@@ -45,21 +45,22 @@ CPU/RSS/thermal/power are not measured claims until the same binaries run on the
 
 ## CI matrix
 
-The intended gate is:
+The release gate is:
 
 - GCC and Clang native build/tests with assertions retained in Release;
+- SDK install smoke for core/runtime static libraries and public headers;
 - strict Clang warnings;
-- ASan/UBSan;
+- ASan/UBSan including the Linux runtime integration test;
 - MDF default and NLMS fallback;
 - 8/16/24/32/48 kHz contracts;
 - AEC convergence/geometry/double-talk;
 - slow drift + sample-slip and abrupt route-jump reset;
 - frequency RES and SAFE/double-talk fallback;
-- runtime start/backpressure/output-drop/semaphore wakeup;
+- runtime start/backpressure/output-drop/semaphore wakeup/deinit lifecycle;
 - libFuzzer smoke;
 - optional ALSA example compilation with `libasound2-dev` only in that job;
 - paced runtime benchmark smoke;
-- Cortex-A32 cross-build.
+- Cortex-A32 cross-build of both portable core and Linux runtime libraries.
 
 ## Acoustic release corpus
 

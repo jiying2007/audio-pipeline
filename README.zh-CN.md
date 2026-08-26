@@ -46,6 +46,8 @@ FULL/LITE 复用 NS 的 STFT，对 AEC 预测回声谱做 frequency-dependent RE
 
 两核通过固定容量 SPSC queue 通信。DSP worker 空闲时通过 semaphore 阻塞，不短周期轮询。CPU affinity 和 `SCHED_FIFO` 为 best-effort 优化。runtime metrics 提供 submitted/processed、input-full、output-drop、DSP overrun、last/max DSP us 和当前质量状态。
 
+runtime 生命周期显式管理：`ap_runtime_init()` 初始化调用方内存，`ap_runtime_start()`/`ap_runtime_stop()` 控制 worker；复用或释放 runtime 内存前必须调用 `ap_runtime_deinit()`，确保 POSIX semaphore 正常销毁。
+
 不强行把 AEC/NS 每 10 ms 拆成跨核 barrier，避免小双核上的唤醒、cache migration 和同步成本反而超过收益。
 
 ## Profile

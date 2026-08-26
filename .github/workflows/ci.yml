@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        env:
+          CC: ${{ matrix.compiler }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Install SDK smoke
+        run: |
+          cmake --install build --prefix "$PWD/stage"
+          test -f stage/lib/libaudio_pipeline.a
+          test -f stage/lib/libaudio_pipeline_runtime.a
+          test -f stage/include/audio_pipeline/audio_pipeline.h
+          test -f stage/include/audio_pipeline/audio_runtime.h
+      - name: Benchmark smoke
+        run: ./build/ap_bench 2 0.35 9000
+      - name: Runtime benchmark smoke
+        run: ./build/ap_runtime_bench 1 0 0.99 -1
+
+  strict-clang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure strict warnings
+        env:
+          CC: clang
+        run: cmake -S . -B build-strict -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+      - name: Build
+        run: cmake --build build-strict --parallel
+      - name: Test
+        run: ctest --test-dir build-strict --output-on-failure
+
+  backend-fallback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure NLMS fallback
+        env:
+          CC: clang
+        run: >-
+          cmake -S . -B build-nlms -DCMAKE_BUILD_TYPE=Release
+          -DAP_ENABLE_MDF_AEC=OFF -DAP_ENABLE_RUNTIME=OFF
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build
+        run: cmake --build build-nlms --parallel
+      - name: Test
+        run: ctest --test-dir build-nlms --output-on-failure
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure ASan/UBSan
+        env:
+          CC: clang
+        run: >-
+          cmake -S . -B build-san -DCMAKE_BUILD_TYPE=Debug
+          -DAP_BUILD_BENCH=OFF
+          -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
+          -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+      - name: Build
+        run: cmake --build build-san --parallel
+      - name: Test
+        run: ctest --test-dir build-san --output-on-failure
+
+  fuzz-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure libFuzzer
+        env:
+          CC: clang
+        run: >-
+          cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug
+          -DAP_BUILD_FUZZ=ON -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF
+          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_RUNTIME=OFF
+      - name: Build
+        run: cmake --build build-fuzz --target ap_fuzz --parallel
+      - name: Fuzz smoke
+        run: ./build-fuzz/ap_fuzz -runs=2000 -max_len=4096
+
+  alsa-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ALSA development package
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - name: Configure ALSA examples
+        env:
+          CC: clang
+        run: >-
+          cmake -S . -B build-alsa -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_ALSA_EXAMPLE=ON -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF
+          -DAP_STRICT_WARNINGS=ON
+      - name: Build ALSA examples
+        run: cmake --build build-alsa --target ap_alsa_duplex ap_alsa_runtime_duplex --parallel
+
+  arm-cross:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cross compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: Configure Cortex-A32
+        run: >-
+          cmake -S . -B build-arm -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-cortex-a32.cmake
+          -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF
+      - name: Build
+        run: cmake --build build-arm --parallel

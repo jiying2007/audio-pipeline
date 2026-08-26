@@ -46,6 +46,8 @@ Recommended split:
 
 The cores use bounded SPSC queues. The worker blocks on a POSIX semaphore when idle rather than polling. Affinity and `SCHED_FIFO` are best-effort optimizations. Runtime telemetry exposes submitted/processed frames, input-full/output-drop events, DSP overruns, last/max DSP time and current quality state.
 
+Runtime ownership is explicit: `ap_runtime_init()` initializes caller-owned state, `ap_runtime_start()`/`ap_runtime_stop()` control the worker, and `ap_runtime_deinit()` must be called before reusing/releasing the runtime memory so the POSIX semaphore is destroyed cleanly.
+
 This avoids a cross-core barrier between AEC/NS every 10 ms, which is often a net loss on a small dual-core CPU because of wakeup/cache/synchronization overhead.
 
 ## Profiles

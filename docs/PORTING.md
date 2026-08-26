@@ -21,6 +21,8 @@ Typical policy:
 
 The runtime uses bounded SPSC queues. `AP_EFULL` is an explicit producer-overrun signal. Output drops are counted rather than hidden. The DSP worker sleeps on a semaphore when idle.
 
+Runtime lifetime is explicit: initialize once with `ap_runtime_init()`, start/stop the worker as required, then call `ap_runtime_deinit()` before reusing or releasing the caller-owned runtime memory. `ap_runtime_deinit()` stops a running worker and destroys the POSIX semaphore, so route/service re-creation does not leak control-plane synchronization resources.
+
 ## ALSA examples
 
 ALSA integration is opt-in:

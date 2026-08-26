@@ -64,6 +64,14 @@ ctest --test-dir build --output-on-failure
 ./build/ap_bench 30
 ```
 
+Install the SDK to a staging prefix:
+
+```bash
+cmake --install build --prefix ./stage
+```
+
+The default Linux build installs `libaudio_pipeline.a`, `libaudio_pipeline_runtime.a` and the public headers under `include/audio_pipeline/`. When `AP_ENABLE_RUNTIME=OFF`, only the portable core library and headers are installed.
+
 Cortex-A32 cross-build:
 
 ```bash

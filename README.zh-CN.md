@@ -64,6 +64,14 @@ ctest --test-dir build --output-on-failure
 ./build/ap_bench 30
 ```
 
+安装 SDK 到 staging 目录：
+
+```bash
+cmake --install build --prefix ./stage
+```
+
+默认 Linux 构建会安装 `libaudio_pipeline.a`、`libaudio_pipeline_runtime.a` 以及 `include/audio_pipeline/` 下的公共头文件；当 `AP_ENABLE_RUNTIME=OFF` 时，仅安装 portable core 库和公共头文件。
+
 Cortex-A32：
 
 ```bash

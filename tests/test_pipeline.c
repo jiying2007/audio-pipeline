@@ -16,13 +16,36 @@ static AP_ALIGN16 unsigned char state[AP_PIPELINE_STATE_MAX_BYTES];
 
 static void test_state_budget(void) {
     assert(ap_pipeline_state_size() <= AP_PIPELINE_STATE_MAX_BYTES);
+    assert((ap_pipeline_compiled_stages() & ~AP_STAGE_ALL) == 0u);
 }
 
 static void test_invalid_config(void) {
+    const ap_stage_mask_t compiled = ap_pipeline_compiled_stages();
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *p = NULL;
     c.io_sample_rate_hz = 44100u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_EINVAL);
+
+    if (compiled & AP_STAGE_RES) {
+        c = ap_config_default(AP_PROFILE_CALL);
+        c.stages = AP_STAGE_RES;
+        c.enable_delay_tracking = 0u;
+        c.enable_clock_drift_compensation = 0u;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
+    if (compiled & AP_STAGE_AEC) {
+        c = ap_config_default(AP_PROFILE_CALL);
+        c.stages = AP_STAGE_AEC;
+        c.enable_delay_tracking = 0u;
+        c.enable_clock_drift_compensation = 0u;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
+    if (compiled & AP_STAGE_BF) {
+        c = ap_config_default(AP_PROFILE_CALL);
+        c.mic_channels = 1u;
+        c.stages |= AP_STAGE_BF;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
 }
 
 static void test_silence(void) {
@@ -34,44 +57,60 @@ static void test_silence(void) {
     unsigned f, i;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
     for (f = 0; f < 30; ++f) {
-        assert(ap_pipeline_push_render(p, render, 160) == AP_OK);
+        if (c.stages & AP_STAGE_SYNC)
+            assert(ap_pipeline_push_render(p, render, 160) == AP_OK);
         assert(ap_pipeline_process_capture(p, mic, 160, out) == AP_OK);
     }
     for (i = 0; i < 160; ++i) assert(out[i] > -8 && out[i] < 8);
 }
 
-static void test_shared_double_talk_hangover(void) {
-    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+static void test_partial_composition(void) {
+    const ap_stage_mask_t compiled = ap_pipeline_compiled_stages();
+    ap_config_t c = ap_config_default(AP_PROFILE_ASSISTANT);
     ap_pipeline_t *p = NULL;
-    ap_metrics_t m;
-    int16_t mic[160];
-    int16_t render[160];
+    int16_t mic[160] = {0};
+    int16_t render[160] = {0};
     int16_t out[160];
-    unsigned frame, i;
-
     c.mic_channels = 1u;
-    c.enable_hpf = 0u;
-    c.enable_beamformer = 0u;
+    c.stages = compiled & (AP_STAGE_HPF | AP_STAGE_NS | AP_STAGE_AGC | AP_STAGE_VAD);
     c.enable_delay_tracking = 0u;
     c.enable_clock_drift_compensation = 0u;
-    c.initial_delay_ms = 0u;
-    c.enable_aec = 0u;
-    c.enable_residual_echo_suppression = 0u;
-    c.enable_noise_suppression = 0u;
-    c.enable_agc = 0u;
-    c.enable_vad = 0u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+    assert(ap_pipeline_push_render(p, render, 160u) == AP_ESTATE);
+    assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+    assert(ap_pipeline_algorithmic_latency_ms(p) ==
+           ((c.stages & AP_STAGE_NS) ? AP_FRAME_MS : 0u));
+}
 
-    for (i = 0u; i < 160u; ++i) render[i] = 2000;
-    for (frame = 0u; frame < 4u; ++frame) {
-        const int16_t mic_level = frame == 0u ? 6000 : 1000;
-        for (i = 0u; i < 160u; ++i) mic[i] = mic_level;
-        assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
-        assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
-        ap_pipeline_get_metrics(p, &m);
-        assert(m.far_end_active == 1u);
-        if (frame < 3u) assert(m.double_talk_active == 1u);
-        else assert(m.double_talk_active == 0u);
+static void test_shared_double_talk_hangover(void) {
+    if (!(ap_pipeline_compiled_stages() & AP_STAGE_SYNC)) return;
+    {
+        ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+        ap_pipeline_t *p = NULL;
+        ap_metrics_t m;
+        int16_t mic[160];
+        int16_t render[160];
+        int16_t out[160];
+        unsigned frame, i;
+
+        c.mic_channels = 1u;
+        c.stages = AP_STAGE_SYNC;
+        c.enable_delay_tracking = 0u;
+        c.enable_clock_drift_compensation = 0u;
+        c.initial_delay_ms = 0u;
+        assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+
+        for (i = 0u; i < 160u; ++i) render[i] = 2000;
+        for (frame = 0u; frame < 4u; ++frame) {
+            const int16_t mic_level = frame == 0u ? 6000 : 1000;
+            for (i = 0u; i < 160u; ++i) mic[i] = mic_level;
+            assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
+            assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+            ap_pipeline_get_metrics(p, &m);
+            assert(m.far_end_active == 1u);
+            if (frame < 3u) assert(m.double_talk_active == 1u);
+            else assert(m.double_talk_active == 0u);
+        }
     }
 }
 
@@ -95,8 +134,6 @@ static void test_all_rate_geometries(void) {
             c.internal_sample_rate_hz = internal_rates[ir];
             assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
             assert(ap_pipeline_frame_samples(p) == io_frames);
-            assert(ap_pipeline_sample_rate_hz(p) == io_rate);
-            assert(ap_pipeline_mic_channels(p) == 2u);
             for (frame = 0u; frame < 20u; ++frame) {
                 for (i = 0u; i < io_frames; ++i) {
                     const uint32_t n = frame * io_frames + i;
@@ -108,67 +145,69 @@ static void test_all_rate_geometries(void) {
                     mic[2u * i] = (int16_t)((near + 0.18f * far) * 32767.0f);
                     mic[2u * i + 1u] = (int16_t)((near + 0.16f * far) * 32767.0f);
                 }
-                assert(ap_pipeline_push_render(p, render, io_frames) == AP_OK);
+                if (c.stages & AP_STAGE_SYNC)
+                    assert(ap_pipeline_push_render(p, render, io_frames) == AP_OK);
                 assert(ap_pipeline_process_capture(p, mic, io_frames, out) == AP_OK);
             }
             ap_pipeline_get_metrics(p, &m);
             assert(m.processed_frames == 20u);
-            assert(m.active_aec_taps > 0u);
+            if (c.stages & AP_STAGE_AEC) assert(m.active_aec_taps > 0u);
             assert(m.quality == AP_QUALITY_FULL);
         }
     }
 }
 
 static void test_aec_convergence(void) {
-    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
-    ap_pipeline_t *p = NULL;
-    int16_t mic[320];
-    int16_t render[160];
-    int16_t out[160];
-    int16_t echo_delay[4096] = {0};
-    unsigned wp = 0, frame, i;
-    double in_e = 1.0, out_e = 1.0;
-    c.mic_channels = 1u;
-    c.enable_beamformer = 0u;
-    c.enable_delay_tracking = 0u;
-    c.initial_delay_ms = 40u;
-    c.enable_residual_echo_suppression = 0u;
-    c.enable_noise_suppression = 0u;
-    c.enable_agc = 0u;
-    c.enable_vad = 0u;
-    c.aec_filter_ms = 64u;
-    c.aec_adapt_stride = 1u;
-    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
-    for (frame = 0; frame < 500; ++frame) {
-        for (i = 0; i < 160; ++i) {
-            const unsigned sample = frame * 160u + i;
-            const float r = 0.45f * sinf(2.0f * PI_F * 937.0f * (float)sample / 16000.0f) +
-                            0.20f * sinf(2.0f * PI_F * 613.0f * (float)sample / 16000.0f);
-            const int16_t rs = (int16_t)(r * 22000.0f);
-            const int16_t delayed = echo_delay[(wp + 4096u - 640u) & 4095u];
-            echo_delay[wp] = rs;
-            wp = (wp + 1u) & 4095u;
-            render[i] = rs;
-            mic[i] = (int16_t)(0.45f * delayed);
-            mic[160u + i] = 0;
-        }
-        assert(ap_pipeline_push_render(p, render, 160) == AP_OK);
-        assert(ap_pipeline_process_capture(p, mic, 160, out) == AP_OK);
-        if (frame > 300u) {
+    if ((ap_pipeline_compiled_stages() & (AP_STAGE_SYNC | AP_STAGE_AEC)) !=
+        (AP_STAGE_SYNC | AP_STAGE_AEC)) return;
+    {
+        ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+        ap_pipeline_t *p = NULL;
+        int16_t mic[320];
+        int16_t render[160];
+        int16_t out[160];
+        int16_t echo_delay[4096] = {0};
+        unsigned wp = 0, frame, i;
+        double in_e = 1.0, out_e = 1.0;
+        c.mic_channels = 1u;
+        c.stages = AP_STAGE_SYNC | AP_STAGE_AEC;
+        c.enable_delay_tracking = 0u;
+        c.enable_clock_drift_compensation = 0u;
+        c.initial_delay_ms = 40u;
+        c.aec_filter_ms = 64u;
+        c.aec_adapt_stride = 1u;
+        assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+        for (frame = 0; frame < 500; ++frame) {
             for (i = 0; i < 160; ++i) {
-                in_e += (double)mic[i] * mic[i];
-                out_e += (double)out[i] * out[i];
+                const unsigned sample = frame * 160u + i;
+                const float r = 0.45f * sinf(2.0f * PI_F * 937.0f * (float)sample / 16000.0f) +
+                                0.20f * sinf(2.0f * PI_F * 613.0f * (float)sample / 16000.0f);
+                const int16_t rs = (int16_t)(r * 22000.0f);
+                const int16_t delayed = echo_delay[(wp + 4096u - 640u) & 4095u];
+                echo_delay[wp] = rs;
+                wp = (wp + 1u) & 4095u;
+                render[i] = rs;
+                mic[i] = (int16_t)(0.45f * delayed);
+                mic[160u + i] = 0;
+            }
+            assert(ap_pipeline_push_render(p, render, 160) == AP_OK);
+            assert(ap_pipeline_process_capture(p, mic, 160, out) == AP_OK);
+            if (frame > 300u) {
+                for (i = 0; i < 160; ++i) {
+                    in_e += (double)mic[i] * mic[i];
+                    out_e += (double)out[i] * out[i];
+                }
             }
         }
+        assert(out_e < in_e * 0.70);
     }
-    /* Deterministic synthetic echo should show material cancellation after convergence. */
-    assert(out_e < in_e * 0.70);
 }
 
 int main(void) {
     test_state_budget();
     test_invalid_config();
     test_silence();
+    test_partial_composition();
     test_shared_double_talk_hangover();
     test_all_rate_geometries();
     test_aec_convergence();

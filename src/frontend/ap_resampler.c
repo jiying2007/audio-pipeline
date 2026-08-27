@@ -1,11 +1,15 @@
 #include "frontend/ap_resampler.h"
-#include "dsp/ap_dsp.h"
+#include "audio_pipeline/audio_modules.h"
 #include <stdint.h>
 
 static float ap_s16_to_f32(int16_t x) { return (float)x * (1.0f / 32768.0f); }
 
+static float ap_resampler_clamp(float x, float lo, float hi) {
+    return x < lo ? lo : (x > hi ? hi : x);
+}
+
 static int16_t ap_f32_to_s16(float x) {
-    const float y = ap_clampf(x, -0.999969f, 0.999969f) * 32768.0f;
+    const float y = ap_resampler_clamp(x, -0.999969f, 0.999969f) * 32768.0f;
     return (int16_t)(y >= 0.0f ? y + 0.5f : y - 0.5f);
 }
 
@@ -110,4 +114,33 @@ void ap_resample_output(const float *in, uint32_t in_frames,
         i1 = i0 + 1u < in_frames ? i0 + 1u : i0;
         out[i] = ap_f32_to_s16(in[i0] * (1.0f - frac) + in[i1] * frac);
     }
+}
+
+ap_status_t ap_module_resampler_input_s16(const int16_t *input,
+                                          size_t input_frames,
+                                          uint32_t channels,
+                                          uint32_t channel,
+                                          float *output,
+                                          size_t output_frames) {
+    if (!input || !output || input_frames == 0u || output_frames == 0u ||
+        input_frames > AP_MAX_IO_FRAME_SAMPLES ||
+        output_frames > AP_MAX_IO_FRAME_SAMPLES || channels < 1u ||
+        channels > AP_MAX_MIC_CHANNELS || channel >= channels)
+        return AP_EINVAL;
+    ap_resample_input_channel(input, (uint32_t)input_frames, channels, channel,
+                              output, (uint32_t)output_frames);
+    return AP_OK;
+}
+
+ap_status_t ap_module_resampler_output_s16(const float *input,
+                                           size_t input_frames,
+                                           int16_t *output,
+                                           size_t output_frames) {
+    if (!input || !output || input_frames == 0u || output_frames == 0u ||
+        input_frames > AP_MAX_IO_FRAME_SAMPLES ||
+        output_frames > AP_MAX_IO_FRAME_SAMPLES)
+        return AP_EINVAL;
+    ap_resample_output(input, (uint32_t)input_frames, output,
+                       (uint32_t)output_frames);
+    return AP_OK;
 }

@@ -1,16 +1,8 @@
-#include "audio_pipeline/audio_pipeline.h"
+#include "audio_pipeline/audio_modules.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#if defined(_MSC_VER)
-#define AP_ALIGN16 __declspec(align(16))
-#else
-#define AP_ALIGN16 _Alignas(16)
-#endif
-
-static AP_ALIGN16 unsigned char state[AP_PIPELINE_STATE_MAX_BYTES];
 
 static float ref_s16_to_f32(int16_t x) {
     return (float)x * (1.0f / 32768.0f);
@@ -62,45 +54,27 @@ static void ref_output(const float *in, uint32_t in_frames,
     }
 }
 
-static ap_config_t passthrough_config(uint32_t io_rate, uint32_t internal_rate) {
-    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
-    c.io_sample_rate_hz = io_rate;
-    c.internal_sample_rate_hz = internal_rate;
-    c.mic_channels = 1u;
-    c.enable_hpf = 0u;
-    c.enable_beamformer = 0u;
-    c.enable_delay_tracking = 0u;
-    c.enable_clock_drift_compensation = 0u;
-    c.enable_aec = 0u;
-    c.enable_residual_echo_suppression = 0u;
-    c.enable_noise_suppression = 0u;
-    c.enable_agc = 0u;
-    c.enable_vad = 0u;
-    return c;
-}
-
 static void check_rate_pair(uint32_t io_rate, uint32_t internal_rate) {
-    ap_config_t c = passthrough_config(io_rate, internal_rate);
-    ap_pipeline_t *p = NULL;
     int16_t input[AP_MAX_IO_FRAME_SAMPLES];
     int16_t actual[AP_MAX_IO_FRAME_SAMPLES];
     int16_t expected[AP_MAX_IO_FRAME_SAMPLES];
     float internal[160];
+    float expected_internal[160];
     const uint32_t io_frames = io_rate / 100u;
     const uint32_t internal_frames = internal_rate / 100u;
     uint32_t frame, i;
-
-    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
-    assert(ap_pipeline_frame_samples(p) == io_frames);
 
     for (frame = 0u; frame < 4u; ++frame) {
         for (i = 0u; i < io_frames; ++i) {
             const uint32_t x = 1103515245u * (i + 1u + frame * 997u) + 12345u;
             input[i] = (int16_t)((int32_t)((x >> 8u) % 40001u) - 20000);
         }
-        ref_input(input, io_frames, internal, internal_frames);
-        ref_output(internal, internal_frames, expected, io_frames);
-        assert(ap_pipeline_process_capture(p, input, io_frames, actual) == AP_OK);
+        ref_input(input, io_frames, expected_internal, internal_frames);
+        ref_output(expected_internal, internal_frames, expected, io_frames);
+        assert(ap_module_resampler_input_s16(input, io_frames, 1u, 0u,
+                                             internal, internal_frames) == AP_OK);
+        assert(ap_module_resampler_output_s16(internal, internal_frames,
+                                              actual, io_frames) == AP_OK);
         for (i = 0u; i < io_frames; ++i) {
             const int diff = (int)actual[i] - (int)expected[i];
             if (abs(diff) > 1) {
@@ -118,11 +92,9 @@ int main(void) {
     static const uint32_t io_rates[] = {8000u, 16000u, 24000u, 32000u, 48000u};
     static const uint32_t internal_rates[] = {8000u, 16000u};
     size_t i, j;
-
     for (i = 0u; i < sizeof(io_rates) / sizeof(io_rates[0]); ++i)
         for (j = 0u; j < sizeof(internal_rates) / sizeof(internal_rates[0]); ++j)
             check_rate_pair(io_rates[i], internal_rates[j]);
-
-    puts("audio-pipeline resampler contracts: OK");
+    puts("audio resampler module contracts: OK");
     return 0;
 }

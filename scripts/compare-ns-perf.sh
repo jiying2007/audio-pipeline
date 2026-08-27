@@ -21,14 +21,16 @@ cmake -S "$ROOT" -B "$TMP/head-build" $COMMON_FLAGS >/dev/null
 cmake --build "$TMP/head-build" --target audio_pipeline --parallel >/dev/null
 
 compile_harness() {
-  build_dir=$1; include_dir=$2; output=$3
-  ${CC:-cc} -O3 -std=c11 -I"$include_dir" \
-    "$ROOT/bench/bench_ns_path.c" "$build_dir/libaudio_pipeline.a" -lm -o "$output"
+  source=$1; build_dir=$2; include_dir=$3; output=$4
+  ${CC:-cc} -O3 -std=c11 -I"$include_dir" -I"$build_dir/generated" \
+    "$source" "$build_dir/libaudio_pipeline.a" -lm -o "$output"
 }
-# Public structs may change across a hard-cut branch. Always compile each
-# harness against the matching library's headers.
-compile_harness "$TMP/base/build-ns-perf" "$TMP/base/include" "$TMP/base-ns-bench"
-compile_harness "$TMP/head-build" "$ROOT/include" "$TMP/head-ns-bench"
+# Hard-cut APIs are allowed to differ. Compile each benchmark source against
+# the matching tree and matching generated/source headers.
+compile_harness "$TMP/base/bench/bench_ns_path.c" \
+    "$TMP/base/build-ns-perf" "$TMP/base/include" "$TMP/base-ns-bench"
+compile_harness "$ROOT/bench/bench_ns_path.c" \
+    "$TMP/head-build" "$ROOT/include" "$TMP/head-ns-bench"
 
 extract_us() { "$1" "$FRAMES" "$2" "$3" | sed -n 's/.* us_per_frame=\([0-9.]*\).*/\1/p'; }
 median() { sort -n "$1" | awk -v n="$REPS" 'NR == int(n/2)+1 { print; exit }'; }

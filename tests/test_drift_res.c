@@ -48,13 +48,7 @@ static void test_clock_drift_and_route_jump(void) {
 
     memset(history, 0, sizeof(history));
     c.mic_channels = 1u;
-    c.enable_hpf = 0u;
-    c.enable_beamformer = 0u;
-    c.enable_aec = 0u;
-    c.enable_residual_echo_suppression = 0u;
-    c.enable_noise_suppression = 0u;
-    c.enable_agc = 0u;
-    c.enable_vad = 0u;
+    c.stages = AP_STAGE_SYNC | AP_STAGE_AEC;
     c.enable_delay_tracking = 1u;
     c.enable_clock_drift_compensation = 1u;
     c.initial_delay_ms = 40u;
@@ -64,7 +58,6 @@ static void test_clock_drift_and_route_jump(void) {
     for (frame = 0u; frame < 250u; ++frame)
         run_delay_frame(p, history, &wp, &sample_index, 640u, out);
 
-    /* +1 sample/second at 16 kHz = 62.5 ppm render/capture clock drift. */
     for (frame = 0u; frame < 1000u; ++frame) {
         const uint32_t delay = 640u + frame / 100u;
         run_delay_frame(p, history, &wp, &sample_index, delay, out);
@@ -75,7 +68,6 @@ static void test_clock_drift_and_route_jump(void) {
     assert(fabsf(before_jump.estimated_drift_ppm) <= 2000.0f);
     assert(before_jump.estimated_delay_ms >= 39u && before_jump.estimated_delay_ms <= 43u);
 
-    /* A route/buffer change is not drift: snap and reset learned AEC state. */
     for (frame = 0u; frame < 120u; ++frame)
         run_delay_frame(p, history, &wp, &sample_index, 1280u, out);
     ap_pipeline_get_metrics(p, &after_jump);
@@ -106,13 +98,10 @@ static void test_frequency_res_and_degradation(void) {
     ap_metrics_t full, safe, dt;
 
     c.mic_channels = 1u;
-    c.enable_hpf = 0u;
-    c.enable_beamformer = 0u;
+    c.stages = AP_STAGE_SYNC | AP_STAGE_AEC | AP_STAGE_RES | AP_STAGE_NS;
     c.enable_delay_tracking = 0u;
     c.enable_clock_drift_compensation = 0u;
     c.initial_delay_ms = 0u;
-    c.enable_agc = 0u;
-    c.enable_vad = 0u;
     c.aec_filter_ms = 64u;
     c.aec_adapt_stride = 1u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);

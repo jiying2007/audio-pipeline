@@ -34,8 +34,6 @@ struct ap_runtime {
     pthread_t thread;
     sem_t wake;
     atomic_uint running, in_head, in_tail, out_head, out_tail;
-    /* 32-bit lock-free counters avoid hidden libatomic/locks on ARMv7-A.
-     * Public snapshots widen them to uint64_t; counters are per runtime init. */
     atomic_uint submitted_frames, processed_frames;
     atomic_uint input_full_events, output_drop_events, dsp_overruns;
     atomic_uint last_dsp_us, max_dsp_us;
@@ -43,6 +41,7 @@ struct ap_runtime {
     ap_rt_output_t out[AP_RT_DEPTH];
     uint32_t io_frames, mic_channels;
     uint32_t overload_streak, healthy_streak;
+    uint8_t uses_render;
 };
 
 static uint64_t ap_now_ns(void) {
@@ -95,6 +94,7 @@ ap_status_t ap_runtime_init(void *memory, size_t memory_size, ap_pipeline_t *pip
     r->cfg = *config;
     r->io_frames = (uint32_t)ap_pipeline_frame_samples(pipeline);
     r->mic_channels = ap_pipeline_mic_channels(pipeline);
+    r->uses_render = (uint8_t)((ap_pipeline_stages(pipeline) & AP_STAGE_SYNC) != 0u);
     if (!r->io_frames || r->io_frames > AP_MAX_IO_FRAME_SAMPLES ||
         !r->mic_channels || r->mic_channels > AP_MAX_MIC_CHANNELS) return AP_EINVAL;
     if (sem_init(&r->wake, 0, 0) != 0) return AP_ESTATE;
@@ -151,9 +151,7 @@ static void ap_adjust_quality(ap_runtime_t *r, uint64_t elapsed_ns) {
 
 static int ap_wait_for_work(ap_runtime_t *r) {
     int rc;
-    do {
-        rc = sem_wait(&r->wake);
-    } while (rc != 0 && errno == EINTR);
+    do { rc = sem_wait(&r->wake); } while (rc != 0 && errno == EINTR);
     return rc;
 }
 
@@ -181,7 +179,8 @@ static void *ap_worker(void *arg) {
             }
             out = &r->out[oh & AP_RT_MASK];
             t0 = ap_now_ns();
-            if (ap_pipeline_push_render(r->pipeline, in->render, r->io_frames) != AP_OK ||
+            if ((r->uses_render &&
+                 ap_pipeline_push_render(r->pipeline, in->render, r->io_frames) != AP_OK) ||
                 ap_pipeline_process_capture(r->pipeline, in->mic, r->io_frames, out->audio) != AP_OK) {
                 atomic_store_explicit(&r->in_tail, tail + 1u, memory_order_release);
                 continue;

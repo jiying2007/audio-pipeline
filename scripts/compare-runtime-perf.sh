@@ -14,8 +14,6 @@ if [ "$REPS" -lt 3 ]; then echo "repetitions must be >= 3" >&2; exit 2; fi
 git fetch origin main --depth=1
 git worktree add --detach "$TMP/base" "$BASE_REF" >/dev/null
 COMMON_FLAGS='-DCMAKE_BUILD_TYPE=Release -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF'
-# Both old and new main builds enable their Linux runtime by default on Linux.
-# Avoid version-specific CMake switches so historical-base comparisons remain valid.
 # shellcheck disable=SC2086
 cmake -S "$TMP/base" -B "$TMP/base/build-runtime-perf" $COMMON_FLAGS >/dev/null
 cmake --build "$TMP/base/build-runtime-perf" --target audio_pipeline_runtime --parallel >/dev/null
@@ -24,13 +22,17 @@ cmake -S "$ROOT" -B "$TMP/head-build" $COMMON_FLAGS >/dev/null
 cmake --build "$TMP/head-build" --target audio_pipeline_runtime --parallel >/dev/null
 
 compile_harness() {
-  build_dir=$1; include_dir=$2; output=$3
-  ${CC:-cc} -O3 -std=c11 -pthread -I"$include_dir" \
-    "$ROOT/bench/bench_runtime_throughput.c" \
-    "$build_dir/libaudio_pipeline_runtime.a" "$build_dir/libaudio_pipeline.a" -lm -o "$output"
+  source=$1; build_dir=$2; include_dir=$3; output=$4
+  ${CC:-cc} -O3 -std=c11 -pthread -I"$include_dir" -I"$build_dir/generated" \
+    "$source" "$build_dir/libaudio_pipeline_runtime.a" \
+    "$build_dir/libaudio_pipeline.a" -lm -o "$output"
 }
-compile_harness "$TMP/base/build-runtime-perf" "$TMP/base/include" "$TMP/base-runtime-bench"
-compile_harness "$TMP/head-build" "$ROOT/include" "$TMP/head-runtime-bench"
+# Public config/layout may hard-cut across the comparison. Compile the base
+# harness from the base worktree and the candidate harness from the candidate.
+compile_harness "$TMP/base/bench/bench_runtime_throughput.c" \
+    "$TMP/base/build-runtime-perf" "$TMP/base/include" "$TMP/base-runtime-bench"
+compile_harness "$ROOT/bench/bench_runtime_throughput.c" \
+    "$TMP/head-build" "$ROOT/include" "$TMP/head-runtime-bench"
 
 extract_us() { "$1" "$2" "$3" | sed -n 's/.* us_per_frame=\([0-9.]*\).*/\1/p'; }
 for name in base-minimal head-minimal base-full head-full ratio-minimal ratio-full; do : > "$TMP/$name"; done

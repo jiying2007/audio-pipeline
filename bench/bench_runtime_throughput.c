@@ -37,25 +37,16 @@ int main(int argc, char **argv) {
     if (argc > 1) frames = (uint32_t)strtoul(argv[1], NULL, 10);
     if (argc > 2) {
         if (strcmp(argv[2], "minimal") == 0) minimal = 1;
-        else if (strcmp(argv[2], "full") != 0) {
-            fprintf(stderr, "mode must be minimal or full\n");
-            return 2;
-        }
+        else if (strcmp(argv[2], "full") != 0) return 2;
     }
     if (frames == 0u) frames = 1u;
 
     if (minimal) {
         pcfg.mic_channels = 1u;
         pcfg.initial_delay_ms = 0u;
-        pcfg.enable_hpf = 0u;
-        pcfg.enable_beamformer = 0u;
+        pcfg.stages = 0u;
         pcfg.enable_delay_tracking = 0u;
         pcfg.enable_clock_drift_compensation = 0u;
-        pcfg.enable_aec = 0u;
-        pcfg.enable_residual_echo_suppression = 0u;
-        pcfg.enable_noise_suppression = 0u;
-        pcfg.enable_agc = 0u;
-        pcfg.enable_vad = 0u;
     }
 
     memset(mic, 0, sizeof(mic));
@@ -74,27 +65,14 @@ int main(int argc, char **argv) {
     rcfg.recover_frames = UINT32_MAX;
     if (ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &pcfg, &pipeline) != AP_OK ||
         ap_runtime_init(runtime_mem, sizeof(runtime_mem), pipeline, &rcfg, &runtime) != AP_OK ||
-        ap_runtime_start(runtime) != AP_OK) {
-        fprintf(stderr, "runtime throughput init failed\n");
-        return 3;
-    }
+        ap_runtime_start(runtime) != AP_OK) return 3;
 
     t0 = now_ns();
     for (f = 0u; f < frames; ++f) {
         ap_status_t s = ap_runtime_submit(runtime, mic, render);
-        if (s != AP_OK) {
-            fprintf(stderr, "submit failed frame=%u status=%d\n", f, (int)s);
-            ap_runtime_deinit(runtime);
-            return 4;
-        }
-        do {
-            s = ap_runtime_receive(runtime, out, NULL);
-        } while (s == AP_EEMPTY);
-        if (s != AP_OK) {
-            fprintf(stderr, "receive failed frame=%u status=%d\n", f, (int)s);
-            ap_runtime_deinit(runtime);
-            return 5;
-        }
+        if (s != AP_OK) { ap_runtime_deinit(runtime); return 4; }
+        do { s = ap_runtime_receive(runtime, out, NULL); } while (s == AP_EEMPTY);
+        if (s != AP_OK) { ap_runtime_deinit(runtime); return 5; }
     }
     t1 = now_ns();
 
@@ -108,11 +86,9 @@ int main(int argc, char **argv) {
                (unsigned long long)rm.processed_frames,
                (unsigned long long)rm.input_full_events,
                (unsigned long long)rm.output_drop_events,
-               (unsigned long long)rm.dsp_overruns,
-               (int)rm.quality);
+               (unsigned long long)rm.dsp_overruns, (int)rm.quality);
         if (rm.processed_frames != frames || rm.input_full_events != 0u ||
             rm.output_drop_events != 0u || rm.dsp_overruns != 0u) {
-            fprintf(stderr, "runtime throughput correctness gate failed\n");
             ap_runtime_deinit(runtime);
             return 6;
         }

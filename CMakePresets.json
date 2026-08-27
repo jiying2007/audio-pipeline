@@ -2,6 +2,64 @@
   "version": 3,
   "configurePresets": [
     {
+      "name": "host-compose-base",
+      "hidden": true,
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "AP_ENABLE_LINUX_RUNTIME": "OFF",
+        "AP_BUILD_TESTS": "ON",
+        "AP_BUILD_BENCH": "OFF",
+        "AP_BUILD_EXAMPLES": "OFF",
+        "AP_STRICT_WARNINGS": "ON"
+      }
+    },
+    {
+      "name": "composition-full",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-full",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD"
+      }
+    },
+    {
+      "name": "composition-voice-frontend",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-voice-frontend",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER,HPF,BF,NS,AGC,VAD"
+      }
+    },
+    {
+      "name": "composition-raw",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-raw",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER"
+      }
+    },
+    {
+      "name": "composition-aec-only",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-aec-only",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "OFF",
+        "AP_MODULES": "AEC"
+      }
+    },
+    {
+      "name": "composition-ns-only",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-ns-only",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "OFF",
+        "AP_MODULES": "NS"
+      }
+    },
+    {
       "name": "armhf-base",
       "hidden": true,
       "generator": "Unix Makefiles",
@@ -13,6 +71,8 @@
         "AP_AEC_BACKEND": "MDF",
         "AP_ENABLE_FAST_MATH": "OFF",
         "AP_ENABLE_LINUX_RUNTIME": "ON",
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD",
         "AP_BUILD_TESTS": "OFF",
         "AP_BUILD_BENCH": "OFF",
         "AP_BUILD_EXAMPLES": "OFF"
@@ -68,6 +128,8 @@
         "AP_SIMD_BACKEND": "NEON",
         "AP_ENABLE_FAST_MATH": "OFF",
         "AP_ENABLE_LINUX_RUNTIME": "ON",
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD",
         "AP_BUILD_TESTS": "OFF",
         "AP_BUILD_BENCH": "OFF",
         "AP_BUILD_EXAMPLES": "OFF"

@@ -1,8 +1,11 @@
 #include "sync/ap_sync.h"
-#include "dsp/ap_dsp.h"
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+
+static float ap_sync_clamp(float x, float lo, float hi) {
+    return x < lo ? lo : (x > hi ? hi : x);
+}
 
 void ap_sync_init(ap_sync_state_t *s, uint32_t initial_delay_samples) {
     memset(s, 0, sizeof(*s));
@@ -68,15 +71,15 @@ static void ap_sync_apply_drift(ap_sync_state_t *s,
     if (s->have_last_best_delay) {
         const int32_t delta = (int32_t)best_delay - (int32_t)s->last_best_delay;
         float raw_ppm = (float)delta * 10000000.0f / (float)sample_rate_hz;
-        raw_ppm = ap_clampf(raw_ppm, -2000.0f, 2000.0f);
+        raw_ppm = ap_sync_clamp(raw_ppm, -2000.0f, 2000.0f);
         s->drift_ppm = 0.95f * s->drift_ppm + 0.05f * raw_ppm;
     }
     s->last_best_delay = best_delay;
     s->have_last_best_delay = 1u;
 
     s->drift_credit += s->drift_ppm * (float)sample_rate_hz / 10000000.0f;
-    if (error > 4) s->drift_credit += ap_clampf((float)error * 0.05f, 0.0f, 0.5f);
-    else if (error < -4) s->drift_credit += ap_clampf((float)error * 0.05f, -0.5f, 0.0f);
+    if (error > 4) s->drift_credit += ap_sync_clamp((float)error * 0.05f, 0.0f, 0.5f);
+    else if (error < -4) s->drift_credit += ap_sync_clamp((float)error * 0.05f, -0.5f, 0.0f);
 
     while (s->drift_credit >= 1.0f && s->delay_samples <
            max_delay_ms * sample_rate_hz / 1000u && corrections < 4u) {

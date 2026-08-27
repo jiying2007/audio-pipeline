@@ -42,6 +42,16 @@ jobs:
       - name: Runtime benchmark smoke
         run: ./build/ap_runtime_bench 1 0 0.99 -1
 
+  perf-compare:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Same-runner main vs candidate
+        env:
+          CC: gcc
+        run: sh scripts/compare-perf.sh origin/main 7 20
+
   strict-clang:
     runs-on: ubuntu-latest
     steps:

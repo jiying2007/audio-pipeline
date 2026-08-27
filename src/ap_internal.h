@@ -22,6 +22,9 @@
 #define AP_AEC_BINS_MAX (AP_AEC_FFT_MAX / 2u + 1u)
 #define AP_AEC_PARTITIONS_MAX 60u
 
+_Static_assert((AP_RENDER_CAP & (AP_RENDER_CAP - 1u)) == 0u,
+               "AP_RENDER_CAP must remain a power of two");
+
 typedef struct ap_complex {
     float re;
     float im;
@@ -86,6 +89,7 @@ struct ap_pipeline {
 
     float bf_history[AP_MAX_MIC_CHANNELS][AP_BF_HISTORY];
     int bf_lag;
+    int bf_max_lag;
     uint32_t bf_counter;
 
     float render_ring[AP_RENDER_CAP];
@@ -107,11 +111,13 @@ struct ap_pipeline {
     float aec_history[AP_AEC_CAP * 2u];
     float aec_weights[AP_AEC_CAP];
     uint32_t aec_pos;
-    uint64_t aec_sample_counter;
+    uint32_t aec_adapt_phase;
 #endif
 
     ap_ns_state_t ns;
     float agc_gain;
+    float agc_target_linear;
+    float limiter_linear;
     float residual_gain;
     float vad_noise_rms;
     uint32_t vad_hangover;

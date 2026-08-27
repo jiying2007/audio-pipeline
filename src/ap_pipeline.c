@@ -89,15 +89,12 @@ static float ap_past_sample(const ap_pipeline_t *p, const float *x,
 
 static int ap_estimate_bf_lag(ap_pipeline_t *p, const float *a,
                               const float *b, uint32_t n) {
-    const float sound_mm_s = 343000.0f;
-    int max_lag = (int)ceilf(p->cfg.mic_spacing_mm *
-                             (float)p->cfg.internal_sample_rate_hz / sound_mm_s) + 1;
+    const int max_lag = p->bf_max_lag;
     int lag, best = 0;
     float best_score = -1.0e30f;
-    if (max_lag > (int)AP_BF_HISTORY) max_lag = (int)AP_BF_HISTORY;
     if (max_lag < 1) return 0;
     for (lag = -max_lag; lag <= max_lag; ++lag) {
-        double xy = 0.0, aa = 1.0e-12, bb = 1.0e-12;
+        float xy = 0.0f, aa = 1.0e-12f, bb = 1.0e-12f;
         uint32_t i;
         for (i = 0u; i < n; i += 2u) {
             float x, y;
@@ -108,12 +105,12 @@ static int ap_estimate_bf_lag(ap_pipeline_t *p, const float *a,
                 x = ap_past_sample(p, a, 0u, (int)i + lag);
                 y = b[i];
             }
-            xy += (double)x * y;
-            aa += (double)x * x;
-            bb += (double)y * y;
+            xy += x * y;
+            aa += x * x;
+            bb += y * y;
         }
         {
-            const float score = (float)(xy / sqrt(aa * bb));
+            const float score = xy / sqrtf(aa * bb);
             if (score > best_score) {
                 best_score = score;
                 best = lag;
@@ -152,7 +149,7 @@ static void ap_beamform(ap_pipeline_t *p, float *a, float *b,
 static float ap_render_absolute(const ap_pipeline_t *p, int64_t index) {
     const int64_t oldest = (int64_t)p->render_total - (int64_t)AP_RENDER_CAP;
     if (index < 0 || index >= (int64_t)p->render_total || index < oldest) return 0.0f;
-    return p->render_ring[(uint64_t)index % AP_RENDER_CAP];
+    return p->render_ring[(uint64_t)index & (AP_RENDER_CAP - 1u)];
 }
 
 static void ap_get_reference(ap_pipeline_t *p, uint32_t delay, float *out) {
@@ -171,7 +168,7 @@ static void ap_reset_aec_weights(ap_pipeline_t *p) {
     memset(p->aec_weights, 0, sizeof(p->aec_weights));
     memset(p->aec_history, 0, sizeof(p->aec_history));
     p->aec_pos = 0u;
-    p->aec_sample_counter = 0u;
+    p->aec_adapt_phase = 0u;
     p->metrics.aec_resets++;
 #endif
 }
@@ -180,16 +177,16 @@ static float ap_delay_score(const ap_pipeline_t *p, const float *mic,
                             uint32_t delay, uint32_t sample_step) {
     const int64_t start = (int64_t)p->render_total -
                           (int64_t)p->internal_frame - (int64_t)delay;
-    double xy = 0.0, xx = 1.0e-12, yy = 1.0e-12;
+    float xy = 0.0f, xx = 1.0e-12f, yy = 1.0e-12f;
     uint32_t i;
     for (i = 0u; i < p->internal_frame; i += sample_step) {
         const float x = ap_render_absolute(p, start + (int64_t)i);
         const float y = mic[i];
-        xy += (double)x * y;
-        xx += (double)x * x;
-        yy += (double)y * y;
+        xy += x * y;
+        xx += x * x;
+        yy += y * y;
     }
-    return fabsf((float)(xy / sqrt(xx * yy)));
+    return fabsf(xy / sqrtf(xx * yy));
 }
 
 static void ap_apply_drift_correction(ap_pipeline_t *p, uint32_t best_delay) {
@@ -314,7 +311,7 @@ static void ap_aec(ap_pipeline_t *p, const float *mic, const float *ref,
                    float *out, float *echo_out, float mic_energy,
                    float ref_energy, float *echo_energy_out) {
     uint32_t i;
-    double echo_energy = 1.0e-12;
+    float echo_energy = 1.0e-12f;
     const int far_active = ref_energy > 1.0e-7f;
     const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
     const uint32_t taps = p->active_aec_taps;
@@ -339,24 +336,27 @@ static void ap_aec(ap_pipeline_t *p, const float *mic, const float *ref,
         e = mic[i] - y;
         echo_out[i] = y;
         out[i] = e;
-        echo_energy += (double)y * y;
-        if (far_active && !double_talk &&
-            (++p->aec_sample_counter % p->active_aec_adapt_stride) == 0u) {
-            const float norm = 1.0e-6f + ap_dot(hist, hist, taps);
-            const float step = p->cfg.aec_mu * e / norm;
-            uint32_t k = 0u;
+        echo_energy += y * y;
+        if (far_active && !double_talk) {
+            p->aec_adapt_phase++;
+            if (p->aec_adapt_phase >= p->active_aec_adapt_stride) {
+                const float norm = 1.0e-6f + ap_dot(hist, hist, taps);
+                const float step = p->cfg.aec_mu * e / norm;
+                uint32_t k = 0u;
+                p->aec_adapt_phase = 0u;
 #if AP_HAVE_NEON
-            for (; k + 4u <= taps; k += 4u) {
-                float32x4_t vw = vld1q_f32(w + k);
-                vw = vmlaq_n_f32(vw, vld1q_f32(hist + k), step);
-                vst1q_f32(w + k, vw);
-            }
+                for (; k + 4u <= taps; k += 4u) {
+                    float32x4_t vw = vld1q_f32(w + k);
+                    vw = vmlaq_n_f32(vw, vld1q_f32(hist + k), step);
+                    vst1q_f32(w + k, vw);
+                }
 #endif
-            for (; k < taps; ++k) w[k] += step * hist[k];
+                for (; k < taps; ++k) w[k] += step * hist[k];
+            }
         }
         p->aec_pos = pos + 1u == AP_AEC_CAP ? 0u : pos + 1u;
     }
-    *echo_energy_out = (float)(echo_energy / p->internal_frame);
+    *echo_energy_out = echo_energy / (float)p->internal_frame;
 }
 #else
 static void ap_aec(ap_pipeline_t *p, const float *mic, const float *ref,
@@ -417,7 +417,7 @@ static void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
     uint32_t i, k;
     float speech_sum = 0.0f;
     float res_gain_sum = 0.0f;
-    double noise_sum = 1.0e-18;
+    float noise_sum = 1.0e-18f;
 
     if (!p->cfg.enable_noise_suppression) {
         memcpy(out, in, f * sizeof(float));
@@ -501,7 +501,7 @@ static void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
         s->speech_probability = ap_clampf(
             speech_sum / (float)(speech_bins ? speech_bins : 1u), 0.0f, 1.0f);
         s->noise_rms_dbfs = 10.0f * log10f(
-            (float)(noise_sum / bins) / ((float)nfft * (float)nfft) + 1.0e-18f);
+            noise_sum / (float)bins / ((float)nfft * (float)nfft) + 1.0e-18f);
     }
     if (freq_res) {
         p->metrics.residual_echo_gain = res_gain_sum / (float)bins;
@@ -521,23 +521,22 @@ static void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
 
 static void ap_agc(ap_pipeline_t *p, float *x, uint32_t n) {
     uint32_t i;
-    double e = 1.0e-12;
+    float e = 1.0e-12f;
     float peak = 0.0f, target_gain, alpha;
     if (!p->cfg.enable_agc) return;
     for (i = 0u; i < n; ++i) {
         const float a = fabsf(x[i]);
-        e += (double)x[i] * x[i];
+        e += x[i] * x[i];
         if (a > peak) peak = a;
     }
     {
-        const float rms = sqrtf((float)(e / n));
-        const float target = powf(10.0f, p->cfg.agc_target_dbfs / 20.0f);
-        target_gain = ap_clampf(target / (rms + 1.0e-6f), 0.25f, 8.0f);
+        const float rms = sqrtf(e / (float)n);
+        target_gain = ap_clampf(p->agc_target_linear / (rms + 1.0e-6f), 0.25f, 8.0f);
     }
     alpha = target_gain < p->agc_gain ? 0.25f : 0.015f;
     p->agc_gain += alpha * (target_gain - p->agc_gain);
     {
-        const float limit = powf(10.0f, p->cfg.limiter_dbfs / 20.0f);
+        const float limit = p->limiter_linear;
         float gain = p->agc_gain;
         if (peak * gain > limit && peak > 1.0e-6f) gain = limit / peak;
         for (i = 0u; i < n; ++i) x[i] = ap_clampf(x[i] * gain, -limit, limit);
@@ -545,11 +544,11 @@ static void ap_agc(ap_pipeline_t *p, float *x, uint32_t n) {
 }
 
 static void ap_vad(ap_pipeline_t *p, const float *x, uint32_t n) {
-    double e = 1.0e-12;
+    float e = 1.0e-12f;
     uint32_t i;
     float rms, ratio_db, prob;
-    for (i = 0u; i < n; ++i) e += (double)x[i] * x[i];
-    rms = sqrtf((float)(e / n));
+    for (i = 0u; i < n; ++i) e += x[i] * x[i];
+    rms = sqrtf(e / (float)n);
     if (p->vad_noise_rms <= 0.0f) p->vad_noise_rms = rms + 1.0e-6f;
     ratio_db = 20.0f * log10f((rms + 1.0e-7f) /
                               (p->vad_noise_rms + 1.0e-7f));
@@ -643,7 +642,17 @@ ap_status_t ap_pipeline_init(void *memory, size_t memory_size,
     p->delay_samples = c->initial_delay_ms * c->internal_sample_rate_hz / 1000u;
     p->hpf_r = expf(-2.0f * AP_PI * 80.0f /
                     (float)c->internal_sample_rate_hz);
+    {
+        const float sound_mm_s = 343000.0f;
+        int max_lag = (int)ceilf(c->mic_spacing_mm *
+                                 (float)c->internal_sample_rate_hz / sound_mm_s) + 1;
+        if (max_lag > (int)AP_BF_HISTORY) max_lag = (int)AP_BF_HISTORY;
+        if (max_lag < 0) max_lag = 0;
+        p->bf_max_lag = max_lag;
+    }
     p->agc_gain = 1.0f;
+    p->agc_target_linear = powf(10.0f, c->agc_target_dbfs / 20.0f);
+    p->limiter_linear = powf(10.0f, c->limiter_dbfs / 20.0f);
     p->residual_gain = 1.0f;
     p->vad_noise_rms = 1.0e-3f;
     p->quality = AP_QUALITY_FULL;
@@ -693,6 +702,8 @@ ap_status_t ap_pipeline_set_quality(ap_pipeline_t *p, ap_quality_t q) {
     p->metrics.active_aec_adapt_stride = stride;
 #if defined(AP_ENABLE_MDF_AEC)
     ap_mdf_set_active(p);
+#else
+    if (p->aec_adapt_phase >= stride) p->aec_adapt_phase = 0u;
 #endif
     return AP_OK;
 }
@@ -704,7 +715,7 @@ ap_status_t ap_pipeline_push_render(ap_pipeline_t *p,
     ap_resample_input_channel(render, p->io_frame, 1u, 0u,
                               p->work, p->internal_frame);
     for (i = 0u; i < p->internal_frame; ++i) {
-        p->render_ring[p->render_total % AP_RENDER_CAP] = p->work[i];
+        p->render_ring[p->render_total & (AP_RENDER_CAP - 1u)] = p->work[i];
         p->render_total++;
     }
     p->last_render_capture_frame = p->metrics.processed_frames;

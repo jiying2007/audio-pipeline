@@ -34,7 +34,23 @@ static int wait_processed(ap_runtime_t *runtime, uint64_t target, unsigned timeo
     return 0;
 }
 
-int main(void) {
+static ap_metrics_t process_one(ap_runtime_t *runtime,
+                                const int16_t *mic,
+                                const int16_t *render,
+                                int16_t *out) {
+    ap_metrics_t pm;
+    unsigned i;
+    assert(ap_runtime_submit(runtime, mic, render) == AP_OK);
+    for (i = 0u; i < 1000u; ++i) {
+        if (ap_runtime_receive(runtime, out, &pm) == AP_OK) return pm;
+        sleep_ms(1u);
+    }
+    assert(!"timed out waiting for runtime output");
+    memset(&pm, 0, sizeof(pm));
+    return pm;
+}
+
+static void test_queue_and_lifecycle(void) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
     ap_pipeline_t *pipeline = NULL;
@@ -102,7 +118,51 @@ int main(void) {
     runtime = NULL;
     assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
     ap_runtime_deinit(runtime);
+}
 
+static void test_quality_cache_transitions(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime = NULL;
+    ap_metrics_t pm;
+    int16_t mic[320] = {0};
+    int16_t render[160] = {0};
+    int16_t out[160];
+    unsigned i;
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    rcfg.dsp_cpu = -1;
+    rcfg.dsp_priority = 0;
+    rcfg.overload_us = 0u; /* Every processed frame is deliberately overloaded. */
+    rcfg.recover_frames = 2u;
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
+    assert(ap_runtime_start(runtime) == AP_OK);
+
+    for (i = 0u; i < 3u; ++i) pm = process_one(runtime, mic, render, out);
+    assert(pm.quality == AP_QUALITY_LITE);
+    for (i = 0u; i < 3u; ++i) pm = process_one(runtime, mic, render, out);
+    assert(pm.quality == AP_QUALITY_SAFE);
+
+    ap_runtime_deinit(runtime);
+    runtime = NULL;
+
+    /* Runtime init must inherit an already-degraded pipeline rather than
+     * assuming FULL. A huge threshold makes every subsequent frame healthy. */
+    rcfg.overload_us = UINT32_MAX;
+    rcfg.recover_frames = 2u;
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    for (i = 0u; i < 2u; ++i) pm = process_one(runtime, mic, render, out);
+    assert(pm.quality == AP_QUALITY_LITE);
+    for (i = 0u; i < 2u; ++i) pm = process_one(runtime, mic, render, out);
+    assert(pm.quality == AP_QUALITY_FULL);
+    ap_runtime_deinit(runtime);
+}
+
+int main(void) {
+    test_queue_and_lifecycle();
+    test_quality_cache_transitions();
     puts("audio-pipeline runtime tests: OK");
     return 0;
 }

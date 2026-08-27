@@ -51,8 +51,14 @@ typedef struct ap_mdf_state {
     uint32_t active_partitions;
     uint32_t x_head;
     uint32_t constrain_partition;
-    uint64_t block_counter;
+    uint32_t adapt_phase;
     float prev_ref[AP_AEC_BLOCK_MAX];
+    /* Rolling sum of |X|^2 across the currently active render partitions.
+     * Keeping it incrementally avoids a full partition scan for every bin on
+     * each MDF adaptation step. x_power_total allows the echo synthesis path
+     * to sleep once the entire active reference tail has drained to zero. */
+    float x_power_sum[AP_AEC_BINS_MAX];
+    float x_power_total;
     ap_complex_t x_history[AP_AEC_PARTITIONS_MAX][AP_AEC_BINS_MAX];
     ap_complex_t weights[AP_AEC_PARTITIONS_MAX][AP_AEC_BINS_MAX];
     ap_complex_t fft[AP_AEC_FFT_MAX];

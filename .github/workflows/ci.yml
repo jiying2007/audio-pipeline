@@ -36,7 +36,9 @@ jobs:
           test -f stage/include/audio_pipeline/audio_pipeline.h
           test -f stage/include/audio_pipeline/audio_runtime.h
       - name: Benchmark smoke
-        run: ./build/ap_bench 2 0.35 9000
+        run: ./build/ap_bench 2 0.35 9000 active
+      - name: Idle benchmark smoke
+        run: ./build/ap_bench 2 0.35 9000 idle
       - name: Runtime benchmark smoke
         run: ./build/ap_runtime_bench 1 0 0.99 -1
 

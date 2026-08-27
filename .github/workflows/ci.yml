@@ -60,7 +60,7 @@ jobs:
       - name: Same-runner runtime main vs candidate
         env:
           CC: gcc
-        run: sh scripts/compare-runtime-perf.sh origin/main 7 10000 5000
+        run: sh scripts/compare-runtime-perf.sh origin/main 7 100000 10000
 
   strict-clang:
     runs-on: ubuntu-latest

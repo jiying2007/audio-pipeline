@@ -52,7 +52,8 @@ static void ap_mdf_constrain(ap_pipeline_t *p, uint32_t partition) {
     ap_mdf_state_t *s = &p->mdf;
     uint32_t i;
     if (partition >= s->active_partitions) return;
-    memset(s->acc, 0, s->nfft * sizeof(s->acc[0]));
+    /* memcpy + Hermitian expansion overwrites every FFT element, so clearing
+     * the whole scratch buffer first is wasted memory traffic. */
     memcpy(s->acc, s->weights[partition], s->bins * sizeof(s->acc[0]));
     ap_mdf_make_hermitian(s->acc, s->nfft, s->bins);
     ap_fft(s->acc, s->nfft, 1);
@@ -62,6 +63,56 @@ static void ap_mdf_constrain(ap_pipeline_t *p, uint32_t partition) {
     }
     ap_fft(s->acc, s->nfft, 0);
     memcpy(s->weights[partition], s->acc, s->bins * sizeof(s->acc[0]));
+}
+
+static void ap_mdf_rebuild_power_sum(ap_mdf_state_t *s) {
+    uint32_t part, k, xi;
+    float total = 0.0f;
+    memset(s->x_power_sum, 0, sizeof(s->x_power_sum));
+    if (s->partitions == 0u || s->active_partitions == 0u) {
+        s->x_power_total = 0.0f;
+        return;
+    }
+    xi = s->x_head;
+    for (part = 0u; part < s->active_partitions; ++part) {
+        for (k = 0u; k < s->bins; ++k) {
+            const float xr = s->x_history[xi][k].re;
+            const float xi_im = s->x_history[xi][k].im;
+            s->x_power_sum[k] += xr * xr + xi_im * xi_im;
+        }
+        xi = xi ? xi - 1u : s->partitions - 1u;
+    }
+    for (k = 0u; k < s->bins; ++k) total += s->x_power_sum[k];
+    s->x_power_total = total;
+}
+
+/* Advance the render-spectrum ring and update the active-window power sum in
+ * O(bins), rather than rescanning O(active_partitions*bins) during adaptation. */
+static void ap_mdf_push_render_spectrum(ap_mdf_state_t *s) {
+    uint32_t leaving, k;
+    float total = 0.0f;
+    s->x_head++;
+    if (s->x_head == s->partitions) s->x_head = 0u;
+
+    if (s->x_head >= s->active_partitions)
+        leaving = s->x_head - s->active_partitions;
+    else
+        leaving = s->partitions - (s->active_partitions - s->x_head);
+
+    for (k = 0u; k < s->bins; ++k) {
+        const float old_re = s->x_history[leaving][k].re;
+        const float old_im = s->x_history[leaving][k].im;
+        const float new_re = s->fft[k].re;
+        const float new_im = s->fft[k].im;
+        float power = s->x_power_sum[k] +
+                      new_re * new_re + new_im * new_im -
+                      old_re * old_re - old_im * old_im;
+        if (power < 0.0f) power = 0.0f;
+        s->x_power_sum[k] = power;
+        total += power;
+    }
+    s->x_power_total = total;
+    memcpy(s->x_history[s->x_head], s->fft, s->bins * sizeof(s->fft[0]));
 }
 
 void ap_mdf_init(ap_pipeline_t *p) {
@@ -104,42 +155,67 @@ void ap_mdf_set_active(ap_pipeline_t *p) {
     if (parts < 1u) parts = 1u;
     if (parts > s->partitions) parts = s->partitions;
     s->active_partitions = parts;
+    if (s->constrain_partition >= parts) s->constrain_partition = 0u;
+    if (s->adapt_phase >= p->active_aec_adapt_stride) s->adapt_phase = 0u;
+    ap_mdf_rebuild_power_sum(s);
     p->metrics.active_aec_partitions = parts;
     p->metrics.aec_block_samples = s->block;
 }
 
 static void ap_mdf_adapt(ap_pipeline_t *p, const float *error) {
     ap_mdf_state_t *s = &p->mdf;
-    uint32_t k, part;
-    memset(s->fft, 0, s->nfft * sizeof(s->fft[0]));
-    for (k = 0u; k < s->block; ++k) s->fft[s->block + k].re = error[k];
+    uint32_t k, part, xi;
+    for (k = 0u; k < s->block; ++k) {
+        s->fft[k].re = 0.0f;
+        s->fft[k].im = 0.0f;
+        s->fft[s->block + k].re = error[k];
+        s->fft[s->block + k].im = 0.0f;
+    }
     ap_fft(s->fft, s->nfft, 0);
 
+    /* Precompute the normalized error spectrum once. s->acc is scratch here
+     * and will be overwritten by the cyclic constraint before it is needed for
+     * echo synthesis again. This changes the update order from bin-major to
+     * partition-major, making both X history and W updates contiguous. */
     for (k = 0u; k < s->bins; ++k) {
-        float denom = 1.0e-5f;
-        for (part = 0u; part < s->active_partitions; ++part) {
-            const uint32_t xi = (s->x_head + s->partitions - part) % s->partitions;
-            const float xr = s->x_history[xi][k].re;
-            const float xi_im = s->x_history[xi][k].im;
-            denom += xr * xr + xi_im * xi_im;
+        const float scale = p->cfg.aec_mu / (1.0e-5f + s->x_power_sum[k]);
+        s->acc[k].re = s->fft[k].re * scale;
+        s->acc[k].im = s->fft[k].im * scale;
+    }
+
+    xi = s->x_head;
+    for (part = 0u; part < s->active_partitions; ++part) {
+        ap_complex_t *w = s->weights[part];
+        const ap_complex_t *x = s->x_history[xi];
+        k = 0u;
+#if AP_MDF_HAVE_NEON
+        for (; k + 4u <= s->bins; k += 4u) {
+            float32x4x2_t vw = vld2q_f32((const float *)(w + k));
+            const float32x4x2_t vx = vld2q_f32((const float *)(x + k));
+            const float32x4x2_t vg = vld2q_f32((const float *)(s->acc + k));
+            vw.val[0] = vmlaq_f32(vw.val[0], vx.val[0], vg.val[0]);
+            vw.val[0] = vmlaq_f32(vw.val[0], vx.val[1], vg.val[1]);
+            vw.val[1] = vmlaq_f32(vw.val[1], vx.val[0], vg.val[1]);
+            vw.val[1] = vmlsq_f32(vw.val[1], vx.val[1], vg.val[0]);
+            vst2q_f32((float *)(w + k), vw);
         }
-        {
-            const float scale = p->cfg.aec_mu / denom;
-            const float er = s->fft[k].re;
-            const float ei = s->fft[k].im;
-            for (part = 0u; part < s->active_partitions; ++part) {
-                const uint32_t xi = (s->x_head + s->partitions - part) % s->partitions;
-                const float xr = s->x_history[xi][k].re;
-                const float xi_im = s->x_history[xi][k].im;
-                s->weights[part][k].re += scale * (xr * er + xi_im * ei);
-                s->weights[part][k].im += scale * (xr * ei - xi_im * er);
-            }
+#endif
+        for (; k < s->bins; ++k) {
+            const float xr = x[k].re;
+            const float xi_im = x[k].im;
+            const float gr = s->acc[k].re;
+            const float gi = s->acc[k].im;
+            w[k].re += xr * gr + xi_im * gi;
+            w[k].im += xr * gi - xi_im * gr;
         }
+        xi = xi ? xi - 1u : s->partitions - 1u;
     }
 
     if (s->active_partitions > 0u) {
-        ap_mdf_constrain(p, s->constrain_partition % s->active_partitions);
+        ap_mdf_constrain(p, s->constrain_partition);
         s->constrain_partition++;
+        if (s->constrain_partition == s->active_partitions)
+            s->constrain_partition = 0u;
     }
 }
 
@@ -154,7 +230,7 @@ void ap_mdf_process(ap_pipeline_t *p,
     ap_mdf_state_t *s = &p->mdf;
     const int far_active = ref_energy > 1.0e-7f;
     const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
-    double echo_energy = 1.0e-12;
+    float echo_energy = 1.0e-12f;
     uint32_t off;
 
     p->metrics.double_talk_active = (uint8_t)(double_talk ? 1u : 0u);
@@ -167,41 +243,62 @@ void ap_mdf_process(ap_pipeline_t *p,
 
     for (off = 0u; off < p->internal_frame; off += s->block) {
         float error[AP_AEC_BLOCK_MAX];
-        uint32_t i, part;
-        memset(s->fft, 0, s->nfft * sizeof(s->fft[0]));
-        for (i = 0u; i < s->block; ++i) {
-            s->fft[i].re = s->prev_ref[i];
-            s->fft[s->block + i].re = ref[off + i];
-            s->prev_ref[i] = ref[off + i];
-        }
-        ap_fft(s->fft, s->nfft, 0);
-
-        s->x_head = (s->x_head + 1u) % s->partitions;
-        memcpy(s->x_history[s->x_head], s->fft, s->bins * sizeof(s->fft[0]));
-
-        memset(s->acc, 0, s->nfft * sizeof(s->acc[0]));
-        for (part = 0u; part < s->active_partitions; ++part) {
-            const uint32_t xi = (s->x_head + s->partitions - part) % s->partitions;
-            ap_mdf_complex_mac(s->acc, s->weights[part], s->x_history[xi], s->bins);
-        }
-        ap_mdf_make_hermitian(s->acc, s->nfft, s->bins);
-        ap_fft(s->acc, s->nfft, 1);
+        uint32_t i, part, xi;
+        int zero_reference_block = 1;
 
         for (i = 0u; i < s->block; ++i) {
-            const float y = s->acc[s->block + i].re;
-            const float e = mic[off + i] - y;
-            echo_out[off + i] = y;
-            out[off + i] = e;
-            error[i] = e;
-            echo_energy += (double)y * (double)y;
+            const float prev = s->prev_ref[i];
+            const float cur = ref[off + i];
+            if (prev != 0.0f || cur != 0.0f) zero_reference_block = 0;
+            s->fft[i].re = prev;
+            s->fft[i].im = 0.0f;
+            s->fft[s->block + i].re = cur;
+            s->fft[s->block + i].im = 0.0f;
+            s->prev_ref[i] = cur;
+        }
+        if (zero_reference_block)
+            memset(s->fft, 0, s->bins * sizeof(s->fft[0]));
+        else
+            ap_fft(s->fft, s->nfft, 0);
+        ap_mdf_push_render_spectrum(s);
+
+        if (s->x_power_total <= 1.0e-20f) {
+            /* The full active render tail has drained. There is no echo basis
+             * left to synthesize, so skip partition MAC + IFFT. Keep advancing
+             * the ring/phase so a future far-end block wakes the AEC cleanly. */
+            for (i = 0u; i < s->block; ++i) {
+                out[off + i] = mic[off + i];
+                echo_out[off + i] = 0.0f;
+            }
+        } else {
+            /* Only the unique bins participate in the complex MAC. The negative
+             * frequencies are overwritten by ap_mdf_make_hermitian below. */
+            memset(s->acc, 0, s->bins * sizeof(s->acc[0]));
+            xi = s->x_head;
+            for (part = 0u; part < s->active_partitions; ++part) {
+                ap_mdf_complex_mac(s->acc, s->weights[part], s->x_history[xi], s->bins);
+                xi = xi ? xi - 1u : s->partitions - 1u;
+            }
+            ap_mdf_make_hermitian(s->acc, s->nfft, s->bins);
+            ap_fft(s->acc, s->nfft, 1);
+
+            for (i = 0u; i < s->block; ++i) {
+                const float y = s->acc[s->block + i].re;
+                const float e = mic[off + i] - y;
+                echo_out[off + i] = y;
+                out[off + i] = e;
+                error[i] = e;
+                echo_energy += y * y;
+            }
         }
 
-        s->block_counter++;
-        if (far_active && !double_talk &&
-            (s->block_counter % p->active_aec_adapt_stride) == 0u) {
-            ap_mdf_adapt(p, error);
+        s->adapt_phase++;
+        if (s->adapt_phase >= p->active_aec_adapt_stride) {
+            s->adapt_phase = 0u;
+            if (s->x_power_total > 1.0e-20f && far_active && !double_talk)
+                ap_mdf_adapt(p, error);
         }
     }
 
-    *echo_energy_out = (float)(echo_energy / (double)p->internal_frame);
+    *echo_energy_out = echo_energy / (float)p->internal_frame;
 }

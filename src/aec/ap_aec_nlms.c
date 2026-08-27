@@ -1,76 +1,92 @@
-#include "ap_internal.h"
+#include "aec/ap_aec.h"
 #include <stdint.h>
 #include <string.h>
 
-void ap_aec_backend_init(ap_pipeline_t *p) {
-    memset(p->aec_history, 0, sizeof(p->aec_history));
-    memset(p->aec_weights, 0, sizeof(p->aec_weights));
-    p->aec_pos = 0u;
-    p->aec_adapt_phase = 0u;
-    p->metrics.aec_backend = AP_AEC_BACKEND_NLMS;
-    p->metrics.aec_block_samples = 1u;
-    p->metrics.active_aec_partitions = 0u;
+void ap_aec_backend_init(ap_aec_state_t *state,
+                         uint32_t frame_samples,
+                         uint32_t taps,
+                         uint32_t adapt_stride) {
+    (void)frame_samples;
+    memset(state, 0, sizeof(*state));
+    state->taps = taps;
+    state->active_taps = taps;
+    state->active_adapt_stride = adapt_stride;
 }
 
-void ap_aec_backend_reset(ap_pipeline_t *p, int count_reset) {
-    memset(p->aec_history, 0, sizeof(p->aec_history));
-    memset(p->aec_weights, 0, sizeof(p->aec_weights));
-    p->aec_pos = 0u;
-    p->aec_adapt_phase = 0u;
-    if (count_reset) p->metrics.aec_resets++;
+void ap_aec_backend_reset(ap_aec_state_t *state) {
+    memset(state->history, 0, sizeof(state->history));
+    memset(state->weights, 0, sizeof(state->weights));
+    state->pos = 0u;
+    state->adapt_phase = 0u;
 }
 
-void ap_aec_backend_set_active(ap_pipeline_t *p) {
-    if (p->aec_adapt_phase >= p->active_aec_adapt_stride) p->aec_adapt_phase = 0u;
-    p->metrics.active_aec_partitions = 0u;
-    p->metrics.aec_block_samples = 1u;
+void ap_aec_backend_set_active(ap_aec_state_t *state,
+                               uint32_t active_taps,
+                               uint32_t adapt_stride) {
+    if (active_taps > state->taps) active_taps = state->taps;
+    state->active_taps = active_taps;
+    state->active_adapt_stride = adapt_stride;
+    if (state->adapt_phase >= adapt_stride) state->adapt_phase = 0u;
 }
 
-void ap_aec_backend_process(ap_pipeline_t *p,
+void ap_aec_backend_process(ap_aec_state_t *state,
+                            int enabled,
+                            float mu,
+                            uint32_t frame_samples,
                             const float *mic,
                             const float *ref,
                             float *out,
                             float *echo_out,
                             float mic_energy,
                             float ref_energy,
-                            float *echo_energy_out) {
+                            ap_aec_result_t *result) {
     uint32_t i;
     float echo_energy = 1.0e-12f;
     const int far_active = ref_energy > 1.0e-7f;
     const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
-    const uint32_t taps = p->active_aec_taps;
-    const uint32_t woff = p->aec_taps - taps;
-    float *w = p->aec_weights + woff;
-    p->metrics.double_talk_active = (uint8_t)(double_talk ? 1u : 0u);
-    if (!p->cfg.enable_aec || taps == 0u) {
-        memcpy(out, mic, p->internal_frame * sizeof(float));
-        memset(echo_out, 0, p->internal_frame * sizeof(float));
-        *echo_energy_out = 0.0f;
+    const uint32_t taps = state->active_taps;
+    const uint32_t woff = state->taps - taps;
+    float *w = state->weights + woff;
+
+    result->double_talk_active = (uint8_t)(double_talk ? 1u : 0u);
+    result->echo_energy = 0.0f;
+    if (!enabled || taps == 0u) {
+        memcpy(out, mic, frame_samples * sizeof(float));
+        memset(echo_out, 0, frame_samples * sizeof(float));
         return;
     }
-    for (i = 0u; i < p->internal_frame; ++i) {
+    for (i = 0u; i < frame_samples; ++i) {
         const float x = ref[i];
-        const uint32_t pos = p->aec_pos;
+        const uint32_t pos = state->pos;
         const float *hist;
         float y, e;
-        p->aec_history[pos] = x;
-        p->aec_history[pos + AP_AEC_CAP] = x;
-        hist = p->aec_history + pos + AP_AEC_CAP - taps + 1u;
+        state->history[pos] = x;
+        state->history[pos + AP_AEC_CAP] = x;
+        hist = state->history + pos + AP_AEC_CAP - taps + 1u;
         y = ap_kernel_dot_f32(w, hist, taps);
         e = mic[i] - y;
         echo_out[i] = y;
         out[i] = e;
         echo_energy += y * y;
         if (far_active && !double_talk) {
-            p->aec_adapt_phase++;
-            if (p->aec_adapt_phase >= p->active_aec_adapt_stride) {
+            state->adapt_phase++;
+            if (state->adapt_phase >= state->active_adapt_stride) {
                 const float norm = 1.0e-6f + ap_kernel_dot_f32(hist, hist, taps);
-                const float step = p->cfg.aec_mu * e / norm;
-                p->aec_adapt_phase = 0u;
+                const float step = mu * e / norm;
+                state->adapt_phase = 0u;
                 ap_kernel_nlms_update(w, hist, step, taps);
             }
         }
-        p->aec_pos = pos + 1u == AP_AEC_CAP ? 0u : pos + 1u;
+        state->pos = pos + 1u == AP_AEC_CAP ? 0u : pos + 1u;
     }
-    *echo_energy_out = echo_energy / (float)p->internal_frame;
+    result->echo_energy = echo_energy / (float)frame_samples;
+}
+
+void ap_aec_backend_get_status(const ap_aec_state_t *state,
+                               ap_aec_status_t *status) {
+    status->kind = AP_AEC_KIND_NLMS;
+    status->active_taps = state->active_taps;
+    status->active_adapt_stride = state->active_adapt_stride;
+    status->active_partitions = 0u;
+    status->block_samples = 1u;
 }

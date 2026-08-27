@@ -8,22 +8,45 @@
 4. Compile-time AEC/SIMD selection; no hot-path plugin dispatch.
 5. Linux/threading is an adapter around a portable core.
 6. Resource class, runtime quality and CPU build profile remain independent.
+7. DSP stages own their state and expose narrow contracts; only core owns the composite graph/public telemetry.
 
 ## Production modules
 
 ```text
-src/core/            config, lifecycle, graph orchestration
-src/frontend/        rate boundary, HPF, 2-mic beamformer
-src/sync/            render delay, route-jump and clock-drift handling
-src/aec/             MDF or NLMS compile-time backend
-src/enhance/         broadband/subband RES, NS, AGC, VAD
-src/dsp/             FFT/math primitives
+src/core/            public config/lifecycle, composite state, graph orchestration, telemetry aggregation
+src/frontend/        rate boundary, HPF, 2-mic beamformer state
+src/sync/            render history, delay/route-jump/clock-drift state and events
+src/aec/             MDF or NLMS compile-time backend state/results
+src/enhance/         broadband/subband RES, NS, AGC, VAD state/results
+src/dsp/             FFT/math primitives and DSP data types
 src/arch/scalar/     portable kernels
 src/arch/arm_neon/   Arm NEON kernels
 src/platform/linux/  optional SPSC worker/runtime policy
 ```
 
 The dependency direction and realtime rules are enforced by `scripts/check-architecture.sh`.
+
+## State ownership and dependency direction
+
+The portable DSP is intentionally not a set of files sharing one giant internal object. `src/core/ap_pipeline_internal.h` is the only place that composes the full pipeline state. Each stage owns its own private state type and receives only the samples/scalars required for that operation.
+
+```text
+                     +-> frontend -> dsp
+                     |
+public API -> core --+-> sync -----> dsp
+                     |
+                     +-> AEC ------> dsp + arch
+                     |
+                     +-> enhance --> dsp
+
+platform/linux -> public API
+```
+
+Sibling stages do not call each other. Cross-stage effects are events/results returned to core. For example, the synchronization layer reports a route jump; core increments public telemetry and resets the AEC backend. The sync module never knows that an AEC implementation exists.
+
+Likewise, frontend/AEC/sync/enhancement code cannot reference `ap_pipeline_t`, `ap_config_t` or `ap_metrics_t`. Core is the single owner of public configuration policy and public metrics aggregation. This makes a backend or stage replaceable without exposing the complete pipeline memory layout.
+
+Physical module separation is combined with CMake unity compilation for the selected core/backend/kernel set, preserving cross-module inlining without reintroducing source-level state coupling.
 
 ## Data plane
 
@@ -54,7 +77,7 @@ A Cortex-A7 product may pass `STANDARD`; a Cortex-A32 product may deliberately s
 
 ## Architecture kernels
 
-Algorithm files call a small internal kernel contract for dot products and AEC vector/complex updates. CMake compiles exactly one implementation:
+AEC implementations call a small internal kernel contract for dot products and vector/complex updates. CMake compiles exactly one implementation:
 
 - scalar C;
 - Arm NEON.
@@ -63,11 +86,13 @@ There is no runtime CPU detection or function-pointer dispatch. CPU model and `-
 
 ## Synchronization and clock domains
 
-The caller supplies the actual post-mix/post-gain DAC reference. Every ~100 ms the portable core performs a bounded coarse correlation plus one-sample local fine search.
+The caller supplies the actual post-mix/post-gain DAC reference. Every ~100 ms the synchronization module performs a bounded coarse correlation plus one-sample local fine search.
 
-- >20 ms mismatch is a route/buffer jump and resets adaptive AEC state;
+- >20 ms mismatch emits a route/buffer-jump event;
 - small mismatch feeds a ppm estimator;
 - fractional drift is integrated and reference alignment moves by individual samples.
+
+Core interprets a route-jump event by resetting the selected AEC backend. This keeps synchronization independent from AEC implementation details.
 
 This is a lightweight AEC-reference alignment controller, not a full-band ASRC. Hardware capture/playback timestamps should seed/narrow it when available.
 
@@ -79,4 +104,4 @@ ARMv7-A is treated as a first-class runtime target: queue/counter atomics use lo
 
 ## Memory ownership
 
-`ap_pipeline_init()` and `ap_runtime_init()` consume caller-owned aligned fixed storage. Alignment and exact-size functions are public contracts. No heap growth occurs in the synchronous DSP path.
+`ap_pipeline_init()` and `ap_runtime_init()` consume caller-owned aligned fixed storage. Alignment and exact-size functions are public contracts. Module-owned states are embedded directly in the one caller-owned pipeline object; there are no per-module heap allocations or duplicate public telemetry/config copies.

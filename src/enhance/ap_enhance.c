@@ -1,76 +1,92 @@
-#include "ap_internal.h"
+#include "enhance/ap_enhance.h"
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
 
-static uint32_t ap_next_pow2(uint32_t x) {
+static uint32_t ap_enhance_next_pow2(uint32_t x) {
     uint32_t p = 1u;
     while (p < x) p <<= 1u;
     return p;
 }
 
-void ap_enhance_init(ap_pipeline_t *p) {
-    ap_ns_state_t *s = &p->ns;
-    const uint32_t win = p->internal_frame * 2u;
+void ap_enhance_init(ap_enhance_state_t *state,
+                     uint32_t frame_samples,
+                     float agc_target_dbfs,
+                     float limiter_dbfs) {
+    ap_ns_state_t *s = &state->ns;
+    const uint32_t win = frame_samples * 2u;
     uint32_t i;
-    s->nfft = ap_next_pow2(win);
+    s->nfft = ap_enhance_next_pow2(win);
     if (s->nfft > AP_NS_FFT_MAX) s->nfft = AP_NS_FFT_MAX;
     for (i = 0u; i < win; ++i)
         s->window[i] = sinf(AP_PI * ((float)i + 0.5f) / (float)win);
     for (i = 0u; i < AP_NS_BINS_MAX; ++i) s->residual_gain_bins[i] = 1.0f;
     s->noise_rms_dbfs = -90.0f;
-    p->agc_gain = 1.0f;
-    p->agc_target_linear = powf(10.0f, p->cfg.agc_target_dbfs / 20.0f);
-    p->limiter_linear = powf(10.0f, p->cfg.limiter_dbfs / 20.0f);
-    p->residual_gain = 1.0f;
-    p->vad_noise_rms = 1.0e-3f;
+    state->agc_gain = 1.0f;
+    state->agc_target_linear = powf(10.0f, agc_target_dbfs / 20.0f);
+    state->limiter_linear = powf(10.0f, limiter_dbfs / 20.0f);
+    state->residual_gain = 1.0f;
+    state->vad_noise_rms = 1.0e-3f;
 }
 
-float ap_apply_broadband_res(ap_pipeline_t *p, float *x,
-                             float echo_energy, float residual_energy,
-                             float ref_energy, float mic_energy) {
+static float ap_enhance_broadband_res(ap_enhance_state_t *state,
+                                      ap_enhance_mode_t mode,
+                                      float *x,
+                                      uint32_t frame_samples,
+                                      int enabled,
+                                      float echo_energy,
+                                      float residual_energy,
+                                      float ref_energy,
+                                      float mic_energy) {
     float target = 1.0f;
     uint32_t i;
     const int far_active = ref_energy > 1.0e-7f;
     const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
-    if (p->cfg.enable_residual_echo_suppression && far_active && !double_talk) {
-        const float floor_gain = p->quality == AP_QUALITY_FULL ? 0.10f :
-                                 (p->quality == AP_QUALITY_LITE ? 0.16f : 0.24f);
+    if (enabled && far_active && !double_talk) {
+        const float floor_gain = mode == AP_ENHANCE_FULL ? 0.10f :
+                                 (mode == AP_ENHANCE_LITE ? 0.16f : 0.24f);
         target = sqrtf(residual_energy /
                        (residual_energy + 0.8f * echo_energy + 1.0e-12f));
         target = ap_clampf(target, floor_gain, 1.0f);
     }
-    if (target < p->residual_gain)
-        p->residual_gain = 0.45f * p->residual_gain + 0.55f * target;
+    if (target < state->residual_gain)
+        state->residual_gain = 0.45f * state->residual_gain + 0.55f * target;
     else
-        p->residual_gain = 0.92f * p->residual_gain + 0.08f * target;
-    for (i = 0u; i < p->internal_frame; ++i) x[i] *= p->residual_gain;
-    p->metrics.frequency_res_active = 0u;
-    return p->residual_gain;
+        state->residual_gain = 0.92f * state->residual_gain + 0.08f * target;
+    for (i = 0u; i < frame_samples; ++i) x[i] *= state->residual_gain;
+    return state->residual_gain;
 }
 
-void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
-                   float *out, float ref_energy, float mic_energy) {
-    ap_ns_state_t *s = &p->ns;
-    const uint32_t f = p->internal_frame;
+static void ap_enhance_ns(ap_enhance_state_t *state,
+                          ap_enhance_mode_t mode,
+                          const ap_enhance_params_t *params,
+                          const float *in,
+                          const float *echo,
+                          float *out,
+                          uint32_t f,
+                          float ref_energy,
+                          float mic_energy,
+                          ap_enhance_result_t *result) {
+    ap_ns_state_t *s = &state->ns;
     const uint32_t win = f * 2u;
     const uint32_t nfft = s->nfft;
     const uint32_t bins = nfft / 2u + 1u;
     const int far_active = ref_energy > 1.0e-7f;
     const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
-    const int freq_res = p->cfg.enable_residual_echo_suppression &&
-                         p->cfg.enable_noise_suppression &&
-                         p->quality != AP_QUALITY_SAFE && far_active && !double_talk;
+    const int freq_res = params->enable_residual_echo_suppression &&
+                         params->enable_noise_suppression &&
+                         mode != AP_ENHANCE_SAFE && far_active && !double_talk;
     uint32_t i, k;
     float speech_sum = 0.0f;
     float res_gain_sum = 0.0f;
     float noise_sum = 1.0e-18f;
 
-    if (!p->cfg.enable_noise_suppression) {
+    if (!params->enable_noise_suppression) {
         memcpy(out, in, f * sizeof(float));
         memcpy(s->previous_echo, echo, f * sizeof(float));
         s->speech_probability = 0.0f;
-        p->metrics.frequency_res_active = 0u;
+        result->frequency_res_active = 0u;
+        result->noise_rms_dbfs = s->noise_rms_dbfs;
         return;
     }
 
@@ -110,8 +126,8 @@ void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
         float res_gain = 1.0f;
         if (freq_res) {
             const float echo_power = s->echo_power[k];
-            const float beta = p->quality == AP_QUALITY_FULL ? 1.4f : 0.75f;
-            const float floor_gain = p->quality == AP_QUALITY_FULL ? 0.10f : 0.18f;
+            const float beta = mode == AP_ENHANCE_FULL ? 1.4f : 0.75f;
+            const float floor_gain = mode == AP_ENHANCE_FULL ? 0.10f : 0.18f;
             const float target = ap_clampf(
                 sqrtf(power / (power + beta * echo_power + 1.0e-12f)),
                 floor_gain, 1.0f);
@@ -135,9 +151,9 @@ void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
         }
         post = power / (noise + 1.0e-12f);
         gain = post > 1.0f ? sqrtf((post - 1.0f) / post) : 0.0f;
-        gain = ap_clampf(gain, p->cfg.ns_floor, 1.0f) * res_gain;
-        if (p->quality == AP_QUALITY_SAFE)
-            gain = ap_clampf(gain + 0.06f, p->cfg.ns_floor, 1.0f);
+        gain = ap_clampf(gain, params->ns_floor, 1.0f) * res_gain;
+        if (mode == AP_ENHANCE_SAFE)
+            gain = ap_clampf(gain + 0.06f, params->ns_floor, 1.0f);
         s->spectrum[k].re *= gain;
         s->spectrum[k].im *= gain;
         if (k != 0u && k != nfft / 2u) {
@@ -155,12 +171,13 @@ void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
             noise_sum / (float)bins / ((float)nfft * (float)nfft) + 1.0e-18f);
     }
     if (freq_res) {
-        p->metrics.residual_echo_gain = res_gain_sum / (float)bins;
-        p->metrics.frequency_res_active = 1u;
-    } else if (p->cfg.enable_residual_echo_suppression && p->quality != AP_QUALITY_SAFE) {
-        p->metrics.residual_echo_gain = 1.0f;
-        p->metrics.frequency_res_active = 0u;
+        result->residual_echo_gain = res_gain_sum / (float)bins;
+        result->frequency_res_active = 1u;
+    } else if (params->enable_residual_echo_suppression && mode != AP_ENHANCE_SAFE) {
+        result->residual_echo_gain = 1.0f;
+        result->frequency_res_active = 0u;
     }
+    result->noise_rms_dbfs = s->noise_rms_dbfs;
 
     ap_fft(s->spectrum, nfft, 1);
     for (i = 0u; i < f; ++i) {
@@ -170,11 +187,14 @@ void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
     s->frame++;
 }
 
-void ap_agc_process(ap_pipeline_t *p, float *x, uint32_t n) {
+static void ap_enhance_agc(ap_enhance_state_t *state,
+                           int enabled,
+                           float *x,
+                           uint32_t n) {
     uint32_t i;
     float e = 1.0e-12f;
     float peak = 0.0f, target_gain, alpha;
-    if (!p->cfg.enable_agc) return;
+    if (!enabled) return;
     for (i = 0u; i < n; ++i) {
         const float a = fabsf(x[i]);
         e += x[i] * x[i];
@@ -182,34 +202,68 @@ void ap_agc_process(ap_pipeline_t *p, float *x, uint32_t n) {
     }
     {
         const float rms = sqrtf(e / (float)n);
-        target_gain = ap_clampf(p->agc_target_linear / (rms + 1.0e-6f), 0.25f, 8.0f);
+        target_gain = ap_clampf(state->agc_target_linear / (rms + 1.0e-6f), 0.25f, 8.0f);
     }
-    alpha = target_gain < p->agc_gain ? 0.25f : 0.015f;
-    p->agc_gain += alpha * (target_gain - p->agc_gain);
+    alpha = target_gain < state->agc_gain ? 0.25f : 0.015f;
+    state->agc_gain += alpha * (target_gain - state->agc_gain);
     {
-        const float limit = p->limiter_linear;
-        float gain = p->agc_gain;
+        const float limit = state->limiter_linear;
+        float gain = state->agc_gain;
         if (peak * gain > limit && peak > 1.0e-6f) gain = limit / peak;
         for (i = 0u; i < n; ++i) x[i] = ap_clampf(x[i] * gain, -limit, limit);
     }
 }
 
-void ap_vad_process(ap_pipeline_t *p, const float *x, uint32_t n) {
+static void ap_enhance_vad(ap_enhance_state_t *state,
+                           const ap_enhance_params_t *params,
+                           const float *x,
+                           uint32_t n,
+                           ap_enhance_result_t *result) {
     float e = 1.0e-12f;
     uint32_t i;
     float rms, ratio_db, prob;
     for (i = 0u; i < n; ++i) e += x[i] * x[i];
     rms = sqrtf(e / (float)n);
-    if (p->vad_noise_rms <= 0.0f) p->vad_noise_rms = rms + 1.0e-6f;
+    if (state->vad_noise_rms <= 0.0f) state->vad_noise_rms = rms + 1.0e-6f;
     ratio_db = 20.0f * log10f((rms + 1.0e-7f) /
-                              (p->vad_noise_rms + 1.0e-7f));
+                              (state->vad_noise_rms + 1.0e-7f));
     prob = ap_clampf((ratio_db - 2.0f) / 12.0f, 0.0f, 1.0f);
-    if (p->cfg.enable_noise_suppression && p->ns.speech_probability > prob)
-        prob = p->ns.speech_probability;
+    if (params->enable_noise_suppression && state->ns.speech_probability > prob)
+        prob = state->ns.speech_probability;
     if (prob < 0.35f)
-        p->vad_noise_rms = 0.98f * p->vad_noise_rms + 0.02f * rms;
-    if (p->cfg.enable_vad && prob > 0.45f) p->vad_hangover = 8u;
-    else if (p->vad_hangover) p->vad_hangover--;
-    p->metrics.vad_probability = p->cfg.enable_vad ? prob : 0.0f;
-    p->metrics.vad_active = (uint8_t)(p->cfg.enable_vad && p->vad_hangover > 0u);
+        state->vad_noise_rms = 0.98f * state->vad_noise_rms + 0.02f * rms;
+    if (params->enable_vad && prob > 0.45f) state->vad_hangover = 8u;
+    else if (state->vad_hangover) state->vad_hangover--;
+    result->vad_probability = params->enable_vad ? prob : 0.0f;
+    result->vad_active = (uint8_t)(params->enable_vad && state->vad_hangover > 0u);
+}
+
+void ap_enhance_process(ap_enhance_state_t *state,
+                        ap_enhance_mode_t mode,
+                        const ap_enhance_params_t *params,
+                        float *aec_residual,
+                        const float *echo,
+                        float *out,
+                        uint32_t frame_samples,
+                        float echo_energy,
+                        float residual_energy,
+                        float ref_energy,
+                        float mic_energy,
+                        ap_enhance_result_t *result) {
+    const int frequency_res_policy = params->enable_residual_echo_suppression &&
+                                     params->enable_noise_suppression &&
+                                     mode != AP_ENHANCE_SAFE;
+    memset(result, 0, sizeof(*result));
+    result->residual_echo_gain = 1.0f;
+    result->noise_rms_dbfs = state->ns.noise_rms_dbfs;
+    if (!frequency_res_policy) {
+        result->residual_echo_gain = ap_enhance_broadband_res(
+            state, mode, aec_residual, frame_samples,
+            params->enable_residual_echo_suppression,
+            echo_energy, residual_energy, ref_energy, mic_energy);
+    }
+    ap_enhance_ns(state, mode, params, aec_residual, echo, out,
+                  frame_samples, ref_energy, mic_energy, result);
+    ap_enhance_agc(state, params->enable_agc, out, frame_samples);
+    ap_enhance_vad(state, params, out, frame_samples, result);
 }

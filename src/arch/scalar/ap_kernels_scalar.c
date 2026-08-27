@@ -1,4 +1,4 @@
-#include "ap_internal.h"
+#include "arch/ap_kernels.h"
 #include <stdint.h>
 
 float ap_kernel_dot_f32(const float *a, const float *b, uint32_t n) {

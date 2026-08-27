@@ -102,6 +102,7 @@ typedef struct ap_metrics {
     uint64_t delay_jumps;
     uint64_t reference_sample_slips;
     uint8_t vad_active;
+    uint8_t far_end_active;
     uint8_t double_talk_active;
     uint8_t frequency_res_active;
     ap_quality_t quality;

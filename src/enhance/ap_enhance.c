@@ -1,4 +1,5 @@
 #include "enhance/ap_enhance.h"
+#include "enhance/ap_window.h"
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
@@ -14,12 +15,10 @@ void ap_enhance_init(ap_enhance_state_t *state,
                      float agc_target_dbfs,
                      float limiter_dbfs) {
     ap_ns_state_t *s = &state->ns;
-    const uint32_t win = frame_samples * 2u;
     uint32_t i;
-    s->nfft = ap_enhance_next_pow2(win);
+    s->nfft = ap_enhance_next_pow2(frame_samples * 2u);
     if (s->nfft > AP_NS_FFT_MAX) s->nfft = AP_NS_FFT_MAX;
-    for (i = 0u; i < win; ++i)
-        s->window[i] = sinf(AP_PI * ((float)i + 0.5f) / (float)win);
+    ap_noise_tracker_init(&s->noise_tracker);
     for (i = 0u; i < AP_NS_BINS_MAX; ++i) s->residual_gain_bins[i] = 1.0f;
     s->noise_rms_dbfs = -90.0f;
     state->agc_gain = 1.0f;
@@ -36,13 +35,11 @@ static float ap_enhance_broadband_res(ap_enhance_state_t *state,
                                       int enabled,
                                       float echo_energy,
                                       float residual_energy,
-                                      float ref_energy,
-                                      float mic_energy) {
+                                      int far_end_active,
+                                      int double_talk_active) {
     float target = 1.0f;
     uint32_t i;
-    const int far_active = ref_energy > 1.0e-7f;
-    const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
-    if (enabled && far_active && !double_talk) {
+    if (enabled && far_end_active && !double_talk_active) {
         const float floor_gain = mode == AP_ENHANCE_FULL ? 0.10f :
                                  (mode == AP_ENHANCE_LITE ? 0.16f : 0.24f);
         target = sqrtf(residual_energy /
@@ -64,18 +61,18 @@ static void ap_enhance_ns(ap_enhance_state_t *state,
                           const float *echo,
                           float *out,
                           uint32_t f,
-                          float ref_energy,
-                          float mic_energy,
+                          int far_end_active,
+                          int double_talk_active,
                           ap_enhance_result_t *result) {
     ap_ns_state_t *s = &state->ns;
+    const float *window = ap_window_half(f);
     const uint32_t win = f * 2u;
     const uint32_t nfft = s->nfft;
     const uint32_t bins = nfft / 2u + 1u;
-    const int far_active = ref_energy > 1.0e-7f;
-    const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
     const int freq_res = params->enable_residual_echo_suppression &&
                          params->enable_noise_suppression &&
-                         mode != AP_ENHANCE_SAFE && far_active && !double_talk;
+                         mode != AP_ENHANCE_SAFE && far_end_active &&
+                         !double_talk_active;
     uint32_t i, k;
     float speech_sum = 0.0f;
     float res_gain_sum = 0.0f;
@@ -92,9 +89,11 @@ static void ap_enhance_ns(ap_enhance_state_t *state,
 
     if (freq_res) {
         for (i = 0u; i < f; ++i) {
-            s->spectrum[i].re = s->previous_echo[i] * s->window[i];
+            const float w0 = window[i];
+            const float w1 = window[f - 1u - i];
+            s->spectrum[i].re = s->previous_echo[i] * w0;
             s->spectrum[i].im = 0.0f;
-            s->spectrum[f + i].re = echo[i] * s->window[f + i];
+            s->spectrum[f + i].re = echo[i] * w1;
             s->spectrum[f + i].im = 0.0f;
         }
         memset(s->spectrum + win, 0, (nfft - win) * sizeof(s->spectrum[0]));
@@ -107,10 +106,12 @@ static void ap_enhance_ns(ap_enhance_state_t *state,
     }
 
     for (i = 0u; i < f; ++i) {
+        const float w0 = window[i];
+        const float w1 = window[f - 1u - i];
         const float previous = s->previous[i];
-        s->spectrum[i].re = previous * s->window[i];
+        s->spectrum[i].re = previous * w0;
         s->spectrum[i].im = 0.0f;
-        s->spectrum[f + i].re = in[i] * s->window[f + i];
+        s->spectrum[f + i].re = in[i] * w1;
         s->spectrum[f + i].im = 0.0f;
         s->previous[i] = in[i];
         s->previous_echo[i] = echo[i];
@@ -122,7 +123,8 @@ static void ap_enhance_ns(ap_enhance_state_t *state,
         const float re = s->spectrum[k].re;
         const float im = s->spectrum[k].im;
         const float power = re * re + im * im + 1.0e-12f;
-        float noise = s->noise_psd[k], post, gain, speech;
+        ap_noise_tracker_result_t noise_result;
+        float noise, post, gain, speech;
         float res_gain = 1.0f;
         if (freq_res) {
             const float echo_power = s->echo_power[k];
@@ -140,15 +142,11 @@ static void ap_enhance_ns(ap_enhance_state_t *state,
             s->residual_gain_bins[k] = 0.95f * s->residual_gain_bins[k] + 0.05f;
         }
         res_gain_sum += res_gain;
-        if (s->frame < 20u || noise <= 0.0f) noise = power;
-        post = power / (noise + 1.0e-12f);
-        speech = ap_clampf((post - 1.4f) * 0.35f, 0.0f, 1.0f);
+
+        ap_noise_tracker_update(&s->noise_tracker, k, power, &noise_result);
+        noise = noise_result.noise;
+        speech = noise_result.speech_probability;
         if (k > nfft / 64u && k < nfft * 7u / 16u) speech_sum += speech;
-        {
-            const float alpha = speech > 0.35f ? 0.995f : 0.92f;
-            noise = alpha * noise + (1.0f - alpha) * power;
-            s->noise_psd[k] = noise;
-        }
         post = power / (noise + 1.0e-12f);
         gain = post > 1.0f ? sqrtf((post - 1.0f) / post) : 0.0f;
         gain = ap_clampf(gain, params->ns_floor, 1.0f) * res_gain;
@@ -162,6 +160,7 @@ static void ap_enhance_ns(ap_enhance_state_t *state,
         }
         noise_sum += noise;
     }
+    ap_noise_tracker_next_frame(&s->noise_tracker);
 
     {
         const uint32_t speech_bins = (nfft * 7u / 16u) - (nfft / 64u);
@@ -181,10 +180,11 @@ static void ap_enhance_ns(ap_enhance_state_t *state,
 
     ap_fft(s->spectrum, nfft, 1);
     for (i = 0u; i < f; ++i) {
-        out[i] = s->spectrum[i].re * s->window[i] + s->overlap[i];
-        s->overlap[i] = s->spectrum[i + f].re * s->window[i + f];
+        const float w0 = window[i];
+        const float w1 = window[f - 1u - i];
+        out[i] = s->spectrum[i].re * w0 + s->overlap[i];
+        s->overlap[i] = s->spectrum[i + f].re * w1;
     }
-    s->frame++;
 }
 
 static void ap_enhance_agc(ap_enhance_state_t *state,
@@ -247,8 +247,8 @@ void ap_enhance_process(ap_enhance_state_t *state,
                         uint32_t frame_samples,
                         float echo_energy,
                         float residual_energy,
-                        float ref_energy,
-                        float mic_energy,
+                        int far_end_active,
+                        int double_talk_active,
                         ap_enhance_result_t *result) {
     const int frequency_res_policy = params->enable_residual_echo_suppression &&
                                      params->enable_noise_suppression &&
@@ -260,10 +260,10 @@ void ap_enhance_process(ap_enhance_state_t *state,
         result->residual_echo_gain = ap_enhance_broadband_res(
             state, mode, aec_residual, frame_samples,
             params->enable_residual_echo_suppression,
-            echo_energy, residual_energy, ref_energy, mic_energy);
+            echo_energy, residual_energy, far_end_active, double_talk_active);
     }
     ap_enhance_ns(state, mode, params, aec_residual, echo, out,
-                  frame_samples, ref_energy, mic_energy, result);
+                  frame_samples, far_end_active, double_talk_active, result);
     ap_enhance_agc(state, params->enable_agc, out, frame_samples);
     ap_enhance_vad(state, params, out, frame_samples, result);
 }

@@ -6,14 +6,15 @@
 #include <stdint.h>
 #include <string.h>
 
+#define AP_DTD_HANGOVER_FRAMES 3u
+
 static ap_enhance_mode_t ap_pipeline_enhance_mode(ap_quality_t quality) {
     if (quality == AP_QUALITY_FULL) return AP_ENHANCE_FULL;
     if (quality == AP_QUALITY_LITE) return AP_ENHANCE_LITE;
     return AP_ENHANCE_SAFE;
 }
 
-static void ap_pipeline_update_aec_metrics(ap_pipeline_t *p,
-                                           const ap_aec_result_t *result) {
+static void ap_pipeline_update_aec_metrics(ap_pipeline_t *p) {
     ap_aec_status_t status;
     ap_aec_backend_get_status(&p->aec, &status);
     p->metrics.aec_backend = status.kind == AP_AEC_KIND_MDF ?
@@ -22,7 +23,6 @@ static void ap_pipeline_update_aec_metrics(ap_pipeline_t *p,
     p->metrics.active_aec_adapt_stride = status.active_adapt_stride;
     p->metrics.active_aec_partitions = status.active_partitions;
     p->metrics.aec_block_samples = status.block_samples;
-    if (result) p->metrics.double_talk_active = result->double_talk_active;
 }
 
 static void ap_pipeline_update_sync_metrics(ap_pipeline_t *p,
@@ -41,6 +41,25 @@ static void ap_pipeline_update_sync_metrics(ap_pipeline_t *p,
         ap_aec_backend_reset(&p->aec);
         p->metrics.aec_resets++;
     }
+}
+
+static void ap_pipeline_update_activity(ap_pipeline_t *p,
+                                        float mic_energy,
+                                        float ref_energy,
+                                        int *far_end_active,
+                                        int *double_talk_active) {
+    const int far_now = ref_energy > 1.0e-7f;
+    const int double_talk_now = far_now && mic_energy > ref_energy * 1.5f;
+
+    if (double_talk_now)
+        p->double_talk_hangover = AP_DTD_HANGOVER_FRAMES;
+    else if (p->double_talk_hangover)
+        p->double_talk_hangover--;
+
+    *far_end_active = far_now;
+    *double_talk_active = far_now && p->double_talk_hangover > 0u;
+    p->metrics.far_end_active = (uint8_t)(*far_end_active ? 1u : 0u);
+    p->metrics.double_talk_active = (uint8_t)(*double_talk_active ? 1u : 0u);
 }
 
 ap_config_t ap_config_for_resource(ap_profile_t profile,
@@ -156,7 +175,7 @@ ap_status_t ap_pipeline_init(void *memory, size_t memory_size,
     ap_aec_backend_init(&p->aec, p->internal_frame, taps, c->aec_adapt_stride);
     ap_enhance_init(&p->enhance, p->internal_frame,
                     c->agc_target_dbfs, c->limiter_dbfs);
-    ap_pipeline_update_aec_metrics(p, NULL);
+    ap_pipeline_update_aec_metrics(p);
     ap_pipeline_update_sync_metrics(p, NULL);
     *out = p;
     return AP_OK;
@@ -187,7 +206,7 @@ ap_status_t ap_pipeline_set_quality(ap_pipeline_t *p, ap_quality_t q) {
     ap_aec_backend_set_active(&p->aec, active_taps, stride);
     p->quality = q;
     p->metrics.quality = q;
-    ap_pipeline_update_aec_metrics(p, NULL);
+    ap_pipeline_update_aec_metrics(p);
     return AP_OK;
 }
 
@@ -210,6 +229,7 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *p, const int16_t *mic,
     uint32_t i;
     float mic_e = 1.0e-12f, ref_e = 1.0e-12f;
     float res_e = 1.0e-12f;
+    int far_end_active, double_talk_active;
     if (!p || !mic || !output || frames != p->io_frame) return AP_EINVAL;
 
     ap_resample_input_channel(mic, p->io_frame, p->cfg.mic_channels,
@@ -244,12 +264,14 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *p, const int16_t *mic,
     }
     mic_e /= p->internal_frame;
     ref_e /= p->internal_frame;
+    ap_pipeline_update_activity(p, mic_e, ref_e,
+                                &far_end_active, &double_talk_active);
 
     ap_aec_backend_process(&p->aec, p->cfg.enable_aec, p->cfg.aec_mu,
                            p->internal_frame, p->mono, p->reference,
                            p->aec_out, p->echo_estimate,
-                           mic_e, ref_e, &aec_result);
-    ap_pipeline_update_aec_metrics(p, &aec_result);
+                           far_end_active, double_talk_active, &aec_result);
+    ap_pipeline_update_aec_metrics(p);
     for (i = 0u; i < p->internal_frame; ++i)
         res_e += p->aec_out[i] * p->aec_out[i];
     res_e /= p->internal_frame;
@@ -263,7 +285,8 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *p, const int16_t *mic,
     ap_enhance_process(&p->enhance, ap_pipeline_enhance_mode(p->quality),
                        &enhance_params, p->aec_out, p->echo_estimate,
                        p->ns_out, p->internal_frame,
-                       aec_result.echo_energy, res_e, ref_e, mic_e,
+                       aec_result.echo_energy, res_e,
+                       far_end_active, double_talk_active,
                        &enhance_result);
 
     p->metrics.residual_echo_gain = enhance_result.residual_echo_gain;

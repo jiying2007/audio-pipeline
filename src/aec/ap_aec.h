@@ -55,7 +55,6 @@ typedef struct ap_aec_state {
 
 typedef struct ap_aec_result {
     float echo_energy;
-    uint8_t double_talk_active;
 } ap_aec_result_t;
 
 typedef struct ap_aec_status {
@@ -82,8 +81,8 @@ void ap_aec_backend_process(ap_aec_state_t *state,
                             const float *ref,
                             float *out,
                             float *echo_out,
-                            float mic_energy,
-                            float ref_energy,
+                            int far_end_active,
+                            int double_talk_active,
                             ap_aec_result_t *result);
 void ap_aec_backend_get_status(const ap_aec_state_t *state,
                                ap_aec_status_t *status);

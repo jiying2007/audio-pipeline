@@ -16,6 +16,12 @@ Every ~100 ms the bounded reference history is searched at ~2 ms coarse resoluti
 
 Hardware timestamps are preferred whenever the audio driver exposes them.
 
+## Shared far-end / double-talk activity
+
+Far-end activity and double-talk are classified once in the core after reference alignment and microphone combination. The same gate is then passed to both AEC adaptation and residual/noise suppression. A short three-frame hold counter prevents adaptation/suppression mode chatter after a detected near-end overlap.
+
+This is deliberately conservative and inexpensive: the current gate uses aligned frame energy and does not claim a correlation/coherence DTD. More advanced DTD may replace the classifier later without changing the AEC/enhancement contracts.
+
 ## AEC backend contract
 
 AEC is selected at compile time with `AP_AEC_BACKEND`.
@@ -31,24 +37,28 @@ The default MDF/AUMDF-lite backend uses:
 - rolling per-bin reference power;
 - normalized `conj(X)*E` adaptation;
 - cyclic support constraint;
-- double-talk adaptation freeze;
+- shared double-talk adaptation freeze;
 - compile-time scalar or NEON complex kernels.
 
 ### NLMS
 
-The NLMS backend is a separate translation unit implementing the same internal AEC contract. It uses the same compile-time scalar/NEON kernel layer for dot/update operations.
+The NLMS backend is a separate translation unit implementing the same internal AEC contract. It uses the same compile-time scalar/NEON kernel layer for dot/update operations and the same core-owned far-end/double-talk gate as MDF.
 
 Algorithm code never includes architecture intrinsics directly.
 
 ## Predicted echo and RES
 
-Both AEC backends emit predicted echo. When NS is enabled in FULL/LITE, frequency RES reuses the NS spectral machinery, stores only unique-bin predicted-echo power and applies a smoothed per-bin residual gain. SAFE or NS-off uses broadband RES. True double-talk disables frequency RES.
+Both AEC backends emit predicted echo. When NS is enabled in FULL/LITE, frequency RES reuses the NS spectral machinery, stores only unique-bin predicted-echo power and applies a smoothed per-bin residual gain. SAFE or NS-off uses broadband RES. Shared double-talk activity disables frequency RES.
 
 ## Noise suppression
 
-The default NS is a 20 ms sqrt-Hann STFT with 10 ms hop: 256 FFT at 8 kHz or 512 FFT at 16 kHz, recursive noise PSD, speech-aware update and Wiener-like gain floor. It has no model weights.
+The NS stage is a 20 ms sine-window STFT with 10 ms hop: 256 FFT at 8 kHz or 512 FFT at 16 kHz, speech-aware Wiener-like gain and no model weights.
 
-Neural NS/AEC is not part of the minimum low-compute backend. Add heavier backends only after target measurements demonstrate headroom.
+`AP_NS_ESTIMATOR=EMA` is the default production estimator because it preserves the established CPU/behavior baseline. `AP_NS_ESTIMATOR=MCRA` enables a clean-room MCRA-lite backend that keeps a slowly rising local spectral minimum and uses minimum-to-current power ratio to slow noise-floor learning during speech while still learning persistent environmental changes. MCRA remains opt-in until a shipping profile proves a useful acoustic improvement on the product corpus together with acceptable target-board CPU/thermal headroom.
+
+The 8/16 kHz analysis/synthesis sine windows are stored as symmetric read-only half-window tables generated from the repository's original formula. They are shared by all instances and do not consume per-pipeline RAM.
+
+Neural NS/AEC, MVDR and GSC are not part of the minimum low-compute backend. Add heavier backends only after target measurements demonstrate headroom.
 
 ## VAD and AGC
 

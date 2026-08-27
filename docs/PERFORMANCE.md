@@ -30,20 +30,32 @@ Target wrappers record CPU/kernel/frequency context and `/usr/bin/time -v` when 
 
 The second command defaults to an 8 h nominal soak.
 
+For optimization branches, `scripts/compare-perf.sh` builds `main` and the candidate with the same compiler on the same hosted runner, alternates base/head execution order, and reports the median of repeated active/idle runs. This is a much stronger regression signal than comparing separate workflow runs, while still not replacing target-board measurements.
+
+```bash
+sh scripts/compare-perf.sh origin/main 7 20
+```
+
+The CI comparator fails only on a clear >10% same-runner regression. Smaller deltas are diagnostic: a sub-percent hosted improvement is not a Cortex-A32 performance claim.
+
 ## Current low-compute hot-path policy
 
-The default MDF/FFT implementation deliberately trades a small, bounded amount of state/ROM for predictable CPU savings:
+The default implementation deliberately trades small, bounded state/ROM changes for predictable CPU savings while preserving the public API and algorithmic contracts:
 
 - supported 32/64/256/512-point FFTs use a 512-root read-only twiddle table, removing per-butterfly twiddle recurrence and all steady-state trigonometric calls; the raw table is 2 KiB of read-only data;
 - MDF maintains a rolling per-bin `sum(|X|^2)` over active partitions, so adaptation normalization no longer rescans the full render history;
 - MDF coefficient updates are partition-major for contiguous `X/W` access and use a four-bin Arm NEON complex update where available;
 - active-partition traversal and adaptation cadence avoid variable modulo operations in the 2 ms hot loop;
 - scratch clearing is limited to the half spectrum that is actually consumed;
-- when the complete active render-reference tail has drained to zero, MDF keeps advancing history/cadence but bypasses echo MAC/IFFT until far-end data returns.
+- when the complete active render-reference tail has drained to zero, MDF keeps advancing history/cadence but bypasses echo MAC/IFFT until far-end data returns;
+- fixed AGC target/limiter dB values and the physical beamformer lag limit are converted once during initialization instead of recomputing `powf`/`ceilf` in the frame path;
+- the 8192-sample render ring is compile-time asserted to be power-of-two and uses a mask rather than variable remainder indexing;
+- the NLMS fallback uses an adaptation phase counter instead of a per-sample modulo operation;
+- bounded energy/correlation accumulators over normalized audio windows use FP32, while filter coefficients, public configuration semantics and algorithm topology remain unchanged.
 
-The rolling MDF power state increases the current pipeline state by roughly a hundred bytes, while remaining well below the 128 KiB public ceiling. The FFT table affects code/rodata, not caller-owned pipeline state.
+The rolling MDF power state plus scalar precomputed controls increase the current pipeline state only slightly and remain well below the 128 KiB public ceiling. The FFT table affects code/rodata, not caller-owned pipeline state.
 
-GitHub-hosted x86 benchmark changes are useful **directional regression signals only**. Hosted runners are not pinned to identical CPUs, regions or load, so do not publish their percentage delta as Cortex-A32 performance. The same active/idle commands must be rerun on the real target to decide whether the 2 KiB twiddle-table ROM trade is worthwhile for a particular SKU.
+GitHub-hosted x86 benchmark changes are useful **directional regression signals only**. Hosted runners are not pinned to identical CPUs, regions or load. Even the same-runner comparator is a regression tool, not permission to publish an x86 percentage as Cortex-A32 performance. The same active/idle commands must be rerun on the real target to decide the final ROM/CPU trade for a shipping SKU.
 
 ## Initial Cortex-A32 product gates
 
@@ -70,6 +82,7 @@ The release gate is:
 - GCC and Clang native build/tests with assertions retained in Release;
 - SDK install smoke for core/runtime static libraries and public headers;
 - active and assistant-idle benchmark smoke;
+- same-runner main-vs-candidate median performance comparison on non-main branches;
 - strict Clang warnings;
 - ASan/UBSan including the Linux runtime integration test;
 - MDF default and NLMS fallback;
@@ -93,12 +106,13 @@ Measure ERLE/residual echo, SI-SDR or segmental SNR, STOI, PESQ/POLQA when licen
 
 1. Correct DAC reference and synchronization first.
 2. Measure active and idle separately; do not optimize a synthetic average workload.
-3. Reduce measured AEC tail/active partitions.
-4. Increase adaptation stride only after path-change tests.
-5. Use hardware timestamps to narrow delay tracking where possible.
-6. Profile MDF complex MAC/FFT and NS/RES FFT hot spots before adding more assembly or tables.
-7. Use SAFE/broadband RES when headroom is tight.
-8. Consider neural NS or a heavier AEC backend only after target measurements demonstrate headroom.
+3. Compare candidate and base on the same runner before trusting small hosted deltas.
+4. Reduce measured AEC tail/active partitions.
+5. Increase adaptation stride only after path-change tests.
+6. Use hardware timestamps to narrow delay tracking where possible.
+7. Profile MDF complex MAC/FFT and NS/RES FFT hot spots before adding more assembly or tables.
+8. Use SAFE/broadband RES when headroom is tight.
+9. Consider neural NS or a heavier AEC backend only after target measurements demonstrate headroom.
 
 ## Target profiling
 

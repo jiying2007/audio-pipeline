@@ -33,9 +33,46 @@ static void ap_resample_input_channel(const int16_t *in, uint32_t in_frames,
                                       float *out, uint32_t out_frames) {
     uint32_t i;
     if (in_frames == out_frames) {
-        for (i = 0u; i < out_frames; ++i) out[i] = ap_s16_to_f32(in[i * channels + channel]);
+        for (i = 0u; i < out_frames; ++i)
+            out[i] = ap_s16_to_f32(in[i * channels + channel]);
         return;
     }
+
+    /* All current product rates use fixed 10 ms frame ratios. Integer
+     * decimation needs no interpolation and avoids per-sample float position
+     * math for 16/24/32/48 kHz -> 8/16 kHz boundaries. */
+    if (in_frames > out_frames && in_frames % out_frames == 0u) {
+        const uint32_t step = in_frames / out_frames;
+        for (i = 0u; i < out_frames; ++i)
+            out[i] = ap_s16_to_f32(in[(i * step) * channels + channel]);
+        return;
+    }
+
+    /* 24 kHz -> 16 kHz: positions repeat as 0, 1.5, 3, 4.5, ... */
+    if (in_frames * 2u == out_frames * 3u) {
+        uint32_t src = 0u;
+        for (i = 0u; i + 1u < out_frames; i += 2u, src += 3u) {
+            out[i] = ap_s16_to_f32(in[src * channels + channel]);
+            out[i + 1u] = 0.5f *
+                (ap_s16_to_f32(in[(src + 1u) * channels + channel]) +
+                 ap_s16_to_f32(in[(src + 2u) * channels + channel]));
+        }
+        return;
+    }
+
+    /* 8 kHz -> 16 kHz capture is the only current input-side upsample. */
+    if (out_frames == in_frames * 2u) {
+        for (i = 0u; i < in_frames; ++i) {
+            const uint32_t next = i + 1u < in_frames ? i + 1u : i;
+            const float a = ap_s16_to_f32(in[i * channels + channel]);
+            const float b = ap_s16_to_f32(in[next * channels + channel]);
+            out[2u * i] = a;
+            out[2u * i + 1u] = 0.5f * (a + b);
+        }
+        return;
+    }
+
+    /* Generic fallback for future product rates outside the fixed geometry. */
     for (i = 0u; i < out_frames; ++i) {
         const float pos = (float)i * (float)in_frames / (float)out_frames;
         uint32_t i0 = (uint32_t)pos;
@@ -55,6 +92,49 @@ static void ap_resample_output(const float *in, uint32_t in_frames,
         for (i = 0u; i < out_frames; ++i) out[i] = ap_f32_to_s16(in[i]);
         return;
     }
+
+    if (in_frames > out_frames && in_frames % out_frames == 0u) {
+        const uint32_t step = in_frames / out_frames;
+        for (i = 0u; i < out_frames; ++i)
+            out[i] = ap_f32_to_s16(in[i * step]);
+        return;
+    }
+
+    /* 16 kHz -> 24 kHz: three outputs for each two input samples. */
+    if (out_frames * 2u == in_frames * 3u) {
+        uint32_t src = 0u;
+        const float one_third = 1.0f / 3.0f;
+        const float two_thirds = 2.0f / 3.0f;
+        for (i = 0u; i + 2u < out_frames; i += 3u, src += 2u) {
+            const uint32_t next = src + 1u < in_frames ? src + 1u : src;
+            const uint32_t next2 = src + 2u < in_frames ? src + 2u : next;
+            out[i] = ap_f32_to_s16(in[src]);
+            out[i + 1u] = ap_f32_to_s16(one_third * in[src] +
+                                           two_thirds * in[next]);
+            out[i + 2u] = ap_f32_to_s16(two_thirds * in[next] +
+                                           one_third * in[next2]);
+        }
+        return;
+    }
+
+    /* 8/16 kHz -> integer-multiple output rates. Advance the source only when
+     * a fixed interpolation phase wraps, avoiding division/modulo per sample. */
+    if (out_frames > in_frames && out_frames % in_frames == 0u) {
+        const uint32_t phases = out_frames / in_frames;
+        const float inv_phases = 1.0f / (float)phases;
+        uint32_t src = 0u, phase = 0u;
+        for (i = 0u; i < out_frames; ++i) {
+            const uint32_t next = src + 1u < in_frames ? src + 1u : src;
+            const float frac = (float)phase * inv_phases;
+            out[i] = ap_f32_to_s16(in[src] * (1.0f - frac) + in[next] * frac);
+            if (++phase == phases) {
+                phase = 0u;
+                if (src + 1u < in_frames) src++;
+            }
+        }
+        return;
+    }
+
     for (i = 0u; i < out_frames; ++i) {
         const float pos = (float)i * (float)in_frames / (float)out_frames;
         uint32_t i0 = (uint32_t)pos;

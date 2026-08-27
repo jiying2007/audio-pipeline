@@ -55,6 +55,10 @@ jobs:
         env:
           CC: gcc
         run: sh scripts/compare-ns-perf.sh origin/main 7 50000
+      - name: Same-runner boundary resampler paths
+        env:
+          CC: gcc
+        run: sh scripts/compare-resampler-perf.sh origin/main 7 100000
 
   runtime-perf-compare:
     if: github.ref != 'refs/heads/main'

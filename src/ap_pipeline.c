@@ -427,23 +427,27 @@ static void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
         return;
     }
 
-    for (i = 0u; i < nfft; ++i) {
-        float v = 0.0f;
-        if (i < f) v = s->previous[i];
-        else if (i < win) v = in[i - f];
-        s->spectrum[i].re = v * (i < win ? s->window[i] : 0.0f);
+    for (i = 0u; i < f; ++i) {
+        const float previous = s->previous[i];
+        const float previous_echo = s->previous_echo[i];
+        s->spectrum[i].re = previous * s->window[i];
         s->spectrum[i].im = 0.0f;
+        s->spectrum[f + i].re = in[i] * s->window[f + i];
+        s->spectrum[f + i].im = 0.0f;
+        s->previous[i] = in[i];
 
         if (freq_res) {
-            float ev = 0.0f;
-            if (i < f) ev = s->previous_echo[i];
-            else if (i < win) ev = echo[i - f];
-            s->echo_spectrum[i].re = ev * (i < win ? s->window[i] : 0.0f);
+            s->echo_spectrum[i].re = previous_echo * s->window[i];
             s->echo_spectrum[i].im = 0.0f;
+            s->echo_spectrum[f + i].re = echo[i] * s->window[f + i];
+            s->echo_spectrum[f + i].im = 0.0f;
         }
+        s->previous_echo[i] = echo[i];
     }
-    memcpy(s->previous, in, f * sizeof(float));
-    memcpy(s->previous_echo, echo, f * sizeof(float));
+    memset(s->spectrum + win, 0, (nfft - win) * sizeof(s->spectrum[0]));
+    if (freq_res)
+        memset(s->echo_spectrum + win, 0,
+               (nfft - win) * sizeof(s->echo_spectrum[0]));
     ap_fft(s->spectrum, nfft, 0);
     if (freq_res) ap_fft(s->echo_spectrum, nfft, 0);
 

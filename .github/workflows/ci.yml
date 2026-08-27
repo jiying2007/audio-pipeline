@@ -51,6 +51,10 @@ jobs:
         env:
           CC: gcc
         run: sh scripts/compare-perf.sh origin/main 7 20
+      - name: Same-runner isolated NS paths
+        env:
+          CC: gcc
+        run: sh scripts/compare-ns-perf.sh origin/main 7 50000
 
   runtime-perf-compare:
     if: github.ref != 'refs/heads/main'

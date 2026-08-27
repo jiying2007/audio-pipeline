@@ -87,10 +87,13 @@ static void ap_mdf_rebuild_power_sum(ap_mdf_state_t *s) {
 }
 
 /* Advance the render-spectrum ring and update the active-window power sum in
- * O(bins), rather than rescanning O(active_partitions*bins) during adaptation. */
+ * O(bins), rather than rescanning O(active_partitions*bins) during adaptation.
+ * Store the new spectrum in the same pass so the hot path does not walk these
+ * cache lines a second time through memcpy(). */
 static void ap_mdf_push_render_spectrum(ap_mdf_state_t *s) {
     uint32_t leaving, k;
     float total = 0.0f;
+    ap_complex_t *dst;
     s->x_head++;
     if (s->x_head == s->partitions) s->x_head = 0u;
 
@@ -99,6 +102,7 @@ static void ap_mdf_push_render_spectrum(ap_mdf_state_t *s) {
     else
         leaving = s->partitions - (s->active_partitions - s->x_head);
 
+    dst = s->x_history[s->x_head];
     for (k = 0u; k < s->bins; ++k) {
         const float old_re = s->x_history[leaving][k].re;
         const float old_im = s->x_history[leaving][k].im;
@@ -110,9 +114,10 @@ static void ap_mdf_push_render_spectrum(ap_mdf_state_t *s) {
         if (power < 0.0f) power = 0.0f;
         s->x_power_sum[k] = power;
         total += power;
+        dst[k].re = new_re;
+        dst[k].im = new_im;
     }
     s->x_power_total = total;
-    memcpy(s->x_history[s->x_head], s->fft, s->bins * sizeof(s->fft[0]));
 }
 
 void ap_mdf_init(ap_pipeline_t *p) {
@@ -245,6 +250,8 @@ void ap_mdf_process(ap_pipeline_t *p,
         float error[AP_AEC_BLOCK_MAX];
         uint32_t i, part, xi;
         int zero_reference_block = 1;
+        int adapt_due;
+        int do_adapt;
 
         for (i = 0u; i < s->block; ++i) {
             const float prev = s->prev_ref[i];
@@ -261,6 +268,12 @@ void ap_mdf_process(ap_pipeline_t *p,
         else
             ap_fft(s->fft, s->nfft, 0);
         ap_mdf_push_render_spectrum(s);
+
+        s->adapt_phase++;
+        adapt_due = s->adapt_phase >= p->active_aec_adapt_stride;
+        if (adapt_due) s->adapt_phase = 0u;
+        do_adapt = adapt_due && s->x_power_total > 1.0e-20f &&
+                   far_active && !double_talk;
 
         if (s->x_power_total <= 1.0e-20f) {
             /* The full active render tail has drained. There is no echo basis
@@ -287,17 +300,12 @@ void ap_mdf_process(ap_pipeline_t *p,
                 const float e = mic[off + i] - y;
                 echo_out[off + i] = y;
                 out[off + i] = e;
-                error[i] = e;
+                if (do_adapt) error[i] = e;
                 echo_energy += y * y;
             }
         }
 
-        s->adapt_phase++;
-        if (s->adapt_phase >= p->active_aec_adapt_stride) {
-            s->adapt_phase = 0u;
-            if (s->x_power_total > 1.0e-20f && far_active && !double_talk)
-                ap_mdf_adapt(p, error);
-        }
+        if (do_adapt) ap_mdf_adapt(p, error);
     }
 
     *echo_energy_out = echo_energy / (float)p->internal_frame;

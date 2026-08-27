@@ -2,56 +2,88 @@
 
 ## Minimum platform
 
-The portable core needs C11, `libm`, fixed-width integers and caller-owned memory. The Linux runtime adds pthreads, C11 atomics and POSIX semaphores. ALSA is optional and disabled by default.
+Portable core requirements:
 
-The supplied Cortex-A32 toolchain uses `-mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard`. Verify the actual SoC FPU/NEON configuration. A CPU without hardware floating point needs a separate fixed-point port/profile and target re-benchmark; this repository does not claim a completed Q15/Q31 backend.
+- C11 compiler;
+- `libm`;
+- fixed-width integer types;
+- hardware floating point for the supported profile;
+- caller-owned aligned storage.
+
+The Linux runtime additionally needs pthreads, C11 lock-free 32-bit atomics and POSIX semaphores. ALSA remains optional.
+
+A CPU without hardware floating point requires a separate fixed-point backend/profile; this repository does not claim Q15/Q31 support.
+
+## Toolchain versus CPU profile
+
+Generic toolchains describe ABI/compiler only:
+
+```text
+cmake/toolchains/arm-linux-gnueabihf.cmake
+cmake/toolchains/aarch64-linux-gnu.cmake
+```
+
+CPU/FPU/SIMD tuning lives in `CMakePresets.json` or the product build:
+
+```bash
+cmake --preset armv7a-scalar
+cmake --preset cortex-a7-scalar
+cmake --preset cortex-a7-neon
+cmake --preset cortex-a32-neon
+cmake --preset aarch64-neon
+```
+
+Do not copy `-mcpu`, `-mfpu` or fast-math policy into a generic toolchain. `AP_ENABLE_FAST_MATH` is a separate, default-OFF product decision.
+
+For vendor BSPs, replace only the compiler/sysroot portion and retain the same backend/build contract where possible.
+
+## SIMD selection
+
+Use:
+
+```text
+-DAP_SIMD_BACKEND=SCALAR
+-DAP_SIMD_BACKEND=NEON
+```
+
+NEON is never required for correctness. The scalar build is a first-class CI target and is the portability baseline.
+
+## AEC selection
+
+Use one compile-time backend:
+
+```text
+-DAP_AEC_BACKEND=MDF
+-DAP_AEC_BACKEND=NLMS
+```
+
+MDF is the default product backend. NLMS is independently tested for constrained/bring-up comparison; there are no legacy boolean compatibility switches.
+
+## State storage
+
+Respect the public alignment contract:
+
+```c
+_Alignas(AP_PIPELINE_STATE_ALIGNMENT)
+static unsigned char pipeline_mem[AP_PIPELINE_STATE_MAX_BYTES];
+```
+
+Use `ap_pipeline_state_size()` for the exact selected build. Misaligned storage is rejected rather than relying on undefined behavior.
 
 ## PCM contract
 
-Prefer 10 ms periods. Capture is 1/2-channel S16; render reference is mono S16 representing the post-mix/post-gain speaker signal. If capture/playback callbacks are independent, align them with PCM timestamps before forming matched runtime items.
+Prefer 10 ms periods. Capture is 1/2-channel S16; render reference is mono S16 representing the post-mix/post-gain speaker signal. If capture/playback callbacks are independent, align them using driver/PCM timestamps before forming matched items.
 
-## Two-core Linux wiring
+## Linux runtime integration
 
-Typical policy:
+`AP_ENABLE_LINUX_RUNTIME=ON` is supported only for Linux. The default runtime does not pin or request realtime scheduling. After validating IRQ affinity, cpusets and privileges, products may explicitly configure a worker CPU and FIFO priority.
 
-- audio I/O thread on CPU0;
-- DSP worker on CPU1;
-- optional `SCHED_FIFO` around priority 20 after validating IRQ priorities;
-- no logging/file I/O/malloc/control RPC in the hot PCM path.
+Do not place logging, file/network I/O, allocation or control RPC in the PCM/DSP hot path.
 
-The runtime uses bounded SPSC queues. `AP_EFULL` is an explicit producer-overrun signal. Output drops are counted rather than hidden. The DSP worker sleeps on a semaphore when idle.
+## 24/32/48 kHz devices
 
-Runtime lifetime is explicit: initialize once with `ap_runtime_init()`, start/stop the worker as required, then call `ap_runtime_deinit()` before reusing or releasing the caller-owned runtime memory. `ap_runtime_deinit()` stops a running worker and destroys the POSIX semaphore, so route/service re-creation does not leak control-plane synchronization resources.
-
-## ALSA examples
-
-ALSA integration is opt-in:
-
-```bash
-cmake -S . -B build-alsa -DAP_BUILD_ALSA_EXAMPLE=ON
-cmake --build build-alsa --target ap_alsa_duplex ap_alsa_runtime_duplex
-```
-
-`ap_alsa_duplex` shows the simplest synchronous path. `ap_alsa_runtime_duplex` shows the recommended worker path, XRUN recovery, a `-` far-end argument for a NULL/silent render reference, output draining and runtime telemetry.
-
-In a real VoIP application, feed the exact decoded/mixed samples written to the playback device into the AEC reference. On route/codec restart, preserve explicit XRUN/route diagnostics; the DSP delay tracker will treat a large alignment change as a path jump and reset AEC.
-
-## Clock domains
-
-The core has a low-cost reference-domain drift controller: one-sample fine delay estimates feed a ppm IIR and slow sample slips. It is meant to keep AEC alignment stable for small clock mismatch, not to act as a high-fidelity full-band ASRC.
-
-If ALSA/driver timestamps expose capture and playback clocks, use them to establish the base delay and clock ratio; let the DSP correlation correct only residual acoustic/buffering uncertainty.
-
-## 24/32/48 kHz hardware
-
-Best: configure codec/hardware/ALSA to deliver synchronized 16 kHz voice-band streams. The built-in adapter is a low-CPU bring-up fallback and does not provide a production full-band anti-aliasing guarantee.
-
-## VoIP and assistant integration
-
-Calls: send cleaned mono output to the uplink codec; use `vad_active` for DTX only if codec policy expects it.
-
-Assistants: feed the same cleaned mono stream to wake/ASR. Do not run a second independent AEC in the assistant stack. Use VAD probability for wake/endpointing policy.
+Best: configure codec/hardware/ALSA to provide a synchronized voice-band stream. The built-in fixed-ratio linear adapter is deterministic and low cost, but it is not a full-band anti-aliasing resampler guarantee.
 
 ## Target certification
 
-Run both target wrappers under the shipping kernel/DVFS/audio route. Do not certify from x86 CI or an ARM cross-build alone.
+Cross compilation establishes build support only. Each shipping SoC/SKU must create a record following `PLATFORM_SUPPORT.md` and pass target benchmark, acoustic corpus, contention/thermal/power checks and the 8 h soak.

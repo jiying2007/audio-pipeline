@@ -8,13 +8,17 @@
 #include <time.h>
 
 #if defined(_MSC_VER)
-#define AP_ALIGN16 __declspec(align(16))
+#define AP_PIPE_ALIGN __declspec(align(AP_PIPELINE_STATE_ALIGNMENT))
+#define AP_RT_ALIGN __declspec(align(AP_RUNTIME_STATE_ALIGNMENT))
 #else
-#define AP_ALIGN16 _Alignas(16)
+#define AP_PIPE_ALIGN _Alignas(AP_PIPELINE_STATE_ALIGNMENT)
+#define AP_RT_ALIGN _Alignas(AP_RUNTIME_STATE_ALIGNMENT)
 #endif
 
-static AP_ALIGN16 unsigned char pipeline_state[AP_PIPELINE_STATE_MAX_BYTES];
-static AP_ALIGN16 unsigned char runtime_state[AP_RUNTIME_STATE_MAX_BYTES];
+static AP_PIPE_ALIGN unsigned char pipeline_state[AP_PIPELINE_STATE_MAX_BYTES];
+static AP_RT_ALIGN unsigned char runtime_state[AP_RUNTIME_STATE_MAX_BYTES];
+static AP_RT_ALIGN unsigned char runtime_misaligned[
+    AP_RUNTIME_STATE_MAX_BYTES + AP_RUNTIME_STATE_ALIGNMENT];
 
 static void sleep_ms(unsigned ms) {
     struct timespec ts;
@@ -50,6 +54,27 @@ static ap_metrics_t process_one(ap_runtime_t *runtime,
     return pm;
 }
 
+static void test_runtime_init_contract(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime = NULL;
+    assert(rcfg.dsp_cpu == -1);
+    assert(rcfg.dsp_priority == 0);
+    assert(ap_runtime_state_alignment() == AP_RUNTIME_STATE_ALIGNMENT);
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    assert(ap_runtime_init(NULL, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_EINVAL);
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), NULL, &rcfg, &runtime) == AP_EINVAL);
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, NULL, &runtime) == AP_EINVAL);
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, NULL) == AP_EINVAL);
+    assert(ap_runtime_init(runtime_state, ap_runtime_state_size() - 1u,
+                           pipeline, &rcfg, &runtime) == AP_ENOMEM);
+    assert(ap_runtime_init(runtime_misaligned + 1u, sizeof(runtime_misaligned) - 1u,
+                           pipeline, &rcfg, &runtime) == AP_EINVAL);
+    rcfg.recover_frames = 0u;
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_EINVAL);
+}
+
 static void test_queue_and_lifecycle(void) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
@@ -65,8 +90,6 @@ static void test_queue_and_lifecycle(void) {
     assert(ap_pipeline_state_size() <= sizeof(pipeline_state));
     assert(ap_runtime_state_size() <= sizeof(runtime_state));
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
-    rcfg.dsp_cpu = -1;
-    rcfg.dsp_priority = 0;
     rcfg.overload_us = 9000u;
     rcfg.recover_frames = 20u;
     assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
@@ -113,14 +136,12 @@ static void test_queue_and_lifecycle(void) {
 
     ap_runtime_stop(runtime);
     ap_runtime_deinit(runtime);
-
-    /* The same caller-owned storage can be initialized again after deinit. */
     runtime = NULL;
     assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
     ap_runtime_deinit(runtime);
 }
 
-static void test_quality_cache_transitions(void) {
+static void test_quality_transitions(void) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
     ap_pipeline_t *pipeline = NULL;
@@ -132,9 +153,7 @@ static void test_quality_cache_transitions(void) {
     unsigned i;
 
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
-    rcfg.dsp_cpu = -1;
-    rcfg.dsp_priority = 0;
-    rcfg.overload_us = 0u; /* Every processed frame is deliberately overloaded. */
+    rcfg.overload_us = 0u;
     rcfg.recover_frames = 2u;
     assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
     assert(ap_runtime_start(runtime) == AP_OK);
@@ -146,9 +165,6 @@ static void test_quality_cache_transitions(void) {
 
     ap_runtime_deinit(runtime);
     runtime = NULL;
-
-    /* Runtime init must inherit an already-degraded pipeline rather than
-     * assuming FULL. A huge threshold makes every subsequent frame healthy. */
     rcfg.overload_us = UINT32_MAX;
     rcfg.recover_frames = 2u;
     assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
@@ -161,8 +177,9 @@ static void test_quality_cache_transitions(void) {
 }
 
 int main(void) {
+    test_runtime_init_contract();
     test_queue_and_lifecycle();
-    test_quality_cache_transitions();
+    test_quality_transitions();
     puts("audio-pipeline runtime tests: OK");
     return 0;
 }

@@ -13,6 +13,11 @@
 #define AP_RT_MASK (AP_RT_DEPTH - 1u)
 #define AP_RT_MAX_CAPTURE (AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS)
 
+_Static_assert(ATOMIC_INT_LOCK_FREE == 2,
+               "Linux runtime requires lock-free 32-bit atomics");
+_Static_assert((AP_RUNTIME_STATE_ALIGNMENT & (AP_RUNTIME_STATE_ALIGNMENT - 1u)) == 0u,
+               "runtime state alignment must remain power of two");
+
 typedef struct ap_rt_input {
     int16_t mic[AP_RT_MAX_CAPTURE];
     int16_t render[AP_MAX_IO_FRAME_SAMPLES];
@@ -29,8 +34,10 @@ struct ap_runtime {
     pthread_t thread;
     sem_t wake;
     atomic_uint running, in_head, in_tail, out_head, out_tail;
-    atomic_uint_fast64_t submitted_frames, processed_frames;
-    atomic_uint_fast64_t input_full_events, output_drop_events, dsp_overruns;
+    /* 32-bit lock-free counters avoid hidden libatomic/locks on ARMv7-A.
+     * Public snapshots widen them to uint64_t; counters are per runtime init. */
+    atomic_uint submitted_frames, processed_frames;
+    atomic_uint input_full_events, output_drop_events, dsp_overruns;
     atomic_uint last_dsp_us, max_dsp_us;
     ap_rt_input_t in[AP_RT_DEPTH];
     ap_rt_output_t out[AP_RT_DEPTH];
@@ -63,19 +70,25 @@ int ap_runtime_bind_current_thread(int cpu, int fifo_priority) {
 
 ap_runtime_config_t ap_runtime_config_default(void) {
     ap_runtime_config_t c;
-    c.dsp_cpu = 1;
-    c.dsp_priority = 20;
+    c.dsp_cpu = -1;
+    c.dsp_priority = 0;
     c.overload_us = 9000u;
     c.recover_frames = 1000u;
     return c;
 }
 
 size_t ap_runtime_state_size(void) { return sizeof(ap_runtime_t); }
+size_t ap_runtime_state_alignment(void) { return AP_RUNTIME_STATE_ALIGNMENT; }
 
 ap_status_t ap_runtime_init(void *memory, size_t memory_size, ap_pipeline_t *pipeline,
                             const ap_runtime_config_t *config, ap_runtime_t **out) {
     ap_runtime_t *r;
-    if (!memory || memory_size < sizeof(ap_runtime_t) || !pipeline || !config || !out) return AP_ENOMEM;
+    if (!memory || !pipeline || !config || !out) return AP_EINVAL;
+    *out = NULL;
+    if (memory_size < sizeof(ap_runtime_t)) return AP_ENOMEM;
+    if (((uintptr_t)memory & (AP_RUNTIME_STATE_ALIGNMENT - 1u)) != 0u)
+        return AP_EINVAL;
+    if (config->recover_frames == 0u) return AP_EINVAL;
     r = (ap_runtime_t *)memory;
     memset(r, 0, sizeof(*r));
     r->pipeline = pipeline;
@@ -118,15 +131,19 @@ static void ap_adjust_quality(ap_runtime_t *r, uint64_t elapsed_ns) {
         r->healthy_streak = 0u;
         atomic_fetch_add_explicit(&r->dsp_overruns, 1u, memory_order_relaxed);
         if (++r->overload_streak >= 3u) {
-            if (m.quality == AP_QUALITY_FULL) (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_LITE);
-            else if (m.quality == AP_QUALITY_LITE) (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_SAFE);
+            if (m.quality == AP_QUALITY_FULL)
+                (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_LITE);
+            else if (m.quality == AP_QUALITY_LITE)
+                (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_SAFE);
             r->overload_streak = 0u;
         }
     } else {
         r->overload_streak = 0u;
         if (++r->healthy_streak >= r->cfg.recover_frames) {
-            if (m.quality == AP_QUALITY_SAFE) (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_LITE);
-            else if (m.quality == AP_QUALITY_LITE) (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_FULL);
+            if (m.quality == AP_QUALITY_SAFE)
+                (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_LITE);
+            else if (m.quality == AP_QUALITY_LITE)
+                (void)ap_pipeline_set_quality(r->pipeline, AP_QUALITY_FULL);
             r->healthy_streak = 0u;
         }
     }
@@ -247,11 +264,11 @@ ap_status_t ap_runtime_receive(ap_runtime_t *r, int16_t *output, ap_metrics_t *m
 void ap_runtime_get_metrics(const ap_runtime_t *r, ap_runtime_metrics_t *m) {
     ap_metrics_t pm;
     if (!r || !m) return;
-    m->submitted_frames = atomic_load_explicit(&r->submitted_frames, memory_order_relaxed);
-    m->processed_frames = atomic_load_explicit(&r->processed_frames, memory_order_relaxed);
-    m->input_full_events = atomic_load_explicit(&r->input_full_events, memory_order_relaxed);
-    m->output_drop_events = atomic_load_explicit(&r->output_drop_events, memory_order_relaxed);
-    m->dsp_overruns = atomic_load_explicit(&r->dsp_overruns, memory_order_relaxed);
+    m->submitted_frames = (uint64_t)atomic_load_explicit(&r->submitted_frames, memory_order_relaxed);
+    m->processed_frames = (uint64_t)atomic_load_explicit(&r->processed_frames, memory_order_relaxed);
+    m->input_full_events = (uint64_t)atomic_load_explicit(&r->input_full_events, memory_order_relaxed);
+    m->output_drop_events = (uint64_t)atomic_load_explicit(&r->output_drop_events, memory_order_relaxed);
+    m->dsp_overruns = (uint64_t)atomic_load_explicit(&r->dsp_overruns, memory_order_relaxed);
     m->last_dsp_us = atomic_load_explicit(&r->last_dsp_us, memory_order_relaxed);
     m->max_dsp_us = atomic_load_explicit(&r->max_dsp_us, memory_order_relaxed);
     ap_pipeline_get_metrics(r->pipeline, &pm);

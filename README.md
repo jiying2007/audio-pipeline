@@ -2,133 +2,133 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A dependency-light real-time speech front end for low-power embedded Linux, targeting dual-core Cortex-A32-class SoCs and similar low-end Arm Linux CPUs for hands-free calls and voice assistants.
+A dependency-light, allocation-free real-time speech front end for **low-compute Arm Linux products**. The same DSP core is intended for ARMv7-A and ARMv8-A/AArch32-class systems such as Cortex-A7 and Cortex-A32, plus AArch64 products with comparable voice-processing budgets. CPU names are build/certification profiles, not DSP dependencies.
 
-Default path:
+Default graph:
 
-`S16 capture -> rate adapter -> HPF -> 2-mic TDOA/delay-and-sum -> delay+drift tracker -> MDF/AUMDF-lite AEC -> subband residual echo suppression -> STFT Wiener NS -> VAD -> AGC/limiter -> mono S16`
+`S16 capture -> rate adapter -> HPF -> 2-mic BF -> delay/drift -> AEC -> RES -> STFT Wiener NS -> VAD -> AGC/limiter -> mono S16`
 
-The synchronous DSP path is caller-owned, bounded and allocation-free. No third-party DSP source is vendored.
+The public frame contract is fixed at 10 ms. Device I/O supports 8/16/24/32/48 kHz; heavy DSP stays at 8 or 16 kHz. The synchronous data plane uses caller-owned bounded state, no heap allocation, no mutexes and no runtime SIMD dispatch.
 
-## Low-compute design
+## Product dimensions
 
-- Public contract: fixed 10 ms frames.
-- I/O: 8/16/24/32/48 kHz; heavy DSP stays at 8 or 16 kHz.
-- Default AEC: clean-room partitioned MDF/AUMDF-lite, five 2 ms blocks per 10 ms frame.
-- 16 kHz MDF geometry: 32-sample block, 64-point FFT, at most 60 partitions for the 120 ms hard tail ceiling.
-- `AP_ENABLE_MDF_AEC=OFF` selects the independently tested NLMS fallback.
-- FULL/LITE/SAFE reduces active AEC partitions/update rate and array work before removing essential AEC/NS/AGC/VAD.
-- Cortex-A32 NEON complex MAC is optional; scalar C remains available.
+Three independent dimensions avoid tying product policy to one CPU model:
 
-The architecture was informed by aispeech-earbuds, athena-signal, SpeexDSP MDF/AUMDF literature/practices, WebRTC Audio Processing, RNNoise and DeepFilterNet. See [THIRD_PARTY.md](THIRD_PARTY.md) for the clean-room policy.
+- **Use case:** `AP_PROFILE_CALL` or `AP_PROFILE_ASSISTANT`.
+- **Resource class:** `AP_RESOURCE_TINY`, `AP_RESOURCE_LOW`, `AP_RESOURCE_STANDARD` selected at product configuration time.
+- **Runtime quality:** `FULL`, `LITE`, `SAFE` selected automatically by the Linux overload controller or explicitly by the caller.
 
-## Echo synchronization and clock drift
+`TINY` defaults to an 8 kHz internal path, shorter AEC tail and no beamformer tracking; `LOW` retains 16 kHz with a shorter tail; `STANDARD` keeps the existing full voice-band geometry. These are starting envelopes, not Cortex-A7/A32 labels: certify the class on the actual board.
 
-The render reference must be the signal actually sent to the DAC after software mixing/gain. The bounded render ring is searched every ~100 ms with a low-cost coarse correlation plus one-sample fine search.
+## Architecture
 
-- A >20 ms change is treated as a route/buffer-path jump: snap delay and reset learned AEC state.
-- Small movement is treated as jitter/clock mismatch.
-- A ppm estimator integrates persistent drift and performs slow single-sample reference insert/drop correction only after fractional error reaches a whole sample.
-- Metrics expose `estimated_drift_ppm`, `delay_error_samples`, `reference_sample_slips`, `delay_jumps` and `aec_resets`.
+Production source boundaries are explicit:
 
-Hardware playback/capture timestamps are still preferred when available because they narrow the search and distinguish clock domains more directly.
+```text
+src/core/            pipeline/config/orchestration
+src/frontend/        boundary resampler, HPF, beamformer
+src/sync/            render delay and clock-drift alignment
+src/aec/             compile-time MDF or NLMS backend
+src/enhance/         RES, Wiener NS, AGC, VAD
+src/dsp/             FFT/math primitives
+src/arch/scalar/     portable scalar kernels
+src/arch/arm_neon/   Arm NEON kernels
+src/platform/linux/  pthread/semaphore SPSC runtime only
+```
 
-## Residual echo suppression
+The algorithms never include Arm intrinsics or pthread/semaphore headers directly. SIMD and AEC selection are compile-time backends, so modularity does not add virtual calls/function-pointer dispatch to the 10 ms path.
 
-FULL/LITE reuse the NS STFT to apply frequency-dependent residual suppression from the AEC-predicted echo spectrum, avoiding another model or large dependency. Double-talk disables subband RES so near-end speech is not aggressively removed. SAFE or NS-off falls back to the cheaper broadband RES path.
+## Build policy
 
-## Dual-core Linux runtime
+The hard-cut build switches are:
 
-Recommended split:
+```text
+AP_AEC_BACKEND=MDF|NLMS
+AP_SIMD_BACKEND=SCALAR|NEON
+AP_ENABLE_LINUX_RUNTIME=ON|OFF
+AP_ENABLE_FAST_MATH=ON|OFF
+```
 
-- Core 0: ALSA/audio I/O, render-reference acquisition, codec/application work.
-- Core 1: one serial DSP worker.
+Fast math is **OFF by default** and is a product performance policy, not part of a CPU toolchain.
 
-The cores use bounded SPSC queues. The worker blocks on a POSIX semaphore when idle rather than polling. Affinity and `SCHED_FIFO` are best-effort optimizations. Runtime telemetry exposes submitted/processed frames, input-full/output-drop events, DSP overruns, last/max DSP time and current quality state.
-
-Runtime ownership is explicit: `ap_runtime_init()` initializes caller-owned state, `ap_runtime_start()`/`ap_runtime_stop()` control the worker, and `ap_runtime_deinit()` must be called before reusing/releasing the runtime memory so the POSIX semaphore is destroyed cleanly.
-
-This avoids a cross-core barrier between AEC/NS every 10 ms, which is often a net loss on a small dual-core CPU because of wakeup/cache/synchronization overhead.
-
-## Profiles
-
-| Profile | AEC | NS/RES | Beamforming | AGC | Use |
-|---|---:|---:|---:|---:|---|
-| `AP_PROFILE_CALL` | 96 ms default tail | stronger | 2-mic | conservative | full-duplex call |
-| `AP_PROFILE_ASSISTANT` | 80 ms default tail | gentler | 2-mic | slightly hotter | wake/ASR/assistant |
-
-## Build
+Native Linux:
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
-./build/ap_bench 30
 ```
 
-Install the SDK to a staging prefix:
+Cross-build presets:
 
 ```bash
-cmake --install build --prefix ./stage
+cmake --preset armv7a-scalar
+cmake --preset cortex-a7-scalar
+cmake --preset cortex-a7-neon
+cmake --preset cortex-a32-neon
+cmake --preset aarch64-neon
+cmake --build build/cortex-a7-neon --parallel
 ```
 
-The default Linux build installs `libaudio_pipeline.a`, `libaudio_pipeline_runtime.a` and the public headers under `include/audio_pipeline/`. When `AP_ENABLE_RUNTIME=OFF`, only the portable core library and headers are installed.
+The generic toolchain files describe compiler/ABI only; `-mcpu/-mfpu` tuning lives in presets or product build configuration.
 
-Cortex-A32 cross-build:
+## Caller-owned state contract
 
-```bash
-cmake -S . -B build-arm \
-  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-cortex-a32.cmake \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build build-arm --parallel
+The exact state size is build-specific; the hard public ceiling is 80,000 bytes. Storage must be 16-byte aligned:
+
+```c
+_Alignas(AP_PIPELINE_STATE_ALIGNMENT)
+static unsigned char pipeline_mem[AP_PIPELINE_STATE_MAX_BYTES];
+
+ap_pipeline_t *pipeline = NULL;
+ap_config_t cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_LOW);
+ap_status_t rc = ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline);
 ```
 
-NLMS fallback:
+Invalid/null/misaligned arguments return `AP_EINVAL`; insufficient caller-owned storage returns `AP_ENOMEM`. See [API contract](docs/API_CONTRACT.md).
 
-```bash
-cmake -S . -B build-nlms -DAP_ENABLE_MDF_AEC=OFF
-cmake --build build-nlms --parallel
-ctest --test-dir build-nlms --output-on-failure
+## AEC, synchronization and enhancement
+
+The default AEC is a clean-room partitioned MDF/AUMDF-lite implementation with five 2 ms sub-blocks per 10 ms frame. `AP_AEC_BACKEND=NLMS` builds the independent time-domain fallback. Both backends expose predicted echo internally for residual suppression.
+
+The render reference must be the actual post-mix/post-gain DAC signal. A bounded coarse/fine tracker handles route-delay changes and small clock mismatch; large path jumps reset adaptive state. Hardware capture/playback timestamps remain preferred for narrowing the search.
+
+FULL/LITE use frequency-dependent residual suppression when NS is active; SAFE or NS-off uses broadband RES. True double-talk disables subband RES.
+
+## Linux runtime
+
+The portable core does not require Linux. `AP_ENABLE_LINUX_RUNTIME=ON` adds the Linux-only bounded SPSC worker using pthreads, C11 atomics and a POSIX semaphore. Runtime defaults are topology-neutral:
+
+```text
+dsp_cpu = -1
+dsp_priority = 0
 ```
 
-Optional ALSA examples do not affect the minimum dependency set:
-
-```bash
-cmake -S . -B build-alsa -DAP_BUILD_ALSA_EXAMPLE=ON
-cmake --build build-alsa --target ap_alsa_duplex ap_alsa_runtime_duplex
-```
-
-`ap_alsa_runtime_duplex` demonstrates the intended two-core product wiring, XRUN recovery, silent/NULL render reference handling and runtime telemetry.
-
-## Performance and target-board gates
-
-`ap_bench` reports average/p50/p95/p99/max frame time, 10 ms deadline misses, RTF, state size, AEC geometry, ERLE, delay/drift/sample-slip, RES and reset metrics.
-
-```bash
-./build/ap_bench 120 0.40 9000
-./scripts/run-target-benchmark.sh ./build/ap_bench 120 0.40 9000 1
-```
-
-`ap_runtime_bench` paces real 10 ms submissions through the worker and gates queue drops, DSP overruns and FULL/LITE/SAFE residence. The target soak wrapper defaults to eight hours:
-
-```bash
-./scripts/run-target-soak.sh ./build/ap_runtime_bench 28800 0 0.999 1
-```
-
-GitHub x86 numbers are regression signals only; they are not Cortex-A32 CPU/RSS/power claims. Final acceptance must run on the shipping board/kernel/compiler/DVFS/audio route.
+Product integration may explicitly pin a worker or request `SCHED_FIFO` after IRQ/cpuset validation. The runtime uses lock-free-width 32-bit atomics internally so ARMv7-A telemetry does not depend on hidden 64-bit atomic locks.
 
 ## Verification
 
-CI is designed to cover GCC/Clang, strict warnings, ASan/UBSan, MDF and NLMS fallback, 8/16/24/32/48 kHz contracts, double-talk, drift/path-jump/RES contracts, bounded runtime/backpressure/wakeup, libFuzzer smoke, optional ALSA example compilation, runtime benchmark smoke and Cortex-A32 cross-build.
+CI covers native GCC/Clang, strict warnings, ASan/UBSan, fuzzing, MDF and NLMS, explicit fast-math mode, optional ALSA compilation, runtime/performance smoke, architecture-boundary lint, and a cross-build matrix for:
+
+- generic ARMv7-A scalar;
+- Cortex-A7 scalar;
+- Cortex-A7 NEON/VFPv4;
+- Cortex-A32 NEON/FP-Armv8;
+- generic AArch64/NEON.
+
+Cross-build means **build-supported**, not board-certified. CPU/RSS/thermal/power claims require the shipping board/kernel/compiler/DVFS/audio route and the target benchmark/8 h soak wrappers.
 
 ## Documentation
 
+- [Platform support and certification](docs/PLATFORM_SUPPORT.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [API contract](docs/API_CONTRACT.md)
 - [DSP design](docs/DSP_DESIGN.md)
-- [Performance and release gates](docs/PERFORMANCE.md)
 - [Porting](docs/PORTING.md)
+- [Performance and release gates](docs/PERFORMANCE.md)
 - [Tuning](docs/TUNING.md)
+- [Development/module rules](docs/DEVELOPMENT.md)
 
 ## License
 
-Apache-2.0. The minimum implementation contains no vendored third-party DSP source.
+Apache-2.0. No third-party DSP source is vendored; see [THIRD_PARTY.md](THIRD_PARTY.md).

@@ -2,132 +2,131 @@
 
 [English](README.md) | 简体中文
 
-面向**低算力嵌入式 Linux** 的端侧实时语音前处理引擎，目标平台为 Cortex-A32 双核级或相近低端 Arm Linux SoC，覆盖免提语音通话和语音交互。
+面向**低算力 Arm Linux 产品族**的轻依赖、无堆分配实时语音前端。目标不是绑定某一颗 CPU，而是在同一套 DSP 核心上长期覆盖 ARMv7-A、ARMv8-A/AArch32 以及同等语音算力档位的 AArch64 产品，例如 Cortex-A7、Cortex-A32 等。
 
-默认主链：
+默认链路：
 
-`S16采集 -> 采样率边界适配 -> HPF -> 双麦TDOA/Delay-and-Sum -> 时延/漂移跟踪 -> MDF/AUMDF-lite AEC -> 分频残余回声抑制 -> STFT Wiener NS -> VAD -> AGC/Limiter -> mono S16`
+`S16采集 -> 边界采样率适配 -> HPF -> 双麦波束形成 -> 延时/时钟漂移 -> AEC -> RES -> STFT Wiener NS -> VAD -> AGC/限幅 -> 单声道S16`
 
-同步 DSP 路径全部使用调用方提供的有界内存，不 malloc、不加阻塞 mutex；默认实现不 vendor 第三方 DSP 源码。
+公共帧长固定 10 ms；设备侧支持 8/16/24/32/48 kHz，重 DSP 始终工作在 8 或 16 kHz。同步数据面全部使用调用者提供的有界内存，不 malloc、不加 mutex，也不做运行时 SIMD 分发。
 
-## 面向低算力的核心设计
+## 三个独立产品维度
 
-- 对外固定 10 ms frame。
-- I/O 支持 8/16/24/32/48 kHz，重 DSP 固定在 8/16 kHz。
-- 默认 AEC 为 clean-room partitioned MDF/AUMDF-lite，每个 10 ms frame 内拆成 5 个 2 ms block。
-- 16 kHz 下：32 samples / 64-point FFT；最大 120 ms tail 对应最多 60 partitions。
-- `AP_ENABLE_MDF_AEC=OFF` 可切到独立测试的时域 NLMS fallback。
-- FULL/LITE/SAFE 优先减少 active partitions、AEC 更新频率和阵列跟踪，基础 AEC/NS/AGC/VAD 不直接消失。
-- Cortex-A32 可选 NEON complex MAC，同时保留纯 C fallback。
+不再把 CPU 型号直接等同于算法档位：
 
-设计参考 aispeech-earbuds、athena-signal、SpeexDSP 的 MDF/AUMDF 思路、WebRTC Audio Processing、RNNoise、DeepFilterNet，但不复制这些项目源码。详见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+- **场景**：`AP_PROFILE_CALL` / `AP_PROFILE_ASSISTANT`；
+- **资源档**：`AP_RESOURCE_TINY` / `AP_RESOURCE_LOW` / `AP_RESOURCE_STANDARD`，产品配置阶段选择；
+- **运行时质量状态**：`FULL` / `LITE` / `SAFE`，用于过载降级与恢复。
 
-## 回声同步与 clock drift
+`TINY` 默认使用 8 kHz 内部链路、短 AEC tail、关闭波束跟踪；`LOW` 保持 16 kHz 但缩短 AEC tail；`STANDARD` 保留完整语音带宽几何。它们只是起始资源包络，不是“Cortex-A7=某档、Cortex-A32=某档”的硬编码，最终仍按实板数据认证。
 
-AEC reference 必须尽量等于真正送到 DAC 的软件混音/音量后信号。reference ring 每约 100 ms 做低成本粗相关搜索，并在候选附近做逐 sample 精搜。
+## 模块边界
 
-- >20 ms 变化按 route/buffer path jump 处理：直接更新时延并 reset AEC。
-- 小变化按 jitter/clock mismatch 处理。
-- ppm 估计器累计持续漂移，只有 fractional error 达到整 sample 时才缓慢 insert/drop 一个 reference sample。
-- metrics 暴露 `estimated_drift_ppm`、`delay_error_samples`、`reference_sample_slips`、`delay_jumps`、`aec_resets`。
+```text
+src/core/            pipeline/config/编排
+src/frontend/        边界resampler、HPF、beamformer
+src/sync/            render延时与时钟漂移
+src/aec/             编译期MDF或NLMS后端
+src/enhance/         RES、Wiener NS、AGC、VAD
+src/dsp/             FFT/数学基础
+src/arch/scalar/     纯C scalar kernel
+src/arch/arm_neon/   Arm NEON kernel
+src/platform/linux/  Linux pthread/semaphore SPSC runtime
+```
 
-若硬件有可靠 capture/playback timestamp，仍应优先使用 timestamp 缩小搜索范围并明确两个时钟域。
+算法模块不直接包含 `arm_neon.h`，也不直接依赖 pthread/semaphore。SIMD/AEC 均为编译期选择，因此模块化不会在 10 ms 热路径中引入虚函数、插件或函数指针分发。
 
-## 分频残余回声抑制
+## 构建策略
 
-FULL/LITE 复用 NS 的 STFT，对 AEC 预测回声谱做 frequency-dependent RES，不额外引入模型或大依赖。双讲时关闭分频 RES，避免误压近端语音；SAFE 或关闭 NS 时自动回退到更便宜的 broadband RES。
+正式构建开关为：
 
-## 双核实时模型
+```text
+AP_AEC_BACKEND=MDF|NLMS
+AP_SIMD_BACKEND=SCALAR|NEON
+AP_ENABLE_LINUX_RUNTIME=ON|OFF
+AP_ENABLE_FAST_MATH=ON|OFF
+```
 
-推荐：
+`fast-math` 默认 **OFF**，它属于产品性能策略，不再写死到 CPU toolchain。
 
-- **Core 0**：ALSA/Audio I/O、render-reference、codec/application；
-- **Core 1**：完整串行 DSP worker。
-
-两核通过固定容量 SPSC queue 通信。DSP worker 空闲时通过 semaphore 阻塞，不短周期轮询。CPU affinity 和 `SCHED_FIFO` 为 best-effort 优化。runtime metrics 提供 submitted/processed、input-full、output-drop、DSP overrun、last/max DSP us 和当前质量状态。
-
-runtime 生命周期显式管理：`ap_runtime_init()` 初始化调用方内存，`ap_runtime_start()`/`ap_runtime_stop()` 控制 worker；复用或释放 runtime 内存前必须调用 `ap_runtime_deinit()`，确保 POSIX semaphore 正常销毁。
-
-不强行把 AEC/NS 每 10 ms 拆成跨核 barrier，避免小双核上的唤醒、cache migration 和同步成本反而超过收益。
-
-## Profile
-
-| Profile | AEC | NS/RES | 双麦 | AGC | 场景 |
-|---|---:|---:|---:|---:|---|
-| `AP_PROFILE_CALL` | 默认 96 ms tail | 较强 | 开 | 保守 | 全双工通话 |
-| `AP_PROFILE_ASSISTANT` | 默认 80 ms tail | 更温和 | 开 | 略高 | 唤醒/ASR/助手 |
-
-## 构建
+本机 Linux：
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
-./build/ap_bench 30
 ```
 
-安装 SDK 到 staging 目录：
+跨平台 preset：
 
 ```bash
-cmake --install build --prefix ./stage
+cmake --preset armv7a-scalar
+cmake --preset cortex-a7-scalar
+cmake --preset cortex-a7-neon
+cmake --preset cortex-a32-neon
+cmake --preset aarch64-neon
+cmake --build build/cortex-a7-neon --parallel
 ```
 
-默认 Linux 构建会安装 `libaudio_pipeline.a`、`libaudio_pipeline_runtime.a` 以及 `include/audio_pipeline/` 下的公共头文件；当 `AP_ENABLE_RUNTIME=OFF` 时，仅安装 portable core 库和公共头文件。
+通用 toolchain 只描述 compiler/ABI；`-mcpu/-mfpu` 放在 preset 或具体产品构建配置中。
 
-Cortex-A32：
+## 调用者内存合同
 
-```bash
-cmake -S . -B build-arm \
-  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-cortex-a32.cmake \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build build-arm --parallel
+实际大小由 `ap_pipeline_state_size()` 返回，公共硬上限为 80,000 B，内存必须满足 16-byte 对齐：
+
+```c
+_Alignas(AP_PIPELINE_STATE_ALIGNMENT)
+static unsigned char pipeline_mem[AP_PIPELINE_STATE_MAX_BYTES];
+
+ap_pipeline_t *pipeline = NULL;
+ap_config_t cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_LOW);
+ap_status_t rc = ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline);
 ```
 
-NLMS fallback：
+NULL、非法参数、未对齐内存返回 `AP_EINVAL`；内存不足返回 `AP_ENOMEM`。详见 [API 合同](docs/API_CONTRACT.md)。
 
-```bash
-cmake -S . -B build-nlms -DAP_ENABLE_MDF_AEC=OFF
-cmake --build build-nlms --parallel
-ctest --test-dir build-nlms --output-on-failure
+## AEC / 同步 / 增强
+
+默认 AEC 为 clean-room 分区 MDF/AUMDF-lite，每 10 ms 处理 5 个 2 ms 子块。`AP_AEC_BACKEND=NLMS` 编译独立时域 NLMS 后端。两种后端都向内部 RES 提供预测回声。
+
+render reference 必须是实际送 DAC 的 post-mix/post-gain 信号。延时跟踪采用有界 coarse/fine 搜索；大路径跳变会重置 AEC，小漂移通过慢速 sample-slip 修正。硬件 capture/playback timestamp 仍然优先。
+
+FULL/LITE 在 NS 开启时使用频率相关 RES；SAFE 或 NS 关闭时回退到宽带 RES；真实双讲时关闭频率 RES，避免误伤近端语音。
+
+## Linux runtime
+
+portable core 不依赖 Linux。`AP_ENABLE_LINUX_RUNTIME=ON` 才构建 Linux-only SPSC worker，使用 pthread、C11 atomic 和 POSIX semaphore。默认不再假定“CPU1 + FIFO 20”：
+
+```text
+dsp_cpu = -1
+dsp_priority = 0
 ```
 
-ALSA 示例是可选依赖，不污染最小构建：
+产品可在完成 IRQ/cpuset 验证后显式设置 affinity/SCHED_FIFO。runtime 内部统计使用 lock-free-width 32-bit atomic，避免 ARMv7-A 上隐藏的 64-bit atomic 锁/`libatomic` 成本。
 
-```bash
-cmake -S . -B build-alsa -DAP_BUILD_ALSA_EXAMPLE=ON
-cmake --build build-alsa --target ap_alsa_duplex ap_alsa_runtime_duplex
-```
+## CI 与平台覆盖
 
-`ap_alsa_runtime_duplex` 展示正式双核接线、XRUN recover、NULL/silence render 和 runtime telemetry。
+CI 除 GCC/Clang、strict、ASan/UBSan、fuzz、MDF/NLMS、fast-math、ALSA、runtime/perf 外，还加入架构边界检查和 5 路 Arm cross-build：
 
-## 真机性能门禁
+- generic ARMv7-A scalar；
+- Cortex-A7 scalar；
+- Cortex-A7 NEON/VFPv4；
+- Cortex-A32 NEON/FP-Armv8；
+- generic AArch64/NEON。
 
-`ap_bench` 输出 average/p50/p95/p99/max、10 ms deadline miss、RTF、state bytes、AEC geometry、ERLE、delay/drift/sample-slip、RES/reset 等：
-
-```bash
-./scripts/run-target-benchmark.sh ./build/ap_bench 120 0.40 9000 1
-```
-
-`ap_runtime_bench` 按真实 10 ms 节拍驱动 worker，检查 queue drop、DSP overrun 和 FULL/LITE/SAFE 驻留率。8 小时长稳入口：
-
-```bash
-./scripts/run-target-soak.sh ./build/ap_runtime_bench 28800 0 0.999 1
-```
-
-GitHub x86 结果只用于回归，不能冒充 Cortex-A32 CPU/RSS/功耗。最终必须在正式板卡、kernel/compiler/DVFS/audio route 上验收。
-
-## CI 目标
-
-CI 设计覆盖 GCC/Clang、strict warnings、ASan/UBSan、MDF/NLMS 双后端、8/16/24/32/48 kHz、双讲、drift/path-jump/RES、runtime backpressure/wakeup、libFuzzer、ALSA 可选示例编译、runtime benchmark smoke 和 Cortex-A32 cross-build。
+Cross-build 代表**构建支持**，不代表实板认证。CPU、RSS、温升、功耗必须在出货板卡、内核、编译器、DVFS、音频路由下重新跑 benchmark 与 8h soak。
 
 ## 文档
 
+- [平台支持与认证](docs/PLATFORM_SUPPORT.md)
 - [架构](docs/ARCHITECTURE.md)
-- [DSP设计](docs/DSP_DESIGN.md)
-- [性能与门禁](docs/PERFORMANCE.md)
+- [API 合同](docs/API_CONTRACT.md)
+- [DSP 设计](docs/DSP_DESIGN.md)
 - [移植](docs/PORTING.md)
+- [性能与发布门禁](docs/PERFORMANCE.md)
 - [调参](docs/TUNING.md)
+- [开发/模块规范](docs/DEVELOPMENT.md)
 
 ## License
 
-Apache-2.0。最小实现不 vendor 第三方 DSP 源码。
+Apache-2.0。最小实现不 vendoring 第三方 DSP 源码，详见 [THIRD_PARTY.md](THIRD_PARTY.md)。

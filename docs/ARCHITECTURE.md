@@ -2,72 +2,81 @@
 
 ## Product goals
 
-1. Hands-free calls and assistant capture on a small dual-core Linux CPU.
-2. Fixed 10 ms scheduling, bounded state, allocation-free synchronous DSP.
-3. Heavy compute stays at 8/16 kHz even when the device boundary is 24/32/48 kHz.
-4. Explicit overload/backpressure instead of hidden queue growth.
-5. Stable portable C DSP API; Linux/ALSA remain adapters around the core.
+1. One classical voice front end for low-compute Arm Linux product families, not one CPU model.
+2. Fixed 10 ms scheduling, bounded caller-owned state and allocation-free synchronous DSP.
+3. Heavy compute stays at 8/16 kHz even when device I/O is 24/32/48 kHz.
+4. Compile-time AEC/SIMD selection; no hot-path plugin dispatch.
+5. Linux/threading is an adapter around a portable core.
+6. Resource class, runtime quality and CPU build profile remain independent.
+
+## Production modules
+
+```text
+src/core/            config, lifecycle, graph orchestration
+src/frontend/        rate boundary, HPF, 2-mic beamformer
+src/sync/            render delay, route-jump and clock-drift handling
+src/aec/             MDF or NLMS compile-time backend
+src/enhance/         broadband/subband RES, NS, AGC, VAD
+src/dsp/             FFT/math primitives
+src/arch/scalar/     portable kernels
+src/arch/arm_neon/   Arm NEON kernels
+src/platform/linux/  optional SPSC worker/runtime policy
+```
+
+The dependency direction and realtime rules are enforced by `scripts/check-architecture.sh`.
 
 ## Data plane
 
 ```text
-render/DAC reference -> bounded ring -> delay + ppm drift tracker --------+
-                                                                     v
-mic S16 -> rate -> HPF -> 2-mic TDOA/BF -> mono -> MDF/NLMS AEC -> predicted echo
-                                                        |                 |
-                                                        v                 v
-                                                   AEC residual -> subband RES
-                                                                     |
-                                                                     v
-                                                              STFT Wiener NS
-                                                                     |
-                                                                VAD -> AGC
-                                                                     |
-                                                              rate -> mono S16
+render/DAC reference -> bounded ring -> delay + ppm drift ----------------+
+                                                                         v
+mic S16 -> rate -> HPF -> optional 2-mic BF -> mono -> AEC -> predicted echo
+                                                      |                  |
+                                                      v                  v
+                                                 residual ----------> RES/NS
+                                                                         |
+                                                                    VAD -> AGC
+                                                                         |
+                                                               rate -> mono S16
 ```
 
-AEC runs after microphone combination, not once per microphone. That is a major structural CPU saving.
+AEC runs once after microphone combination, not per microphone.
 
-## Dual-core model
+## Product resource versus runtime degradation
 
-- Core 0: PCM/ALSA I/O, render-reference construction, codec/application work.
-- Core 1: serial DSP graph.
-- Bounded SPSC input/output queues separate the two deadlines.
-- A semaphore blocks the DSP worker when there is no work; no 200 us polling loop.
-- Affinity/SCHED_FIFO are optional and never required for correctness.
+These dimensions are intentionally separate:
 
-A per-frame AEC-to-NS cross-core barrier is intentionally avoided because wakeup/cache/synchronization overhead is significant on a small dual-core system.
+- `CALL` / `ASSISTANT`: user experience/use case;
+- `TINY` / `LOW` / `STANDARD`: nominal product resource envelope;
+- `FULL` / `LITE` / `SAFE`: runtime overload response.
+
+A Cortex-A7 product may pass `STANDARD`; a Cortex-A32 product may deliberately ship `LOW`. The architecture never maps CPU model to resource class.
+
+## Architecture kernels
+
+Algorithm files call a small internal kernel contract for dot products and AEC vector/complex updates. CMake compiles exactly one implementation:
+
+- scalar C;
+- Arm NEON.
+
+There is no runtime CPU detection or function-pointer dispatch. CPU model and `-mcpu/-mfpu` settings live in build presets/certification records only.
 
 ## Synchronization and clock domains
 
-The caller supplies the post-mix/post-gain DAC reference. Every ~100 ms the pipeline performs a 2 ms-step coarse correlation plus one-sample local fine search.
+The caller supplies the actual post-mix/post-gain DAC reference. Every ~100 ms the portable core performs a bounded coarse correlation plus one-sample local fine search.
 
-- >20 ms mismatch is a route/buffer jump: snap and reset AEC.
-- Small mismatch feeds a ppm IIR estimator.
-- Fractional drift is integrated; reference delay changes by a single sample only when accumulated error reaches a whole sample.
+- >20 ms mismatch is a route/buffer jump and resets adaptive AEC state;
+- small mismatch feeds a ppm estimator;
+- fractional drift is integrated and reference alignment moves by individual samples.
 
-This is a lightweight reference-domain sample-slip controller, not a full-band ASRC. Reliable hardware timestamps should be used to seed/narrow the estimator when available.
+This is a lightweight AEC-reference alignment controller, not a full-band ASRC. Hardware capture/playback timestamps should seed/narrow it when available.
 
-## Quality states
+## Linux runtime
 
-| State | Beamforming | AEC | RES | Essential NS/AGC/VAD |
-|---|---|---|---|---|
-| FULL | track | configured tail/stride | frequency-dependent | on |
-| LITE | hold/less work | <=64 ms, slower update | frequency-dependent, gentler | on |
-| SAFE | bypass BF | <=40 ms, slower update | broadband fallback | on |
+The runtime is Linux-specific and optional. It provides bounded SPSC input/output queues and one sleeping DSP worker. Default policy is topology-neutral (`dsp_cpu=-1`, `dsp_priority=0`). Affinity and `SCHED_FIFO` are explicit product integration choices.
 
-Runtime degradation happens after repeated deadline overruns; recovery requires sustained headroom.
+ARMv7-A is treated as a first-class runtime target: queue/counter atomics use lock-free-width 32-bit objects rather than assuming cheap 64-bit atomic operations.
 
 ## Memory ownership
 
-`ap_pipeline_init()` and `ap_runtime_init()` take caller-owned fixed memory. All DSP arrays, render history, adaptive-filter state, FFT state and queue data are bounded. Thread/semaphore creation is control-plane work outside the synchronous DSP data plane.
-
-## API/adapters
-
-- `audio_pipeline.h`: portable synchronous DSP API and telemetry.
-- `audio_runtime.h`: Linux dual-core queue/worker policy.
-- `examples/alsa_duplex.c`: optional synchronous ALSA reference wiring.
-- `examples/alsa_runtime_duplex.c`: optional two-core ALSA/runtime wiring.
-- `bench/*` and `scripts/run-target-*`: release/performance tooling.
-
-ALSA is optional and disabled by default, preserving a dependency-light minimum library.
+`ap_pipeline_init()` and `ap_runtime_init()` consume caller-owned aligned fixed storage. Alignment and exact-size functions are public contracts. No heap growth occurs in the synchronous DSP path.

@@ -12,9 +12,12 @@ extern "C" {
 #define AP_MAX_MIC_CHANNELS 2u
 #define AP_MAX_IO_RATE_HZ 48000u
 #define AP_MAX_IO_FRAME_SAMPLES (AP_MAX_IO_RATE_HZ / 100u)
-/* Hard caller-owned static state ceiling for the current implementation.
- * ap_pipeline_state_size() returns the exact build-specific requirement. */
+
+/* Caller-owned storage contract. The exact build-specific requirement is
+ * returned by ap_pipeline_state_size(); static callers may reserve this hard
+ * ceiling. Storage must satisfy AP_PIPELINE_STATE_ALIGNMENT. */
 #define AP_PIPELINE_STATE_MAX_BYTES 80000u
+#define AP_PIPELINE_STATE_ALIGNMENT 16u
 
 typedef enum ap_status {
     AP_OK = 0,
@@ -29,6 +32,14 @@ typedef enum ap_profile {
     AP_PROFILE_CALL = 0,
     AP_PROFILE_ASSISTANT = 1
 } ap_profile_t;
+
+/* Product-time resource envelope. This is independent from FULL/LITE/SAFE,
+ * which is the runtime overload state machine. */
+typedef enum ap_resource_class {
+    AP_RESOURCE_TINY = 0,
+    AP_RESOURCE_LOW = 1,
+    AP_RESOURCE_STANDARD = 2
+} ap_resource_class_t;
 
 typedef enum ap_quality {
     AP_QUALITY_SAFE = 0,
@@ -52,13 +63,14 @@ typedef struct ap_config {
     uint32_t initial_delay_ms;
     float aec_mu;
     /* MDF: number of 2 ms sub-blocks between adaptation updates.
-     * NLMS fallback: number of samples between coefficient updates. */
+     * NLMS: number of samples between coefficient updates. */
     uint32_t aec_adapt_stride;
 
     float ns_floor;
     float agc_target_dbfs;
     float limiter_dbfs;
 
+    ap_resource_class_t resource_class;
     uint8_t enable_hpf;
     uint8_t enable_beamformer;
     uint8_t enable_delay_tracking;
@@ -98,8 +110,14 @@ typedef struct ap_metrics {
 
 typedef struct ap_pipeline ap_pipeline_t;
 
+/* Standard resource envelope convenience constructor. */
 ap_config_t ap_config_default(ap_profile_t profile);
+/* Explicit product resource envelope; callers may override fields afterwards. */
+ap_config_t ap_config_for_resource(ap_profile_t profile,
+                                   ap_resource_class_t resource_class);
+
 size_t ap_pipeline_state_size(void);
+size_t ap_pipeline_state_alignment(void);
 size_t ap_pipeline_io_frame_samples(const ap_config_t *config);
 size_t ap_pipeline_internal_frame_samples(const ap_config_t *config);
 
@@ -115,19 +133,12 @@ size_t ap_pipeline_frame_samples(const ap_pipeline_t *pipeline);
 uint32_t ap_pipeline_mic_channels(const ap_pipeline_t *pipeline);
 uint32_t ap_pipeline_sample_rate_hz(const ap_pipeline_t *pipeline);
 
-/*
- * Push exactly one 10 ms mono far-end/render frame. Call this before the
- * matching capture frame whenever possible. The reference must be the signal
- * actually sent toward the DAC, after application playback gain/mixing.
- */
+/* Push exactly one 10 ms mono post-mix/post-gain DAC reference frame. */
 ap_status_t ap_pipeline_push_render(ap_pipeline_t *pipeline,
                                     const int16_t *render,
                                     size_t samples);
 
-/*
- * Process exactly one 10 ms interleaved microphone frame and produce mono S16.
- * mic samples = io_frame_samples * mic_channels; output samples = io_frame_samples.
- */
+/* Process exactly one 10 ms interleaved microphone frame and produce mono S16. */
 ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
                                         const int16_t *mic_interleaved,
                                         size_t frames,

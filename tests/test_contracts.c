@@ -5,12 +5,14 @@
 #include <string.h>
 
 #if defined(_MSC_VER)
-#define AP_ALIGN16 __declspec(align(16))
+#define AP_STATE_ALIGN __declspec(align(AP_PIPELINE_STATE_ALIGNMENT))
 #else
-#define AP_ALIGN16 _Alignas(16)
+#define AP_STATE_ALIGN _Alignas(AP_PIPELINE_STATE_ALIGNMENT)
 #endif
 
-static AP_ALIGN16 unsigned char state[AP_PIPELINE_STATE_MAX_BYTES];
+static AP_STATE_ALIGN unsigned char state[AP_PIPELINE_STATE_MAX_BYTES];
+static AP_STATE_ALIGN unsigned char misaligned_state[
+    AP_PIPELINE_STATE_MAX_BYTES + AP_PIPELINE_STATE_ALIGNMENT];
 
 static void run_silence_rate(uint32_t rate) {
     ap_config_t c = ap_config_default(AP_PROFILE_ASSISTANT);
@@ -42,6 +44,36 @@ static void test_supported_rates(void) {
     for (i = 0u; i < sizeof(rates) / sizeof(rates[0]); ++i) run_silence_rate(rates[i]);
 }
 
+static void test_resource_classes(void) {
+    const ap_config_t standard = ap_config_default(AP_PROFILE_CALL);
+    const ap_config_t low = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_LOW);
+    const ap_config_t tiny = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_TINY);
+    assert(standard.resource_class == AP_RESOURCE_STANDARD);
+    assert(low.resource_class == AP_RESOURCE_LOW);
+    assert(tiny.resource_class == AP_RESOURCE_TINY);
+    assert(standard.internal_sample_rate_hz == 16000u);
+    assert(low.internal_sample_rate_hz == 16000u);
+    assert(tiny.internal_sample_rate_hz == 8000u);
+    assert(tiny.aec_filter_ms < low.aec_filter_ms);
+    assert(low.aec_filter_ms < standard.aec_filter_ms);
+    assert(tiny.enable_beamformer == 0u);
+}
+
+static void test_init_contract(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    assert(ap_pipeline_state_alignment() == AP_PIPELINE_STATE_ALIGNMENT);
+    assert(ap_pipeline_state_size() <= AP_PIPELINE_STATE_MAX_BYTES);
+    assert(ap_pipeline_init(NULL, sizeof(state), &c, &p) == AP_EINVAL);
+    assert(ap_pipeline_init(state, sizeof(state), NULL, &p) == AP_EINVAL);
+    assert(ap_pipeline_init(state, sizeof(state), &c, NULL) == AP_EINVAL);
+    assert(ap_pipeline_init(state, ap_pipeline_state_size() - 1u, &c, &p) == AP_ENOMEM);
+    assert(ap_pipeline_init(misaligned_state + 1u, sizeof(misaligned_state) - 1u,
+                            &c, &p) == AP_EINVAL);
+    c.resource_class = (ap_resource_class_t)99;
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_EINVAL);
+}
+
 static void test_quality_contract(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *p = NULL;
@@ -51,9 +83,6 @@ static void test_quality_contract(void) {
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
     ap_pipeline_get_metrics(p, &m);
     assert(m.quality == AP_QUALITY_FULL);
-    /* The implementation may cap the requested echo tail to its bounded
-     * realtime state. Capture the effective FULL geometry rather than
-     * reconstructing an uncapped internal value from public config. */
     full_taps = m.active_aec_taps;
     full_stride = m.active_aec_adapt_stride;
     assert(full_taps > 0u);
@@ -92,6 +121,8 @@ static void test_frame_contract_rejects_wrong_sizes(void) {
 
 int main(void) {
     test_supported_rates();
+    test_resource_classes();
+    test_init_contract();
     test_quality_contract();
     test_frame_contract_rejects_wrong_sizes();
     puts("audio-pipeline contract tests: OK");

@@ -1,43 +1,49 @@
 # Tuning Guide
 
-Tune with recordings from the real enclosure, speaker, microphone geometry and playback-volume table.
+Tune with recordings from the real enclosure, speaker, microphone geometry and playback-volume table. CPU model is not a tuning parameter; select a resource envelope from measured product headroom.
 
-## 1. Reference and delay first
+## 1. Choose resource class
 
-Verify that the reference is the exact post-mix/post-gain DAC signal. Set `initial_delay_ms` near the median path and keep `max_delay_ms` only as wide as the product needs.
+Start with the highest class that comfortably meets target CPU/thermal/power gates:
 
-Watch `delay_error_samples`, `estimated_drift_ppm`, `reference_sample_slips`, `delay_jumps` and `aec_resets`. Frequent route jumps in a steady route usually indicate reference/timestamp plumbing problems, not an AEC-mu problem.
+- `STANDARD`: 16 kHz, longest default classical tail;
+- `LOW`: 16 kHz, shorter tail;
+- `TINY`: 8 kHz, short tail and no beamformer tracking by default.
 
-## 2. Clock drift
+Then tune individual fields only with an acoustic/performance reason. Do not use FULL/LITE/SAFE as a substitute for selecting the correct nominal product class.
 
-Keep `enable_clock_drift_compensation=1` when playback/capture clocks can differ. Small ppm mismatch should produce occasional sample slips, not repeated AEC resets. If sample slips are continuous/high or drift is clamped near ±2000 ppm, fix the audio clock/timestamp/resampling architecture instead of increasing AEC tail.
+## 2. Reference and delay first
 
-## 3. AEC tail and adaptation
+Verify that the AEC reference is the exact post-mix/post-gain DAC signal. Set `initial_delay_ms` near the median path and keep `max_delay_ms` only as wide as required.
 
-CALL starts at 96 ms; ASSISTANT at 80 ms. Reduce active tail until real-device ERLE/path-change recovery regresses. Increase beyond 100 ms only with evidence.
+Watch `delay_error_samples`, `estimated_drift_ppm`, `reference_sample_slips`, `delay_jumps` and `aec_resets`. Frequent jumps on a stable route usually indicate timestamp/reference plumbing problems, not `aec_mu`.
 
-`aec_mu` trades convergence for stability. `aec_adapt_stride` trades CPU for tracking speed. Always re-run true double-talk and path-change tests after changing either.
+## 3. Clock drift
 
-## 4. Microphone geometry
+Keep drift compensation enabled when playback/capture clocks can differ. Small ppm mismatch should cause occasional sample slips, not repeated AEC resets. Continuous/high slips or ±2000 ppm clamp means the audio clock/timestamp/resampling architecture needs fixing.
 
-Use acoustic-center spacing for `mic_spacing_mm`. If the target direction is fixed, a calibrated held delay is cheaper and more stable than continuous tracking.
+## 4. AEC tail and adaptation
 
-## 5. Residual echo suppression
+Reduce tail until real-device ERLE/path-change recovery regresses. Increase beyond the selected class only with evidence. `aec_mu` trades convergence against stability; `aec_adapt_stride` trades CPU against tracking speed. Always rerun double-talk and path-change tests.
 
-FULL/LITE use frequency-dependent RES when NS is active; SAFE uses broadband RES. Tune with both far-end-only and true double-talk. Too aggressive subband floors create musical/chopped near-end speech even if far-end-only ERLE looks excellent.
+## 5. Microphone geometry
 
-Monitor `residual_echo_gain` and `frequency_res_active`. During strong double-talk, `frequency_res_active` should drop to zero.
+Use acoustic-center spacing for `mic_spacing_mm`. If target direction is fixed, a calibrated held delay may be cheaper and more stable than tracking. TINY intentionally starts with BF tracking disabled.
 
-## 6. Noise suppression
+## 6. Residual echo suppression
 
-`ns_floor` is the minimum Wiener gain. Lower is stronger/noisier in artifacts; higher preserves more natural speech/noise. ASSISTANT should generally be gentler than CALL.
+FULL/LITE use frequency RES when NS is active; SAFE uses broadband RES. Tune both far-end-only and true double-talk. Monitor `residual_echo_gain` and `frequency_res_active`.
 
-## 7. AGC
+## 7. Noise suppression / AGC / VAD
 
-Tune `agc_target_dbfs` after AEC/RES/NS. Keep limiter headroom. If background pumps during pauses, fix speech/noise estimation or gain attack/release rather than only lowering the limiter.
+`ns_floor` is the minimum Wiener gain. Tune AGC only after AEC/RES/NS. Keep limiter headroom. If background pumps during pauses, fix speech/noise estimation or attack/release rather than only lowering the limiter.
 
-## 8. Runtime degradation
+## 8. Runtime policy
 
-Default runtime overload threshold is 9 ms for a 10 ms frame, with downgrade after repeated overruns and slow recovery after sustained headroom. Nominal target is >=99.9% FULL residence with zero queue drops/overruns.
+Runtime defaults are intentionally topology-neutral (`dsp_cpu=-1`, `dsp_priority=0`). Only pin or request FIFO after measuring IRQ/cpuset interaction on the product. Default overload threshold is 9 ms for a 10 ms frame; nominal target is >=99.9% FULL residence with zero queue drops/overruns.
 
 Use `ap_runtime_bench` and the 8 h target soak rather than tuning against an unconstrained desktop loop.
+
+## 9. Fast math
+
+Keep `AP_ENABLE_FAST_MATH=OFF` until a target profile demonstrates a useful benefit. Turning it on requires the same unit/contracts, acoustic corpus and board performance/thermal/power certification as any other DSP change.

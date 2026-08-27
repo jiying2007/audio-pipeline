@@ -1,0 +1,77 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "armhf-base",
+      "hidden": true,
+      "generator": "Unix Makefiles",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/arm-linux-gnueabihf.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--gc-sections",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--gc-sections",
+        "AP_AEC_BACKEND": "MDF",
+        "AP_ENABLE_FAST_MATH": "OFF",
+        "AP_ENABLE_LINUX_RUNTIME": "ON",
+        "AP_BUILD_TESTS": "OFF",
+        "AP_BUILD_BENCH": "OFF",
+        "AP_BUILD_EXAMPLES": "OFF"
+      }
+    },
+    {
+      "name": "armv7a-scalar",
+      "inherits": "armhf-base",
+      "binaryDir": "${sourceDir}/build/armv7a-scalar",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-O3 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard -fdata-sections -ffunction-sections",
+        "AP_SIMD_BACKEND": "SCALAR"
+      }
+    },
+    {
+      "name": "cortex-a7-scalar",
+      "inherits": "armhf-base",
+      "binaryDir": "${sourceDir}/build/cortex-a7-scalar",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-O3 -mcpu=cortex-a7 -mfpu=vfpv4 -mfloat-abi=hard -fdata-sections -ffunction-sections",
+        "AP_SIMD_BACKEND": "SCALAR"
+      }
+    },
+    {
+      "name": "cortex-a7-neon",
+      "inherits": "armhf-base",
+      "binaryDir": "${sourceDir}/build/cortex-a7-neon",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-O3 -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -fdata-sections -ffunction-sections",
+        "AP_SIMD_BACKEND": "NEON"
+      }
+    },
+    {
+      "name": "cortex-a32-neon",
+      "inherits": "armhf-base",
+      "binaryDir": "${sourceDir}/build/cortex-a32-neon",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-O3 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard -fdata-sections -ffunction-sections",
+        "AP_SIMD_BACKEND": "NEON"
+      }
+    },
+    {
+      "name": "aarch64-neon",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/aarch64-neon",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/aarch64-linux-gnu.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_FLAGS": "-O3 -march=armv8-a -fdata-sections -ffunction-sections",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--gc-sections",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--gc-sections",
+        "AP_AEC_BACKEND": "MDF",
+        "AP_SIMD_BACKEND": "NEON",
+        "AP_ENABLE_FAST_MATH": "OFF",
+        "AP_ENABLE_LINUX_RUNTIME": "ON",
+        "AP_BUILD_TESTS": "OFF",
+        "AP_BUILD_BENCH": "OFF",
+        "AP_BUILD_EXAMPLES": "OFF"
+      }
+    }
+  ]
+}

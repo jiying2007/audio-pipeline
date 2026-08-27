@@ -13,6 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  architecture-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce module and platform boundaries
+        run: sh scripts/check-architecture.sh
+
   native:
     runs-on: ubuntu-latest
     strategy:
@@ -83,21 +90,37 @@ jobs:
       - name: Test
         run: ctest --test-dir build-strict --output-on-failure
 
-  backend-fallback:
+  backend-nlms:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Configure NLMS fallback
+      - name: Configure NLMS backend
         env:
           CC: clang
         run: >-
           cmake -S . -B build-nlms -DCMAKE_BUILD_TYPE=Release
-          -DAP_ENABLE_MDF_AEC=OFF -DAP_ENABLE_RUNTIME=OFF
+          -DAP_AEC_BACKEND=NLMS -DAP_ENABLE_LINUX_RUNTIME=OFF
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build
         run: cmake --build build-nlms --parallel
       - name: Test
         run: ctest --test-dir build-nlms --output-on-failure
+
+  fast-math-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure explicit fast-math policy
+        env:
+          CC: gcc
+        run: >-
+          cmake -S . -B build-fast -DCMAKE_BUILD_TYPE=Release
+          -DAP_ENABLE_FAST_MATH=ON -DAP_ENABLE_LINUX_RUNTIME=OFF
+          -DAP_BUILD_BENCH=OFF
+      - name: Build and test
+        run: |
+          cmake --build build-fast --parallel
+          ctest --test-dir build-fast --output-on-failure
 
   sanitizers:
     runs-on: ubuntu-latest
@@ -126,7 +149,7 @@ jobs:
         run: >-
           cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug
           -DAP_BUILD_FUZZ=ON -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF
-          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_RUNTIME=OFF
+          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_LINUX_RUNTIME=OFF
       - name: Build
         run: cmake --build build-fuzz --target ap_fuzz --parallel
       - name: Fuzz smoke
@@ -150,14 +173,22 @@ jobs:
 
   arm-cross:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+          - armv7a-scalar
+          - cortex-a7-scalar
+          - cortex-a7-neon
+          - cortex-a32-neon
+          - aarch64-neon
     steps:
       - uses: actions/checkout@v4
-      - name: Install cross compiler
-        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
-      - name: Configure Cortex-A32
+      - name: Install Arm cross compilers
         run: >-
-          cmake -S . -B build-arm -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-cortex-a32.cmake
-          -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF
-      - name: Build
-        run: cmake --build build-arm --parallel
+          sudo apt-get update && sudo apt-get install -y
+          gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+      - name: Configure ${{ matrix.preset }}
+        run: cmake --preset ${{ matrix.preset }}
+      - name: Build ${{ matrix.preset }}
+        run: cmake --build build/${{ matrix.preset }} --parallel

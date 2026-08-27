@@ -22,9 +22,11 @@ Watch `delay_error_samples`, `estimated_drift_ppm`, `reference_sample_slips`, `d
 
 Keep drift compensation enabled when playback/capture clocks can differ. Small ppm mismatch should cause occasional sample slips, not repeated AEC resets. Continuous/high slips or ±2000 ppm clamp means the audio clock/timestamp/resampling architecture needs fixing.
 
-## 4. AEC tail and adaptation
+## 4. AEC tail, activity and adaptation
 
-Reduce tail until real-device ERLE/path-change recovery regresses. Increase beyond the selected class only with evidence. `aec_mu` trades convergence against stability; `aec_adapt_stride` trades CPU against tracking speed. Always rerun double-talk and path-change tests.
+Reduce tail until real-device ERLE/path-change recovery regresses. Increase beyond the selected class only with evidence. `aec_mu` trades convergence against stability; `aec_adapt_stride` trades CPU against tracking speed.
+
+Monitor both `far_end_active` and `double_talk_active`. The shared classifier intentionally holds double-talk for a few frames to prevent rapid adaptation/RES mode switching. If it misclassifies a product acoustic condition, improve the classifier/corpus rather than independently retuning AEC and RES thresholds so that they disagree.
 
 ## 5. Microphone geometry
 
@@ -36,7 +38,9 @@ FULL/LITE use frequency RES when NS is active; SAFE uses broadband RES. Tune bot
 
 ## 7. Noise suppression / AGC / VAD
 
-`ns_floor` is the minimum Wiener gain. Tune AGC only after AEC/RES/NS. Keep limiter headroom. If background pumps during pauses, fix speech/noise estimation or attack/release rather than only lowering the limiter.
+`AP_NS_ESTIMATOR=EMA` is the default production estimator. `AP_NS_ESTIMATOR=MCRA` is an opt-in clean-room backend for products whose real noise corpus benefits from minimum-controlled tracking. Before enabling MCRA on a shipping profile, validate stationary noise, short speech/noise bursts, persistent background changes, speech distortion, pumping, CPU, thermal and power on the actual target. A short burst should not immediately become the estimated floor; a sustained environmental change must eventually be learned.
+
+`ns_floor` is the minimum Wiener gain. Tune AGC only after AEC/RES/NS. Keep limiter headroom. If background pumps during pauses, inspect the noise estimate and speech score before lowering the limiter or making AGC more conservative.
 
 ## 8. Runtime policy
 

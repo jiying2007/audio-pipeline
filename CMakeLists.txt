@@ -20,6 +20,10 @@ set(AP_AEC_BACKEND "MDF" CACHE STRING "Compile-time AEC backend: MDF or NLMS")
 set_property(CACHE AP_AEC_BACKEND PROPERTY STRINGS MDF NLMS)
 string(TOUPPER "${AP_AEC_BACKEND}" AP_AEC_BACKEND)
 
+set(AP_NS_ESTIMATOR "EMA" CACHE STRING "Compile-time NS noise estimator: EMA or MCRA")
+set_property(CACHE AP_NS_ESTIMATOR PROPERTY STRINGS EMA MCRA)
+string(TOUPPER "${AP_NS_ESTIMATOR}" AP_NS_ESTIMATOR)
+
 set(AP_SIMD_BACKEND "SCALAR" CACHE STRING "Compile-time DSP kernel backend: SCALAR or NEON")
 set_property(CACHE AP_SIMD_BACKEND PROPERTY STRINGS SCALAR NEON)
 string(TOUPPER "${AP_SIMD_BACKEND}" AP_SIMD_BACKEND)
@@ -34,6 +38,8 @@ set(AP_CORE_SOURCES
     src/frontend/ap_frontend.c
     src/sync/ap_sync.c
     src/enhance/ap_enhance.c
+    src/enhance/ap_noise_tracker.c
+    src/enhance/ap_window.c
     src/dsp/ap_fft.c
 )
 
@@ -45,6 +51,14 @@ elseif(AP_AEC_BACKEND STREQUAL "NLMS")
     set(AP_AEC_DEFINE AP_BUILD_AEC_NLMS=1)
 else()
     message(FATAL_ERROR "AP_AEC_BACKEND must be MDF or NLMS")
+endif()
+
+if(AP_NS_ESTIMATOR STREQUAL "MCRA")
+    set(AP_NS_DEFINE AP_BUILD_NS_MCRA=1)
+elseif(AP_NS_ESTIMATOR STREQUAL "EMA")
+    set(AP_NS_DEFINE AP_BUILD_NS_EMA=1)
+else()
+    message(FATAL_ERROR "AP_NS_ESTIMATOR must be EMA or MCRA")
 endif()
 
 if(AP_SIMD_BACKEND STREQUAL "SCALAR")
@@ -63,7 +77,7 @@ target_include_directories(audio_pipeline
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(audio_pipeline PUBLIC m)
-target_compile_definitions(audio_pipeline PRIVATE ${AP_AEC_DEFINE})
+target_compile_definitions(audio_pipeline PRIVATE ${AP_AEC_DEFINE} ${AP_NS_DEFINE})
 target_compile_options(audio_pipeline PRIVATE -Wall -Wextra -Wpedantic)
 if(AP_STRICT_WARNINGS)
     target_compile_options(audio_pipeline PRIVATE -Werror)
@@ -127,6 +141,12 @@ if(AP_BUILD_TESTS)
     target_link_libraries(ap_fft_tests PRIVATE audio_pipeline)
     add_test(NAME ap_fft_tests COMMAND ap_fft_tests)
 
+    add_executable(ap_noise_tracker_tests tests/test_noise_tracker.c)
+    target_include_directories(ap_noise_tracker_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_compile_definitions(ap_noise_tracker_tests PRIVATE ${AP_NS_DEFINE})
+    target_link_libraries(ap_noise_tracker_tests PRIVATE audio_pipeline)
+    add_test(NAME ap_noise_tracker_tests COMMAND ap_noise_tracker_tests)
+
     add_executable(ap_resampler_tests tests/test_resampler.c)
     target_link_libraries(ap_resampler_tests PRIVATE audio_pipeline)
     add_test(NAME ap_resampler_tests COMMAND ap_resampler_tests)
@@ -150,7 +170,7 @@ if(AP_BUILD_TESTS)
     endif()
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        foreach(_t ap_tests ap_fft_tests ap_resampler_tests ap_contract_tests ap_realtime_tests ap_drift_res_tests)
+        foreach(_t ap_tests ap_fft_tests ap_noise_tracker_tests ap_resampler_tests ap_contract_tests ap_realtime_tests ap_drift_res_tests)
             target_compile_options(${_t} PRIVATE -UNDEBUG)
         endforeach()
         if(TARGET ap_runtime_tests)

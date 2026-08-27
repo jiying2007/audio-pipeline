@@ -3,10 +3,11 @@
 
 #include "ap_limits.h"
 #include "dsp/ap_dsp.h"
+#include "enhance/ap_noise_tracker.h"
 #include <stdint.h>
 
 #define AP_NS_FFT_MAX 512u
-#define AP_NS_BINS_MAX (AP_NS_FFT_MAX / 2u + 1u)
+#define AP_NS_BINS_MAX AP_NOISE_TRACKER_BINS_MAX
 
 typedef enum ap_enhance_mode {
     AP_ENHANCE_SAFE = 0,
@@ -15,13 +16,11 @@ typedef enum ap_enhance_mode {
 } ap_enhance_mode_t;
 
 typedef struct ap_ns_state {
-    uint32_t frame;
     uint32_t nfft;
-    float window[AP_INTERNAL_FRAME_MAX * 2u];
     float previous[AP_INTERNAL_FRAME_MAX];
     float previous_echo[AP_INTERNAL_FRAME_MAX];
     float overlap[AP_INTERNAL_FRAME_MAX];
-    float noise_psd[AP_NS_BINS_MAX];
+    ap_noise_tracker_state_t noise_tracker;
     float residual_gain_bins[AP_NS_BINS_MAX];
     ap_complex_t spectrum[AP_NS_FFT_MAX];
     float echo_power[AP_NS_BINS_MAX];
@@ -68,8 +67,8 @@ void ap_enhance_process(ap_enhance_state_t *state,
                         uint32_t frame_samples,
                         float echo_energy,
                         float residual_energy,
-                        float ref_energy,
-                        float mic_energy,
+                        int far_end_active,
+                        int double_talk_active,
                         ap_enhance_result_t *result);
 
 #endif

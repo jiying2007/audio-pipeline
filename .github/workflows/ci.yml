@@ -106,6 +106,22 @@ jobs:
       - name: Test
         run: ctest --test-dir build-nlms --output-on-failure
 
+  backend-ns-mcra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure MCRA noise estimator
+        env:
+          CC: clang
+        run: >-
+          cmake -S . -B build-ns-mcra -DCMAKE_BUILD_TYPE=Release
+          -DAP_NS_ESTIMATOR=MCRA -DAP_ENABLE_LINUX_RUNTIME=OFF
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build
+        run: cmake --build build-ns-mcra --parallel
+      - name: Test
+        run: ctest --test-dir build-ns-mcra --output-on-failure
+
   fast-math-contract:
     runs-on: ubuntu-latest
     steps:

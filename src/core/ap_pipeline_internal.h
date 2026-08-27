@@ -38,6 +38,7 @@ struct ap_pipeline {
     ap_aec_state_t aec;
     ap_enhance_state_t enhance;
     ap_quality_t quality;
+    uint32_t double_talk_hangover;
 };
 
 _Static_assert((AP_PIPELINE_STATE_ALIGNMENT & (AP_PIPELINE_STATE_ALIGNMENT - 1u)) == 0u,

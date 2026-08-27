@@ -40,6 +40,41 @@ static void test_silence(void) {
     for (i = 0; i < 160; ++i) assert(out[i] > -8 && out[i] < 8);
 }
 
+static void test_shared_double_talk_hangover(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    ap_metrics_t m;
+    int16_t mic[160];
+    int16_t render[160];
+    int16_t out[160];
+    unsigned frame, i;
+
+    c.mic_channels = 1u;
+    c.enable_hpf = 0u;
+    c.enable_beamformer = 0u;
+    c.enable_delay_tracking = 0u;
+    c.enable_clock_drift_compensation = 0u;
+    c.initial_delay_ms = 0u;
+    c.enable_aec = 0u;
+    c.enable_residual_echo_suppression = 0u;
+    c.enable_noise_suppression = 0u;
+    c.enable_agc = 0u;
+    c.enable_vad = 0u;
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+
+    for (i = 0u; i < 160u; ++i) render[i] = 2000;
+    for (frame = 0u; frame < 4u; ++frame) {
+        const int16_t mic_level = frame == 0u ? 6000 : 1000;
+        for (i = 0u; i < 160u; ++i) mic[i] = mic_level;
+        assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
+        assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+        ap_pipeline_get_metrics(p, &m);
+        assert(m.far_end_active == 1u);
+        if (frame < 3u) assert(m.double_talk_active == 1u);
+        else assert(m.double_talk_active == 0u);
+    }
+}
+
 static void test_all_rate_geometries(void) {
     static const uint32_t io_rates[] = {8000u, 16000u, 24000u, 32000u, 48000u};
     static const uint32_t internal_rates[] = {8000u, 16000u};
@@ -134,6 +169,7 @@ int main(void) {
     test_state_budget();
     test_invalid_config();
     test_silence();
+    test_shared_double_talk_hangover();
     test_all_rate_geometries();
     test_aec_convergence();
     puts("audio-pipeline tests: OK");

@@ -171,16 +171,13 @@ void ap_aec_backend_process(ap_aec_state_t *state,
                             const float *ref,
                             float *out,
                             float *echo_out,
-                            float mic_energy,
-                            float ref_energy,
+                            int far_end_active,
+                            int double_talk_active,
                             ap_aec_result_t *result) {
     ap_mdf_state_t *s = &state->backend;
-    const int far_active = ref_energy > 1.0e-7f;
-    const int double_talk = far_active && mic_energy > ref_energy * 1.5f;
     float echo_energy = 1.0e-12f;
     uint32_t off;
 
-    result->double_talk_active = (uint8_t)(double_talk ? 1u : 0u);
     result->echo_energy = 0.0f;
     if (!enabled || state->active_taps == 0u) {
         memcpy(out, mic, frame_samples * sizeof(float));
@@ -213,7 +210,8 @@ void ap_aec_backend_process(ap_aec_state_t *state,
         s->adapt_phase++;
         adapt_due = s->adapt_phase >= state->active_adapt_stride;
         if (adapt_due) s->adapt_phase = 0u;
-        do_adapt = adapt_due && s->x_power_total > 1.0e-20f && far_active && !double_talk;
+        do_adapt = adapt_due && s->x_power_total > 1.0e-20f &&
+                   far_end_active && !double_talk_active;
 
         if (s->x_power_total <= 1.0e-20f) {
             for (i = 0u; i < s->block; ++i) {

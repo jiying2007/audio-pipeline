@@ -56,10 +56,8 @@ else()
 endif()
 
 add_library(audio_pipeline STATIC ${AP_CORE_SOURCES})
-# Keep physical source ownership/module boundaries without paying cross-TU call
-# overhead in the tiny real-time graph. CMake 3.16 unity compilation lets the
-# optimizer see the selected core/backend/kernel modules as one optimization
-# unit while the repository remains split and architecture-linted.
+# Physical module boundaries remain explicit, while unity compilation preserves
+# the cross-module inlining needed by the tiny real-time graph.
 set_target_properties(audio_pipeline PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 32)
 target_include_directories(audio_pipeline
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -126,10 +124,6 @@ if(AP_BUILD_TESTS)
 
     add_executable(ap_fft_tests tests/test_fft.c)
     target_include_directories(ap_fft_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-    # test_fft.c intentionally includes the private DSP header. Keep the AEC
-    # layout selector private to this white-box target rather than exporting it
-    # from the library as a public compile definition.
-    target_compile_definitions(ap_fft_tests PRIVATE ${AP_AEC_DEFINE})
     target_link_libraries(ap_fft_tests PRIVATE audio_pipeline)
     add_test(NAME ap_fft_tests COMMAND ap_fft_tests)
 

@@ -1,4 +1,5 @@
-#include "ap_internal.h"
+#include "frontend/ap_resampler.h"
+#include "dsp/ap_dsp.h"
 #include <stdint.h>
 
 static float ap_s16_to_f32(int16_t x) { return (float)x * (1.0f / 32768.0f); }

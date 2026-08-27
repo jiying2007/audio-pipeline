@@ -1,4 +1,4 @@
-#include "ap_internal.h"
+#include "dsp/ap_dsp.h"
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
@@ -6,9 +6,10 @@
 #include <string.h>
 
 #define TEST_PI 3.14159265358979323846f
+#define TEST_FFT_MAX 512u
 
 static void test_impulse_spectrum(uint32_t n) {
-    ap_complex_t x[AP_NS_FFT_MAX];
+    ap_complex_t x[TEST_FFT_MAX];
     uint32_t k;
     memset(x, 0, sizeof(x));
     x[1].re = 1.0f;
@@ -31,8 +32,8 @@ static void test_impulse_spectrum(uint32_t n) {
 }
 
 static void test_round_trip(uint32_t n) {
-    ap_complex_t x[AP_NS_FFT_MAX];
-    ap_complex_t original[AP_NS_FFT_MAX];
+    ap_complex_t x[TEST_FFT_MAX];
+    ap_complex_t original[TEST_FFT_MAX];
     uint32_t i;
     for (i = 0u; i < n; ++i) {
         const float t = (float)i / (float)n;

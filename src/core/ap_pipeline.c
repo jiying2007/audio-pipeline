@@ -1,8 +1,47 @@
-#include "ap_internal.h"
+#include "core/ap_pipeline_internal.h"
+#include "dsp/ap_dsp.h"
+#include "frontend/ap_resampler.h"
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+static ap_enhance_mode_t ap_pipeline_enhance_mode(ap_quality_t quality) {
+    if (quality == AP_QUALITY_FULL) return AP_ENHANCE_FULL;
+    if (quality == AP_QUALITY_LITE) return AP_ENHANCE_LITE;
+    return AP_ENHANCE_SAFE;
+}
+
+static void ap_pipeline_update_aec_metrics(ap_pipeline_t *p,
+                                           const ap_aec_result_t *result) {
+    ap_aec_status_t status;
+    ap_aec_backend_get_status(&p->aec, &status);
+    p->metrics.aec_backend = status.kind == AP_AEC_KIND_MDF ?
+                             AP_AEC_BACKEND_MDF : AP_AEC_BACKEND_NLMS;
+    p->metrics.active_aec_taps = status.active_taps;
+    p->metrics.active_aec_adapt_stride = status.active_adapt_stride;
+    p->metrics.active_aec_partitions = status.active_partitions;
+    p->metrics.aec_block_samples = status.block_samples;
+    if (result) p->metrics.double_talk_active = result->double_talk_active;
+}
+
+static void ap_pipeline_update_sync_metrics(ap_pipeline_t *p,
+                                            const ap_sync_event_t *event) {
+    ap_sync_status_t status;
+    ap_sync_get_status(&p->sync, &status);
+    p->metrics.estimated_drift_ppm = status.estimated_drift_ppm;
+    p->metrics.estimated_delay_ms =
+        status.delay_samples * 1000u / p->cfg.internal_sample_rate_hz;
+    if (!event) return;
+    if (event->delay_observed)
+        p->metrics.delay_error_samples = event->delay_error_samples;
+    p->metrics.reference_sample_slips += event->reference_sample_slips;
+    if (event->route_jump) {
+        p->metrics.delay_jumps++;
+        ap_aec_backend_reset(&p->aec);
+        p->metrics.aec_resets++;
+    }
+}
 
 ap_config_t ap_config_for_resource(ap_profile_t profile,
                                    ap_resource_class_t resource_class) {
@@ -105,21 +144,20 @@ ap_status_t ap_pipeline_init(void *memory, size_t memory_size,
     p->cfg = *c;
     p->io_frame = c->io_sample_rate_hz / 100u;
     p->internal_frame = c->internal_sample_rate_hz / 100u;
-    taps = c->aec_filter_ms * c->internal_sample_rate_hz / 1000u;
-    if (taps > AP_AEC_CAP) taps = AP_AEC_CAP;
-    p->aec_taps = taps;
-    p->active_aec_taps = taps;
-    p->active_aec_adapt_stride = c->aec_adapt_stride;
-    p->delay_samples = c->initial_delay_ms * c->internal_sample_rate_hz / 1000u;
     p->quality = AP_QUALITY_FULL;
     p->metrics.quality = AP_QUALITY_FULL;
     p->metrics.residual_echo_gain = 1.0f;
-    p->metrics.active_aec_taps = p->active_aec_taps;
-    p->metrics.active_aec_adapt_stride = p->active_aec_adapt_stride;
 
-    ap_frontend_init(p);
-    ap_aec_backend_init(p);
-    ap_enhance_init(p);
+    taps = c->aec_filter_ms * c->internal_sample_rate_hz / 1000u;
+    if (taps > AP_AEC_CAP) taps = AP_AEC_CAP;
+    ap_frontend_init(&p->frontend, c->internal_sample_rate_hz, c->mic_spacing_mm);
+    ap_sync_init(&p->sync,
+                 c->initial_delay_ms * c->internal_sample_rate_hz / 1000u);
+    ap_aec_backend_init(&p->aec, p->internal_frame, taps, c->aec_adapt_stride);
+    ap_enhance_init(&p->enhance, p->internal_frame,
+                    c->agc_target_dbfs, c->limiter_dbfs);
+    ap_pipeline_update_aec_metrics(p, NULL);
+    ap_pipeline_update_sync_metrics(p, NULL);
     *out = p;
     return AP_OK;
 }
@@ -133,9 +171,8 @@ void ap_pipeline_reset(ap_pipeline_t *p) {
 }
 
 ap_status_t ap_pipeline_set_quality(ap_pipeline_t *p, ap_quality_t q) {
-    uint32_t ms, stride;
+    uint32_t ms, stride, active_taps;
     if (!p || q < AP_QUALITY_SAFE || q > AP_QUALITY_FULL) return AP_EINVAL;
-    p->quality = q;
     if (q == AP_QUALITY_FULL) {
         ms = p->cfg.aec_filter_ms;
         stride = p->cfg.aec_adapt_stride;
@@ -146,38 +183,33 @@ ap_status_t ap_pipeline_set_quality(ap_pipeline_t *p, ap_quality_t q) {
         ms = p->cfg.aec_filter_ms < 40u ? p->cfg.aec_filter_ms : 40u;
         stride = p->cfg.aec_adapt_stride < 4u ? 4u : p->cfg.aec_adapt_stride;
     }
-    p->active_aec_taps = ms * p->cfg.internal_sample_rate_hz / 1000u;
-    if (p->active_aec_taps > p->aec_taps) p->active_aec_taps = p->aec_taps;
-    p->active_aec_adapt_stride = stride;
+    active_taps = ms * p->cfg.internal_sample_rate_hz / 1000u;
+    ap_aec_backend_set_active(&p->aec, active_taps, stride);
+    p->quality = q;
     p->metrics.quality = q;
-    p->metrics.active_aec_taps = p->active_aec_taps;
-    p->metrics.active_aec_adapt_stride = stride;
-    ap_aec_backend_set_active(p);
+    ap_pipeline_update_aec_metrics(p, NULL);
     return AP_OK;
 }
 
 ap_status_t ap_pipeline_push_render(ap_pipeline_t *p,
                                     const int16_t *render, size_t samples) {
-    uint32_t i;
     if (!p || !render || samples != p->io_frame) return AP_EINVAL;
     ap_resample_input_channel(render, p->io_frame, 1u, 0u,
                               p->work, p->internal_frame);
-    for (i = 0u; i < p->internal_frame; ++i) {
-        p->render_ring[p->render_total & (AP_RENDER_CAP - 1u)] = p->work[i];
-        p->render_total++;
-    }
-    p->last_render_capture_frame = p->metrics.processed_frames;
+    ap_sync_push_render(&p->sync, p->work, p->internal_frame,
+                        p->metrics.processed_frames);
     return AP_OK;
 }
 
 ap_status_t ap_pipeline_process_capture(ap_pipeline_t *p, const int16_t *mic,
                                         size_t frames, int16_t *output) {
+    ap_sync_event_t sync_event;
+    ap_aec_result_t aec_result;
+    ap_enhance_result_t enhance_result;
+    ap_enhance_params_t enhance_params;
     uint32_t i;
     float mic_e = 1.0e-12f, ref_e = 1.0e-12f;
-    float res_e = 1.0e-12f, echo_e = 0.0f;
-    const int use_frequency_res = p && p->cfg.enable_residual_echo_suppression &&
-                                  p->cfg.enable_noise_suppression &&
-                                  p->quality != AP_QUALITY_SAFE;
+    float res_e = 1.0e-12f;
     if (!p || !mic || !output || frames != p->io_frame) return AP_EINVAL;
 
     ap_resample_input_channel(mic, p->io_frame, p->cfg.mic_channels,
@@ -186,18 +218,26 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *p, const int16_t *mic,
         ap_resample_input_channel(mic, p->io_frame, 2u, 1u,
                                   p->mic1, p->internal_frame);
     if (p->cfg.enable_hpf) {
-        ap_hpf_process(p, p->mic0, p->internal_frame, 0u);
+        ap_hpf_process(&p->frontend, p->mic0, p->internal_frame, 0u);
         if (p->cfg.mic_channels == 2u)
-            ap_hpf_process(p, p->mic1, p->internal_frame, 1u);
+            ap_hpf_process(&p->frontend, p->mic1, p->internal_frame, 1u);
     }
     if (p->cfg.mic_channels == 2u && p->cfg.enable_beamformer &&
         p->quality != AP_QUALITY_SAFE)
-        ap_beamform(p, p->mic0, p->mic1, p->mono, p->internal_frame);
+        ap_beamform(&p->frontend, p->quality == AP_QUALITY_FULL,
+                    p->mic0, p->mic1, p->mono, p->internal_frame);
     else
         memcpy(p->mono, p->mic0, p->internal_frame * sizeof(float));
 
-    ap_sync_track_delay(p, p->mono);
-    ap_sync_get_reference(p, p->delay_samples, p->reference);
+    ap_sync_track_delay(&p->sync, p->mono, p->internal_frame,
+                        p->cfg.internal_sample_rate_hz, p->cfg.max_delay_ms,
+                        p->cfg.enable_delay_tracking,
+                        p->cfg.enable_clock_drift_compensation,
+                        &sync_event);
+    ap_pipeline_update_sync_metrics(p, &sync_event);
+    if (ap_sync_get_reference(&p->sync, p->internal_frame, p->reference))
+        p->metrics.render_underruns++;
+
     for (i = 0u; i < p->internal_frame; ++i) {
         mic_e += p->mono[i] * p->mono[i];
         ref_e += p->reference[i] * p->reference[i];
@@ -205,37 +245,42 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *p, const int16_t *mic,
     mic_e /= p->internal_frame;
     ref_e /= p->internal_frame;
 
-    ap_aec_backend_process(p, p->mono, p->reference, p->aec_out, p->echo_estimate,
-                           mic_e, ref_e, &echo_e);
+    ap_aec_backend_process(&p->aec, p->cfg.enable_aec, p->cfg.aec_mu,
+                           p->internal_frame, p->mono, p->reference,
+                           p->aec_out, p->echo_estimate,
+                           mic_e, ref_e, &aec_result);
+    ap_pipeline_update_aec_metrics(p, &aec_result);
     for (i = 0u; i < p->internal_frame; ++i)
         res_e += p->aec_out[i] * p->aec_out[i];
     res_e /= p->internal_frame;
 
-    if (!use_frequency_res) {
-        p->metrics.residual_echo_gain = ap_apply_broadband_res(
-            p, p->aec_out, echo_e, res_e, ref_e, mic_e);
-    } else {
-        p->metrics.residual_echo_gain = 1.0f;
-    }
-    ap_ns_process(p, p->aec_out, p->echo_estimate, p->ns_out, ref_e, mic_e);
-    ap_agc_process(p, p->ns_out, p->internal_frame);
-    ap_vad_process(p, p->ns_out, p->internal_frame);
+    enhance_params.ns_floor = p->cfg.ns_floor;
+    enhance_params.enable_residual_echo_suppression =
+        p->cfg.enable_residual_echo_suppression;
+    enhance_params.enable_noise_suppression = p->cfg.enable_noise_suppression;
+    enhance_params.enable_agc = p->cfg.enable_agc;
+    enhance_params.enable_vad = p->cfg.enable_vad;
+    ap_enhance_process(&p->enhance, ap_pipeline_enhance_mode(p->quality),
+                       &enhance_params, p->aec_out, p->echo_estimate,
+                       p->ns_out, p->internal_frame,
+                       aec_result.echo_energy, res_e, ref_e, mic_e,
+                       &enhance_result);
 
+    p->metrics.residual_echo_gain = enhance_result.residual_echo_gain;
+    p->metrics.frequency_res_active = enhance_result.frequency_res_active;
+    p->metrics.noise_rms_dbfs = enhance_result.noise_rms_dbfs;
+    p->metrics.vad_probability = enhance_result.vad_probability;
+    p->metrics.vad_active = enhance_result.vad_active;
     p->metrics.input_rms_dbfs = 10.0f * log10f(mic_e + 1.0e-18f);
     p->metrics.output_rms_dbfs = ap_rms_dbfs(p->ns_out, p->internal_frame);
-    p->metrics.noise_rms_dbfs = p->ns.noise_rms_dbfs;
     if (ref_e > 1.0e-7f && res_e > 1.0e-12f) {
         const float erle = 10.0f * log10f(
             (mic_e + 1.0e-12f) / (res_e + 1.0e-12f));
         p->metrics.erle_db = p->metrics.processed_frames ?
             0.95f * p->metrics.erle_db + 0.05f * erle : erle;
     }
-    p->metrics.estimated_delay_ms =
-        p->delay_samples * 1000u / p->cfg.internal_sample_rate_hz;
-    p->metrics.active_aec_taps = p->active_aec_taps;
-    p->metrics.active_aec_adapt_stride = p->active_aec_adapt_stride;
     p->metrics.processed_frames++;
-    if (p->metrics.processed_frames > p->last_render_capture_frame + 2u)
+    if (ap_sync_note_capture(&p->sync, p->metrics.processed_frames))
         p->metrics.render_underruns++;
     ap_resample_output(p->ns_out, p->internal_frame, output, p->io_frame);
     return AP_OK;

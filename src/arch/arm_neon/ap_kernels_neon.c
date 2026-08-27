@@ -1,4 +1,4 @@
-#include "ap_internal.h"
+#include "arch/ap_kernels.h"
 #include <arm_neon.h>
 #include <stdint.h>
 

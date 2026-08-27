@@ -6,35 +6,63 @@ Allowed production dependency direction:
 
 ```text
 core -> frontend / sync / aec / enhance
+modules -> frontend / sync / aec / enhance
 frontend -> dsp
 sync -> dsp
-AEC -> dsp / arch kernels
+AEC -> dsp / arch
 enhance -> dsp
-arch kernels -> dsp data types only
-platform/linux -> public core API only
+arch -> dsp types only
+platform/linux -> public pipeline API only
 ```
 
-Sibling DSP stages do not include or call each other's private contracts. In particular, synchronization reports route-jump events to core; only core decides whether to reset AEC. Algorithm modules must not depend on `platform/linux`.
+`src/modules` is a public standalone adapter layer. Stage implementations must never depend back on it, and core must never call through it. Sibling DSP stages do not include/call each other's private contracts; cross-stage effects are events/results interpreted by core.
 
-## State ownership and contracts
+## State ownership
 
-`src/core/ap_pipeline_internal.h` is the only composite-state definition. Each DSP domain owns a private state type and a narrow private contract in its own directory:
+`src/core/ap_pipeline_internal.h` is the only full-pipeline composite state. HPF, BF, SYNC, AEC, RES, NS, AGC and VAD own distinct private state types. A build that omits a stage must omit its pipeline member and implementation TU as well.
 
-- `ap_frontend_state_t` owns HPF/beamformer history;
-- `ap_sync_state_t` owns render history, delay and drift state;
-- `ap_aec_state_t` owns the selected MDF/NLMS backend state;
-- `ap_enhance_state_t` owns RES/NS/AGC/VAD history.
+Standalone wrappers embed/reuse the same private stage state. Do not fork an algorithm into separate pipeline and standalone implementations. Wrapper-only persistent data is limited to adapter metadata needed to enforce the public contract.
 
-Non-core DSP modules must not receive or reference `ap_pipeline_t`, `ap_config_t` or `ap_metrics_t`. They receive only the samples/scalars they need and return small event/result/status structures. Public telemetry is aggregated exactly once by core.
+No repository-wide catch-all internal header may be introduced.
 
-Do not introduce a repository-wide catch-all internal header. Module-private headers may expose only the state/types/functions required by core or a lower dependency layer. Avoid duplicating the public configuration inside module state unless the value is genuinely persistent algorithm state and the memory/performance trade is measured.
+## Composition rules
+
+There are two composition times:
+
+1. **Build time:** `AP_MODULES` defines physical SDK capability and controls ROM/RAM pruning.
+2. **Runtime init:** `ap_config_t.stages` selects a topology-safe subset of compiled DSP stages.
+
+Do not turn runtime composition into an arbitrary DAG or node/plugin framework. The high-level order is fixed. New dependencies must be represented in `ap_pipeline_validate_config()` and covered by invalid-composition tests.
+
+Current required edges:
+
+```text
+BF -> two mics
+AEC -> SYNC
+RES -> AEC
+delay/drift policy -> SYNC
+```
+
+RESAMPLER is a boundary module, not an `AP_STAGE_*` bit. RAW/resampler-only is therefore a valid high-level build/instance with zero DSP stage bits.
+
+## Public SDK capability
+
+`cmake/audio_pipeline_build.h.in` produces the installed capability header. When adding/removing a module:
+
+- update `AP_MODULES` parsing;
+- update `AP_HAVE_MODULE_*` generation;
+- condition public declarations in `audio_modules.h`;
+- ensure module-only install does not leak unrelated high-level/runtime headers;
+- add a composition preset/CI case when the new boundary is materially different.
+
+Do not expose a declaration for a module not present in the binary.
 
 ## Realtime rules
 
-For `src/core`, `src/frontend`, `src/sync`, `src/aec`, `src/enhance`, `src/dsp` and `src/arch`:
+For synchronous core/stage/module code:
 
 - no heap allocation;
-- no mutexes, file/network I/O, logging or control RPC;
+- no mutexes, file/network I/O, logging or RPC;
 - bounded loops/state only;
 - no runtime plugin discovery or function-pointer backend dispatch in the 10 ms path;
 - CPU model names are forbidden; depend on scalar/NEON capability only;
@@ -42,51 +70,39 @@ For `src/core`, `src/frontend`, `src/sync`, `src/aec`, `src/enhance`, `src/dsp` 
 
 Linux thread, affinity, semaphore and scheduling policy lives only under `src/platform/linux/`.
 
-`scripts/check-architecture.sh` enforces state ownership, dependency direction and realtime boundaries in CI.
+`scripts/check-architecture.sh` enforces these boundaries in CI, including removal of the old public `enable_*` stage booleans and old multi-stage frontend/enhance TUs.
 
 ## Backend rules
 
-AEC and SIMD are compile-time selectors. New backends implement the existing private AEC/kernel contract and add CI coverage. Do not add a new pair of `AP_ENABLE_X` / `AP_DISABLE_Y` booleans when the choice is mutually exclusive; use a string backend selector.
+AEC, NS estimator and SIMD choices are compile-time selectors. New mutually exclusive choices use string selectors, not paired enable/disable booleans. Backend selectors are meaningful only when their owning module is part of `AP_MODULES`.
 
-A backend must not reach through core to another stage. Cross-stage effects are represented as results/events and interpreted by core.
+A backend must not reach upward into core or laterally into another stage.
 
-## Configuration rules
+## Memory/pruning verification
 
-CPU architecture is not an algorithm configuration. Product resource class and runtime quality are separate concepts:
+Every composition refactor must prove that pruning is physical, not just runtime bypass. CI must build representative graphs and compare exact state sizes. At minimum:
 
-- resource class changes the nominal product envelope;
-- FULL/LITE/SAFE reacts to runtime headroom;
-- CPU-specific compiler flags belong to presets/certification records.
+```text
+RAW < voice frontend < full pipeline
+```
 
-Module code should consume narrow parameters rather than the complete public `ap_config_t` object.
+The current GCC reference is 3,392 B < 9,936 B < 78,456 B. Do not encode those exact values as ABI constants; encode ordering/ceilings and report exact sizes from the selected build.
 
-## Numeric policy
+Standalone state must fit `AP_MODULE_STATE_MAX_BYTES`; exact per-module size functions are authoritative.
 
-Precise IEEE-like compiler semantics are the default. `AP_ENABLE_FAST_MATH=ON` is opt-in and must pass the same contracts/acoustic corpus on each shipping target. Fast-math flags must never be embedded in a generic toolchain file.
+## Public API hard cuts
 
-## Public API changes
-
-Before changing state layout, frame contract, enums or status behavior:
+Before changing stage bits, public structs, state contracts or module declarations:
 
 1. update `docs/API_CONTRACT.md`;
-2. add/adjust a contract test;
-3. verify MDF and NLMS builds;
-4. verify ARMv7-A scalar and at least one NEON profile;
-5. keep `AP_PIPELINE_STATE_MAX_BYTES` and alignment contracts truthful.
+2. update high-level and standalone contract tests;
+3. run full, RAW, voice, AEC-only and NS-only composition CI;
+4. verify MDF/NLMS and EMA/MCRA where applicable;
+5. verify ARMv7-A scalar and NEON/AArch64 cross profiles;
+6. run same-runner core/module/runtime regression gates.
 
-Private module refactors must preserve public behavior unless the API change is deliberate and separately documented.
-
-## Verification for module refactors
-
-A module-boundary change is complete only when:
-
-1. `scripts/check-architecture.sh` passes;
-2. default and NLMS tests pass under strict warnings and sanitizers;
-3. all Arm cross profiles compile;
-4. `state_bytes` does not silently grow;
-5. active/idle, NS, resampler and runtime same-runner gates do not show a clear regression;
-6. delay/ERLE/RES/double-talk telemetry remains behaviorally equivalent.
+Do not add compatibility aliases unless the product explicitly requires a migration period; the current repository policy is hard-cut/no residue.
 
 ## Performance changes
 
-A code change is not retained because it is theoretically faster. Use same-runner A/B for regression signals and board measurements for product claims. Never trade delay convergence, double-talk behavior or acoustic quality for a hosted benchmark result.
+A theoretically cleaner composition is rejected if it materially regresses the full realtime graph. Full pipeline keeps unity compilation to preserve inlining; module-only products keep independent translation units for linker pruning. Hosted same-runner numbers are regression signals only; Cortex-A7/A32 CPU/RSS/thermal/power claims require target-board certification.

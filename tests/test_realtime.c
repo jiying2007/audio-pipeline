@@ -3,7 +3,6 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 #define PI_F 3.14159265358979323846f
 #if defined(_MSC_VER)
@@ -18,6 +17,8 @@ static void test_backend_geometry_and_quality(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *p = NULL;
     ap_metrics_t full, lite, safe, restored;
+    assert((c.stages & (AP_STAGE_SYNC | AP_STAGE_AEC)) ==
+           (AP_STAGE_SYNC | AP_STAGE_AEC));
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
     ap_pipeline_get_metrics(p, &full);
     assert(full.quality == AP_QUALITY_FULL);
@@ -66,13 +67,10 @@ static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
     unsigned frame, i;
     double near_e = 1.0, out_e = 1.0;
     c.mic_channels = 1u;
-    c.enable_beamformer = 0u;
+    c.stages = AP_STAGE_SYNC | AP_STAGE_AEC;
     c.enable_delay_tracking = 0u;
+    c.enable_clock_drift_compensation = 0u;
     c.initial_delay_ms = 0u;
-    c.enable_residual_echo_suppression = 0u;
-    c.enable_noise_suppression = 0u;
-    c.enable_agc = 0u;
-    c.enable_vad = 0u;
     c.aec_filter_ms = 64u;
     c.aec_adapt_stride = 1u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
@@ -106,7 +104,6 @@ static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
         assert(m.double_talk_active != 0u);
         for (i = 0u; i < 160u; ++i) out_e += (double)out[i] * out[i];
     }
-    /* The AEC may leave echo, but it must not erase a strong near-end talker. */
     assert(out_e > near_e * 0.25);
 }
 
@@ -117,12 +114,9 @@ static void test_long_running_state_is_bounded_and_delay_jump_resets(void) {
     int16_t render[160];
     int16_t out[160];
     unsigned frame, i;
+    assert((c.stages & (AP_STAGE_SYNC | AP_STAGE_AEC)) ==
+           (AP_STAGE_SYNC | AP_STAGE_AEC));
     assert(ap_pipeline_state_size() <= AP_PIPELINE_STATE_MAX_BYTES);
-    /* This is a default two-mic/HPF/beamforming long-run stress case. It
-     * verifies bounded state and that a materially different render path can
-     * invalidate AEC state. Exact delay convergence belongs to
-     * test_drift_res.c, which disables front-end transforms and drives a
-     * controlled delayed render history. */
     assert(c.initial_delay_ms == 40u);
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
     for (frame = 0u; frame < 1200u; ++frame) {

@@ -6,28 +6,36 @@
 #define AP_FRONTEND_MAX_MIC_CHANNELS 2u
 #define AP_BF_HISTORY 8u
 
-typedef struct ap_frontend_state {
-    float hpf_r;
-    float hpf_x[AP_FRONTEND_MAX_MIC_CHANNELS];
-    float hpf_y[AP_FRONTEND_MAX_MIC_CHANNELS];
-    float bf_history[AP_FRONTEND_MAX_MIC_CHANNELS][AP_BF_HISTORY];
-    int bf_lag;
-    int bf_max_lag;
-    uint32_t bf_counter;
-} ap_frontend_state_t;
+typedef struct ap_hpf_state {
+    float r;
+    float x[AP_FRONTEND_MAX_MIC_CHANNELS];
+    float y[AP_FRONTEND_MAX_MIC_CHANNELS];
+    uint32_t channels;
+} ap_hpf_state_t;
 
-void ap_frontend_init(ap_frontend_state_t *state,
-                      uint32_t sample_rate_hz,
-                      float mic_spacing_mm);
-void ap_hpf_process(ap_frontend_state_t *state,
+typedef struct ap_beamformer_state {
+    float history[AP_FRONTEND_MAX_MIC_CHANNELS][AP_BF_HISTORY];
+    int lag;
+    int max_lag;
+    uint32_t counter;
+} ap_beamformer_state_t;
+
+void ap_hpf_init(ap_hpf_state_t *state,
+                 uint32_t sample_rate_hz,
+                 uint32_t channels);
+void ap_hpf_process(ap_hpf_state_t *state,
                     float *x,
                     uint32_t n,
                     uint32_t channel);
-void ap_beamform(ap_frontend_state_t *state,
-                 int track_direction,
-                 float *a,
-                 float *b,
-                 float *out,
-                 uint32_t n);
+
+void ap_beamformer_init(ap_beamformer_state_t *state,
+                        uint32_t sample_rate_hz,
+                        float mic_spacing_mm);
+void ap_beamformer_process(ap_beamformer_state_t *state,
+                           int track_direction,
+                           float *mic0,
+                           float *mic1,
+                           float *out,
+                           uint32_t n);
 
 #endif

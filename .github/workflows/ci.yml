@@ -20,6 +20,62 @@ jobs:
       - name: Enforce module and platform boundaries
         run: sh scripts/check-architecture.sh
 
+  composition-contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+          - composition-voice-frontend
+          - composition-raw
+          - composition-aec-only
+          - composition-ns-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure ${{ matrix.preset }}
+        run: cmake --preset ${{ matrix.preset }}
+      - name: Build ${{ matrix.preset }}
+        run: cmake --build build/${{ matrix.preset }} --parallel
+      - name: Test ${{ matrix.preset }}
+        run: ctest --test-dir build/${{ matrix.preset }} --output-on-failure
+      - name: Install composition SDK
+        run: |
+          prefix="$PWD/stage/${{ matrix.preset }}"
+          cmake --install build/${{ matrix.preset }} --prefix "$prefix"
+          test -f "$prefix/lib/libaudio_pipeline.a"
+          test -f "$prefix/include/audio_pipeline/audio_types.h"
+          test -f "$prefix/include/audio_pipeline/audio_modules.h"
+          test -f "$prefix/include/audio_pipeline/audio_pipeline_build.h"
+          case "${{ matrix.preset }}" in
+            composition-aec-only|composition-ns-only)
+              test ! -e "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
+            *)
+              test -f "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
+          esac
+
+  composition-size-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure representative graphs
+        run: |
+          cmake --preset composition-full
+          cmake --preset composition-voice-frontend
+          cmake --preset composition-raw
+      - name: Build state-size probes
+        run: |
+          cmake --build build/composition-full --target ap_state_size --parallel
+          cmake --build build/composition-voice-frontend --target ap_state_size --parallel
+          cmake --build build/composition-raw --target ap_state_size --parallel
+      - name: Verify physical RAM pruning
+        run: |
+          full=$(./build/composition-full/ap_state_size)
+          voice=$(./build/composition-voice-frontend/ap_state_size)
+          raw=$(./build/composition-raw/ap_state_size)
+          echo "pipeline_state_bytes full=$full voice_frontend=$voice raw=$raw"
+          test "$voice" -lt "$full"
+          test "$raw" -lt "$voice"
+
   native:
     runs-on: ubuntu-latest
     strategy:
@@ -40,7 +96,10 @@ jobs:
           cmake --install build --prefix "$PWD/stage"
           test -f stage/lib/libaudio_pipeline.a
           test -f stage/lib/libaudio_pipeline_runtime.a
+          test -f stage/include/audio_pipeline/audio_types.h
           test -f stage/include/audio_pipeline/audio_pipeline.h
+          test -f stage/include/audio_pipeline/audio_modules.h
+          test -f stage/include/audio_pipeline/audio_pipeline_build.h
           test -f stage/include/audio_pipeline/audio_runtime.h
       - name: Benchmark smoke
         run: ./build/ap_bench 2 0.35 9000 active

@@ -2,106 +2,114 @@
 
 ## Product goals
 
-1. One classical voice front end for low-compute Arm Linux product families, not one CPU model.
+1. One classical voice SDK for low-compute Arm Linux product families, not one CPU model.
 2. Fixed 10 ms scheduling, bounded caller-owned state and allocation-free synchronous DSP.
 3. Heavy compute stays at 8/16 kHz even when device I/O is 24/32/48 kHz.
-4. Compile-time AEC/SIMD selection; no hot-path plugin dispatch.
-5. Linux/threading is an adapter around a portable core.
-6. Resource class, runtime quality and CPU build profile remain independent.
-7. DSP stages own their state and expose narrow contracts; only core owns the composite graph/public telemetry.
+4. High-level pipeline and standalone module SDK reuse one implementation set.
+5. Compile-time product composition physically removes unused TUs/state; runtime composition selects a legal subset of compiled stages.
+6. No arbitrary DAG, dynamic plugin discovery or hot-path function-pointer dispatch.
+7. Linux/threading remains an adapter around the portable synchronous APIs.
 
-## Production modules
-
-```text
-src/core/            public config/lifecycle, composite state, graph orchestration, telemetry aggregation
-src/frontend/        rate boundary, HPF, 2-mic beamformer state
-src/sync/            render history, delay/route-jump/clock-drift state and events
-src/aec/             MDF or NLMS compile-time backend state/results
-src/enhance/         broadband/subband RES, NS, AGC, VAD state/results
-src/dsp/             FFT/math primitives and DSP data types
-src/arch/scalar/     portable kernels
-src/arch/arm_neon/   Arm NEON kernels
-src/platform/linux/  optional SPSC worker/runtime policy
-```
-
-The dependency direction and realtime rules are enforced by `scripts/check-architecture.sh`.
-
-## State ownership and dependency direction
-
-The portable DSP is intentionally not a set of files sharing one giant internal object. `src/core/ap_pipeline_internal.h` is the only place that composes the full pipeline state. Each stage owns its own private state type and receives only the samples/scalars required for that operation.
+## Layers
 
 ```text
-                     +-> frontend -> dsp
-                     |
-public API -> core --+-> sync -----> dsp
-                     |
-                     +-> AEC ------> dsp + arch
-                     |
-                     +-> enhance --> dsp
-
-platform/linux -> public API
+application
+   |
+   +--> high-level pipeline API -----+
+   |                                  |
+   +--> standalone module SDK --------+--> stage implementations --> dsp/arch
+                                      |
+platform/linux runtime --> pipeline API
 ```
 
-Sibling stages do not call each other. Cross-stage effects are events/results returned to core. For example, the synchronization layer reports a route jump; core increments public telemetry and resets the AEC backend. The sync module never knows that an AEC implementation exists.
-
-Likewise, frontend/AEC/sync/enhancement code cannot reference `ap_pipeline_t`, `ap_config_t` or `ap_metrics_t`. Core is the single owner of public configuration policy and public metrics aggregation. This makes a backend or stage replaceable without exposing the complete pipeline memory layout.
-
-Physical module separation is combined with CMake unity compilation for the selected core/backend/kernel set, preserving cross-module inlining without reintroducing source-level state coupling.
-
-## Data plane
+Production ownership:
 
 ```text
-render/DAC reference -> bounded ring -> delay + ppm drift ----------------+
-                                                                         v
-mic S16 -> rate -> HPF -> optional 2-mic BF -> mono -> AEC -> predicted echo
-                                                      |                  |
-                                                      v                  v
-                                                 residual ----------> RES/NS
-                                                                         |
-                                                                    VAD -> AGC
-                                                                         |
-                                                               rate -> mono S16
+src/core/            public config/lifecycle, composite state, fixed graph orchestration, telemetry
+src/frontend/        resampler, HPF, beamformer
+src/sync/            render history, delay/route-jump/clock-drift
+src/aec/             MDF or NLMS backend
+src/enhance/         RES, NS, AGC, VAD
+src/modules/         public standalone adapters only
+src/dsp/             FFT/math primitives and DSP types
+src/arch/            scalar/NEON kernels
+src/platform/linux/  optional SPSC runtime
 ```
 
-AEC runs once after microphone combination, not per microphone.
+The dependency direction and realtime rules are enforced by `scripts/check-architecture.sh`. Stage implementations never depend upward on core or `src/modules`. Core never calls the standalone wrapper layer; both consumers call the same lower implementation contracts.
 
-## Product resource versus runtime degradation
+## Build-time graph
 
-These dimensions are intentionally separate:
+`AP_MODULES` defines which product capabilities physically exist. CMake compiles only those stage translation units and wraps pipeline state members with `AP_BUILD_STAGE_*` conditions. This is the ROM/RAM pruning boundary.
 
-- `CALL` / `ASSISTANT`: user experience/use case;
-- `TINY` / `LOW` / `STANDARD`: nominal product resource envelope;
-- `FULL` / `LITE` / `SAFE`: runtime overload response.
+The generated installed `audio_pipeline_build.h` records the resulting capability set. Module-only builds can ship AEC or NS without the high-level pipeline header/runtime.
 
-A Cortex-A7 product may pass `STANDARD`; a Cortex-A32 product may deliberately ship `LOW`. The architecture never maps CPU model to resource class.
+Representative graphs:
 
-## Architecture kernels
+```text
+FULL:          RESAMPLER HPF BF SYNC AEC RES NS AGC VAD
+VOICE_FRONTEND:RESAMPLER HPF BF              NS AGC VAD
+RAW:           RESAMPLER
+AEC_ONLY:                           AEC
+NS_ONLY:                                    NS
+```
 
-AEC implementations call a small internal kernel contract for dot products and vector/complex updates. CMake compiles exactly one implementation:
+The first three may build the high-level pipeline; AEC_ONLY/NS_ONLY are standalone-SDK products. CI verifies physical high-level pipeline state pruning: full > voice frontend > RAW.
 
-- scalar C;
-- Arm NEON.
+## Runtime graph
 
-There is no runtime CPU detection or function-pointer dispatch. CPU model and `-mcpu/-mfpu` settings live in build presets/certification records only.
+For a build containing the high-level pipeline, `ap_config_t.stages` chooses a subset of compiled DSP stages. It never changes topology. The execution order remains:
 
-## Synchronization and clock domains
+```text
+rate -> HPF -> BF -> SYNC -> AEC -> RES/NS -> AGC -> VAD -> rate
+```
 
-The caller supplies the actual post-mix/post-gain DAC reference. Every ~100 ms the synchronization module performs a bounded coarse correlation plus one-sample local fine search.
+Validation encodes the semantic edges instead of letting illegal graphs fail later:
 
-- >20 ms mismatch emits a route/buffer-jump event;
-- small mismatch feeds a ppm estimator;
-- fractional drift is integrated and reference alignment moves by individual samples.
+```text
+BF  requires 2 microphone channels
+AEC requires SYNC
+RES requires AEC
+delay/drift policies require SYNC
+runtime stages must be subset of compiled stages
+```
 
-Core interprets a route-jump event by resetting the selected AEC backend. This keeps synchronization independent from AEC implementation details.
+RESAMPLER is a mandatory high-level boundary component, not an `AP_STAGE_*` bit, so RAW is represented by an empty DSP stage mask.
 
-This is a lightweight AEC-reference alignment controller, not a full-band ASRC. Hardware capture/playback timestamps should seed/narrow it when available.
+## State ownership
+
+`src/core/ap_pipeline_internal.h` is the only full-pipeline composite state. Every selected stage owns a distinct state type. Conditional members mean an omitted module contributes zero resident pipeline state.
+
+Standalone state is also caller-owned. The wrapper may add only small adapter metadata such as configured frame size; it embeds/reuses the same stage state rather than maintaining a parallel algorithm implementation.
+
+Current GCC CI measurements are:
+
+```text
+full pipeline           78,456 B
+voice frontend           9,936 B
+RAW/resampler-only       3,392 B
+```
+
+These establish pruning behavior, not a cross-compiler ABI promise.
+
+## Data/control interactions
+
+Cross-stage effects are returned to core as events/results rather than sibling calls. SYNC reports route jumps; core resets AEC only when AEC is selected. Shared far-end/double-talk activity is computed once and passed to AEC/RES/NS.
+
+Standalone AEC intentionally accepts activity and aligned reference from its caller. An application that wants repository-owned delay/drift may compose standalone SYNC before standalone AEC itself. This keeps AEC independently reusable without silently importing a 32 KiB render ring.
+
+## Performance strategy
+
+Source ownership stays modular. The full high-level target uses CMake unity compilation to preserve cross-module inlining/cache locality. Module-only builds retain independent TUs so the linker can prune at object granularity.
+
+No runtime node objects, virtual tables or generic graph executor are used. The composition layer is deliberately finite and static because low-end Cortex-A7/A32 determinism is more important than desktop-style arbitrary graph flexibility.
 
 ## Linux runtime
 
-The runtime is Linux-specific and optional. It provides bounded SPSC input/output queues and one sleeping DSP worker. Default policy is topology-neutral (`dsp_cpu=-1`, `dsp_priority=0`). Affinity and `SCHED_FIFO` are explicit product integration choices.
+The Linux runtime observes the initialized stage mask. Duplex graphs feed render only when SYNC exists; capture-only graphs process without a render path. It still uses bounded SPSC queues and a sleeping worker with topology-neutral defaults (`dsp_cpu=-1`, `dsp_priority=0`).
 
-ARMv7-A is treated as a first-class runtime target: queue/counter atomics use lock-free-width 32-bit objects rather than assuming cheap 64-bit atomic operations.
+ARMv7-A remains first-class: realtime counters use lock-free-width 32-bit atomics rather than assuming cheap 64-bit atomics.
 
-## Memory ownership
+## CPU/platform separation
 
-`ap_pipeline_init()` and `ap_runtime_init()` consume caller-owned aligned fixed storage. Alignment and exact-size functions are public contracts. Module-owned states are embedded directly in the one caller-owned pipeline object; there are no per-module heap allocations or duplicate public telemetry/config copies.
+AEC kernels compile as scalar or NEON without algorithm code naming Cortex models. CPU model and `-mcpu/-mfpu` settings live in build presets/certification records. Resource class, compiled graph and runtime FULL/LITE/SAFE quality are independent product dimensions.

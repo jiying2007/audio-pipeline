@@ -52,6 +52,16 @@ jobs:
           CC: gcc
         run: sh scripts/compare-perf.sh origin/main 7 20
 
+  runtime-perf-compare:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Same-runner runtime main vs candidate
+        env:
+          CC: gcc
+        run: sh scripts/compare-runtime-perf.sh origin/main 7 10000 5000
+
   strict-clang:
     runs-on: ubuntu-latest
     steps:

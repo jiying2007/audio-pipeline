@@ -21,6 +21,7 @@
 #define AP_AEC_FFT_MAX (AP_AEC_BLOCK_MAX * 2u)
 #define AP_AEC_BINS_MAX (AP_AEC_FFT_MAX / 2u + 1u)
 #define AP_AEC_PARTITIONS_MAX 60u
+#define AP_PIPELINE_RESIDENT_BUDGET_BYTES 83000u
 
 _Static_assert((AP_RENDER_CAP & (AP_RENDER_CAP - 1u)) == 0u,
                "AP_RENDER_CAP must remain a power of two");
@@ -78,13 +79,23 @@ struct ap_pipeline {
     float hpf_x[AP_MAX_MIC_CHANNELS];
     float hpf_y[AP_MAX_MIC_CHANNELS];
 
-    float mic0[AP_INTERNAL_FRAME_MAX];
-    float mic1[AP_INTERNAL_FRAME_MAX];
-    float mono[AP_INTERNAL_FRAME_MAX];
-    float reference[AP_INTERNAL_FRAME_MAX];
-    float aec_out[AP_INTERNAL_FRAME_MAX];
+    /* These frame buffers are live in strictly sequential stages:
+     * mic0 -> reference, mic1 -> aec_out, mono -> ns_out. Reusing their
+     * storage keeps the synchronous data plane unchanged while removing three
+     * resident 160-float scratch buffers from every pipeline instance. */
+    union {
+        float mic0[AP_INTERNAL_FRAME_MAX];
+        float reference[AP_INTERNAL_FRAME_MAX];
+    };
+    union {
+        float mic1[AP_INTERNAL_FRAME_MAX];
+        float aec_out[AP_INTERNAL_FRAME_MAX];
+    };
+    union {
+        float mono[AP_INTERNAL_FRAME_MAX];
+        float ns_out[AP_INTERNAL_FRAME_MAX];
+    };
     float echo_estimate[AP_INTERNAL_FRAME_MAX];
-    float ns_out[AP_INTERNAL_FRAME_MAX];
     float work[AP_INTERNAL_FRAME_MAX];
 
     float bf_history[AP_MAX_MIC_CHANNELS][AP_BF_HISTORY];
@@ -123,6 +134,9 @@ struct ap_pipeline {
     uint32_t vad_hangover;
     ap_quality_t quality;
 };
+
+_Static_assert(sizeof(struct ap_pipeline) <= AP_PIPELINE_RESIDENT_BUDGET_BYTES,
+               "pipeline resident state exceeded the 83 kB product budget");
 
 void ap_fft(ap_complex_t *x, uint32_t n, int inverse);
 float ap_clampf(float x, float lo, float hi);

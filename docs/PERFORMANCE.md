@@ -36,7 +36,7 @@ For optimization branches, `scripts/compare-perf.sh` builds `main` and the candi
 sh scripts/compare-perf.sh origin/main 7 20
 ```
 
-The CI comparator fails only on a clear >10% same-runner regression. Smaller deltas are diagnostic: a sub-percent hosted improvement is not a Cortex-A32 performance claim.
+The CI comparator fails only on a clear >10% same-runner regression. Smaller deltas are diagnostic: a sub-percent hosted improvement is not a Cortex-A32 performance claim. Isolated same-runner comparators also exercise NS/RES and all fixed boundary-resampler rate paths so local hot-path changes are not hidden by the full pipeline average.
 
 ## Current low-compute hot-path policy
 
@@ -51,9 +51,12 @@ The default implementation deliberately trades small, bounded state/ROM changes 
 - fixed AGC target/limiter dB values and the physical beamformer lag limit are converted once during initialization instead of recomputing `powf`/`ceilf` in the frame path;
 - the 8192-sample render ring is compile-time asserted to be power-of-two and uses a mask rather than variable remainder indexing;
 - the NLMS fallback uses an adaptation phase counter instead of a per-sample modulo operation;
-- bounded energy/correlation accumulators over normalized audio windows use FP32, while filter coefficients, public configuration semantics and algorithm topology remain unchanged.
+- bounded energy/correlation accumulators over normalized audio windows use FP32, while filter coefficients, public configuration semantics and algorithm topology remain unchanged;
+- fixed 10 ms 8/16/24/32/48 kHz boundary ratios use direct/fixed-phase linear paths while retaining the generic interpolation fallback for future geometries;
+- three strictly sequential 160-sample frame-scratch pairs share storage (`mic0/reference`, `mic1/aec_out`, `mono/ns_out`);
+- frequency RES retains only the unique-bin echo power after its forward FFT and then reuses the same 512-point complex scratch for the near-end FFT instead of keeping a second resident complex spectrum.
 
-The rolling MDF power state plus scalar precomputed controls increase the current pipeline state only slightly and remain well below the 128 KiB public ceiling. The FFT table affects code/rodata, not caller-owned pipeline state.
+The default MDF pipeline currently occupies **79,728 bytes** of caller-owned state on the CI reference build. An internal **80,000-byte compile-time product gate** prevents resident state from silently growing back above this level, while the public API ceiling remains 128 KiB for ABI/integration headroom. Compared with the pre-RAM-optimization 84,712-byte layout, the current state is 4,984 bytes smaller (about 5.9%). The FFT table affects code/rodata, not caller-owned pipeline state.
 
 GitHub-hosted x86 benchmark changes are useful **directional regression signals only**. Hosted runners are not pinned to identical CPUs, regions or load. Even the same-runner comparator is a regression tool, not permission to publish an x86 percentage as Cortex-A32 performance. The same active/idle commands must be rerun on the real target to decide the final ROM/CPU trade for a shipping SKU.
 
@@ -66,7 +69,7 @@ GitHub-hosted x86 benchmark changes are useful **directional regression signals 
 | 10 ms deadline misses | 0 nominal |
 | Two-core average CPU | target <=35-40%, lower preferred |
 | Pipeline/runtime steady-state heap growth | 0 in data plane |
-| Pipeline state | <=128 KiB API ceiling |
+| Pipeline state | <=80,000 B internal product gate; <=128 KiB public API ceiling |
 | Runtime state | <=64 KiB API ceiling |
 | Input-full/output-drop | 0 nominal |
 | DSP overruns | 0 nominal |
@@ -83,10 +86,11 @@ The release gate is:
 - SDK install smoke for core/runtime static libraries and public headers;
 - active and assistant-idle benchmark smoke;
 - same-runner main-vs-candidate median performance comparison on non-main branches;
+- isolated same-runner NS/RES and fixed-ratio boundary-resampler comparisons;
 - strict Clang warnings;
 - ASan/UBSan including the Linux runtime integration test;
 - MDF default and NLMS fallback;
-- 8/16/24/32/48 kHz contracts;
+- 8/16/24/32/48 kHz contracts plus full-DSP smoke across all IO/internal-rate geometries;
 - AEC convergence/geometry/double-talk;
 - slow drift + sample-slip and abrupt route-jump reset;
 - frequency RES and SAFE/double-talk fallback;

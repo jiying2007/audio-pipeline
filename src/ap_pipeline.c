@@ -507,29 +507,36 @@ static void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
         return;
     }
 
+    /* Frequency RES consumes only echo magnitude power. Reuse the single
+     * complex FFT scratch sequentially: transform echo first, retain its
+     * unique-bin power, then overwrite the scratch with the near-end window. */
+    if (freq_res) {
+        for (i = 0u; i < f; ++i) {
+            s->spectrum[i].re = s->previous_echo[i] * s->window[i];
+            s->spectrum[i].im = 0.0f;
+            s->spectrum[f + i].re = echo[i] * s->window[f + i];
+            s->spectrum[f + i].im = 0.0f;
+        }
+        memset(s->spectrum + win, 0, (nfft - win) * sizeof(s->spectrum[0]));
+        ap_fft(s->spectrum, nfft, 0);
+        for (k = 0u; k < bins; ++k) {
+            const float er = s->spectrum[k].re;
+            const float ei = s->spectrum[k].im;
+            s->echo_power[k] = er * er + ei * ei;
+        }
+    }
+
     for (i = 0u; i < f; ++i) {
         const float previous = s->previous[i];
-        const float previous_echo = s->previous_echo[i];
         s->spectrum[i].re = previous * s->window[i];
         s->spectrum[i].im = 0.0f;
         s->spectrum[f + i].re = in[i] * s->window[f + i];
         s->spectrum[f + i].im = 0.0f;
         s->previous[i] = in[i];
-
-        if (freq_res) {
-            s->echo_spectrum[i].re = previous_echo * s->window[i];
-            s->echo_spectrum[i].im = 0.0f;
-            s->echo_spectrum[f + i].re = echo[i] * s->window[f + i];
-            s->echo_spectrum[f + i].im = 0.0f;
-        }
         s->previous_echo[i] = echo[i];
     }
     memset(s->spectrum + win, 0, (nfft - win) * sizeof(s->spectrum[0]));
-    if (freq_res)
-        memset(s->echo_spectrum + win, 0,
-               (nfft - win) * sizeof(s->echo_spectrum[0]));
     ap_fft(s->spectrum, nfft, 0);
-    if (freq_res) ap_fft(s->echo_spectrum, nfft, 0);
 
     for (k = 0u; k < bins; ++k) {
         const float re = s->spectrum[k].re;
@@ -539,9 +546,7 @@ static void ap_ns_process(ap_pipeline_t *p, const float *in, const float *echo,
         float res_gain = 1.0f;
 
         if (freq_res) {
-            const float er = s->echo_spectrum[k].re;
-            const float ei = s->echo_spectrum[k].im;
-            const float echo_power = er * er + ei * ei;
+            const float echo_power = s->echo_power[k];
             const float beta = p->quality == AP_QUALITY_FULL ? 1.4f : 0.75f;
             const float floor_gain = p->quality == AP_QUALITY_FULL ? 0.10f : 0.18f;
             const float target = ap_clampf(

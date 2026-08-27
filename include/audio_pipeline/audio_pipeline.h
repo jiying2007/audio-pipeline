@@ -12,7 +12,9 @@ extern "C" {
 #define AP_MAX_MIC_CHANNELS 2u
 #define AP_MAX_IO_RATE_HZ 48000u
 #define AP_MAX_IO_FRAME_SAMPLES (AP_MAX_IO_RATE_HZ / 100u)
-#define AP_PIPELINE_STATE_MAX_BYTES (128u * 1024u)
+/* Hard caller-owned static state ceiling for the current implementation.
+ * ap_pipeline_state_size() returns the exact build-specific requirement. */
+#define AP_PIPELINE_STATE_MAX_BYTES 80000u
 
 typedef enum ap_status {
     AP_OK = 0,

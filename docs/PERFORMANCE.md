@@ -56,7 +56,7 @@ The default implementation deliberately trades small, bounded state/ROM changes 
 - three strictly sequential 160-sample frame-scratch pairs share storage (`mic0/reference`, `mic1/aec_out`, `mono/ns_out`);
 - frequency RES retains only the unique-bin echo power after its forward FFT and then reuses the same 512-point complex scratch for the near-end FFT instead of keeping a second resident complex spectrum.
 
-The default MDF pipeline currently occupies **79,728 bytes** of caller-owned state on the CI reference build. An internal **80,000-byte compile-time product gate** prevents resident state from silently growing back above this level, while the public API ceiling remains 128 KiB for ABI/integration headroom. Compared with the pre-RAM-optimization 84,712-byte layout, the current state is 4,984 bytes smaller (about 5.9%). The FFT table affects code/rodata, not caller-owned pipeline state.
+The default MDF pipeline currently occupies **79,728 bytes** of caller-owned state on the CI reference build. `AP_PIPELINE_STATE_MAX_BYTES` is now the single **80,000-byte public and compile-time product ceiling**, so static embedded allocations no longer reserve the previous 128 KiB envelope. Compared with that former public ceiling, callers using the macro directly can release 51,072 bytes of reserved RAM; compared with the pre-RAM-optimization 84,712-byte implementation layout, the resident object itself is 4,984 bytes smaller (about 5.9%). The FFT table affects code/rodata, not caller-owned pipeline state.
 
 GitHub-hosted x86 benchmark changes are useful **directional regression signals only**. Hosted runners are not pinned to identical CPUs, regions or load. Even the same-runner comparator is a regression tool, not permission to publish an x86 percentage as Cortex-A32 performance. The same active/idle commands must be rerun on the real target to decide the final ROM/CPU trade for a shipping SKU.
 
@@ -69,7 +69,7 @@ GitHub-hosted x86 benchmark changes are useful **directional regression signals 
 | 10 ms deadline misses | 0 nominal |
 | Two-core average CPU | target <=35-40%, lower preferred |
 | Pipeline/runtime steady-state heap growth | 0 in data plane |
-| Pipeline state | <=80,000 B internal product gate; <=128 KiB public API ceiling |
+| Pipeline state | <=80,000 B public/static product ceiling |
 | Runtime state | <=64 KiB API ceiling |
 | Input-full/output-drop | 0 nominal |
 | DSP overruns | 0 nominal |

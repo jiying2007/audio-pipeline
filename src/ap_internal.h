@@ -21,7 +21,7 @@
 #define AP_AEC_FFT_MAX (AP_AEC_BLOCK_MAX * 2u)
 #define AP_AEC_BINS_MAX (AP_AEC_FFT_MAX / 2u + 1u)
 #define AP_AEC_PARTITIONS_MAX 60u
-#define AP_PIPELINE_RESIDENT_BUDGET_BYTES 80000u
+#define AP_PIPELINE_RESIDENT_BUDGET_BYTES AP_PIPELINE_STATE_MAX_BYTES
 
 _Static_assert((AP_RENDER_CAP & (AP_RENDER_CAP - 1u)) == 0u,
                "AP_RENDER_CAP must remain a power of two");
@@ -139,7 +139,7 @@ struct ap_pipeline {
 };
 
 _Static_assert(sizeof(struct ap_pipeline) <= AP_PIPELINE_RESIDENT_BUDGET_BYTES,
-               "pipeline resident state exceeded the 80 kB product budget");
+               "pipeline resident state exceeded the public static-state ceiling");
 
 void ap_fft(ap_complex_t *x, uint32_t n, int inverse);
 float ap_clampf(float x, float lo, float hi);

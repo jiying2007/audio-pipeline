@@ -3,6 +3,7 @@
 
 static float smooth_energy(float old_value, float value) {
     const float alpha = value > old_value ? 0.35f : 0.08f;
+    if (old_value <= 0.0f) return value;
     return old_value + alpha * (value - old_value);
 }
 

@@ -2,95 +2,115 @@
 
 [English](README.md) | 简体中文
 
-面向**低算力 Arm Linux 产品族**的轻依赖、无堆分配实时语音前端与可组合 DSP SDK。目标不是绑定某一颗 CPU，而是在同一代码资产上长期覆盖 ARMv7-A、ARMv8-A/AArch32 以及同等语音算力档位的 AArch64 产品，例如 Cortex-A7、Cortex-A32 等。
+`audio-pipeline` 是面向**低算力 Arm Linux 产品**的轻依赖、无动态分配实时语音前端与可组合 DSP SDK。同一套源码覆盖 ARMv7-A/Cortex-A7、Cortex-A32 类 AArch32，以及具有相近语音处理预算的 AArch64 产品。CPU 型号只属于构建/认证配置，不进入 DSP 算法依赖。
 
-高层 pipeline 采用拓扑安全的固定顺序：
+默认高层链路采用固定且可验证的安全顺序：
 
-`S16采集 -> 边界采样率适配 -> HPF -> 双麦BF -> 延时/时钟漂移 -> AEC -> RES -> STFT Wiener NS -> AGC -> VAD -> 单声道S16`
+`S16采集 -> 采样率适配 -> HPF -> 双麦BF -> SYNC -> Activity/DTD -> AEC -> RES -> NS -> AGC -> VAD -> 单声道S16`
 
-公共帧长固定 10 ms；设备侧支持 8/16/24/32/48 kHz，重 DSP 始终工作在 8 或 16 kHz。同步数据面全部使用调用者提供的有界内存，不 malloc、不加 mutex，也不做运行时 SIMD/插件分发。
+公开帧长固定为 10 ms。设备 I/O 在构建包络允许范围内支持 8/16/24/32/48 kHz；重 DSP 只运行在 8 或 16 kHz。同步数据面使用调用方持有的有界状态，不使用 heap、mutex，也没有运行时 SIMD/plugin dispatch。
 
-## 两种正式使用方式
+## 两种集成方式
 
-**高层组合 pipeline。** `ap_config_t.stages` 选择当前 binary 已编入模块的合法运行时子集。顺序固定并在 init 时校验，不提供任意 DAG。可形成完整 CALL、capture-only voice frontend、RAW rate-adapter 等链路。
+**高层组合 Pipeline。** `ap_config_t.stages` 从当前二进制已经编入的 stage 中选择合法运行子集。处理顺序固定，不设计成任意 DAG。
 
-**独立 Module SDK。** `audio_pipeline/audio_modules.h` 提供 Resampler、HPF、BF、Sync、AEC、RES、NS、AGC、VAD 的 caller-owned standalone API。它们直接复用高层 pipeline 的同一内部算法实现，不维护第二套 DSP。
+**Standalone Module SDK。** `audio_pipeline/audio_modules.h` 独立提供 resampler、HPF、BF、SYNC、Activity/DTD、AEC、RES、NS、AGC、VAD。Standalone wrapper 与高层 Pipeline 共用同一套私有算法实现，不维护两套 DSP。
 
 编译期产品组合：
 
 ```text
 AP_BUILD_PIPELINE=ON|OFF
-AP_MODULES=RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD
+AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
 ```
 
-模块从 `AP_MODULES` 移除后，不只是运行时 bypass，而是对应 translation unit 和 pipeline 常驻 state 都从构建中物理移除。安装后的 generated `audio_pipeline_build.h` 通过 `AP_HAVE_PIPELINE` / `AP_HAVE_MODULE_*` 给出当前 SDK 的能力事实源。
+未出现在 `AP_MODULES` 的模块会真实移除实现 TU 和 resident state，而不是仅运行时 bypass。
 
-代表性 preset：
+代表性 presets：
 
 ```bash
 cmake --preset composition-full
+cmake --preset composition-low
+cmake --preset composition-tiny
 cmake --preset composition-voice-frontend
 cmake --preset composition-raw
 cmake --preset composition-aec-only
 cmake --preset composition-ns-only
+cmake --preset composition-activity-only
+cmake --preset composition-fast-resampler
 ```
 
-当前 GCC CI 的 state-size gate 实测：完整图 **78,456 B**、voice frontend **9,936 B**、RAW/resampler-only **3,392 B**。这些数字用于证明物理裁剪成立，不是跨 ABI/compiler 永久常量；产品必须使用对应 build 的精确 `*_state_size()`。
-
-## 组合约束
-
-init 阶段统一校验：
-
-- BF 必须是双麦；
-- AEC 必须有 SYNC/reference alignment；
-- RES 必须有 AEC；
-- delay/drift 子策略必须有 SYNC；
-- runtime `stages` 必须是当前 binary 已编译 stage 的子集。
-
-RAW pipeline 可以没有任何 `AP_STAGE_*` DSP bit；RESAMPLER 属于边界模块而不是 DSP stage。capture-only 组合不要求 render reference，Linux runtime 也只在存在 SYNC 时提交 render。
-
-## 三个独立产品维度
-
-- **场景**：`AP_PROFILE_CALL` / `AP_PROFILE_ASSISTANT`；
-- **资源档**：`AP_RESOURCE_TINY` / `AP_RESOURCE_LOW` / `AP_RESOURCE_STANDARD`；
-- **运行时质量状态**：`FULL` / `LITE` / `SAFE`。
-
-`TINY` 默认使用 8 kHz 内部链路、短 AEC tail、关闭 BF 跟踪；`LOW` 保持 16 kHz 但缩短 AEC tail；`STANDARD` 保留完整语音带宽几何。它们不是 Cortex-A7/A32 的硬编码映射，最终仍按实板认证。
-
-## 模块边界
+当前 hosted GCC Quality gate 已证明 Pipeline RAM 会物理裁剪：
 
 ```text
-src/core/            pipeline/config/编排
-src/frontend/        resampler、HPF、BF
-src/sync/            render延时与时钟漂移
-src/aec/             MDF/NLMS编译期后端
-src/enhance/         RES、NS、AGC、VAD
-src/modules/         public standalone adapter
-src/dsp/             FFT/数学基础
-src/arch/scalar/     纯C scalar kernel
-src/arch/arm_neon/   Arm NEON kernel
-src/platform/linux/  Linux pthread/semaphore SPSC runtime
+full   78,072 B
+LOW    46,904 B
+TINY   25,384 B
+RAW     1,064 B
 ```
 
-算法 stage 不依赖 public module wrapper；wrapper 只向下调用 stage，core 也不会反过来经过 wrapper。完整 pipeline 保留 CMake unity compilation 以维持跨模块 inline，但源码所有权/state 边界仍独立。
+Linux runtime 同样受 build envelope 控制：当前 hosted 参考为完整 48 kHz/depth-8 **31,824 B**，约束后的 16 kHz/depth-4 TINY **4,464 B**。这些数字只用于证明当前 compiler/ABI 下的物理裁剪；发货应始终读取 exact size API。
 
-## 构建策略
+## SKU 构建包络
 
-正式构建开关：
+除模块集合外，每个产品可以在编译期限制最大几何：
 
 ```text
-AP_BUILD_PIPELINE=ON|OFF
-AP_MODULES=...
-AP_AEC_BACKEND=MDF|NLMS
-AP_NS_ESTIMATOR=EMA|MCRA
-AP_SIMD_BACKEND=SCALAR|NEON
-AP_ENABLE_LINUX_RUNTIME=ON|OFF
-AP_ENABLE_FAST_MATH=ON|OFF
+AP_BUILD_MAX_IO_RATE_HZ
+AP_BUILD_MAX_INTERNAL_RATE_HZ
+AP_BUILD_MAX_MIC_CHANNELS
+AP_BUILD_MAX_DELAY_MS
+AP_BUILD_MAX_AEC_TAIL_MS
+AP_RUNTIME_QUEUE_DEPTH
 ```
 
-`fast-math` 默认 OFF，属于产品性能策略，不写死到 CPU toolchain。
+这些限制会按条件缩小 AEC partitions、SYNC render history、scratch 和 runtime queue。它们是 SKU 编译约束，与运行时 `TINY/LOW/STANDARD` 策略相互独立。
 
-本机 Linux：
+生成的 `audio_pipeline_build.h` 与 `ap_build_info()` 会给出实际二进制 fingerprint：版本、模块 mask、AEC/NS/SIMD/resampler backend、fast-math 以及最大构建几何。
+
+## DSP 与实时策略
+
+- AEC：默认 MDF，可编译切换 NLMS fallback。
+- NS estimator：默认 EMA，clean-room MCRA 为 opt-in。
+- SIMD：编译期 SCALAR/NEON。
+- Resampler：默认 BANDLIMITED，可显式选择 legacy-speed FAST fallback。
+- fast-math：默认关闭，绝不隐藏到 CPU toolchain。
+- Activity/DTD 已成为复用模块，高层 AEC/RES 不再复制独立判定。
+- ERLE 仅在 AEC + far-end-only + 非双讲时有效，并显式提供 convergence 状态。
+- 大的 correlation/timestamp path jump 会重置失效的 AEC convergence epoch。
+
+默认边界 resampler 对当前固定下采样比例使用小型 FIR 以抑制 alias；FAST 保留原有轻量插值/抽取行为。API 提供 resampler filter delay，高层 algorithmic latency 会计入该延迟。
+
+## 硬件时间戳与回声路径变化
+
+如果产品可以获取可信的 capture/playback hardware timestamp，可调用：
+
+```c
+ap_pipeline_observe_io_timestamps(...);
+```
+
+两个 timestamp 必须描述同一 monotonic clock domain 中相互对应的位置。
+
+如果产品明确知道 speaker route、codec reopen、gain path 等导致 echo path 发生变化，应主动调用：
+
+```c
+ap_pipeline_notify_echo_path_change(...);
+```
+
+这样会立即清理陈旧的 SYNC/Activity/AEC 状态，而不是等待相关搜索重新发现路径。
+
+## Linux runtime 所有权
+
+同步 Pipeline/Module API 要求调用方串行化。Pipeline 交给 `audio_pipeline_runtime` 并启动 worker 后，运行期间由 worker 独占 Pipeline。
+
+每帧完整 `ap_metrics_t` 随 SPSC output snapshot 返回；控制面 `ap_runtime_get_metrics()` 只读取 runtime 自己的 atomics，不再并发读取 worker 正在修改的 Pipeline state。ThreadSanitizer CI 已覆盖该所有权模型。
+
+Runtime overload 状态与产品 resource class 分离：
+
+`FULL -> LITE -> SAFE`，健康后确定性恢复。
+
+## 构建
+
+Native Linux：
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -98,7 +118,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-跨平台 preset：
+Arm presets：
 
 ```bash
 cmake --preset armv7a-scalar
@@ -108,49 +128,68 @@ cmake --preset cortex-a32-neon
 cmake --preset aarch64-neon
 ```
 
-## 调用者内存合同
+CI 会持续 cross-build 全部 profile；Quality CI 还会在 QEMU 下实际执行 Cortex-A7 NEON 与 AArch64 的 module/contract/FFT/resampler 测试。Cross-build/QEMU 仅属于 correctness signal，不是实板性能结论。
 
-高层 pipeline 公共静态上限为 80,000 B；standalone 模块使用独立 `AP_MODULE_STATE_MAX_BYTES` 与 `AP_MODULE_STATE_ALIGNMENT`。产品分配应优先使用当前 build 对应的精确 `*_state_size()`。
+## 安装后的 SDK
 
-```c
-_Alignas(AP_PIPELINE_STATE_ALIGNMENT)
-static unsigned char pipeline_mem[AP_PIPELINE_STATE_MAX_BYTES];
+安装包正式导出 CMake package 与 pkg-config：
 
-ap_pipeline_t *pipeline = NULL;
-ap_config_t cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_LOW);
-cfg.stages = AP_STAGE_HPF | AP_STAGE_NS | AP_STAGE_AGC | AP_STAGE_VAD;
-ap_status_t rc = ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline);
+```cmake
+find_package(AudioPipeline CONFIG REQUIRED)
+target_link_libraries(app PRIVATE AudioPipeline::core)
+# Linux runtime 可选：
+target_link_libraries(app PRIVATE AudioPipeline::runtime)
 ```
 
-NULL、非法参数、未对齐内存返回 `AP_EINVAL`；内存不足返回 `AP_ENOMEM`；请求当前 SDK 未编译的 stage 返回 `AP_ESTATE`。
+或：
 
-## AEC / 同步 / 增强
+```bash
+pkg-config --cflags --libs audio-pipeline
+```
 
-默认 AEC 为 clean-room MDF/AUMDF-lite；`AP_AEC_BACKEND=NLMS` 编译独立 NLMS。默认 NS noise estimator 为 EMA；clean-room MCRA-lite 仍是 opt-in backend。
+CI 会把 SDK 安装到干净目录，再用独立 consumer 工程执行 `find_package`、编译、链接与运行，而不是只检查文件是否存在。
 
-render reference 必须是实际送 DAC 的 post-mix/post-gain 信号。大路径跳变会重置 AEC，小漂移通过 sample-slip 修正。FULL/LITE 在 RES+NS 同时选择时使用频率相关 RES；SAFE 使用宽带 RES；共享 double-talk gate 会冻结 AEC adaptation 并关闭 subband RES。
+## Quality / Release Gate
 
-## Linux runtime
+仓库自动化当前包含：
 
-portable core 不依赖 Linux。`AP_ENABLE_LINUX_RUNTIME=ON` 才构建 Linux SPSC worker。默认 `dsp_cpu=-1`、`dsp_priority=0`。runtime 已支持 capture-only composed pipeline，只有选择 SYNC 时才要求/提交 render。
+- GCC/Clang、strict、ASan/UBSan、libFuzzer smoke；
+- ThreadSanitizer runtime race 检查；
+- MDF/NLMS、EMA/MCRA、precise/fast-math、BANDLIMITED/FAST；
+- RAW/LOW/TINY/voice/module-only composition；
+- Pipeline/Runtime RAM 和最终 consumer ELF 裁剪；
+- generic ARMv7-A、Cortex-A7、Cortex-A32、AArch64 cross-build；
+- Cortex-A7 NEON / AArch64 QEMU 执行；
+- hosted 源码 line coverage >=90%、clang static analyzer、nightly fuzz；
+- acoustic eval harness/schema 与 SKU certification schema；
+- main 上按 project version 自动生成 SDK/source/SHA256 GitHub Release。
 
-## CI 与平台覆盖
+Hosted x86 的百分比仅作为 regression signal。发货结论必须来自真实 SoC/kernel/compiler/DVFS/audio route 与声学语料。
 
-CI 覆盖 GCC/Clang、strict、ASan/UBSan、fuzz、MDF/NLMS、EMA/MCRA、fast-math、ALSA、架构边界、full/RAW/voice/AEC-only/NS-only composition、物理 RAM pruning、same-runner regression，以及 generic ARMv7-A、Cortex-A7 scalar/NEON、Cortex-A32 NEON、AArch64 NEON cross-build。
+## 产品认证
 
-Hosted x86 timing 只作为回归信号。Cross-build 代表**构建支持**，不代表实板认证。CPU、RSS、温升、功耗仍必须在出货板卡、内核、编译器、DVFS、音频路由下重新跑 benchmark 与 8h soak。
+每个发货 SKU 至少应记录 CPU、p95/p99、RSS/cache/context-switch、XRUN/backpressure/overrun、thermal/power、声学 corpus 结果以及 8h soak。
+
+参考：
+
+- `docs/PLATFORM_SUPPORT.md`
+- `docs/PERFORMANCE.md`
+- `certification/record.schema.json`
+- `eval/README.md`
+
+仓库 CI 不会把 hosted/QEMU 数据包装成 Cortex-A7/A32 实板性能。
 
 ## 文档
 
-- [平台支持与认证](docs/PLATFORM_SUPPORT.md)
-- [架构](docs/ARCHITECTURE.md)
-- [API 合同](docs/API_CONTRACT.md)
-- [DSP 设计](docs/DSP_DESIGN.md)
-- [移植](docs/PORTING.md)
-- [性能与发布门禁](docs/PERFORMANCE.md)
-- [调参](docs/TUNING.md)
-- [开发/模块规范](docs/DEVELOPMENT.md)
+- `docs/API_CONTRACT.md`：公开生命周期、内存、组合、线程合同
+- `docs/ARCHITECTURE.md`：状态所有权与依赖方向
+- `docs/DSP_DESIGN.md`：算法设计
+- `docs/PERFORMANCE.md`：性能/发布/实板 gate
+- `docs/PORTING.md`：BSP/ALSA/toolchain 集成
+- `docs/TUNING.md`：产品声学调优
+- `docs/DEVELOPMENT.md`：开发与 hard-cut 规范
+- `THIRD_PARTY.md`：clean-room/reference 边界
 
 ## License
 
-Apache-2.0。最小实现不 vendoring 第三方 DSP 源码，详见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+见 [LICENSE](LICENSE)。

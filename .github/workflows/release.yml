@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Resolve project version
+        id: version
+        run: |
+          version=$(sed -n 's/^project(audio_pipeline VERSION \([0-9][0-9.]*\).*/\1/p' CMakeLists.txt)
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+      - name: Check existing release
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Ensure release tag exists
+        if: steps.existing.outputs.release != 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            test "$(git rev-list -n1 "$TAG")" = "$GITHUB_SHA"
+          else
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git tag -a "$TAG" -m "audio-pipeline $TAG" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
+      - name: Build, test and install SDK
+        if: steps.existing.outputs.release != 'true'
+        run: |
+          cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-release --parallel
+          ctest --test-dir build-release --output-on-failure
+          cmake --install build-release --prefix "$PWD/stage"
+      - name: Package SDK and checksums
+        if: steps.existing.outputs.release != 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          tar -C stage -czf "audio-pipeline-${TAG}-sdk.tar.gz" .
+          git archive --format=tar.gz -o "audio-pipeline-${TAG}-source.tar.gz" "$GITHUB_SHA"
+          sha256sum "audio-pipeline-${TAG}-sdk.tar.gz" \
+                    "audio-pipeline-${TAG}-source.tar.gz" > SHA256SUMS
+      - name: Create GitHub Release
+        if: steps.existing.outputs.release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: >-
+          gh release create "$TAG"
+          "audio-pipeline-${TAG}-sdk.tar.gz"
+          "audio-pipeline-${TAG}-source.tar.gz"
+          SHA256SUMS --verify-tag --generate-notes

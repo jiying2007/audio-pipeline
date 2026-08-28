@@ -13,17 +13,30 @@ extern "C" {
 #define AP_MODULE_STATE_ALIGNMENT 16u
 #define AP_MODULE_STATE_MAX_BYTES 40000u
 
+/* Standalone DSP APIs are caller-serialized, allocation-free and fixed at
+ * 10 ms where a sample rate is part of init. Unless documented otherwise,
+ * input/output buffers must not partially overlap. */
+
 #if AP_HAVE_MODULE_RESAMPLER
-ap_status_t ap_module_resampler_input_s16(const int16_t *input,
+typedef struct ap_resampler_module ap_resampler_module_t;
+size_t ap_module_resampler_state_size(void);
+ap_status_t ap_module_resampler_init(void *memory, size_t memory_size,
+                                     ap_resampler_module_t **out);
+void ap_module_resampler_reset(ap_resampler_module_t *module);
+ap_status_t ap_module_resampler_input_s16(ap_resampler_module_t *module,
+                                          const int16_t *input,
                                           size_t input_frames,
                                           uint32_t channels,
                                           uint32_t channel,
                                           float *output,
                                           size_t output_frames);
-ap_status_t ap_module_resampler_output_s16(const float *input,
+ap_status_t ap_module_resampler_output_s16(ap_resampler_module_t *module,
+                                           const float *input,
                                            size_t input_frames,
                                            int16_t *output,
                                            size_t output_frames);
+uint32_t ap_module_resampler_filter_delay_samples(uint32_t input_rate_hz,
+                                                  uint32_t output_rate_hz);
 #endif
 
 #if AP_HAVE_MODULE_HPF
@@ -32,6 +45,7 @@ size_t ap_module_hpf_state_size(void);
 ap_status_t ap_module_hpf_init(void *memory, size_t memory_size,
                                uint32_t sample_rate_hz, uint32_t channels,
                                ap_hpf_module_t **out);
+void ap_module_hpf_reset(ap_hpf_module_t *module);
 ap_status_t ap_module_hpf_process(ap_hpf_module_t *module,
                                   float *samples, size_t frame_samples,
                                   uint32_t channel);
@@ -44,6 +58,7 @@ ap_status_t ap_module_beamformer_init(void *memory, size_t memory_size,
                                       uint32_t sample_rate_hz,
                                       float mic_spacing_mm,
                                       ap_beamformer_module_t **out);
+void ap_module_beamformer_reset(ap_beamformer_module_t *module);
 ap_status_t ap_module_beamformer_process(ap_beamformer_module_t *module,
                                          int track_direction,
                                          float *mic0, float *mic1,
@@ -58,6 +73,7 @@ typedef struct ap_module_sync_event {
     uint32_t reference_sample_slips;
     uint8_t delay_observed;
     uint8_t route_jump;
+    uint8_t timestamp_observed;
 } ap_module_sync_event_t;
 typedef struct ap_module_sync_status {
     float estimated_drift_ppm;
@@ -67,6 +83,7 @@ size_t ap_module_sync_state_size(void);
 ap_status_t ap_module_sync_init(void *memory, size_t memory_size,
                                 uint32_t initial_delay_samples,
                                 ap_sync_module_t **out);
+void ap_module_sync_reset(ap_sync_module_t *module);
 ap_status_t ap_module_sync_push_render(ap_sync_module_t *module,
                                        const float *render, size_t samples,
                                        uint64_t processed_frames);
@@ -77,12 +94,40 @@ ap_status_t ap_module_sync_track(ap_sync_module_t *module,
                                  int enable_delay_tracking,
                                  int enable_clock_drift_compensation,
                                  ap_module_sync_event_t *event);
+ap_status_t ap_module_sync_observe_timestamps(ap_sync_module_t *module,
+                                              uint64_t capture_timestamp_ns,
+                                              uint64_t render_timestamp_ns,
+                                              uint32_t sample_rate_hz,
+                                              uint32_t max_delay_ms,
+                                              ap_module_sync_event_t *event);
 ap_status_t ap_module_sync_get_reference(ap_sync_module_t *module,
                                          size_t frame_samples,
                                          float *output,
                                          int *underrun);
 void ap_module_sync_get_status(const ap_sync_module_t *module,
                                ap_module_sync_status_t *status);
+#endif
+
+#if AP_HAVE_MODULE_ACTIVITY
+typedef struct ap_activity_module ap_activity_module_t;
+typedef struct ap_module_activity_config {
+    float far_end_threshold;
+    float double_talk_ratio;
+    uint32_t hangover_frames;
+} ap_module_activity_config_t;
+typedef struct ap_module_activity_result {
+    uint8_t far_end_active;
+    uint8_t double_talk_active;
+} ap_module_activity_result_t;
+size_t ap_module_activity_state_size(void);
+ap_status_t ap_module_activity_init(void *memory, size_t memory_size,
+                                    const ap_module_activity_config_t *config,
+                                    ap_activity_module_t **out);
+void ap_module_activity_reset(ap_activity_module_t *module);
+ap_status_t ap_module_activity_process(ap_activity_module_t *module,
+                                       float mic_energy,
+                                       float reference_energy,
+                                       ap_module_activity_result_t *result);
 #endif
 
 #if AP_HAVE_MODULE_AEC
@@ -121,6 +166,7 @@ typedef struct ap_res_module ap_res_module_t;
 size_t ap_module_res_state_size(void);
 ap_status_t ap_module_res_init(void *memory, size_t memory_size,
                                ap_res_module_t **out);
+void ap_module_res_reset(ap_res_module_t *module);
 ap_status_t ap_module_res_process(ap_res_module_t *module,
                                   ap_quality_t quality,
                                   float *samples, size_t frame_samples,
@@ -147,6 +193,7 @@ size_t ap_module_ns_state_size(void);
 ap_status_t ap_module_ns_init(void *memory, size_t memory_size,
                               const ap_module_ns_config_t *config,
                               ap_ns_module_t **out);
+void ap_module_ns_reset(ap_ns_module_t *module);
 ap_status_t ap_module_ns_process(ap_ns_module_t *module,
                                  ap_quality_t quality,
                                  const float *input,
@@ -169,6 +216,7 @@ size_t ap_module_agc_state_size(void);
 ap_status_t ap_module_agc_init(void *memory, size_t memory_size,
                                const ap_module_agc_config_t *config,
                                ap_agc_module_t **out);
+void ap_module_agc_reset(ap_agc_module_t *module);
 ap_status_t ap_module_agc_process(ap_agc_module_t *module,
                                   float *samples, size_t frame_samples);
 #endif
@@ -182,6 +230,7 @@ typedef struct ap_module_vad_result {
 size_t ap_module_vad_state_size(void);
 ap_status_t ap_module_vad_init(void *memory, size_t memory_size,
                                ap_vad_module_t **out);
+void ap_module_vad_reset(ap_vad_module_t *module);
 ap_status_t ap_module_vad_process(ap_vad_module_t *module,
                                   const float *samples, size_t frame_samples,
                                   float upstream_speech_probability,

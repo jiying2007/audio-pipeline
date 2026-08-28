@@ -1,0 +1,32 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '17 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  long-fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure libFuzzer
+        env:
+          CC: clang
+        run: >-
+          cmake -S . -B build-fuzz-nightly -DCMAKE_BUILD_TYPE=Debug
+          -DAP_BUILD_FUZZ=ON -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF
+          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_LINUX_RUNTIME=OFF
+      - name: Build
+        run: cmake --build build-fuzz-nightly --target ap_fuzz --parallel
+      - name: Long fuzz
+        run: ./build-fuzz-nightly/ap_fuzz -max_total_time=300 -max_len=4096
+
+  eval-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 eval/run_eval.py --self-test

@@ -2,6 +2,7 @@
 #define AUDIO_PIPELINE_AUDIO_RUNTIME_H
 
 #include "audio_pipeline/audio_pipeline.h"
+#include "audio_pipeline/audio_pipeline_build.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -55,6 +56,7 @@ ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
                                int16_t *output,
                                ap_metrics_t *metrics_or_null);
 
+/* Queue depth is a build capability: AP_BUILD_RUNTIME_QUEUE_DEPTH. */
 void ap_runtime_get_metrics(const ap_runtime_t *runtime,
                             ap_runtime_metrics_t *metrics);
 

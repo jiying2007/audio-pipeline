@@ -1,0 +1,11 @@
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: audio-pipeline-runtime
+Description: Linux bounded worker for audio-pipeline
+Version: @PROJECT_VERSION@
+Requires: audio-pipeline
+Libs: -L${libdir} -laudio_pipeline_runtime -lpthread
+Cflags: -I${includedir}

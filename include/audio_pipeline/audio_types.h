@@ -33,6 +33,43 @@ typedef enum ap_aec_backend {
     AP_AEC_BACKEND_NLMS = 1
 } ap_aec_backend_t;
 
+typedef uint32_t ap_module_mask_t;
+enum {
+    AP_MODULE_CAP_RESAMPLER = 1u << 0,
+    AP_MODULE_CAP_HPF       = 1u << 1,
+    AP_MODULE_CAP_BF        = 1u << 2,
+    AP_MODULE_CAP_SYNC      = 1u << 3,
+    AP_MODULE_CAP_ACTIVITY  = 1u << 4,
+    AP_MODULE_CAP_AEC       = 1u << 5,
+    AP_MODULE_CAP_RES       = 1u << 6,
+    AP_MODULE_CAP_NS        = 1u << 7,
+    AP_MODULE_CAP_AGC       = 1u << 8,
+    AP_MODULE_CAP_VAD       = 1u << 9
+};
+
+typedef struct ap_build_info {
+    uint32_t version_major;
+    uint32_t version_minor;
+    uint32_t version_patch;
+    ap_module_mask_t module_mask;
+    uint32_t max_io_rate_hz;
+    uint32_t max_internal_rate_hz;
+    uint32_t max_mic_channels;
+    uint32_t max_delay_ms;
+    uint32_t max_aec_tail_ms;
+    uint32_t runtime_queue_depth;
+    uint8_t has_pipeline;
+    uint8_t has_linux_runtime;
+    uint8_t fast_math;
+    const char *version;
+    const char *aec_backend;
+    const char *ns_estimator;
+    const char *simd_backend;
+    const char *resampler_mode;
+} ap_build_info_t;
+
+const ap_build_info_t *ap_build_info(void);
+
 #ifdef __cplusplus
 }
 #endif

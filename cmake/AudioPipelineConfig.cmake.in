@@ -1,0 +1,7 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+if(@AP_HAVE_LINUX_RUNTIME@)
+    find_dependency(Threads)
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/AudioPipelineTargets.cmake")
+check_required_components(AudioPipeline)

@@ -1,69 +1,118 @@
 # DSP Design
 
-## Boundary and front end
+## Processing model
 
-I/O rates are 8/16/24/32/48 kHz; internal processing is 8 or 16 kHz. Fixed 10 ms product ratios use deterministic direct/fixed-phase linear paths. The boundary adapter is intended for voice-band bring-up/integration, not as a production full-band anti-aliasing guarantee.
+The high-level synchronous path processes fixed 10 ms frames. Device PCM is S16; internal classical DSP uses float at 8 or 16 kHz. The graph is a fixed safe order with build/runtime pruning, not a general-purpose audio DAG.
 
-Each microphone uses a one-pole high-pass/DC remover. Two-mic mode uses a geometry-bounded integer TDOA search and delay-and-sum. TINY disables beamformer tracking by default; LOW/STANDARD keep it available. Product geometry may use a fixed calibrated delay when cheaper and more stable.
+Default logical order:
 
-## Delay tracker and drift
+```text
+boundary resampler
+ -> HPF
+ -> optional 2-mic delay/sum beamformer
+ -> render SYNC / delay / drift
+ -> Activity / DTD
+ -> AEC
+ -> RES
+ -> Wiener NS
+ -> AGC / limiter
+ -> VAD
+ -> boundary output resampler
+```
 
-Every ~100 ms the bounded reference history is searched at ~2 ms coarse resolution, then the winning cell is refined sample-by-sample.
+## Boundary resampling
 
-- >20 ms change: route/buffer-path jump, snap and reset AEC;
-- smaller motion: jitter/clock mismatch feeding a ppm estimate;
-- accumulated clock error: slow single-sample reference slips.
+Two compile-time modes exist:
 
-Hardware timestamps are preferred whenever the audio driver exposes them.
+- `BANDLIMITED` default: small first-party FIRs for current supported downsampling ratios, with frame-to-frame history;
+- `FAST`: the previous low-cost interpolation/decimation behavior.
 
-## Shared far-end / double-talk activity
+Current BANDLIMITED filters cover fixed 2:1, 3:1, 4:1, 6:1 and 3:2 downsampling geometries. Other/same-rate/upconversion paths use the lightweight interpolation path. This is intentionally not a large arbitrary-ratio SRC.
 
-Far-end activity and double-talk are classified once in the core after reference alignment and microphone combination. The same gate is then passed to both AEC adaptation and residual/noise suppression. A short three-frame hold counter prevents adaptation/suppression mode chatter after a detected near-end overlap.
+The public latency API includes FIR group delay. Tests validate representative passband/stopband behavior rather than requiring BANDLIMITED output to match FAST samples.
 
-This is deliberately conservative and inexpensive: the current gate uses aligned frame energy and does not claim a correlation/coherence DTD. More advanced DTD may replace the classifier later without changing the AEC/enhancement contracts.
+## HPF
 
-## AEC backend contract
+Per-channel first-order high-pass filtering removes DC/very-low-frequency energy before spatial processing. State is channel-local and independently resettable in standalone use.
 
-AEC is selected at compile time with `AP_AEC_BACKEND`.
+## Beamformer
 
-### MDF
+The two-mic frontend uses a low-cost delay-and-sum geometry with optional direction tracking. It is selected only for two-microphone configurations. SAFE quality bypasses tracking/beamforming work in the high-level graph.
 
-The default MDF/AUMDF-lite backend uses:
+## Render synchronization
 
-- five 2 ms blocks per public 10 ms frame;
-- 16 kHz: 32-sample blocks, 64-point FFT, 33 unique bins;
-- 8 kHz: 16-sample blocks, 32-point FFT;
-- at most 60 partitions for the 120 ms hard ceiling;
-- rolling per-bin reference power;
-- normalized `conj(X)*E` adaptation;
-- cyclic support constraint;
-- shared double-talk adaptation freeze;
-- compile-time scalar or NEON complex kernels.
+SYNC stores a bounded render ring whose capacity is derived from the compiled max delay/internal sample rate. Coarse normalized correlation is periodically searched across the supported delay range, followed by a local one-sample refinement.
 
-### NLMS
+Large correlation jumps are emitted as route-jump events. Persistent small error drives the existing ppm estimate and integer reference-domain sample slips.
 
-The NLMS backend is a separate translation unit implementing the same internal AEC contract. It uses the same compile-time scalar/NEON kernel layer for dot/update operations and the same core-owned far-end/double-talk gate as MDF.
+Optional hardware timestamp observations convert trusted capture/playback time deltas into delay observations. Timestamps must share a monotonic clock domain. Correlation remains the fallback and timestamp observations do not create a general ASRC.
 
-Algorithm code never includes architecture intrinsics directly.
+## Activity / double-talk
 
-## Predicted echo and RES
+Activity is a small stateful supporting module shared by high-level AEC/RES/NS and available standalone. The current clean-room implementation uses far-end energy threshold + near/reference energy ratio + hangover. It is intentionally cheap; future coherence/correlation implementations should preserve the same module contract.
 
-Both AEC backends emit predicted echo. When NS is enabled in FULL/LITE, frequency RES reuses the NS spectral machinery, stores only unique-bin predicted-echo power and applies a smoothed per-bin residual gain. SAFE or NS-off uses broadband RES. Shared double-talk activity disables frequency RES.
+A single Activity result avoids independent AEC and RES double-talk decisions.
+
+## AEC
+
+Default AEC is a clean-room partitioned MDF/AUMDF-lite style frequency-domain backend. It processes five 2 ms subblocks per 10 ms frame. A compile-time NLMS backend remains a validation/safety alternative.
+
+AEC resident geometry is derived from the compiled max tail/internal rate, so LOW/TINY product builds physically remove unused partitions/history.
+
+Adaptation is gated by far-end/double-talk activity. AEC reset occurs on explicit path changes or sufficiently large SYNC/timestamp route jumps through the core orchestrator.
+
+## ERLE / convergence telemetry
+
+ERLE is not computed as a generic graph input/output ratio. It updates only when:
+
+```text
+AEC selected
+AND far-end active
+AND double-talk inactive
+AND valid reference/residual energy
+```
+
+`erle_valid` marks frames meeting this contract. `aec_convergence_frames` counts valid observations in the current epoch; route/path reset starts a new epoch.
+
+## Residual echo suppression
+
+RES has two forms:
+
+- broadband attenuation fallback used when NS spectral processing is unavailable or SAFE mode requires the simpler path;
+- frequency-dependent residual echo gain applied through the NS STFT when the graph has RES+NS and conditions permit.
+
+Double-talk disables aggressive frequency RES.
 
 ## Noise suppression
 
-The NS stage is a 20 ms sine-window STFT with 10 ms hop: 256 FFT at 8 kHz or 512 FFT at 16 kHz, speech-aware Wiener-like gain and no model weights.
+NS uses an overlap STFT Wiener-style spectral gain. The default noise estimator is EMA; clean-room MCRA-lite is a compile-time opt-in. Read-only windows/tables live outside instance state.
 
-`AP_NS_ESTIMATOR=EMA` is the default production estimator because it preserves the established CPU/behavior baseline. `AP_NS_ESTIMATOR=MCRA` enables a clean-room MCRA-lite backend that keeps a slowly rising local spectral minimum and uses minimum-to-current power ratio to slow noise-floor learning during speech while still learning persistent environmental changes. MCRA remains opt-in until a shipping profile proves a useful acoustic improvement on the product corpus together with acceptable target-board CPU/thermal headroom.
+Frequency RES stores only echo power bins and reuses the complex FFT scratch rather than holding a second persistent complex spectrum.
 
-The 8/16 kHz analysis/synthesis sine windows are stored as symmetric read-only half-window tables generated from the repository's original formula. They are shared by all instances and do not consume per-pipeline RAM.
+## AGC / limiter
 
-Neural NS/AEC, MVDR and GSC are not part of the minimum low-compute backend. Add heavier backends only after target measurements demonstrate headroom.
+AGC estimates frame RMS/peak, smooths gain with asymmetric attack/release behavior and applies a limiter. dB controls are converted to linear values at init, so the steady-state loop avoids `powf`.
 
-## VAD and AGC
+The 10 ms cadence is part of the algorithm contract because gain smoothing advances once per process call.
 
-VAD combines energy above a slow noise floor with the NS speech score and hangover. AGC uses slow gain-up, faster gain-down and a peak limiter. Codec DTX/comfort-noise policy remains outside the DSP core.
+## VAD
 
-## Numeric policy
+The lightweight VAD tracks an RMS noise floor and hangover. When NS exists, upstream NS speech probability may raise the decision probability. It is a classical low-cost product signal, not a calibrated neural posterior.
 
-FP32 is the supported implementation format. Hardware floating point is required by the current product profiles. Precise compiler semantics are the default; `AP_ENABLE_FAST_MATH=ON` is an explicit separately tested product policy rather than a toolchain assumption.
+## Quality states
+
+`FULL/LITE/SAFE` are runtime overload states, not CPU classes.
+
+- FULL: nominal graph and AEC geometry;
+- LITE: reduced active AEC tail/adaptation cadence and lower-cost choices;
+- SAFE: strongest overload fallback, including BF bypass and broadband RES path.
+
+Compile-time TINY/LOW product envelopes are separate and may physically remove capacity that runtime quality cannot restore.
+
+## SIMD / math
+
+Scalar and NEON kernels are compile-time selected; algorithm code does not contain CPU model names. Fast math is independently opt-in. Correctness and acoustic contracts must pass for every shipping combination.
+
+## Clean-room policy
+
+Algorithmic ideas may be informed by public literature and referenced open-source project architecture, but production source, tables and tuning values remain first-party clean-room unless explicitly documented in `THIRD_PARTY.md`.

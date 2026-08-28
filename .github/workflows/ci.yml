@@ -16,7 +16,7 @@ jobs:
   architecture-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Enforce module and platform boundaries
         run: sh scripts/check-architecture.sh
 
@@ -26,12 +26,16 @@ jobs:
       fail-fast: false
       matrix:
         preset:
+          - composition-low
+          - composition-tiny
           - composition-voice-frontend
           - composition-raw
           - composition-aec-only
           - composition-ns-only
+          - composition-activity-only
+          - composition-fast-resampler
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure ${{ matrix.preset }}
         run: cmake --preset ${{ matrix.preset }}
       - name: Build ${{ matrix.preset }}
@@ -47,7 +51,7 @@ jobs:
           test -f "$prefix/include/audio_pipeline/audio_modules.h"
           test -f "$prefix/include/audio_pipeline/audio_pipeline_build.h"
           case "${{ matrix.preset }}" in
-            composition-aec-only|composition-ns-only)
+            composition-aec-only|composition-ns-only|composition-activity-only)
               test ! -e "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
             *)
               test -f "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
@@ -56,25 +60,28 @@ jobs:
   composition-size-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure representative graphs
         run: |
           cmake --preset composition-full
-          cmake --preset composition-voice-frontend
+          cmake --preset composition-low
+          cmake --preset composition-tiny
           cmake --preset composition-raw
       - name: Build state-size probes
         run: |
-          cmake --build build/composition-full --target ap_state_size --parallel
-          cmake --build build/composition-voice-frontend --target ap_state_size --parallel
-          cmake --build build/composition-raw --target ap_state_size --parallel
+          for p in full low tiny raw; do
+            cmake --build "build/composition-$p" --target ap_state_size --parallel
+          done
       - name: Verify physical RAM pruning
         run: |
           full=$(./build/composition-full/ap_state_size)
-          voice=$(./build/composition-voice-frontend/ap_state_size)
+          low=$(./build/composition-low/ap_state_size)
+          tiny=$(./build/composition-tiny/ap_state_size)
           raw=$(./build/composition-raw/ap_state_size)
-          echo "pipeline_state_bytes full=$full voice_frontend=$voice raw=$raw"
-          test "$voice" -lt "$full"
-          test "$raw" -lt "$voice"
+          echo "pipeline_state_bytes full=$full low=$low tiny=$tiny raw=$raw"
+          test "$low" -lt "$full"
+          test "$tiny" -lt "$low"
+          test "$raw" -lt "$tiny"
 
   native:
     runs-on: ubuntu-latest
@@ -82,7 +89,7 @@ jobs:
       matrix:
         compiler: [gcc, clang]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure
         env:
           CC: ${{ matrix.compiler }}
@@ -112,7 +119,7 @@ jobs:
     if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Same-runner main vs candidate
         env:
           CC: gcc
@@ -130,7 +137,7 @@ jobs:
     if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Same-runner runtime main vs candidate
         env:
           CC: gcc
@@ -139,7 +146,7 @@ jobs:
   strict-clang:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure strict warnings
         env:
           CC: clang
@@ -152,7 +159,7 @@ jobs:
   backend-nlms:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure NLMS backend
         env:
           CC: clang
@@ -168,7 +175,7 @@ jobs:
   backend-ns-mcra:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure MCRA noise estimator
         env:
           CC: clang
@@ -184,7 +191,7 @@ jobs:
   fast-math-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure explicit fast-math policy
         env:
           CC: gcc
@@ -200,7 +207,7 @@ jobs:
   sanitizers:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure ASan/UBSan
         env:
           CC: clang
@@ -217,7 +224,7 @@ jobs:
   fuzz-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure libFuzzer
         env:
           CC: clang
@@ -233,7 +240,7 @@ jobs:
   alsa-compile:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install ALSA development package
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev
       - name: Configure ALSA examples
@@ -258,7 +265,7 @@ jobs:
           - cortex-a32-neon
           - aarch64-neon
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Arm cross compilers
         run: >-
           sudo apt-get update && sudo apt-get install -y

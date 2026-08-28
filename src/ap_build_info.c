@@ -1,0 +1,26 @@
+#include "audio_pipeline/audio_types.h"
+#include "audio_pipeline/audio_pipeline_build.h"
+
+const ap_build_info_t *ap_build_info(void) {
+    static const ap_build_info_t info = {
+        AP_VERSION_MAJOR, AP_VERSION_MINOR, AP_VERSION_PATCH,
+        (AP_HAVE_MODULE_RESAMPLER ? AP_MODULE_CAP_RESAMPLER : 0u) |
+        (AP_HAVE_MODULE_HPF ? AP_MODULE_CAP_HPF : 0u) |
+        (AP_HAVE_MODULE_BF ? AP_MODULE_CAP_BF : 0u) |
+        (AP_HAVE_MODULE_SYNC ? AP_MODULE_CAP_SYNC : 0u) |
+        (AP_HAVE_MODULE_ACTIVITY ? AP_MODULE_CAP_ACTIVITY : 0u) |
+        (AP_HAVE_MODULE_AEC ? AP_MODULE_CAP_AEC : 0u) |
+        (AP_HAVE_MODULE_RES ? AP_MODULE_CAP_RES : 0u) |
+        (AP_HAVE_MODULE_NS ? AP_MODULE_CAP_NS : 0u) |
+        (AP_HAVE_MODULE_AGC ? AP_MODULE_CAP_AGC : 0u) |
+        (AP_HAVE_MODULE_VAD ? AP_MODULE_CAP_VAD : 0u),
+        AP_BUILD_MAX_IO_RATE_HZ, AP_BUILD_MAX_INTERNAL_RATE_HZ,
+        AP_BUILD_MAX_MIC_CHANNELS, AP_BUILD_MAX_DELAY_MS,
+        AP_BUILD_MAX_AEC_TAIL_MS, AP_BUILD_RUNTIME_QUEUE_DEPTH,
+        AP_HAVE_PIPELINE, AP_HAVE_LINUX_RUNTIME, AP_BUILD_FAST_MATH,
+        AP_VERSION_STRING, AP_BUILD_AEC_BACKEND_NAME,
+        AP_BUILD_NS_ESTIMATOR_NAME, AP_BUILD_SIMD_BACKEND_NAME,
+        AP_BUILD_RESAMPLER_MODE_NAME
+    };
+    return &info;
+}

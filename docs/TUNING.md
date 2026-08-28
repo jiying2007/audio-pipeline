@@ -1,53 +1,114 @@
 # Tuning Guide
 
-Tune with recordings from the real enclosure, speaker, microphone geometry and playback-volume table. CPU model is not a tuning parameter; select a resource envelope from measured product headroom.
+## Separate product decisions
 
-## 1. Choose resource class
+Do not tune by CPU name. Treat these independently:
 
-Start with the highest class that comfortably meets target CPU/thermal/power gates:
+1. build module set;
+2. build geometry envelope;
+3. CALL/ASSISTANT use case;
+4. runtime TINY/LOW/STANDARD resource class;
+5. FULL/LITE/SAFE overload quality;
+6. acoustic/device tuning.
 
-- `STANDARD`: 16 kHz, longest default classical tail;
-- `LOW`: 16 kHz, shorter tail;
-- `TINY`: 8 kHz, short tail and no beamformer tracking by default.
+A Cortex-A7 may ship STANDARD if the real board meets product gates; an AArch64 product may intentionally use LOW for power.
 
-Then tune individual fields only with an acoustic/performance reason. Do not use FULL/LITE/SAFE as a substitute for selecting the correct nominal product class.
+## Start from measured artifact identity
 
-## 2. Reference and delay first
+Always record `ap_build_info()` before acoustic work. A result is not comparable if module set, AEC/NS/SIMD/resampler backend, fast-math or max geometry changed silently.
 
-Verify that the AEC reference is the exact post-mix/post-gain DAC signal. Set `initial_delay_ms` near the median path and keep `max_delay_ms` only as wide as required.
+## AEC
 
-Watch `delay_error_samples`, `estimated_drift_ppm`, `reference_sample_slips`, `delay_jumps` and `aec_resets`. Frequent jumps on a stable route usually indicate timestamp/reference plumbing problems, not `aec_mu`.
+Tune in this order:
 
-## 3. Clock drift
+1. render reference correctness;
+2. route/timestamp correctness;
+3. delay convergence;
+4. AEC tail length;
+5. adaptation rate/stride;
+6. RES aggressiveness.
 
-Keep drift compensation enabled when playback/capture clocks can differ. Small ppm mismatch should cause occasional sample slips, not repeated AEC resets. Continuous/high slips or ±2000 ppm clamp means the audio clock/timestamp/resampling architecture needs fixing.
+Do not increase `aec_mu` to compensate for a wrong render reference or delay.
 
-## 4. AEC tail, activity and adaptation
+ERLE is considered valid only when `erle_valid=1`; double-talk samples must not be used as convergence evidence. Use `aec_convergence_frames/aec_converged` to separate startup/path-change epochs.
 
-Reduce tail until real-device ERLE/path-change recovery regresses. Increase beyond the selected class only with evidence. `aec_mu` trades convergence against stability; `aec_adapt_stride` trades CPU against tracking speed.
+If the application knows an echo path changed, call the explicit path-change API instead of waiting for the tracker.
 
-Monitor both `far_end_active` and `double_talk_active`. The shared classifier intentionally holds double-talk for a few frames to prevent rapid adaptation/RES mode switching. If it misclassifies a product acoustic condition, improve the classifier/corpus rather than independently retuning AEC and RES thresholds so that they disagree.
+## SYNC and timestamps
 
-## 5. Microphone geometry
+Correlation remains the robust fallback. Hardware timestamp observations are useful only when capture and playback positions share a documented monotonic timebase and describe corresponding positions.
 
-Use acoustic-center spacing for `mic_spacing_mm`. If target direction is fixed, a calibrated held delay may be cheaper and more stable than tracking. TINY intentionally starts with BF tracking disabled.
+Verify route changes, codec reopen and playback gain/mixer behavior. Treat sudden >~20 ms equivalent delay changes as path-change events requiring new AEC convergence.
 
-## 6. Residual echo suppression
+## Activity / double-talk
 
-FULL/LITE use frequency RES when NS is active; SAFE uses broadband RES. Tune both far-end-only and true double-talk. Monitor `residual_echo_gain` and `frequency_res_active`.
+The built-in Activity module currently uses a simple energy relationship with hangover. It is intentionally classical and low-cost. Do not tune its far threshold/double-talk ratio from one room or one playback level.
 
-## 7. Noise suppression / AGC / VAD
+Use a corpus containing near-only, far-only, double-talk, music/content echo and robot motion noise before changing these defaults. If a future coherence/correlation DTD replaces the current method, keep the same standalone/core contract.
 
-`AP_NS_ESTIMATOR=EMA` is the default production estimator. `AP_NS_ESTIMATOR=MCRA` is an opt-in clean-room backend for products whose real noise corpus benefits from minimum-controlled tracking. Before enabling MCRA on a shipping profile, validate stationary noise, short speech/noise bursts, persistent background changes, speech distortion, pumping, CPU, thermal and power on the actual target. A short burst should not immediately become the estimated floor; a sustained environmental change must eventually be learned.
+## Boundary resampler
 
-`ns_floor` is the minimum Wiener gain. Tune AGC only after AEC/RES/NS. Keep limiter headroom. If background pumps during pauses, inspect the noise estimate and speech score before lowering the limiter or making AGC more conservative.
+Default `BANDLIMITED` uses small fixed FIR filters for current downsampling ratios. Prefer it for production unless target profiling and acoustic tests justify `FAST`.
 
-## 8. Runtime policy
+When comparing modes record:
 
-Runtime defaults are intentionally topology-neutral (`dsp_cpu=-1`, `dsp_priority=0`). Only pin or request FIFO after measuring IRQ/cpuset interaction on the product. Default overload threshold is 9 ms for a 10 ms frame; nominal target is >=99.9% FULL residence with zero queue drops/overruns.
+- passband speech quality;
+- stopband alias rejection with motor/PWM/high-frequency noise;
+- algorithmic latency/filter delay;
+- CPU and state on the shipping SoC.
 
-Use `ap_runtime_bench` and the 8 h target soak rather than tuning against an unconstrained desktop loop.
+Do not compare FAST and BANDLIMITED by expecting sample-for-sample equality.
 
-## 9. Fast math
+## Noise suppression
 
-Keep `AP_ENABLE_FAST_MATH=OFF` until a target profile demonstrates a useful benefit. Turning it on requires the same unit/contracts, acoustic corpus and board performance/thermal/power certification as any other DSP change.
+EMA remains the default noise estimator. MCRA is an opt-in backend that must be certified on the target corpus. Tune `ns_floor` against quiet speech preservation and stationary/non-stationary noise, not synthetic noise alone.
+
+Frequency RES requires AEC predicted echo and should not be evaluated as a standalone denoiser quality gain.
+
+## AGC / limiter
+
+Tune target and limiter jointly. Input values must be finite and `target_dbfs < limiter_dbfs`.
+
+Assess:
+
+- quiet speech audibility;
+- pump/breathing after NS;
+- transient clipping;
+- background-noise uplift;
+- far-end leakage during double-talk.
+
+AGC process cadence is a 10 ms contract; do not feed arbitrary frame durations to standalone AGC.
+
+## VAD
+
+The built-in VAD is intentionally lightweight. When NS is present it may consume upstream speech probability; without NS it uses its own noise/rms history.
+
+For product thresholds use labeled speech/non-speech data and report precision/recall/F1 by noise condition. Do not treat VAD probability as a calibrated neural posterior.
+
+## Beamformer
+
+BF requires two microphones and trustworthy geometry. Tune/validate microphone spacing, polarity, channel order and sample synchronization before changing tracking thresholds.
+
+TINY disables BF tracking by policy; a build with max microphone channels=1 physically removes the valid two-mic configuration.
+
+## Resource/build envelope
+
+Compile-time caps can save substantial RAM, but capability removed at build time cannot be restored by runtime configuration. Choose max delay/AEC tail from real route/path measurements with margin.
+
+Current hosted proof points show full > LOW > TINY state reduction, but shipping caps must be chosen from actual product acoustics, not the hosted byte counts.
+
+## Acceptance corpus
+
+At minimum include:
+
+- far-end speech/music at multiple volumes;
+- near speech at multiple distances/angles;
+- double-talk;
+- path/route changes;
+- delay/clock mismatch;
+- stationary + non-stationary environment noise;
+- robot motors/gears/PWM/structure vibration;
+- quiet speech;
+- CPU/DDR contention.
+
+Use `eval/` for repeatable result exchange and store shipping results in a certification record. Hosted synthetic tests protect contracts; they do not replace listening/product corpus evaluation.

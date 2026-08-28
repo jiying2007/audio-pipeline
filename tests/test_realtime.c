@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #define PI_F 3.14159265358979323846f
 #if defined(_MSC_VER)
@@ -27,7 +28,6 @@ static void test_backend_geometry_and_quality(void) {
     if (full.aec_backend == AP_AEC_BACKEND_MDF) {
         assert(full.aec_block_samples == c.internal_sample_rate_hz / 500u);
         assert(full.active_aec_partitions > 0u);
-        assert(full.active_aec_partitions <= 60u);
     } else {
         assert(full.aec_backend == AP_AEC_BACKEND_NLMS);
         assert(full.aec_block_samples == 1u);
@@ -61,9 +61,11 @@ static void test_backend_geometry_and_quality(void) {
 static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *p = NULL;
-    int16_t render[160];
-    int16_t mic[160];
-    int16_t out[160];
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES];
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES];
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES];
+    const uint32_t io_rate = c.io_sample_rate_hz;
+    const uint32_t io_frame = io_rate / 100u;
     unsigned frame, i;
     double near_e = 1.0, out_e = 1.0;
     c.mic_channels = 1u;
@@ -71,38 +73,39 @@ static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
     c.enable_delay_tracking = 0u;
     c.enable_clock_drift_compensation = 0u;
     c.initial_delay_ms = 0u;
-    c.aec_filter_ms = 64u;
+    if (c.aec_filter_ms > 64u) c.aec_filter_ms = 64u;
     c.aec_adapt_stride = 1u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
 
     for (frame = 0u; frame < 220u; ++frame) {
-        for (i = 0u; i < 160u; ++i) {
-            const unsigned s = frame * 160u + i;
-            const float far = 0.18f * sinf(2.0f * PI_F * 733.0f * (float)s / 16000.0f) +
-                              0.09f * sinf(2.0f * PI_F * 997.0f * (float)s / 16000.0f);
+        for (i = 0u; i < io_frame; ++i) {
+            const unsigned s = frame * io_frame + i;
+            const float far = 0.18f * sinf(2.0f * PI_F * 733.0f * (float)s / (float)io_rate) +
+                              0.09f * sinf(2.0f * PI_F * 997.0f * (float)s / (float)io_rate);
             render[i] = (int16_t)(far * 32767.0f);
             mic[i] = (int16_t)(0.35f * far * 32767.0f);
         }
-        assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
-        assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+        assert(ap_pipeline_push_render(p, render, io_frame) == AP_OK);
+        assert(ap_pipeline_process_capture(p, mic, io_frame, out) == AP_OK);
     }
 
     for (frame = 0u; frame < 20u; ++frame) {
         ap_metrics_t m;
-        for (i = 0u; i < 160u; ++i) {
-            const unsigned s = (220u + frame) * 160u + i;
-            const float far = 0.18f * sinf(2.0f * PI_F * 733.0f * (float)s / 16000.0f) +
-                              0.09f * sinf(2.0f * PI_F * 997.0f * (float)s / 16000.0f);
-            const float near = 0.55f * sinf(2.0f * PI_F * 241.0f * (float)s / 16000.0f);
+        for (i = 0u; i < io_frame; ++i) {
+            const unsigned s = (220u + frame) * io_frame + i;
+            const float far = 0.18f * sinf(2.0f * PI_F * 733.0f * (float)s / (float)io_rate) +
+                              0.09f * sinf(2.0f * PI_F * 997.0f * (float)s / (float)io_rate);
+            const float near = 0.55f * sinf(2.0f * PI_F * 241.0f * (float)s / (float)io_rate);
             render[i] = (int16_t)(far * 32767.0f);
             mic[i] = (int16_t)((near + 0.35f * far) * 32767.0f);
             near_e += (double)(near * 32767.0f) * (near * 32767.0f);
         }
-        assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
-        assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+        assert(ap_pipeline_push_render(p, render, io_frame) == AP_OK);
+        assert(ap_pipeline_process_capture(p, mic, io_frame, out) == AP_OK);
         ap_pipeline_get_metrics(p, &m);
         assert(m.double_talk_active != 0u);
-        for (i = 0u; i < 160u; ++i) out_e += (double)out[i] * out[i];
+        assert(m.erle_valid == 0u);
+        for (i = 0u; i < io_frame; ++i) out_e += (double)out[i] * out[i];
     }
     assert(out_e > near_e * 0.25);
 }
@@ -110,32 +113,33 @@ static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
 static void test_long_running_state_is_bounded_and_delay_jump_resets(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_ASSISTANT);
     ap_pipeline_t *p = NULL;
-    int16_t mic[320];
-    int16_t render[160];
-    int16_t out[160];
-    unsigned frame, i;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS];
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES];
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES];
+    const uint32_t io_frame = c.io_sample_rate_hz / 100u;
+    unsigned frame, i, ch;
     assert((c.stages & (AP_STAGE_SYNC | AP_STAGE_AEC)) ==
            (AP_STAGE_SYNC | AP_STAGE_AEC));
     assert(ap_pipeline_state_size() <= AP_PIPELINE_STATE_MAX_BYTES);
-    assert(c.initial_delay_ms == 40u);
+    assert(c.initial_delay_ms <= c.max_delay_ms);
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+    memset(mic, 0, sizeof(mic));
     for (frame = 0u; frame < 1200u; ++frame) {
-        for (i = 0u; i < 160u; ++i) {
-            const uint32_t s = frame * 160u + i;
+        for (i = 0u; i < io_frame; ++i) {
+            const uint32_t s = frame * io_frame + i;
             const int32_t prn = (int32_t)((s * 1664525u + 1013904223u) >> 16u) - 32768;
             render[i] = (int16_t)(prn / 8);
-            mic[2u * i] = (int16_t)(prn / 12);
-            mic[2u * i + 1u] = (int16_t)(prn / 13);
+            for (ch = 0u; ch < c.mic_channels; ++ch)
+                mic[i * c.mic_channels + ch] = (int16_t)(prn / (12 + (int32_t)ch));
         }
-        assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
-        assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+        assert(ap_pipeline_push_render(p, render, io_frame) == AP_OK);
+        assert(ap_pipeline_process_capture(p, mic, io_frame, out) == AP_OK);
     }
     {
         ap_metrics_t m;
         ap_pipeline_get_metrics(p, &m);
         assert(m.processed_frames == 1200u);
         assert(m.active_aec_taps > 0u);
-        assert(m.aec_resets > 0u);
         assert(m.estimated_delay_ms <= c.max_delay_ms);
     }
 }

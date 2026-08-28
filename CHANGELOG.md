@@ -6,6 +6,16 @@ All notable changes are recorded here. The project follows semantic-version inte
 
 - target-board Cortex-A7/A32/AArch64 certification records remain SKU-specific work.
 
+## [0.7.0] - 2026-08-28
+
+- make the bandlimited boundary resampler the formally gated production default while preserving the explicit FAST validation fallback;
+- enforce fixed-ratio anti-alias/passband contracts for 8/16 kHz internal DSP paths across supported device rates;
+- formalize capture/render timestamp observation and explicit echo-path-change notification as synchronization/AEC reset contracts;
+- add a repository acoustic-evaluation manifest/schema/runner so private product corpora can use the same metric interface without being committed to the repository;
+- add dedicated Audio Quality Gates covering bandlimited/FAST resampling, synchronization/route-change semantics and the acoustic-eval self-test.
+
+The repository audio-quality gate is synthetic/contract validation. Real robot far-end, double-talk, motor-noise, enclosure/path-change and product microphone/speaker corpus certification remains per shipping SKU and is not inferred from hosted CI.
+
 ## [0.6.0] - 2026-08-28
 
 - formalize compile-time geometry caps for maximum I/O/internal rate, microphone count, render delay, AEC tail and runtime queue depth;

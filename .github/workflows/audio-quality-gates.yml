@@ -29,6 +29,35 @@ jobs:
           ctest --test-dir build-audio --output-on-failure -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests'
       - name: Verify acoustic evaluation harness
         run: python3 eval/run_eval.py --self-test
+      - name: Verify certification evidence validator
+        run: python3 certification/validate_record.py --self-test
+
+  diagnostics-replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure realtime diagnostics build
+        run: >-
+          cmake -S . -B build-diag -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build runtime and offline processor
+        run: cmake --build build-diag --parallel
+      - name: Build deterministic APD fixture generator
+        run: |
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
+            tests/generate_diag_dump.c \
+            -Iinclude -Ibuild-diag/generated \
+            build-diag/libaudio_pipeline_runtime.a build-diag/libaudio_pipeline.a \
+            -lm -pthread -o /tmp/ap_diag_dump_fixture
+      - name: Generate inspect extract and replay dump
+        run: |
+          /tmp/ap_diag_dump_fixture /tmp/test.apd
+          python3 tools/apdump.py info /tmp/test.apd > /tmp/dump-info.json
+          python3 tools/apdump.py extract /tmp/test.apd --output-dir /tmp/apd-extract
+          python3 tools/apreplay.py /tmp/test.apd \
+            --processor ./build-diag/ap_process_pcm --require-bit-exact
+      - name: Run runtime continuity and diagnostics contracts
+        run: ctest --test-dir build-diag --output-on-failure -R 'ap_runtime_tests'
 
   fast-fallback:
     runs-on: ubuntu-latest

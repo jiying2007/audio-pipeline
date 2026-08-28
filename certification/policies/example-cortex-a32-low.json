@@ -1,0 +1,15 @@
+{
+  "policy_id": "example-cortex-a32-low-not-for-shipping",
+  "max_active_cpu_percent": 40,
+  "max_rss_kib": 4096,
+  "max_p95_us": 7000,
+  "max_p99_us": 9000,
+  "max_soc_c": 85,
+  "max_average_power_w": 2.0,
+  "min_far_end_erle_db": 15,
+  "max_aec_convergence_ms": 1000,
+  "min_double_talk_near_si_sdr_db": 5,
+  "min_noise_si_sdr_improvement_db": 3,
+  "min_vad_f1": 0.85,
+  "min_soak_hours": 8
+}

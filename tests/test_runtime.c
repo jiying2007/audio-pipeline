@@ -209,6 +209,18 @@ static void test_metadata_commands_and_events(void) {
     memset(&cmd, 0, sizeof(cmd));
     cmd.struct_size = sizeof(cmd);
     cmd.api_version = AP_RUNTIME_CONTROL_API_VERSION;
+    cmd.kind = 0x7fffffffu;
+    assert(ap_runtime_command(runtime, &cmd) == AP_EINVAL);
+    cmd.kind = AP_RUNTIME_COMMAND_SET_QUALITY;
+    cmd.data.set_quality.quality = (ap_quality_t)99;
+    assert(ap_runtime_command(runtime, &cmd) == AP_EINVAL);
+    cmd.kind = AP_RUNTIME_COMMAND_STREAM_DISCONTINUITY;
+    cmd.data.discontinuity.flags = 1u << 31;
+    assert(ap_runtime_command(runtime, &cmd) == AP_EINVAL);
+
+    memset(&cmd, 0, sizeof(cmd));
+    cmd.struct_size = sizeof(cmd);
+    cmd.api_version = AP_RUNTIME_CONTROL_API_VERSION;
     cmd.kind = AP_RUNTIME_COMMAND_SET_QUALITY;
     cmd.data.set_quality.quality = AP_QUALITY_SAFE;
     assert(ap_runtime_command(runtime, &cmd) == AP_OK);
@@ -230,6 +242,48 @@ static void test_metadata_commands_and_events(void) {
     ap_runtime_deinit(runtime);
 }
 
+
+static void test_recorder_configuration_contract(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_flight_recorder_config_t dcfg = ap_flight_recorder_config_default(16000u, 2u);
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime = NULL;
+    ap_flight_recorder_t *recorder = NULL;
+
+    assert(dcfg.record_mask == AP_DIAG_RECORD_METRICS);
+    dcfg.pre_roll_frames = 1u;
+    dcfg.post_roll_frames = 0u;
+    assert(ap_flight_recorder_state_size(&dcfg) > 0u);
+    dcfg.frame_samples++;
+    assert(ap_flight_recorder_state_size(&dcfg) == 0u);
+    dcfg = ap_flight_recorder_config_default(11025u, 2u);
+    assert(ap_flight_recorder_state_size(&dcfg) == 0u);
+    dcfg = ap_flight_recorder_config_default(16000u, 2u);
+    dcfg.pre_roll_frames = UINT32_MAX;
+    dcfg.post_roll_frames = UINT32_MAX;
+    assert(ap_flight_recorder_state_size(&dcfg) == 0u);
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
+    dcfg = ap_flight_recorder_config_default(8000u, 2u);
+    dcfg.pre_roll_frames = 1u;
+    dcfg.post_roll_frames = 0u;
+    assert(ap_flight_recorder_init(recorder_state, sizeof(recorder_state), &dcfg, &recorder) == AP_OK);
+    assert(ap_runtime_attach_flight_recorder(runtime, recorder) == AP_EINVAL);
+    dcfg = ap_flight_recorder_config_default(16000u, 1u);
+    dcfg.pre_roll_frames = 1u;
+    dcfg.post_roll_frames = 0u;
+    assert(ap_flight_recorder_init(recorder_state, sizeof(recorder_state), &dcfg, &recorder) == AP_OK);
+    assert(ap_runtime_attach_flight_recorder(runtime, recorder) == AP_EINVAL);
+    dcfg = ap_flight_recorder_config_default(16000u, 2u);
+    dcfg.pre_roll_frames = 1u;
+    dcfg.post_roll_frames = 0u;
+    assert(ap_flight_recorder_init(recorder_state, sizeof(recorder_state), &dcfg, &recorder) == AP_OK);
+    assert(ap_runtime_attach_flight_recorder(runtime, recorder) == AP_OK);
+    ap_runtime_deinit(runtime);
+}
+
 static void test_flight_recorder(void) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
@@ -244,6 +298,7 @@ static void test_flight_recorder(void) {
 
     dcfg.pre_roll_frames = 2u;
     dcfg.post_roll_frames = 1u;
+    dcfg.record_mask = AP_DIAG_RECORD_ALL;
     dcfg.trigger_severity = AP_EVENT_WARN;
     need = ap_flight_recorder_state_size(&dcfg);
     assert(need > 0u && need <= sizeof(recorder_state));
@@ -348,6 +403,7 @@ int main(void) {
     test_runtime_init_contract();
     test_queue_and_lifecycle();
     test_metadata_commands_and_events();
+    test_recorder_configuration_contract();
     test_flight_recorder();
     test_recorder_trigger_survives_event_queue_full();
     test_quality_transitions();

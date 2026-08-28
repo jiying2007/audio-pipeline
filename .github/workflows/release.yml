@@ -1,12 +1,14 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  workflow_run:
+    workflows: [Verify]
+    types: [completed]
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 concurrency:
   group: release
@@ -14,11 +16,17 @@ concurrency:
 
 jobs:
   release:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
+    env:
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          ref: ${{ env.RELEASE_SHA }}
           fetch-depth: 0
+      - name: Verify exact release SHA
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
       - name: Resolve project version
         id: version
         run: |
@@ -50,20 +58,28 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           tar -C stage -czf "audio-pipeline-${TAG}-sdk.tar.gz" .
-          git archive --format=tar.gz -o "audio-pipeline-${TAG}-source.tar.gz" "$GITHUB_SHA"
+          git archive --format=tar.gz -o "audio-pipeline-${TAG}-source.tar.gz" "$RELEASE_SHA"
           sha256sum "audio-pipeline-${TAG}-sdk.tar.gz" \
                     "audio-pipeline-${TAG}-source.tar.gz" > SHA256SUMS
-      - name: Create verified release tag
+      - name: Attest release artifacts
+        if: steps.existing.outputs.release != 'true'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: |
+            audio-pipeline-${{ steps.version.outputs.tag }}-sdk.tar.gz
+            audio-pipeline-${{ steps.version.outputs.tag }}-source.tar.gz
+            SHA256SUMS
+      - name: Create exact-SHA release tag
         if: steps.existing.outputs.release != 'true'
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           if git rev-parse "$TAG" >/dev/null 2>&1; then
-            test "$(git rev-list -n1 "$TAG")" = "$GITHUB_SHA"
+            test "$(git rev-list -n1 "$TAG")" = "$RELEASE_SHA"
           else
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git tag -a "$TAG" -m "audio-pipeline $TAG" "$GITHUB_SHA"
+            git tag -a "$TAG" -m "audio-pipeline $TAG" "$RELEASE_SHA"
             git push origin "$TAG"
           fi
       - name: Create GitHub Release

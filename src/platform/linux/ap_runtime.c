@@ -3,6 +3,7 @@
 #include "audio_pipeline/audio_pipeline_build.h"
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <pthread.h>
 #include <sched.h>
 #include <semaphore.h>
@@ -295,24 +296,42 @@ ap_flight_recorder_config_t ap_flight_recorder_config_default(uint32_t rate,
     config.frame_samples = rate / 100u;
     config.pre_roll_frames = 500u;
     config.post_roll_frames = 100u;
-    config.record_mask = AP_DIAG_RECORD_ALL;
+    config.record_mask = AP_DIAG_RECORD_METRICS;
     config.trigger_severity = AP_EVENT_ERROR;
     return config;
+}
+
+static int recorder_rate_supported(uint32_t rate) {
+    return rate == 8000u || rate == 16000u || rate == 24000u ||
+           rate == 32000u || rate == 48000u;
+}
+
+static int recorder_config_valid(const ap_flight_recorder_config_t *config) {
+    size_t capacity;
+    size_t stride;
+    if (!config || config->struct_size < sizeof(*config) ||
+        config->api_version != AP_DIAG_API_VERSION ||
+        !recorder_rate_supported(config->io_sample_rate_hz) ||
+        config->frame_samples != config->io_sample_rate_hz / 100u ||
+        !config->mic_channels || config->mic_channels > 2u ||
+        (config->record_mask & ~AP_DIAG_RECORD_ALL) != 0u)
+        return 0;
+    capacity = (size_t)config->pre_roll_frames +
+               (size_t)config->post_roll_frames + 1u;
+    if (!capacity || capacity > UINT32_MAX) return 0;
+    stride = recorder_slot_stride(config);
+    if (!stride || stride > UINT32_MAX || stride > SIZE_MAX / capacity) return 0;
+    if (sizeof(ap_flight_recorder_t) > SIZE_MAX - capacity * stride) return 0;
+    return 1;
 }
 
 size_t ap_flight_recorder_state_size(const ap_flight_recorder_config_t *config) {
     size_t capacity;
     size_t stride;
-    if (!config || config->struct_size < sizeof(*config) ||
-        config->api_version != AP_DIAG_API_VERSION || !config->frame_samples ||
-        !config->mic_channels || config->mic_channels > 2u ||
-        (config->record_mask & ~AP_DIAG_RECORD_ALL) != 0u)
-        return 0u;
+    if (!recorder_config_valid(config)) return 0u;
     capacity = (size_t)config->pre_roll_frames +
                (size_t)config->post_roll_frames + 1u;
     stride = recorder_slot_stride(config);
-    if (!capacity || stride > SIZE_MAX / capacity) return 0u;
-    if (sizeof(ap_flight_recorder_t) > SIZE_MAX - capacity * stride) return 0u;
     return sizeof(ap_flight_recorder_t) + capacity * stride;
 }
 
@@ -813,7 +832,13 @@ static void runtime_apply_command(ap_runtime_t *runtime,
         tuning.ns_floor = command->data.tuning.ns_floor;
         tuning.agc_target_dbfs = command->data.tuning.agc_target_dbfs;
         tuning.limiter_dbfs = command->data.tuning.limiter_dbfs;
-        (void)ap_pipeline_apply_tuning(runtime->pipeline, &tuning);
+        if (ap_pipeline_apply_tuning(runtime->pipeline, &tuning) != AP_OK)
+            runtime_emit_event(runtime,
+                               AP_EVENT_COMMAND_REJECTED,
+                               AP_EVENT_WARN,
+                               (int32_t)command->kind,
+                               AP_EINVAL,
+                               1u);
         break;
     }
     default:
@@ -1236,13 +1261,68 @@ ap_status_t ap_runtime_submit(ap_runtime_t *runtime,
     return ap_runtime_submit_ex(runtime, mic, render, NULL);
 }
 
+static ap_status_t runtime_validate_command(const ap_runtime_command_t *command) {
+    const ap_discontinuity_flags_t discontinuity_all =
+        AP_DISCONTINUITY_CAPTURE_GAP | AP_DISCONTINUITY_RENDER_GAP |
+        AP_DISCONTINUITY_CLOCK_RESET | AP_DISCONTINUITY_XRUN |
+        AP_DISCONTINUITY_CODEC_REOPEN | AP_DISCONTINUITY_ROUTE_CHANGE;
+    const ap_tuning_mask_t tuning_all =
+        AP_TUNING_AEC_MU | AP_TUNING_NS_FLOOR |
+        AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER;
+    if (!command || command->struct_size < sizeof(*command) ||
+        command->api_version != AP_RUNTIME_CONTROL_API_VERSION)
+        return AP_EINVAL;
+    switch ((ap_runtime_command_kind_t)command->kind) {
+    case AP_RUNTIME_COMMAND_ECHO_PATH_CHANGE:
+    case AP_RUNTIME_COMMAND_RESET:
+        return AP_OK;
+    case AP_RUNTIME_COMMAND_STREAM_DISCONTINUITY:
+        if (command->data.discontinuity.flags == 0u ||
+            (command->data.discontinuity.flags & ~discontinuity_all) != 0u)
+            return AP_EINVAL;
+        return AP_OK;
+    case AP_RUNTIME_COMMAND_SET_QUALITY:
+        if (command->data.set_quality.quality < AP_QUALITY_SAFE ||
+            command->data.set_quality.quality > AP_QUALITY_FULL)
+            return AP_EINVAL;
+        return AP_OK;
+    case AP_RUNTIME_COMMAND_SET_TUNING: {
+        const ap_tuning_t *t = &command->data.tuning;
+        if (t->struct_size < sizeof(*t) ||
+            t->api_version != AP_PIPELINE_CONTROL_API_VERSION ||
+            t->mask == 0u || (t->mask & ~tuning_all) != 0u)
+            return AP_EINVAL;
+        if ((t->mask & AP_TUNING_AEC_MU) &&
+            (!isfinite(t->aec_mu) || t->aec_mu <= 0.0f || t->aec_mu > 1.0f))
+            return AP_EINVAL;
+        if ((t->mask & AP_TUNING_NS_FLOOR) &&
+            (!isfinite(t->ns_floor) || t->ns_floor < 0.02f || t->ns_floor > 1.0f))
+            return AP_EINVAL;
+        if ((t->mask & AP_TUNING_AGC_TARGET) &&
+            (!isfinite(t->agc_target_dbfs) || t->agc_target_dbfs < -60.0f ||
+             t->agc_target_dbfs > -1.0f))
+            return AP_EINVAL;
+        if ((t->mask & AP_TUNING_LIMITER) &&
+            (!isfinite(t->limiter_dbfs) || t->limiter_dbfs < -20.0f ||
+             t->limiter_dbfs > -0.1f))
+            return AP_EINVAL;
+        if ((t->mask & (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER)) ==
+            (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER) &&
+            t->agc_target_dbfs >= t->limiter_dbfs)
+            return AP_EINVAL;
+        return AP_OK;
+    }
+    default:
+        return AP_EINVAL;
+    }
+}
+
 ap_status_t ap_runtime_command(ap_runtime_t *runtime,
                                const ap_runtime_command_t *command) {
     unsigned head;
     unsigned tail;
     ap_rt_command_t *dst;
-    if (!runtime || !command || command->struct_size < sizeof(*command) ||
-        command->api_version != AP_RUNTIME_CONTROL_API_VERSION)
+    if (!runtime || runtime_validate_command(command) != AP_OK)
         return AP_EINVAL;
     head = atomic_load_explicit(&runtime->command_head, memory_order_relaxed);
     tail = atomic_load_explicit(&runtime->command_tail, memory_order_acquire);
@@ -1263,9 +1343,6 @@ ap_status_t ap_runtime_command(ap_runtime_t *runtime,
         dst->data.quality = command->data.set_quality.quality;
         break;
     case AP_RUNTIME_COMMAND_SET_TUNING:
-        if (command->data.tuning.struct_size < sizeof(command->data.tuning) ||
-            command->data.tuning.api_version != AP_PIPELINE_CONTROL_API_VERSION)
-            return AP_EINVAL;
         dst->data.tuning.mask = command->data.tuning.mask;
         dst->data.tuning.aec_mu = command->data.tuning.aec_mu;
         dst->data.tuning.ns_floor = command->data.tuning.ns_floor;
@@ -1328,6 +1405,11 @@ ap_status_t ap_runtime_attach_flight_recorder(ap_runtime_t *runtime,
     if (!runtime) return AP_EINVAL;
     if (atomic_load_explicit(&runtime->running, memory_order_acquire))
         return AP_ESTATE;
+    if (recorder &&
+        (recorder->cfg.frame_samples != runtime->io_frames ||
+         recorder->cfg.mic_channels != runtime->mic_channels ||
+         recorder->cfg.io_sample_rate_hz != runtime->io_frames * 100u))
+        return AP_EINVAL;
     runtime->recorder = recorder;
     return AP_OK;
 }

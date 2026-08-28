@@ -1,0 +1,49 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  packages: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+  quality:
+    uses: ./.github/workflows/quality.yml
+  audio-quality:
+    uses: ./.github/workflows/audio-quality-gates.yml
+  resource-gates:
+    uses: ./.github/workflows/resource-gates.yml
+  codeql:
+    uses: ./.github/workflows/codeql.yml
+  summary:
+    if: always()
+    needs: [ci, quality, audio-quality, resource-gates, codeql]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce aggregate verification
+        env:
+          CI_RESULT: ${{ needs.ci.result }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          AUDIO_RESULT: ${{ needs.audio-quality.result }}
+          RESOURCE_RESULT: ${{ needs.resource-gates.result }}
+          CODEQL_RESULT: ${{ needs.codeql.result }}
+        run: |
+          printf 'ci=%s quality=%s audio=%s resource=%s codeql=%s\n' \
+            "$CI_RESULT" "$QUALITY_RESULT" "$AUDIO_RESULT" "$RESOURCE_RESULT" "$CODEQL_RESULT"
+          test "$CI_RESULT" = success
+          test "$QUALITY_RESULT" = success
+          test "$AUDIO_RESULT" = success
+          test "$RESOURCE_RESULT" = success
+          test "$CODEQL_RESULT" = success

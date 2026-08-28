@@ -29,7 +29,7 @@ sh scripts/compare-resampler-perf.sh origin/main 7 100000
 sh scripts/compare-runtime-perf.sh origin/main 7 100000 10000
 ```
 
-Full-graph/NS/runtime comparators use the existing >10% paired regression gate. The FAST resampler microbenchmark is sub-microsecond, so it fails only when the paired regression is both >10% and >0.05 us per 10 ms frame. Hosted deltas are diagnostic until board profiling confirms product significance.
+Full-graph/NS/full-runtime comparators use the existing >10% paired regression gate. Very small hosted microbenchmarks additionally require an absolute regression above a documented noise floor: the FAST resampler must regress by both >10% and >0.05 us per 10 ms frame, while the minimal runtime thread/queue round-trip must regress by both >10% and >1.0 us per 10 ms frame. The minimal runtime path is only a few microseconds and includes hosted scheduler/wakeup noise; the 1 us floor is 0.01% of the 10 ms realtime deadline. Shipping target-board p95/p99/deadline gates are unchanged and do not use these hosted noise floors.
 
 ## Current low-compute reductions
 

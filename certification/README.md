@@ -18,3 +18,13 @@ A product-certified record must include:
 - artifact/corpus revision hashes.
 
 A missing board result must be recorded as `pending`; never substitute hosted x86 or cross-build results.
+
+## Product policy gate
+
+`product-certified` now requires an explicit SKU policy and thermal/power evidence. Validate with:
+
+```bash
+python3 certification/validate_record.py record.json --policy product-policy.json
+```
+
+The repository example policy is not a shipping requirement; product owners must define and version their own thresholds.

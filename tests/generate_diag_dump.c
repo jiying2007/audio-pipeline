@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
     }
 
     recorder_config = ap_flight_recorder_config_default(16000u, 2u);
+    recorder_config.record_mask = AP_DIAG_RECORD_ALL;
     recorder_config.pre_roll_frames = 0u;
     recorder_config.post_roll_frames = 0u;
     recorder_config.trigger_severity = AP_EVENT_WARN;

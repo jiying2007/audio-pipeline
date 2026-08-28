@@ -6,6 +6,16 @@ All notable changes are recorded here. The project follows semantic versioning. 
 
 - SKU-specific Cortex-A7/A32/AArch64 board certification may be added independently of the software release line and does not block the repository SDK release.
 
+## [1.1.1] - 2026-08-29
+
+- validate Flight Recorder rate/frame/channel geometry and reject runtime/recorder mismatches before diagnostic copies;
+- make Flight Recorder defaults metrics-only so private microphone/render/output PCM is explicit opt-in;
+- reject unknown/invalid runtime commands before enqueue and surface apply-time tuning rejection as a bounded diagnostic event;
+- consolidate PR/main verification behind one `Verify` workflow, include runtime in coverage/static analysis and execute runtime tests under Arm QEMU;
+- gate Release on a successful exact-SHA main Verify run, add provenance attestations and pin third-party Actions to immutable commit SHAs with Dependabot maintenance;
+- require explicit per-SKU certification policy plus CPU/RSS/latency/thermal/power/acoustic/soak thresholds for `product-certified` evidence;
+- package LICENSE, third-party notice, README and changelog in the installed SDK.
+
 ## [1.1.0] - 2026-08-28
 
 - add an additive, size/versioned runtime control plane for frame metadata, hardware timestamps, stream discontinuities, echo-path changes, reset, quality and tuning without changing the frozen 1.x public struct layouts;

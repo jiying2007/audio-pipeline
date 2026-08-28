@@ -1,12 +1,14 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  workflow_run:
+    workflows: [Verify]
+    types: [completed]
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 concurrency:
   group: release
@@ -14,11 +16,17 @@ concurrency:
 
 jobs:
   release:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
+      - name: Verify exact release SHA
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
       - name: Resolve project version
         id: version
         run: |
@@ -53,7 +61,15 @@ jobs:
           git archive --format=tar.gz -o "audio-pipeline-${TAG}-source.tar.gz" "$GITHUB_SHA"
           sha256sum "audio-pipeline-${TAG}-sdk.tar.gz" \
                     "audio-pipeline-${TAG}-source.tar.gz" > SHA256SUMS
-      - name: Create verified release tag
+      - name: Attest release artifacts
+        if: steps.existing.outputs.release != 'true'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: |
+            audio-pipeline-${{ steps.version.outputs.tag }}-sdk.tar.gz
+            audio-pipeline-${{ steps.version.outputs.tag }}-source.tar.gz
+            SHA256SUMS
+      - name: Create exact-SHA release tag
         if: steps.existing.outputs.release != 'true'
         env:
           TAG: ${{ steps.version.outputs.tag }}

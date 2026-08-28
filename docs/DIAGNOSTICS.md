@@ -36,7 +36,7 @@ size_t bytes = ap_flight_recorder_state_size(&cfg);
 
 Allocate and align that memory outside the DSP path, initialize it with `ap_flight_recorder_init()` and attach it before `ap_runtime_start()` using `ap_runtime_attach_flight_recorder()`.
 
-The recorder is a bounded circular buffer with configurable pre-roll and post-roll. Recording masks independently select microphone PCM, render PCM, processed output and per-frame metrics. Trigger severity is configurable. Once post-roll completes the recorder freezes; a control thread can then query `ap_flight_recorder_export_size()` and export a versioned `.apd` blob with `ap_flight_recorder_export()`.
+The recorder is a bounded circular buffer with configurable pre-roll and post-roll. The default policy records metrics only; microphone/render/output PCM require explicit opt-in. Recording masks independently select microphone PCM, render PCM, processed output and per-frame metrics. Trigger severity is configurable. Once post-roll completes the recorder freezes; a control thread can then query `ap_flight_recorder_export_size()` and export a versioned `.apd` blob with `ap_flight_recorder_export()`.
 
 A dump contains the audio geometry, record mask, trigger event and the exact library build fingerprint, including project version, module mask and selected AEC/NS/SIMD/resampler backends.
 

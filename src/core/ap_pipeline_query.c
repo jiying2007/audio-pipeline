@@ -12,7 +12,11 @@ ap_status_t ap_pipeline_notify_stream_discontinuity(ap_pipeline_t *pipeline,
                                                     ap_discontinuity_flags_t flags,
                                                     uint32_t lost_frames) {
     (void)lost_frames;
-    if (!pipeline || flags == 0u) return AP_EINVAL;
+    if (!pipeline || flags == 0u ||
+        (flags & ~(AP_DISCONTINUITY_CAPTURE_GAP | AP_DISCONTINUITY_RENDER_GAP |
+                   AP_DISCONTINUITY_CLOCK_RESET | AP_DISCONTINUITY_XRUN |
+                   AP_DISCONTINUITY_CODEC_REOPEN | AP_DISCONTINUITY_ROUTE_CHANGE)) != 0u)
+        return AP_EINVAL;
 
     /* Boundary SRC history must never bridge a known PCM discontinuity. */
     ap_resampler_reset(&pipeline->resampler);

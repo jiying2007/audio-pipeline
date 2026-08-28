@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio-pipeline product certification policy",
+  "type": "object",
+  "required": [
+    "policy_id",
+    "max_active_cpu_percent",
+    "max_rss_kib",
+    "max_p95_us",
+    "max_p99_us",
+    "max_soc_c",
+    "max_average_power_w",
+    "min_far_end_erle_db",
+    "max_aec_convergence_ms",
+    "min_double_talk_near_si_sdr_db",
+    "min_noise_si_sdr_improvement_db",
+    "min_vad_f1",
+    "min_soak_hours"
+  ],
+  "properties": {
+    "policy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "max_active_cpu_percent": {
+      "type": "number",
+      "minimum": 0
+    },
+    "max_rss_kib": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_p95_us": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "max_p99_us": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "max_soc_c": {
+      "type": "number"
+    },
+    "max_average_power_w": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "min_far_end_erle_db": {
+      "type": "number"
+    },
+    "max_aec_convergence_ms": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "min_double_talk_near_si_sdr_db": {
+      "type": "number"
+    },
+    "min_noise_si_sdr_improvement_db": {
+      "type": "number"
+    },
+    "min_vad_f1": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "min_soak_hours": {
+      "type": "number",
+      "minimum": 8
+    }
+  },
+  "additionalProperties": false
+}

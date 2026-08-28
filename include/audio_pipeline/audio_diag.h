@@ -43,7 +43,8 @@ typedef enum ap_event_kind {
     AP_EVENT_QUALITY_FULL_TO_LITE = 40,
     AP_EVENT_QUALITY_LITE_TO_SAFE = 41,
     AP_EVENT_QUALITY_RECOVERED = 42,
-    AP_EVENT_DIAG_TRIGGERED = 50
+    AP_EVENT_DIAG_TRIGGERED = 50,
+    AP_EVENT_COMMAND_REJECTED = 51
 } ap_event_kind_t;
 
 typedef struct ap_event {

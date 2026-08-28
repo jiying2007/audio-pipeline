@@ -2,132 +2,384 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "audio-pipeline SKU certification record",
   "type": "object",
-  "required": ["sku", "status", "build", "platform", "audio_route", "performance", "acoustic", "soak", "artifacts"],
+  "required": [
+    "sku",
+    "status",
+    "build",
+    "platform",
+    "audio_route",
+    "performance",
+    "acoustic",
+    "soak",
+    "artifacts"
+  ],
   "properties": {
-    "sku": {"type": "string", "minLength": 1},
-    "status": {"enum": ["pending", "board-validated", "product-certified", "failed"]},
+    "sku": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "board-validated",
+        "product-certified",
+        "failed"
+      ]
+    },
     "build": {
       "type": "object",
-      "required": ["commit", "version", "fingerprint", "compiler", "abi"],
+      "required": [
+        "commit",
+        "version",
+        "fingerprint",
+        "compiler",
+        "abi"
+      ],
       "properties": {
-        "commit": {"type": "string", "minLength": 7},
-        "version": {"type": "string", "minLength": 1},
-        "fingerprint": {"type": "string", "minLength": 1},
-        "compiler": {"type": "string", "minLength": 1},
-        "abi": {"type": "string", "minLength": 1}
+        "commit": {
+          "type": "string",
+          "minLength": 7
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compiler": {
+          "type": "string",
+          "minLength": 1
+        },
+        "abi": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": true
     },
     "platform": {
       "type": "object",
-      "required": ["soc", "kernel", "governor", "cpuset"],
+      "required": [
+        "soc",
+        "kernel",
+        "governor",
+        "cpuset"
+      ],
       "properties": {
-        "soc": {"type": "string", "minLength": 1},
-        "revision": {"type": "string"},
-        "kernel": {"type": "string", "minLength": 1},
-        "governor": {"type": "string", "minLength": 1},
-        "cpuset": {"type": "string", "minLength": 1}
+        "soc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string"
+        },
+        "kernel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "governor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cpuset": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": true
     },
     "audio_route": {
       "type": "object",
-      "required": ["capture_device", "playback_device", "sample_rate_hz", "mic_channels"],
+      "required": [
+        "capture_device",
+        "playback_device",
+        "sample_rate_hz",
+        "mic_channels"
+      ],
       "properties": {
-        "capture_device": {"type": "string", "minLength": 1},
-        "playback_device": {"type": ["string", "null"]},
-        "sample_rate_hz": {"enum": [8000, 16000, 24000, 32000, 48000]},
-        "mic_channels": {"enum": [1, 2]},
-        "period_frames": {"type": "integer", "minimum": 1},
-        "buffer_frames": {"type": "integer", "minimum": 1}
+        "capture_device": {
+          "type": "string",
+          "minLength": 1
+        },
+        "playback_device": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sample_rate_hz": {
+          "enum": [
+            8000,
+            16000,
+            24000,
+            32000,
+            48000
+          ]
+        },
+        "mic_channels": {
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "period_frames": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "buffer_frames": {
+          "type": "integer",
+          "minimum": 1
+        }
       },
       "additionalProperties": true
     },
     "performance": {
       "type": "object",
       "properties": {
-        "active_cpu_percent": {"type": "number", "minimum": 0},
-        "idle_cpu_percent": {"type": "number", "minimum": 0},
-        "p50_us": {"type": "number", "minimum": 0},
-        "p95_us": {"type": "number", "minimum": 0},
-        "p99_us": {"type": "number", "minimum": 0},
-        "deadline_misses": {"type": "integer", "minimum": 0},
-        "rss_kib": {"type": "integer", "minimum": 0},
-        "xruns": {"type": "integer", "minimum": 0},
-        "overruns": {"type": "integer", "minimum": 0},
-        "input_full_events": {"type": "integer", "minimum": 0},
-        "output_drop_events": {"type": "integer", "minimum": 0},
-        "runtime_state_bytes": {"type": "integer", "minimum": 0},
-        "pipeline_state_bytes": {"type": "integer", "minimum": 0}
+        "active_cpu_percent": {
+          "type": "number",
+          "minimum": 0
+        },
+        "idle_cpu_percent": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p50_us": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p95_us": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p99_us": {
+          "type": "number",
+          "minimum": 0
+        },
+        "deadline_misses": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rss_kib": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xruns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "overruns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "input_full_events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_drop_events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "runtime_state_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pipeline_state_bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
       },
       "additionalProperties": true
     },
     "acoustic": {
       "type": "object",
       "properties": {
-        "corpus_revision": {"type": "string", "minLength": 1},
-        "cases_total": {"type": "integer", "minimum": 1},
-        "cases_passed": {"type": "integer", "minimum": 0},
-        "far_end_erle_db": {"type": "number"},
-        "aec_convergence_ms": {"type": "number", "minimum": 0},
-        "double_talk_near_si_sdr_db": {"type": "number"},
-        "noise_si_sdr_improvement_db": {"type": "number"},
-        "vad_f1": {"type": "number", "minimum": 0, "maximum": 1},
-        "threshold_report": {"type": "string", "minLength": 1}
+        "corpus_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cases_total": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cases_passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "far_end_erle_db": {
+          "type": "number"
+        },
+        "aec_convergence_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "double_talk_near_si_sdr_db": {
+          "type": "number"
+        },
+        "noise_si_sdr_improvement_db": {
+          "type": "number"
+        },
+        "vad_f1": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "threshold_report": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": true
     },
     "thermal_power": {
       "type": "object",
       "properties": {
-        "ambient_c": {"type": "number"},
-        "max_soc_c": {"type": "number"},
-        "average_power_w": {"type": "number", "minimum": 0}
+        "ambient_c": {
+          "type": "number"
+        },
+        "max_soc_c": {
+          "type": "number"
+        },
+        "average_power_w": {
+          "type": "number",
+          "minimum": 0
+        }
       },
       "additionalProperties": true
     },
     "soak": {
       "type": "object",
-      "required": ["hours", "passed"],
+      "required": [
+        "hours",
+        "passed"
+      ],
       "properties": {
-        "hours": {"type": "number", "minimum": 0},
-        "passed": {"type": "boolean"},
-        "xruns": {"type": "integer", "minimum": 0},
-        "deadline_misses": {"type": "integer", "minimum": 0},
-        "output_drop_events": {"type": "integer", "minimum": 0}
+        "hours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "xruns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deadline_misses": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_drop_events": {
+          "type": "integer",
+          "minimum": 0
+        }
       },
       "additionalProperties": true
     },
     "artifacts": {
       "type": "object",
       "properties": {
-        "result_json": {"type": "string", "minLength": 1},
-        "benchmark_json": {"type": "string", "minLength": 1},
-        "debug_bundle": {"type": "string"},
-        "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+        "result_json": {
+          "type": "string",
+          "minLength": 1
+        },
+        "benchmark_json": {
+          "type": "string",
+          "minLength": 1
+        },
+        "debug_bundle": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$"
+        }
       },
       "additionalProperties": true
+    },
+    "policy": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "allOf": [
     {
-      "if": {"properties": {"status": {"const": "product-certified"}}, "required": ["status"]},
+      "if": {
+        "properties": {
+          "status": {
+            "const": "product-certified"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "then": {
         "properties": {
           "performance": {
-            "required": ["active_cpu_percent", "p95_us", "p99_us", "deadline_misses", "rss_kib", "xruns", "overruns", "input_full_events", "output_drop_events"]
+            "required": [
+              "active_cpu_percent",
+              "p95_us",
+              "p99_us",
+              "deadline_misses",
+              "rss_kib",
+              "xruns",
+              "overruns",
+              "input_full_events",
+              "output_drop_events"
+            ]
           },
           "acoustic": {
-            "required": ["corpus_revision", "cases_total", "cases_passed", "far_end_erle_db", "aec_convergence_ms", "double_talk_near_si_sdr_db", "noise_si_sdr_improvement_db", "vad_f1", "threshold_report"]
+            "required": [
+              "corpus_revision",
+              "cases_total",
+              "cases_passed",
+              "far_end_erle_db",
+              "aec_convergence_ms",
+              "double_talk_near_si_sdr_db",
+              "noise_si_sdr_improvement_db",
+              "vad_f1",
+              "threshold_report"
+            ]
           },
           "soak": {
-            "properties": {"hours": {"minimum": 8}, "passed": {"const": true}},
-            "required": ["hours", "passed", "xruns", "deadline_misses", "output_drop_events"]
+            "properties": {
+              "hours": {
+                "minimum": 8
+              },
+              "passed": {
+                "const": true
+              }
+            },
+            "required": [
+              "hours",
+              "passed",
+              "xruns",
+              "deadline_misses",
+              "output_drop_events"
+            ]
           },
           "artifacts": {
-            "required": ["result_json", "benchmark_json", "sha256"]
+            "required": [
+              "result_json",
+              "benchmark_json",
+              "sha256"
+            ]
+          },
+          "thermal_power": {
+            "required": [
+              "ambient_c",
+              "max_soc_c",
+              "average_power_w"
+            ]
           }
-        }
+        },
+        "required": [
+          "policy",
+          "thermal_power"
+        ]
       }
     }
   ],

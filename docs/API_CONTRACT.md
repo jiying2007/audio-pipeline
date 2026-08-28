@@ -196,3 +196,7 @@ AP_ENABLE_FAST_MATH=ON|OFF
 ```
 
 There are no compatibility aliases for removed stage-enable booleans or old build switches.
+
+## v1.1.1 hardening notes
+
+Flight Recorder defaults are metrics-only; audio PCM recording is explicit opt-in. `ap_runtime_attach_flight_recorder()` rejects sample-rate/frame/channel geometry that does not match the runtime. `ap_runtime_command()` rejects unknown kinds and invalid payloads before enqueue; a command accepted into the bounded queue may still emit `AP_EVENT_COMMAND_REJECTED` if a frame-boundary state-dependent tuning application is rejected.

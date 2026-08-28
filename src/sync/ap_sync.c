@@ -1,5 +1,4 @@
 #include "sync/ap_sync.h"
-#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -73,7 +72,7 @@ static float ap_sync_delay_score(const ap_sync_state_t *s, const float *mic,
         xx += x * x;
         yy += y * y;
     }
-    return fabsf(xy / sqrtf(xx * yy));
+    return (xy * xy) / (xx * yy);
 }
 
 static void ap_sync_apply_drift(ap_sync_state_t *s, uint32_t best_delay,
@@ -144,7 +143,7 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
             }
         }
     }
-    if (best > 0.18f) {
+    if (best > 0.0324f) {
         const uint32_t old = s->delay_samples;
         const uint32_t raw_jump = old > best_delay ? old - best_delay : best_delay - old;
         event->delay_observed = 1u;

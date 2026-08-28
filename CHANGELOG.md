@@ -6,6 +6,12 @@ All notable changes are recorded here. The project follows semantic-version inte
 
 - target-board Cortex-A7/A32/AArch64 certification records remain SKU-specific work.
 
+## [0.7.1] - 2026-08-28
+
+- create annotated release tags only after build, test, SDK installation, packaging and checksum generation have all succeeded;
+- close the release/main reproducibility gap introduced by the v0.7.0 release-promotion workflow fix;
+- no DSP, public API, ABI, resource-envelope or acoustic-behavior change relative to the validated v0.7.0 code line.
+
 ## [0.7.0] - 2026-08-28
 
 - make the bandlimited boundary resampler the formally gated production default while preserving the explicit FAST validation fallback;

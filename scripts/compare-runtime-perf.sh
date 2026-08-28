@@ -5,6 +5,7 @@ BASE_REF=${1:-origin/main}
 REPS=${2:-7}
 MINIMAL_FRAMES=${3:-100000}
 FULL_FRAMES=${4:-10000}
+MINIMAL_MAX_ABS_REGRESSION_US=${5:-1.0}
 ROOT=$(pwd)
 TMP=$(mktemp -d)
 trap 'git worktree remove --force "$TMP/base" >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT INT TERM
@@ -57,8 +58,18 @@ median() { sort -n "$1" | awk -v n="$REPS" 'NR == int(n/2)+1 { print; exit }'; }
 BASE_MINIMAL=$(median "$TMP/base-minimal"); HEAD_MINIMAL=$(median "$TMP/head-minimal")
 BASE_FULL=$(median "$TMP/base-full"); HEAD_FULL=$(median "$TMP/head-full")
 MINIMAL_DELTA=$(median "$TMP/ratio-minimal"); FULL_DELTA=$(median "$TMP/ratio-full")
-echo "same_runner_runtime_perf reps=$REPS minimal_frames=$MINIMAL_FRAMES full_frames=$FULL_FRAMES"
-echo "minimal base_median_us=$BASE_MINIMAL head_median_us=$HEAD_MINIMAL paired_delta_pct=$MINIMAL_DELTA"
-echo "full    base_median_us=$BASE_FULL head_median_us=$HEAD_FULL paired_delta_pct=$FULL_DELTA"
-if awk -v d="$MINIMAL_DELTA" 'BEGIN { exit !(d > 10.0) }'; then echo "minimal runtime paired same-runner regression exceeds 10%" >&2; exit 3; fi
+MINIMAL_ABS_DELTA=$(awk -v b="$BASE_MINIMAL" -v h="$HEAD_MINIMAL" 'BEGIN { printf "%.6f", h-b }')
+FULL_ABS_DELTA=$(awk -v b="$BASE_FULL" -v h="$HEAD_FULL" 'BEGIN { printf "%.6f", h-b }')
+echo "same_runner_runtime_perf reps=$REPS minimal_frames=$MINIMAL_FRAMES full_frames=$FULL_FRAMES minimal_abs_gate_us=$MINIMAL_MAX_ABS_REGRESSION_US"
+echo "minimal base_median_us=$BASE_MINIMAL head_median_us=$HEAD_MINIMAL paired_delta_pct=$MINIMAL_DELTA abs_delta_us=$MINIMAL_ABS_DELTA"
+echo "full    base_median_us=$BASE_FULL head_median_us=$HEAD_FULL paired_delta_pct=$FULL_DELTA abs_delta_us=$FULL_ABS_DELTA"
+# The minimal path is only a few microseconds per 10 ms frame and includes
+# cross-thread wake/scheduling latency from the hosted runner. Like the FAST
+# resampler microbenchmark, require both a material relative regression and an
+# absolute delta above a small noise floor. The full runtime remains on the
+# strict relative gate because its larger signal is stable enough to compare.
+if awk -v d="$MINIMAL_DELTA" -v a="$MINIMAL_ABS_DELTA" -v maxa="$MINIMAL_MAX_ABS_REGRESSION_US" 'BEGIN { exit !(d > 10.0 && a > maxa) }'; then
+  echo "minimal runtime regression exceeds relative and absolute gates" >&2
+  exit 3
+fi
 if awk -v d="$FULL_DELTA" 'BEGIN { exit !(d > 10.0) }'; then echo "full runtime paired same-runner regression exceeds 10%" >&2; exit 4; fi

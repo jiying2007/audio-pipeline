@@ -88,6 +88,11 @@ static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
         assert(ap_pipeline_push_render(p, render, io_frame) == AP_OK);
         assert(ap_pipeline_process_capture(p, mic, io_frame, out) == AP_OK);
     }
+    {
+        ap_metrics_t stable;
+        ap_pipeline_get_metrics(p, &stable);
+        assert(stable.active_aec_adapt_stride >= 4u);
+    }
 
     for (frame = 0u; frame < 20u; ++frame) {
         ap_metrics_t m;
@@ -105,6 +110,7 @@ static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
         ap_pipeline_get_metrics(p, &m);
         assert(m.double_talk_active != 0u);
         assert(m.erle_valid == 0u);
+        assert(m.active_aec_adapt_stride == c.aec_adapt_stride);
         for (i = 0u; i < io_frame; ++i) out_e += (double)out[i] * out[i];
     }
     assert(out_e > near_e * 0.25);

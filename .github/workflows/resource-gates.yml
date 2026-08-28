@@ -1,0 +1,82 @@
+name: Resource Gates
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: resource-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sku-hard-ceilings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build representative pipeline SKUs
+        run: |
+          cmake --preset composition-full
+          cmake --preset composition-low
+          cmake --preset composition-tiny
+          cmake --preset composition-raw
+          for p in full low tiny raw; do
+            cmake --build "build/composition-$p" --target ap_state_size --parallel
+          done
+      - name: Enforce absolute pipeline RAM ceilings
+        run: |
+          full=$(./build/composition-full/ap_state_size)
+          low=$(./build/composition-low/ap_state_size)
+          tiny=$(./build/composition-tiny/ap_state_size)
+          raw=$(./build/composition-raw/ap_state_size)
+          echo "pipeline_state_bytes full=$full low=$low tiny=$tiny raw=$raw"
+          test "$full" -le 80000
+          test "$low" -le 50000
+          test "$tiny" -le 28000
+          test "$raw" -le 2048
+          test "$low" -lt "$full"
+          test "$tiny" -lt "$low"
+          test "$raw" -lt "$tiny"
+      - name: Enforce runtime RAM ceilings
+        run: |
+          cmake -S . -B build/rt-full -DCMAKE_BUILD_TYPE=Release -DAP_RUNTIME_QUEUE_DEPTH=8
+          cmake -S . -B build/rt-tiny -DCMAKE_BUILD_TYPE=Release \
+            -DAP_RUNTIME_QUEUE_DEPTH=4 -DAP_BUILD_MAX_IO_RATE_HZ=16000 \
+            -DAP_BUILD_MAX_INTERNAL_RATE_HZ=8000 -DAP_BUILD_MAX_MIC_CHANNELS=1 \
+            -DAP_BUILD_MAX_DELAY_MS=120 -DAP_BUILD_MAX_AEC_TAIL_MS=48 \
+            -DAP_MODULES=RESAMPLER,HPF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          cmake --build build/rt-full --parallel
+          cmake --build build/rt-tiny --parallel
+          cc tests/print_runtime_state.c -Iinclude -Ibuild/rt-full/generated \
+            build/rt-full/libaudio_pipeline_runtime.a build/rt-full/libaudio_pipeline.a \
+            -lm -pthread -o /tmp/rt-full
+          cc tests/print_runtime_state.c -Iinclude -Ibuild/rt-tiny/generated \
+            build/rt-tiny/libaudio_pipeline_runtime.a build/rt-tiny/libaudio_pipeline.a \
+            -lm -pthread -o /tmp/rt-tiny
+          full=$(/tmp/rt-full)
+          tiny=$(/tmp/rt-tiny)
+          echo "runtime_state_bytes full=$full tiny=$tiny"
+          test "$full" -le 32768
+          test "$tiny" -le 8192
+          test "$tiny" -lt "$full"
+      - name: Enforce final consumer ELF pruning
+        run: |
+          common="-DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DCMAKE_C_FLAGS=-ffunction-sections\ -fdata-sections -DCMAKE_EXE_LINKER_FLAGS=-Wl,--gc-sections"
+          eval cmake -S . -B build/elf-full $common -DAP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          eval cmake -S . -B build/elf-voice $common -DAP_MODULES=RESAMPLER,HPF,BF,NS,AGC,VAD
+          eval cmake -S . -B build/elf-raw $common -DAP_MODULES=RESAMPLER
+          for p in full voice raw; do
+            cmake --build "build/elf-$p" --target ap_consumer_smoke --parallel
+          done
+          elf_bytes() { size "$1" | awk 'NR==2 {print $1+$2+$3}'; }
+          full=$(elf_bytes build/elf-full/ap_consumer_smoke)
+          voice=$(elf_bytes build/elf-voice/ap_consumer_smoke)
+          raw=$(elf_bytes build/elf-raw/ap_consumer_smoke)
+          echo "consumer_elf_bytes full=$full voice=$voice raw=$raw"
+          test "$voice" -lt "$full"
+          test "$raw" -lt "$voice"
+          test $((full - voice)) -ge 64
+          test $((voice - raw)) -ge 64

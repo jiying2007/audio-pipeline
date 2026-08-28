@@ -39,16 +39,18 @@ cmake --preset composition-activity-only
 cmake --preset composition-fast-resampler
 ```
 
-当前 hosted GCC Quality gate 已证明 Pipeline RAM 会物理裁剪：
+当前 hosted GCC Resource Gate 已证明物理裁剪：
 
 ```text
-full   78,072 B
-LOW    46,904 B
-TINY   25,384 B
-RAW     1,064 B
+Pipeline full   78,096 B
+Pipeline LOW    46,928 B
+Pipeline TINY   25,408 B
+Pipeline RAW     1,064 B
+Runtime full    32,632 B
+Runtime TINY     5,080 B
 ```
 
-Linux runtime 同样受 build envelope 控制：当前 hosted 参考为完整 48 kHz/depth-8 **31,824 B**，约束后的 16 kHz/depth-4 TINY **4,464 B**。这些数字只用于证明当前 compiler/ABI 下的物理裁剪；发货应始终读取 exact size API。
+这些数字只用于证明当前 compiler/ABI 下的物理裁剪；发货产品仍应读取 exact size API。
 
 ## SKU 构建包络
 
@@ -74,39 +76,52 @@ AP_RUNTIME_QUEUE_DEPTH
 - SIMD：编译期 SCALAR/NEON。
 - Resampler：默认 BANDLIMITED，可显式选择 legacy-speed FAST fallback。
 - fast-math：默认关闭，绝不隐藏到 CPU toolchain。
-- Activity/DTD 已成为复用模块，高层 AEC/RES 不再复制独立判定。
+- Activity/DTD 增加 attack/release 能量平滑、far-end hysteresis 和双讲双阈值/hangover，但仍保持低成本接口。
+- AEC 在重收敛阶段保持快速 adaptation；连续稳定 far-end-only 后自动降低 adaptation cadence，双讲或参考消失时立即恢复配置的快速 cadence。
+- SYNC 保留整数 delay correction，同时使用 `drift_credit` 的小数残差进行两点线性 reference interpolation，减少纯整数 sample slip 带来的跳变。
+- delay search 改用平方归一化相关性比较，移除每个候选 delay 上的 `sqrtf`。
 - ERLE 仅在 AEC + far-end-only + 非双讲时有效，并显式提供 convergence 状态。
 - 大的 correlation/timestamp path jump 会重置失效的 AEC convergence epoch。
 
-默认边界 resampler 对当前固定下采样比例使用小型 FIR 以抑制 alias；FAST 保留原有轻量插值/抽取行为。API 提供 resampler filter delay，高层 algorithmic latency 会计入该延迟。
+默认边界 resampler 对固定下采样比例使用小型 FIR 抑制 alias；FAST 保留轻量插值/抽取行为。API 提供 filter delay，高层 algorithmic latency 会计入该延迟。
 
-## 硬件时间戳与回声路径变化
+## 时间戳、断流与回声路径变化
 
-如果产品可以获取可信的 capture/playback hardware timestamp，可调用：
+产品可用 `ap_pipeline_observe_io_timestamps()` 提供同一 monotonic clock domain 中对应的 capture/playback hardware timestamp；明确的 speaker route、codec/gain path 变化使用 `ap_pipeline_notify_echo_path_change()`。
 
-```c
-ap_pipeline_observe_io_timestamps(...);
-```
+Linux runtime 侧，`ap_runtime_submit_ex()` 可携带 versioned frame metadata：stream sequence、capture/render timestamp、XRUN、capture/render discontinuity、clock reset、codec reopen 以及丢帧数量。
 
-两个 timestamp 必须描述同一 monotonic clock domain 中相互对应的位置。
+`ap_runtime_command()` 提供有界控制队列，支持 echo-path change、stream discontinuity、reset、quality、tuning。所有 command 只由 DSP worker 在 frame boundary 执行，保持 live pipeline 单 owner。
 
-如果产品明确知道 speaker route、codec reopen、gain path 等导致 echo path 发生变化，应主动调用：
+## Linux runtime 所有权与过载行为
 
-```c
-ap_pipeline_notify_echo_path_change(...);
-```
+同步 Pipeline/Module API 要求调用方串行化。Pipeline 交给 `audio_pipeline_runtime` 并启动 worker 后，由 worker 独占 Pipeline。
 
-这样会立即清理陈旧的 SYNC/Activity/AEC 状态，而不是等待相关搜索重新发现路径。
-
-## Linux runtime 所有权
-
-同步 Pipeline/Module API 要求调用方串行化。Pipeline 交给 `audio_pipeline_runtime` 并启动 worker 后，运行期间由 worker 独占 Pipeline。
-
-每帧完整 `ap_metrics_t` 随 SPSC output snapshot 返回；控制面 `ap_runtime_get_metrics()` 只读取 runtime 自己的 atomics，不再并发读取 worker 正在修改的 Pipeline state。ThreadSanitizer CI 已覆盖该所有权模型。
+output consumer 变慢不会再跳过 DSP frame：output queue 满时只丢弃该次发布结果并计数，AEC/SYNC/NS/AGC/VAD 状态仍继续按 10 ms 时间线前进，避免 backpressure 破坏自适应状态。
 
 Runtime overload 状态与产品 resource class 分离：
 
 `FULL -> LITE -> SAFE`，健康后确定性恢复。
+
+`ap_runtime_get_metrics_v2()` 增加长期 64 位计数、queue high-water、capture/render gap、discontinuity、timestamp、RT scheduler/mlock 失败、实际 CPU/scheduler/priority 和基于固定 histogram 的 DSP p50/p95/p99。
+
+## 日志、事件、Dump 与 Replay
+
+`audio_pipeline/audio_diag.h` 定义正式 diagnostics plane。10 ms realtime worker **不执行** `printf/fwrite`、文件 I/O、heap allocation、JSON 编码。
+
+- 固定大小 event 覆盖生命周期、RT 配置失败、queue pressure、deadline miss、render/sync/AEC 异常和 quality transition。
+- event queue 有界且允许丢失，`event_drop_events` 可观测；event ring 满不会阻止 Flight Recorder 触发。
+- 可选 Flight Recorder 使用调用方提供的有界内存，保存可配置 pre-roll/post-roll 的 mic/render/output/metrics，并在指定 severity/event 后冻结。
+- `.apd` dump 带 exact build fingerprint。
+- PC 侧可检查、抽取、回放：
+
+```bash
+python3 tools/apdump.py info failure.apd
+python3 tools/apdump.py extract failure.apd --out-dir extracted
+python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-dir replay
+```
+
+音频 dump 可能包含用户语音；保留周期、访问控制、上传授权和安全删除由产品侧定义，SDK 本身不会上传数据。详见 `docs/DIAGNOSTICS.md`。
 
 ## 构建
 
@@ -128,11 +143,11 @@ cmake --preset cortex-a32-neon
 cmake --preset aarch64-neon
 ```
 
-CI 会持续 cross-build 全部 profile；Quality CI 还会在 QEMU 下实际执行 Cortex-A7 NEON 与 AArch64 的 module/contract/FFT/resampler 测试。Cross-build/QEMU 仅属于 correctness signal，不是实板性能结论。
+CI 会持续 cross-build 全部 profile；Quality CI 还会在 QEMU 下实际执行 Cortex-A7 NEON 与 AArch64 contracts。Cross-build/QEMU 只属于 correctness signal，不是实板性能结论。
 
 ## 安装后的 SDK
 
-安装包正式导出 CMake package 与 pkg-config：
+安装包正式导出 CMake package 与 pkg-config。Linux runtime 安装时会同时安装 `audio_runtime.h` 及其 diagnostics 依赖 `audio_diag.h`。
 
 ```cmake
 find_package(AudioPipeline CONFIG REQUIRED)
@@ -141,40 +156,41 @@ target_link_libraries(app PRIVATE AudioPipeline::core)
 target_link_libraries(app PRIVATE AudioPipeline::runtime)
 ```
 
-或：
+CI 会安装到干净目录后，用独立 consumer 工程编译、链接和运行，而不是只检查源码树。
 
-```bash
-pkg-config --cflags --libs audio-pipeline
-```
+## 声学评测
 
-CI 会把 SDK 安装到干净目录，再用独立 consumer 工程执行 `find_package`、编译、链接与运行，而不是只检查文件是否存在。
+`eval/run_eval.py` 支持 1/2 麦、capture-only/full-duplex、可选 clean near-end，并可对 SI-SDR、RMS、input/output 与 render 的相关性配置 case-level threshold。`--enforce-thresholds` 会让未达标 case 直接失败。真实产品语料继续保留在仓库外。
 
 ## Quality / Release Gate
 
-仓库自动化当前包含：
+仓库自动化包含：
 
 - GCC/Clang、strict、ASan/UBSan、libFuzzer smoke；
-- ThreadSanitizer runtime race 检查；
+- ThreadSanitizer runtime ownership 检查；
 - MDF/NLMS、EMA/MCRA、precise/fast-math、BANDLIMITED/FAST；
 - RAW/LOW/TINY/voice/module-only composition；
-- Pipeline/Runtime RAM 和最终 consumer ELF 裁剪；
+- Pipeline/Runtime RAM 与最终 consumer ELF 裁剪；
 - generic ARMv7-A、Cortex-A7、Cortex-A32、AArch64 cross-build；
 - Cortex-A7 NEON / AArch64 QEMU 执行；
 - hosted 源码 line coverage >=90%、clang static analyzer、nightly fuzz；
-- acoustic eval harness/schema 与 SKU certification schema；
-- main 上按 project version 自动生成 SDK/source/SHA256 GitHub Release。
+- `.apd` 生成 -> parse/extract -> 同构建 deterministic replay；
+- acoustic eval threshold/self-test 与严格 SKU certification validator；
+- main 按 project version 生成 SDK/source/checksum Release。
 
-Hosted x86 的百分比仅作为 regression signal。发货结论必须来自真实 SoC/kernel/compiler/DVFS/audio route 与声学语料。
+Hosted x86 百分比只作为 regression signal。发货结论必须来自真实 SoC/kernel/compiler/DVFS/audio route 与声学 corpus。
 
 ## 产品认证
 
-每个发货 SKU 至少应记录 CPU、p95/p99、RSS/cache/context-switch、XRUN/backpressure/overrun、thermal/power、声学 corpus 结果以及 8h soak。
+`product-certified` 记录必须包含目标板 performance evidence、声学 corpus revision/result、nominal XRUN/overrun/drop、artifact/checksum，以及通过的 >=8 h soak。semantic validator 还会执行初始产品门槛，例如 p95 <7 ms、p99 <10 ms。
 
 参考：
 
 - `docs/PLATFORM_SUPPORT.md`
 - `docs/PERFORMANCE.md`
+- `docs/DIAGNOSTICS.md`
 - `certification/record.schema.json`
+- `certification/validate_record.py`
 - `eval/README.md`
 
 仓库 CI 不会把 hosted/QEMU 数据包装成 Cortex-A7/A32 实板性能。
@@ -185,6 +201,7 @@ Hosted x86 的百分比仅作为 regression signal。发货结论必须来自真
 - `docs/ARCHITECTURE.md`：状态所有权与依赖方向
 - `docs/DSP_DESIGN.md`：算法设计
 - `docs/PERFORMANCE.md`：性能/发布/实板 gate
+- `docs/DIAGNOSTICS.md`：event、Flight Recorder、dump/replay 契约
 - `docs/PORTING.md`：BSP/ALSA/toolchain 集成
 - `docs/TUNING.md`：产品声学调优
 - `docs/DEVELOPMENT.md`：开发与 hard-cut 规范

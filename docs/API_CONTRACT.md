@@ -1,5 +1,11 @@
 # Public API Contract
 
+## Compatibility baseline
+
+The 1.x ABI baseline established by 1.0.0 remains in force. Version 1.1.0 is additive: existing `ap_config_t`, `ap_metrics_t`, `ap_runtime_config_t`, `ap_runtime_metrics_t` and existing module/public lifecycle layouts are not changed.
+
+New extensible control/diagnostic structures use `struct_size`, `api_version` and reserved fields. Callers must initialize those fields with the corresponding `*_API_VERSION` constant.
+
 ## Frame and sample contract
 
 High-level pipeline:
@@ -22,16 +28,9 @@ AP_BUILD_PIPELINE=ON|OFF
 AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
 ```
 
-The generated installed `audio_pipeline_build.h` is the macro capability source of truth. `ap_build_info()` exposes the corresponding runtime-readable immutable fingerprint including:
+The generated installed `audio_pipeline_build.h` is the macro capability source of truth. `ap_build_info()` exposes the corresponding runtime-readable immutable fingerprint including semantic version, module mask, AEC/NS/SIMD/resampler backend names, fast-math state, pipeline/runtime presence and compiled geometry.
 
-- semantic version;
-- module mask;
-- AEC/NS/SIMD/resampler backend names;
-- fast-math state;
-- pipeline/runtime presence;
-- max I/O/internal rate, microphone channels, delay, AEC tail and runtime queue depth.
-
-A module omitted from the build has no standalone declaration, implementation TU or embedded pipeline state.
+A module omitted from the build has no standalone implementation TU or embedded pipeline state.
 
 ## Build-time SKU envelope
 
@@ -80,9 +79,9 @@ static unsigned char pipeline_mem[AP_PIPELINE_STATE_MAX_BYTES];
 
 Standalone stateful modules use `AP_MODULE_STATE_ALIGNMENT`, `AP_MODULE_STATE_MAX_BYTES` and exact `ap_module_*_state_size()` functions.
 
-Linux runtime uses `AP_RUNTIME_STATE_ALIGNMENT`, `AP_RUNTIME_STATE_MAX_BYTES` and exact runtime size APIs. Runtime storage is also compile-time envelope aware.
+Linux runtime uses `AP_RUNTIME_STATE_ALIGNMENT`, `AP_RUNTIME_STATE_MAX_BYTES` and exact runtime size APIs. Flight Recorder storage is separate caller-owned memory sized by `ap_flight_recorder_state_size()` and therefore does not inflate runtime resident state unless a product explicitly provisions diagnostics audio history.
 
-Hosted GCC Quality CI currently demonstrates physical pipeline state pruning of full=78,072 B, LOW=46,904 B, TINY=25,384 B and RAW=1,064 B, and runtime pruning of full=31,824 B vs constrained TINY=4,464 B. These are verification values, not ABI constants.
+Current hosted GCC verification values are pipeline full=78,096 B, LOW=46,928 B, TINY=25,408 B, RAW=1,064 B and runtime full=32,632 B, constrained TINY=5,080 B. These are verification values, not ABI constants or target-board RAM claims.
 
 ## Standalone module lifecycle
 
@@ -92,7 +91,7 @@ Stateful standalone modules follow:
 state_size -> aligned caller storage -> init -> process/reset/status as applicable
 ```
 
-Resampler, HPF, BF, SYNC, Activity, AEC, RES, NS, AGC and VAD all expose reset semantics when stateful. Wrappers reuse the same private implementation as the high-level pipeline.
+Resampler, HPF, BF, SYNC, Activity, AEC, RES, NS, AGC and VAD expose deterministic reset semantics when stateful. Wrappers reuse the same private implementation as the high-level pipeline.
 
 Activity/DTD is independently available for applications that compose SYNC + Activity + AEC themselves. AEC standalone consumes already aligned microphone/reference frames plus explicit far-end/double-talk decisions.
 
@@ -100,44 +99,74 @@ Activity/DTD is independently available for applications that compose SYNC + Act
 
 `AP_RESAMPLER_MODE=BANDLIMITED|FAST` is compile-time.
 
-- `BANDLIMITED` is the default and applies small fixed FIR filters to the supported downsampling ratios to reduce aliasing.
-- `FAST` preserves the legacy lightweight interpolation/decimation path for explicitly accepted products.
-- resampler state preserves history across 10 ms frames;
+- `BANDLIMITED` is the default and applies small fixed FIR filters to supported downsampling ratios;
+- `FAST` preserves the lightweight interpolation/decimation path for explicitly accepted products;
+- state preserves history across 10 ms frames;
 - reset restores deterministic initial history;
-- filter delay is exposed through the standalone API and included in high-level algorithmic latency.
+- filter delay is exposed and included in high-level algorithmic latency.
 
-## Timestamp and echo-path contract
+## Timestamp, discontinuity and echo-path contract
 
 `ap_pipeline_observe_io_timestamps()` is optional. Capture and render timestamps must describe corresponding hardware positions in the same monotonic clock domain. Invalid/non-positive or out-of-envelope delay observations return `AP_EINVAL`.
 
-A sufficiently large timestamp delay jump is treated as a route jump and resets stale AEC convergence state through the core orchestrator.
+A sufficiently large timestamp/correlation delay jump is treated as a route jump and resets stale AEC convergence state through core.
 
-`ap_pipeline_notify_echo_path_change()` is for product-known route/path changes such as codec reopen, speaker path change or gain-route replacement. It resets stale SYNC/resampler/Activity/AEC state without waiting for correlation search.
+`ap_pipeline_notify_echo_path_change()` is for product-known route/path replacement. `ap_pipeline_notify_stream_discontinuity()` is distinct: it represents capture/render gaps, clock reset, XRUN or codec reopen and clears time-dependent state deterministically.
+
+When using the Linux runtime, applications must not call these mutating pipeline functions concurrently. Supply timestamp/discontinuity observations in `ap_frame_metadata_t` to `ap_runtime_submit_ex()`, or enqueue explicit controls through `ap_runtime_command()`.
+
+## Runtime control ownership
+
+After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until stop/deinit.
+
+`ap_runtime_command()` is a bounded single-producer control queue. Commands are applied only at frame boundaries and currently support:
+
+- echo-path change;
+- stream discontinuity;
+- pipeline reset;
+- explicit overload quality;
+- versioned tuning updates.
+
+`AP_EFULL` on the control queue means the application must retry/coalesce according to product policy; the runtime never silently creates an unbounded command backlog.
+
+## Output backpressure contract
+
+Accepted capture frames advance DSP state even when the output consumer is late. If the output queue is full, runtime processes the frame into bounded scratch, increments `output_drop_events`, emits a best-effort event and discards only that output publication. AEC/SYNC/NS/AGC/VAD state and the processing timeline are not skipped.
+
+Input queue overflow remains explicit `AP_EFULL`: a frame that was never accepted cannot be processed and should be represented by discontinuity/lost-frame metadata when appropriate.
 
 ## Telemetry semantics
 
-`ap_metrics_t.erle_valid` is true only for valid AEC far-end-only, non-double-talk observations. ERLE does not update for non-AEC graphs or during double-talk. `aec_convergence_frames` counts valid convergence observations within the current AEC epoch; `aec_converged` is an explicit heuristic status. Route/path resets start a new epoch.
+`ap_metrics_t.erle_valid` is true only for valid AEC far-end-only, non-double-talk observations. `aec_convergence_frames` counts valid convergence observations in the current AEC epoch and `aec_converged` is the explicit heuristic state. Route/path/discontinuity reset starts a new relevant epoch.
 
-`timestamp_observations` counts accepted timestamp observations. Delay jumps, sample slips, AEC resets and underruns remain monotonic per initialized pipeline instance.
+AEC backend status exposes the active runtime adaptation stride. The configured fast stride may increase after a sustained stable far-end-only window and returns to the configured value when double talk/reference loss requires fast reacquisition.
 
-## Threading and runtime ownership
+`ap_runtime_get_metrics_v2()` adds long-running 64-bit counters built from lock-free-width atomics, queue high-water marks, discontinuity/gap/timestamp counters, RT setup failures, actual CPU/scheduler/priority and fixed-histogram DSP p50/p95/p99 estimates.
 
-Synchronous pipeline/module APIs are caller-serialized and create no threads.
+## Diagnostics contract
 
-When `audio_pipeline_runtime` is running, the worker owns the supplied pipeline. Applications must not directly call pipeline mutating/metrics APIs until the runtime is stopped. Complete per-frame `ap_metrics_t` snapshots travel through the SPSC output queue. `ap_runtime_get_metrics()` reads only runtime-owned atomics and never reads live pipeline state concurrently.
+`ap_runtime_receive_event()` returns fixed-size versioned events from a small bounded ring. Event delivery is best-effort; `event_drop_events` is authoritative for loss. Persistent state must be read from metrics rather than inferred from complete event delivery.
 
-This ownership model is validated by ThreadSanitizer CI. Runtime counters intentionally use lock-free-width atomics suitable for ARMv7-A and widen public snapshots to 64 bits.
+Flight Recorder triggering is independent of event-ring capacity. If an event meets the configured recorder severity, recorder triggering occurs even if the notification event itself must be dropped.
+
+The realtime worker never opens/writes files, formats JSON/log lines or allocates heap storage for diagnostics. See `docs/DIAGNOSTICS.md`.
+
+## Threading
+
+Synchronous pipeline/module APIs are caller-serialized and create no threads. Runtime producer/consumer/control interfaces follow their documented SPSC ownership assumptions. Complete `ap_metrics_t` output snapshots travel with output slots; control-plane metric APIs read runtime-owned atomics and do not inspect worker-mutated pipeline memory.
+
+ThreadSanitizer CI validates this ownership model.
 
 ## Status semantics
 
 | Status | Meaning |
 |---|---|
 | `AP_OK` | operation completed |
-| `AP_EINVAL` | NULL, bad alignment, non-finite/out-of-range value, unsupported geometry or dependency violation |
+| `AP_EINVAL` | NULL, bad alignment, bad version/size, non-finite/out-of-range value, unsupported geometry or dependency violation |
 | `AP_ENOMEM` | caller state buffer is too small |
 | `AP_ESTATE` | feature not compiled or invalid lifecycle/state |
-| `AP_EFULL` | bounded producer queue full |
-| `AP_EEMPTY` | bounded consumer queue empty |
+| `AP_EFULL` | bounded producer/control queue full |
+| `AP_EEMPTY` | bounded consumer/event queue empty |
 
 `AP_ENOMEM` is never a generic invalid-argument status.
 
@@ -150,7 +179,8 @@ Independent dimensions are:
 - compiled module set;
 - compiled SKU envelope;
 - runtime stage subset;
-- runtime overload quality: FULL / LITE / SAFE.
+- runtime overload quality: FULL / LITE / SAFE;
+- optional diagnostics recording policy.
 
 CPU model does not imply any one resource class.
 

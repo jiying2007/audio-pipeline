@@ -39,16 +39,18 @@ cmake --preset composition-activity-only
 cmake --preset composition-fast-resampler
 ```
 
-Current hosted GCC Quality gates demonstrate physical pipeline RAM pruning:
+Current hosted GCC resource gates demonstrate physical pruning:
 
 ```text
-full   78,072 B
-LOW    46,904 B
-TINY   25,384 B
-RAW     1,064 B
+Pipeline full   78,096 B
+Pipeline LOW    46,928 B
+Pipeline TINY   25,408 B
+Pipeline RAW     1,064 B
+Runtime full    32,632 B
+Runtime TINY     5,080 B
 ```
 
-The Linux runtime is also build-envelope aware: the current hosted reference is `31,824 B` for the full 48 kHz/depth-8 envelope and `4,464 B` for the constrained 16 kHz/depth-4 TINY envelope. These numbers prove pruning for that compiler/ABI only; exact size functions remain authoritative.
+These numbers prove pruning for the current hosted compiler/ABI only; exact size functions remain authoritative for a product build.
 
 ## Product build envelope
 
@@ -74,13 +76,16 @@ The generated installed `audio_pipeline_build.h` plus `ap_build_info()` report t
 - SIMD: compile-time `SCALAR` or `NEON`.
 - Resampler: `BANDLIMITED` default or legacy-speed `FAST` fallback.
 - Fast math: OFF by default and never hidden in a CPU toolchain.
-- Activity/DTD is a reusable module shared by the high-level AEC/RES path rather than duplicated logic.
+- Activity/DTD uses attack/release energy smoothing, far-end hysteresis and double-talk hysteresis/hangover while keeping the same low-cost module contract.
+- AEC adapts quickly during acquisition/path recovery and automatically reduces adaptation cadence after a stable far-end-only window; double talk/reference loss returns it to the configured fast cadence.
+- SYNC keeps integer delay correction but consumes the fractional drift residue with linear reference interpolation, reducing discrete sample-jump artifacts.
+- Delay search compares squared normalized correlation and avoids per-candidate `sqrtf` calls.
 - ERLE is valid only during AEC far-end-only/non-double-talk observations; convergence state is exposed explicitly.
 - Large correlation/timestamp path jumps reset stale AEC convergence state.
 
 The default boundary resampler uses small fixed FIR filters for supported downsampling ratios to reduce aliasing. `FAST` retains the previous lightweight interpolation/decimation behavior as an explicit product choice. The API reports resampler filter delay and high-level algorithmic latency includes that delay.
 
-## Hardware timestamps and route changes
+## Hardware timestamps, discontinuities and route changes
 
 Products with trustworthy capture/playback hardware timestamps can seed SYNC using:
 
@@ -88,21 +93,39 @@ Products with trustworthy capture/playback hardware timestamps can seed SYNC usi
 ap_pipeline_observe_io_timestamps(...);
 ```
 
-Both timestamps must describe corresponding positions in the same monotonic clock domain. Product-known route/path changes should call:
+Both timestamps must describe corresponding positions in the same monotonic clock domain. Product-known route/path changes call `ap_pipeline_notify_echo_path_change()`.
 
-```c
-ap_pipeline_notify_echo_path_change(...);
-```
+For Linux runtime integration, `ap_runtime_submit_ex()` carries versioned frame metadata including stream sequence, capture/render timestamps, XRUN/discontinuity/clock-reset/codec-reopen flags and lost-frame counts. `ap_runtime_command()` queues echo-path changes, stream discontinuities, reset, quality and tuning controls. Commands are applied by the DSP worker only at frame boundaries, preserving single-owner access to the live pipeline.
 
-This explicitly clears stale SYNC/Activity/AEC state instead of waiting for correlation to rediscover the path.
+## Linux runtime ownership and overload behavior
 
-## Linux runtime ownership
+The synchronous API is caller-serialized. After a pipeline is handed to `audio_pipeline_runtime` and the worker is running, the worker owns pipeline access. Per-frame `ap_metrics_t` snapshots are returned through the SPSC output queue; control-plane metrics read runtime-owned atomics only. ThreadSanitizer CI enforces this ownership model.
 
-The synchronous API is caller-serialized. After a pipeline is handed to `audio_pipeline_runtime` and the worker is running, the worker owns pipeline access. Per-frame `ap_metrics_t` snapshots are returned through the SPSC output queue; control-plane `ap_runtime_get_metrics()` reads runtime-owned atomics only. ThreadSanitizer CI enforces this ownership model.
+Output backpressure never skips DSP processing. If the output queue is full, that output snapshot is dropped and counted while AEC/SYNC/NS/AGC/VAD state still advances. This preserves the 10 ms DSP timeline independently of consumer speed.
 
 Runtime overload state is distinct from product resource class:
 
 `FULL -> LITE -> SAFE` under sustained deadline pressure, with deterministic recovery.
+
+`ap_runtime_get_metrics_v2()` exposes long-running 64-bit counters, queue high-water marks, capture/render gaps, discontinuities, timestamp observations, RT scheduler setup failures, actual scheduler/CPU state and fixed-histogram DSP p50/p95/p99 estimates.
+
+## Diagnostics, dump and replay
+
+`audio_pipeline/audio_diag.h` provides a bounded diagnostics plane. The realtime worker never performs file I/O, heap allocation, JSON encoding or formatted logging.
+
+- Fixed-size events cover lifecycle, RT setup failures, queue pressure, deadline misses, reference/sync/AEC faults and quality transitions.
+- Event delivery is intentionally lossy and separately counted; a full event ring cannot suppress a Flight Recorder trigger.
+- The optional caller-owned Flight Recorder stores configurable pre-roll/post-roll mic/render/output/metrics in memory and freezes on selected severity/events.
+- Exported `.apd` dumps include the exact build fingerprint.
+- PC tools inspect/extract/replay dumps:
+
+```bash
+python3 tools/apdump.py info failure.apd
+python3 tools/apdump.py extract failure.apd --out-dir extracted
+python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-dir replay
+```
+
+Audio dumps may contain private speech. Retention, access control, upload consent and secure deletion are product responsibilities; the SDK never uploads data. See `docs/DIAGNOSTICS.md`.
 
 ## Build
 
@@ -128,7 +151,7 @@ CI cross-compiles all profiles; Quality CI additionally executes selected Cortex
 
 ## Installed SDK
 
-Installation exports both CMake and pkg-config metadata:
+Installation exports CMake and pkg-config metadata. Runtime packages install `audio_runtime.h` and its diagnostics dependency `audio_diag.h` together.
 
 ```cmake
 find_package(AudioPipeline CONFIG REQUIRED)
@@ -137,13 +160,11 @@ target_link_libraries(app PRIVATE AudioPipeline::core)
 target_link_libraries(app PRIVATE AudioPipeline::runtime)
 ```
 
-or:
+CI installs the SDK into a clean prefix and builds/runs separate consumers, so packaging is exercised rather than only checking source-tree builds.
 
-```bash
-pkg-config --cflags --libs audio-pipeline
-```
+## Acoustic evaluation
 
-CI installs the SDK into a clean prefix and builds/runs a separate consumer project, so package metadata is tested rather than only checking that files exist.
+`eval/run_eval.py` supports 1- or 2-mic cases, capture-only or full-duplex input, optional clean near-end reference and case-level thresholds for SI-SDR, RMS and input/output render correlation. `--enforce-thresholds` converts a case into an executable acoustic gate. Private product corpora remain outside the repository.
 
 ## Quality and release gates
 
@@ -157,18 +178,23 @@ Repository automation includes:
 - generic ARMv7-A, Cortex-A7, Cortex-A32 and AArch64 cross-builds;
 - Cortex-A7 NEON and AArch64 QEMU execution;
 - >=90% hosted source line coverage gate, clang static analyzer and nightly fuzz;
-- acoustic evaluation harness/schema and per-SKU certification schema;
-- automatic v0.5.0-style SDK/source/checksum GitHub release from the project version on `main`.
+- dump generation -> parse/extract -> deterministic replay contracts;
+- acoustic evaluation self-tests/threshold contracts and strict SKU certification validation;
+- release packaging and checksums from the project version on `main`.
 
 Hosted x86 percentages are regression signals only. Shipping claims require the actual SoC/kernel/compiler/DVFS/audio route and acoustic corpus.
 
 ## Target certification
 
-A shipping SKU is not considered product-certified until it records at least CPU/p95/p99/RSS/cache/context switches, XRUN/backpressure/overrun counters, thermal/power, acoustic corpus results and an 8 h soak. See:
+`product-certified` records must include target performance evidence, acoustic corpus revision/results, nominal XRUN/overrun/drop results, artifacts/checksums and a passing >=8 h soak. The semantic validator additionally enforces the initial product gates such as p95 <7 ms and p99 <10 ms.
+
+See:
 
 - `docs/PLATFORM_SUPPORT.md`
 - `docs/PERFORMANCE.md`
+- `docs/DIAGNOSTICS.md`
 - `certification/record.schema.json`
+- `certification/validate_record.py`
 - `eval/README.md`
 
 No repository CI result is presented as Cortex-A7/A32 board performance.
@@ -179,6 +205,7 @@ No repository CI result is presented as Cortex-A7/A32 board performance.
 - `docs/ARCHITECTURE.md` — ownership and dependency direction
 - `docs/DSP_DESIGN.md` — algorithm details
 - `docs/PERFORMANCE.md` — regression and product certification gates
+- `docs/DIAGNOSTICS.md` — event, Flight Recorder, dump and replay contract
 - `docs/PORTING.md` — BSP/ALSA/toolchain integration
 - `docs/TUNING.md` — acoustic/product tuning rules
 - `docs/DEVELOPMENT.md` — contribution and hard-cut rules

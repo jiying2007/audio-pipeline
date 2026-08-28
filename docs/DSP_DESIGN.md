@@ -43,15 +43,23 @@ The two-mic frontend uses a low-cost delay-and-sum geometry with optional direct
 
 SYNC stores a bounded render ring whose capacity is derived from the compiled max delay/internal sample rate. Coarse normalized correlation is periodically searched across the supported delay range, followed by a local one-sample refinement.
 
-Large correlation jumps are emitted as route-jump events. Persistent small error drives the existing ppm estimate and integer reference-domain sample slips.
+The search compares **squared normalized correlation**, so candidate ranking and the acceptance threshold are equivalent to absolute normalized correlation without performing `sqrtf` for every candidate.
 
-Optional hardware timestamp observations convert trusted capture/playback time deltas into delay observations. Timestamps must share a monotonic clock domain. Correlation remains the fallback and timestamp observations do not create a general ASRC.
+Large correlation jumps are emitted as route-jump events. Persistent small error drives the ppm estimate and `drift_credit`. Integer crossings still update the reference delay and increment sample-slip telemetry. The remaining fractional credit is applied directly during reference fetch using two-point linear interpolation. This reduces discrete correction artifacts without introducing a general-purpose ASRC or new large state.
+
+Optional hardware timestamp observations convert trusted capture/playback time deltas into delay observations. Timestamps must share a monotonic clock domain. Correlation remains the fallback.
 
 ## Activity / double-talk
 
-Activity is a small stateful supporting module shared by high-level AEC/RES/NS and available standalone. The current clean-room implementation uses far-end energy threshold + near/reference energy ratio + hangover. It is intentionally cheap; future coherence/correlation implementations should preserve the same module contract.
+Activity is a small stateful supporting module shared by high-level AEC/RES/NS and available standalone. The clean-room low-compute detector now uses:
 
-A single Activity result avoids independent AEC and RES double-talk decisions.
+- asymmetric attack/release smoothing for mic/reference energy;
+- a far-end activation threshold plus a lower release threshold and short hangover;
+- a double-talk activation ratio plus a lower hold ratio and hangover.
+
+The first valid observation seeds the smoothers directly so cold-start far-end/double-talk response is not delayed by EMA warm-up. The implementation remains energy-domain and intentionally avoids per-frame FFT/coherence cost in the default low-compute profile.
+
+A single Activity result avoids independent AEC, RES and NS double-talk decisions.
 
 ## AEC
 
@@ -59,7 +67,14 @@ Default AEC is a clean-room partitioned MDF/AUMDF-lite style frequency-domain ba
 
 AEC resident geometry is derived from the compiled max tail/internal rate, so LOW/TINY product builds physically remove unused partitions/history.
 
-Adaptation is gated by far-end/double-talk activity. AEC reset occurs on explicit path changes or sufficiently large SYNC/timestamp route jumps through the core orchestrator.
+Adaptation is gated by far-end/double-talk activity. Both MDF and NLMS maintain two adaptation cadences:
+
+- **acquisition/recovery cadence** — the configured `aec_adapt_stride`;
+- **steady cadence** — after 50 consecutive far-end-active/non-double-talk frames, at least stride 4.
+
+Double talk or loss of far-end activity clears the steady window and immediately restores the configured acquisition cadence. Quality changes and AEC reset also clear the steady state. This lowers steady-state update/constrain work without slowing path reacquisition after a real condition change.
+
+AEC reset occurs on explicit path changes, stream discontinuities that invalidate alignment or sufficiently large SYNC/timestamp route jumps through core.
 
 ## ERLE / convergence telemetry
 
@@ -72,7 +87,7 @@ AND double-talk inactive
 AND valid reference/residual energy
 ```
 
-`erle_valid` marks frames meeting this contract. `aec_convergence_frames` counts valid observations in the current epoch; route/path reset starts a new epoch.
+`erle_valid` marks frames meeting this contract. `aec_convergence_frames` counts valid observations in the current epoch; route/path reset starts a new epoch. `active_aec_adapt_stride` reports the effective runtime cadence rather than only the configured base value.
 
 ## Residual echo suppression
 
@@ -89,6 +104,8 @@ NS uses an overlap STFT Wiener-style spectral gain. The default noise estimator 
 
 Frequency RES stores only echo power bins and reuses the complex FFT scratch rather than holding a second persistent complex spectrum.
 
+The current product policy is to optimize measured target-board hotspots rather than expand SIMD surface speculatively. Existing AEC vector kernels remain compile-time SCALAR/NEON; full FFT/NS vectorization should be accepted only when target profiling demonstrates material benefit and all acoustic contracts remain unchanged.
+
 ## AGC / limiter
 
 AGC estimates frame RMS/peak, smooths gain with asymmetric attack/release behavior and applies a limiter. dB controls are converted to linear values at init, so the steady-state loop avoids `powf`.
@@ -104,14 +121,16 @@ The lightweight VAD tracks an RMS noise floor and hangover. When NS exists, upst
 `FULL/LITE/SAFE` are runtime overload states, not CPU classes.
 
 - FULL: nominal graph and AEC geometry;
-- LITE: reduced active AEC tail/adaptation cadence and lower-cost choices;
+- LITE: reduced active AEC tail/base adaptation policy and lower-cost choices;
 - SAFE: strongest overload fallback, including BF bypass and broadband RES path.
+
+Steady-state AEC cadence is an additional backend-local CPU reduction and does not replace FULL/LITE/SAFE overload policy.
 
 Compile-time TINY/LOW product envelopes are separate and may physically remove capacity that runtime quality cannot restore.
 
 ## SIMD / math
 
-Scalar and NEON kernels are compile-time selected; algorithm code does not contain CPU model names. Fast math is independently opt-in. Correctness and acoustic contracts must pass for every shipping combination.
+Scalar and NEON kernels are compile-time selected; algorithm code does not contain CPU model names. Fast math is independently opt-in. Correctness, deterministic behavior where required and acoustic contracts must pass for every shipping combination.
 
 ## Clean-room policy
 

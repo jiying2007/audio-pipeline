@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 1.0.0 LANGUAGES C)
+project(audio_pipeline VERSION 1.1.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -396,7 +396,9 @@ if(AP_BUILD_PIPELINE)
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/audio_pipeline)
 endif()
 if(TARGET audio_pipeline_runtime)
-    install(FILES include/audio_pipeline/audio_runtime.h
+    install(FILES
+            include/audio_pipeline/audio_runtime.h
+            include/audio_pipeline/audio_diag.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/audio_pipeline)
 endif()
 install(EXPORT AudioPipelineTargets

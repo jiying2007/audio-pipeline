@@ -11,6 +11,7 @@ extern "C" {
 
 #define AP_PIPELINE_STATE_MAX_BYTES 80000u
 #define AP_PIPELINE_STATE_ALIGNMENT 16u
+#define AP_PIPELINE_CONTROL_API_VERSION 2u
 
 typedef enum ap_profile { AP_PROFILE_CALL = 0, AP_PROFILE_ASSISTANT = 1 } ap_profile_t;
 typedef enum ap_resource_class { AP_RESOURCE_TINY = 0, AP_RESOURCE_LOW = 1, AP_RESOURCE_STANDARD = 2 } ap_resource_class_t;
@@ -71,6 +72,35 @@ typedef struct ap_metrics {
     ap_aec_backend_t aec_backend;
 } ap_metrics_t;
 
+typedef uint32_t ap_discontinuity_flags_t;
+enum {
+    AP_DISCONTINUITY_CAPTURE_GAP = 1u << 0,
+    AP_DISCONTINUITY_RENDER_GAP = 1u << 1,
+    AP_DISCONTINUITY_CLOCK_RESET = 1u << 2,
+    AP_DISCONTINUITY_XRUN = 1u << 3,
+    AP_DISCONTINUITY_CODEC_REOPEN = 1u << 4,
+    AP_DISCONTINUITY_ROUTE_CHANGE = 1u << 5
+};
+
+typedef uint32_t ap_tuning_mask_t;
+enum {
+    AP_TUNING_AEC_MU = 1u << 0,
+    AP_TUNING_NS_FLOOR = 1u << 1,
+    AP_TUNING_AGC_TARGET = 1u << 2,
+    AP_TUNING_LIMITER = 1u << 3
+};
+
+typedef struct ap_tuning {
+    uint32_t struct_size;
+    uint32_t api_version;
+    ap_tuning_mask_t mask;
+    float aec_mu;
+    float ns_floor;
+    float agc_target_dbfs;
+    float limiter_dbfs;
+    uint32_t reserved[8];
+} ap_tuning_t;
+
 typedef struct ap_pipeline ap_pipeline_t;
 
 ap_config_t ap_config_default(ap_profile_t profile);
@@ -98,6 +128,15 @@ ap_status_t ap_pipeline_observe_io_timestamps(ap_pipeline_t *pipeline,
 /* Explicit product route/path notification. Clears stale reference/alignment and
  * adaptive AEC state instead of waiting for correlation to rediscover the path. */
 ap_status_t ap_pipeline_notify_echo_path_change(ap_pipeline_t *pipeline);
+/* Stream discontinuity is distinct from an acoustic echo-path change. It is used
+ * for XRUN/capture gaps/render gaps/clock resets and may reset timing/AEC state. */
+ap_status_t ap_pipeline_notify_stream_discontinuity(ap_pipeline_t *pipeline,
+                                                    ap_discontinuity_flags_t flags,
+                                                    uint32_t lost_frames);
+/* Frame-boundary tuning control. The caller must serialize this with synchronous
+ * processing; the Linux runtime command queue provides that ownership boundary. */
+ap_status_t ap_pipeline_apply_tuning(ap_pipeline_t *pipeline,
+                                     const ap_tuning_t *tuning);
 void ap_pipeline_get_metrics(const ap_pipeline_t *pipeline, ap_metrics_t *metrics);
 uint32_t ap_pipeline_algorithmic_latency_ms(const ap_pipeline_t *pipeline);
 

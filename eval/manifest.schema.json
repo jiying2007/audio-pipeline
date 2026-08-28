@@ -3,14 +3,28 @@
   "$id": "https://example.invalid/audio-pipeline/eval-manifest.schema.json",
   "title": "audio-pipeline acoustic evaluation manifest",
   "type": "object",
-  "required": ["sample_rate_hz", "mic_pcm", "render_pcm"],
+  "required": ["sample_rate_hz", "mic_pcm"],
   "properties": {
+    "case_id": {"type": "string", "minLength": 1},
     "sample_rate_hz": {"enum": [8000, 16000, 24000, 32000, 48000]},
-    "mic_channels": {"enum": [2], "default": 2},
-    "mic_pcm": {"type": "string", "description": "S16LE interleaved microphone PCM"},
-    "render_pcm": {"type": "string", "description": "S16LE mono render reference PCM"},
-    "clean_near_pcm": {"type": "string", "description": "Optional S16LE mono clean near-end reference"},
-    "output_pcm": {"type": "string", "description": "Optional output path; otherwise a temporary file is used"},
+    "mic_channels": {"enum": [1, 2], "default": 2},
+    "mic_pcm": {"type": "string", "minLength": 1, "description": "S16LE interleaved microphone PCM"},
+    "render_pcm": {"type": "string", "minLength": 1, "description": "Optional S16LE mono render reference PCM; omit for capture-only cases"},
+    "clean_near_pcm": {"type": "string", "minLength": 1, "description": "Optional S16LE mono clean near-end reference"},
+    "output_pcm": {"type": "string", "minLength": 1, "description": "Optional output path; otherwise a temporary file is used"},
+    "expected": {
+      "type": "object",
+      "description": "Optional case-level metric gates. Every named minimum/maximum is enforced by run_eval.py.",
+      "properties": {
+        "min_near_si_sdr_db": {"type": "number"},
+        "min_output_rms_dbfs": {"type": "number"},
+        "max_output_rms_dbfs": {"type": "number"},
+        "max_output_render_abs_corr": {"type": "number", "minimum": 0, "maximum": 1},
+        "max_output_render_corr_ratio": {"type": "number", "minimum": 0},
+        "min_output_render_corr_reduction": {"type": "number", "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
     "metadata": {"type": "object", "additionalProperties": true}
   },
   "additionalProperties": false

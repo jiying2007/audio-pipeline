@@ -29,7 +29,8 @@ void ap_activity_process(ap_activity_state_t *s,
                          float reference_energy,
                          ap_activity_result_t *r) {
     const uint32_t far_hold = s->hangover_frames > 1u ? 2u : s->hangover_frames;
-    float ratio;
+    float smoothed_ratio;
+    float instant_ratio;
     int far;
     int dt_on;
     int dt_hold;
@@ -46,10 +47,17 @@ void ap_activity_process(ap_activity_state_t *s,
     far = s->far_end_hangover > 0u ||
           s->smoothed_reference_energy > s->far_end_threshold;
 
-    ratio = s->smoothed_mic_energy /
-            (s->smoothed_reference_energy + 1.0e-12f);
-    dt_on = far && ratio > s->double_talk_ratio;
-    dt_hold = far && ratio > 0.72f * s->double_talk_ratio;
+    smoothed_ratio = s->smoothed_mic_energy /
+                     (s->smoothed_reference_energy + 1.0e-12f);
+    instant_ratio = mic_energy / (reference_energy + 1.0e-12f);
+
+    /* Smoothed energy rejects one-frame threshold chatter, but the current
+     * frame must still contain near-end evidence before double talk can be
+     * triggered or held. This prevents the mic EMA tail from continuously
+     * refreshing hangover after near-end speech has stopped. */
+    dt_on = far && smoothed_ratio > s->double_talk_ratio &&
+            instant_ratio > 0.90f * s->double_talk_ratio;
+    dt_hold = far && instant_ratio > 0.72f * s->double_talk_ratio;
 
     if (dt_on) {
         s->double_talk_hangover = s->hangover_frames;

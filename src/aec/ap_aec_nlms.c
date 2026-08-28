@@ -2,6 +2,26 @@
 #include <stdint.h>
 #include <string.h>
 
+static uint32_t ap_aec_steady_stride(uint32_t configured) {
+    return configured < AP_AEC_STEADY_MIN_STRIDE ?
+           AP_AEC_STEADY_MIN_STRIDE : configured;
+}
+
+static void ap_aec_update_runtime_stride(ap_aec_state_t *state,
+                                         int far_end_active,
+                                         int double_talk_active) {
+    if (far_end_active && !double_talk_active) {
+        if (state->steady_frames < AP_AEC_STEADY_FRAMES)
+            state->steady_frames++;
+        if (state->steady_frames >= AP_AEC_STEADY_FRAMES)
+            state->runtime_adapt_stride =
+                ap_aec_steady_stride(state->active_adapt_stride);
+    } else {
+        state->steady_frames = 0u;
+        state->runtime_adapt_stride = state->active_adapt_stride;
+    }
+}
+
 void ap_aec_backend_init(ap_aec_state_t *state,
                          uint32_t frame_samples,
                          uint32_t taps,
@@ -11,6 +31,7 @@ void ap_aec_backend_init(ap_aec_state_t *state,
     state->taps = taps;
     state->active_taps = taps;
     state->active_adapt_stride = adapt_stride;
+    state->runtime_adapt_stride = adapt_stride;
 }
 
 void ap_aec_backend_reset(ap_aec_state_t *state) {
@@ -18,6 +39,8 @@ void ap_aec_backend_reset(ap_aec_state_t *state) {
     memset(state->weights, 0, sizeof(state->weights));
     state->pos = 0u;
     state->adapt_phase = 0u;
+    state->steady_frames = 0u;
+    state->runtime_adapt_stride = state->active_adapt_stride;
 }
 
 void ap_aec_backend_set_active(ap_aec_state_t *state,
@@ -26,6 +49,8 @@ void ap_aec_backend_set_active(ap_aec_state_t *state,
     if (active_taps > state->taps) active_taps = state->taps;
     state->active_taps = active_taps;
     state->active_adapt_stride = adapt_stride;
+    state->runtime_adapt_stride = adapt_stride;
+    state->steady_frames = 0u;
     if (state->adapt_phase >= adapt_stride) state->adapt_phase = 0u;
 }
 
@@ -52,6 +77,11 @@ void ap_aec_backend_process(ap_aec_state_t *state,
         memset(echo_out, 0, frame_samples * sizeof(float));
         return;
     }
+
+    ap_aec_update_runtime_stride(state, far_end_active, double_talk_active);
+    if (state->adapt_phase >= state->runtime_adapt_stride)
+        state->adapt_phase = 0u;
+
     for (i = 0u; i < frame_samples; ++i) {
         const float x = ref[i];
         const uint32_t pos = state->pos;
@@ -67,7 +97,7 @@ void ap_aec_backend_process(ap_aec_state_t *state,
         echo_energy += y * y;
         if (far_end_active && !double_talk_active) {
             state->adapt_phase++;
-            if (state->adapt_phase >= state->active_adapt_stride) {
+            if (state->adapt_phase >= state->runtime_adapt_stride) {
                 const float norm = 1.0e-6f + ap_kernel_dot_f32(hist, hist, taps);
                 const float step = mu * e / norm;
                 state->adapt_phase = 0u;
@@ -83,7 +113,7 @@ void ap_aec_backend_get_status(const ap_aec_state_t *state,
                                ap_aec_status_t *status) {
     status->kind = AP_AEC_KIND_NLMS;
     status->active_taps = state->active_taps;
-    status->active_adapt_stride = state->active_adapt_stride;
+    status->active_adapt_stride = state->runtime_adapt_stride;
     status->active_partitions = 0u;
     status->block_samples = 1u;
 }

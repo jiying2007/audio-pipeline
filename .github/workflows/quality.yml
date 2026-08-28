@@ -14,7 +14,7 @@ jobs:
   sdk-consumer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build and install SDK
         run: |
           cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release
@@ -36,7 +36,7 @@ jobs:
   sku-memory-rom:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify SKU pipeline RAM pruning
         run: |
           cmake --preset composition-full
@@ -90,7 +90,7 @@ jobs:
   thread-sanitizer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure TSan runtime contract
         env:
           CC: clang
@@ -125,7 +125,7 @@ jobs:
             simd: NEON
             qemu: qemu-aarch64 -cpu cortex-a53 -L /usr/aarch64-linux-gnu
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install cross runtime
         run: >-
           sudo apt-get update && sudo apt-get install -y qemu-user
@@ -157,7 +157,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install coverage tooling
         run: sudo apt-get update && sudo apt-get install -y gcovr
       - name: Configure coverage build
@@ -178,7 +178,7 @@ jobs:
   static-analysis:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install analyzer
         run: sudo apt-get update && sudo apt-get install -y clang-tools
       - name: Configure
@@ -193,6 +193,6 @@ jobs:
   acoustic-eval-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validate evaluation harness
         run: python3 eval/run_eval.py --self-test

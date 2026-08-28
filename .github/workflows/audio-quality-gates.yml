@@ -14,7 +14,7 @@ jobs:
   bandlimited-boundary:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure bandlimited default
         run: >-
           cmake -S . -B build-audio -DCMAKE_BUILD_TYPE=Release
@@ -33,7 +33,7 @@ jobs:
   diagnostics-replay:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure realtime diagnostics build
         run: >-
           cmake -S . -B build-diag -DCMAKE_BUILD_TYPE=Release
@@ -60,7 +60,7 @@ jobs:
   fast-fallback:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure explicit FAST fallback
         run: >-
           cmake -S . -B build-fast -DCMAKE_BUILD_TYPE=Release
@@ -74,7 +74,7 @@ jobs:
   timestamp-route-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure full sync/AEC graph
         run: cmake -S . -B build-sync -DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build and validate synchronization/reset semantics

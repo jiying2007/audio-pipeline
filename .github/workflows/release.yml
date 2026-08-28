@@ -37,19 +37,6 @@ jobs:
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Ensure release tag exists
-        if: steps.existing.outputs.release != 'true'
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            test "$(git rev-list -n1 "$TAG")" = "$GITHUB_SHA"
-          else
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git tag -a "$TAG" -m "audio-pipeline $TAG" "$GITHUB_SHA"
-            git push origin "$TAG"
-          fi
       - name: Build, test and install SDK
         if: steps.existing.outputs.release != 'true'
         run: |
@@ -66,6 +53,19 @@ jobs:
           git archive --format=tar.gz -o "audio-pipeline-${TAG}-source.tar.gz" "$GITHUB_SHA"
           sha256sum "audio-pipeline-${TAG}-sdk.tar.gz" \
                     "audio-pipeline-${TAG}-source.tar.gz" > SHA256SUMS
+      - name: Create verified release tag
+        if: steps.existing.outputs.release != 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            test "$(git rev-list -n1 "$TAG")" = "$GITHUB_SHA"
+          else
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git tag -a "$TAG" -m "audio-pipeline $TAG" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
       - name: Create GitHub Release
         if: steps.existing.outputs.release != 'true'
         env:

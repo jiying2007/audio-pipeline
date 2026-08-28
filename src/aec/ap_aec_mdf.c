@@ -12,6 +12,26 @@ static void ap_mdf_make_hermitian(ap_complex_t *x, uint32_t nfft, uint32_t bins)
     }
 }
 
+static uint32_t ap_aec_steady_stride(uint32_t configured) {
+    return configured < AP_AEC_STEADY_MIN_STRIDE ?
+           AP_AEC_STEADY_MIN_STRIDE : configured;
+}
+
+static void ap_aec_update_runtime_stride(ap_aec_state_t *state,
+                                         int far_end_active,
+                                         int double_talk_active) {
+    if (far_end_active && !double_talk_active) {
+        if (state->steady_frames < AP_AEC_STEADY_FRAMES)
+            state->steady_frames++;
+        if (state->steady_frames >= AP_AEC_STEADY_FRAMES)
+            state->runtime_adapt_stride =
+                ap_aec_steady_stride(state->active_adapt_stride);
+    } else {
+        state->steady_frames = 0u;
+        state->runtime_adapt_stride = state->active_adapt_stride;
+    }
+}
+
 static void ap_mdf_constrain(ap_aec_state_t *state, uint32_t partition) {
     ap_mdf_state_t *s = &state->backend;
     uint32_t i;
@@ -85,7 +105,7 @@ static void ap_mdf_set_active(ap_aec_state_t *state) {
     if (parts > s->partitions) parts = s->partitions;
     s->active_partitions = parts;
     if (s->constrain_partition >= parts) s->constrain_partition = 0u;
-    if (s->adapt_phase >= state->active_adapt_stride) s->adapt_phase = 0u;
+    if (s->adapt_phase >= state->runtime_adapt_stride) s->adapt_phase = 0u;
     ap_mdf_rebuild_power_sum(s);
 }
 
@@ -98,6 +118,7 @@ void ap_aec_backend_init(ap_aec_state_t *state,
     state->taps = taps;
     state->active_taps = taps;
     state->active_adapt_stride = adapt_stride;
+    state->runtime_adapt_stride = adapt_stride;
     s = &state->backend;
     s->block = frame_samples / AP_AEC_SUBBLOCKS_PER_FRAME;
     s->nfft = s->block * 2u;
@@ -123,6 +144,8 @@ void ap_aec_backend_reset(ap_aec_state_t *state) {
     s->partitions = partitions;
     s->active_partitions = active_partitions;
     s->x_head = partitions ? partitions - 1u : 0u;
+    state->steady_frames = 0u;
+    state->runtime_adapt_stride = state->active_adapt_stride;
 }
 
 void ap_aec_backend_set_active(ap_aec_state_t *state,
@@ -131,6 +154,8 @@ void ap_aec_backend_set_active(ap_aec_state_t *state,
     if (active_taps > state->taps) active_taps = state->taps;
     state->active_taps = active_taps;
     state->active_adapt_stride = adapt_stride;
+    state->runtime_adapt_stride = adapt_stride;
+    state->steady_frames = 0u;
     ap_mdf_set_active(state);
 }
 
@@ -185,6 +210,9 @@ void ap_aec_backend_process(ap_aec_state_t *state,
         return;
     }
 
+    ap_aec_update_runtime_stride(state, far_end_active, double_talk_active);
+    if (s->adapt_phase >= state->runtime_adapt_stride) s->adapt_phase = 0u;
+
     for (off = 0u; off < frame_samples; off += s->block) {
         float error[AP_AEC_BLOCK_MAX];
         uint32_t i, part, xi;
@@ -208,7 +236,7 @@ void ap_aec_backend_process(ap_aec_state_t *state,
         ap_mdf_push_render_spectrum(s);
 
         s->adapt_phase++;
-        adapt_due = s->adapt_phase >= state->active_adapt_stride;
+        adapt_due = s->adapt_phase >= state->runtime_adapt_stride;
         if (adapt_due) s->adapt_phase = 0u;
         do_adapt = adapt_due && s->x_power_total > 1.0e-20f &&
                    far_end_active && !double_talk_active;
@@ -247,7 +275,7 @@ void ap_aec_backend_get_status(const ap_aec_state_t *state,
     const ap_mdf_state_t *s = &state->backend;
     status->kind = AP_AEC_KIND_MDF;
     status->active_taps = state->active_taps;
-    status->active_adapt_stride = state->active_adapt_stride;
+    status->active_adapt_stride = state->runtime_adapt_stride;
     status->active_partitions = s->active_partitions;
     status->block_samples = s->block;
 }

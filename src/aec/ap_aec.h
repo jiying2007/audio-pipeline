@@ -12,6 +12,8 @@
 #define AP_AEC_FFT_MAX (AP_AEC_BLOCK_MAX * 2u)
 #define AP_AEC_BINS_MAX (AP_AEC_FFT_MAX / 2u + 1u)
 #define AP_AEC_PARTITIONS_MAX AP_BUILD_AEC_PARTITIONS_MAX
+#define AP_AEC_STEADY_FRAMES 50u
+#define AP_AEC_STEADY_MIN_STRIDE 4u
 
 typedef enum ap_aec_kind { AP_AEC_KIND_MDF = 0, AP_AEC_KIND_NLMS = 1 } ap_aec_kind_t;
 
@@ -30,7 +32,11 @@ typedef struct ap_mdf_state {
 #endif
 
 typedef struct ap_aec_state {
-    uint32_t taps, active_taps, active_adapt_stride;
+    uint32_t taps;
+    uint32_t active_taps;
+    uint32_t active_adapt_stride;
+    uint32_t runtime_adapt_stride;
+    uint32_t steady_frames;
 #if defined(AP_BUILD_AEC_MDF)
     ap_mdf_state_t backend;
 #elif defined(AP_BUILD_AEC_NLMS)

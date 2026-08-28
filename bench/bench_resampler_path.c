@@ -5,6 +5,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+#if defined(_MSC_VER)
+#define AP_ALIGN16 __declspec(align(16))
+#else
+#define AP_ALIGN16 _Alignas(16)
+#endif
+
 static uint64_t now_ns(void) {
     struct timespec ts;
     (void)clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -13,15 +19,18 @@ static uint64_t now_ns(void) {
 
 int main(int argc, char **argv) {
 #if !AP_HAVE_MODULE_RESAMPLER
-    (void)argc; (void)argv;
+    (void)argc;
+    (void)argv;
     return 2;
 #else
+    AP_ALIGN16 static unsigned char module_mem[AP_MODULE_STATE_MAX_BYTES];
+    ap_resampler_module_t *resampler = NULL;
     uint32_t io_rate = 48000u;
     uint32_t internal_rate = 16000u;
     uint32_t frames = 100000u;
     int16_t mic[AP_MAX_IO_FRAME_SAMPLES];
     int16_t out[AP_MAX_IO_FRAME_SAMPLES];
-    float internal[160];
+    float internal[AP_MAX_IO_FRAME_SAMPLES];
     uint32_t io_frames, internal_frames, frame, i;
     uint64_t t0, t1;
     volatile int64_t checksum = 0;
@@ -34,15 +43,18 @@ int main(int argc, char **argv) {
     internal_frames = internal_rate / 100u;
     if (!io_frames || io_frames > AP_MAX_IO_FRAME_SAMPLES ||
         (internal_rate != 8000u && internal_rate != 16000u)) return 2;
+    if (ap_module_resampler_state_size() > sizeof(module_mem) ||
+        ap_module_resampler_init(module_mem, sizeof(module_mem), &resampler) != AP_OK)
+        return 2;
 
     for (i = 0u; i < io_frames; ++i)
         mic[i] = (int16_t)((int32_t)((i * 1103u + 7919u) % 40001u) - 20000);
 
     for (frame = 0u; frame < 200u; ++frame) {
         mic[frame % io_frames] ^= (int16_t)(frame * 17u);
-        if (ap_module_resampler_input_s16(mic, io_frames, 1u, 0u,
+        if (ap_module_resampler_input_s16(resampler, mic, io_frames, 1u, 0u,
                                           internal, internal_frames) != AP_OK ||
-            ap_module_resampler_output_s16(internal, internal_frames,
+            ap_module_resampler_output_s16(resampler, internal, internal_frames,
                                            out, io_frames) != AP_OK)
             return 3;
         checksum += out[(frame * 13u) % io_frames];
@@ -52,9 +64,9 @@ int main(int argc, char **argv) {
     for (frame = 0u; frame < frames; ++frame) {
         const uint32_t pos = frame % io_frames;
         mic[pos] = (int16_t)(mic[pos] + (int16_t)((frame & 31u) - 15u));
-        if (ap_module_resampler_input_s16(mic, io_frames, 1u, 0u,
+        if (ap_module_resampler_input_s16(resampler, mic, io_frames, 1u, 0u,
                                           internal, internal_frames) != AP_OK ||
-            ap_module_resampler_output_s16(internal, internal_frames,
+            ap_module_resampler_output_s16(resampler, internal, internal_frames,
                                            out, io_frames) != AP_OK)
             return 4;
         checksum += out[(frame * 29u) % io_frames];

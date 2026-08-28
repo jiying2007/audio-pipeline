@@ -2,99 +2,109 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A dependency-light, allocation-free real-time speech front end and composable DSP SDK for **low-compute Arm Linux products**. The same codebase targets ARMv7-A and ARMv8-A/AArch32-class systems such as Cortex-A7 and Cortex-A32, plus AArch64 products with comparable voice-processing budgets. CPU names are build/certification profiles, not DSP dependencies.
+`audio-pipeline` is a dependency-light, allocation-free real-time speech front end and composable DSP SDK for **low-compute Arm Linux products**. The same source supports ARMv7-A/Cortex-A7, Cortex-A32-class AArch32 systems and AArch64 products with comparable voice-processing budgets. CPU model names belong to build/certification profiles, not DSP algorithms.
 
-The high-level pipeline uses the topology-safe order:
+The default high-level graph is topology-safe and fixed-order:
 
-`S16 capture -> rate adapter -> HPF -> 2-mic BF -> delay/drift -> AEC -> RES -> STFT Wiener NS -> AGC -> VAD -> mono S16`
+`S16 capture -> rate adapter -> HPF -> 2-mic BF -> SYNC -> Activity/DTD -> AEC -> RES -> NS -> AGC -> VAD -> mono S16`
 
-The public frame contract is fixed at 10 ms. Device I/O supports 8/16/24/32/48 kHz; heavy DSP stays at 8 or 16 kHz. The synchronous data plane uses caller-owned bounded state, no heap allocation, no mutexes and no runtime SIMD/plugin dispatch.
+The public frame contract is 10 ms. Device I/O supports 8/16/24/32/48 kHz within the selected build envelope; heavy DSP stays at 8 or 16 kHz. The synchronous data plane uses caller-owned bounded state, no heap allocation, no mutexes and no runtime SIMD/plugin dispatch.
 
-## Two consumption modes
+## Integration modes
 
-`audio-pipeline` supports two deliberate integration levels without maintaining duplicate DSP implementations.
+**High-level composed pipeline.** `ap_config_t.stages` selects a legal runtime subset of stages physically present in the binary. The order is fixed; this is deliberately not an arbitrary DAG.
 
-**High-level composed pipeline.** `ap_config_t.stages` selects a legal runtime subset of the modules physically present in the build. The order is fixed and validated; this is not an arbitrary DAG. Examples include full CALL, capture-only voice frontend and RAW rate adaptation.
+**Standalone module SDK.** `audio_pipeline/audio_modules.h` exposes caller-owned APIs for resampler, HPF, beamformer, SYNC, Activity/DTD, AEC, RES, NS, AGC and VAD. Standalone wrappers use the same private implementations as the high-level pipeline.
 
-**Standalone module SDK.** `audio_pipeline/audio_modules.h` exposes caller-owned standalone APIs for resampler, HPF, beamformer, sync, AEC, RES, NS, AGC and VAD. These wrappers call the same internal implementations used by the high-level pipeline.
-
-Compile-time product composition is controlled by:
+Build-time composition:
 
 ```text
 AP_BUILD_PIPELINE=ON|OFF
-AP_MODULES=RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD
+AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
 ```
 
-A module omitted from `AP_MODULES` is not merely bypassed: its translation unit and pipeline resident state are removed. The generated installed header `audio_pipeline_build.h` exposes `AP_HAVE_PIPELINE` and `AP_HAVE_MODULE_*` as the build capability source of truth.
+A module omitted from `AP_MODULES` loses its implementation TU and resident state; it is not merely bypassed.
 
 Representative presets:
 
 ```bash
 cmake --preset composition-full
+cmake --preset composition-low
+cmake --preset composition-tiny
 cmake --preset composition-voice-frontend
 cmake --preset composition-raw
 cmake --preset composition-aec-only
 cmake --preset composition-ns-only
+cmake --preset composition-activity-only
+cmake --preset composition-fast-resampler
 ```
 
-Current GCC CI composition probes report `78,456 B` for the full graph, `9,936 B` for the voice-front-end graph and `3,392 B` for RAW/resampler-only. These numbers prove physical pruning for that build; use the exact size function for every shipping compiler/ABI.
-
-## Composition rules
-
-The pipeline validates dependencies at initialization:
-
-- BF requires two microphone channels;
-- AEC requires SYNC/reference alignment;
-- RES requires AEC;
-- delay/drift policy requires SYNC;
-- runtime stages must be a subset of stages compiled into the binary.
-
-A RAW pipeline may have no DSP stage bits at all; RESAMPLER is a boundary module rather than an `AP_STAGE_*` DSP stage. A capture-only graph does not require a render reference, and the Linux runtime only submits render when SYNC is active.
-
-## Product dimensions
-
-Three independent dimensions avoid tying product policy to one CPU model:
-
-- **Use case:** `AP_PROFILE_CALL` or `AP_PROFILE_ASSISTANT`.
-- **Resource class:** `AP_RESOURCE_TINY`, `AP_RESOURCE_LOW`, `AP_RESOURCE_STANDARD` selected at product configuration time.
-- **Runtime quality:** `FULL`, `LITE`, `SAFE` selected automatically by the Linux overload controller or explicitly by the caller.
-
-`TINY` defaults to an 8 kHz internal path, shorter AEC tail and no beamformer tracking; `LOW` retains 16 kHz with a shorter tail; `STANDARD` keeps the full voice-band geometry. These are starting envelopes, not Cortex-A7/A32 labels: certify the class on the actual board.
-
-## Architecture
-
-Production source boundaries are explicit:
+Current hosted GCC Quality gates demonstrate physical pipeline RAM pruning:
 
 ```text
-src/core/            pipeline/config/orchestration
-src/frontend/        boundary resampler, HPF, beamformer
-src/sync/            render delay and clock-drift alignment
-src/aec/             compile-time MDF or NLMS backend
-src/enhance/         RES, Wiener NS, AGC, VAD
-src/modules/         public standalone adapters only
-src/dsp/             FFT/math primitives
-src/arch/scalar/     portable scalar kernels
-src/arch/arm_neon/   Arm NEON kernels
-src/platform/linux/  pthread/semaphore SPSC runtime only
+full   78,072 B
+LOW    46,904 B
+TINY   25,384 B
+RAW     1,064 B
 ```
 
-The algorithms never include Arm intrinsics or pthread/semaphore headers directly. Public module wrappers depend downward on stage implementations; core never calls back through the wrapper layer. Full-pipeline unity compilation preserves cross-module inlining while source/state ownership remains modular.
+The Linux runtime is also build-envelope aware: the current hosted reference is `31,824 B` for the full 48 kHz/depth-8 envelope and `4,464 B` for the constrained 16 kHz/depth-4 TINY envelope. These numbers prove pruning for that compiler/ABI only; exact size functions remain authoritative.
 
-## Build policy
+## Product build envelope
 
-The hard-cut selectors are:
+Besides module selection, a shipping SKU can physically cap maximum geometry:
 
 ```text
-AP_BUILD_PIPELINE=ON|OFF
-AP_MODULES=...
-AP_AEC_BACKEND=MDF|NLMS
-AP_NS_ESTIMATOR=EMA|MCRA
-AP_SIMD_BACKEND=SCALAR|NEON
-AP_ENABLE_LINUX_RUNTIME=ON|OFF
-AP_ENABLE_FAST_MATH=ON|OFF
+AP_BUILD_MAX_IO_RATE_HZ
+AP_BUILD_MAX_INTERNAL_RATE_HZ
+AP_BUILD_MAX_MIC_CHANNELS
+AP_BUILD_MAX_DELAY_MS
+AP_BUILD_MAX_AEC_TAIL_MS
+AP_RUNTIME_QUEUE_DEPTH
 ```
 
-Fast math is **OFF by default** and is a product performance policy, not part of a CPU toolchain.
+These caps shrink AEC partitions, SYNC render history, scratch and runtime queue storage where applicable. They are compile-time product constraints, independent of runtime `TINY/LOW/STANDARD` policy.
+
+The generated installed `audio_pipeline_build.h` plus `ap_build_info()` report the exact binary fingerprint: version, module mask, backends, resampler mode, fast-math state and build geometry.
+
+## DSP and realtime policy
+
+- AEC: compile-time `MDF` default or `NLMS` fallback.
+- NS estimator: `EMA` default or clean-room `MCRA` opt-in.
+- SIMD: compile-time `SCALAR` or `NEON`.
+- Resampler: `BANDLIMITED` default or legacy-speed `FAST` fallback.
+- Fast math: OFF by default and never hidden in a CPU toolchain.
+- Activity/DTD is a reusable module shared by the high-level AEC/RES path rather than duplicated logic.
+- ERLE is valid only during AEC far-end-only/non-double-talk observations; convergence state is exposed explicitly.
+- Large correlation/timestamp path jumps reset stale AEC convergence state.
+
+The default boundary resampler uses small fixed FIR filters for supported downsampling ratios to reduce aliasing. `FAST` retains the previous lightweight interpolation/decimation behavior as an explicit product choice. The API reports resampler filter delay and high-level algorithmic latency includes that delay.
+
+## Hardware timestamps and route changes
+
+Products with trustworthy capture/playback hardware timestamps can seed SYNC using:
+
+```c
+ap_pipeline_observe_io_timestamps(...);
+```
+
+Both timestamps must describe corresponding positions in the same monotonic clock domain. Product-known route/path changes should call:
+
+```c
+ap_pipeline_notify_echo_path_change(...);
+```
+
+This explicitly clears stale SYNC/Activity/AEC state instead of waiting for correlation to rediscover the path.
+
+## Linux runtime ownership
+
+The synchronous API is caller-serialized. After a pipeline is handed to `audio_pipeline_runtime` and the worker is running, the worker owns pipeline access. Per-frame `ap_metrics_t` snapshots are returned through the SPSC output queue; control-plane `ap_runtime_get_metrics()` reads runtime-owned atomics only. ThreadSanitizer CI enforces this ownership model.
+
+Runtime overload state is distinct from product resource class:
+
+`FULL -> LITE -> SAFE` under sustained deadline pressure, with deterministic recovery.
+
+## Build
 
 Native Linux:
 
@@ -114,53 +124,66 @@ cmake --preset cortex-a32-neon
 cmake --preset aarch64-neon
 ```
 
-The generic toolchain files describe compiler/ABI only; `-mcpu/-mfpu` tuning lives in presets or product build configuration.
+CI cross-compiles all profiles; Quality CI additionally executes selected Cortex-A7 NEON and AArch64 contracts under QEMU. Cross-build/QEMU are correctness signals, never target-board performance claims.
 
-## Caller-owned state contract
+## Installed SDK
 
-Pipeline state is build-specific; the high-level hard ceiling is 80,000 bytes. Standalone modules use the independent `AP_MODULE_STATE_MAX_BYTES` ceiling and `AP_MODULE_STATE_ALIGNMENT`. Always prefer each exact `*_state_size()` function when sizing a product image.
+Installation exports both CMake and pkg-config metadata:
 
-```c
-_Alignas(AP_PIPELINE_STATE_ALIGNMENT)
-static unsigned char pipeline_mem[AP_PIPELINE_STATE_MAX_BYTES];
-
-ap_pipeline_t *pipeline = NULL;
-ap_config_t cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_LOW);
-cfg.stages = AP_STAGE_HPF | AP_STAGE_NS | AP_STAGE_AGC | AP_STAGE_VAD;
-ap_status_t rc = ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline);
+```cmake
+find_package(AudioPipeline CONFIG REQUIRED)
+target_link_libraries(app PRIVATE AudioPipeline::core)
+# Optional Linux runtime:
+target_link_libraries(app PRIVATE AudioPipeline::runtime)
 ```
 
-Invalid/null/misaligned arguments return `AP_EINVAL`; insufficient caller-owned storage returns `AP_ENOMEM`; requesting a stage that is not compiled into the SDK returns `AP_ESTATE`. See [API contract](docs/API_CONTRACT.md).
+or:
 
-## AEC, synchronization and enhancement
+```bash
+pkg-config --cflags --libs audio-pipeline
+```
 
-The default AEC is a clean-room partitioned MDF/AUMDF-lite implementation with five 2 ms sub-blocks per 10 ms frame. `AP_AEC_BACKEND=NLMS` builds the independent time-domain fallback. The default NS noise estimator is EMA; clean-room MCRA-lite remains an opt-in compile-time backend.
+CI installs the SDK into a clean prefix and builds/runs a separate consumer project, so package metadata is tested rather than only checking that files exist.
 
-The render reference must be the actual post-mix/post-gain DAC signal. A bounded coarse/fine tracker handles route-delay changes and small clock mismatch; large path jumps reset adaptive state. Hardware capture/playback timestamps remain preferred for narrowing the search.
+## Quality and release gates
 
-FULL/LITE use frequency-dependent residual suppression when RES+NS are selected; SAFE uses broadband RES. Shared double-talk activity freezes AEC adaptation and disables subband RES.
+Repository automation includes:
 
-## Linux runtime
+- native GCC/Clang, strict warnings, ASan/UBSan and libFuzzer smoke;
+- ThreadSanitizer runtime ownership checks;
+- MDF/NLMS, EMA/MCRA, precise/fast-math and BANDLIMITED/FAST composition contracts;
+- RAW/LOW/TINY/voice/module-only builds;
+- pipeline/runtime RAM and final consumer ELF pruning gates;
+- generic ARMv7-A, Cortex-A7, Cortex-A32 and AArch64 cross-builds;
+- Cortex-A7 NEON and AArch64 QEMU execution;
+- >=90% hosted source line coverage gate, clang static analyzer and nightly fuzz;
+- acoustic evaluation harness/schema and per-SKU certification schema;
+- automatic v0.5.0-style SDK/source/checksum GitHub release from the project version on `main`.
 
-The portable core does not require Linux. `AP_ENABLE_LINUX_RUNTIME=ON` adds the Linux-only bounded SPSC worker using pthreads, C11 atomics and a POSIX semaphore. Runtime defaults are topology-neutral (`dsp_cpu=-1`, `dsp_priority=0`). Capture-only composed pipelines are supported; render submission is required only when SYNC is selected.
+Hosted x86 percentages are regression signals only. Shipping claims require the actual SoC/kernel/compiler/DVFS/audio route and acoustic corpus.
 
-## Verification
+## Target certification
 
-CI covers native GCC/Clang, strict warnings, ASan/UBSan, fuzzing, MDF/NLMS, EMA/MCRA, explicit fast-math mode, optional ALSA, architecture-boundary lint, full/RAW/voice/AEC-only/NS-only composition contracts, physical state-size pruning, same-runner regression gates and cross-builds for generic ARMv7-A scalar, Cortex-A7 scalar/NEON, Cortex-A32 NEON and AArch64 NEON.
+A shipping SKU is not considered product-certified until it records at least CPU/p95/p99/RSS/cache/context switches, XRUN/backpressure/overrun counters, thermal/power, acoustic corpus results and an 8 h soak. See:
 
-Hosted x86 timing is regression evidence only. Cross-build means **build-supported**, not board-certified. CPU/RSS/thermal/power claims require the shipping board/kernel/compiler/DVFS/audio route and target benchmark/8 h soak.
+- `docs/PLATFORM_SUPPORT.md`
+- `docs/PERFORMANCE.md`
+- `certification/record.schema.json`
+- `eval/README.md`
+
+No repository CI result is presented as Cortex-A7/A32 board performance.
 
 ## Documentation
 
-- [Platform support and certification](docs/PLATFORM_SUPPORT.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [API contract](docs/API_CONTRACT.md)
-- [DSP design](docs/DSP_DESIGN.md)
-- [Porting](docs/PORTING.md)
-- [Performance and release gates](docs/PERFORMANCE.md)
-- [Tuning](docs/TUNING.md)
-- [Development/module rules](docs/DEVELOPMENT.md)
+- `docs/API_CONTRACT.md` — public lifecycle, state, composition and threading contracts
+- `docs/ARCHITECTURE.md` — ownership and dependency direction
+- `docs/DSP_DESIGN.md` — algorithm details
+- `docs/PERFORMANCE.md` — regression and product certification gates
+- `docs/PORTING.md` — BSP/ALSA/toolchain integration
+- `docs/TUNING.md` — acoustic/product tuning rules
+- `docs/DEVELOPMENT.md` — contribution and hard-cut rules
+- `THIRD_PARTY.md` — clean-room/reference policy
 
 ## License
 
-Apache-2.0. No third-party DSP source is vendored; see [THIRD_PARTY.md](THIRD_PARTY.md).
+See [LICENSE](LICENSE).

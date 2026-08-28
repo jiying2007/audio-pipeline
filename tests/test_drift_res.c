@@ -74,6 +74,7 @@ static void test_clock_drift_and_route_jump(void) {
     assert(after_jump.delay_jumps > before_jump.delay_jumps);
     assert(after_jump.aec_resets > before_jump.aec_resets);
     assert(after_jump.estimated_delay_ms >= 75u && after_jump.estimated_delay_ms <= 85u);
+    assert(after_jump.erle_valid == 0u || after_jump.aec_convergence_frames < before_jump.aec_convergence_frames + 120u);
 }
 
 static void fill_tone_frame(unsigned frame, int16_t *render, int16_t *mic,
@@ -102,7 +103,7 @@ static void test_frequency_res_and_degradation(void) {
     c.enable_delay_tracking = 0u;
     c.enable_clock_drift_compensation = 0u;
     c.initial_delay_ms = 0u;
-    c.aec_filter_ms = 64u;
+    if (c.aec_filter_ms > 64u) c.aec_filter_ms = 64u;
     c.aec_adapt_stride = 1u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
 
@@ -134,6 +135,7 @@ static void test_frequency_res_and_degradation(void) {
     ap_pipeline_get_metrics(p, &dt);
     assert(dt.double_talk_active != 0u);
     assert(dt.frequency_res_active == 0u);
+    assert(dt.erle_valid == 0u);
 }
 
 int main(void) {

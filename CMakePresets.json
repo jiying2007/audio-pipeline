@@ -20,7 +20,34 @@
       "binaryDir": "${sourceDir}/build/composition-full",
       "cacheVariables": {
         "AP_BUILD_PIPELINE": "ON",
-        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD"
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD"
+      }
+    },
+    {
+      "name": "composition-low",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-low",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD",
+        "AP_BUILD_MAX_DELAY_MS": "180",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "64",
+        "AP_RUNTIME_QUEUE_DEPTH": "4"
+      }
+    },
+    {
+      "name": "composition-tiny",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-tiny",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER,HPF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD",
+        "AP_BUILD_MAX_IO_RATE_HZ": "16000",
+        "AP_BUILD_MAX_INTERNAL_RATE_HZ": "8000",
+        "AP_BUILD_MAX_MIC_CHANNELS": "1",
+        "AP_BUILD_MAX_DELAY_MS": "120",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "48",
+        "AP_RUNTIME_QUEUE_DEPTH": "4"
       }
     },
     {
@@ -60,6 +87,25 @@
       }
     },
     {
+      "name": "composition-activity-only",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-activity-only",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "OFF",
+        "AP_MODULES": "ACTIVITY"
+      }
+    },
+    {
+      "name": "composition-fast-resampler",
+      "inherits": "host-compose-base",
+      "binaryDir": "${sourceDir}/build/composition-fast-resampler",
+      "cacheVariables": {
+        "AP_BUILD_PIPELINE": "ON",
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD",
+        "AP_RESAMPLER_MODE": "FAST"
+      }
+    },
+    {
       "name": "armhf-base",
       "hidden": true,
       "generator": "Unix Makefiles",
@@ -72,7 +118,7 @@
         "AP_ENABLE_FAST_MATH": "OFF",
         "AP_ENABLE_LINUX_RUNTIME": "ON",
         "AP_BUILD_PIPELINE": "ON",
-        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD",
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD",
         "AP_BUILD_TESTS": "OFF",
         "AP_BUILD_BENCH": "OFF",
         "AP_BUILD_EXAMPLES": "OFF"
@@ -129,7 +175,7 @@
         "AP_ENABLE_FAST_MATH": "OFF",
         "AP_ENABLE_LINUX_RUNTIME": "ON",
         "AP_BUILD_PIPELINE": "ON",
-        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,AEC,RES,NS,AGC,VAD",
+        "AP_MODULES": "RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD",
         "AP_BUILD_TESTS": "OFF",
         "AP_BUILD_BENCH": "OFF",
         "AP_BUILD_EXAMPLES": "OFF"

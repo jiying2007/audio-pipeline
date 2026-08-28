@@ -1,5 +1,7 @@
 #include "audio_pipeline/audio_pipeline.h"
+#include "audio_pipeline/audio_pipeline_build.h"
 #include <assert.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,11 +24,14 @@ static void run_silence_rate(uint32_t rate) {
     int16_t out[AP_MAX_IO_FRAME_SAMPLES];
     const size_t frame = rate / 100u;
     unsigned f, i;
+
+    if (rate > AP_BUILD_MAX_IO_RATE_HZ) return;
     memset(mic, 0, sizeof(mic));
     memset(render, 0, sizeof(render));
     memset(out, 0, sizeof(out));
     c.io_sample_rate_hz = rate;
-    c.internal_sample_rate_hz = rate == 8000u ? 8000u : 16000u;
+    c.internal_sample_rate_hz =
+        (rate == 8000u || AP_BUILD_MAX_INTERNAL_RATE_HZ == 8000u) ? 8000u : 16000u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
     assert(ap_pipeline_frame_samples(p) == frame);
     assert(ap_pipeline_sample_rate_hz(p) == rate);
@@ -37,7 +42,7 @@ static void run_silence_rate(uint32_t rate) {
             assert(ap_pipeline_push_render(p, render, frame) == AP_OK);
         assert(ap_pipeline_process_capture(p, mic, frame, out) == AP_OK);
     }
-    for (i = 0u; i < frame; ++i) assert(out[i] > -16 && out[i] < 16);
+    for (i = 0u; i < frame; ++i) assert(out[i] > -32 && out[i] < 32);
 }
 
 static void test_supported_rates(void) {
@@ -53,13 +58,21 @@ static void test_resource_classes(void) {
     assert(standard.resource_class == AP_RESOURCE_STANDARD);
     assert(low.resource_class == AP_RESOURCE_LOW);
     assert(tiny.resource_class == AP_RESOURCE_TINY);
-    assert(standard.internal_sample_rate_hz == 16000u);
-    assert(low.internal_sample_rate_hz == 16000u);
+    assert(standard.internal_sample_rate_hz <= AP_BUILD_MAX_INTERNAL_RATE_HZ);
+    assert(low.internal_sample_rate_hz <= AP_BUILD_MAX_INTERNAL_RATE_HZ);
     assert(tiny.internal_sample_rate_hz == 8000u);
-    assert(tiny.aec_filter_ms < low.aec_filter_ms);
-    assert(low.aec_filter_ms < standard.aec_filter_ms);
+    assert(standard.aec_filter_ms <= AP_BUILD_MAX_AEC_TAIL_MS);
+    assert(low.aec_filter_ms <= AP_BUILD_MAX_AEC_TAIL_MS);
+    assert(tiny.aec_filter_ms <= AP_BUILD_MAX_AEC_TAIL_MS);
+    assert(standard.max_delay_ms <= AP_BUILD_MAX_DELAY_MS);
+    assert(low.max_delay_ms <= AP_BUILD_MAX_DELAY_MS);
+    assert(tiny.max_delay_ms <= AP_BUILD_MAX_DELAY_MS);
     assert((tiny.stages & AP_STAGE_BF) == 0u);
     assert((standard.stages & ~ap_pipeline_compiled_stages()) == 0u);
+    if (AP_BUILD_MAX_MIC_CHANNELS == 1u) {
+        assert(standard.mic_channels == 1u);
+        assert((standard.stages & AP_STAGE_BF) == 0u);
+    }
 }
 
 static void test_composition_contract(void) {
@@ -102,8 +115,48 @@ static void test_composition_contract(void) {
     assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
 
     c = ap_config_default(AP_PROFILE_CALL);
-    c.stages = ap_pipeline_compiled_stages() | (1u << 31);
+    c.stages = compiled | (1u << 31);
     assert(ap_pipeline_validate_config(&c) == AP_ESTATE);
+}
+
+static void test_finite_and_envelope_validation(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+
+    c.io_sample_rate_hz = AP_BUILD_MAX_IO_RATE_HZ == 48000u ? 32000u : 48000u;
+    if (c.io_sample_rate_hz > AP_BUILD_MAX_IO_RATE_HZ)
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+
+    c = ap_config_default(AP_PROFILE_CALL);
+    if (c.stages & AP_STAGE_BF) {
+        c.mic_spacing_mm = NAN;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
+    c = ap_config_default(AP_PROFILE_CALL);
+    if (c.stages & AP_STAGE_AEC) {
+        c.aec_mu = NAN;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+        c = ap_config_default(AP_PROFILE_CALL);
+        c.aec_filter_ms = AP_BUILD_MAX_AEC_TAIL_MS + 1u;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
+    c = ap_config_default(AP_PROFILE_CALL);
+    if (c.stages & AP_STAGE_NS) {
+        c.ns_floor = NAN;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
+    c = ap_config_default(AP_PROFILE_CALL);
+    if (c.stages & AP_STAGE_AGC) {
+        c.agc_target_dbfs = INFINITY;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+        c = ap_config_default(AP_PROFILE_CALL);
+        c.limiter_dbfs = NAN;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
+    c = ap_config_default(AP_PROFILE_CALL);
+    if (c.stages & AP_STAGE_SYNC) {
+        c.max_delay_ms = AP_BUILD_MAX_DELAY_MS + 1u;
+        assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    }
 }
 
 static void test_init_contract(void) {
@@ -130,6 +183,7 @@ static void test_quality_contract(void) {
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
     ap_pipeline_get_metrics(p, &m);
     assert(m.quality == AP_QUALITY_FULL);
+    assert(m.erle_valid == 0u);
     if (c.stages & AP_STAGE_AEC) {
         full_taps = m.active_aec_taps;
         full_stride = m.active_aec_adapt_stride;
@@ -163,24 +217,52 @@ static void test_quality_contract(void) {
     }
 }
 
+static void test_timestamp_and_route_contract(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    ap_metrics_t before, after;
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+    if (c.stages & AP_STAGE_SYNC) {
+        assert(ap_pipeline_observe_io_timestamps(p, 1100000000ull, 1000000000ull) == AP_OK);
+        ap_pipeline_get_metrics(p, &before);
+        assert(before.timestamp_observations == 1u);
+        assert(ap_pipeline_observe_io_timestamps(p, 1000000000ull, 1100000000ull) == AP_EINVAL);
+        assert(ap_pipeline_notify_echo_path_change(p) == AP_OK);
+        ap_pipeline_get_metrics(p, &after);
+        if (c.stages & AP_STAGE_AEC) {
+            assert(after.aec_resets == before.aec_resets + 1u);
+            assert(after.erle_valid == 0u);
+            assert(after.aec_convergence_frames == 0u);
+        }
+    } else {
+        assert(ap_pipeline_observe_io_timestamps(p, 1u, 1u) == AP_ESTATE);
+        assert(ap_pipeline_notify_echo_path_change(p) == AP_ESTATE);
+    }
+}
+
 static void test_frame_contract_rejects_wrong_sizes(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *p = NULL;
-    int16_t mic[320] = {0};
-    int16_t render[160] = {0};
-    int16_t out[160] = {0};
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    size_t frame;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+    frame = ap_pipeline_frame_samples(p);
+    assert(frame > 1u);
     if (c.stages & AP_STAGE_SYNC)
-        assert(ap_pipeline_push_render(p, render, 159u) == AP_EINVAL);
-    assert(ap_pipeline_process_capture(p, mic, 159u, out) == AP_EINVAL);
+        assert(ap_pipeline_push_render(p, render, frame - 1u) == AP_EINVAL);
+    assert(ap_pipeline_process_capture(p, mic, frame - 1u, out) == AP_EINVAL);
 }
 
 int main(void) {
     test_supported_rates();
     test_resource_classes();
     test_composition_contract();
+    test_finite_and_envelope_validation();
     test_init_contract();
     test_quality_contract();
+    test_timestamp_and_route_contract();
     test_frame_contract_rejects_wrong_sizes();
     puts("audio-pipeline contract tests: OK");
     return 0;

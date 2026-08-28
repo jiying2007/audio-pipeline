@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/audio-pipeline/eval-manifest.schema.json",
+  "title": "audio-pipeline acoustic evaluation manifest",
+  "type": "object",
+  "required": ["sample_rate_hz", "mic_pcm", "render_pcm"],
+  "properties": {
+    "sample_rate_hz": {"enum": [8000, 16000, 24000, 32000, 48000]},
+    "mic_channels": {"enum": [2], "default": 2},
+    "mic_pcm": {"type": "string", "description": "S16LE interleaved microphone PCM"},
+    "render_pcm": {"type": "string", "description": "S16LE mono render reference PCM"},
+    "clean_near_pcm": {"type": "string", "description": "Optional S16LE mono clean near-end reference"},
+    "output_pcm": {"type": "string", "description": "Optional output path; otherwise a temporary file is used"},
+    "metadata": {"type": "object", "additionalProperties": true}
+  },
+  "additionalProperties": false
+}

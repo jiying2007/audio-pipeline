@@ -1,89 +1,115 @@
 # Porting Guide
 
-## Minimum platform
+## 1. Choose ABI/toolchain first
 
-Portable core requirements:
+Generic toolchain files describe compiler/sysroot/ABI only. CPU tuning belongs in presets or product build configuration.
 
-- C11 compiler;
-- `libm`;
-- fixed-width integer types;
-- hardware floating point for the supported profile;
-- caller-owned aligned storage.
-
-The Linux runtime additionally needs pthreads, C11 lock-free 32-bit atomics and POSIX semaphores. ALSA remains optional.
-
-A CPU without hardware floating point requires a separate fixed-point backend/profile; this repository does not claim Q15/Q31 support.
-
-## Toolchain versus CPU profile
-
-Generic toolchains describe ABI/compiler only:
+Current continuously checked profiles:
 
 ```text
-cmake/toolchains/arm-linux-gnueabihf.cmake
-cmake/toolchains/aarch64-linux-gnu.cmake
+ARMv7-A armhf scalar
+Cortex-A7 armhf scalar/VFPv4
+Cortex-A7 armhf NEON/VFPv4
+Cortex-A32 armhf NEON/FP-Armv8
+AArch64 NEON/ASIMD
 ```
 
-CPU/FPU/SIMD tuning lives in `CMakePresets.json` or the product build:
+Do not copy Cortex-A32 `-mcpu/-mfpu` flags into an A7 BSP.
 
-```bash
-cmake --preset armv7a-scalar
-cmake --preset cortex-a7-scalar
-cmake --preset cortex-a7-neon
-cmake --preset cortex-a32-neon
-cmake --preset aarch64-neon
+## 2. Define the product artifact
+
+Choose module set and maximum geometry before integrating ALSA/runtime:
+
+```text
+AP_MODULES
+AP_BUILD_MAX_IO_RATE_HZ
+AP_BUILD_MAX_INTERNAL_RATE_HZ
+AP_BUILD_MAX_MIC_CHANNELS
+AP_BUILD_MAX_DELAY_MS
+AP_BUILD_MAX_AEC_TAIL_MS
+AP_RUNTIME_QUEUE_DEPTH
+AP_AEC_BACKEND
+AP_NS_ESTIMATOR
+AP_SIMD_BACKEND
+AP_RESAMPLER_MODE
+AP_ENABLE_FAST_MATH
 ```
 
-Do not copy `-mcpu`, `-mfpu` or fast-math policy into a generic toolchain. `AP_ENABLE_FAST_MATH` is a separate, default-OFF product decision.
+Use `ap_build_info()` in product logs so the deployed binary can be reconstructed unambiguously.
 
-For vendor BSPs, replace only the compiler/sysroot portion and retain the same backend/build contract where possible.
+## 3. Prefer installed package targets
 
-## SIMD selection
+For CMake products:
+
+```cmake
+find_package(AudioPipeline CONFIG REQUIRED)
+target_link_libraries(product PRIVATE AudioPipeline::core)
+```
+
+Optional Linux worker:
+
+```cmake
+target_link_libraries(product PRIVATE AudioPipeline::runtime)
+```
+
+Traditional BSP/Make projects may consume `audio-pipeline.pc` / `audio-pipeline-runtime.pc` through pkg-config.
+
+## 4. PCM integration
+
+High-level frame period is fixed at 10 ms. Capture is 1/2-channel interleaved S16; render reference is mono S16; output is mono S16.
+
+The render reference should represent the post-mix/post-volume signal actually headed toward playback. A pre-volume or unrelated media buffer weakens AEC observability.
+
+BANDLIMITED is the default boundary resampler and adds short FIR delay. Query high-level algorithmic latency instead of assuming NS is the only source of delay.
+
+## 5. Hardware timestamps
+
+If ALSA/codec/driver exposes trustworthy hardware timestamps, verify that capture and playback positions are represented in the **same monotonic clock domain** and refer to corresponding sample positions. Then feed observations through:
+
+```c
+ap_pipeline_observe_io_timestamps(...)
+```
+
+Do not convert unrelated wall-clock timestamps into delay observations. When timestamp quality is uncertain, keep correlation tracking as the authority.
+
+## 6. Product-known path changes
+
+When the application knows that the acoustic route changed (codec reopen, speaker device/route replacement, gain-path switch, major topology change), call:
+
+```c
+ap_pipeline_notify_echo_path_change(...)
+```
+
+This clears stale SYNC/Activity/AEC state deterministically.
+
+## 7. Linux runtime ownership
+
+The synchronous API is caller-serialized. Once `ap_runtime_start()` succeeds, the runtime worker owns the pipeline until stop/deinit. Do not call pipeline metrics/quality/process APIs concurrently from another thread.
 
 Use:
 
-```text
--DAP_SIMD_BACKEND=SCALAR
--DAP_SIMD_BACKEND=NEON
-```
+- `ap_runtime_submit()` for producer input;
+- `ap_runtime_receive()` for complete per-frame output + pipeline metric snapshot;
+- `ap_runtime_get_metrics()` for atomic runtime counters/quality.
 
-NEON is never required for correctness. The scalar build is a first-class CI target and is the portability baseline.
+Affinity/FIFO are optional product decisions; defaults do not assume CPU1 or realtime privilege.
 
-## AEC selection
+## 8. ALSA geometry
 
-Use one compile-time backend:
+Choose ALSA period/buffer sizes compatible with 10 ms processing. Record:
 
-```text
--DAP_AEC_BACKEND=MDF
--DAP_AEC_BACKEND=NLMS
-```
+- capture/playback period and total buffer;
+- whether capture/playback clocks are independent;
+- hardware timestamp source/domain;
+- XRUN recovery behavior;
+- thread/cpuset/IRQ affinity.
 
-MDF is the default product backend. NLMS is independently tested for constrained/bring-up comparison; there are no legacy boolean compatibility switches.
+The bundled ALSA examples are compile/integration references, not universal product policy.
 
-## State storage
+## 9. Validate the actual target
 
-Respect the public alignment contract:
+Run the target benchmark and 8 h soak using the shipping compiler/kernel/DVFS/audio route. Record the artifact through `certification/record.schema.json`.
 
-```c
-_Alignas(AP_PIPELINE_STATE_ALIGNMENT)
-static unsigned char pipeline_mem[AP_PIPELINE_STATE_MAX_BYTES];
-```
+At minimum capture CPU, frame p95/p99, RSS/cache/context switches, XRUN/backpressure/overrun, thermal/power and acoustic corpus results.
 
-Use `ap_pipeline_state_size()` for the exact selected build. Misaligned storage is rejected rather than relying on undefined behavior.
-
-## PCM contract
-
-Prefer 10 ms periods. Capture is 1/2-channel S16; render reference is mono S16 representing the post-mix/post-gain speaker signal. If capture/playback callbacks are independent, align them using driver/PCM timestamps before forming matched items.
-
-## Linux runtime integration
-
-`AP_ENABLE_LINUX_RUNTIME=ON` is supported only for Linux. The default runtime does not pin or request realtime scheduling. After validating IRQ affinity, cpusets and privileges, products may explicitly configure a worker CPU and FIFO priority.
-
-Do not place logging, file/network I/O, allocation or control RPC in the PCM/DSP hot path.
-
-## 24/32/48 kHz devices
-
-Best: configure codec/hardware/ALSA to provide a synchronized voice-band stream. The built-in fixed-ratio linear adapter is deterministic and low cost, but it is not a full-band anti-aliasing resampler guarantee.
-
-## Target certification
-
-Cross compilation establishes build support only. Each shipping SoC/SKU must create a record following `PLATFORM_SUPPORT.md` and pass target benchmark, acoustic corpus, contention/thermal/power checks and the 8 h soak.
+QEMU and hosted CI prove correctness portability; they do not replace this step.

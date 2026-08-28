@@ -1,0 +1,10 @@
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: audio-pipeline
+Description: Low-compute Arm speech DSP core/module SDK
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -laudio_pipeline -lm
+Cflags: -I${includedir}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio-pipeline SKU certification record",
+  "type": "object",
+  "required": ["sku", "status", "build", "platform", "audio_route", "performance", "acoustic", "soak"],
+  "properties": {
+    "sku": {"type": "string", "minLength": 1},
+    "status": {"enum": ["pending", "board-validated", "product-certified", "failed"]},
+    "build": {
+      "type": "object",
+      "required": ["commit", "version", "fingerprint"],
+      "properties": {
+        "commit": {"type": "string"},
+        "version": {"type": "string"},
+        "fingerprint": {"type": "string"},
+        "compiler": {"type": "string"},
+        "abi": {"type": "string"}
+      }
+    },
+    "platform": {
+      "type": "object",
+      "required": ["soc", "kernel"],
+      "properties": {
+        "soc": {"type": "string"},
+        "revision": {"type": "string"},
+        "kernel": {"type": "string"},
+        "governor": {"type": "string"},
+        "cpuset": {"type": "string"}
+      }
+    },
+    "audio_route": {"type": "object"},
+    "performance": {
+      "type": "object",
+      "properties": {
+        "active_cpu_percent": {"type": "number"},
+        "idle_cpu_percent": {"type": "number"},
+        "p95_us": {"type": "number"},
+        "p99_us": {"type": "number"},
+        "rss_kib": {"type": "integer"},
+        "xruns": {"type": "integer", "minimum": 0},
+        "overruns": {"type": "integer", "minimum": 0}
+      }
+    },
+    "acoustic": {"type": "object"},
+    "thermal_power": {"type": "object"},
+    "soak": {
+      "type": "object",
+      "required": ["hours", "passed"],
+      "properties": {
+        "hours": {"type": "number", "minimum": 0},
+        "passed": {"type": "boolean"}
+      }
+    },
+    "artifacts": {"type": "object"}
+  },
+  "additionalProperties": true
+}

@@ -15,7 +15,7 @@ extern "C" {
 #define AP_RUNTIME_STATE_ALIGNMENT 16u
 #define AP_RUNTIME_CONTROL_API_VERSION 2u
 #define AP_RUNTIME_COMMAND_QUEUE_DEPTH 4u
-#define AP_RUNTIME_EVENT_QUEUE_DEPTH 8u
+#define AP_RUNTIME_EVENT_QUEUE_DEPTH 4u
 #define AP_RUNTIME_LATENCY_BUCKETS 12u
 
 typedef struct ap_runtime ap_runtime_t;

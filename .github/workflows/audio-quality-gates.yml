@@ -1,0 +1,56 @@
+name: Audio Quality Gates
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audio-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bandlimited-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure bandlimited default
+        run: >-
+          cmake -S . -B build-audio -DCMAKE_BUILD_TYPE=Release
+          -DAP_RESAMPLER_MODE=BANDLIMITED -DAP_ENABLE_LINUX_RUNTIME=OFF
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build quality contracts
+        run: cmake --build build-audio --parallel
+      - name: Run resampler and acoustic-path contracts
+        run: |
+          ctest --test-dir build-audio --output-on-failure -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests'
+      - name: Verify acoustic evaluation harness
+        run: python3 eval/run_eval.py --self-test
+
+  fast-fallback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure explicit FAST fallback
+        run: >-
+          cmake -S . -B build-fast -DCMAKE_BUILD_TYPE=Release
+          -DAP_RESAMPLER_MODE=FAST -DAP_ENABLE_LINUX_RUNTIME=OFF
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build and run fixed-ratio regression contracts
+        run: |
+          cmake --build build-fast --parallel
+          ctest --test-dir build-fast --output-on-failure -R 'ap_resampler_tests|ap_contract_tests'
+
+  timestamp-route-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure full sync/AEC graph
+        run: cmake -S . -B build-sync -DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build and validate synchronization/reset semantics
+        run: |
+          cmake --build build-sync --parallel
+          ctest --test-dir build-sync --output-on-failure -R 'ap_contract_tests|ap_realtime_tests|ap_drift_res_tests'

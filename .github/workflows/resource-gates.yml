@@ -1,9 +1,7 @@
 name: Resource Gates
 
 on:
-  push:
-  pull_request:
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -16,7 +14,7 @@ jobs:
   sku-hard-ceilings:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Build representative pipeline SKUs
         run: |
           cmake --preset composition-full

@@ -271,6 +271,44 @@ static void test_flight_recorder(void) {
     ap_runtime_deinit(runtime);
 }
 
+static void test_recorder_trigger_survives_event_queue_full(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_flight_recorder_config_t dcfg = ap_flight_recorder_config_default(16000u, 2u);
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime = NULL;
+    ap_flight_recorder_t *recorder = NULL;
+    ap_runtime_metrics_v2_t rm2;
+    int16_t mic[320] = {0};
+    size_t need;
+
+    dcfg.pre_roll_frames = 1u;
+    dcfg.post_roll_frames = 0u;
+    dcfg.record_mask = AP_DIAG_RECORD_METRICS;
+    dcfg.trigger_severity = AP_EVENT_ERROR;
+    need = ap_flight_recorder_state_size(&dcfg);
+    assert(need > 0u && need <= sizeof(recorder_state));
+    assert(ap_flight_recorder_init(recorder_state, sizeof(recorder_state), &dcfg, &recorder) == AP_OK);
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    rcfg.overload_us = 0u;
+    rcfg.recover_frames = 100u;
+    assert(ap_runtime_init(runtime_state, sizeof(runtime_state), pipeline, &rcfg, &runtime) == AP_OK);
+    assert(ap_runtime_attach_flight_recorder(runtime, recorder) == AP_OK);
+    assert(ap_runtime_start(runtime) == AP_OK);
+
+    /* RUNTIME_STARTED occupies the first event slot and RENDER_MISSING occupies
+     * the second. The following ERROR deadline event must still trigger the
+     * recorder even though delivery through the event ring is now full. */
+    assert(ap_runtime_submit(runtime, mic, NULL) == AP_OK);
+    assert(wait_processed(runtime, 1u, 1000u));
+    rm2 = metrics_v2(runtime);
+    assert(rm2.event_drop_events >= 1u);
+    assert(ap_flight_recorder_is_frozen(recorder));
+
+    ap_runtime_deinit(runtime);
+}
+
 static void test_quality_transitions(void) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
@@ -311,6 +349,7 @@ int main(void) {
     test_queue_and_lifecycle();
     test_metadata_commands_and_events();
     test_flight_recorder();
+    test_recorder_trigger_survives_event_queue_full();
     test_quality_transitions();
     puts("audio-pipeline runtime tests: OK");
     return 0;

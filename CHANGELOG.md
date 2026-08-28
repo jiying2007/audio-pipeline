@@ -1,10 +1,23 @@
 # Changelog
 
-All notable changes are recorded here. The project follows semantic-version intent; before 1.0, minor releases may contain documented hard-cut API changes.
+All notable changes are recorded here. The project follows semantic versioning. Starting with 1.0.0, documented public API/ABI and package contracts are treated as stable within the 1.x line; incompatible changes require a new major version.
 
 ## [Unreleased]
 
-- target-board Cortex-A7/A32/AArch64 certification records remain SKU-specific work.
+- SKU-specific Cortex-A7/A32/AArch64 board certification may be added independently of the software release line and does not block the repository SDK release.
+
+## [1.0.0] - 2026-08-28
+
+- promote the validated low-compute Arm speech pipeline and standalone DSP module SDK to the first stable product release;
+- freeze the public 10 ms PCM/frame contract, caller-owned state/alignment/error semantics, topology-safe stage-mask composition and standalone module lifecycle as the 1.x compatibility baseline;
+- freeze the build/product composition model: `AP_MODULES`, build geometry caps, MDF/NLMS, EMA/MCRA, SCALAR/NEON, BANDLIMITED/FAST and precise/fast-math selectors remain explicit compile-time product choices;
+- ship CMake package exports and pkg-config metadata with clean-prefix consumer validation;
+- ship race-safe Linux SPSC runtime ownership, TSan coverage, resource/RAM/ELF pruning gates, QEMU Arm execution, coverage/static-analysis/nightly fuzz automation and acoustic-evaluation/certification schemas;
+- ship the BANDLIMITED boundary resampler, timestamp observation, echo-path-change notification, reusable Activity/DTD module and corrected ERLE convergence telemetry;
+- ship reproducible GitHub release automation that builds/tests/installs/packages/checksums before creating the annotated tag and Release assets;
+- retain target-board CPU/thermal/power/8 h soak and private acoustic-corpus measurements as per-SKU certification records rather than prerequisites for the software SDK release.
+
+No DSP, public API, ABI, resource-envelope or acoustic-behavior changes are introduced by the 1.0.0 promotion relative to the validated 0.7.1 code line; 1.0.0 establishes the stable support contract for that validated productized implementation.
 
 ## [0.7.1] - 2026-08-28
 

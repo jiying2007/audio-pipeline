@@ -654,6 +654,10 @@ static void runtime_emit_event(ap_runtime_t *runtime,
     const unsigned tail =
         atomic_load_explicit(&runtime->event_tail, memory_order_acquire);
     ap_rt_event_t *event;
+
+    if (runtime->recorder)
+        (void)ap_flight_recorder_trigger(runtime->recorder, kind, severity);
+
     if (head - tail >= AP_RUNTIME_EVENT_QUEUE_DEPTH) {
         counter64_add(&runtime->event_drop_events, 1u);
         return;
@@ -668,8 +672,6 @@ static void runtime_emit_event(ap_runtime_t *runtime,
     event->arg1 = arg1;
     event->count = count;
     atomic_store_explicit(&runtime->event_head, head + 1u, memory_order_release);
-    if (runtime->recorder)
-        (void)ap_flight_recorder_trigger(runtime->recorder, kind, severity);
 }
 
 static uint32_t latency_bucket(uint32_t us) {

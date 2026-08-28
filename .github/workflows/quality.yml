@@ -1,9 +1,7 @@
 name: Quality
 
 on:
-  push:
-  pull_request:
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -16,7 +14,7 @@ jobs:
   sdk-consumer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Build and install SDK
         run: |
           cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release
@@ -38,7 +36,7 @@ jobs:
   sku-memory-rom:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Verify SKU pipeline RAM pruning
         run: |
           cmake --preset composition-full
@@ -92,7 +90,7 @@ jobs:
   thread-sanitizer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Configure TSan runtime contract
         env:
           CC: clang
@@ -127,7 +125,7 @@ jobs:
             simd: NEON
             qemu: qemu-aarch64 -cpu cortex-a53 -L /usr/aarch64-linux-gnu
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install cross runtime
         run: >-
           sudo apt-get update && sudo apt-get install -y qemu-user
@@ -142,12 +140,11 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_C_FLAGS='${{ matrix.cflags }}'
           -DAP_SIMD_BACKEND=${{ matrix.simd }}
-          -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF
-          -DAP_BUILD_EXAMPLES=OFF -DAP_BUILD_TESTS=ON
+          -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DAP_BUILD_TESTS=ON
       - name: Build executable contracts
         run: >-
           cmake --build build/qemu-${{ matrix.name }} --parallel
-          --target ap_module_tests ap_contract_tests ap_fft_tests ap_resampler_tests
+          --target ap_module_tests ap_contract_tests ap_fft_tests ap_resampler_tests ap_runtime_tests
       - name: Execute under QEMU
         run: |
           Q='${{ matrix.qemu }}'
@@ -155,11 +152,12 @@ jobs:
           $Q ./build/qemu-${{ matrix.name }}/ap_contract_tests
           $Q ./build/qemu-${{ matrix.name }}/ap_fft_tests
           $Q ./build/qemu-${{ matrix.name }}/ap_resampler_tests
+          $Q ./build/qemu-${{ matrix.name }}/ap_runtime_tests
 
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install coverage tooling
         run: sudo apt-get update && sudo apt-get install -y gcovr
       - name: Configure coverage build
@@ -167,7 +165,7 @@ jobs:
           CC: gcc
         run: >-
           cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Debug
-          -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF
+          -DAP_BUILD_BENCH=OFF
           -DCMAKE_C_FLAGS='--coverage -O0 -g'
           -DCMAKE_EXE_LINKER_FLAGS='--coverage'
       - name: Run tests and enforce coverage
@@ -180,7 +178,7 @@ jobs:
   static-analysis:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install analyzer
         run: sudo apt-get update && sudo apt-get install -y clang-tools
       - name: Configure
@@ -189,13 +187,12 @@ jobs:
         run: >-
           cmake -S . -B build-analysis -DCMAKE_BUILD_TYPE=Debug
           -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF
-          -DAP_ENABLE_LINUX_RUNTIME=OFF
       - name: Scan build
         run: scan-build --status-bugs cmake --build build-analysis --parallel
 
   acoustic-eval-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Validate evaluation harness
         run: python3 eval/run_eval.py --self-test

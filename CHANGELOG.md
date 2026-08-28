@@ -6,6 +6,23 @@ All notable changes are recorded here. The project follows semantic versioning. 
 
 - SKU-specific Cortex-A7/A32/AArch64 board certification may be added independently of the software release line and does not block the repository SDK release.
 
+## [1.1.0] - 2026-08-28
+
+- add an additive, size/versioned runtime control plane for frame metadata, hardware timestamps, stream discontinuities, echo-path changes, reset, quality and tuning without changing the frozen 1.x public struct layouts;
+- preserve DSP timeline continuity under output backpressure: a full output queue now drops only publication while AEC/SYNC/NS/AGC/VAD state continues to advance every accepted capture frame;
+- extend long-running runtime observability with lock-free 32-bit-atomic-backed 64-bit counters, queue high-water marks, discontinuity/gap/timestamp counters, actual RT scheduler state and fixed-histogram DSP p50/p95/p99;
+- harden Linux RT setup with validated CPU affinity, optional worker stack sizing/thread naming/mlock and observable non-fatal setup failures;
+- add bounded fixed-size runtime events plus a caller-owned pre/post-roll Flight Recorder; event delivery may drop under pressure but recorder triggering is independent of event-ring capacity;
+- add the versioned `.apd` dump format and PC-side `apdump`/`apreplay` tooling, with CI that generates, parses, extracts and bit-exact replays deterministic dumps;
+- expand acoustic evaluation to 1/2-mic and capture-only/full-duplex cases with enforceable case thresholds, and repair the processor CLI so the evaluation runner's sample-rate/mic geometry is actually honored;
+- strengthen SKU certification so `product-certified` requires concrete target performance/acoustic/artifact/8 h soak evidence plus semantic p95/p99/XRUN/overrun/drop gates;
+- stabilize Activity/DTD with attack/release energy tracking and far-end/double-talk hysteresis; make MDF/NLMS adaptation convergence-aware so steady far-end-only operation reduces adaptation work and double-talk/reference loss immediately restores fast cadence;
+- consume fractional SYNC drift residue with linear reference interpolation and replace delay-search square-root correlation with equivalent squared normalized correlation;
+- retain resource ceilings after productization: current hosted GCC references are pipeline full=78,096 B, LOW=46,928 B, TINY=25,408 B, RAW=1,064 B and runtime full=32,632 B, TINY=5,080 B;
+- install the diagnostics public header together with the Linux runtime SDK and promote the project package version to 1.1.0.
+
+The 1.1.0 public surface is additive. Existing 1.0 configuration, metrics, runtime configuration and runtime metrics structure layouts are not changed.
+
 ## [1.0.0] - 2026-08-28
 
 - promote the validated low-compute Arm speech pipeline and standalone DSP module SDK to the first stable product release;
@@ -23,7 +40,7 @@ No DSP, public API, ABI, resource-envelope or acoustic-behavior changes are intr
 
 - create annotated release tags only after build, test, SDK installation, packaging and checksum generation have all succeeded;
 - close the release/main reproducibility gap introduced by the v0.7.0 release-promotion workflow fix;
-- no DSP, public API, ABI, resource-envelope or acoustic-behavior change relative to the validated v0.7.0 code line.
+- no DSP, API, ABI, resource-envelope or acoustic-behavior change relative to the validated v0.7.0 code line.
 
 ## [0.7.0] - 2026-08-28
 

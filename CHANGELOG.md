@@ -1,3 +1,10 @@
+# 1.2.0
+
+- Close runtime async failure semantics: failed DSP submissions publish a bounded completion status when output capacity exists, increment failure counters, emit `AP_EVENT_PIPELINE_ERROR`, and latch ERROR/FATAL state independently from the event queue.
+- Add additive runtime metrics v3 with pipeline-failure, critical-event, and sampled CPU-migration telemetry.
+- Bind product certification records to exact policy/corpus/evidence bytes and add `ap_certify.py` plus machine-readable evidence/corpus manifests.
+- Add ABI/API compatibility comparison against released v1.1.1, expanded runtime/recorder fuzzing, deterministic SPDX SBOM generation, reproducible release packaging, and supply-chain attestation hooks.
+
 # Changelog
 
 All notable changes are recorded here. The project follows semantic versioning. Starting with 1.0.0, documented public API/ABI and package contracts are treated as stable within the 1.x line; incompatible changes require a new major version.

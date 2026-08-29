@@ -129,6 +129,58 @@ typedef struct ap_runtime_metrics_v2 {
     uint32_t reserved[8];
 } ap_runtime_metrics_v2_t;
 
+#define AP_RUNTIME_METRICS_V3_API_VERSION 1u
+#define AP_RUNTIME_CRITICAL_STATE_API_VERSION 1u
+
+typedef struct ap_runtime_metrics_v3 {
+    uint32_t struct_size;
+    uint32_t api_version;
+    uint64_t submitted_frames;
+    uint64_t processed_frames;
+    uint64_t failed_frames;
+    uint64_t input_full_events;
+    uint64_t output_drop_events;
+    uint64_t dsp_overruns;
+    uint64_t command_full_events;
+    uint64_t event_drop_events;
+    uint64_t stream_discontinuities;
+    uint64_t capture_gap_frames;
+    uint64_t render_gap_frames;
+    uint64_t timestamp_frames;
+    uint64_t scheduler_bind_failures;
+    uint64_t memory_lock_failures;
+    uint64_t render_push_failures;
+    uint64_t capture_process_failures;
+    uint64_t observed_cpu_changes;
+    uint64_t critical_events;
+    uint32_t input_queue_high_water;
+    uint32_t output_queue_high_water;
+    uint32_t last_dsp_us;
+    uint32_t max_dsp_us;
+    uint32_t p50_dsp_us;
+    uint32_t p95_dsp_us;
+    uint32_t p99_dsp_us;
+    int32_t actual_cpu;
+    int32_t actual_policy;
+    int32_t actual_priority;
+    int32_t last_pipeline_error;
+    ap_quality_t quality;
+    uint32_t reserved[8];
+} ap_runtime_metrics_v3_t;
+
+typedef struct ap_runtime_critical_state {
+    uint32_t struct_size;
+    uint32_t api_version;
+    uint64_t frame_sequence;
+    uint64_t total_events;
+    uint32_t kind;
+    uint8_t severity;
+    uint8_t reserved8[3];
+    int32_t arg0;
+    int32_t arg1;
+    uint32_t reserved[6];
+} ap_runtime_critical_state_t;
+
 ap_runtime_config_t ap_runtime_config_default(void);
 ap_runtime_options_t ap_runtime_options_default(void);
 size_t ap_runtime_state_size(void);
@@ -180,6 +232,11 @@ void ap_runtime_get_metrics(const ap_runtime_t *runtime,
                             ap_runtime_metrics_t *metrics);
 ap_status_t ap_runtime_get_metrics_v2(const ap_runtime_t *runtime,
                                       ap_runtime_metrics_v2_t *metrics);
+ap_status_t ap_runtime_get_metrics_v3(const ap_runtime_t *runtime,
+                                      ap_runtime_metrics_v3_t *metrics);
+/* ERROR/FATAL events are latched independently from the bounded event queue. */
+ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
+                                          ap_runtime_critical_state_t *state);
 
 /* Optional Linux helper. Affinity/FIFO failure is non-fatal to DSP correctness. */
 int ap_runtime_bind_current_thread(int cpu, int fifo_priority);

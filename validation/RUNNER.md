@@ -37,7 +37,7 @@ Do not place public corpora in this repository or in GitHub Actions artifacts.
 
 ## Compact profile
 
-Compact is the recommended first public-data gate. It avoids the roughly 1 TB unpacked DNS5 training corpus and uses:
+Compact is the recommended first public-data gate. It avoids the very large DNS5 training corpus and uses:
 
 - pinned Microsoft AEC Challenge test audio;
 - sealed OpenSLR SLR28 RIR/noise;
@@ -77,9 +77,13 @@ The workflow fails if it does not cover all three AEC scenarios or if the derive
 
 ## Full profile
 
-Full adds Microsoft DNS Challenge real noisy/clean pairs. DNS5 is intentionally not silently downloaded by `audio-pipeline`: the upstream documentation states that the unpacked training data is about 1 TB and provides `download-dns-challenge-5-*.sh` scripts for operators to select and download the desired data.
+Full is a strict superset of Compact and adds Microsoft DNS Challenge source material. The upstream DNS5 repository provides clean speech, noise and RIR source archives rather than a canonical noisy/clean validation pair set. `audio-pipeline` therefore does not pretend that an arbitrary DNS materialization already contains official noisy/clean pairs.
 
-First use the pinned DNS repository checkout's official download scripts to materialize `datasets_fullband` on storage sized for the data. Review upstream dataset licenses before downloading or redistributing any corpus.
+Instead, Full selects official DNS clean WAVs and noise WAVs, verifies every selected source against Microsoft's pinned checksum index, and deterministically mixes them into validation-grade NS cases with a known clean reference. The generated noisy PCM is sealed by the corpus/evidence chain; the upstream clean/noise files retain their official SHA1 provenance.
+
+DNS5 is intentionally not silently downloaded by `audio-pipeline`: upstream documents roughly 1 TB for the complete unpacked training data and provides `download-dns-challenge-5-*.sh` scripts so the operator can select the desired source archives. A full 1 TB mirror is not required by the validation workflow; the supplied DNS root only needs enough official indexed clean and noise WAV material to satisfy the requested case/diversity budget.
+
+Use the pinned DNS repository checkout's official download scripts to materialize the desired clean/noise sources on suitable storage. Review upstream dataset licenses before downloading or redistributing any corpus.
 
 Then prepare and seal the full cache:
 
@@ -92,7 +96,7 @@ python3 validation/tools/prepare_public_validation.py prepare \
   --allow-large-downloads
 ```
 
-This downloads/seals the pinned DNS checksum index but does not replace the upstream DNS dataset downloader. Full preparation fails closed if the DNS materialization is absent.
+This downloads/seals the pinned DNS checksum index but does not replace the upstream DNS dataset downloader. Full preparation fails closed unless the DNS root contains both clean and noise WAV sources.
 
 Verify:
 
@@ -104,7 +108,29 @@ python3 validation/tools/prepare_public_validation.py verify \
   --dns-data-root /data/dns5/datasets_fullband
 ```
 
-Run the GitHub Actions workflow **Validation Grade**. Its official policy is fixed to `validation/policies/validation-full.json`; callers cannot weaken the workflow by supplying another policy path.
+Run the GitHub Actions workflow **Validation Grade**. Its official policy is fixed to `validation/policies/validation-full.json`; callers cannot weaken the workflow by supplying another policy path. The default full corpus is:
+
+```text
+60 balanced real AEC cases
+20 AEC+SLR28 acoustic combinations × (1 NS + 1 BF) = 40 cases
+60 verified DNS clean+noise derived NS cases
+= 160 validation-grade cases
+```
+
+The workflow verifies multiple AEC scenarios, multiple AEC near-end sources, multiple SLR28 RIR/noise members, and multiple DNS clean/noise files.
+
+## Processor identity
+
+Both public-validation workflows bind the exact execution binary into the evidence bundle using:
+
+- source revision;
+- SHA-256 of `ap_process_pcm`;
+- `ap_build_info_dump` output;
+- compiler identity;
+- cache verification report;
+- corpus/policy/report/evidence hashes.
+
+This is intentionally lighter than shipping certification provenance, but it prevents a later unrelated processor binary from being presented as the binary that produced an earlier validation report.
 
 ## Blind holdout
 

@@ -50,6 +50,7 @@ jobs:
           python3 -m py_compile validation/tools/*.py scripts/validation_reproducer.py scripts/ci_failure.py
           python3 validation/tools/dataset_lock.py self-test
           python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
+          python3 validation/tools/build_public_corpus.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 scripts/validation_reproducer.py --self-test
       - name: Configure offline validation processor

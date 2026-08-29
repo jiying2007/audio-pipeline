@@ -145,7 +145,7 @@ jobs:
 
   ci:
     needs: [impact, fast-gate]
-    if: needs.fast-gate.result == 'success' && needs.impact.outputs.run_ci == 'true'
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_ci == 'true'
     uses: ./.github/workflows/ci.yml
     with:
       composition_matrix: ${{ needs.impact.outputs.composition_matrix }}
@@ -160,7 +160,7 @@ jobs:
 
   quality:
     needs: [impact, fast-gate]
-    if: needs.fast-gate.result == 'success' && needs.impact.outputs.run_quality == 'true'
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_quality == 'true'
     uses: ./.github/workflows/quality.yml
     with:
       run_abi: ${{ needs.impact.outputs.run_abi == 'true' }}
@@ -168,19 +168,19 @@ jobs:
 
   audio-quality:
     needs: [impact, fast-gate]
-    if: needs.fast-gate.result == 'success' && needs.impact.outputs.run_audio == 'true'
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_audio == 'true'
     uses: ./.github/workflows/audio-quality-gates.yml
     with:
       run_extended: ${{ needs.impact.outputs.run_extended == 'true' }}
 
   resource-gates:
     needs: [impact, fast-gate]
-    if: needs.fast-gate.result == 'success' && needs.impact.outputs.run_resource == 'true'
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_resource == 'true'
     uses: ./.github/workflows/resource-gates.yml
 
   codeql:
     needs: [impact, fast-gate]
-    if: needs.fast-gate.result == 'success' && needs.impact.outputs.run_codeql == 'true'
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_codeql == 'true'
     permissions:
       contents: read
       security-events: write

@@ -13,51 +13,100 @@ on:
         required: true
         type: string
       policy_path:
-        description: Repository-relative certification policy path
+        description: Repository-relative approved certification policy path
         required: true
-        default: certification/policies/example-cortex-a32-low.json
         type: string
       corpus_manifest:
-        description: Corpus manifest path on the target runner
+        description: Real product corpus manifest path on the audio-target runner
         required: true
         type: string
-      evidence_dir:
-        description: Directory containing benchmark.json, acoustic.json, soak.json
+      acoustic_json:
+        description: Real product acoustic evaluation JSON path on the audio-target runner
         required: true
-        default: certification-input
         type: string
       capture_device:
-        description: ALSA/product capture route identifier
+        description: ALSA capture device, for example hw:0,0
         required: true
         type: string
       playback_device:
-        description: ALSA/product playback route identifier; use none for capture-only
+        description: ALSA playback device; use none for capture-only certification
         required: true
         default: none
         type: string
+      farend_file:
+        description: Optional real far-end PCM16 stimulus; repeated during route soak
+        required: false
+        default: ''
+        type: string
       sample_rate:
-        description: Device sample rate
+        description: Product audio sample rate
         required: true
         default: '16000'
         type: choice
         options: ['8000','16000','24000','32000','48000']
       mic_channels:
-        description: Microphone channels
+        description: Product microphone channels
         required: true
         default: '2'
         type: choice
         options: ['1','2']
+      dsp_cpu:
+        description: DSP worker CPU
+        required: true
+        default: '1'
+        type: string
+      ambient_c:
+        description: Measured ambient temperature in Celsius
+        required: true
+        type: string
+      power_input:
+        description: Live numeric power source path on runner/board; sampled during certification
+        required: true
+        type: string
+      power_scale:
+        description: Divide raw power source value by this scale to obtain watts
+        required: true
+        default: '1000000'
+        type: string
+      benchmark_seconds:
+        description: Active target benchmark duration
+        required: true
+        default: '120'
+        type: string
+      idle_seconds:
+        description: Idle target benchmark duration
+        required: true
+        default: '30'
+        type: string
+      soak_seconds:
+        description: Real ALSA route soak duration; 28800 is 8 hours
+        required: true
+        default: '28800'
+        type: string
+      max_xruns:
+        description: Allowed real ALSA XRUN recoveries during soak
+        required: true
+        default: '0'
+        type: string
+      max_overruns:
+        description: Allowed DSP overruns during soak
+        required: true
+        default: '0'
+        type: string
       shipping_cc:
         description: Optional shipping compiler executable available on runner
         required: false
+        default: ''
         type: string
       shipping_sysroot:
         description: Optional shipping sysroot path
         required: false
+        default: ''
         type: string
       shipping_cflags:
         description: Optional shipping compiler flags
         required: false
+        default: ''
         type: string
 
 permissions:
@@ -76,54 +125,154 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
       - name: Record exact certification revision
+        id: revision
+        shell: bash
         run: |
-          git rev-parse HEAD | tee certification-revision.txt
-          git status --porcelain=v1
+          set -euo pipefail
+          revision=$(git rev-parse HEAD)
+          test "$revision" != unknown
           test -z "$(git status --porcelain=v1)"
+          printf '%s\n' "$revision" | tee certification-revision.txt
+          echo "sha=$revision" >> "$GITHUB_OUTPUT"
+      - name: Validate external product evidence contract
+        shell: bash
+        env:
+          POLICY: ${{ inputs.policy_path }}
+          CORPUS: ${{ inputs.corpus_manifest }}
+          ACOUSTIC: ${{ inputs.acoustic_json }}
+          POWER: ${{ inputs.power_input }}
+          PLAYBACK: ${{ inputs.playback_device }}
+          FAREND: ${{ inputs.farend_file }}
+        run: |
+          set -euo pipefail
+          test -f "$POLICY"
+          test -f "$CORPUS"
+          test -f "$ACOUSTIC"
+          test -r "$POWER"
+          python3 -m json.tool "$POLICY" >/dev/null
+          python3 -m json.tool "$CORPUS" >/dev/null
+          python3 -m json.tool "$ACOUSTIC" >/dev/null
+          if [ "$PLAYBACK" = none ] && [ -n "$FAREND" ]; then
+            echo "capture-only certification cannot use farend_file" >&2
+            exit 2
+          fi
+          if [ -n "$FAREND" ]; then test -s "$FAREND"; fi
       - name: Verify shipping toolchain contract
         if: inputs.shipping_cc != ''
         env:
           CC: ${{ inputs.shipping_cc }}
           SYSROOT: ${{ inputs.shipping_sysroot }}
           CFLAGS: ${{ inputs.shipping_cflags }}
-          BUILD_DIR: build/shipping-certification
+          BUILD_DIR: build/shipping-certification-smoke
         run: sh scripts/verify-shipping-toolchain.sh
-      - name: Validate target evidence inputs
+      - name: Configure exact target build
+        shell: bash
         env:
-          EVIDENCE_DIR: ${{ inputs.evidence_dir }}
-          CORPUS: ${{ inputs.corpus_manifest }}
-          POLICY: ${{ inputs.policy_path }}
+          REVISION: ${{ steps.revision.outputs.sha }}
+          CC: ${{ inputs.shipping_cc }}
+          SYSROOT: ${{ inputs.shipping_sysroot }}
+          CFLAGS: ${{ inputs.shipping_cflags }}
         run: |
-          test -f "$POLICY"
-          test -f "$CORPUS"
-          test -f "$EVIDENCE_DIR/benchmark.json"
-          test -f "$EVIDENCE_DIR/acoustic.json"
-          test -f "$EVIDENCE_DIR/soak.json"
-      - name: Assemble immutable certification evidence
+          set -euo pipefail
+          args=(
+            -S . -B build/product-cert
+            -DCMAKE_BUILD_TYPE=Release
+            -DAP_BUILD_SOURCE_REVISION="$REVISION"
+            -DAP_BUILD_ALSA_EXAMPLE=ON
+            -DAP_STRICT_WARNINGS=ON
+          )
+          if [ -n "$CC" ]; then args+=( -DCMAKE_C_COMPILER="$CC" ); fi
+          if [ -n "$SYSROOT" ]; then args+=( -DCMAKE_SYSROOT="$SYSROOT" ); fi
+          if [ -n "$CFLAGS" ]; then args+=( -DCMAKE_C_FLAGS="$CFLAGS" ); fi
+          cmake "${args[@]}"
+      - name: Build exact certification binaries
+        run: >-
+          cmake --build build/product-cert --parallel --target
+          ap_bench ap_build_info_dump ap_alsa_runtime_duplex
+      - name: Collect target benchmark, thermal and power evidence
+        shell: bash
+        env:
+          SECONDS: ${{ inputs.benchmark_seconds }}
+          IDLE: ${{ inputs.idle_seconds }}
+          DSP_CPU: ${{ inputs.dsp_cpu }}
+          AMBIENT: ${{ inputs.ambient_c }}
+          POWER: ${{ inputs.power_input }}
+          POWER_SCALE: ${{ inputs.power_scale }}
+        run: |
+          set -euo pipefail
+          mkdir -p certification-input
+          python3 tools/target_evidence.py benchmark \
+            --binary build/product-cert/ap_bench \
+            --output certification-input/benchmark.json \
+            --seconds "$SECONDS" --idle-seconds "$IDLE" \
+            --max-rtf 0.40 --max-p99-us 9000 --dsp-cpu "$DSP_CPU" \
+            --ambient-c "$AMBIENT" --power-input "$POWER" \
+            --power-scale "$POWER_SCALE" --require-sensors
+      - name: Run real ALSA route soak
+        shell: bash
+        env:
+          CAPTURE: ${{ inputs.capture_device }}
+          PLAYBACK: ${{ inputs.playback_device }}
+          FAREND: ${{ inputs.farend_file }}
+          SECONDS: ${{ inputs.soak_seconds }}
+          DSP_CPU: ${{ inputs.dsp_cpu }}
+          RATE: ${{ inputs.sample_rate }}
+          CHANNELS: ${{ inputs.mic_channels }}
+          MAX_XRUNS: ${{ inputs.max_xruns }}
+          MAX_OVERRUNS: ${{ inputs.max_overruns }}
+          POWER: ${{ inputs.power_input }}
+          POWER_SCALE: ${{ inputs.power_scale }}
+        run: |
+          set -euo pipefail
+          args=(
+            route-soak
+            --binary build/product-cert/ap_alsa_runtime_duplex
+            --output certification-input/soak.json
+            --capture-device "$CAPTURE"
+            --seconds "$SECONDS"
+            --dsp-cpu "$DSP_CPU"
+            --sample-rate "$RATE"
+            --mic-channels "$CHANNELS"
+            --max-xruns "$MAX_XRUNS"
+            --max-overruns "$MAX_OVERRUNS"
+            --power-input "$POWER"
+            --power-scale "$POWER_SCALE"
+          )
+          if [ "$PLAYBACK" != none ]; then args+=( --playback-device "$PLAYBACK" ); fi
+          if [ -n "$FAREND" ]; then args+=( --farend "$FAREND" ); fi
+          python3 tools/target_evidence.py "${args[@]}"
+      - name: Assemble immutable product certification evidence
+        shell: bash
         env:
           SKU: ${{ inputs.sku }}
           POLICY: ${{ inputs.policy_path }}
           CORPUS: ${{ inputs.corpus_manifest }}
-          EVIDENCE_DIR: ${{ inputs.evidence_dir }}
+          ACOUSTIC: ${{ inputs.acoustic_json }}
           CAPTURE: ${{ inputs.capture_device }}
           PLAYBACK: ${{ inputs.playback_device }}
           RATE: ${{ inputs.sample_rate }}
           CHANNELS: ${{ inputs.mic_channels }}
         run: |
-          playback="$PLAYBACK"
-          test "$playback" = none && playback=""
-          args=""
-          if [ -n "$playback" ]; then args="--playback-device $playback"; fi
-          # shellcheck disable=SC2086
-          python3 tools/ap_certify.py \
-            --sku "$SKU" --policy "$POLICY" --corpus-manifest "$CORPUS" \
-            --benchmark-json "$EVIDENCE_DIR/benchmark.json" \
-            --acoustic-json "$EVIDENCE_DIR/acoustic.json" \
-            --soak-json "$EVIDENCE_DIR/soak.json" \
-            --output-dir certification-out \
-            --capture-device "$CAPTURE" $args \
-            --sample-rate "$RATE" --mic-channels "$CHANNELS"
-      - name: Enforce certification policy and evidence hashes
+          set -euo pipefail
+          args=(
+            --sku "$SKU"
+            --policy "$POLICY"
+            --corpus-manifest "$CORPUS"
+            --benchmark-json certification-input/benchmark.json
+            --acoustic-json "$ACOUSTIC"
+            --soak-json certification-input/soak.json
+            --output-dir certification-out
+            --capture-device "$CAPTURE"
+            --sample-rate "$RATE"
+            --mic-channels "$CHANNELS"
+            --build-info-bin build/product-cert/ap_build_info_dump
+            --binary build/product-cert/ap_bench
+            --binary build/product-cert/ap_alsa_runtime_duplex
+            --cmake-cache build/product-cert/CMakeCache.txt
+          )
+          if [ "$PLAYBACK" != none ]; then args+=( --playback-device "$PLAYBACK" ); fi
+          python3 tools/ap_certify.py "${args[@]}"
+      - name: Enforce certification policy and materialized evidence hashes
         env:
           POLICY: ${{ inputs.policy_path }}
           CORPUS: ${{ inputs.corpus_manifest }}
@@ -132,11 +281,13 @@ jobs:
           --policy "$POLICY"
           --corpus-manifest "$CORPUS"
           --evidence-manifest certification-out/evidence-manifest.json
-      - name: Bind workflow revision into evidence package
+      - name: Bind workflow revision and package checksums
         run: |
+          set -euo pipefail
           cp certification-revision.txt certification-out/
-          sha256sum certification-out/* | sort > certification-out/SHA256SUMS
-      - name: Upload certification evidence
+          find certification-out -type f ! -name SHA256SUMS -print0 \
+            | sort -z | xargs -0 sha256sum > certification-out/SHA256SUMS
+      - name: Upload product certification evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: product-certification-${{ inputs.sku }}-${{ github.run_id }}

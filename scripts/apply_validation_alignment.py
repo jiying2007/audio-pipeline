@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+from pathlib import Path
+
+path = Path('validation/tools/run_validation.py')
+text = path.read_text(encoding='utf-8')
+old = '''def max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:\n    max_lag = max(1, sample_rate // 10)\n    step = max(1, max_lag // 60)\n    lags = list(range(-max_lag, max_lag + 1, step))\n    if 0 not in lags:\n        lags.append(0)\n    return max((normalized_corr(a, b, lag) for lag in lags), default=0.0)\n\n\n'''
+new = '''def best_corr_lag(a: Sequence[int], b: Sequence[int], sample_rate: int,\n                  max_lag_ms: int = 120) -> tuple[float, int]:\n    """Return max absolute normalized correlation and exact lag.\n\n    A negative lag means ``b`` is delayed relative to ``a``. A two-stage\n    coarse/exact search keeps long public validation cases affordable while\n    preserving sample-accurate alignment for SI-SDR.\n    """\n    max_lag = max(1, sample_rate * max_lag_ms // 1000)\n    coarse_step = max(1, max_lag // 80)\n    coarse_lags = list(range(-max_lag, max_lag + 1, coarse_step))\n    if 0 not in coarse_lags:\n        coarse_lags.append(0)\n    coarse = max(coarse_lags, key=lambda lag: normalized_corr(a, b, lag, stride=8))\n    low = max(-max_lag, coarse - coarse_step)\n    high = min(max_lag, coarse + coarse_step)\n    best_lag = coarse\n    best_corr = -1.0\n    for lag in range(low, high + 1):\n        corr = normalized_corr(a, b, lag, stride=4)\n        if corr > best_corr:\n            best_corr = corr\n            best_lag = lag\n    return max(0.0, best_corr), best_lag\n\n\ndef max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:\n    return best_corr_lag(a, b, sample_rate)[0]\n\n\ndef aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],\n                   sample_rate: int) -> tuple[float | None, int]:\n    _, lag = best_corr_lag(reference, estimate, sample_rate)\n    if lag >= 0:\n        ref = reference[lag:]\n        est = estimate\n    else:\n        ref = reference\n        est = estimate[-lag:]\n    count = min(len(ref), len(est))\n    if count < 16:\n        return None, -lag\n    return si_sdr_db(ref[:count], est[:count]), -lag\n\n\n'''
+if old not in text:
+    raise SystemExit('correlation block not found')
+text = text.replace(old, new, 1)
+old = '''    if clean_path is not None:\n        clean, _ = read_audio(clean_path, rate, 1)\n        input_sdr = si_sdr_db(clean, mic0)\n        output_sdr = si_sdr_db(clean, output)\n        metrics["input_near_si_sdr_db"] = input_sdr\n        metrics["near_si_sdr_db"] = output_sdr\n        metrics["near_si_sdr_improvement_db"] = None if input_sdr is None or output_sdr is None else output_sdr - input_sdr\n'''
+new = '''    if clean_path is not None:\n        clean, _ = read_audio(clean_path, rate, 1)\n        input_sdr, input_alignment = aligned_si_sdr(clean, mic0, rate)\n        output_sdr, output_alignment = aligned_si_sdr(clean, output, rate)\n        metrics["input_near_si_sdr_db"] = input_sdr\n        metrics["near_si_sdr_db"] = output_sdr\n        metrics["input_alignment_samples"] = input_alignment\n        metrics["output_alignment_samples"] = output_alignment\n        metrics["near_si_sdr_improvement_db"] = None if input_sdr is None or output_sdr is None else output_sdr - input_sdr\n'''
+if old not in text:
+    raise SystemExit('clean reference block not found')
+text = text.replace(old, new, 1)
+old = '''    assert (si_sdr_db(ref, ref) or 0) > 100\n    assert max_abs_corr(ref, ref, rate) > 0.99\n    assert vad_f1([0, 1, 1, 0], [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]) == 1.0\n'''
+new = '''    assert (si_sdr_db(ref, ref) or 0) > 100\n    assert max_abs_corr(ref, ref, rate) > 0.99\n    delayed = [0] * 137 + ref[:-137]\n    delayed_sdr, alignment = aligned_si_sdr(ref, delayed, rate)\n    assert alignment == 137\n    assert delayed_sdr is not None and delayed_sdr > 100\n    assert vad_f1([0, 1, 1, 0], [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]) == 1.0\n'''
+if old not in text:
+    raise SystemExit('self-test block not found')
+text = text.replace(old, new, 1)
+path.write_text(text, encoding='utf-8')
+Path('scripts/apply_validation_alignment.py').unlink()

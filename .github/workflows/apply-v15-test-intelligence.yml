@@ -27,6 +27,7 @@ jobs:
       - name: Apply ordinary patches
         run: python3 tools/apply_v15_test_intelligence.py
       - name: Self-test and strict build
+        shell: bash
         run: |
           set -euo pipefail
           python3 -m py_compile tools/target_evidence.py

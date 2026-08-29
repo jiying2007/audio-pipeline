@@ -1,3 +1,14 @@
+# 2.0.0
+
+- Hard-cut the public SDK at a new major-version boundary; v2 intentionally provides no source or binary compatibility aliases for removed v1 generational APIs.
+- Collapse build identity to one complete `ap_build_info_t` returned by `ap_build_info()`; remove the parallel build-info v2 surface.
+- Collapse Linux runtime integration to one API generation: `ap_runtime_open()`, `ap_runtime_submit_frame()` and `ap_runtime_read_metrics()` with the current options, frame metadata, command, critical-state and full long-running metric contracts.
+- Remove runtime `init/init_ex`, `submit/submit_ex`, metrics v1/v2/v3 public generations and their exported compatibility symbols.
+- Make product-certification records schema-v4-only; historical v2/v3 records remain historical release artifacts but are no longer accepted by the current validator or current shipping workflow.
+- Replace the v1.1.1 additive ABI gate with a v2 hard-cut symbol/header contract; after v2.0.0 is released, later 2.x releases use v2.0.0 as their ABI baseline.
+- Migrate native tests, fuzz targets, benchmarks, diagnostics, installed-SDK consumers and the real ALSA/HIL runtime path to the single v2 API.
+- No DSP algorithm, acoustic threshold, resource envelope, HIL trust boundary or shipping certification threshold changes are introduced by the v2 API cleanup.
+
 # 1.6.1
 
 - Add a shared fail-closed `tools/runner_preflight.py` contract for `audio-validation`, `audio-builder`, `audio-target`, and `certification-archive` self-hosted roles; `READY` is infrastructure readiness only and never acoustic/HIL/product evidence.

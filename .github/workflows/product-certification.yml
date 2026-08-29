@@ -162,7 +162,6 @@ jobs:
             -DAP_BUILD_TESTS=OFF -DAP_BUILD_EXAMPLES=ON -DAP_BUILD_BENCH=ON \
             "${extra[@]}"
           cmake --build build-shipping --parallel --target ap_bench ap_build_info_dump ap_alsa_runtime_duplex
-          ./build-shipping/ap_build_info_dump
       - name: Seal builder binary and toolchain identity
         env:
           CC: ${{ inputs.shipping_cc }}
@@ -182,7 +181,7 @@ jobs:
             --binary shipping-bundle/bin/ap_alsa_runtime_duplex \
             --compiler "$CC" --sysroot "$SYSROOT" --toolchain-root "$TOOLCHAIN_ROOT" \
             --cflags "$CFLAGS" --output shipping-bundle/build-provenance.json
-          sha256sum shipping-bundle/bin/* shipping-bundle/CMakeCache.txt shipping-bundle/build-provenance.json > shipping-bundle/SHA256SUMS
+          (cd shipping-bundle && sha256sum bin/* CMakeCache.txt build-provenance.json > SHA256SUMS)
       - name: Upload exact shipping build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -303,7 +302,7 @@ jobs:
             -czf certification-out.tar.gz certification-out
           sha256sum certification-out.tar.gz | tee certification-out.tar.gz.sha256
       - name: Attest certification evidence bundle
-        uses: actions/attest@1e69f3e2c3b845b28d7192f41ebf9f0974e6d2c4 # v4.2.2
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: certification-out.tar.gz
       - name: Upload certification transport artifact
@@ -333,7 +332,7 @@ jobs:
       - name: Require immutable product-lifecycle archive backend
         run: |
           set -euo pipefail
-          sha256sum -c certification-transport/certification-out.tar.gz.sha256
+          (cd certification-transport && sha256sum -c certification-out.tar.gz.sha256)
           test -x /usr/local/bin/audio-pipeline-cert-archive
           /usr/local/bin/audio-pipeline-cert-archive \
             --input certification-transport/certification-out.tar.gz \
@@ -344,7 +343,7 @@ jobs:
             --receipt archive-receipt.json \
             --bundle certification-transport/certification-out.tar.gz
       - name: Attest lifecycle archive receipt
-        uses: actions/attest@1e69f3e2c3b845b28d7192f41ebf9f0974e6d2c4 # v4.2.2
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: archive-receipt.json
       - name: Upload archive receipt

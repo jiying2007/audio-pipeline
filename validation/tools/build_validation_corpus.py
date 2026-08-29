@@ -215,7 +215,7 @@ def build(output: Path, seed: int, seconds: float) -> dict:
         "schema_version": 1,
         "corpus_id": f"validation-smoke-seed-{seed}",
         "tier": "regression",
-        "generator": {"name": "build_validation_corpus.py", "version": 1, "seed": seed},
+        "generator": {"name": "build_validation_corpus.py", "version": 2, "seed": seed},
         "sources": ["deterministic-generator"],
         "sealed_data": True,
         "cases": cases,

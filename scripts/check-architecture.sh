@@ -12,6 +12,24 @@ if grep -R -n -E 'AP_ENABLE_RUNTIME|AP_ENABLE_MDF_AEC|AP_ENABLE_NEON' \
   fail "legacy build switch found"
 fi
 
+# v2 is a hard cut. Current public headers and current product documentation
+# must never restore v1 generational wrappers/types or advertise historical
+# certification schemas as accepted input.
+if grep -R -n -E '\b(ap_build_info_v2_t|ap_build_info_v2_get|ap_runtime_init_ex|ap_runtime_submit_ex|ap_runtime_metrics_v2_t|ap_runtime_metrics_v3_t|ap_runtime_get_metrics_v2|ap_runtime_get_metrics_v3|AP_RUNTIME_METRICS_V3_API_VERSION|AP_RUNTIME_CONTROL_API_VERSION)\b' \
+    include/audio_pipeline README.md README.zh-CN.md docs certification/README.md 2>/dev/null; then
+  fail "v2 public compatibility residue found"
+fi
+if grep -n -E 'schema v2/v3 remain accepted|v2, v3 or v4|\[2, 3, 4\]' \
+    certification/README.md certification/validate_record.py certification/record.schema.json 2>/dev/null; then
+  fail "historical certification compatibility returned"
+fi
+python3 - <<'PY'
+import json
+schema = json.load(open('certification/record.schema.json', encoding='utf-8'))
+assert schema['properties']['schema_version'] == {'const': 4}
+print('certification schema v4-only contract: OK')
+PY
+
 # Per-stage runtime composition replaced the old pile of public enable booleans.
 if grep -R -n -E '\b(enable_hpf|enable_beamformer|enable_aec|enable_residual_echo_suppression|enable_noise_suppression|enable_agc|enable_vad)\b' \
     --exclude='check-architecture.sh' \

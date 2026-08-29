@@ -100,10 +100,10 @@ import json
 from pathlib import Path
 
 expected = {
-    'validation-compact.json': ({'validation-grade', 'validation-grade-blind'}, 100),
+    'validation-compact.json': ({'validation-grade'}, 100),
     'validation-compact-partition.json': ({'validation-grade'}, 60),
     'validation-compact-blind.json': ({'validation-grade-blind'}, 10),
-    'validation-full.json': ({'validation-grade', 'validation-grade-blind'}, 160),
+    'validation-full.json': ({'validation-grade'}, 160),
     'validation-full-partition.json': ({'validation-grade'}, 100),
     'validation-full-blind.json': ({'validation-grade-blind'}, 16),
 }

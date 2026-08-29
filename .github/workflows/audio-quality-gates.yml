@@ -62,6 +62,15 @@ jobs:
         run: |
           python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-1307 --seed 1307
           python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-1307-repeat --seed 1307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for path in [Path('/tmp/ap-validation-1307/corpus.json'), Path('/tmp/ap-validation-1307-repeat/corpus.json')]:
+              corpus = json.loads(path.read_text())
+              assert corpus['generator']['name'] == 'build_validation_corpus.py'
+              assert corpus['generator']['version'] == 2
+              assert corpus['tier'] == 'regression'
+          PY
           diff -u /tmp/ap-validation-1307/corpus.json /tmp/ap-validation-1307-repeat/corpus.json
           (cd /tmp/ap-validation-1307 && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/seed-1307-a.sha256
           (cd /tmp/ap-validation-1307-repeat && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/seed-1307-b.sha256

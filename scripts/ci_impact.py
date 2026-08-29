@@ -101,7 +101,7 @@ def analyze(paths: list[str], force_full: bool = False) -> dict:
             flags["alsa"] = True
         elif p.startswith("examples/") or p.startswith("tools/"):
             flags["bench"] = True
-        elif p.startswith("scripts/") or p.startswith("ci/"):
+        elif p.startswith("scripts/") or p.startswith("ci/") or p.startswith("hil/"):
             flags["unknown"] = True
         elif not is_docs(p):
             flags["unknown"] = True
@@ -185,9 +185,11 @@ def self_test() -> None:
     aec = analyze(["src/modules/ap_aec_module.c"])
     assert aec["run_aec_backend"] and "composition-aec-only" in aec["compositions"]
     val = analyze(["validation/tools/run_validation.py"])
-    assert val["run_audio"] and not val["run_ci"] and not val["run_arm" if "run_arm" in val else "full"]
+    assert val["run_audio"] and not val["run_ci"] and val["arm"] == []
     unknown = analyze(["scripts/new-thing.sh"])
     assert unknown["full"] and len(unknown["arm"]) == len(FULL_ARM)
+    hil = analyze(["hil/board.schema.json"])
+    assert hil["full"]
     assert analyze([], True)["full"]
     print("ci impact analyzer self-test: OK")
 

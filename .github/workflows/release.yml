@@ -9,6 +9,7 @@ permissions:
   contents: write
   id-token: write
   attestations: write
+  artifact-metadata: write
 
 concurrency:
   group: release
@@ -18,22 +19,27 @@ jobs:
   release:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
-    env:
-      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ env.RELEASE_SHA }}
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
       - name: Verify exact release SHA
-        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
-      - name: Resolve project version
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
+      - name: Resolve project version and source epoch
         id: version
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           version=$(sed -n 's/^project(audio_pipeline VERSION \([0-9][0-9.]*\).*/\1/p' CMakeLists.txt)
           test -n "$version"
+          epoch=$(git show -s --format=%ct "$VERIFIED_SHA")
+          test -n "$epoch"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          echo "epoch=$epoch" >> "$GITHUB_OUTPUT"
       - name: Check existing release
         id: existing
         env:
@@ -52,43 +58,94 @@ jobs:
           cmake --build build-release --parallel
           ctest --test-dir build-release --output-on-failure
           cmake --install build-release --prefix "$PWD/stage"
-      - name: Package SDK and checksums
+      - name: Generate SPDX SBOM
+        if: steps.existing.outputs.release != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          python3 tools/generate_spdx_sbom.py \
+            --root stage \
+            --name audio-pipeline \
+            --version "$VERSION" \
+            --revision "$VERIFIED_SHA" \
+            --created-epoch "$SOURCE_DATE_EPOCH" \
+            --output "audio-pipeline-${TAG}.spdx.json"
+      - name: Package reproducible SDK/source and checksums
         if: steps.existing.outputs.release != 'true'
         env:
           TAG: ${{ steps.version.outputs.tag }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         run: |
-          tar -C stage -czf "audio-pipeline-${TAG}-sdk.tar.gz" .
-          git archive --format=tar.gz -o "audio-pipeline-${TAG}-source.tar.gz" "$RELEASE_SHA"
-          sha256sum "audio-pipeline-${TAG}-sdk.tar.gz" \
-                    "audio-pipeline-${TAG}-source.tar.gz" > SHA256SUMS
-      - name: Attest release artifacts
+          find stage -exec touch -d "@$SOURCE_DATE_EPOCH" {} +
+          package_sdk() {
+            out=$1
+            tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" \
+              --owner=0 --group=0 --numeric-owner --format=gnu \
+              -C stage -cf - . | gzip -n > "$out"
+          }
+          package_source() {
+            out=$1
+            git archive --format=tar \
+              --prefix="audio-pipeline-${TAG}-source/" \
+              "$VERIFIED_SHA" | gzip -n > "$out"
+          }
+          package_sdk "audio-pipeline-${TAG}-sdk.tar.gz"
+          package_sdk /tmp/sdk-repeat.tar.gz
+          cmp "audio-pipeline-${TAG}-sdk.tar.gz" /tmp/sdk-repeat.tar.gz
+          package_source "audio-pipeline-${TAG}-source.tar.gz"
+          package_source /tmp/source-repeat.tar.gz
+          cmp "audio-pipeline-${TAG}-source.tar.gz" /tmp/source-repeat.tar.gz
+          sha256sum \
+            "audio-pipeline-${TAG}-sdk.tar.gz" \
+            "audio-pipeline-${TAG}-source.tar.gz" \
+            "audio-pipeline-${TAG}.spdx.json" > SHA256SUMS
+      - name: Attest release build provenance
         if: steps.existing.outputs.release != 'true'
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: |
             audio-pipeline-${{ steps.version.outputs.tag }}-sdk.tar.gz
             audio-pipeline-${{ steps.version.outputs.tag }}-source.tar.gz
+            audio-pipeline-${{ steps.version.outputs.tag }}.spdx.json
             SHA256SUMS
+      - name: Attest SDK SBOM
+        if: steps.existing.outputs.release != 'true'
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: audio-pipeline-${{ steps.version.outputs.tag }}-sdk.tar.gz
+          sbom-path: audio-pipeline-${{ steps.version.outputs.tag }}.spdx.json
       - name: Create exact-SHA release tag
         if: steps.existing.outputs.release != 'true'
         env:
           TAG: ${{ steps.version.outputs.tag }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           if git rev-parse "$TAG" >/dev/null 2>&1; then
-            test "$(git rev-list -n1 "$TAG")" = "$RELEASE_SHA"
+            test "$(git rev-list -n1 "$TAG")" = "$VERIFIED_SHA"
           else
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git tag -a "$TAG" -m "audio-pipeline $TAG" "$RELEASE_SHA"
+            git tag -a "$TAG" -m "audio-pipeline $TAG" "$VERIFIED_SHA"
             git push origin "$TAG"
           fi
-      - name: Create GitHub Release
+      - name: Create draft GitHub Release with complete asset set
         if: steps.existing.outputs.release != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
-        run: >-
-          gh release create "$TAG"
-          "audio-pipeline-${TAG}-sdk.tar.gz"
-          "audio-pipeline-${TAG}-source.tar.gz"
-          SHA256SUMS --verify-tag --generate-notes
+        run: |
+          gh release create "$TAG" --draft --verify-tag --generate-notes \
+            "audio-pipeline-${TAG}-sdk.tar.gz" \
+            "audio-pipeline-${TAG}-source.tar.gz" \
+            "audio-pipeline-${TAG}.spdx.json" \
+            SHA256SUMS
+      - name: Publish complete release
+        if: steps.existing.outputs.release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: gh release edit "$TAG" --draft=false --latest

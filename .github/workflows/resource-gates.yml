@@ -28,6 +28,7 @@ jobs:
           for p in full low tiny raw; do cmake --build "build/composition-$p" --target ap_state_size --parallel; done
       - name: Enforce absolute pipeline RAM ceilings
         run: |
+          set -euo pipefail
           full=$(./build/composition-full/ap_state_size)
           low=$(./build/composition-low/ap_state_size)
           tiny=$(./build/composition-tiny/ap_state_size)
@@ -40,8 +41,11 @@ jobs:
           test "$low" -lt "$full"
           test "$tiny" -lt "$low"
           test "$raw" -lt "$tiny"
+          printf 'P_FULL=%s\nP_LOW=%s\nP_TINY=%s\nP_RAW=%s\n' \
+            "$full" "$low" "$tiny" "$raw" > /tmp/resource-pipeline.env
       - name: Enforce runtime RAM ceilings
         run: |
+          set -euo pipefail
           cmake -S . -B build/rt-full -DCMAKE_BUILD_TYPE=Release -DAP_RUNTIME_QUEUE_DEPTH=8
           cmake -S . -B build/rt-tiny -DCMAKE_BUILD_TYPE=Release \
             -DAP_RUNTIME_QUEUE_DEPTH=4 -DAP_BUILD_MAX_IO_RATE_HZ=16000 \
@@ -60,6 +64,20 @@ jobs:
           test "$full" -le 32768
           test "$tiny" -le 8192
           test "$tiny" -lt "$full"
+          printf 'R_FULL=%s\nR_TINY=%s\n' "$full" "$tiny" > /tmp/resource-runtime.env
+      - name: Enforce resource baseline single source
+        run: |
+          set -euo pipefail
+          python3 scripts/resource_baseline.py --self-test
+          . /tmp/resource-pipeline.env
+          . /tmp/resource-runtime.env
+          python3 scripts/resource_baseline.py \
+            --full "$P_FULL" --low "$P_LOW" --tiny "$P_TINY" --raw "$P_RAW" \
+            --runtime-full "$R_FULL" --runtime-tiny "$R_TINY" \
+            --json-output /tmp/resource-baseline.json \
+            --markdown-output /tmp/RESOURCE_BASELINE.md
+          diff -u ci/resource-baseline.json /tmp/resource-baseline.json
+          diff -u docs/generated/RESOURCE_BASELINE.md /tmp/RESOURCE_BASELINE.md
       - name: Enforce final consumer ELF pruning
         run: |
           common="-DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DCMAKE_C_FLAGS=-ffunction-sections\ -fdata-sections -DCMAKE_EXE_LINKER_FLAGS=-Wl,--gc-sections"

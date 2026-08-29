@@ -130,11 +130,16 @@ def shutil_which(name: str) -> str | None:
 def benchmark(args: argparse.Namespace) -> int:
     if args.seconds < 1 or args.idle_seconds < 1:
         raise SystemExit("benchmark durations must be >= 1")
+    if args.sample_rate not in _SUPPORTED_RATES or args.mic_channels not in (1, 2):
+        raise SystemExit("invalid benchmark route geometry")
     active_cmd = [
         str(args.binary), str(args.seconds), str(args.max_rtf),
-        str(args.max_p99_us), "active",
+        str(args.max_p99_us), "active", str(args.sample_rate), str(args.mic_channels),
     ]
-    idle_cmd = [str(args.binary), str(args.idle_seconds), "0", "0", "idle"]
+    idle_cmd = [
+        str(args.binary), str(args.idle_seconds), "0", "0", "idle",
+        str(args.sample_rate), str(args.mic_channels),
+    ]
     if args.dsp_cpu >= 0 and shutil_which("taskset"):
         active_cmd = ["taskset", "-c", str(args.dsp_cpu)] + active_cmd
         idle_cmd = ["taskset", "-c", str(args.dsp_cpu)] + idle_cmd
@@ -149,10 +154,16 @@ def benchmark(args: argparse.Namespace) -> int:
     require_success(idle)
     active_kv = parse_kv(active.stdout + "\n" + active.stderr)
     idle_kv = parse_kv(idle.stdout + "\n" + idle.stderr)
-    required = {"p50_us", "p95_us", "p99_us", "deadline_misses", "rtf", "state_bytes"}
+    required = {
+        "p50_us", "p95_us", "p99_us", "deadline_misses", "rtf", "state_bytes",
+        "sample_rate_hz", "mic_channels",
+    }
     missing = sorted(required - active_kv.keys())
     if missing:
         raise ValueError(f"benchmark output missing keys: {', '.join(missing)}")
+    if as_int(active_kv, "sample_rate_hz") != args.sample_rate or \
+       as_int(active_kv, "mic_channels") != args.mic_channels:
+        raise ValueError("benchmark output geometry does not match requested route")
 
     thermal = {
         "ambient_c": args.ambient_c,
@@ -182,6 +193,7 @@ def benchmark(args: argparse.Namespace) -> int:
         "collector_version": VERSION,
         "kind": "target-benchmark",
         "command": active_cmd,
+        "route": {"sample_rate_hz": args.sample_rate, "mic_channels": args.mic_channels},
         "performance": performance,
         "thermal_power": thermal,
         "raw": {"active": active.stdout.strip(), "idle": idle.stdout.strip()},
@@ -274,12 +286,13 @@ def route_soak(args: argparse.Namespace) -> int:
 
 def self_test() -> int:
     bench = (
-        "mode=active frames=100 audio_s=1 elapsed_s=0.123 avg_us=12.3 "
-        "p50_us=11 p95_us=22 p99_us=33 max_us=44 deadline_misses=0 "
-        "rtf=0.123 state_bytes=1234\n"
+        "mode=active frames=100 sample_rate_hz=16000 mic_channels=2 audio_s=1 "
+        "elapsed_s=0.123 avg_us=12.3 p50_us=11 p95_us=22 p99_us=33 "
+        "max_us=44 deadline_misses=0 rtf=0.123 state_bytes=1234\n"
     )
     values = parse_kv(bench)
     assert as_int(values, "p99_us") == 33
+    assert as_int(values, "sample_rate_hz") == 16000
     assert abs(as_float(values, "rtf") - 0.123) < 1e-9
     route = (
         "produced=100 received=100 xruns=0 dsp_overruns=0 input_full=0 "
@@ -306,6 +319,8 @@ def main() -> int:
     b.add_argument("--max-rtf", type=float, default=0.40)
     b.add_argument("--max-p99-us", type=int, default=9000)
     b.add_argument("--dsp-cpu", type=int, default=1)
+    b.add_argument("--sample-rate", type=int, default=16000)
+    b.add_argument("--mic-channels", type=int, default=2)
     b.add_argument("--ambient-c", type=float, required=True)
     b.add_argument("--power-input", type=Path)
     b.add_argument("--power-scale", type=float, default=1_000_000.0)

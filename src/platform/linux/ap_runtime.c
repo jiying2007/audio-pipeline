@@ -174,11 +174,11 @@ struct ap_runtime {
     ap_counter64_t timestamp_frames;
     ap_counter64_t scheduler_bind_failures;
     ap_counter64_t memory_lock_failures;
-    ap_counter64_t failed_frames;
-    ap_counter64_t render_push_failures;
-    ap_counter64_t capture_process_failures;
-    ap_counter64_t observed_cpu_changes;
-    ap_counter64_t critical_events;
+    atomic_uint failed_frames;
+    atomic_uint render_push_failures;
+    atomic_uint capture_process_failures;
+    atomic_uint observed_cpu_changes;
+    atomic_uint critical_events;
     atomic_uint input_queue_high_water;
     atomic_uint output_queue_high_water;
     atomic_uint last_dsp_us;
@@ -270,6 +270,17 @@ static void update_max(atomic_uint *dst, uint32_t value) {
            !atomic_compare_exchange_weak_explicit(dst,
                                                   &current,
                                                   value,
+                                                  memory_order_relaxed,
+                                                  memory_order_relaxed)) {
+    }
+}
+
+static void counter32_inc_sat(atomic_uint *counter) {
+    unsigned current = atomic_load_explicit(counter, memory_order_relaxed);
+    while (current != UINT32_MAX &&
+           !atomic_compare_exchange_weak_explicit(counter,
+                                                  &current,
+                                                  current + 1u,
                                                   memory_order_relaxed,
                                                   memory_order_relaxed)) {
     }
@@ -608,11 +619,11 @@ static void init_runtime_atomics(ap_runtime_t *runtime) {
     counter64_init(&runtime->timestamp_frames);
     counter64_init(&runtime->scheduler_bind_failures);
     counter64_init(&runtime->memory_lock_failures);
-    counter64_init(&runtime->failed_frames);
-    counter64_init(&runtime->render_push_failures);
-    counter64_init(&runtime->capture_process_failures);
-    counter64_init(&runtime->observed_cpu_changes);
-    counter64_init(&runtime->critical_events);
+    atomic_init(&runtime->failed_frames, 0u);
+    atomic_init(&runtime->render_push_failures, 0u);
+    atomic_init(&runtime->capture_process_failures, 0u);
+    atomic_init(&runtime->observed_cpu_changes, 0u);
+    atomic_init(&runtime->critical_events, 0u);
     atomic_init(&runtime->input_queue_high_water, 0u);
     atomic_init(&runtime->output_queue_high_water, 0u);
     atomic_init(&runtime->last_dsp_us, 0u);
@@ -698,7 +709,7 @@ static void runtime_latch_critical(ap_runtime_t *runtime,
     uint64_t frame;
     if (severity < AP_EVENT_ERROR) return;
     frame = runtime->worker_sequence;
-    counter64_add(&runtime->critical_events, 1u);
+    counter32_inc_sat(&runtime->critical_events);
     atomic_fetch_add_explicit(&runtime->critical_seq, 1u, memory_order_acq_rel);
     atomic_store_explicit(&runtime->critical_frame_lo, (uint32_t)frame, memory_order_relaxed);
     atomic_store_explicit(&runtime->critical_frame_hi, (uint32_t)(frame >> 32u), memory_order_relaxed);
@@ -1098,7 +1109,7 @@ static void runtime_sample_cpu(ap_runtime_t *runtime) {
     if (cpu < 0) return;
     old = atomic_load_explicit(&runtime->actual_cpu, memory_order_relaxed);
     if (old >= 0 && old != cpu) {
-        counter64_add(&runtime->observed_cpu_changes, 1u);
+        counter32_inc_sat(&runtime->observed_cpu_changes);
         runtime_emit_event(runtime, AP_EVENT_CPU_MIGRATION, AP_EVENT_INFO, old, cpu, 1u);
     }
     atomic_store_explicit(&runtime->actual_cpu, cpu, memory_order_release);
@@ -1115,9 +1126,9 @@ static void runtime_publish_failure(ap_runtime_t *runtime,
                                     int stage) {
     ap_metrics_t metrics;
     memset(audio, 0, (size_t)runtime->io_frames * sizeof(int16_t));
-    counter64_add(&runtime->failed_frames, 1u);
-    if (stage == 1) counter64_add(&runtime->render_push_failures, 1u);
-    if (stage == 2) counter64_add(&runtime->capture_process_failures, 1u);
+    counter32_inc_sat(&runtime->failed_frames);
+    if (stage == 1) counter32_inc_sat(&runtime->render_push_failures);
+    if (stage == 2) counter32_inc_sat(&runtime->capture_process_failures);
     atomic_store_explicit(&runtime->last_pipeline_error, status, memory_order_release);
     runtime_emit_event(runtime, AP_EVENT_PIPELINE_ERROR, AP_EVENT_ERROR, stage, status, 1u);
     ap_pipeline_get_metrics(runtime->pipeline, &metrics);
@@ -1612,7 +1623,7 @@ ap_status_t ap_runtime_get_metrics_v3(const ap_runtime_t *runtime,
     if (ap_runtime_get_metrics_v2(runtime, &v2) != AP_OK) return AP_ESTATE;
     metrics->submitted_frames = v2.submitted_frames;
     metrics->processed_frames = v2.processed_frames;
-    metrics->failed_frames = counter64_read(&runtime->failed_frames);
+    metrics->failed_frames = (uint64_t)atomic_load_explicit(&runtime->failed_frames, memory_order_acquire);
     metrics->input_full_events = v2.input_full_events;
     metrics->output_drop_events = v2.output_drop_events;
     metrics->dsp_overruns = v2.dsp_overruns;
@@ -1624,10 +1635,10 @@ ap_status_t ap_runtime_get_metrics_v3(const ap_runtime_t *runtime,
     metrics->timestamp_frames = v2.timestamp_frames;
     metrics->scheduler_bind_failures = v2.scheduler_bind_failures;
     metrics->memory_lock_failures = v2.memory_lock_failures;
-    metrics->render_push_failures = counter64_read(&runtime->render_push_failures);
-    metrics->capture_process_failures = counter64_read(&runtime->capture_process_failures);
-    metrics->observed_cpu_changes = counter64_read(&runtime->observed_cpu_changes);
-    metrics->critical_events = counter64_read(&runtime->critical_events);
+    metrics->render_push_failures = (uint64_t)atomic_load_explicit(&runtime->render_push_failures, memory_order_acquire);
+    metrics->capture_process_failures = (uint64_t)atomic_load_explicit(&runtime->capture_process_failures, memory_order_acquire);
+    metrics->observed_cpu_changes = (uint64_t)atomic_load_explicit(&runtime->observed_cpu_changes, memory_order_acquire);
+    metrics->critical_events = (uint64_t)atomic_load_explicit(&runtime->critical_events, memory_order_acquire);
     metrics->input_queue_high_water = v2.input_queue_high_water;
     metrics->output_queue_high_water = v2.output_queue_high_water;
     metrics->last_dsp_us = v2.last_dsp_us;
@@ -1645,8 +1656,10 @@ ap_status_t ap_runtime_get_metrics_v3(const ap_runtime_t *runtime,
 
 ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
                                           ap_runtime_critical_state_t *state) {
-    unsigned seq0, seq1;
-    unsigned lo, hi;
+    unsigned seq0 = 0u;
+    unsigned seq1 = 0u;
+    unsigned lo = 0u;
+    unsigned hi = 0u;
     if (!runtime || !state || state->struct_size < sizeof(*state) ||
         state->api_version != AP_RUNTIME_CRITICAL_STATE_API_VERSION)
         return AP_EINVAL;
@@ -1662,6 +1675,6 @@ ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
         seq1 = atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
     } while (seq0 != seq1);
     state->frame_sequence = ((uint64_t)hi << 32u) | lo;
-    state->total_events = counter64_read(&runtime->critical_events);
+    state->total_events = (uint64_t)atomic_load_explicit(&runtime->critical_events, memory_order_acquire);
     return AP_OK;
 }

@@ -65,6 +65,7 @@ jobs:
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           python3 validation/tools/build_validation_corpus.py --output validation-smoke --seed 1307
+          cp validation-smoke/corpus.json "audio-pipeline-${TAG}-validation-smoke-corpus.json"
           python3 validation/tools/run_validation.py \
             --corpus validation-smoke/corpus.json \
             --policy validation/policies/validation-smoke.json \
@@ -119,6 +120,7 @@ jobs:
             "audio-pipeline-${TAG}-sdk.tar.gz" \
             "audio-pipeline-${TAG}-source.tar.gz" \
             "audio-pipeline-${TAG}.spdx.json" \
+            "audio-pipeline-${TAG}-validation-smoke-corpus.json" \
             "audio-pipeline-${TAG}-validation-smoke.json" \
             "audio-pipeline-${TAG}-validation-smoke-evidence.json" > SHA256SUMS
       - name: Attest release build provenance
@@ -129,6 +131,7 @@ jobs:
             audio-pipeline-${{ steps.version.outputs.tag }}-sdk.tar.gz
             audio-pipeline-${{ steps.version.outputs.tag }}-source.tar.gz
             audio-pipeline-${{ steps.version.outputs.tag }}.spdx.json
+            audio-pipeline-${{ steps.version.outputs.tag }}-validation-smoke-corpus.json
             audio-pipeline-${{ steps.version.outputs.tag }}-validation-smoke.json
             audio-pipeline-${{ steps.version.outputs.tag }}-validation-smoke-evidence.json
             SHA256SUMS
@@ -162,6 +165,7 @@ jobs:
             "audio-pipeline-${TAG}-sdk.tar.gz" \
             "audio-pipeline-${TAG}-source.tar.gz" \
             "audio-pipeline-${TAG}.spdx.json" \
+            "audio-pipeline-${TAG}-validation-smoke-corpus.json" \
             "audio-pipeline-${TAG}-validation-smoke.json" \
             "audio-pipeline-${TAG}-validation-smoke-evidence.json" \
             SHA256SUMS

@@ -68,7 +68,23 @@ typedef struct ap_build_info {
     const char *resampler_mode;
 } ap_build_info_t;
 
+#define AP_BUILD_INFO_V2_API_VERSION 1u
+
+typedef struct ap_build_info_v2 {
+    uint32_t struct_size;
+    uint32_t api_version;
+    const char *source_revision;
+    const char *compiler_id;
+    const char *compiler_version;
+    const char *target_triple;
+    const char *build_type;
+    const char *config_digest;
+    uint32_t reserved[8];
+} ap_build_info_v2_t;
+
 const ap_build_info_t *ap_build_info(void);
+/* Additive exact-build identity. The original ap_build_info_t layout remains frozen. */
+const ap_build_info_v2_t *ap_build_info_v2_get(void);
 
 #ifdef __cplusplus
 }

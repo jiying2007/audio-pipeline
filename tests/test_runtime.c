@@ -184,6 +184,7 @@ static void test_metadata_commands_and_events(void) {
     int16_t out[160];
     unsigned i;
     int saw_discontinuity = 0;
+    int saw_direct_degradation = 0;
 
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
     rcfg.recover_frames = 100u;
@@ -235,6 +236,12 @@ static void test_metadata_commands_and_events(void) {
     assert(ap_runtime_command(runtime, &cmd) == AP_OK);
     pm = process_one(runtime, mic, render, out);
     assert(pm.quality == AP_QUALITY_SAFE);
+    while (ap_runtime_receive_event(runtime, &event) == AP_OK) {
+        if (event.kind == AP_EVENT_QUALITY_DEGRADED &&
+            event.arg0 == AP_QUALITY_FULL && event.arg1 == AP_QUALITY_SAFE)
+            saw_direct_degradation = 1;
+    }
+    assert(saw_direct_degradation);
 
     memset(&cmd, 0, sizeof(cmd));
     cmd.struct_size = sizeof(cmd);

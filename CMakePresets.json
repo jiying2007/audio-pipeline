@@ -161,6 +161,20 @@
       }
     },
     {
+      "name": "ssc305-cortex-a32-low",
+      "inherits": "cortex-a32-neon",
+      "binaryDir": "${sourceDir}/build/ssc305-cortex-a32-low",
+      "cacheVariables": {
+        "AP_BUILD_MAX_IO_RATE_HZ": "16000",
+        "AP_BUILD_MAX_INTERNAL_RATE_HZ": "16000",
+        "AP_BUILD_MAX_MIC_CHANNELS": "2",
+        "AP_BUILD_MAX_DELAY_MS": "60",
+        "AP_BUILD_MAX_AEC_TAIL_MS": "64",
+        "AP_RUNTIME_QUEUE_DEPTH": "4",
+        "AP_ENABLE_BF_DIRECTION_TRACKING": "OFF"
+      }
+    },
+    {
       "name": "aarch64-neon",
       "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build/aarch64-neon",

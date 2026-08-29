@@ -43,6 +43,12 @@ The two-mic frontend uses a low-cost delay-and-sum geometry with optional direct
 
 SYNC stores a bounded render ring whose capacity is derived from the compiled max delay/internal sample rate. Coarse normalized correlation is periodically searched across the supported delay range, followed by a local one-sample refinement.
 
+Correlation updates are ambiguity-gated. Small delay/drift corrections require the winning peak to be
+separated from non-local competitors, preventing periodic playback tones from driving sample slips.
+Large route changes use a separate policy: the candidate must remain consistent for three consecutive
+search epochs before the delay is committed and AEC is reset. Trusted hardware timestamps and explicit
+application path-change notifications remain authoritative.
+
 The search compares **squared normalized correlation**, so candidate ranking and the acceptance threshold are equivalent to absolute normalized correlation without performing `sqrtf` for every candidate.
 
 Large correlation jumps are emitted as route-jump events. Persistent small error drives the ppm estimate and `drift_credit`. Integer crossings still update the reference delay and increment sample-slip telemetry. The remaining fractional credit is applied directly during reference fetch using two-point linear interpolation. This reduces discrete correction artifacts without introducing a general-purpose ASRC or new large state.

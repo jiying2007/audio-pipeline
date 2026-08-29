@@ -91,6 +91,38 @@ static void fill_tone_frame(unsigned frame, int16_t *render, int16_t *mic,
     }
 }
 
+static void test_periodic_path_does_not_trigger_false_route_jumps(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    int16_t render[160], mic[160], out[160];
+    ap_metrics_t metrics;
+    unsigned frame, i;
+
+    c.mic_channels = 1u;
+    c.stages = AP_STAGE_SYNC | AP_STAGE_AEC;
+    c.enable_delay_tracking = 1u;
+    c.enable_clock_drift_compensation = 1u;
+    c.initial_delay_ms = 40u;
+    c.max_delay_ms = 180u;
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+
+    for (frame = 0u; frame < 300u; ++frame) {
+        for (i = 0u; i < 160u; ++i) {
+            const unsigned sample = frame * 160u + i;
+            const float far = 0.18f * sinf(2.0f * PI_F * 733.0f * (float)sample / 16000.0f);
+            const float near = 0.08f * sinf(2.0f * PI_F * 211.0f * (float)sample / 16000.0f);
+            render[i] = (int16_t)(far * 32767.0f);
+            mic[i] = (int16_t)((near + 0.20f * far) * 32767.0f);
+        }
+        assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
+        assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+    }
+
+    ap_pipeline_get_metrics(p, &metrics);
+    assert(metrics.delay_jumps == 0u);
+    assert(metrics.aec_resets == 0u);
+}
+
 static void test_frequency_res_and_degradation(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *p = NULL;
@@ -140,6 +172,7 @@ static void test_frequency_res_and_degradation(void) {
 
 int main(void) {
     test_clock_drift_and_route_jump();
+    test_periodic_path_does_not_trigger_false_route_jumps();
     test_frequency_res_and_degradation();
     puts("audio-pipeline drift/RES tests: OK");
     return 0;

@@ -79,6 +79,10 @@ if grep -R -n -E '#include <(pthread|semaphore)\.h>' src \
   fail "Linux runtime dependency escaped platform/linux"
 fi
 
+if grep -R -n -E '\bmlockall[[:space:]]*\(' src 2>/dev/null; then
+  fail "process-global mlockall is forbidden inside the SDK runtime"
+fi
+
 if grep -R -n -E 'cortex-a7|cortex-a32|cortex-a53' src 2>/dev/null; then
   fail "CPU model name leaked into DSP source"
 fi

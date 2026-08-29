@@ -119,6 +119,10 @@ When using the Linux runtime, applications must not call these mutating pipeline
 
 After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until stop/deinit.
 
+When `ap_runtime_options_t.lock_memory` is enabled, the runtime performs best-effort bounded `mlock()`
+on the caller-provided runtime and pipeline arenas only. It never calls process-global `mlockall()`;
+the product remains responsible for worker-stack prefaulting and any process-wide realtime memory policy.
+
 `ap_runtime_command()` is a bounded single-producer control queue. Commands are applied only at frame boundaries and currently support:
 
 - echo-path change;

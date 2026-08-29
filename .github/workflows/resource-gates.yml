@@ -78,3 +78,33 @@ jobs:
           test "$raw" -lt "$voice"
           test $((full - voice)) -ge 64
           test $((voice - raw)) -ge 64
+
+  cortex-a32-rom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Arm cross compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: Build Cortex-A32 full and tiny final consumers
+        run: |
+          common="-DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-linux-gnueabihf.cmake -DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_TESTS=ON -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DCMAKE_C_FLAGS=-O2\ -mcpu=cortex-a32\ -mfpu=neon-vfpv4\ -mfloat-abi=hard\ -ffunction-sections\ -fdata-sections -DCMAKE_EXE_LINKER_FLAGS=-Wl,--gc-sections"
+          eval cmake -S . -B build/arm-full $common \
+            -DAP_SIMD_BACKEND=NEON \
+            -DAP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          eval cmake -S . -B build/arm-tiny $common \
+            -DAP_SIMD_BACKEND=NEON \
+            -DAP_BUILD_MAX_IO_RATE_HZ=16000 -DAP_BUILD_MAX_INTERNAL_RATE_HZ=8000 \
+            -DAP_BUILD_MAX_MIC_CHANNELS=1 -DAP_BUILD_MAX_DELAY_MS=120 \
+            -DAP_BUILD_MAX_AEC_TAIL_MS=48 \
+            -DAP_MODULES=RESAMPLER,HPF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          cmake --build build/arm-full --target ap_consumer_smoke --parallel
+          cmake --build build/arm-tiny --target ap_consumer_smoke --parallel
+      - name: Enforce Cortex-A32 linked ROM envelope
+        run: |
+          elf_bytes() { arm-linux-gnueabihf-size "$1" | awk 'NR==2 {print $1+$2+$3}'; }
+          full=$(elf_bytes build/arm-full/ap_consumer_smoke)
+          tiny=$(elf_bytes build/arm-tiny/ap_consumer_smoke)
+          echo "cortex_a32_consumer_elf_bytes full=$full tiny=$tiny"
+          test "$full" -le 262144
+          test "$tiny" -lt "$full"
+          test $((full - tiny)) -ge 64

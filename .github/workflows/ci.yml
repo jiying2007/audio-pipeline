@@ -80,7 +80,7 @@ jobs:
               test ! -e "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
             *) test -f "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
           esac
-          ccache --show-stats
+          command -v ccache >/dev/null 2>&1 && ccache --show-stats || true
 
   composition-size-contract:
     if: inputs.run_extended
@@ -146,7 +146,7 @@ jobs:
       - name: Runtime benchmark smoke
         run: ./build/ap_runtime_bench 1 0 0.99 -1
       - name: Cache statistics
-        run: ccache --show-stats
+        run: command -v ccache >/dev/null 2>&1 && ccache --show-stats || true
 
   perf-compare:
     if: inputs.run_perf && github.ref != 'refs/heads/main'

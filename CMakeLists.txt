@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 1.1.1 LANGUAGES C)
+project(audio_pipeline VERSION 1.2.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -373,11 +373,21 @@ if(AP_BUILD_FUZZ)
     if(NOT AP_BUILD_PIPELINE OR NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
         message(FATAL_ERROR "AP_BUILD_FUZZ requires pipeline + Clang/libFuzzer")
     endif()
+    set(_AP_FUZZ_TARGETS ap_fuzz)
     add_executable(ap_fuzz fuzz/fuzz_pipeline.c)
     target_link_libraries(ap_fuzz PRIVATE audio_pipeline)
-    target_compile_options(ap_fuzz PRIVATE
-        -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer)
-    target_link_options(ap_fuzz PRIVATE -fsanitize=fuzzer,address,undefined)
+    if(AP_ENABLE_LINUX_RUNTIME)
+        add_executable(ap_fuzz_runtime_commands fuzz/fuzz_runtime_commands.c)
+        target_link_libraries(ap_fuzz_runtime_commands PRIVATE audio_pipeline_runtime)
+        add_executable(ap_fuzz_flight_recorder fuzz/fuzz_flight_recorder.c)
+        target_link_libraries(ap_fuzz_flight_recorder PRIVATE audio_pipeline_runtime)
+        list(APPEND _AP_FUZZ_TARGETS ap_fuzz_runtime_commands ap_fuzz_flight_recorder)
+    endif()
+    foreach(_f IN LISTS _AP_FUZZ_TARGETS)
+        target_compile_options(${_f} PRIVATE
+            -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer)
+        target_link_options(${_f} PRIVATE -fsanitize=fuzzer,address,undefined)
+    endforeach()
 endif()
 
 install(TARGETS audio_pipeline EXPORT AudioPipelineTargets

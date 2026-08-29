@@ -193,3 +193,7 @@ perf record -g ./build/ap_bench 120 0.40 9000 active
 Also capture `top -H`, `/proc/<pid>/status`, CPU online/cpuset state, IRQ affinity, governor/frequency, ALSA XRUNs and product power measurements. Compare FULL/LITE/SAFE, steady-state AEC cadence and SYNC tracking separately so optimization decisions are based on the real hotspot distribution.
 
 Store the final result using `certification/record.schema.json` and validate it with `certification/validate_record.py`. A successful hosted release is not a product certification record.
+
+## v1.2 runtime health telemetry
+
+Runtime metrics v3 distinguishes successful and failed DSP frames, render-push/capture-process failures, the last pipeline error, critical ERROR/FATAL events, and sampled CPU migration. CPU identity is sampled every 64 frames when the worker runs, keeping scheduler diagnostics low-overhead; the counter therefore represents observed CPU changes rather than an exact scheduler migration trace.

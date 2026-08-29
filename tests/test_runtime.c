@@ -42,6 +42,15 @@ static int wait_processed(ap_runtime_t *runtime, uint64_t target, unsigned timeo
     return 0;
 }
 
+static ap_runtime_metrics_v3_t metrics_v3(ap_runtime_t *runtime) {
+    ap_runtime_metrics_v3_t m;
+    memset(&m, 0, sizeof(m));
+    m.struct_size = sizeof(m);
+    m.api_version = AP_RUNTIME_METRICS_V3_API_VERSION;
+    assert(ap_runtime_get_metrics_v3(runtime, &m) == AP_OK);
+    return m;
+}
+
 static ap_runtime_metrics_v2_t metrics_v2(ap_runtime_t *runtime) {
     ap_runtime_metrics_v2_t m;
     memset(&m, 0, sizeof(m));
@@ -360,6 +369,18 @@ static void test_recorder_trigger_survives_event_queue_full(void) {
     rm2 = metrics_v2(runtime);
     assert(rm2.event_drop_events >= 1u);
     assert(ap_flight_recorder_is_frozen(recorder));
+    {
+        ap_runtime_critical_state_t critical;
+        ap_runtime_metrics_v3_t rm3 = metrics_v3(runtime);
+        memset(&critical, 0, sizeof(critical));
+        critical.struct_size = sizeof(critical);
+        critical.api_version = AP_RUNTIME_CRITICAL_STATE_API_VERSION;
+        assert(ap_runtime_get_critical_state(runtime, &critical) == AP_OK);
+        assert(critical.total_events >= 1u);
+        assert(critical.severity >= AP_EVENT_ERROR);
+        assert(rm3.critical_events >= 1u);
+        assert(rm3.failed_frames == 0u);
+    }
 
     ap_runtime_deinit(runtime);
 }

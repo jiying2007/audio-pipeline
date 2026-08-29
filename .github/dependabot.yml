@@ -4,4 +4,15 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      actions-non-major:
+        patterns:
+          - '*'
+        update-types:
+          - patch
+          - minor
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          - version-update:semver-major

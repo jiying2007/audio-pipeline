@@ -78,3 +78,49 @@ jobs:
           test "$raw" -lt "$voice"
           test $((full - voice)) -ge 64
           test $((voice - raw)) -ge 64
+
+  cortex-a32-rom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Arm cross compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: Build Cortex-A32 full and tiny pipeline libraries
+        run: |
+          common="-DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-linux-gnueabihf.cmake -DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DCMAKE_C_FLAGS=-O2\ -mcpu=cortex-a32\ -mfpu=neon-vfpv4\ -mfloat-abi=hard\ -ffunction-sections\ -fdata-sections"
+          eval cmake -S . -B build/arm-full $common \
+            -DAP_SIMD_BACKEND=NEON \
+            -DAP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          eval cmake -S . -B build/arm-tiny $common \
+            -DAP_SIMD_BACKEND=NEON \
+            -DAP_BUILD_MAX_IO_RATE_HZ=16000 -DAP_BUILD_MAX_INTERNAL_RATE_HZ=8000 \
+            -DAP_BUILD_MAX_MIC_CHANNELS=1 -DAP_BUILD_MAX_DELAY_MS=120 \
+            -DAP_BUILD_MAX_AEC_TAIL_MS=48 \
+            -DAP_MODULES=RESAMPLER,HPF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          cmake --build build/arm-full --target audio_pipeline --parallel
+          cmake --build build/arm-tiny --target audio_pipeline --parallel
+      - name: Link representative Cortex-A32 pipeline graphs
+        run: |
+          common="-O2 -mcpu=cortex-a32 -mfpu=neon-vfpv4 -mfloat-abi=hard -ffunction-sections -fdata-sections -Wl,--gc-sections"
+          # shellcheck disable=SC2086
+          arm-linux-gnueabihf-gcc $common -Iinclude -Ibuild/arm-full/generated \
+            tests/rom_probe.c build/arm-full/libaudio_pipeline.a -lm -o /tmp/rom-full
+          # shellcheck disable=SC2086
+          arm-linux-gnueabihf-gcc $common -Iinclude -Ibuild/arm-tiny/generated \
+            tests/rom_probe.c build/arm-tiny/libaudio_pipeline.a -lm -o /tmp/rom-tiny
+      - name: Enforce Cortex-A32 ROM envelopes and physical module pruning
+        run: |
+          rom_bytes() { arm-linux-gnueabihf-size "$1" | awk 'NR==2 {print $1+$2}'; }
+          full=$(rom_bytes /tmp/rom-full)
+          tiny=$(rom_bytes /tmp/rom-tiny)
+          echo "cortex_a32_pipeline_rom_bytes full=$full tiny=$tiny"
+          # v1.2 measured references are ~30.8 KiB FULL and ~33.0 KiB constrained TINY.
+          # Code size is not required to be monotonic with RAM envelopes because
+          # compile-time maxima change constant folding and generated control code.
+          test "$full" -le 40960
+          test "$tiny" -le 40960
+          arm-linux-gnueabihf-nm /tmp/rom-full | grep -q 'ap_beamformer'
+          if arm-linux-gnueabihf-nm /tmp/rom-tiny | grep -q 'ap_beamformer'; then
+            echo "TINY Cortex-A32 ROM unexpectedly retains beamformer symbols" >&2
+            exit 3
+          fi

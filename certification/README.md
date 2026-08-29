@@ -28,3 +28,7 @@ python3 certification/validate_record.py record.json --policy product-policy.jso
 ```
 
 The repository example policy is not a shipping requirement; product owners must define and version their own thresholds.
+
+## v1.2 evidence binding
+
+`product-certified` records use schema version 2 and bind the exact certification policy, acoustic corpus manifest and evidence manifest by SHA-256. Use `tools/ap_certify.py` on the shipping board to assemble a record from benchmark, acoustic and soak JSON, then validate with `certification/validate_record.py --policy ... --corpus-manifest ... --evidence-manifest ...`.

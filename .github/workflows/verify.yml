@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
-  packages: read
 
 concurrency:
   group: verify-${{ github.ref }}
@@ -26,6 +24,9 @@ jobs:
   resource-gates:
     uses: ./.github/workflows/resource-gates.yml
   codeql:
+    permissions:
+      contents: read
+      security-events: write
     uses: ./.github/workflows/codeql.yml
   summary:
     if: always()

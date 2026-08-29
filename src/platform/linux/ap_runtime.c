@@ -62,6 +62,7 @@ typedef struct ap_rt_input {
 typedef struct ap_rt_output {
     int16_t audio[AP_BUILD_IO_FRAME_MAX];
     ap_metrics_t metrics;
+    ap_status_t status;
 } ap_rt_output_t;
 
 typedef struct ap_rt_tuning {
@@ -173,6 +174,11 @@ struct ap_runtime {
     ap_counter64_t timestamp_frames;
     ap_counter64_t scheduler_bind_failures;
     ap_counter64_t memory_lock_failures;
+    atomic_uint failed_frames;
+    atomic_uint render_push_failures;
+    atomic_uint capture_process_failures;
+    atomic_uint observed_cpu_changes;
+    atomic_uint critical_events;
     atomic_uint input_queue_high_water;
     atomic_uint output_queue_high_water;
     atomic_uint last_dsp_us;
@@ -182,6 +188,14 @@ struct ap_runtime {
     atomic_int actual_cpu;
     atomic_int actual_policy;
     atomic_int actual_priority;
+    atomic_int last_pipeline_error;
+    atomic_uint critical_seq;
+    atomic_uint critical_frame_lo;
+    atomic_uint critical_frame_hi;
+    atomic_uint critical_kind;
+    atomic_uint critical_severity;
+    atomic_int critical_arg0;
+    atomic_int critical_arg1;
     ap_rt_input_t in[AP_RT_DEPTH];
     ap_rt_output_t out[AP_RT_DEPTH];
     ap_rt_command_t commands[AP_RUNTIME_COMMAND_QUEUE_DEPTH];
@@ -192,6 +206,7 @@ struct ap_runtime {
     uint32_t overload_streak;
     uint32_t healthy_streak;
     uint64_t worker_sequence;
+    uint32_t cpu_sample_countdown;
     uint64_t last_render_underruns;
     uint64_t last_delay_jumps;
     uint64_t last_aec_resets;
@@ -255,6 +270,17 @@ static void update_max(atomic_uint *dst, uint32_t value) {
            !atomic_compare_exchange_weak_explicit(dst,
                                                   &current,
                                                   value,
+                                                  memory_order_relaxed,
+                                                  memory_order_relaxed)) {
+    }
+}
+
+static void counter32_inc_sat(atomic_uint *counter) {
+    unsigned current = atomic_load_explicit(counter, memory_order_relaxed);
+    while (current != UINT32_MAX &&
+           !atomic_compare_exchange_weak_explicit(counter,
+                                                  &current,
+                                                  current + 1u,
                                                   memory_order_relaxed,
                                                   memory_order_relaxed)) {
     }
@@ -593,6 +619,11 @@ static void init_runtime_atomics(ap_runtime_t *runtime) {
     counter64_init(&runtime->timestamp_frames);
     counter64_init(&runtime->scheduler_bind_failures);
     counter64_init(&runtime->memory_lock_failures);
+    atomic_init(&runtime->failed_frames, 0u);
+    atomic_init(&runtime->render_push_failures, 0u);
+    atomic_init(&runtime->capture_process_failures, 0u);
+    atomic_init(&runtime->observed_cpu_changes, 0u);
+    atomic_init(&runtime->critical_events, 0u);
     atomic_init(&runtime->input_queue_high_water, 0u);
     atomic_init(&runtime->output_queue_high_water, 0u);
     atomic_init(&runtime->last_dsp_us, 0u);
@@ -603,6 +634,14 @@ static void init_runtime_atomics(ap_runtime_t *runtime) {
     atomic_init(&runtime->actual_cpu, -1);
     atomic_init(&runtime->actual_policy, SCHED_OTHER);
     atomic_init(&runtime->actual_priority, 0);
+    atomic_init(&runtime->last_pipeline_error, AP_OK);
+    atomic_init(&runtime->critical_seq, 0u);
+    atomic_init(&runtime->critical_frame_lo, 0u);
+    atomic_init(&runtime->critical_frame_hi, 0u);
+    atomic_init(&runtime->critical_kind, 0u);
+    atomic_init(&runtime->critical_severity, 0u);
+    atomic_init(&runtime->critical_arg0, 0);
+    atomic_init(&runtime->critical_arg1, 0);
 }
 
 ap_status_t ap_runtime_init_ex(void *memory,
@@ -662,6 +701,25 @@ ap_status_t ap_runtime_init(void *memory,
                               out_runtime);
 }
 
+static void runtime_latch_critical(ap_runtime_t *runtime,
+                                   ap_event_kind_t kind,
+                                   ap_event_severity_t severity,
+                                   int32_t arg0,
+                                   int32_t arg1) {
+    uint64_t frame;
+    if (severity < AP_EVENT_ERROR) return;
+    frame = runtime->worker_sequence;
+    counter32_inc_sat(&runtime->critical_events);
+    atomic_fetch_add_explicit(&runtime->critical_seq, 1u, memory_order_acq_rel);
+    atomic_store_explicit(&runtime->critical_frame_lo, (uint32_t)frame, memory_order_relaxed);
+    atomic_store_explicit(&runtime->critical_frame_hi, (uint32_t)(frame >> 32u), memory_order_relaxed);
+    atomic_store_explicit(&runtime->critical_kind, (unsigned)kind, memory_order_relaxed);
+    atomic_store_explicit(&runtime->critical_severity, (unsigned)severity, memory_order_relaxed);
+    atomic_store_explicit(&runtime->critical_arg0, arg0, memory_order_relaxed);
+    atomic_store_explicit(&runtime->critical_arg1, arg1, memory_order_relaxed);
+    atomic_fetch_add_explicit(&runtime->critical_seq, 1u, memory_order_release);
+}
+
 static void runtime_emit_event(ap_runtime_t *runtime,
                                ap_event_kind_t kind,
                                ap_event_severity_t severity,
@@ -674,6 +732,7 @@ static void runtime_emit_event(ap_runtime_t *runtime,
         atomic_load_explicit(&runtime->event_tail, memory_order_acquire);
     ap_rt_event_t *event;
 
+    runtime_latch_critical(runtime, kind, severity, arg0, arg1);
     if (runtime->recorder)
         (void)ap_flight_recorder_trigger(runtime->recorder, kind, severity);
 
@@ -1038,6 +1097,53 @@ static void runtime_setup_thread(ap_runtime_t *runtime) {
     }
 }
 
+static void runtime_sample_cpu(ap_runtime_t *runtime) {
+    int cpu;
+    int old;
+    if (runtime->cpu_sample_countdown) {
+        runtime->cpu_sample_countdown--;
+        return;
+    }
+    runtime->cpu_sample_countdown = 63u;
+    cpu = sched_getcpu();
+    if (cpu < 0) return;
+    old = atomic_load_explicit(&runtime->actual_cpu, memory_order_relaxed);
+    if (old >= 0 && old != cpu) {
+        counter32_inc_sat(&runtime->observed_cpu_changes);
+        runtime_emit_event(runtime, AP_EVENT_CPU_MIGRATION, AP_EVENT_INFO, old, cpu, 1u);
+    }
+    atomic_store_explicit(&runtime->actual_cpu, cpu, memory_order_release);
+}
+
+static void runtime_publish_failure(ap_runtime_t *runtime,
+                                    ap_rt_input_t *input,
+                                    int publish,
+                                    ap_rt_output_t *slot,
+                                    unsigned out_head,
+                                    unsigned out_tail,
+                                    int16_t *audio,
+                                    ap_status_t status,
+                                    int stage) {
+    ap_metrics_t metrics;
+    memset(audio, 0, (size_t)runtime->io_frames * sizeof(int16_t));
+    counter32_inc_sat(&runtime->failed_frames);
+    if (stage == 1) counter32_inc_sat(&runtime->render_push_failures);
+    if (stage == 2) counter32_inc_sat(&runtime->capture_process_failures);
+    atomic_store_explicit(&runtime->last_pipeline_error, status, memory_order_release);
+    runtime_emit_event(runtime, AP_EVENT_PIPELINE_ERROR, AP_EVENT_ERROR, stage, status, 1u);
+    ap_pipeline_get_metrics(runtime->pipeline, &metrics);
+    runtime_record_frame(runtime, input, audio, &metrics);
+    if (publish) {
+        slot->metrics = metrics;
+        slot->status = status;
+        atomic_store_explicit(&runtime->out_head, out_head + 1u, memory_order_release);
+        update_max(&runtime->output_queue_high_water, out_head + 1u - out_tail);
+    } else {
+        counter64_add(&runtime->output_drop_events, 1u);
+        runtime_emit_event(runtime, AP_EVENT_OUTPUT_DROPPED, AP_EVENT_WARN, 0, 0, 1u);
+    }
+}
+
 static void *worker(void *arg) {
     ap_runtime_t *runtime = (ap_runtime_t *)arg;
     int16_t discard_audio[AP_BUILD_IO_FRAME_MAX];
@@ -1085,6 +1191,7 @@ static void *worker(void *arg) {
             else
                 runtime->worker_sequence++;
             runtime_apply_metadata(runtime, input);
+            runtime_sample_cpu(runtime);
             t0 = now_ns();
 #if AP_HAVE_MODULE_SYNC
             if (runtime->uses_render) {
@@ -1095,24 +1202,30 @@ static void *worker(void *arg) {
                                        0,
                                        0,
                                        1u);
-                if (ap_pipeline_push_render(runtime->pipeline,
-                                            input->render,
-                                            runtime->io_frames) != AP_OK) {
-                    atomic_store_explicit(&runtime->in_tail,
-                                          tail + 1u,
-                                          memory_order_release);
-                    continue;
+                {
+                    const ap_status_t status = ap_pipeline_push_render(runtime->pipeline,
+                                                                       input->render,
+                                                                       runtime->io_frames);
+                    if (status != AP_OK) {
+                        runtime_publish_failure(runtime, input, publish, slot, out_head,
+                                                out_tail, audio, status, 1);
+                        atomic_store_explicit(&runtime->in_tail, tail + 1u, memory_order_release);
+                        continue;
+                    }
                 }
             }
 #endif
-            if (ap_pipeline_process_capture(runtime->pipeline,
-                                            input->mic,
-                                            runtime->io_frames,
-                                            audio) != AP_OK) {
-                atomic_store_explicit(&runtime->in_tail,
-                                      tail + 1u,
-                                      memory_order_release);
-                continue;
+            {
+                const ap_status_t status = ap_pipeline_process_capture(runtime->pipeline,
+                                                                       input->mic,
+                                                                       runtime->io_frames,
+                                                                       audio);
+                if (status != AP_OK) {
+                    runtime_publish_failure(runtime, input, publish, slot, out_head,
+                                            out_tail, audio, status, 2);
+                    atomic_store_explicit(&runtime->in_tail, tail + 1u, memory_order_release);
+                    continue;
+                }
             }
             t1 = now_ns();
             us = (uint32_t)((t1 - t0 + 999ull) / 1000ull);
@@ -1131,6 +1244,7 @@ static void *worker(void *arg) {
             counter64_add(&runtime->processed_frames, 1u);
             if (publish) {
                 slot->metrics = metrics;
+                slot->status = AP_OK;
                 atomic_store_explicit(&runtime->out_head,
                                       out_head + 1u,
                                       memory_order_release);
@@ -1373,7 +1487,7 @@ ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
            (size_t)runtime->io_frames * sizeof(int16_t));
     if (metrics) *metrics = src->metrics;
     atomic_store_explicit(&runtime->out_tail, tail + 1u, memory_order_release);
-    return AP_OK;
+    return src->status;
 }
 
 ap_status_t ap_runtime_receive_event(ap_runtime_t *runtime, ap_event_t *event) {
@@ -1494,5 +1608,73 @@ ap_status_t ap_runtime_get_metrics_v2(const ap_runtime_t *runtime,
     metrics->quality =
         (ap_quality_t)atomic_load_explicit(&runtime->quality,
                                            memory_order_acquire);
+    return AP_OK;
+}
+
+ap_status_t ap_runtime_get_metrics_v3(const ap_runtime_t *runtime,
+                                      ap_runtime_metrics_v3_t *metrics) {
+    ap_runtime_metrics_v2_t v2;
+    if (!runtime || !metrics || metrics->struct_size < sizeof(*metrics) ||
+        metrics->api_version != AP_RUNTIME_METRICS_V3_API_VERSION)
+        return AP_EINVAL;
+    memset(&v2, 0, sizeof(v2));
+    v2.struct_size = sizeof(v2);
+    v2.api_version = AP_RUNTIME_CONTROL_API_VERSION;
+    if (ap_runtime_get_metrics_v2(runtime, &v2) != AP_OK) return AP_ESTATE;
+    metrics->submitted_frames = v2.submitted_frames;
+    metrics->processed_frames = v2.processed_frames;
+    metrics->failed_frames = (uint64_t)atomic_load_explicit(&runtime->failed_frames, memory_order_acquire);
+    metrics->input_full_events = v2.input_full_events;
+    metrics->output_drop_events = v2.output_drop_events;
+    metrics->dsp_overruns = v2.dsp_overruns;
+    metrics->command_full_events = v2.command_full_events;
+    metrics->event_drop_events = v2.event_drop_events;
+    metrics->stream_discontinuities = v2.stream_discontinuities;
+    metrics->capture_gap_frames = v2.capture_gap_frames;
+    metrics->render_gap_frames = v2.render_gap_frames;
+    metrics->timestamp_frames = v2.timestamp_frames;
+    metrics->scheduler_bind_failures = v2.scheduler_bind_failures;
+    metrics->memory_lock_failures = v2.memory_lock_failures;
+    metrics->render_push_failures = (uint64_t)atomic_load_explicit(&runtime->render_push_failures, memory_order_acquire);
+    metrics->capture_process_failures = (uint64_t)atomic_load_explicit(&runtime->capture_process_failures, memory_order_acquire);
+    metrics->observed_cpu_changes = (uint64_t)atomic_load_explicit(&runtime->observed_cpu_changes, memory_order_acquire);
+    metrics->critical_events = (uint64_t)atomic_load_explicit(&runtime->critical_events, memory_order_acquire);
+    metrics->input_queue_high_water = v2.input_queue_high_water;
+    metrics->output_queue_high_water = v2.output_queue_high_water;
+    metrics->last_dsp_us = v2.last_dsp_us;
+    metrics->max_dsp_us = v2.max_dsp_us;
+    metrics->p50_dsp_us = v2.p50_dsp_us;
+    metrics->p95_dsp_us = v2.p95_dsp_us;
+    metrics->p99_dsp_us = v2.p99_dsp_us;
+    metrics->actual_cpu = v2.actual_cpu;
+    metrics->actual_policy = v2.actual_policy;
+    metrics->actual_priority = v2.actual_priority;
+    metrics->last_pipeline_error = atomic_load_explicit(&runtime->last_pipeline_error, memory_order_acquire);
+    metrics->quality = v2.quality;
+    return AP_OK;
+}
+
+ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
+                                          ap_runtime_critical_state_t *state) {
+    unsigned seq0 = 0u;
+    unsigned seq1 = 0u;
+    unsigned lo = 0u;
+    unsigned hi = 0u;
+    if (!runtime || !state || state->struct_size < sizeof(*state) ||
+        state->api_version != AP_RUNTIME_CRITICAL_STATE_API_VERSION)
+        return AP_EINVAL;
+    do {
+        seq0 = atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
+        if (seq0 & 1u) continue;
+        lo = atomic_load_explicit(&runtime->critical_frame_lo, memory_order_relaxed);
+        hi = atomic_load_explicit(&runtime->critical_frame_hi, memory_order_relaxed);
+        state->kind = atomic_load_explicit(&runtime->critical_kind, memory_order_relaxed);
+        state->severity = (uint8_t)atomic_load_explicit(&runtime->critical_severity, memory_order_relaxed);
+        state->arg0 = atomic_load_explicit(&runtime->critical_arg0, memory_order_relaxed);
+        state->arg1 = atomic_load_explicit(&runtime->critical_arg1, memory_order_relaxed);
+        seq1 = atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
+    } while (seq0 != seq1);
+    state->frame_sequence = ((uint64_t)hi << 32u) | lo;
+    state->total_events = (uint64_t)atomic_load_explicit(&runtime->critical_events, memory_order_acquire);
     return AP_OK;
 }

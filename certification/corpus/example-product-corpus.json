@@ -1,0 +1,20 @@
+{
+  "$schema": "../corpus-manifest.schema.json",
+  "schema_version": 1,
+  "corpus_id": "example-mobile-robot-audio",
+  "revision": "example-only-not-certified",
+  "cases": [
+    {"case_id":"near-clean-0deg-0p5m","scenario":"near_end_clean","mic_angle_deg":0,"distance_m":0.5,"snr_db":30,"motion":"stationary","noise":"quiet","echo_path_change":false},
+    {"case_id":"far-playback-medium","scenario":"far_end_playback","mic_angle_deg":0,"distance_m":1.0,"ser_db":-10,"motion":"stationary","noise":"quiet","echo_path_change":false},
+    {"case_id":"double-talk-0db","scenario":"double_talk","mic_angle_deg":45,"distance_m":0.8,"snr_db":20,"ser_db":0,"motion":"stationary","noise":"quiet","echo_path_change":false},
+    {"case_id":"stationary-noise-5db","scenario":"stationary_noise","mic_angle_deg":45,"distance_m":1.0,"snr_db":5,"motion":"stationary","noise":"broadband","echo_path_change":false},
+    {"case_id":"fan-motor-wheel","scenario":"robot_self_noise","mic_angle_deg":90,"distance_m":0.8,"snr_db":3,"motion":"driving","noise":"fan_motor_wheel","echo_path_change":false},
+    {"case_id":"wind","scenario":"wind_noise","mic_angle_deg":45,"distance_m":0.8,"snr_db":0,"motion":"stationary","noise":"wind","echo_path_change":false},
+    {"case_id":"dynamic-motion","scenario":"dynamic_robot_motion","mic_angle_deg":90,"distance_m":1.2,"snr_db":5,"motion":"turning_and_driving","noise":"motor_wheel","echo_path_change":false},
+    {"case_id":"echo-path-change","scenario":"echo_path_change_recovery","mic_angle_deg":0,"distance_m":1.0,"ser_db":-5,"motion":"moving_speaker_geometry","noise":"quiet","echo_path_change":true},
+    {"case_id":"nonlinear-speaker","scenario":"speaker_clipping_nonlinear_echo","mic_angle_deg":0,"distance_m":1.0,"ser_db":-10,"motion":"stationary","noise":"speaker_clipping","echo_path_change":false},
+    {"case_id":"codec-reopen-xrun","scenario":"stream_discontinuity_recovery","mic_angle_deg":0,"distance_m":1.0,"motion":"stationary","noise":"quiet","echo_path_change":false},
+    {"case_id":"capture-only","scenario":"capture_only_voice_frontend","mic_angle_deg":45,"distance_m":0.8,"snr_db":5,"motion":"stationary","noise":"household","echo_path_change":false},
+    {"case_id":"full-duplex","scenario":"full_duplex_product_route","mic_angle_deg":45,"distance_m":0.8,"snr_db":10,"ser_db":-5,"motion":"driving","noise":"motor_wheel","echo_path_change":false}
+  ]
+}

@@ -302,6 +302,30 @@
     "policy": {
       "type": "string",
       "minLength": 1
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "policy_sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "corpus_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "evidence_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "collector_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "toolchain_digest": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
     }
   },
   "allOf": [
@@ -374,11 +398,20 @@
               "max_soc_c",
               "average_power_w"
             ]
+          },
+          "schema_version": {
+            "const": 2
           }
         },
         "required": [
           "policy",
-          "thermal_power"
+          "thermal_power",
+          "schema_version",
+          "policy_sha256",
+          "corpus_manifest_sha256",
+          "evidence_manifest_sha256",
+          "collector_version",
+          "toolchain_digest"
         ]
       }
     }

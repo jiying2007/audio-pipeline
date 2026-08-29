@@ -67,8 +67,8 @@ on:
       shipping_cflags:
         description: Exact shipping C flags
         required: true
-      shipping_cmake_args:
-        description: Exact reviewed SKU CMake arguments
+      shipping_cmake_args_json:
+        description: JSON array of exact reviewed SKU CMake arguments
         required: true
 
 permissions:
@@ -106,7 +106,15 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          policy = json.loads(Path(os.environ['POLICY']).read_text())
+          repo = Path.cwd().resolve()
+          policy_base = (repo / 'certification' / 'policies').resolve()
+          raw_policy = Path(os.environ['POLICY'])
+          if raw_policy.is_absolute() or raw_policy.suffix != '.json':
+              raise SystemExit('policy_path must be a repository-relative JSON policy')
+          policy_path = (repo / raw_policy).resolve()
+          if policy_base != policy_path.parent and policy_base not in policy_path.parents:
+              raise SystemExit('policy_path must stay under certification/policies')
+          policy = json.loads(policy_path.read_text())
           if policy.get('shipping_approved') is not True:
               raise SystemExit('policy is not shipping_approved')
           if policy.get('sku') != os.environ['SKU']:
@@ -136,7 +144,7 @@ jobs:
           SYSROOT: ${{ inputs.shipping_sysroot }}
           TOOLCHAIN_ROOT: ${{ inputs.shipping_toolchain_root }}
           CFLAGS: ${{ inputs.shipping_cflags }}
-          CMAKE_ARGS: ${{ inputs.shipping_cmake_args }}
+          CMAKE_ARGS_JSON: ${{ inputs.shipping_cmake_args_json }}
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = '${{ needs.resolve.outputs.sha }}'
@@ -144,19 +152,33 @@ jobs:
           test -d "$SYSROOT"
           test -d "$TOOLCHAIN_ROOT"
           test -n "$CFLAGS"
-          test -n "$CMAKE_ARGS"
+          python3 - <<'PY'
+          import json, os
+          args = json.loads(os.environ['CMAKE_ARGS_JSON'])
+          if not isinstance(args, list) or not args or not all(isinstance(item, str) and item for item in args):
+              raise SystemExit('shipping_cmake_args_json must be a non-empty JSON array of non-empty strings')
+          forbidden = (
+              '-DCMAKE_C_COMPILER=', '-DCMAKE_SYSROOT=', '-DCMAKE_FIND_ROOT_PATH=',
+              '-DCMAKE_FIND_ROOT_PATH_MODE_', '-DCMAKE_C_FLAGS=', '-DCMAKE_BUILD_TYPE=',
+          )
+          bad = [item for item in args if item.startswith(forbidden)]
+          if bad:
+              raise SystemExit(f'SKU CMake arguments may not override enforced shipping boundaries: {bad}')
+          print(f'validated {len(args)} exact SKU CMake arguments')
+          PY
           "$CC" --version | head -n 1
       - name: Build exact shipping binaries
         env:
           CC: ${{ inputs.shipping_cc }}
           SYSROOT: ${{ inputs.shipping_sysroot }}
           CFLAGS: ${{ inputs.shipping_cflags }}
-          CMAKE_ARGS: ${{ inputs.shipping_cmake_args }}
+          CMAKE_ARGS_JSON: ${{ inputs.shipping_cmake_args_json }}
         shell: bash
         run: |
           set -euo pipefail
-          read -r -a extra <<< "$CMAKE_ARGS"
-          cmake -S . -B build-shipping -DCMAKE_BUILD_TYPE=Release \
+          mapfile -d '' -t extra < <(python3 -c 'import json,os,sys; [sys.stdout.write(item + "\0") for item in json.loads(os.environ["CMAKE_ARGS_JSON"])]')
+          cmake -S . -B build-shipping "${extra[@]}" \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER="$CC" -DCMAKE_SYSROOT="$SYSROOT" \
             -DCMAKE_FIND_ROOT_PATH="$SYSROOT" \
             -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
@@ -164,8 +186,7 @@ jobs:
             -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
             -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
             -DCMAKE_C_FLAGS="$CFLAGS" -DAP_BUILD_ALSA_EXAMPLE=ON \
-            -DAP_BUILD_TESTS=OFF -DAP_BUILD_EXAMPLES=ON -DAP_BUILD_BENCH=ON \
-            "${extra[@]}"
+            -DAP_BUILD_TESTS=OFF -DAP_BUILD_EXAMPLES=ON -DAP_BUILD_BENCH=ON
           cmake --build build-shipping --parallel --target ap_bench ap_build_info_dump ap_alsa_runtime_duplex
       - name: Seal builder binary and toolchain identity
         env:
@@ -173,11 +194,13 @@ jobs:
           SYSROOT: ${{ inputs.shipping_sysroot }}
           TOOLCHAIN_ROOT: ${{ inputs.shipping_toolchain_root }}
           CFLAGS: ${{ inputs.shipping_cflags }}
+          CMAKE_ARGS_JSON: ${{ inputs.shipping_cmake_args_json }}
         run: |
           set -euo pipefail
           mkdir -p shipping-bundle/bin
           cp build-shipping/ap_bench build-shipping/ap_build_info_dump build-shipping/ap_alsa_runtime_duplex shipping-bundle/bin/
           cp build-shipping/CMakeCache.txt shipping-bundle/
+          printf '%s\n' "$CMAKE_ARGS_JSON" > shipping-bundle/shipping-cmake-args.json
           python3 tools/certification_provenance.py snapshot \
             --stage build --revision '${{ needs.resolve.outputs.sha }}' \
             --runner-name "$RUNNER_NAME" --runner-arch "$RUNNER_ARCH" \
@@ -185,8 +208,9 @@ jobs:
             --binary shipping-bundle/bin/ap_build_info_dump \
             --binary shipping-bundle/bin/ap_alsa_runtime_duplex \
             --compiler "$CC" --sysroot "$SYSROOT" --toolchain-root "$TOOLCHAIN_ROOT" \
-            --cflags "$CFLAGS" --output shipping-bundle/build-provenance.json
-          (cd shipping-bundle && sha256sum bin/* CMakeCache.txt build-provenance.json > SHA256SUMS)
+            --cflags "$CFLAGS" --cmake-args-json "$CMAKE_ARGS_JSON" \
+            --output shipping-bundle/build-provenance.json
+          (cd shipping-bundle && sha256sum bin/* CMakeCache.txt shipping-cmake-args.json build-provenance.json > SHA256SUMS)
       - name: Upload exact shipping build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -198,6 +222,7 @@ jobs:
   certify-dut:
     needs: [resolve, build-shipping]
     runs-on: [self-hosted, linux, audio-target]
+    timeout-minutes: 4380
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:

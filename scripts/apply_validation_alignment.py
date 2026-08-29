@@ -14,7 +14,7 @@ if old not in text:
     raise SystemExit('clean reference block not found')
 text = text.replace(old, new, 1)
 old = '''    assert (si_sdr_db(ref, ref) or 0) > 100\n    assert max_abs_corr(ref, ref, rate) > 0.99\n    assert vad_f1([0, 1, 1, 0], [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]) == 1.0\n'''
-new = '''    assert (si_sdr_db(ref, ref) or 0) > 100\n    assert max_abs_corr(ref, ref, rate) > 0.99\n    delayed = [0] * 137 + ref[:-137]\n    delayed_sdr, alignment = aligned_si_sdr(ref, delayed, rate)\n    assert alignment == 137\n    assert delayed_sdr is not None and delayed_sdr > 100\n    assert vad_f1([0, 1, 1, 0], [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]) == 1.0\n'''
+new = '''    assert (si_sdr_db(ref, ref) or 0) > 100\n    assert max_abs_corr(ref, ref, rate) > 0.99\n    state = 1\n    broadband = []\n    for _ in range(rate):\n        state = (1664525 * state + 1013904223) & 0xffffffff\n        broadband.append(((state >> 16) & 0xffff) - 32768)\n    delayed = [0] * 137 + broadband[:-137]\n    delayed_sdr, alignment = aligned_si_sdr(broadband, delayed, rate)\n    assert alignment == 137\n    assert delayed_sdr is not None and delayed_sdr > 100\n    assert vad_f1([0, 1, 1, 0], [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]) == 1.0\n'''
 if old not in text:
     raise SystemExit('self-test block not found')
 text = text.replace(old, new, 1)

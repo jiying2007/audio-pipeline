@@ -3,7 +3,7 @@
   "policy_id": "validation-full-v1",
   "allowed_tiers": ["validation-grade", "validation-grade-blind"],
   "minimum_cases": 100,
-  "required_public_sources": ["microsoft-aec-challenge", "microsoft-dns-challenge"],
+  "required_public_sources": ["microsoft-aec-challenge", "microsoft-dns-challenge", "openslr-slr28"],
   "aggregate": {
     "min_pass_rate": 0.98,
     "min_median_near_si_sdr_improvement_db": 0.0,

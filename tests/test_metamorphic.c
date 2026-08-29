@@ -29,14 +29,15 @@ static void make_frame(unsigned frame_index, int16_t *mic, int16_t *render) {
     }
 }
 
-static void process_sequence(ap_pipeline_t *pipeline, int compare) {
+static void process_sequence(ap_pipeline_t *pipeline, int use_render, int compare) {
     int16_t mic[FRAME * 2u];
     int16_t render[FRAME];
     int16_t out[FRAME];
     unsigned f;
     for (f = 0u; f < FRAMES; ++f) {
         make_frame(f, mic, render);
-        assert(ap_pipeline_push_render(pipeline, render, FRAME) == AP_OK);
+        if (use_render)
+            assert(ap_pipeline_push_render(pipeline, render, FRAME) == AP_OK);
         assert(ap_pipeline_process_capture(pipeline, mic, FRAME, out) == AP_OK);
         if (compare)
             assert(memcmp(first_pass[f], out, sizeof(out)) == 0);
@@ -48,10 +49,15 @@ static void process_sequence(ap_pipeline_t *pipeline, int compare) {
 static void test_reset_replay_is_bit_exact(void) {
     ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *pipeline = NULL;
+    int16_t render[FRAME] = {0};
+    const int use_render = (cfg.stages & AP_STAGE_SYNC) != 0u;
+
     assert(ap_pipeline_init(state, sizeof(state), &cfg, &pipeline) == AP_OK);
-    process_sequence(pipeline, 0);
+    if (!use_render)
+        assert(ap_pipeline_push_render(pipeline, render, FRAME) == AP_ESTATE);
+    process_sequence(pipeline, use_render, 0);
     ap_pipeline_reset(pipeline);
-    process_sequence(pipeline, 1);
+    process_sequence(pipeline, use_render, 1);
 }
 
 static void test_silence_is_stable_in_isolated_ns(void) {

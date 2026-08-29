@@ -68,18 +68,20 @@ def self_test() -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    sub = parser.add_subparsers(dest="command", required=True)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--self-test", action="store_true")
+    sub = parser.add_subparsers(dest="command")
     agg = sub.add_parser("aggregate")
     for name in ("fast", "ci", "quality", "audio", "resource", "codeql"):
         agg.add_argument(f"--{name}", default="skipped")
     val = sub.add_parser("validation")
     val.add_argument("--report", type=Path, required=True)
-    parser.add_argument("--output", type=Path)
-    parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return 0
+    if args.command is None:
+        parser.error("aggregate or validation is required")
     if args.command == "aggregate":
         result = aggregate({name: getattr(args, name) for name in ("fast", "ci", "quality", "audio", "resource", "codeql")})
     else:

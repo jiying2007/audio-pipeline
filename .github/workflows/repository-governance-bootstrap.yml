@@ -1,17 +1,35 @@
 name: Repository Governance Bootstrap
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/bootstrap_github_governance.py
+      - scripts/github_governance.py
+      - .github/workflows/repository-governance-bootstrap.yml
+      - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: repository-governance-bootstrap
-  cancel-in-progress: false
+  group: repository-governance-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate governance payload and live-audit contracts
+        run: |
+          python3 scripts/bootstrap_github_governance.py --self-test
+          python3 scripts/github_governance.py --self-test
+
   apply:
+    if: github.event_name == 'workflow_dispatch'
+    needs: contract
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5

@@ -21,19 +21,22 @@ extern "C" {
 typedef struct ap_runtime ap_runtime_t;
 
 typedef struct ap_runtime_config {
-    uint32_t struct_size;
-    uint32_t api_version;
     int dsp_cpu;              /* -1: do not pin; default */
     int dsp_priority;         /* 0: SCHED_OTHER; default */
     uint32_t overload_us;     /* default 9000 for a 10 ms frame */
     uint32_t recover_frames;  /* sustained healthy frames before upgrade */
+} ap_runtime_config_t;
+
+typedef struct ap_runtime_options {
+    uint32_t struct_size;
+    uint32_t api_version;
     size_t dsp_stack_bytes;   /* 0: pthread default */
     uint8_t lock_memory;      /* best-effort mlockall; failure is observable */
     uint8_t set_thread_name;
     uint8_t reserved8[6];
     char thread_name[16];
     uint32_t reserved[8];
-} ap_runtime_config_t;
+} ap_runtime_options_t;
 
 typedef uint32_t ap_frame_metadata_flags_t;
 enum {
@@ -135,23 +138,25 @@ typedef struct ap_runtime_critical_state {
 } ap_runtime_critical_state_t;
 
 ap_runtime_config_t ap_runtime_config_default(void);
+ap_runtime_options_t ap_runtime_options_default(void);
 size_t ap_runtime_state_size(void);
 size_t ap_runtime_state_alignment(void);
 
-ap_status_t ap_runtime_init(void *memory,
+ap_status_t ap_runtime_open(void *memory,
                             size_t memory_size,
                             ap_pipeline_t *pipeline,
                             const ap_runtime_config_t *config,
+                            const ap_runtime_options_t *options,
                             ap_runtime_t **out_runtime);
 ap_status_t ap_runtime_start(ap_runtime_t *runtime);
 void ap_runtime_stop(ap_runtime_t *runtime);
 void ap_runtime_deinit(ap_runtime_t *runtime);
 
 /* SPSC producer. Submission never waits; AP_EFULL exposes backpressure. */
-ap_status_t ap_runtime_submit(ap_runtime_t *runtime,
-                              const int16_t *mic_interleaved,
-                              const int16_t *render_or_null,
-                              const ap_frame_metadata_t *metadata_or_null);
+ap_status_t ap_runtime_submit_frame(ap_runtime_t *runtime,
+                                    const int16_t *mic_interleaved,
+                                    const int16_t *render_or_null,
+                                    const ap_frame_metadata_t *metadata_or_null);
 
 /* Single control producer -> DSP worker command queue. Commands are applied only
  * at frame boundaries, preserving worker ownership of the live pipeline. */
@@ -174,8 +179,8 @@ ap_status_t ap_runtime_attach_flight_recorder(ap_runtime_t *runtime,
                                               ap_flight_recorder_t *recorder);
 
 /* Queue depth is a build capability: AP_BUILD_RUNTIME_QUEUE_DEPTH. */
-ap_status_t ap_runtime_get_metrics(const ap_runtime_t *runtime,
-                                   ap_runtime_metrics_t *metrics);
+ap_status_t ap_runtime_read_metrics(const ap_runtime_t *runtime,
+                                    ap_runtime_metrics_t *metrics);
 /* ERROR/FATAL events are latched independently from the bounded event queue. */
 ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
                                           ap_runtime_critical_state_t *state);

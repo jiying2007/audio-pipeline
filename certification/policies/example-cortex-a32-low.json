@@ -1,5 +1,7 @@
 {
   "policy_id": "example-cortex-a32-low-not-for-shipping",
+  "sku": "example-cortex-a32-low",
+  "shipping_approved": false,
   "max_active_cpu_percent": 40,
   "max_rss_kib": 4096,
   "max_p95_us": 7000,

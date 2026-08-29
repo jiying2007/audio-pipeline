@@ -1,0 +1,29 @@
+name: Apply v1.2 closure
+
+on:
+  push:
+    branches: [product/v1.2.0-closure]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: product/v1.2.0-closure
+      - name: Apply non-workflow closure patch
+        run: python3 tools/apply_v1_2_closure.py
+      - name: Commit generated source, tests, certification and tooling
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm tools/apply_v1_2_closure.py
+          git add CMakeLists.txt CHANGELOG.md include src tests fuzz scripts tools certification docs
+          git diff --cached --check
+          git commit -m "release: implement v1.2 product certification closure"
+          git push origin HEAD:product/v1.2.0-closure

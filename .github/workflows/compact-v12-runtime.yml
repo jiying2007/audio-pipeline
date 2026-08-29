@@ -1,0 +1,29 @@
+name: Compact v1.2 runtime
+
+on:
+  push:
+    branches: [product/v1.2.0-closure]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compact:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: product/v1.2.0-closure
+      - name: Compact rare runtime counters
+        run: python3 tools/compact_v12_runtime.py
+      - name: Commit compacted runtime
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm tools/compact_v12_runtime.py
+          git add src/platform/linux/ap_runtime.c
+          git diff --cached --check
+          git commit -m "runtime: keep v1.2 diagnostics within 32 KiB envelope"
+          git push origin HEAD:product/v1.2.0-closure

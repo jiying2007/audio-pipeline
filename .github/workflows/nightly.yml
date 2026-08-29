@@ -53,6 +53,8 @@ jobs:
       - run: python3 scripts/ci_impact.py --self-test
       - run: python3 scripts/flaky_guard.py --self-test
       - run: python3 scripts/test_history.py --self-test
+      - run: python3 scripts/github_governance.py --self-test
+      - run: python3 scripts/resource_baseline.py --self-test
       - run: python3 tools/hil_board.py --self-test
 
   validation-regression:
@@ -146,7 +148,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/test-history-old
-          gh run list --workflow=nightly.yml --branch=main --status=success --limit 20 \
+          gh run list --workflow=nightly.yml --branch=main --status=success --limit 40 \
             --json databaseId --jq '.[].databaseId' | while read -r id; do
               mkdir -p "/tmp/test-history-old/$id"
               gh run download "$id" --name test-history --dir "/tmp/test-history-old/$id" >/dev/null 2>&1 || true
@@ -157,7 +159,22 @@ jobs:
           --current /tmp/test-history-current/current.json
           --history-dir /tmp/test-history-old
           --output /tmp/test-history-current/trend.json
-          --min-samples 5 --z-limit 4.0 --pct-limit 15.0
+          --min-samples 5 --maturity-samples 30 --z-limit 4.0 --pct-limit 15.0
+      - name: Publish trend maturity summary
+        if: always()
+        run: |
+          if [ -f /tmp/test-history-current/trend.json ]; then
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/test-history-current/trend.json').read_text())
+          with Path('/tmp/test-history-current/maturity.txt').open('w') as out:
+              out.write(f"trend_result={data['result']}\n")
+              out.write(f"maturity_status={data['maturity_status']}\n")
+              out.write(f"history_records={data['history_records']}\n")
+          print(f"trend={data['result']} maturity={data['maturity_status']} history={data['history_records']}")
+          PY
+          fi
       - name: Upload current history point
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

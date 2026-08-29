@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
     c.io_sample_rate_hz = rate;
     c.internal_sample_rate_hz = rate < 16000u ? rate : 16000u;
     c.mic_channels = mic_channels;
+    if (mic_channels == 1u) c.stages &= ~AP_STAGE_BF;
     if (ap_pipeline_validate_config(&c) != AP_OK ||
         ap_pipeline_init(state, sizeof(state), &c, &p) != AP_OK) return 2;
     frame = rate / 100u;

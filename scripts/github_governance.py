@@ -99,7 +99,7 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
 
 
 def _gh_json(args: list[str]) -> object:
-    command = ["gh", "api", "-H", "X-GitHub-Api-Version: 2026-03-10", *args]
+    command = ["gh", "api", *args]
     return json.loads(subprocess.check_output(command, text=True))
 
 

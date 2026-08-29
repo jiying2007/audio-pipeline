@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
     uint32_t discontinuity_flags = AP_DISCONTINUITY_CAPTURE_GAP;
     uint32_t discontinuity_lost_frames = 1u;
     uint32_t frame_index = 0u;
+    uint32_t algorithmic_latency_ms = 0u;
     int capture_only = 0;
     int arg = 1;
     const char *metrics_path = NULL;
@@ -148,6 +149,7 @@ int main(int argc, char **argv) {
     if (ap_pipeline_state_size() > sizeof(state) ||
         ap_pipeline_init(state, sizeof(state), &cfg, &pipeline) != AP_OK)
         return 3;
+    algorithmic_latency_ms = ap_pipeline_algorithmic_latency_ms(pipeline);
 
     while (fread(mic, sizeof(int16_t) * channels, frame, fm) == frame) {
         ap_metrics_t metrics;
@@ -170,11 +172,13 @@ int main(int argc, char **argv) {
         if (fmetrics) {
             ap_pipeline_get_metrics(pipeline, &metrics);
             if (fprintf(fmetrics,
-                        "{\"frame\":%u,\"vad_probability\":%.7g,\"vad_active\":%u,"
+                        "{\"frame\":%u,\"algorithmic_latency_ms\":%u,"
+                        "\"vad_probability\":%.7g,\"vad_active\":%u,"
                         "\"far_end_active\":%u,\"double_talk_active\":%u,"
                         "\"erle_db\":%.7g,\"erle_valid\":%u,\"aec_converged\":%u,"
                         "\"estimated_delay_ms\":%u,\"delay_error_samples\":%d}\n",
                         frame_index,
+                        algorithmic_latency_ms,
                         (double)metrics.vad_probability,
                         (unsigned)metrics.vad_active,
                         (unsigned)metrics.far_end_active,

@@ -42,6 +42,11 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
+      - name: Validate every workflow YAML document
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -e 'require "yaml"; ARGV.each { |path| abort("invalid workflow YAML: #{path}") unless Psych.parse_file(path) }' .github/workflows/*.yml
       - name: Resolve verification range
         id: refs
         shell: bash
@@ -124,6 +129,15 @@ jobs:
           python3 tools/ap_certify.py --self-test
           python3 certification/validate_record.py --self-test
           python3 certification/validate_archive_receipt.py --self-test
+          python3 -m json.tool certification/record.schema.json >/dev/null
+          grep -q '^      shipping_cmake_args_json:' .github/workflows/product-certification.yml
+          ! grep -q '^      shipping_cmake_args:$' .github/workflows/product-certification.yml
+          grep -q 'timeout-minutes: 4380' .github/workflows/product-certification.yml
+          grep -q 'policy_path must stay under certification/policies' .github/workflows/product-certification.yml
+          grep -q -- '--cmake-args-json "$CMAKE_ARGS_JSON"' .github/workflows/product-certification.yml
+          grep -q 'shipping-cmake-args.json' .github/workflows/product-certification.yml
+          grep -q 'cmake_args_sha256' certification/record.schema.json
+          python3 -c 'import json; p=json.load(open("certification/policies/cortex-a32-low-shipping.json")); assert p["shipping_approved"] is True and float(p["min_soak_hours"]) >= 72'
           sh scripts/check-architecture.sh
       - name: Strict compile and unit/property gate
         env:

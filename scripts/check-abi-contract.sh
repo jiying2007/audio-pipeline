@@ -2,6 +2,9 @@
 set -eu
 BASE_REF=${1:-v1.1.1}
 ROOT=$(pwd)
+# GitHub job containers can mount the checkout with host ownership. Trust only
+# the exact caller-selected working directory before any fetch/worktree command.
+git config --global --add safe.directory "$ROOT"
 TMP=$(mktemp -d)
 trap 'git worktree remove --force "$TMP/base" >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT INT TERM
 git fetch origin "refs/tags/$BASE_REF:refs/tags/$BASE_REF" --force >/dev/null 2>&1 || true

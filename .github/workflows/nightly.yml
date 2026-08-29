@@ -19,14 +19,23 @@ jobs:
         run: >-
           cmake -S . -B build-fuzz-nightly -DCMAKE_BUILD_TYPE=Debug
           -DAP_BUILD_FUZZ=ON -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF
-          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_LINUX_RUNTIME=OFF
-      - name: Build
-        run: cmake --build build-fuzz-nightly --target ap_fuzz --parallel
-      - name: Long fuzz
+          -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_LINUX_RUNTIME=ON
+      - name: Build fuzz targets
+        run: >-
+          cmake --build build-fuzz-nightly --parallel
+          --target ap_fuzz ap_fuzz_runtime_commands ap_fuzz_flight_recorder
+      - name: Pipeline fuzz
         run: ./build-fuzz-nightly/ap_fuzz -max_total_time=900 -max_len=4096
+      - name: Runtime command fuzz
+        run: ./build-fuzz-nightly/ap_fuzz_runtime_commands -max_total_time=600 -max_len=256
+      - name: Flight recorder config fuzz
+        run: ./build-fuzz-nightly/ap_fuzz_flight_recorder -max_total_time=600 -max_len=64
+      - name: APD parser malformed-input fuzz
+        run: python3 fuzz/fuzz_apd_parser.py
 
   eval-contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - run: python3 eval/run_eval.py --self-test
+      - run: python3 certification/validate_record.py --self-test

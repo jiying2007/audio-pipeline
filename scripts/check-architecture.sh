@@ -88,4 +88,10 @@ if grep -R -n -E '\b(malloc|calloc|realloc|free)[[:space:]]*\(' \
   fail "heap allocation found in synchronous DSP/modules"
 fi
 
+# Public validation workflows are part of the repository assurance boundary.
+# Keep their profile-selection and balanced-corpus logic executable in the
+# required fast gate instead of relying only on YAML/Python syntax checks.
+python3 validation/tools/prepare_public_validation.py self-test
+python3 validation/tools/build_compact_public_corpus.py --self-test
+
 echo "architecture contracts: OK"

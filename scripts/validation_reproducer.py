@@ -44,6 +44,9 @@ def shell_quote(value: str) -> str:
 
 def package(corpus_path: Path, report_path: Path, destination: Path,
             processor: Path | None) -> int:
+    corpus_path = corpus_path.resolve()
+    report_path = report_path.resolve()
+    destination = destination.resolve()
     corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
     report = json.loads(report_path.read_text(encoding="utf-8"))
     cases = {case["case_id"]: case for case in corpus["cases"]}
@@ -52,14 +55,14 @@ def package(corpus_path: Path, report_path: Path, destination: Path,
     (destination / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     for result in failed:
         source_case = dict(cases[result["case_id"]])
-        root = destination / result["case_id"]
+        root = (destination / result["case_id"]).resolve()
         root.mkdir(parents=True, exist_ok=True)
         local_case = json.loads(json.dumps(source_case))
         for key in AUDIO_KEYS:
             value = source_case.get(key)
             if not value:
                 continue
-            src = resolve(corpus_path, value)
+            src = resolve(corpus_path, value).resolve()
             dst = root / src.name
             shutil.copy2(src, dst)
             local_case[key] = dst.name
@@ -73,7 +76,7 @@ def package(corpus_path: Path, report_path: Path, destination: Path,
         (root / "reproduce.sh").chmod(0o755)
         if processor:
             proc = subprocess.run(command_for(str(processor.resolve()), local_case, root),
-                                  cwd=root, text=True, stdout=subprocess.PIPE,
+                                  text=True, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT)
             (root / "replay.log").write_text(proc.stdout or "", encoding="utf-8")
             if proc.returncode != 0:

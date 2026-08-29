@@ -9,11 +9,24 @@ A software release requires all of the following:
 - the exact `main` SHA passed `Verify/summary`;
 - the release SHA is attributable to a merged pull request targeting `main`;
 - live repository governance passes `scripts/github_governance.py` using a read-only administration credential supplied as `REPOSITORY_GOVERNANCE_TOKEN`;
-- the active main Ruleset requires pull requests, strict `summary`, blocks deletion and non-fast-forward updates, and has no bypass actors;
+- the active main Ruleset requires pull requests, squash-only merging, resolved review conversations, strict `summary` from the GitHub Actions App, blocks deletion and non-fast-forward updates, and has no bypass actors;
 - the active `v*` tag Ruleset blocks deletion and non-fast-forward updates and has no bypass actors;
 - repository immutable releases are enabled before publication.
 
-The normal workflow `GITHUB_TOKEN` is deliberately not treated as proof of repository administration state. The governance token should be a fine-grained read-only credential with the minimum Administration metadata permission needed to read Rulesets and immutable-release state.
+The normal workflow `GITHUB_TOKEN` is deliberately not treated as proof of repository administration state. The governance token should be a fine-grained read-only credential with the minimum Administration permission needed to read Rulesets and immutable-release state.
+
+## Governance bootstrap
+
+`scripts/bootstrap_github_governance.py` is the idempotent desired-state installer for the repository controls above. It creates or updates only the named `audio-pipeline-main` and `audio-pipeline-version-tags` repository Rulesets and enables repository Immutable Releases. The required `summary` check is bound to the GitHub Actions App integration id observed from the real repository check run.
+
+`.github/workflows/repository-governance-bootstrap.yml` exposes that installer as an explicit manual administrative operation. The workflow requires `REPOSITORY_ADMIN_TOKEN` with repository **Administration: write**, then runs the normal live audit after applying the settings. Pull requests only execute its read-only contract self-tests; untrusted PR code never receives the administration credential.
+
+Use separate credentials:
+
+- `REPOSITORY_ADMIN_TOKEN`: Administration write; bootstrap/recovery only;
+- `REPOSITORY_GOVERNANCE_TOKEN`: Administration read; every Release preflight.
+
+For the first transition from an unprotected repository, governance must be installed **before** merging the release PR. An administrator can run `scripts/bootstrap_github_governance.py` from the reviewed PR checkout with `GH_TOKEN` set to the write credential. Once the workflow is present on `main`, future re-application can use the manual bootstrap workflow. This avoids weakening the release workflow by giving routine releases repository-administration write permission.
 
 ## Shipping certification gate
 

@@ -24,3 +24,18 @@ const ap_build_info_t *ap_build_info(void) {
     };
     return &info;
 }
+
+const ap_build_info_v2_t *ap_build_info_v2_get(void) {
+    static const ap_build_info_v2_t info = {
+        sizeof(ap_build_info_v2_t),
+        AP_BUILD_INFO_V2_API_VERSION,
+        AP_BUILD_SOURCE_REVISION,
+        AP_BUILD_COMPILER_ID,
+        AP_BUILD_COMPILER_VERSION,
+        AP_BUILD_TARGET_TRIPLE,
+        AP_BUILD_TYPE_NAME,
+        AP_BUILD_CONFIG_DIGEST,
+        {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
+    };
+    return &info;
+}

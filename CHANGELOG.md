@@ -1,3 +1,12 @@
+# 1.4.0
+
+- Add additive build identity v2 with exact source revision, compiler, target triple, build type and SHA-256 configuration digest while preserving the frozen 1.x `ap_build_info_t` layout.
+- Make `ap_bench` route-geometry aware so target CPU/latency evidence measures the shipping sample rate and microphone count instead of an implicit 16 kHz/2-mic graph.
+- Turn Product Certification into an `audio-target` self-hosted measurement workflow: exact target build, DSP benchmark, RSS/thermal/power sampling, real ALSA-route soak, immutable evidence packaging and strict policy validation.
+- Upgrade new certification records to schema v3 with certification-binary hashes and materialized evidence size/SHA-256 revalidation; historical v2 records remain accepted.
+- Make real ALSA route soak expose XRUN recovery, queue/drop/overrun/failure and runtime p50/p95/p99/critical telemetry; synthetic runtime soak is no longer accepted as product-route evidence.
+- Keep private real-product acoustic results and corpus manifests external; the workflow refuses to manufacture hosted acoustic evidence or substitute missing power/thermal measurements.
+
 # 1.3.0
 
 - Add a validation-grade self-validation layer with explicit `regression`, `validation-grade`, `validation-grade-blind`, and `product-certified` trust boundaries.

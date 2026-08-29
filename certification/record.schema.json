@@ -55,6 +55,38 @@
         "abi": {
           "type": "string",
           "minLength": 1
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{40}$"
+        },
+        "config_digest": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$"
+        },
+        "compiler_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compiler_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_triple": {
+          "type": "string",
+          "minLength": 1
+        },
+        "build_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "binary_sha256": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          }
         }
       },
       "additionalProperties": true
@@ -295,6 +327,18 @@
         "sha256": {
           "type": "string",
           "pattern": "^[A-Fa-f0-9]{64}$"
+        },
+        "evidence_manifest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "binary_sha256": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          }
         }
       },
       "additionalProperties": true
@@ -400,7 +444,10 @@
             ]
           },
           "schema_version": {
-            "const": 2
+            "enum": [
+              2,
+              3
+            ]
           }
         },
         "required": [

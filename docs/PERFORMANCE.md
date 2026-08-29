@@ -101,14 +101,17 @@ Compile-time SKU envelopes can additionally cap max I/O/internal rate, mic count
 
 The CPU target is a starting product gate, not an architecture rating.
 
-## Target wrappers
+## Target certification collectors
+
+Target CPU/latency evidence is generated with the actual shipping route geometry, while the soak uses the real ALSA capture/playback path:
 
 ```bash
-./scripts/run-target-benchmark.sh ./build/ap_bench 120 0.40 9000 1
-./scripts/run-target-soak.sh ./build/ap_runtime_bench 28800 0 0.999 1
+python3 tools/target_evidence.py benchmark --binary ./build/ap_bench   --output benchmark.json --seconds 120 --idle-seconds 30 --dsp-cpu 1   --sample-rate 16000 --mic-channels 2 --ambient-c 25   --power-input /path/to/live_power --power-scale 1000000 --require-sensors
+
+python3 tools/target_evidence.py route-soak --binary ./build/ap_alsa_runtime_duplex   --output soak.json --capture-device hw:0,0 --playback-device hw:0,0   --farend /path/to/farend.pcm --seconds 28800 --dsp-cpu 1   --sample-rate 16000 --mic-channels 2 --max-xruns 0 --max-overruns 0   --power-input /path/to/live_power --power-scale 1000000
 ```
 
-The soak defaults to 8 h.
+The default product soak is 8 h. `ap_runtime_bench` remains a synthetic runtime regression tool and is not accepted as real product-route soak evidence.
 
 ## Realtime correctness gates
 

@@ -15,25 +15,33 @@
 #define AP_ALIGN16 _Alignas(16)
 #endif
 
-#define RATE 16000u
-#define FRAME 160u
-#define MIC_CHANNELS 2u
+static int supported_rate(unsigned rate) {
+    return rate == 8000u || rate == 16000u || rate == 24000u ||
+           rate == 32000u || rate == 48000u;
+}
 
-static int configure_pcm(snd_pcm_t *pcm, unsigned channels) {
+static int configure_pcm(snd_pcm_t *pcm, unsigned channels, unsigned rate) {
     int rc = snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE,
                                 SND_PCM_ACCESS_RW_INTERLEAVED,
-                                channels, RATE, 1, 20000u);
+                                channels, rate, 1, 20000u);
     if (rc < 0) fprintf(stderr, "snd_pcm_set_params: %s\n", snd_strerror(rc));
     return rc;
 }
 
-static int write_all(snd_pcm_t *pcm, const int16_t *data, snd_pcm_uframes_t frames) {
+static int recover_pcm(snd_pcm_t *pcm, int error, uint64_t *xruns) {
+    int rc;
+    if (error == -EPIPE || error == -ESTRPIPE) (*xruns)++;
+    rc = snd_pcm_recover(pcm, error, 1);
+    return rc < 0 ? -1 : 0;
+}
+
+static int write_all(snd_pcm_t *pcm, const int16_t *data,
+                     snd_pcm_uframes_t frames, uint64_t *xruns) {
     snd_pcm_uframes_t done = 0u;
     while (done < frames) {
         snd_pcm_sframes_t n = snd_pcm_writei(pcm, data + done, frames - done);
         if (n < 0) {
-            n = snd_pcm_recover(pcm, (int)n, 1);
-            if (n < 0) return -1;
+            if (recover_pcm(pcm, (int)n, xruns) != 0) return -1;
             continue;
         }
         done += (snd_pcm_uframes_t)n;
@@ -41,17 +49,47 @@ static int write_all(snd_pcm_t *pcm, const int16_t *data, snd_pcm_uframes_t fram
     return 0;
 }
 
-static int read_all(snd_pcm_t *pcm, int16_t *data, snd_pcm_uframes_t frames) {
+static int read_all(snd_pcm_t *pcm, int16_t *data, snd_pcm_uframes_t frames,
+                    unsigned channels, uint64_t *xruns) {
     snd_pcm_uframes_t done = 0u;
     while (done < frames) {
-        snd_pcm_sframes_t n = snd_pcm_readi(pcm, data + (size_t)done * MIC_CHANNELS,
+        snd_pcm_sframes_t n = snd_pcm_readi(pcm, data + (size_t)done * channels,
                                             frames - done);
         if (n < 0) {
-            n = snd_pcm_recover(pcm, (int)n, 1);
-            if (n < 0) return -1;
+            if (recover_pcm(pcm, (int)n, xruns) != 0) return -1;
             continue;
         }
         done += (snd_pcm_uframes_t)n;
+    }
+    return 0;
+}
+
+static int fill_render(FILE *far, int silence, int repeat, int16_t *render,
+                       size_t frame, int *ended) {
+    size_t done = 0u;
+    *ended = 0;
+    if (silence) {
+        memset(render, 0, frame * sizeof(render[0]));
+        return 0;
+    }
+    while (done < frame) {
+        size_t got = fread(render + done, sizeof(render[0]), frame - done, far);
+        done += got;
+        if (done == frame) return 0;
+        if (ferror(far)) return -1;
+        if (!feof(far)) continue;
+        if (!repeat) {
+            memset(render + done, 0, (frame - done) * sizeof(render[0]));
+            *ended = 1;
+            return 0;
+        }
+        clearerr(far);
+        if (fseek(far, 0L, SEEK_SET) != 0) return -1;
+        if (got == 0u) {
+            int probe = fgetc(far);
+            if (probe == EOF) return -1;
+            if (ungetc(probe, far) == EOF) return -1;
+        }
     }
     return 0;
 }
@@ -59,6 +97,13 @@ static int read_all(snd_pcm_t *pcm, int16_t *data, snd_pcm_uframes_t frames) {
 static void nap_100us(void) {
     const struct timespec t = {0, 100000};
     (void)nanosleep(&t, NULL);
+}
+
+static void usage(const char *argv0) {
+    fprintf(stderr,
+            "usage: %s <capture> <playback|-> <farend-s16le|-> <uplink-s16le|-> "
+            "[seconds] [dsp-cpu] [sample-rate] [mic-channels]\n",
+            argv0);
 }
 
 int main(int argc, char **argv) {
@@ -70,22 +115,37 @@ int main(int argc, char **argv) {
     ap_runtime_t *runtime = NULL;
     snd_pcm_t *capture = NULL, *playback = NULL;
     FILE *far = NULL, *uplink = NULL;
-    int16_t render[FRAME] = {0};
-    int16_t mic[FRAME * MIC_CHANNELS] = {0};
-    int16_t clean[FRAME] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t clean[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    unsigned rate = 16000u, mic_channels = 2u, frame;
     unsigned max_frames = 0u, produced = 0u, received = 0u;
-    int silence_render = 0;
+    uint64_t xruns = 0u;
+    int silence_render;
+    int have_playback;
+    int discard_uplink;
     int rc = 1;
 
-    if (argc < 5 || argc > 7) {
-        fprintf(stderr,
-                "usage: %s <capture> <playback> <farend-s16le|-> <uplink-s16le> [seconds] [dsp-cpu]\n",
-                argv[0]);
+    if (argc < 5 || argc > 9) {
+        usage(argv[0]);
         return 2;
     }
     if (argc >= 6) max_frames = (unsigned)strtoul(argv[5], NULL, 10) * 100u;
-    if (argc == 7) rt_cfg.dsp_cpu = (int)strtol(argv[6], NULL, 10);
+    if (argc >= 7) rt_cfg.dsp_cpu = (int)strtol(argv[6], NULL, 10);
+    if (argc >= 8) rate = (unsigned)strtoul(argv[7], NULL, 10);
+    if (argc >= 9) mic_channels = (unsigned)strtoul(argv[8], NULL, 10);
+    if (!supported_rate(rate) || mic_channels < 1u || mic_channels > AP_MAX_MIC_CHANNELS) {
+        usage(argv[0]);
+        return 2;
+    }
+    frame = rate / 100u;
+    have_playback = strcmp(argv[2], "-") != 0;
     silence_render = strcmp(argv[3], "-") == 0;
+    discard_uplink = strcmp(argv[4], "-") == 0;
+    if (!have_playback && !silence_render) {
+        fprintf(stderr, "far-end stimulus requires a playback device\n");
+        return 2;
+    }
 
     if (!silence_render) {
         far = fopen(argv[3], "rb");
@@ -94,19 +154,30 @@ int main(int argc, char **argv) {
             goto done;
         }
     }
-    uplink = fopen(argv[4], "wb");
-    if (!uplink) {
-        fprintf(stderr, "open uplink %s: %s\n", argv[4], strerror(errno));
+    if (!discard_uplink) {
+        uplink = fopen(argv[4], "wb");
+        if (!uplink) {
+            fprintf(stderr, "open uplink %s: %s\n", argv[4], strerror(errno));
+            goto done;
+        }
+    }
+    if (snd_pcm_open(&capture, argv[1], SND_PCM_STREAM_CAPTURE, 0) < 0) {
+        fprintf(stderr, "cannot open ALSA capture device\n");
         goto done;
     }
-    if (snd_pcm_open(&capture, argv[1], SND_PCM_STREAM_CAPTURE, 0) < 0 ||
-        snd_pcm_open(&playback, argv[2], SND_PCM_STREAM_PLAYBACK, 0) < 0) {
-        fprintf(stderr, "cannot open ALSA devices\n");
+    if (have_playback && snd_pcm_open(&playback, argv[2], SND_PCM_STREAM_PLAYBACK, 0) < 0) {
+        fprintf(stderr, "cannot open ALSA playback device\n");
         goto done;
     }
-    if (configure_pcm(capture, MIC_CHANNELS) < 0 || configure_pcm(playback, 1u) < 0) goto done;
+    if (configure_pcm(capture, mic_channels, rate) < 0 ||
+        (playback && configure_pcm(playback, 1u, rate) < 0)) goto done;
 
-    cfg.mic_channels = MIC_CHANNELS;
+    cfg.io_sample_rate_hz = rate;
+    cfg.mic_channels = mic_channels;
+    if (ap_pipeline_validate_config(&cfg) != AP_OK) {
+        fprintf(stderr, "pipeline does not support requested route geometry\n");
+        goto done;
+    }
     if (ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline) != AP_OK ||
         ap_runtime_init(runtime_mem, sizeof(runtime_mem), pipeline, &rt_cfg, &runtime) != AP_OK ||
         ap_runtime_start(runtime) != AP_OK) {
@@ -115,22 +186,23 @@ int main(int argc, char **argv) {
     }
 
     while (!max_frames || produced < max_frames) {
-        size_t got = FRAME;
         ap_status_t s;
-        if (silence_render) {
-            memset(render, 0, sizeof(render));
-        } else {
-            got = fread(render, sizeof(render[0]), FRAME, far);
-            if (got == 0u) break;
-            if (got < FRAME) memset(render + got, 0, (FRAME - got) * sizeof(render[0]));
+        int ended = 0;
+        if (fill_render(far, silence_render, max_frames != 0u,
+                        render, frame, &ended) != 0) {
+            fprintf(stderr, "cannot read/repeat far-end stimulus\n");
+            goto done;
         }
-
-        if (write_all(playback, render, FRAME) != 0 || read_all(capture, mic, FRAME) != 0) {
-            fprintf(stderr, "ALSA XRUN recovery failed\n");
+        if (playback && write_all(playback, render, frame, &xruns) != 0) {
+            fprintf(stderr, "ALSA playback XRUN recovery failed\n");
+            goto done;
+        }
+        if (read_all(capture, mic, frame, mic_channels, &xruns) != 0) {
+            fprintf(stderr, "ALSA capture XRUN recovery failed\n");
             goto done;
         }
 
-        s = ap_runtime_submit(runtime, mic, silence_render ? NULL : render);
+        s = ap_runtime_submit(runtime, mic, playback ? render : NULL);
         if (s == AP_EFULL) {
             fprintf(stderr, "DSP input queue full at frame %u\n", produced);
             goto done;
@@ -138,18 +210,23 @@ int main(int argc, char **argv) {
         if (s != AP_OK) goto done;
         produced++;
 
-        while (ap_runtime_receive(runtime, clean, NULL) == AP_OK) {
-            if (fwrite(clean, sizeof(clean[0]), FRAME, uplink) != FRAME) goto done;
-            received++;
+        for (;;) {
+            s = ap_runtime_receive(runtime, clean, NULL);
+            if (s == AP_OK) {
+                if (uplink && fwrite(clean, sizeof(clean[0]), frame, uplink) != frame) goto done;
+                received++;
+                continue;
+            }
+            if (s != AP_EEMPTY) goto done;
+            break;
         }
-        if (!silence_render && got < FRAME) break;
+        if (ended) break;
     }
 
-    /* Drain outstanding DSP results without busy-spinning. */
     while (received < produced) {
         ap_status_t s = ap_runtime_receive(runtime, clean, NULL);
         if (s == AP_OK) {
-            if (fwrite(clean, sizeof(clean[0]), FRAME, uplink) != FRAME) goto done;
+            if (uplink && fwrite(clean, sizeof(clean[0]), frame, uplink) != frame) goto done;
             received++;
         } else if (s == AP_EEMPTY) {
             nap_100us();
@@ -159,18 +236,41 @@ int main(int argc, char **argv) {
     }
 
     {
-        ap_runtime_metrics_t rm;
+        ap_runtime_metrics_v3_t rm;
         ap_metrics_t pm;
-        ap_runtime_get_metrics(runtime, &rm);
+        memset(&rm, 0, sizeof(rm));
+        rm.struct_size = sizeof(rm);
+        rm.api_version = AP_RUNTIME_METRICS_V3_API_VERSION;
+        if (ap_runtime_get_metrics_v3(runtime, &rm) != AP_OK) goto done;
         ap_pipeline_get_metrics(pipeline, &pm);
         fprintf(stderr,
-                "produced=%u received=%u dsp_max_us=%u overruns=%llu input_full=%llu output_drop=%llu quality=%d backend=%d delay_ms=%u resets=%llu\n",
-                produced, received, rm.max_dsp_us,
+                "produced=%u received=%u xruns=%llu dsp_overruns=%llu input_full=%llu "
+                "output_drop=%llu p50_dsp_us=%u p95_dsp_us=%u p99_dsp_us=%u "
+                "max_dsp_us=%u failed_frames=%llu critical_events=%llu "
+                "render_push_failures=%llu capture_process_failures=%llu "
+                "scheduler_bind_failures=%llu memory_lock_failures=%llu "
+                "actual_cpu=%d actual_policy=%d actual_priority=%d quality=%d "
+                "backend=%d delay_ms=%u resets=%llu\n",
+                produced, received, (unsigned long long)xruns,
                 (unsigned long long)rm.dsp_overruns,
                 (unsigned long long)rm.input_full_events,
                 (unsigned long long)rm.output_drop_events,
+                rm.p50_dsp_us, rm.p95_dsp_us, rm.p99_dsp_us, rm.max_dsp_us,
+                (unsigned long long)rm.failed_frames,
+                (unsigned long long)rm.critical_events,
+                (unsigned long long)rm.render_push_failures,
+                (unsigned long long)rm.capture_process_failures,
+                (unsigned long long)rm.scheduler_bind_failures,
+                (unsigned long long)rm.memory_lock_failures,
+                rm.actual_cpu, rm.actual_policy, rm.actual_priority,
                 (int)rm.quality, (int)pm.aec_backend, pm.estimated_delay_ms,
                 (unsigned long long)pm.aec_resets);
+        if (produced != received || rm.failed_frames != 0u ||
+            rm.input_full_events != 0u || rm.output_drop_events != 0u ||
+            rm.capture_process_failures != 0u || rm.render_push_failures != 0u) {
+            fprintf(stderr, "route runtime integrity gate failed\n");
+            goto done;
+        }
     }
     rc = 0;
 

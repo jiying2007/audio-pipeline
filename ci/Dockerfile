@@ -3,10 +3,12 @@ FROM ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+       alsa-utils \
        build-essential \
        ca-certificates \
        ccache \
        clang \
+       clang-tools \
        cmake \
        curl \
        gcc-aarch64-linux-gnu \
@@ -15,6 +17,8 @@ RUN apt-get update \
        git \
        jq \
        libasound2-dev \
+       libc6-dev-arm64-cross \
+       libc6-dev-armhf-cross \
        ninja-build \
        pkg-config \
        python3 \

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Prepare and verify sealed public-data caches for validation-grade runs.
 
-The compact profile intentionally avoids materializing the ~1 TB DNS5 training
-corpus. It uses pinned Microsoft AEC Challenge audio plus sealed OpenSLR SLR28.
-The full profile adds a caller-provided DNS5 materialization and its pinned
+The compact profile avoids the very large DNS5 training corpus. It uses pinned
+Microsoft AEC Challenge audio plus sealed OpenSLR SLR28. The full profile adds
+caller-materialized official DNS5 clean/noise WAV sources plus the pinned
 upstream checksum index. Neither profile is product-certification evidence.
 """
 
@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -97,6 +96,22 @@ def require_slr28(lock_items: dict[str, dict], root: Path, seal: dict) -> dict:
     return {"id": item["id"], "path": str(archive), "sha256": actual}
 
 
+def dns_role_counts(data: Path) -> tuple[int, int, int]:
+    clean = 0
+    noise = 0
+    total = 0
+    for path in data.rglob("*.wav"):
+        total += 1
+        rel = path.relative_to(data).as_posix().lower()
+        if "noisy" in rel:
+            continue
+        if "clean" in rel:
+            clean += 1
+        elif "noise" in rel:
+            noise += 1
+    return clean, noise, total
+
+
 def require_dns(lock_items: dict[str, dict], root: Path, seal: dict,
                 dns_data_root: Path | None) -> dict:
     item = lock_items["microsoft-dns-challenge"]
@@ -113,16 +128,20 @@ def require_dns(lock_items: dict[str, dict], root: Path, seal: dict,
     data = dns_data_root or (repo / "datasets_fullband")
     if not data.is_dir():
         raise FileNotFoundError(
-            f"DNS full profile requires an externally materialized DNS5 data root: {data}. "
-            "Use the pinned upstream download-dns-challenge-5-* scripts; the repository does not "
-            "silently download the roughly 1 TB unpacked corpus."
+            f"DNS full profile requires caller-materialized official DNS5 WAV sources: {data}. "
+            "Use the pinned upstream download-dns-challenge-5-* scripts; audio-pipeline does not "
+            "silently download the large upstream corpus."
         )
-    wav_count = sum(1 for _ in data.rglob("*.wav"))
-    if wav_count < 2:
-        raise ValueError(f"DNS data root has too few WAV files to validate: {data}")
+    clean_count, noise_count, wav_count = dns_role_counts(data)
+    if clean_count < 2 or noise_count < 2:
+        raise ValueError(
+            f"DNS data root must contain official clean and noise WAV sources; "
+            f"clean={clean_count} noise={noise_count} total={wav_count} under {data}"
+        )
     return {
         "id": item["id"], "revision": head, "checksum_index": str(index),
-        "checksum_index_sha256": expected, "data_root": str(data), "wav_count": wav_count,
+        "checksum_index_sha256": expected, "data_root": str(data),
+        "wav_count": wav_count, "clean_wavs": clean_count, "noise_wavs": noise_count,
     }
 
 

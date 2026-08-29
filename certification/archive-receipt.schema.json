@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio-pipeline certification lifecycle archive receipt",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "archive_id",
+    "bundle_sha256",
+    "stored_at",
+    "retention_class",
+    "immutable"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "archive_id": {"type": "string", "minLength": 1},
+    "bundle_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "stored_at": {"type": "string", "format": "date-time"},
+    "retention_class": {"const": "product-lifecycle"},
+    "retention_until": {"type": ["string", "null"]},
+    "immutable": {"const": true},
+    "backend": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": true
+}

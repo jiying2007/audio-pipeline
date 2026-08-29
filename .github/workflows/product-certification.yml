@@ -195,6 +195,8 @@ jobs:
           SECONDS: ${{ inputs.benchmark_seconds }}
           IDLE: ${{ inputs.idle_seconds }}
           DSP_CPU: ${{ inputs.dsp_cpu }}
+          RATE: ${{ inputs.sample_rate }}
+          CHANNELS: ${{ inputs.mic_channels }}
           AMBIENT: ${{ inputs.ambient_c }}
           POWER: ${{ inputs.power_input }}
           POWER_SCALE: ${{ inputs.power_scale }}
@@ -206,6 +208,7 @@ jobs:
             --output certification-input/benchmark.json \
             --seconds "$SECONDS" --idle-seconds "$IDLE" \
             --max-rtf 0.40 --max-p99-us 9000 --dsp-cpu "$DSP_CPU" \
+            --sample-rate "$RATE" --mic-channels "$CHANNELS" \
             --ambient-c "$AMBIENT" --power-input "$POWER" \
             --power-scale "$POWER_SCALE" --require-sensors
       - name: Run real ALSA route soak

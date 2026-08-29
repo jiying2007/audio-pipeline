@@ -25,14 +25,9 @@ on:
         default: /opt/audio-validation-data/datasets.seal.json
         type: string
       dns_data_root:
-        description: Optional DNS unpacked datasets_fullband path
+        description: DNS5 unpacked datasets_fullband path; defaults under pinned DNS checkout
         required: false
         default: ''
-        type: string
-      policy_path:
-        description: Repository-relative validation policy
-        required: true
-        default: validation/policies/validation-full.json
         type: string
       aec_limit:
         description: Maximum AEC real cases
@@ -72,17 +67,20 @@ jobs:
           fetch-depth: 0
       - name: Record exact validation revision
         run: |
+          set -euo pipefail
           git rev-parse HEAD | tee validation-revision.txt
           test -z "$(git status --porcelain=v1)"
-      - name: Validate public dataset lock and local seals
+      - name: Verify full sealed public cache
         env:
           DATA_ROOT: ${{ inputs.data_root }}
           SEAL: ${{ inputs.seal_path }}
+          DNS_ROOT: ${{ inputs.dns_data_root }}
         run: |
-          python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
-          python3 validation/tools/dataset_lock.py verify-local \
-            --lock validation/datasets.lock.json --root "$DATA_ROOT" --seal "$SEAL" \
-            --validation-grade --require-materialized > validation-dataset-verification.json
+          set -euo pipefail
+          args=(verify --profile full --root "$DATA_ROOT" --seal "$SEAL")
+          if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
+          python3 validation/tools/prepare_public_validation.py "${args[@]}" \
+            > validation-dataset-verification.json
       - name: Build offline validation processor
         run: |
           cmake -S . -B build-validation -DCMAKE_BUILD_TYPE=Release \
@@ -97,13 +95,13 @@ jobs:
           DNS_LIMIT: ${{ inputs.dns_limit }}
           ROBOT_LIMIT: ${{ inputs.robot_sim_limit }}
         run: |
-          args=""
-          if [ -n "$DNS_ROOT" ]; then args="--dns-data-root $DNS_ROOT"; fi
-          # shellcheck disable=SC2086
-          python3 validation/tools/build_public_corpus.py \
-            --data-root "$DATA_ROOT" --seal "$SEAL" --output validation-out/public \
-            --aec-limit "$AEC_LIMIT" --dns-limit "$DNS_LIMIT" --robot-sim-limit "$ROBOT_LIMIT" \
-            $args
+          set -euo pipefail
+          args=(
+            --data-root "$DATA_ROOT" --seal "$SEAL" --output validation-out/public
+            --aec-limit "$AEC_LIMIT" --dns-limit "$DNS_LIMIT" --robot-sim-limit "$ROBOT_LIMIT"
+          )
+          if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
+          python3 validation/tools/build_public_corpus.py "${args[@]}"
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -125,40 +123,39 @@ jobs:
           AP_VALIDATION_HOLDOUT_KEY: ${{ secrets.AP_VALIDATION_HOLDOUT_KEY }}
           HOLDOUT: ${{ inputs.holdout_percent }}
         run: |
+          set -euo pipefail
+          test -n "$AP_VALIDATION_HOLDOUT_KEY" || { echo 'AP_VALIDATION_HOLDOUT_KEY is required' >&2; exit 1; }
           python3 validation/tools/split_holdout.py \
             --corpus validation-out/public/corpus.json \
             --validation-output validation-out/public/corpus-validation.json \
             --blind-output validation-out/public/corpus-blind.json \
             --holdout-percent "$HOLDOUT"
-      - name: Run validation-grade policy
+      - name: Run official full validation-grade policy
         if: inputs.tier == 'validation-grade'
-        env:
-          POLICY: ${{ inputs.policy_path }}
         run: |
           python3 validation/tools/run_validation.py \
-            --corpus validation-out/public/corpus.json --policy "$POLICY" \
+            --corpus validation-out/public/corpus.json \
+            --policy validation/policies/validation-full.json \
             --dataset-lock validation/datasets.lock.json \
             --processor build-validation/ap_process_pcm \
             --output validation-out/validation-report.json \
             --evidence-manifest validation-out/evidence-manifest.json --enforce
       - name: Run public validation partition before blind holdout
         if: inputs.tier == 'validation-grade-blind'
-        env:
-          POLICY: ${{ inputs.policy_path }}
         run: |
           python3 validation/tools/run_validation.py \
-            --corpus validation-out/public/corpus-validation.json --policy "$POLICY" \
+            --corpus validation-out/public/corpus-validation.json \
+            --policy validation/policies/validation-full.json \
             --dataset-lock validation/datasets.lock.json \
             --processor build-validation/ap_process_pcm \
             --output validation-out/validation-report.json \
             --evidence-manifest validation-out/evidence-manifest.json --enforce
       - name: Run blind holdout with summary-only report
         if: inputs.tier == 'validation-grade-blind'
-        env:
-          POLICY: ${{ inputs.policy_path }}
         run: |
           python3 validation/tools/run_validation.py \
-            --corpus validation-out/public/corpus-blind.json --policy "$POLICY" \
+            --corpus validation-out/public/corpus-blind.json \
+            --policy validation/policies/validation-full.json \
             --dataset-lock validation/datasets.lock.json \
             --processor build-validation/ap_process_pcm \
             --output validation-out/blind-report.json \

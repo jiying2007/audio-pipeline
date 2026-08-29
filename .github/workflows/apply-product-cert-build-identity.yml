@@ -1,0 +1,194 @@
+name: Apply product certification build identity
+
+on:
+  push:
+    branches: [feat/product-certification-v2]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Integrate exact build identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "feat/product-certification-v2"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'anchor not found in {path}: {old[:100]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          replace_once(
+              'CMakeLists.txt',
+              'project(audio_pipeline VERSION 1.3.0 LANGUAGES C)',
+              'project(audio_pipeline VERSION 1.4.0 LANGUAGES C)')
+
+          anchor = '''if(AP_ENABLE_FAST_MATH)\n    set(AP_HAVE_FAST_MATH 1)\nelse()\n    set(AP_HAVE_FAST_MATH 0)\nendif()\n\n'''
+          identity = r'''if(AP_ENABLE_FAST_MATH)
+    set(AP_HAVE_FAST_MATH 1)
+else()
+    set(AP_HAVE_FAST_MATH 0)
+endif()
+
+set(AP_BUILD_SOURCE_REVISION "" CACHE STRING
+    "Exact source revision embedded into additive build identity")
+if(AP_BUILD_SOURCE_REVISION STREQUAL "")
+    execute_process(
+        COMMAND git rev-parse --verify HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE AP_BUILD_SOURCE_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE _AP_GIT_REVISION_RESULT)
+    if(NOT _AP_GIT_REVISION_RESULT EQUAL 0 OR AP_BUILD_SOURCE_REVISION STREQUAL "")
+        set(AP_BUILD_SOURCE_REVISION "unknown")
+    endif()
+endif()
+
+if(CMAKE_C_COMPILER_TARGET)
+    set(AP_BUILD_TARGET_TRIPLE "${CMAKE_C_COMPILER_TARGET}")
+else()
+    execute_process(
+        COMMAND ${CMAKE_C_COMPILER} -dumpmachine
+        OUTPUT_VARIABLE AP_BUILD_TARGET_TRIPLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE _AP_TARGET_RESULT)
+    if(NOT _AP_TARGET_RESULT EQUAL 0 OR AP_BUILD_TARGET_TRIPLE STREQUAL "")
+        set(AP_BUILD_TARGET_TRIPLE "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+endif()
+if(AP_BUILD_TARGET_TRIPLE STREQUAL "-")
+    set(AP_BUILD_TARGET_TRIPLE "unknown")
+endif()
+
+if(CMAKE_BUILD_TYPE)
+    set(AP_BUILD_TYPE_NAME "${CMAKE_BUILD_TYPE}")
+else()
+    set(AP_BUILD_TYPE_NAME "unspecified")
+endif()
+string(TOUPPER "${AP_BUILD_TYPE_NAME}" _AP_BUILD_TYPE_UPPER)
+set(_AP_BUILD_TYPE_FLAGS_VAR "CMAKE_C_FLAGS_${_AP_BUILD_TYPE_UPPER}")
+set(_AP_BUILD_TYPE_FLAGS "${${_AP_BUILD_TYPE_FLAGS_VAR}}")
+string(CONCAT _AP_CONFIG_IDENTITY
+    "version=${PROJECT_VERSION}\n"
+    "modules=${AP_MODULES}\n"
+    "pipeline=${AP_BUILD_PIPELINE}\n"
+    "linux_runtime=${AP_ENABLE_LINUX_RUNTIME}\n"
+    "fast_math=${AP_ENABLE_FAST_MATH}\n"
+    "max_io_rate=${AP_BUILD_MAX_IO_RATE_HZ}\n"
+    "max_internal_rate=${AP_BUILD_MAX_INTERNAL_RATE_HZ}\n"
+    "max_mics=${AP_BUILD_MAX_MIC_CHANNELS}\n"
+    "max_delay_ms=${AP_BUILD_MAX_DELAY_MS}\n"
+    "max_aec_tail_ms=${AP_BUILD_MAX_AEC_TAIL_MS}\n"
+    "runtime_queue_depth=${AP_RUNTIME_QUEUE_DEPTH}\n"
+    "aec_backend=${AP_AEC_BACKEND}\n"
+    "ns_estimator=${AP_NS_ESTIMATOR}\n"
+    "simd_backend=${AP_SIMD_BACKEND}\n"
+    "resampler_mode=${AP_RESAMPLER_MODE}\n"
+    "compiler_id=${CMAKE_C_COMPILER_ID}\n"
+    "compiler_version=${CMAKE_C_COMPILER_VERSION}\n"
+    "target=${AP_BUILD_TARGET_TRIPLE}\n"
+    "build_type=${AP_BUILD_TYPE_NAME}\n"
+    "c_flags=${CMAKE_C_FLAGS}\n"
+    "build_flags=${_AP_BUILD_TYPE_FLAGS}\n")
+string(SHA256 AP_BUILD_CONFIG_DIGEST "${_AP_CONFIG_IDENTITY}")
+
+'''
+          replace_once('CMakeLists.txt', anchor, identity)
+
+          replace_once(
+              'CMakeLists.txt',
+              '''if(AP_BUILD_EXAMPLES AND AP_BUILD_PIPELINE)\n    add_executable(ap_process_pcm examples/process_pcm.c)\n    target_link_libraries(ap_process_pcm PRIVATE audio_pipeline)\nendif()\n''',
+              '''if(AP_BUILD_EXAMPLES)\n    add_executable(ap_build_info_dump examples/build_info.c)\n    target_link_libraries(ap_build_info_dump PRIVATE audio_pipeline)\nendif()\nif(AP_BUILD_EXAMPLES AND AP_BUILD_PIPELINE)\n    add_executable(ap_process_pcm examples/process_pcm.c)\n    target_link_libraries(ap_process_pcm PRIVATE audio_pipeline)\nendif()\n''')
+          PY
+
+          cat > tests/test_build_info.c <<'EOF'
+          #include "audio_pipeline/audio_types.h"
+          #include "audio_pipeline/audio_pipeline_build.h"
+          #include <assert.h>
+          #include <ctype.h>
+          #include <stdio.h>
+          #include <string.h>
+
+          static int is_sha256_hex(const char *text) {
+              size_t i;
+              if (text == NULL || strlen(text) != 64u) return 0;
+              for (i = 0u; i < 64u; ++i) {
+                  if (!isxdigit((unsigned char)text[i])) return 0;
+              }
+              return 1;
+          }
+
+          int main(void) {
+              const ap_build_info_t *info = ap_build_info();
+              const ap_build_info_v2_t *v2 = ap_build_info_v2_get();
+              assert(info != NULL);
+              assert(v2 != NULL);
+              assert(info->version_major == AP_VERSION_MAJOR);
+              assert(info->version_minor == AP_VERSION_MINOR);
+              assert(info->version_patch == AP_VERSION_PATCH);
+              assert(strcmp(info->version, AP_VERSION_STRING) == 0);
+              assert(info->max_io_rate_hz == AP_BUILD_MAX_IO_RATE_HZ);
+              assert(info->max_internal_rate_hz == AP_BUILD_MAX_INTERNAL_RATE_HZ);
+              assert(info->max_mic_channels == AP_BUILD_MAX_MIC_CHANNELS);
+              assert(info->max_delay_ms == AP_BUILD_MAX_DELAY_MS);
+              assert(info->max_aec_tail_ms == AP_BUILD_MAX_AEC_TAIL_MS);
+              assert(info->runtime_queue_depth == AP_BUILD_RUNTIME_QUEUE_DEPTH);
+              assert(info->has_pipeline == AP_HAVE_PIPELINE);
+              assert(info->has_linux_runtime == AP_HAVE_LINUX_RUNTIME);
+              assert(info->fast_math == AP_BUILD_FAST_MATH);
+          #if AP_HAVE_MODULE_AEC
+              assert(info->aec_backend != NULL && info->aec_backend[0] != '\0');
+          #endif
+          #if AP_HAVE_MODULE_NS
+              assert(info->ns_estimator != NULL && info->ns_estimator[0] != '\0');
+          #endif
+              assert(info->simd_backend != NULL && info->simd_backend[0] != '\0');
+          #if AP_HAVE_MODULE_RESAMPLER
+              assert(info->resampler_mode != NULL && info->resampler_mode[0] != '\0');
+          #endif
+              assert(v2->struct_size == sizeof(*v2));
+              assert(v2->api_version == AP_BUILD_INFO_V2_API_VERSION);
+              assert(v2->source_revision != NULL && v2->source_revision[0] != '\0');
+              assert(v2->compiler_id != NULL && v2->compiler_id[0] != '\0');
+              assert(v2->compiler_version != NULL && v2->compiler_version[0] != '\0');
+              assert(v2->target_triple != NULL && v2->target_triple[0] != '\0');
+              assert(v2->build_type != NULL && v2->build_type[0] != '\0');
+              assert(is_sha256_hex(v2->config_digest));
+              assert(strcmp(v2->source_revision, AP_BUILD_SOURCE_REVISION) == 0);
+              assert(strcmp(v2->config_digest, AP_BUILD_CONFIG_DIGEST) == 0);
+              puts("audio-pipeline build info contract: OK");
+              return 0;
+          }
+          EOF
+
+          python3 tools/target_evidence.py --self-test
+          rm -rf build-identity
+          cmake -S . -B build-identity -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-identity --target ap_build_info_dump ap_build_info_tests --parallel
+          ctest --test-dir build-identity -R ap_build_info_tests --output-on-failure
+          output=$(./build-identity/ap_build_info_dump)
+          printf '%s\n' "$output"
+          echo "$output" | grep -Eq '^source_revision=[0-9a-f]{40}$'
+          echo "$output" | grep -Eq '^config_digest=[0-9a-f]{64}$'
+          echo "$output" | grep -q '^compiler_id='
+          echo "$output" | grep -q '^target_triple='
+          git diff --check
+          git rm .github/workflows/apply-product-cert-build-identity.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CMakeLists.txt tests/test_build_info.c
+          git commit -m "build: integrate exact build identity"
+          git push origin HEAD:feat/product-certification-v2

@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
     }
     if (!seconds) seconds = 1u;
     c.io_sample_rate_hz = rate;
+    c.internal_sample_rate_hz = rate < 16000u ? rate : 16000u;
     c.mic_channels = mic_channels;
     if (ap_pipeline_validate_config(&c) != AP_OK ||
         ap_pipeline_init(state, sizeof(state), &c, &p) != AP_OK) return 2;

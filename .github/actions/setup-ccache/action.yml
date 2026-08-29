@@ -1,5 +1,5 @@
 name: Setup compiler cache
-description: Configure content-addressed ccache with GitHub cache storage.
+description: Configure content-addressed ccache when the job image provides ccache.
 inputs:
   namespace:
     description: Stable compiler/target namespace for the cache key.
@@ -7,7 +7,19 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Detect ccache
+      id: detect
+      shell: bash
+      run: |
+        set -euo pipefail
+        if command -v ccache >/dev/null 2>&1; then
+          echo 'available=true' >> "$GITHUB_OUTPUT"
+        else
+          echo 'available=false' >> "$GITHUB_OUTPUT"
+          echo 'ccache is not provided by this runner image; compile cache disabled for this job' >> "$GITHUB_STEP_SUMMARY"
+        fi
     - name: Restore ccache
+      if: steps.detect.outputs.available == 'true'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .ccache
@@ -16,10 +28,10 @@ runs:
         restore-keys: |
           ap-ccache-${{ runner.os }}-${{ inputs.namespace }}-
     - name: Configure ccache environment
+      if: steps.detect.outputs.available == 'true'
       shell: bash
       run: |
         set -euo pipefail
-        command -v ccache >/dev/null
         mkdir -p "$GITHUB_WORKSPACE/.ccache"
         {
           echo "CCACHE_DIR=$GITHUB_WORKSPACE/.ccache"

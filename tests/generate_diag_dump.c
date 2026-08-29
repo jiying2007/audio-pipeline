@@ -31,6 +31,7 @@ static void sleep_ms(unsigned ms) {
 int main(int argc, char **argv) {
     ap_config_t pipeline_config = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t runtime_config = ap_runtime_config_default();
+    ap_runtime_options_t runtime_options = ap_runtime_options_default();
     ap_flight_recorder_config_t recorder_config;
     ap_pipeline_t *pipeline = NULL;
     ap_runtime_t *runtime = NULL;
@@ -68,19 +69,23 @@ int main(int argc, char **argv) {
                             sizeof(pipeline_state),
                             &pipeline_config,
                             &pipeline) == AP_OK);
-    assert(ap_runtime_init(runtime_state,
+    assert(ap_runtime_open(runtime_state,
                            sizeof(runtime_state),
                            pipeline,
                            &runtime_config,
+                           &runtime_options,
                            &runtime) == AP_OK);
     assert(ap_runtime_attach_flight_recorder(runtime, recorder) == AP_OK);
     assert(ap_flight_recorder_trigger(recorder,
                                       AP_EVENT_DIAG_TRIGGERED,
                                       AP_EVENT_WARN) == AP_OK);
     assert(ap_runtime_start(runtime) == AP_OK);
-    assert(ap_runtime_submit(runtime, mic, render) == AP_OK);
+    assert(ap_runtime_submit_frame(runtime, mic, render, NULL) == AP_OK);
+    memset(&runtime_metrics, 0, sizeof(runtime_metrics));
+    runtime_metrics.struct_size = sizeof(runtime_metrics);
+    runtime_metrics.api_version = AP_RUNTIME_API_VERSION;
     for (i = 0u; i < 1000u; ++i) {
-        ap_runtime_get_metrics(runtime, &runtime_metrics);
+        assert(ap_runtime_read_metrics(runtime, &runtime_metrics) == AP_OK);
         if (runtime_metrics.processed_frames >= 1u) break;
         sleep_ms(1u);
     }

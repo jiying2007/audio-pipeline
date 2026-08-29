@@ -5,7 +5,7 @@
 - **Build-supported**: continuously compiled for the stated ABI/SIMD profile.
 - **Emulation-executed**: selected executable contracts run under QEMU for that architecture class.
 - **Board-validated**: benchmark + functional/acoustic corpus pass on a named real board/kernel/compiler/audio route.
-- **Product-certified**: board validation plus thermal/power/contention and 8 h soak pass for the shipping SKU.
+- **Product-certified**: exact shipping build/deploy/execute identity plus approved SKU policy, real acoustic/thermal/power evidence, required route soak, attested evidence and lifecycle archive all pass.
 
 Cross-build/QEMU are never reported as target-board performance.
 
@@ -38,14 +38,9 @@ AP_RUNTIME_QUEUE_DEPTH
 
 These settings are part of the product artifact fingerprint and must be captured in certification. A smaller envelope is a product capability decision, not a runtime overload response.
 
-Current hosted Quality proof-of-pruning:
+Hosted proof-of-pruning measurements have one source of truth: [`ci/resource-baseline.json`](../ci/resource-baseline.json), rendered for humans in [`docs/generated/RESOURCE_BASELINE.md`](generated/RESOURCE_BASELINE.md). Resource-gate CI regenerates both views from the current hosted GCC Release measurement and fails if either checked-in view is stale.
 
-```text
-pipeline: full 78,072 B > LOW 46,904 B > TINY 25,384 B > RAW 1,064 B
-runtime:  full 31,824 B > constrained TINY 4,464 B
-```
-
-Exact values vary by compiler/ABI/build and are not certification claims.
+Those hosted values are build-contract/regression evidence only. They are not ABI constants, target-board RAM claims or product-certification evidence.
 
 ## Runtime resource classes
 
@@ -64,9 +59,12 @@ Compile-time build caps may further restrict these defaults. `ap_config_for_reso
 For each shipping SoC/SKU capture at least:
 
 - product/SKU/board identifier and date;
+- exact source revision and approved shipping policy hash;
 - CPU model/revision/core count and online cpuset;
-- compiler version, ABI, CPU/FPU/SIMD flags and fast-math state;
-- `ap_build_info()` fingerprint and exact pipeline/runtime state sizes;
+- exact shipping compiler executable hash/version, sysroot hash, toolchain-root hash and C flags;
+- `ap_build_info_v2_get()` build identity/config digest and certification binary SHA-256 values;
+- builder runner and distinct DUT runner identity;
+- build, deployed and executed binary SHA-256 equality;
 - kernel, governor/DVFS, cpuset and IRQ affinity;
 - codec/ALSA period/buffer geometry;
 - capture/playback hardware timestamp clock domains and timestamp integration mode;
@@ -76,13 +74,16 @@ For each shipping SoC/SKU capture at least:
 - XRUN, input-full, output-drop and DSP overrun counters;
 - ERLE/convergence, double-talk, path-change and noise corpus results;
 - thermal and product power measurements;
-- 8 h runtime soak result.
+- policy-required real route soak; the checked-in Cortex-A32 LOW shipping policy requires 72 hours;
+- attested certification bundle and an immutable `product-lifecycle` archive receipt.
 
-Use `certification/record.schema.json` as the machine-readable record contract.
+Use `certification/record.schema.json` as the machine-readable record contract. The current shipping record format is v4; older v2/v3 records remain historical evidence and do not satisfy the v4 shipping provenance contract.
 
 ## Acoustic certification
 
 Use the repository `eval/` schema/runner for public interchange and product-specific thresholding. Real/private WAV corpora remain outside the public repository. A release is not considered acoustically certified just because the eval self-test passes.
+
+Advanced BF/SYNC/wind/microphone-health complexity is evidence-triggered rather than roadmap-triggered: if the real shipping corpus meets the approved SKU policy, retain the lower-cost implementation; if it fails, the failed acoustic gates become the evidence for a scoped algorithm upgrade.
 
 ## Unsupported assumptions
 
@@ -94,4 +95,5 @@ Do not assume:
 - NEON/FIFO scheduling is available on every BSP;
 - QEMU timings represent silicon timings;
 - hardware timestamps are comparable unless they share a defined monotonic clock domain;
-- a new software release preserves a previous board certification without rerunning required gates.
+- a new software release preserves a previous board certification without rerunning required gates;
+- existence of a shipping policy means the SKU has passed certification.

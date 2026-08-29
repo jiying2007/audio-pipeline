@@ -188,6 +188,36 @@ def vad_f1(labels: list[int], trace: list[dict]) -> float | None:
     return 2.0 * precision * recall / (precision + recall)
 
 
+def noise_only_attenuation_db(input_samples: Sequence[int], output: Sequence[int],
+                              labels: list[int], rate: int,
+                              output_delay_samples: int) -> tuple[float | None, int]:
+    frame = rate // 100
+    input_energy = 0.0
+    output_energy = 0.0
+    used_frames = 0
+    sample_count = 0
+    for frame_index in range(1, len(labels) - 1):
+        if labels[frame_index - 1] or labels[frame_index] or labels[frame_index + 1]:
+            continue
+        input_start = frame_index * frame
+        output_start = input_start + output_delay_samples
+        if output_start < 0:
+            continue
+        count = min(frame, len(input_samples) - input_start, len(output) - output_start)
+        if count <= 0:
+            continue
+        for offset in range(count):
+            x = float(input_samples[input_start + offset])
+            y = float(output[output_start + offset])
+            input_energy += x * x
+            output_energy += y * y
+        used_frames += 1
+        sample_count += count
+    if sample_count < frame or input_energy <= 1.0e-12:
+        return None, used_frames
+    return 10.0 * math.log10((input_energy + 1.0e-12) / (output_energy + 1.0e-12)), used_frames
+
+
 def load_labels(path: Path) -> list[int]:
     labels = []
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -230,7 +260,10 @@ def invoke(processor: Path, case: dict, corpus_path: Path, work: Path) -> tuple[
                     "--discontinuity-flags", str(int(control.get("discontinuity_flags", 1))),
                     "--discontinuity-lost-frames", str(int(control.get("discontinuity_lost_frames", 1)))]
     if render_raw is None:
-        command += ["--capture-only", str(mic_raw), str(output_path)]
+        profile = case.get("processor_profile", "default")
+        if profile not in {"default", "ns-isolated"}:
+            raise ValueError(f"unsupported processor_profile: {profile}")
+        command += ["--capture-profile", profile, "--capture-only", str(mic_raw), str(output_path)]
     else:
         command += [str(mic_raw), str(render_raw), str(output_path)]
     subprocess.run(command, check=True)
@@ -254,6 +287,7 @@ def threshold_violations(metrics: dict, expected: dict) -> list[dict]:
         "min_output_render_corr_reduction": ("output_render_corr_reduction", "min"),
         "min_erle_db": ("erle_db", "min"),
         "min_vad_f1": ("vad_f1", "min"),
+        "min_noise_only_attenuation_db": ("noise_only_attenuation_db", "min"),
     }
     unknown = set(expected) - set(mapping)
     if unknown:
@@ -311,7 +345,13 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         metrics["erle_db"] = erle_db(echo, output)
     labels_path = resolve(corpus_path, case.get("vad_labels"))
     if labels_path is not None:
-        metrics["vad_f1"] = vad_f1(load_labels(labels_path), trace)
+        labels = load_labels(labels_path)
+        metrics["vad_f1"] = vad_f1(labels, trace)
+        declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
+        output_delay = int(metrics.get("output_alignment_samples", declared_latency_ms * rate // 1000) or 0)
+        attenuation, noise_frames = noise_only_attenuation_db(mic0, output, labels, rate, output_delay)
+        metrics["noise_only_attenuation_db"] = attenuation
+        metrics["noise_only_frames"] = noise_frames
     violations = threshold_violations(metrics, case.get("expected", {}))
     return {
         "case_id": case["case_id"], "split": case["split"], "scenario": case["scenario"],
@@ -391,6 +431,9 @@ def validate_corpus_shape(corpus: dict) -> None:
     ids = [case.get("case_id") for case in corpus.get("cases", [])]
     if not ids or len(set(ids)) != len(ids) or any(not item for item in ids):
         raise ValueError("case_id values must be non-empty and unique")
+    invalid_profiles = sorted({case.get("processor_profile", "default") for case in corpus.get("cases", [])} - {"default", "ns-isolated"})
+    if invalid_profiles:
+        raise ValueError(f"invalid processor_profile values: {invalid_profiles}")
 
 
 def write_evidence(path: Path, report_path: Path, corpus_path: Path, policy_path: Path,
@@ -421,6 +464,10 @@ def self_test() -> None:
     assert alignment == 137
     assert delayed_sdr is not None and delayed_sdr > 100
     assert vad_f1([0, 1, 1, 0], [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]) == 1.0
+    noise_in = [1000, -1000] * 320
+    noise_out = [500, -500] * 320
+    attenuation, used = noise_only_attenuation_db(noise_in, noise_out, [0, 0, 0, 0], rate, 0)
+    assert used == 2 and attenuation is not None and 5.9 < attenuation < 6.2
     assert rms_dbfs([0] * 10) <= -119.0
     print("validation evaluator self-test: OK")
 

@@ -45,6 +45,10 @@ python3 validation/tools/run_validation.py \
 
 For public data, acquire/cache data outside Git, verify the pinned revisions and local seals, build a canonical corpus with `build_public_corpus.py`, then run the same evaluator. The self-hosted `Validation Grade` workflow uses runner label `audio-validation` so large public corpora do not enter GitHub-hosted runners.
 
+## Case-local processor profiles
+
+Validation cases may declare `processor_profile`. The default profile exercises the normal capture graph. `ns-isolated` runs only NS + VAD so NS preservation is not contaminated by HPF or AGC transforms. NS cases with deterministic VAD labels additionally measure `noise_only_attenuation_db` on stable non-speech frames after declared-latency alignment; a positive gate proves the suppressor is not a no-op while SI-SDR protects near-end fidelity.
+
 ## Blind holdout
 
 Never store a blind split key in the repository. A release-validation runner provides `AP_VALIDATION_HOLDOUT_KEY`; `split_holdout.py` HMAC-partitions immutable case identities. Per-case blind metrics can be suppressed from the published report while aggregate gates remain enforceable.

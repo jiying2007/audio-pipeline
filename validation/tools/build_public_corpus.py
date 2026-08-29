@@ -333,7 +333,7 @@ def main() -> int:
             "sample_rate_hz": rate, "mic_channels": 1,
             "mic_audio": str(noisy.resolve()), "render_audio": None,
             "clean_near_audio": str(clean.resolve()), "echo_audio": None, "vad_labels": None,
-            "control": {}, "expected": {}, "source": source
+            "control": {}, "processor_profile": "ns-isolated", "expected": {}, "source": source
         })
         if first_clean is None:
             first_clean = clean

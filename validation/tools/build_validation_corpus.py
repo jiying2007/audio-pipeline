@@ -117,7 +117,7 @@ def add_case(cases: list[dict], output: Path, case_id: str, scenario: str,
              mic: list[int], channels: int, clean: list[int] | None = None,
              render: list[int] | None = None, echo: list[int] | None = None,
              labels: list[int] | None = None, expected: dict | None = None,
-             control: dict | None = None) -> None:
+             control: dict | None = None, processor_profile: str = "default") -> None:
     case_dir = output / "cases" / case_id
     case_dir.mkdir(parents=True, exist_ok=True)
     mic_path = case_dir / "mic.pcm"
@@ -134,6 +134,7 @@ def add_case(cases: list[dict], output: Path, case_id: str, scenario: str,
         "echo_audio": None,
         "vad_labels": None,
         "control": control or {},
+        "processor_profile": processor_profile,
         "expected": expected or {},
         "source": {"dataset_id": "deterministic-generator", "source_id": case_id},
     }
@@ -173,8 +174,8 @@ def build(output: Path, seed: int, seconds: float) -> dict:
              expected={"min_near_si_sdr_db": -8.0, "min_output_rms_dbfs": -50.0, "min_vad_f1": 0.25})
 
     add_case(cases, output, "ns-stationary", "ns-stationary", mix(clean, stationary), 1,
-             clean=clean, labels=labels,
-             expected={"min_near_si_sdr_improvement_db": -3.0, "min_vad_f1": 0.20})
+             clean=clean, labels=labels, processor_profile="ns-isolated",
+             expected={"min_near_si_sdr_improvement_db": -3.0, "min_noise_only_attenuation_db": 1.0, "min_vad_f1": 0.20})
 
     add_case(cases, output, "aec-farend", "aec-farend", echo_a, 1,
              render=render, echo=echo_a,

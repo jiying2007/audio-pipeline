@@ -13,7 +13,7 @@
 static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
-            "[--capture-only] [--metrics-jsonl FILE] "
+            "[--capture-only] [--capture-profile default|ns-isolated] [--metrics-jsonl FILE] "
             "[--echo-path-change-frame N] "
             "[--discontinuity-frame N --discontinuity-flags MASK "
             "--discontinuity-lost-frames N] "
@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
     uint32_t frame_index = 0u;
     uint32_t algorithmic_latency_ms = 0u;
     int capture_only = 0;
+    const char *capture_profile = "default";
     int arg = 1;
     const char *metrics_path = NULL;
     const char *mic_path;
@@ -71,6 +72,13 @@ int main(int argc, char **argv) {
             }
         } else if (strcmp(argv[arg], "--capture-only") == 0) {
             capture_only = 1;
+        } else if (strcmp(argv[arg], "--capture-profile") == 0) {
+            if (++arg >= argc ||
+                (strcmp(argv[arg], "default") != 0 && strcmp(argv[arg], "ns-isolated") != 0)) {
+                usage(argv[0]);
+                return 2;
+            }
+            capture_profile = argv[arg];
         } else if (strcmp(argv[arg], "--metrics-jsonl") == 0) {
             if (++arg >= argc) {
                 usage(argv[0]);
@@ -110,7 +118,8 @@ int main(int argc, char **argv) {
         usage(argv[0]);
         return 2;
     }
-    if ((!capture_only && argc - arg != 3) || (capture_only && argc - arg != 2)) {
+    if ((!capture_only && argc - arg != 3) || (capture_only && argc - arg != 2) ||
+        (!capture_only && strcmp(capture_profile, "default") != 0)) {
         usage(argv[0]);
         return 2;
     }
@@ -126,6 +135,8 @@ int main(int argc, char **argv) {
         cfg.stages &= ~(AP_STAGE_SYNC | AP_STAGE_AEC | AP_STAGE_RES);
         cfg.enable_delay_tracking = 0u;
         cfg.enable_clock_drift_compensation = 0u;
+        if (strcmp(capture_profile, "ns-isolated") == 0)
+            cfg.stages = AP_STAGE_NS | AP_STAGE_VAD;
     }
     if (ap_pipeline_validate_config(&cfg) != AP_OK) {
         fprintf(stderr, "invalid processor geometry/stage configuration\n");

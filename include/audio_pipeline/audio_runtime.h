@@ -215,7 +215,10 @@ ap_status_t ap_runtime_submit_ex(ap_runtime_t *runtime,
 ap_status_t ap_runtime_command(ap_runtime_t *runtime,
                                const ap_runtime_command_t *command);
 
-/* SPSC consumer. */
+/* SPSC consumer. AP_EEMPTY means no completion is available. A submitted frame
+ * can complete with another non-AP_OK pipeline status; in that case the queue
+ * is still advanced, output is zero-filled, and metrics contain the failure-time
+ * pipeline snapshot. This prevents a successful submit from disappearing. */
 ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
                                int16_t *output,
                                ap_metrics_t *metrics_or_null);

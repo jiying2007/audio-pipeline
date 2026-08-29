@@ -103,9 +103,9 @@ jobs:
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: fast-clang
-      - name: Validate test-intelligence tools
+      - name: Validate test-intelligence and assurance tools
         run: |
-          python3 -m py_compile scripts/*.py tools/*.py validation/tools/*.py
+          python3 -m py_compile scripts/*.py tools/*.py certification/*.py validation/tools/*.py
           python3 scripts/ci_impact.py --self-test
           python3 scripts/ci_failure.py --self-test
           python3 scripts/flaky_guard.py --self-test
@@ -115,6 +115,11 @@ jobs:
           python3 scripts/resource_baseline.py --self-test
           python3 tools/hil_board.py --self-test
           python3 tools/target_evidence.py --self-test
+          python3 tools/certification_provenance.py --self-test
+          python3 tools/acoustic_upgrade_decision.py --self-test
+          python3 tools/ap_certify.py --self-test
+          python3 certification/validate_record.py --self-test
+          python3 certification/validate_archive_receipt.py --self-test
           sh scripts/check-architecture.sh
       - name: Strict compile and unit/property gate
         env:

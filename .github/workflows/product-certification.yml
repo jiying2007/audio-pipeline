@@ -1,0 +1,145 @@
+name: Product Certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Exact branch, tag, or commit to certify
+        required: true
+        default: main
+        type: string
+      sku:
+        description: Product SKU identifier
+        required: true
+        type: string
+      policy_path:
+        description: Repository-relative certification policy path
+        required: true
+        default: certification/policies/example-cortex-a32-low.json
+        type: string
+      corpus_manifest:
+        description: Corpus manifest path on the target runner
+        required: true
+        type: string
+      evidence_dir:
+        description: Directory containing benchmark.json, acoustic.json, soak.json
+        required: true
+        default: certification-input
+        type: string
+      capture_device:
+        description: ALSA/product capture route identifier
+        required: true
+        type: string
+      playback_device:
+        description: ALSA/product playback route identifier; use none for capture-only
+        required: true
+        default: none
+        type: string
+      sample_rate:
+        description: Device sample rate
+        required: true
+        default: '16000'
+        type: choice
+        options: ['8000','16000','24000','32000','48000']
+      mic_channels:
+        description: Microphone channels
+        required: true
+        default: '2'
+        type: choice
+        options: ['1','2']
+      shipping_cc:
+        description: Optional shipping compiler executable available on runner
+        required: false
+        type: string
+      shipping_sysroot:
+        description: Optional shipping sysroot path
+        required: false
+        type: string
+      shipping_cflags:
+        description: Optional shipping compiler flags
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-certification-${{ inputs.sku }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: [self-hosted, linux, audio-target]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - name: Record exact certification revision
+        run: |
+          git rev-parse HEAD | tee certification-revision.txt
+          git status --porcelain=v1
+          test -z "$(git status --porcelain=v1)"
+      - name: Verify shipping toolchain contract
+        if: inputs.shipping_cc != ''
+        env:
+          CC: ${{ inputs.shipping_cc }}
+          SYSROOT: ${{ inputs.shipping_sysroot }}
+          CFLAGS: ${{ inputs.shipping_cflags }}
+          BUILD_DIR: build/shipping-certification
+        run: sh scripts/verify-shipping-toolchain.sh
+      - name: Validate target evidence inputs
+        env:
+          EVIDENCE_DIR: ${{ inputs.evidence_dir }}
+          CORPUS: ${{ inputs.corpus_manifest }}
+          POLICY: ${{ inputs.policy_path }}
+        run: |
+          test -f "$POLICY"
+          test -f "$CORPUS"
+          test -f "$EVIDENCE_DIR/benchmark.json"
+          test -f "$EVIDENCE_DIR/acoustic.json"
+          test -f "$EVIDENCE_DIR/soak.json"
+      - name: Assemble immutable certification evidence
+        env:
+          SKU: ${{ inputs.sku }}
+          POLICY: ${{ inputs.policy_path }}
+          CORPUS: ${{ inputs.corpus_manifest }}
+          EVIDENCE_DIR: ${{ inputs.evidence_dir }}
+          CAPTURE: ${{ inputs.capture_device }}
+          PLAYBACK: ${{ inputs.playback_device }}
+          RATE: ${{ inputs.sample_rate }}
+          CHANNELS: ${{ inputs.mic_channels }}
+        run: |
+          playback="$PLAYBACK"
+          test "$playback" = none && playback=""
+          args=""
+          if [ -n "$playback" ]; then args="--playback-device $playback"; fi
+          # shellcheck disable=SC2086
+          python3 tools/ap_certify.py \
+            --sku "$SKU" --policy "$POLICY" --corpus-manifest "$CORPUS" \
+            --benchmark-json "$EVIDENCE_DIR/benchmark.json" \
+            --acoustic-json "$EVIDENCE_DIR/acoustic.json" \
+            --soak-json "$EVIDENCE_DIR/soak.json" \
+            --output-dir certification-out \
+            --capture-device "$CAPTURE" $args \
+            --sample-rate "$RATE" --mic-channels "$CHANNELS"
+      - name: Enforce certification policy and evidence hashes
+        env:
+          POLICY: ${{ inputs.policy_path }}
+          CORPUS: ${{ inputs.corpus_manifest }}
+        run: >-
+          python3 certification/validate_record.py certification-out/record.json
+          --policy "$POLICY"
+          --corpus-manifest "$CORPUS"
+          --evidence-manifest certification-out/evidence-manifest.json
+      - name: Bind workflow revision into evidence package
+        run: |
+          cp certification-revision.txt certification-out/
+          sha256sum certification-out/* | sort > certification-out/SHA256SUMS
+      - name: Upload certification evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: product-certification-${{ inputs.sku }}-${{ github.run_id }}
+          path: certification-out/
+          if-no-files-found: error
+          retention-days: 90

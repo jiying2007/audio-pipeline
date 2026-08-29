@@ -93,7 +93,7 @@ jobs:
           PY
           git rm .github/workflows/apply-v15-test-intelligence.yml
           git rm .github/workflows/ci-image-bootstrap.yml
-          git rm .github/workflows/finalize-v15.yml
+          git rm -f .github/workflows/finalize-v15.yml
           python3 -m py_compile scripts/*.py tools/*.py validation/tools/*.py
           python3 scripts/ci_impact.py --self-test
           python3 scripts/ci_failure.py --self-test

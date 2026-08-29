@@ -173,18 +173,45 @@
     {
       "if": {"properties": {"status": {"const": "product-certified"}}, "required": ["status"]},
       "then": {
-        "properties": {"schema_version": {"enum": [2, 3, 4]}},
         "required": [
           "policy", "thermal_power", "schema_version", "policy_sha256",
           "corpus_manifest_sha256", "evidence_manifest_sha256",
           "collector_version", "toolchain_digest"
-        ]
+        ],
+        "properties": {
+          "schema_version": {"enum": [2, 3, 4]},
+          "performance": {
+            "required": [
+              "active_cpu_percent", "p95_us", "p99_us", "deadline_misses", "rss_kib",
+              "xruns", "overruns", "input_full_events", "output_drop_events"
+            ]
+          },
+          "acoustic": {
+            "required": [
+              "corpus_revision", "cases_total", "cases_passed", "far_end_erle_db",
+              "aec_convergence_ms", "double_talk_near_si_sdr_db",
+              "noise_si_sdr_improvement_db", "vad_f1", "threshold_report"
+            ]
+          },
+          "thermal_power": {
+            "required": ["ambient_c", "max_soc_c", "average_power_w"]
+          },
+          "soak": {
+            "required": ["hours", "passed", "xruns", "deadline_misses", "output_drop_events"],
+            "properties": {
+              "hours": {"minimum": 8},
+              "passed": {"const": true}
+            }
+          },
+          "artifacts": {
+            "required": ["result_json", "benchmark_json", "evidence_manifest", "sha256"]
+          }
+        }
       }
     },
     {
-      "if": {"properties": {"schema_version": {"const": 4}}, "required": ["schema_version"]},
+      "if": {"properties": {"schema_version": {"enum": [3, 4]}}, "required": ["schema_version"]},
       "then": {
-        "required": ["deployment"],
         "properties": {
           "build": {
             "required": [
@@ -192,6 +219,21 @@
               "target_triple", "build_type", "binary_sha256"
             ]
           },
+          "soak": {
+            "required": [
+              "xruns", "deadline_misses", "overruns", "input_full_events",
+              "output_drop_events", "failed_frames", "p95_us", "p99_us"
+            ]
+          },
+          "artifacts": {"required": ["binary_sha256"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"schema_version": {"const": 4}}, "required": ["schema_version"]},
+      "then": {
+        "required": ["deployment"],
+        "properties": {
           "deployment": {
             "required": [
               "source_revision", "builder_runner", "dut_runner", "binary_sha256",

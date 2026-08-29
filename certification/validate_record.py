@@ -39,7 +39,7 @@ V4_DEPLOYMENT_REQUIRED = {
 V4_TOOLCHAIN_REQUIRED = {
     "compiler_path", "compiler_sha256", "compiler_version",
     "sysroot_path", "sysroot_sha256", "toolchain_root_path",
-    "toolchain_root_sha256", "cflags",
+    "toolchain_root_sha256", "cflags", "cmake_args", "cmake_args_sha256",
 }
 HEX64 = re.compile(r"^[0-9a-fA-F]{64}$")
 HEX40 = re.compile(r"^[0-9a-fA-F]{40}$")
@@ -163,9 +163,17 @@ def validate_v4_deployment(record: dict, evidence: dict, errors: list[str]) -> N
         errors.append("deployment.toolchain: required object")
     else:
         require_keys(toolchain, V4_TOOLCHAIN_REQUIRED, "deployment.toolchain", errors)
-        for key in ("compiler_sha256", "sysroot_sha256", "toolchain_root_sha256"):
+        for key in ("compiler_sha256", "sysroot_sha256", "toolchain_root_sha256", "cmake_args_sha256"):
             if not HEX64.fullmatch(str(toolchain.get(key, ""))):
                 errors.append(f"deployment.toolchain.{key}: invalid SHA-256")
+        cmake_args = toolchain.get("cmake_args")
+        if not isinstance(cmake_args, list) or not cmake_args or not all(isinstance(item, str) and item for item in cmake_args):
+            errors.append("deployment.toolchain.cmake_args: must be a non-empty string array")
+        else:
+            payload = json.dumps(cmake_args, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+            expected = hashlib.sha256(payload).hexdigest()
+            if toolchain.get("cmake_args_sha256") != expected:
+                errors.append("deployment.toolchain.cmake_args_sha256: does not match exact CMake arguments")
     if not any(item.get("type") == "deployment-provenance" for item in evidence.get("artifacts", [])):
         errors.append("evidence_manifest: v4 requires deployment-provenance artifact")
 
@@ -408,6 +416,10 @@ def self_test() -> None:
         v4 = json.loads(json.dumps(v3))
         v4["schema_version"] = 4
         v4["soak"]["hours"] = 72
+        cmake_args = ["-DCMAKE_TOOLCHAIN_FILE=/opt/tc/toolchain.cmake", "-DAP_BUILD_PIPELINE=ON"]
+        cmake_args_hash = hashlib.sha256(json.dumps(
+            cmake_args, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        ).encode("utf-8")).hexdigest()
         v4["deployment"] = {
             "schema_version": 1,
             "source_revision": "a" * 40,
@@ -424,6 +436,8 @@ def self_test() -> None:
                 "toolchain_root_path": "/opt/tc",
                 "toolchain_root_sha256": "a" * 64,
                 "cflags": "-O2 -mcpu=cortex-a32",
+                "cmake_args": cmake_args,
+                "cmake_args_sha256": cmake_args_hash,
             },
         }
         v4["artifacts"]["deployment_provenance"] = "evidence/deployment-provenance.json"
@@ -433,6 +447,9 @@ def self_test() -> None:
             "size": provenance.stat().st_size, "sha256": sha256(provenance),
         })
         assert validate(v4, policy_v4, ph, evidence_v4, eh, ch, root) == []
+        bad_v4 = json.loads(json.dumps(v4))
+        bad_v4["deployment"]["toolchain"]["cmake_args_sha256"] = "0" * 64
+        assert validate(bad_v4, policy_v4, ph, evidence_v4, eh, ch, root)
 
         binary.write_bytes(b"tampered")
         assert validate(v3, policy, ph, evidence_v3, eh, ch, root)

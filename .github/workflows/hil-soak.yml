@@ -1,0 +1,191 @@
+name: HIL Tiered Soak
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Exact branch, tag or SHA to test
+        required: true
+        default: main
+        type: string
+      tier:
+        description: Soak tier
+        required: true
+        default: accelerated-pr
+        type: choice
+        options: [accelerated-pr, nightly-1h, release-8h, weekly-24h, certification-72h]
+      board_manifest:
+        description: Board-local JSON manifest path
+        required: true
+        default: /etc/audio-pipeline/board.json
+        type: string
+      capture_device:
+        description: ALSA capture device
+        required: true
+        type: string
+      playback_device:
+        description: ALSA playback device or none
+        required: true
+        default: none
+        type: string
+      farend_file:
+        description: Optional board-local PCM16 far-end stimulus
+        required: false
+        default: ''
+        type: string
+      sample_rate:
+        required: true
+        default: '16000'
+        type: choice
+        options: ['8000','16000','24000','32000','48000']
+      mic_channels:
+        required: true
+        default: '2'
+        type: choice
+        options: ['1','2']
+      dsp_cpu:
+        required: true
+        default: '1'
+        type: string
+      power_input:
+        description: Optional live numeric power sensor path
+        required: false
+        default: ''
+        type: string
+      power_scale:
+        required: true
+        default: '1000000'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hil-${{ inputs.tier }}-${{ inputs.capture_device }}
+  cancel-in-progress: false
+
+jobs:
+  soak:
+    runs-on: [self-hosted, linux, audio-target]
+    timeout-minutes: 4380
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - name: Resolve exact revision and tier
+        id: tier
+        shell: bash
+        run: |
+          set -euo pipefail
+          case '${{ inputs.tier }}' in
+            accelerated-pr) seconds=600; fault=accelerated; max_xruns=5; max_overruns=5 ;;
+            nightly-1h) seconds=3600; fault=none; max_xruns=0; max_overruns=0 ;;
+            release-8h) seconds=28800; fault=none; max_xruns=0; max_overruns=0 ;;
+            weekly-24h) seconds=86400; fault=none; max_xruns=0; max_overruns=0 ;;
+            certification-72h) seconds=259200; fault=none; max_xruns=0; max_overruns=0 ;;
+            *) exit 2 ;;
+          esac
+          echo "seconds=$seconds" >> "$GITHUB_OUTPUT"
+          echo "fault=$fault" >> "$GITHUB_OUTPUT"
+          echo "max_xruns=$max_xruns" >> "$GITHUB_OUTPUT"
+          echo "max_overruns=$max_overruns" >> "$GITHUB_OUTPUT"
+          git rev-parse HEAD | tee /tmp/hil-revision.txt
+          test -z "$(git status --porcelain=v1)"
+      - name: Board preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ap-hil-evidence
+          python3 tools/hil_board.py preflight \
+            --board '${{ inputs.board_manifest }}' \
+            --output /tmp/ap-hil-evidence/preflight.json \
+            --settle-seconds 120
+          cp '${{ inputs.board_manifest }}' /tmp/ap-hil-evidence/board.json
+          cp /tmp/hil-revision.txt /tmp/ap-hil-evidence/source-revision.txt
+      - name: Build exact HIL runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          revision=$(cat /tmp/hil-revision.txt)
+          cmake -S . -B build/hil -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_SOURCE_REVISION="$revision" \
+            -DAP_BUILD_ALSA_EXAMPLE=ON -DAP_STRICT_WARNINGS=ON
+          cmake --build build/hil --parallel --target ap_alsa_runtime_duplex ap_build_info_dump
+          ./build/hil/ap_build_info_dump > /tmp/ap-hil-evidence/build-info.txt
+      - name: Execute tiered route soak
+        shell: bash
+        env:
+          PLAYBACK: ${{ inputs.playback_device }}
+          FAREND: ${{ inputs.farend_file }}
+          POWER: ${{ inputs.power_input }}
+        run: |
+          set -euo pipefail
+          args=(
+            route-soak
+            --binary build/hil/ap_alsa_runtime_duplex
+            --output /tmp/ap-hil-evidence/soak.json
+            --capture-device '${{ inputs.capture_device }}'
+            --seconds '${{ steps.tier.outputs.seconds }}'
+            --dsp-cpu '${{ inputs.dsp_cpu }}'
+            --sample-rate '${{ inputs.sample_rate }}'
+            --mic-channels '${{ inputs.mic_channels }}'
+            --max-xruns '${{ steps.tier.outputs.max_xruns }}'
+            --max-overruns '${{ steps.tier.outputs.max_overruns }}'
+            --power-scale '${{ inputs.power_scale }}'
+            --fault-profile '${{ steps.tier.outputs.fault }}'
+          )
+          if [ "$PLAYBACK" != none ]; then args+=(--playback-device "$PLAYBACK"); fi
+          if [ -n "$FAREND" ]; then args+=(--farend "$FAREND"); fi
+          if [ -n "$POWER" ]; then args+=(--power-input "$POWER"); fi
+          python3 tools/target_evidence.py "${args[@]}"
+      - name: Classify HIL evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('/tmp/ap-hil-evidence')
+          preflight = json.loads((root/'preflight.json').read_text()) if (root/'preflight.json').exists() else None
+          soak = json.loads((root/'soak.json').read_text()) if (root/'soak.json').exists() else None
+          if preflight is None or preflight.get('classification') != 'READY':
+              category = 'INFRA_FAILURE'
+          elif soak is None:
+              category = 'HARDWARE_FAILURE'
+          elif not soak['soak']['passed']:
+              category = 'XRUN_FAILURE' if soak['soak']['xruns'] else 'HARDWARE_FAILURE'
+          else:
+              category = 'NONE'
+          out = {
+              'schema_version': 1,
+              'category': category,
+              'tier': '${{ inputs.tier }}',
+              'source_revision': Path('/tmp/hil-revision.txt').read_text().strip() if Path('/tmp/hil-revision.txt').exists() else None,
+          }
+          (root/'classification.json').write_text(json.dumps(out, indent=2, sort_keys=True)+'\n')
+          print(json.dumps(out, sort_keys=True))
+          PY
+      - name: Board cleanup
+        if: always()
+        continue-on-error: true
+        run: >-
+          python3 tools/hil_board.py cleanup
+          --board '${{ inputs.board_manifest }}'
+          --output /tmp/ap-hil-evidence/cleanup.json
+      - name: Seal HIL evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/ap-hil-evidence
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+      - name: Upload HIL evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hil-${{ inputs.tier }}-${{ github.run_id }}
+          path: /tmp/ap-hil-evidence
+          retention-days: 90
+          if-no-files-found: error

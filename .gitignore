@@ -12,4 +12,6 @@ compile_commands.json
 *.raw
 *.profraw
 *.profdata
+__pycache__/
+*.py[cod]
 .DS_Store

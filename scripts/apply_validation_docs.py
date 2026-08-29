@@ -99,7 +99,7 @@ notice = """
 `validation/datasets.lock.json` references Microsoft AEC Challenge, Microsoft DNS Challenge and OpenSLR SLR28 for optional offline validation. Their audio is not vendored, redistributed, sublicensed or installed by this repository. Dataset users are responsible for reviewing and complying with the original upstream dataset terms. The repository only stores source revisions, source URLs, integrity policy and validation adapters.
 """
 if "## External validation datasets" not in text:
-    text = text.rstrip() + notice + "\n"
-third.write_text(text, encoding="utf-8")
+    text = text.rstrip() + notice
+third.write_text(text.rstrip() + "\n", encoding="utf-8")
 
 Path("scripts/apply_validation_docs.py").unlink()

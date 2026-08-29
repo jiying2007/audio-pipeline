@@ -17,7 +17,13 @@ jobs:
         with:
           ref: product/v1.2.0-closure
       - name: Apply non-workflow closure patch
-        run: python3 tools/apply_v1_2_closure.py
+        run: |
+          python3 tools/apply_v1_2_closure.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/platform/linux/ap_runtime.c')
+          p.write_text(p.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+          PY
       - name: Commit generated source, tests, certification and tooling
         run: |
           git config user.name github-actions[bot]

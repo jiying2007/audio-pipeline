@@ -54,6 +54,12 @@ Nightly `historical-trend` stores revision-bound benchmark and validation points
 
 Representative hosted pipeline/runtime state measurements are generated into [`ci/resource-baseline.json`](../ci/resource-baseline.json) and [`docs/generated/RESOURCE_BASELINE.md`](generated/RESOURCE_BASELINE.md). Resource Gate regenerates those files from the current hosted GCC Release measurement and fails if the checked-in baseline is stale. Other documentation must link to that generated view rather than copying numeric values.
 
+## Trusted runner readiness
+
+Trusted self-hosted labels route jobs but do not prove that the underlying machine is ready. `tools/runner_preflight.py` defines a shared fail-closed infrastructure contract for `audio-validation`, `audio-builder`, `audio-target` and `certification-archive`. The manually dispatched **Trusted Runner Readiness** workflow runs that contract against an exact source ref before long-running lab work. Its JSON result is `READY` or `NOT_READY`; `READY` is infrastructure readiness only and is never acoustic, HIL, performance or product-certification evidence.
+
+The runner-preflight self-test executes in the required hosted Fast Gate. Compact/Full public validation and HIL also execute the applicable preflight inside their real self-hosted jobs so a stale manual readiness result cannot bypass the workflow-local prerequisite check. Cross-role activation and invalidation rules are documented in [`TRUSTED_RUNNERS.md`](TRUSTED_RUNNERS.md).
+
 ## HIL board contract
 
 Every self-hosted product board uses labels `[self-hosted, linux, audio-target]` and a board-local manifest, normally `/etc/audio-pipeline/board.json`, conforming to `hil/board.schema.json`. The manifest binds stable board/revision/SoC/codec/microphone/speaker identity, thermal/power inputs, optional reset/cleanup hooks and the default product audio route.

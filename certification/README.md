@@ -39,6 +39,12 @@ The policy is an acceptance contract, **not measured evidence and not a PASS res
 
 `example-cortex-a32-low.json` is explicitly `shipping_approved=false`. v4 collector/validator logic rejects example and `not-for-shipping` policies.
 
+## Trusted runner readiness
+
+Before allocating a formal certification run, dispatch **Trusted Runner Readiness** against the exact source ref for `audio-builder`, `audio-target`, and `certification-archive`. Require `READY` for the exact shipping compiler/sysroot/toolchain paths, DUT product-input paths and immutable archive command that will be used. See [`docs/TRUSTED_RUNNERS.md`](../docs/TRUSTED_RUNNERS.md).
+
+Readiness is an infrastructure prerequisite only. The Product Certification workflow remains the authority for builder/DUT separation, exact binary digest equality, real target/acoustic/thermal/power/route evidence, 72-hour policy enforcement, artifact attestation and lifecycle archive receipt validation.
+
 ## Automated shipping workflow
 
 `.github/workflows/product-certification.yml` deliberately separates build, DUT execution and long-term archive responsibilities:

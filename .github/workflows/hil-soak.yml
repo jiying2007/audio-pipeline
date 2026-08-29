@@ -199,6 +199,21 @@ jobs:
           PY
           printf '%s\n' "$revision" | tee /tmp/hil-revision.txt
           test -z "$(git status --porcelain=v1)"
+      - name: Preflight isolated audio-target runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ap-hil-evidence
+          args=(
+            --role audio-target
+            --board-manifest '${{ steps.route.outputs.board }}'
+            --require-command cmake --require-command cc
+            --writable-path /tmp
+            --output /tmp/ap-hil-evidence/runner-preflight.json
+          )
+          if [ -n '${{ steps.route.outputs.farend }}' ]; then args+=(--farend-file '${{ steps.route.outputs.farend }}'); fi
+          if [ -n '${{ steps.route.outputs.power }}' ]; then args+=(--power-input '${{ steps.route.outputs.power }}'); fi
+          python3 tools/runner_preflight.py "${args[@]}"
       - name: Board preflight
         shell: bash
         run: |
@@ -254,9 +269,12 @@ jobs:
           from pathlib import Path
           root = Path('/tmp/ap-hil-evidence')
           root.mkdir(parents=True, exist_ok=True)
+          runner = json.loads((root/'runner-preflight.json').read_text()) if (root/'runner-preflight.json').exists() else None
           preflight = json.loads((root/'preflight.json').read_text()) if (root/'preflight.json').exists() else None
           soak = json.loads((root/'soak.json').read_text()) if (root/'soak.json').exists() else None
-          if preflight is None or preflight.get('classification') != 'READY':
+          if runner is None or runner.get('classification') != 'READY':
+              category = 'INFRA_FAILURE'
+          elif preflight is None or preflight.get('classification') != 'READY':
               category = 'INFRA_FAILURE'
           elif soak is None:
               category = 'HARDWARE_FAILURE'

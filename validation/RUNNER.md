@@ -2,6 +2,8 @@
 
 The `audio-validation` runner is a self-hosted Linux runner used only for public-data acoustic validation. It is intentionally separate from product certification and from normal GitHub-hosted CI.
 
+Before allocating a public-data run, dispatch **Trusted Runner Readiness** for role `audio-validation` against the exact source ref and require `READY`. The same `tools/runner_preflight.py` contract is executed again inside Compact/Full validation and its JSON report is included in the validation evidence bundle. See [`docs/TRUSTED_RUNNERS.md`](../docs/TRUSTED_RUNNERS.md) for the cross-role activation sequence.
+
 ## Evidence levels
 
 - `regression`: deterministic generated fixtures; correctness/regression only.
@@ -127,6 +129,7 @@ Both public-validation workflows bind the exact execution binary into the eviden
 - SHA-256 of `ap_process_pcm`;
 - `ap_build_info_dump` output;
 - compiler identity;
+- runner readiness report;
 - cache verification report;
 - corpus/policy/report/evidence hashes.
 

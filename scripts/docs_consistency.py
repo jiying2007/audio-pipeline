@@ -22,6 +22,7 @@ CURRENT_DOCS = (
     "docs/REPOSITORY_GOVERNANCE.md",
     "docs/TESTING.md",
     "docs/TESTING.zh-CN.md",
+    "docs/TRUSTED_RUNNERS.md",
     "hil/README.md",
     "certification/README.md",
     "certification/policies/README.md",

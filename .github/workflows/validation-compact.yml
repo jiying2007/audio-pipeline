@@ -38,7 +38,8 @@ on:
         description: Blind HMAC holdout percentage
         required: true
         default: '20'
-        type: string
+        type: choice
+        options: ['20', '30']
 
 permissions:
   contents: read
@@ -136,12 +137,12 @@ jobs:
             --processor build-validation-compact/ap_process_pcm \
             --output validation-out/validation-report.json \
             --evidence-manifest validation-out/evidence-manifest.json --enforce
-      - name: Run public partition before blind holdout
+      - name: Run validation partition under holdout policy
         if: inputs.tier == 'validation-grade-blind'
         run: |
           python3 validation/tools/run_validation.py \
             --corpus validation-out/public/corpus-validation.json \
-            --policy validation/policies/validation-compact.json \
+            --policy validation/policies/validation-compact-partition.json \
             --dataset-lock validation/datasets.lock.json \
             --processor build-validation-compact/ap_process_pcm \
             --output validation-out/validation-report.json \
@@ -151,7 +152,7 @@ jobs:
         run: |
           python3 validation/tools/run_validation.py \
             --corpus validation-out/public/corpus-blind.json \
-            --policy validation/policies/validation-compact.json \
+            --policy validation/policies/validation-compact-blind.json \
             --dataset-lock validation/datasets.lock.json \
             --processor build-validation-compact/ap_process_pcm \
             --output validation-out/blind-report.json \

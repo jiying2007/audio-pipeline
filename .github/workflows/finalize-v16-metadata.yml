@@ -1,0 +1,53 @@
+name: Finalize v1.6 Metadata
+
+on:
+  push:
+    branches: [feat/product-assurance-v1.6.0]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.repository == 'jiying2007/audio-pipeline'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/product-assurance-v1.6.0
+          fetch-depth: 0
+      - name: Finalize release metadata and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          cmake = Path('CMakeLists.txt')
+          text = cmake.read_text(encoding='utf-8')
+          old = 'project(audio_pipeline VERSION 1.5.0 LANGUAGES C)'
+          new = 'project(audio_pipeline VERSION 1.6.0 LANGUAGES C)'
+          if new not in text:
+              if text.count(old) != 1:
+                  raise SystemExit('unexpected CMake project version state')
+              cmake.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          body = changelog.read_text(encoding='utf-8')
+          section = '''# 1.6.0\n\n- Close the main-branch performance bypass: PR verification compares `origin/main` to the candidate while main push verification compares the exact `event.before` revision to `HEAD`; paired core/NS/resampler/runtime performance gates now run on main as part of FULL verification.\n- Establish one hosted resource source of truth in `ci/resource-baseline.json`, generate `docs/generated/RESOURCE_BASELINE.md`, and make CI re-measure/diff the generated JSON and Markdown so resource values cannot silently drift across API/Performance/Platform documentation.\n- Replace pre-1.0 development language with the stable 1.x ABI policy and keep API evolution additive/versioned.\n- Promote shipping certification to schema v4 with a checked-in shipping-approved Cortex-A32 LOW policy, explicit 72 h minimum soak, and hard rejection of example/not-for-shipping policies.\n- Split product certification across `audio-builder`, `audio-target`, and `certification-archive`: exact shipping compiler/sysroot/CFLAGS build, artifact deployment, build/deployed/executed SHA-256 equality, real target benchmark/route soak, evidence attestation, and immutable product-lifecycle archive receipt validation.\n- Make HIL absence visible instead of silently skipped for scheduled/post-release tiers; real HIL/acoustic/thermal/power evidence remains mandatory and is never synthesized by hosted CI.\n- Add `WARMING_UP`/`MATURE` historical-trend semantics so a passing short history cannot be described as a statistically mature gate; 30 comparable history samples are required for maturity.\n- Add repository-governance audit tooling for PR-only main integration, strict required `summary`, deletion/non-fast-forward protection and protected `v*` tags, while keeping platform Ruleset/immutable-release enablement an explicit administrative prerequisite rather than a repository claim.\n- Add acoustic-upgrade decision tooling: advanced BF/calibration/wind/mic-health/drift work is eligible only when real shipping acoustic evidence violates the approved policy; passing evidence preserves the low-compute baseline.\n- No architecture redesign or speculative DSP expansion is introduced by this release; product-final status still requires enforced GitHub governance plus real shipping-board/HIL/certification evidence.\n\n'''
+          if not body.startswith('# 1.6.0\n'):
+              changelog.write_text(section + body, encoding='utf-8')
+          PY
+          test "$(sed -n 's/^project(audio_pipeline VERSION \([0-9][0-9.]*\).*/\1/p' CMakeLists.txt)" = 1.6.0
+          head -n 1 CHANGELOG.md | grep -Fx '# 1.6.0'
+          rm .github/workflows/finalize-v16-metadata.yml
+          git diff --check
+          git diff -- CMakeLists.txt CHANGELOG.md .github/workflows/finalize-v16-metadata.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CMakeLists.txt CHANGELOG.md .github/workflows/finalize-v16-metadata.yml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'release: finalize audio-pipeline v1.6.0 metadata'
+          git push origin HEAD:feat/product-assurance-v1.6.0

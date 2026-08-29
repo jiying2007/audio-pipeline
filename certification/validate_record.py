@@ -23,6 +23,7 @@ POLICY_REQUIRED = {
     "max_aec_convergence_ms", "min_double_talk_near_si_sdr_db",
     "min_noise_si_sdr_improvement_db", "min_vad_f1", "min_soak_hours",
 }
+POLICY_V4_REQUIRED = POLICY_REQUIRED | {"sku", "shipping_approved"}
 V3_BUILD_REQUIRED = {
     "source_revision", "config_digest", "compiler_id", "compiler_version",
     "target_triple", "build_type", "binary_sha256",
@@ -30,6 +31,15 @@ V3_BUILD_REQUIRED = {
 V3_SOAK_REQUIRED = {
     "xruns", "deadline_misses", "overruns", "input_full_events",
     "output_drop_events", "failed_frames", "p95_us", "p99_us",
+}
+V4_DEPLOYMENT_REQUIRED = {
+    "source_revision", "builder_runner", "dut_runner", "binary_sha256",
+    "toolchain", "result",
+}
+V4_TOOLCHAIN_REQUIRED = {
+    "compiler_path", "compiler_sha256", "compiler_version",
+    "sysroot_path", "sysroot_sha256", "toolchain_root_path",
+    "toolchain_root_sha256", "cflags",
 }
 HEX64 = re.compile(r"^[0-9a-fA-F]{64}$")
 HEX40 = re.compile(r"^[0-9a-fA-F]{40}$")
@@ -77,9 +87,7 @@ def validate_manifest(manifest: dict, errors: list[str]) -> None:
             errors.append(f"evidence_manifest.artifacts[{i}].sha256: invalid")
 
 
-def validate_materialized_manifest(
-    manifest: dict, root: Path, errors: list[str]
-) -> None:
+def validate_materialized_manifest(manifest: dict, root: Path, errors: list[str]) -> None:
     seen: set[str] = set()
     for i, item in enumerate(manifest.get("artifacts", [])):
         if not isinstance(item, dict) or "path" not in item:
@@ -103,24 +111,24 @@ def validate_materialized_manifest(
 
 def validate_v3_build(record: dict, evidence: dict, errors: list[str]) -> None:
     build = record["build"]
-    require_keys(build, V3_BUILD_REQUIRED, "build(v3)", errors)
+    require_keys(build, V3_BUILD_REQUIRED, "build(v3+)", errors)
     if errors:
         return
     source_revision = str(build["source_revision"])
     if not HEX40.fullmatch(source_revision):
-        errors.append("build.source_revision: v3 requires exact 40-hex Git revision")
+        errors.append("build.source_revision: v3+ requires exact 40-hex Git revision")
     if str(build.get("commit")) != source_revision:
-        errors.append("build.commit: must equal build.source_revision in v3")
+        errors.append("build.commit: must equal build.source_revision in v3+")
     if not HEX64.fullmatch(str(build["config_digest"])):
-        errors.append("build.config_digest: v3 requires SHA-256")
+        errors.append("build.config_digest: v3+ requires SHA-256")
     if not HEX64.fullmatch(str(build.get("fingerprint", ""))):
-        errors.append("build.fingerprint: v3 requires SHA-256")
+        errors.append("build.fingerprint: v3+ requires SHA-256")
     for key in ("compiler_id", "compiler_version", "target_triple", "build_type"):
         if not str(build.get(key, "")).strip():
-            errors.append(f"build.{key}: v3 requires non-empty value")
+            errors.append(f"build.{key}: v3+ requires non-empty value")
     binaries = build.get("binary_sha256")
     if not isinstance(binaries, dict) or not binaries:
-        errors.append("build.binary_sha256: v3 requires at least one binary")
+        errors.append("build.binary_sha256: v3+ requires at least one binary")
         return
     for name, value in binaries.items():
         if not name or not HEX64.fullmatch(str(value)):
@@ -132,6 +140,34 @@ def validate_v3_build(record: dict, evidence: dict, errors: list[str]) -> None:
     }
     if {k: str(v).lower() for k, v in binaries.items()} != manifest_binaries:
         errors.append("build.binary_sha256: does not match binary evidence artifacts")
+
+
+def validate_v4_deployment(record: dict, evidence: dict, errors: list[str]) -> None:
+    deployment = record.get("deployment")
+    if not isinstance(deployment, dict):
+        errors.append("deployment(v4): required object")
+        return
+    require_keys(deployment, V4_DEPLOYMENT_REQUIRED, "deployment(v4)", errors)
+    if errors:
+        return
+    if deployment.get("result") != "PASS":
+        errors.append("deployment.result: v4 requires PASS")
+    if deployment.get("source_revision") != record["build"].get("source_revision"):
+        errors.append("deployment.source_revision: must equal build.source_revision")
+    if deployment.get("builder_runner") == deployment.get("dut_runner"):
+        errors.append("deployment: builder and DUT runners must be different")
+    if deployment.get("binary_sha256") != record["build"].get("binary_sha256"):
+        errors.append("deployment.binary_sha256: must equal certified build binaries")
+    toolchain = deployment.get("toolchain")
+    if not isinstance(toolchain, dict):
+        errors.append("deployment.toolchain: required object")
+    else:
+        require_keys(toolchain, V4_TOOLCHAIN_REQUIRED, "deployment.toolchain", errors)
+        for key in ("compiler_sha256", "sysroot_sha256", "toolchain_root_sha256"):
+            if not HEX64.fullmatch(str(toolchain.get(key, ""))):
+                errors.append(f"deployment.toolchain.{key}: invalid SHA-256")
+    if not any(item.get("type") == "deployment-provenance" for item in evidence.get("artifacts", [])):
+        errors.append("evidence_manifest: v4 requires deployment-provenance artifact")
 
 
 def validate(
@@ -186,15 +222,22 @@ def validate(
         errors,
     )
     schema_version = record.get("schema_version")
-    if schema_version not in {2, 3}:
-        errors.append("schema_version: product-certified records require v2 or v3")
+    if schema_version not in {2, 3, 4}:
+        errors.append("schema_version: product-certified records require v2, v3 or v4")
     for key in ("policy_sha256", "corpus_manifest_sha256", "evidence_manifest_sha256", "toolchain_digest"):
         if not HEX64.fullmatch(str(record.get(key, ""))):
             errors.append(f"{key}: must be 64 hexadecimal characters")
     if policy is None:
         errors.append("policy: product-certified requires --policy")
         return errors
-    require_keys(policy, POLICY_REQUIRED, "policy", errors)
+    require_keys(policy, POLICY_V4_REQUIRED if schema_version == 4 else POLICY_REQUIRED, "policy", errors)
+    if schema_version == 4:
+        if policy.get("shipping_approved") is not True:
+            errors.append("policy.shipping_approved: v4 product certification requires true")
+        if str(policy.get("sku")) != str(record.get("sku")):
+            errors.append("policy.sku: must match certification record SKU")
+        if "not-for-shipping" in str(policy.get("policy_id", "")) or str(policy.get("policy_id", "")).startswith("example-"):
+            errors.append("policy.policy_id: example/not-for-shipping policy cannot certify v4")
     if policy_hash and record.get("policy_sha256") != policy_hash:
         errors.append("policy_sha256: does not match supplied policy bytes")
     if corpus_hash and record.get("corpus_manifest_sha256") != corpus_hash:
@@ -205,12 +248,14 @@ def validate(
         validate_manifest(evidence, errors)
         if evidence_hash and record.get("evidence_manifest_sha256") != evidence_hash:
             errors.append("evidence_manifest_sha256: does not match supplied manifest")
-        if schema_version == 3:
+        if schema_version in {3, 4}:
             if evidence_root is None:
-                errors.append("evidence_manifest: v3 requires materialized evidence root")
+                errors.append("evidence_manifest: v3+ requires materialized evidence root")
             else:
                 validate_materialized_manifest(evidence, evidence_root, errors)
             validate_v3_build(record, evidence, errors)
+        if schema_version == 4:
+            validate_v4_deployment(record, evidence, errors)
     if errors:
         return errors
     if record.get("policy") != policy.get("policy_id"):
@@ -226,9 +271,11 @@ def validate(
     require_keys(thermal, {"ambient_c", "max_soc_c", "average_power_w"}, "thermal_power", errors)
     require_keys(soak, {"hours", "passed", "xruns", "deadline_misses", "output_drop_events"}, "soak", errors)
     require_keys(artifacts, {"result_json", "benchmark_json", "evidence_manifest", "sha256"}, "artifacts", errors)
-    if schema_version == 3:
-        require_keys(soak, V3_SOAK_REQUIRED, "soak(v3)", errors)
-        require_keys(artifacts, {"binary_sha256"}, "artifacts(v3)", errors)
+    if schema_version in {3, 4}:
+        require_keys(soak, V3_SOAK_REQUIRED, "soak(v3+)", errors)
+        require_keys(artifacts, {"binary_sha256"}, "artifacts(v3+)", errors)
+    if schema_version == 4:
+        require_keys(artifacts, {"deployment_provenance"}, "artifacts(v4)", errors)
     if errors:
         return errors
 
@@ -238,10 +285,10 @@ def validate(
     for key in {"xruns", "deadline_misses", "output_drop_events"}:
         if int(soak[key]) != 0:
             errors.append(f"soak.{key}: nominal gate requires 0")
-    if schema_version == 3:
+    if schema_version in {3, 4}:
         for key in {"overruns", "input_full_events", "failed_frames"}:
             if int(soak[key]) != 0:
-                errors.append(f"soak.{key}: v3 nominal gate requires 0")
+                errors.append(f"soak.{key}: v3+ nominal gate requires 0")
 
     checks = [
         (float(perf["active_cpu_percent"]) <= float(policy["max_active_cpu_percent"]), "performance.active_cpu_percent"),
@@ -332,6 +379,8 @@ def self_test() -> None:
         binary = root / "ap_bench"
         binary.write_bytes(b"x")
         binary_hash = sha256(binary)
+        provenance = root / "deployment-provenance.json"
+        provenance.write_text("{}\n", encoding="utf-8")
         evidence_v3 = {
             "schema_version": 1, "collector_version": "2", "generated_at": "now",
             "artifacts": [{
@@ -354,6 +403,37 @@ def self_test() -> None:
         })
         v3["artifacts"]["binary_sha256"] = {"ap_bench": binary_hash}
         assert validate(v3, policy, ph, evidence_v3, eh, ch, root) == []
+
+        policy_v4 = {**policy, "sku": "test", "shipping_approved": True, "min_soak_hours": 72}
+        v4 = json.loads(json.dumps(v3))
+        v4["schema_version"] = 4
+        v4["soak"]["hours"] = 72
+        v4["deployment"] = {
+            "schema_version": 1,
+            "source_revision": "a" * 40,
+            "builder_runner": "builder-1",
+            "dut_runner": "dut-1",
+            "binary_sha256": {"ap_bench": binary_hash},
+            "result": "PASS",
+            "toolchain": {
+                "compiler_path": "/opt/tc/bin/cc",
+                "compiler_sha256": "8" * 64,
+                "compiler_version": "GNU 13.3",
+                "sysroot_path": "/opt/tc/sysroot",
+                "sysroot_sha256": "9" * 64,
+                "toolchain_root_path": "/opt/tc",
+                "toolchain_root_sha256": "a" * 64,
+                "cflags": "-O2 -mcpu=cortex-a32",
+            },
+        }
+        v4["artifacts"]["deployment_provenance"] = "evidence/deployment-provenance.json"
+        evidence_v4 = json.loads(json.dumps(evidence_v3))
+        evidence_v4["artifacts"].append({
+            "path": "deployment-provenance.json", "type": "deployment-provenance",
+            "size": provenance.stat().st_size, "sha256": sha256(provenance),
+        })
+        assert validate(v4, policy_v4, ph, evidence_v4, eh, ch, root) == []
+
         binary.write_bytes(b"tampered")
         assert validate(v3, policy, ph, evidence_v3, eh, ch, root)
     print("audio-pipeline certification validator self-test: OK")

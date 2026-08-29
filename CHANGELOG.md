@@ -1,3 +1,16 @@
+# 1.5.0
+
+- Rework PR verification into mandatory Fast Gate -> impact-aware Full Gate while forcing every `main` push through the complete release verification graph.
+- Add conservative `ci_impact.py` dependency routing with unknown/public/build/test-infrastructure changes expanding to FULL, plus dynamic composition, Arm, backend, performance, ALSA, ABI and extended matrices.
+- Replace repeated ARM/QEMU/ALSA/static-analysis package installation with a smoke-tested GHCR toolchain image pinned by immutable digest; add content-addressed `ccache` reuse without caching test or certification results.
+- Add stable CI failure taxonomy, acoustic failure reproducer bundles, Nightly 100-run flaky sentinel and median/MAD historical CPU/latency/acoustic trend gates.
+- Add metamorphic/property DSP contracts for deterministic reset/replay, silence stability and topology invariants.
+- Add real-route accelerated fault injection for codec/PCM restart, render gaps and CPU stalls while keeping nominal certification evidence fault-free.
+- Add HIL board metadata, preflight, cleanup and SHA-256 evidence sealing with `INFRA_FAILURE` separated from product/HIL failures.
+- Add tiered trusted-hardware soak: accelerated PR 10 min, Nightly 1 h, Release 8 h, Weekly 24 h and Certification 72 h. Scheduled/post-release HIL is explicitly gated by `HIL_ENABLED=true`, and untrusted public PR code never auto-runs on self-hosted product boards.
+- Add permanent CI toolchain-image rebuild workflow and formal English/Chinese testing/HIL operations documentation.
+- No hosted, cross-build or QEMU result is promoted to a real product-board certification claim; shipping certification still requires real target evidence.
+
 # 1.4.0
 
 - Add additive build identity v2 with exact source revision, compiler, target triple, build type and SHA-256 configuration digest while preserving the frozen 1.x `ap_build_info_t` layout.

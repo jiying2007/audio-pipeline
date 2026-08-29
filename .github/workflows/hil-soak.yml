@@ -1,6 +1,12 @@
 name: HIL Tiered Soak
 
 on:
+  schedule:
+    - cron: '43 18 * * *'
+    - cron: '17 17 * * 0'
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
     inputs:
       ref:
@@ -20,16 +26,16 @@ on:
         default: /etc/audio-pipeline/board.json
         type: string
       capture_device:
-        description: ALSA capture device
+        description: Manual ALSA capture device; scheduled runs use board.route
         required: true
         type: string
       playback_device:
-        description: ALSA playback device or none
+        description: Manual ALSA playback device or none
         required: true
         default: none
         type: string
       farend_file:
-        description: Optional board-local PCM16 far-end stimulus
+        description: Optional manual board-local PCM16 far-end stimulus
         required: false
         default: ''
         type: string
@@ -61,24 +67,52 @@ permissions:
   contents: read
 
 concurrency:
-  group: hil-${{ inputs.tier }}-${{ inputs.capture_device }}
+  group: hil-${{ github.event_name }}-${{ github.event.schedule || inputs.tier || 'release' }}
   cancel-in-progress: false
 
 jobs:
   soak:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && vars.HIL_ENABLED == 'true') ||
+      (github.event_name == 'workflow_run' && vars.HIL_ENABLED == 'true' && github.event.workflow_run.conclusion == 'success')
     runs-on: [self-hosted, linux, audio-target]
     timeout-minutes: 4380
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
           fetch-depth: 0
-      - name: Resolve exact revision and tier
-        id: tier
+      - name: Resolve exact revision tier and board route
+        id: route
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          INPUT_TIER: ${{ inputs.tier }}
+          INPUT_BOARD: ${{ inputs.board_manifest }}
+          INPUT_CAPTURE: ${{ inputs.capture_device }}
+          INPUT_PLAYBACK: ${{ inputs.playback_device }}
+          INPUT_FAREND: ${{ inputs.farend_file }}
+          INPUT_RATE: ${{ inputs.sample_rate }}
+          INPUT_MICS: ${{ inputs.mic_channels }}
+          INPUT_CPU: ${{ inputs.dsp_cpu }}
+          INPUT_POWER: ${{ inputs.power_input }}
+          INPUT_POWER_SCALE: ${{ inputs.power_scale }}
         run: |
           set -euo pipefail
-          case '${{ inputs.tier }}' in
+          board=${INPUT_BOARD:-/etc/audio-pipeline/board.json}
+          case "$EVENT_NAME" in
+            workflow_dispatch) tier=$INPUT_TIER ;;
+            workflow_run) tier=release-8h ;;
+            schedule)
+              case "$EVENT_SCHEDULE" in
+                '17 17 * * 0') tier=weekly-24h ;;
+                *) tier=nightly-1h ;;
+              esac ;;
+            *) exit 2 ;;
+          esac
+          case "$tier" in
             accelerated-pr) seconds=600; fault=accelerated; max_xruns=5; max_overruns=5 ;;
             nightly-1h) seconds=3600; fault=none; max_xruns=0; max_overruns=0 ;;
             release-8h) seconds=28800; fault=none; max_xruns=0; max_overruns=0 ;;
@@ -86,10 +120,50 @@ jobs:
             certification-72h) seconds=259200; fault=none; max_xruns=0; max_overruns=0 ;;
             *) exit 2 ;;
           esac
-          echo "seconds=$seconds" >> "$GITHUB_OUTPUT"
-          echo "fault=$fault" >> "$GITHUB_OUTPUT"
-          echo "max_xruns=$max_xruns" >> "$GITHUB_OUTPUT"
-          echo "max_overruns=$max_overruns" >> "$GITHUB_OUTPUT"
+          export BOARD="$board" TIER="$tier" SECONDS="$seconds" FAULT="$fault" MAX_XRUNS="$max_xruns" MAX_OVERRUNS="$max_overruns"
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          from pathlib import Path
+
+          event = os.environ['EVENT_NAME']
+          board_path = Path(os.environ['BOARD'])
+          board = json.loads(board_path.read_text(encoding='utf-8'))
+          if event == 'workflow_dispatch':
+              route = {
+                  'capture': os.environ['INPUT_CAPTURE'],
+                  'playback': os.environ.get('INPUT_PLAYBACK') or 'none',
+                  'farend': os.environ.get('INPUT_FAREND') or '',
+                  'rate': os.environ['INPUT_RATE'],
+                  'mics': os.environ['INPUT_MICS'],
+                  'cpu': os.environ['INPUT_CPU'],
+                  'power': os.environ.get('INPUT_POWER') or '',
+                  'power_scale': os.environ.get('INPUT_POWER_SCALE') or '1000000',
+              }
+          else:
+              configured = board.get('route')
+              if not configured:
+                  raise SystemExit('scheduled HIL requires board.route in board manifest')
+              route = {
+                  'capture': str(configured['capture_device']),
+                  'playback': str(configured.get('playback_device') or 'none'),
+                  'farend': str(configured.get('farend_file') or ''),
+                  'rate': str(configured['sample_rate_hz']),
+                  'mics': str(configured['mic_channels']),
+                  'cpu': str(configured['dsp_cpu']),
+                  'power': str(board.get('power_sensor') or ''),
+                  'power_scale': '1000000',
+              }
+          values = {
+              'board': str(board_path), 'tier': os.environ['TIER'],
+              'seconds': os.environ['SECONDS'], 'fault': os.environ['FAULT'],
+              'max_xruns': os.environ['MAX_XRUNS'], 'max_overruns': os.environ['MAX_OVERRUNS'],
+              **route,
+          }
+          for key, value in values.items():
+              if '\n' in value or '\r' in value:
+                  raise SystemExit(f'invalid newline in HIL output {key}')
+              print(f'{key}={value}')
+          PY
           git rev-parse HEAD | tee /tmp/hil-revision.txt
           test -z "$(git status --porcelain=v1)"
       - name: Board preflight
@@ -98,10 +172,10 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/ap-hil-evidence
           python3 tools/hil_board.py preflight \
-            --board '${{ inputs.board_manifest }}' \
+            --board '${{ steps.route.outputs.board }}' \
             --output /tmp/ap-hil-evidence/preflight.json \
             --settle-seconds 120
-          cp '${{ inputs.board_manifest }}' /tmp/ap-hil-evidence/board.json
+          cp '${{ steps.route.outputs.board }}' /tmp/ap-hil-evidence/board.json
           cp /tmp/hil-revision.txt /tmp/ap-hil-evidence/source-revision.txt
       - name: Build exact HIL runtime
         shell: bash
@@ -115,39 +189,38 @@ jobs:
           ./build/hil/ap_build_info_dump > /tmp/ap-hil-evidence/build-info.txt
       - name: Execute tiered route soak
         shell: bash
-        env:
-          PLAYBACK: ${{ inputs.playback_device }}
-          FAREND: ${{ inputs.farend_file }}
-          POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
           args=(
             route-soak
             --binary build/hil/ap_alsa_runtime_duplex
             --output /tmp/ap-hil-evidence/soak.json
-            --capture-device '${{ inputs.capture_device }}'
-            --seconds '${{ steps.tier.outputs.seconds }}'
-            --dsp-cpu '${{ inputs.dsp_cpu }}'
-            --sample-rate '${{ inputs.sample_rate }}'
-            --mic-channels '${{ inputs.mic_channels }}'
-            --max-xruns '${{ steps.tier.outputs.max_xruns }}'
-            --max-overruns '${{ steps.tier.outputs.max_overruns }}'
-            --power-scale '${{ inputs.power_scale }}'
-            --fault-profile '${{ steps.tier.outputs.fault }}'
+            --capture-device '${{ steps.route.outputs.capture }}'
+            --seconds '${{ steps.route.outputs.seconds }}'
+            --dsp-cpu '${{ steps.route.outputs.cpu }}'
+            --sample-rate '${{ steps.route.outputs.rate }}'
+            --mic-channels '${{ steps.route.outputs.mics }}'
+            --max-xruns '${{ steps.route.outputs.max_xruns }}'
+            --max-overruns '${{ steps.route.outputs.max_overruns }}'
+            --power-scale '${{ steps.route.outputs.power_scale }}'
+            --fault-profile '${{ steps.route.outputs.fault }}'
           )
-          if [ "$PLAYBACK" != none ]; then args+=(--playback-device "$PLAYBACK"); fi
-          if [ -n "$FAREND" ]; then args+=(--farend "$FAREND"); fi
-          if [ -n "$POWER" ]; then args+=(--power-input "$POWER"); fi
+          if [ '${{ steps.route.outputs.playback }}' != none ]; then args+=(--playback-device '${{ steps.route.outputs.playback }}'); fi
+          if [ -n '${{ steps.route.outputs.farend }}' ]; then args+=(--farend '${{ steps.route.outputs.farend }}'); fi
+          if [ -n '${{ steps.route.outputs.power }}' ]; then args+=(--power-input '${{ steps.route.outputs.power }}'); fi
           python3 tools/target_evidence.py "${args[@]}"
       - name: Classify HIL evidence
         if: always()
         shell: bash
+        env:
+          TIER: ${{ steps.route.outputs.tier }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           root = Path('/tmp/ap-hil-evidence')
+          root.mkdir(parents=True, exist_ok=True)
           preflight = json.loads((root/'preflight.json').read_text()) if (root/'preflight.json').exists() else None
           soak = json.loads((root/'soak.json').read_text()) if (root/'soak.json').exists() else None
           if preflight is None or preflight.get('classification') != 'READY':
@@ -161,7 +234,7 @@ jobs:
           out = {
               'schema_version': 1,
               'category': category,
-              'tier': '${{ inputs.tier }}',
+              'tier': os.environ.get('TIER') or None,
               'source_revision': Path('/tmp/hil-revision.txt').read_text().strip() if Path('/tmp/hil-revision.txt').exists() else None,
           }
           (root/'classification.json').write_text(json.dumps(out, indent=2, sort_keys=True)+'\n')
@@ -172,20 +245,21 @@ jobs:
         continue-on-error: true
         run: >-
           python3 tools/hil_board.py cleanup
-          --board '${{ inputs.board_manifest }}'
+          --board '${{ steps.route.outputs.board }}'
           --output /tmp/ap-hil-evidence/cleanup.json
       - name: Seal HIL evidence
         if: always()
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p /tmp/ap-hil-evidence
           cd /tmp/ap-hil-evidence
           find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
       - name: Upload HIL evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: hil-${{ inputs.tier }}-${{ github.run_id }}
+          name: hil-${{ steps.route.outputs.tier || 'unresolved' }}-${{ github.run_id }}
           path: /tmp/ap-hil-evidence
           retention-days: 90
           if-no-files-found: error

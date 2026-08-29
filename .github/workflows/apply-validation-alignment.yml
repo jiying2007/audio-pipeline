@@ -25,6 +25,6 @@ jobs:
           git diff --check
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A validation/tools/run_validation.py scripts/apply_validation_alignment.py
+          git add -A validation/tools/run_validation.py examples/process_pcm.c scripts/apply_validation_alignment.py
           git commit -m "validation: align reference metrics to processor latency"
           git push origin HEAD:validation/v1.3.0

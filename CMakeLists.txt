@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 1.3.0 LANGUAGES C)
+project(audio_pipeline VERSION 1.4.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -101,6 +101,70 @@ if(AP_ENABLE_FAST_MATH)
 else()
     set(AP_HAVE_FAST_MATH 0)
 endif()
+
+set(AP_BUILD_SOURCE_REVISION "" CACHE STRING
+    "Exact source revision embedded into additive build identity")
+if(AP_BUILD_SOURCE_REVISION STREQUAL "")
+    execute_process(
+        COMMAND git rev-parse --verify HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE AP_BUILD_SOURCE_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE _AP_GIT_REVISION_RESULT)
+    if(NOT _AP_GIT_REVISION_RESULT EQUAL 0 OR AP_BUILD_SOURCE_REVISION STREQUAL "")
+        set(AP_BUILD_SOURCE_REVISION "unknown")
+    endif()
+endif()
+
+if(CMAKE_C_COMPILER_TARGET)
+    set(AP_BUILD_TARGET_TRIPLE "${CMAKE_C_COMPILER_TARGET}")
+else()
+    execute_process(
+        COMMAND ${CMAKE_C_COMPILER} -dumpmachine
+        OUTPUT_VARIABLE AP_BUILD_TARGET_TRIPLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE _AP_TARGET_RESULT)
+    if(NOT _AP_TARGET_RESULT EQUAL 0 OR AP_BUILD_TARGET_TRIPLE STREQUAL "")
+        set(AP_BUILD_TARGET_TRIPLE "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+endif()
+if(AP_BUILD_TARGET_TRIPLE STREQUAL "-")
+    set(AP_BUILD_TARGET_TRIPLE "unknown")
+endif()
+
+if(CMAKE_BUILD_TYPE)
+    set(AP_BUILD_TYPE_NAME "${CMAKE_BUILD_TYPE}")
+else()
+    set(AP_BUILD_TYPE_NAME "unspecified")
+endif()
+string(TOUPPER "${AP_BUILD_TYPE_NAME}" _AP_BUILD_TYPE_UPPER)
+set(_AP_BUILD_TYPE_FLAGS_VAR "CMAKE_C_FLAGS_${_AP_BUILD_TYPE_UPPER}")
+set(_AP_BUILD_TYPE_FLAGS "${${_AP_BUILD_TYPE_FLAGS_VAR}}")
+string(CONCAT _AP_CONFIG_IDENTITY
+    "version=${PROJECT_VERSION}\n"
+    "modules=${AP_MODULES}\n"
+    "pipeline=${AP_BUILD_PIPELINE}\n"
+    "linux_runtime=${AP_ENABLE_LINUX_RUNTIME}\n"
+    "fast_math=${AP_ENABLE_FAST_MATH}\n"
+    "max_io_rate=${AP_BUILD_MAX_IO_RATE_HZ}\n"
+    "max_internal_rate=${AP_BUILD_MAX_INTERNAL_RATE_HZ}\n"
+    "max_mics=${AP_BUILD_MAX_MIC_CHANNELS}\n"
+    "max_delay_ms=${AP_BUILD_MAX_DELAY_MS}\n"
+    "max_aec_tail_ms=${AP_BUILD_MAX_AEC_TAIL_MS}\n"
+    "runtime_queue_depth=${AP_RUNTIME_QUEUE_DEPTH}\n"
+    "aec_backend=${AP_AEC_BACKEND}\n"
+    "ns_estimator=${AP_NS_ESTIMATOR}\n"
+    "simd_backend=${AP_SIMD_BACKEND}\n"
+    "resampler_mode=${AP_RESAMPLER_MODE}\n"
+    "compiler_id=${CMAKE_C_COMPILER_ID}\n"
+    "compiler_version=${CMAKE_C_COMPILER_VERSION}\n"
+    "target=${AP_BUILD_TARGET_TRIPLE}\n"
+    "build_type=${AP_BUILD_TYPE_NAME}\n"
+    "c_flags=${CMAKE_C_FLAGS}\n"
+    "build_flags=${_AP_BUILD_TYPE_FLAGS}\n")
+string(SHA256 AP_BUILD_CONFIG_DIGEST "${_AP_CONFIG_IDENTITY}")
 
 set(AP_AEC_BACKEND "MDF" CACHE STRING "Compile-time AEC backend: MDF or NLMS")
 set_property(CACHE AP_AEC_BACKEND PROPERTY STRINGS MDF NLMS)
@@ -268,6 +332,10 @@ if(AP_ENABLE_LINUX_RUNTIME)
     endif()
 endif()
 
+if(AP_BUILD_EXAMPLES)
+    add_executable(ap_build_info_dump examples/build_info.c)
+    target_link_libraries(ap_build_info_dump PRIVATE audio_pipeline)
+endif()
 if(AP_BUILD_EXAMPLES AND AP_BUILD_PIPELINE)
     add_executable(ap_process_pcm examples/process_pcm.c)
     target_link_libraries(ap_process_pcm PRIVATE audio_pipeline)

@@ -29,6 +29,14 @@ jobs:
         env:
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
+      - name: Require live repository governance before release
+        env:
+          GH_TOKEN: ${{ secrets.REPOSITORY_GOVERNANCE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || { echo "REPOSITORY_GOVERNANCE_TOKEN is required" >&2; exit 1; }
+          python3 scripts/github_governance.py \
+            --repository "$GITHUB_REPOSITORY" --output /tmp/repository-governance.json
       - name: Require merged PR lineage for release SHA
         env:
           GH_TOKEN: ${{ github.token }}
@@ -201,7 +209,7 @@ jobs:
           set -euo pipefail
           immutable=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.immutable')
           if [ "$immutable" != true ]; then
-            echo "Published release is mutable. Enable repository immutable releases before merging a release version." >&2
+            echo "Published release is mutable despite the preflight governance gate." >&2
             exit 1
           fi
           echo "immutable_release=$TAG"

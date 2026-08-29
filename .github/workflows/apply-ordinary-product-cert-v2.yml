@@ -1,0 +1,170 @@
+name: Apply ordinary product certification v2 contracts
+
+on:
+  push:
+    branches: [feat/product-certification-v2]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Apply and verify ordinary certification files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "feat/product-certification-v2"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          # Ensure the exact configuration digest is computed only after all backend
+          # cache variables have been normalized to their canonical values.
+          cmake = Path('CMakeLists.txt')
+          text = cmake.read_text(encoding='utf-8')
+          start_marker = 'set(AP_BUILD_SOURCE_REVISION "" CACHE STRING\n'
+          digest_marker = 'string(SHA256 AP_BUILD_CONFIG_DIGEST "${_AP_CONFIG_IDENTITY}")\n'
+          resampler_marker = 'string(TOUPPER "${AP_RESAMPLER_MODE}" AP_RESAMPLER_MODE)\n'
+          start = text.find(start_marker)
+          digest = text.find(digest_marker, start if start >= 0 else 0)
+          resampler = text.find(resampler_marker)
+          if start < 0 or digest < 0 or resampler < 0:
+              raise SystemExit('build identity CMake anchors missing')
+          end = digest + len(digest_marker)
+          block = text[start:end]
+          if start < resampler:
+              text = text[:start] + text[end:]
+              resampler = text.find(resampler_marker)
+              insert_at = resampler + len(resampler_marker)
+              text = text[:insert_at] + '\n' + block + text[insert_at:]
+              cmake.write_text(text, encoding='utf-8')
+
+          # Extend the JSON interchange schema without invalidating historical v2 records.
+          schema_path = Path('certification/record.schema.json')
+          schema = json.loads(schema_path.read_text(encoding='utf-8'))
+          build_props = schema['properties']['build']['properties']
+          build_props.update({
+              'source_revision': {'type': 'string', 'pattern': '^[A-Fa-f0-9]{40}$'},
+              'config_digest': {'type': 'string', 'pattern': '^[A-Fa-f0-9]{64}$'},
+              'compiler_id': {'type': 'string', 'minLength': 1},
+              'compiler_version': {'type': 'string', 'minLength': 1},
+              'target_triple': {'type': 'string', 'minLength': 1},
+              'build_type': {'type': 'string', 'minLength': 1},
+              'binary_sha256': {
+                  'type': 'object',
+                  'minProperties': 1,
+                  'additionalProperties': {
+                      'type': 'string', 'pattern': '^[A-Fa-f0-9]{64}$'
+                  },
+              },
+          })
+          artifact_props = schema['properties']['artifacts']['properties']
+          artifact_props['evidence_manifest'] = {'type': 'string', 'minLength': 1}
+          artifact_props['binary_sha256'] = {
+              'type': 'object',
+              'minProperties': 1,
+              'additionalProperties': {
+                  'type': 'string', 'pattern': '^[A-Fa-f0-9]{64}$'
+              },
+          }
+          schema['allOf'][0]['then']['properties']['schema_version'] = {'enum': [2, 3]}
+          rendered = json.dumps(schema, indent=2) + '\n'
+          if schema_path.read_text(encoding='utf-8') != rendered:
+              schema_path.write_text(rendered, encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          section = '''# 1.4.0
+
+- Add additive build identity v2 with exact source revision, compiler, target triple, build type and SHA-256 configuration digest while preserving the frozen 1.x `ap_build_info_t` layout.
+- Make `ap_bench` route-geometry aware so target CPU/latency evidence measures the shipping sample rate and microphone count instead of an implicit 16 kHz/2-mic graph.
+- Turn Product Certification into an `audio-target` self-hosted measurement workflow: exact target build, DSP benchmark, RSS/thermal/power sampling, real ALSA-route soak, immutable evidence packaging and strict policy validation.
+- Upgrade new certification records to schema v3 with certification-binary hashes and materialized evidence size/SHA-256 revalidation; historical v2 records remain accepted.
+- Make real ALSA route soak expose XRUN recovery, queue/drop/overrun/failure and runtime p50/p95/p99/critical telemetry; synthetic runtime soak is no longer accepted as product-route evidence.
+- Keep private real-product acoustic results and corpus manifests external; the workflow refuses to manufacture hosted acoustic evidence or substitute missing power/thermal measurements.
+
+'''
+          if not text.startswith('# 1.4.0\n'):
+              changelog.write_text(section + text, encoding='utf-8')
+
+          performance = Path('docs/PERFORMANCE.md')
+          text = performance.read_text(encoding='utf-8')
+          old = '''## Target wrappers
+
+```bash
+./scripts/run-target-benchmark.sh ./build/ap_bench 120 0.40 9000 1
+./scripts/run-target-soak.sh ./build/ap_runtime_bench 28800 0 0.999 1
+```
+
+The soak defaults to 8 h.
+'''
+          new = '''## Target certification collectors
+
+Target CPU/latency evidence is generated with the actual shipping route geometry, while the soak uses the real ALSA capture/playback path:
+
+```bash
+python3 tools/target_evidence.py benchmark --binary ./build/ap_bench \\
+  --output benchmark.json --seconds 120 --idle-seconds 30 --dsp-cpu 1 \\
+  --sample-rate 16000 --mic-channels 2 --ambient-c 25 \\
+  --power-input /path/to/live_power --power-scale 1000000 --require-sensors
+
+python3 tools/target_evidence.py route-soak --binary ./build/ap_alsa_runtime_duplex \\
+  --output soak.json --capture-device hw:0,0 --playback-device hw:0,0 \\
+  --farend /path/to/farend.pcm --seconds 28800 --dsp-cpu 1 \\
+  --sample-rate 16000 --mic-channels 2 --max-xruns 0 --max-overruns 0 \\
+  --power-input /path/to/live_power --power-scale 1000000
+```
+
+The default product soak is 8 h. `ap_runtime_bench` remains a synthetic runtime regression tool and is not accepted as real product-route soak evidence.
+'''
+          if old in text:
+              performance.write_text(text.replace(old, new, 1), encoding='utf-8')
+          elif '## Target certification collectors\n' not in text:
+              raise SystemExit('target performance documentation anchor missing')
+          PY
+
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libasound2-dev
+          python3 -m py_compile tools/*.py certification/*.py
+          python3 certification/validate_record.py --self-test
+          python3 tools/ap_certify.py --self-test
+          python3 tools/target_evidence.py --self-test
+          python3 -m json.tool certification/record.schema.json >/dev/null
+
+          rm -rf build-cert-final build-cert-alsa build-cert-ema build-cert-mcra
+          cmake -S . -B build-cert-final -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-cert-final --parallel
+          ctest --test-dir build-cert-final --output-on-failure
+          ./build-cert-final/ap_bench 1 0 0 active 8000 1 | tee /tmp/bench-8k.txt
+          ./build-cert-final/ap_bench 1 0 0 active 48000 2 | tee /tmp/bench-48k.txt
+          grep -q 'sample_rate_hz=8000 mic_channels=1' /tmp/bench-8k.txt
+          grep -q 'sample_rate_hz=48000 mic_channels=2' /tmp/bench-48k.txt
+
+          cmake -S . -B build-cert-alsa -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_ALSA_EXAMPLE=ON -DAP_STRICT_WARNINGS=ON
+          cmake --build build-cert-alsa --parallel --target ap_alsa_runtime_duplex ap_build_info_dump
+
+          cmake -S . -B build-cert-ema -DCMAKE_BUILD_TYPE=Release -DAP_NS_ESTIMATOR=EMA -DAP_STRICT_WARNINGS=ON
+          cmake --build build-cert-ema --target ap_build_info_dump --parallel
+          cmake -S . -B build-cert-mcra -DCMAKE_BUILD_TYPE=Release -DAP_NS_ESTIMATOR=MCRA -DAP_STRICT_WARNINGS=ON
+          cmake --build build-cert-mcra --target ap_build_info_dump --parallel
+          ema=$(./build-cert-ema/ap_build_info_dump | sed -n 's/^config_digest=//p')
+          mcra=$(./build-cert-mcra/ap_build_info_dump | sed -n 's/^config_digest=//p')
+          test "${#ema}" -eq 64
+          test "${#mcra}" -eq 64
+          test "$ema" != "$mcra"
+
+          git diff --check
+          if git diff --quiet -- CMakeLists.txt certification/record.schema.json CHANGELOG.md docs/PERFORMANCE.md; then
+            echo 'ordinary certification contracts already applied; no commit needed'
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CMakeLists.txt certification/record.schema.json CHANGELOG.md docs/PERFORMANCE.md
+          git commit -m "certification: finalize product evidence v3 contracts"
+          git push origin HEAD:feat/product-certification-v2

@@ -19,6 +19,30 @@ REQUIRED = {
     "schema_version", "board_id", "revision", "soc", "ram_mib",
     "kernel_family", "audio_codec", "mic_board_revision", "speaker_revision",
 }
+SUPPORTED_RATES = {8000, 16000, 24000, 32000, 48000}
+
+
+def validate_route(route: object) -> None:
+    if route is None:
+        return
+    if not isinstance(route, dict):
+        raise ValueError("route must be an object")
+    required = {"capture_device", "sample_rate_hz", "mic_channels", "dsp_cpu"}
+    missing = sorted(required - set(route))
+    if missing:
+        raise ValueError(f"invalid route; missing={missing}")
+    if not isinstance(route["capture_device"], str) or not route["capture_device"]:
+        raise ValueError("route.capture_device must be non-empty")
+    if int(route["sample_rate_hz"]) not in SUPPORTED_RATES:
+        raise ValueError("route.sample_rate_hz is unsupported")
+    if int(route["mic_channels"]) not in (1, 2):
+        raise ValueError("route.mic_channels must be 1 or 2")
+    if int(route["dsp_cpu"]) < -1:
+        raise ValueError("route.dsp_cpu must be >= -1")
+    for key in ("playback_device", "farend_file"):
+        value = route.get(key)
+        if value is not None and (not isinstance(value, str) or not value):
+            raise ValueError(f"route.{key} must be null or non-empty string")
 
 
 def load_board(path: Path) -> dict:
@@ -26,6 +50,7 @@ def load_board(path: Path) -> dict:
     missing = sorted(REQUIRED - set(data))
     if missing or data.get("schema_version") != 1:
         raise ValueError(f"invalid board manifest; missing={missing}")
+    validate_route(data.get("route"))
     return data
 
 
@@ -102,6 +127,12 @@ def preflight(board: dict, output: Path, settle_seconds: int) -> int:
     inventory = alsa_inventory()
     if not inventory["capture"]:
         failures.append("no ALSA capture inventory detected")
+    route = board.get("route") or {}
+    if route.get("playback_device") and not inventory["playback"]:
+        failures.append("scheduled route requires playback but no ALSA playback inventory detected")
+    farend = route.get("farend_file")
+    if farend and not Path(farend).is_file():
+        failures.append(f"scheduled route far-end fixture missing: {farend}")
 
     report = {
         "schema_version": 1,
@@ -153,10 +184,22 @@ def self_test() -> None:
         "schema_version": 1, "board_id": "b", "revision": "r", "soc": "s",
         "ram_mib": 64, "kernel_family": "linux", "audio_codec": "c",
         "mic_board_revision": "m", "speaker_revision": "sp",
+        "route": {
+            "capture_device": "hw:0,0", "playback_device": None,
+            "farend_file": None, "sample_rate_hz": 16000,
+            "mic_channels": 2, "dsp_cpu": 1,
+        },
     }
     path = Path("/tmp/ap-hil-board-self-test.json")
     path.write_text(json.dumps(sample), encoding="utf-8")
-    assert load_board(path)["board_id"] == "b"
+    loaded = load_board(path)
+    assert loaded["board_id"] == "b" and loaded["route"]["sample_rate_hz"] == 16000
+    try:
+        validate_route({"capture_device": "x", "sample_rate_hz": 11025, "mic_channels": 2, "dsp_cpu": 1})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unsupported route rate accepted")
     path.unlink(missing_ok=True)
     print("HIL board controller self-test: OK")
 

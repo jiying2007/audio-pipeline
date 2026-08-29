@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio-pipeline validation report",
+  "type": "object",
+  "required": ["schema_version", "validation_result", "tier", "source_revision", "bindings", "summary", "violations"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "validation_result": {"enum": ["PASS", "FAIL"]},
+    "tier": {"enum": ["regression", "validation-grade", "validation-grade-blind"]},
+    "source_revision": {"type": "string", "minLength": 7},
+    "bindings": {
+      "type": "object",
+      "required": ["dataset_lock_sha256", "corpus_sha256", "policy_sha256"],
+      "properties": {
+        "dataset_lock_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "corpus_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "summary": {"type": "object"},
+    "cases": {"type": "array"},
+    "violations": {"type": "array"}
+  }
+}

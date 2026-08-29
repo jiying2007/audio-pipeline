@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-smoke-v1",
+  "allowed_tiers": ["regression"],
+  "minimum_cases": 6,
+  "required_public_sources": [],
+  "aggregate": {
+    "min_pass_rate": 1.0
+  }
+}

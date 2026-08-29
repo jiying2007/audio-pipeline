@@ -30,6 +30,58 @@ jobs:
       - name: Verify certification evidence validator
         run: python3 certification/validate_record.py --self-test
 
+  validation-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate validation tooling and pinned public source contract
+        run: |
+          python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/dataset_lock.py self-test
+          python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
+          python3 validation/tools/run_validation.py --self-test
+      - name: Configure offline validation processor
+        run: >-
+          cmake -S . -B build-validation-smoke -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build offline validation processor
+        run: cmake --build build-validation-smoke --target ap_process_pcm --parallel
+      - name: Build deterministic validation corpus twice
+        run: |
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-a --seed 1307
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-b --seed 1307
+          diff -u /tmp/ap-validation-a/corpus.json /tmp/ap-validation-b/corpus.json
+          (cd /tmp/ap-validation-a && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/a.sha256
+          (cd /tmp/ap-validation-b && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/b.sha256
+          diff -u /tmp/a.sha256 /tmp/b.sha256
+      - name: Enforce self-validation regression policy
+        run: |
+          python3 validation/tools/run_validation.py \
+            --corpus /tmp/ap-validation-a/corpus.json \
+            --policy validation/policies/validation-smoke.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor ./build-validation-smoke/ap_process_pcm \
+            --output /tmp/ap-validation-a/report.json \
+            --evidence-manifest /tmp/ap-validation-a/evidence-manifest.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('/tmp/ap-validation-a/report.json').read_text())
+          print(json.dumps(report['summary'], sort_keys=True))
+          failed = [case for case in report['cases'] if not case['passed']]
+          for case in failed:
+              print(json.dumps({
+                  'case_id': case['case_id'],
+                  'scenario': case['scenario'],
+                  'metrics': case['metrics'],
+                  'violations': case['violations'],
+              }, sort_keys=True))
+          assert report['tier'] == 'regression'
+          assert report['summary']['cases'] >= 6
+          assert report['validation_result'] == 'PASS'
+          PY
+
   diagnostics-replay:
     runs-on: ubuntu-latest
     steps:

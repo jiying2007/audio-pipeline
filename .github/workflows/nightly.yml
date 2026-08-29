@@ -39,3 +39,29 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - run: python3 eval/run_eval.py --self-test
       - run: python3 certification/validate_record.py --self-test
+      - run: python3 validation/tools/dataset_lock.py self-test
+      - run: python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
+      - run: python3 validation/tools/run_validation.py --self-test
+
+  validation-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Build offline processor
+        run: |
+          cmake -S . -B build-validation-nightly -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-validation-nightly --target ap_process_pcm --parallel
+      - name: Run independent deterministic seeds
+        run: |
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-validation-$seed"
+            python3 validation/tools/build_validation_corpus.py --output "$root" --seed "$seed"
+            python3 validation/tools/run_validation.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor ./build-validation-nightly/ap_process_pcm \
+              --output "$root/report.json" \
+              --evidence-manifest "$root/evidence-manifest.json" \
+              --enforce
+          done

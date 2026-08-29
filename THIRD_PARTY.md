@@ -20,3 +20,7 @@ The in-tree MDF/AUMDF-lite backend uses repository-specific 2 ms partitions, bou
 Standard algorithm names such as NLMS, MDF/AUMDF, MCRA, Wiener filtering, STFT, delay-and-sum, normalized cross-correlation and sample-slip clock correction do not imply copied source.
 
 Any future vendored/linked third-party backend must add its exact version/commit, license/notices, build isolation and target-board CPU/RSS measurements before becoming a default dependency.
+
+## External validation datasets
+
+`validation/datasets.lock.json` references Microsoft AEC Challenge, Microsoft DNS Challenge and OpenSLR SLR28 for optional offline validation. Their audio is not vendored, redistributed, sublicensed or installed by this repository. Dataset users are responsible for reviewing and complying with the original upstream dataset terms. The repository only stores source revisions, source URLs, integrity policy and validation adapters.

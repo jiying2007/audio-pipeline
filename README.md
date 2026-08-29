@@ -85,6 +85,31 @@ The generated installed `audio_pipeline_build.h` plus `ap_build_info()` report t
 
 The default boundary resampler uses small fixed FIR filters for supported downsampling ratios to reduce aliasing. `FAST` retains the previous lightweight interpolation/decimation behavior as an explicit product choice. The API reports resampler filter delay and high-level algorithmic latency includes that delay.
 
+## Validation-grade self-validation
+
+`validation/` is the formal acoustic evidence layer between unit tests and real target-board certification. It intentionally separates trust levels:
+
+- `regression`: deterministic generated fixtures used by PR/main and Nightly CI; never presented as validation-grade evidence.
+- `validation-grade`: pinned public real data plus locally sealed public-derived simulation. The current source lock pins Microsoft AEC Challenge, Microsoft DNS Challenge and OpenSLR SLR28 metadata without storing third-party corpora in Git.
+- `validation-grade-blind`: the same sealed corpus HMAC-partitioned with a repository-external holdout key; release reports may suppress per-case blind metrics.
+- `product-certified`: real shipping hardware/audio route plus performance, thermal, power and soak evidence under `certification/`.
+
+The validation runner emits SI-SDR, SI-SDR improvement, AEC render-correlation reduction, ERLE and VAD F1 where references exist. Every report binds the exact dataset lock, corpus manifest, policy and source revision by SHA-256 and emits an evidence manifest.
+
+```bash
+python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation --seed 1307
+cmake -S . -B build-validation -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF
+cmake --build build-validation --target ap_process_pcm --parallel
+python3 validation/tools/run_validation.py \
+  --corpus /tmp/ap-validation/corpus.json \
+  --policy validation/policies/validation-smoke.json \
+  --dataset-lock validation/datasets.lock.json \
+  --processor build-validation/ap_process_pcm \
+  --output /tmp/ap-validation/report.json --enforce
+```
+
+Large public corpora remain outside the repository. `Validation Grade` runs only on a self-hosted `audio-validation` runner after dataset revision/checksum/seal verification. See `validation/README.md`.
+
 ## Hardware timestamps, discontinuities and route changes
 
 Products with trustworthy capture/playback hardware timestamps can seed SYNC using:

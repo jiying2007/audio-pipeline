@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "scenario_matrix_id": "mobile-robot-validation-v1",
+  "dimensions": {
+    "talk_state": ["nearend", "farend", "doubletalk"],
+    "snr_db": [-10, -5, 0, 5, 10, 20],
+    "ser_db": [-10, -5, 0, 5, 10],
+    "echo_delay_ms": [0, 20, 60, 120, 200, 300],
+    "clock_drift_ppm": [-200, -100, 0, 100, 200],
+    "target_angle_deg": [-90, -60, -30, 0, 30, 60, 90],
+    "target_distance_m": [0.3, 0.5, 1.0, 2.0, 3.0],
+    "floor": ["hard", "carpet"],
+    "motion": ["stationary", "straight", "turn", "spin"],
+    "noise": ["stationary", "fan", "tv", "speech", "traffic", "wind", "motor", "wheel", "gearbox", "floor-friction"],
+    "echo_path": ["static", "sudden-change", "movement"],
+    "stream_event": ["none", "render-gap", "capture-gap", "xrun", "codec-reopen"]
+  },
+  "required_scenarios": [
+    "aec-farend", "aec-doubletalk", "aec-echo-path-change", "aec-render-gap",
+    "ns-stationary", "ns-nonstationary", "bf-offaxis", "vad-nearend"
+  ]
+}

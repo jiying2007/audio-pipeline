@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio-pipeline validation corpus",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "corpus_id",
+    "tier",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "corpus_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tier": {
+      "enum": [
+        "regression",
+        "validation-grade",
+        "validation-grade-blind"
+      ]
+    },
+    "generator": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sealed_data": {
+      "type": "boolean"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id",
+          "split",
+          "scenario",
+          "sample_rate_hz",
+          "mic_channels",
+          "mic_audio"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "split": {
+            "enum": [
+              "dev",
+              "validation",
+              "blind"
+            ]
+          },
+          "scenario": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sample_rate_hz": {
+            "enum": [
+              8000,
+              16000,
+              24000,
+              32000,
+              48000
+            ]
+          },
+          "mic_channels": {
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "mic_audio": {
+            "type": "string"
+          },
+          "render_audio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clean_near_audio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "echo_audio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vad_labels": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "control": {
+            "type": "object"
+          },
+          "expected": {
+            "type": "object"
+          },
+          "source": {
+            "type": "object"
+          },
+          "processor_profile": {
+            "enum": [
+              "default",
+              "ns-isolated"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

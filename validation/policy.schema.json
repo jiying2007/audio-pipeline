@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio-pipeline validation policy",
+  "type": "object",
+  "required": ["schema_version", "policy_id", "allowed_tiers", "aggregate"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "policy_id": {"type": "string", "minLength": 1},
+    "allowed_tiers": {"type": "array", "items": {"enum": ["regression", "validation-grade", "validation-grade-blind"]}, "minItems": 1},
+    "minimum_cases": {"type": "integer", "minimum": 1},
+    "required_public_sources": {"type": "array", "items": {"type": "string"}},
+    "aggregate": {
+      "type": "object",
+      "properties": {
+        "min_pass_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "min_median_near_si_sdr_improvement_db": {"type": "number"},
+        "min_median_erle_db": {"type": "number"},
+        "min_median_output_render_corr_reduction": {"type": "number"},
+        "min_vad_f1": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

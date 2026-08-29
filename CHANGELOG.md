@@ -1,3 +1,12 @@
+# 1.3.0
+
+- Add a validation-grade self-validation layer with explicit `regression`, `validation-grade`, `validation-grade-blind`, and `product-certified` trust boundaries.
+- Pin Microsoft AEC Challenge and DNS Challenge source revisions plus OpenSLR SLR28 metadata; require local SHA-256 sealing/checksum-index verification before public data can contribute to validation-grade evidence.
+- Add deterministic multi-scenario regression corpus generation and a dependency-free evaluator for SI-SDR, SI-SDR improvement, AEC render-correlation reduction, ERLE, VAD F1, dynamic echo-path changes, and stream discontinuities.
+- Add public AEC/DNS/SLR28 corpus adapters, HMAC blind holdout splitting with repository-external keys, hash-bound validation reports/evidence manifests, and a self-hosted `audio-validation` workflow.
+- Extend `ap_process_pcm` with offline per-frame metrics JSONL and deterministic control-event injection without changing the core DSP ABI.
+- Gate every PR/main on deterministic self-validation, run independent seeds nightly, and publish a clearly regression-only validation-smoke report alongside release SDK/source/SBOM artifacts.
+
 # 1.2.0
 
 - Close runtime async failure semantics: failed DSP submissions publish a bounded completion status when output capacity exists, increment failure counters, emit `AP_EVENT_PIPELINE_ERROR`, and latch ERROR/FATAL state independently from the event queue.

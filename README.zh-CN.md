@@ -85,6 +85,31 @@ AP_RUNTIME_QUEUE_DEPTH
 
 默认边界 resampler 对固定下采样比例使用小型 FIR 抑制 alias；FAST 保留轻量插值/抽取行为。API 提供 filter delay，高层 algorithmic latency 会计入该延迟。
 
+## 验证级自验证
+
+`validation/` 是 unit/regression test 与真实产品板认证之间的正式声学证据层，并强制区分可信等级：
+
+- `regression`：PR/main 和 Nightly 使用的确定性自生成 fixture，**不得**包装成验证级证据。
+- `validation-grade`：锁定 revision 的公共真实数据 + 已本地封存的公共数据派生仿真。当前锁定 Microsoft AEC Challenge、Microsoft DNS Challenge、OpenSLR SLR28；第三方大数据不进入 Git。
+- `validation-grade-blind`：使用仓库外 HMAC key 对同一封存 corpus 做 blind holdout，发布报告可隐藏逐 case blind 指标。
+- `product-certified`：仍必须使用真实发货硬件/音频 route，加 CPU、时延、thermal、power、soak 等 `certification/` 证据。
+
+验证 runner 在存在 reference 时计算 SI-SDR、SI-SDR improvement、AEC render-correlation reduction、ERLE、VAD F1；每份报告都会用 SHA-256 绑定 dataset lock、corpus manifest、policy 和 source revision，并生成 evidence manifest。
+
+```bash
+python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation --seed 1307
+cmake -S . -B build-validation -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF
+cmake --build build-validation --target ap_process_pcm --parallel
+python3 validation/tools/run_validation.py \
+  --corpus /tmp/ap-validation/corpus.json \
+  --policy validation/policies/validation-smoke.json \
+  --dataset-lock validation/datasets.lock.json \
+  --processor build-validation/ap_process_pcm \
+  --output /tmp/ap-validation/report.json --enforce
+```
+
+大规模公共 corpus 始终保存在仓库外；`Validation Grade` 只在带 `audio-validation` 标签的 self-hosted runner 上运行，并先验证 revision/checksum/local seal。详见 `validation/README.md`。
+
 ## 时间戳、断流与回声路径变化
 
 产品可用 `ap_pipeline_observe_io_timestamps()` 提供同一 monotonic clock domain 中对应的 capture/playback hardware timestamp；明确的 speaker route、codec/gain path 变化使用 `ap_pipeline_notify_echo_path_change()`。

@@ -58,7 +58,13 @@
             "sysroot_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
             "toolchain_root_path": {"type": "string", "minLength": 1},
             "toolchain_root_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
-            "cflags": {"type": "string"}
+            "cflags": {"type": "string"},
+            "cmake_args": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "cmake_args_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
           },
           "additionalProperties": true
         },
@@ -244,7 +250,7 @@
                 "required": [
                   "compiler_path", "compiler_sha256", "compiler_version",
                   "sysroot_path", "sysroot_sha256", "toolchain_root_path",
-                  "toolchain_root_sha256", "cflags"
+                  "toolchain_root_sha256", "cflags", "cmake_args", "cmake_args_sha256"
                 ]
               }
             }

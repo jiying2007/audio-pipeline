@@ -61,6 +61,17 @@ jobs:
           set -euo pipefail
           git rev-parse HEAD | tee validation-revision.txt
           test -z "$(git status --porcelain=v1)"
+      - name: Preflight isolated audio-validation runner
+        env:
+          DATA_ROOT: ${{ inputs.data_root }}
+          SEAL: ${{ inputs.seal_path }}
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role audio-validation \
+            --data-root "$DATA_ROOT" --seal "$SEAL" \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output validation-runner-preflight.json
       - name: Verify compact sealed public cache
         env:
           DATA_ROOT: ${{ inputs.data_root }}
@@ -161,6 +172,7 @@ jobs:
       - name: Bind exact revision cache processor and package evidence
         run: |
           cp validation-revision.txt validation-out/
+          cp validation-runner-preflight.json validation-out/
           cp validation-cache-verification.json validation-out/
           cp validation-processor.sha256 validation-out/
           cp validation-build-info.txt validation-out/

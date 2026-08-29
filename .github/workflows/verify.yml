@@ -130,6 +130,7 @@ jobs:
           python3 certification/validate_record.py --self-test
           python3 certification/validate_archive_receipt.py --self-test
           python3 -m json.tool certification/record.schema.json >/dev/null
+          python3 -c 'import json; s=json.load(open("certification/record.schema.json")); assert s["properties"]["schema_version"]["const"] == 4'
           grep -q '^      shipping_cmake_args_json:' .github/workflows/product-certification.yml
           ! grep -q '^      shipping_cmake_args:$' .github/workflows/product-certification.yml
           grep -q 'timeout-minutes: 4380' .github/workflows/product-certification.yml
@@ -147,9 +148,9 @@ jobs:
           cmake --build build-fast-gate --parallel
           ctest --test-dir build-fast-gate --output-on-failure
           ccache --show-stats
-      - name: Additive ABI gate when impacted
+      - name: V2 hard-cut ABI gate when impacted
         if: needs.impact.outputs.run_abi == 'true'
-        run: sh scripts/check-abi-contract.sh v1.1.1
+        run: sh scripts/check-abi-contract.sh
 
   fast-gate:
     if: always()

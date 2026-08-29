@@ -108,11 +108,19 @@ jobs:
           # shellcheck disable=SC2086
           arm-linux-gnueabihf-gcc $common -Iinclude -Ibuild/arm-tiny/generated \
             tests/rom_probe.c build/arm-tiny/libaudio_pipeline.a -lm -o /tmp/rom-tiny
-      - name: Enforce Cortex-A32 linked ROM envelope
+      - name: Enforce Cortex-A32 ROM envelopes and physical module pruning
         run: |
           rom_bytes() { arm-linux-gnueabihf-size "$1" | awk 'NR==2 {print $1+$2}'; }
           full=$(rom_bytes /tmp/rom-full)
           tiny=$(rom_bytes /tmp/rom-tiny)
           echo "cortex_a32_pipeline_rom_bytes full=$full tiny=$tiny"
-          test "$full" -le 262144
-          test "$tiny" -lt "$full"
+          # v1.2 measured references are ~30.8 KiB FULL and ~33.0 KiB constrained TINY.
+          # Code size is not required to be monotonic with RAM envelopes because
+          # compile-time maxima change constant folding and generated control code.
+          test "$full" -le 40960
+          test "$tiny" -le 40960
+          arm-linux-gnueabihf-nm /tmp/rom-full | grep -q 'ap_beamformer'
+          if arm-linux-gnueabihf-nm /tmp/rom-tiny | grep -q 'ap_beamformer'; then
+            echo "TINY Cortex-A32 ROM unexpectedly retains beamformer symbols" >&2
+            exit 3
+          fi

@@ -153,7 +153,9 @@ jobs:
         run: |
           cp validation-revision.txt validation-out/
           cp validation-dataset-verification.json validation-out/
-          find validation-out -type f -print0 | sort -z | xargs -0 sha256sum > validation-out/SHA256SUMS
+          find validation-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > /tmp/validation-SHA256SUMS
+          mv /tmp/validation-SHA256SUMS validation-out/SHA256SUMS
       - name: Upload validation evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

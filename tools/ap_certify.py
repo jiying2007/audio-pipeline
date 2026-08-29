@@ -13,7 +13,7 @@ import tempfile
 import time
 from pathlib import Path
 
-VERSION = "3.0"
+VERSION = "3.1"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -26,7 +26,7 @@ def digest(path: Path) -> str:
 
 
 def canonical_digest(value: object) -> str:
-    data = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    data = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(data).hexdigest()
 
 
@@ -200,9 +200,22 @@ def validate_deployment(provenance: dict, revision: str, binary_hashes: dict[str
     toolchain = provenance.get("toolchain")
     if not isinstance(toolchain, dict):
         raise ValueError("deployment provenance has no toolchain object")
-    for key in ("compiler_sha256", "sysroot_sha256", "toolchain_root_sha256"):
+    required_toolchain = {
+        "compiler_path", "compiler_sha256", "compiler_version",
+        "sysroot_path", "sysroot_sha256", "toolchain_root_path",
+        "toolchain_root_sha256", "cflags", "cmake_args", "cmake_args_sha256",
+    }
+    missing_toolchain = sorted(required_toolchain - toolchain.keys())
+    if missing_toolchain:
+        raise ValueError("deployment toolchain missing: " + ", ".join(missing_toolchain))
+    for key in ("compiler_sha256", "sysroot_sha256", "toolchain_root_sha256", "cmake_args_sha256"):
         if not HEX64.fullmatch(str(toolchain.get(key, ""))):
             raise ValueError(f"deployment toolchain {key} is not SHA-256")
+    cmake_args = toolchain.get("cmake_args")
+    if not isinstance(cmake_args, list) or not cmake_args or not all(isinstance(item, str) and item for item in cmake_args):
+        raise ValueError("deployment toolchain cmake_args must be a non-empty string array")
+    if toolchain.get("cmake_args_sha256") != canonical_digest(cmake_args):
+        raise ValueError("deployment toolchain cmake_args_sha256 mismatch")
 
 
 def assemble(args: argparse.Namespace) -> Path:
@@ -372,13 +385,28 @@ def self_test() -> int:
             "dut_runner": "dut",
             "binary_sha256": {"sample": digest(sample)},
             "toolchain": {
+                "compiler_path": "/opt/tc/bin/cc",
                 "compiler_sha256": "c" * 64,
+                "compiler_version": "test-cc 1.0",
+                "sysroot_path": "/opt/tc/sysroot",
                 "sysroot_sha256": "d" * 64,
+                "toolchain_root_path": "/opt/tc",
                 "toolchain_root_sha256": "e" * 64,
+                "cflags": "-O2 -mcpu=cortex-a32",
+                "cmake_args": ["-DCMAKE_TOOLCHAIN_FILE=/opt/tc/toolchain.cmake"],
+                "cmake_args_sha256": canonical_digest(["-DCMAKE_TOOLCHAIN_FILE=/opt/tc/toolchain.cmake"]),
             },
             "result": "PASS",
         }
         validate_deployment(deployment, "a" * 40, {"sample": digest(sample)})
+        bad = json.loads(json.dumps(deployment))
+        bad["toolchain"]["cmake_args_sha256"] = "0" * 64
+        try:
+            validate_deployment(bad, "a" * 40, {"sample": digest(sample)})
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("tampered CMake argument digest must fail")
     print("audio-pipeline certification collector self-test: OK")
     return 0
 

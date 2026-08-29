@@ -141,6 +141,7 @@ int main(int argc, char **argv) {
     AP_ALIGN16 static unsigned char runtime_mem[AP_RUNTIME_STATE_MAX_BYTES];
     ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rt_cfg = ap_runtime_config_default();
+    ap_runtime_options_t rt_opts = ap_runtime_options_default();
     ap_pipeline_t *pipeline = NULL;
     ap_runtime_t *runtime = NULL;
     snd_pcm_t *capture = NULL, *playback = NULL;
@@ -220,7 +221,7 @@ int main(int argc, char **argv) {
         goto done;
     }
     if (ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline) != AP_OK ||
-        ap_runtime_init(runtime_mem, sizeof(runtime_mem), pipeline, &rt_cfg, &runtime) != AP_OK ||
+        ap_runtime_open(runtime_mem, sizeof(runtime_mem), pipeline, &rt_cfg, &rt_opts, &runtime) != AP_OK ||
         ap_runtime_start(runtime) != AP_OK) {
         fprintf(stderr, "audio runtime init/start failed\n");
         goto done;
@@ -234,7 +235,7 @@ int main(int argc, char **argv) {
         int gap_started = 0;
         memset(&metadata, 0, sizeof(metadata));
         metadata.struct_size = sizeof(metadata);
-        metadata.api_version = AP_RUNTIME_CONTROL_API_VERSION;
+        metadata.api_version = AP_RUNTIME_API_VERSION;
         metadata.stream_sequence = produced;
 
         if (fault_route_restart_every && produced > 0u &&
@@ -288,7 +289,7 @@ int main(int argc, char **argv) {
             nap_ms(fault_cpu_stall_ms);
             injected_cpu_stalls++;
         }
-        s = ap_runtime_submit_ex(runtime, mic, playback ? render : NULL, metadata_ptr);
+        s = ap_runtime_submit_frame(runtime, mic, playback ? render : NULL, metadata_ptr);
         if (s == AP_EFULL) {
             fprintf(stderr, "DSP input queue full at frame %u\n", produced);
             goto done;
@@ -322,12 +323,12 @@ int main(int argc, char **argv) {
     }
 
     {
-        ap_runtime_metrics_v3_t rm;
+        ap_runtime_metrics_t rm;
         ap_metrics_t pm;
         memset(&rm, 0, sizeof(rm));
         rm.struct_size = sizeof(rm);
-        rm.api_version = AP_RUNTIME_METRICS_V3_API_VERSION;
-        if (ap_runtime_get_metrics_v3(runtime, &rm) != AP_OK) goto done;
+        rm.api_version = AP_RUNTIME_API_VERSION;
+        if (ap_runtime_read_metrics(runtime, &rm) != AP_OK) goto done;
         ap_pipeline_get_metrics(pipeline, &pm);
         fprintf(stderr,
                 "produced=%u received=%u xruns=%llu dsp_overruns=%llu input_full=%llu "

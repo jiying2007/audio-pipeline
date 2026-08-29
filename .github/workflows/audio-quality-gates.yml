@@ -2,6 +2,11 @@ name: Audio Quality Gates
 
 on:
   workflow_call:
+    inputs:
+      run_extended:
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -12,9 +17,13 @@ concurrency:
 
 jobs:
   bandlimited-boundary:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: audio-bandlimited
       - name: Configure bandlimited default
         run: >-
           cmake -S . -B build-audio -DCMAKE_BUILD_TYPE=Release
@@ -23,8 +32,7 @@ jobs:
       - name: Build quality contracts
         run: cmake --build build-audio --parallel
       - name: Run resampler and acoustic-path contracts
-        run: |
-          ctest --test-dir build-audio --output-on-failure -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests'
+        run: ctest --test-dir build-audio --output-on-failure -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests'
       - name: Verify acoustic evaluation harness
         run: python3 eval/run_eval.py --self-test
       - name: Verify certification evidence validator
@@ -34,12 +42,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: validation-smoke
       - name: Validate validation tooling and pinned public source contract
         run: |
-          python3 -m py_compile validation/tools/*.py
+          python3 -m py_compile validation/tools/*.py scripts/validation_reproducer.py scripts/ci_failure.py
           python3 validation/tools/dataset_lock.py self-test
           python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
           python3 validation/tools/run_validation.py --self-test
+          python3 scripts/validation_reproducer.py --self-test
       - name: Configure offline validation processor
         run: >-
           cmake -S . -B build-validation-smoke -DCMAKE_BUILD_TYPE=Release
@@ -66,26 +78,50 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-
           report = json.loads(Path('/tmp/ap-validation-a/report.json').read_text())
           print(json.dumps(report['summary'], sort_keys=True))
           failed = [case for case in report['cases'] if not case['passed']]
           for case in failed:
               print(json.dumps({
-                  'case_id': case['case_id'],
-                  'scenario': case['scenario'],
-                  'metrics': case['metrics'],
-                  'violations': case['violations'],
+                  'case_id': case['case_id'], 'scenario': case['scenario'],
+                  'metrics': case['metrics'], 'violations': case['violations'],
               }, sort_keys=True))
           assert report['tier'] == 'regression'
           assert report['summary']['cases'] >= 6
           assert report['validation_result'] == 'PASS'
           PY
+      - name: Package failed validation reproducer
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f /tmp/ap-validation-a/report.json || exit 0
+          python3 scripts/ci_failure.py --output /tmp/ap-validation-a/failure-classification.json \
+            validation --report /tmp/ap-validation-a/report.json
+          python3 scripts/validation_reproducer.py \
+            --corpus /tmp/ap-validation-a/corpus.json \
+            --report /tmp/ap-validation-a/report.json \
+            --destination /tmp/ap-validation-reproducer \
+            --processor ./build-validation-smoke/ap_process_pcm
+      - name: Upload failed validation reproducer
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: validation-reproducer-${{ github.run_id }}
+          path: |
+            /tmp/ap-validation-reproducer
+            /tmp/ap-validation-a/failure-classification.json
+          retention-days: 30
+          if-no-files-found: warn
 
   diagnostics-replay:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: diagnostics-replay
       - name: Configure realtime diagnostics build
         run: >-
           cmake -S . -B build-diag -DCMAKE_BUILD_TYPE=Release
@@ -94,8 +130,7 @@ jobs:
         run: cmake --build build-diag --parallel
       - name: Build deterministic APD fixture generator
         run: |
-          cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
-            tests/generate_diag_dump.c \
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror tests/generate_diag_dump.c \
             -Iinclude -Ibuild-diag/generated \
             build-diag/libaudio_pipeline_runtime.a build-diag/libaudio_pipeline.a \
             -lm -pthread -o /tmp/ap_diag_dump_fixture
@@ -104,15 +139,18 @@ jobs:
           /tmp/ap_diag_dump_fixture /tmp/test.apd
           python3 tools/apdump.py info /tmp/test.apd > /tmp/dump-info.json
           python3 tools/apdump.py extract /tmp/test.apd --output-dir /tmp/apd-extract
-          python3 tools/apreplay.py /tmp/test.apd \
-            --processor ./build-diag/ap_process_pcm --require-bit-exact
+          python3 tools/apreplay.py /tmp/test.apd --processor ./build-diag/ap_process_pcm --require-bit-exact
       - name: Run runtime continuity and diagnostics contracts
         run: ctest --test-dir build-diag --output-on-failure -R 'ap_runtime_tests'
 
   fast-fallback:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: audio-fast-resampler
       - name: Configure explicit FAST fallback
         run: >-
           cmake -S . -B build-fast -DCMAKE_BUILD_TYPE=Release
@@ -124,11 +162,17 @@ jobs:
           ctest --test-dir build-fast --output-on-failure -R 'ap_resampler_tests|ap_contract_tests'
 
   timestamp-route-contract:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: audio-timestamp-route
       - name: Configure full sync/AEC graph
-        run: cmake -S . -B build-sync -DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+        run: >-
+          cmake -S . -B build-sync -DCMAKE_BUILD_TYPE=Release
+          -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build and validate synchronization/reset semantics
         run: |
           cmake --build build-sync --parallel

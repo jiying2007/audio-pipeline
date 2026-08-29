@@ -16,7 +16,7 @@ jobs:
   apply:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:4106ce8c0aa63d87ad233d87a51d23b2098dc526e9604ae6fd9d08ec5c3069db
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -28,14 +28,15 @@ jobs:
         run: python3 tools/apply_v15_test_intelligence.py
       - name: Self-test and strict build
         run: |
+          set -euo pipefail
           python3 -m py_compile tools/target_evidence.py
           python3 tools/target_evidence.py --self-test
           cmake -S . -B build-v15-apply -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON -DAP_BUILD_ALSA_EXAMPLE=ON
           cmake --build build-v15-apply --parallel
           ctest --test-dir build-v15-apply --output-on-failure
           ./build-v15-apply/ap_metamorphic_tests
-          test "$(./build-v15-apply/ap_build_info_dump | sed -n 's/^version=//p')" = 1.5.0
-          git diff --check
+          grep -q '^project(audio_pipeline VERSION 1.5.0 LANGUAGES C)$' CMakeLists.txt
+          git -C "$GITHUB_WORKSPACE" diff --check
       - name: Commit consumed ordinary patch
         shell: bash
         run: |

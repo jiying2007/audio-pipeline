@@ -50,6 +50,7 @@ jobs:
           python3 -m py_compile validation/tools/*.py scripts/validation_reproducer.py scripts/ci_failure.py
           python3 validation/tools/dataset_lock.py self-test
           python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
+          python3 validation/tools/build_public_corpus.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 scripts/validation_reproducer.py --self-test
       - name: Configure offline validation processor
@@ -58,59 +59,83 @@ jobs:
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build offline validation processor
         run: cmake --build build-validation-smoke --target ap_process_pcm --parallel
-      - name: Build deterministic validation corpus twice
+      - name: Verify deterministic corpus bytes
         run: |
-          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-a --seed 1307
-          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-b --seed 1307
-          diff -u /tmp/ap-validation-a/corpus.json /tmp/ap-validation-b/corpus.json
-          (cd /tmp/ap-validation-a && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/a.sha256
-          (cd /tmp/ap-validation-b && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/b.sha256
-          diff -u /tmp/a.sha256 /tmp/b.sha256
-      - name: Enforce self-validation regression policy
-        run: |
-          python3 validation/tools/run_validation.py \
-            --corpus /tmp/ap-validation-a/corpus.json \
-            --policy validation/policies/validation-smoke.json \
-            --dataset-lock validation/datasets.lock.json \
-            --processor ./build-validation-smoke/ap_process_pcm \
-            --output /tmp/ap-validation-a/report.json \
-            --evidence-manifest /tmp/ap-validation-a/evidence-manifest.json
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-1307 --seed 1307
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation-1307-repeat --seed 1307
           python3 - <<'PY'
           import json
           from pathlib import Path
-          report = json.loads(Path('/tmp/ap-validation-a/report.json').read_text())
-          print(json.dumps(report['summary'], sort_keys=True))
-          failed = [case for case in report['cases'] if not case['passed']]
-          for case in failed:
-              print(json.dumps({
-                  'case_id': case['case_id'], 'scenario': case['scenario'],
-                  'metrics': case['metrics'], 'violations': case['violations'],
-              }, sort_keys=True))
-          assert report['tier'] == 'regression'
-          assert report['summary']['cases'] >= 6
-          assert report['validation_result'] == 'PASS'
+          for path in [Path('/tmp/ap-validation-1307/corpus.json'), Path('/tmp/ap-validation-1307-repeat/corpus.json')]:
+              corpus = json.loads(path.read_text())
+              assert corpus['generator']['name'] == 'build_validation_corpus.py'
+              assert corpus['generator']['version'] == 3
+              assert corpus['tier'] == 'regression'
+              assert len(corpus['cases']) >= 24
           PY
+          diff -u /tmp/ap-validation-1307/corpus.json /tmp/ap-validation-1307-repeat/corpus.json
+          (cd /tmp/ap-validation-1307 && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/seed-1307-a.sha256
+          (cd /tmp/ap-validation-1307-repeat && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/seed-1307-b.sha256
+          diff -u /tmp/seed-1307-a.sha256 /tmp/seed-1307-b.sha256
+      - name: Enforce deterministic Nightly seed matrix
+        run: |
+          set -euo pipefail
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-validation-$seed"
+            if [ "$seed" != 1307 ]; then
+              python3 validation/tools/build_validation_corpus.py --output "$root" --seed "$seed"
+            fi
+            python3 validation/tools/run_validation.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor ./build-validation-smoke/ap_process_pcm \
+              --output "$root/report.json" \
+              --evidence-manifest "$root/evidence-manifest.json" \
+              --enforce
+            python3 - "$root/report.json" <<'PY'
+          import json, sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text())
+          print(json.dumps({"corpus_id": report["corpus_id"], **report["summary"]}, sort_keys=True))
+          assert report["tier"] == "regression"
+          assert report["summary"]["cases"] >= 24
+          assert report["validation_result"] == "PASS"
+          PY
+          done
       - name: Package failed validation reproducer
         if: failure()
         shell: bash
         run: |
           set -euo pipefail
-          test -f /tmp/ap-validation-a/report.json || exit 0
-          python3 scripts/ci_failure.py --output /tmp/ap-validation-a/failure-classification.json \
-            validation --report /tmp/ap-validation-a/report.json
-          python3 scripts/validation_reproducer.py \
-            --corpus /tmp/ap-validation-a/corpus.json \
-            --report /tmp/ap-validation-a/report.json \
-            --destination /tmp/ap-validation-reproducer \
-            --processor ./build-validation-smoke/ap_process_pcm
+          found=false
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-validation-$seed"
+            test -f "$root/report.json" || continue
+            if python3 - "$root/report.json" <<'PY'
+          import json, sys
+          raise SystemExit(0 if json.load(open(sys.argv[1]))['validation_result'] != 'PASS' else 1)
+          PY
+            then
+              found=true
+              python3 scripts/ci_failure.py \
+                --output "$root/failure-classification.json" validation --report "$root/report.json"
+              python3 scripts/validation_reproducer.py \
+                --corpus "$root/corpus.json" \
+                --report "$root/report.json" \
+                --destination "/tmp/ap-validation-reproducer-$seed" \
+                --processor ./build-validation-smoke/ap_process_pcm
+            fi
+          done
+          $found || exit 0
       - name: Upload failed validation reproducer
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: validation-reproducer-${{ github.run_id }}
           path: |
-            /tmp/ap-validation-reproducer
-            /tmp/ap-validation-a/failure-classification.json
+            /tmp/ap-validation-reproducer-*
+            /tmp/ap-validation-*/failure-classification.json
           retention-days: 30
           if-no-files-found: warn
 

@@ -11,6 +11,10 @@ on:
         type: string
         required: false
         default: '["armv7a-scalar","cortex-a7-scalar","cortex-a7-neon","cortex-a32-neon","aarch64-neon"]'
+      perf_base:
+        type: string
+        required: false
+        default: origin/main
       run_composition:
         type: boolean
         required: false
@@ -149,7 +153,7 @@ jobs:
         run: command -v ccache >/dev/null 2>&1 && ccache --show-stats || true
 
   perf-compare:
-    if: inputs.run_perf && github.ref != 'refs/heads/main'
+    if: inputs.run_perf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -158,21 +162,28 @@ jobs:
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: perf-gcc
-      - name: Same-runner main vs candidate
+      - name: Validate paired performance base
+        env:
+          BASE: ${{ inputs.perf_base }}
+        run: git rev-parse --verify "$BASE^{commit}"
+      - name: Same-runner base vs candidate
         env:
           CC: gcc
-        run: sh scripts/compare-perf.sh origin/main 7 20
+          BASE: ${{ inputs.perf_base }}
+        run: sh scripts/compare-perf.sh "$BASE" 7 20
       - name: Same-runner isolated NS paths
         env:
           CC: gcc
-        run: sh scripts/compare-ns-perf.sh origin/main 7 50000
+          BASE: ${{ inputs.perf_base }}
+        run: sh scripts/compare-ns-perf.sh "$BASE" 7 50000
       - name: Same-runner boundary resampler paths
         env:
           CC: gcc
-        run: sh scripts/compare-resampler-perf.sh origin/main 7 100000
+          BASE: ${{ inputs.perf_base }}
+        run: sh scripts/compare-resampler-perf.sh "$BASE" 7 100000
 
   runtime-perf-compare:
-    if: inputs.run_perf && inputs.run_extended && github.ref != 'refs/heads/main'
+    if: inputs.run_perf && inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -181,10 +192,15 @@ jobs:
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: runtime-perf-gcc
-      - name: Same-runner runtime main vs candidate
+      - name: Validate paired runtime performance base
+        env:
+          BASE: ${{ inputs.perf_base }}
+        run: git rev-parse --verify "$BASE^{commit}"
+      - name: Same-runner runtime base vs candidate
         env:
           CC: gcc
-        run: sh scripts/compare-runtime-perf.sh origin/main 7 100000 10000
+          BASE: ${{ inputs.perf_base }}
+        run: sh scripts/compare-runtime-perf.sh "$BASE" 7 100000 10000
 
   backend-nlms:
     if: inputs.run_aec_backend

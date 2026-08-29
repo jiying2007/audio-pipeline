@@ -13,6 +13,7 @@ import json
 import math
 import os
 import re
+import tempfile
 import wave
 import zipfile
 from pathlib import Path
@@ -202,75 +203,110 @@ def frame_labels(signal: list[int], rate: int) -> list[int]:
     return [1 if e > threshold else 0 for e in energies]
 
 
-def select_zip_members(archive: Path) -> tuple[str, str]:
+def select_zip_members(archive: Path) -> tuple[list[str], list[str]]:
     with zipfile.ZipFile(archive) as zf:
-        names = [name for name in zf.namelist() if name.lower().endswith(".wav")]
-    rir = next((name for name in names if "rir" in name.lower()), None)
-    noise = next((name for name in names if "noise" in name.lower()), None)
-    if rir is None or noise is None:
+        names = sorted(name for name in zf.namelist() if name.lower().endswith(".wav"))
+    rirs = [name for name in names if "rir" in name.lower()]
+    noises = [name for name in names if "noise" in name.lower()]
+    if not rirs or not noises:
         raise ValueError("could not find RIR/noise WAV members in SLR28 archive")
-    return rir, noise
+    return rirs, noises
 
 
-def write_robot_sim(output: Path, clean_path: Path, archive: Path, count: int,
-                    cases: list[dict], dns_source: dict) -> None:
-    clean, clean_rate, _ = read_wav(clean_path)
-    clean16 = resample_linear(clean, clean_rate, 16000)
-    clean16 = clean16[:min(len(clean16), 16000 * 8)]
-    if len(clean16) < 16000 * 2:
+def write_robot_sim(output: Path, clean_candidates: list[tuple[Path, dict]], archive: Path,
+                    count: int, cases: list[dict]) -> None:
+    prepared: list[tuple[list[int], dict]] = []
+    for clean_path, dns_source in clean_candidates:
+        clean, clean_rate, _ = read_wav(clean_path)
+        clean16 = resample_linear(clean, clean_rate, 16000)
+        clean16 = clean16[:min(len(clean16), 16000 * 8)]
+        if len(clean16) >= 16000 * 2:
+            prepared.append((clean16, dns_source))
+        if len(prepared) >= min(max(count, 1), 12):
+            break
+    if not prepared:
         return
-    rir_name, noise_name = select_zip_members(archive)
+
+    rir_names, noise_names = select_zip_members(archive)
+    archive_sha = sha256_file(archive)
     with zipfile.ZipFile(archive) as zf:
-        rir, rir_rate, _ = read_wav_bytes(zf.read(rir_name))
-        noise, noise_rate, _ = read_wav_bytes(zf.read(noise_name))
-    rir = resample_linear(rir, rir_rate, 16000)
-    noise = resample_linear(noise, noise_rate, 16000)
-    target = convolve_short(clean16, rir)
-    if not noise:
-        return
-    repeated_noise = [noise[i % len(noise)] for i in range(len(target))]
-    peak_target = max(1, max(abs(x) for x in target))
-    peak_noise = max(1, max(abs(x) for x in repeated_noise))
-    for index in range(count):
-        delay = 1 + index % 4
-        noise_gain = [0.20, 0.35, 0.50, 0.70][index % 4] * peak_target / peak_noise
-        left = [clamp16(target[i] + noise_gain * repeated_noise[i]) for i in range(len(target))]
-        delayed = [0] * delay + target[:-delay]
-        right = [clamp16(delayed[i] + noise_gain * repeated_noise[(i + 137) % len(repeated_noise)]) for i in range(len(target))]
-        case_id = f"robot-sim-bf-{index:03d}"
-        case_dir = output / "cases" / case_id
-        case_dir.mkdir(parents=True, exist_ok=True)
-        write_pcm(case_dir / "mic.pcm", interleave(left, right))
-        write_pcm(case_dir / "clean.pcm", target)
-        labels = frame_labels(target, 16000)
-        (case_dir / "vad.labels").write_text("".join(f"{x}\n" for x in labels), encoding="utf-8")
-        cases.append({
-            "case_id": case_id, "split": "validation", "scenario": "bf-offaxis",
-            "sample_rate_hz": 16000, "mic_channels": 2,
-            "mic_audio": str((case_dir / "mic.pcm").relative_to(output)),
-            "render_audio": None, "clean_near_audio": str((case_dir / "clean.pcm").relative_to(output)),
-            "echo_audio": None, "vad_labels": str((case_dir / "vad.labels").relative_to(output)),
-            "control": {}, "expected": {},
-            "source": {
-                "dataset_id": "openslr-slr28+microsoft-dns-challenge",
-                "source_id": case_id, "clean": dns_source,
-                "rir_member": rir_name, "noise_member": noise_name,
-                "slr28_archive_sha256": sha256_file(archive)
-            }
-        })
+        for index in range(count):
+            clean16, dns_source = prepared[index % len(prepared)]
+            rir_name = rir_names[index % len(rir_names)]
+            noise_name = noise_names[(index * 3 + index // max(1, len(rir_names))) % len(noise_names)]
+            rir, rir_rate, _ = read_wav_bytes(zf.read(rir_name))
+            noise, noise_rate, _ = read_wav_bytes(zf.read(noise_name))
+            rir = resample_linear(rir, rir_rate, 16000)
+            noise = resample_linear(noise, noise_rate, 16000)
+            target = convolve_short(clean16, rir)
+            if not target or not noise:
+                continue
+            repeated_noise = [noise[i % len(noise)] for i in range(len(target))]
+            peak_target = max(1, max(abs(x) for x in target))
+            peak_noise = max(1, max(abs(x) for x in repeated_noise))
+            delay = 1 + index % 5
+            noise_gain = [0.16, 0.24, 0.35, 0.50, 0.70][index % 5] * peak_target / peak_noise
+            left = [clamp16(target[i] + noise_gain * repeated_noise[i]) for i in range(len(target))]
+            delayed = [0] * delay + target[:-delay]
+            decorrelation = 97 + (index * 137) % max(1, len(repeated_noise))
+            right = [clamp16(delayed[i] + noise_gain * repeated_noise[(i + decorrelation) % len(repeated_noise)])
+                     for i in range(len(target))]
+            case_id = f"robot-sim-bf-{index:03d}"
+            case_dir = output / "cases" / case_id
+            case_dir.mkdir(parents=True, exist_ok=True)
+            write_pcm(case_dir / "mic.pcm", interleave(left, right))
+            write_pcm(case_dir / "clean.pcm", target)
+            labels = frame_labels(target, 16000)
+            (case_dir / "vad.labels").write_text("".join(f"{x}\n" for x in labels), encoding="utf-8")
+            cases.append({
+                "case_id": case_id, "split": "validation", "scenario": "bf-offaxis",
+                "sample_rate_hz": 16000, "mic_channels": 2,
+                "mic_audio": str((case_dir / "mic.pcm").relative_to(output)),
+                "render_audio": None, "clean_near_audio": str((case_dir / "clean.pcm").relative_to(output)),
+                "echo_audio": None, "vad_labels": str((case_dir / "vad.labels").relative_to(output)),
+                "control": {}, "expected": {},
+                "source": {
+                    "dataset_id": "openslr-slr28+microsoft-dns-challenge",
+                    "source_id": case_id, "clean": dns_source,
+                    "rir_member": rir_name, "noise_member": noise_name,
+                    "slr28_archive_sha256": archive_sha
+                }
+            })
+
+
+def self_test() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        archive = Path(tmp) / "members.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            for name in (
+                "room-b/noise-z.wav", "room-a/rir-2.wav", "room-a/rir-1.wav",
+                "room-b/noise-a.wav", "room-c/ambient.wav",
+            ):
+                zf.writestr(name, b"")
+        rirs, noises = select_zip_members(archive)
+        assert rirs == ["room-a/rir-1.wav", "room-a/rir-2.wav"]
+        assert noises == ["room-b/noise-a.wav", "room-b/noise-z.wav"]
+    print("public corpus diversity self-test: OK")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--lock", type=Path, default=Path("validation/datasets.lock.json"))
-    parser.add_argument("--seal", type=Path, required=True)
-    parser.add_argument("--data-root", type=Path, required=True)
+    parser.add_argument("--seal", type=Path)
+    parser.add_argument("--data-root", type=Path)
     parser.add_argument("--dns-data-root", type=Path)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--aec-limit", type=int, default=60)
     parser.add_argument("--dns-limit", type=int, default=60)
     parser.add_argument("--robot-sim-limit", type=int, default=20)
     args = parser.parse_args()
+
+    if args.self_test:
+        self_test()
+        return 0
+    if args.seal is None or args.data_root is None or args.output is None:
+        parser.error("--seal, --data-root and --output are required unless --self-test is used")
 
     lock = load_json(args.lock)
     validate_lock(lock)
@@ -314,8 +350,7 @@ def main() -> int:
         })
 
     dns_pairs = pair_dns(dns_data_root)
-    first_clean: Path | None = None
-    first_clean_source: dict | None = None
+    robot_clean_candidates: list[tuple[Path, dict]] = []
     for noisy, clean in dns_pairs[:max(0, args.dns_limit)]:
         noisy_rel, noisy_sha1 = verify_dns_file(noisy, dns_repo, dns_data_root, dns_index)
         clean_rel, clean_sha1 = verify_dns_file(clean, dns_repo, dns_data_root, dns_index)
@@ -335,12 +370,11 @@ def main() -> int:
             "clean_near_audio": str(clean.resolve()), "echo_audio": None, "vad_labels": None,
             "control": {}, "processor_profile": "ns-isolated", "expected": {}, "source": source
         })
-        if first_clean is None:
-            first_clean = clean
-            first_clean_source = source
+        robot_clean_candidates.append((clean, source))
 
-    if args.robot_sim_limit and first_clean is not None and first_clean_source is not None:
-        write_robot_sim(args.output, first_clean, slr_archive, args.robot_sim_limit, cases, first_clean_source)
+    if args.robot_sim_limit and robot_clean_candidates:
+        write_robot_sim(args.output, robot_clean_candidates, slr_archive,
+                        args.robot_sim_limit, cases)
 
     if not cases:
         raise SystemExit("no public validation cases were built")
@@ -348,7 +382,7 @@ def main() -> int:
         "schema_version": 1,
         "corpus_id": "public-validation-v1",
         "tier": "validation-grade",
-        "generator": {"name": "build_public_corpus.py", "version": 1},
+        "generator": {"name": "build_public_corpus.py", "version": 2},
         "sources": ["microsoft-aec-challenge", "microsoft-dns-challenge", "openslr-slr28"],
         "sealed_data": True,
         "dataset_lock_sha256": sha256_file(args.lock),

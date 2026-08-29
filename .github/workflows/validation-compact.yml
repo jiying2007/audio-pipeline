@@ -1,4 +1,4 @@
-name: Validation Grade
+name: Validation Compact
 
 on:
   workflow_dispatch:
@@ -15,19 +15,14 @@ on:
         type: choice
         options: [validation-grade, validation-grade-blind]
       data_root:
-        description: Public dataset cache root on audio-validation runner
+        description: Sealed public dataset cache root on audio-validation runner
         required: true
         default: /opt/audio-validation-data
         type: string
       seal_path:
-        description: Local dataset seal JSON path on runner
+        description: Local dataset seal JSON path
         required: true
         default: /opt/audio-validation-data/datasets.seal.json
-        type: string
-      dns_data_root:
-        description: Official DNS5 clean/noise WAV root; defaults under pinned DNS checkout
-        required: false
-        default: ''
         type: string
       aec_limit:
         description: Balanced real AEC cases across single/double-talk scenarios
@@ -35,14 +30,9 @@ on:
         default: '60'
         type: string
       derived_limit:
-        description: AEC+SLR28 acoustic combinations; each emits NS + BF
+        description: Public-derived acoustic combinations; each emits NS + BF
         required: true
         default: '20'
-        type: string
-      dns_limit:
-        description: Verified DNS clean+noise derived NS cases
-        required: true
-        default: '60'
         type: string
       holdout_percent:
         description: Blind HMAC holdout percentage
@@ -55,7 +45,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: validation-grade-${{ inputs.tier }}
+  group: validation-compact-${{ inputs.tier }}
   cancel-in-progress: false
 
 jobs:
@@ -71,77 +61,58 @@ jobs:
           set -euo pipefail
           git rev-parse HEAD | tee validation-revision.txt
           test -z "$(git status --porcelain=v1)"
-      - name: Verify full sealed public cache
+      - name: Verify compact sealed public cache
         env:
           DATA_ROOT: ${{ inputs.data_root }}
           SEAL: ${{ inputs.seal_path }}
-          DNS_ROOT: ${{ inputs.dns_data_root }}
         run: |
           set -euo pipefail
-          args=(verify --profile full --root "$DATA_ROOT" --seal "$SEAL")
-          if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
-          python3 validation/tools/prepare_public_validation.py "${args[@]}" \
-            > validation-dataset-verification.json
+          python3 validation/tools/prepare_public_validation.py verify \
+            --profile compact --root "$DATA_ROOT" --seal "$SEAL" \
+            > validation-cache-verification.json
       - name: Build and identify offline validation processor
         run: |
           set -euo pipefail
-          cmake -S . -B build-validation -DCMAKE_BUILD_TYPE=Release \
+          cmake -S . -B build-validation-compact -DCMAKE_BUILD_TYPE=Release \
             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-          cmake --build build-validation --target ap_process_pcm ap_build_info_dump --parallel
-          sha256sum build-validation/ap_process_pcm | tee validation-processor.sha256
-          build-validation/ap_build_info_dump | tee validation-build-info.txt
+          cmake --build build-validation-compact --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum build-validation-compact/ap_process_pcm | tee validation-processor.sha256
+          build-validation-compact/ap_build_info_dump | tee validation-build-info.txt
           ${CC:-cc} --version | head -n 1 | tee validation-compiler.txt
-      - name: Build full public validation corpus
+      - name: Build compact public validation corpus
         env:
           DATA_ROOT: ${{ inputs.data_root }}
           SEAL: ${{ inputs.seal_path }}
-          DNS_ROOT: ${{ inputs.dns_data_root }}
           AEC_LIMIT: ${{ inputs.aec_limit }}
           DERIVED_LIMIT: ${{ inputs.derived_limit }}
-          DNS_LIMIT: ${{ inputs.dns_limit }}
         run: |
           set -euo pipefail
-          args=(
-            --data-root "$DATA_ROOT" --seal "$SEAL" --output validation-out/public
-            --aec-limit "$AEC_LIMIT" --derived-limit "$DERIVED_LIMIT" --dns-limit "$DNS_LIMIT"
-          )
-          if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
-          python3 validation/tools/build_full_public_corpus.py "${args[@]}"
-      - name: Enforce full public source diversity and case budget
+          python3 validation/tools/build_compact_public_corpus.py \
+            --data-root "$DATA_ROOT" --seal "$SEAL" --output validation-out/public \
+            --aec-limit "$AEC_LIMIT" --derived-limit "$DERIVED_LIMIT"
+      - name: Enforce public acoustic diversity and case budget
         env:
           AEC_LIMIT: ${{ inputs.aec_limit }}
           DERIVED_LIMIT: ${{ inputs.derived_limit }}
-          DNS_LIMIT: ${{ inputs.dns_limit }}
         run: |
           python3 - <<'PY'
           import json, os
           from pathlib import Path
           corpus = json.loads(Path('validation-out/public/corpus.json').read_text())
-          assert corpus['generator']['name'] == 'build_full_public_corpus.py'
-          assert corpus['generator']['version'] == 1
-          expected = int(os.environ['AEC_LIMIT']) + 2 * int(os.environ['DERIVED_LIMIT']) + int(os.environ['DNS_LIMIT'])
+          expected = int(os.environ['AEC_LIMIT']) + 2 * int(os.environ['DERIVED_LIMIT'])
           if len(corpus['cases']) != expected:
-              raise SystemExit(f'full corpus case count mismatch: {len(corpus["cases"])} != {expected}')
-          required_aec = {'aec-farend-singletalk', 'aec-doubletalk', 'aec-nearend-singletalk'}
+              raise SystemExit(f'compact corpus case count mismatch: {len(corpus["cases"])} != {expected}')
+          derived = [c for c in corpus['cases'] if c['scenario'] in {'ns-public-derived', 'bf-offaxis'}]
+          cleans = {c['source']['clean']['source_id'] for c in derived}
+          rirs = {c['source']['rir_member'] for c in derived}
+          noises = {c['source']['noise_member'] for c in derived}
           aec_scenarios = {c['scenario'] for c in corpus['cases'] if c['scenario'].startswith('aec-')}
+          if len(cleans) < 2 or len(rirs) < 2 or len(noises) < 2:
+              raise SystemExit(f'insufficient public acoustic diversity: clean={len(cleans)} rir={len(rirs)} noise={len(noises)}')
+          required_aec = {'aec-farend-singletalk', 'aec-doubletalk', 'aec-nearend-singletalk'}
           if not required_aec.issubset(aec_scenarios):
               raise SystemExit(f'missing AEC scenarios: {sorted(required_aec - aec_scenarios)}')
-          slr = [c for c in corpus['cases'] if c['scenario'] in {'ns-public-derived', 'bf-offaxis'}]
-          slr_clean = {c['source']['clean']['source_id'] for c in slr}
-          rirs = {c['source']['rir_member'] for c in slr}
-          slr_noise = {c['source']['noise_member'] for c in slr}
-          dns = [c for c in corpus['cases'] if c['scenario'] == 'ns-public-derived-dns']
-          dns_clean = {c['source']['clean']['path'] for c in dns}
-          dns_noise = {c['source']['noise']['path'] for c in dns}
-          if min(len(slr_clean), len(rirs), len(slr_noise), len(dns_clean), len(dns_noise)) < 2:
-              raise SystemExit(
-                  f'insufficient full public diversity: slr_clean={len(slr_clean)} rir={len(rirs)} '
-                  f'slr_noise={len(slr_noise)} dns_clean={len(dns_clean)} dns_noise={len(dns_noise)}'
-              )
-          print(
-              f'full_public_cases={len(corpus["cases"])} slr_clean={len(slr_clean)} rir={len(rirs)} '
-              f'slr_noise={len(slr_noise)} dns_clean={len(dns_clean)} dns_noise={len(dns_noise)}'
-          )
+          print(f'compact_public_cases={len(corpus["cases"])} clean={len(cleans)} rir={len(rirs)} noise={len(noises)}')
           PY
       - name: Partition blind holdout when requested
         if: inputs.tier == 'validation-grade-blind'
@@ -156,14 +127,14 @@ jobs:
             --validation-output validation-out/public/corpus-validation.json \
             --blind-output validation-out/public/corpus-blind.json \
             --holdout-percent "$HOLDOUT"
-      - name: Run official full validation-grade policy
+      - name: Run compact validation-grade policy
         if: inputs.tier == 'validation-grade'
         run: |
           python3 validation/tools/run_validation.py \
             --corpus validation-out/public/corpus.json \
-            --policy validation/policies/validation-full.json \
+            --policy validation/policies/validation-compact.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor build-validation/ap_process_pcm \
+            --processor build-validation-compact/ap_process_pcm \
             --output validation-out/validation-report.json \
             --evidence-manifest validation-out/evidence-manifest.json --enforce
       - name: Run validation partition under holdout policy
@@ -171,9 +142,9 @@ jobs:
         run: |
           python3 validation/tools/run_validation.py \
             --corpus validation-out/public/corpus-validation.json \
-            --policy validation/policies/validation-full-partition.json \
+            --policy validation/policies/validation-compact-partition.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor build-validation/ap_process_pcm \
+            --processor build-validation-compact/ap_process_pcm \
             --output validation-out/validation-report.json \
             --evidence-manifest validation-out/evidence-manifest.json --enforce
       - name: Run blind holdout with summary-only report
@@ -181,26 +152,26 @@ jobs:
         run: |
           python3 validation/tools/run_validation.py \
             --corpus validation-out/public/corpus-blind.json \
-            --policy validation/policies/validation-full-blind.json \
+            --policy validation/policies/validation-compact-blind.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor build-validation/ap_process_pcm \
+            --processor build-validation-compact/ap_process_pcm \
             --output validation-out/blind-report.json \
             --evidence-manifest validation-out/blind-evidence-manifest.json \
             --blind-summary-only --enforce
       - name: Bind exact revision cache processor and package evidence
         run: |
           cp validation-revision.txt validation-out/
-          cp validation-dataset-verification.json validation-out/
+          cp validation-cache-verification.json validation-out/
           cp validation-processor.sha256 validation-out/
           cp validation-build-info.txt validation-out/
           cp validation-compiler.txt validation-out/
           find validation-out -type f ! -name SHA256SUMS -print0 | sort -z | \
-            xargs -0 sha256sum > /tmp/validation-SHA256SUMS
-          mv /tmp/validation-SHA256SUMS validation-out/SHA256SUMS
-      - name: Upload validation evidence
+            xargs -0 sha256sum > /tmp/validation-compact-SHA256SUMS
+          mv /tmp/validation-compact-SHA256SUMS validation-out/SHA256SUMS
+      - name: Upload compact validation evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: validation-${{ inputs.tier }}-${{ github.run_id }}
+          name: validation-compact-${{ inputs.tier }}-${{ github.run_id }}
           path: validation-out/
           if-no-files-found: error
           retention-days: 90

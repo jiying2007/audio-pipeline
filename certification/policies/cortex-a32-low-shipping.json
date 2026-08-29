@@ -1,7 +1,7 @@
 {
-  "policy_id": "example-cortex-a32-low-not-for-shipping",
-  "sku": "example-cortex-a32-low",
-  "shipping_approved": false,
+  "policy_id": "cortex-a32-low-shipping-v1",
+  "sku": "cortex-a32-low",
+  "shipping_approved": true,
   "max_active_cpu_percent": 40,
   "max_rss_kib": 4096,
   "max_p95_us": 7000,
@@ -13,5 +13,5 @@
   "min_double_talk_near_si_sdr_db": 5,
   "min_noise_si_sdr_improvement_db": 3,
   "min_vad_f1": 0.85,
-  "min_soak_hours": 8
+  "min_soak_hours": 72
 }

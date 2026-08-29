@@ -1,8 +1,10 @@
 # Development Rules
 
-## Hard-cut policy
+## Stable 1.x policy
 
-The repository is pre-1.0 and intentionally uses hard cuts for public/configuration changes unless a migration period is explicitly approved. Do not add compatibility aliases, dead switches or duplicate implementations merely to preserve an unreleased shape.
+The repository is in the stable 1.x line. The ABI baseline established by 1.0.0 remains in force: do not mutate frozen public structures or silently repurpose existing fields. Additive public evolution uses versioned structures/APIs with explicit `struct_size`, `api_version` and reserved space; incompatible changes require a major version.
+
+Do not add compatibility aliases, dead switches, duplicate implementations or transitional architecture merely to avoid a deliberate major-version decision.
 
 ## Dependency direction
 
@@ -78,6 +80,10 @@ AP_RESAMPLER_MODE=BANDLIMITED|FAST
 
 A backend exists only when its owning module is compiled.
 
+## Acoustic-complexity rule
+
+The v1.6 assurance closure does not expand DSP scope. Fractional-delay BF, microphone gain/phase calibration, wind/clipping/microphone-health detection, interference-direction logic or more advanced drift control may be proposed only when a real SKU acoustic report fails an approved shipping policy and the pull request links that evidence and failure category. If the real corpus passes, keep the lower-cost implementation.
+
 ## Resampler changes
 
 BANDLIMITED is the product default. Changes require both:
@@ -112,7 +118,7 @@ A production change is complete only when relevant gates pass:
 - MDF/NLMS, EMA/MCRA, precise/fast-math and BANDLIMITED/FAST where relevant;
 - LOW/TINY/RAW/voice/module-only composition tests;
 - pipeline/runtime RAM and final consumer ELF pruning;
-- hosted same-runner core/module/runtime performance regression gates;
+- hosted same-runner core/module/runtime performance regression gates, including `event.before -> HEAD` on main;
 - ARMv7-A/Cortex-A7/Cortex-A32/AArch64 cross-builds;
 - selected ARM QEMU executable contracts;
 - static analyzer;
@@ -138,7 +144,7 @@ PR Quality CI maintains the current coverage baseline. Nightly fuzz is intention
 
 ## Release/version rules
 
-`project(audio_pipeline VERSION ...)`, generated build fingerprint and `CHANGELOG.md` must describe the same release. After a version bump reaches `main`, the release workflow is responsible for creating the matching `vX.Y.Z` tag (when absent), SDK/source archives, SHA256 checksums and GitHub Release.
+`project(audio_pipeline VERSION ...)`, generated build fingerprint and `CHANGELOG.md` must describe the same release. A release SHA must have merged-PR lineage and a successful main Verify. The release workflow creates the matching exact-SHA `vX.Y.Z` tag, reproducible SDK/source archives, checksums, SBOM and attestations, then verifies that the published GitHub Release is immutable.
 
 A release does not imply target-board certification. Certification records remain SKU-specific.
 
@@ -150,6 +156,9 @@ No code/CI change can fabricate:
 - thermal/power;
 - XRUN behavior on the shipping audio route;
 - private acoustic corpus scores;
-- 8 h soak results.
+- shipping toolchain/sysroot/flags identity;
+- build/deployed/executed binary identity;
+- required 72 h shipping route soak results;
+- lifecycle archive durability.
 
-Use `certification/record.schema.json` and `docs/PLATFORM_SUPPORT.md` to close those on real hardware.
+Product Certification uses an `audio-builder` runner, a distinct `audio-target` DUT runner and a `certification-archive` runner. A v4 record is valid only when exact shipping binaries are SHA-256-identical across build/deploy/execute, the real policy/corpus/sensor gates pass, the evidence bundle is attested, and the immutable lifecycle archive returns a valid receipt.

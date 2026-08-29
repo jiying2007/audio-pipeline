@@ -81,7 +81,7 @@ Standalone stateful modules use `AP_MODULE_STATE_ALIGNMENT`, `AP_MODULE_STATE_MA
 
 Linux runtime uses `AP_RUNTIME_STATE_ALIGNMENT`, `AP_RUNTIME_STATE_MAX_BYTES` and exact runtime size APIs. Flight Recorder storage is separate caller-owned memory sized by `ap_flight_recorder_state_size()` and therefore does not inflate runtime resident state unless a product explicitly provisions diagnostics audio history.
 
-Current hosted GCC verification values are pipeline full=78,096 B, LOW=46,928 B, TINY=25,408 B, RAW=1,064 B and runtime full=32,632 B, constrained TINY=5,080 B. These are verification values, not ABI constants or target-board RAM claims.
+Current hosted state-size measurements are generated from the resource-gate result into the single machine-readable source [`ci/resource-baseline.json`](../ci/resource-baseline.json) and human view [`docs/generated/RESOURCE_BASELINE.md`](generated/RESOURCE_BASELINE.md). Numeric hosted measurements are intentionally not duplicated in this API contract. They are verification values, not ABI constants or target-board RAM claims.
 
 ## Standalone module lifecycle
 

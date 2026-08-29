@@ -1,0 +1,14 @@
+{
+  "measurement_profile": "hosted-gcc-release",
+  "pipeline_state_bytes": {
+    "full": 78096,
+    "low": 46928,
+    "raw": 1064,
+    "tiny": 25408
+  },
+  "runtime_state_bytes": {
+    "full": 32752,
+    "tiny": 5168
+  },
+  "schema_version": 1
+}

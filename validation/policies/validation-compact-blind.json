@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-compact-blind-v1",
+  "allowed_tiers": ["validation-grade-blind"],
+  "minimum_cases": 10,
+  "required_public_sources": ["microsoft-aec-challenge", "openslr-slr28"],
+  "aggregate": {
+    "min_pass_rate": 0.98,
+    "min_median_near_si_sdr_improvement_db": 0.0,
+    "min_median_output_render_corr_reduction": 0.05,
+    "min_vad_f1": 0.80
+  }
+}

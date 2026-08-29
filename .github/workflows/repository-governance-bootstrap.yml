@@ -1,0 +1,62 @@
+name: Repository Governance Bootstrap
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/bootstrap_github_governance.py
+      - scripts/github_governance.py
+      - .github/workflows/repository-governance-bootstrap.yml
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-governance-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate governance payload and live-audit contracts
+        run: |
+          python3 scripts/bootstrap_github_governance.py --self-test
+          python3 scripts/github_governance.py --self-test
+
+  apply:
+    if: github.event_name == 'workflow_dispatch'
+    needs: contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Require repository administration credential
+        env:
+          GH_TOKEN: ${{ secrets.REPOSITORY_ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || {
+            echo "REPOSITORY_ADMIN_TOKEN is required with repository Administration: write." >&2
+            exit 1
+          }
+      - name: Install idempotent main/tag rulesets and immutable releases
+        env:
+          GH_TOKEN: ${{ secrets.REPOSITORY_ADMIN_TOKEN }}
+        run: >-
+          python3 scripts/bootstrap_github_governance.py
+          --repository "$GITHUB_REPOSITORY"
+          --output /tmp/governance-bootstrap.json
+      - name: Verify resulting live governance
+        env:
+          GH_TOKEN: ${{ secrets.REPOSITORY_ADMIN_TOKEN }}
+        run: >-
+          python3 scripts/github_governance.py
+          --repository "$GITHUB_REPOSITORY"
+          --output /tmp/repository-governance.json
+      - name: Publish audit summary
+        run: |
+          cat /tmp/governance-bootstrap.json
+          cat /tmp/repository-governance.json

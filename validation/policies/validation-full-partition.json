@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "policy_id": "validation-full-v2",
+  "policy_id": "validation-full-partition-v1",
   "allowed_tiers": ["validation-grade"],
-  "minimum_cases": 160,
+  "minimum_cases": 100,
   "required_public_sources": ["microsoft-aec-challenge", "microsoft-dns-challenge", "openslr-slr28"],
   "aggregate": {
     "min_pass_rate": 0.98,

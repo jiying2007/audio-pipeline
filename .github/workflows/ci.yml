@@ -48,9 +48,6 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  CI_TOOLCHAIN_IMAGE: ghcr.io/jiying2007/audio-pipeline-ci@sha256:4106ce8c0aa63d87ad233d87a51d23b2098dc526e9604ae6fd9d08ec5c3069db
-
 jobs:
   composition-contract:
     if: inputs.run_composition
@@ -292,7 +289,7 @@ jobs:
     if: inputs.run_alsa
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:4106ce8c0aa63d87ad233d87a51d23b2098dc526e9604ae6fd9d08ec5c3069db
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -315,7 +312,7 @@ jobs:
     if: inputs.run_arm
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:4106ce8c0aa63d87ad233d87a51d23b2098dc526e9604ae6fd9d08ec5c3069db
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

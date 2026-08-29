@@ -1,0 +1,38 @@
+name: Repair product certification finalizer
+
+on:
+  push:
+    branches: [feat/product-certification-v2]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Remove consumed workflow patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/finalize-product-cert-v2.yml')
+          text = path.read_text(encoding='utf-8')
+          start_marker = '          # Product workflow passes the same real route geometry to benchmark and soak.\n'
+          end_marker = '          # JSON schema remains backward compatible with v2 while documenting v3 fields.\n'
+          start = text.find(start_marker)
+          end = text.find(end_marker)
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('finalizer repair anchors not found')
+          path.write_text(text[:start] + text[end:], encoding='utf-8')
+          PY
+          git rm .github/workflows/fix-finalize-product-cert-v2.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/finalize-product-cert-v2.yml
+          git commit -m "ci: repair product certification finalizer"
+          git push origin HEAD:feat/product-certification-v2

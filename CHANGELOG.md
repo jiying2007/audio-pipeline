@@ -1,3 +1,16 @@
+# 1.6.0
+
+- Close the main-branch performance bypass: PR verification compares `origin/main` to the candidate while main push verification compares the exact `event.before` revision to `HEAD`; paired core/NS/resampler/runtime performance gates now run on main as part of FULL verification.
+- Establish one hosted resource source of truth in `ci/resource-baseline.json`, generate `docs/generated/RESOURCE_BASELINE.md`, and make CI re-measure/diff the generated JSON and Markdown so resource values cannot silently drift across API/Performance/Platform documentation.
+- Replace pre-1.0 development language with the stable 1.x ABI policy and keep API evolution additive/versioned.
+- Promote shipping certification to schema v4 with a checked-in shipping-approved Cortex-A32 LOW policy, explicit 72 h minimum soak, and hard rejection of example/not-for-shipping policies.
+- Split product certification across `audio-builder`, `audio-target`, and `certification-archive`: exact shipping compiler/sysroot/CFLAGS build, artifact deployment, build/deployed/executed SHA-256 equality, real target benchmark/route soak, evidence attestation, and immutable product-lifecycle archive receipt validation.
+- Make HIL absence visible instead of silently skipped for scheduled/post-release tiers; real HIL/acoustic/thermal/power evidence remains mandatory and is never synthesized by hosted CI.
+- Add `WARMING_UP`/`MATURE` historical-trend semantics so a passing short history cannot be described as a statistically mature gate; 30 comparable history samples are required for maturity.
+- Add repository-governance audit tooling for PR-only main integration, strict required `summary`, deletion/non-fast-forward protection and protected `v*` tags, while keeping platform Ruleset/immutable-release enablement an explicit administrative prerequisite rather than a repository claim.
+- Add acoustic-upgrade decision tooling: advanced BF/calibration/wind/mic-health/drift work is eligible only when real shipping acoustic evidence violates the approved policy; passing evidence preserves the low-compute baseline.
+- No architecture redesign or speculative DSP expansion is introduced by this release; product-final status still requires enforced GitHub governance plus real shipping-board/HIL/certification evidence.
+
 # 1.5.0
 
 - Rework PR verification into mandatory Fast Gate -> impact-aware Full Gate while forcing every `main` push through the complete release verification graph.

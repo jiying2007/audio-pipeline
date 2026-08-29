@@ -13,7 +13,7 @@ import tempfile
 import time
 from pathlib import Path
 
-VERSION = "2.0"
+VERSION = "3.0"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -184,6 +184,27 @@ def exact_build_info(binary: Path) -> tuple[dict[str, str], str]:
     return values, text
 
 
+def validate_deployment(provenance: dict, revision: str, binary_hashes: dict[str, str]) -> None:
+    required = {"source_revision", "builder_runner", "dut_runner", "binary_sha256", "toolchain", "result"}
+    missing = sorted(required - provenance.keys())
+    if missing:
+        raise ValueError("deployment provenance missing: " + ", ".join(missing))
+    if provenance.get("result") != "PASS":
+        raise ValueError("deployment provenance is not PASS")
+    if provenance.get("source_revision") != revision:
+        raise ValueError("deployment provenance revision does not match checkout")
+    if provenance.get("builder_runner") == provenance.get("dut_runner"):
+        raise ValueError("builder and DUT must be different runners")
+    if provenance.get("binary_sha256") != binary_hashes:
+        raise ValueError("deployment provenance binary hashes do not match certification binaries")
+    toolchain = provenance.get("toolchain")
+    if not isinstance(toolchain, dict):
+        raise ValueError("deployment provenance has no toolchain object")
+    for key in ("compiler_sha256", "sysroot_sha256", "toolchain_root_sha256"):
+        if not HEX64.fullmatch(str(toolchain.get(key, ""))):
+            raise ValueError(f"deployment toolchain {key} is not SHA-256")
+
+
 def assemble(args: argparse.Namespace) -> Path:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     evidence_dir = args.output_dir / "evidence"
@@ -196,6 +217,12 @@ def assemble(args: argparse.Namespace) -> Path:
     policy_id = policy.get("policy_id")
     if not policy_id:
         raise ValueError("policy_id is required")
+    if policy.get("shipping_approved") is not True:
+        raise ValueError("product certification requires shipping_approved=true")
+    if str(policy.get("sku")) != args.sku:
+        raise ValueError("policy sku does not match --sku")
+    if str(policy_id).startswith("example-") or "not-for-shipping" in str(policy_id):
+        raise ValueError("example/not-for-shipping policy cannot create product certification")
 
     revision = git_revision()
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
@@ -220,6 +247,9 @@ def assemble(args: argparse.Namespace) -> Path:
         seen.add(key)
         binary_hashes[key] = digest(resolved)
         binary_items.append((f"binary:{key}", resolved))
+
+    deployment = json.loads(args.deployment_provenance.read_text(encoding="utf-8"))
+    validate_deployment(deployment, revision, binary_hashes)
 
     build_identity = {
         "source_revision": revision,
@@ -254,8 +284,7 @@ def assemble(args: argparse.Namespace) -> Path:
         if thermal.get(key) is None:
             raise ValueError(f"benchmark thermal_power.{key} is required; no fabricated value allowed")
     if soak_thermal.get("max_soc_c") is not None:
-        thermal["max_soc_c"] = max(float(thermal["max_soc_c"]),
-                                     float(soak_thermal["max_soc_c"]))
+        thermal["max_soc_c"] = max(float(thermal["max_soc_c"]), float(soak_thermal["max_soc_c"]))
 
     staged: list[tuple[str, Path]] = []
     staged.append(("benchmark", copy_evidence(args.benchmark_json, evidence_dir, "benchmark.json")))
@@ -263,6 +292,10 @@ def assemble(args: argparse.Namespace) -> Path:
     staged.append(("soak", copy_evidence(args.soak_json, evidence_dir, "soak.json")))
     staged.append(("policy", copy_evidence(args.policy, evidence_dir, "policy.json")))
     staged.append(("corpus-manifest", copy_evidence(args.corpus_manifest, evidence_dir, "corpus-manifest.json")))
+    staged.append((
+        "deployment-provenance",
+        copy_evidence(args.deployment_provenance, evidence_dir, "deployment-provenance.json"),
+    ))
     build_info_path = evidence_dir / "build-info.txt"
     build_info_path.write_text(build_info_text, encoding="utf-8")
     staged.append(("build-info", build_info_path))
@@ -275,7 +308,7 @@ def assemble(args: argparse.Namespace) -> Path:
     build_manifest(staged, args.output_dir, evidence_path)
 
     record = {
-        "schema_version": 3,
+        "schema_version": 4,
         "sku": args.sku,
         "status": "product-certified",
         "policy": policy_id,
@@ -283,11 +316,7 @@ def assemble(args: argparse.Namespace) -> Path:
         "corpus_manifest_sha256": digest(args.corpus_manifest),
         "evidence_manifest_sha256": digest(evidence_path),
         "collector_version": VERSION,
-        "toolchain_digest": canonical_digest({
-            "compiler_id": build_info["compiler_id"],
-            "compiler_version": build_info["compiler_version"],
-            "target_triple": build_info["target_triple"],
-        }),
+        "toolchain_digest": canonical_digest(deployment["toolchain"]),
         "build": {
             "commit": revision,
             "version": build_info["version"],
@@ -296,6 +325,7 @@ def assemble(args: argparse.Namespace) -> Path:
             "abi": build_info["target_triple"],
             **build_identity,
         },
+        "deployment": deployment,
         "platform": collect_platform(),
         "audio_route": {
             "capture_device": args.capture_device,
@@ -311,6 +341,7 @@ def assemble(args: argparse.Namespace) -> Path:
             "result_json": "record.json",
             "benchmark_json": "evidence/benchmark.json",
             "evidence_manifest": "evidence-manifest.json",
+            "deployment_provenance": "evidence/deployment-provenance.json",
             "sha256": digest(evidence_path),
             "binary_sha256": binary_hashes,
         },
@@ -335,6 +366,19 @@ def self_test() -> int:
         manifest = build_manifest([("sample", sample)], root, manifest_path)
         assert manifest["artifacts"][0]["path"] == "sample"
         assert manifest["artifacts"][0]["size"] == len(b"audio-pipeline")
+        deployment = {
+            "source_revision": "a" * 40,
+            "builder_runner": "builder",
+            "dut_runner": "dut",
+            "binary_sha256": {"sample": digest(sample)},
+            "toolchain": {
+                "compiler_sha256": "c" * 64,
+                "sysroot_sha256": "d" * 64,
+                "toolchain_root_sha256": "e" * 64,
+            },
+            "result": "PASS",
+        }
+        validate_deployment(deployment, "a" * 40, {"sample": digest(sample)})
     print("audio-pipeline certification collector self-test: OK")
     return 0
 
@@ -348,6 +392,7 @@ def main() -> int:
     parser.add_argument("--benchmark-json", type=Path)
     parser.add_argument("--acoustic-json", type=Path)
     parser.add_argument("--soak-json", type=Path)
+    parser.add_argument("--deployment-provenance", type=Path)
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--capture-device")
     parser.add_argument("--playback-device")
@@ -361,7 +406,7 @@ def main() -> int:
         return self_test()
     required = (
         "sku", "policy", "corpus_manifest", "benchmark_json", "acoustic_json",
-        "soak_json", "output_dir", "capture_device", "build_info_bin",
+        "soak_json", "deployment_provenance", "output_dir", "capture_device", "build_info_bin",
     )
     missing = [name for name in required if getattr(args, name) is None]
     if missing:

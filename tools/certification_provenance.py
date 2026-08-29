@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-VERSION = "1.0"
+VERSION = "1.1"
 
 
 def sha256(path: Path) -> str:
@@ -20,6 +20,11 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def canonical_sha256(value: object) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def tree_sha256(root: Path) -> str:
@@ -60,6 +65,15 @@ def binary_map(paths: list[Path]) -> dict[str, str]:
     return result
 
 
+def parse_cmake_args(raw: str | None) -> list[str]:
+    if raw is None:
+        raise ValueError("build snapshot requires cmake args JSON")
+    value = json.loads(raw)
+    if not isinstance(value, list) or not value or not all(isinstance(item, str) and item for item in value):
+        raise ValueError("cmake args JSON must be a non-empty array of non-empty strings")
+    return value
+
+
 def snapshot(args: argparse.Namespace) -> dict:
     if args.stage not in {"build", "deployed", "executed"}:
         raise ValueError("invalid stage")
@@ -78,6 +92,7 @@ def snapshot(args: argparse.Namespace) -> dict:
         compiler = args.compiler.resolve()
         sysroot = args.sysroot.resolve()
         toolchain = args.toolchain_root.resolve()
+        cmake_args = parse_cmake_args(args.cmake_args_json)
         doc["toolchain"] = {
             "compiler_path": str(compiler),
             "compiler_sha256": sha256(compiler),
@@ -87,6 +102,8 @@ def snapshot(args: argparse.Namespace) -> dict:
             "toolchain_root_path": str(toolchain),
             "toolchain_root_sha256": tree_sha256(toolchain),
             "cflags": args.cflags,
+            "cmake_args": cmake_args,
+            "cmake_args_sha256": canonical_sha256(cmake_args),
         }
     return doc
 
@@ -109,6 +126,11 @@ def verify(build: dict, deployed: dict, executed: dict) -> dict:
     toolchain = build.get("toolchain")
     if not isinstance(toolchain, dict):
         raise ValueError("build snapshot is missing toolchain identity")
+    cmake_args = toolchain.get("cmake_args")
+    if not isinstance(cmake_args, list) or not cmake_args:
+        raise ValueError("build snapshot is missing exact CMake arguments")
+    if toolchain.get("cmake_args_sha256") != canonical_sha256(cmake_args):
+        raise ValueError("build snapshot CMake argument digest mismatch")
     return {
         "schema_version": 1,
         "collector_version": VERSION,
@@ -140,7 +162,12 @@ def self_test() -> None:
             "runner_arch": "X64",
             "binary_sha256": {"ap_bench": sha256(binary)},
         }
-        build = {**common, "stage": "build", "runner_name": "builder", "toolchain": {"compiler_sha256": "b" * 64}}
+        cmake_args = ["-DCMAKE_TOOLCHAIN_FILE=/opt/tc/toolchain.cmake", "-DAP_BUILD_PIPELINE=ON"]
+        build = {**common, "stage": "build", "runner_name": "builder", "toolchain": {
+            "compiler_sha256": "b" * 64,
+            "cmake_args": cmake_args,
+            "cmake_args_sha256": canonical_sha256(cmake_args),
+        }}
         deployed = {**common, "stage": "deployed", "runner_name": "dut"}
         executed = {**common, "stage": "executed", "runner_name": "dut"}
         assert verify(build, deployed, executed)["result"] == "PASS"
@@ -162,6 +189,7 @@ def main() -> int:
     snap.add_argument("--sysroot", type=Path)
     snap.add_argument("--toolchain-root", type=Path)
     snap.add_argument("--cflags")
+    snap.add_argument("--cmake-args-json")
     snap.add_argument("--output", type=Path, required=True)
     check = sub.add_parser("verify")
     check.add_argument("--build", type=Path, required=True)

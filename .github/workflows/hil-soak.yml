@@ -4,9 +4,8 @@ on:
   schedule:
     - cron: '43 18 * * *'
     - cron: '17 17 * * 0'
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
+  repository_dispatch:
+    types: [hil-post-release]
   workflow_dispatch:
     inputs:
       ref:
@@ -67,7 +66,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: hil-${{ github.event_name }}-${{ github.event.schedule || inputs.tier || 'release' }}
+  group: hil-${{ github.event_name }}-${{ github.event.schedule || inputs.tier || github.event.client_payload.release_ref || 'release' }}
   cancel-in-progress: false
 
 jobs:
@@ -80,7 +79,9 @@ jobs:
         id: policy
         env:
           EVENT_NAME: ${{ github.event_name }}
-          RELEASE_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          EVENT_TYPE: ${{ github.event.action }}
+          RELEASE_REF: ${{ github.event.client_payload.release_ref }}
+          RELEASE_TAG: ${{ github.event.client_payload.tag }}
           HIL_ENABLED: ${{ vars.HIL_ENABLED }}
         run: |
           set -euo pipefail
@@ -88,10 +89,13 @@ jobs:
             echo 'run=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if [ "$EVENT_NAME" = workflow_run ] && [ "$RELEASE_CONCLUSION" != success ]; then
-            echo 'run=false' >> "$GITHUB_OUTPUT"
-            echo "Release did not succeed; post-release HIL is not applicable."
-            exit 0
+          if [ "$EVENT_NAME" = repository_dispatch ]; then
+            test "$EVENT_TYPE" = hil-post-release
+            case "$RELEASE_REF" in
+              [0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;;
+              *) echo 'invalid post-release SHA' >&2; exit 1 ;;
+            esac
+            case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 1 ;; esac
           fi
           if [ "$HIL_ENABLED" != true ]; then
             echo 'run=false' >> "$GITHUB_OUTPUT"
@@ -108,7 +112,7 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || 'main' }}
           fetch-depth: 0
       - name: Resolve exact revision tier and board route
         id: route
@@ -116,6 +120,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_SCHEDULE: ${{ github.event.schedule }}
+          EXPECTED_RELEASE_SHA: ${{ github.event.client_payload.release_ref }}
           INPUT_TIER: ${{ inputs.tier }}
           INPUT_BOARD: ${{ inputs.board_manifest }}
           INPUT_CAPTURE: ${{ inputs.capture_device }}
@@ -131,7 +136,7 @@ jobs:
           board=${INPUT_BOARD:-/etc/audio-pipeline/board.json}
           case "$EVENT_NAME" in
             workflow_dispatch) tier=$INPUT_TIER ;;
-            workflow_run) tier=release-8h ;;
+            repository_dispatch) tier=release-8h ;;
             schedule)
               case "$EVENT_SCHEDULE" in
                 '17 17 * * 0') tier=weekly-24h ;;
@@ -147,6 +152,10 @@ jobs:
             certification-72h) seconds=259200; fault=none; max_xruns=0; max_overruns=0 ;;
             *) exit 2 ;;
           esac
+          revision=$(git rev-parse HEAD)
+          if [ "$EVENT_NAME" = repository_dispatch ]; then
+            test "$revision" = "$EXPECTED_RELEASE_SHA"
+          fi
           export BOARD="$board" TIER="$tier" SECONDS="$seconds" FAULT="$fault" MAX_XRUNS="$max_xruns" MAX_OVERRUNS="$max_overruns"
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, os
@@ -191,7 +200,7 @@ jobs:
                   raise SystemExit(f'invalid newline in HIL output {key}')
               print(f'{key}={value}')
           PY
-          git rev-parse HEAD | tee /tmp/hil-revision.txt
+          printf '%s\n' "$revision" | tee /tmp/hil-revision.txt
           test -z "$(git status --porcelain=v1)"
       - name: Board preflight
         shell: bash

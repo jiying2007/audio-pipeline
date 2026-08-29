@@ -121,8 +121,11 @@ int main(int argc, char **argv) {
     cfg.io_sample_rate_hz = sample_rate;
     cfg.mic_channels = channels;
     if (channels == 1u) cfg.stages &= ~AP_STAGE_BF;
-    if (capture_only)
+    if (capture_only) {
         cfg.stages &= ~(AP_STAGE_SYNC | AP_STAGE_AEC | AP_STAGE_RES);
+        cfg.enable_delay_tracking = 0u;
+        cfg.enable_clock_drift_compensation = 0u;
+    }
     if (ap_pipeline_validate_config(&cfg) != AP_OK) {
         fprintf(stderr, "invalid processor geometry/stage configuration\n");
         return 2;

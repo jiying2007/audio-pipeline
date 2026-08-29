@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
     AP_ALIGN16 static unsigned char runtime_mem[AP_RUNTIME_STATE_MAX_BYTES];
     ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_runtime_options_t ropts = ap_runtime_options_default();
     ap_pipeline_t *pipeline = NULL;
     ap_runtime_t *runtime = NULL;
     int16_t mic[320], render[160], out[160];
@@ -55,10 +56,10 @@ int main(int argc, char **argv) {
     if (argc > 4) rcfg.dsp_cpu = (int)strtol(argv[4], NULL, 10);
     if (!seconds) seconds = 1u;
     frames = seconds * 100u;
-    rcfg.dsp_priority = 0; /* benchmark must also work without RT privileges */
+    rcfg.dsp_priority = 0;
 
     if (ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline) != AP_OK ||
-        ap_runtime_init(runtime_mem, sizeof(runtime_mem), pipeline, &rcfg, &runtime) != AP_OK ||
+        ap_runtime_open(runtime_mem, sizeof(runtime_mem), pipeline, &rcfg, &ropts, &runtime) != AP_OK ||
         ap_runtime_start(runtime) != AP_OK) {
         fprintf(stderr, "runtime benchmark init failed\n");
         return 2;
@@ -77,7 +78,7 @@ int main(int argc, char **argv) {
             mic[2u * i] = (int16_t)((near + 0.22f * far) * 32767.0f);
             mic[2u * i + 1u] = (int16_t)((near + 0.20f * far) * 32767.0f);
         }
-        s = ap_runtime_submit(runtime, mic, render);
+        s = ap_runtime_submit_frame(runtime, mic, render, NULL);
         if (s != AP_OK) {
             fprintf(stderr, "submit failed at frame %u status=%d\n", f, (int)s);
             goto done;
@@ -113,7 +114,10 @@ int main(int argc, char **argv) {
     {
         ap_runtime_metrics_t rm;
         const double full_ratio = received ? (double)full_frames / (double)received : 0.0;
-        ap_runtime_get_metrics(runtime, &rm);
+        memset(&rm, 0, sizeof(rm));
+        rm.struct_size = sizeof(rm);
+        rm.api_version = AP_RUNTIME_API_VERSION;
+        if (ap_runtime_read_metrics(runtime, &rm) != AP_OK) goto done;
         printf("frames=%u received=%llu full=%llu lite=%llu safe=%llu full_ratio=%.6f input_full=%llu output_drop=%llu dsp_overruns=%llu last_dsp_us=%u max_dsp_us=%u quality=%d\n",
                frames, (unsigned long long)received,
                (unsigned long long)full_frames,

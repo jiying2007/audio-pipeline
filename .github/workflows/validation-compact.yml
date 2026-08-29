@@ -69,11 +69,15 @@ jobs:
           python3 validation/tools/prepare_public_validation.py verify \
             --profile compact --root "$DATA_ROOT" --seal "$SEAL" \
             > validation-cache-verification.json
-      - name: Build offline validation processor
+      - name: Build and identify offline validation processor
         run: |
+          set -euo pipefail
           cmake -S . -B build-validation-compact -DCMAKE_BUILD_TYPE=Release \
             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-          cmake --build build-validation-compact --target ap_process_pcm --parallel
+          cmake --build build-validation-compact --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum build-validation-compact/ap_process_pcm | tee validation-processor.sha256
+          build-validation-compact/ap_build_info_dump | tee validation-build-info.txt
+          ${CC:-cc} --version | head -n 1 | tee validation-compiler.txt
       - name: Build compact public validation corpus
         env:
           DATA_ROOT: ${{ inputs.data_root }}
@@ -153,10 +157,13 @@ jobs:
             --output validation-out/blind-report.json \
             --evidence-manifest validation-out/blind-evidence-manifest.json \
             --blind-summary-only --enforce
-      - name: Bind exact revision cache and package evidence
+      - name: Bind exact revision cache processor and package evidence
         run: |
           cp validation-revision.txt validation-out/
           cp validation-cache-verification.json validation-out/
+          cp validation-processor.sha256 validation-out/
+          cp validation-build-info.txt validation-out/
+          cp validation-compiler.txt validation-out/
           find validation-out -type f ! -name SHA256SUMS -print0 | sort -z | \
             xargs -0 sha256sum > /tmp/validation-compact-SHA256SUMS
           mv /tmp/validation-compact-SHA256SUMS validation-out/SHA256SUMS

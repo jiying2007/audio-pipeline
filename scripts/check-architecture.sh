@@ -89,10 +89,31 @@ if grep -R -n -E '\b(malloc|calloc|realloc|free)[[:space:]]*\(' \
 fi
 
 # Public validation workflows are part of the repository assurance boundary.
-# Keep their profile-selection and corpus-selection logic executable in the
-# required fast gate instead of relying only on YAML/Python syntax checks.
+# Keep profile selection, corpus selection and blind holdout budgets executable
+# in the required fast gate instead of relying only on YAML/Python syntax checks.
 python3 validation/tools/prepare_public_validation.py self-test
 python3 validation/tools/build_compact_public_corpus.py --self-test
 python3 validation/tools/build_full_public_corpus.py --self-test
+python3 validation/tools/split_holdout.py --self-test
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+expected = {
+    'validation-compact.json': ({'validation-grade', 'validation-grade-blind'}, 100),
+    'validation-compact-partition.json': ({'validation-grade'}, 60),
+    'validation-compact-blind.json': ({'validation-grade-blind'}, 10),
+    'validation-full.json': ({'validation-grade', 'validation-grade-blind'}, 160),
+    'validation-full-partition.json': ({'validation-grade'}, 100),
+    'validation-full-blind.json': ({'validation-grade-blind'}, 16),
+}
+root = Path('validation/policies')
+for name, (tiers, minimum) in expected.items():
+    data = json.loads((root / name).read_text())
+    assert set(data['allowed_tiers']) == tiers, (name, data['allowed_tiers'])
+    assert int(data['minimum_cases']) == minimum, (name, data['minimum_cases'])
+    assert float(data['aggregate']['min_pass_rate']) == 0.98
+print('public validation policy contracts: OK')
+PY
 
 echo "architecture contracts: OK"

@@ -1,0 +1,163 @@
+name: Validation Grade
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Exact branch, tag, or commit to validate
+        required: true
+        default: main
+        type: string
+      tier:
+        description: Validation tier
+        required: true
+        default: validation-grade
+        type: choice
+        options: [validation-grade, validation-grade-blind]
+      data_root:
+        description: Public dataset cache root on audio-validation runner
+        required: true
+        default: /opt/audio-validation-data
+        type: string
+      seal_path:
+        description: Local dataset seal JSON path on runner
+        required: true
+        default: /opt/audio-validation-data/datasets.seal.json
+        type: string
+      dns_data_root:
+        description: Optional DNS unpacked datasets_fullband path
+        required: false
+        default: ''
+        type: string
+      policy_path:
+        description: Repository-relative validation policy
+        required: true
+        default: validation/policies/validation-full.json
+        type: string
+      aec_limit:
+        description: Maximum AEC real cases
+        required: true
+        default: '60'
+        type: string
+      dns_limit:
+        description: Maximum DNS real pairs
+        required: true
+        default: '60'
+        type: string
+      robot_sim_limit:
+        description: Maximum sealed DNS+SLR28 robot-sim cases
+        required: true
+        default: '20'
+        type: string
+      holdout_percent:
+        description: Blind HMAC holdout percentage
+        required: true
+        default: '20'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validation-grade-${{ inputs.tier }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: [self-hosted, linux, audio-validation]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - name: Record exact validation revision
+        run: |
+          git rev-parse HEAD | tee validation-revision.txt
+          test -z "$(git status --porcelain=v1)"
+      - name: Validate public dataset lock and local seals
+        env:
+          DATA_ROOT: ${{ inputs.data_root }}
+          SEAL: ${{ inputs.seal_path }}
+        run: |
+          python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
+          python3 validation/tools/dataset_lock.py verify-local \
+            --lock validation/datasets.lock.json --root "$DATA_ROOT" --seal "$SEAL" \
+            --validation-grade --require-materialized > validation-dataset-verification.json
+      - name: Build offline validation processor
+        run: |
+          cmake -S . -B build-validation -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-validation --target ap_process_pcm --parallel
+      - name: Build canonical public validation corpus
+        env:
+          DATA_ROOT: ${{ inputs.data_root }}
+          SEAL: ${{ inputs.seal_path }}
+          DNS_ROOT: ${{ inputs.dns_data_root }}
+          AEC_LIMIT: ${{ inputs.aec_limit }}
+          DNS_LIMIT: ${{ inputs.dns_limit }}
+          ROBOT_LIMIT: ${{ inputs.robot_sim_limit }}
+        run: |
+          args=""
+          if [ -n "$DNS_ROOT" ]; then args="--dns-data-root $DNS_ROOT"; fi
+          # shellcheck disable=SC2086
+          python3 validation/tools/build_public_corpus.py \
+            --data-root "$DATA_ROOT" --seal "$SEAL" --output validation-out/public \
+            --aec-limit "$AEC_LIMIT" --dns-limit "$DNS_LIMIT" --robot-sim-limit "$ROBOT_LIMIT" \
+            $args
+      - name: Partition blind holdout when requested
+        if: inputs.tier == 'validation-grade-blind'
+        env:
+          AP_VALIDATION_HOLDOUT_KEY: ${{ secrets.AP_VALIDATION_HOLDOUT_KEY }}
+          HOLDOUT: ${{ inputs.holdout_percent }}
+        run: |
+          python3 validation/tools/split_holdout.py \
+            --corpus validation-out/public/corpus.json \
+            --validation-output validation-out/public/corpus-validation.json \
+            --blind-output validation-out/public/corpus-blind.json \
+            --holdout-percent "$HOLDOUT"
+      - name: Run validation-grade policy
+        if: inputs.tier == 'validation-grade'
+        env:
+          POLICY: ${{ inputs.policy_path }}
+        run: |
+          python3 validation/tools/run_validation.py \
+            --corpus validation-out/public/corpus.json --policy "$POLICY" \
+            --dataset-lock validation/datasets.lock.json \
+            --processor build-validation/ap_process_pcm \
+            --output validation-out/validation-report.json \
+            --evidence-manifest validation-out/evidence-manifest.json --enforce
+      - name: Run public validation partition before blind holdout
+        if: inputs.tier == 'validation-grade-blind'
+        env:
+          POLICY: ${{ inputs.policy_path }}
+        run: |
+          python3 validation/tools/run_validation.py \
+            --corpus validation-out/public/corpus-validation.json --policy "$POLICY" \
+            --dataset-lock validation/datasets.lock.json \
+            --processor build-validation/ap_process_pcm \
+            --output validation-out/validation-report.json \
+            --evidence-manifest validation-out/evidence-manifest.json --enforce
+      - name: Run blind holdout with summary-only report
+        if: inputs.tier == 'validation-grade-blind'
+        env:
+          POLICY: ${{ inputs.policy_path }}
+        run: |
+          python3 validation/tools/run_validation.py \
+            --corpus validation-out/public/corpus-blind.json --policy "$POLICY" \
+            --dataset-lock validation/datasets.lock.json \
+            --processor build-validation/ap_process_pcm \
+            --output validation-out/blind-report.json \
+            --evidence-manifest validation-out/blind-evidence-manifest.json \
+            --blind-summary-only --enforce
+      - name: Bind exact revision and package evidence
+        run: |
+          cp validation-revision.txt validation-out/
+          cp validation-dataset-verification.json validation-out/
+          find validation-out -type f -print0 | sort -z | xargs -0 sha256sum > validation-out/SHA256SUMS
+      - name: Upload validation evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: validation-${{ inputs.tier }}-${{ github.run_id }}
+          path: validation-out/
+          if-no-files-found: error
+          retention-days: 90

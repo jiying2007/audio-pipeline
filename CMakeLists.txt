@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 1.6.1 LANGUAGES C)
+project(audio_pipeline VERSION 2.0.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -101,7 +101,6 @@ if(AP_ENABLE_FAST_MATH)
 else()
     set(AP_HAVE_FAST_MATH 0)
 endif()
-
 
 set(AP_AEC_BACKEND "MDF" CACHE STRING "Compile-time AEC backend: MDF or NLMS")
 set_property(CACHE AP_AEC_BACKEND PROPERTY STRINGS MDF NLMS)

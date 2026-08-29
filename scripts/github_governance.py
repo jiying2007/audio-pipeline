@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 
 API_VERSION = "2026-03-10"
+GITHUB_ACTIONS_APP_ID = 15368
 
 
 def _ref_included(ruleset: dict, ref: str, default_branch: bool = False) -> bool:
@@ -59,14 +60,24 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
         present = {rule.get("type") for rule in ruleset.get("rules", []) or []}
         if not required.issubset(present):
             return False
+
+        pull = _rule(ruleset, "pull_request") or {}
+        pull_params = pull.get("parameters", {})
+        if pull_params.get("allowed_merge_methods") != ["squash"]:
+            return False
+        if pull_params.get("required_review_thread_resolution") is not True:
+            return False
+
         status = _rule(ruleset, "required_status_checks") or {}
-        params = status.get("parameters", {})
-        contexts = {
-            item.get("context")
-            for item in params.get("required_status_checks", []) or []
+        status_params = status.get("parameters", {})
+        checks = [
+            item for item in status_params.get("required_status_checks", []) or []
             if isinstance(item, dict)
-        }
-        if "summary" not in contexts or params.get("strict_required_status_checks_policy") is not True:
+        ]
+        summary_checks = [item for item in checks if item.get("context") == "summary"]
+        if not any(item.get("integration_id") == GITHUB_ACTIONS_APP_ID for item in summary_checks):
+            return False
+        if status_params.get("strict_required_status_checks_policy") is not True:
             return False
         if ruleset.get("bypass_actors"):
             return False
@@ -80,8 +91,9 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
     tags_enforced = any(tag_ok(r) for r in tag_candidates)
     if main_candidates and not main_enforced:
         findings.append(
-            "main ruleset must require PRs, strict summary status, deletion protection, "
-            "non-fast-forward protection and no bypass actors"
+            "main ruleset must require PRs, squash-only merge, conversation resolution, "
+            "strict GitHub-Actions summary status, deletion protection, non-fast-forward "
+            "protection and no bypass actors"
         )
     if tag_candidates and not tags_enforced:
         findings.append("v* tag ruleset must protect deletion/force-update and have no bypass actors")
@@ -101,7 +113,12 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
 
 
 def _gh_json(args: list[str]) -> object:
-    command = ["gh", "api", "-H", f"X-GitHub-Api-Version: {API_VERSION}", *args]
+    command = [
+        "gh", "api",
+        "-H", "Accept: application/vnd.github+json",
+        "-H", f"X-GitHub-Api-Version: {API_VERSION}",
+        *args,
+    ]
     return json.loads(subprocess.check_output(command, text=True))
 
 
@@ -130,12 +147,20 @@ def self_test() -> None:
         "bypass_actors": [],
         "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
         "rules": [
-            {"type": "pull_request", "parameters": {"allowed_merge_methods": ["squash"]}},
+            {
+                "type": "pull_request",
+                "parameters": {
+                    "allowed_merge_methods": ["squash"],
+                    "required_review_thread_resolution": True,
+                },
+            },
             {
                 "type": "required_status_checks",
                 "parameters": {
                     "strict_required_status_checks_policy": True,
-                    "required_status_checks": [{"context": "summary"}],
+                    "required_status_checks": [
+                        {"context": "summary", "integration_id": GITHUB_ACTIONS_APP_ID}
+                    ],
                 },
             },
             {"type": "deletion"},
@@ -150,6 +175,9 @@ def self_test() -> None:
         "rules": [{"type": "deletion"}, {"type": "non_fast_forward"}],
     }
     assert audit([main, tags], {"enabled": True})["result"] == "PASS"
+    main["rules"][0]["parameters"]["allowed_merge_methods"] = ["merge", "squash"]
+    assert audit([main, tags], {"enabled": True})["result"] == "FAIL"
+    main["rules"][0]["parameters"]["allowed_merge_methods"] = ["squash"]
     main["bypass_actors"] = [{"actor_type": "RepositoryRole", "actor_id": 5}]
     failed = audit([main, tags], {"enabled": False})
     assert failed["result"] == "FAIL"

@@ -10,7 +10,7 @@ import subprocess
 import time
 from pathlib import Path
 
-VERSION = "2.0"
+VERSION = "2.1"
 _KV_RE = re.compile(r"([A-Za-z0-9_]+)=([^\s]+)")
 _SUPPORTED_RATES = {8000, 16000, 24000, 32000, 48000}
 
@@ -79,9 +79,13 @@ def rss_kib(pid: int) -> int | None:
 
 
 def run_monitored(command: list[str], power_input: Path | None, power_scale: float,
-                  sample_period: float = 0.10) -> tuple[subprocess.CompletedProcess[str], dict]:
+                  sample_period: float = 0.10, extra_env: dict[str, str] | None = None
+                  ) -> tuple[subprocess.CompletedProcess[str], dict]:
+    environment = os.environ.copy()
+    if extra_env:
+        environment.update(extra_env)
     process = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=environment
     )
     max_rss = 0
     max_temp: float | None = None
@@ -219,14 +223,37 @@ def route_soak(args: argparse.Namespace) -> int:
         str(args.seconds), str(args.dsp_cpu), str(args.sample_rate),
         str(args.mic_channels),
     ]
+    fault_profiles = {
+        "none": {},
+        "accelerated": {
+            "AP_FAULT_ROUTE_RESTART_EVERY": "3000",
+            "AP_FAULT_RENDER_GAP_EVERY": "6000",
+            "AP_FAULT_RENDER_GAP_FRAMES": "5",
+            "AP_FAULT_CPU_STALL_EVERY": "9000",
+            "AP_FAULT_CPU_STALL_MS": "15",
+        },
+        "stress": {
+            "AP_FAULT_ROUTE_RESTART_EVERY": "1000",
+            "AP_FAULT_RENDER_GAP_EVERY": "2000",
+            "AP_FAULT_RENDER_GAP_FRAMES": "10",
+            "AP_FAULT_CPU_STALL_EVERY": "3000",
+            "AP_FAULT_CPU_STALL_MS": "25",
+        },
+    }
+    fault_env = dict(fault_profiles[args.fault_profile])
+    if playback == "-":
+        fault_env.pop("AP_FAULT_RENDER_GAP_EVERY", None)
+        fault_env.pop("AP_FAULT_RENDER_GAP_FRAMES", None)
     result, sensors = run_monitored(
-        command, args.power_input, args.power_scale, args.sample_period
+        command, args.power_input, args.power_scale, args.sample_period, fault_env
     )
     combined = result.stdout + "\n" + result.stderr
     values = parse_kv(combined)
     required = {
         "produced", "received", "xruns", "dsp_overruns", "input_full",
         "output_drop", "p95_dsp_us", "p99_dsp_us", "failed_frames",
+        "injected_route_restarts", "injected_render_gap_frames",
+        "injected_cpu_stalls",
     }
     missing = sorted(required - values.keys())
     if missing:
@@ -238,8 +265,16 @@ def route_soak(args: argparse.Namespace) -> int:
     input_full = as_int(values, "input_full")
     output_drop = as_int(values, "output_drop")
     failed_frames = as_int(values, "failed_frames")
+    injected_restarts = as_int(values, "injected_route_restarts")
+    injected_gaps = as_int(values, "injected_render_gap_frames")
+    injected_stalls = as_int(values, "injected_cpu_stalls")
+    injection_ok = True
+    if args.fault_profile != "none":
+        injection_ok = injected_restarts > 0 and injected_stalls > 0
+        if playback != "-":
+            injection_ok = injection_ok and injected_gaps > 0
     passed = (
-        result.returncode == 0 and produced == received
+        result.returncode == 0 and produced == received and injection_ok
         and xruns <= args.max_xruns and overruns <= args.max_overruns
         and input_full == 0 and output_drop == 0 and failed_frames == 0
     )
@@ -254,6 +289,13 @@ def route_soak(args: argparse.Namespace) -> int:
             "sample_rate_hz": args.sample_rate,
             "mic_channels": args.mic_channels,
             "dsp_cpu": args.dsp_cpu,
+        },
+        "fault_injection": {
+            "profile": args.fault_profile,
+            "route_restarts": injected_restarts,
+            "render_gap_frames": injected_gaps,
+            "cpu_stalls": injected_stalls,
+            "observed_required_faults": injection_ok,
         },
         "soak": {
             "hours": args.seconds / 3600.0,
@@ -297,11 +339,13 @@ def self_test() -> int:
     route = (
         "produced=100 received=100 xruns=0 dsp_overruns=0 input_full=0 "
         "output_drop=0 p50_dsp_us=10 p95_dsp_us=20 p99_dsp_us=30 "
-        "max_dsp_us=40 failed_frames=0 critical_events=0\n"
+        "max_dsp_us=40 failed_frames=0 critical_events=0 "
+        "injected_route_restarts=0 injected_render_gap_frames=0 injected_cpu_stalls=0\n"
     )
     r = parse_kv(route)
     assert as_int(r, "produced") == as_int(r, "received") == 100
     assert as_int(r, "p95_dsp_us") == 20
+    assert as_int(r, "injected_route_restarts") == 0
     print("target evidence collector self-test: OK")
     return 0
 
@@ -342,6 +386,8 @@ def main() -> int:
     s.add_argument("--power-input", type=Path)
     s.add_argument("--power-scale", type=float, default=1_000_000.0)
     s.add_argument("--sample-period", type=float, default=1.0)
+    s.add_argument("--fault-profile", choices=("none", "accelerated", "stress"),
+                   default="none")
 
     args = parser.parse_args()
     if args.self_test:

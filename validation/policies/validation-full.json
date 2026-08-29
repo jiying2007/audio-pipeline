@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "policy_id": "validation-full-v2",
-  "allowed_tiers": ["validation-grade", "validation-grade-blind"],
+  "allowed_tiers": ["validation-grade"],
   "minimum_cases": 160,
   "required_public_sources": ["microsoft-aec-challenge", "microsoft-dns-challenge", "openslr-slr28"],
   "aggregate": {

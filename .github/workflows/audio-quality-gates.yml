@@ -62,16 +62,24 @@ jobs:
             --dataset-lock validation/datasets.lock.json \
             --processor ./build-validation-smoke/ap_process_pcm \
             --output /tmp/ap-validation-a/report.json \
-            --evidence-manifest /tmp/ap-validation-a/evidence-manifest.json \
-            --enforce
+            --evidence-manifest /tmp/ap-validation-a/evidence-manifest.json
           python3 - <<'PY'
           import json
           from pathlib import Path
+
           report = json.loads(Path('/tmp/ap-validation-a/report.json').read_text())
-          assert report['tier'] == 'regression'
-          assert report['validation_result'] == 'PASS'
-          assert report['summary']['cases'] >= 6
           print(json.dumps(report['summary'], sort_keys=True))
+          failed = [case for case in report['cases'] if not case['passed']]
+          for case in failed:
+              print(json.dumps({
+                  'case_id': case['case_id'],
+                  'scenario': case['scenario'],
+                  'metrics': case['metrics'],
+                  'violations': case['violations'],
+              }, sort_keys=True))
+          assert report['tier'] == 'regression'
+          assert report['summary']['cases'] >= 6
+          assert report['validation_result'] == 'PASS'
           PY
 
   diagnostics-replay:

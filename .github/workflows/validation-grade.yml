@@ -104,6 +104,21 @@ jobs:
             --data-root "$DATA_ROOT" --seal "$SEAL" --output validation-out/public \
             --aec-limit "$AEC_LIMIT" --dns-limit "$DNS_LIMIT" --robot-sim-limit "$ROBOT_LIMIT" \
             $args
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          corpus = json.loads(Path('validation-out/public/corpus.json').read_text())
+          assert corpus['generator']['name'] == 'build_public_corpus.py'
+          assert corpus['generator']['version'] == 2
+          robot = [case for case in corpus['cases'] if case['scenario'] == 'bf-offaxis']
+          if len(robot) >= 4:
+              rirs = {case['source']['rir_member'] for case in robot}
+              noises = {case['source']['noise_member'] for case in robot}
+              cleans = {case['source']['clean']['source_id'] for case in robot}
+              assert len(rirs) >= 2, 'robot-sim must span multiple SLR28 RIRs'
+              assert len(noises) >= 2, 'robot-sim must span multiple SLR28 noise members'
+              assert len(cleans) >= 2, 'robot-sim must span multiple DNS clean utterances'
+          PY
       - name: Partition blind holdout when requested
         if: inputs.tier == 'validation-grade-blind'
         env:

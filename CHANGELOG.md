@@ -1,3 +1,12 @@
+# 1.6.1
+
+- Add a shared fail-closed `tools/runner_preflight.py` contract for `audio-validation`, `audio-builder`, `audio-target`, and `certification-archive` self-hosted roles; `READY` is infrastructure readiness only and never acoustic/HIL/product evidence.
+- Add the manually dispatched Trusted Runner Readiness workflow so lab machines can be validated against an exact source ref before allocating public validation, 8/24 h HIL, or 72 h shipping certification work.
+- Make Compact/Full public validation capture the `audio-validation` runner readiness report in the sealed evidence bundle before dataset verification or acoustic execution.
+- Make HIL validate and seal `audio-target` runner readiness before board preflight, and classify missing runner prerequisites as `INFRA_FAILURE` rather than product failure.
+- Add one trusted-runner activation runbook covering public validation, HIL enablement, shipping builder/toolchain readiness, lifecycle archive readiness, and readiness invalidation after machine/input changes.
+- No DSP, public C API/ABI, acoustic thresholds, resource envelopes, or shipping-certification acceptance thresholds change in this maintenance release.
+
 # 1.6.0
 
 - Close the main-branch performance bypass: PR verification compares `origin/main` to the candidate while main push verification compares the exact `event.before` revision to `HEAD`; paired core/NS/resampler/runtime performance gates now run on main as part of FULL verification.

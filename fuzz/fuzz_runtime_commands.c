@@ -13,15 +13,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     static AP_ALIGN(AP_RUNTIME_STATE_ALIGNMENT) unsigned char runtime_mem[AP_RUNTIME_STATE_MAX_BYTES];
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_runtime_options_t ropts = ap_runtime_options_default();
     ap_pipeline_t *pipeline = NULL;
     ap_runtime_t *runtime = NULL;
     ap_runtime_command_t cmd;
     if (size < 4u) return 0;
     if (ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &pcfg, &pipeline) != AP_OK) return 0;
-    if (ap_runtime_init(runtime_mem, sizeof(runtime_mem), pipeline, &rcfg, &runtime) != AP_OK) return 0;
+    if (ap_runtime_open(runtime_mem, sizeof(runtime_mem), pipeline, &rcfg, &ropts, &runtime) != AP_OK) return 0;
     memset(&cmd, 0, sizeof(cmd));
     cmd.struct_size = sizeof(cmd);
-    cmd.api_version = AP_RUNTIME_CONTROL_API_VERSION;
+    cmd.api_version = AP_RUNTIME_API_VERSION;
     cmd.kind = 1u + (data[0] % 7u);
     if (cmd.kind == AP_RUNTIME_COMMAND_STREAM_DISCONTINUITY) {
         cmd.data.discontinuity.flags = size > 1u ? data[1] : 0u;

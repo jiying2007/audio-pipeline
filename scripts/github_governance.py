@@ -9,6 +9,8 @@ import os
 import subprocess
 from pathlib import Path
 
+API_VERSION = "2026-03-10"
+
 
 def _ref_included(ruleset: dict, ref: str, default_branch: bool = False) -> bool:
     ref_name = ruleset.get("conditions", {}).get("ref_name", {})
@@ -99,7 +101,7 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
 
 
 def _gh_json(args: list[str]) -> object:
-    command = ["gh", "api", *args]
+    command = ["gh", "api", "-H", f"X-GitHub-Api-Version: {API_VERSION}", *args]
     return json.loads(subprocess.check_output(command, text=True))
 
 

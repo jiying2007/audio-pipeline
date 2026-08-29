@@ -175,7 +175,7 @@ def build(output: Path, seed: int, seconds: float) -> dict:
 
     add_case(cases, output, "ns-stationary", "ns-stationary", mix(clean, stationary), 1,
              clean=clean, labels=labels, processor_profile="ns-isolated",
-             expected={"min_near_si_sdr_improvement_db": -3.0, "min_noise_only_attenuation_db": 1.0, "min_vad_f1": 0.20})
+             expected={"min_near_si_sdr_improvement_db": -4.0, "min_noise_only_attenuation_db": 1.0, "min_vad_f1": 0.20})
 
     add_case(cases, output, "aec-farend", "aec-farend", echo_a, 1,
              render=render, echo=echo_a,

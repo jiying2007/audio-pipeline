@@ -130,6 +130,37 @@ def max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:
     return max((normalized_corr(a, b, lag) for lag in lags), default=0.0)
 
 
+def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
+                   sample_rate: int, expected_delay_samples: int) -> tuple[float | None, int]:
+    """Calculate SI-SDR after bounded sample-exact latency refinement.
+
+    The search is anchored to the pipeline-declared algorithmic latency. Input
+    references use an expected delay of zero. A narrow +/-3 ms refinement
+    absorbs integer-ms latency reporting and filter rounding without turning
+    the evaluator into an unconstrained synchronizer that can search for a
+    favorable score.
+    """
+    radius = max(2, sample_rate * 3 // 1000)
+    center = -int(expected_delay_samples)
+    best_lag = center
+    best_corr = -1.0
+    for lag in range(center - radius, center + radius + 1):
+        corr = normalized_corr(reference, estimate, lag, stride=4)
+        if corr > best_corr:
+            best_corr = corr
+            best_lag = lag
+    if best_lag >= 0:
+        ref = reference[best_lag:]
+        est = estimate
+    else:
+        ref = reference
+        est = estimate[-best_lag:]
+    count = min(len(ref), len(est))
+    if count < 16:
+        return None, -best_lag
+    return si_sdr_db(ref[:count], est[:count]), -best_lag
+
+
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
     count = min(len(echo), len(output))
     if count < 160:
@@ -264,10 +295,15 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
     clean_path = resolve(corpus_path, case.get("clean_near_audio"))
     if clean_path is not None:
         clean, _ = read_audio(clean_path, rate, 1)
-        input_sdr = si_sdr_db(clean, mic0)
-        output_sdr = si_sdr_db(clean, output)
+        declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
+        expected_output_delay = declared_latency_ms * rate // 1000
+        input_sdr, input_alignment = aligned_si_sdr(clean, mic0, rate, 0)
+        output_sdr, output_alignment = aligned_si_sdr(clean, output, rate, expected_output_delay)
         metrics["input_near_si_sdr_db"] = input_sdr
         metrics["near_si_sdr_db"] = output_sdr
+        metrics["declared_algorithmic_latency_ms"] = declared_latency_ms
+        metrics["input_alignment_samples"] = input_alignment
+        metrics["output_alignment_samples"] = output_alignment
         metrics["near_si_sdr_improvement_db"] = None if input_sdr is None or output_sdr is None else output_sdr - input_sdr
     echo_path = resolve(corpus_path, case.get("echo_audio"))
     if echo_path is not None:
@@ -375,6 +411,15 @@ def self_test() -> None:
     ref = [int(10000 * math.sin(math.tau * 440.0 * n / rate)) for n in range(rate)]
     assert (si_sdr_db(ref, ref) or 0) > 100
     assert max_abs_corr(ref, ref, rate) > 0.99
+    state = 1
+    broadband = []
+    for _ in range(rate):
+        state = (1664525 * state + 1013904223) & 0xffffffff
+        broadband.append(((state >> 16) & 0xffff) - 32768)
+    delayed = [0] * 137 + broadband[:-137]
+    delayed_sdr, alignment = aligned_si_sdr(broadband, delayed, rate, 137)
+    assert alignment == 137
+    assert delayed_sdr is not None and delayed_sdr > 100
     assert vad_f1([0, 1, 1, 0], [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]) == 1.0
     assert rms_dbfs([0] * 10) <= -119.0
     print("validation evaluator self-test: OK")

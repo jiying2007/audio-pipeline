@@ -39,18 +39,7 @@ cmake --preset composition-activity-only
 cmake --preset composition-fast-resampler
 ```
 
-当前 hosted GCC Resource Gate 已证明物理裁剪：
-
-```text
-Pipeline full   78,096 B
-Pipeline LOW    46,928 B
-Pipeline TINY   25,408 B
-Pipeline RAW     1,064 B
-Runtime full    32,632 B
-Runtime TINY     5,080 B
-```
-
-这些数字只用于证明当前 compiler/ABI 下的物理裁剪；发货产品仍应读取 exact size API。
+Hosted GCC 资源测量只有一个机器真相源：`ci/resource-baseline.json`；`docs/generated/RESOURCE_BASELINE.md` 由它生成，CI 会重新测量并 diff 两者。Hosted 数字只证明声明的 hosted build contract 下存在物理裁剪；产品 exact size API 与 shipping certification 才是发货构建的最终依据。
 
 ## SKU 构建包络
 
@@ -193,7 +182,7 @@ PR 先通过强制 Fast Gate，再展开高成本矩阵。`scripts/ci_impact.py`
 
 Nightly 增加显式 flaky 检测和 revision-bound 历史趋势分析；声学 validation 失败会保留可一键重放的 reproducer artifact；metamorphic/property contracts 覆盖 reset deterministic replay、silence 稳定性和拓扑不变量。
 
-真实板 HIL 与 hosted/QEMU 证据严格分离。可信 `[self-hosted, linux, audio-target]` runner 使用板卡本地 metadata/preflight/cleanup，并支持 10 分钟 / 1 小时 / 8 小时 / 24 小时 / 72 小时分层 soak。只有仓库变量 `HIL_ENABLED=true` 后才启用定时和 Release 后 HIL；public 仓库的外部 PR 不会自动在产品板执行。详见 `docs/TESTING.zh-CN.md` 和 `hil/README.md`。
+真实板 HIL 与 hosted/QEMU 证据严格分离。可信 `[self-hosted, linux, audio-target]` runner 使用板卡本地 metadata/preflight/cleanup，并支持 10 分钟 / 1 小时 / 8 小时 / 24 小时 / 72 小时分层 soak。Scheduled/Release 后 HIL 是 fail-visible：策略要求执行但 `HIL_ENABLED!=true` 时 availability gate 失败，而不是静默 skip 或伪造 PASS。Release 后 8 小时 HIL 只在真正新建且确认 immutable 的 Release 后触发，并绑定该 Release exact SHA；Scheduled HIL 固定调度事件 SHA。Public 仓库外部 PR 不会自动在产品板执行。详见 `docs/TESTING.zh-CN.md`、`docs/PRODUCT_ASSURANCE.md` 和 `hil/README.md`。
 
 ## Quality / Release Gate
 
@@ -215,7 +204,7 @@ Hosted x86 百分比只作为 regression signal。发货结论必须来自真实
 
 ## 产品认证
 
-`product-certified` 记录必须包含目标板 performance evidence、声学 corpus revision/result、nominal XRUN/overrun/drop、artifact/checksum，以及通过的 >=8 h soak。semantic validator 还会执行初始产品门槛，例如 p95 <7 ms、p99 <10 ms。
+`product-certified` schema-v4 记录必须绑定 shipping-approved SKU policy、exact shipping toolchain、build/deployed/executed 二进制 SHA-256 一致性、真实 target performance/acoustic/thermal/power/route evidence、nominal XRUN/overrun/drop、attested artifacts，以及 immutable `product-lifecycle` archive receipt。正式 Cortex-A32 LOW shipping policy 要求最少 72 小时 soak；1 小时 / 8 小时 / 24 小时 HIL 仅属于运营健康与发布历史，不能替代 72 小时 shipping certification。
 
 参考：
 

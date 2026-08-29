@@ -39,18 +39,7 @@ cmake --preset composition-activity-only
 cmake --preset composition-fast-resampler
 ```
 
-Current hosted GCC resource gates demonstrate physical pruning:
-
-```text
-Pipeline full   78,096 B
-Pipeline LOW    46,928 B
-Pipeline TINY   25,408 B
-Pipeline RAW     1,064 B
-Runtime full    32,632 B
-Runtime TINY     5,080 B
-```
-
-These numbers prove pruning for the current hosted compiler/ABI only; exact size functions remain authoritative for a product build.
+Hosted GCC resource measurements have a single machine source of truth in `ci/resource-baseline.json`; `docs/generated/RESOURCE_BASELINE.md` is generated from it and CI re-measures/diffs both. These hosted numbers prove pruning only for the declared hosted build contract; exact product size functions and shipping certification remain authoritative for a product build.
 
 ## Product build envelope
 
@@ -197,7 +186,7 @@ PR verification now uses a mandatory Fast Gate before expensive matrices expand.
 
 Nightly adds explicit flaky detection and revision-bound historical trend analysis. Acoustic validation failures preserve a self-contained reproducer artifact. Metamorphic/property contracts cover deterministic reset/replay, silence stability and topology invariants.
 
-Real-board HIL remains evidence-separated from hosted/QEMU CI. Trusted `[self-hosted, linux, audio-target]` runners use board-local metadata/preflight/cleanup and tiered 10 min / 1 h / 8 h / 24 h / 72 h soak. Scheduled and post-release HIL are disabled until repository variable `HIL_ENABLED=true`; untrusted public PR code is never automatically executed on product hardware. See `docs/TESTING.md` and `hil/README.md`.
+Real-board HIL remains evidence-separated from hosted/QEMU CI. Trusted `[self-hosted, linux, audio-target]` runners use board-local metadata/preflight/cleanup and tiered 10 min / 1 h / 8 h / 24 h / 72 h soak. Scheduled and post-release HIL are fail-visible: when policy requires them but `HIL_ENABLED!=true`, the availability gate fails instead of silently skipping or manufacturing PASS. Post-release 8 h HIL is dispatched only for a newly published immutable release and is pinned to that exact release SHA; scheduled HIL is pinned to the schedule event SHA. Untrusted public PR code is never automatically executed on product hardware. See `docs/TESTING.md`, `docs/PRODUCT_ASSURANCE.md` and `hil/README.md`.
 
 ## Quality and release gates
 
@@ -219,7 +208,7 @@ Hosted x86 percentages are regression signals only. Shipping claims require the 
 
 ## Target certification
 
-`product-certified` records must include target performance evidence, acoustic corpus revision/results, nominal XRUN/overrun/drop results, artifacts/checksums and a passing >=8 h soak. The semantic validator additionally enforces the initial product gates such as p95 <7 ms and p99 <10 ms.
+`product-certified` schema-v4 records must bind a shipping-approved SKU policy, exact shipping toolchain, build/deployed/executed binary SHA-256 equality, real target performance/acoustic/thermal/power/route evidence, nominal XRUN/overrun/drop results, attested artifacts and an immutable product-lifecycle archive receipt. The formal Cortex-A32 LOW shipping policy requires a minimum 72 h soak; 1 h / 8 h / 24 h HIL tiers are operational/release history and never substitute for 72 h shipping certification.
 
 See:
 

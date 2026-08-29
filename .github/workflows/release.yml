@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
   id-token: write
   attestations: write
   artifact-metadata: write
@@ -28,6 +29,22 @@ jobs:
         env:
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
+      - name: Require merged PR lineage for release SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          gh api -H 'Accept: application/vnd.github+json' \
+            "repos/$GITHUB_REPOSITORY/commits/$VERIFIED_SHA/pulls" > /tmp/release-prs.json
+          python3 - <<'PY'
+          import json
+          prs = json.load(open('/tmp/release-prs.json'))
+          eligible = [p for p in prs if p.get('merged_at') and p.get('base', {}).get('ref') == 'main']
+          if not eligible:
+              raise SystemExit('release SHA has no merged PR targeting main; direct-push releases are forbidden')
+          print('release_prs=' + ','.join('#' + str(p['number']) for p in eligible))
+          PY
       - name: Resolve project version and source epoch
         id: version
         env:
@@ -175,3 +192,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: gh release edit "$TAG" --draft=false --latest
+      - name: Require immutable published release
+        if: steps.existing.outputs.release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          immutable=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.immutable')
+          if [ "$immutable" != true ]; then
+            echo "Published release is mutable. Enable repository immutable releases before merging a release version." >&2
+            exit 1
+          fi
+          echo "immutable_release=$TAG"

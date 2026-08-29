@@ -1,0 +1,55 @@
+name: NS quality sweep
+
+on:
+  push:
+    branches: [validation/v1.3.0]
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Sweep speech-preservation blend
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-validation --seed 1307 >/dev/null
+          for protect in 0.0 0.2 0.35 0.5 0.65; do
+            git checkout -- src/enhance/ap_ns.c
+            python3 - "$protect" <<'PY'
+          from pathlib import Path
+          import sys
+          p = Path('src/enhance/ap_ns.c')
+          text = p.read_text()
+          old = '        gain = ap_clampf(gain, floor_gain, 1.0f) * res_gain;\n'
+          protect = sys.argv[1]
+          new = f'        gain = ap_clampf(gain + {protect}f * speech * (1.0f - gain), floor_gain, 1.0f) * res_gain;\n'
+          if old not in text:
+              raise SystemExit('NS gain anchor not found')
+          p.write_text(text.replace(old, new, 1))
+          PY
+            rm -rf "build-sweep-$protect"
+            cmake -S . -B "build-sweep-$protect" -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_BUILD_TESTS=OFF >/dev/null
+            cmake --build "build-sweep-$protect" --target ap_process_pcm --parallel >/dev/null
+            python3 validation/tools/run_validation.py \
+              --corpus /tmp/ap-validation/corpus.json \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor "./build-sweep-$protect/ap_process_pcm" \
+              --output "/tmp/report-$protect.json" >/dev/null
+            python3 - "$protect" <<'PY'
+          import json, sys
+          report = json.load(open('/tmp/report-' + sys.argv[1] + '.json'))
+          case = next(x for x in report['cases'] if x['case_id'] == 'ns-stationary')
+          print(json.dumps({
+              'protect': float(sys.argv[1]),
+              'validation_result': report['validation_result'],
+              'passed_cases': report['summary']['passed_cases'],
+              'ns_metrics': case['metrics'],
+              'ns_violations': case['violations'],
+          }, sort_keys=True))
+          PY
+          done

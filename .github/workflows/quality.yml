@@ -11,6 +11,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  abi-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Verify additive ABI/API against v1.1.1
+        run: sh scripts/check-abi-contract.sh v1.1.1
+
   sdk-consumer:
     runs-on: ubuntu-latest
     steps:

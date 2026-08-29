@@ -1,12 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "audio-pipeline SKU certification record",
+  "title": "audio-pipeline v4 SKU certification record",
   "type": "object",
-  "required": ["sku", "status", "build", "platform", "audio_route", "performance", "acoustic", "soak", "artifacts"],
+  "required": [
+    "schema_version", "sku", "status", "build", "platform", "audio_route",
+    "performance", "acoustic", "soak", "artifacts"
+  ],
   "properties": {
+    "schema_version": {"const": 4},
     "sku": {"type": "string", "minLength": 1},
     "status": {"enum": ["pending", "board-validated", "product-certified", "failed"]},
-    "schema_version": {"type": "integer", "minimum": 1},
     "policy": {"type": "string", "minLength": 1},
     "policy_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
     "corpus_manifest_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
@@ -15,11 +18,15 @@
     "toolchain_digest": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
     "build": {
       "type": "object",
-      "required": ["commit", "version", "fingerprint", "compiler", "abi"],
+      "required": [
+        "commit", "version", "fingerprint", "compiler", "abi",
+        "source_revision", "config_digest", "compiler_id", "compiler_version",
+        "target_triple", "build_type", "binary_sha256"
+      ],
       "properties": {
-        "commit": {"type": "string", "minLength": 7},
+        "commit": {"type": "string", "pattern": "^[A-Fa-f0-9]{40}$"},
         "version": {"type": "string", "minLength": 1},
-        "fingerprint": {"type": "string", "minLength": 1},
+        "fingerprint": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
         "compiler": {"type": "string", "minLength": 1},
         "abi": {"type": "string", "minLength": 1},
         "source_revision": {"type": "string", "pattern": "^[A-Fa-f0-9]{40}$"},
@@ -29,8 +36,7 @@
         "target_triple": {"type": "string", "minLength": 1},
         "build_type": {"type": "string", "minLength": 1},
         "binary_sha256": {
-          "type": "object",
-          "minProperties": 1,
+          "type": "object", "minProperties": 1,
           "additionalProperties": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
         }
       },
@@ -38,18 +44,26 @@
     },
     "deployment": {
       "type": "object",
+      "required": [
+        "source_revision", "builder_runner", "dut_runner", "binary_sha256",
+        "toolchain", "result"
+      ],
       "properties": {
         "schema_version": {"const": 1},
         "source_revision": {"type": "string", "pattern": "^[A-Fa-f0-9]{40}$"},
         "builder_runner": {"type": "string", "minLength": 1},
         "dut_runner": {"type": "string", "minLength": 1},
         "binary_sha256": {
-          "type": "object",
-          "minProperties": 1,
+          "type": "object", "minProperties": 1,
           "additionalProperties": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
         },
         "toolchain": {
           "type": "object",
+          "required": [
+            "compiler_path", "compiler_sha256", "compiler_version",
+            "sysroot_path", "sysroot_sha256", "toolchain_root_path",
+            "toolchain_root_sha256", "cflags", "cmake_args", "cmake_args_sha256"
+          ],
           "properties": {
             "compiler_path": {"type": "string", "minLength": 1},
             "compiler_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
@@ -59,11 +73,7 @@
             "toolchain_root_path": {"type": "string", "minLength": 1},
             "toolchain_root_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
             "cflags": {"type": "string"},
-            "cmake_args": {
-              "type": "array",
-              "minItems": 1,
-              "items": {"type": "string", "minLength": 1}
-            },
+            "cmake_args": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
             "cmake_args_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
           },
           "additionalProperties": true
@@ -99,6 +109,10 @@
     },
     "performance": {
       "type": "object",
+      "required": [
+        "active_cpu_percent", "p95_us", "p99_us", "deadline_misses", "rss_kib",
+        "xruns", "overruns", "input_full_events", "output_drop_events"
+      ],
       "properties": {
         "active_cpu_percent": {"type": "number", "minimum": 0},
         "idle_cpu_percent": {"type": "number", "minimum": 0},
@@ -118,6 +132,11 @@
     },
     "acoustic": {
       "type": "object",
+      "required": [
+        "corpus_revision", "cases_total", "cases_passed", "far_end_erle_db",
+        "aec_convergence_ms", "double_talk_near_si_sdr_db",
+        "noise_si_sdr_improvement_db", "vad_f1", "threshold_report"
+      ],
       "properties": {
         "corpus_revision": {"type": "string", "minLength": 1},
         "cases_total": {"type": "integer", "minimum": 1},
@@ -133,6 +152,7 @@
     },
     "thermal_power": {
       "type": "object",
+      "required": ["ambient_c", "max_soc_c", "average_power_w"],
       "properties": {
         "ambient_c": {"type": "number"},
         "max_soc_c": {"type": "number"},
@@ -142,7 +162,10 @@
     },
     "soak": {
       "type": "object",
-      "required": ["hours", "passed"],
+      "required": [
+        "hours", "passed", "xruns", "deadline_misses", "overruns",
+        "input_full_events", "output_drop_events", "failed_frames", "p95_us", "p99_us"
+      ],
       "properties": {
         "hours": {"type": "number", "minimum": 0},
         "passed": {"type": "boolean"},
@@ -159,6 +182,10 @@
     },
     "artifacts": {
       "type": "object",
+      "required": [
+        "result_json", "benchmark_json", "evidence_manifest", "deployment_provenance",
+        "binary_sha256", "sha256"
+      ],
       "properties": {
         "result_json": {"type": "string", "minLength": 1},
         "benchmark_json": {"type": "string", "minLength": 1},
@@ -167,8 +194,7 @@
         "evidence_manifest": {"type": "string", "minLength": 1},
         "deployment_provenance": {"type": "string", "minLength": 1},
         "binary_sha256": {
-          "type": "object",
-          "minProperties": 1,
+          "type": "object", "minProperties": 1,
           "additionalProperties": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
         }
       },
@@ -180,82 +206,12 @@
       "if": {"properties": {"status": {"const": "product-certified"}}, "required": ["status"]},
       "then": {
         "required": [
-          "policy", "thermal_power", "schema_version", "policy_sha256",
+          "policy", "thermal_power", "deployment", "policy_sha256",
           "corpus_manifest_sha256", "evidence_manifest_sha256",
           "collector_version", "toolchain_digest"
         ],
         "properties": {
-          "schema_version": {"enum": [2, 3, 4]},
-          "performance": {
-            "required": [
-              "active_cpu_percent", "p95_us", "p99_us", "deadline_misses", "rss_kib",
-              "xruns", "overruns", "input_full_events", "output_drop_events"
-            ]
-          },
-          "acoustic": {
-            "required": [
-              "corpus_revision", "cases_total", "cases_passed", "far_end_erle_db",
-              "aec_convergence_ms", "double_talk_near_si_sdr_db",
-              "noise_si_sdr_improvement_db", "vad_f1", "threshold_report"
-            ]
-          },
-          "thermal_power": {
-            "required": ["ambient_c", "max_soc_c", "average_power_w"]
-          },
-          "soak": {
-            "required": ["hours", "passed", "xruns", "deadline_misses", "output_drop_events"],
-            "properties": {
-              "hours": {"minimum": 8},
-              "passed": {"const": true}
-            }
-          },
-          "artifacts": {
-            "required": ["result_json", "benchmark_json", "evidence_manifest", "sha256"]
-          }
-        }
-      }
-    },
-    {
-      "if": {"properties": {"schema_version": {"enum": [3, 4]}}, "required": ["schema_version"]},
-      "then": {
-        "properties": {
-          "build": {
-            "required": [
-              "source_revision", "config_digest", "compiler_id", "compiler_version",
-              "target_triple", "build_type", "binary_sha256"
-            ]
-          },
-          "soak": {
-            "required": [
-              "xruns", "deadline_misses", "overruns", "input_full_events",
-              "output_drop_events", "failed_frames", "p95_us", "p99_us"
-            ]
-          },
-          "artifacts": {"required": ["binary_sha256"]}
-        }
-      }
-    },
-    {
-      "if": {"properties": {"schema_version": {"const": 4}}, "required": ["schema_version"]},
-      "then": {
-        "required": ["deployment"],
-        "properties": {
-          "deployment": {
-            "required": [
-              "source_revision", "builder_runner", "dut_runner", "binary_sha256",
-              "toolchain", "result"
-            ],
-            "properties": {
-              "toolchain": {
-                "required": [
-                  "compiler_path", "compiler_sha256", "compiler_version",
-                  "sysroot_path", "sysroot_sha256", "toolchain_root_path",
-                  "toolchain_root_sha256", "cflags", "cmake_args", "cmake_args_sha256"
-                ]
-              }
-            }
-          },
-          "artifacts": {"required": ["deployment_provenance", "binary_sha256"]}
+          "soak": {"properties": {"passed": {"const": true}}}
         }
       }
     }

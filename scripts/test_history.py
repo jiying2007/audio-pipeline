@@ -66,14 +66,18 @@ def robust_z(value: float, values: list[float]) -> float:
     return 0.67448975 * (value - median) / mad
 
 
-def evaluate(current: dict, history: list[dict], min_samples: int, z_limit: float,
-             pct_limit: float) -> dict:
+def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samples: int,
+             z_limit: float, pct_limit: float) -> dict:
     findings = []
     metrics = current["metrics"]
+    sample_counts: dict[str, int] = {}
+    evaluated_metrics = 0
     for name, value_raw in sorted(metrics.items()):
         samples = [float(r["metrics"][name]) for r in history if name in r.get("metrics", {})]
+        sample_counts[name] = len(samples)
         if len(samples) < min_samples:
             continue
+        evaluated_metrics += 1
         value = float(value_raw)
         median = statistics.median(samples)
         pct = 0.0 if abs(median) <= 1.0e-12 else (value - median) / abs(median) * 100.0
@@ -85,11 +89,16 @@ def evaluate(current: dict, history: list[dict], min_samples: int, z_limit: floa
                 "metric": name, "current": value, "median": median,
                 "delta_pct": pct, "robust_z": z, "samples": len(samples),
             })
+    mature = bool(metrics) and all(sample_counts.get(name, 0) >= maturity_samples for name in metrics)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "source_revision": current.get("source_revision"),
         "history_records": len(history),
         "min_samples": min_samples,
+        "maturity_samples": maturity_samples,
+        "maturity_status": "MATURE" if mature else "WARMING_UP",
+        "sample_counts": sample_counts,
+        "evaluated_metrics": evaluated_metrics,
         "z_limit": z_limit,
         "pct_limit": pct_limit,
         "result": "FAIL" if findings else "PASS",
@@ -100,9 +109,14 @@ def evaluate(current: dict, history: list[dict], min_samples: int, z_limit: floa
 def self_test() -> None:
     current = {"source_revision": "x", "metrics": {"active_p99_us": 130.0}}
     history = [{"metrics": {"active_p99_us": x}} for x in (99, 100, 101, 100, 99, 101)]
-    assert evaluate(current, history, 5, 4.0, 15.0)["result"] == "FAIL"
+    failed = evaluate(current, history, 5, 30, 4.0, 15.0)
+    assert failed["result"] == "FAIL"
+    assert failed["maturity_status"] == "WARMING_UP"
     current["metrics"]["active_p99_us"] = 103.0
-    assert evaluate(current, history, 5, 4.0, 15.0)["result"] == "PASS"
+    assert evaluate(current, history, 5, 30, 4.0, 15.0)["result"] == "PASS"
+    mature_history = [{"metrics": {"active_p99_us": 100.0}} for _ in range(30)]
+    mature = evaluate(current, mature_history, 5, 30, 4.0, 15.0)
+    assert mature["maturity_status"] == "MATURE"
     print("test history self-test: OK")
 
 
@@ -120,6 +134,7 @@ def main() -> int:
     e.add_argument("--history-dir", type=Path, required=True)
     e.add_argument("--output", type=Path, required=True)
     e.add_argument("--min-samples", type=int, default=5)
+    e.add_argument("--maturity-samples", type=int, default=30)
     e.add_argument("--z-limit", type=float, default=4.0)
     e.add_argument("--pct-limit", type=float, default=15.0)
     args = parser.parse_args()
@@ -130,7 +145,14 @@ def main() -> int:
         result = collect(args.benchmark, args.validation, args.revision)
     elif args.command == "evaluate":
         current = json.loads(args.current.read_text(encoding="utf-8"))
-        result = evaluate(current, load_history(args.history_dir), args.min_samples, args.z_limit, args.pct_limit)
+        result = evaluate(
+            current,
+            load_history(args.history_dir),
+            args.min_samples,
+            args.maturity_samples,
+            args.z_limit,
+            args.pct_limit,
+        )
     else:
         parser.error("collect or evaluate is required")
     args.output.parent.mkdir(parents=True, exist_ok=True)

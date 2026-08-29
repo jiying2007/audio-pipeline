@@ -1,0 +1,64 @@
+name: Bootstrap v1.5 CI Toolchain Image
+
+on:
+  push:
+    branches: [feat/test-intelligence-v1.5.0]
+    paths:
+      - ci/Dockerfile
+      - .github/workflows/ci-image-bootstrap.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Login to GHCR
+        shell: bash
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build image
+        run: docker build --pull -f ci/Dockerfile -t ghcr.io/jiying2007/audio-pipeline-ci:v1.5 .
+      - name: Push image
+        id: push
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker push ghcr.io/jiying2007/audio-pipeline-ci:v1.5 | tee /tmp/push.log
+          digest=$(sed -n 's/^v1.5: digest: \(sha256:[0-9a-f]\{64\}\).*/\1/p' /tmp/push.log | tail -n1)
+          test -n "$digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "CI_IMAGE_DIGEST=$digest"
+
+  verify-image:
+    needs: build-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@${{ needs.build-image.outputs.digest }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Verify toolchain image
+        run: |
+          gcc --version
+          clang --version
+          cmake --version
+          arm-linux-gnueabihf-gcc --version
+          aarch64-linux-gnu-gcc --version
+          qemu-arm --version
+          pkg-config --exists alsa
+          gcovr --version
+          ccache --version
+          cmake -S . -B /tmp/ap-ci-image-smoke -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/ap-ci-image-smoke --parallel
+          ctest --test-dir /tmp/ap-ci-image-smoke --output-on-failure

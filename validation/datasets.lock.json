@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lock_id": "audio-pipeline-public-validation-v1",
+  "datasets": [
+    {
+      "id": "microsoft-aec-challenge",
+      "kind": "git",
+      "source": "https://github.com/microsoft/AEC-Challenge.git",
+      "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+      "license": "Composite upstream dataset terms; code MIT. See upstream README Dataset licenses.",
+      "validation_roles": ["aec-real", "aec-doubletalk", "aec-mobile", "aec-synthetic"],
+      "local_path": "AEC-Challenge",
+      "required_paths": ["datasets/test_set_icassp2022/doubletalk", "datasets/test_set_icassp2022/farend-singletalk", "datasets/test_set_icassp2022/nearend-singletalk"],
+      "integrity": {"mode": "git-revision"}
+    },
+    {
+      "id": "microsoft-dns-challenge",
+      "kind": "git",
+      "source": "https://github.com/microsoft/DNS-Challenge.git",
+      "revision": "591184a9fcb2cbdec02520fed81a32bbbf9d73ff",
+      "license": "Composite upstream dataset terms; code MIT. See upstream README Dataset licenses.",
+      "validation_roles": ["noise-suppression", "clean-speech", "noise", "speakerphone"],
+      "local_path": "DNS-Challenge",
+      "required_paths": ["noisyspeech_synthesizer_singleprocess.py", "README.md"],
+      "integrity": {
+        "mode": "upstream-checksum-index",
+        "algorithm": "sha1",
+        "index_url": "https://dns4public.blob.core.windows.net/dns4archive/dns5-datasets-files-sha1.csv.bz2"
+      }
+    },
+    {
+      "id": "openslr-slr28",
+      "kind": "archive",
+      "source": "https://www.openslr.org/resources/28/rirs_noises.zip",
+      "revision": null,
+      "license": "Apache-2.0",
+      "validation_roles": ["rir-real", "rir-simulated", "isotropic-noise", "point-source-noise"],
+      "local_path": "rirs_noises.zip",
+      "required_paths": [],
+      "integrity": {"mode": "local-sha256-seal", "algorithm": "sha256", "digest": null}
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio-pipeline public validation dataset lock",
+  "type": "object",
+  "required": ["schema_version", "lock_id", "datasets"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "lock_id": {"type": "string", "minLength": 1},
+    "datasets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "source", "license", "validation_roles"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["git", "archive", "checksum-index"]},
+          "source": {"type": "string", "minLength": 1},
+          "revision": {"type": ["string", "null"]},
+          "license": {"type": "string", "minLength": 1},
+          "validation_roles": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "local_path": {"type": "string"},
+          "required_paths": {"type": "array", "items": {"type": "string"}},
+          "integrity": {
+            "type": "object",
+            "properties": {
+              "mode": {"enum": ["git-revision", "upstream-checksum-index", "local-sha256-seal"]},
+              "algorithm": {"type": ["string", "null"]},
+              "digest": {"type": ["string", "null"]},
+              "index_url": {"type": ["string", "null"]}
+            },
+            "required": ["mode"]
+          }
+        }
+      }
+    }
+  }
+}

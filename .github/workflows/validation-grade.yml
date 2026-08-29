@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Exact branch, tag, or commit to validate
+        description: Exact branch, tag or commit to validate
         required: true
         default: main
         type: string
@@ -81,11 +81,15 @@ jobs:
           if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
           python3 validation/tools/prepare_public_validation.py "${args[@]}" \
             > validation-dataset-verification.json
-      - name: Build offline validation processor
+      - name: Build and identify offline validation processor
         run: |
+          set -euo pipefail
           cmake -S . -B build-validation -DCMAKE_BUILD_TYPE=Release \
             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-          cmake --build build-validation --target ap_process_pcm --parallel
+          cmake --build build-validation --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum build-validation/ap_process_pcm | tee validation-processor.sha256
+          build-validation/ap_build_info_dump | tee validation-build-info.txt
+          ${CC:-cc} --version | head -n 1 | tee validation-compiler.txt
       - name: Build canonical public validation corpus
         env:
           DATA_ROOT: ${{ inputs.data_root }}
@@ -161,10 +165,13 @@ jobs:
             --output validation-out/blind-report.json \
             --evidence-manifest validation-out/blind-evidence-manifest.json \
             --blind-summary-only --enforce
-      - name: Bind exact revision and package evidence
+      - name: Bind exact revision cache processor and package evidence
         run: |
           cp validation-revision.txt validation-out/
           cp validation-dataset-verification.json validation-out/
+          cp validation-processor.sha256 validation-out/
+          cp validation-build-info.txt validation-out/
+          cp validation-compiler.txt validation-out/
           find validation-out -type f ! -name SHA256SUMS -print0 | sort -z | \
             xargs -0 sha256sum > /tmp/validation-SHA256SUMS
           mv /tmp/validation-SHA256SUMS validation-out/SHA256SUMS

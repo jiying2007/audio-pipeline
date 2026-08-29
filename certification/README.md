@@ -9,6 +9,7 @@ A v4 product certification record binds all of the following to one exact source
 - shipping-approved SKU policy bytes and SHA-256;
 - shipping SoC/revision, kernel, governor, cpuset, IRQ affinity and CPU-frequency state;
 - exact shipping compiler executable SHA-256/version, sysroot tree SHA-256, toolchain-root SHA-256 and C flags;
+- exact reviewed SKU CMake argument array and its canonical SHA-256;
 - deterministic build-configuration digest and build-info identity;
 - SHA-256 for every certification binary;
 - distinct builder and DUT runner identities;
@@ -26,7 +27,7 @@ A v4 product certification record binds all of the following to one exact source
 
 Schema v2/v3 remain accepted as historical evidence. New formal shipping certification runs emit schema v4.
 
-v3 added exact build identity and materialized-evidence verification. v4 adds the shipping-approved SKU policy contract plus builder/DUT separation, exact build/deploy/execute binary identity, detailed toolchain provenance and deployment-provenance evidence.
+v3 added exact build identity and materialized-evidence verification. v4 adds the shipping-approved SKU policy contract plus builder/DUT separation, exact build/deploy/execute binary identity, detailed toolchain/CMake-argument provenance and deployment-provenance evidence.
 
 The 1.x C API/ABI remains compatible. `ap_build_info_t` stays frozen; additive build identity is exposed through versioned build-info surfaces rather than by mutating the original public structure.
 
@@ -77,7 +78,7 @@ It also does not compile the shipping binary on the DUT. The DUT runs the exact 
 A formal run requires all of the following rather than optional fallbacks:
 
 - exact source ref/SHA;
-- shipping SKU and checked-in approved policy;
+- shipping SKU and checked-in approved policy under `certification/policies/`;
 - real corpus manifest and acoustic result JSON already present on the DUT/lab environment;
 - capture/playback route and real far-end PCM;
 - live target power sensor and ambient condition;
@@ -85,8 +86,10 @@ A formal run requires all of the following rather than optional fallbacks:
 - exact shipping sysroot;
 - exact shipping toolchain root;
 - exact shipping C flags;
-- reviewed shipping SKU CMake arguments;
+- reviewed shipping SKU CMake arguments supplied as a non-empty JSON string array and hash-bound in build provenance;
 - soak duration meeting the checked-in policy minimum.
+
+Critical CMake boundary variables such as compiler, sysroot, root-path modes, C flags and build type are enforced by the workflow and cannot be overridden by SKU argument input.
 
 Missing hardware, sensor, route, archive service or toolchain input is a failed/incomplete certification run, not a degraded hosted PASS.
 
@@ -114,7 +117,7 @@ python3 tools/target_evidence.py route-soak \
 
 ## Provenance helpers
 
-`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. Build provenance includes compiler/sysroot/toolchain-root hashes; the final verifier requires binary-map equality and distinct builder/DUT runners.
+`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. Build provenance includes compiler/sysroot/toolchain-root hashes, exact C flags, the exact CMake argument array and its canonical SHA-256; the final verifier requires binary-map equality and distinct builder/DUT runners.
 
 `tools/ap_certify.py` assembles the v4 record and materialized evidence. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and v4 deployment provenance.
 

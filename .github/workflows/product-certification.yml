@@ -158,6 +158,11 @@ jobs:
           read -r -a extra <<< "$CMAKE_ARGS"
           cmake -S . -B build-shipping -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER="$CC" -DCMAKE_SYSROOT="$SYSROOT" \
+            -DCMAKE_FIND_ROOT_PATH="$SYSROOT" \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
             -DCMAKE_C_FLAGS="$CFLAGS" -DAP_BUILD_ALSA_EXAMPLE=ON \
             -DAP_BUILD_TESTS=OFF -DAP_BUILD_EXAMPLES=ON -DAP_BUILD_BENCH=ON \
             "${extra[@]}"

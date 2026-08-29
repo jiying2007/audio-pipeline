@@ -191,6 +191,14 @@ CI installs the SDK into a clean prefix and builds/runs separate consumers, so p
 
 `eval/run_eval.py` supports 1- or 2-mic cases, capture-only or full-duplex input, optional clean near-end reference and case-level thresholds for SI-SDR, RMS and input/output render correlation. `--enforce-thresholds` converts a case into an executable acoustic gate. Private product corpora remain outside the repository.
 
+## Test intelligence and HIL automation
+
+PR verification now uses a mandatory Fast Gate before expensive matrices expand. `scripts/ci_impact.py` conservatively selects affected composition/Arm/backend/performance domains; unknown/public/build/test-infrastructure changes expand to FULL, and every `main` push always runs full verification. Heavy ARM/QEMU/ALSA/static-analysis jobs use the reviewed GHCR toolchain image by immutable digest and share only `ccache` compiler objects, never test results or certification evidence.
+
+Nightly adds explicit flaky detection and revision-bound historical trend analysis. Acoustic validation failures preserve a self-contained reproducer artifact. Metamorphic/property contracts cover deterministic reset/replay, silence stability and topology invariants.
+
+Real-board HIL remains evidence-separated from hosted/QEMU CI. Trusted `[self-hosted, linux, audio-target]` runners use board-local metadata/preflight/cleanup and tiered 10 min / 1 h / 8 h / 24 h / 72 h soak. Scheduled and post-release HIL are disabled until repository variable `HIL_ENABLED=true`; untrusted public PR code is never automatically executed on product hardware. See `docs/TESTING.md` and `hil/README.md`.
+
 ## Quality and release gates
 
 Repository automation includes:
@@ -233,6 +241,7 @@ No repository CI result is presented as Cortex-A7/A32 board performance.
 - `docs/DIAGNOSTICS.md` — event, Flight Recorder, dump and replay contract
 - `docs/PORTING.md` — BSP/ALSA/toolchain integration
 - `docs/TUNING.md` — acoustic/product tuning rules
+- `docs/TESTING.md` — Fast/Full CI, impact routing, cache, failure, flaky/trend and HIL policy
 - `docs/DEVELOPMENT.md` — contribution and hard-cut rules
 - `THIRD_PARTY.md` — clean-room/reference policy
 

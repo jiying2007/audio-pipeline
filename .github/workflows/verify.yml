@@ -9,42 +9,233 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: verify-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  impact:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.impact.outputs.docs_only }}
+      full: ${{ steps.impact.outputs.full }}
+      run_ci: ${{ steps.impact.outputs.run_ci }}
+      run_quality: ${{ steps.impact.outputs.run_quality }}
+      run_audio: ${{ steps.impact.outputs.run_audio }}
+      run_resource: ${{ steps.impact.outputs.run_resource }}
+      run_codeql: ${{ steps.impact.outputs.run_codeql }}
+      run_perf: ${{ steps.impact.outputs.run_perf }}
+      run_alsa: ${{ steps.impact.outputs.run_alsa }}
+      run_aec_backend: ${{ steps.impact.outputs.run_aec_backend }}
+      run_ns_backend: ${{ steps.impact.outputs.run_ns_backend }}
+      run_extended: ${{ steps.impact.outputs.run_extended }}
+      run_abi: ${{ steps.impact.outputs.run_abi }}
+      composition_matrix: ${{ steps.impact.outputs.composition_matrix }}
+      arm_matrix: ${{ steps.impact.outputs.arm_matrix }}
+      base_sha: ${{ steps.refs.outputs.base }}
+      head_sha: ${{ steps.refs.outputs.head }}
+      reason: ${{ steps.impact.outputs.reason }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Resolve verification range
+        id: refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          head='${{ github.sha }}'
+          if [ '${{ github.event_name }}' = pull_request ]; then
+            base='${{ github.event.pull_request.base.sha }}'
+            head='${{ github.event.pull_request.head.sha }}'
+          else
+            base='${{ github.event.before }}'
+            case "$base" in
+              ''|0000000000000000000000000000000000000000) base=$(git rev-parse HEAD^) ;;
+            esac
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+      - name: Select conservative CI impact
+        id: impact
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='${{ steps.refs.outputs.base }}'
+          head='${{ steps.refs.outputs.head }}'
+          python3 scripts/ci_impact.py --self-test
+          git diff --check "$base...$head"
+          args=(--base "$base" --head "$head" --github-output "$GITHUB_OUTPUT")
+          if [ '${{ github.event_name }}' != pull_request ]; then args+=(--force-full); fi
+          python3 scripts/ci_impact.py "${args[@]}" | tee /tmp/impact.json
+
+  fast-docs:
+    needs: impact
+    if: needs.impact.outputs.docs_only == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Fast documentation gate
+        run: python3 scripts/ci_impact.py --self-test
+
+  fast-code:
+    needs: impact
+    if: needs.impact.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: fast-clang
+      - name: Validate test-intelligence tools
+        run: |
+          python3 -m py_compile scripts/*.py tools/*.py validation/tools/*.py
+          python3 scripts/ci_impact.py --self-test
+          python3 scripts/ci_failure.py --self-test
+          python3 scripts/flaky_guard.py --self-test
+          python3 scripts/test_history.py --self-test
+          python3 scripts/validation_reproducer.py --self-test
+          python3 tools/hil_board.py --self-test
+          python3 tools/target_evidence.py --self-test
+          sh scripts/check-architecture.sh
+      - name: Strict compile and unit/property gate
+        env:
+          CC: clang
+        run: |
+          cmake -S . -B build-fast-gate -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-fast-gate --parallel
+          ctest --test-dir build-fast-gate --output-on-failure
+          ccache --show-stats
+      - name: Additive ABI gate when impacted
+        if: needs.impact.outputs.run_abi == 'true'
+        run: sh scripts/check-abi-contract.sh v1.1.1
+
+  fast-gate:
+    if: always()
+    needs: [impact, fast-docs, fast-code]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce fast feedback gate
+        env:
+          DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
+          DOCS_RESULT: ${{ needs.fast-docs.result }}
+          CODE_RESULT: ${{ needs.fast-code.result }}
+          IMPACT_RESULT: ${{ needs.impact.result }}
+          REASON: ${{ needs.impact.outputs.reason }}
+        run: |
+          set -euo pipefail
+          echo "impact=$IMPACT_RESULT docs_only=$DOCS_ONLY docs=$DOCS_RESULT code=$CODE_RESULT reason=$REASON"
+          test "$IMPACT_RESULT" = success
+          if [ "$DOCS_ONLY" = true ]; then
+            test "$DOCS_RESULT" = success
+            test "$CODE_RESULT" = skipped
+          else
+            test "$DOCS_RESULT" = skipped
+            test "$CODE_RESULT" = success
+          fi
+
   ci:
+    needs: [impact, fast-gate]
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_ci == 'true'
     uses: ./.github/workflows/ci.yml
+    with:
+      composition_matrix: ${{ needs.impact.outputs.composition_matrix }}
+      arm_matrix: ${{ needs.impact.outputs.arm_matrix }}
+      run_composition: ${{ needs.impact.outputs.composition_matrix != '[]' }}
+      run_arm: ${{ needs.impact.outputs.arm_matrix != '[]' }}
+      run_perf: ${{ needs.impact.outputs.run_perf == 'true' }}
+      run_extended: ${{ needs.impact.outputs.run_extended == 'true' }}
+      run_alsa: ${{ needs.impact.outputs.run_alsa == 'true' }}
+      run_aec_backend: ${{ needs.impact.outputs.run_aec_backend == 'true' }}
+      run_ns_backend: ${{ needs.impact.outputs.run_ns_backend == 'true' }}
+
   quality:
+    needs: [impact, fast-gate]
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_quality == 'true'
     uses: ./.github/workflows/quality.yml
+    with:
+      run_abi: ${{ needs.impact.outputs.run_abi == 'true' }}
+      run_extended: ${{ needs.impact.outputs.run_extended == 'true' }}
+
   audio-quality:
+    needs: [impact, fast-gate]
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_audio == 'true'
     uses: ./.github/workflows/audio-quality-gates.yml
+    with:
+      run_extended: ${{ needs.impact.outputs.run_extended == 'true' }}
+
   resource-gates:
+    needs: [impact, fast-gate]
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_resource == 'true'
     uses: ./.github/workflows/resource-gates.yml
+
   codeql:
+    needs: [impact, fast-gate]
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_codeql == 'true'
     permissions:
       contents: read
       security-events: write
     uses: ./.github/workflows/codeql.yml
+
   summary:
     if: always()
-    needs: [ci, quality, audio-quality, resource-gates, codeql]
+    needs: [impact, fast-gate, ci, quality, audio-quality, resource-gates, codeql]
     runs-on: ubuntu-latest
     steps:
-      - name: Enforce aggregate verification
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Classify aggregate verification
+        run: >-
+          python3 scripts/ci_failure.py --output /tmp/verification-summary.json aggregate
+          --fast '${{ needs.fast-gate.result }}'
+          --ci '${{ needs.ci.result }}'
+          --quality '${{ needs.quality.result }}'
+          --audio '${{ needs.audio-quality.result }}'
+          --resource '${{ needs.resource-gates.result }}'
+          --codeql '${{ needs.codeql.result }}'
+      - name: Enforce impact-aware aggregate verification
+        shell: bash
         env:
+          FAST_RESULT: ${{ needs.fast-gate.result }}
           CI_RESULT: ${{ needs.ci.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           AUDIO_RESULT: ${{ needs.audio-quality.result }}
           RESOURCE_RESULT: ${{ needs.resource-gates.result }}
           CODEQL_RESULT: ${{ needs.codeql.result }}
+          EXPECT_CI: ${{ needs.impact.outputs.run_ci }}
+          EXPECT_QUALITY: ${{ needs.impact.outputs.run_quality }}
+          EXPECT_AUDIO: ${{ needs.impact.outputs.run_audio }}
+          EXPECT_RESOURCE: ${{ needs.impact.outputs.run_resource }}
+          EXPECT_CODEQL: ${{ needs.impact.outputs.run_codeql }}
         run: |
-          printf 'ci=%s quality=%s audio=%s resource=%s codeql=%s\n' \
-            "$CI_RESULT" "$QUALITY_RESULT" "$AUDIO_RESULT" "$RESOURCE_RESULT" "$CODEQL_RESULT"
-          test "$CI_RESULT" = success
-          test "$QUALITY_RESULT" = success
-          test "$AUDIO_RESULT" = success
-          test "$RESOURCE_RESULT" = success
-          test "$CODEQL_RESULT" = success
+          set -euo pipefail
+          check() {
+            expected=$1 result=$2 name=$3
+            if [ "$expected" = true ]; then
+              [ "$result" = success ] || { echo "$name expected success, got $result" >&2; return 1; }
+            else
+              [ "$result" = skipped ] || { echo "$name expected skipped, got $result" >&2; return 1; }
+            fi
+          }
+          test "$FAST_RESULT" = success
+          check "$EXPECT_CI" "$CI_RESULT" ci
+          check "$EXPECT_QUALITY" "$QUALITY_RESULT" quality
+          check "$EXPECT_AUDIO" "$AUDIO_RESULT" audio-quality
+          check "$EXPECT_RESOURCE" "$RESOURCE_RESULT" resource-gates
+          check "$EXPECT_CODEQL" "$CODEQL_RESULT" codeql
+      - name: Upload failure classification
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: verification-failure-${{ github.run_id }}
+          path: /tmp/verification-summary.json
+          retention-days: 14
+          if-no-files-found: error

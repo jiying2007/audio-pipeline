@@ -99,6 +99,36 @@ static void nap_100us(void) {
     (void)nanosleep(&t, NULL);
 }
 
+static void nap_ms(unsigned ms) {
+    struct timespec t;
+    t.tv_sec = (time_t)(ms / 1000u);
+    t.tv_nsec = (long)(ms % 1000u) * 1000000L;
+    (void)nanosleep(&t, NULL);
+}
+
+static unsigned env_u32(const char *name, unsigned default_value) {
+    const char *value = getenv(name);
+    char *end = NULL;
+    unsigned long parsed;
+    if (!value || !*value) return default_value;
+    errno = 0;
+    parsed = strtoul(value, &end, 10);
+    if (errno != 0 || !end || *end != '\0' || parsed > 0xfffffffful) {
+        fprintf(stderr, "invalid %s=%s\n", name, value);
+        exit(2);
+    }
+    return (unsigned)parsed;
+}
+
+static int restart_pcm(snd_pcm_t *pcm) {
+    int rc;
+    if (!pcm) return 0;
+    rc = snd_pcm_drop(pcm);
+    if (rc < 0) return -1;
+    rc = snd_pcm_prepare(pcm);
+    return rc < 0 ? -1 : 0;
+}
+
 static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s <capture> <playback|-> <farend-s16le|-> <uplink-s16le|-> "
@@ -121,6 +151,15 @@ int main(int argc, char **argv) {
     unsigned rate = 16000u, mic_channels = 2u, frame;
     unsigned max_frames = 0u, produced = 0u, received = 0u;
     uint64_t xruns = 0u;
+    uint64_t injected_route_restarts = 0u;
+    uint64_t injected_render_gap_frames = 0u;
+    uint64_t injected_cpu_stalls = 0u;
+    const unsigned fault_route_restart_every = env_u32("AP_FAULT_ROUTE_RESTART_EVERY", 0u);
+    const unsigned fault_render_gap_every = env_u32("AP_FAULT_RENDER_GAP_EVERY", 0u);
+    const unsigned fault_render_gap_frames = env_u32("AP_FAULT_RENDER_GAP_FRAMES", 0u);
+    const unsigned fault_cpu_stall_every = env_u32("AP_FAULT_CPU_STALL_EVERY", 0u);
+    const unsigned fault_cpu_stall_ms = env_u32("AP_FAULT_CPU_STALL_MS", 0u);
+    unsigned render_gap_remaining = 0u;
     int silence_render;
     int have_playback;
     int discard_uplink;
@@ -173,7 +212,9 @@ int main(int argc, char **argv) {
         (playback && configure_pcm(playback, 1u, rate) < 0)) goto done;
 
     cfg.io_sample_rate_hz = rate;
+    cfg.internal_sample_rate_hz = rate < 16000u ? rate : 16000u;
     cfg.mic_channels = mic_channels;
+    if (mic_channels == 1u) cfg.stages &= ~AP_STAGE_BF;
     if (ap_pipeline_validate_config(&cfg) != AP_OK) {
         fprintf(stderr, "pipeline does not support requested route geometry\n");
         goto done;
@@ -187,11 +228,51 @@ int main(int argc, char **argv) {
 
     while (!max_frames || produced < max_frames) {
         ap_status_t s;
+        ap_frame_metadata_t metadata;
+        const ap_frame_metadata_t *metadata_ptr = NULL;
         int ended = 0;
+        int gap_started = 0;
+        memset(&metadata, 0, sizeof(metadata));
+        metadata.struct_size = sizeof(metadata);
+        metadata.api_version = AP_RUNTIME_CONTROL_API_VERSION;
+        metadata.stream_sequence = produced;
+
+        if (fault_route_restart_every && produced > 0u &&
+            produced % fault_route_restart_every == 0u) {
+            if (restart_pcm(capture) != 0 || restart_pcm(playback) != 0) {
+                fprintf(stderr, "injected ALSA route restart failed\n");
+                goto done;
+            }
+            metadata.flags |= AP_FRAME_CAPTURE_DISCONTINUITY | AP_FRAME_CODEC_REOPEN;
+            metadata.lost_capture_frames = 1u;
+            if (playback) {
+                metadata.flags |= AP_FRAME_RENDER_DISCONTINUITY;
+                metadata.lost_render_frames = 1u;
+            }
+            metadata_ptr = &metadata;
+            injected_route_restarts++;
+        }
+
         if (fill_render(far, silence_render, max_frames != 0u,
                         render, frame, &ended) != 0) {
             fprintf(stderr, "cannot read/repeat far-end stimulus\n");
             goto done;
+        }
+        if (playback && fault_render_gap_every && fault_render_gap_frames &&
+            render_gap_remaining == 0u && produced > 0u &&
+            produced % fault_render_gap_every == 0u) {
+            render_gap_remaining = fault_render_gap_frames;
+            gap_started = 1;
+        }
+        if (playback && render_gap_remaining > 0u) {
+            memset(render, 0, frame * sizeof(render[0]));
+            render_gap_remaining--;
+            injected_render_gap_frames++;
+            if (gap_started) {
+                metadata.flags |= AP_FRAME_RENDER_DISCONTINUITY;
+                metadata.lost_render_frames = fault_render_gap_frames;
+                metadata_ptr = &metadata;
+            }
         }
         if (playback && write_all(playback, render, frame, &xruns) != 0) {
             fprintf(stderr, "ALSA playback XRUN recovery failed\n");
@@ -202,7 +283,12 @@ int main(int argc, char **argv) {
             goto done;
         }
 
-        s = ap_runtime_submit(runtime, mic, playback ? render : NULL);
+        if (fault_cpu_stall_every && fault_cpu_stall_ms && produced > 0u &&
+            produced % fault_cpu_stall_every == 0u) {
+            nap_ms(fault_cpu_stall_ms);
+            injected_cpu_stalls++;
+        }
+        s = ap_runtime_submit_ex(runtime, mic, playback ? render : NULL, metadata_ptr);
         if (s == AP_EFULL) {
             fprintf(stderr, "DSP input queue full at frame %u\n", produced);
             goto done;
@@ -250,7 +336,8 @@ int main(int argc, char **argv) {
                 "render_push_failures=%llu capture_process_failures=%llu "
                 "scheduler_bind_failures=%llu memory_lock_failures=%llu "
                 "actual_cpu=%d actual_policy=%d actual_priority=%d quality=%d "
-                "backend=%d delay_ms=%u resets=%llu\n",
+                "backend=%d delay_ms=%u resets=%llu injected_route_restarts=%llu "
+                "injected_render_gap_frames=%llu injected_cpu_stalls=%llu\n",
                 produced, received, (unsigned long long)xruns,
                 (unsigned long long)rm.dsp_overruns,
                 (unsigned long long)rm.input_full_events,
@@ -264,7 +351,10 @@ int main(int argc, char **argv) {
                 (unsigned long long)rm.memory_lock_failures,
                 rm.actual_cpu, rm.actual_policy, rm.actual_priority,
                 (int)rm.quality, (int)pm.aec_backend, pm.estimated_delay_ms,
-                (unsigned long long)pm.aec_resets);
+                (unsigned long long)pm.aec_resets,
+                (unsigned long long)injected_route_restarts,
+                (unsigned long long)injected_render_gap_frames,
+                (unsigned long long)injected_cpu_stalls);
         if (produced != received || rm.failed_frames != 0u ||
             rm.input_full_events != 0u || rm.output_drop_events != 0u ||
             rm.capture_process_failures != 0u || rm.render_push_failures != 0u) {

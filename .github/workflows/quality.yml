@@ -2,9 +2,19 @@ name: Quality
 
 on:
   workflow_call:
+    inputs:
+      run_abi:
+        type: boolean
+        required: false
+        default: true
+      run_extended:
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -12,6 +22,7 @@ concurrency:
 
 jobs:
   abi-contract:
+    if: inputs.run_abi
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -24,6 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: quality-sdk
       - name: Build and install SDK
         run: |
           cmake -S . -B build-sdk -DCMAKE_BUILD_TYPE=Release
@@ -31,30 +45,30 @@ jobs:
           cmake --install build-sdk --prefix "$PWD/stage"
       - name: Consume with find_package
         run: |
-          cmake -S tests/consumer -B build-consumer \
-            -DCMAKE_PREFIX_PATH="$PWD/stage"
+          cmake -S tests/consumer -B build-consumer -DCMAKE_PREFIX_PATH="$PWD/stage"
           cmake --build build-consumer --parallel
           ./build-consumer/audio_pipeline_consumer
       - name: Consume with pkg-config
         run: |
           export PKG_CONFIG_PATH="$PWD/stage/lib/pkgconfig:$PWD/stage/lib64/pkgconfig"
-          cc tests/consumer/consumer.c -o /tmp/audio-pipeline-pc \
-            $(pkg-config --cflags --libs audio-pipeline)
+          cc tests/consumer/consumer.c -o /tmp/audio-pipeline-pc $(pkg-config --cflags --libs audio-pipeline)
           /tmp/audio-pipeline-pc
 
   sku-memory-rom:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: quality-size
       - name: Verify SKU pipeline RAM pruning
         run: |
           cmake --preset composition-full
           cmake --preset composition-low
           cmake --preset composition-tiny
           cmake --preset composition-raw
-          for p in full low tiny raw; do
-            cmake --build "build/composition-$p" --target ap_state_size --parallel
-          done
+          for p in full low tiny raw; do cmake --build "build/composition-$p" --target ap_state_size --parallel; done
           full=$(./build/composition-full/ap_state_size)
           low=$(./build/composition-low/ap_state_size)
           tiny=$(./build/composition-tiny/ap_state_size)
@@ -97,9 +111,13 @@ jobs:
           test "$tiny" -lt "$full"
 
   thread-sanitizer:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: tsan
       - name: Configure TSan runtime contract
         env:
           CC: clang
@@ -116,7 +134,13 @@ jobs:
         run: ./build-tsan/ap_runtime_tests
 
   qemu-exec:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     strategy:
       fail-fast: false
       matrix:
@@ -135,20 +159,16 @@ jobs:
             qemu: qemu-aarch64 -cpu cortex-a53 -L /usr/aarch64-linux-gnu
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Install cross runtime
-        run: >-
-          sudo apt-get update && sudo apt-get install -y qemu-user
-          gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
-          libc6-dev-armhf-cross libc6-dev-arm64-cross
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: qemu-${{ matrix.name }}
       - name: Configure executable contract
         env:
           CC: ${{ matrix.compiler }}
         run: >-
           cmake -S . -B build/qemu-${{ matrix.name }}
-          -DCMAKE_TOOLCHAIN_FILE=${{ matrix.toolchain }}
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_C_FLAGS='${{ matrix.cflags }}'
-          -DAP_SIMD_BACKEND=${{ matrix.simd }}
+          -DCMAKE_TOOLCHAIN_FILE=${{ matrix.toolchain }} -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_FLAGS='${{ matrix.cflags }}' -DAP_SIMD_BACKEND=${{ matrix.simd }}
           -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DAP_BUILD_TESTS=ON
       - name: Build executable contracts
         run: >-
@@ -164,32 +184,42 @@ jobs:
           $Q ./build/qemu-${{ matrix.name }}/ap_runtime_tests
 
   coverage:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Install coverage tooling
-        run: sudo apt-get update && sudo apt-get install -y gcovr
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: coverage
       - name: Configure coverage build
         env:
           CC: gcc
         run: >-
-          cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Debug
-          -DAP_BUILD_BENCH=OFF
-          -DCMAKE_C_FLAGS='--coverage -O0 -g'
-          -DCMAKE_EXE_LINKER_FLAGS='--coverage'
+          cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Debug -DAP_BUILD_BENCH=OFF
+          -DCMAKE_C_FLAGS='--coverage -O0 -g' -DCMAKE_EXE_LINKER_FLAGS='--coverage'
       - name: Run tests and enforce coverage
         run: |
           cmake --build build-coverage --parallel
           ctest --test-dir build-coverage --output-on-failure
-          gcovr --root . --filter 'src/' --exclude 'tests/' \
-            --fail-under-line 90 --print-summary
+          gcovr --root . --filter 'src/' --exclude 'tests/' --fail-under-line 90 --print-summary
 
   static-analysis:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Install analyzer
-        run: sudo apt-get update && sudo apt-get install -y clang-tools
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: scan-build
       - name: Configure
         env:
           CC: clang

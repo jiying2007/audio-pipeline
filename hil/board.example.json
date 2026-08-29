@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "board_id": "replace-with-stable-board-id",
+  "revision": "EVT/DVT/PVT revision",
+  "soc": "Cortex-A32 product SoC",
+  "ram_mib": 128,
+  "kernel_family": "embedded-linux",
+  "audio_codec": "replace-with-codec",
+  "mic_board_revision": "replace-with-mic-revision",
+  "speaker_revision": "replace-with-speaker-revision",
+  "runner_labels": ["self-hosted", "linux", "audio-target"],
+  "route": {
+    "capture_device": "hw:0,0",
+    "playback_device": "hw:0,0",
+    "farend_file": "/opt/audio-pipeline/fixtures/farend-s16le.pcm",
+    "sample_rate_hz": 16000,
+    "mic_channels": 2,
+    "dsp_cpu": 1
+  },
+  "thermal_sensor": "/sys/class/thermal/thermal_zone0/temp",
+  "power_sensor": "/path/to/live_power_sensor",
+  "preflight_max_soc_c": 55.0,
+  "min_free_mib": 256,
+  "power_cycle_hook": null,
+  "cleanup_hook": null
+}

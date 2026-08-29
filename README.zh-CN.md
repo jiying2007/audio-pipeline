@@ -187,6 +187,14 @@ CI 会安装到干净目录后，用独立 consumer 工程编译、链接和运�
 
 `eval/run_eval.py` 支持 1/2 麦、capture-only/full-duplex、可选 clean near-end，并可对 SI-SDR、RMS、input/output 与 render 的相关性配置 case-level threshold。`--enforce-thresholds` 会让未达标 case 直接失败。真实产品语料继续保留在仓库外。
 
+## 测试智能化与 HIL 自动化
+
+PR 先通过强制 Fast Gate，再展开高成本矩阵。`scripts/ci_impact.py` 按显式依赖保守选择 composition/Arm/backend/performance 域；未知路径、公开头文件、构建/测试基础设施改动直接回退 FULL，所有 `main` push 无条件完整 Verify。ARM/QEMU/ALSA/static-analysis 等重任务统一使用按 immutable digest 固定的 GHCR toolchain image，只复用 `ccache` 编译对象，不缓存测试结论或认证 evidence。
+
+Nightly 增加显式 flaky 检测和 revision-bound 历史趋势分析；声学 validation 失败会保留可一键重放的 reproducer artifact；metamorphic/property contracts 覆盖 reset deterministic replay、silence 稳定性和拓扑不变量。
+
+真实板 HIL 与 hosted/QEMU 证据严格分离。可信 `[self-hosted, linux, audio-target]` runner 使用板卡本地 metadata/preflight/cleanup，并支持 10 分钟 / 1 小时 / 8 小时 / 24 小时 / 72 小时分层 soak。只有仓库变量 `HIL_ENABLED=true` 后才启用定时和 Release 后 HIL；public 仓库的外部 PR 不会自动在产品板执行。详见 `docs/TESTING.zh-CN.md` 和 `hil/README.md`。
+
 ## Quality / Release Gate
 
 仓库自动化包含：
@@ -229,6 +237,7 @@ Hosted x86 百分比只作为 regression signal。发货结论必须来自真实
 - `docs/DIAGNOSTICS.md`：event、Flight Recorder、dump/replay 契约
 - `docs/PORTING.md`：BSP/ALSA/toolchain 集成
 - `docs/TUNING.md`：产品声学调优
+- `docs/TESTING.zh-CN.md`：Fast/Full CI、impact、cache、失败分类、flaky/trend 与 HIL 策略
 - `docs/DEVELOPMENT.md`：开发与 hard-cut 规范
 - `THIRD_PARTY.md`：clean-room/reference 边界
 

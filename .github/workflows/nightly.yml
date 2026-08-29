@@ -7,12 +7,20 @@ on:
 
 permissions:
   contents: read
+  actions: read
+
+concurrency:
+  group: nightly-main
+  cancel-in-progress: true
 
 jobs:
   long-fuzz:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: nightly-fuzz
       - name: Configure libFuzzer
         env:
           CC: clang
@@ -42,11 +50,18 @@ jobs:
       - run: python3 validation/tools/dataset_lock.py self-test
       - run: python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
       - run: python3 validation/tools/run_validation.py --self-test
+      - run: python3 scripts/ci_impact.py --self-test
+      - run: python3 scripts/flaky_guard.py --self-test
+      - run: python3 scripts/test_history.py --self-test
+      - run: python3 tools/hil_board.py --self-test
 
   validation-regression:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: nightly-validation
       - name: Build offline processor
         run: |
           cmake -S . -B build-validation-nightly -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
@@ -65,3 +80,89 @@ jobs:
               --evidence-manifest "$root/evidence-manifest.json" \
               --enforce
           done
+
+  flaky-sentinel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: nightly-flaky
+      - name: Build deterministic test suite once
+        env:
+          CC: clang
+        run: |
+          cmake -S . -B build-flaky -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-flaky --parallel
+      - name: Enforce 2 percent flake budget across 100 replays
+        run: >-
+          python3 scripts/flaky_guard.py --runs 100 --max-rate 0.02
+          --output /tmp/flaky-report.json --
+          ctest --test-dir build-flaky --output-on-failure
+      - name: Upload flaky history
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: flaky-sentinel-${{ github.run_id }}
+          path: /tmp/flaky-report.json
+          retention-days: 30
+          if-no-files-found: error
+
+  historical-trend:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: nightly-history
+      - name: Build history probes
+        env:
+          CC: gcc
+        run: |
+          cmake -S . -B build-history -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-history --parallel --target ap_bench ap_process_pcm
+      - name: Measure current main candidate
+        run: |
+          mkdir -p /tmp/test-history-current
+          ./build-history/ap_bench 5 0 0 active > /tmp/test-history-current/benchmark.txt
+          python3 validation/tools/build_validation_corpus.py --output /tmp/history-validation --seed 4307
+          python3 validation/tools/run_validation.py \
+            --corpus /tmp/history-validation/corpus.json \
+            --policy validation/policies/validation-smoke.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor ./build-history/ap_process_pcm \
+            --output /tmp/history-validation/report.json \
+            --evidence-manifest /tmp/history-validation/evidence.json \
+            --enforce
+          python3 scripts/test_history.py collect \
+            --benchmark /tmp/test-history-current/benchmark.txt \
+            --validation /tmp/history-validation/report.json \
+            --revision '${{ github.sha }}' \
+            --output /tmp/test-history-current/current.json
+      - name: Download successful main history
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/test-history-old
+          gh run list --workflow=nightly.yml --branch=main --status=success --limit 20 \
+            --json databaseId --jq '.[].databaseId' | while read -r id; do
+              mkdir -p "/tmp/test-history-old/$id"
+              gh run download "$id" --name test-history --dir "/tmp/test-history-old/$id" >/dev/null 2>&1 || true
+            done
+      - name: Enforce robust historical trend envelope
+        run: >-
+          python3 scripts/test_history.py evaluate
+          --current /tmp/test-history-current/current.json
+          --history-dir /tmp/test-history-old
+          --output /tmp/test-history-current/trend.json
+          --min-samples 5 --z-limit 4.0 --pct-limit 15.0
+      - name: Upload current history point
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-history
+          path: /tmp/test-history-current
+          retention-days: 90
+          if-no-files-found: error

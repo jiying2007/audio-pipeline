@@ -1,0 +1,79 @@
+name: CI Toolchain Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ci/Dockerfile
+      - .github/workflows/ci-toolchain-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ci-toolchain-image-main
+  cancel-in-progress: false
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Login to GHCR
+        shell: bash
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build immutable candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="ghcr.io/jiying2007/audio-pipeline-ci:ci-${GITHUB_SHA}"
+          docker build --pull -f ci/Dockerfile -t "$image" .
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+      - name: Local image smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" bash -lc '
+            set -euo pipefail
+            gcc --version
+            clang --version
+            scan-build --help >/dev/null
+            cmake --version
+            ninja --version
+            arm-linux-gnueabihf-gcc --version
+            aarch64-linux-gnu-gcc --version
+            qemu-arm --version
+            qemu-aarch64 --version
+            arecord --version
+            pkg-config --exists alsa
+            gcovr --version
+            ccache --version
+            cmake -S . -B /tmp/ap-ci-image-smoke -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+            cmake --build /tmp/ap-ci-image-smoke --parallel
+            ctest --test-dir /tmp/ap-ci-image-smoke --output-on-failure
+          '
+      - name: Publish SHA tag and stable pointer
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          stable=ghcr.io/jiying2007/audio-pipeline-ci:ci-latest
+          docker tag "$IMAGE" "$stable"
+          docker push "$IMAGE" | tee /tmp/ci-image-push.log
+          docker push "$stable" >/dev/null
+          digest=$(sed -n 's/^ci-[0-9a-f]*: digest: \(sha256:[0-9a-f]\{64\}\).*/\1/p' /tmp/ci-image-push.log | tail -n1)
+          if [ -z "$digest" ]; then
+            digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE" | sed 's/.*@//')
+          fi
+          test -n "$digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "Pinned reference: ghcr.io/jiying2007/audio-pipeline-ci@$digest" >> "$GITHUB_STEP_SUMMARY"
+      - name: Pull published digest and re-verify identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="ghcr.io/jiying2007/audio-pipeline-ci@${{ steps.publish.outputs.digest }}"
+          docker pull "$ref"
+          docker run --rm "$ref" bash -lc 'command -v arm-linux-gnueabihf-gcc && command -v qemu-arm && command -v arecord && command -v scan-build && command -v ccache'

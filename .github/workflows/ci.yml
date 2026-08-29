@@ -2,38 +2,65 @@ name: CI
 
 on:
   workflow_call:
+    inputs:
+      composition_matrix:
+        type: string
+        required: false
+        default: '["composition-low","composition-tiny","composition-voice-frontend","composition-raw","composition-aec-only","composition-ns-only","composition-activity-only","composition-fast-resampler"]'
+      arm_matrix:
+        type: string
+        required: false
+        default: '["armv7a-scalar","cortex-a7-scalar","cortex-a7-neon","cortex-a32-neon","aarch64-neon"]'
+      run_composition:
+        type: boolean
+        required: false
+        default: true
+      run_arm:
+        type: boolean
+        required: false
+        default: true
+      run_perf:
+        type: boolean
+        required: false
+        default: true
+      run_extended:
+        type: boolean
+        required: false
+        default: true
+      run_alsa:
+        type: boolean
+        required: false
+        default: true
+      run_aec_backend:
+        type: boolean
+        required: false
+        default: true
+      run_ns_backend:
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  architecture-contract:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Enforce module and platform boundaries
-        run: sh scripts/check-architecture.sh
-
   composition-contract:
+    if: inputs.run_composition
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        preset:
-          - composition-low
-          - composition-tiny
-          - composition-voice-frontend
-          - composition-raw
-          - composition-aec-only
-          - composition-ns-only
-          - composition-activity-only
-          - composition-fast-resampler
+        preset: ${{ fromJSON(inputs.composition_matrix) }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: composition-${{ matrix.preset }}
       - name: Configure ${{ matrix.preset }}
         run: cmake --preset ${{ matrix.preset }}
       - name: Build ${{ matrix.preset }}
@@ -51,14 +78,18 @@ jobs:
           case "${{ matrix.preset }}" in
             composition-aec-only|composition-ns-only|composition-activity-only)
               test ! -e "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
-            *)
-              test -f "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
+            *) test -f "$prefix/include/audio_pipeline/audio_pipeline.h" ;;
           esac
+          command -v ccache >/dev/null 2>&1 && ccache --show-stats || true
 
   composition-size-contract:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: composition-size
       - name: Configure representative graphs
         run: |
           cmake --preset composition-full
@@ -67,9 +98,7 @@ jobs:
           cmake --preset composition-raw
       - name: Build state-size probes
         run: |
-          for p in full low tiny raw; do
-            cmake --build "build/composition-$p" --target ap_state_size --parallel
-          done
+          for p in full low tiny raw; do cmake --build "build/composition-$p" --target ap_state_size --parallel; done
       - name: Verify physical RAM pruning
         run: |
           full=$(./build/composition-full/ap_state_size)
@@ -84,10 +113,14 @@ jobs:
   native:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: native-${{ matrix.compiler }}
       - name: Configure
         env:
           CC: ${{ matrix.compiler }}
@@ -112,12 +145,19 @@ jobs:
         run: ./build/ap_bench 2 0.35 9000 idle
       - name: Runtime benchmark smoke
         run: ./build/ap_runtime_bench 1 0 0.99 -1
+      - name: Cache statistics
+        run: command -v ccache >/dev/null 2>&1 && ccache --show-stats || true
 
   perf-compare:
-    if: github.ref != 'refs/heads/main'
+    if: inputs.run_perf && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: perf-gcc
       - name: Same-runner main vs candidate
         env:
           CC: gcc
@@ -132,32 +172,28 @@ jobs:
         run: sh scripts/compare-resampler-perf.sh origin/main 7 100000
 
   runtime-perf-compare:
-    if: github.ref != 'refs/heads/main'
+    if: inputs.run_perf && inputs.run_extended && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: runtime-perf-gcc
       - name: Same-runner runtime main vs candidate
         env:
           CC: gcc
         run: sh scripts/compare-runtime-perf.sh origin/main 7 100000 10000
 
-  strict-clang:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Configure strict warnings
-        env:
-          CC: clang
-        run: cmake -S . -B build-strict -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
-      - name: Build
-        run: cmake --build build-strict --parallel
-      - name: Test
-        run: ctest --test-dir build-strict --output-on-failure
-
   backend-nlms:
+    if: inputs.run_aec_backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: backend-nlms
       - name: Configure NLMS backend
         env:
           CC: clang
@@ -165,15 +201,19 @@ jobs:
           cmake -S . -B build-nlms -DCMAKE_BUILD_TYPE=Release
           -DAP_AEC_BACKEND=NLMS -DAP_ENABLE_LINUX_RUNTIME=OFF
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-      - name: Build
-        run: cmake --build build-nlms --parallel
-      - name: Test
-        run: ctest --test-dir build-nlms --output-on-failure
+      - name: Build and test
+        run: |
+          cmake --build build-nlms --parallel
+          ctest --test-dir build-nlms --output-on-failure
 
   backend-ns-mcra:
+    if: inputs.run_ns_backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: backend-ns-mcra
       - name: Configure MCRA noise estimator
         env:
           CC: clang
@@ -181,48 +221,58 @@ jobs:
           cmake -S . -B build-ns-mcra -DCMAKE_BUILD_TYPE=Release
           -DAP_NS_ESTIMATOR=MCRA -DAP_ENABLE_LINUX_RUNTIME=OFF
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-      - name: Build
-        run: cmake --build build-ns-mcra --parallel
-      - name: Test
-        run: ctest --test-dir build-ns-mcra --output-on-failure
+      - name: Build and test
+        run: |
+          cmake --build build-ns-mcra --parallel
+          ctest --test-dir build-ns-mcra --output-on-failure
 
   fast-math-contract:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: fast-math
       - name: Configure explicit fast-math policy
         env:
           CC: gcc
         run: >-
           cmake -S . -B build-fast -DCMAKE_BUILD_TYPE=Release
-          -DAP_ENABLE_FAST_MATH=ON -DAP_ENABLE_LINUX_RUNTIME=OFF
-          -DAP_BUILD_BENCH=OFF
+          -DAP_ENABLE_FAST_MATH=ON -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF
       - name: Build and test
         run: |
           cmake --build build-fast --parallel
           ctest --test-dir build-fast --output-on-failure
 
   sanitizers:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: asan-ubsan
       - name: Configure ASan/UBSan
         env:
           CC: clang
         run: >-
-          cmake -S . -B build-san -DCMAKE_BUILD_TYPE=Debug
-          -DAP_BUILD_BENCH=OFF
+          cmake -S . -B build-san -DCMAKE_BUILD_TYPE=Debug -DAP_BUILD_BENCH=OFF
           -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
           -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
-      - name: Build
-        run: cmake --build build-san --parallel
-      - name: Test
-        run: ctest --test-dir build-san --output-on-failure
+      - name: Build and test
+        run: |
+          cmake --build build-san --parallel
+          ctest --test-dir build-san --output-on-failure
 
   fuzz-smoke:
+    if: inputs.run_extended
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: fuzz-smoke
       - name: Configure libFuzzer
         env:
           CC: clang
@@ -230,17 +280,24 @@ jobs:
           cmake -S . -B build-fuzz -DCMAKE_BUILD_TYPE=Debug
           -DAP_BUILD_FUZZ=ON -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF
           -DAP_BUILD_EXAMPLES=OFF -DAP_ENABLE_LINUX_RUNTIME=OFF
-      - name: Build
-        run: cmake --build build-fuzz --target ap_fuzz --parallel
-      - name: Fuzz smoke
-        run: ./build-fuzz/ap_fuzz -runs=2000 -max_len=4096
+      - name: Build and fuzz smoke
+        run: |
+          cmake --build build-fuzz --target ap_fuzz --parallel
+          ./build-fuzz/ap_fuzz -runs=2000 -max_len=4096
 
   alsa-compile:
+    if: inputs.run_alsa
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Install ALSA development package
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: alsa-clang
       - name: Configure ALSA examples
         env:
           CC: clang
@@ -252,23 +309,25 @@ jobs:
         run: cmake --build build-alsa --target ap_alsa_duplex ap_alsa_runtime_duplex --parallel
 
   arm-cross:
+    if: inputs.run_arm
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     strategy:
       fail-fast: false
       matrix:
-        preset:
-          - armv7a-scalar
-          - cortex-a7-scalar
-          - cortex-a7-neon
-          - cortex-a32-neon
-          - aarch64-neon
+        preset: ${{ fromJSON(inputs.arm_matrix) }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Install Arm cross compilers
-        run: >-
-          sudo apt-get update && sudo apt-get install -y
-          gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: arm-${{ matrix.preset }}
       - name: Configure ${{ matrix.preset }}
         run: cmake --preset ${{ matrix.preset }}
       - name: Build ${{ matrix.preset }}
         run: cmake --build build/${{ matrix.preset }} --parallel
+      - name: Cache statistics
+        run: ccache --show-stats

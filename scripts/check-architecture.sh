@@ -30,15 +30,18 @@ assert schema['properties']['schema_version'] == {'const': 4}
 print('certification schema v4-only contract: OK')
 PY
 
+# Per-stage runtime composition replaced the old pile of public enable booleans.
 if grep -R -n -E '\b(enable_hpf|enable_beamformer|enable_aec|enable_residual_echo_suppression|enable_noise_suppression|enable_agc|enable_vad)\b' \
     --exclude='check-architecture.sh' \
     src include tests bench examples fuzz 2>/dev/null; then
   fail "legacy stage enable field found; use ap_config_t.stages"
 fi
 
+# Physical stage split is part of the compile-pruning contract.
 if [ -e src/frontend/ap_frontend.c ] || [ -e src/enhance/ap_enhance.c ]; then
   fail "legacy multi-stage translation unit found"
 fi
+
 if [ -e src/ap_internal.h ]; then
   fail "repository-wide src/ap_internal.h must not exist"
 fi
@@ -57,20 +60,60 @@ fi
 if grep -n 'audio_pipeline/audio_pipeline.h' include/audio_pipeline/audio_modules.h 2>/dev/null; then
   fail "standalone module SDK depends on high-level pipeline API"
 fi
-if grep -R -n -E '#include "(core|sync|aec|enhance|modules|platform)/' src/frontend 2>/dev/null; then fail "frontend has a forbidden stage dependency"; fi
-if grep -R -n -E '#include "(core|frontend|aec|enhance|modules|platform)/' src/sync 2>/dev/null; then fail "sync has a forbidden stage dependency"; fi
-if grep -R -n -E '#include "(core|frontend|sync|enhance|modules|platform)/' src/aec 2>/dev/null; then fail "AEC has a forbidden stage dependency"; fi
-if grep -R -n -E '#include "(core|frontend|sync|aec|modules|platform)/' src/enhance 2>/dev/null; then fail "enhancement has a forbidden stage dependency"; fi
-if grep -R -n -E '#include "(core|frontend|sync|aec|enhance|modules|platform|arch)/' src/dsp 2>/dev/null; then fail "DSP primitive layer depends upward"; fi
-if grep -R -n -E '#include "(core|frontend|sync|aec|enhance|modules|platform)/' src/arch 2>/dev/null; then fail "architecture kernel layer depends upward"; fi
-if grep -R -n '#include "modules/' src/core 2>/dev/null; then fail "core depends on standalone wrapper layer"; fi
-if grep -R -n -E '#include "(core|platform)/' src/modules 2>/dev/null; then fail "standalone wrapper depends on orchestration/platform layer"; fi
-if grep -R -n 'arm_neon.h' src --exclude='ap_kernels_neon.c' 2>/dev/null; then fail "Arm NEON include escaped src/arch/arm_neon"; fi
-if grep -R -n -E '#include <(pthread|semaphore)\.h>' src --exclude='ap_runtime.c' 2>/dev/null; then fail "Linux runtime dependency escaped platform/linux"; fi
-if grep -R -n -E '\bmlockall[[:space:]]*\(' src 2>/dev/null; then fail "process-global mlockall is forbidden inside the SDK runtime"; fi
-if grep -R -n -E 'cortex-a7|cortex-a32|cortex-a53' src 2>/dev/null; then fail "CPU model name leaked into DSP source"; fi
-if grep -R -n -E '\b(malloc|calloc|realloc|free)[[:space:]]*\(' src/core src/frontend src/sync src/aec src/enhance src/modules src/dsp src/arch 2>/dev/null; then fail "heap allocation found in synchronous DSP/modules"; fi
 
+# Dependency direction is core -> stages -> dsp/arch. The public standalone
+# wrapper layer may call stages, but stages must never depend back on wrappers.
+if grep -R -n -E '#include "(core|sync|aec|enhance|modules|platform)/' src/frontend 2>/dev/null; then
+  fail "frontend has a forbidden stage dependency"
+fi
+if grep -R -n -E '#include "(core|frontend|aec|enhance|modules|platform)/' src/sync 2>/dev/null; then
+  fail "sync has a forbidden stage dependency"
+fi
+if grep -R -n -E '#include "(core|frontend|sync|enhance|modules|platform)/' src/aec 2>/dev/null; then
+  fail "AEC has a forbidden stage dependency"
+fi
+if grep -R -n -E '#include "(core|frontend|sync|aec|modules|platform)/' src/enhance 2>/dev/null; then
+  fail "enhancement has a forbidden stage dependency"
+fi
+if grep -R -n -E '#include "(core|frontend|sync|aec|enhance|modules|platform|arch)/' src/dsp 2>/dev/null; then
+  fail "DSP primitive layer depends upward"
+fi
+if grep -R -n -E '#include "(core|frontend|sync|aec|enhance|modules|platform)/' src/arch 2>/dev/null; then
+  fail "architecture kernel layer depends upward"
+fi
+if grep -R -n '#include "modules/' src/core 2>/dev/null; then
+  fail "core depends on standalone wrapper layer"
+fi
+if grep -R -n -E '#include "(core|platform)/' src/modules 2>/dev/null; then
+  fail "standalone wrapper depends on orchestration/platform layer"
+fi
+
+if grep -R -n 'arm_neon.h' src --exclude='ap_kernels_neon.c' 2>/dev/null; then
+  fail "Arm NEON include escaped src/arch/arm_neon"
+fi
+
+if grep -R -n -E '#include <(pthread|semaphore)\.h>' src \
+    --exclude='ap_runtime.c' 2>/dev/null; then
+  fail "Linux runtime dependency escaped platform/linux"
+fi
+
+if grep -R -n -E '\bmlockall[[:space:]]*\(' src 2>/dev/null; then
+  fail "process-global mlockall is forbidden inside the SDK runtime"
+fi
+
+if grep -R -n -E 'cortex-a7|cortex-a32|cortex-a53' src 2>/dev/null; then
+  fail "CPU model name leaked into DSP source"
+fi
+
+if grep -R -n -E '\b(malloc|calloc|realloc|free)[[:space:]]*\(' \
+    src/core src/frontend src/sync src/aec src/enhance src/modules src/dsp src/arch 2>/dev/null; then
+  fail "heap allocation found in synchronous DSP/modules"
+fi
+
+# Public validation and trusted-runner workflows are part of the repository
+# assurance boundary. Keep profile selection, holdout budgets and runner-role
+# preflight executable in the required fast gate rather than relying only on
+# YAML/Python syntax checks.
 python3 validation/tools/prepare_public_validation.py self-test
 python3 validation/tools/build_compact_public_corpus.py --self-test
 python3 validation/tools/build_full_public_corpus.py --self-test
@@ -79,6 +122,7 @@ python3 tools/runner_preflight.py --self-test
 python3 - <<'PY'
 import json
 from pathlib import Path
+
 expected = {
     'validation-compact.json': ({'validation-grade'}, 100),
     'validation-compact-partition.json': ({'validation-grade'}, 60),
@@ -96,9 +140,17 @@ for name, (tiers, minimum) in expected.items():
 print('public validation policy contracts: OK')
 PY
 
+# Formal evidence entrypoints must be immutable and explicitly source-bound.
 python3 - <<'PY2'
 from pathlib import Path
-manual = [Path('.github/workflows/trusted-runner-readiness.yml'), Path('.github/workflows/validation-compact.yml'), Path('.github/workflows/validation-grade.yml'), Path('.github/workflows/hil-soak.yml'), Path('.github/workflows/product-certification.yml')]
+
+manual = [
+    Path('.github/workflows/trusted-runner-readiness.yml'),
+    Path('.github/workflows/validation-compact.yml'),
+    Path('.github/workflows/validation-grade.yml'),
+    Path('.github/workflows/hil-soak.yml'),
+    Path('.github/workflows/product-certification.yml'),
+]
 for path in manual:
     text = path.read_text(encoding='utf-8')
     assert '      source_sha:' in text, path
@@ -117,6 +169,7 @@ PY2
 
 echo "architecture contracts: OK"
 
+
 # extended-real-validation-contract-v1
 python3 validation/tools/extended_dataset_lock.py self-test
 python3 validation/tools/prepare_extended_validation.py self-test
@@ -133,7 +186,13 @@ for profile in ('commercial-core', 'commercial-plus'):
 assert by_id['wham']['usage_class'] == 'research-only'
 assert by_id['aishell4']['usage_class'] == 'conditional'
 assert by_id['ace-challenge']['transforms_allowed'] is False
-for name in ('validation-extended-real-core.json','validation-extended-real-core-blind.json','validation-extended-real-plus.json','validation-extended-real-plus-blind.json','validation-extended-real-research.json'):
+for name in (
+    'validation-extended-real-core.json',
+    'validation-extended-real-core-blind.json',
+    'validation-extended-real-plus.json',
+    'validation-extended-real-plus-blind.json',
+    'validation-extended-real-research.json',
+):
     policy = json.loads((Path('validation/policies') / name).read_text())
     assert policy['schema_version'] == 1
     assert policy['minimum_cases'] > 0
@@ -162,17 +221,21 @@ python3 validation/tools/build_hosted_real_corpus.py validate --lock validation/
 python3 - <<'PY_HOSTED'
 import json
 from pathlib import Path
+
 def require(value, message):
     if not value:
         raise SystemExit('hosted-real contract failed: ' + message)
-lock=json.loads(Path('validation/hosted_real.datasets.lock.json').read_text())
-require(lock['source_repository']=='microsoft/P.808', 'source repository')
-require(len(lock['source_revision'])==40, 'revision')
-require(lock['license']=='CC-BY-4.0' and lock['usage_class']=='commercial-validation', 'license isolation')
-require(len(lock['clips'])>=4 and all(len(x['sha256'])==64 for x in lock['clips']), 'clip hashes')
-policy=json.loads(Path('validation/policies/validation-hosted-real-smoke.json').read_text())
-require(policy['minimum_cases']>=4 and float(policy['aggregate']['min_pass_rate'])==1.0, 'policy')
-auto=Path('.github/workflows/extended-real-automation.yml').read_text(); release=Path('.github/workflows/release.yml').read_text(); verify=Path('.github/workflows/verify.yml').read_text()
+
+lock = json.loads(Path('validation/hosted_real.datasets.lock.json').read_text())
+require(lock['source_repository'] == 'microsoft/P.808', 'source repository')
+require(len(lock['source_revision']) == 40, 'revision')
+require(lock['license'] == 'CC-BY-4.0' and lock['usage_class'] == 'commercial-validation', 'license isolation')
+require(len(lock['clips']) >= 4 and all(len(item['sha256']) == 64 for item in lock['clips']), 'clip hashes')
+policy = json.loads(Path('validation/policies/validation-hosted-real-smoke.json').read_text())
+require(policy['minimum_cases'] >= 4 and float(policy['aggregate']['min_pass_rate']) == 1.0, 'policy')
+auto = Path('.github/workflows/extended-real-automation.yml').read_text()
+release = Path('.github/workflows/release.yml').read_text()
+verify = Path('.github/workflows/verify.yml').read_text()
 require('repository_dispatch:' in auto and 'types: [extended-real-post-release]' in auto, 'dispatch listener')
 require('types: [published]' not in auto, 'unreliable release trigger residue')
 require('event_type=extended-real-post-release' in release, 'release dispatch sender')

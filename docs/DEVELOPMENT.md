@@ -1,10 +1,12 @@
 # Development Rules
 
-## Stable 1.x policy
+## Stable v2 policy
 
-The repository is in the stable 1.x line. The ABI baseline established by 1.0.0 remains in force: do not mutate frozen public structures or silently repurpose existing fields. Additive public evolution uses versioned structures/APIs with explicit `struct_size`, `api_version` and reserved space; incompatible changes require a major version.
+Version 2.0.0 establishes the current public API/ABI baseline. Within the 2.x line, public structures and exported symbols are compatibility contracts; incompatible public changes require the next major version.
 
-Do not add compatibility aliases, dead switches, duplicate implementations or transitional architecture merely to avoid a deliberate major-version decision.
+The v2 baseline itself is a deliberate hard cut from 1.x. Do not reintroduce removed 1.x aliases, version-suffixed compatibility APIs, transitional wrappers, duplicate certification schemas, dead switches or migration-only architecture. Historical release facts belong in `CHANGELOG.md`, not in the current public surface.
+
+Extensible structures use `struct_size`, `api_version` and reserved space so future 2.x additions can remain explicit and bounded.
 
 ## Dependency direction
 
@@ -33,14 +35,7 @@ AP_BUILD_MAX_AEC_TAIL_MS
 AP_RUNTIME_QUEUE_DEPTH
 ```
 
-Adding/changing a build dimension requires:
-
-1. generated build-info support;
-2. validation in CMake and public runtime config;
-3. at least one CI product exercising the boundary;
-4. proof that smaller products physically reduce state/ELF where applicable.
-
-Do not infer these values from a CPU name.
+Adding/changing a build dimension requires generated build-info support, CMake/public validation, at least one CI boundary product, and proof that smaller products physically reduce state/ELF where applicable. CPU model names do not imply these values.
 
 ## Realtime rules
 
@@ -57,19 +52,19 @@ Linux control-plane/thread/scheduling functionality lives under `src/platform/li
 
 ## Runtime ownership
 
-A pipeline is caller-owned until handed to the Linux runtime. While the runtime worker is started, only the worker may access the pipeline. Control-plane APIs must use runtime-owned atomics or published SPSC snapshots.
+A pipeline is caller-owned until handed to `ap_runtime_open()`. While the worker is started, only the worker may mutate/access the live pipeline. Frame input uses `ap_runtime_submit_frame()`; control-plane runtime telemetry uses `ap_runtime_read_metrics()` and runtime-owned atomics.
 
-Any change to runtime ownership, counters, queue publication or lifecycle must pass ThreadSanitizer. ASan/UBSan is not a substitute for TSan.
+Any change to ownership, counters, queue publication or lifecycle must pass ThreadSanitizer. ASan/UBSan is not a substitute for TSan.
 
 ## Numeric/API validation
 
-Public floating-point inputs must be explicitly finite before range validation. Tests must cover NaN, positive/negative infinity and important range boundaries, including with `AP_ENABLE_FAST_MATH=ON`.
+Public floating-point inputs must be finite before range validation. Tests cover NaN, positive/negative infinity and important boundaries, including with `AP_ENABLE_FAST_MATH=ON`.
 
-Status meaning must remain precise: invalid input is `AP_EINVAL`, insufficient caller storage is `AP_ENOMEM`, unavailable build feature/lifecycle state is `AP_ESTATE`.
+Status meaning stays precise: invalid input is `AP_EINVAL`, insufficient caller storage is `AP_ENOMEM`, unavailable build feature/lifecycle state is `AP_ESTATE`.
 
 ## DSP backend rules
 
-Mutually exclusive choices use one string selector, not paired booleans:
+Mutually exclusive choices use one selector rather than paired booleans:
 
 ```text
 AP_AEC_BACKEND=MDF|NLMS
@@ -78,87 +73,42 @@ AP_SIMD_BACKEND=SCALAR|NEON
 AP_RESAMPLER_MODE=BANDLIMITED|FAST
 ```
 
-A backend exists only when its owning module is compiled.
+A backend exists only when its owning module is compiled. BANDLIMITED is the default resampler; FAST is an independent explicit product choice, not a compatibility alias.
 
 ## Acoustic-complexity rule
 
-The v1.6 assurance closure does not expand DSP scope. Fractional-delay BF, microphone gain/phase calibration, wind/clipping/microphone-health detection, interference-direction logic or more advanced drift control may be proposed only when a real SKU acoustic report fails an approved shipping policy and the pull request links that evidence and failure category. If the real corpus passes, keep the lower-cost implementation.
+Fractional-delay BF, microphone gain/phase calibration, wind/clipping/microphone-health detection, interference-direction logic or more advanced drift control are eligible only when real SKU acoustic evidence fails an approved shipping threshold and the change addresses that measured failure. If the corpus passes, keep the lower-cost implementation.
 
-## Resampler changes
+## Telemetry and standalone APIs
 
-BANDLIMITED is the product default. Changes require both:
+Telemetry names are product contracts. ERLE is valid only for AEC far-end-only/non-double-talk observations. Route/path resets start a new convergence epoch.
 
-- signal-quality contracts: passband level, stopband/alias attenuation, continuity/reset and delay;
-- performance regression measurements.
-
-FAST remains an explicit accepted fallback and its behavior/performance must remain separately tested. Do not replace fixed-ratio paths with a large generic SRC without board evidence.
-
-## Telemetry changes
-
-Telemetry names are product contracts. ERLE is only valid for AEC far-end-only/non-double-talk observations. Route/path resets start a new convergence epoch. Do not reuse ERLE as a generic signal ratio.
-
-## Standalone API rules
-
-A stateful public module should provide a consistent lifecycle:
+Stateful standalone modules follow one lifecycle:
 
 ```text
 state_size -> aligned caller storage -> init -> reset -> process/status
 ```
 
-Standalone wrappers reuse stage implementations and remain separate TUs so high-level consumers can link-prune them. Do not fork algorithms for standalone use.
+Standalone wrappers reuse stage implementations and remain separate TUs for link pruning; never fork algorithms for standalone use.
 
 ## Verification before merge
 
-A production change is complete only when relevant gates pass:
-
-- architecture contract;
-- native GCC/Clang and strict warnings;
-- ASan/UBSan;
-- TSan for runtime ownership changes;
-- MDF/NLMS, EMA/MCRA, precise/fast-math and BANDLIMITED/FAST where relevant;
-- LOW/TINY/RAW/voice/module-only composition tests;
-- pipeline/runtime RAM and final consumer ELF pruning;
-- hosted same-runner core/module/runtime performance regression gates, including `event.before -> HEAD` on main;
-- ARMv7-A/Cortex-A7/Cortex-A32/AArch64 cross-builds;
-- selected ARM QEMU executable contracts;
-- static analyzer;
-- source line coverage gate (currently >=90% hosted);
-- acoustic evaluation harness contract.
+A production change is complete only when relevant gates pass: architecture/hard-cut contract, native GCC/Clang strict builds, ASan/UBSan, TSan for runtime changes, backend/composition variants, RAM/ELF pruning, paired hosted performance, ARM cross-build/QEMU, static analysis, hosted coverage, acoustic validation contracts and the v2 ABI gate.
 
 Hosted performance is a regression signal, never a Cortex board claim.
 
 ## SDK/package changes
 
-Installed SDK changes must be consumed from a clean prefix through both:
-
-```text
-find_package(AudioPipeline CONFIG REQUIRED)
-pkg-config audio-pipeline
-```
-
-The consumer build must compile, link and run. File-existence checks alone are insufficient.
-
-## Coverage, fuzz and analysis
-
-PR Quality CI maintains the current coverage baseline. Nightly fuzz is intentionally longer than PR smoke. Static analyzer findings are release blockers unless explicitly triaged with a documented reason.
+Installed SDK changes must be consumed from a clean prefix through CMake and pkg-config. Consumer tests must compile, link and run; file-existence checks are insufficient.
 
 ## Release/version rules
 
-`project(audio_pipeline VERSION ...)`, generated build fingerprint and `CHANGELOG.md` must describe the same release. A release SHA must have merged-PR lineage and a successful main Verify. The release workflow creates the matching exact-SHA `vX.Y.Z` tag, reproducible SDK/source archives, checksums, SBOM and attestations, then verifies that the published GitHub Release is immutable.
+`project(audio_pipeline VERSION ...)`, generated build identity and the top `CHANGELOG.md` release must agree. A release SHA needs merged-PR lineage and successful exact-SHA main Verify. Release automation creates the matching annotated `vX.Y.Z` tag, reproducible SDK/source archives, checksums, SBOM and attestations, then requires an immutable published Release.
 
-A release does not imply target-board certification. Certification records remain SKU-specific.
+The initial v2 ABI gate rejects any removed 1.x runtime/build-info symbols. After `v2.0.0` is published, subsequent 2.x releases use it as the compatibility baseline.
 
 ## Product certification
 
-No code/CI change can fabricate:
+Current certification accepts schema v4 only. No code or hosted CI may fabricate target CPU/p95/p99, thermal/power, shipping-route XRUN behavior, private acoustic scores, shipping toolchain identity, build/deploy/execute identity, required 72 h soak, or lifecycle archive durability.
 
-- target CPU percentage or frame p95/p99;
-- thermal/power;
-- XRUN behavior on the shipping audio route;
-- private acoustic corpus scores;
-- shipping toolchain/sysroot/flags identity;
-- build/deployed/executed binary identity;
-- required 72 h shipping route soak results;
-- lifecycle archive durability.
-
-Product Certification uses an `audio-builder` runner, a distinct `audio-target` DUT runner and a `certification-archive` runner. A v4 record is valid only when exact shipping binaries are SHA-256-identical across build/deploy/execute, the real policy/corpus/sensor gates pass, the evidence bundle is attested, and the immutable lifecycle archive returns a valid receipt.
+Product Certification uses `audio-builder`, a distinct `audio-target` DUT and `certification-archive`. A record is valid only when exact binaries match across build/deploy/execute, real policy/corpus/sensor gates pass, the bundle is attested and the immutable `product-lifecycle` archive receipt validates.

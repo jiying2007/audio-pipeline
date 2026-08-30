@@ -95,9 +95,8 @@ Use the exact source commit that will be validated:
 ```bash
 SHA=<40-hex-audio-pipeline-commit>
 
-sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py verify-profile \
+$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py verify-profile \
   --profile commercial-core \
-  --data-root $HOME/audio-validation-extended \
   --source-revision "$SHA"
 ```
 
@@ -146,7 +145,7 @@ Only after the isolated runner/cache has repeatedly produced valid core/plus rep
 
 ```text
 EXTENDED_REAL_ENABLED=true
-EXTENDED_REAL_DATA_ROOT=$HOME/audio-validation-extended
+# Optional override only; leave EXTENDED_REAL_DATA_ROOT unset for $HOME/audio-validation-extended.
 ```
 
 At that point post-release automation runs `commercial-core` and the weekly automation runs `commercial-plus`.

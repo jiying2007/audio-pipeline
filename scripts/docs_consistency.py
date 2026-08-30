@@ -139,6 +139,35 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         errors.append("lab validation Python dependency pin drift")
     if read(root, "lab/requirements-ansible.txt").strip() != "ansible-core==2.19.12":
         errors.append("lab Ansible dependency pin drift")
+    workflow_contracts = {
+        ".github/workflows/validation-extended-real.yml": (
+            "DATA_ROOT=${INPUT_DATA_ROOT:-$HOME/audio-validation-extended}",
+            "default: /opt/audio-validation-extended",
+        ),
+        ".github/workflows/hil-soak.yml": (
+            "board=${INPUT_BOARD:-$HOME/.config/audio-pipeline/board.json}",
+            "default: /etc/audio-pipeline/board.json",
+        ),
+        ".github/workflows/product-certification.yml": (
+            "BOARD=${INPUT_BOARD:-$HOME/.config/audio-pipeline/board.json}",
+            "default: /etc/audio-pipeline/board.json",
+        ),
+        ".github/workflows/trusted-runner-readiness.yml": (
+            "DATA_ROOT=${INPUT_DATA_ROOT:-$HOME/audio-validation-data}",
+            "default: /opt/audio-validation-data",
+        ),
+    }
+    for rel, (required, forbidden) in workflow_contracts.items():
+        workflow = read(root, rel)
+        if required not in workflow:
+            errors.append(f"{rel}: missing ordinary-user workflow default contract")
+        if forbidden in workflow:
+            errors.append(f"{rel}: stale system-mode path remains a workflow default: {forbidden}")
+    readiness = read(root, ".github/workflows/trusted-runner-readiness.yml")
+    if "SEAL=${INPUT_SEAL:-$DATA_ROOT/datasets.seal.json}" not in readiness:
+        errors.append("trusted runner readiness missing HOME-relative public seal default")
+    if "BOARD=${INPUT_BOARD:-$HOME/.config/audio-pipeline/board.json}" not in readiness:
+        errors.append("trusted runner readiness missing ordinary-user board default")
     try:
         completed = subprocess.run(
             [sys.executable, str(root / "lab/scripts/labctl.py"), "self-test"],

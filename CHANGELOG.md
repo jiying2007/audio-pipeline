@@ -1,3 +1,9 @@
+# 2.2.3
+
+- Align trusted self-hosted workflow defaults with the ordinary-user laboratory model so blank inputs resolve on the runner under HOME instead of requiring `/opt` or `/etc`.
+- Extended Real now resolves a blank data root to `$HOME/audio-validation-extended`; HIL/Product Certification and target readiness resolve a blank board manifest to `$HOME/.config/audio-pipeline/board.json`; legacy public-validation readiness resolves its blank root/seal below `$HOME/audio-validation-data`.
+- Preserve explicit absolute overrides for dedicated system-mode labs. No DSP/API/ABI, acoustic/resource/HIL thresholds, dataset hashes/licenses or certification authority changed.
+
 # 2.2.2
 
 - Fix `labctl.py self-test` so XDG and `AUDIO_PIPELINE_LAB_*` path overrides are treated as supported configuration instead of being rejected for living outside `Path.home()`.

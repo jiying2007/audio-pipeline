@@ -1,48 +1,53 @@
 ---
-- name: Install audio-target controller packages
+- name: Install audio-target controller packages in dedicated system mode
+  become: true
   ansible.builtin.apt:
-    name:
-      - alsa-utils
-      - openssh-client
-      - usbutils
+    name: [alsa-utils, openssh-client, usbutils]
     state: present
+  when: lab_system_mode | bool
 
-- name: Add HIL service account to hardware access groups
+- name: Validate ordinary-user target controller tools
+  ansible.builtin.shell: |
+    set -eu
+    for cmd in arecord aplay ssh lsusb; do command -v "$cmd" >/dev/null || exit 1; done
+  args:
+    executable: /bin/sh
+  changed_when: false
+  when: not (lab_system_mode | bool)
+
+- name: Add HIL service account to hardware access groups in system mode
+  become: true
   ansible.builtin.user:
     name: "{{ lab_service_user }}"
     groups: audio,dialout
     append: true
+  when: lab_system_mode | bool
 
-- name: Create board configuration directory
-  ansible.builtin.file:
-    path: /etc/audio-pipeline
-    state: directory
-    owner: root
-    group: "{{ lab_service_user }}"
-    mode: '0750'
-
-- name: Create HIL fixture and evidence directories
+- name: Create board/fixture/evidence directories
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: "{{ lab_service_user }}"
-    group: "{{ lab_service_user }}"
+    owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+    group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
     mode: '0750'
   loop:
-    - /opt/audio-pipeline/fixtures
-    - /var/lib/audio-pipeline-lab/hil
-    - /var/log/audio-pipeline-lab/hil
+    - "{{ lab_audio_target_config_root }}"
+    - "{{ lab_audio_target_fixture_root }}"
+    - "{{ lab_state_root }}/hil"
+    - "{{ lab_log_root }}/hil"
 
 - name: Install reviewed board manifest when supplied
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.copy:
     src: "{{ audio_target_board_manifest_src }}"
-    dest: /etc/audio-pipeline/board.json
-    owner: root
-    group: "{{ lab_service_user }}"
+    dest: "{{ lab_audio_target_config_root }}/board.json"
+    owner: "{{ 'root' if (lab_system_mode | bool) else omit }}"
+    group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
     mode: '0640'
   when: audio_target_board_manifest_src | default('') | length > 0
 
 - name: Report explicit board-manifest requirement
   ansible.builtin.debug:
-    msg: "No board manifest was installed. Copy a reviewed product-specific manifest to /etc/audio-pipeline/board.json before readiness/HIL."
+    msg: "No board manifest installed. Put a reviewed product manifest at {{ lab_audio_target_config_root }}/board.json before readiness/HIL."
   when: audio_target_board_manifest_src | default('') | length == 0

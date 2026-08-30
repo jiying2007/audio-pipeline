@@ -4,22 +4,25 @@ all:
     github_runner_version: "2.336.0"
     github_runner_arch: "x64"
     github_runner_sha256: "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d"
+    # Default is ordinary-user mode: no sudo/become and no /opt,/var,/etc writes.
+    lab_system_mode: false
   children:
     audio_validation:
       hosts:
         validation01:
           ansible_host: 192.0.2.10
-          ansible_user: labadmin
-          lab_service_user: audio-ci
+          ansible_user: ubuntu
           github_runner_name: audio-validation-01
           github_runner_labels: "audio-validation"
-          validation_data_root: /opt/audio-validation-extended
     audio_target:
       hosts:
         target01:
           ansible_host: 192.0.2.20
-          ansible_user: labadmin
-          lab_service_user: audio-hil
+          ansible_user: ubuntu
           github_runner_name: audio-target-ssc305-01
           github_runner_labels: "audio-target"
           audio_target_board_manifest_src: ""
+# Dedicated system mode is opt-in per host/group:
+# lab_system_mode: true
+# lab_service_user: audio-ci   # or audio-hil
+# validation_data_root: /opt/audio-validation-extended

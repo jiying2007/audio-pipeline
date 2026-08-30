@@ -1,7 +1,6 @@
 ---
 - name: Provision audio-validation laboratory runner
   hosts: audio_validation
-  become: true
   roles:
     - common
     - audio_validation
@@ -9,7 +8,6 @@
 
 - name: Provision audio-target laboratory controller
   hosts: audio_target
-  become: true
   roles:
     - common
     - audio_target

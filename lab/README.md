@@ -11,7 +11,7 @@ operator / Ansible controller
         |
         +--> audio-validation PC (Ubuntu x64, 32 GiB+, 4 TiB NVMe recommended)
         |      label: self-hosted,linux,audio-validation
-        |      /opt/audio-validation-extended
+        |      $HOME/audio-validation-extended
         |      RealMAN / BUT ReverbDB / MUSAN / Mini LibriSpeech / plus imports
         |
         +--> audio-target controller PC (Ubuntu x64)
@@ -28,43 +28,51 @@ Because this repository is public, never route untrusted fork pull-request code 
 
 ## 1. Provision the hosts
 
-Copy the inventory and replace all documentation addresses/names:
+The **default is ordinary-user mode**. It requires no sudo and writes only below the SSH user's HOME:
+
+```text
+$HOME/.local/share/audio-pipeline-lab/   runner + venv + fixtures
+$HOME/.cache/audio-pipeline-lab/         downloaded archives
+$HOME/.local/state/audio-pipeline-lab/   acquisition/readiness/HIL state
+$HOME/.config/audio-pipeline/board.json  audio-target board manifest
+$HOME/audio-validation-extended/         real validation datasets
+```
+
+The OS still needs the required native tools (`cc`, CMake, Git/Git-LFS, ffmpeg, 7z, ALSA tools as applicable). In ordinary-user mode Ansible verifies them but never attempts apt/sudo. Ask an administrator to install missing OS packages once if needed.
+
+Copy the inventory, set the real SSH hosts/users, obtain a short-lived repository runner token, then run without `--become`:
 
 ```bash
 cd lab/ansible
 cp inventory.example.yml inventory.yml
-```
-
-Obtain a short-lived repository runner-registration token from **Settings -> Actions -> Runners -> New self-hosted runner**. Do not put the token in `inventory.yml` or Git.
-
-Provision one host group at a time:
-
-```bash
 ansible-playbook site.yml --limit audio_validation \
   --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'
-
 ansible-playbook site.yml --limit audio_target \
   --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'
 ```
 
-The playbooks pin GitHub Actions Runner `2.336.0` x64 to SHA-256
-`04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d`.
-Registration tokens are `no_log`; persistent runner credentials are managed by the official runner installation under `/opt/actions-runner-*`.
+The ordinary-user runner is installed as a `systemd --user` service. For unattended reboot/no-login persistence only, an administrator may run once:
 
-`audio-validation` additionally installs `aria2`, `ffmpeg`, `7z` and a dedicated `/opt/audio-lab/venv` with the pinned validation requirements. `audio-target` installs ALSA/SSH/USB controller tools and prepares `/etc/audio-pipeline` plus fixture/evidence directories.
+```bash
+sudo loginctl enable-linger <ubuntu-user>
+```
+
+This linger step is optional for interactive/login-session use; it is not permission to write `/opt`.
+
+For a dedicated service-account deployment, explicitly set `lab_system_mode: true`, `lab_service_user`, and any desired `/opt` data paths in inventory. System mode retains apt/service-account/systemd-system behavior.
+
+The runner distribution remains SHA-256 pinned and registration tokens remain runtime-only `no_log` inputs.
 
 ## 2. Materialize commercial-core
 
-Run data commands as the `audio-ci` account with the validation virtual environment:
+In default ordinary-user mode, use the Ansible-created user virtual environment:
 
 ```bash
 cd /path/to/audio-pipeline
-sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py self-test
-sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py validate-catalog
-sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py plan --profile commercial-core
-sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py materialize \
-  --profile commercial-core \
-  --data-root /opt/audio-validation-extended
+$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py self-test
+$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py validate-catalog
+$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py plan --profile commercial-core
+$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py materialize --profile commercial-core
 ```
 
 The locked core sources are:
@@ -72,11 +80,11 @@ The locked core sources are:
 | Dataset | Acquisition | Integrity |
 | --- | --- | --- |
 | RealMAN | Hugging Face `AISHELL/RealMAN` | exact revision `12b6f7979e4e5efad4e1004280cf7419201ce209`; only `val`, `test`, `dataset_info`, transcription patterns; RARs extracted locally |
-| BUT ReverbDB | official `19_06` RIR-only archive | official versioned TLS URL; first acquisition SHA-256 is sealed under `/var/lib/audio-pipeline-lab/acquisition`, all later acquisitions must match |
+| BUT ReverbDB | official `19_06` RIR-only archive | official versioned TLS URL; first acquisition SHA-256 is sealed under `$HOME/.local/state/audio-pipeline-lab/acquisition`, all later acquisitions must match |
 | MUSAN | OpenSLR SLR17 | official MD5 `0c472d4fc0c5141eca47ad1ffeb2a7df` plus local SHA-256 acquisition seal |
 | Mini LibriSpeech | OpenSLR SLR31 `dev-clean-2` | official MD5 `6d7ab67ac6a1d2c993d050e16d61080d` plus local SHA-256 acquisition seal |
 
-Large archives stay in `/var/cache/audio-pipeline-lab/datasets`; extracted data lives under `/opt/audio-validation-extended`; acquisition seals live under `/var/lib/audio-pipeline-lab/acquisition`. None are Git artifacts.
+Large archives stay in `$HOME/.cache/audio-pipeline-lab/datasets`; extracted data lives under `$HOME/audio-validation-extended`; acquisition seals live under `$HOME/.local/state/audio-pipeline-lab/acquisition`. None are Git artifacts.
 
 RealMAN train and `*_raw` trees are intentionally excluded. Validation needs the real val/test noisy/direct-path pairs and location metadata, not the hundreds-of-gigabytes training set.
 
@@ -89,7 +97,7 @@ SHA=<40-hex-audio-pipeline-commit>
 
 sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py verify-profile \
   --profile commercial-core \
-  --data-root /opt/audio-validation-extended \
+  --data-root $HOME/audio-validation-extended \
   --source-revision "$SHA"
 ```
 
@@ -98,7 +106,7 @@ This invokes the repository's existing `prepare_extended_validation.py scan/veri
 Readiness/evidence preparation is stored below:
 
 ```text
-/var/lib/audio-pipeline-lab/readiness/commercial-core/
+$HOME/.local/state/audio-pipeline-lab/readiness/commercial-core/
   source-manifest.json
   runner-readiness.json
 ```
@@ -111,7 +119,7 @@ From a trusted operator machine already authenticated with `gh`:
 python3 lab/scripts/labctl.py dispatch-validation \
   --source-revision "$SHA" \
   --profile commercial-core \
-  --data-root /opt/audio-validation-extended
+  --data-root $HOME/audio-validation-extended
 ```
 
 The workflow then repeats runner preflight, scans/hashes source files, builds the exact processor, creates the real corpus, performs scenario-stratified visible/blind validation and uploads the hash-bound evidence bundle. `AP_VALIDATION_HOLDOUT_KEY` must be configured as a repository secret before commercial validation.
@@ -138,23 +146,23 @@ Only after the isolated runner/cache has repeatedly produced valid core/plus rep
 
 ```text
 EXTENDED_REAL_ENABLED=true
-EXTENDED_REAL_DATA_ROOT=/opt/audio-validation-extended
+EXTENDED_REAL_DATA_ROOT=$HOME/audio-validation-extended
 ```
 
 At that point post-release automation runs `commercial-core` and the weekly automation runs `commercial-plus`.
 
 ## 6. Bring up the SSC305 audio-target controller
 
-Start from `lab/examples/board.ssc305.example.json`, replace **every** placeholder with the real product route and install it as `/etc/audio-pipeline/board.json`. Hardware hooks and sensor paths are product/lab specific and must never be invented by automation.
+Start from `lab/examples/board.ssc305.example.json`, replace **every** placeholder with the real product route and install it as `$HOME/.config/audio-pipeline/board.json`. Hardware hooks and sensor paths are product/lab specific and must never be invented by automation.
 
 Then run:
 
 ```bash
 SHA=<40-hex-audio-pipeline-commit>
 
-sudo -u audio-hil python3 lab/scripts/labctl.py target-readiness \
+python3 lab/scripts/labctl.py target-readiness \
   --source-revision "$SHA" \
-  --board /etc/audio-pipeline/board.json \
+  --board $HOME/.config/audio-pipeline/board.json \
   --power-input <live-power-path>
 ```
 
@@ -166,10 +174,10 @@ From a trusted authenticated operator machine, start the 10-minute accelerated H
 python3 lab/scripts/labctl.py dispatch-hil \
   --source-revision "$SHA" \
   --tier accelerated-pr \
-  --board /etc/audio-pipeline/board.json \
+  --board $HOME/.config/audio-pipeline/board.json \
   --capture '<controller-visible-capture-device>' \
   --playback '<controller-visible-playback-device>' \
-  --farend /opt/audio-pipeline/fixtures/farend-s16le.pcm \
+  --farend $HOME/.local/share/audio-pipeline-lab/fixtures/farend-s16le.pcm \
   --power '<live-power-path>'
 ```
 
@@ -186,7 +194,7 @@ A lab is considered operational only when all applicable items are true:
 - `audio-validation` runner preflight is `READY` for the exact SHA;
 - visible and blind commercial-core validation pass repeatedly;
 - commercial-plus is adopted/scanned and passes before weekly automation is enabled;
-- `/etc/audio-pipeline/board.json` is a reviewed real product manifest;
+- `$HOME/.config/audio-pipeline/board.json` is a reviewed real product manifest;
 - `audio-target` runner and board preflight are `READY`;
 - accelerated HIL passes repeatedly before `HIL_ENABLED=true`;
 - Nightly 1 h, release 8 h and weekly 24 h evidence are accumulated before formal certification;

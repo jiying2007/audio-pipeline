@@ -1,3 +1,11 @@
+# 2.2.1
+
+- Make ordinary unprivileged Ubuntu accounts the default laboratory deployment mode; no `/opt`, `/var`, `/etc`, service-account creation or sudo is required.
+- Resolve runner, cache, state, validation data and board-manifest defaults under HOME/XDG paths while retaining explicit `lab_system_mode=true` for dedicated system installations.
+- Install repository runners as `systemd --user` services in ordinary-user mode and document optional administrator-enabled linger only for reboot/no-login persistence.
+- Let `labctl.py` default to HOME/XDG storage and fall back from `aria2c` to `curl` for resumable archive acquisition.
+- Keep dataset hashes, readiness semantics, Extended Real authority and HIL/Product Certification boundaries unchanged.
+
 # 2.2.0
 
 - Productize the trusted laboratory as versioned `lab/` infrastructure for reproducible `audio-validation` and `audio-target` controller deployment.

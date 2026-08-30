@@ -37,16 +37,19 @@ jobs:
           compile(code, '<staged-evidence-migration>', 'exec')
           exec(compile(code, '<staged-evidence-migration>', 'exec'), {'__name__': '__main__'})
 
-          # Fix one generated anti-regression assertion whose nested shell/Python
-          # quoting cannot be represented literally inside the staging workflow.
           path = Path('scripts/check-architecture.sh')
-          text = path.read_text(encoding='utf-8')
-          dollar = chr(36)
-          bad = "assert text.count('--source-revision '" + dollar + "{{ needs.resolve.outputs.sha }}'') >= 4, path"
-          good = 'assert text.count("--source-revision \'" + dollar + "{{ needs.resolve.outputs.sha }}\'") >= 4, path'
-          if bad not in text:
-              raise SystemExit('generated evidence assertion not found')
-          path.write_text(text.replace(bad, good, 1), encoding='utf-8')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          needle = "--source-revision '" + chr(36) + "{{ needs.resolve.outputs.sha }}'"
+          replacement = 'assert text.count(' + repr(needle) + ') >= 4, path'
+          matches = 0
+          for index, line in enumerate(lines):
+              if "assert text.count('--source-revision '" in line:
+                  prefix = line[:len(line) - len(line.lstrip())]
+                  lines[index] = prefix + replacement
+                  matches += 1
+          if matches != 1:
+              raise SystemExit(f'expected one generated evidence assertion, got {matches}')
+          path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
 
       - name: Validate migrated repository

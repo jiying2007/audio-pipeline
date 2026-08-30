@@ -1,0 +1,264 @@
+name: Evidence Chain v2.0.1 Once
+
+on:
+  push:
+    branches: [feat/evidence-chain-v2.0.1]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          ref: feat/evidence-chain-v2.0.1
+
+      - name: Apply evidence-chain hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8')
+
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, got {count}')
+              return text.replace(old, new, 1)
+
+          # Version / changelog.
+          p = 'CMakeLists.txt'
+          text = read(p)
+          text = replace_once(text,
+              'project(audio_pipeline VERSION 2.0.0 LANGUAGES C)',
+              'project(audio_pipeline VERSION 2.0.1 LANGUAGES C)', p)
+          write(p, text)
+
+          p = 'CHANGELOG.md'
+          text = read(p)
+          entry = '''# 2.0.1\n\n- Require immutable 40-character commit SHA inputs for manual trusted-runner readiness, public validation, HIL, and formal Product Certification evidence entrypoints.\n- Bind public Compact/Full validation reports explicitly to the resolved checkout SHA instead of relying on the workflow-dispatch `GITHUB_SHA`.\n- Bind every trusted-runner readiness report to the exact source revision and fail readiness when that identity is absent or malformed.\n- Re-run audio-builder, audio-target, and certification-archive readiness inside the same formal Product Certification execution, and hash-bind builder/target readiness into the v4 certification evidence manifest.\n- Keep archive readiness alongside the immutable lifecycle receipt and attest both artifacts. No DSP behavior, acoustic threshold, HIL policy, resource envelope, or shipping acceptance threshold is changed.\n\n'''
+          if not text.startswith('# 2.0.0\n'):
+              raise SystemExit('unexpected CHANGELOG head')
+          write(p, entry + text)
+
+          # runner_preflight: source revision becomes part of the machine contract.
+          p = 'tools/runner_preflight.py'
+          text = read(p)
+          text = replace_once(text, 'import platform\nimport shutil\n', 'import platform\nimport re\nimport shutil\n', p + ': import re')
+          text = replace_once(text,
+              '    current_system = system_name or platform.system()\n    checks.append(_check("os-linux", current_system == "Linux", f"system={current_system}"))\n',
+              '    current_system = system_name or platform.system()\n    source_revision = args.source_revision or ""\n    checks.append(_check(\n        "source-revision",\n        re.fullmatch(r"[0-9a-fA-F]{40}", source_revision) is not None,\n        f"source_revision={source_revision or \'missing\'}",\n    ))\n    checks.append(_check("os-linux", current_system == "Linux", f"system={current_system}"))\n',
+              p + ': source revision check')
+          text = replace_once(text,
+              '        "role": args.role,\n        "classification": "READY" if not failures else "NOT_READY",\n',
+              '        "role": args.role,\n        "source_revision": source_revision.lower() if source_revision else None,\n        "classification": "READY" if not failures else "NOT_READY",\n',
+              p + ': report revision')
+          text = replace_once(text,
+              '        "role": role,\n        "require_command": [],\n',
+              '        "role": role,\n        "source_revision": "0" * 40,\n        "require_command": [],\n',
+              p + ': namespace revision')
+          text = replace_once(text,
+              '    result.add_argument("--role", choices=ROLES)\n    result.add_argument("--output", type=Path)\n',
+              '    result.add_argument("--role", choices=ROLES)\n    result.add_argument("--source-revision")\n    result.add_argument("--output", type=Path)\n',
+              p + ': parser revision')
+          write(p, text)
+
+          # ap_certify: readiness artifacts are first-class evidence.
+          p = 'tools/ap_certify.py'
+          text = read(p)
+          helper = '''\n\ndef load_readiness(path: Path, expected_role: str, revision: str, expected_runner: str | None = None) -> dict:\n    value = json.loads(path.read_text(encoding="utf-8"))\n    if value.get("schema_version") != 1:\n        raise ValueError(f"{path}: readiness schema_version must be 1")\n    if value.get("classification") != "READY":\n        raise ValueError(f"{path}: readiness is not READY")\n    if value.get("role") != expected_role:\n        raise ValueError(f"{path}: readiness role {value.get('role')!r} != {expected_role!r}")\n    if value.get("source_revision") != revision:\n        raise ValueError(f"{path}: readiness source revision does not match certification checkout")\n    runner = value.get("runner") or {}\n    if expected_runner is not None and runner.get("name") != expected_runner:\n        raise ValueError(f"{path}: readiness runner does not match deployment provenance")\n    return value\n'''
+          text = replace_once(text,
+              'def copy_evidence(source: Path, evidence_dir: Path, name: str) -> Path:\n',
+              helper + '\n\ndef copy_evidence(source: Path, evidence_dir: Path, name: str) -> Path:\n',
+              p + ': readiness helper')
+          text = replace_once(text,
+              '    deployment = json.loads(args.deployment_provenance.read_text(encoding="utf-8"))\n    validate_deployment(deployment, revision, binary_hashes)\n\n    build_identity = {\n',
+              '    deployment = json.loads(args.deployment_provenance.read_text(encoding="utf-8"))\n    validate_deployment(deployment, revision, binary_hashes)\n    load_readiness(args.builder_readiness, "audio-builder", revision, deployment["builder_runner"])\n    load_readiness(args.target_readiness, "audio-target", revision, deployment["dut_runner"])\n\n    build_identity = {\n',
+              p + ': validate readiness')
+          text = replace_once(text,
+              '    staged.append((\n        "deployment-provenance",\n        copy_evidence(args.deployment_provenance, evidence_dir, "deployment-provenance.json"),\n    ))\n    build_info_path = evidence_dir / "build-info.txt"\n',
+              '    staged.append((\n        "deployment-provenance",\n        copy_evidence(args.deployment_provenance, evidence_dir, "deployment-provenance.json"),\n    ))\n    staged.append((\n        "runner-readiness:audio-builder",\n        copy_evidence(args.builder_readiness, evidence_dir, "runner-readiness-audio-builder.json"),\n    ))\n    staged.append((\n        "runner-readiness:audio-target",\n        copy_evidence(args.target_readiness, evidence_dir, "runner-readiness-audio-target.json"),\n    ))\n    build_info_path = evidence_dir / "build-info.txt"\n',
+              p + ': stage readiness')
+          text = replace_once(text,
+              '    parser.add_argument("--deployment-provenance", type=Path)\n    parser.add_argument("--output-dir", type=Path)\n',
+              '    parser.add_argument("--deployment-provenance", type=Path)\n    parser.add_argument("--builder-readiness", type=Path)\n    parser.add_argument("--target-readiness", type=Path)\n    parser.add_argument("--output-dir", type=Path)\n',
+              p + ': readiness args')
+          text = replace_once(text,
+              '        "soak_json", "deployment_provenance", "output_dir", "capture_device", "build_info_bin",\n',
+              '        "soak_json", "deployment_provenance", "builder_readiness", "target_readiness",\n        "output_dir", "capture_device", "build_info_bin",\n',
+              p + ': required readiness args')
+          # Strengthen self-test for readiness validation.
+          text = replace_once(text,
+              '        validate_deployment(deployment, "a" * 40, {"sample": digest(sample)})\n        bad = json.loads(json.dumps(deployment))\n',
+              '        validate_deployment(deployment, "a" * 40, {"sample": digest(sample)})\n        readiness = root / "readiness.json"\n        readiness.write_text(json.dumps({\n            "schema_version": 1, "role": "audio-builder", "classification": "READY",\n            "source_revision": "a" * 40, "runner": {"name": "builder"}, "checks": [],\n            "failure_count": 0,\n        }) + "\\n", encoding="utf-8")\n        load_readiness(readiness, "audio-builder", "a" * 40, "builder")\n        bad = json.loads(json.dumps(deployment))\n',
+              p + ': readiness self-test')
+          write(p, text)
+
+          resolve_job = '''  resolve:\n    runs-on: ubuntu-latest\n    outputs:\n      sha: ${{ steps.source.outputs.sha }}\n    steps:\n      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          fetch-depth: 0\n      - name: Validate exact source commit SHA\n        id: source\n        env:\n          SOURCE_SHA: ${{ inputs.source_sha }}\n        shell: bash\n        run: |\n          set -euo pipefail\n          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }\n          git fetch --no-tags origin "$SOURCE_SHA"\n          git cat-file -e "$SOURCE_SHA^{commit}"\n          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"\n\n'''
+
+          # Trusted runner readiness: exact SHA only, and report carries it.
+          p = '.github/workflows/trusted-runner-readiness.yml'
+          text = read(p)
+          text = replace_once(text,
+              '      ref:\n        description: Exact source ref whose runner contract should be checked\n        required: true\n        default: main\n        type: string\n',
+              '      source_sha:\n        description: Exact 40-character source commit SHA whose runner contract should be checked\n        required: true\n        type: string\n', p + ': input')
+          text = text.replace('inputs.ref', 'inputs.source_sha')
+          text = replace_once(text, 'jobs:\n  validation:\n', 'jobs:\n' + resolve_job + '  validation:\n    needs: resolve\n', p + ': resolve job')
+          for job in ('builder', 'target', 'archive'):
+              text = replace_once(text, f'  {job}:\n    if:', f'  {job}:\n    needs: resolve\n    if:', p + f': {job} needs')
+          text = text.replace('ref: ${{ inputs.source_sha }}', 'ref: ${{ needs.resolve.outputs.sha }}')
+          text = text.replace('--role audio-validation\n', '--role audio-validation\n            --source-revision \'${{ needs.resolve.outputs.sha }}\'\n')
+          text = text.replace('--role audio-builder \\\n', '--role audio-builder \\\n            --source-revision \'${{ needs.resolve.outputs.sha }}\' \\\n')
+          text = text.replace('args=(--role audio-target --writable-path /tmp --output runner-readiness.json)', 'args=(--role audio-target --source-revision \'${{ needs.resolve.outputs.sha }}\' --writable-path /tmp --output runner-readiness.json)')
+          text = text.replace('--role certification-archive \\\n', '--role certification-archive \\\n            --source-revision \'${{ needs.resolve.outputs.sha }}\' \\\n')
+          write(p, text)
+
+          # Compact / Full validation: exact SHA and explicit report source binding.
+          for p in ('.github/workflows/validation-compact.yml', '.github/workflows/validation-grade.yml'):
+              text = read(p)
+              text = replace_once(text,
+                  '      ref:\n        description: Exact branch, tag or commit to validate\n        required: true\n        default: main\n        type: string\n',
+                  '      source_sha:\n        description: Exact 40-character source commit SHA to validate\n        required: true\n        type: string\n', p + ': input')
+              text = text.replace('inputs.ref', 'inputs.source_sha')
+              text = replace_once(text, 'jobs:\n  validate:\n', 'jobs:\n' + resolve_job + '  validate:\n    needs: resolve\n', p + ': resolve job')
+              text = text.replace('ref: ${{ inputs.source_sha }}', 'ref: ${{ needs.resolve.outputs.sha }}')
+              text = replace_once(text,
+                  '          git rev-parse HEAD | tee validation-revision.txt\n          test -z "$(git status --porcelain=v1)"\n',
+                  '          revision=$(git rev-parse HEAD)\n          test "$revision" = \'${{ needs.resolve.outputs.sha }}\'\n          printf \'%s\\n\' "$revision" | tee validation-revision.txt\n          test -z "$(git status --porcelain=v1)"\n', p + ': exact revision')
+              text = text.replace('--role audio-validation \\\n', '--role audio-validation \\\n            --source-revision \'${{ needs.resolve.outputs.sha }}\' \\\n')
+              text = text.replace('python3 validation/tools/run_validation.py \\\n', 'python3 validation/tools/run_validation.py \\\n            --source-revision \'${{ needs.resolve.outputs.sha }}\' \\\n')
+              write(p, text)
+
+          # HIL manual dispatch is immutable SHA only; scheduled/release paths were already exact.
+          p = '.github/workflows/hil-soak.yml'
+          text = read(p)
+          text = replace_once(text,
+              '      ref:\n        description: Exact branch, tag or SHA to test\n        required: true\n        default: main\n        type: string\n',
+              '      source_sha:\n        description: Exact 40-character source commit SHA to test\n        required: true\n        type: string\n', p + ': input')
+          text = text.replace('inputs.ref', 'inputs.source_sha')
+          text = replace_once(text,
+              '          HIL_ENABLED: ${{ vars.HIL_ENABLED }}\n',
+              '          HIL_ENABLED: ${{ vars.HIL_ENABLED }}\n          MANUAL_SHA: ${{ inputs.source_sha }}\n', p + ': manual sha env')
+          text = replace_once(text,
+              '          if [ "$EVENT_NAME" = workflow_dispatch ]; then\n            echo \'run=true\' >> "$GITHUB_OUTPUT"\n            exit 0\n          fi\n',
+              '          if [ "$EVENT_NAME" = workflow_dispatch ]; then\n            [[ "$MANUAL_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }\n            echo \'run=true\' >> "$GITHUB_OUTPUT"\n            exit 0\n          fi\n', p + ': manual sha validate')
+          text = text.replace("EXPECTED_EVENT_SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}", "EXPECTED_EVENT_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}")
+          text = replace_once(text,
+              '          if [ "$EVENT_NAME" != workflow_dispatch ]; then\n            test "$revision" = "$EXPECTED_EVENT_SHA"\n          fi\n',
+              '          test "$revision" = "$EXPECTED_EVENT_SHA"\n          echo "revision=$revision" >> "$GITHUB_OUTPUT"\n', p + ': exact manual revision')
+          text = text.replace('--role audio-target\n', '--role audio-target\n            --source-revision \'${{ steps.route.outputs.revision }}\'\n', 1)
+          write(p, text)
+
+          # Product Certification: immutable source input + in-run preflight for all trusted roles.
+          p = '.github/workflows/product-certification.yml'
+          text = read(p)
+          text = replace_once(text,
+              '      ref:\n        description: Exact source ref to certify\n        required: true\n        default: main\n',
+              '      source_sha:\n        description: Exact 40-character source commit SHA to certify\n        required: true\n', p + ': input')
+          text = text.replace('inputs.ref', 'inputs.source_sha')
+          text = replace_once(text,
+              '      acoustic_json:\n        description: Absolute path to real product acoustic result JSON on DUT\n        required: true\n',
+              '      acoustic_json:\n        description: Absolute path to real product acoustic result JSON on DUT\n        required: true\n      board_manifest:\n        description: Absolute path to the DUT board manifest\n        required: true\n        default: /etc/audio-pipeline/board.json\n', p + ': board input')
+          text = replace_once(text,
+              '      - name: Resolve immutable source revision\n        id: resolve\n        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"\n',
+              '      - name: Validate immutable source revision\n        id: resolve\n        env:\n          SOURCE_SHA: ${{ inputs.source_sha }}\n        run: |\n          set -euo pipefail\n          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }\n          revision=$(git rev-parse HEAD)\n          test "$revision" = "${SOURCE_SHA,,}"\n          echo "sha=$revision" >> "$GITHUB_OUTPUT"\n', p + ': source validate')
+          builder_preflight = '''      - name: Preflight exact audio-builder runner\n        env:\n          CC: ${{ inputs.shipping_cc }}\n          SYSROOT: ${{ inputs.shipping_sysroot }}\n          TOOLCHAIN_ROOT: ${{ inputs.shipping_toolchain_root }}\n        run: |\n          set -euo pipefail\n          python3 tools/runner_preflight.py \\\n            --role audio-builder \\\n            --source-revision '${{ needs.resolve.outputs.sha }}' \\\n            --shipping-cc "$CC" --shipping-sysroot "$SYSROOT" \\\n            --shipping-toolchain-root "$TOOLCHAIN_ROOT" \\\n            --writable-path "$GITHUB_WORKSPACE" \\\n            --output /tmp/audio-builder-readiness.json\n'''
+          text = replace_once(text, '      - name: Verify exact builder inputs\n', builder_preflight + '      - name: Verify exact builder inputs\n', p + ': builder preflight')
+          text = replace_once(text,
+              '          mkdir -p shipping-bundle/bin\n',
+              '          mkdir -p shipping-bundle/bin\n          cp /tmp/audio-builder-readiness.json shipping-bundle/audio-builder-readiness.json\n', p + ': copy builder readiness')
+          text = replace_once(text,
+              '          (cd shipping-bundle && sha256sum bin/* CMakeCache.txt shipping-cmake-args.json build-provenance.json > SHA256SUMS)\n',
+              '          (cd shipping-bundle && sha256sum bin/* CMakeCache.txt shipping-cmake-args.json build-provenance.json audio-builder-readiness.json > SHA256SUMS)\n', p + ': hash builder readiness')
+          target_preflight = '''      - name: Preflight exact audio-target runner and product inputs\n        env:\n          BOARD: ${{ inputs.board_manifest }}\n          CORPUS: ${{ inputs.corpus_manifest }}\n          ACOUSTIC: ${{ inputs.acoustic_json }}\n          FAREND: ${{ inputs.farend_pcm }}\n          POWER: ${{ inputs.power_input }}\n        run: |\n          set -euo pipefail\n          python3 tools/runner_preflight.py \\\n            --role audio-target \\\n            --source-revision '${{ needs.resolve.outputs.sha }}' \\\n            --board-manifest "$BOARD" --corpus-manifest "$CORPUS" \\\n            --acoustic-json "$ACOUSTIC" --farend-file "$FAREND" \\\n            --power-input "$POWER" --writable-path /tmp \\\n            --output /tmp/audio-target-readiness.json\n'''
+          text = replace_once(text, '      - name: Verify and deploy exact builder artifact\n', target_preflight + '      - name: Verify and deploy exact builder artifact\n', p + ': target preflight')
+          text = replace_once(text,
+              '            --soak-json /tmp/soak.json --deployment-provenance /tmp/deployment-provenance.json \\\n            --output-dir certification-out --capture-device "$CAPTURE" --playback-device "$PLAYBACK" \\\n',
+              '            --soak-json /tmp/soak.json --deployment-provenance /tmp/deployment-provenance.json \\\n            --builder-readiness shipping-build/audio-builder-readiness.json \\\n            --target-readiness /tmp/audio-target-readiness.json \\\n            --output-dir certification-out --capture-device "$CAPTURE" --playback-device "$PLAYBACK" \\\n', p + ': certify readiness args')
+          archive_preflight = '''      - name: Preflight exact certification-archive runner\n        run: |\n          set -euo pipefail\n          python3 tools/runner_preflight.py \\\n            --role certification-archive \\\n            --source-revision '${{ needs.resolve.outputs.sha }}' \\\n            --archive-command /usr/local/bin/audio-pipeline-cert-archive \\\n            --writable-path "$GITHUB_WORKSPACE" \\\n            --output archive-readiness.json\n'''
+          text = replace_once(text, '      - name: Require immutable product-lifecycle archive backend\n', archive_preflight + '      - name: Require immutable product-lifecycle archive backend\n', p + ': archive preflight')
+          text = replace_once(text,
+              '          subject-path: archive-receipt.json\n',
+              '          subject-path: |\n            archive-receipt.json\n            archive-readiness.json\n', p + ': archive attest')
+          text = replace_once(text,
+              '          path: archive-receipt.json\n',
+              '          path: |\n            archive-receipt.json\n            archive-readiness.json\n', p + ': archive upload')
+          write(p, text)
+
+          # Docs: immutable SHA is normative at evidence entrypoints.
+          p = 'docs/TRUSTED_RUNNERS.md'
+          text = read(p)
+          text = replace_once(text,
+              'Before enabling long-running or shipping workflows, run the **Trusted Runner Readiness** workflow against the exact source ref and keep its `runner-readiness.json` result with the lab/change record.\n',
+              'Before enabling long-running or shipping workflows, run the **Trusted Runner Readiness** workflow against the exact 40-character source commit SHA and keep its `runner-readiness.json` result with the lab/change record. The readiness JSON itself is hash-bound to that source revision.\n', p + ': exact sha docs')
+          text = text.replace('python3 tools/runner_preflight.py \\\n  --role ', 'python3 tools/runner_preflight.py \\\n  --source-revision <40-hex-commit-sha> \\\n  --role ')
+          text = replace_once(text,
+              '5. Confirm the `audio-target` readiness result for the DUT/product inputs is current.\n6. Run **Product Certification** with the checked-in shipping-approved policy and a soak duration meeting the policy minimum (72 h for Cortex-A32 LOW).\n',
+              '5. Confirm the `audio-target` readiness result for the DUT/product inputs is current.\n6. Run **Product Certification** with the exact commit SHA, checked-in shipping-approved policy and a soak duration meeting the policy minimum (72 h for Cortex-A32 LOW). Product Certification re-runs builder/target/archive preflight inside the same execution; external readiness is preparatory, not a substitute.\n', p + ': certification docs')
+          write(p, text)
+
+          # Permanent anti-regression contract.
+          p = 'scripts/check-architecture.sh'
+          text = read(p)
+          contract = '''\n# Formal evidence entrypoints must be immutable and explicitly source-bound.\npython3 - <<'PY2'\nfrom pathlib import Path\n\nmanual = [\n    Path('.github/workflows/trusted-runner-readiness.yml'),\n    Path('.github/workflows/validation-compact.yml'),\n    Path('.github/workflows/validation-grade.yml'),\n    Path('.github/workflows/hil-soak.yml'),\n    Path('.github/workflows/product-certification.yml'),\n]\nfor path in manual:\n    text = path.read_text(encoding='utf-8')\n    assert '      source_sha:' in text, path\n    assert 'inputs.ref' not in text, path\n    assert '40-character' in text, path\nfor path in (Path('.github/workflows/validation-compact.yml'), Path('.github/workflows/validation-grade.yml')):\n    text = path.read_text(encoding='utf-8')\n    assert text.count('--source-revision \'${{ needs.resolve.outputs.sha }}\'') >= 4, path\nproduct = Path('.github/workflows/product-certification.yml').read_text(encoding='utf-8')\nfor role in ('audio-builder', 'audio-target', 'certification-archive'):\n    assert f'--role {role}' in product, role\nassert '--builder-readiness shipping-build/audio-builder-readiness.json' in product\nassert '--target-readiness /tmp/audio-target-readiness.json' in product\nprint('immutable evidence entrypoint contracts: OK')\nPY2\n'''
+          text = replace_once(text, '\necho "architecture contracts: OK"\n', contract + '\necho "architecture contracts: OK"\n', p + ': evidence contract')
+          write(p, text)
+          PY
+
+      - name: Validate migrated repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -e 'require "yaml"; ARGV.each { |path| abort("invalid workflow YAML: #{path}") unless Psych.parse_file(path) }' .github/workflows/*.yml
+          python3 tools/runner_preflight.py --self-test
+          python3 tools/ap_certify.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 scripts/docs_consistency.py
+          sh scripts/check-architecture.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          calls = []
+          for root in (Path('.github/workflows'), Path('docs')):
+              for path in root.rglob('*'):
+                  if path.is_file():
+                      text = path.read_text(encoding='utf-8', errors='ignore')
+                      if 'runner_preflight.py' in text:
+                          calls.append(path)
+          print('runner_preflight_callsite_files=' + ','.join(map(str, calls)))
+          required = {
+              '.github/workflows/trusted-runner-readiness.yml',
+              '.github/workflows/validation-compact.yml',
+              '.github/workflows/validation-grade.yml',
+              '.github/workflows/hil-soak.yml',
+              '.github/workflows/product-certification.yml',
+              'docs/TRUSTED_RUNNERS.md',
+          }
+          missing = sorted(required - {str(p) for p in calls})
+          if missing:
+              raise SystemExit('missing expected preflight callsites: ' + ','.join(missing))
+          PY
+          cmake -S . -B build-evidence-chain -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-evidence-chain --parallel
+          ctest --test-dir build-evidence-chain --output-on-failure
+          git diff --check
+
+      - name: Commit closure and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/evidence-chain-v2.0.1-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'release: v2.0.1 evidence-chain closure'
+          git push origin HEAD:feat/evidence-chain-v2.0.1

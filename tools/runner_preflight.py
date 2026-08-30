@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import platform
+import re
 import shutil
 import stat
 import tempfile
@@ -70,6 +71,12 @@ def evaluate(
 ) -> dict:
     checks: list[dict] = []
     current_system = system_name or platform.system()
+    source_revision = args.source_revision or ""
+    checks.append(_check(
+        "source-revision",
+        re.fullmatch(r"[0-9a-fA-F]{40}", source_revision) is not None,
+        f"source_revision={source_revision or 'missing'}",
+    ))
     checks.append(_check("os-linux", current_system == "Linux", f"system={current_system}"))
 
     commands = list(ROLE_COMMANDS[args.role]) + list(args.require_command or [])
@@ -105,6 +112,7 @@ def evaluate(
     return {
         "schema_version": SCHEMA_VERSION,
         "role": args.role,
+        "source_revision": source_revision.lower() if source_revision else None,
         "classification": "READY" if not failures else "NOT_READY",
         "runner": {
             "name": os.environ.get("RUNNER_NAME") or None,
@@ -129,6 +137,7 @@ def write_report(report: dict, output: Path | None) -> None:
 def _namespace(role: str, **overrides: object) -> argparse.Namespace:
     values = {
         "role": role,
+        "source_revision": "0" * 40,
         "require_command": [],
         "data_root": None,
         "seal": None,
@@ -216,6 +225,7 @@ def self_test() -> None:
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser()
     result.add_argument("--role", choices=ROLES)
+    result.add_argument("--source-revision")
     result.add_argument("--output", type=Path)
     result.add_argument("--require-command", action="append", default=[])
     result.add_argument("--writable-path", action="append", default=[])

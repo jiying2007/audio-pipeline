@@ -1,3 +1,11 @@
+# 2.0.1
+
+- Require immutable 40-character commit SHA inputs for manual trusted-runner readiness, public validation, HIL, and formal Product Certification evidence entrypoints.
+- Bind public Compact/Full validation reports explicitly to the resolved checkout SHA instead of relying on the workflow-dispatch `GITHUB_SHA`.
+- Bind every trusted-runner readiness report to the exact source revision and fail readiness when that identity is absent or malformed.
+- Re-run audio-builder, audio-target, and certification-archive readiness inside the same formal Product Certification execution, and hash-bind builder/target readiness into the v4 certification evidence manifest.
+- Keep archive readiness alongside the immutable lifecycle receipt and attest both artifacts. No DSP behavior, acoustic threshold, HIL policy, resource envelope, or shipping acceptance threshold is changed.
+
 # 2.0.0
 
 - Hard-cut the public SDK at a new major-version boundary; v2 intentionally provides no source or binary compatibility aliases for removed v1 generational APIs.

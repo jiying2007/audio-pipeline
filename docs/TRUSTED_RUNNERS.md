@@ -2,7 +2,7 @@
 
 This is the normative activation runbook for the trusted self-hosted runners used by public validation, HIL and product certification.
 
-A runner label is routing metadata, not evidence that the machine is ready. Before enabling long-running or shipping workflows, run the **Trusted Runner Readiness** workflow against the exact source ref and keep its `runner-readiness.json` result with the lab/change record.
+A runner label is routing metadata, not evidence that the machine is ready. Before enabling long-running or shipping workflows, run the **Trusted Runner Readiness** workflow against the exact 40-character source commit SHA and keep its `runner-readiness.json` result with the lab/change record. The readiness JSON itself is hash-bound to that source revision.
 
 `READY` means only that the runner satisfies the checked infrastructure prerequisites. It is never an acoustic PASS, HIL PASS or `product-certified` result.
 
@@ -62,7 +62,7 @@ Before formal shipping certification:
 3. Dispatch readiness for `certification-archive` using the exact immutable archive command path.
 4. Require `READY`.
 5. Confirm the `audio-target` readiness result for the DUT/product inputs is current.
-6. Run **Product Certification** with the checked-in shipping-approved policy and a soak duration meeting the policy minimum (72 h for Cortex-A32 LOW).
+6. Run **Product Certification** with the exact commit SHA, checked-in shipping-approved policy and a soak duration meeting the policy minimum (72 h for Cortex-A32 LOW). Product Certification re-runs builder/target/archive preflight inside the same execution; external readiness is preparatory, not a substitute.
 
 The Product Certification workflow remains the authority for exact builder/DUT separation, build/deploy/execute digest equality, real corpus/acoustic evidence, thermal/power evidence, route soak, attestation and lifecycle receipt validation.
 
@@ -72,6 +72,7 @@ Public validation:
 
 ```bash
 python3 tools/runner_preflight.py \
+  --source-revision <40-hex-commit-sha> \
   --role audio-validation \
   --data-root /opt/audio-validation-data \
   --seal /opt/audio-validation-data/datasets.seal.json \
@@ -82,6 +83,7 @@ Shipping builder:
 
 ```bash
 python3 tools/runner_preflight.py \
+  --source-revision <40-hex-commit-sha> \
   --role audio-builder \
   --shipping-cc /opt/toolchain/bin/arm-linux-gnueabihf-gcc \
   --shipping-sysroot /opt/toolchain/sysroot \
@@ -93,6 +95,7 @@ DUT/HIL target:
 
 ```bash
 python3 tools/runner_preflight.py \
+  --source-revision <40-hex-commit-sha> \
   --role audio-target \
   --board-manifest /etc/audio-pipeline/board.json \
   --power-input /path/to/live_power \
@@ -103,6 +106,7 @@ Lifecycle archive:
 
 ```bash
 python3 tools/runner_preflight.py \
+  --source-revision <40-hex-commit-sha> \
   --role certification-archive \
   --archive-command /usr/local/bin/audio-pipeline-cert-archive \
   --output /tmp/certification-archive-readiness.json

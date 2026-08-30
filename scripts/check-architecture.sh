@@ -140,4 +140,31 @@ for name, (tiers, minimum) in expected.items():
 print('public validation policy contracts: OK')
 PY
 
+# Formal evidence entrypoints must be immutable and explicitly source-bound.
+python3 - <<'PY2'
+from pathlib import Path
+
+manual = [
+    Path('.github/workflows/trusted-runner-readiness.yml'),
+    Path('.github/workflows/validation-compact.yml'),
+    Path('.github/workflows/validation-grade.yml'),
+    Path('.github/workflows/hil-soak.yml'),
+    Path('.github/workflows/product-certification.yml'),
+]
+for path in manual:
+    text = path.read_text(encoding='utf-8')
+    assert '      source_sha:' in text, path
+    assert 'inputs.ref' not in text, path
+    assert '40-character' in text, path
+for path in (Path('.github/workflows/validation-compact.yml'), Path('.github/workflows/validation-grade.yml')):
+    text = path.read_text(encoding='utf-8')
+    assert text.count("--source-revision '${{ needs.resolve.outputs.sha }}'") >= 4, path
+product = Path('.github/workflows/product-certification.yml').read_text(encoding='utf-8')
+for role in ('audio-builder', 'audio-target', 'certification-archive'):
+    assert f'--role {role}' in product, role
+assert '--builder-readiness shipping-build/audio-builder-readiness.json' in product
+assert '--target-readiness /tmp/audio-target-readiness.json' in product
+print('immutable evidence entrypoint contracts: OK')
+PY2
+
 echo "architecture contracts: OK"

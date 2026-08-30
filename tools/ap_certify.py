@@ -140,6 +140,24 @@ def load_json(path: Path, root: str) -> dict:
     return value
 
 
+
+
+def load_readiness(path: Path, expected_role: str, revision: str, expected_runner: str | None = None) -> dict:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if value.get("schema_version") != 1:
+        raise ValueError(f"{path}: readiness schema_version must be 1")
+    if value.get("classification") != "READY":
+        raise ValueError(f"{path}: readiness is not READY")
+    if value.get("role") != expected_role:
+        raise ValueError(f"{path}: readiness role {value.get('role')!r} != {expected_role!r}")
+    if value.get("source_revision") != revision:
+        raise ValueError(f"{path}: readiness source revision does not match certification checkout")
+    runner = value.get("runner") or {}
+    if expected_runner is not None and runner.get("name") != expected_runner:
+        raise ValueError(f"{path}: readiness runner does not match deployment provenance")
+    return value
+
+
 def copy_evidence(source: Path, evidence_dir: Path, name: str) -> Path:
     if not source.is_file():
         raise FileNotFoundError(source)
@@ -263,6 +281,8 @@ def assemble(args: argparse.Namespace) -> Path:
 
     deployment = json.loads(args.deployment_provenance.read_text(encoding="utf-8"))
     validate_deployment(deployment, revision, binary_hashes)
+    load_readiness(args.builder_readiness, "audio-builder", revision, deployment["builder_runner"])
+    load_readiness(args.target_readiness, "audio-target", revision, deployment["dut_runner"])
 
     build_identity = {
         "source_revision": revision,
@@ -308,6 +328,14 @@ def assemble(args: argparse.Namespace) -> Path:
     staged.append((
         "deployment-provenance",
         copy_evidence(args.deployment_provenance, evidence_dir, "deployment-provenance.json"),
+    ))
+    staged.append((
+        "runner-readiness:audio-builder",
+        copy_evidence(args.builder_readiness, evidence_dir, "runner-readiness-audio-builder.json"),
+    ))
+    staged.append((
+        "runner-readiness:audio-target",
+        copy_evidence(args.target_readiness, evidence_dir, "runner-readiness-audio-target.json"),
     ))
     build_info_path = evidence_dir / "build-info.txt"
     build_info_path.write_text(build_info_text, encoding="utf-8")
@@ -399,6 +427,13 @@ def self_test() -> int:
             "result": "PASS",
         }
         validate_deployment(deployment, "a" * 40, {"sample": digest(sample)})
+        readiness = root / "readiness.json"
+        readiness.write_text(json.dumps({
+            "schema_version": 1, "role": "audio-builder", "classification": "READY",
+            "source_revision": "a" * 40, "runner": {"name": "builder"}, "checks": [],
+            "failure_count": 0,
+        }) + "\n", encoding="utf-8")
+        load_readiness(readiness, "audio-builder", "a" * 40, "builder")
         bad = json.loads(json.dumps(deployment))
         bad["toolchain"]["cmake_args_sha256"] = "0" * 64
         try:
@@ -421,6 +456,8 @@ def main() -> int:
     parser.add_argument("--acoustic-json", type=Path)
     parser.add_argument("--soak-json", type=Path)
     parser.add_argument("--deployment-provenance", type=Path)
+    parser.add_argument("--builder-readiness", type=Path)
+    parser.add_argument("--target-readiness", type=Path)
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--capture-device")
     parser.add_argument("--playback-device")
@@ -434,7 +471,8 @@ def main() -> int:
         return self_test()
     required = (
         "sku", "policy", "corpus_manifest", "benchmark_json", "acoustic_json",
-        "soak_json", "deployment_provenance", "output_dir", "capture_device", "build_info_bin",
+        "soak_json", "deployment_provenance", "builder_readiness", "target_readiness",
+        "output_dir", "capture_device", "build_info_bin",
     )
     missing = [name for name in required if getattr(args, name) is None]
     if missing:

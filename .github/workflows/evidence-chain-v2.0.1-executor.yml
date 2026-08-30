@@ -36,6 +36,17 @@ jobs:
           code = '\n'.join(body) + '\n'
           compile(code, '<staged-evidence-migration>', 'exec')
           exec(compile(code, '<staged-evidence-migration>', 'exec'), {'__name__': '__main__'})
+
+          # Fix one generated anti-regression assertion whose nested shell/Python
+          # quoting cannot be represented literally inside the staging workflow.
+          path = Path('scripts/check-architecture.sh')
+          text = path.read_text(encoding='utf-8')
+          dollar = chr(36)
+          bad = "assert text.count('--source-revision '" + dollar + "{{ needs.resolve.outputs.sha }}'') >= 4, path"
+          good = 'assert text.count("--source-revision \'" + dollar + "{{ needs.resolve.outputs.sha }}\'") >= 4, path'
+          if bad not in text:
+              raise SystemExit('generated evidence assertion not found')
+          path.write_text(text.replace(bad, good, 1), encoding='utf-8')
           PY
 
       - name: Validate migrated repository

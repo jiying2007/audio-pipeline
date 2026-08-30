@@ -32,6 +32,7 @@ int main(void) {
     assert(info->has_pipeline == AP_HAVE_PIPELINE);
     assert(info->has_linux_runtime == AP_HAVE_LINUX_RUNTIME);
     assert(info->fast_math == AP_BUILD_FAST_MATH);
+    assert(info->bf_direction_tracking == AP_BUILD_BF_DIRECTION_TRACKING);
 #if AP_HAVE_MODULE_AEC
     assert(info->aec_backend != NULL && info->aec_backend[0] != '\0');
 #endif

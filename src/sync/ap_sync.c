@@ -2,8 +2,60 @@
 #include <stdint.h>
 #include <string.h>
 
+#define AP_SYNC_MIN_CORRELATION_SQUARED 0.0324f
+#define AP_SYNC_MIN_PEAK_RATIO 1.01f
+#define AP_SYNC_ROUTE_CONFIRMATIONS 3u
+
 static float ap_sync_clamp(float x, float lo, float hi) {
     return x < lo ? lo : (x > hi ? hi : x);
+}
+
+static float ap_sync_delay_score(const ap_sync_state_t *s,
+                                 const float *mic,
+                                 uint32_t frame_samples,
+                                 uint32_t delay,
+                                 uint32_t sample_step);
+
+static uint32_t ap_sync_distance(uint32_t a, uint32_t b) {
+    return a > b ? a - b : b - a;
+}
+
+static int ap_sync_peak_is_unique(const ap_sync_state_t *s,
+                                  const float *mic,
+                                  uint32_t frame_samples,
+                                  uint32_t max_delay,
+                                  uint32_t best_delay,
+                                  float best_score,
+                                  uint32_t coarse_step,
+                                  uint32_t sample_step) {
+    float runner_up = 0.0f;
+    uint32_t d;
+    const uint32_t guard = coarse_step ? coarse_step : 1u;
+
+    if (best_score < AP_SYNC_MIN_CORRELATION_SQUARED) return 0;
+    for (d = 0u; d <= max_delay; d += coarse_step) {
+        float score;
+        if (ap_sync_distance(d, best_delay) <= guard) continue;
+        score = ap_sync_delay_score(s, mic, frame_samples, d, sample_step);
+        if (score > runner_up) runner_up = score;
+    }
+    return runner_up <= 1.0e-12f || best_score >= runner_up * AP_SYNC_MIN_PEAK_RATIO;
+}
+
+static int ap_sync_confirm_route_candidate(ap_sync_state_t *s,
+                                           uint32_t candidate,
+                                           uint32_t tolerance) {
+    if (s->route_candidate_confirmations == 0u ||
+        ap_sync_distance(candidate, s->route_candidate_delay) > tolerance) {
+        s->route_candidate_delay = candidate;
+        s->route_candidate_confirmations = 1u;
+        return 0;
+    }
+    if (s->route_candidate_confirmations < UINT8_MAX)
+        s->route_candidate_confirmations++;
+    if (s->route_candidate_confirmations < AP_SYNC_ROUTE_CONFIRMATIONS) return 0;
+    s->route_candidate_confirmations = 0u;
+    return 1;
 }
 
 void ap_sync_init(ap_sync_state_t *s, uint32_t initial_delay_samples) {
@@ -143,21 +195,36 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
             }
         }
     }
-    if (best > 0.0324f) {
+    if (best < AP_SYNC_MIN_CORRELATION_SQUARED) {
+        s->route_candidate_confirmations = 0u;
+        return;
+    }
+    {
         const uint32_t old = s->delay_samples;
         const uint32_t raw_jump = old > best_delay ? old - best_delay : best_delay - old;
         event->delay_observed = 1u;
         event->delay_error_samples = (int32_t)best_delay - (int32_t)old;
         if (raw_jump > sample_rate_hz / 50u) {
+            if (!ap_sync_confirm_route_candidate(s, best_delay, coarse_step)) {
+                event->delay_observed = 0u;
+                return;
+            }
+            best_delay = s->route_candidate_delay;
             s->delay_samples = best_delay;
             s->drift_ppm = 0.0f;
             s->drift_credit = 0.0f;
             s->last_best_delay = best_delay;
             s->have_last_best_delay = 1u;
             event->route_jump = 1u;
+        } else if (!ap_sync_peak_is_unique(s, mic, frame_samples, max_delay,
+                                           best_delay, best, coarse_step, sample_step)) {
+            s->route_candidate_confirmations = 0u;
+            event->delay_observed = 0u;
         } else if (enable_clock_drift_compensation) {
+            s->route_candidate_confirmations = 0u;
             ap_sync_apply_drift(s, best_delay, sample_rate_hz, max_delay_ms, event);
         } else {
+            s->route_candidate_confirmations = 0u;
             uint32_t next = (7u * old + best_delay) / 8u;
             const uint32_t max_slew = sample_rate_hz / 1000u ?
                                       sample_rate_hz / 1000u : 1u;
@@ -195,6 +262,7 @@ int ap_sync_observe_timestamps(ap_sync_state_t *s,
     s->have_last_best_delay = 1u;
     s->drift_ppm = 0.0f;
     s->drift_credit = 0.0f;
+    s->route_candidate_confirmations = 0u;
     event->timestamp_observed = 1u;
     event->delay_observed = 1u;
     event->delay_error_samples = (int32_t)observed - (int32_t)old;

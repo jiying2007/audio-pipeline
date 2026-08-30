@@ -11,6 +11,7 @@ option(AP_BUILD_EXAMPLES "Build portable examples" ON)
 option(AP_BUILD_ALSA_EXAMPLE "Build optional Linux ALSA examples" OFF)
 option(AP_BUILD_FUZZ "Build clang libFuzzer target" OFF)
 option(AP_ENABLE_FAST_MATH "Enable explicitly accepted fast-math DSP policy" OFF)
+option(AP_ENABLE_BF_DIRECTION_TRACKING "Enable adaptive two-mic direction tracking" ON)
 option(AP_STRICT_WARNINGS "Treat warnings as errors" OFF)
 
 set(AP_MODULES "RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD" CACHE STRING
@@ -101,6 +102,11 @@ if(AP_ENABLE_FAST_MATH)
 else()
     set(AP_HAVE_FAST_MATH 0)
 endif()
+if(AP_HAVE_BF AND AP_ENABLE_BF_DIRECTION_TRACKING)
+    set(AP_HAVE_BF_DIRECTION_TRACKING 1)
+else()
+    set(AP_HAVE_BF_DIRECTION_TRACKING 0)
+endif()
 
 set(AP_AEC_BACKEND "MDF" CACHE STRING "Compile-time AEC backend: MDF or NLMS")
 set_property(CACHE AP_AEC_BACKEND PROPERTY STRINGS MDF NLMS)
@@ -127,6 +133,15 @@ if(AP_BUILD_SOURCE_REVISION STREQUAL "")
         RESULT_VARIABLE _AP_GIT_REVISION_RESULT)
     if(NOT _AP_GIT_REVISION_RESULT EQUAL 0 OR AP_BUILD_SOURCE_REVISION STREQUAL "")
         set(AP_BUILD_SOURCE_REVISION "unknown")
+    else()
+        execute_process(
+            COMMAND git status --porcelain
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            OUTPUT_VARIABLE _AP_GIT_DIRTY
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(NOT _AP_GIT_DIRTY STREQUAL "")
+            string(APPEND AP_BUILD_SOURCE_REVISION "-dirty")
+        endif()
     endif()
 endif()
 
@@ -161,6 +176,7 @@ string(CONCAT _AP_CONFIG_IDENTITY
     "pipeline=${AP_BUILD_PIPELINE}\n"
     "linux_runtime=${AP_ENABLE_LINUX_RUNTIME}\n"
     "fast_math=${AP_ENABLE_FAST_MATH}\n"
+    "bf_direction_tracking=${AP_HAVE_BF_DIRECTION_TRACKING}\n"
     "max_io_rate=${AP_BUILD_MAX_IO_RATE_HZ}\n"
     "max_internal_rate=${AP_BUILD_MAX_INTERNAL_RATE_HZ}\n"
     "max_mics=${AP_BUILD_MAX_MIC_CHANNELS}\n"
@@ -278,6 +294,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/audio_pipeline_build.h.in
 set(AP_STAGE_DEFINES
     AP_BUILD_STAGE_HPF=${AP_HAVE_HPF}
     AP_BUILD_STAGE_BF=${AP_HAVE_BF}
+    AP_BUILD_BF_DIRECTION_TRACKING=${AP_HAVE_BF_DIRECTION_TRACKING}
     AP_BUILD_STAGE_SYNC=${AP_HAVE_SYNC}
     AP_BUILD_ACTIVITY=${AP_HAVE_ACTIVITY}
     AP_BUILD_STAGE_AEC=${AP_HAVE_AEC}

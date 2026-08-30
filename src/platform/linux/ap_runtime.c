@@ -213,6 +213,7 @@ struct ap_runtime {
     float last_valid_erle;
     uint8_t last_aec_converged;
     uint8_t uses_render;
+    uint8_t memory_locked;
 };
 
 _Static_assert(sizeof(struct ap_runtime) <= AP_RUNTIME_STATE_MAX_BYTES,
@@ -782,6 +783,13 @@ static void apply_quality_transition(ap_runtime_t *runtime, ap_quality_t next) {
                            (int32_t)old,
                            (int32_t)next,
                            1u);
+    } else if (next < old) {
+        runtime_emit_event(runtime,
+                           AP_EVENT_QUALITY_DEGRADED,
+                           next == AP_QUALITY_SAFE ? AP_EVENT_ERROR : AP_EVENT_WARN,
+                           (int32_t)old,
+                           (int32_t)next,
+                           1u);
     } else {
         runtime_emit_event(runtime,
                            AP_EVENT_QUALITY_RECOVERED,
@@ -1028,6 +1036,25 @@ static int wait_work(ap_runtime_t *runtime) {
     return rc;
 }
 
+static int runtime_lock_state_memory(ap_runtime_t *runtime) {
+    int error;
+    if (mlock(runtime, sizeof(*runtime)) != 0) return errno;
+    if (mlock(runtime->pipeline, ap_pipeline_state_size()) != 0) {
+        error = errno;
+        (void)munlock(runtime, sizeof(*runtime));
+        return error;
+    }
+    runtime->memory_locked = 1u;
+    return 0;
+}
+
+static void runtime_unlock_state_memory(ap_runtime_t *runtime) {
+    if (!runtime->memory_locked) return;
+    (void)munlock(runtime->pipeline, ap_pipeline_state_size());
+    (void)munlock(runtime, sizeof(*runtime));
+    runtime->memory_locked = 0u;
+}
+
 static void runtime_setup_thread(ap_runtime_t *runtime) {
     int policy = SCHED_OTHER;
     struct sched_param sp;
@@ -1065,14 +1092,17 @@ static void runtime_setup_thread(ap_runtime_t *runtime) {
                                1u);
         }
     }
-    if (runtime->options.lock_memory && mlockall(MCL_CURRENT | MCL_FUTURE) != 0) {
-        counter64_add(&runtime->memory_lock_failures, 1u);
-        runtime_emit_event(runtime,
-                           AP_EVENT_RT_MLOCK_FAILED,
-                           AP_EVENT_WARN,
-                           errno,
-                           0,
-                           1u);
+    if (runtime->options.lock_memory) {
+        const int lock_error = runtime_lock_state_memory(runtime);
+        if (lock_error != 0) {
+            counter64_add(&runtime->memory_lock_failures, 1u);
+            runtime_emit_event(runtime,
+                               AP_EVENT_RT_MLOCK_FAILED,
+                               AP_EVENT_WARN,
+                               lock_error,
+                               0,
+                               1u);
+        }
     }
     atomic_store_explicit(&runtime->actual_cpu, sched_getcpu(), memory_order_release);
     if (pthread_getschedparam(pthread_self(), &policy, &sp) == 0) {
@@ -1288,6 +1318,7 @@ void ap_runtime_stop(ap_runtime_t *runtime) {
     if (atomic_exchange_explicit(&runtime->running, 0u, memory_order_acq_rel)) {
         (void)sem_post(&runtime->wake);
         (void)pthread_join(runtime->thread, NULL);
+        runtime_unlock_state_memory(runtime);
     }
 }
 

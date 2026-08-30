@@ -15,6 +15,7 @@
 #define FRAME (RATE / 100u)
 
 static AP_ALIGN unsigned char state[AP_PIPELINE_STATE_MAX_BYTES];
+static AP_ALIGN unsigned char fresh_state[AP_PIPELINE_STATE_MAX_BYTES];
 static int16_t first_pass[FRAMES][FRAME];
 
 static void make_frame(unsigned frame_index, int16_t *mic, int16_t *render) {
@@ -81,6 +82,24 @@ static void test_silence_is_stable_in_isolated_ns(void) {
     }
 }
 
+static void test_discontinuity_matches_fresh_algorithm_state(void) {
+    ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *warmed = NULL;
+    ap_pipeline_t *fresh = NULL;
+    const int use_render = (cfg.stages & AP_STAGE_SYNC) != 0u;
+
+    assert(ap_pipeline_init(state, sizeof(state), &cfg, &warmed) == AP_OK);
+    process_sequence(warmed, use_render, 0);
+    assert(ap_pipeline_notify_stream_discontinuity(
+               warmed,
+               AP_DISCONTINUITY_CAPTURE_GAP | AP_DISCONTINUITY_RENDER_GAP,
+               3u) == AP_OK);
+    process_sequence(warmed, use_render, 0);
+
+    assert(ap_pipeline_init(fresh_state, sizeof(fresh_state), &cfg, &fresh) == AP_OK);
+    process_sequence(fresh, use_render, 1);
+}
+
 static void test_single_mic_geometry_requires_no_beamformer(void) {
     ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
     cfg.mic_channels = 1u;
@@ -93,6 +112,7 @@ static void test_single_mic_geometry_requires_no_beamformer(void) {
 int main(void) {
     test_reset_replay_is_bit_exact();
     test_silence_is_stable_in_isolated_ns();
+    test_discontinuity_matches_fresh_algorithm_state();
     test_single_mic_geometry_requires_no_beamformer();
     puts("metamorphic DSP contracts: OK");
     return 0;

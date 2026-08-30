@@ -292,6 +292,64 @@ static void test_automatic_quality_degrade_and_recovery(void) {
     ap_runtime_deinit(runtime);
 }
 
+
+static void test_direct_quality_degradation_event(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    ap_runtime_command_t command;
+    ap_event_t event;
+    ap_metrics_t pm;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    unsigned i;
+    int saw_degraded = 0;
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    runtime = open_default(pipeline, &rcfg);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    memset(&command, 0, sizeof(command));
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_SET_QUALITY;
+    command.data.set_quality.quality = AP_QUALITY_SAFE;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+    pm = process_one(runtime, mic, render, out);
+    assert(pm.quality == AP_QUALITY_SAFE);
+    for (i = 0u; i < 16u && ap_runtime_receive_event(runtime, &event) == AP_OK; ++i) {
+        if (event.kind == AP_EVENT_QUALITY_DEGRADED &&
+            event.arg0 == AP_QUALITY_FULL && event.arg1 == AP_QUALITY_SAFE)
+            saw_degraded = 1;
+    }
+    assert(saw_degraded);
+    ap_runtime_deinit(runtime);
+}
+
+static void test_bounded_memory_lock_path(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_runtime_options_t options = ap_runtime_options_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime = NULL;
+    ap_runtime_metrics_t rm;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES] = {0};
+
+    options.lock_memory = 1u;
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    assert(ap_runtime_open(runtime_state, sizeof(runtime_state), pipeline,
+                           &rcfg, &options, &runtime) == AP_OK);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    (void)process_one(runtime, mic, render, out);
+    rm = metrics(runtime);
+    assert(rm.processed_frames == 1u);
+    assert(rm.memory_lock_failures <= 1u);
+    ap_runtime_deinit(runtime);
+}
+
 static void test_recorder_validation_record_and_export(void) {
     ap_flight_recorder_config_t config = ap_flight_recorder_config_default(16000u, 2u);
     ap_flight_recorder_t *recorder = NULL;
@@ -441,6 +499,8 @@ int main(void) {
     test_command_validation_and_queue_pressure();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();
+    test_direct_quality_degradation_event();
+    test_bounded_memory_lock_path();
     test_recorder_validation_record_and_export();
     test_recorder_attach_geometry();
     puts("audio-pipeline v2 extended runtime contracts: OK");

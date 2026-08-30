@@ -64,7 +64,7 @@ typedef struct ap_build_info {
     uint8_t has_pipeline;
     uint8_t has_linux_runtime;
     uint8_t fast_math;
-    uint8_t reserved8;
+    uint8_t bf_direction_tracking;
     const char *version;
     const char *aec_backend;
     const char *ns_estimator;

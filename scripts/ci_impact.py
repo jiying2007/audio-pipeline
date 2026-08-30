@@ -59,6 +59,7 @@ def analyze(paths: list[str], force_full: bool = False) -> dict:
             "run_ns_backend": False,
             "run_extended": False,
             "run_abi": False,
+            "run_lab": False,
             "compositions": [],
             "arm": [],
             "reason": "documentation-only change",
@@ -136,6 +137,7 @@ def analyze(paths: list[str], force_full: bool = False) -> dict:
         "run_ns_backend": flags["ns"],
         "run_extended": dsp or flags["runtime"],
         "run_abi": flags["runtime"],
+        "run_lab": False,
         "compositions": compositions,
         "arm": DSP_ARM if dsp or flags["runtime"] else [],
         "reason": "validation/certification-only" if python_only else "targeted component change",
@@ -158,6 +160,7 @@ def _full(reason: str, paths: list[str]) -> dict:
         "run_ns_backend": True,
         "run_extended": True,
         "run_abi": True,
+        "run_lab": True,
         "compositions": FULL_COMPOSITIONS,
         "arm": FULL_ARM,
         "reason": reason,
@@ -185,12 +188,14 @@ def self_test() -> None:
     aec = analyze(["src/modules/ap_aec_module.c"])
     assert aec["run_aec_backend"] and "composition-aec-only" in aec["compositions"]
     val = analyze(["validation/tools/run_validation.py"])
-    assert val["run_audio"] and not val["run_ci"] and val["arm"] == []
+    assert val["run_audio"] and not val["run_ci"] and val["arm"] == [] and not val["run_lab"]
     unknown = analyze(["scripts/new-thing.sh"])
-    assert unknown["full"] and len(unknown["arm"]) == len(FULL_ARM)
+    assert unknown["full"] and unknown["run_lab"] and len(unknown["arm"]) == len(FULL_ARM)
+    lab = analyze(["lab/ansible/site.yml"])
+    assert lab["full"] and lab["run_lab"]
     hil = analyze(["hil/board.schema.json"])
-    assert hil["full"]
-    assert analyze([], True)["full"]
+    assert hil["full"] and hil["run_lab"]
+    assert analyze([], True)["full"] and analyze([], True)["run_lab"]
     print("ci impact analyzer self-test: OK")
 
 

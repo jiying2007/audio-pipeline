@@ -32,6 +32,7 @@ jobs:
       run_ns_backend: ${{ steps.impact.outputs.run_ns_backend }}
       run_extended: ${{ steps.impact.outputs.run_extended }}
       run_abi: ${{ steps.impact.outputs.run_abi }}
+      run_lab: ${{ steps.impact.outputs.run_lab }}
       composition_matrix: ${{ steps.impact.outputs.composition_matrix }}
       arm_matrix: ${{ steps.impact.outputs.arm_matrix }}
       base_sha: ${{ steps.refs.outputs.base }}
@@ -137,6 +138,9 @@ jobs:
           grep -q 'shipping-cmake-args.json' .github/workflows/product-certification.yml
           grep -q 'cmake_args_sha256' certification/record.schema.json
           python3 -c 'import json; p=json.load(open("certification/policies/cortex-a32-low-shipping.json")); assert p["shipping_approved"] is True and float(p["min_soak_hours"]) >= 72'
+          grep -q '^name: Lab User Mode Runtime$' .github/workflows/lab-user-mode.yml
+          grep -q 'run_lab:' .github/workflows/verify.yml
+          grep -q 'LAB_RESULT:' .github/workflows/verify.yml
           sh scripts/check-architecture.sh
       - name: Strict compile and unit/property gate
         env:
@@ -232,6 +236,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  lab-user-mode:
+    needs: [impact, fast-gate]
+    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_lab == 'true'
+    uses: ./.github/workflows/lab-user-mode.yml
+    with:
+      source_sha: ${{ needs.impact.outputs.head_sha }}
+
   ci:
     needs: [impact, fast-gate]
     if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_ci == 'true'
@@ -278,7 +289,7 @@ jobs:
 
   summary:
     if: always()
-    needs: [impact, fast-gate, hosted-real-smoke, ci, quality, audio-quality, resource-gates, codeql]
+    needs: [impact, fast-gate, hosted-real-smoke, lab-user-mode, ci, quality, audio-quality, resource-gates, codeql]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -286,6 +297,7 @@ jobs:
         run: >-
           python3 scripts/ci_failure.py --output /tmp/verification-summary.json aggregate
           --fast '${{ needs.fast-gate.result }}'
+          --lab '${{ needs.lab-user-mode.result }}'
           --ci '${{ needs.ci.result }}'
           --quality '${{ needs.quality.result }}'
           --audio '${{ needs.audio-quality.result }}'
@@ -296,11 +308,13 @@ jobs:
         env:
           FAST_RESULT: ${{ needs.fast-gate.result }}
           HOSTED_REAL_RESULT: ${{ needs.hosted-real-smoke.result }}
+          LAB_RESULT: ${{ needs.lab-user-mode.result }}
           CI_RESULT: ${{ needs.ci.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           AUDIO_RESULT: ${{ needs.audio-quality.result }}
           RESOURCE_RESULT: ${{ needs.resource-gates.result }}
           CODEQL_RESULT: ${{ needs.codeql.result }}
+          EXPECT_LAB: ${{ needs.impact.outputs.run_lab }}
           EXPECT_CI: ${{ needs.impact.outputs.run_ci }}
           EXPECT_QUALITY: ${{ needs.impact.outputs.run_quality }}
           EXPECT_AUDIO: ${{ needs.impact.outputs.run_audio }}
@@ -318,6 +332,7 @@ jobs:
           }
           test "$FAST_RESULT" = success
           test "$HOSTED_REAL_RESULT" = success
+          check "$EXPECT_LAB" "$LAB_RESULT" lab-user-mode
           check "$EXPECT_CI" "$CI_RESULT" ci
           check "$EXPECT_QUALITY" "$QUALITY_RESULT" quality
           check "$EXPECT_AUDIO" "$AUDIO_RESULT" audio-quality

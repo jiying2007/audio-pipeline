@@ -7,6 +7,7 @@
 - Add research-only AISHELL-4, permissive-filtered FSD50K and WHAM stress paths while keeping CC-BY-ND ACE catalog-only and non-transforming.
 - Extend validation metrics with clipping, DC offset, output level drift, VAD precision/recall/FPR/FNR, speech-active attenuation, tail percentiles, scenario pass rates and dimension-coverage gates.
 - Stratify blind HMAC holdouts by scenario or dataset so required acoustic families cannot disappear from the hidden partition by chance.
+- Automate exact-SHA Extended Real commercial-core validation on published releases and commercial-plus weekly through one canonical workflow; automation remains fail-visible until `EXTENDED_REAL_ENABLED=true`.
 - Keep extended-real validation non-authoritative for product shipping: real DUT HIL, product acoustic/thermal/power evidence and 72 h certification remain separate mandatory gates.
 
 # 2.0.1

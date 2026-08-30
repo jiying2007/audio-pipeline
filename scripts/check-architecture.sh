@@ -198,3 +198,19 @@ for name in (
     assert policy['minimum_cases'] > 0
 print('extended-real validation contracts: OK')
 PY
+python3 - <<'PY_AUTO'
+from pathlib import Path
+canonical = Path('.github/workflows/validation-extended-real.yml').read_text(encoding='utf-8')
+auto = Path('.github/workflows/extended-real-automation.yml').read_text(encoding='utf-8')
+for token in ('source_sha:', 'commercial-core', 'commercial-plus', '--stratify scenario', '--source-manifest extended-out/source-manifest.json'):
+    assert token in canonical, token
+assert "options: [commercial-core, commercial-plus, research]" in canonical
+assert "release:" in auto and "schedule:" in auto
+assert 'EXTENDED_REAL_ENABLED' in auto
+assert 'EXTENDED_REAL_REQUIRED_BUT_DISABLED' in auto
+assert 'gh workflow run validation-extended-real.yml' in auto
+assert '-f "source_sha=$SOURCE_SHA"' in auto
+assert 'profile=commercial-core' in auto and 'profile=commercial-plus' in auto
+assert 'research' not in auto, 'research profile must never be automated'
+print('extended-real automation contracts: OK')
+PY_AUTO

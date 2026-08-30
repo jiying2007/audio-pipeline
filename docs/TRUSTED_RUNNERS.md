@@ -10,7 +10,7 @@ A runner label is routing metadata, not evidence that the machine is ready. Befo
 
 | Role | Labels | Readiness scope | Subsequent evidence |
 | --- | --- | --- | --- |
-| public validation | `self-hosted, linux, audio-validation` | Python/CMake/C compiler/Git/Git LFS, sealed cache paths | Compact/Full public-data validation |
+| public validation | `self-hosted, linux, audio-validation` | Python/CMake/C compiler/Git/Git LFS; either Compact/Full seal or Extended Real catalog/cache | Compact/Full/Extended Real public-data validation |
 | shipping builder | `self-hosted, linux, audio-builder` | build tools, exact shipping compiler, sysroot and toolchain root | sealed shipping binaries/build provenance |
 | DUT/HIL target | `self-hosted, linux, audio-target` | Linux runner baseline plus supplied board/product input paths | HIL, real target benchmark/route soak/certification |
 | lifecycle archive | `self-hosted, linux, certification-archive` | immutable archive backend command and runner baseline | validated product-lifecycle receipt |
@@ -39,6 +39,9 @@ The command exits non-zero for `NOT_READY`, so workflow use is fail-closed. Its 
 7. Materialize sufficient official DNS clean/noise data, reseal Full cache and rerun readiness with the DNS root.
 8. Run **Validation Grade**: default 160 cases.
 9. Run Full blind holdout.
+10. Materialize the Extended Real `commercial-core` cache, rerun readiness with `--extended-catalog`, then run Extended Real visible + scenario-stratified blind.
+11. Materialize VOiCES/AMI/ICSI and run `commercial-plus`.
+12. Only after the isolated runner/cache is repeatedly healthy set `EXTENDED_REAL_ENABLED=true`; release automation then dispatches core and the weekly schedule dispatches plus.
 
 Do not enable product/hardware claims from public validation results.
 

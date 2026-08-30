@@ -154,3 +154,19 @@ Never reuse a seal whose `lock_sha256` does not match the checked-out repository
 ## Release interpretation
 
 A passing Compact or Full run means the exact source revision passed the corresponding public-data policy against the sealed cache used by that run. It does **not** establish target CPU, RSS, thermal, power, microphone/codec/box acoustics, 3–5 m far-field behavior, HIL stability or 72-hour shipping certification. Those remain the responsibility of `product-certification.yml` and real product evidence.
+
+## Extended Real profile
+
+Extended Real uses a separate root, normally `/opt/audio-validation-extended`, and `validation/extended.datasets.lock.json`. It requires `ffmpeg` in addition to the normal audio-validation toolchain. Do not pass the Compact/Full seal at the same time as `--extended-catalog`; runner readiness requires exactly one dataset contract.
+
+```bash
+python3 tools/runner_preflight.py \
+  --source-revision <40-hex-commit-sha> \
+  --role audio-validation \
+  --data-root /opt/audio-validation-extended \
+  --extended-catalog "$PWD/validation/extended.datasets.lock.json" \
+  --require-command ffmpeg \
+  --output /tmp/extended-real-readiness.json
+```
+
+After materializing the profile directories, use `prepare_extended_validation.py scan` to create the per-file SHA-256 source manifest, then `verify` it before corpus construction. See `../docs/EXTENDED_REAL_VALIDATION.md`. Release/week automation is intentionally disabled until repository variable `EXTENDED_REAL_ENABLED=true`.

@@ -96,9 +96,11 @@ python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-
 - `validation-grade-blind`：仓库外 HMAC key 划分的 blind holdout；
 - `product-certified`：真实发货硬件/音频 route 加 performance、thermal、power、acoustic、soak 证据。
 
-公共数据源锁定 Microsoft AEC Challenge、Microsoft DNS Challenge 和 OpenSLR SLR28 元数据，大型 corpus 不进入 Git。
+Compact/Full 继续固定 Microsoft AEC Challenge、Microsoft DNS Challenge 和 OpenSLR SLR28。v2.1.0 新增独立 **Extended Real**：商业验证层使用 RealMAN、BUT ReverbDB、MUSAN、Mini LibriSpeech，并可扩展 VOiCES/AMI/ICSI；AISHELL-4/FSD50K/WHAM 被隔离到 research。大型 corpus 不进入 Git。
 
-大规模公共验证只在可信 `audio-validation` runner 上执行，并先通过 readiness 和 dataset seal。详见 [`validation/README.md`](validation/README.md) 与 [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md)。
+Extended Real 增加真实 far-field/moving source、实测房间、meeting/overlap、hard-negative、逐文件 SHA-256、scenario 分层 blind、tail metric、clipping/DC/VAD error 和 scenario/dimension gate，但仍不具备 product certification 权限。
+
+大规模公共验证只在可信 `audio-validation` runner 上执行，并先通过 readiness 和 dataset verify。详见 [`validation/README.md`](validation/README.md)、[`docs/EXTENDED_REAL_VALIDATION.zh-CN.md`](docs/EXTENDED_REAL_VALIDATION.zh-CN.md) 与 [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md)。
 
 ## HIL 与发货认证
 
@@ -164,6 +166,7 @@ PR/main Verify 包含 strict compile/test、GCC/Clang、sanitizer、TSan、stati
 - [`docs/PORTING.md`](docs/PORTING.md) — BSP/ALSA/toolchain 集成
 - [`docs/TESTING.zh-CN.md`](docs/TESTING.zh-CN.md) — CI/HIL 策略
 - [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md) — self-hosted runner readiness
+- [`docs/EXTENDED_REAL_VALIDATION.zh-CN.md`](docs/EXTENDED_REAL_VALIDATION.zh-CN.md) — 真实远场/房间/会议/环境负例验证
 - [`certification/README.md`](certification/README.md) — v4 发货认证
 - [`THIRD_PARTY.md`](THIRD_PARTY.md) — 第三方/reference 规则
 

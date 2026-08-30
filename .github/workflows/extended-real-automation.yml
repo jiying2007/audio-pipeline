@@ -1,0 +1,80 @@
+name: Extended Real Automation
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: '17 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: extended-real-automation
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Resolve exact source and automation profile
+        id: request
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
+          EXTENDED_REAL_DATA_ROOT: ${{ vars.EXTENDED_REAL_DATA_ROOT }}
+        run: |
+          set -euo pipefail
+          if [ "$EXTENDED_REAL_ENABLED" != true ]; then
+            echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED: set repository variable EXTENDED_REAL_ENABLED=true only after the isolated audio-validation runner and materialized dataset cache are genuinely ready.' >&2
+            exit 1
+          fi
+          data_root=${EXTENDED_REAL_DATA_ROOT:-/opt/audio-validation-extended}
+          case "$EVENT_NAME" in
+            release)
+              test -n "$RELEASE_TAG"
+              git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+              source_sha=$(git rev-list -n1 "$RELEASE_TAG")
+              profile=commercial-core
+              ;;
+            schedule|workflow_dispatch)
+              git fetch origin main
+              source_sha=$(git rev-parse origin/main)
+              profile=commercial-plus
+              ;;
+            *)
+              echo "unsupported automation event: $EVENT_NAME" >&2
+              exit 2
+              ;;
+          esac
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "$source_sha^{commit}"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "profile=$profile" >> "$GITHUB_OUTPUT"
+          echo "data_root=$data_root" >> "$GITHUB_OUTPUT"
+          echo "extended-real automation: event=$EVENT_NAME profile=$profile source=$source_sha root=$data_root"
+      - name: Dispatch canonical extended-real workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.request.outputs.source_sha }}
+          PROFILE: ${{ steps.request.outputs.profile }}
+          DATA_ROOT: ${{ steps.request.outputs.data_root }}
+        run: |
+          set -euo pipefail
+          gh workflow run validation-extended-real.yml \
+            --ref main \
+            -f "source_sha=$SOURCE_SHA" \
+            -f "profile=$PROFILE" \
+            -f "data_root=$DATA_ROOT" \
+            -f limit_per_dataset=48 \
+            -f direct_limit=24 \
+            -f derived_limit=16 \
+            -f holdout_percent=20
+          echo "EXTENDED_REAL_DISPATCHED profile=$PROFILE source=$SOURCE_SHA"

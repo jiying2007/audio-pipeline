@@ -1,0 +1,130 @@
+name: Close v2.2.3 User Mode Workflow Once
+
+on:
+  push:
+    branches: [fix/user-mode-workflow-v2.2.3]
+    paths: [.github/workflows/close-v2.2.3-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: fix/user-mode-workflow-v2.2.3
+          fetch-depth: 0
+
+      - name: Patch permanent non-workflow assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one replacement, found {count}: {old!r}')
+              p.write_text(text.replace(old, new), encoding='utf-8')
+
+          replace_once('CMakeLists.txt',
+                       'project(audio_pipeline VERSION 2.2.2 LANGUAGES C)',
+                       'project(audio_pipeline VERSION 2.2.3 LANGUAGES C)')
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          if not text.startswith('# 2.2.2\n'):
+              raise SystemExit('CHANGELOG top version is not 2.2.2')
+          prefix = '''# 2.2.3
+
+- Make Extended Real automation leave the dataset root unresolved until the `audio-validation` runner executes; blank input resolves to `AUDIO_PIPELINE_LAB_DATA_ROOT` or `$HOME/audio-validation-extended`.
+- Make HIL blank `board_manifest` resolve on the `audio-target` runner through `AUDIO_PIPELINE_LAB_BOARD`, XDG config, or `$HOME/.config/audio-pipeline/board.json` instead of a hard-coded `/etc` path.
+- Make `labctl.py dispatch-validation` and `dispatch-hil` avoid leaking the operator machine's HOME paths into a different self-hosted runner unless an explicit path override is supplied.
+- Preserve explicit system-mode `/opt`/`/etc` overrides and keep DSP/API/ABI, dataset hashes/licenses, acoustic thresholds, HIL thresholds and Product Certification authority unchanged.
+
+'''
+          changelog.write_text(prefix + text, encoding='utf-8')
+
+          labctl = Path('lab/scripts/labctl.py')
+          text = labctl.read_text(encoding='utf-8')
+          old = '''def dispatch_validation(source_revision: str, profile: str, data_root: Path, repo: str) -> None:\n    require_command("gh")\n    if not re.fullmatch(r"[0-9a-fA-F]{40}", source_revision):\n        raise ValueError("source_revision must be exact 40-hex commit SHA")\n    run([\n        "gh", "workflow", "run", "validation-extended-real.yml", "--repo", repo, "--ref", "main",\n        "-f", f"source_sha={source_revision.lower()}", "-f", f"profile={profile}",\n        "-f", f"data_root={data_root}", "-f", "limit_per_dataset=48",\n        "-f", "direct_limit=24", "-f", "derived_limit=16", "-f", "holdout_percent=20",\n    ])\n\n\ndef dispatch_hil(source_revision: str, repo: str, board: Path, capture: str, playback: str,\n                 farend: str, power: str, tier: str) -> None:\n    require_command("gh")\n    if not re.fullmatch(r"[0-9a-fA-F]{40}", source_revision):\n        raise ValueError("source_revision must be exact 40-hex commit SHA")\n    run([\n        "gh", "workflow", "run", "hil-soak.yml", "--repo", repo, "--ref", "main",\n        "-f", f"source_sha={source_revision.lower()}", "-f", f"tier={tier}",\n        "-f", f"board_manifest={board}", "-f", f"capture_device={capture}",\n        "-f", f"playback_device={playback}", "-f", f"farend_file={farend}",\n        "-f", "sample_rate=16000", "-f", "mic_channels=2", "-f", "dsp_cpu=1",\n        "-f", f"power_input={power}", "-f", "power_scale=1000000",\n    ])\n'''
+          new = '''def dispatch_validation(source_revision: str, profile: str, data_root: Path | None, repo: str) -> None:\n    require_command("gh")\n    if not re.fullmatch(r"[0-9a-fA-F]{40}", source_revision):\n        raise ValueError("source_revision must be exact 40-hex commit SHA")\n    run([\n        "gh", "workflow", "run", "validation-extended-real.yml", "--repo", repo, "--ref", "main",\n        "-f", f"source_sha={source_revision.lower()}", "-f", f"profile={profile}",\n        "-f", f"data_root={data_root if data_root is not None else ''}", "-f", "limit_per_dataset=48",\n        "-f", "direct_limit=24", "-f", "derived_limit=16", "-f", "holdout_percent=20",\n    ])\n\n\ndef dispatch_hil(source_revision: str, repo: str, board: Path | None, capture: str, playback: str,\n                 farend: str, power: str, tier: str) -> None:\n    require_command("gh")\n    if not re.fullmatch(r"[0-9a-fA-F]{40}", source_revision):\n        raise ValueError("source_revision must be exact 40-hex commit SHA")\n    run([\n        "gh", "workflow", "run", "hil-soak.yml", "--repo", repo, "--ref", "main",\n        "-f", f"source_sha={source_revision.lower()}", "-f", f"tier={tier}",\n        "-f", f"board_manifest={board if board is not None else ''}", "-f", f"capture_device={capture}",\n        "-f", f"playback_device={playback}", "-f", f"farend_file={farend}",\n        "-f", "sample_rate=16000", "-f", "mic_channels=2", "-f", "dsp_cpu=1",\n        "-f", f"power_input={power}", "-f", "power_scale=1000000",\n    ])\n'''
+          if text.count(old) != 1:
+              raise SystemExit('labctl dispatch function anchor drifted')
+          text = text.replace(old, new)
+          text = text.replace('dv.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)',
+                              'dv.add_argument("--data-root", type=Path)')
+          text = text.replace('dh.add_argument("--board", type=Path, default=DEFAULT_BOARD)',
+                              'dh.add_argument("--board", type=Path)')
+          marker = '    for current in (DEFAULT_DATA_ROOT, DEFAULT_CACHE_ROOT, DEFAULT_STATE_ROOT, DEFAULT_BOARD):\n        assert current.is_absolute()\n'
+          addition = marker + '''    dispatch_validation_args = parser().parse_args(["dispatch-validation", "--source-revision", "0" * 40])\n    assert dispatch_validation_args.data_root is None\n    dispatch_hil_args = parser().parse_args(["dispatch-hil", "--source-revision", "0" * 40, "--capture", "hw:0,0"])\n    assert dispatch_hil_args.board is None\n'''
+          if text.count(marker) != 1:
+              raise SystemExit('labctl self-test anchor drifted')
+          text = text.replace(marker, addition)
+          labctl.write_text(text, encoding='utf-8')
+
+          readme = Path('lab/README.md')
+          text = readme.read_text(encoding='utf-8')
+          text = text.replace('''sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py verify-profile \\\n  --profile commercial-core \\\n  --data-root $HOME/audio-validation-extended \\\n  --source-revision "$SHA"''', '''$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py verify-profile \\\n  --profile commercial-core \\\n  --source-revision "$SHA"''')
+          text = text.replace('''python3 lab/scripts/labctl.py dispatch-validation \\\n  --source-revision "$SHA" \\\n  --profile commercial-core \\\n  --data-root $HOME/audio-validation-extended''', '''python3 lab/scripts/labctl.py dispatch-validation \\\n  --source-revision "$SHA" \\\n  --profile commercial-core''')
+          text = text.replace('''EXTENDED_REAL_ENABLED=true\nEXTENDED_REAL_DATA_ROOT=$HOME/audio-validation-extended''', '''EXTENDED_REAL_ENABLED=true''')
+          text = text.replace('''At that point post-release automation runs `commercial-core` and the weekly automation runs `commercial-plus`.''', '''At that point post-release automation runs `commercial-core` and the weekly automation runs `commercial-plus`. With no `EXTENDED_REAL_DATA_ROOT` repository variable, the workflow deliberately resolves `$HOME/audio-validation-extended` on the `audio-validation` runner itself. Set `EXTENDED_REAL_DATA_ROOT` only when that runner uses an explicit non-default/system-mode location.''')
+          text = text.replace('''python3 lab/scripts/labctl.py dispatch-hil \\\n  --source-revision "$SHA" \\\n  --tier accelerated-pr \\\n  --board $HOME/.config/audio-pipeline/board.json \\\n  --capture '<controller-visible-capture-device>' \\\n''', '''python3 lab/scripts/labctl.py dispatch-hil \\\n  --source-revision "$SHA" \\\n  --tier accelerated-pr \\\n  --capture '<controller-visible-capture-device>' \\\n''')
+          text = text.replace('''Do not set `HIL_ENABLED=true` until repeated manual accelerated runs demonstrate that the controller, DUT route, power-cycle/cleanup hooks and sensors are actually healthy.''', '''When `--board` is omitted, the HIL workflow resolves `AUDIO_PIPELINE_LAB_BOARD`, then XDG config, then `$HOME/.config/audio-pipeline/board.json` on the `audio-target` runner. Use `--board` only for an explicit runner-local override.\n\nDo not set `HIL_ENABLED=true` until repeated manual accelerated runs demonstrate that the controller, DUT route, power-cycle/cleanup hooks and sensors are actually healthy.''')
+          readme.write_text(text, encoding='utf-8')
+
+          docs = Path('scripts/docs_consistency.py')
+          text = docs.read_text(encoding='utf-8')
+          text = text.replace('''    "lab/examples/board.ssc305.example.json",\n)''', '''    "lab/examples/board.ssc305.example.json",\n    ".github/workflows/extended-real-automation.yml",\n    ".github/workflows/validation-extended-real.yml",\n    ".github/workflows/hil-soak.yml",\n)''')
+          anchor = '''    if read(root, "lab/requirements-ansible.txt").strip() != "ansible-core==2.19.12":\n        errors.append("lab Ansible dependency pin drift")\n'''
+          extra = anchor + '''    extended_auto = read(root, ".github/workflows/extended-real-automation.yml")\n    extended = read(root, ".github/workflows/validation-extended-real.yml")\n    hil = read(root, ".github/workflows/hil-soak.yml")\n    if "/opt/audio-validation-extended" in extended_auto or "/opt/audio-validation-extended" in extended:\n        errors.append("extended-real workflow reintroduced a system-mode /opt default")\n    for token in ("AUDIO_PIPELINE_LAB_DATA_ROOT", "$HOME/audio-validation-extended"):\n        if token not in extended:\n            errors.append(f"extended-real workflow missing runner-local user-mode token: {token}")\n    if "default: /etc/audio-pipeline/board.json" in hil:\n        errors.append("HIL workflow reintroduced a system-mode /etc board default")\n    for token in ("AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config"):\n        if token not in hil:\n            errors.append(f"HIL workflow missing runner-local user-mode token: {token}")\n'''
+          if text.count(anchor) != 1:
+              raise SystemExit('docs_consistency lab anchor drifted')
+          docs.write_text(text.replace(anchor, extra), encoding='utf-8')
+          PY
+
+      - name: Validate workflows and permanent contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/ap-yaml
+          /tmp/ap-yaml/bin/pip -q install PyYAML==6.0.2
+          /tmp/ap-yaml/bin/python - <<'PY'
+          from pathlib import Path
+          import yaml
+          for path in sorted(Path('.github/workflows').glob('*.yml')):
+              yaml.safe_load(path.read_text(encoding='utf-8'))
+          print('all workflow YAML documents parse')
+          PY
+          python3 -m py_compile lab/scripts/labctl.py scripts/docs_consistency.py
+          python3 lab/scripts/labctl.py self-test
+          python3 scripts/docs_consistency.py
+          grep -q "default: ''" .github/workflows/validation-extended-real.yml
+          grep -q 'AUDIO_PIPELINE_LAB_DATA_ROOT' .github/workflows/validation-extended-real.yml
+          grep -q 'AUDIO_PIPELINE_LAB_BOARD' .github/workflows/hil-soak.yml
+          ! grep -q '/opt/audio-validation-extended' .github/workflows/extended-real-automation.yml
+          ! grep -q 'default: /etc/audio-pipeline/board.json' .github/workflows/hil-soak.yml
+
+      - name: Strict build and CTest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-v223 -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-v223 --parallel
+          ctest --test-dir build-v223 --output-on-failure
+
+      - name: Commit validated non-workflow closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name jiying2007
+          git config user.email 33591504+jiying2007@users.noreply.github.com
+          git add CMakeLists.txt CHANGELOG.md lab/README.md lab/scripts/labctl.py scripts/docs_consistency.py
+          test -n "$(git diff --cached --name-only)"
+          git commit -m 'release: v2.2.3 user-mode workflow closure'
+          git push origin HEAD:fix/user-mode-workflow-v2.2.3

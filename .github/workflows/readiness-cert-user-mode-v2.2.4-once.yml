@@ -1,0 +1,55 @@
+name: Validate v2.2.4 Readiness Certification Closure Once
+
+on:
+  push:
+    branches: [fix/readiness-cert-user-mode-v2.2.4]
+    paths:
+      - scripts/migrate_v224_once.py
+      - .github/workflows/readiness-cert-user-mode-v2.2.4-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-and-validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: fix/readiness-cert-user-mode-v2.2.4
+          fetch-depth: 0
+
+      - name: Generate v2.2.4 candidate and workflow exports
+        run: python3 scripts/migrate_v224_once.py
+
+      - name: Validate exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile lab/scripts/labctl.py scripts/docs_consistency.py
+          python3 lab/scripts/labctl.py self-test
+          python3 scripts/docs_consistency.py --self-test
+          python3 scripts/docs_consistency.py
+          python3 tools/runner_preflight.py --self-test
+          python3 tools/ap_certify.py --self-test
+          ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_file(f); puts "yaml ok: #{f}" }' \
+            .github/workflows/trusted-runner-readiness.yml \
+            .github/workflows/product-certification.yml
+          ./scripts/check-architecture.sh
+          cmake -S . -B build-v224 -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-v224 --parallel
+          ctest --test-dir build-v224 --output-on-failure
+
+      - name: Push non-workflow changes and validated workflow exports
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout HEAD -- \
+            .github/workflows/trusted-runner-readiness.yml \
+            .github/workflows/product-certification.yml
+          git config user.name jiying2007
+          git config user.email 33591504+jiying2007@users.noreply.github.com
+          git add CMakeLists.txt CHANGELOG.md docs/TRUSTED_RUNNERS.md certification/README.md scripts/docs_consistency.py workflow-export
+          test -z "$(git diff --cached --name-only | grep '^\.github/workflows/' || true)"
+          git commit -m 'release: v2.2.4 readiness certification user-mode closure'
+          git push origin HEAD:fix/readiness-cert-user-mode-v2.2.4

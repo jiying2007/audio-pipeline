@@ -3,10 +3,9 @@ name: Validation Compact
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: Exact branch, tag or commit to validate
+      source_sha:
+        description: Exact 40-character source commit SHA to validate
         required: true
-        default: main
         type: string
       tier:
         description: Validation tier
@@ -49,17 +48,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Validate exact source commit SHA
+        id: source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }
+          git fetch --no-tags origin "$SOURCE_SHA"
+          git cat-file -e "$SOURCE_SHA^{commit}"
+          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
+
   validate:
+    needs: resolve
     runs-on: [self-hosted, linux, audio-validation]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
       - name: Record exact validation revision
         run: |
           set -euo pipefail
-          git rev-parse HEAD | tee validation-revision.txt
+          revision=$(git rev-parse HEAD)
+          test "$revision" = '${{ needs.resolve.outputs.sha }}'
+          printf '%s\n' "$revision" | tee validation-revision.txt
           test -z "$(git status --porcelain=v1)"
       - name: Preflight isolated audio-validation runner
         env:
@@ -69,6 +91,7 @@ jobs:
           set -euo pipefail
           python3 tools/runner_preflight.py \
             --role audio-validation \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
             --data-root "$DATA_ROOT" --seal "$SEAL" \
             --writable-path "$GITHUB_WORKSPACE" \
             --output validation-runner-preflight.json
@@ -142,6 +165,7 @@ jobs:
         if: inputs.tier == 'validation-grade'
         run: |
           python3 validation/tools/run_validation.py \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
             --corpus validation-out/public/corpus.json \
             --policy validation/policies/validation-compact.json \
             --dataset-lock validation/datasets.lock.json \
@@ -152,6 +176,7 @@ jobs:
         if: inputs.tier == 'validation-grade-blind'
         run: |
           python3 validation/tools/run_validation.py \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
             --corpus validation-out/public/corpus-validation.json \
             --policy validation/policies/validation-compact-partition.json \
             --dataset-lock validation/datasets.lock.json \
@@ -162,6 +187,7 @@ jobs:
         if: inputs.tier == 'validation-grade-blind'
         run: |
           python3 validation/tools/run_validation.py \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
             --corpus validation-out/public/corpus-blind.json \
             --policy validation/policies/validation-compact-blind.json \
             --dataset-lock validation/datasets.lock.json \

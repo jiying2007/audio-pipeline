@@ -3,10 +3,9 @@ name: Trusted Runner Readiness
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: Exact source ref whose runner contract should be checked
+      source_sha:
+        description: Exact 40-character source commit SHA whose runner contract should be checked
         required: true
-        default: main
         type: string
       role:
         description: Trusted self-hosted runner role
@@ -82,13 +81,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Validate exact source commit SHA
+        id: source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }
+          git fetch --no-tags origin "$SOURCE_SHA"
+          git cat-file -e "$SOURCE_SHA^{commit}"
+          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
+
   validation:
+    needs: resolve
     if: inputs.role == 'audio-validation'
     runs-on: [self-hosted, linux, audio-validation]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
       - name: Check audio-validation readiness
         env:
@@ -99,6 +119,7 @@ jobs:
           set -euo pipefail
           args=(
             --role audio-validation
+            --source-revision '${{ needs.resolve.outputs.sha }}'
             --data-root "$DATA_ROOT" --seal "$SEAL"
             --writable-path "$GITHUB_WORKSPACE"
             --output runner-readiness.json
@@ -115,12 +136,13 @@ jobs:
           retention-days: 90
 
   builder:
+    needs: resolve
     if: inputs.role == 'audio-builder'
     runs-on: [self-hosted, linux, audio-builder]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
       - name: Check audio-builder readiness
         env:
@@ -131,6 +153,7 @@ jobs:
           set -euo pipefail
           python3 tools/runner_preflight.py \
             --role audio-builder \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
             --shipping-cc "$CC" \
             --shipping-sysroot "$SYSROOT" \
             --shipping-toolchain-root "$TOOLCHAIN_ROOT" \
@@ -146,12 +169,13 @@ jobs:
           retention-days: 90
 
   target:
+    needs: resolve
     if: inputs.role == 'audio-target'
     runs-on: [self-hosted, linux, audio-target]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
       - name: Check audio-target readiness
         env:
@@ -162,7 +186,7 @@ jobs:
           POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
-          args=(--role audio-target --writable-path /tmp --output runner-readiness.json)
+          args=(--role audio-target --source-revision '${{ needs.resolve.outputs.sha }}' --writable-path /tmp --output runner-readiness.json)
           if [ -n "$BOARD" ]; then args+=(--board-manifest "$BOARD"); fi
           if [ -n "$CORPUS" ]; then args+=(--corpus-manifest "$CORPUS"); fi
           if [ -n "$ACOUSTIC" ]; then args+=(--acoustic-json "$ACOUSTIC"); fi
@@ -179,12 +203,13 @@ jobs:
           retention-days: 90
 
   archive:
+    needs: resolve
     if: inputs.role == 'certification-archive'
     runs-on: [self-hosted, linux, certification-archive]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
       - name: Check certification-archive readiness
         env:
@@ -193,6 +218,7 @@ jobs:
           set -euo pipefail
           python3 tools/runner_preflight.py \
             --role certification-archive \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
             --archive-command "$ARCHIVE_COMMAND" \
             --writable-path "$GITHUB_WORKSPACE" \
             --output runner-readiness.json

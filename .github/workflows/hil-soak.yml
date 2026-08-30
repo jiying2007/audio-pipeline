@@ -8,10 +8,9 @@ on:
     types: [hil-post-release]
   workflow_dispatch:
     inputs:
-      ref:
-        description: Exact branch, tag or SHA to test
+      source_sha:
+        description: Exact 40-character source commit SHA to test
         required: true
-        default: main
         type: string
       tier:
         description: Soak tier
@@ -83,9 +82,11 @@ jobs:
           RELEASE_REF: ${{ github.event.client_payload.release_ref }}
           RELEASE_TAG: ${{ github.event.client_payload.tag }}
           HIL_ENABLED: ${{ vars.HIL_ENABLED }}
+          MANUAL_SHA: ${{ inputs.source_sha }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            [[ "$MANUAL_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }
             echo 'run=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -109,7 +110,7 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}
           fetch-depth: 0
       - name: Resolve exact revision tier and board route
         id: route
@@ -117,7 +118,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_SCHEDULE: ${{ github.event.schedule }}
-          EXPECTED_EVENT_SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}
+          EXPECTED_EVENT_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}
           INPUT_TIER: ${{ inputs.tier }}
           INPUT_BOARD: ${{ inputs.board_manifest }}
           INPUT_CAPTURE: ${{ inputs.capture_device }}
@@ -150,9 +151,8 @@ jobs:
             *) exit 2 ;;
           esac
           revision=$(git rev-parse HEAD)
-          if [ "$EVENT_NAME" != workflow_dispatch ]; then
-            test "$revision" = "$EXPECTED_EVENT_SHA"
-          fi
+          test "$revision" = "$EXPECTED_EVENT_SHA"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
           export BOARD="$board" TIER="$tier" SECONDS="$seconds" FAULT="$fault" MAX_XRUNS="$max_xruns" MAX_OVERRUNS="$max_overruns"
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, os
@@ -206,6 +206,7 @@ jobs:
           mkdir -p /tmp/ap-hil-evidence
           args=(
             --role audio-target
+            --source-revision '${{ steps.route.outputs.revision }}'
             --board-manifest '${{ steps.route.outputs.board }}'
             --require-command cmake --require-command cc
             --writable-path /tmp

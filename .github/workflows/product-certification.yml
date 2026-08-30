@@ -3,10 +3,9 @@ name: Product Certification
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: Exact source ref to certify
+      source_sha:
+        description: Exact 40-character source commit SHA to certify
         required: true
-        default: main
       sku:
         description: Shipping SKU id; must match policy.sku
         required: true
@@ -21,6 +20,10 @@ on:
       acoustic_json:
         description: Absolute path to real product acoustic result JSON on DUT
         required: true
+      board_manifest:
+        description: Absolute path to the DUT board manifest
+        required: true
+        default: /etc/audio-pipeline/board.json
       capture_device:
         required: true
         default: hw:0,0
@@ -90,11 +93,18 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.source_sha }}
           fetch-depth: 0
-      - name: Resolve immutable source revision
+      - name: Validate immutable source revision
         id: resolve
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "${SOURCE_SHA,,}"
+          echo "sha=$revision" >> "$GITHUB_OUTPUT"
       - name: Validate shipping policy before hardware allocation
         id: policy
         env:
@@ -138,6 +148,20 @@ jobs:
         with:
           ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
+      - name: Preflight exact audio-builder runner
+        env:
+          CC: ${{ inputs.shipping_cc }}
+          SYSROOT: ${{ inputs.shipping_sysroot }}
+          TOOLCHAIN_ROOT: ${{ inputs.shipping_toolchain_root }}
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role audio-builder \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --shipping-cc "$CC" --shipping-sysroot "$SYSROOT" \
+            --shipping-toolchain-root "$TOOLCHAIN_ROOT" \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output /tmp/audio-builder-readiness.json
       - name: Verify exact builder inputs
         env:
           CC: ${{ inputs.shipping_cc }}
@@ -198,6 +222,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p shipping-bundle/bin
+          cp /tmp/audio-builder-readiness.json shipping-bundle/audio-builder-readiness.json
           cp build-shipping/ap_bench build-shipping/ap_build_info_dump build-shipping/ap_alsa_runtime_duplex shipping-bundle/bin/
           cp build-shipping/CMakeCache.txt shipping-bundle/
           printf '%s\n' "$CMAKE_ARGS_JSON" > shipping-bundle/shipping-cmake-args.json
@@ -210,7 +235,7 @@ jobs:
             --compiler "$CC" --sysroot "$SYSROOT" --toolchain-root "$TOOLCHAIN_ROOT" \
             --cflags "$CFLAGS" --cmake-args-json "$CMAKE_ARGS_JSON" \
             --output shipping-bundle/build-provenance.json
-          (cd shipping-bundle && sha256sum bin/* CMakeCache.txt shipping-cmake-args.json build-provenance.json > SHA256SUMS)
+          (cd shipping-bundle && sha256sum bin/* CMakeCache.txt shipping-cmake-args.json build-provenance.json audio-builder-readiness.json > SHA256SUMS)
       - name: Upload exact shipping build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -232,6 +257,22 @@ jobs:
         with:
           name: shipping-build-${{ needs.resolve.outputs.sha }}
           path: shipping-build
+      - name: Preflight exact audio-target runner and product inputs
+        env:
+          BOARD: ${{ inputs.board_manifest }}
+          CORPUS: ${{ inputs.corpus_manifest }}
+          ACOUSTIC: ${{ inputs.acoustic_json }}
+          FAREND: ${{ inputs.farend_pcm }}
+          POWER: ${{ inputs.power_input }}
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role audio-target \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --board-manifest "$BOARD" --corpus-manifest "$CORPUS" \
+            --acoustic-json "$ACOUSTIC" --farend-file "$FAREND" \
+            --power-input "$POWER" --writable-path /tmp \
+            --output /tmp/audio-target-readiness.json
       - name: Verify and deploy exact builder artifact
         run: |
           set -euo pipefail
@@ -320,6 +361,8 @@ jobs:
             --sku "$SKU" --policy "$POLICY" --corpus-manifest "$CORPUS" \
             --benchmark-json /tmp/benchmark.json --acoustic-json "$ACOUSTIC" \
             --soak-json /tmp/soak.json --deployment-provenance /tmp/deployment-provenance.json \
+            --builder-readiness shipping-build/audio-builder-readiness.json \
+            --target-readiness /tmp/audio-target-readiness.json \
             --output-dir certification-out --capture-device "$CAPTURE" --playback-device "$PLAYBACK" \
             --sample-rate "$SAMPLE_RATE" --mic-channels "$MIC_CHANNELS" \
             --build-info-bin "$DEPLOY_DIR/ap_build_info_dump" \
@@ -359,6 +402,15 @@ jobs:
         with:
           name: product-certification-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
           path: certification-transport
+      - name: Preflight exact certification-archive runner
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role certification-archive \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --archive-command /usr/local/bin/audio-pipeline-cert-archive \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output archive-readiness.json
       - name: Require immutable product-lifecycle archive backend
         run: |
           set -euo pipefail
@@ -375,11 +427,15 @@ jobs:
       - name: Attest lifecycle archive receipt
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: archive-receipt.json
+          subject-path: |
+            archive-receipt.json
+            archive-readiness.json
       - name: Upload archive receipt
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: certification-archive-receipt-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
-          path: archive-receipt.json
+          path: |
+            archive-receipt.json
+            archive-readiness.json
           retention-days: 90
           if-no-files-found: error

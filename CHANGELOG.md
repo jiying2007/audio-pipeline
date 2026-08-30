@@ -1,3 +1,9 @@
+# 2.2.5
+
+- Seal the permanent ordinary-user laboratory runtime admission gate into an immutable release: required full verification now executes real `audio-validation` and `audio-target` provisioning under fresh Ubuntu accounts with no sudo/admin membership.
+- Preserve v2.2.3/v2.2.4 runner-local dataset, board-manifest, readiness and Product Certification defaults while versioning the current required-gate source state so `main`, tag and immutable Release no longer diverge.
+- No DSP/API/ABI behavior, dataset hashes/licenses, acoustic/resource/HIL thresholds or Product Certification authority changed.
+
 # 2.2.4
 
 - Complete ordinary-user trusted-runner readiness defaults: blank public-validation cache/seal paths now resolve on `audio-validation` under `$HOME/audio-validation-data`, and blank target board manifests resolve through `AUDIO_PIPELINE_LAB_BOARD`, XDG config or `$HOME/.config/audio-pipeline/board.json`.

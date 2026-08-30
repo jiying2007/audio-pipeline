@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 2.2.4 LANGUAGES C)
+project(audio_pipeline VERSION 2.2.5 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)

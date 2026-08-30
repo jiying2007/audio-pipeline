@@ -42,6 +42,7 @@ Build-time composition:
 ```text
 AP_BUILD_PIPELINE=ON|OFF
 AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+AP_ENABLE_BF_DIRECTION_TRACKING=ON|OFF
 ```
 
 A module omitted from `AP_MODULES` loses its implementation TU and resident state; it is not merely bypassed.
@@ -68,6 +69,7 @@ Hosted resource measurements have one machine source of truth in [`ci/resource-b
 - SIMD: compile-time SCALAR or NEON.
 - Resampler: BANDLIMITED default or explicit lower-cost FAST mode.
 - Fast math: OFF by default.
+- BF direction tracking: explicit compile-time capability; the conservative `ssc305-cortex-a32-low` preset disables it and exports the effective state in build info.
 - Linux runtime: bounded SPSC data queues, bounded control/event queues and one DSP worker owning the pipeline after start.
 - Output backpressure drops publication only; accepted frames still advance DSP state.
 - Frame metadata carries timestamps, discontinuities, XRUN/clock-reset/codec-reopen state and lost-frame counts.
@@ -135,7 +137,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-Cross-build presets include generic ARMv7-A, Cortex-A7 scalar/NEON, Cortex-A32 NEON and AArch64 NEON. Selected executable contracts also run under QEMU; QEMU timing is never treated as silicon timing.
+Cross-build presets include generic ARMv7-A, Cortex-A7 scalar/NEON, Cortex-A32 NEON, the conservative `ssc305-cortex-a32-low` product profile and AArch64 NEON. Selected executable contracts also run under QEMU; QEMU timing is never treated as silicon timing.
 
 Installed SDK:
 

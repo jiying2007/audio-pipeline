@@ -30,7 +30,7 @@ AP_BUILD_PIPELINE=ON|OFF
 AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
 ```
 
-The generated installed `audio_pipeline_build.h` is the compile-time capability source of truth. The single `ap_build_info()` API returns one complete immutable `ap_build_info_t` containing semantic version, module mask, geometry, selected AEC/NS/SIMD/resampler backends, fast-math state, source revision, compiler/target/build identity and configuration SHA-256.
+The generated installed `audio_pipeline_build.h` is the compile-time capability source of truth. The single `ap_build_info()` API returns one complete immutable `ap_build_info_t` containing semantic version, module mask, geometry, selected AEC/NS/SIMD/resampler backends, fast-math state, the effective BF direction-tracking capability, source revision, compiler/target/build identity and configuration SHA-256. `AP_BUILD_BF_DIRECTION_TRACKING` and `ap_build_info_t.bf_direction_tracking` report the effective compiled capability rather than requiring a product to infer it from CMake arguments.
 
 A module omitted from the build has no standalone implementation TU or embedded pipeline state.
 
@@ -45,6 +45,7 @@ AP_BUILD_MAX_MIC_CHANNELS
 AP_BUILD_MAX_DELAY_MS
 AP_BUILD_MAX_AEC_TAIL_MS
 AP_RUNTIME_QUEUE_DEPTH
+AP_ENABLE_BF_DIRECTION_TRACKING=ON|OFF
 ```
 
 Configuration outside the compiled envelope returns `AP_EINVAL`. A smaller envelope can reduce AEC partitions, SYNC history, scratch geometry and runtime queue storage.
@@ -111,7 +112,7 @@ Neither mode is a compatibility alias.
 
 `ap_pipeline_observe_io_timestamps()` is optional. Capture and render timestamps must describe corresponding hardware positions in the same monotonic clock domain. Invalid or out-of-envelope observations return `AP_EINVAL`.
 
-A sufficiently large timestamp/correlation delay jump is treated as a route jump and resets stale AEC convergence state.
+Correlation-based delay updates are ambiguity-gated. Small delay/drift corrections require the winning peak to be separated from non-local competitors; a large correlation route-change candidate must remain consistent for three search epochs before it is committed and stale AEC convergence is reset. Trusted hardware timestamps and explicit application path-change notifications remain authoritative and are not delayed by the correlation confirmation policy.
 
 `ap_pipeline_notify_echo_path_change()` represents product-known route/path replacement. `ap_pipeline_notify_stream_discontinuity()` represents capture/render gaps, clock reset, XRUN or codec reopen and clears time-dependent state deterministically.
 
@@ -136,7 +137,7 @@ ap_runtime_deinit(runtime);
 
 `ap_runtime_open()` validates caller-owned state, basic scheduling/overload policy and extensible runtime options. `ap_runtime_submit_frame()` is the only frame producer API and always accepts optional metadata. `ap_runtime_read_metrics()` returns the complete long-running runtime metric structure.
 
-After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until stop/deinit.
+After `ap_runtime_start()`, the worker is the sole owner of the supplied pipeline until stop/deinit. If `ap_runtime_options_t.lock_memory` is enabled, the runtime performs best-effort bounded `mlock()` only on the caller-owned runtime and pipeline arenas and releases those locks on stop. The SDK never invokes process-global `mlockall()`; worker-stack prefaulting and process-wide realtime memory policy remain product responsibilities.
 
 ## Runtime control ownership
 
@@ -214,6 +215,7 @@ AP_SIMD_BACKEND=SCALAR|NEON
 AP_RESAMPLER_MODE=BANDLIMITED|FAST
 AP_ENABLE_LINUX_RUNTIME=ON|OFF
 AP_ENABLE_FAST_MATH=ON|OFF
+AP_ENABLE_BF_DIRECTION_TRACKING=ON|OFF
 ```
 
 Removed v1 API generations and removed build/stage switches have no v2 compatibility aliases.

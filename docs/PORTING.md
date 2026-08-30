@@ -14,7 +14,7 @@ Cortex-A32 armhf NEON/FP-Armv8
 AArch64 NEON/ASIMD
 ```
 
-Do not copy Cortex-A32 `-mcpu/-mfpu` flags into an A7 BSP.
+Do not copy Cortex-A32 `-mcpu/-mfpu` flags into an A7 BSP. `ssc305-cortex-a32-low` is the conservative SSC305 product starting profile: 16 kHz/2-mic geometry, 60 ms maximum delay, 64 ms AEC tail, runtime queue depth 4 and fixed broadside delay/sum BF. Adaptive BF direction tracking remains available in generic builds but is disabled in this preset until real render-active/motor/far-field corpus evidence supports enabling it.
 
 ## 2. Define the product artifact
 
@@ -33,6 +33,7 @@ AP_NS_ESTIMATOR
 AP_SIMD_BACKEND
 AP_RESAMPLER_MODE
 AP_ENABLE_FAST_MATH
+AP_ENABLE_BF_DIRECTION_TRACKING
 ```
 
 Use `ap_build_info()` in product logs. The v2 structure contains both capability and exact build identity; no separate build-info compatibility surface exists.
@@ -85,7 +86,7 @@ ap_runtime_deinit(runtime);
 
 `ap_runtime_open()` validates caller-owned memory, CPU/priority settings and options. `ap_runtime_submit_frame()` is a bounded SPSC producer; `AP_EFULL` means the application must account for the missing frame and report discontinuity/lost-frame metadata according to product policy. `ap_runtime_read_metrics()` exposes the full current runtime telemetry contract.
 
-Affinity/FIFO are optional product decisions; defaults do not assume CPU1 or realtime privilege.
+Affinity/FIFO are optional product decisions; defaults do not assume CPU1 or realtime privilege. `options.lock_memory=1` requests best-effort bounded locking of the caller-owned runtime and pipeline arenas only; the SDK does not call process-global `mlockall()`.
 
 ## 7. ALSA geometry
 

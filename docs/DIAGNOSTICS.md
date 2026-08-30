@@ -8,7 +8,7 @@ The event queue is deliberately lossy. `event_drop_events` reports notification 
 
 ## Runtime events
 
-`ap_runtime_receive_event()` exposes fixed-size `ap_event_t` records covering runtime lifecycle, RT affinity/priority/mlock failures, queue pressure, output drops, DSP deadline misses, missing/underrun render reference, delay jumps, stream discontinuities, echo-path changes, AEC reset/convergence, ERLE collapse, pipeline failures, CPU migration observations and runtime quality transitions.
+`ap_runtime_receive_event()` exposes fixed-size `ap_event_t` records covering runtime lifecycle, RT affinity/priority/bounded-memory-lock failures, queue pressure, output drops, DSP deadline misses, missing/underrun render reference, delay jumps, stream discontinuities, echo-path changes, AEC reset/convergence, ERLE collapse, pipeline failures, CPU migration observations and runtime quality transitions. Stepwise overload transitions keep their dedicated event kinds; a direct multi-level downward transition such as `FULL -> SAFE` emits `AP_EVENT_QUALITY_DEGRADED`, while upward transitions emit `AP_EVENT_QUALITY_RECOVERED`.
 
 Consumers should drain the bounded event ring from a non-realtime control thread. Persistent statistics belong in `ap_runtime_metrics_t`, read through `ap_runtime_read_metrics()`, not in an unbounded log queue.
 

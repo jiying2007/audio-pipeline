@@ -37,15 +37,15 @@ Per-channel first-order high-pass filtering removes DC/very-low-frequency energy
 
 ## Beamformer
 
-The two-mic frontend uses a low-cost delay-and-sum geometry with optional direction tracking. It is selected only for two-microphone configurations. SAFE quality bypasses tracking/beamforming work in the high-level graph.
+The two-mic frontend uses a low-cost delay-and-sum geometry with optional compile-time direction tracking. It is selected only for two-microphone configurations. `AP_ENABLE_BF_DIRECTION_TRACKING` controls whether adaptive tracking is physically enabled; the effective result is exported as `AP_BUILD_BF_DIRECTION_TRACKING` and in build info. SAFE quality bypasses tracking/beamforming work in the high-level graph. The conservative `ssc305-cortex-a32-low` product preset keeps fixed broadside delay/sum BF by disabling direction tracking until real render-active, motor-noise and far-field evidence justifies enabling it.
 
 ## Render synchronization
 
 SYNC stores a bounded render ring whose capacity is derived from the compiled max delay/internal sample rate. Coarse normalized correlation is periodically searched across the supported delay range, followed by a local one-sample refinement.
 
-The search compares **squared normalized correlation**, so candidate ranking and the acceptance threshold are equivalent to absolute normalized correlation without performing `sqrtf` for every candidate.
+The search compares **squared normalized correlation**, so candidate ranking and the acceptance threshold are equivalent to absolute normalized correlation without performing `sqrtf` for every candidate. Correlation updates are ambiguity-gated: small corrections require the winning peak to be separated from non-local competitors, preventing periodic playback tones from driving sample slips. Large correlation route-change candidates must remain consistent for three consecutive search epochs before they are committed.
 
-Large correlation jumps are emitted as route-jump events. Persistent small error drives the ppm estimate and `drift_credit`. Integer crossings still update the reference delay and increment sample-slip telemetry. The remaining fractional credit is applied directly during reference fetch using two-point linear interpolation. This reduces discrete correction artifacts without introducing a general-purpose ASRC or new large state.
+Confirmed large correlation jumps are emitted as route-jump events. Persistent small error drives the ppm estimate and `drift_credit`. Integer crossings still update the reference delay and increment sample-slip telemetry. The remaining fractional credit is applied directly during reference fetch using two-point linear interpolation. This reduces discrete correction artifacts without introducing a general-purpose ASRC or new large state.
 
 Optional hardware timestamp observations convert trusted capture/playback time deltas into delay observations. Timestamps must share a monotonic clock domain. Correlation remains the fallback.
 

@@ -42,6 +42,7 @@ ap_runtime_deinit(runtime);
 ```text
 AP_BUILD_PIPELINE=ON|OFF
 AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+AP_ENABLE_BF_DIRECTION_TRACKING=ON|OFF
 ```
 
 未加入 `AP_MODULES` 的模块会真实移除实现 TU 与 resident state，不是运行时 bypass。
@@ -66,6 +67,7 @@ Hosted 资源测量只有一个机器真相源：[`ci/resource-baseline.json`](c
 - SIMD：编译期 SCALAR / NEON。
 - Resampler：BANDLIMITED 默认，FAST 为显式低成本模式。
 - fast-math：默认关闭。
+- BF direction tracking：显式编译期能力；保守的 `ssc305-cortex-a32-low` preset 默认关闭，并通过 build info 暴露最终生效状态。
 - Linux Runtime：有界 SPSC 数据队列、有界控制/事件队列、单 DSP worker。
 - worker 启动后独占 Pipeline；output backpressure 只丢发布结果，不跳过已经接受的 DSP frame。
 - frame metadata 统一携带时间戳、断流、XRUN、clock reset、codec reopen 和 lost-frame 信息。
@@ -131,7 +133,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-Arm presets 覆盖 generic ARMv7-A、Cortex-A7 scalar/NEON、Cortex-A32 NEON 和 AArch64 NEON。部分可执行 contract 会在 QEMU 下运行，但 QEMU 时间不能作为芯片性能结论。
+Arm presets 覆盖 generic ARMv7-A、Cortex-A7 scalar/NEON、Cortex-A32 NEON、保守的 `ssc305-cortex-a32-low` 产品配置和 AArch64 NEON。部分可执行 contract 会在 QEMU 下运行，但 QEMU 时间不能作为芯片性能结论。
 
 安装后的 SDK：
 

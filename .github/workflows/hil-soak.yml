@@ -19,9 +19,9 @@ on:
         type: choice
         options: [accelerated-pr, nightly-1h, release-8h, weekly-24h, certification-72h]
       board_manifest:
-        description: Board-local JSON manifest path
-        required: true
-        default: /etc/audio-pipeline/board.json
+        description: Optional board-local JSON manifest; blank resolves AUDIO_PIPELINE_LAB_BOARD or XDG/HOME user-mode path
+        required: false
+        default: ''
         type: string
       capture_device:
         description: Manual ALSA capture device; scheduled runs use board.route
@@ -131,7 +131,15 @@ jobs:
           INPUT_POWER_SCALE: ${{ inputs.power_scale }}
         run: |
           set -euo pipefail
-          board=${INPUT_BOARD:-/etc/audio-pipeline/board.json}
+          board=$INPUT_BOARD
+          if [ -z "$board" ]; then
+            board=${AUDIO_PIPELINE_LAB_BOARD:-${XDG_CONFIG_HOME:-$HOME/.config}/audio-pipeline/board.json}
+          fi
+          case "$board" in
+            /*) ;;
+            *) echo "HIL board manifest must resolve to an absolute path: $board" >&2; exit 1 ;;
+          esac
+          case "$board" in *$'\n'*|*$'\r'*) echo 'HIL board manifest contains a newline' >&2; exit 1 ;; esac
           case "$EVENT_NAME" in
             workflow_dispatch) tier=$INPUT_TIER ;;
             repository_dispatch) tier=release-8h ;;

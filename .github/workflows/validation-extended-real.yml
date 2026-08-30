@@ -14,9 +14,9 @@ on:
         type: choice
         options: [commercial-core, commercial-plus, research]
       data_root:
-        description: Caller-materialized extended-real dataset root on audio-validation runner
-        required: true
-        default: /opt/audio-validation-extended
+        description: Optional dataset root; blank resolves AUDIO_PIPELINE_LAB_DATA_ROOT or $HOME/audio-validation-extended on audio-validation runner
+        required: false
+        default: ''
         type: string
       limit_per_dataset:
         description: Stable source entries hashed per dataset
@@ -75,9 +75,26 @@ jobs:
         with:
           ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
+      - name: Resolve runner-local data root
+        id: paths
+        env:
+          INPUT_DATA_ROOT: ${{ inputs.data_root }}
+        run: |
+          set -euo pipefail
+          data_root=$INPUT_DATA_ROOT
+          if [ -z "$data_root" ]; then
+            data_root=${AUDIO_PIPELINE_LAB_DATA_ROOT:-$HOME/audio-validation-extended}
+          fi
+          case "$data_root" in
+            /*) ;;
+            *) echo "extended-real data root must resolve to an absolute path: $data_root" >&2; exit 1 ;;
+          esac
+          case "$data_root" in *$'\n'*|*$'\r'*) echo 'extended-real data root contains a newline' >&2; exit 1 ;; esac
+          echo "data_root=$data_root" >> "$GITHUB_OUTPUT"
+          echo "extended-real runner data root: $data_root"
       - name: Bind exact revision and runner readiness
         env:
-          DATA_ROOT: ${{ inputs.data_root }}
+          DATA_ROOT: ${{ steps.paths.outputs.data_root }}
         run: |
           set -euo pipefail
           revision=$(git rev-parse HEAD)
@@ -94,7 +111,7 @@ jobs:
             --output extended-out/runner-preflight.json
       - name: Validate license catalog and scan immutable source manifest
         env:
-          DATA_ROOT: ${{ inputs.data_root }}
+          DATA_ROOT: ${{ steps.paths.outputs.data_root }}
           PROFILE: ${{ inputs.profile }}
           LIMIT: ${{ inputs.limit_per_dataset }}
         run: |
@@ -125,7 +142,7 @@ jobs:
           ${CC:-cc} --version | head -n 1 > extended-out/compiler.txt
       - name: Build extended-real corpus from hash-bound sources
         env:
-          DATA_ROOT: ${{ inputs.data_root }}
+          DATA_ROOT: ${{ steps.paths.outputs.data_root }}
           DIRECT_LIMIT: ${{ inputs.direct_limit }}
           DERIVED_LIMIT: ${{ inputs.derived_limit }}
         run: |

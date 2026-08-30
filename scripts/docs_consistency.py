@@ -68,6 +68,9 @@ LAB_REQUIRED = (
     "lab/ansible/roles/audio_validation/tasks/main.yml",
     "lab/ansible/roles/audio_target/tasks/main.yml",
     "lab/examples/board.ssc305.example.json",
+    ".github/workflows/extended-real-automation.yml",
+    ".github/workflows/validation-extended-real.yml",
+    ".github/workflows/hil-soak.yml",
 )
 
 
@@ -139,6 +142,19 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         errors.append("lab validation Python dependency pin drift")
     if read(root, "lab/requirements-ansible.txt").strip() != "ansible-core==2.19.12":
         errors.append("lab Ansible dependency pin drift")
+    extended_auto = read(root, ".github/workflows/extended-real-automation.yml")
+    extended = read(root, ".github/workflows/validation-extended-real.yml")
+    hil = read(root, ".github/workflows/hil-soak.yml")
+    if "/opt/audio-validation-extended" in extended_auto or "/opt/audio-validation-extended" in extended:
+        errors.append("extended-real workflow reintroduced a system-mode /opt default")
+    for token in ("AUDIO_PIPELINE_LAB_DATA_ROOT", "$HOME/audio-validation-extended"):
+        if token not in extended:
+            errors.append(f"extended-real workflow missing runner-local user-mode token: {token}")
+    if "default: /etc/audio-pipeline/board.json" in hil:
+        errors.append("HIL workflow reintroduced a system-mode /etc board default")
+    for token in ("AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config"):
+        if token not in hil:
+            errors.append(f"HIL workflow missing runner-local user-mode token: {token}")
     try:
         completed = subprocess.run(
             [sys.executable, str(root / "lab/scripts/labctl.py"), "self-test"],

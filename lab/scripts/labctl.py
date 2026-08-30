@@ -370,19 +370,19 @@ def target_readiness(source_revision: str, board: Path, power_input: str | None,
     run(args, cwd=REPO_ROOT)
 
 
-def dispatch_validation(source_revision: str, profile: str, data_root: Path, repo: str) -> None:
+def dispatch_validation(source_revision: str, profile: str, data_root: Path | None, repo: str) -> None:
     require_command("gh")
     if not re.fullmatch(r"[0-9a-fA-F]{40}", source_revision):
         raise ValueError("source_revision must be exact 40-hex commit SHA")
     run([
         "gh", "workflow", "run", "validation-extended-real.yml", "--repo", repo, "--ref", "main",
         "-f", f"source_sha={source_revision.lower()}", "-f", f"profile={profile}",
-        "-f", f"data_root={data_root}", "-f", "limit_per_dataset=48",
+        "-f", f"data_root={data_root if data_root is not None else ''}", "-f", "limit_per_dataset=48",
         "-f", "direct_limit=24", "-f", "derived_limit=16", "-f", "holdout_percent=20",
     ])
 
 
-def dispatch_hil(source_revision: str, repo: str, board: Path, capture: str, playback: str,
+def dispatch_hil(source_revision: str, repo: str, board: Path | None, capture: str, playback: str,
                  farend: str, power: str, tier: str) -> None:
     require_command("gh")
     if not re.fullmatch(r"[0-9a-fA-F]{40}", source_revision):
@@ -390,7 +390,7 @@ def dispatch_hil(source_revision: str, repo: str, board: Path, capture: str, pla
     run([
         "gh", "workflow", "run", "hil-soak.yml", "--repo", repo, "--ref", "main",
         "-f", f"source_sha={source_revision.lower()}", "-f", f"tier={tier}",
-        "-f", f"board_manifest={board}", "-f", f"capture_device={capture}",
+        "-f", f"board_manifest={board if board is not None else ''}", "-f", f"capture_device={capture}",
         "-f", f"playback_device={playback}", "-f", f"farend_file={farend}",
         "-f", "sample_rate=16000", "-f", "mic_channels=2", "-f", "dsp_cpu=1",
         "-f", f"power_input={power}", "-f", "power_scale=1000000",
@@ -430,6 +430,10 @@ def self_test() -> None:
     assert explicit[5:] == (Path("/data/ap-real"), Path("/data/ap-cache"), Path("/data/ap-state"), Path("/data/ap-config/board.json"))
     for current in (DEFAULT_DATA_ROOT, DEFAULT_CACHE_ROOT, DEFAULT_STATE_ROOT, DEFAULT_BOARD):
         assert current.is_absolute()
+    dispatch_validation_args = parser().parse_args(["dispatch-validation", "--source-revision", "0" * 40])
+    assert dispatch_validation_args.data_root is None
+    dispatch_hil_args = parser().parse_args(["dispatch-hil", "--source-revision", "0" * 40, "--capture", "hw:0,0"])
+    assert dispatch_hil_args.board is None
     site = (REPO_ROOT / "lab/ansible/site.yml").read_text(encoding="utf-8")
     inventory = (REPO_ROOT / "lab/ansible/inventory.example.yml").read_text(encoding="utf-8")
     runner_role = (REPO_ROOT / "lab/ansible/roles/github_runner/tasks/main.yml").read_text(encoding="utf-8")
@@ -484,12 +488,12 @@ def parser() -> argparse.ArgumentParser:
     dv = sub.add_parser("dispatch-validation")
     dv.add_argument("--source-revision", required=True)
     dv.add_argument("--profile", choices=sorted(COMMERCIAL_PROFILES), default="commercial-core")
-    dv.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
+    dv.add_argument("--data-root", type=Path)
     dv.add_argument("--repo", default="jiying2007/audio-pipeline")
     dh = sub.add_parser("dispatch-hil")
     dh.add_argument("--source-revision", required=True)
     dh.add_argument("--repo", default="jiying2007/audio-pipeline")
-    dh.add_argument("--board", type=Path, default=DEFAULT_BOARD)
+    dh.add_argument("--board", type=Path)
     dh.add_argument("--capture", required=True)
     dh.add_argument("--playback", default="none")
     dh.add_argument("--farend", default="")

@@ -36,7 +36,7 @@ jobs:
             echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED: enable only after audio-validation runner and materialized cache are genuinely ready.' >&2
             exit 1
           fi
-          data_root=${EXTENDED_REAL_DATA_ROOT:-/opt/audio-validation-extended}
+          data_root=${EXTENDED_REAL_DATA_ROOT:-}
           case "$EVENT_NAME" in
             repository_dispatch)
               source_sha=$RELEASE_REF
@@ -57,7 +57,11 @@ jobs:
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
           echo "profile=$profile" >> "$GITHUB_OUTPUT"
           echo "data_root=$data_root" >> "$GITHUB_OUTPUT"
-          echo "extended-real automation: event=$EVENT_NAME profile=$profile source=$source_sha root=$data_root"
+          if [ -n "$data_root" ]; then
+            echo "extended-real automation: event=$EVENT_NAME profile=$profile source=$source_sha root=$data_root"
+          else
+            echo "extended-real automation: event=$EVENT_NAME profile=$profile source=$source_sha root=<runner-user-default>"
+          fi
       - name: Dispatch canonical extended-real workflow
         env:
           GH_TOKEN: ${{ github.token }}

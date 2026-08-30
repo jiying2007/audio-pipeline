@@ -95,9 +95,8 @@ Use the exact source commit that will be validated:
 ```bash
 SHA=<40-hex-audio-pipeline-commit>
 
-sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py verify-profile \
+$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py verify-profile \
   --profile commercial-core \
-  --data-root $HOME/audio-validation-extended \
   --source-revision "$SHA"
 ```
 
@@ -118,8 +117,7 @@ From a trusted operator machine already authenticated with `gh`:
 ```bash
 python3 lab/scripts/labctl.py dispatch-validation \
   --source-revision "$SHA" \
-  --profile commercial-core \
-  --data-root $HOME/audio-validation-extended
+  --profile commercial-core
 ```
 
 The workflow then repeats runner preflight, scans/hashes source files, builds the exact processor, creates the real corpus, performs scenario-stratified visible/blind validation and uploads the hash-bound evidence bundle. `AP_VALIDATION_HOLDOUT_KEY` must be configured as a repository secret before commercial validation.
@@ -146,10 +144,9 @@ Only after the isolated runner/cache has repeatedly produced valid core/plus rep
 
 ```text
 EXTENDED_REAL_ENABLED=true
-EXTENDED_REAL_DATA_ROOT=$HOME/audio-validation-extended
 ```
 
-At that point post-release automation runs `commercial-core` and the weekly automation runs `commercial-plus`.
+At that point post-release automation runs `commercial-core` and the weekly automation runs `commercial-plus`. With no `EXTENDED_REAL_DATA_ROOT` repository variable, the workflow deliberately resolves `$HOME/audio-validation-extended` on the `audio-validation` runner itself. Set `EXTENDED_REAL_DATA_ROOT` only when that runner uses an explicit non-default/system-mode location.
 
 ## 6. Bring up the SSC305 audio-target controller
 
@@ -174,12 +171,13 @@ From a trusted authenticated operator machine, start the 10-minute accelerated H
 python3 lab/scripts/labctl.py dispatch-hil \
   --source-revision "$SHA" \
   --tier accelerated-pr \
-  --board $HOME/.config/audio-pipeline/board.json \
   --capture '<controller-visible-capture-device>' \
   --playback '<controller-visible-playback-device>' \
   --farend $HOME/.local/share/audio-pipeline-lab/fixtures/farend-s16le.pcm \
   --power '<live-power-path>'
 ```
+
+When `--board` is omitted, the HIL workflow resolves `AUDIO_PIPELINE_LAB_BOARD`, then XDG config, then `$HOME/.config/audio-pipeline/board.json` on the `audio-target` runner. Use `--board` only for an explicit runner-local override.
 
 Do not set `HIL_ENABLED=true` until repeated manual accelerated runs demonstrate that the controller, DUT route, power-cycle/cleanup hooks and sensors are actually healthy.
 

@@ -1,0 +1,65 @@
+name: Lab Closure One-Time
+
+on:
+  push:
+    branches: [feat/lab-infrastructure-v2.2.0]
+    paths: [.github/workflows/lab-close-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/lab-infrastructure-v2.2.0
+          fetch-depth: 0
+      - name: Finalize v2.2.0 product documentation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('CMakeLists.txt'); t=p.read_text(); t=t.replace('project(audio_pipeline VERSION 2.1.1 LANGUAGES C)','project(audio_pipeline VERSION 2.2.0 LANGUAGES C)',1); p.write_text(t)
+          p=Path('CHANGELOG.md'); t=p.read_text()
+          if not t.startswith('# 2.2.0'):
+              p.write_text('''# 2.2.0\n\n- Productize the trusted laboratory as versioned `lab/` infrastructure for reproducible `audio-validation` and `audio-target` controller deployment.\n- Pin the GitHub Actions runner distribution and validation/Ansible controller dependencies; registration tokens remain short-lived, runtime-only inputs.\n- Add license-aware commercial-core materialization for exact-revision RealMAN val/test, official BUT ReverbDB RIR-only, MUSAN and Mini LibriSpeech, with acquisition seals and canonical per-file SHA-256 source manifests.\n- Add reviewed operator-import paths for VOiCES/AMI/ICSI commercial-plus data instead of silently scraping terms-sensitive upstream layouts.\n- Add a fail-closed `labctl.py` workflow for materialize/adopt/verify/readiness/Extended Real dispatch and SSC305 controller readiness/HIL dispatch.\n- Gate the lab asset set, dataset/runner/dependency pins and `labctl` self-test through the existing required assurance consistency path.\n- Keep lab readiness and public real-data validation below DUT HIL and formal 72 h Product Certification authority.\n\n'''+t)
+          sections={
+            'README.md':'''## Reproducible laboratory deployment\n\nTrusted `audio-validation` and `audio-target` controllers, commercial-core real-data materialization, readiness and first-run dispatch are versioned under [`lab/README.md`](lab/README.md). Lab readiness and public real-data results remain below DUT HIL and 72 h Product Certification authority.''',
+            'README.zh-CN.md':'''## 可复现实验室部署\n\n可信 `audio-validation` / `audio-target` 控制机、commercial-core 真实数据 materialize、readiness 与首次验证 dispatch 已版本化到 [`lab/README.md`](lab/README.md)。实验室 READY 与公开真实数据结果仍不能替代 DUT HIL 和 72 小时 Product Certification。'''
+          }
+          for name, section in sections.items():
+              p=Path(name); text=p.read_text()
+              if 'lab/README.md' not in text:
+                  p.write_text(text.rstrip()+'\n\n'+section+'\n')
+          PY
+      - name: Validate lab controller and assurance contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile lab/scripts/*.py scripts/docs_consistency.py
+          python3 lab/scripts/labctl.py self-test
+          python3 lab/scripts/labctl.py validate-catalog
+          python3 scripts/docs_consistency.py --self-test
+          python3 scripts/docs_consistency.py
+          git diff --check
+      - name: Validate Ansible inventory and playbook syntax
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --user -r lab/requirements-ansible.txt
+          export PATH="$HOME/.local/bin:$PATH"
+          cd lab/ansible
+          ansible-inventory -i inventory.example.yml --list >/tmp/lab-inventory.json
+          ansible-playbook -i inventory.example.yml site.yml --syntax-check
+      - name: Prove SDK remains healthy
+        run: |
+          cmake -S . -B build-lab-close -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-lab-close --parallel
+          ctest --test-dir build-lab-close --output-on-failure
+      - name: Commit verified non-workflow closure
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CMakeLists.txt CHANGELOG.md README.md README.zh-CN.md
+          git diff --cached --check
+          git commit -m 'release: finalize v2.2.0 laboratory infrastructure'
+          git push origin HEAD:feat/lab-infrastructure-v2.2.0

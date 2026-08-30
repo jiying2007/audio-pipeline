@@ -1,0 +1,5 @@
+---
+# Default mode is deliberately privilege-free. Set true explicitly for
+# dedicated /opt,/var,/etc service-account installations.
+lab_system_mode: false
+lab_user_start_runner: true

@@ -9,24 +9,30 @@
       - github_runner_registration_token | length > 10
       - github_runner_name is defined
       - github_runner_labels is defined
-    fail_msg: "Pass a short-lived GitHub runner registration token via --extra-vars; never store it in inventory."
+    fail_msg: "Pass a short-lived registration token via --extra-vars; never store it in inventory."
   no_log: true
 
 - name: Set runner paths
   ansible.builtin.set_fact:
-    github_runner_dir: "/opt/actions-runner-{{ github_runner_name }}"
-    github_runner_archive: "/var/cache/audio-pipeline-lab/actions-runner-linux-{{ github_runner_arch }}-{{ github_runner_version }}.tar.gz"
+    github_runner_dir: "{{ lab_root }}/runners/{{ github_runner_name }}"
+    github_runner_archive: "{{ lab_cache_root }}/runner/actions-runner-linux-{{ github_runner_arch }}-{{ github_runner_version }}.tar.gz"
     github_runner_service: "actions.runner.{{ audio_pipeline_repo_url | regex_replace('^https://github.com/', '') | replace('/', '-') }}.{{ github_runner_name }}.service"
+    github_runner_user_unit: "audio-pipeline-runner-{{ github_runner_name }}.service"
 
-- name: Create runner directory
+- name: Create runner/cache directories
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.file:
-    path: "{{ github_runner_dir }}"
+    path: "{{ item }}"
     state: directory
-    owner: "{{ lab_service_user }}"
-    group: "{{ lab_service_user }}"
+    owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+    group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
     mode: '0750'
+  loop:
+    - "{{ github_runner_dir }}"
+    - "{{ lab_cache_root }}/runner"
 
 - name: Download pinned GitHub Actions runner
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.get_url:
     url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-{{ github_runner_arch }}-{{ github_runner_version }}.tar.gz"
     dest: "{{ github_runner_archive }}"
@@ -39,49 +45,82 @@
   register: runner_configuration
 
 - name: Extract pinned runner distribution
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.unarchive:
     src: "{{ github_runner_archive }}"
     dest: "{{ github_runner_dir }}"
     remote_src: true
-    owner: "{{ lab_service_user }}"
-    group: "{{ lab_service_user }}"
+    owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+    group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
   when: not runner_configuration.stat.exists
 
 - name: Configure repository-scoped self-hosted runner
-  become_user: "{{ lab_service_user }}"
+  become: "{{ lab_system_mode | bool }}"
+  become_user: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
   ansible.builtin.command:
-    argv:
-      - ./config.sh
-      - --url
-      - "{{ audio_pipeline_repo_url }}"
-      - --token
-      - "{{ github_runner_registration_token }}"
-      - --name
-      - "{{ github_runner_name }}"
-      - --labels
-      - "{{ github_runner_labels }}"
-      - --work
-      - _work
-      - --unattended
-      - --replace
+    argv: [./config.sh, --url, "{{ audio_pipeline_repo_url }}", --token, "{{ github_runner_registration_token }}", --name, "{{ github_runner_name }}", --labels, "{{ github_runner_labels }}", --work, _work, --unattended, --replace]
     chdir: "{{ github_runner_dir }}"
   when: not runner_configuration.stat.exists
   no_log: true
 
-- name: Check runner systemd unit
+- name: Check runner system service in dedicated system mode
+  become: true
   ansible.builtin.stat:
     path: "/etc/systemd/system/{{ github_runner_service }}"
   register: runner_service_file
+  when: lab_system_mode | bool
 
-- name: Install official runner systemd service
+- name: Install official runner system service
+  become: true
   ansible.builtin.command:
-    argv: ["./svc.sh", "install", "{{ lab_service_user }}"]
+    argv: ["./svc.sh", install, "{{ lab_service_user }}"]
     chdir: "{{ github_runner_dir }}"
-  when: not runner_service_file.stat.exists
+  when: (lab_system_mode | bool) and not runner_service_file.stat.exists
 
-- name: Enable and start runner service
+- name: Enable and start runner system service
+  become: true
   ansible.builtin.systemd:
     name: "{{ github_runner_service }}"
     enabled: true
     state: started
     daemon_reload: true
+  when: lab_system_mode | bool
+
+- name: Create ordinary-user systemd directory
+  ansible.builtin.file:
+    path: "{{ lab_effective_home }}/.config/systemd/user"
+    state: directory
+    mode: '0750'
+  when: not (lab_system_mode | bool)
+
+- name: Install ordinary-user runner unit
+  ansible.builtin.copy:
+    dest: "{{ lab_effective_home }}/.config/systemd/user/{{ github_runner_user_unit }}"
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Audio Pipeline GitHub Runner {{ github_runner_name }}
+      After=network-online.target
+      Wants=network-online.target
+      [Service]
+      Type=simple
+      WorkingDirectory={{ github_runner_dir }}
+      ExecStart={{ github_runner_dir }}/run.sh
+      Restart=always
+      RestartSec=5
+      [Install]
+      WantedBy=default.target
+  when: not (lab_system_mode | bool)
+
+- name: Enable and start ordinary-user runner unit
+  ansible.builtin.command: "systemctl --user enable --now {{ github_runner_user_unit }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_user_uid }}/bus"
+  changed_when: false
+  when: (not (lab_system_mode | bool)) and (lab_user_start_runner | bool)
+
+- name: Report user-service persistence requirement
+  ansible.builtin.debug:
+    msg: "Ordinary-user runner uses systemd --user. For reboot/no-login persistence, ask an administrator once to run: loginctl enable-linger {{ ansible_user_id }}. No /opt or root permission is otherwise required."
+  when: not (lab_system_mode | bool)

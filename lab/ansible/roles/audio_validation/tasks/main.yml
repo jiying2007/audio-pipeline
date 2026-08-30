@@ -1,50 +1,54 @@
 ---
-- name: Install audio-validation packages
+- name: Install audio-validation packages in dedicated system mode
+  become: true
   ansible.builtin.apt:
-    name:
-      - aria2
-      - ffmpeg
-      - p7zip-full
+    name: [aria2, ffmpeg, p7zip-full]
     state: present
+  when: lab_system_mode | bool
+
+- name: Validate ordinary-user validation tools
+  ansible.builtin.shell: |
+    set -eu
+    command -v ffmpeg >/dev/null
+    command -v 7z >/dev/null
+    command -v aria2c >/dev/null || command -v curl >/dev/null
+  args:
+    executable: /bin/sh
+  changed_when: false
+  when: not (lab_system_mode | bool)
 
 - name: Create validation data/cache directories
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: "{{ lab_service_user }}"
-    group: "{{ lab_service_user }}"
+    owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+    group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
     mode: '0750'
   loop:
-    - "{{ validation_data_root | default('/opt/audio-validation-extended') }}"
-    - /var/cache/audio-pipeline-lab/datasets
-    - /var/lib/audio-pipeline-lab/acquisition
+    - "{{ lab_validation_data_root }}"
+    - "{{ lab_cache_root }}/datasets"
+    - "{{ lab_state_root }}/acquisition"
 
 - name: Create validation Python virtual environment
+  become: "{{ lab_system_mode | bool }}"
+  become_user: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
   ansible.builtin.command:
-    argv: [python3, -m, venv, /opt/audio-lab/venv]
-    creates: /opt/audio-lab/venv/bin/python
+    argv: [python3, -m, venv, "{{ lab_root }}/venv"]
+    creates: "{{ lab_root }}/venv/bin/python"
 
 - name: Copy pinned validation Python requirements
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../requirements-validation.txt"
-    dest: /opt/audio-lab/requirements-validation.txt
-    owner: "{{ lab_service_user }}"
-    group: "{{ lab_service_user }}"
+    dest: "{{ lab_root }}/requirements-validation.txt"
+    owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+    group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
     mode: '0644'
 
 - name: Install pinned validation Python requirements
+  become: "{{ lab_system_mode | bool }}"
+  become_user: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
   ansible.builtin.pip:
-    requirements: /opt/audio-lab/requirements-validation.txt
-    virtualenv: /opt/audio-lab/venv
-
-- name: Ensure validation directories belong to the runner account
-  ansible.builtin.file:
-    path: "{{ item }}"
-    owner: "{{ lab_service_user }}"
-    group: "{{ lab_service_user }}"
-    recurse: true
-  loop:
-    - /opt/audio-lab
-    - "{{ validation_data_root | default('/opt/audio-validation-extended') }}"
-    - /var/cache/audio-pipeline-lab
-    - /var/lib/audio-pipeline-lab
+    requirements: "{{ lab_root }}/requirements-validation.txt"
+    virtualenv: "{{ lab_root }}/venv"

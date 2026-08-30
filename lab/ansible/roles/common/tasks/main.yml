@@ -4,49 +4,74 @@
     that:
       - ansible_os_family == 'Debian'
       - ansible_architecture in ['x86_64', 'amd64']
-      - lab_service_user is defined
-    fail_msg: "The reference lab automation currently supports x86_64 Debian/Ubuntu controllers only."
+      - not (lab_system_mode | bool) or lab_service_user is defined
+    fail_msg: "Reference lab automation supports x86_64 Debian/Ubuntu; system mode also requires lab_service_user."
 
-- name: Install common laboratory packages
+- name: Resolve privilege-neutral laboratory identity
+  ansible.builtin.set_fact:
+    lab_effective_user: "{{ lab_service_user if (lab_system_mode | bool) else ansible_user_id }}"
+    lab_effective_home: "{{ ('/home/' ~ lab_service_user) if (lab_system_mode | bool) else ansible_env.HOME }}"
+
+- name: Resolve laboratory paths
+  ansible.builtin.set_fact:
+    lab_root: "{{ '/opt/audio-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/share/audio-pipeline-lab') }}"
+    lab_cache_root: "{{ '/var/cache/audio-pipeline-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.cache/audio-pipeline-lab') }}"
+    lab_state_root: "{{ '/var/lib/audio-pipeline-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/state/audio-pipeline-lab') }}"
+    lab_log_root: "{{ '/var/log/audio-pipeline-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/state/audio-pipeline-lab/log') }}"
+    lab_validation_data_root: "{{ validation_data_root | default('/opt/audio-validation-extended' if (lab_system_mode | bool) else (lab_effective_home ~ '/audio-validation-extended')) }}"
+    lab_audio_target_config_root: "{{ '/etc/audio-pipeline' if (lab_system_mode | bool) else (lab_effective_home ~ '/.config/audio-pipeline') }}"
+    lab_audio_target_fixture_root: "{{ '/opt/audio-pipeline/fixtures' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/share/audio-pipeline-lab/fixtures') }}"
+
+- name: Install common laboratory packages in dedicated system mode
+  become: true
   ansible.builtin.apt:
-    name:
-      - build-essential
-      - ca-certificates
-      - cmake
-      - curl
-      - git
-      - git-lfs
-      - jq
-      - python3
-      - python3-pip
-      - python3-venv
-      - rsync
-      - tar
-      - unzip
+    name: [build-essential, ca-certificates, cmake, curl, git, git-lfs, jq, python3, python3-pip, python3-venv, rsync, tar, unzip]
     state: present
     update_cache: true
     cache_valid_time: 3600
+  when: lab_system_mode | bool
 
-- name: Create isolated laboratory service account
+- name: Validate ordinary-user prerequisites without sudo
+  ansible.builtin.shell: |
+    set -eu
+    for cmd in cc cmake curl git git-lfs jq python3 rsync tar unzip; do
+      command -v "$cmd" >/dev/null || { echo "missing ordinary-user prerequisite: $cmd" >&2; exit 1; }
+    done
+  args:
+    executable: /bin/sh
+  changed_when: false
+  when: not (lab_system_mode | bool)
+
+- name: Create isolated laboratory service account in system mode
+  become: true
   ansible.builtin.user:
     name: "{{ lab_service_user }}"
     shell: /bin/bash
     create_home: true
     system: false
+  when: lab_system_mode | bool
 
 - name: Create common laboratory directories
+  become: "{{ lab_system_mode | bool }}"
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: "{{ lab_service_user }}"
-    group: "{{ lab_service_user }}"
+    owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+    group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
     mode: '0750'
   loop:
-    - /opt/audio-lab
-    - /var/cache/audio-pipeline-lab
-    - /var/lib/audio-pipeline-lab
-    - /var/log/audio-pipeline-lab
+    - "{{ lab_root }}"
+    - "{{ lab_cache_root }}"
+    - "{{ lab_state_root }}"
+    - "{{ lab_log_root }}"
 
-- name: Initialize Git LFS for the host
+- name: Initialize Git LFS for system mode
+  become: true
   ansible.builtin.command: git lfs install --system
   changed_when: false
+  when: lab_system_mode | bool
+
+- name: Initialize Git LFS for ordinary-user mode
+  ansible.builtin.command: git lfs install --skip-repo
+  changed_when: false
+  when: not (lab_system_mode | bool)

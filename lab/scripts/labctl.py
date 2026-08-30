@@ -22,9 +22,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_LOCK = REPO_ROOT / "lab" / "data-sources.lock.json"
 EXTENDED_CATALOG = REPO_ROOT / "validation" / "extended.datasets.lock.json"
-DEFAULT_DATA_ROOT = Path("/opt/audio-validation-extended")
-DEFAULT_CACHE_ROOT = Path("/var/cache/audio-pipeline-lab/datasets")
-DEFAULT_STATE_ROOT = Path("/var/lib/audio-pipeline-lab")
+USER_HOME = Path.home()
+XDG_DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", USER_HOME / ".local/share")).expanduser()
+XDG_CACHE_HOME = Path(os.environ.get("XDG_CACHE_HOME", USER_HOME / ".cache")).expanduser()
+XDG_STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", USER_HOME / ".local/state")).expanduser()
+XDG_CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", USER_HOME / ".config")).expanduser()
+DEFAULT_DATA_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_DATA_ROOT", USER_HOME / "audio-validation-extended")).expanduser()
+DEFAULT_CACHE_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_CACHE_ROOT", XDG_CACHE_HOME / "audio-pipeline-lab/datasets")).expanduser()
+DEFAULT_STATE_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_STATE_ROOT", XDG_STATE_HOME / "audio-pipeline-lab")).expanduser()
+DEFAULT_BOARD = Path(os.environ.get("AUDIO_PIPELINE_LAB_BOARD", XDG_CONFIG_HOME / "audio-pipeline/board.json")).expanduser()
 SUPPORTED_PROVIDERS = {"huggingface_snapshot", "http_archive", "operator_import"}
 COMMERCIAL_PROFILES = {"commercial-core", "commercial-plus"}
 
@@ -153,16 +159,20 @@ def record_or_verify_acquisition(item: dict, archive: Path, state_root: Path) ->
 
 
 def download_archive(item: dict, cache_root: Path, state_root: Path) -> tuple[Path, dict]:
-    require_command("aria2c")
+    downloader = "aria2c" if shutil.which("aria2c") else require_command("curl")
     directory = cache_root / item["id"]
     directory.mkdir(parents=True, exist_ok=True)
     archive = directory / item["archive_name"]
     if not archive.exists():
-        run([
-            "aria2c", "--continue=true", "--max-connection-per-server=4", "--split=4",
-            "--min-split-size=16M", "--file-allocation=none", "--dir", str(directory),
-            "--out", archive.name, item["url"],
-        ])
+        if downloader == "aria2c":
+            run([
+                "aria2c", "--continue=true", "--max-connection-per-server=4", "--split=4",
+                "--min-split-size=16M", "--file-allocation=none", "--dir", str(directory),
+                "--out", archive.name, item["url"],
+            ])
+        else:
+            run(["curl", "--fail", "--location", "--retry", "5", "--continue-at", "-",
+                 "--output", str(archive), item["url"]])
     integrity = item["integrity"]
     mode = integrity["mode"]
     if mode in {"md5", "sha256"}:
@@ -210,7 +220,7 @@ def materialize_huggingface(item: dict, data_root: Path, cache_root: Path, state
     try:
         from huggingface_hub import snapshot_download
     except ImportError as exc:
-        raise SystemExit("huggingface_hub is required; run /opt/audio-lab/venv/bin/python or install lab/requirements-validation.txt") from exc
+        raise SystemExit("huggingface_hub is required; use the Ansible-created user venv or install lab/requirements-validation.txt") from exc
     snapshot = cache_root / item["id"] / "snapshot"
     snapshot.mkdir(parents=True, exist_ok=True)
     snapshot_download(
@@ -388,6 +398,16 @@ def self_test() -> None:
     assert by_id["musan"]["integrity"]["value"] == "0c472d4fc0c5141eca47ad1ffeb2a7df"
     assert by_id["openslr-slr31"]["integrity"]["value"] == "6d7ab67ac6a1d2c993d050e16d61080d"
     assert {by_id[item]["provider"] for item in catalog["profiles"]["commercial-core"]} <= {"http_archive", "huggingface_snapshot"}
+    assert str(DEFAULT_DATA_ROOT).startswith(str(USER_HOME))
+    assert str(DEFAULT_CACHE_ROOT).startswith(str(USER_HOME))
+    assert str(DEFAULT_STATE_ROOT).startswith(str(USER_HOME))
+    assert str(DEFAULT_BOARD).startswith(str(USER_HOME))
+    site = (REPO_ROOT / "lab/ansible/site.yml").read_text(encoding="utf-8")
+    inventory = (REPO_ROOT / "lab/ansible/inventory.example.yml").read_text(encoding="utf-8")
+    runner_role = (REPO_ROOT / "lab/ansible/roles/github_runner/tasks/main.yml").read_text(encoding="utf-8")
+    assert "lab_system_mode: false" in inventory
+    assert "become: true\n  roles:" not in site
+    assert "systemctl --user" in runner_role and "loginctl enable-linger" in runner_role
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         archive = root / "ok.tar"
@@ -430,9 +450,9 @@ def parser() -> argparse.ArgumentParser:
     verify.add_argument("--source-revision")
     target = sub.add_parser("target-readiness")
     target.add_argument("--source-revision", required=True)
-    target.add_argument("--board", type=Path, default=Path("/etc/audio-pipeline/board.json"))
+    target.add_argument("--board", type=Path, default=DEFAULT_BOARD)
     target.add_argument("--power-input")
-    target.add_argument("--output", type=Path, default=Path("/tmp/audio-target-readiness.json"))
+    target.add_argument("--output", type=Path, default=DEFAULT_STATE_ROOT / "readiness/audio-target/runner-readiness.json")
     dv = sub.add_parser("dispatch-validation")
     dv.add_argument("--source-revision", required=True)
     dv.add_argument("--profile", choices=sorted(COMMERCIAL_PROFILES), default="commercial-core")
@@ -441,7 +461,7 @@ def parser() -> argparse.ArgumentParser:
     dh = sub.add_parser("dispatch-hil")
     dh.add_argument("--source-revision", required=True)
     dh.add_argument("--repo", default="jiying2007/audio-pipeline")
-    dh.add_argument("--board", type=Path, default=Path("/etc/audio-pipeline/board.json"))
+    dh.add_argument("--board", type=Path, default=DEFAULT_BOARD)
     dh.add_argument("--capture", required=True)
     dh.add_argument("--playback", default="none")
     dh.add_argument("--farend", default="")

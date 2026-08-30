@@ -30,7 +30,15 @@ Hosted resource 数字只维护在 `ci/resource-baseline.json`；`docs/generated
 
 PR/main 音频 regression 使用 generator **v3** 与 seeds `1307 / 2307 / 3307`。每个 seed 生成 **27 个 case**，必须 27/27 PASS，并对同 seed 重生成结果做 hash 级 deterministic 检查；因此 hosted generated regression 总计 81 case。
 
-这 81 case 仅是 regression evidence。公共真实数据在独立 `audio-validation` runner 上按 Compact 100 / Full 160 profile 封存和执行，并可做 HMAC blind holdout；Product Certification 仍是更高一级的真实发货硬件证据。
+这 81 case 仅是 regression evidence。公共真实数据在独立 `audio-validation` runner 上按 Compact 100 / Full 160 profile 封存和执行，并可做 HMAC blind holdout。
+
+### Extended Real 验证
+
+v2.1.0 增加独立 Extended Real family，不修改 Compact100/Full160 历史基线。`commercial-core` 使用 RealMAN 真实远场/移动声源以及 BUT measured RIR、MUSAN、Mini LibriSpeech；`commercial-plus` 增加 VOiCES、AMI、ICSI。AISHELL-4、过滤后的 FSD50K、WHAM 只能进入 research/conditional 路径，不能满足 commercial gate。所有实际选择的 source file 在构建 corpus 前逐文件 SHA-256 绑定。
+
+Extended Real 增加 P10 tail、clipping/DC/level、VAD precision/recall/FPR/FNR、speech/noise attenuation、scenario 样本数/通过率和维度覆盖；blind 按 scenario 分层。Release published 自动申请 commercial-core，每周申请 commercial-plus；只有 `EXTENDED_REAL_ENABLED=true` 才进入 self-hosted，否则 hosted availability 必须 fail-visible。详见 `EXTENDED_REAL_VALIDATION.zh-CN.md`。
+
+Product Certification 仍是更高一级的真实发货硬件证据。
 
 ## 失败分类与可复现包
 

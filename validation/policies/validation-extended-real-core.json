@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-extended-real-core-v1",
+  "allowed_tiers": ["validation-grade"],
+  "minimum_cases": 48,
+  "required_public_sources": ["realman", "but-reverbdb", "musan", "openslr-slr31"],
+  "required_scenarios": ["realman-farfield", "measured-rir-ns", "measured-rir-bf", "musan-negative"],
+  "minimum_cases_by_scenario": {
+    "realman-farfield": 8,
+    "measured-rir-ns": 8,
+    "measured-rir-bf": 8,
+    "musan-negative": 4
+  },
+  "minimum_pass_rate_by_scenario": {
+    "realman-farfield": 0.80,
+    "measured-rir-ns": 0.90,
+    "measured-rir-bf": 0.85,
+    "musan-negative": 0.80
+  },
+  "required_dimension_values": {"motion": ["static", "moving"]},
+  "aggregate": {
+    "min_pass_rate": 0.88,
+    "min_p10_near_si_sdr_improvement_db": -1.5,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -25.0,
+    "max_vad_false_positive_rate": 0.40,
+    "min_vad_recall": 0.60
+  }
+}

@@ -1,0 +1,215 @@
+name: Extended Real Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact 40-character source commit SHA to validate
+        required: true
+        type: string
+      profile:
+        description: License and source profile
+        required: true
+        default: commercial-core
+        type: choice
+        options: [commercial-core, commercial-plus, research]
+      data_root:
+        description: Caller-materialized extended-real dataset root on audio-validation runner
+        required: true
+        default: /opt/audio-validation-extended
+        type: string
+      limit_per_dataset:
+        description: Stable source entries hashed per dataset
+        required: true
+        default: '24'
+        type: string
+      direct_limit:
+        description: Direct real/stress cases per source family
+        required: true
+        default: '24'
+        type: string
+      derived_limit:
+        description: Measured-RIR acoustic combinations; each emits NS + BF
+        required: true
+        default: '16'
+        type: string
+      holdout_percent:
+        description: Scenario-stratified blind HMAC holdout percentage for commercial profiles
+        required: true
+        default: '20'
+        type: choice
+        options: ['20', '30']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: extended-real-${{ inputs.profile }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Validate exact source commit SHA
+        id: source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }
+          git fetch --no-tags origin "$SOURCE_SHA"
+          git cat-file -e "$SOURCE_SHA^{commit}"
+          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
+
+  validate:
+    needs: resolve
+    runs-on: [self-hosted, linux, audio-validation]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
+      - name: Bind exact revision and runner readiness
+        env:
+          DATA_ROOT: ${{ inputs.data_root }}
+        run: |
+          set -euo pipefail
+          revision=$(git rev-parse HEAD)
+          test "$revision" = '${{ needs.resolve.outputs.sha }}'
+          mkdir -p extended-out
+          printf '%s\n' "$revision" > extended-out/source-revision.txt
+          python3 tools/runner_preflight.py \
+            --role audio-validation \
+            --source-revision "$revision" \
+            --data-root "$DATA_ROOT" \
+            --extended-catalog "$GITHUB_WORKSPACE/validation/extended.datasets.lock.json" \
+            --require-command ffmpeg \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output extended-out/runner-preflight.json
+      - name: Validate license catalog and scan immutable source manifest
+        env:
+          DATA_ROOT: ${{ inputs.data_root }}
+          PROFILE: ${{ inputs.profile }}
+          LIMIT: ${{ inputs.limit_per_dataset }}
+        run: |
+          set -euo pipefail
+          python3 validation/tools/extended_dataset_lock.py validate \
+            --catalog validation/extended.datasets.lock.json \
+            > extended-out/catalog-verification.json
+          python3 validation/tools/prepare_extended_validation.py scan \
+            --catalog validation/extended.datasets.lock.json \
+            --data-root "$DATA_ROOT" \
+            --profile "$PROFILE" \
+            --limit-per-dataset "$LIMIT" \
+            --output extended-out/source-manifest.json \
+            > extended-out/source-scan.json
+          python3 validation/tools/prepare_extended_validation.py verify \
+            --catalog validation/extended.datasets.lock.json \
+            --data-root "$DATA_ROOT" \
+            --manifest extended-out/source-manifest.json \
+            > extended-out/source-verification.json
+      - name: Build exact validation processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-extended-real -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-extended-real --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum build-extended-real/ap_process_pcm > extended-out/processor.sha256
+          build-extended-real/ap_build_info_dump > extended-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > extended-out/compiler.txt
+      - name: Build extended-real corpus from hash-bound sources
+        env:
+          DATA_ROOT: ${{ inputs.data_root }}
+          DIRECT_LIMIT: ${{ inputs.direct_limit }}
+          DERIVED_LIMIT: ${{ inputs.derived_limit }}
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_extended_real_corpus.py \
+            --catalog validation/extended.datasets.lock.json \
+            --manifest extended-out/source-manifest.json \
+            --data-root "$DATA_ROOT" \
+            --output extended-out/corpus \
+            --direct-limit "$DIRECT_LIMIT" \
+            --derived-limit "$DERIVED_LIMIT" \
+            > extended-out/corpus-build.json
+      - name: Scenario-stratified commercial validation and blind holdout
+        if: inputs.profile != 'research'
+        env:
+          AP_VALIDATION_HOLDOUT_KEY: ${{ secrets.AP_VALIDATION_HOLDOUT_KEY }}
+          HOLDOUT: ${{ inputs.holdout_percent }}
+          PROFILE: ${{ inputs.profile }}
+        run: |
+          set -euo pipefail
+          test -n "$AP_VALIDATION_HOLDOUT_KEY" || { echo 'AP_VALIDATION_HOLDOUT_KEY is required for commercial extended validation' >&2; exit 1; }
+          python3 validation/tools/split_holdout.py \
+            --corpus extended-out/corpus/corpus.json \
+            --validation-output extended-out/corpus/corpus-validation.json \
+            --blind-output extended-out/corpus/corpus-blind.json \
+            --holdout-percent "$HOLDOUT" \
+            --stratify scenario
+          case "$PROFILE" in
+            commercial-core)
+              policy=validation/policies/validation-extended-real-core.json
+              blind_policy=validation/policies/validation-extended-real-core-blind.json
+              ;;
+            commercial-plus)
+              policy=validation/policies/validation-extended-real-plus.json
+              blind_policy=validation/policies/validation-extended-real-plus-blind.json
+              ;;
+            *) exit 2 ;;
+          esac
+          python3 validation/tools/run_validation.py \
+            --corpus extended-out/corpus/corpus-validation.json \
+            --policy "$policy" \
+            --dataset-lock validation/extended.datasets.lock.json \
+            --source-manifest extended-out/source-manifest.json \
+            --processor build-extended-real/ap_process_pcm \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --output extended-out/validation-report.json \
+            --evidence-manifest extended-out/validation-evidence.json \
+            --enforce
+          python3 validation/tools/run_validation.py \
+            --corpus extended-out/corpus/corpus-blind.json \
+            --policy "$blind_policy" \
+            --dataset-lock validation/extended.datasets.lock.json \
+            --source-manifest extended-out/source-manifest.json \
+            --processor build-extended-real/ap_process_pcm \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --output extended-out/blind-report.json \
+            --evidence-manifest extended-out/blind-evidence.json \
+            --blind-summary-only --enforce
+      - name: Enforce research-only isolation
+        if: inputs.profile == 'research'
+        run: |
+          set -euo pipefail
+          python3 validation/tools/run_validation.py \
+            --corpus extended-out/corpus/corpus.json \
+            --policy validation/policies/validation-extended-real-research.json \
+            --dataset-lock validation/extended.datasets.lock.json \
+            --source-manifest extended-out/source-manifest.json \
+            --processor build-extended-real/ap_process_pcm \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --output extended-out/research-report.json \
+            --evidence-manifest extended-out/research-evidence.json \
+            --enforce
+          printf '%s\n' 'RESEARCH_ONLY_NOT_SHIPPING_AUTHORITY' > extended-out/RESEARCH_ONLY
+      - name: Seal complete extended-real evidence bundle
+        run: |
+          set -euo pipefail
+          cp validation/extended.datasets.lock.json extended-out/
+          find extended-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > /tmp/extended-real-SHA256SUMS
+          mv /tmp/extended-real-SHA256SUMS extended-out/SHA256SUMS
+      - name: Upload extended-real evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: extended-real-${{ inputs.profile }}-${{ github.run_id }}
+          path: extended-out/
+          if-no-files-found: error
+          retention-days: 90

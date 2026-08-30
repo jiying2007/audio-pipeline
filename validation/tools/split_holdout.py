@@ -16,23 +16,58 @@ def canonical_identity(case: dict) -> str:
     return str(source.get("source_id") or source.get("path") or case["case_id"])
 
 
-def partition_cases(cases: list[dict], key: bytes, holdout_percent: int) -> tuple[list[dict], list[dict]]:
+
+def stratification_value(case: dict, stratify: str | None) -> str:
+    if stratify in (None, "none"):
+        return "all"
+    if stratify == "scenario":
+        return str(case.get("scenario", "unknown"))
+    if stratify == "dataset":
+        source = case.get("source", {})
+        return str(source.get("dataset_id", "unknown"))
+    raise ValueError(f"unsupported stratification: {stratify}")
+
+
+def partition_cases(cases: list[dict], key: bytes, holdout_percent: int,
+                    stratify: str | None = None) -> tuple[list[dict], list[dict]]:
     validation_cases: list[dict] = []
     blind_cases: list[dict] = []
+    groups: dict[str, list[tuple[int, dict]]] = {}
     for case in cases:
         identity = canonical_identity(case).encode("utf-8")
-        bucket = int.from_bytes(hmac.new(key, identity, hashlib.sha256).digest()[:4], "big") % 100
-        target = blind_cases if bucket < holdout_percent else validation_cases
-        copied = dict(case)
-        copied["split"] = "blind" if target is blind_cases else "validation"
-        target.append(copied)
+        digest = hmac.new(key, identity, hashlib.sha256).digest()
+        bucket = int.from_bytes(digest[:4], "big") % 100
+        groups.setdefault(stratification_value(case, stratify), []).append((bucket, case))
+    for _group, rows in sorted(groups.items()):
+        ordered = sorted(rows, key=lambda item: (item[0], canonical_identity(item[1])))
+        group_validation: list[dict] = []
+        group_blind: list[dict] = []
+        for bucket, case in ordered:
+            target = group_blind if bucket < holdout_percent else group_validation
+            copied = dict(case)
+            copied["split"] = "blind" if target is group_blind else "validation"
+            target.append(copied)
+        if stratify not in (None, "none") and len(ordered) >= 2:
+            if not group_blind:
+                moved = group_validation.pop(0)
+                moved["split"] = "blind"
+                group_blind.append(moved)
+            if not group_validation:
+                moved = group_blind.pop(-1)
+                moved["split"] = "validation"
+                group_validation.append(moved)
+        validation_cases.extend(group_validation)
+        blind_cases.extend(group_blind)
+    validation_cases.sort(key=lambda case: case["case_id"])
+    blind_cases.sort(key=lambda case: case["case_id"])
     return validation_cases, blind_cases
 
 
 def self_test() -> None:
     key = b"audio-pipeline-holdout-self-test-key"
     cases = [
-        {"case_id": f"case-{index:03d}", "source": {"source_id": f"case-{index:03d}"}}
+        {"case_id": f"case-{index:03d}", "scenario": f"s{index % 4}",
+         "source": {"source_id": f"case-{index:03d}", "dataset_id": f"d{index % 3}"}}
         for index in range(160)
     ]
     expected_minima = {
@@ -49,8 +84,15 @@ def self_test() -> None:
         validation2, blind2 = partition_cases(cases[:count], key, percent)
         assert [item["case_id"] for item in validation] == [item["case_id"] for item in validation2]
         assert [item["case_id"] for item in blind] == [item["case_id"] for item in blind2]
+    validation, blind = partition_cases(cases, key, 20, "scenario")
+    for scenario in {case["scenario"] for case in cases}:
+        assert any(case["scenario"] == scenario for case in validation)
+        assert any(case["scenario"] == scenario for case in blind)
+    dataset_validation, dataset_blind = partition_cases(cases, key, 20, "dataset")
+    for dataset in {case["source"]["dataset_id"] for case in cases}:
+        assert any(case["source"]["dataset_id"] == dataset for case in dataset_validation)
+        assert any(case["source"]["dataset_id"] == dataset for case in dataset_blind)
     print("validation blind holdout self-test: OK")
-
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -59,6 +101,7 @@ def main() -> int:
     parser.add_argument("--blind-output", type=Path)
     parser.add_argument("--holdout-percent", type=int, default=20)
     parser.add_argument("--key-env", default="AP_VALIDATION_HOLDOUT_KEY")
+    parser.add_argument("--stratify", choices=("none", "scenario", "dataset"), default="none")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -75,7 +118,7 @@ def main() -> int:
     corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
     if corpus.get("tier") != "validation-grade" or not corpus.get("sealed_data"):
         raise SystemExit("holdout input must be sealed validation-grade corpus")
-    validation_cases, blind_cases = partition_cases(corpus["cases"], key, args.holdout_percent)
+    validation_cases, blind_cases = partition_cases(corpus["cases"], key, args.holdout_percent, args.stratify)
     if not validation_cases or not blind_cases:
         raise SystemExit("holdout split produced an empty partition; increase corpus size")
     fingerprint = hashlib.sha256(key).hexdigest()[:16]
@@ -88,7 +131,7 @@ def main() -> int:
     args.blind_output.write_text(json.dumps(blind, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"validation": len(validation_cases), "blind": len(blind_cases),
                       "holdout_percent": args.holdout_percent,
-                      "key_fingerprint": fingerprint}, sort_keys=True))
+                      "key_fingerprint": fingerprint, "stratify": args.stratify}, sort_keys=True))
     return 0
 
 

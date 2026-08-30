@@ -76,6 +76,12 @@ The DNS5 source download contains official clean/noise/RIR material, not a canon
 
 The full workflow uses the fixed `validation/policies/validation-full.json`; callers cannot replace it with a weaker policy through workflow inputs.
 
+## Extended Real validation
+
+Compact100/Full160 remain frozen historical comparison families. v2.1.0 adds a separate Extended Real catalog and workflow for real far-field/moving-source, measured-room, meeting/overlap and hard-negative stress. Commercial profiles are license-isolated; research-only/conditional sources cannot enter commercial validation. Selected real files are individually SHA-256 bound in a source manifest and verified again before corpus construction.
+
+Extended Real uses scenario-stratified blind holdout plus tail/scenario/dimension gates and remains non-authoritative for shipping. See [`../docs/EXTENDED_REAL_VALIDATION.md`](../docs/EXTENDED_REAL_VALIDATION.md).
+
 ## Public cache preparation
 
 `prepare_public_validation.py` provides fail-closed cache preparation and verification:

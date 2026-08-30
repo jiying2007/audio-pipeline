@@ -1,3 +1,15 @@
+# 2.1.0
+
+- Add a separate extended-real validation family without changing the established Compact100/Full160 public-validation baselines.
+- Add a license-aware extended dataset catalog with commercial, conditional, research-only, and catalog-only usage classes; research/NC/share-alike data cannot satisfy commercial or shipping evidence gates.
+- Hash-bind every selected real audio input through normalized source manifests and verify those SHA-256 bindings again before corpus construction.
+- Add real far-field/moving-source RealMAN cases, measured-room BUT ReverbDB + Mini LibriSpeech + MUSAN NS/BF cases, environmental hard-negative cases, and optional VOiCES/AMI/ICSI meeting/far-field stress suites.
+- Add research-only AISHELL-4, permissive-filtered FSD50K and WHAM stress paths while keeping CC-BY-ND ACE catalog-only and non-transforming.
+- Extend validation metrics with clipping, DC offset, output level drift, VAD precision/recall/FPR/FNR, speech-active attenuation, tail percentiles, scenario pass rates and dimension-coverage gates.
+- Stratify blind HMAC holdouts by scenario or dataset so required acoustic families cannot disappear from the hidden partition by chance.
+- Automate exact-SHA Extended Real commercial-core validation on published releases and commercial-plus weekly through one canonical workflow; automation remains fail-visible until `EXTENDED_REAL_ENABLED=true`.
+- Keep extended-real validation non-authoritative for product shipping: real DUT HIL, product acoustic/thermal/power evidence and 72 h certification remain separate mandatory gates.
+
 # 2.0.1
 
 - Require immutable 40-character commit SHA inputs for manual trusted-runner readiness, public validation, HIL, and formal Product Certification evidence entrypoints.

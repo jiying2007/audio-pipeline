@@ -30,7 +30,15 @@ Heavy ARM/QEMU/ALSA/static-analysis jobs use the reviewed GHCR toolchain image b
 
 PR/main audio-quality regression uses deterministic generator v3 and seeds `1307`, `2307`, `3307`. Each seed generates 27 cases and must pass 27/27 under the regression policy; deterministic regeneration is hash-compared.
 
-This 81-case generated suite is regression evidence only. Public validation remains separately materialized/sealed on trusted `audio-validation` runners using Compact 100 / Full 160 profiles and optional HMAC blind holdout. Product certification remains a still higher trust tier.
+This 81-case generated suite is regression evidence only. Public validation remains separately materialized/sealed on trusted `audio-validation` runners using Compact 100 / Full 160 profiles and optional HMAC blind holdout.
+
+### Extended Real validation
+
+v2.1.0 adds an independent Extended Real family; it does not mutate Compact100/Full160. `commercial-core` covers RealMAN real far-field/moving sources plus measured BUT RIR, MUSAN and Mini LibriSpeech combinations. `commercial-plus` adds VOiCES, AMI and ICSI. AISHELL-4, filtered FSD50K and WHAM are research-only/conditional and cannot satisfy commercial gates. Selected source files are SHA-256 bound before corpus construction.
+
+Extended Real adds p10 tail metrics, clipping/DC/level gates, VAD precision/recall/FPR/FNR, speech/noise attenuation, per-scenario sample/pass-rate requirements and dimension coverage. Blind holdout is scenario-stratified. Published releases automatically request commercial-core and the weekly schedule requests commercial-plus only after `EXTENDED_REAL_ENABLED=true`; otherwise automation fails visibly before allocating a self-hosted runner. See `EXTENDED_REAL_VALIDATION.md`.
+
+Product certification remains a still higher trust tier.
 
 ## Failure taxonomy and reproducer artifacts
 

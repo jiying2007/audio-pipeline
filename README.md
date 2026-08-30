@@ -100,9 +100,11 @@ Audio dumps may contain private speech; retention, access control and secure del
 - `validation-grade-blind`: HMAC-partitioned repository-external holdout;
 - `product-certified`: real shipping hardware/audio route plus performance, thermal, power, acoustic and soak evidence.
 
-Pinned public sources include Microsoft AEC Challenge, Microsoft DNS Challenge and OpenSLR SLR28 metadata. Public corpora remain outside Git.
+Pinned Compact/Full sources include Microsoft AEC Challenge, Microsoft DNS Challenge and OpenSLR SLR28 metadata. v2.1.0 adds a separate **Extended Real** family with license-isolated RealMAN, BUT ReverbDB, MUSAN, Mini LibriSpeech and optional VOiCES/AMI/ICSI plus research-only AISHELL-4/FSD50K/WHAM. Public corpora remain outside Git.
 
-Large public validation runs only on a trusted `audio-validation` runner after readiness and dataset-seal verification. See [`validation/README.md`](validation/README.md) and [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md).
+Extended Real adds real far-field/moving-source, measured-room, meeting/overlap and hard-negative stress with per-file SHA-256 provenance, scenario-stratified blind holdout, tail metrics, clipping/DC/VAD error gates and scenario/dimension coverage. It is still public validation, never product certification.
+
+Large public validation runs only on a trusted `audio-validation` runner after readiness and dataset verification. See [`validation/README.md`](validation/README.md), [`docs/EXTENDED_REAL_VALIDATION.md`](docs/EXTENDED_REAL_VALIDATION.md) and [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md).
 
 ## HIL and shipping certification
 
@@ -168,6 +170,7 @@ Real public-data validation, HIL and product certification remain evidence-separ
 - [`docs/PORTING.md`](docs/PORTING.md) — BSP/ALSA/toolchain integration
 - [`docs/TESTING.md`](docs/TESTING.md) — CI/HIL policy
 - [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md) — self-hosted runner readiness
+- [`docs/EXTENDED_REAL_VALIDATION.md`](docs/EXTENDED_REAL_VALIDATION.md) — real/public far-field, measured-room, meeting and hard-negative validation
 - [`certification/README.md`](certification/README.md) — v4 shipping certification
 - [`THIRD_PARTY.md`](THIRD_PARTY.md) — third-party/reference policy
 

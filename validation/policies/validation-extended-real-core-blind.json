@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-extended-real-core-blind-v1",
+  "allowed_tiers": ["validation-grade-blind"],
+  "minimum_cases": 8,
+  "required_public_sources": ["realman", "but-reverbdb", "musan", "openslr-slr31"],
+  "required_scenarios": ["realman-farfield", "measured-rir-ns", "measured-rir-bf", "musan-negative"],
+  "minimum_cases_by_scenario": {
+    "realman-farfield": 1,
+    "measured-rir-ns": 1,
+    "measured-rir-bf": 1,
+    "musan-negative": 1
+  },
+  "minimum_pass_rate_by_scenario": {
+    "realman-farfield": 0.70,
+    "measured-rir-ns": 0.75,
+    "measured-rir-bf": 0.70,
+    "musan-negative": 0.70
+  },
+  "aggregate": {
+    "min_pass_rate": 0.75,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -25.0
+  }
+}

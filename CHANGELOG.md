@@ -1,3 +1,13 @@
+# 2.2.0
+
+- Productize the trusted laboratory as versioned `lab/` infrastructure for reproducible `audio-validation` and `audio-target` controller deployment.
+- Pin the GitHub Actions runner distribution and validation/Ansible controller dependencies; registration tokens remain short-lived, runtime-only inputs.
+- Add license-aware commercial-core materialization for exact-revision RealMAN val/test, official BUT ReverbDB RIR-only, MUSAN and Mini LibriSpeech, with acquisition seals and canonical per-file SHA-256 source manifests.
+- Add reviewed operator-import paths for VOiCES/AMI/ICSI commercial-plus data instead of silently scraping terms-sensitive upstream layouts.
+- Add a fail-closed `labctl.py` workflow for materialize/adopt/verify/readiness/Extended Real dispatch and SSC305 controller readiness/HIL dispatch.
+- Gate the lab asset set, dataset/runner/dependency pins and `labctl` self-test through the existing required assurance consistency path.
+- Keep lab readiness and public real-data validation below DUT HIL and formal 72 h Product Certification authority.
+
 # 2.1.1
 
 - Make post-release Extended Real automation reliable through the explicit `extended-real-post-release` repository-dispatch channel.

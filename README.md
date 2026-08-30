@@ -179,3 +179,7 @@ Real public-data validation, HIL and product certification remain evidence-separ
 See [LICENSE](LICENSE).
 
 Hosted CI also runs a required **Microsoft P.808 real-audio smoke** on four exact-revision CC-BY-4.0 clips. Inputs are SHA-256/Git-blob pinned, never stored in Git, and exercise stereo-to-mono materialization plus 48 kHz boundary resampling. This is validation-grade safety evidence, not far-field or product-certified evidence.
+
+## Reproducible laboratory deployment
+
+Trusted `audio-validation` and `audio-target` controllers, commercial-core real-data materialization, readiness and first-run dispatch are versioned under [`lab/README.md`](lab/README.md). Lab readiness and public real-data results remain below DUT HIL and 72 h Product Certification authority.

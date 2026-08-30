@@ -1,3 +1,9 @@
+# 2.2.2
+
+- Fix `labctl.py self-test` so XDG and `AUDIO_PIPELINE_LAB_*` path overrides are treated as supported configuration instead of being rejected for living outside `Path.home()`.
+- Refactor user-path resolution into a deterministic helper and self-test plain HOME defaults, XDG overrides and explicit laboratory-root overrides independently.
+- Keep ordinary-user Ansible deployment, dataset acquisition semantics, validation authority, DSP/API/ABI and certification thresholds unchanged.
+
 # 2.2.1
 
 - Make ordinary unprivileged Ubuntu accounts the default laboratory deployment mode; no `/opt`, `/var`, `/etc`, service-account creation or sudo is required.

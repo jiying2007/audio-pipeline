@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-hosted-real-smoke-v1",
+  "allowed_tiers": ["validation-grade"],
+  "minimum_cases": 4,
+  "required_public_sources": ["microsoft-p808-hosted-real"],
+  "required_scenarios": ["p808-created-speech", "p808-degraded-speech"],
+  "minimum_cases_by_scenario": {
+    "p808-created-speech": 2,
+    "p808-degraded-speech": 2
+  },
+  "minimum_pass_rate_by_scenario": {
+    "p808-created-speech": 1.0,
+    "p808-degraded-speech": 1.0
+  },
+  "required_dimension_values": {
+    "source_rate_hz": [16000, 48000],
+    "source_channels": [1, 2]
+  },
+  "aggregate": {
+    "min_pass_rate": 1.0,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -20.0
+  }
+}

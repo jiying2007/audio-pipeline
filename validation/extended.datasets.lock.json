@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "catalog_id": "audio-pipeline-extended-real-v1",
+  "profiles": {
+    "commercial-core": [
+      "realman",
+      "but-reverbdb",
+      "musan",
+      "openslr-slr31"
+    ],
+    "commercial-plus": [
+      "realman",
+      "but-reverbdb",
+      "musan",
+      "openslr-slr31",
+      "voices",
+      "ami",
+      "icsi"
+    ],
+    "research": [
+      "realman",
+      "but-reverbdb",
+      "musan",
+      "openslr-slr31",
+      "voices",
+      "ami",
+      "icsi",
+      "aishell4",
+      "fsd50k",
+      "wham"
+    ]
+  },
+  "datasets": [
+    {
+      "id": "realman",
+      "source": "https://huggingface.co/datasets/AISHELL/RealMAN",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "attribution": "RealMAN: AudioLab at Westlake University and AISHELL Technology; NeurIPS 2024.",
+      "local_path": "RealMAN",
+      "transforms_allowed": true,
+      "validation_roles": ["real-farfield", "multichannel", "moving-source", "static-source", "distance", "speech-enhancement"],
+      "recommended_materialization": ["val", "test", "dataset_info", "transcriptions.trn"],
+      "notes": "Prefer val/test; do not require the 531 GB training archive for validation."
+    },
+    {
+      "id": "voices",
+      "source": "https://iqtlabs.github.io/voices/",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "attribution": "VOiCES corpus by SRI International and Lab41/IQTLabs.",
+      "local_path": "VOiCES",
+      "transforms_allowed": true,
+      "validation_roles": ["real-farfield", "reverberation", "distractor-noise", "obstruction", "microphone-position"],
+      "recommended_materialization": ["distant-16k", "source-16k"],
+      "notes": "Commercial, academic and government use permitted under CC BY 4.0."
+    },
+    {
+      "id": "but-reverbdb",
+      "source": "https://speech.fit.vut.cz/software/but-speech-fit-reverb-database",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "attribution": "BUT Speech@FIT Reverb Database, Brno University of Technology.",
+      "local_path": "BUT_ReverbDB",
+      "transforms_allowed": true,
+      "validation_roles": ["measured-rir", "room-noise", "microphone-position", "reverberation"],
+      "recommended_materialization": ["RIR-only"],
+      "notes": "RIR-only release is sufficient for measured-room derived validation."
+    },
+    {
+      "id": "musan",
+      "source": "https://www.openslr.org/resources/17/musan.tar.gz",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "attribution": "MUSAN corpus by David Snyder, Guoguo Chen and Daniel Povey.",
+      "local_path": "musan",
+      "transforms_allowed": true,
+      "validation_roles": ["noise", "music", "speech", "vad-negative", "noise-suppression"],
+      "recommended_materialization": ["noise", "music"],
+      "notes": "Use noise/music as negative and robustness stress sources."
+    },
+    {
+      "id": "openslr-slr31",
+      "source": "https://www.openslr.org/31/",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "attribution": "Mini LibriSpeech (OpenSLR SLR31), derived from LibriSpeech.",
+      "local_path": "LibriSpeechMini",
+      "transforms_allowed": true,
+      "validation_roles": ["clean-speech", "regression-clean-reference"],
+      "recommended_materialization": ["dev-clean-2"],
+      "notes": "Small CC-BY clean speech source for deterministic measured-RIR combinations."
+    },
+    {
+      "id": "ami",
+      "source": "https://groups.inf.ed.ac.uk/ami/download/",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "attribution": "AMI Meeting Corpus.",
+      "local_path": "AMI",
+      "transforms_allowed": true,
+      "validation_roles": ["meeting", "farfield", "overlap", "multispeaker", "microphone-array"],
+      "recommended_materialization": ["microphone-array-audio", "manual-annotations"],
+      "notes": "Signals/transcriptions and released annotations are CC BY 4.0."
+    },
+    {
+      "id": "icsi",
+      "source": "https://groups.inf.ed.ac.uk/ami/icsi/download/",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "attribution": "ICSI Meeting Corpus.",
+      "local_path": "ICSI",
+      "transforms_allowed": true,
+      "validation_roles": ["meeting", "overlap", "multispeaker", "spontaneous-speech"],
+      "recommended_materialization": ["audio", "core-annotations"],
+      "notes": "Use for spontaneous meeting stress and overlap robustness."
+    },
+    {
+      "id": "aishell4",
+      "source": "https://www.openslr.org/111/",
+      "license": "CC-BY-SA-4.0",
+      "usage_class": "conditional",
+      "attribution": "AISHELL-4 Mandarin multi-channel meeting corpus.",
+      "local_path": "AISHELL4",
+      "transforms_allowed": true,
+      "validation_roles": ["mandarin", "meeting", "8-channel", "overlap", "speaker-activity"],
+      "recommended_materialization": ["test"],
+      "notes": "Share-alike obligations require separate legal/release handling; research profile only."
+    },
+    {
+      "id": "fsd50k",
+      "source": "https://zenodo.org/records/4060432",
+      "license": "Mixed per-clip CC0/CC-BY/CC-BY-NC/CC-Sampling+; dataset curation CC-BY",
+      "usage_class": "conditional",
+      "attribution": "FSD50K by Eduardo Fonseca et al.; preserve per-clip attribution metadata.",
+      "local_path": "FSD50K",
+      "transforms_allowed": true,
+      "validation_roles": ["environmental-sound", "vad-negative", "domestic-noise", "hard-negative"],
+      "recommended_materialization": ["eval_audio", "ground_truth", "metadata"],
+      "notes": "Automation must select only CC0/CC-BY clips and non-speech labels; commercial use note requires separate review."
+    },
+    {
+      "id": "wham",
+      "source": "https://wham.whisper.ai/",
+      "license": "CC-BY-NC-4.0",
+      "usage_class": "research-only",
+      "attribution": "WHAM!/WHAMR! by Wichern et al. and Maciejewski et al.",
+      "local_path": "WHAM",
+      "transforms_allowed": true,
+      "validation_roles": ["noise", "reverberation", "speech-separation-stress"],
+      "recommended_materialization": ["test"],
+      "notes": "NonCommercial; never allowed in commercial validation or shipping evidence."
+    },
+    {
+      "id": "ace-challenge",
+      "source": "https://www.imperial.ac.uk/speech-audio-processing/projects/ace-challenge/",
+      "license": "CC-BY-ND-4.0",
+      "usage_class": "catalog-only",
+      "attribution": "ACE Challenge corpus, Imperial College London.",
+      "local_path": "ACE",
+      "transforms_allowed": false,
+      "validation_roles": ["room-acoustics", "rir", "t60", "drr"],
+      "recommended_materialization": [],
+      "notes": "NoDerivatives: catalogued for reference only; not transformed into audio-pipeline validation cases."
+    }
+  ]
+}

@@ -1,0 +1,469 @@
+name: Lab User Mode Closure One-Time
+
+on:
+  push:
+    branches: [feat/lab-user-mode-v2.2.1]
+    paths: [.github/workflows/lab-user-mode-close-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/lab-user-mode-v2.2.1
+          fetch-depth: 0
+      - name: Implement ordinary-user first laboratory mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p lab/ansible/group_vars
+          cat > lab/ansible/group_vars/all.yml <<'EOF'
+          ---
+          # Default mode is deliberately privilege-free. Set true explicitly for
+          # dedicated /opt,/var,/etc service-account installations.
+          lab_system_mode: false
+          lab_user_start_runner: true
+          EOF
+          cat > lab/ansible/site.yml <<'EOF'
+          ---
+          - name: Provision audio-validation laboratory runner
+            hosts: audio_validation
+            roles:
+              - common
+              - audio_validation
+              - github_runner
+
+          - name: Provision audio-target laboratory controller
+            hosts: audio_target
+            roles:
+              - common
+              - audio_target
+              - github_runner
+          EOF
+          cat > lab/ansible/inventory.example.yml <<'EOF'
+          all:
+            vars:
+              audio_pipeline_repo_url: "https://github.com/jiying2007/audio-pipeline"
+              github_runner_version: "2.336.0"
+              github_runner_arch: "x64"
+              github_runner_sha256: "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d"
+              # Default is ordinary-user mode: no sudo/become and no /opt,/var,/etc writes.
+              lab_system_mode: false
+            children:
+              audio_validation:
+                hosts:
+                  validation01:
+                    ansible_host: 192.0.2.10
+                    ansible_user: ubuntu
+                    github_runner_name: audio-validation-01
+                    github_runner_labels: "audio-validation"
+              audio_target:
+                hosts:
+                  target01:
+                    ansible_host: 192.0.2.20
+                    ansible_user: ubuntu
+                    github_runner_name: audio-target-ssc305-01
+                    github_runner_labels: "audio-target"
+                    audio_target_board_manifest_src: ""
+          # Dedicated system mode is opt-in per host/group:
+          # lab_system_mode: true
+          # lab_service_user: audio-ci   # or audio-hil
+          # validation_data_root: /opt/audio-validation-extended
+          EOF
+          cat > lab/ansible/roles/common/tasks/main.yml <<'EOF'
+          ---
+          - name: Require a supported Debian-family laboratory host
+            ansible.builtin.assert:
+              that:
+                - ansible_os_family == 'Debian'
+                - ansible_architecture in ['x86_64', 'amd64']
+                - not (lab_system_mode | bool) or lab_service_user is defined
+              fail_msg: "Reference lab automation supports x86_64 Debian/Ubuntu; system mode also requires lab_service_user."
+
+          - name: Resolve privilege-neutral laboratory identity
+            ansible.builtin.set_fact:
+              lab_effective_user: "{{ lab_service_user if (lab_system_mode | bool) else ansible_user_id }}"
+              lab_effective_home: "{{ ('/home/' ~ lab_service_user) if (lab_system_mode | bool) else ansible_env.HOME }}"
+
+          - name: Resolve laboratory paths
+            ansible.builtin.set_fact:
+              lab_root: "{{ '/opt/audio-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/share/audio-pipeline-lab') }}"
+              lab_cache_root: "{{ '/var/cache/audio-pipeline-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.cache/audio-pipeline-lab') }}"
+              lab_state_root: "{{ '/var/lib/audio-pipeline-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/state/audio-pipeline-lab') }}"
+              lab_log_root: "{{ '/var/log/audio-pipeline-lab' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/state/audio-pipeline-lab/log') }}"
+              lab_validation_data_root: "{{ validation_data_root | default('/opt/audio-validation-extended' if (lab_system_mode | bool) else (lab_effective_home ~ '/audio-validation-extended')) }}"
+              lab_audio_target_config_root: "{{ '/etc/audio-pipeline' if (lab_system_mode | bool) else (lab_effective_home ~ '/.config/audio-pipeline') }}"
+              lab_audio_target_fixture_root: "{{ '/opt/audio-pipeline/fixtures' if (lab_system_mode | bool) else (lab_effective_home ~ '/.local/share/audio-pipeline-lab/fixtures') }}"
+
+          - name: Install common laboratory packages in dedicated system mode
+            become: true
+            ansible.builtin.apt:
+              name: [build-essential, ca-certificates, cmake, curl, git, git-lfs, jq, python3, python3-pip, python3-venv, rsync, tar, unzip]
+              state: present
+              update_cache: true
+              cache_valid_time: 3600
+            when: lab_system_mode | bool
+
+          - name: Validate ordinary-user prerequisites without sudo
+            ansible.builtin.shell: |
+              set -eu
+              for cmd in cc cmake curl git git-lfs jq python3 rsync tar unzip; do
+                command -v "$cmd" >/dev/null || { echo "missing ordinary-user prerequisite: $cmd" >&2; exit 1; }
+              done
+            args:
+              executable: /bin/sh
+            changed_when: false
+            when: not (lab_system_mode | bool)
+
+          - name: Create isolated laboratory service account in system mode
+            become: true
+            ansible.builtin.user:
+              name: "{{ lab_service_user }}"
+              shell: /bin/bash
+              create_home: true
+              system: false
+            when: lab_system_mode | bool
+
+          - name: Create common laboratory directories
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.file:
+              path: "{{ item }}"
+              state: directory
+              owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+              group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
+              mode: '0750'
+            loop:
+              - "{{ lab_root }}"
+              - "{{ lab_cache_root }}"
+              - "{{ lab_state_root }}"
+              - "{{ lab_log_root }}"
+
+          - name: Initialize Git LFS for system mode
+            become: true
+            ansible.builtin.command: git lfs install --system
+            changed_when: false
+            when: lab_system_mode | bool
+
+          - name: Initialize Git LFS for ordinary-user mode
+            ansible.builtin.command: git lfs install --skip-repo
+            changed_when: false
+            when: not (lab_system_mode | bool)
+          EOF
+          cat > lab/ansible/roles/audio_validation/tasks/main.yml <<'EOF'
+          ---
+          - name: Install audio-validation packages in dedicated system mode
+            become: true
+            ansible.builtin.apt:
+              name: [aria2, ffmpeg, p7zip-full]
+              state: present
+            when: lab_system_mode | bool
+
+          - name: Validate ordinary-user validation tools
+            ansible.builtin.shell: |
+              set -eu
+              command -v ffmpeg >/dev/null
+              command -v 7z >/dev/null
+              command -v aria2c >/dev/null || command -v curl >/dev/null
+            args:
+              executable: /bin/sh
+            changed_when: false
+            when: not (lab_system_mode | bool)
+
+          - name: Create validation data/cache directories
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.file:
+              path: "{{ item }}"
+              state: directory
+              owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+              group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
+              mode: '0750'
+            loop:
+              - "{{ lab_validation_data_root }}"
+              - "{{ lab_cache_root }}/datasets"
+              - "{{ lab_state_root }}/acquisition"
+
+          - name: Create validation Python virtual environment
+            become: "{{ lab_system_mode | bool }}"
+            become_user: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+            ansible.builtin.command:
+              argv: [python3, -m, venv, "{{ lab_root }}/venv"]
+              creates: "{{ lab_root }}/venv/bin/python"
+
+          - name: Copy pinned validation Python requirements
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.copy:
+              src: "{{ playbook_dir }}/../requirements-validation.txt"
+              dest: "{{ lab_root }}/requirements-validation.txt"
+              owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+              group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
+              mode: '0644'
+
+          - name: Install pinned validation Python requirements
+            become: "{{ lab_system_mode | bool }}"
+            become_user: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+            ansible.builtin.pip:
+              requirements: "{{ lab_root }}/requirements-validation.txt"
+              virtualenv: "{{ lab_root }}/venv"
+          EOF
+          cat > lab/ansible/roles/audio_target/tasks/main.yml <<'EOF'
+          ---
+          - name: Install audio-target controller packages in dedicated system mode
+            become: true
+            ansible.builtin.apt:
+              name: [alsa-utils, openssh-client, usbutils]
+              state: present
+            when: lab_system_mode | bool
+
+          - name: Validate ordinary-user target controller tools
+            ansible.builtin.shell: |
+              set -eu
+              for cmd in arecord aplay ssh lsusb; do command -v "$cmd" >/dev/null || exit 1; done
+            args:
+              executable: /bin/sh
+            changed_when: false
+            when: not (lab_system_mode | bool)
+
+          - name: Add HIL service account to hardware access groups in system mode
+            become: true
+            ansible.builtin.user:
+              name: "{{ lab_service_user }}"
+              groups: audio,dialout
+              append: true
+            when: lab_system_mode | bool
+
+          - name: Create board/fixture/evidence directories
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.file:
+              path: "{{ item }}"
+              state: directory
+              owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+              group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
+              mode: '0750'
+            loop:
+              - "{{ lab_audio_target_config_root }}"
+              - "{{ lab_audio_target_fixture_root }}"
+              - "{{ lab_state_root }}/hil"
+              - "{{ lab_log_root }}/hil"
+
+          - name: Install reviewed board manifest when supplied
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.copy:
+              src: "{{ audio_target_board_manifest_src }}"
+              dest: "{{ lab_audio_target_config_root }}/board.json"
+              owner: "{{ 'root' if (lab_system_mode | bool) else omit }}"
+              group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
+              mode: '0640'
+            when: audio_target_board_manifest_src | default('') | length > 0
+
+          - name: Report explicit board-manifest requirement
+            ansible.builtin.debug:
+              msg: "No board manifest installed. Put a reviewed product manifest at {{ lab_audio_target_config_root }}/board.json before readiness/HIL."
+            when: audio_target_board_manifest_src | default('') | length == 0
+          EOF
+          cat > lab/ansible/roles/github_runner/tasks/main.yml <<'EOF'
+          ---
+          - name: Validate pinned GitHub Actions runner inputs
+            ansible.builtin.assert:
+              that:
+                - audio_pipeline_repo_url is match('^https://github.com/[^/]+/[^/]+$')
+                - github_runner_version is match('^[0-9]+\\.[0-9]+\\.[0-9]+$')
+                - github_runner_sha256 is match('^[0-9a-f]{64}$')
+                - github_runner_registration_token is defined
+                - github_runner_registration_token | length > 10
+                - github_runner_name is defined
+                - github_runner_labels is defined
+              fail_msg: "Pass a short-lived registration token via --extra-vars; never store it in inventory."
+            no_log: true
+
+          - name: Set runner paths
+            ansible.builtin.set_fact:
+              github_runner_dir: "{{ lab_root }}/runners/{{ github_runner_name }}"
+              github_runner_archive: "{{ lab_cache_root }}/runner/actions-runner-linux-{{ github_runner_arch }}-{{ github_runner_version }}.tar.gz"
+              github_runner_service: "actions.runner.{{ audio_pipeline_repo_url | regex_replace('^https://github.com/', '') | replace('/', '-') }}.{{ github_runner_name }}.service"
+              github_runner_user_unit: "audio-pipeline-runner-{{ github_runner_name }}.service"
+
+          - name: Create runner/cache directories
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.file:
+              path: "{{ item }}"
+              state: directory
+              owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+              group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
+              mode: '0750'
+            loop:
+              - "{{ github_runner_dir }}"
+              - "{{ lab_cache_root }}/runner"
+
+          - name: Download pinned GitHub Actions runner
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.get_url:
+              url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-{{ github_runner_arch }}-{{ github_runner_version }}.tar.gz"
+              dest: "{{ github_runner_archive }}"
+              checksum: "sha256:{{ github_runner_sha256 }}"
+              mode: '0644'
+
+          - name: Check whether runner is already configured
+            ansible.builtin.stat:
+              path: "{{ github_runner_dir }}/.runner"
+            register: runner_configuration
+
+          - name: Extract pinned runner distribution
+            become: "{{ lab_system_mode | bool }}"
+            ansible.builtin.unarchive:
+              src: "{{ github_runner_archive }}"
+              dest: "{{ github_runner_dir }}"
+              remote_src: true
+              owner: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+              group: "{{ lab_service_user if (lab_system_mode | bool) else omit }}"
+            when: not runner_configuration.stat.exists
+
+          - name: Configure repository-scoped self-hosted runner
+            become: "{{ lab_system_mode | bool }}"
+            become_user: "{{ lab_effective_user if (lab_system_mode | bool) else omit }}"
+            ansible.builtin.command:
+              argv: [./config.sh, --url, "{{ audio_pipeline_repo_url }}", --token, "{{ github_runner_registration_token }}", --name, "{{ github_runner_name }}", --labels, "{{ github_runner_labels }}", --work, _work, --unattended, --replace]
+              chdir: "{{ github_runner_dir }}"
+            when: not runner_configuration.stat.exists
+            no_log: true
+
+          - name: Check runner system service in dedicated system mode
+            become: true
+            ansible.builtin.stat:
+              path: "/etc/systemd/system/{{ github_runner_service }}"
+            register: runner_service_file
+            when: lab_system_mode | bool
+
+          - name: Install official runner system service
+            become: true
+            ansible.builtin.command:
+              argv: ["./svc.sh", install, "{{ lab_service_user }}"]
+              chdir: "{{ github_runner_dir }}"
+            when: (lab_system_mode | bool) and not runner_service_file.stat.exists
+
+          - name: Enable and start runner system service
+            become: true
+            ansible.builtin.systemd:
+              name: "{{ github_runner_service }}"
+              enabled: true
+              state: started
+              daemon_reload: true
+            when: lab_system_mode | bool
+
+          - name: Create ordinary-user systemd directory
+            ansible.builtin.file:
+              path: "{{ lab_effective_home }}/.config/systemd/user"
+              state: directory
+              mode: '0750'
+            when: not (lab_system_mode | bool)
+
+          - name: Install ordinary-user runner unit
+            ansible.builtin.copy:
+              dest: "{{ lab_effective_home }}/.config/systemd/user/{{ github_runner_user_unit }}"
+              mode: '0644'
+              content: |
+                [Unit]
+                Description=Audio Pipeline GitHub Runner {{ github_runner_name }}
+                After=network-online.target
+                Wants=network-online.target
+                [Service]
+                Type=simple
+                WorkingDirectory={{ github_runner_dir }}
+                ExecStart={{ github_runner_dir }}/run.sh
+                Restart=always
+                RestartSec=5
+                [Install]
+                WantedBy=default.target
+            when: not (lab_system_mode | bool)
+
+          - name: Enable and start ordinary-user runner unit
+            ansible.builtin.command: "systemctl --user enable --now {{ github_runner_user_unit }}"
+            environment:
+              XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+              DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_user_uid }}/bus"
+            changed_when: false
+            when: (not (lab_system_mode | bool)) and (lab_user_start_runner | bool)
+
+          - name: Report user-service persistence requirement
+            ansible.builtin.debug:
+              msg: "Ordinary-user runner uses systemd --user. For reboot/no-login persistence, ask an administrator once to run: loginctl enable-linger {{ ansible_user_id }}. No /opt or root permission is otherwise required."
+            when: not (lab_system_mode | bool)
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('lab/scripts/labctl.py'); t=p.read_text()
+          t=t.replace('DEFAULT_DATA_ROOT = Path("/opt/audio-validation-extended")\nDEFAULT_CACHE_ROOT = Path("/var/cache/audio-pipeline-lab/datasets")\nDEFAULT_STATE_ROOT = Path("/var/lib/audio-pipeline-lab")', '''USER_HOME = Path.home()\nXDG_DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", USER_HOME / ".local/share")).expanduser()\nXDG_CACHE_HOME = Path(os.environ.get("XDG_CACHE_HOME", USER_HOME / ".cache")).expanduser()\nXDG_STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", USER_HOME / ".local/state")).expanduser()\nXDG_CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", USER_HOME / ".config")).expanduser()\nDEFAULT_DATA_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_DATA_ROOT", USER_HOME / "audio-validation-extended")).expanduser()\nDEFAULT_CACHE_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_CACHE_ROOT", XDG_CACHE_HOME / "audio-pipeline-lab/datasets")).expanduser()\nDEFAULT_STATE_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_STATE_ROOT", XDG_STATE_HOME / "audio-pipeline-lab")).expanduser()\nDEFAULT_BOARD = Path(os.environ.get("AUDIO_PIPELINE_LAB_BOARD", XDG_CONFIG_HOME / "audio-pipeline/board.json")).expanduser()''')
+          t=t.replace('    require_command("aria2c")\n    directory = cache_root / item["id"]', '    downloader = "aria2c" if shutil.which("aria2c") else require_command("curl")\n    directory = cache_root / item["id"]')
+          old='''    if not archive.exists():\n        run([\n            "aria2c", "--continue=true", "--max-connection-per-server=4", "--split=4",\n            "--min-split-size=16M", "--file-allocation=none", "--dir", str(directory),\n            "--out", archive.name, item["url"],\n        ])'''
+          new='''    if not archive.exists():\n        if downloader == "aria2c":\n            run([\n                "aria2c", "--continue=true", "--max-connection-per-server=4", "--split=4",\n                "--min-split-size=16M", "--file-allocation=none", "--dir", str(directory),\n                "--out", archive.name, item["url"],\n            ])\n        else:\n            run(["curl", "--fail", "--location", "--retry", "5", "--continue-at", "-",\n                 "--output", str(archive), item["url"]])'''
+          if old not in t: raise SystemExit('download block not found')
+          t=t.replace(old,new,1)
+          t=t.replace('raise SystemExit("huggingface_hub is required; run /opt/audio-lab/venv/bin/python or install lab/requirements-validation.txt")', 'raise SystemExit("huggingface_hub is required; use the Ansible-created user venv or install lab/requirements-validation.txt")')
+          t=t.replace('target.add_argument("--board", type=Path, default=Path("/etc/audio-pipeline/board.json"))', 'target.add_argument("--board", type=Path, default=DEFAULT_BOARD)')
+          t=t.replace('target.add_argument("--output", type=Path, default=Path("/tmp/audio-target-readiness.json"))', 'target.add_argument("--output", type=Path, default=DEFAULT_STATE_ROOT / "readiness/audio-target/runner-readiness.json")')
+          t=t.replace('dh.add_argument("--board", type=Path, default=Path("/etc/audio-pipeline/board.json"))', 'dh.add_argument("--board", type=Path, default=DEFAULT_BOARD)')
+          marker='''    assert {by_id[item]["provider"] for item in catalog["profiles"]["commercial-core"]} <= {"http_archive", "huggingface_snapshot"}\n'''
+          inject=marker+'''    assert str(DEFAULT_DATA_ROOT).startswith(str(USER_HOME))\n    assert str(DEFAULT_CACHE_ROOT).startswith(str(USER_HOME))\n    assert str(DEFAULT_STATE_ROOT).startswith(str(USER_HOME))\n    assert str(DEFAULT_BOARD).startswith(str(USER_HOME))\n    site = (REPO_ROOT / "lab/ansible/site.yml").read_text(encoding="utf-8")\n    inventory = (REPO_ROOT / "lab/ansible/inventory.example.yml").read_text(encoding="utf-8")\n    runner_role = (REPO_ROOT / "lab/ansible/roles/github_runner/tasks/main.yml").read_text(encoding="utf-8")\n    assert "lab_system_mode: false" in inventory\n    assert "become: true\\n  roles:" not in site\n    assert "systemctl --user" in runner_role and "loginctl enable-linger" in runner_role\n'''
+          if marker not in t: raise SystemExit('self-test marker missing')
+          t=t.replace(marker, inject, 1)
+          p.write_text(t)
+
+          p=Path('CMakeLists.txt'); t=p.read_text(); t=t.replace('project(audio_pipeline VERSION 2.2.0 LANGUAGES C)','project(audio_pipeline VERSION 2.2.1 LANGUAGES C)',1); p.write_text(t)
+          p=Path('CHANGELOG.md'); t=p.read_text()
+          p.write_text('''# 2.2.1\n\n- Make ordinary unprivileged Ubuntu accounts the default laboratory deployment mode; no `/opt`, `/var`, `/etc`, service-account creation or sudo is required.\n- Resolve runner, cache, state, validation data and board-manifest defaults under HOME/XDG paths while retaining explicit `lab_system_mode=true` for dedicated system installations.\n- Install repository runners as `systemd --user` services in ordinary-user mode and document optional administrator-enabled linger only for reboot/no-login persistence.\n- Let `labctl.py` default to HOME/XDG storage and fall back from `aria2c` to `curl` for resumable archive acquisition.\n- Keep dataset hashes, readiness semantics, Extended Real authority and HIL/Product Certification boundaries unchanged.\n\n'''+t)
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('lab/README.md'); t=p.read_text()
+          start=t.index('## 1. Provision the hosts')
+          end=t.index('## 2. Materialize commercial-core')
+          replacement='''## 1. Provision the hosts\n\nThe **default is ordinary-user mode**. It requires no sudo and writes only below the SSH user's HOME:\n\n```text\n$HOME/.local/share/audio-pipeline-lab/   runner + venv + fixtures\n$HOME/.cache/audio-pipeline-lab/         downloaded archives\n$HOME/.local/state/audio-pipeline-lab/   acquisition/readiness/HIL state\n$HOME/.config/audio-pipeline/board.json  audio-target board manifest\n$HOME/audio-validation-extended/         real validation datasets\n```\n\nThe OS still needs the required native tools (`cc`, CMake, Git/Git-LFS, ffmpeg, 7z, ALSA tools as applicable). In ordinary-user mode Ansible verifies them but never attempts apt/sudo. Ask an administrator to install missing OS packages once if needed.\n\nCopy the inventory, set the real SSH hosts/users, obtain a short-lived repository runner token, then run without `--become`:\n\n```bash\ncd lab/ansible\ncp inventory.example.yml inventory.yml\nansible-playbook site.yml --limit audio_validation \\\n  --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'\nansible-playbook site.yml --limit audio_target \\\n  --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'\n```\n\nThe ordinary-user runner is installed as a `systemd --user` service. For unattended reboot/no-login persistence only, an administrator may run once:\n\n```bash\nsudo loginctl enable-linger <ubuntu-user>\n```\n\nThis linger step is optional for interactive/login-session use; it is not permission to write `/opt`.\n\nFor a dedicated service-account deployment, explicitly set `lab_system_mode: true`, `lab_service_user`, and any desired `/opt` data paths in inventory. System mode retains apt/service-account/systemd-system behavior.\n\nThe runner distribution remains SHA-256 pinned and registration tokens remain runtime-only `no_log` inputs.\n\n'''
+          t=t[:start]+replacement+t[end:]
+          t=t.replace('Run data commands as the `audio-ci` account with the validation virtual environment:', 'In default ordinary-user mode, use the Ansible-created user virtual environment:')
+          t=t.replace('''sudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py self-test\nsudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py validate-catalog\nsudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py plan --profile commercial-core\nsudo -u audio-ci /opt/audio-lab/venv/bin/python lab/scripts/labctl.py materialize \\\n  --profile commercial-core \\\n  --data-root /opt/audio-validation-extended''','''$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py self-test\n$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py validate-catalog\n$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py plan --profile commercial-core\n$HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py materialize --profile commercial-core''')
+          t=t.replace('/var/lib/audio-pipeline-lab/acquisition', '$HOME/.local/state/audio-pipeline-lab/acquisition')
+          t=t.replace('/var/cache/audio-pipeline-lab/datasets', '$HOME/.cache/audio-pipeline-lab/datasets')
+          t=t.replace('/opt/audio-validation-extended', '$HOME/audio-validation-extended')
+          t=t.replace('/var/lib/audio-pipeline-lab/readiness/commercial-core/', '$HOME/.local/state/audio-pipeline-lab/readiness/commercial-core/')
+          t=t.replace('/etc/audio-pipeline/board.json', '$HOME/.config/audio-pipeline/board.json')
+          t=t.replace('/opt/audio-pipeline/fixtures/farend-s16le.pcm', '$HOME/.local/share/audio-pipeline-lab/fixtures/farend-s16le.pcm')
+          t=t.replace('sudo -u audio-hil python3 lab/scripts/labctl.py target-readiness', 'python3 lab/scripts/labctl.py target-readiness')
+          p.write_text(t)
+          PY
+      - name: Validate ordinary-user and system-mode contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile lab/scripts/labctl.py
+          python3 lab/scripts/labctl.py self-test
+          python3 lab/scripts/labctl.py validate-catalog
+          python3 scripts/docs_consistency.py
+          ! grep -q '^  become: true$' lab/ansible/site.yml
+          grep -q 'lab_system_mode: false' lab/ansible/inventory.example.yml
+          grep -q 'systemctl --user' lab/ansible/roles/github_runner/tasks/main.yml
+          grep -q 'XDG_DATA_HOME' lab/scripts/labctl.py
+          git diff --check
+      - name: Validate both Ansible deployment modes syntactically
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --user -r lab/requirements-ansible.txt
+          export PATH="$HOME/.local/bin:$PATH"
+          cd lab/ansible
+          ansible-inventory -i inventory.example.yml --list >/tmp/lab-user-inventory.json
+          ansible-playbook -i inventory.example.yml site.yml --syntax-check
+          ansible-playbook -i inventory.example.yml site.yml --syntax-check -e lab_system_mode=true -e lab_service_user=audio-ci
+      - name: Prove SDK remains healthy
+        run: |
+          cmake -S . -B build-user-mode -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-user-mode --parallel
+          ctest --test-dir build-user-mode --output-on-failure
+      - name: Commit verified ordinary-user closure
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CMakeLists.txt CHANGELOG.md lab/
+          git diff --cached --check
+          git commit -m 'lab: make ordinary-user deployment the default'
+          git push origin HEAD:feat/lab-user-mode-v2.2.1

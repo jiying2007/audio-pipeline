@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-extended-real-plus-v1",
+  "allowed_tiers": ["validation-grade"],
+  "minimum_cases": 96,
+  "required_public_sources": ["realman", "but-reverbdb", "musan", "openslr-slr31", "voices", "ami", "icsi"],
+  "required_scenarios": ["realman-farfield", "measured-rir-ns", "measured-rir-bf", "musan-negative", "voices-farfield-stress", "ami-meeting-stress", "icsi-meeting-stress"],
+  "minimum_cases_by_scenario": {
+    "realman-farfield": 8,
+    "measured-rir-ns": 8,
+    "measured-rir-bf": 8,
+    "musan-negative": 4,
+    "voices-farfield-stress": 8,
+    "ami-meeting-stress": 8,
+    "icsi-meeting-stress": 8
+  },
+  "minimum_pass_rate_by_scenario": {
+    "realman-farfield": 0.80,
+    "measured-rir-ns": 0.90,
+    "measured-rir-bf": 0.85,
+    "musan-negative": 0.80,
+    "voices-farfield-stress": 0.95,
+    "ami-meeting-stress": 0.95,
+    "icsi-meeting-stress": 0.95
+  },
+  "required_dimension_values": {"motion": ["static", "moving"]},
+  "aggregate": {
+    "min_pass_rate": 0.90,
+    "min_p10_near_si_sdr_improvement_db": -1.5,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -25.0,
+    "max_vad_false_positive_rate": 0.40,
+    "min_vad_recall": 0.60
+  }
+}

@@ -1,0 +1,42 @@
+name: V2.1.1 Legacy Contract One-Time
+
+on:
+  push:
+    branches: [feat/v2.1.1-auto-real-closure]
+    paths: [.github/workflows/v211-legacy-contract-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/v2.1.1-auto-real-closure
+          fetch-depth: 0
+      - name: Replace obsolete release-event contract and retrigger final closure
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/check-architecture.sh')
+          text=p.read_text()
+          old='assert "release:" in auto and "schedule:" in auto'
+          new='assert "repository_dispatch:" in auto and "schedule:" in auto'
+          if old not in text:
+              raise SystemExit('obsolete automation contract not found')
+          p.write_text(text.replace(old,new,1))
+          p=Path('.github/workflows/v211-closure-final-once.yml')
+          text=p.read_text()
+          marker='# rerun after legacy automation contract migration\n'
+          if marker not in text:
+              p.write_text(text.rstrip()+"\n"+marker)
+          PY
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts/check-architecture.sh .github/workflows/v211-closure-final-once.yml
+          git commit -m 'ci: migrate extended-real automation contract'
+          git push origin HEAD:feat/v2.1.1-auto-real-closure

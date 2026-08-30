@@ -66,7 +66,7 @@ jobs:
             fi
           done
 
-          cat >/tmp/ap-lab/ansible/validation.yml <<'YAML'
+          sudo tee /tmp/ap-lab/ansible/validation.yml >/dev/null <<'YAML'
           ---
           - name: Runtime validate ordinary-user audio-validation provisioning
             hosts: localhost
@@ -78,7 +78,7 @@ jobs:
               - common
               - audio_validation
           YAML
-          cat >/tmp/ap-lab/ansible/target.yml <<'YAML'
+          sudo tee /tmp/ap-lab/ansible/target.yml >/dev/null <<'YAML'
           ---
           - name: Runtime validate ordinary-user audio-target provisioning
             hosts: localhost
@@ -90,10 +90,10 @@ jobs:
               - common
               - audio_target
           YAML
-          cat >/tmp/ap-lab/test-board.json <<'JSON'
+          sudo tee /tmp/ap-lab/test-board.json >/dev/null <<'JSON'
           {"schema_version":1,"board_id":"runtime-validation-fixture","evidence_class":"test-only"}
           JSON
-          chmod 0644 /tmp/ap-lab/ansible/validation.yml /tmp/ap-lab/ansible/target.yml /tmp/ap-lab/test-board.json
+          sudo chmod 0644 /tmp/ap-lab/ansible/validation.yml /tmp/ap-lab/ansible/target.yml /tmp/ap-lab/test-board.json
 
           sudo rm -rf \
             /opt/audio-lab \

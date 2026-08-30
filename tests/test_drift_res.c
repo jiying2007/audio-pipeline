@@ -44,7 +44,7 @@ static void test_clock_drift_and_route_jump(void) {
     int16_t history[HIST];
     int16_t out[160];
     uint32_t wp = 0u, sample_index = 0u, frame;
-    ap_metrics_t before_jump, after_jump;
+    ap_metrics_t before_jump, after_jump, after_negative_drift;
 
     memset(history, 0, sizeof(history));
     c.mic_channels = 1u;
@@ -75,6 +75,38 @@ static void test_clock_drift_and_route_jump(void) {
     assert(after_jump.aec_resets > before_jump.aec_resets);
     assert(after_jump.estimated_delay_ms >= 75u && after_jump.estimated_delay_ms <= 85u);
     assert(after_jump.erle_valid == 0u || after_jump.aec_convergence_frames < before_jump.aec_convergence_frames + 120u);
+
+    for (frame = 0u; frame < 2000u; ++frame) {
+        const uint32_t delay = 1280u - frame / 40u;
+        run_delay_frame(p, history, &wp, &sample_index, delay, out);
+    }
+    ap_pipeline_get_metrics(p, &after_negative_drift);
+    assert(after_negative_drift.reference_sample_slips > after_jump.reference_sample_slips);
+}
+
+static void test_delay_tracking_without_clock_drift_compensation(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    int16_t history[HIST];
+    int16_t out[160];
+    uint32_t wp = 0u, sample_index = 0u, frame;
+    ap_metrics_t metrics;
+
+    memset(history, 0, sizeof(history));
+    c.mic_channels = 1u;
+    c.stages = AP_STAGE_SYNC | AP_STAGE_AEC;
+    c.enable_delay_tracking = 1u;
+    c.enable_clock_drift_compensation = 0u;
+    c.initial_delay_ms = 40u;
+    c.max_delay_ms = 100u;
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+
+    for (frame = 0u; frame < 300u; ++frame)
+        run_delay_frame(p, history, &wp, &sample_index, 720u, out);
+
+    ap_pipeline_get_metrics(p, &metrics);
+    assert(metrics.estimated_delay_ms >= 41u && metrics.estimated_delay_ms <= 47u);
+    assert(metrics.reference_sample_slips == 0u);
 }
 
 static void fill_tone_frame(unsigned frame, int16_t *render, int16_t *mic,
@@ -173,6 +205,7 @@ static void test_frequency_res_and_degradation(void) {
 
 int main(void) {
     test_clock_drift_and_route_jump();
+    test_delay_tracking_without_clock_drift_compensation();
     test_periodic_path_does_not_trigger_false_route_jumps();
     test_frequency_res_and_degradation();
     puts("audio-pipeline drift/RES tests: OK");

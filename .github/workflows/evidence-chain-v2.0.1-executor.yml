@@ -37,6 +37,17 @@ jobs:
           compile(code, '<staged-evidence-migration>', 'exec')
           exec(compile(code, '<staged-evidence-migration>', 'exec'), {'__name__': '__main__'})
 
+          # Full validation uses an argv array for preflight, so bind the same
+          # exact resolved source SHA there as well as in all report invocations.
+          full_path = Path('.github/workflows/validation-grade.yml')
+          full = full_path.read_text(encoding='utf-8')
+          source_expr = "'" + chr(36) + "{{ needs.resolve.outputs.sha }}'"
+          old = '          args=(\n            --role audio-validation\n            --data-root "$DATA_ROOT" --seal "$SEAL"\n'
+          new = '          args=(\n            --role audio-validation\n            --source-revision ' + source_expr + '\n            --data-root "$DATA_ROOT" --seal "$SEAL"\n'
+          if full.count(old) != 1:
+              raise SystemExit(f'full validation preflight pattern count={full.count(old)}')
+          full_path.write_text(full.replace(old, new, 1), encoding='utf-8')
+
           path = Path('scripts/check-architecture.sh')
           lines = path.read_text(encoding='utf-8').splitlines()
           needle = "--source-revision '" + chr(36) + "{{ needs.resolve.outputs.sha }}'"

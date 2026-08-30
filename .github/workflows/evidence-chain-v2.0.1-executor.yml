@@ -37,8 +37,6 @@ jobs:
           compile(code, '<staged-evidence-migration>', 'exec')
           exec(compile(code, '<staged-evidence-migration>', 'exec'), {'__name__': '__main__'})
 
-          # Full validation uses an argv array for preflight, so bind the same
-          # exact resolved source SHA there as well as in all report invocations.
           full_path = Path('.github/workflows/validation-grade.yml')
           full = full_path.read_text(encoding='utf-8')
           source_expr = "'" + chr(36) + "{{ needs.resolve.outputs.sha }}'"
@@ -78,15 +76,30 @@ jobs:
           ctest --test-dir build-evidence-chain --output-on-failure
           git diff --check
 
-      - name: Commit closure and remove staging workflows
+      - name: Export validated workflows and commit non-workflow closure
         shell: bash
         run: |
           set -euo pipefail
-          rm .github/workflows/evidence-chain-v2.0.1-once.yml
-          rm .github/workflows/evidence-chain-v2.0.1-executor.yml
+          export_dir=evidence-workflow-export
+          rm -rf "$export_dir"
+          mkdir -p "$export_dir"
+          workflows='trusted-runner-readiness.yml validation-compact.yml validation-grade.yml hil-soak.yml product-certification.yml'
+          for name in $workflows; do
+            cp ".github/workflows/$name" "$export_dir/$name"
+          done
+
+          # GitHub's Actions token is intentionally not allowed to rewrite workflow
+          # files. Restore those five paths before this intermediate push; the
+          # validated bytes above are then promoted by the GitHub connector that
+          # has explicit workflow-write permission.
+          for name in $workflows; do
+            git checkout HEAD -- ".github/workflows/$name"
+          done
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
+          git add CMakeLists.txt CHANGELOG.md tools/runner_preflight.py tools/ap_certify.py \
+            docs/TRUSTED_RUNNERS.md scripts/check-architecture.sh "$export_dir"
           git diff --cached --check
           git commit -m 'release: v2.0.1 evidence-chain closure'
           git push origin HEAD:feat/evidence-chain-v2.0.1

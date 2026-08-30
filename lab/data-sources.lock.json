@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "catalog_id": "audio-pipeline-lab-materialization-v1",
+  "profiles": {
+    "commercial-core": ["realman", "but-reverbdb", "musan", "openslr-slr31"],
+    "commercial-plus": ["realman", "but-reverbdb", "musan", "openslr-slr31", "voices", "ami", "icsi"]
+  },
+  "datasets": [
+    {
+      "id": "realman",
+      "provider": "huggingface_snapshot",
+      "repo_id": "AISHELL/RealMAN",
+      "repo_type": "dataset",
+      "revision": "12b6f7979e4e5efad4e1004280cf7419201ce209",
+      "allow_patterns": ["val/**", "test/**", "dataset_info/**", "transcriptions.trn"],
+      "local_path": "RealMAN",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "postprocess": "extract-rar-tree",
+      "notes": "Pinned validation/test snapshot; training and *_raw trees are intentionally excluded."
+    },
+    {
+      "id": "but-reverbdb",
+      "provider": "http_archive",
+      "url": "https://merlin.fit.vutbr.cz/ReverbDB/BUT_ReverbDB_rel_19_06_RIR-Only.tgz",
+      "archive_name": "BUT_ReverbDB_rel_19_06_RIR-Only.tgz",
+      "local_path": "BUT_ReverbDB",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "integrity": {"mode": "record-first-sha256"},
+      "notes": "Official 19_06 RIR/noise/metadata release. The first TLS acquisition is SHA-256 sealed locally; later materializations must match that local acquisition seal."
+    },
+    {
+      "id": "musan",
+      "provider": "http_archive",
+      "url": "https://www.openslr.org/resources/17/musan.tar.gz",
+      "archive_name": "musan.tar.gz",
+      "local_path": "musan",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "integrity": {"mode": "md5", "value": "0c472d4fc0c5141eca47ad1ffeb2a7df"}
+    },
+    {
+      "id": "openslr-slr31",
+      "provider": "http_archive",
+      "url": "https://openslr.trmal.net/resources/31/dev-clean-2.tar.gz",
+      "archive_name": "dev-clean-2.tar.gz",
+      "local_path": "LibriSpeechMini",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "integrity": {"mode": "md5", "value": "6d7ab67ac6a1d2c993d050e16d61080d"}
+    },
+    {
+      "id": "voices",
+      "provider": "operator_import",
+      "local_path": "VOiCES",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "required_hint": "distant-16k speech/distractors"
+    },
+    {
+      "id": "ami",
+      "provider": "operator_import",
+      "local_path": "AMI",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "required_hint": "microphone-array meeting audio"
+    },
+    {
+      "id": "icsi",
+      "provider": "operator_import",
+      "local_path": "ICSI",
+      "license": "CC-BY-4.0",
+      "usage_class": "commercial-validation",
+      "required_hint": "meeting audio"
+    }
+  ]
+}

@@ -12,6 +12,7 @@ extern "C" {
 #define AP_MAX_MIC_CHANNELS 2u
 #define AP_MAX_IO_RATE_HZ 48000u
 #define AP_MAX_IO_FRAME_SAMPLES (AP_MAX_IO_RATE_HZ / 100u)
+#define AP_BUILD_INFO_API_VERSION 1u
 
 typedef enum ap_status {
     AP_OK = 0,
@@ -48,6 +49,8 @@ enum {
 };
 
 typedef struct ap_build_info {
+    uint32_t struct_size;
+    uint32_t api_version;
     uint32_t version_major;
     uint32_t version_minor;
     uint32_t version_patch;
@@ -61,18 +64,12 @@ typedef struct ap_build_info {
     uint8_t has_pipeline;
     uint8_t has_linux_runtime;
     uint8_t fast_math;
+    uint8_t bf_direction_tracking;
     const char *version;
     const char *aec_backend;
     const char *ns_estimator;
     const char *simd_backend;
     const char *resampler_mode;
-} ap_build_info_t;
-
-#define AP_BUILD_INFO_V2_API_VERSION 1u
-
-typedef struct ap_build_info_v2 {
-    uint32_t struct_size;
-    uint32_t api_version;
     const char *source_revision;
     const char *compiler_id;
     const char *compiler_version;
@@ -80,11 +77,9 @@ typedef struct ap_build_info_v2 {
     const char *build_type;
     const char *config_digest;
     uint32_t reserved[8];
-} ap_build_info_v2_t;
+} ap_build_info_t;
 
 const ap_build_info_t *ap_build_info(void);
-/* Additive exact-build identity. The original ap_build_info_t layout remains frozen. */
-const ap_build_info_v2_t *ap_build_info_v2_get(void);
 
 #ifdef __cplusplus
 }

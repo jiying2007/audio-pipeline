@@ -3,6 +3,8 @@
 
 const ap_build_info_t *ap_build_info(void) {
     static const ap_build_info_t info = {
+        sizeof(ap_build_info_t),
+        AP_BUILD_INFO_API_VERSION,
         AP_VERSION_MAJOR, AP_VERSION_MINOR, AP_VERSION_PATCH,
         (AP_HAVE_MODULE_RESAMPLER ? AP_MODULE_CAP_RESAMPLER : 0u) |
         (AP_HAVE_MODULE_HPF ? AP_MODULE_CAP_HPF : 0u) |
@@ -18,17 +20,10 @@ const ap_build_info_t *ap_build_info(void) {
         AP_BUILD_MAX_MIC_CHANNELS, AP_BUILD_MAX_DELAY_MS,
         AP_BUILD_MAX_AEC_TAIL_MS, AP_BUILD_RUNTIME_QUEUE_DEPTH,
         AP_HAVE_PIPELINE, AP_HAVE_LINUX_RUNTIME, AP_BUILD_FAST_MATH,
+        AP_BUILD_BF_DIRECTION_TRACKING,
         AP_VERSION_STRING, AP_BUILD_AEC_BACKEND_NAME,
         AP_BUILD_NS_ESTIMATOR_NAME, AP_BUILD_SIMD_BACKEND_NAME,
-        AP_BUILD_RESAMPLER_MODE_NAME
-    };
-    return &info;
-}
-
-const ap_build_info_v2_t *ap_build_info_v2_get(void) {
-    static const ap_build_info_v2_t info = {
-        sizeof(ap_build_info_v2_t),
-        AP_BUILD_INFO_V2_API_VERSION,
+        AP_BUILD_RESAMPLER_MODE_NAME,
         AP_BUILD_SOURCE_REVISION,
         AP_BUILD_COMPILER_ID,
         AP_BUILD_COMPILER_VERSION,

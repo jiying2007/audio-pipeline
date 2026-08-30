@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 1.6.1 LANGUAGES C)
+project(audio_pipeline VERSION 2.0.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -102,7 +102,11 @@ if(AP_ENABLE_FAST_MATH)
 else()
     set(AP_HAVE_FAST_MATH 0)
 endif()
-
+if(AP_HAVE_BF AND AP_ENABLE_BF_DIRECTION_TRACKING)
+    set(AP_HAVE_BF_DIRECTION_TRACKING 1)
+else()
+    set(AP_HAVE_BF_DIRECTION_TRACKING 0)
+endif()
 
 set(AP_AEC_BACKEND "MDF" CACHE STRING "Compile-time AEC backend: MDF or NLMS")
 set_property(CACHE AP_AEC_BACKEND PROPERTY STRINGS MDF NLMS)
@@ -172,7 +176,7 @@ string(CONCAT _AP_CONFIG_IDENTITY
     "pipeline=${AP_BUILD_PIPELINE}\n"
     "linux_runtime=${AP_ENABLE_LINUX_RUNTIME}\n"
     "fast_math=${AP_ENABLE_FAST_MATH}\n"
-    "bf_direction_tracking=${AP_ENABLE_BF_DIRECTION_TRACKING}\n"
+    "bf_direction_tracking=${AP_HAVE_BF_DIRECTION_TRACKING}\n"
     "max_io_rate=${AP_BUILD_MAX_IO_RATE_HZ}\n"
     "max_internal_rate=${AP_BUILD_MAX_INTERNAL_RATE_HZ}\n"
     "max_mics=${AP_BUILD_MAX_MIC_CHANNELS}\n"
@@ -290,7 +294,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/audio_pipeline_build.h.in
 set(AP_STAGE_DEFINES
     AP_BUILD_STAGE_HPF=${AP_HAVE_HPF}
     AP_BUILD_STAGE_BF=${AP_HAVE_BF}
-    AP_BUILD_BF_DIRECTION_TRACKING=$<BOOL:${AP_ENABLE_BF_DIRECTION_TRACKING}>
+    AP_BUILD_BF_DIRECTION_TRACKING=${AP_HAVE_BF_DIRECTION_TRACKING}
     AP_BUILD_STAGE_SYNC=${AP_HAVE_SYNC}
     AP_BUILD_ACTIVITY=${AP_HAVE_ACTIVITY}
     AP_BUILD_STAGE_AEC=${AP_HAVE_AEC}
@@ -388,6 +392,9 @@ if(AP_BUILD_TESTS)
         add_executable(ap_contract_tests tests/test_contracts.c)
         target_link_libraries(ap_contract_tests PRIVATE audio_pipeline)
         add_test(NAME ap_contract_tests COMMAND ap_contract_tests)
+        add_executable(ap_pipeline_control_tests tests/test_pipeline_controls.c)
+        target_link_libraries(ap_pipeline_control_tests PRIVATE audio_pipeline)
+        add_test(NAME ap_pipeline_control_tests COMMAND ap_pipeline_control_tests)
         if(AP_HAVE_BF AND AP_HAVE_NS AND AP_HAVE_VAD)
             add_executable(ap_metamorphic_tests tests/test_metamorphic.c)
             target_link_libraries(ap_metamorphic_tests PRIVATE audio_pipeline)
@@ -432,6 +439,9 @@ if(AP_BUILD_TESTS)
         add_executable(ap_runtime_tests tests/test_runtime.c)
         target_link_libraries(ap_runtime_tests PRIVATE audio_pipeline_runtime)
         add_test(NAME ap_runtime_tests COMMAND ap_runtime_tests)
+        add_executable(ap_runtime_extended_tests tests/test_runtime_extended.c)
+        target_link_libraries(ap_runtime_extended_tests PRIVATE audio_pipeline_runtime)
+        add_test(NAME ap_runtime_extended_tests COMMAND ap_runtime_extended_tests)
         add_executable(ap_runtime_state_size tests/print_runtime_state.c)
         target_link_libraries(ap_runtime_state_size PRIVATE audio_pipeline_runtime)
     endif()

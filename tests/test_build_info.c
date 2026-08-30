@@ -16,9 +16,9 @@ static int is_sha256_hex(const char *text) {
 
 int main(void) {
     const ap_build_info_t *info = ap_build_info();
-    const ap_build_info_v2_t *v2 = ap_build_info_v2_get();
     assert(info != NULL);
-    assert(v2 != NULL);
+    assert(info->struct_size == sizeof(*info));
+    assert(info->api_version == AP_BUILD_INFO_API_VERSION);
     assert(info->version_major == AP_VERSION_MAJOR);
     assert(info->version_minor == AP_VERSION_MINOR);
     assert(info->version_patch == AP_VERSION_PATCH);
@@ -32,6 +32,7 @@ int main(void) {
     assert(info->has_pipeline == AP_HAVE_PIPELINE);
     assert(info->has_linux_runtime == AP_HAVE_LINUX_RUNTIME);
     assert(info->fast_math == AP_BUILD_FAST_MATH);
+    assert(info->bf_direction_tracking == AP_BUILD_BF_DIRECTION_TRACKING);
 #if AP_HAVE_MODULE_AEC
     assert(info->aec_backend != NULL && info->aec_backend[0] != '\0');
 #endif
@@ -42,16 +43,14 @@ int main(void) {
 #if AP_HAVE_MODULE_RESAMPLER
     assert(info->resampler_mode != NULL && info->resampler_mode[0] != '\0');
 #endif
-    assert(v2->struct_size == sizeof(*v2));
-    assert(v2->api_version == AP_BUILD_INFO_V2_API_VERSION);
-    assert(v2->source_revision != NULL && v2->source_revision[0] != '\0');
-    assert(v2->compiler_id != NULL && v2->compiler_id[0] != '\0');
-    assert(v2->compiler_version != NULL && v2->compiler_version[0] != '\0');
-    assert(v2->target_triple != NULL && v2->target_triple[0] != '\0');
-    assert(v2->build_type != NULL && v2->build_type[0] != '\0');
-    assert(is_sha256_hex(v2->config_digest));
-    assert(strcmp(v2->source_revision, AP_BUILD_SOURCE_REVISION) == 0);
-    assert(strcmp(v2->config_digest, AP_BUILD_CONFIG_DIGEST) == 0);
-    puts("audio-pipeline build info contract: OK");
+    assert(info->source_revision != NULL && info->source_revision[0] != '\0');
+    assert(info->compiler_id != NULL && info->compiler_id[0] != '\0');
+    assert(info->compiler_version != NULL && info->compiler_version[0] != '\0');
+    assert(info->target_triple != NULL && info->target_triple[0] != '\0');
+    assert(info->build_type != NULL && info->build_type[0] != '\0');
+    assert(is_sha256_hex(info->config_digest));
+    assert(strcmp(info->source_revision, AP_BUILD_SOURCE_REVISION) == 0);
+    assert(strcmp(info->config_digest, AP_BUILD_CONFIG_DIGEST) == 0);
+    puts("audio-pipeline v2 build info contract: OK");
     return 0;
 }

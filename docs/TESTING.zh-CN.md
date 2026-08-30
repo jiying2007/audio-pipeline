@@ -4,85 +4,88 @@
 
 ## Fast Gate 与 Full Gate
 
-PR 先经过强制 Fast Gate，再展开高成本矩阵。Fast Gate 执行架构边界检查、Python assurance/validation 工具自测、Clang strict build、unit/contract/property tests，并在公开/runtime ABI 被影响时执行 additive ABI gate。
+PR 先经过强制 Fast Gate，再展开高成本矩阵。Fast Gate 执行架构/硬切边界检查、Python assurance/validation 工具自测、Clang strict build、unit/contract/property tests，并在公开/runtime ABI 被影响时执行 v2 ABI gate。
 
 纯文档变更可只执行 diff/impact 检查；未知路径、公开头文件、构建系统、workflow、测试基础设施或无法精确归类的核心源码一律保守扩展为 FULL。`main` push 无条件执行完整 Verify。
 
-性能比较具有明确基线：
+性能比较基线：PR 使用 `origin/main -> candidate`，main push 使用精确 `github.event.before -> HEAD`。最终 `summary` 是唯一 merge/release 聚合状态。
 
-- PR：`origin/main -> candidate`；
-- main push：精确 `github.event.before -> HEAD`。
+## v2 API/ABI 硬切门禁
 
-最终 `summary` 是唯一 merge/release 聚合状态，同时验证应运行域全部成功、未选择域确实 skipped。
+2.0.0 首版不再对 1.x 做 additive compatibility。门禁要求当前 `ap_build_info()`、`ap_runtime_open()`、`ap_runtime_submit_frame()`、`ap_runtime_read_metrics()` 等 v2 symbol 存在，同时明确禁止被移除的 1.x runtime/build-info symbol、类型和兼容 shadow header 回流；Certification 当前只接受 schema v4。
+
+`v2.0.0` immutable tag 发布后，后续 2.x ABI 检查自动以 v2.0.0 为正式同 major baseline，从而同时做到“旧兼容残留不回流”和“2.x 稳定 ABI”。
 
 ## 变更感知测试选择
 
-`scripts/ci_impact.py` 维护显式依赖映射，可选择 AEC/NS/resampler/Activity/VAD composition、Arm cross profile、alternate backend、perf、ALSA、ABI、sanitizer、QEMU、resource 与 validation/certification 域。无法识别的输入直接回退 FULL，不允许为了节省 CI 猜测跳过。
+`scripts/ci_impact.py` 维护 composition、Arm profile、alternate backend、performance、ALSA、ABI、sanitizer、QEMU、resource 与 validation/certification 的显式依赖。无法识别的输入直接回退 FULL，不允许为了节省 CI 猜测跳过。
 
 ## 可复现 CI 与资源单一真相源
 
-ARM/QEMU/ALSA/static-analysis 等重任务使用按 immutable digest 固定的 GHCR toolchain image。`ccache` 只保存编译对象；build 目录、测试结论、secret、认证记录和产品 evidence 不缓存。
+ARM/QEMU/ALSA/static-analysis 等重任务使用 immutable digest 固定的 GHCR toolchain image。`ccache` 只保存编译对象；build 目录、测试结论、secret、认证记录和产品 evidence 不缓存。
 
-Hosted resource 数字不在文档中重复维护。机器真相源是 `ci/resource-baseline.json`，人类可读视图由 `docs/generated/RESOURCE_BASELINE.md` 生成；Resource Gate 会重新测量并 diff 两者，防止文档漂移。
+Hosted resource 数字只维护在 `ci/resource-baseline.json`；`docs/generated/RESOURCE_BASELINE.md` 由它生成，Resource Gate 会重新测量并 diff 两者。
+
+## Deterministic regression 与公共数据验证
+
+PR/main 音频 regression 使用 generator **v3** 与 seeds `1307 / 2307 / 3307`。每个 seed 生成 **27 个 case**，必须 27/27 PASS，并对同 seed 重生成结果做 hash 级 deterministic 检查；因此 hosted generated regression 总计 81 case。
+
+这 81 case 仅是 regression evidence。公共真实数据在独立 `audio-validation` runner 上按 Compact 100 / Full 160 profile 封存和执行，并可做 HMAC blind holdout；Product Certification 仍是更高一级的真实发货硬件证据。
 
 ## 失败分类与可复现包
 
 `scripts/ci_failure.py` 输出稳定机器分类，包括 build、ABI、unit、sanitizer、DSP quality、performance、resource、QEMU、HIL、XRUN、infra、evidence、security。
 
-声学 validation 失败时，`scripts/validation_reproducer.py` 保存 mic/render/clean 输入、case JSON、metrics/failure 数据与 `reproduce.sh`，避免依赖长日志人工还原。
+声学 validation 失败时，`scripts/validation_reproducer.py` 保存精确输入、case JSON、metrics/failure 数据和复现入口，避免依赖人工阅读长日志。
 
-## Deterministic regression、Flaky 与历史成熟度
+## Flaky 与历史成熟度
 
-PR 与 Nightly 都执行 deterministic regression seeds `1307/2307/3307`，每个 seed 必须 8/8 case、`pass_rate=1.0`。regression corpus manifest 当前 generator version 为 v2，并做字节级 deterministic regeneration 检查。
-
-Nightly `flaky-sentinel` 将确定性测试套件重放 100 次，hard budget 为 2%，不允许通过静默 retry 洗绿。
-
-Nightly `historical-trend` 使用 median/MAD 与相对变化阈值。`PASS/FAIL` 与统计成熟度分离：历史不足时可为 `PASS + WARMING_UP`，只有所有当前指标都至少拥有 30 个可比历史样本后才可标记 `MATURE`。因此短历史不能被描述为“成熟趋势门禁”。
+Nightly `flaky-sentinel` 重放确定性测试 100 次，不允许静默 retry 洗绿。历史趋势使用 robust median/MAD；`PASS/FAIL` 与 `WARMING_UP/MATURE` 分开。所有当前指标至少有 30 个可比成功样本后才能标为 `MATURE`。
 
 ## Metamorphic / Property Contracts
 
-`tests/test_metamorphic.c` 验证 reset 后 deterministic replay、silence 稳定性、单麦/拓扑约束等不依赖 golden waveform 的不变量，并进入普通 CTest、sanitizer 及适用构建。
+`tests/test_metamorphic.c` 验证 reset 后 deterministic replay、silence 稳定性和拓扑约束，并进入普通 CTest 和适用 sanitizer/build matrix。
+
+## Trusted Runner Readiness
+
+`tools/runner_preflight.py` 对 `audio-validation`、`audio-builder`、`audio-target`、`certification-archive` 提供 fail-closed readiness。**Trusted Runner Readiness** 针对 exact ref 执行；`READY` 只表示基础设施可用，不是 acoustic/HIL/performance/product PASS。
+
+Compact/Full validation 和 HIL 仍会在真实 self-hosted job 内重复 preflight，防止陈旧 readiness 结果被误用。详见 `TRUSTED_RUNNERS.md`。
 
 ## HIL 板卡合同
 
-真实产品板使用 `[self-hosted, linux, audio-target]` runner labels，并在板卡本地保存 `/etc/audio-pipeline/board.json`（或显式其它路径），格式遵循 `hil/board.schema.json`。manifest 绑定 board/revision/SoC/codec/麦板/扬声器版本、thermal/power sensor、可选 power-cycle/cleanup hook 和默认产品 audio route。
+真实产品板使用 `[self-hosted, linux, audio-target]`，并在板卡本地保存符合 `hil/board.schema.json` 的 `/etc/audio-pipeline/board.json`。它绑定 board/revision/SoC/codec/麦板/扬声器、thermal/power sensor、reset/cleanup hook 和默认 route。
 
-`tools/hil_board.py preflight` 在测量前记录板卡身份、kernel/machine、磁盘、温度、CPU governor、NTP、ALSA inventory。实验室/环境故障归类为 `INFRA_FAILURE`；测试结束始终 cleanup，最终 evidence 使用 SHA-256 封存。
+`tools/hil_board.py preflight` 在测量前记录板卡身份、kernel/machine、磁盘、温度、CPU governor、NTP、ALSA inventory。实验室/环境故障归类为 `INFRA_FAILURE`；结束始终 cleanup，evidence 使用 SHA-256 封存。
 
 ## 分层 Soak 与故障注入
 
-`.github/workflows/hil-soak.yml` 定义：
-
 | Tier | 时长 | Fault profile | 用途 |
 | --- | ---: | --- | --- |
-| accelerated-pr | 10 分钟 | accelerated | 可信 PR/复现；route restart、render gap、CPU stall |
+| accelerated-pr | 10 分钟 | accelerated | 可信 PR/复现 |
 | nightly-1h | 1 小时 | none | 产品 route 日常健康 |
-| release-8h | 8 小时 | none | 新 immutable Release 后 exact-SHA route 验证 |
+| release-8h | 8 小时 | none | immutable Release 后 exact-SHA 验证 |
 | weekly-24h | 24 小时 | none | 长时稳定性趋势 |
-| certification-72h | 72 小时 | none | 正式 shipping certification 最低 soak |
+| certification-72h | 72 小时 | none | 当前 LOW shipping policy 正式最低 soak |
 
-外部 PR 不自动进入 self-hosted 产品板；`accelerated-pr` 必须由维护者针对已 review SHA 手动触发。
+外部 PR 不自动进入 self-hosted 产品板。Scheduled/Release HIL 是 **fail-visible**：当策略要求执行但 `HIL_ENABLED!=true` 时，availability 直接失败，而不是静默 skip 或伪造 PASS。只有真实 target runner、板卡和 route 在线后才应打开该变量。
 
-Scheduled/Release HIL 是 **fail-visible** 的：当它们按策略应执行但 `HIL_ENABLED!=true` 时，availability gate 失败，而不是静默 skip 或伪造 PASS。只有真实 target runner、板卡与 route 已在线后才应设置 `HIL_ENABLED=true`。
-
-Release 后 8 h HIL 仅由真正新建并确认 immutable 的 Release 显式 `repository_dispatch` 触发，并绑定该 Release 的 exact SHA；已有 Release 不会重复制造 HIL 历史。Scheduled HIL 固定到调度事件 SHA，避免排队期间 main 前进导致证据漂移。
-
-故障注入仅用于 accelerated 测试；正式 certification/nominal performance evidence 不注入人工 fault。
+故障注入仅用于 accelerated 工程测试；正式 certification/nominal evidence 不注入人工 fault。
 
 ## Product Certification 拓扑
 
-正式 shipping certification 使用三段可信拓扑：
+正式 shipping certification 使用：
 
 `audio-builder -> audio-target -> certification-archive`
 
-- `audio-builder` 使用明确的 shipping compiler、sysroot、toolchain root、CFLAGS/CMake args 构建；
-- `audio-target` 只部署并执行该构建产物，记录 real route benchmark/soak/thermal/power/acoustic evidence；
-- build/deployed/executed binary SHA-256 必须一致，builder 与 DUT runner 必须分离；
-- `certification-archive` 验证 bundle digest，并返回 immutable `product-lifecycle` archive receipt；
-- certification record v4、deployment provenance、bundle 与 archive receipt 均进入 attestation/semantic validation。
+- builder 使用精确 shipping compiler/sysroot/toolchain/CFLAGS/CMake args；
+- target 只部署并执行该构建产物，采集 real route benchmark/soak/thermal/power/acoustic evidence；
+- build/deployed/executed SHA-256 必须一致，builder 与 DUT 必须分离；
+- archive 返回 immutable `product-lifecycle` receipt；
+- 当前 certification record **只接受 schema v4**。
 
-正式 shipping policy `certification/policies/cortex-a32-low-shipping.json` 要求最少 72 小时 soak。1 h / 8 h / 24 h HIL 是运营健康与发布历史，不替代 72 h shipping certification。
+正式 Cortex-A32 LOW shipping policy 要求最少 72 小时 soak；1 h / 8 h / 24 h HIL 只属于运营健康和发布历史，不能替代正式认证。
 
 ## 证据边界
 
-Hosted x86、cross-build、QEMU 只属于 software correctness/regression evidence，不能包装成 Cortex-A32 真机性能或产品声学认证。正式 `product-certified` 仍必须来自真实发货硬件、exact shipping toolchain、真实 audio route、声学 corpus/result、thermal/power 与 72 h soak evidence。
+Hosted x86、generated regression、cross-build、QEMU 只属于 software correctness/regression evidence，不能包装成 Cortex-A32 真机性能或产品声学认证。正式 `product-certified` 必须来自真实发货硬件、exact shipping toolchain/deployed binary、真实 route、声学 corpus/result、thermal/power、72 h policy soak、attestation 与 lifecycle archive evidence。

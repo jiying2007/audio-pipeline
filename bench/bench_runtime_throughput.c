@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     AP_ALIGN16 static unsigned char runtime_mem[AP_RUNTIME_STATE_MAX_BYTES];
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_runtime_options_t ropts = ap_runtime_options_default();
     ap_pipeline_t *pipeline = NULL;
     ap_runtime_t *runtime = NULL;
     int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS];
@@ -64,12 +65,12 @@ int main(int argc, char **argv) {
     rcfg.overload_us = UINT32_MAX;
     rcfg.recover_frames = UINT32_MAX;
     if (ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &pcfg, &pipeline) != AP_OK ||
-        ap_runtime_init(runtime_mem, sizeof(runtime_mem), pipeline, &rcfg, &runtime) != AP_OK ||
+        ap_runtime_open(runtime_mem, sizeof(runtime_mem), pipeline, &rcfg, &ropts, &runtime) != AP_OK ||
         ap_runtime_start(runtime) != AP_OK) return 3;
 
     t0 = now_ns();
     for (f = 0u; f < frames; ++f) {
-        ap_status_t s = ap_runtime_submit(runtime, mic, render);
+        ap_status_t s = ap_runtime_submit_frame(runtime, mic, render, NULL);
         if (s != AP_OK) { ap_runtime_deinit(runtime); return 4; }
         do { s = ap_runtime_receive(runtime, out, NULL); } while (s == AP_EEMPTY);
         if (s != AP_OK) { ap_runtime_deinit(runtime); return 5; }
@@ -80,7 +81,13 @@ int main(int argc, char **argv) {
         ap_runtime_metrics_t rm;
         const double elapsed_s = (double)(t1 - t0) / 1.0e9;
         const double us_per_frame = (double)(t1 - t0) / 1000.0 / (double)frames;
-        ap_runtime_get_metrics(runtime, &rm);
+        memset(&rm, 0, sizeof(rm));
+        rm.struct_size = sizeof(rm);
+        rm.api_version = AP_RUNTIME_API_VERSION;
+        if (ap_runtime_read_metrics(runtime, &rm) != AP_OK) {
+            ap_runtime_deinit(runtime);
+            return 6;
+        }
         printf("mode=%s frames=%u elapsed_s=%.6f us_per_frame=%.3f processed=%llu input_full=%llu output_drop=%llu dsp_overruns=%llu quality=%d\n",
                minimal ? "minimal" : "full", frames, elapsed_s, us_per_frame,
                (unsigned long long)rm.processed_frames,

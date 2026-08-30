@@ -35,14 +35,16 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$GH_TOKEN" || { echo "REPOSITORY_GOVERNANCE_TOKEN is required" >&2; exit 1; }
-          python3 scripts/github_governance.py --repository "$GITHUB_REPOSITORY" --output /tmp/repository-governance.json
+          python3 scripts/github_governance.py \
+            --repository "$GITHUB_REPOSITORY" --output /tmp/repository-governance.json
       - name: Require merged PR lineage for release SHA
         env:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          gh api -H 'Accept: application/vnd.github+json' "repos/$GITHUB_REPOSITORY/commits/$VERIFIED_SHA/pulls" > /tmp/release-prs.json
+          gh api -H 'Accept: application/vnd.github+json' \
+            "repos/$GITHUB_REPOSITORY/commits/$VERIFIED_SHA/pulls" > /tmp/release-prs.json
           python3 - <<'PY'
           import json
           prs = json.load(open('/tmp/release-prs.json'))
@@ -69,7 +71,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then echo "release=true" >> "$GITHUB_OUTPUT"; else echo "release=false" >> "$GITHUB_OUTPUT"; fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build, test and install SDK
         if: steps.existing.outputs.release != 'true'
         run: |
@@ -92,7 +98,8 @@ jobs:
             --processor ./build-release/ap_process_pcm \
             --source-revision "$VERIFIED_SHA" \
             --output "audio-pipeline-${TAG}-validation-smoke.json" \
-            --evidence-manifest "audio-pipeline-${TAG}-validation-smoke-evidence.json" --enforce
+            --evidence-manifest "audio-pipeline-${TAG}-validation-smoke-evidence.json" \
+            --enforce
       - name: Generate SPDX SBOM
         if: steps.existing.outputs.release != 'true'
         env:
@@ -101,7 +108,13 @@ jobs:
           SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          python3 tools/generate_spdx_sbom.py --root stage --name audio-pipeline --version "$VERSION" --revision "$VERIFIED_SHA" --created-epoch "$SOURCE_DATE_EPOCH" --output "audio-pipeline-${TAG}.spdx.json"
+          python3 tools/generate_spdx_sbom.py \
+            --root stage \
+            --name audio-pipeline \
+            --version "$VERSION" \
+            --revision "$VERIFIED_SHA" \
+            --created-epoch "$SOURCE_DATE_EPOCH" \
+            --output "audio-pipeline-${TAG}.spdx.json"
       - name: Package reproducible SDK/source and checksums
         if: steps.existing.outputs.release != 'true'
         env:
@@ -110,15 +123,31 @@ jobs:
           SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
         run: |
           find stage -exec touch -d "@$SOURCE_DATE_EPOCH" {} +
-          package_sdk() { out=$1; tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner --format=gnu -C stage -cf - . | gzip -n > "$out"; }
-          package_source() { out=$1; git archive --format=tar --prefix="audio-pipeline-${TAG}-source/" "$VERIFIED_SHA" | gzip -n > "$out"; }
+          package_sdk() {
+            out=$1
+            tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" \
+              --owner=0 --group=0 --numeric-owner --format=gnu \
+              -C stage -cf - . | gzip -n > "$out"
+          }
+          package_source() {
+            out=$1
+            git archive --format=tar \
+              --prefix="audio-pipeline-${TAG}-source/" \
+              "$VERIFIED_SHA" | gzip -n > "$out"
+          }
           package_sdk "audio-pipeline-${TAG}-sdk.tar.gz"
           package_sdk /tmp/sdk-repeat.tar.gz
           cmp "audio-pipeline-${TAG}-sdk.tar.gz" /tmp/sdk-repeat.tar.gz
           package_source "audio-pipeline-${TAG}-source.tar.gz"
           package_source /tmp/source-repeat.tar.gz
           cmp "audio-pipeline-${TAG}-source.tar.gz" /tmp/source-repeat.tar.gz
-          sha256sum "audio-pipeline-${TAG}-sdk.tar.gz" "audio-pipeline-${TAG}-source.tar.gz" "audio-pipeline-${TAG}.spdx.json" "audio-pipeline-${TAG}-validation-smoke-corpus.json" "audio-pipeline-${TAG}-validation-smoke.json" "audio-pipeline-${TAG}-validation-smoke-evidence.json" > SHA256SUMS
+          sha256sum \
+            "audio-pipeline-${TAG}-sdk.tar.gz" \
+            "audio-pipeline-${TAG}-source.tar.gz" \
+            "audio-pipeline-${TAG}.spdx.json" \
+            "audio-pipeline-${TAG}-validation-smoke-corpus.json" \
+            "audio-pipeline-${TAG}-validation-smoke.json" \
+            "audio-pipeline-${TAG}-validation-smoke-evidence.json" > SHA256SUMS
       - name: Attest release build provenance
         if: steps.existing.outputs.release != 'true'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
@@ -158,8 +187,13 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           gh release create "$TAG" --draft --verify-tag --generate-notes \
-            "audio-pipeline-${TAG}-sdk.tar.gz" "audio-pipeline-${TAG}-source.tar.gz" "audio-pipeline-${TAG}.spdx.json" \
-            "audio-pipeline-${TAG}-validation-smoke-corpus.json" "audio-pipeline-${TAG}-validation-smoke.json" "audio-pipeline-${TAG}-validation-smoke-evidence.json" SHA256SUMS
+            "audio-pipeline-${TAG}-sdk.tar.gz" \
+            "audio-pipeline-${TAG}-source.tar.gz" \
+            "audio-pipeline-${TAG}.spdx.json" \
+            "audio-pipeline-${TAG}-validation-smoke-corpus.json" \
+            "audio-pipeline-${TAG}-validation-smoke.json" \
+            "audio-pipeline-${TAG}-validation-smoke-evidence.json" \
+            SHA256SUMS
       - name: Publish complete release
         if: steps.existing.outputs.release != 'true'
         env:
@@ -174,7 +208,10 @@ jobs:
         run: |
           set -euo pipefail
           immutable=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.immutable')
-          if [ "$immutable" != true ]; then echo "Published release is mutable despite the preflight governance gate." >&2; exit 1; fi
+          if [ "$immutable" != true ]; then
+            echo "Published release is mutable despite the preflight governance gate." >&2
+            exit 1
+          fi
           echo "immutable_release=$TAG"
       - name: Trigger exact-SHA post-release HIL
         if: steps.existing.outputs.release != 'true'

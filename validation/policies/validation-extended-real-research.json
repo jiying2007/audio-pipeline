@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-extended-real-research-v1",
+  "allowed_tiers": ["research-validation"],
+  "minimum_cases": 120,
+  "required_public_sources": ["realman", "but-reverbdb", "musan", "openslr-slr31", "voices", "ami", "icsi", "aishell4", "fsd50k", "wham"],
+  "required_scenarios": ["aishell4-meeting-research", "fsd50k-permissive-negative-research", "wham-negative-research"],
+  "minimum_cases_by_scenario": {
+    "aishell4-meeting-research": 4,
+    "fsd50k-permissive-negative-research": 4,
+    "wham-negative-research": 4
+  },
+  "aggregate": {
+    "min_pass_rate": 0.75,
+    "max_output_clip_fraction": 0.03,
+    "max_output_dc_offset_dbfs": -22.0
+  }
+}

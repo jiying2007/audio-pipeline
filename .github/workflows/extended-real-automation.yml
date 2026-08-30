@@ -1,8 +1,8 @@
 name: Extended Real Automation
 
 on:
-  release:
-    types: [published]
+  repository_dispatch:
+    types: [extended-real-post-release]
   schedule:
     - cron: '17 3 * * 0'
   workflow_dispatch:
@@ -24,37 +24,35 @@ jobs:
           fetch-depth: 0
       - name: Resolve exact source and automation profile
         id: request
-        shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_REF: ${{ github.event.client_payload.release_ref }}
+          RELEASE_TAG: ${{ github.event.client_payload.tag }}
           EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
           EXTENDED_REAL_DATA_ROOT: ${{ vars.EXTENDED_REAL_DATA_ROOT }}
         run: |
           set -euo pipefail
           if [ "$EXTENDED_REAL_ENABLED" != true ]; then
-            echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED: set repository variable EXTENDED_REAL_ENABLED=true only after the isolated audio-validation runner and materialized dataset cache are genuinely ready.' >&2
+            echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED: enable only after audio-validation runner and materialized cache are genuinely ready.' >&2
             exit 1
           fi
           data_root=${EXTENDED_REAL_DATA_ROOT:-/opt/audio-validation-extended}
           case "$EVENT_NAME" in
-            release)
+            repository_dispatch)
+              source_sha=$RELEASE_REF
+              profile=commercial-core
+              [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'release_ref must be exact 40-hex SHA' >&2; exit 2; }
               test -n "$RELEASE_TAG"
               git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
-              source_sha=$(git rev-list -n1 "$RELEASE_TAG")
-              profile=commercial-core
+              test "$(git rev-list -n1 "$RELEASE_TAG")" = "$source_sha"
               ;;
             schedule|workflow_dispatch)
               git fetch origin main
               source_sha=$(git rev-parse origin/main)
               profile=commercial-plus
               ;;
-            *)
-              echo "unsupported automation event: $EVENT_NAME" >&2
-              exit 2
-              ;;
+            *) echo "unsupported automation event: $EVENT_NAME" >&2; exit 2 ;;
           esac
-          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
           git cat-file -e "$source_sha^{commit}"
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
           echo "profile=$profile" >> "$GITHUB_OUTPUT"

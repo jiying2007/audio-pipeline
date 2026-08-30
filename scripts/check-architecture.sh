@@ -205,7 +205,7 @@ auto = Path('.github/workflows/extended-real-automation.yml').read_text(encoding
 for token in ('source_sha:', 'commercial-core', 'commercial-plus', '--stratify scenario', '--source-manifest extended-out/source-manifest.json'):
     assert token in canonical, token
 assert "options: [commercial-core, commercial-plus, research]" in canonical
-assert "release:" in auto and "schedule:" in auto
+assert "repository_dispatch:" in auto and "schedule:" in auto
 assert 'EXTENDED_REAL_ENABLED' in auto
 assert 'EXTENDED_REAL_REQUIRED_BUT_DISABLED' in auto
 assert 'gh workflow run validation-extended-real.yml' in auto
@@ -214,3 +214,31 @@ assert 'profile=commercial-core' in auto and 'profile=commercial-plus' in auto
 assert 'research' not in auto, 'research profile must never be automated'
 print('extended-real automation contracts: OK')
 PY_AUTO
+
+# hosted-real-and-post-release-automation-contract-v1
+python3 validation/tools/build_hosted_real_corpus.py self-test
+python3 validation/tools/build_hosted_real_corpus.py validate --lock validation/hosted_real.datasets.lock.json
+python3 - <<'PY_HOSTED'
+import json
+from pathlib import Path
+
+def require(value, message):
+    if not value:
+        raise SystemExit('hosted-real contract failed: ' + message)
+
+lock = json.loads(Path('validation/hosted_real.datasets.lock.json').read_text())
+require(lock['source_repository'] == 'microsoft/P.808', 'source repository')
+require(len(lock['source_revision']) == 40, 'revision')
+require(lock['license'] == 'CC-BY-4.0' and lock['usage_class'] == 'commercial-validation', 'license isolation')
+require(len(lock['clips']) >= 4 and all(len(item['sha256']) == 64 for item in lock['clips']), 'clip hashes')
+policy = json.loads(Path('validation/policies/validation-hosted-real-smoke.json').read_text())
+require(policy['minimum_cases'] >= 4 and float(policy['aggregate']['min_pass_rate']) == 1.0, 'policy')
+auto = Path('.github/workflows/extended-real-automation.yml').read_text()
+release = Path('.github/workflows/release.yml').read_text()
+verify = Path('.github/workflows/verify.yml').read_text()
+require('repository_dispatch:' in auto and 'types: [extended-real-post-release]' in auto, 'dispatch listener')
+require('types: [published]' not in auto, 'unreliable release trigger residue')
+require('event_type=extended-real-post-release' in release, 'release dispatch sender')
+require('hosted-real-smoke:' in verify and 'HOSTED_REAL_RESULT' in verify, 'required hosted real gate')
+print('hosted real and post-release automation contracts: OK')
+PY_HOSTED

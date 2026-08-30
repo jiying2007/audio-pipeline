@@ -129,3 +129,7 @@ This is intentionally lighter than formal shipping-certification provenance but 
 ## Evidence boundary
 
 Compact and Full are acoustic validation evidence only. They do not establish target CPU/RSS, thermal/power limits, real microphone/codec/enclosure acoustics, far-field product performance, HIL stability or the formal 72-hour shipping certification. Those remain governed by `product-certification.yml` and real product evidence.
+
+## Hosted real-audio smoke
+
+`hosted_real.datasets.lock.json` pins four small CC-BY-4.0 Microsoft P.808 WAVs to an exact upstream revision and SHA-256. `Verify` downloads them on GitHub-hosted Linux, rechecks SHA-256 and Git blob identity, materializes mono PCM, and enforces `validation-hosted-real-smoke.json` through the canonical evaluator. Raw third-party audio remains outside this repository.

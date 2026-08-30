@@ -59,9 +59,7 @@ jobs:
             head='${{ github.event.pull_request.head.sha }}'
           else
             base='${{ github.event.before }}'
-            case "$base" in
-              ''|0000000000000000000000000000000000000000) base=$(git rev-parse HEAD^) ;;
-            esac
+            case "$base" in ''|0000000000000000000000000000000000000000) base=$(git rev-parse HEAD^) ;; esac
             perf_base=$base
           fi
           echo "base=$base" >> "$GITHUB_OUTPUT"
@@ -176,6 +174,64 @@ jobs:
             test "$CODE_RESULT" = success
           fi
 
+  hosted-real-smoke:
+    needs: [impact, fast-gate]
+    if: always() && needs.fast-gate.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.impact.outputs.head_sha }}
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: hosted-real-smoke
+      - name: Validate hosted real-data contract
+        run: |
+          python3 validation/tools/build_hosted_real_corpus.py self-test
+          python3 validation/tools/build_hosted_real_corpus.py validate --lock validation/hosted_real.datasets.lock.json
+      - name: Build exact hosted-real processor
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = '${{ needs.impact.outputs.head_sha }}'
+          cmake -S . -B build-hosted-real -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-hosted-real --target ap_process_pcm ap_build_info_dump --parallel
+      - name: Download, hash-bind and enforce P.808 real-audio smoke
+        run: |
+          set -euo pipefail
+          root=/tmp/ap-hosted-real
+          revision=$(git rev-parse HEAD)
+          python3 validation/tools/build_hosted_real_corpus.py build --lock validation/hosted_real.datasets.lock.json --output "$root"
+          python3 validation/tools/run_validation.py \
+            --corpus "$root/corpus.json" \
+            --policy validation/policies/validation-hosted-real-smoke.json \
+            --dataset-lock validation/hosted_real.datasets.lock.json \
+            --source-manifest "$root/source-manifest.json" \
+            --processor ./build-hosted-real/ap_process_pcm \
+            --source-revision "$revision" \
+            --output "$root/report.json" \
+            --evidence-manifest "$root/evidence-manifest.json" --enforce
+          cp validation/hosted_real.datasets.lock.json "$root/"
+          build-hosted-real/ap_build_info_dump > "$root/build-info.txt"
+          sha256sum build-hosted-real/ap_process_pcm > "$root/processor.sha256"
+          find "$root" -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$root/SHA256SUMS"
+      - name: Upload hosted real-data evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hosted-real-smoke-${{ github.run_id }}
+          path: |
+            /tmp/ap-hosted-real/corpus.json
+            /tmp/ap-hosted-real/source-manifest.json
+            /tmp/ap-hosted-real/DATASET_ATTRIBUTION.md
+            /tmp/ap-hosted-real/report.json
+            /tmp/ap-hosted-real/evidence-manifest.json
+            /tmp/ap-hosted-real/hosted_real.datasets.lock.json
+            /tmp/ap-hosted-real/build-info.txt
+            /tmp/ap-hosted-real/processor.sha256
+            /tmp/ap-hosted-real/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
+
   ci:
     needs: [impact, fast-gate]
     if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_ci == 'true'
@@ -222,7 +278,7 @@ jobs:
 
   summary:
     if: always()
-    needs: [impact, fast-gate, ci, quality, audio-quality, resource-gates, codeql]
+    needs: [impact, fast-gate, hosted-real-smoke, ci, quality, audio-quality, resource-gates, codeql]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -239,6 +295,7 @@ jobs:
         shell: bash
         env:
           FAST_RESULT: ${{ needs.fast-gate.result }}
+          HOSTED_REAL_RESULT: ${{ needs.hosted-real-smoke.result }}
           CI_RESULT: ${{ needs.ci.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           AUDIO_RESULT: ${{ needs.audio-quality.result }}
@@ -260,6 +317,7 @@ jobs:
             fi
           }
           test "$FAST_RESULT" = success
+          test "$HOSTED_REAL_RESULT" = success
           check "$EXPECT_CI" "$CI_RESULT" ci
           check "$EXPECT_QUALITY" "$QUALITY_RESULT" quality
           check "$EXPECT_AUDIO" "$AUDIO_RESULT" audio-quality

@@ -225,3 +225,15 @@ jobs:
             -f event_type=hil-post-release \
             -f "client_payload[release_ref]=$VERIFIED_SHA" \
             -f "client_payload[tag]=$TAG"
+      - name: Trigger exact-SHA post-release Extended Real validation
+        if: steps.existing.outputs.release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \
+            -f event_type=extended-real-post-release \
+            -f "client_payload[release_ref]=$VERIFIED_SHA" \
+            -f "client_payload[tag]=$TAG"

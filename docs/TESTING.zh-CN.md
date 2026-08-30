@@ -97,3 +97,7 @@ Compact/Full validation 和 HIL 仍会在真实 self-hosted job 内重复 prefli
 ## 证据边界
 
 Hosted x86、generated regression、cross-build、QEMU 只属于 software correctness/regression evidence，不能包装成 Cortex-A32 真机性能或产品声学认证。正式 `product-certified` 必须来自真实发货硬件、exact shipping toolchain/deployed binary、真实 route、声学 corpus/result、thermal/power、72 h policy soak、attestation 与 lifecycle archive evidence。
+
+## Hosted 真实音频 smoke
+
+每个 PR 与 `main` Verify 都在 GitHub-hosted Linux 上处理 4 个 SHA 固定的 CC-BY-4.0 Microsoft P.808 clip，验证上游字节、WAV 几何、materialization、processor identity、clipping/DC/RMS safety 与 hash-bound evidence。该 gate 是 required `summary` 的一部分，但不能替代 Extended Real、DUT HIL 或 Product Certification。

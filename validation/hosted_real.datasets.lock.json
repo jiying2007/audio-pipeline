@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "catalog_id": "audio-pipeline-hosted-real-v1",
+  "source_repository": "microsoft/P.808",
+  "source_revision": "83b5ce8c3c8654a74fbae2d6171e11018636a5a8",
+  "license": "CC-BY-4.0",
+  "license_evidence": "https://github.com/microsoft/P.808/blob/83b5ce8c3c8654a74fbae2d6171e11018636a5a8/README.md#audio-clips-license",
+  "usage_class": "commercial-validation",
+  "clips": [
+    {
+      "id": "p808-math1",
+      "path": "src/P808Template/assets/clips/math/math1.wav",
+      "sha256": "a7473546ec3ebc51f4b8672c3c0981f534c652b9a925647e41906b55961f239d",
+      "git_blob_sha1": "e3d670be723dae3687f742c4e69b25c910d95416",
+      "channels": 2,
+      "sample_rate_hz": 16000,
+      "sample_width_bytes": 2,
+      "scenario": "p808-created-speech"
+    },
+    {
+      "id": "p808-math2",
+      "path": "src/P808Template/assets/clips/math/math2.wav",
+      "sha256": "423f4af4ecca52699d08729e77adb6494e274036c353ad51b8215046ad30d3c9",
+      "git_blob_sha1": "5c2d32c44f2cbc725a3759ef6c1f8deeecfa4ff6",
+      "channels": 2,
+      "sample_rate_hz": 16000,
+      "sample_width_bytes": 2,
+      "scenario": "p808-created-speech"
+    },
+    {
+      "id": "p808-environment-female-40s",
+      "path": "src/P808Template/assets/clips/environment_test/40S_female1.wav",
+      "sha256": "bfe9f939cfee62f2ecb7f1374b202c8ee33dca71f963c0d5a9178d9c71348ae1",
+      "git_blob_sha1": "5066be4dd623b0edfe0176bc100cfeeb71cb1066",
+      "channels": 1,
+      "sample_rate_hz": 48000,
+      "sample_width_bytes": 2,
+      "scenario": "p808-degraded-speech"
+    },
+    {
+      "id": "p808-environment-male-40s",
+      "path": "src/P808Template/assets/clips/environment_test/40S_male1.wav",
+      "sha256": "91e1a256ed073f7ce97d82e33692441ee359e5ebd37c0539c6b86eea03e273a6",
+      "git_blob_sha1": "9e8137fa15f3c8faa0535c4e15a334c040fabc5e",
+      "channels": 1,
+      "sample_rate_hz": 48000,
+      "sample_width_bytes": 2,
+      "scenario": "p808-degraded-speech"
+    }
+  ]
+}

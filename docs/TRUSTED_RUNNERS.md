@@ -48,7 +48,7 @@ Do not enable product/hardware claims from public validation results.
 ### 2. `audio-target` engineering HIL
 
 1. Register an isolated DUT runner with `audio-target` label.
-2. Install a valid `/etc/audio-pipeline/board.json` and confirm real route/power paths.
+2. Install a reviewed board manifest at `$HOME/.config/audio-pipeline/board.json` for ordinary-user mode (or an explicit system-mode path) and confirm real route/power paths.
 3. Dispatch **Trusted Runner Readiness** with role `audio-target`.
 4. Run a reviewed manual `accelerated-pr` HIL against an exact SHA.
 5. Only after the runner and board route are genuinely online set repository variable `HIL_ENABLED=true`.
@@ -77,8 +77,8 @@ Public validation:
 python3 tools/runner_preflight.py \
   --source-revision <40-hex-commit-sha> \
   --role audio-validation \
-  --data-root /opt/audio-validation-data \
-  --seal /opt/audio-validation-data/datasets.seal.json \
+  --data-root $HOME/audio-validation-data \
+  --seal $HOME/audio-validation-data/datasets.seal.json \
   --output /tmp/audio-validation-readiness.json
 ```
 
@@ -100,7 +100,7 @@ DUT/HIL target:
 python3 tools/runner_preflight.py \
   --source-revision <40-hex-commit-sha> \
   --role audio-target \
-  --board-manifest /etc/audio-pipeline/board.json \
+  --board-manifest $HOME/.config/audio-pipeline/board.json \
   --power-input /path/to/live_power \
   --output /tmp/audio-target-readiness.json
 ```

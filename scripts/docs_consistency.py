@@ -155,6 +155,19 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     for token in ("AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config"):
         if token not in hil:
             errors.append(f"HIL workflow missing runner-local user-mode token: {token}")
+    readiness = read(root, ".github/workflows/trusted-runner-readiness.yml")
+    certification = read(root, ".github/workflows/product-certification.yml")
+    for forbidden in ("default: /opt/audio-validation-data", "default: /etc/audio-pipeline/board.json"):
+        if forbidden in readiness:
+            errors.append(f"trusted runner readiness reintroduced stale system-mode default: {forbidden}")
+    for token in ("$HOME/audio-validation-data", "datasets.seal.json", "AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config"):
+        if token not in readiness:
+            errors.append(f"trusted runner readiness missing runner-local user-mode token: {token}")
+    if "default: /etc/audio-pipeline/board.json" in certification:
+        errors.append("Product Certification reintroduced a system-mode /etc board default")
+    for token in ("AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config", "/tmp/audio-target-board-path.txt"):
+        if token not in certification:
+            errors.append(f"Product Certification missing runner-local user-mode token: {token}")
     try:
         completed = subprocess.run(
             [sys.executable, str(root / "lab/scripts/labctl.py"), "self-test"],

@@ -13,14 +13,14 @@ on:
         type: choice
         options: [audio-validation, audio-builder, audio-target, certification-archive]
       data_root:
-        description: audio-validation sealed cache root
+        description: Optional public-validation cache root; blank uses $HOME/audio-validation-data on audio-validation
         required: false
-        default: /opt/audio-validation-data
+        default: ''
         type: string
       seal_path:
-        description: audio-validation dataset seal
+        description: Optional public-validation dataset seal; blank uses <resolved-data-root>/datasets.seal.json
         required: false
-        default: /opt/audio-validation-data/datasets.seal.json
+        default: ''
         type: string
       dns_data_root:
         description: Optional Full-validation DNS materialization root
@@ -43,9 +43,9 @@ on:
         default: ''
         type: string
       board_manifest:
-        description: audio-target board manifest when available
+        description: Optional audio-target board manifest; blank resolves AUDIO_PIPELINE_LAB_BOARD or XDG/HOME user-mode path
         required: false
-        default: /etc/audio-pipeline/board.json
+        default: ''
         type: string
       corpus_manifest:
         description: Optional real product corpus manifest on audio-target
@@ -112,11 +112,17 @@ jobs:
           fetch-depth: 0
       - name: Check audio-validation readiness
         env:
-          DATA_ROOT: ${{ inputs.data_root }}
-          SEAL: ${{ inputs.seal_path }}
+          INPUT_DATA_ROOT: ${{ inputs.data_root }}
+          INPUT_SEAL: ${{ inputs.seal_path }}
           DNS_ROOT: ${{ inputs.dns_data_root }}
         run: |
           set -euo pipefail
+          DATA_ROOT=${INPUT_DATA_ROOT:-$HOME/audio-validation-data}
+          SEAL=${INPUT_SEAL:-$DATA_ROOT/datasets.seal.json}
+          for value in "$DATA_ROOT" "$SEAL"; do
+            case "$value" in /*) ;; *) echo "readiness path must resolve absolute: $value" >&2; exit 2 ;; esac
+            case "$value" in *$'\n'*|*$'\r'*) echo 'readiness path contains a newline' >&2; exit 2 ;; esac
+          done
           args=(
             --role audio-validation
             --source-revision '${{ needs.resolve.outputs.sha }}'
@@ -179,15 +185,21 @@ jobs:
           fetch-depth: 0
       - name: Check audio-target readiness
         env:
-          BOARD: ${{ inputs.board_manifest }}
+          INPUT_BOARD: ${{ inputs.board_manifest }}
           CORPUS: ${{ inputs.corpus_manifest }}
           ACOUSTIC: ${{ inputs.acoustic_json }}
           FAREND: ${{ inputs.farend_file }}
           POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
+          BOARD=$INPUT_BOARD
+          if [ -z "$BOARD" ]; then
+            BOARD=${AUDIO_PIPELINE_LAB_BOARD:-${XDG_CONFIG_HOME:-$HOME/.config}/audio-pipeline/board.json}
+          fi
+          case "$BOARD" in /*) ;; *) echo "board manifest must resolve absolute: $BOARD" >&2; exit 2 ;; esac
+          case "$BOARD" in *$'\n'*|*$'\r'*) echo 'board manifest contains a newline' >&2; exit 2 ;; esac
           args=(--role audio-target --source-revision '${{ needs.resolve.outputs.sha }}' --writable-path /tmp --output runner-readiness.json)
-          if [ -n "$BOARD" ]; then args+=(--board-manifest "$BOARD"); fi
+          args+=(--board-manifest "$BOARD")
           if [ -n "$CORPUS" ]; then args+=(--corpus-manifest "$CORPUS"); fi
           if [ -n "$ACOUSTIC" ]; then args+=(--acoustic-json "$ACOUSTIC"); fi
           if [ -n "$FAREND" ]; then args+=(--farend-file "$FAREND"); fi

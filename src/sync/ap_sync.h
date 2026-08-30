@@ -14,6 +14,8 @@ typedef struct ap_sync_state {
     uint32_t initial_delay_samples;
     uint32_t delay_update_counter;
     uint32_t last_best_delay;
+    uint32_t route_candidate_delay;
+    uint8_t route_candidate_confirmations;
     uint8_t have_last_best_delay;
     float drift_ppm;
     float drift_credit;

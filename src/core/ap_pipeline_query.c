@@ -21,11 +21,24 @@ ap_status_t ap_pipeline_notify_stream_discontinuity(ap_pipeline_t *pipeline,
     /* Boundary SRC history must never bridge a known PCM discontinuity. */
     ap_resampler_reset(&pipeline->resampler);
 
+#if AP_BUILD_STAGE_HPF
+    if (AP_HAS_STAGE(pipeline, AP_STAGE_HPF))
+        ap_hpf_init(&pipeline->hpf,
+                    pipeline->cfg.internal_sample_rate_hz,
+                    pipeline->cfg.mic_channels);
+#endif
+#if AP_BUILD_STAGE_BF
+    if (AP_HAS_STAGE(pipeline, AP_STAGE_BF))
+        ap_beamformer_init(&pipeline->beamformer,
+                           pipeline->cfg.internal_sample_rate_hz,
+                           pipeline->cfg.mic_spacing_mm);
+#endif
+
 #if AP_BUILD_STAGE_SYNC
     if (AP_HAS_STAGE(pipeline, AP_STAGE_SYNC)) {
         ap_sync_reset(&pipeline->sync);
         pipeline->metrics.delay_error_samples = 0;
-        pipeline->metrics.estimated_delay_ms = 0u;
+        pipeline->metrics.estimated_delay_ms = pipeline->cfg.initial_delay_ms;
         pipeline->metrics.estimated_drift_ppm = 0.0f;
     }
 #endif
@@ -43,13 +56,30 @@ ap_status_t ap_pipeline_notify_stream_discontinuity(ap_pipeline_t *pipeline,
         pipeline->metrics.erle_db = 0.0f;
     }
 #endif
+#if AP_BUILD_STAGE_RES
+    if (AP_HAS_STAGE(pipeline, AP_STAGE_RES)) ap_res_init(&pipeline->res);
+#endif
 #if AP_BUILD_STAGE_NS
     if (AP_HAS_STAGE(pipeline, AP_STAGE_NS))
         ap_ns_init(&pipeline->ns, pipeline->internal_frame);
 #endif
+#if AP_BUILD_STAGE_AGC
+    if (AP_HAS_STAGE(pipeline, AP_STAGE_AGC))
+        ap_agc_init(&pipeline->agc,
+                    pipeline->cfg.agc_target_dbfs,
+                    pipeline->cfg.limiter_dbfs);
+#endif
 #if AP_BUILD_STAGE_VAD
     if (AP_HAS_STAGE(pipeline, AP_STAGE_VAD)) ap_vad_init(&pipeline->vad);
 #endif
+
+    pipeline->metrics.far_end_active = 0u;
+    pipeline->metrics.double_talk_active = 0u;
+    pipeline->metrics.frequency_res_active = 0u;
+    pipeline->metrics.residual_echo_gain = 1.0f;
+    pipeline->metrics.noise_rms_dbfs = -90.0f;
+    pipeline->metrics.vad_probability = 0.0f;
+    pipeline->metrics.vad_active = 0u;
 
     return AP_OK;
 }

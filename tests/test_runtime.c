@@ -169,6 +169,25 @@ static void test_queue_and_lifecycle(void) {
     ap_runtime_deinit(runtime);
 }
 
+static void test_memory_lock_lifecycle(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_runtime_options_t opts = ap_runtime_options_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime = NULL;
+    ap_runtime_metrics_v2_t rm2;
+
+    opts.lock_memory = 1u;
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    assert(ap_runtime_init_ex(runtime_state, sizeof(runtime_state), pipeline,
+                              &rcfg, &opts, &runtime) == AP_OK);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    ap_runtime_stop(runtime);
+    rm2 = metrics_v2(runtime);
+    assert(rm2.memory_lock_failures <= 1u);
+    ap_runtime_deinit(runtime);
+}
+
 static void test_metadata_commands_and_events(void) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
@@ -184,6 +203,7 @@ static void test_metadata_commands_and_events(void) {
     int16_t out[160];
     unsigned i;
     int saw_discontinuity = 0;
+    int saw_direct_degradation = 0;
 
     assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
     rcfg.recover_frames = 100u;
@@ -235,6 +255,12 @@ static void test_metadata_commands_and_events(void) {
     assert(ap_runtime_command(runtime, &cmd) == AP_OK);
     pm = process_one(runtime, mic, render, out);
     assert(pm.quality == AP_QUALITY_SAFE);
+    while (ap_runtime_receive_event(runtime, &event) == AP_OK) {
+        if (event.kind == AP_EVENT_QUALITY_DEGRADED &&
+            event.arg0 == AP_QUALITY_FULL && event.arg1 == AP_QUALITY_SAFE)
+            saw_direct_degradation = 1;
+    }
+    assert(saw_direct_degradation);
 
     memset(&cmd, 0, sizeof(cmd));
     cmd.struct_size = sizeof(cmd);
@@ -423,6 +449,7 @@ static void test_quality_transitions(void) {
 int main(void) {
     test_runtime_init_contract();
     test_queue_and_lifecycle();
+    test_memory_lock_lifecycle();
     test_metadata_commands_and_events();
     test_recorder_configuration_contract();
     test_flight_recorder();

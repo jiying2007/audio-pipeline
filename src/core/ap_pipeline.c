@@ -504,7 +504,8 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
 #if AP_BUILD_STAGE_BF
     if (AP_HAS_STAGE(pipeline, AP_STAGE_BF) && pipeline->quality != AP_QUALITY_SAFE) {
         ap_beamformer_process(&pipeline->beamformer,
-                              pipeline->quality == AP_QUALITY_FULL,
+                              AP_BUILD_BF_DIRECTION_TRACKING &&
+                                  pipeline->quality == AP_QUALITY_FULL,
                               pipeline->mic0,
                               pipeline->mic1,
                               pipeline->mono,

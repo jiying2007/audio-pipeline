@@ -14,6 +14,11 @@ Cortex-A32 armhf NEON/FP-Armv8
 AArch64 NEON/ASIMD
 ```
 
+`ssc305-cortex-a32-low` is the conservative PCR02 starting profile: 16-kHz/2-mic geometry,
+60-ms maximum delay, 64-ms AEC tail, queue depth 4 and fixed broadside delay/sum BF. Adaptive BF
+direction tracking remains available in generic builds but is disabled for this SKU until real
+render-active/motor/far-field corpus evidence justifies enabling it.
+
 Do not copy Cortex-A32 `-mcpu/-mfpu` flags into an A7 BSP.
 
 ## 2. Define the product artifact

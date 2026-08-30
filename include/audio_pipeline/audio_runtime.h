@@ -31,7 +31,7 @@ typedef struct ap_runtime_options {
     uint32_t struct_size;
     uint32_t api_version;
     size_t dsp_stack_bytes;   /* 0: pthread default */
-    uint8_t lock_memory;      /* best-effort mlockall; failure is observable */
+    uint8_t lock_memory;      /* best-effort bounded mlock of runtime/pipeline arenas */
     uint8_t set_thread_name;
     uint8_t reserved8[6];
     char thread_name[16];

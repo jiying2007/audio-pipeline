@@ -60,6 +60,14 @@
 
 # Changelog
 
+## Unreleased
+
+- Reject ambiguous periodic SYNC peaks and confirm large route changes before resetting AEC.
+- Reset all time-dependent DSP state on stream discontinuity.
+- Replace process-global `mlockall()` with bounded runtime/pipeline arena locking.
+- Report direct multi-level quality downgrades accurately.
+- Add a conservative SSC305 Cortex-A32 LOW build profile with fixed-direction BF.
+
 All notable changes are recorded here. The project follows semantic versioning. Starting with 1.0.0, documented public API/ABI and package contracts are treated as stable within the 1.x line; incompatible changes require a new major version.
 
 ## [Unreleased]

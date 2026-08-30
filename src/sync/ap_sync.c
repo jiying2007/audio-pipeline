@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define AP_SYNC_MIN_CORRELATION_SQUARED 0.0324f
-#define AP_SYNC_MIN_PEAK_RATIO 1.05f
+#define AP_SYNC_MIN_PEAK_RATIO 1.01f
 #define AP_SYNC_ROUTE_CONFIRMATIONS 3u
 
 static float ap_sync_clamp(float x, float lo, float hi) {

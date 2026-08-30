@@ -93,6 +93,7 @@ static void fill_tone_frame(unsigned frame, int16_t *render, int16_t *mic,
 
 static void test_periodic_path_does_not_trigger_false_route_jumps(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    const ap_build_info_t *build = ap_build_info();
     ap_pipeline_t *p = NULL;
     int16_t render[160], mic[160], out[160];
     ap_metrics_t metrics;
@@ -103,7 +104,7 @@ static void test_periodic_path_does_not_trigger_false_route_jumps(void) {
     c.enable_delay_tracking = 1u;
     c.enable_clock_drift_compensation = 1u;
     c.initial_delay_ms = 40u;
-    c.max_delay_ms = 180u;
+    c.max_delay_ms = build->max_delay_ms < 180u ? build->max_delay_ms : 180u;
     assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
 
     for (frame = 0u; frame < 300u; ++frame) {

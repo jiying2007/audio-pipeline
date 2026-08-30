@@ -1,0 +1,97 @@
+name: V2 Sync Main Once
+
+on:
+  push:
+    branches: [feat/v2-hard-cut-cleanup]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: "${{ github.event.head_commit.message != 'merge: synchronize v2 with #38 main hardening' }}"
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          ref: feat/v2-hard-cut-cleanup
+      - name: Merge latest main with v2-authoritative conflict resolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$PWD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          base=$(git merge-base HEAD origin/main)
+          echo "merge_base=$base"
+          echo "main=$(git rev-parse origin/main)"
+          set +e
+          git merge --no-ff --no-commit origin/main
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ] && ! git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            echo 'merge failed before conflict resolution state was established' >&2
+            exit 1
+          fi
+          conflicts=$(git diff --name-only --diff-filter=U || true)
+          allowed='CHANGELOG.md
+          CMakeLists.txt
+          CMakePresets.json
+          docs/API_CONTRACT.md
+          docs/DIAGNOSTICS.md
+          docs/DSP_DESIGN.md
+          docs/PORTING.md
+          include/audio_pipeline/audio_diag.h
+          include/audio_pipeline/audio_runtime.h
+          scripts/check-architecture.sh
+          src/core/ap_pipeline.c
+          src/core/ap_pipeline_query.c
+          src/platform/linux/ap_runtime.c
+          src/sync/ap_sync.c
+          src/sync/ap_sync.h
+          tests/test_drift_res.c
+          tests/test_metamorphic.c
+          tests/test_runtime.c'
+          for p in $conflicts; do
+            if ! printf '%s\n' "$allowed" | grep -Fxq "$p"; then
+              echo "unexpected merge conflict: $p" >&2
+              exit 1
+            fi
+            git checkout --ours -- "$p"
+            git add "$p"
+          done
+          if git diff --name-only --diff-filter=U | grep -q .; then
+            echo 'unresolved conflicts remain' >&2
+            exit 1
+          fi
+          git diff --check --cached
+      - name: Validate synchronized v2 tree before merge commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/docs_consistency.py
+          sh scripts/check-architecture.sh
+          cmake -S . -B build-sync-strict -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-sync-strict --parallel
+          ctest --test-dir build-sync-strict --output-on-failure
+          cmake -S . -B build-sync-coverage -DCMAKE_BUILD_TYPE=Debug -DAP_BUILD_BENCH=OFF \
+            -DCMAKE_C_FLAGS='--coverage -O0 -g' -DCMAKE_EXE_LINKER_FLAGS='--coverage'
+          cmake --build build-sync-coverage --parallel
+          ctest --test-dir build-sync-coverage --output-on-failure
+          gcovr --root . --filter 'src/' --exclude 'tests/' --fail-under-line 90 --print-summary
+          sh scripts/check-abi-contract.sh
+      - name: Commit synchronized history and remove migrator
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/v2-sync-main-once.yml
+          git add -A
+          git commit -m 'merge: synchronize v2 with #38 main hardening'
+          git push origin HEAD:feat/v2-hard-cut-cleanup

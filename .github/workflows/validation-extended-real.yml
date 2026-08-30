@@ -14,9 +14,9 @@ on:
         type: choice
         options: [commercial-core, commercial-plus, research]
       data_root:
-        description: Caller-materialized extended-real dataset root on audio-validation runner
-        required: true
-        default: /opt/audio-validation-extended
+        description: Optional absolute dataset root; blank uses $HOME/audio-validation-extended on audio-validation runner
+        required: false
+        default: ''
         type: string
       limit_per_dataset:
         description: Stable source entries hashed per dataset
@@ -77,13 +77,17 @@ jobs:
           fetch-depth: 0
       - name: Bind exact revision and runner readiness
         env:
-          DATA_ROOT: ${{ inputs.data_root }}
+          INPUT_DATA_ROOT: ${{ inputs.data_root }}
         run: |
           set -euo pipefail
+          DATA_ROOT=${INPUT_DATA_ROOT:-$HOME/audio-validation-extended}
+          case "$DATA_ROOT" in /*) ;; *) echo 'data_root must be absolute or blank' >&2; exit 2 ;; esac
+          echo "DATA_ROOT=$DATA_ROOT" >> "$GITHUB_ENV"
           revision=$(git rev-parse HEAD)
           test "$revision" = '${{ needs.resolve.outputs.sha }}'
           mkdir -p extended-out
           printf '%s\n' "$revision" > extended-out/source-revision.txt
+          printf '%s\n' "$DATA_ROOT" > extended-out/data-root.txt
           python3 tools/runner_preflight.py \
             --role audio-validation \
             --source-revision "$revision" \
@@ -94,7 +98,6 @@ jobs:
             --output extended-out/runner-preflight.json
       - name: Validate license catalog and scan immutable source manifest
         env:
-          DATA_ROOT: ${{ inputs.data_root }}
           PROFILE: ${{ inputs.profile }}
           LIMIT: ${{ inputs.limit_per_dataset }}
         run: |
@@ -125,7 +128,6 @@ jobs:
           ${CC:-cc} --version | head -n 1 > extended-out/compiler.txt
       - name: Build extended-real corpus from hash-bound sources
         env:
-          DATA_ROOT: ${{ inputs.data_root }}
           DIRECT_LIMIT: ${{ inputs.direct_limit }}
           DERIVED_LIMIT: ${{ inputs.derived_limit }}
         run: |

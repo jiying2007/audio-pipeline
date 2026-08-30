@@ -21,9 +21,9 @@ on:
         description: Absolute path to real product acoustic result JSON on DUT
         required: true
       board_manifest:
-        description: Absolute path to the DUT board manifest
-        required: true
-        default: /etc/audio-pipeline/board.json
+        description: Optional absolute DUT board manifest; blank uses $HOME/.config/audio-pipeline/board.json on audio-target
+        required: false
+        default: ''
       capture_device:
         required: true
         default: hw:0,0
@@ -259,13 +259,15 @@ jobs:
           path: shipping-build
       - name: Preflight exact audio-target runner and product inputs
         env:
-          BOARD: ${{ inputs.board_manifest }}
+          INPUT_BOARD: ${{ inputs.board_manifest }}
           CORPUS: ${{ inputs.corpus_manifest }}
           ACOUSTIC: ${{ inputs.acoustic_json }}
           FAREND: ${{ inputs.farend_pcm }}
           POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
+          BOARD=${INPUT_BOARD:-$HOME/.config/audio-pipeline/board.json}
+          case "$BOARD" in /*) ;; *) echo 'board_manifest must be absolute or blank' >&2; exit 2 ;; esac
           python3 tools/runner_preflight.py \
             --role audio-target \
             --source-revision '${{ needs.resolve.outputs.sha }}' \

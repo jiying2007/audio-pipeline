@@ -1,0 +1,64 @@
+name: Evidence Chain v2.0.1 Executor
+
+on:
+  push:
+    branches: [feat/evidence-chain-v2.0.1]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          ref: feat/evidence-chain-v2.0.1
+
+      - name: Execute staged migration as repository data
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('.github/workflows/evidence-chain-v2.0.1-once.yml').read_text(encoding='utf-8').splitlines()
+          start = source.index("          python3 - <<'PY'") + 1
+          end = source.index('          PY', start)
+          body = []
+          for line in source[start:end]:
+              if not line.startswith('          '):
+                  raise SystemExit(f'unexpected migration indentation: {line!r}')
+              body.append(line[10:])
+          code = '\n'.join(body) + '\n'
+          compile(code, '<staged-evidence-migration>', 'exec')
+          exec(compile(code, '<staged-evidence-migration>', 'exec'), {'__name__': '__main__'})
+          PY
+
+      - name: Validate migrated repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -e 'require "yaml"; ARGV.each { |path| next if path.end_with?("evidence-chain-v2.0.1-once.yml"); abort("invalid workflow YAML: #{path}") unless Psych.parse_file(path) }' .github/workflows/*.yml
+          python3 tools/runner_preflight.py --self-test
+          python3 tools/ap_certify.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 scripts/docs_consistency.py
+          sh scripts/check-architecture.sh
+          cmake -S . -B build-evidence-chain -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-evidence-chain --parallel
+          ctest --test-dir build-evidence-chain --output-on-failure
+          git diff --check
+
+      - name: Commit closure and remove staging workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/evidence-chain-v2.0.1-once.yml
+          rm .github/workflows/evidence-chain-v2.0.1-executor.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'release: v2.0.1 evidence-chain closure'
+          git push origin HEAD:feat/evidence-chain-v2.0.1

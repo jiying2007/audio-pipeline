@@ -22,15 +22,22 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_LOCK = REPO_ROOT / "lab" / "data-sources.lock.json"
 EXTENDED_CATALOG = REPO_ROOT / "validation" / "extended.datasets.lock.json"
-USER_HOME = Path.home()
-XDG_DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", USER_HOME / ".local/share")).expanduser()
-XDG_CACHE_HOME = Path(os.environ.get("XDG_CACHE_HOME", USER_HOME / ".cache")).expanduser()
-XDG_STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", USER_HOME / ".local/state")).expanduser()
-XDG_CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", USER_HOME / ".config")).expanduser()
-DEFAULT_DATA_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_DATA_ROOT", USER_HOME / "audio-validation-extended")).expanduser()
-DEFAULT_CACHE_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_CACHE_ROOT", XDG_CACHE_HOME / "audio-pipeline-lab/datasets")).expanduser()
-DEFAULT_STATE_ROOT = Path(os.environ.get("AUDIO_PIPELINE_LAB_STATE_ROOT", XDG_STATE_HOME / "audio-pipeline-lab")).expanduser()
-DEFAULT_BOARD = Path(os.environ.get("AUDIO_PIPELINE_LAB_BOARD", XDG_CONFIG_HOME / "audio-pipeline/board.json")).expanduser()
+def resolve_user_paths(env: dict[str, str] | None = None, user_home: Path | None = None) -> tuple[Path, Path, Path, Path, Path, Path, Path, Path, Path]:
+    values = os.environ if env is None else env
+    home = (Path.home() if user_home is None else user_home).expanduser()
+    xdg_data = Path(values.get("XDG_DATA_HOME", str(home / ".local/share"))).expanduser()
+    xdg_cache = Path(values.get("XDG_CACHE_HOME", str(home / ".cache"))).expanduser()
+    xdg_state = Path(values.get("XDG_STATE_HOME", str(home / ".local/state"))).expanduser()
+    xdg_config = Path(values.get("XDG_CONFIG_HOME", str(home / ".config"))).expanduser()
+    data_root = Path(values.get("AUDIO_PIPELINE_LAB_DATA_ROOT", str(home / "audio-validation-extended"))).expanduser()
+    cache_root = Path(values.get("AUDIO_PIPELINE_LAB_CACHE_ROOT", str(xdg_cache / "audio-pipeline-lab/datasets"))).expanduser()
+    state_root = Path(values.get("AUDIO_PIPELINE_LAB_STATE_ROOT", str(xdg_state / "audio-pipeline-lab"))).expanduser()
+    board = Path(values.get("AUDIO_PIPELINE_LAB_BOARD", str(xdg_config / "audio-pipeline/board.json"))).expanduser()
+    return home, xdg_data, xdg_cache, xdg_state, xdg_config, data_root, cache_root, state_root, board
+
+
+(USER_HOME, XDG_DATA_HOME, XDG_CACHE_HOME, XDG_STATE_HOME, XDG_CONFIG_HOME,
+ DEFAULT_DATA_ROOT, DEFAULT_CACHE_ROOT, DEFAULT_STATE_ROOT, DEFAULT_BOARD) = resolve_user_paths()
 SUPPORTED_PROVIDERS = {"huggingface_snapshot", "http_archive", "operator_import"}
 COMMERCIAL_PROFILES = {"commercial-core", "commercial-plus"}
 
@@ -398,10 +405,31 @@ def self_test() -> None:
     assert by_id["musan"]["integrity"]["value"] == "0c472d4fc0c5141eca47ad1ffeb2a7df"
     assert by_id["openslr-slr31"]["integrity"]["value"] == "6d7ab67ac6a1d2c993d050e16d61080d"
     assert {by_id[item]["provider"] for item in catalog["profiles"]["commercial-core"]} <= {"http_archive", "huggingface_snapshot"}
-    assert str(DEFAULT_DATA_ROOT).startswith(str(USER_HOME))
-    assert str(DEFAULT_CACHE_ROOT).startswith(str(USER_HOME))
-    assert str(DEFAULT_STATE_ROOT).startswith(str(USER_HOME))
-    assert str(DEFAULT_BOARD).startswith(str(USER_HOME))
+    fake_home = Path("/tmp/audio-pipeline-selftest-home")
+    resolved = resolve_user_paths({}, fake_home)
+    assert resolved[5] == fake_home / "audio-validation-extended"
+    assert resolved[6] == fake_home / ".cache/audio-pipeline-lab/datasets"
+    assert resolved[7] == fake_home / ".local/state/audio-pipeline-lab"
+    assert resolved[8] == fake_home / ".config/audio-pipeline/board.json"
+    xdg = resolve_user_paths({
+        "XDG_DATA_HOME": "/mnt/ap-xdg-data",
+        "XDG_CACHE_HOME": "/mnt/ap-xdg-cache",
+        "XDG_STATE_HOME": "/mnt/ap-xdg-state",
+        "XDG_CONFIG_HOME": "/mnt/ap-xdg-config",
+    }, fake_home)
+    assert xdg[1] == Path("/mnt/ap-xdg-data")
+    assert xdg[6] == Path("/mnt/ap-xdg-cache/audio-pipeline-lab/datasets")
+    assert xdg[7] == Path("/mnt/ap-xdg-state/audio-pipeline-lab")
+    assert xdg[8] == Path("/mnt/ap-xdg-config/audio-pipeline/board.json")
+    explicit = resolve_user_paths({
+        "AUDIO_PIPELINE_LAB_DATA_ROOT": "/data/ap-real",
+        "AUDIO_PIPELINE_LAB_CACHE_ROOT": "/data/ap-cache",
+        "AUDIO_PIPELINE_LAB_STATE_ROOT": "/data/ap-state",
+        "AUDIO_PIPELINE_LAB_BOARD": "/data/ap-config/board.json",
+    }, fake_home)
+    assert explicit[5:] == (Path("/data/ap-real"), Path("/data/ap-cache"), Path("/data/ap-state"), Path("/data/ap-config/board.json"))
+    for current in (DEFAULT_DATA_ROOT, DEFAULT_CACHE_ROOT, DEFAULT_STATE_ROOT, DEFAULT_BOARD):
+        assert current.is_absolute()
     site = (REPO_ROOT / "lab/ansible/site.yml").read_text(encoding="utf-8")
     inventory = (REPO_ROOT / "lab/ansible/inventory.example.yml").read_text(encoding="utf-8")
     runner_role = (REPO_ROOT / "lab/ansible/roles/github_runner/tasks/main.yml").read_text(encoding="utf-8")

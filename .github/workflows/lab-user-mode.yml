@@ -1,0 +1,215 @@
+name: Lab User Mode Runtime
+
+on:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Exact source commit SHA to validate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  ordinary-user-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+
+      - name: Bind runtime gate to exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha='${{ inputs.source_sha }}'
+          [[ "$source_sha" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'source_sha must be a 40-character commit SHA' >&2; exit 1; }
+          test "$(git rev-parse HEAD)" = "${source_sha,,}"
+          git diff --check HEAD^
+
+      - name: Prepare laboratory runtime prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            ansible alsa-utils build-essential cmake ffmpeg git-lfs jq \
+            openssh-client p7zip-full python3-venv rsync unzip usbutils
+
+          sudo rm -rf /tmp/ap-lab
+          sudo install -d -m 0755 /tmp/ap-lab/ansible/roles
+          sudo cp -a lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
+          sudo cp -a lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
+          sudo cp -a lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
+          sudo cp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
+          sudo cp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
+          sudo chmod -R a+rX /tmp/ap-lab
+          sudo chmod 0644 /tmp/ap-lab/ansible.cfg /tmp/ap-lab/requirements-validation.txt
+
+          diff -qr lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
+          diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
+          diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
+          cmp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
+          cmp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
+
+          sudo useradd --create-home --shell /bin/bash validationuser
+          sudo useradd --create-home --shell /bin/bash targetuser
+          for user in validationuser targetuser; do
+            groups=$(id -nG "$user")
+            case " $groups " in *' sudo '*|*' admin '*) echo "$user unexpectedly privileged: $groups" >&2; exit 1;; esac
+            if sudo -u "$user" -H sudo -n true 2>/dev/null; then
+              echo "$user unexpectedly has passwordless sudo" >&2
+              exit 1
+            fi
+          done
+
+          cat >/tmp/ap-lab/ansible/validation.yml <<'YAML'
+          ---
+          - name: Runtime validate ordinary-user audio-validation provisioning
+            hosts: localhost
+            connection: local
+            gather_facts: true
+            vars:
+              lab_system_mode: false
+            roles:
+              - common
+              - audio_validation
+          YAML
+          cat >/tmp/ap-lab/ansible/target.yml <<'YAML'
+          ---
+          - name: Runtime validate ordinary-user audio-target provisioning
+            hosts: localhost
+            connection: local
+            gather_facts: true
+            vars:
+              lab_system_mode: false
+            roles:
+              - common
+              - audio_target
+          YAML
+          cat >/tmp/ap-lab/test-board.json <<'JSON'
+          {"schema_version":1,"board_id":"runtime-validation-fixture","evidence_class":"test-only"}
+          JSON
+          chmod 0644 /tmp/ap-lab/ansible/validation.yml /tmp/ap-lab/ansible/target.yml /tmp/ap-lab/test-board.json
+
+          sudo rm -rf \
+            /opt/audio-lab \
+            /opt/audio-pipeline \
+            /opt/audio-validation-extended \
+            /var/cache/audio-pipeline-lab \
+            /var/lib/audio-pipeline-lab \
+            /var/log/audio-pipeline-lab \
+            /etc/audio-pipeline
+
+      - name: Execute audio-validation as an ordinary user
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_validation_user() {
+            sudo -u validationuser -H env -i \
+              HOME=/home/validationuser \
+              USER=validationuser \
+              LOGNAME=validationuser \
+              PATH=/usr/local/bin:/usr/bin:/bin \
+              ANSIBLE_NOCOLOR=1 \
+              ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+              ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+              ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/validation.yml
+          }
+          run_validation_user
+          run_validation_user | tee /tmp/audio-validation-idempotent.log
+          grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-validation-idempotent.log
+
+          for path in \
+            /home/validationuser/.local/share/audio-pipeline-lab \
+            /home/validationuser/.cache/audio-pipeline-lab \
+            /home/validationuser/.cache/audio-pipeline-lab/datasets \
+            /home/validationuser/.local/state/audio-pipeline-lab \
+            /home/validationuser/.local/state/audio-pipeline-lab/acquisition \
+            /home/validationuser/audio-validation-extended; do
+            sudo -u validationuser test -d "$path"
+            test "$(sudo stat -c %U "$path")" = validationuser
+          done
+          sudo -u validationuser test -x /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python
+          sudo -u validationuser /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python -c 'import huggingface_hub; assert huggingface_hub.__version__ == "1.29.0"'
+
+      - name: Execute audio-target as an ordinary user
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_target_user() {
+            sudo -u targetuser -H env -i \
+              HOME=/home/targetuser \
+              USER=targetuser \
+              LOGNAME=targetuser \
+              PATH=/usr/local/bin:/usr/bin:/bin \
+              ANSIBLE_NOCOLOR=1 \
+              ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+              ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+              ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/target.yml "$@"
+          }
+
+          run_target_user -e 'audio_target_board_manifest_src='
+          sudo -u targetuser test ! -e /home/targetuser/.config/audio-pipeline/board.json
+
+          run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json'
+          sudo -u targetuser cmp /tmp/ap-lab/test-board.json /home/targetuser/.config/audio-pipeline/board.json
+
+          run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json' | tee /tmp/audio-target-idempotent.log
+          grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-target-idempotent.log
+
+          for path in \
+            /home/targetuser/.local/share/audio-pipeline-lab \
+            /home/targetuser/.cache/audio-pipeline-lab \
+            /home/targetuser/.local/state/audio-pipeline-lab \
+            /home/targetuser/.local/state/audio-pipeline-lab/log \
+            /home/targetuser/.config/audio-pipeline \
+            /home/targetuser/.local/share/audio-pipeline-lab/fixtures \
+            /home/targetuser/.local/state/audio-pipeline-lab/hil \
+            /home/targetuser/.local/state/audio-pipeline-lab/log/hil; do
+            sudo -u targetuser test -d "$path"
+            test "$(sudo stat -c %U "$path")" = targetuser
+          done
+          test "$(sudo stat -c %U /home/targetuser/.config/audio-pipeline/board.json)" = targetuser
+          test "$(sudo stat -c %a /home/targetuser/.config/audio-pipeline/board.json)" = 640
+
+      - name: Enforce privilege-free boundary and controller contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          diff -qr lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
+          diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
+          diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
+
+          for path in \
+            /opt/audio-lab \
+            /opt/audio-pipeline \
+            /opt/audio-validation-extended \
+            /var/cache/audio-pipeline-lab \
+            /var/lib/audio-pipeline-lab \
+            /var/log/audio-pipeline-lab \
+            /etc/audio-pipeline; do
+            if [ -e "$path" ]; then
+              echo "ordinary-user laboratory provisioning wrote forbidden system path: $path" >&2
+              exit 1
+            fi
+          done
+
+          python3 lab/scripts/labctl.py self-test
+          python3 scripts/docs_consistency.py
+
+          cat >/tmp/lab-user-mode-evidence.json <<JSON
+          {"schema_version":1,"source_revision":"${{ inputs.source_sha }}","ubuntu":"24.04","audio_validation":"PASS","audio_target":"PASS","idempotent":true,"system_path_writes":false,"board_manifest":"test-only-fixture"}
+          JSON
+          python3 -m json.tool /tmp/lab-user-mode-evidence.json >/dev/null
+
+      - name: Upload ordinary-user runtime evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lab-user-mode-${{ github.run_id }}
+          path: /tmp/lab-user-mode-evidence.json
+          if-no-files-found: error
+          retention-days: 30

@@ -76,6 +76,7 @@ The workflow deliberately does **not** synthesize `acoustic.json` and does not c
 A formal run requires:
 
 - exact source ref/SHA;
+- a reviewed DUT board manifest; when the workflow input is blank, the `audio-target` runner resolves `AUDIO_PIPELINE_LAB_BOARD`, XDG config, then `$HOME/.config/audio-pipeline/board.json`; explicit absolute system-mode paths remain supported;
 - shipping SKU and approved checked-in policy;
 - real corpus manifest and acoustic result JSON already present on the DUT/lab environment;
 - capture/playback route and real far-end PCM;

@@ -1,3 +1,9 @@
+# 2.2.4
+
+- Complete ordinary-user trusted-runner readiness defaults: blank public-validation cache/seal paths now resolve on `audio-validation` under `$HOME/audio-validation-data`, and blank target board manifests resolve through `AUDIO_PIPELINE_LAB_BOARD`, XDG config or `$HOME/.config/audio-pipeline/board.json`.
+- Complete ordinary-user Product Certification target setup: blank `board_manifest` resolves only on the `audio-target` runner through the same runner-local board-path chain; explicit absolute system-mode paths remain supported.
+- Extend permanent documentation/lab assurance contracts so `/opt`/`/etc` cannot silently return as readiness/certification defaults. No DSP/API/ABI, acoustic/resource/HIL thresholds, dataset hashes/licenses or certification authority changed.
+
 # 2.2.3
 
 - Make Extended Real automation leave the dataset root unresolved until the `audio-validation` runner executes; blank input resolves to `AUDIO_PIPELINE_LAB_DATA_ROOT` or `$HOME/audio-validation-extended`.

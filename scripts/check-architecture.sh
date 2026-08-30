@@ -168,3 +168,33 @@ print('immutable evidence entrypoint contracts: OK')
 PY2
 
 echo "architecture contracts: OK"
+
+
+# extended-real-validation-contract-v1
+python3 validation/tools/extended_dataset_lock.py self-test
+python3 validation/tools/prepare_extended_validation.py self-test
+python3 validation/tools/build_extended_real_corpus.py --self-test
+python3 validation/tools/extended_dataset_lock.py validate --catalog validation/extended.datasets.lock.json
+python3 validation/tools/split_holdout.py --self-test
+python3 - <<'PY'
+import json
+from pathlib import Path
+catalog = json.loads(Path('validation/extended.datasets.lock.json').read_text())
+by_id = {item['id']: item for item in catalog['datasets']}
+for profile in ('commercial-core', 'commercial-plus'):
+    assert all(by_id[item]['usage_class'] == 'commercial-validation' for item in catalog['profiles'][profile]), profile
+assert by_id['wham']['usage_class'] == 'research-only'
+assert by_id['aishell4']['usage_class'] == 'conditional'
+assert by_id['ace-challenge']['transforms_allowed'] is False
+for name in (
+    'validation-extended-real-core.json',
+    'validation-extended-real-core-blind.json',
+    'validation-extended-real-plus.json',
+    'validation-extended-real-plus-blind.json',
+    'validation-extended-real-research.json',
+):
+    policy = json.loads((Path('validation/policies') / name).read_text())
+    assert policy['schema_version'] == 1
+    assert policy['minimum_cases'] > 0
+print('extended-real validation contracts: OK')
+PY

@@ -12,6 +12,11 @@ compile_commands.json
 *.raw
 *.profraw
 *.profdata
+*.gcda
+*.gcno
+coverage.xml
+coverage.json
+coverage.info
 __pycache__/
 *.py[cod]
 .DS_Store

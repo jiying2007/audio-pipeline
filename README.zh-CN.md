@@ -173,3 +173,5 @@ PR/main Verify 包含 strict compile/test、GCC/Clang、sanitizer、TSan、stati
 ## License
 
 见 [LICENSE](LICENSE)。
+
+Hosted CI 还会强制运行 **Microsoft P.808 真实音频 smoke**：4 个 CC-BY-4.0 clip 固定到 exact revision，并校验 SHA-256/Git blob；不把音频提交进 Git，同时覆盖 stereo-to-mono materialization 与 48 kHz 边界重采样。这只是 validation-grade safety evidence，不代表远场或 product-certified 证据。

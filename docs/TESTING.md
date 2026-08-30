@@ -111,3 +111,7 @@ The builder and DUT must be different runners. Current certification accepts sch
 ## Evidence boundary
 
 Hosted x86, generated regression, cross-build and QEMU signals are software evidence only. They are never relabeled as Cortex-A32 product performance or shipping acoustic certification. A shipping policy is not a PASS result. Product certification requires real hardware, exact shipping toolchain/deployed identity, product route, real acoustic results, thermal/power data, policy-duration soak, attestation and lifecycle archive evidence.
+
+## Hosted real-audio smoke
+
+Every PR and `main` Verify runs four SHA-pinned CC-BY-4.0 Microsoft P.808 clips on GitHub-hosted Linux. The gate verifies upstream bytes, WAV geometry, materialization, processor identity, clipping/DC/RMS safety and hash-bound evidence. It is required by `summary` but does not replace Extended Real, DUT HIL or Product Certification.

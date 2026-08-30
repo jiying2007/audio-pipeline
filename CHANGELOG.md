@@ -1,3 +1,10 @@
+# 2.1.1
+
+- Make post-release Extended Real automation reliable through the explicit `extended-real-post-release` repository-dispatch channel.
+- Add a required hosted real-audio smoke using four exact-revision SHA-256-pinned CC-BY-4.0 Microsoft P.808 clips.
+- Verify upstream SHA-256/Git blob identity, WAV geometry, stereo-to-mono materialization, 48 kHz boundary resampling, processor safety and hash-bound evidence on every PR/main Verify.
+- Hosted real smoke remains validation evidence only; Extended Real, DUT HIL and 72 h Product Certification remain separate higher-trust gates.
+
 # 2.1.0
 
 - Add a separate extended-real validation family without changing the established Compact100/Full160 public-validation baselines.

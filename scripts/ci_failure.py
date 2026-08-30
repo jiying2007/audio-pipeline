@@ -19,6 +19,7 @@ TAXONOMY = {
 def aggregate(results: dict[str, str]) -> dict:
     order = [
         ("fast", "BUILD_FAILURE"),
+        ("lab", "INFRA_FAILURE"),
         ("audio", "DSP_QUALITY_REGRESSION"),
         ("resource", "RESOURCE_REGRESSION"),
         ("quality", "UNIT_FAILURE"),
@@ -62,6 +63,8 @@ def validation(report_path: Path) -> dict:
 def self_test() -> None:
     out = aggregate({"fast": "success", "audio": "failure", "ci": "success"})
     assert out["category"] == "DSP_QUALITY_REGRESSION"
+    lab = aggregate({"fast": "success", "lab": "failure", "audio": "success"})
+    assert lab["category"] == "INFRA_FAILURE" and lab["component"] == "lab"
     assert "DSP_QUALITY_REGRESSION" in TAXONOMY
     print("CI failure classifier self-test: OK")
 
@@ -72,7 +75,7 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     sub = parser.add_subparsers(dest="command")
     agg = sub.add_parser("aggregate")
-    for name in ("fast", "ci", "quality", "audio", "resource", "codeql"):
+    for name in ("fast", "lab", "ci", "quality", "audio", "resource", "codeql"):
         agg.add_argument(f"--{name}", default="skipped")
     val = sub.add_parser("validation")
     val.add_argument("--report", type=Path, required=True)
@@ -83,7 +86,8 @@ def main() -> int:
     if args.command is None:
         parser.error("aggregate or validation is required")
     if args.command == "aggregate":
-        result = aggregate({name: getattr(args, name) for name in ("fast", "ci", "quality", "audio", "resource", "codeql")})
+        names = ("fast", "lab", "ci", "quality", "audio", "resource", "codeql")
+        result = aggregate({name: getattr(args, name) for name in names})
     else:
         result = validation(args.report)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"

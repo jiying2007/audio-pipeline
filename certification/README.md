@@ -2,15 +2,17 @@
 
 `certification/` is the shipping-SKU evidence layer. Hosted CI, QEMU and public validation-grade corpora can validate software contracts, but they cannot create a `product-certified` result.
 
-## Trust boundary
+## Current record contract
 
-A v4 product certification record binds all of the following to one exact source revision and one exact shipping binary set:
+The v2 repository accepts **schema v4 only** for formal product certification. `tools/ap_certify.py` emits v4 and `certification/validate_record.py` rejects older certification schemas. Historical v1.x v2/v3 records may be retained externally for audit history, but they are not accepted as current shipping evidence and must not be used to satisfy v2 certification gates.
+
+A v4 record binds all of the following to one exact source revision and one exact shipping binary set:
 
 - shipping-approved SKU policy bytes and SHA-256;
 - shipping SoC/revision, kernel, governor, cpuset, IRQ affinity and CPU-frequency state;
 - exact shipping compiler executable SHA-256/version, sysroot tree SHA-256, toolchain-root SHA-256 and C flags;
-- exact reviewed SKU CMake argument array and its canonical SHA-256;
-- deterministic build-configuration digest and build-info identity;
+- exact reviewed SKU CMake argument array and canonical SHA-256;
+- deterministic build-configuration digest from `ap_build_info()`;
 - SHA-256 for every certification binary;
 - distinct builder and DUT runner identities;
 - exact equality of build, deployed and executed binary SHA-256 maps;
@@ -23,31 +25,23 @@ A v4 product certification record binds all of the following to one exact source
 - cryptographic artifact attestation for the certification bundle;
 - an immutable `product-lifecycle` archive receipt whose bundle hash matches the attested certification bundle.
 
-## Record versions
-
-Schema v2/v3 remain accepted as historical evidence. New formal shipping certification runs emit schema v4.
-
-v3 added exact build identity and materialized-evidence verification. v4 adds the shipping-approved SKU policy contract plus builder/DUT separation, exact build/deploy/execute binary identity, detailed toolchain/CMake-argument provenance and deployment-provenance evidence.
-
-The 1.x C API/ABI remains compatible. `ap_build_info_t` stays frozen; additive build identity is exposed through versioned build-info surfaces rather than by mutating the original public structure.
-
 ## Formal policy
 
-`certification/policies/cortex-a32-low-shipping.json` is the formal repository baseline for the Cortex-A32 LOW SKU profile. It declares `shipping_approved=true` and currently requires a 72-hour route soak.
+`certification/policies/cortex-a32-low-shipping.json` is the formal repository baseline for the Cortex-A32 LOW SKU profile. It declares `shipping_approved=true` and requires a 72-hour route soak.
 
-The policy is an acceptance contract, **not measured evidence and not a PASS result**. Threshold changes are reviewed product-requirement changes. Do not tune policy values inside a certification run to make failing evidence pass.
+The policy is an acceptance contract, **not measured evidence and not a PASS result**. Threshold changes are reviewed product-requirement changes. Never tune policy values inside a certification run to make failing evidence pass.
 
-`example-cortex-a32-low.json` is explicitly `shipping_approved=false`. v4 collector/validator logic rejects example and `not-for-shipping` policies.
+`example-cortex-a32-low.json` is explicitly `shipping_approved=false`; the collector/validator rejects example and `not-for-shipping` policies.
 
 ## Trusted runner readiness
 
 Before allocating a formal certification run, dispatch **Trusted Runner Readiness** against the exact source ref for `audio-builder`, `audio-target`, and `certification-archive`. Require `READY` for the exact shipping compiler/sysroot/toolchain paths, DUT product-input paths and immutable archive command that will be used. See [`docs/TRUSTED_RUNNERS.md`](../docs/TRUSTED_RUNNERS.md).
 
-Readiness is an infrastructure prerequisite only. The Product Certification workflow remains the authority for builder/DUT separation, exact binary digest equality, real target/acoustic/thermal/power/route evidence, 72-hour policy enforcement, artifact attestation and lifecycle archive receipt validation.
+Readiness is an infrastructure prerequisite only. It is not acoustic/HIL/product evidence.
 
 ## Automated shipping workflow
 
-`.github/workflows/product-certification.yml` deliberately separates build, DUT execution and long-term archive responsibilities:
+`.github/workflows/product-certification.yml` separates build, DUT execution and long-term archive responsibilities:
 
 ```text
 trusted exact source SHA
@@ -67,7 +61,7 @@ trusted exact source SHA
   combine real corpus + target performance/thermal/power + route soak
   validate v4 record -> deterministic evidence tarball -> artifact attestation
         |
-        | 90-day Actions artifact is transport/cache only
+        | Actions artifact is transport/cache only
         v
 [self-hosted, linux, certification-archive]
   immutable product-lifecycle storage
@@ -75,33 +69,29 @@ trusted exact source SHA
   validate and attest receipt
 ```
 
-The workflow deliberately does **not** synthesize `acoustic.json`. Product acoustic evidence must come from the real microphone/speaker/enclosure corpus and test method for the shipping SKU.
-
-It also does not compile the shipping binary on the DUT. The DUT runs the exact artifact produced by the shipping builder, and the provenance verifier rejects builder/DUT identity collapse or any binary SHA mismatch.
+The workflow deliberately does **not** synthesize `acoustic.json` and does not compile the shipping binary on the DUT. Product acoustic evidence must come from the real microphone/speaker/enclosure corpus and the DUT executes the exact artifact produced by the shipping builder.
 
 ## Required shipping inputs
 
-A formal run requires all of the following rather than optional fallbacks:
+A formal run requires:
 
 - exact source ref/SHA;
-- shipping SKU and checked-in approved policy under `certification/policies/`;
+- shipping SKU and approved checked-in policy;
 - real corpus manifest and acoustic result JSON already present on the DUT/lab environment;
 - capture/playback route and real far-end PCM;
 - live target power sensor and ambient condition;
-- exact shipping compiler absolute path;
-- exact shipping sysroot;
-- exact shipping toolchain root;
+- exact shipping compiler absolute path, sysroot and toolchain root;
 - exact shipping C flags;
-- reviewed shipping SKU CMake arguments supplied as a non-empty JSON string array and hash-bound in build provenance;
+- reviewed non-empty shipping SKU CMake argument JSON array;
 - soak duration meeting the checked-in policy minimum.
 
-Critical CMake boundary variables such as compiler, sysroot, root-path modes, C flags and build type are enforced by the workflow and cannot be overridden by SKU argument input.
+Critical CMake boundary variables such as compiler, sysroot, root-path modes, C flags and build type are workflow-owned and cannot be overridden by SKU arguments.
 
-Missing hardware, sensor, route, archive service or toolchain input is a failed/incomplete certification run, not a degraded hosted PASS.
+Missing hardware, sensor, route, archive service, corpus or toolchain input is failed/incomplete certification, not a degraded hosted PASS.
 
 ## Target collectors
 
-Synthetic DSP timing and real route stability remain separate measurements. Product Certification invokes them against the exact deployed artifact, conceptually:
+Synthetic DSP timing and real route stability remain separate measurements:
 
 ```bash
 python3 tools/target_evidence.py benchmark \
@@ -119,15 +109,11 @@ python3 tools/target_evidence.py route-soak \
   --power-input /path/to/live_power --power-scale 1000000
 ```
 
-`benchmark` measures deterministic DSP workload. `route-soak` exercises the actual ALSA route. A synthetic runtime benchmark is never labeled as product-route soak evidence.
+`benchmark` measures deterministic DSP workload. `route-soak` exercises the actual ALSA route. A synthetic runtime benchmark is never labeled product-route soak evidence.
 
 ## Provenance helpers
 
-`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. Build provenance includes compiler/sysroot/toolchain-root hashes, exact C flags, the exact CMake argument array and its canonical SHA-256; the final verifier requires binary-map equality and distinct builder/DUT runners.
-
-`tools/ap_certify.py` assembles the v4 record and materialized evidence. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and v4 deployment provenance.
-
-`certification/validate_archive_receipt.py` verifies that the lifecycle archive receipt refers to the exact certification bundle SHA-256 and asserts `retention_class=product-lifecycle` with `immutable=true`.
+`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` assembles the v4 record and materialized evidence. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
 
 Validate a completed unpacked package with:
 
@@ -138,4 +124,4 @@ python3 certification/validate_record.py certification-out/record.json \
   --evidence-manifest certification-out/evidence-manifest.json
 ```
 
-A successful software release, public validation run, HIL engineering soak, checked-in policy or 90-day Actions artifact remains separate from formal product certification.
+A successful software release, public validation run, HIL engineering soak, checked-in policy or Actions artifact remains separate from formal product certification.

@@ -1,0 +1,25 @@
+all:
+  vars:
+    audio_pipeline_repo_url: "https://github.com/jiying2007/audio-pipeline"
+    github_runner_version: "2.336.0"
+    github_runner_arch: "x64"
+    github_runner_sha256: "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d"
+  children:
+    audio_validation:
+      hosts:
+        validation01:
+          ansible_host: 192.0.2.10
+          ansible_user: labadmin
+          lab_service_user: audio-ci
+          github_runner_name: audio-validation-01
+          github_runner_labels: "audio-validation"
+          validation_data_root: /opt/audio-validation-extended
+    audio_target:
+      hosts:
+        target01:
+          ansible_host: 192.0.2.20
+          ansible_user: labadmin
+          lab_service_user: audio-hil
+          github_runner_name: audio-target-ssc305-01
+          github_runner_labels: "audio-target"
+          audio_target_board_manifest_src: ""

@@ -1,0 +1,48 @@
+---
+- name: Install audio-target controller packages
+  ansible.builtin.apt:
+    name:
+      - alsa-utils
+      - openssh-client
+      - usbutils
+    state: present
+
+- name: Add HIL service account to hardware access groups
+  ansible.builtin.user:
+    name: "{{ lab_service_user }}"
+    groups: audio,dialout
+    append: true
+
+- name: Create board configuration directory
+  ansible.builtin.file:
+    path: /etc/audio-pipeline
+    state: directory
+    owner: root
+    group: "{{ lab_service_user }}"
+    mode: '0750'
+
+- name: Create HIL fixture and evidence directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ lab_service_user }}"
+    group: "{{ lab_service_user }}"
+    mode: '0750'
+  loop:
+    - /opt/audio-pipeline/fixtures
+    - /var/lib/audio-pipeline-lab/hil
+    - /var/log/audio-pipeline-lab/hil
+
+- name: Install reviewed board manifest when supplied
+  ansible.builtin.copy:
+    src: "{{ audio_target_board_manifest_src }}"
+    dest: /etc/audio-pipeline/board.json
+    owner: root
+    group: "{{ lab_service_user }}"
+    mode: '0640'
+  when: audio_target_board_manifest_src | default('') | length > 0
+
+- name: Report explicit board-manifest requirement
+  ansible.builtin.debug:
+    msg: "No board manifest was installed. Copy a reviewed product-specific manifest to /etc/audio-pipeline/board.json before readiness/HIL."
+  when: audio_target_board_manifest_src | default('') | length == 0

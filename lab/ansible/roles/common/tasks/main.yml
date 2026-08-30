@@ -1,0 +1,52 @@
+---
+- name: Require a supported Debian-family laboratory host
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'Debian'
+      - ansible_architecture in ['x86_64', 'amd64']
+      - lab_service_user is defined
+    fail_msg: "The reference lab automation currently supports x86_64 Debian/Ubuntu controllers only."
+
+- name: Install common laboratory packages
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - ca-certificates
+      - cmake
+      - curl
+      - git
+      - git-lfs
+      - jq
+      - python3
+      - python3-pip
+      - python3-venv
+      - rsync
+      - tar
+      - unzip
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create isolated laboratory service account
+  ansible.builtin.user:
+    name: "{{ lab_service_user }}"
+    shell: /bin/bash
+    create_home: true
+    system: false
+
+- name: Create common laboratory directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ lab_service_user }}"
+    group: "{{ lab_service_user }}"
+    mode: '0750'
+  loop:
+    - /opt/audio-lab
+    - /var/cache/audio-pipeline-lab
+    - /var/lib/audio-pipeline-lab
+    - /var/log/audio-pipeline-lab
+
+- name: Initialize Git LFS for the host
+  ansible.builtin.command: git lfs install --system
+  changed_when: false

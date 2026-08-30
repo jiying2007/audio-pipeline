@@ -1,0 +1,87 @@
+---
+- name: Validate pinned GitHub Actions runner inputs
+  ansible.builtin.assert:
+    that:
+      - audio_pipeline_repo_url is match('^https://github.com/[^/]+/[^/]+$')
+      - github_runner_version is match('^[0-9]+\\.[0-9]+\\.[0-9]+$')
+      - github_runner_sha256 is match('^[0-9a-f]{64}$')
+      - github_runner_registration_token is defined
+      - github_runner_registration_token | length > 10
+      - github_runner_name is defined
+      - github_runner_labels is defined
+    fail_msg: "Pass a short-lived GitHub runner registration token via --extra-vars; never store it in inventory."
+  no_log: true
+
+- name: Set runner paths
+  ansible.builtin.set_fact:
+    github_runner_dir: "/opt/actions-runner-{{ github_runner_name }}"
+    github_runner_archive: "/var/cache/audio-pipeline-lab/actions-runner-linux-{{ github_runner_arch }}-{{ github_runner_version }}.tar.gz"
+    github_runner_service: "actions.runner.{{ audio_pipeline_repo_url | regex_replace('^https://github.com/', '') | replace('/', '-') }}.{{ github_runner_name }}.service"
+
+- name: Create runner directory
+  ansible.builtin.file:
+    path: "{{ github_runner_dir }}"
+    state: directory
+    owner: "{{ lab_service_user }}"
+    group: "{{ lab_service_user }}"
+    mode: '0750'
+
+- name: Download pinned GitHub Actions runner
+  ansible.builtin.get_url:
+    url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-{{ github_runner_arch }}-{{ github_runner_version }}.tar.gz"
+    dest: "{{ github_runner_archive }}"
+    checksum: "sha256:{{ github_runner_sha256 }}"
+    mode: '0644'
+
+- name: Check whether runner is already configured
+  ansible.builtin.stat:
+    path: "{{ github_runner_dir }}/.runner"
+  register: runner_configuration
+
+- name: Extract pinned runner distribution
+  ansible.builtin.unarchive:
+    src: "{{ github_runner_archive }}"
+    dest: "{{ github_runner_dir }}"
+    remote_src: true
+    owner: "{{ lab_service_user }}"
+    group: "{{ lab_service_user }}"
+  when: not runner_configuration.stat.exists
+
+- name: Configure repository-scoped self-hosted runner
+  become_user: "{{ lab_service_user }}"
+  ansible.builtin.command:
+    argv:
+      - ./config.sh
+      - --url
+      - "{{ audio_pipeline_repo_url }}"
+      - --token
+      - "{{ github_runner_registration_token }}"
+      - --name
+      - "{{ github_runner_name }}"
+      - --labels
+      - "{{ github_runner_labels }}"
+      - --work
+      - _work
+      - --unattended
+      - --replace
+    chdir: "{{ github_runner_dir }}"
+  when: not runner_configuration.stat.exists
+  no_log: true
+
+- name: Check runner systemd unit
+  ansible.builtin.stat:
+    path: "/etc/systemd/system/{{ github_runner_service }}"
+  register: runner_service_file
+
+- name: Install official runner systemd service
+  ansible.builtin.command:
+    argv: ["./svc.sh", "install", "{{ lab_service_user }}"]
+    chdir: "{{ github_runner_dir }}"
+  when: not runner_service_file.stat.exists
+
+- name: Enable and start runner service
+  ansible.builtin.systemd:
+    name: "{{ github_runner_service }}"
+    enabled: true
+    state: started
+    daemon_reload: true

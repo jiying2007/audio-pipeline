@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "board_id": "ssc305-product-lab-01",
+  "revision": "replace-with-EVT-DVT-PVT-revision",
+  "soc": "SigmaStar SSC305",
+  "ram_mib": 128,
+  "kernel_family": "embedded-linux",
+  "audio_codec": "replace-with-product-codec",
+  "mic_board_revision": "replace-with-product-mic-board",
+  "speaker_revision": "replace-with-product-speaker",
+  "runner_labels": ["self-hosted", "linux", "audio-target"],
+  "route": {
+    "capture_device": "replace-with-controller-visible-capture-device",
+    "playback_device": "replace-with-controller-visible-playback-device",
+    "farend_file": "/opt/audio-pipeline/fixtures/farend-s16le.pcm",
+    "sample_rate_hz": 16000,
+    "mic_channels": 2,
+    "dsp_cpu": 1
+  },
+  "thermal_sensor": "replace-with-live-temperature-path-or-controller-export",
+  "power_sensor": "replace-with-live-power-path-or-controller-export",
+  "preflight_max_soc_c": 55.0,
+  "min_free_mib": 256,
+  "power_cycle_hook": "/usr/local/libexec/audio-lab/power-cycle-ssc305",
+  "cleanup_hook": "/usr/local/libexec/audio-lab/cleanup-ssc305"
+}

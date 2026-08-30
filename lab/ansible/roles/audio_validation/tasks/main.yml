@@ -1,0 +1,50 @@
+---
+- name: Install audio-validation packages
+  ansible.builtin.apt:
+    name:
+      - aria2
+      - ffmpeg
+      - p7zip-full
+    state: present
+
+- name: Create validation data/cache directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ lab_service_user }}"
+    group: "{{ lab_service_user }}"
+    mode: '0750'
+  loop:
+    - "{{ validation_data_root | default('/opt/audio-validation-extended') }}"
+    - /var/cache/audio-pipeline-lab/datasets
+    - /var/lib/audio-pipeline-lab/acquisition
+
+- name: Create validation Python virtual environment
+  ansible.builtin.command:
+    argv: [python3, -m, venv, /opt/audio-lab/venv]
+    creates: /opt/audio-lab/venv/bin/python
+
+- name: Copy pinned validation Python requirements
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../requirements-validation.txt"
+    dest: /opt/audio-lab/requirements-validation.txt
+    owner: "{{ lab_service_user }}"
+    group: "{{ lab_service_user }}"
+    mode: '0644'
+
+- name: Install pinned validation Python requirements
+  ansible.builtin.pip:
+    requirements: /opt/audio-lab/requirements-validation.txt
+    virtualenv: /opt/audio-lab/venv
+
+- name: Ensure validation directories belong to the runner account
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ lab_service_user }}"
+    group: "{{ lab_service_user }}"
+    recurse: true
+  loop:
+    - /opt/audio-lab
+    - "{{ validation_data_root | default('/opt/audio-validation-extended') }}"
+    - /var/cache/audio-pipeline-lab
+    - /var/lib/audio-pipeline-lab

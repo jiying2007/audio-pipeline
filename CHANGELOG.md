@@ -1,3 +1,9 @@
+# 2.2.6
+
+- Add a scheduled/manual real acquisition smoke for OpenSLR SLR31 `dev-clean-2` using the production `labctl.materialize_http` path: HTTPS acquisition, official MD5 validation, local SHA-256 acquisition seal, safe tar extraction, materialization marker and evidence upload.
+- Re-run the same materialization to prove idempotency, then deliberately corrupt the cached archive and require the production materializer to reject it fail-closed.
+- Keep this third-party network smoke outside the required PR merge gate so upstream mirror availability cannot block deterministic admission; no DSP/API/ABI behavior, dataset locks/licenses, acoustic/resource/HIL thresholds or Product Certification authority changes.
+
 # 2.2.5
 
 - Seal the permanent ordinary-user laboratory runtime admission gate into an immutable release: required full verification now executes real `audio-validation` and `audio-target` provisioning under fresh Ubuntu accounts with no sudo/admin membership.

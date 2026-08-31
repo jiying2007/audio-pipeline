@@ -88,6 +88,12 @@ Large archives stay in `$HOME/.cache/audio-pipeline-lab/datasets`; extracted dat
 
 RealMAN train and `*_raw` trees are intentionally excluded. Validation needs the real val/test noisy/direct-path pairs and location metadata, not the hundreds-of-gigabytes training set.
 
+### Continuous acquisition smoke
+
+`.github/workflows/lab-acquisition-smoke.yml` runs manually and weekly on a GitHub-hosted Ubuntu runner using the small OpenSLR SLR31 `dev-clean-2` source. It exercises the production HTTP materializer end to end: real HTTPS download, official MD5 verification, local SHA-256 acquisition seal, safe tar extraction, materialization marker, idempotent replay, and an intentional cached-archive corruption that must be rejected fail-closed.
+
+This smoke proves the acquisition mechanism and the pinned SLR31 source remain usable; it does **not** substitute for materializing RealMAN/BUT/MUSAN on the isolated `audio-validation` runner or for Extended Real visible/blind evidence. It is intentionally not a required PR gate because a third-party mirror outage must not block deterministic repository admission.
+
 ## 3. Verify actual files and runner readiness
 
 Use the exact source commit that will be validated:

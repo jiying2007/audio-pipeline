@@ -1,0 +1,132 @@
+name: Lab Acquisition Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 3 * * 3'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-acquisition-smoke
+  cancel-in-progress: true
+
+jobs:
+  openslr-slr31:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Validate source catalog and controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 lab/scripts/labctl.py self-test
+          python3 lab/scripts/labctl.py validate-catalog
+
+      - name: Materialize pinned SLR31 acquisition twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/lab-acquisition-smoke"
+          data="$root/data"
+          cache="$root/cache"
+          state="$root/state"
+          rm -rf "$root"
+          mkdir -p "$data" "$cache" "$state"
+
+          DATA="$data" CACHE="$cache" STATE="$state" python3 - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('lab/scripts').resolve()))
+          import labctl
+
+          catalog = labctl.load_json(labctl.DEFAULT_LOCK)
+          labctl.validate_catalog(catalog)
+          item = labctl.catalog_index(catalog)['openslr-slr31']
+          assert item['provider'] == 'http_archive'
+          labctl.materialize_http(
+              item,
+              Path(os.environ['DATA']),
+              Path(os.environ['CACHE']),
+              Path(os.environ['STATE']),
+              False,
+          )
+          PY
+
+          test -f "$state/acquisition/openslr-slr31.json"
+          test -f "$data/LibriSpeechMini/.audio-pipeline-materialized.json"
+          test -d "$data/LibriSpeechMini/LibriSpeech"
+          python3 -m json.tool "$state/acquisition/openslr-slr31.json" >/dev/null
+          python3 -m json.tool "$data/LibriSpeechMini/.audio-pipeline-materialized.json" >/dev/null
+
+          first_seal=$(sha256sum "$state/acquisition/openslr-slr31.json" | awk '{print $1}')
+          first_marker=$(sha256sum "$data/LibriSpeechMini/.audio-pipeline-materialized.json" | awk '{print $1}')
+
+          DATA="$data" CACHE="$cache" STATE="$state" python3 - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('lab/scripts').resolve()))
+          import labctl
+
+          catalog = labctl.load_json(labctl.DEFAULT_LOCK)
+          item = labctl.catalog_index(catalog)['openslr-slr31']
+          labctl.materialize_http(
+              item,
+              Path(os.environ['DATA']),
+              Path(os.environ['CACHE']),
+              Path(os.environ['STATE']),
+              False,
+          )
+          PY
+
+          test "$first_seal" = "$(sha256sum "$state/acquisition/openslr-slr31.json" | awk '{print $1}')"
+          test "$first_marker" = "$(sha256sum "$data/LibriSpeechMini/.audio-pipeline-materialized.json" | awk '{print $1}')"
+
+      - name: Prove cached archive corruption fails closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/lab-acquisition-smoke"
+          archive="$root/cache/openslr-slr31/dev-clean-2.tar.gz"
+          printf 'corruption-probe' >> "$archive"
+
+          set +e
+          DATA="$root/data" CACHE="$root/cache" STATE="$root/state" python3 - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('lab/scripts').resolve()))
+          import labctl
+
+          catalog = labctl.load_json(labctl.DEFAULT_LOCK)
+          item = labctl.catalog_index(catalog)['openslr-slr31']
+          labctl.materialize_http(
+              item,
+              Path(os.environ['DATA']),
+              Path(os.environ['CACHE']),
+              Path(os.environ['STATE']),
+              False,
+          )
+          PY
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          printf '{"schema_version":1,"dataset_id":"openslr-slr31","initial_materialization":"PASS","idempotent_replay":"PASS","corruption_rejected":true}\n' \
+            > "$root/acquisition-smoke-result.json"
+          python3 -m json.tool "$root/acquisition-smoke-result.json" >/dev/null
+
+      - name: Upload acquisition evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lab-acquisition-smoke-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/lab-acquisition-smoke/state/acquisition/openslr-slr31.json
+            ${{ runner.temp }}/lab-acquisition-smoke/data/LibriSpeechMini/.audio-pipeline-materialized.json
+            ${{ runner.temp }}/lab-acquisition-smoke/acquisition-smoke-result.json
+          if-no-files-found: error
+          retention-days: 30

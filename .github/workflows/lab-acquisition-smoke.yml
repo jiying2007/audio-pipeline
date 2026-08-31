@@ -1,9 +1,6 @@
 name: Lab Acquisition Smoke
 
 on:
-  push:
-    branches: [feat/lab-acquisition-smoke-v2.2.6]
-    paths: [.github/workflows/lab-acquisition-smoke.yml]
   workflow_dispatch:
   schedule:
     - cron: '23 3 * * 3'

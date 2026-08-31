@@ -41,20 +41,23 @@ jobs:
           changelog = Path('CHANGELOG.md')
           text = changelog.read_text(encoding='utf-8')
           assert text.startswith('# 2.2.5\n')
-          entry = '''# 2.2.6
-
-- Add a scheduled/manual real acquisition smoke for OpenSLR SLR31 `dev-clean-2` using the production `labctl.materialize_http` path: HTTPS acquisition, official MD5 validation, local SHA-256 acquisition seal, safe tar extraction, materialization marker and evidence upload.
-- Re-run the same materialization to prove idempotency, then deliberately corrupt the cached archive and require the production materializer to reject it fail-closed.
-- Keep this third-party network smoke outside the required PR merge gate so upstream mirror availability cannot block deterministic admission; no DSP/API/ABI behavior, dataset locks/licenses, acoustic/resource/HIL thresholds or Product Certification authority changes.
-
-'''
+          entry = (
+              '# 2.2.6\n\n'
+              '- Add a scheduled/manual real acquisition smoke for OpenSLR SLR31 `dev-clean-2` using the production `labctl.materialize_http` path: HTTPS acquisition, official MD5 validation, local SHA-256 acquisition seal, safe tar extraction, materialization marker and evidence upload.\n'
+              '- Re-run the same materialization to prove idempotency, then deliberately corrupt the cached archive and require the production materializer to reject it fail-closed.\n'
+              '- Keep this third-party network smoke outside the required PR merge gate so upstream mirror availability cannot block deterministic admission; no DSP/API/ABI behavior, dataset locks/licenses, acoustic/resource/HIL thresholds or Product Certification authority changes.\n\n'
+          )
           changelog.write_text(entry + text, encoding='utf-8')
 
           readme = Path('lab/README.md')
           text = readme.read_text(encoding='utf-8')
           needle = 'RealMAN train and `*_raw` trees are intentionally excluded. Validation needs the real val/test noisy/direct-path pairs and location metadata, not the hundreds-of-gigabytes training set.\n'
           assert needle in text
-          addition = '''\n### Continuous acquisition smoke\n\n`.github/workflows/lab-acquisition-smoke.yml` runs manually and weekly on a GitHub-hosted Ubuntu runner using the small OpenSLR SLR31 `dev-clean-2` source. It exercises the production HTTP materializer end to end: real HTTPS download, official MD5 verification, local SHA-256 acquisition seal, safe tar extraction, materialization marker, idempotent replay, and an intentional cached-archive corruption that must be rejected fail-closed.\n\nThis smoke proves the acquisition mechanism and the pinned SLR31 source remain usable; it does **not** substitute for materializing RealMAN/BUT/MUSAN on the isolated `audio-validation` runner or for Extended Real visible/blind evidence. It is intentionally not a required PR gate because a third-party mirror outage must not block deterministic repository admission.\n'''
+          addition = (
+              '\n### Continuous acquisition smoke\n\n'
+              '`.github/workflows/lab-acquisition-smoke.yml` runs manually and weekly on a GitHub-hosted Ubuntu runner using the small OpenSLR SLR31 `dev-clean-2` source. It exercises the production HTTP materializer end to end: real HTTPS download, official MD5 verification, local SHA-256 acquisition seal, safe tar extraction, materialization marker, idempotent replay, and an intentional cached-archive corruption that must be rejected fail-closed.\n\n'
+              'This smoke proves the acquisition mechanism and the pinned SLR31 source remain usable; it does **not** substitute for materializing RealMAN/BUT/MUSAN on the isolated `audio-validation` runner or for Extended Real visible/blind evidence. It is intentionally not a required PR gate because a third-party mirror outage must not block deterministic repository admission.\n'
+          )
           readme.write_text(text.replace(needle, needle + addition, 1), encoding='utf-8')
           PY
 

@@ -1,0 +1,83 @@
+name: Close v2.2.6 Lab Acquisition Once
+
+on:
+  push:
+    branches: [feat/lab-acquisition-smoke-v2.2.6]
+    paths: [.github/workflows/lab-acquisition-v2.2.6-close-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  close:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/lab-acquisition-smoke-v2.2.6
+          fetch-depth: 0
+
+      - name: Bind closure to v2.2.5 base and permanent smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git merge-base HEAD origin/main)" = 05e6d26ec3dce1c663905f5452e6c56bcb5d0475
+          test -f .github/workflows/lab-acquisition-smoke.yml
+          grep -q "schedule:" .github/workflows/lab-acquisition-smoke.yml
+          grep -q "openslr-slr31" .github/workflows/lab-acquisition-smoke.yml
+          grep -q "corruption_rejected" .github/workflows/lab-acquisition-smoke.yml
+          ! grep -q "branches: \[feat/lab-acquisition-smoke-v2.2.6\]" .github/workflows/lab-acquisition-smoke.yml
+
+      - name: Update version and laboratory documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/project(audio_pipeline VERSION 2\.2\.5 /project(audio_pipeline VERSION 2.2.6 /' CMakeLists.txt
+          python3 - <<'PY'
+          from pathlib import Path
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          assert text.startswith('# 2.2.5\n')
+          entry = '''# 2.2.6
+
+- Add a scheduled/manual real acquisition smoke for OpenSLR SLR31 `dev-clean-2` using the production `labctl.materialize_http` path: HTTPS acquisition, official MD5 validation, local SHA-256 acquisition seal, safe tar extraction, materialization marker and evidence upload.
+- Re-run the same materialization to prove idempotency, then deliberately corrupt the cached archive and require the production materializer to reject it fail-closed.
+- Keep this third-party network smoke outside the required PR merge gate so upstream mirror availability cannot block deterministic admission; no DSP/API/ABI behavior, dataset locks/licenses, acoustic/resource/HIL thresholds or Product Certification authority changes.
+
+'''
+          changelog.write_text(entry + text, encoding='utf-8')
+
+          readme = Path('lab/README.md')
+          text = readme.read_text(encoding='utf-8')
+          needle = 'RealMAN train and `*_raw` trees are intentionally excluded. Validation needs the real val/test noisy/direct-path pairs and location metadata, not the hundreds-of-gigabytes training set.\n'
+          assert needle in text
+          addition = '''\n### Continuous acquisition smoke\n\n`.github/workflows/lab-acquisition-smoke.yml` runs manually and weekly on a GitHub-hosted Ubuntu runner using the small OpenSLR SLR31 `dev-clean-2` source. It exercises the production HTTP materializer end to end: real HTTPS download, official MD5 verification, local SHA-256 acquisition seal, safe tar extraction, materialization marker, idempotent replay, and an intentional cached-archive corruption that must be rejected fail-closed.\n\nThis smoke proves the acquisition mechanism and the pinned SLR31 source remain usable; it does **not** substitute for materializing RealMAN/BUT/MUSAN on the isolated `audio-validation` runner or for Extended Real visible/blind evidence. It is intentionally not a required PR gate because a third-party mirror outage must not block deterministic repository admission.\n'''
+          readme.write_text(text.replace(needle, needle + addition, 1), encoding='utf-8')
+          PY
+
+      - name: Validate repository closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 lab/scripts/labctl.py self-test
+          python3 scripts/docs_consistency.py
+          python3 scripts/ci_impact.py --self-test
+          python3 scripts/ci_failure.py --self-test
+          cmake -S . -B build-close -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build-close -j2
+          ctest --test-dir build-close --output-on-failure
+          git diff --check
+          test "$(git diff --name-only | sort | tr '\n' ' ')" = "CHANGELOG.md CMakeLists.txt lab/README.md "
+
+      - name: Commit non-workflow closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name jiying2007
+          git config user.email 33591504+jiying2007@users.noreply.github.com
+          git add CHANGELOG.md CMakeLists.txt lab/README.md
+          git commit -m 'release: v2.2.6 Lab Acquisition Smoke'
+          git push origin HEAD:feat/lab-acquisition-smoke-v2.2.6

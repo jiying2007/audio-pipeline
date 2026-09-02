@@ -33,8 +33,6 @@ jobs:
         run: cmake --build build-audio --parallel
       - name: Run resampler and acoustic-path contracts
         run: ctest --test-dir build-audio --output-on-failure -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests'
-      - name: Verify acoustic evaluation harness
-        run: python3 eval/run_eval.py --self-test
       - name: Verify certification evidence validator
         run: python3 certification/validate_record.py --self-test
 
@@ -45,9 +43,10 @@ jobs:
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: validation-smoke
-      - name: Validate validation tooling and pinned public source contract
+      - name: Validate canonical validation framework and pinned public source contract
         run: |
           python3 -m py_compile validation/tools/*.py scripts/validation_reproducer.py scripts/ci_failure.py
+          python3 validation/tools/authority.py --self-test
           python3 validation/tools/dataset_lock.py self-test
           python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
           python3 validation/tools/build_public_corpus.py --self-test
@@ -78,7 +77,7 @@ jobs:
           (cd /tmp/ap-validation-1307 && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/seed-1307-a.sha256
           (cd /tmp/ap-validation-1307-repeat && find cases -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/seed-1307-b.sha256
           diff -u /tmp/seed-1307-a.sha256 /tmp/seed-1307-b.sha256
-      - name: Enforce deterministic Nightly seed matrix
+      - name: Enforce deterministic regression seed matrix
         run: |
           set -euo pipefail
           for seed in 1307 2307 3307; do

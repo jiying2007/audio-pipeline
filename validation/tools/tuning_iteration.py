@@ -224,8 +224,11 @@ def enforce_partition_independence(dev: Path, validation: Path, shadow: Path) ->
         raise ValueError("development/validation/shadow corpora must be distinct")
     if all(seed is not None for seed in seeds) and len(set(seeds)) != 3:
         raise ValueError("generated partitions must use distinct seeds")
-    if identities["development"]["tier"] in {"validation-grade-blind", "product-certified"}:
-        raise ValueError("blind/product-certified corpus must never be used for tuning selection")
+    if identities["development"]["tier"] not in {"regression", "research-validation"}:
+        raise ValueError(
+            "development corpus must be regression or research-validation; "
+            "validation-grade/blind/product evidence is never legal tuning input"
+        )
     return identities
 
 
@@ -446,15 +449,15 @@ def self_test() -> None:
             (root / f"{index}.json").write_text(json.dumps(corpus), encoding="utf-8")
         identities = enforce_partition_independence(root / "0.json", root / "1.json", root / "2.json")
         assert identities["development"]["generator_seed"] == 1
-        blind = json.loads((root / "0.json").read_text())
-        blind["tier"] = "validation-grade-blind"
-        (root / "0.json").write_text(json.dumps(blind), encoding="utf-8")
+        validation_grade = json.loads((root / "0.json").read_text())
+        validation_grade["tier"] = "validation-grade"
+        (root / "0.json").write_text(json.dumps(validation_grade), encoding="utf-8")
         try:
             enforce_partition_independence(root / "0.json", root / "1.json", root / "2.json")
         except ValueError:
             pass
         else:
-            raise AssertionError("blind corpus must be rejected for selection")
+            raise AssertionError("validation-grade corpus must be rejected for selection")
     print("tuning iteration self-test: OK")
 
 

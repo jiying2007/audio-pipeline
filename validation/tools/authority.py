@@ -80,11 +80,14 @@ def validate_schema_sync(authority: dict[str, Any], schema_path: Path) -> None:
 
 def corpus_identity(path: Path) -> dict[str, Any]:
     corpus = json.loads(path.read_text(encoding="utf-8"))
+    generator = corpus.get("generator") or {}
+    if not isinstance(generator, dict):
+        raise ValueError(f"corpus generator must be object/null: {path}")
     return {
         "path": str(path),
         "corpus_id": corpus.get("corpus_id"),
         "tier": corpus.get("tier"),
-        "generator_seed": corpus.get("generator", {}).get("seed"),
+        "generator_seed": generator.get("seed"),
     }
 
 

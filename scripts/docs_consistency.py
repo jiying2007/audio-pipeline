@@ -83,7 +83,9 @@ VALIDATION_REQUIRED = (
     "validation/report.schema.json",
     "validation/tools/authority.py",
     "validation/tools/run_validation.py",
+    "validation/tools/run_validation_engine.py",
     "validation/tools/tuning_iteration.py",
+    "validation/tools/tuning_iteration_engine.py",
     "validation/tuning/search-spaces/call-pr-smoke-v1.json",
     "validation/tuning/search-spaces/call-v1.json",
     ".github/workflows/audio-quality-gates.yml",
@@ -114,6 +116,25 @@ def changelog_version(root: Path) -> str:
     return match.group(1)
 
 
+def validate_supply_chain(root: Path, errors: list[str]) -> None:
+    dockerfile = read(root, "ci/Dockerfile")
+    first = next((line.strip() for line in dockerfile.splitlines() if line.strip()), "")
+    if not re.fullmatch(r"FROM\s+ubuntu:24\.04@sha256:[0-9a-f]{64}", first):
+        errors.append("CI Dockerfile base image must be pinned by immutable Ubuntu 24.04 digest")
+
+    dependabot = read(root, ".github/dependabot.yml")
+    required_tokens = (
+        "package-ecosystem: github-actions",
+        "package-ecosystem: pip",
+        "directory: /lab",
+        "package-ecosystem: docker",
+        "directory: /ci",
+    )
+    for token in required_tokens:
+        if token not in dependabot:
+            errors.append(f"Dependabot supply-chain coverage missing token: {token}")
+
+
 def validate_validation_framework(root: Path, errors: list[str]) -> None:
     for rel in VALIDATION_REQUIRED:
         if not (root / rel).is_file():
@@ -123,17 +144,42 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
     if errors and any(item.startswith("missing canonical validation") for item in errors):
         return
 
-    authority = read(root, "validation/authority.json")
+    authority_text = read(root, "validation/authority.json")
     corpus_schema = read(root, "validation/corpus.schema.json")
     validation_readme = read(root, "validation/README.md")
     architecture = read(root, "docs/ARCHITECTURE.md")
     tuning = read(root, "docs/TUNING.md")
+    evaluator = read(root, "validation/tools/run_validation.py")
+    evaluator_engine = read(root, "validation/tools/run_validation_engine.py")
+    tuner = read(root, "validation/tools/tuning_iteration.py")
+    tuner_engine = read(root, "validation/tools/tuning_iteration_engine.py")
     audio_quality = read(root, ".github/workflows/audio-quality-gates.yml")
     tuning_workflow = read(root, ".github/workflows/acoustic-tuning-iteration.yml")
 
-    for token in ("research-validation", "validation-grade-blind", "product-certified"):
-        if token not in authority:
-            errors.append(f"validation authority missing tier/terminal token: {token}")
+    try:
+        authority = json.loads(authority_text)
+        tiers = authority["corpus_tiers"]
+        expected = {
+            "regression", "research-validation", "validation-grade", "validation-grade-blind"
+        }
+        if set(tiers) != expected:
+            errors.append(f"validation authority tier set drift: {sorted(tiers)}")
+        if tiers["validation-grade"]["optimizer_roles"] != ["validation", "shadow"]:
+            errors.append("validation-grade optimizer role authority drift")
+        if tiers["validation-grade-blind"]["optimizer_roles"] != []:
+            errors.append("blind corpus must never become optimizer input")
+        if tiers["research-validation"]["allows_dev_split"] is not True:
+            errors.append("research-validation must retain explicit development semantics")
+        if tiers["validation-grade"]["allows_dev_split"] is not False:
+            errors.append("validation-grade must forbid development split")
+        if tiers["validation-grade-blind"]["requires_blind_key"] is not True:
+            errors.append("blind authority must require repository-external key identity")
+        product = authority["terminal_authority"]["product-certified"]
+        if product.get("system") != "certification" or product.get("record_schema_version") != 4:
+            errors.append("product-certified terminal authority drift")
+    except (KeyError, TypeError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid validation authority JSON: {exc}")
+
     if "research-validation" not in corpus_schema:
         errors.append("corpus schema is missing research-validation authority tier")
     if "validation/authority.json" not in validation_readme or "certification/" not in validation_readme:
@@ -142,6 +188,23 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
         errors.append("architecture must forbid a parallel eval framework")
     if "canonical `validation/`" not in tuning:
         errors.append("tuning guide must use canonical validation framework")
+
+    # Public CLIs own authority; private engines own metric/search implementation only.
+    for token in ("from authority import", "authority_sha256", "tier_spec"):
+        if token not in evaluator:
+            errors.append(f"canonical evaluator is not authority guarded: missing {token}")
+    for token in ("optimizer_role_allowed", "objective_metric_missing", "unknown objective metrics"):
+        if token not in tuner:
+            errors.append(f"canonical tuner is not fail-closed/authority guarded: missing {token}")
+    if "from authority import" in evaluator_engine or "from authority import" in tuner_engine:
+        errors.append("private validation engines must not own duplicated authority policy")
+
+    workflow_text = "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted((root / ".github/workflows").glob("*.yml"))
+    )
+    for private_entry in ("run_validation_engine.py", "tuning_iteration_engine.py"):
+        if private_entry in workflow_text:
+            errors.append(f"workflow bypasses canonical validation CLI via {private_entry}")
 
     if re.search(r"(?m)^\s*pull_request\s*:", tuning_workflow):
         errors.append("standalone acoustic tuning search must not duplicate required PR tuning")
@@ -156,15 +219,16 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
         if token not in audio_quality:
             errors.append(f"required Audio Quality gate missing canonical tuning token: {token}")
 
-    try:
-        completed = subprocess.run(
-            [sys.executable, str(root / "validation/tools/authority.py"), "--self-test"],
-            cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
-        )
-        if completed.returncode != 0:
-            errors.append("validation authority self-test failed: " + completed.stdout.strip())
-    except OSError as exc:
-        errors.append(f"unable to execute validation authority self-test: {exc}")
+    for tool in ("authority.py", "run_validation.py", "tuning_iteration.py"):
+        try:
+            completed = subprocess.run(
+                [sys.executable, str(root / "validation/tools" / tool), "--self-test"],
+                cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+            )
+            if completed.returncode != 0:
+                errors.append(f"validation {tool} self-test failed: " + completed.stdout.strip())
+        except OSError as exc:
+            errors.append(f"unable to execute validation {tool} self-test: {exc}")
 
 
 def validate_lab(root: Path, errors: list[str]) -> None:
@@ -250,7 +314,8 @@ def validate_lab(root: Path, errors: list[str]) -> None:
 
 
 def validate(root: Path, *, require_lab: bool = True,
-             require_validation: bool = True) -> list[str]:
+             require_validation: bool = True,
+             require_supply_chain: bool = True) -> list[str]:
     errors: list[str] = []
     try:
         cmake_version = project_version(root)
@@ -280,11 +345,16 @@ def validate(root: Path, *, require_lab: bool = True,
 
     for rel in ("README.md", "README.zh-CN.md"):
         text = docs.get(rel, "")
-        for required in ("ci/resource-baseline.json", "docs/generated/RESOURCE_BASELINE.md"):
+        for required in (
+            "ci/resource-baseline.json", "docs/generated/RESOURCE_BASELINE.md",
+            "validation/authority.json", "research-validation",
+        ):
             if required not in text:
-                errors.append(f"{rel}: missing resource SSoT link {required}")
+                errors.append(f"{rel}: missing current truth-source token {required}")
         if "72" not in text or "product-lifecycle" not in text:
             errors.append(f"{rel}: must describe 72 h shipping certification and lifecycle archive")
+        if "product-certified" not in text or "certification/" not in text:
+            errors.append(f"{rel}: must separate product-certified from validation corpus tiers")
         if require_lab and "lab/README.md" not in text:
             errors.append(f"{rel}: missing laboratory deployment link lab/README.md")
 
@@ -304,6 +374,8 @@ def validate(root: Path, *, require_lab: bool = True,
 
     if require_validation:
         validate_validation_framework(root, errors)
+    if require_supply_chain:
+        validate_supply_chain(root, errors)
     if require_lab:
         validate_lab(root, errors)
     return errors
@@ -322,10 +394,14 @@ def self_test() -> None:
             )
         (root / "CMakeLists.txt").write_text("project(audio_pipeline VERSION 1.6.0 LANGUAGES C)\n", encoding="utf-8")
         (root / "CHANGELOG.md").write_text("# 1.6.0\n\n- current\n\n# 1.5.0\n- historical 32,632 B\n", encoding="utf-8")
-        assert validate(root, require_lab=False, require_validation=False) == []
+        assert validate(
+            root, require_lab=False, require_validation=False, require_supply_chain=False
+        ) == []
         with (root / "README.md").open("a", encoding="utf-8") as handle:
             handle.write("Runtime full 32,632 B\n")
-        errors = validate(root, require_lab=False, require_validation=False)
+        errors = validate(
+            root, require_lab=False, require_validation=False, require_supply_chain=False
+        )
         assert any("resource literal" in item for item in errors)
     print("documentation consistency self-test: OK")
 

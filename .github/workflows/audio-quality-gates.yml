@@ -106,6 +106,10 @@ jobs:
       - name: Enforce bounded acoustic tuning iteration
         run: |
           set -euo pipefail
+          python3 validation/tools/authority.py \
+            --development-corpus /tmp/ap-validation-1307/corpus.json \
+            --validation-corpus /tmp/ap-validation-2307/corpus.json \
+            --shadow-corpus /tmp/ap-validation-3307/corpus.json
           python3 validation/tools/tuning_iteration.py \
             --processor ./build-validation-smoke/ap_process_pcm \
             --development-corpus /tmp/ap-validation-1307/corpus.json \

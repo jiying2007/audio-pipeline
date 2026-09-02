@@ -189,7 +189,6 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
     if "canonical `validation/`" not in tuning:
         errors.append("tuning guide must use canonical validation framework")
 
-    # Public CLIs own authority; private engines own metric/search implementation only.
     for token in ("from authority import", "authority_sha256", "tier_spec"):
         if token not in evaluator:
             errors.append(f"canonical evaluator is not authority guarded: missing {token}")
@@ -389,7 +388,8 @@ def self_test() -> None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
                 "current HIL_ENABLED fail-visible 72 product-lifecycle "
-                "ci/resource-baseline.json docs/generated/RESOURCE_BASELINE.md\n",
+                "ci/resource-baseline.json docs/generated/RESOURCE_BASELINE.md "
+                "validation/authority.json research-validation product-certified certification/\n",
                 encoding="utf-8",
             )
         (root / "CMakeLists.txt").write_text("project(audio_pipeline VERSION 1.6.0 LANGUAGES C)\n", encoding="utf-8")

@@ -1,17 +1,25 @@
-# Validation-grade acoustic corpus
+# Acoustic validation framework
 
-This directory defines the self-validation layer between unit/regression testing and real target-board product certification.
+`validation/` is the single repository-side framework for acoustic datasets, corpus construction, objective metrics, policies, tuning candidates, independent replay and validation evidence. The previous standalone `eval/` harness has been removed so metric math, corpus semantics and evidence rules cannot drift across two implementations.
 
-## Trust levels
+`certification/` remains the separate terminal shipping authority. `lab/` provisions trusted execution/data infrastructure; it does not define acoustic acceptance.
 
-| Tier | Data | Purpose | Product-certified? |
-| --- | --- | --- | --- |
-| `regression` | deterministic generated fixtures | correctness, CI regression, metric contracts | no |
-| `validation-grade` | pinned public real data + sealed public-derived simulation | acoustic quality evidence | no |
-| `validation-grade-blind` | validation-grade data split with a repository-external HMAC key | release holdout | no |
-| `product-certified` | real shipping hardware/audio route + product corpus + performance/thermal/power/soak | shipping decision | yes |
+## Authority model
 
-A generated fixture MUST NOT be relabeled as `validation-grade`. Product certification remains governed by `certification/`.
+The machine-readable source of truth is [`authority.json`](authority.json). `validation/tools/authority.py --self-test` verifies the authority contract and keeps the corpus schema tier enum synchronized.
+
+### Validation corpus tiers
+
+| Tier | Data | Optimizer role | Purpose | Shipping authority? |
+| --- | --- | --- | --- | --- |
+| `regression` | deterministic generated fixtures | development / validation / shadow | correctness, CI regression, metric contracts | no |
+| `research-validation` | explicitly research/conditional data | development / validation / shadow | algorithm research that cannot satisfy commercial evidence | no |
+| `validation-grade` | pinned public real data + sealed public-derived simulation | validation / shadow only | independent acoustic quality evidence | no |
+| `validation-grade-blind` | validation-grade data split with a repository-external HMAC key | never optimizer input | post-candidate hidden holdout | no |
+
+`product-certified` is intentionally **not** a validation corpus tier. It is a schema-v4 certification record owned by `certification/` and is the only terminal shipping authority.
+
+A generated fixture MUST NOT be relabeled as `validation-grade`. A validation-grade or blind corpus MUST NOT be used as tuning development/search input.
 
 ## Public sources
 
@@ -28,6 +36,7 @@ Dataset licenses are upstream licenses. `audio-pipeline` does not relicense or r
 The always-available deterministic regression corpus is small enough for hosted CI:
 
 ```bash
+python3 validation/tools/authority.py --self-test
 python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
 python3 validation/tools/build_validation_corpus.py \
   --output /tmp/ap-validation-smoke --seed 1307
@@ -44,6 +53,25 @@ python3 validation/tools/run_validation.py \
 ```
 
 The generator is deterministic and remains `tier=regression`; it is not public-data or product evidence.
+
+## Dataset-driven tuning
+
+The bounded search engine is `validation/tools/tuning_iteration.py`; search contracts live under `validation/tuning/`.
+
+Required PR verification runs a small search neighborhood against development seed `1307`, then replays the selected result from scratch on validation seed `2307` and shadow seed `3307`. Scheduled/manual **Acoustic Tuning Search** runs the wider search space. The standalone search workflow has no PR trigger so a pull request does not execute the same optimization twice.
+
+An optimizer result may be only `KEEP_BASELINE`, `REJECT_CANDIDATE`, or `ACOUSTIC_CANDIDATE`. Candidate promotion remains:
+
+```text
+development search
+  -> independent validation/shadow
+  -> validation-grade-blind
+  -> target resource evidence
+  -> HIL/soak
+  -> product-certified
+```
+
+No hosted optimizer path writes shipping defaults or bypasses certification.
 
 ## Public validation profiles
 
@@ -78,7 +106,7 @@ The full workflow uses the fixed `validation/policies/validation-full.json`; cal
 
 ## Extended Real validation
 
-Compact100/Full160 remain frozen historical comparison families. v2.1.0 adds a separate Extended Real catalog and workflow for real far-field/moving-source, measured-room, meeting/overlap and hard-negative stress. Commercial profiles are license-isolated; research-only/conditional sources cannot enter commercial validation. Selected real files are individually SHA-256 bound in a source manifest and verified again before corpus construction.
+Compact100/Full160 remain frozen historical comparison families. v2.1.0 adds a separate Extended Real catalog and workflow for real far-field/moving-source, measured-room, meeting/overlap and hard-negative stress. Commercial profiles are license-isolated; research-only/conditional sources remain `research-validation` and cannot enter commercial validation. Selected real files are individually SHA-256 bound in a source manifest and verified again before corpus construction.
 
 Extended Real uses scenario-stratified blind holdout plus tail/scenario/dimension gates and remains non-authoritative for shipping. See [`../docs/EXTENDED_REAL_VALIDATION.md`](../docs/EXTENDED_REAL_VALIDATION.md).
 
@@ -111,12 +139,14 @@ Validation cases may declare `processor_profile`. The default profile exercises 
 
 Never store a blind split key in the repository. An `audio-validation` runner receives `AP_VALIDATION_HOLDOUT_KEY` from GitHub Actions secrets; missing keys fail the blind workflow. `split_holdout.py` HMAC-partitions immutable case identities. Per-case blind metrics can be suppressed from the published report while aggregate gates remain enforceable.
 
+Blind data is a promotion authority, not an iterative optimizer dataset. Repeated candidate search against blind results would destroy its purpose.
+
 ## Evidence binding
 
 Every public-data evidence bundle includes or binds:
 
 - exact source revision;
-- `datasets.lock.json` SHA-256;
+- dataset lock SHA-256;
 - local cache seal verification;
 - corpus manifest and policy SHA-256;
 - validation report and evidence manifest;
@@ -128,7 +158,7 @@ This is intentionally lighter than formal shipping-certification provenance but 
 
 ## Evidence boundary
 
-Compact and Full are acoustic validation evidence only. They do not establish target CPU/RSS, thermal/power limits, real microphone/codec/enclosure acoustics, far-field product performance, HIL stability or the formal 72-hour shipping certification. Those remain governed by `product-certification.yml` and real product evidence.
+Compact, Full, Extended Real and tuning results are acoustic validation evidence only. They do not establish target CPU/RSS, thermal/power limits, real microphone/codec/enclosure acoustics, HIL stability or the formal 72-hour shipping certification. Those remain governed by `product-certification.yml`, `certification/` and real product evidence.
 
 ## Hosted real-audio smoke
 

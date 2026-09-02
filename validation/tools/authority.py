@@ -8,8 +8,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-DEFAULT_AUTHORITY = Path(__file__).resolve().parents[1] / "authority.json"
-DEFAULT_CORPUS_SCHEMA = Path(__file__).resolve().parents[1] / "corpus.schema.json"
+_VALIDATION_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_AUTHORITY = _VALIDATION_ROOT / "authority.json"
+DEFAULT_CORPUS_SCHEMA = _VALIDATION_ROOT / "corpus.schema.json"
+DEFAULT_POLICY_SCHEMA = _VALIDATION_ROOT / "policy.schema.json"
+DEFAULT_REPORT_SCHEMA = _VALIDATION_ROOT / "report.schema.json"
 VALID_OPTIMIZER_ROLES = {"development", "validation", "shadow"}
 REQUIRED_TIER_FLAGS = {
     "requires_sealed_data",
@@ -93,14 +96,42 @@ def optimizer_role_allowed(authority: dict[str, Any], tier: str, role: str) -> b
     return role in tier_spec(authority, tier).get("optimizer_roles", [])
 
 
-def validate_schema_sync(authority: dict[str, Any], schema_path: Path) -> None:
-    schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    enum = schema.get("properties", {}).get("tier", {}).get("enum", [])
-    if set(enum) != corpus_tiers(authority):
-        raise ValueError(
-            f"corpus.schema.json tier enum drift: schema={sorted(enum)} "
-            f"authority={sorted(corpus_tiers(authority))}"
+def _schema_enum(path: Path, kind: str) -> set[str]:
+    schema = json.loads(path.read_text(encoding="utf-8"))
+    if kind in {"corpus", "report"}:
+        enum = schema.get("properties", {}).get("tier", {}).get("enum", [])
+    elif kind == "policy":
+        enum = (
+            schema.get("properties", {})
+            .get("allowed_tiers", {})
+            .get("items", {})
+            .get("enum", [])
         )
+    else:
+        raise ValueError(f"unknown validation schema kind: {kind}")
+    return set(enum)
+
+
+def validate_schema_sync(authority: dict[str, Any], corpus_schema: Path,
+                         policy_schema: Path, report_schema: Path) -> None:
+    expected = corpus_tiers(authority)
+    for kind, path in (
+        ("corpus", corpus_schema),
+        ("policy", policy_schema),
+        ("report", report_schema),
+    ):
+        actual = _schema_enum(path, kind)
+        if actual != expected:
+            raise ValueError(
+                f"{path.name} tier enum drift: schema={sorted(actual)} "
+                f"authority={sorted(expected)}"
+            )
+    report = json.loads(report_schema.read_text(encoding="utf-8"))
+    binding_required = set(
+        report.get("properties", {}).get("bindings", {}).get("required", [])
+    )
+    if "authority_sha256" not in binding_required:
+        raise ValueError("report schema must require authority_sha256 binding")
 
 
 def corpus_identity(path: Path) -> dict[str, Any]:
@@ -141,7 +172,9 @@ def self_test() -> None:
     assert tier_spec(authority, "research-validation")["allows_dev_split"] is True
     assert tier_spec(authority, "validation-grade")["allows_dev_split"] is False
     assert tier_spec(authority, "validation-grade-blind")["requires_blind_key"] is True
-    validate_schema_sync(authority, DEFAULT_CORPUS_SCHEMA)
+    validate_schema_sync(
+        authority, DEFAULT_CORPUS_SCHEMA, DEFAULT_POLICY_SCHEMA, DEFAULT_REPORT_SCHEMA
+    )
     print("validation authority self-test: OK")
 
 
@@ -149,6 +182,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--authority", type=Path, default=DEFAULT_AUTHORITY)
     parser.add_argument("--corpus-schema", type=Path, default=DEFAULT_CORPUS_SCHEMA)
+    parser.add_argument("--policy-schema", type=Path, default=DEFAULT_POLICY_SCHEMA)
+    parser.add_argument("--report-schema", type=Path, default=DEFAULT_REPORT_SCHEMA)
     parser.add_argument("--development-corpus", type=Path)
     parser.add_argument("--validation-corpus", type=Path)
     parser.add_argument("--shadow-corpus", type=Path)
@@ -158,7 +193,9 @@ def main() -> int:
         self_test()
         return 0
     authority = load_authority(args.authority)
-    validate_schema_sync(authority, args.corpus_schema)
+    validate_schema_sync(
+        authority, args.corpus_schema, args.policy_schema, args.report_schema
+    )
     provided = [args.development_corpus, args.validation_corpus, args.shadow_corpus]
     identities = None
     if any(item is not None for item in provided):

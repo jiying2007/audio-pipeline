@@ -78,6 +78,33 @@ def validate_schema_sync(authority: dict[str, Any], schema_path: Path) -> None:
         )
 
 
+def corpus_identity(path: Path) -> dict[str, Any]:
+    corpus = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        "path": str(path),
+        "corpus_id": corpus.get("corpus_id"),
+        "tier": corpus.get("tier"),
+        "generator_seed": corpus.get("generator", {}).get("seed"),
+    }
+
+
+def validate_optimizer_partitions(authority: dict[str, Any], development: Path,
+                                  validation: Path, shadow: Path) -> dict[str, Any]:
+    paths = {
+        "development": development,
+        "validation": validation,
+        "shadow": shadow,
+    }
+    identities = {role: corpus_identity(path) for role, path in paths.items()}
+    for role, identity in identities.items():
+        tier = identity["tier"]
+        if tier not in corpus_tiers(authority):
+            raise ValueError(f"unknown corpus tier for {role}: {tier}")
+        if not optimizer_role_allowed(authority, tier, role):
+            raise ValueError(f"authority forbids tier={tier} as optimizer role={role}")
+    return identities
+
+
 def self_test() -> None:
     authority = load_authority()
     assert optimizer_role_allowed(authority, "regression", "development")
@@ -92,6 +119,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--authority", type=Path, default=DEFAULT_AUTHORITY)
     parser.add_argument("--corpus-schema", type=Path, default=DEFAULT_CORPUS_SCHEMA)
+    parser.add_argument("--development-corpus", type=Path)
+    parser.add_argument("--validation-corpus", type=Path)
+    parser.add_argument("--shadow-corpus", type=Path)
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -99,10 +129,19 @@ def main() -> int:
         return 0
     authority = load_authority(args.authority)
     validate_schema_sync(authority, args.corpus_schema)
+    provided = [args.development_corpus, args.validation_corpus, args.shadow_corpus]
+    identities = None
+    if any(item is not None for item in provided):
+        if not all(item is not None for item in provided):
+            parser.error("development/validation/shadow corpora must be supplied together")
+        identities = validate_optimizer_partitions(
+            authority, args.development_corpus, args.validation_corpus, args.shadow_corpus
+        )
     print(json.dumps({
         "result": "PASS",
         "corpus_tiers": sorted(corpus_tiers(authority)),
         "terminal_authority": "product-certified",
+        "optimizer_partitions": identities,
     }, sort_keys=True))
     return 0
 

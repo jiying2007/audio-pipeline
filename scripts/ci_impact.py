@@ -2,9 +2,9 @@
 """Conservative change-aware CI selection for audio-pipeline.
 
 Unknown paths always expand to the full matrix. The selector is an optimization
-layer only; main pushes force the full verification graph. Release-bearing
-changes must also advance the repository SemVer so immutable Release cannot
-silently lag behind main.
+layer only; main pushes force the full verification graph. Every merged content
+change advances repository SemVer so main and its immutable source Release stay
+one-to-one instead of silently diverging.
 """
 
 from __future__ import annotations
@@ -28,8 +28,6 @@ DSP_ARM = ["cortex-a7-neon", "cortex-a32-neon", "aarch64-neon"]
 
 DOC_PREFIXES = ("docs/",)
 DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE", "SECURITY.md"}
-RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
-RELEASE_NEUTRAL_FILES = {".gitignore", ".gitattributes"}
 VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
 CHANGELOG_RE = re.compile(r"^#\s+([0-9]+\.[0-9]+\.[0-9]+)\s*$", re.M)
 
@@ -44,10 +42,6 @@ def changed_files(base: str, head: str) -> list[str]:
 
 def is_docs(path: str) -> bool:
     return path in DOC_FILES or path.startswith(DOC_PREFIXES) or path.endswith(".md")
-
-
-def is_release_neutral(path: str) -> bool:
-    return is_docs(path) or path in RELEASE_NEUTRAL_FILES or path.startswith(RELEASE_NEUTRAL_PREFIXES)
 
 
 def parse_semver(value: str) -> tuple[int, int, int]:
@@ -76,15 +70,15 @@ def changelog_version(ref: str) -> str:
 
 
 def enforce_release_version(base: str, head: str, paths: list[str]) -> None:
-    release_paths = [path for path in paths if not is_release_neutral(path)]
-    if not release_paths:
-        return
+    if not paths:
+        raise ValueError("empty content diff cannot establish release identity")
     base_version = project_version(base)
     head_version = project_version(head)
     if parse_semver(head_version) <= parse_semver(base_version):
         raise ValueError(
-            "release-bearing change must advance SemVer: "
-            f"base={base_version} head={head_version} paths={release_paths[:8]}"
+            "every merged content change must advance SemVer so main stays aligned with its "
+            f"immutable source Release: base={base_version} head={head_version} "
+            f"paths={paths[:8]}"
         )
     change_version = changelog_version(head)
     if change_version != head_version:
@@ -237,9 +231,6 @@ def emit(result: dict, github_output: Path | None) -> None:
 
 def self_test() -> None:
     assert analyze(["README.md"])["docs_only"]
-    assert is_release_neutral(".github/workflows/verify.yml")
-    assert is_release_neutral("tests/test_pipeline.c")
-    assert not is_release_neutral("validation/tools/run_validation.py")
     assert parse_semver("2.3.0") > parse_semver("2.2.6")
     ns = analyze(["src/modules/ap_ns_module.c"])
     assert ns["run_ns_backend"] and not ns["full"] and "composition-ns-only" in ns["compositions"]

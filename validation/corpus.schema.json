@@ -19,6 +19,7 @@
     "tier": {
       "enum": [
         "regression",
+        "research-validation",
         "validation-grade",
         "validation-grade-blind"
       ]

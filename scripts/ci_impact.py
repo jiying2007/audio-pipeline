@@ -30,7 +30,10 @@ DSP_ARM = ["cortex-a7-neon", "cortex-a32-neon", "aarch64-neon"]
 DOC_PREFIXES = ("docs/",)
 DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE", "SECURITY.md"}
 RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
-RELEASE_NEUTRAL_FILES = {".gitignore", ".gitattributes"}
+RELEASE_NEUTRAL_FILES = {
+    ".gitignore", ".gitattributes",
+    "scripts/ci_impact.py", "scripts/docs_consistency.py",
+}
 VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
 CHANGELOG_RE = re.compile(r"^#\s+([0-9]+\.[0-9]+\.[0-9]+)\s*$", re.M)
 
@@ -246,6 +249,8 @@ def self_test() -> None:
     assert is_release_neutral("ci/Dockerfile")
     assert is_release_neutral("tests/test_pipeline.c")
     assert is_release_neutral("fuzz/fuzz_pipeline.c")
+    assert is_release_neutral("scripts/ci_impact.py")
+    assert is_release_neutral("scripts/docs_consistency.py")
     assert not is_release_neutral("lab/requirements-ansible.txt")
     assert not is_release_neutral("validation/tools/run_validation.py")
     assert not is_release_neutral("src/core/ap_pipeline.c")

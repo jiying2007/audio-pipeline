@@ -52,6 +52,7 @@ jobs:
           python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
           python3 validation/tools/build_public_corpus.py --self-test
           python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
           python3 scripts/validation_reproducer.py --self-test
       - name: Configure offline validation processor
         run: >-
@@ -103,6 +104,45 @@ jobs:
           assert report["validation_result"] == "PASS"
           PY
           done
+      - name: Enforce bounded acoustic tuning iteration
+        run: |
+          set -euo pipefail
+          python3 validation/tools/tuning_iteration.py \
+            --processor ./build-validation-smoke/ap_process_pcm \
+            --development-corpus /tmp/ap-validation-1307/corpus.json \
+            --validation-corpus /tmp/ap-validation-2307/corpus.json \
+            --shadow-corpus /tmp/ap-validation-3307/corpus.json \
+            --policy validation/policies/validation-smoke.json \
+            --dataset-lock validation/datasets.lock.json \
+            --search-space validation/tuning/search-spaces/call-pr-smoke-v1.json \
+            --output-dir /tmp/ap-tuning-pr
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/ap-tuning-pr/iteration-result.json').read_text())
+          assert result['authority'] == 'non-shipping-acoustic-iteration'
+          assert result['search_space']['candidate_count'] <= 8
+          baseline_dev = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
+          assert baseline_dev['validation_result'] == 'PASS'
+          assert result['validation']['baseline']['validation_result'] == 'PASS'
+          assert result['shadow']['baseline']['validation_result'] == 'PASS'
+          if result['decision'] == 'ACOUSTIC_CANDIDATE':
+              assert not result['validation']['regression_violations']
+              assert not result['shadow']['regression_violations']
+          print(json.dumps({
+              'decision': result['decision'],
+              'iteration_id': result['iteration_id'],
+              'selected': result['selected'],
+          }, sort_keys=True))
+          PY
+      - name: Upload tuning iteration evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: required-acoustic-tuning-${{ github.run_id }}
+          path: /tmp/ap-tuning-pr/
+          retention-days: 30
+          if-no-files-found: warn
       - name: Package failed validation reproducer
         if: failure()
         shell: bash

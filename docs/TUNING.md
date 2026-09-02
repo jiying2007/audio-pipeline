@@ -111,4 +111,26 @@ At minimum include:
 - quiet speech;
 - CPU/DDR contention.
 
-Use `eval/` for repeatable result exchange and store shipping results in a certification record. Hosted synthetic tests protect contracts; they do not replace listening/product corpus evaluation.
+Use the canonical `validation/` corpus/report contract for repeatable result exchange and store shipping results in a `certification/` record. Hosted synthetic tests protect contracts; they do not replace listening/product corpus evaluation.
+
+## Automated dataset-driven iteration
+
+The repository has one bounded automatic tuning loop under `validation/tuning/` and `validation/tools/tuning_iteration.py`. It uses the public `ap_tuning_t` control boundary rather than private source pokes, so offline replay and product runtime use the same four supported controls.
+
+Evidence and optimizer permissions are defined in the machine-readable `validation/authority.json`; `validation/tools/authority.py --self-test` keeps that source synchronized with `corpus.schema.json`.
+
+The default hosted loop deliberately separates data roles:
+
+- seed 1307 is development/search data;
+- seed 2307 is independent validation data;
+- seed 3307 is independent shadow data;
+- development input is restricted to `regression` or `research-validation`;
+- `validation-grade` is independent evidence, not search input;
+- `validation-grade-blind` is reserved for post-candidate promotion and is never a tuning-search dataset;
+- product certification is a separate terminal authority under `certification/`, not a validation corpus tier.
+
+Candidate selection is baseline-relative and multi-metric. Pass rate, p10 speech/noise tails, ERLE, VAD and clipping participate in the objective, while validation/shadow tolerances reject a development winner that trades one metric for an unacceptable regression elsewhere.
+
+Pull requests execute the bounded `call-pr-smoke-v1` neighborhood inside the required `Audio Quality Gates -> validation-smoke` path. The standalone `.github/workflows/acoustic-tuning-iteration.yml` is scheduled/manual only and runs the wider `call-v1` search. This avoids executing the same PR optimization twice while retaining a larger recurring discovery search.
+
+A hosted result may only become `ACOUSTIC_CANDIDATE`. It must not mutate `main`, update shipping defaults, or be described as a shipping improvement. Promotion requires the exact candidate revision to pass blind validation, target CPU/RSS/latency evidence, target HIL/soak and Product Certification. This preserves the repository's existing authority hierarchy while allowing GitHub Actions to do useful iterative search automatically.

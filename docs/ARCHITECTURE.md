@@ -124,6 +124,33 @@ Realtime diagnostics obey the same bounded-data-plane rules:
 
 PC-side `apdump` and `apreplay` provide inspection, extraction and deterministic replay. Audio Quality CI exercises the complete dump -> parse/extract -> replay path.
 
+## Validation and assurance plane
+
+The quality framework is deliberately outside the realtime dependency graph. It has one direction of authority:
+
+```text
+validation/
+  corpus + source locks + policies + canonical metrics/evaluator
+        |
+        +-> tuning search -> ACOUSTIC_CANDIDATE only
+        |
+        +-> validation-grade / blind evidence
+        v
+lab/
+  trusted execution + data materialization + target controller readiness
+        v
+HIL / target resource evidence
+        v
+certification/
+  schema-v4 shipping record + lifecycle archive
+```
+
+`validation/authority.json` is the machine source of truth for corpus tiers and optimizer permissions. `validation/` owns all repository acoustic evaluation; there is no parallel `eval/` implementation. `certification/` owns `product-certified` and is the only shipping authority. `lab/` owns infrastructure readiness only and cannot upgrade evidence by itself.
+
+The optimizer may search only data roles allowed by the authority contract. Validation-grade blind data is excluded from iterative search so repeated candidate feedback cannot leak the holdout. A hosted candidate must be materialized as a reviewed change/configuration before target/HIL/certification can promote it.
+
+PR tuning regression is part of the required `Audio Quality Gates -> validation-smoke` path. The separate Acoustic Tuning Search workflow is schedule/manual only, preventing the same PR search from executing twice.
+
 ## Architecture/SKU boundaries enforced by CI
 
 Automation verifies:
@@ -138,6 +165,8 @@ Automation verifies:
 - state RAM, runtime RAM and final consumer ELF physically shrink for smaller products;
 - installed CMake/pkg-config consumers build outside the source tree;
 - dump/replay and certification contracts remain executable;
+- validation authority and corpus schema stay synchronized;
+- required PR acoustic regression includes bounded tuning plus independent replay;
 - QEMU executes selected ARM contracts rather than cross-compiling only.
 
 ## Deliberate non-goals
@@ -146,4 +175,5 @@ Automation verifies:
 - runtime shared-object/plugin loading;
 - unbounded logging/dump queues;
 - no-FPU/fixed-point implementation in this profile;
+- duplicate acoustic-evaluation frameworks;
 - claims of target-board CPU/thermal/power based on hosted CI.

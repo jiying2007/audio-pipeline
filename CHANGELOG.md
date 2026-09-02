@@ -1,3 +1,14 @@
+# 2.3.0
+
+- Hard-cut repository acoustic evaluation to one canonical `validation/` framework; remove the obsolete parallel `eval/` runner/schema and migrate Quality/Nightly/required Audio Quality entrypoints to the canonical evaluator.
+- Add machine-readable `validation/authority.json` as the executable evidence-authority source of truth. Canonical validation/tuning CLIs now enforce tier roles, sealed/dev/blind rules, bind authority SHA-256 into reports, and keep `product-certified` exclusively under certification schema v4.
+- Add bounded dataset-driven tuning over the existing runtime-safe AEC/NS/AGC/limiter controls with deterministic development/validation/shadow partitions, baseline-relative multi-metric scoring, independent replay, hash-bound evidence and `ACOUSTIC_CANDIDATE` as the maximum hosted authority.
+- Fail tuning closed when a candidate makes an existing objective metric disappear; reject duplicate/unknown objective metrics and prevent validation-grade/blind evidence from entering forbidden optimizer roles.
+- Put bounded tuning inside the existing required `summary -> audio-quality -> validation-smoke` merge path, while leaving wider tuning search schedule/manual-only so PRs do not run the same optimizer twice.
+- Add a required release-version invariant: release-bearing PRs must advance SemVer above the base revision and keep CMake/CHANGELOG versions identical, preventing `main` from diverging from an already-immutable release tag.
+- Pin the CI Ubuntu base image by digest and extend Dependabot coverage to laboratory Python dependencies and the CI Docker base in addition to SHA-pinned GitHub Actions.
+- Preserve the realtime DSP architecture, public v2 API/ABI, algorithm defaults, dataset locks/licenses, resource/acoustic/HIL thresholds and Product Certification authority unchanged; hosted tuning remains discovery/regression evidence only.
+
 # 2.2.6
 
 - Add a scheduled/manual real acquisition smoke for OpenSLR SLR31 `dev-clean-2` using the production `labctl.materialize_http` path: HTTPS acquisition, official MD5 validation, local SHA-256 acquisition seal, safe tar extraction, materialization marker and evidence upload.

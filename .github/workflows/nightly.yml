@@ -41,15 +41,16 @@ jobs:
       - name: APD parser malformed-input fuzz
         run: python3 fuzz/fuzz_apd_parser.py
 
-  eval-contract:
+  validation-contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - run: python3 eval/run_eval.py --self-test
+      - run: python3 validation/tools/authority.py --self-test
       - run: python3 certification/validate_record.py --self-test
       - run: python3 validation/tools/dataset_lock.py self-test
       - run: python3 validation/tools/dataset_lock.py validate --lock validation/datasets.lock.json
       - run: python3 validation/tools/run_validation.py --self-test
+      - run: python3 validation/tools/tuning_iteration.py --self-test
       - run: python3 scripts/ci_impact.py --self-test
       - run: python3 scripts/flaky_guard.py --self-test
       - run: python3 scripts/test_history.py --self-test

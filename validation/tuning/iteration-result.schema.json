@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jiying2007/audio-pipeline/validation/tuning/iteration-result.schema.json",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "iteration_id", "decision", "authority", "search_space", "bindings", "baseline", "selected", "development_ranking", "validation", "shadow", "promotion_required"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "iteration_id": {"type": "string", "minLength": 1},
+    "decision": {"enum": ["KEEP_BASELINE", "ACOUSTIC_CANDIDATE", "REJECT_CANDIDATE"]},
+    "authority": {"const": "non-shipping-acoustic-iteration"},
+    "promotion_required": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "development_ranking": {"type": "array", "minItems": 1},
+    "validation": {"type": "object", "required": ["baseline", "candidate", "regression_violations"]},
+    "shadow": {"type": "object", "required": ["baseline", "candidate", "regression_violations"]}
+  }
+}

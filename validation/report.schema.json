@@ -6,15 +6,17 @@
   "properties": {
     "schema_version": {"const": 1},
     "validation_result": {"enum": ["PASS", "FAIL"]},
-    "tier": {"enum": ["regression", "validation-grade", "validation-grade-blind"]},
+    "tier": {"enum": ["regression", "research-validation", "validation-grade", "validation-grade-blind"]},
     "source_revision": {"type": "string", "minLength": 7},
     "bindings": {
       "type": "object",
-      "required": ["dataset_lock_sha256", "corpus_sha256", "policy_sha256"],
+      "required": ["authority_sha256", "dataset_lock_sha256", "corpus_sha256", "policy_sha256"],
       "properties": {
+        "authority_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "dataset_lock_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "corpus_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        "policy_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
       }
     },
     "summary": {"type": "object"},

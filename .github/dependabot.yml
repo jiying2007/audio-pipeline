@@ -16,3 +16,19 @@ updates:
       - dependency-name: '*'
         update-types:
           - version-update:semver-major
+
+  - package-ecosystem: pip
+    directory: /lab
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+    groups:
+      lab-python-dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: docker
+    directory: /ci
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 1

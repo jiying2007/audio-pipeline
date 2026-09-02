@@ -1,5 +1,6 @@
 #include "audio_pipeline/audio_pipeline.h"
 #include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,7 @@ static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
             "[--capture-only] [--capture-profile default|ns-isolated] [--metrics-jsonl FILE] "
+            "[--aec-mu VALUE] [--ns-floor VALUE] [--agc-target-dbfs VALUE] [--limiter-dbfs VALUE] "
             "[--echo-path-change-frame N] "
             "[--discontinuity-frame N --discontinuity-flags MASK "
             "--discontinuity-lost-frames N] "
@@ -31,6 +33,16 @@ static int parse_u32(const char *text, uint32_t *value) {
     return 1;
 }
 
+static int parse_float(const char *text, float *value) {
+    char *end = NULL;
+    float parsed;
+    errno = 0;
+    parsed = strtof(text, &end);
+    if (errno || !end || *end != '\0' || !isfinite(parsed)) return 0;
+    *value = parsed;
+    return 1;
+}
+
 int main(int argc, char **argv) {
     AP_ALIGN16 static unsigned char state[AP_PIPELINE_STATE_MAX_BYTES];
     int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS];
@@ -41,6 +53,7 @@ int main(int argc, char **argv) {
     FILE *fo = NULL;
     FILE *fmetrics = NULL;
     ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
+    ap_tuning_t tuning;
     ap_pipeline_t *pipeline = NULL;
     uint32_t sample_rate = cfg.io_sample_rate_hz;
     uint32_t channels = cfg.mic_channels;
@@ -58,6 +71,10 @@ int main(int argc, char **argv) {
     const char *render_path = NULL;
     const char *out_path;
     size_t frame;
+
+    memset(&tuning, 0, sizeof(tuning));
+    tuning.struct_size = sizeof(tuning);
+    tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
 
     while (arg < argc && argv[arg][0] == '-') {
         if (strcmp(argv[arg], "--sample-rate") == 0) {
@@ -85,6 +102,30 @@ int main(int argc, char **argv) {
                 return 2;
             }
             metrics_path = argv[arg];
+        } else if (strcmp(argv[arg], "--aec-mu") == 0) {
+            if (++arg >= argc || !parse_float(argv[arg], &tuning.aec_mu)) {
+                usage(argv[0]);
+                return 2;
+            }
+            tuning.mask |= AP_TUNING_AEC_MU;
+        } else if (strcmp(argv[arg], "--ns-floor") == 0) {
+            if (++arg >= argc || !parse_float(argv[arg], &tuning.ns_floor)) {
+                usage(argv[0]);
+                return 2;
+            }
+            tuning.mask |= AP_TUNING_NS_FLOOR;
+        } else if (strcmp(argv[arg], "--agc-target-dbfs") == 0) {
+            if (++arg >= argc || !parse_float(argv[arg], &tuning.agc_target_dbfs)) {
+                usage(argv[0]);
+                return 2;
+            }
+            tuning.mask |= AP_TUNING_AGC_TARGET;
+        } else if (strcmp(argv[arg], "--limiter-dbfs") == 0) {
+            if (++arg >= argc || !parse_float(argv[arg], &tuning.limiter_dbfs)) {
+                usage(argv[0]);
+                return 2;
+            }
+            tuning.mask |= AP_TUNING_LIMITER;
         } else if (strcmp(argv[arg], "--echo-path-change-frame") == 0) {
             if (++arg >= argc || !parse_u32(argv[arg], &echo_path_change_frame)) {
                 usage(argv[0]);
@@ -160,6 +201,10 @@ int main(int argc, char **argv) {
     if (ap_pipeline_state_size() > sizeof(state) ||
         ap_pipeline_init(state, sizeof(state), &cfg, &pipeline) != AP_OK)
         return 3;
+    if (tuning.mask != 0u && ap_pipeline_apply_tuning(pipeline, &tuning) != AP_OK) {
+        fprintf(stderr, "invalid processor tuning\n");
+        return 2;
+    }
     algorithmic_latency_ms = ap_pipeline_algorithmic_latency_ms(pipeline);
 
     while (fread(mic, sizeof(int16_t) * channels, frame, fm) == frame) {

@@ -2,13 +2,16 @@
 """Conservative change-aware CI selection for audio-pipeline.
 
 Unknown paths always expand to the full matrix. The selector is an optimization
-layer only; main pushes force the full verification graph.
+layer only; main pushes force the full verification graph. Every merged content
+change advances repository SemVer so main and its immutable source Release stay
+one-to-one instead of silently diverging.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -24,7 +27,9 @@ FULL_ARM = [
 DSP_ARM = ["cortex-a7-neon", "cortex-a32-neon", "aarch64-neon"]
 
 DOC_PREFIXES = ("docs/",)
-DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE"}
+DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE", "SECURITY.md"}
+VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
+CHANGELOG_RE = re.compile(r"^#\s+([0-9]+\.[0-9]+\.[0-9]+)\s*$", re.M)
 
 
 def changed_files(base: str, head: str) -> list[str]:
@@ -37,6 +42,49 @@ def changed_files(base: str, head: str) -> list[str]:
 
 def is_docs(path: str) -> bool:
     return path in DOC_FILES or path.startswith(DOC_PREFIXES) or path.endswith(".md")
+
+
+def parse_semver(value: str) -> tuple[int, int, int]:
+    match = re.fullmatch(r"([0-9]+)\.([0-9]+)\.([0-9]+)", value)
+    if not match:
+        raise ValueError(f"invalid project SemVer: {value}")
+    return tuple(int(item) for item in match.groups())
+
+
+def git_text(ref: str, path: str) -> str:
+    return subprocess.check_output(["git", "show", f"{ref}:{path}"], text=True)
+
+
+def project_version(ref: str) -> str:
+    match = VERSION_RE.search(git_text(ref, "CMakeLists.txt"))
+    if not match:
+        raise ValueError(f"project VERSION missing at {ref}")
+    return match.group(1)
+
+
+def changelog_version(ref: str) -> str:
+    match = CHANGELOG_RE.search(git_text(ref, "CHANGELOG.md"))
+    if not match:
+        raise ValueError(f"top CHANGELOG version missing at {ref}")
+    return match.group(1)
+
+
+def enforce_release_version(base: str, head: str, paths: list[str]) -> None:
+    if not paths:
+        raise ValueError("empty content diff cannot establish release identity")
+    base_version = project_version(base)
+    head_version = project_version(head)
+    if parse_semver(head_version) <= parse_semver(base_version):
+        raise ValueError(
+            "every merged content change must advance SemVer so main stays aligned with its "
+            f"immutable source Release: base={base_version} head={head_version} "
+            f"paths={paths[:8]}"
+        )
+    change_version = changelog_version(head)
+    if change_version != head_version:
+        raise ValueError(
+            f"release version drift: CMake={head_version} CHANGELOG={change_version}"
+        )
 
 
 def analyze(paths: list[str], force_full: bool = False) -> dict:
@@ -183,6 +231,7 @@ def emit(result: dict, github_output: Path | None) -> None:
 
 def self_test() -> None:
     assert analyze(["README.md"])["docs_only"]
+    assert parse_semver("2.3.0") > parse_semver("2.2.6")
     ns = analyze(["src/modules/ap_ns_module.c"])
     assert ns["run_ns_backend"] and not ns["full"] and "composition-ns-only" in ns["compositions"]
     aec = analyze(["src/modules/ap_aec_module.c"])
@@ -216,6 +265,8 @@ def main() -> int:
         if not args.base or not args.head:
             parser.error("provide paths or --base/--head")
         paths = changed_files(args.base, args.head)
+    if args.base and args.head:
+        enforce_release_version(args.base, args.head, paths)
     emit(analyze(paths, args.force_full), args.github_output)
     return 0
 

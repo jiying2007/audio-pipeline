@@ -229,9 +229,12 @@ jobs:
       - name: Scan build
         run: scan-build --status-bugs cmake --build build-analysis --parallel
 
-  acoustic-eval-contract:
+  acoustic-validation-contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Validate evaluation harness
-        run: python3 eval/run_eval.py --self-test
+      - name: Validate canonical acoustic validation contracts
+        run: |
+          python3 validation/tools/authority.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test

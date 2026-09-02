@@ -122,9 +122,12 @@ The default hosted loop deliberately separates data roles:
 - seed 1307 is development/search data;
 - seed 2307 is independent validation data;
 - seed 3307 is independent shadow data;
-- `validation-grade-blind` remains repository-external HMAC holdout evidence and is never legal search input.
+- development input is restricted to `regression` or `research-validation`;
+- `validation-grade`, `validation-grade-blind`, and product/certification evidence are never legal candidate-selection inputs.
 
 Candidate selection is baseline-relative and multi-metric. Pass rate, p10 speech/noise tails, ERLE, VAD and clipping participate in the objective, while validation/shadow tolerances reject a development winner that trades one metric for an unacceptable regression elsewhere.
+
+Pull requests use the bounded `call-pr-smoke-v1` neighborhood so ordinary code review gets fast tuning-regression evidence. Scheduled and manually dispatched runs use the wider `call-v1` search. Both cadences replay the selected development result from scratch on independent validation and shadow partitions; the smaller PR search changes cost, not authority.
 
 A hosted result may only become `ACOUSTIC_CANDIDATE`. It must not mutate `main`, update shipping defaults, or be described as a shipping improvement. Promotion requires the exact candidate revision to pass blind validation, target CPU/RSS/latency evidence, target HIL/soak and Product Certification. This preserves the repository's existing authority hierarchy while allowing GitHub Actions to do useful iterative search automatically.
 

@@ -25,6 +25,9 @@ jobs:
   iterate:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      SEARCH_SPACE: ${{ github.event_name == 'pull_request' && 'validation/tuning/search-spaces/call-pr-smoke-v1.json' || 'validation/tuning/search-spaces/call-v1.json' }}
+      EXPECTED_MAX_CANDIDATES: ${{ github.event_name == 'pull_request' && '8' || '20' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
@@ -36,13 +39,18 @@ jobs:
           python3 -m py_compile validation/tools/*.py
           python3 validation/tools/tuning_iteration.py --self-test
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
-          space = json.loads(Path('validation/tuning/search-spaces/call-v1.json').read_text())
-          assert space['schema_version'] == 1
-          assert space['strategy'] == 'one-at-a-time'
-          assert space['max_candidates'] <= 20
-          assert set(space['baseline']) == {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
+          for path in [
+              Path('validation/tuning/search-spaces/call-pr-smoke-v1.json'),
+              Path('validation/tuning/search-spaces/call-v1.json'),
+          ]:
+              space = json.loads(path.read_text())
+              assert space['schema_version'] == 1
+              assert space['strategy'] == 'one-at-a-time'
+              assert set(space['baseline']) == {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
+          selected = json.loads(Path(os.environ['SEARCH_SPACE']).read_text())
+          assert selected['max_candidates'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
           PY
       - name: Configure offline tuning processor
         run: >-
@@ -66,18 +74,18 @@ jobs:
             --shadow-corpus /tmp/ap-tuning-3307/corpus.json \
             --policy validation/policies/validation-smoke.json \
             --dataset-lock validation/datasets.lock.json \
-            --search-space validation/tuning/search-spaces/call-v1.json \
+            --search-space "$SEARCH_SPACE" \
             --output-dir tuning-out
       - name: Enforce baseline health and evidence authority
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           result = json.loads(Path('tuning-out/iteration-result.json').read_text())
           assert result['authority'] == 'non-shipping-acoustic-iteration'
           assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
-          assert result['search_space']['candidate_count'] <= 20
+          assert result['search_space']['candidate_count'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
           assert result['bindings']['partitions']['development']['generator_seed'] == 1307
           assert result['bindings']['partitions']['validation']['generator_seed'] == 2307
           assert result['bindings']['partitions']['shadow']['generator_seed'] == 3307
@@ -101,12 +109,13 @@ jobs:
         run: |
           if [ -f tuning-out/iteration-result.json ]; then
             python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
+          import json, os
           from pathlib import Path
           r = json.loads(Path('tuning-out/iteration-result.json').read_text())
           print('## Acoustic tuning iteration')
           print(f"- Decision: `{r['decision']}`")
           print(f"- Iteration: `{r['iteration_id']}`")
+          print(f"- Search space: `{os.environ['SEARCH_SPACE']}`")
           print(f"- Candidate count: `{r['search_space']['candidate_count']}`")
           print(f"- Selected: `{r['selected']['label']}`")
           print(f"- Development score: `{r['selected']['development_score']:.4f}`")

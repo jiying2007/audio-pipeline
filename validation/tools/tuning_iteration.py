@@ -52,6 +52,28 @@ def enforce_optimizer_authority(development: Path, validation: Path, shadow: Pat
             raise ValueError(f"authority rejects {tier!r} corpus for optimizer role {role!r}")
 
 
+def strict_partition_independence(development: Path, validation: Path,
+                                  shadow: Path) -> dict[str, Any]:
+    identities = {
+        "development": engine.load_corpus_identity(development),
+        "validation": engine.load_corpus_identity(validation),
+        "shadow": engine.load_corpus_identity(shadow),
+    }
+    hashes = [item["sha256"] for item in identities.values()]
+    ids = [item["corpus_id"] for item in identities.values()]
+    seeds = [item["generator_seed"] for item in identities.values()]
+    if len(set(hashes)) != 3 or len(set(ids)) != 3:
+        raise ValueError("development/validation/shadow corpora must be distinct")
+    if all(seed is not None for seed in seeds) and len(set(seeds)) != 3:
+        raise ValueError("generated partitions must use distinct seeds")
+    authority = load_authority()
+    for role, identity in identities.items():
+        tier = identity["tier"]
+        if not optimizer_role_allowed(authority, tier, role):
+            raise ValueError(f"authority rejects {tier!r} corpus for optimizer role {role!r}")
+    return identities
+
+
 def strict_validate_search_space(space: dict[str, Any]) -> None:
     _original_validate_search_space(space)
     metrics = engine.objective_metrics(space)
@@ -101,6 +123,7 @@ def strict_regression(space: dict[str, Any], baseline: dict[str, Any],
 
 
 def install_fail_closed_guards() -> None:
+    engine.enforce_partition_independence = strict_partition_independence
     engine.validate_search_space = strict_validate_search_space
     engine.score_against_baseline = strict_score
     engine.regression_violations = strict_regression

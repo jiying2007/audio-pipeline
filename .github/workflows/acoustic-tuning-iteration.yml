@@ -56,6 +56,10 @@ jobs:
           python3 validation/tools/build_validation_corpus.py --output /tmp/ap-tuning-1307 --seed 1307
           python3 validation/tools/build_validation_corpus.py --output /tmp/ap-tuning-2307 --seed 2307
           python3 validation/tools/build_validation_corpus.py --output /tmp/ap-tuning-3307 --seed 3307
+          python3 validation/tools/authority.py \
+            --development-corpus /tmp/ap-tuning-1307/corpus.json \
+            --validation-corpus /tmp/ap-tuning-2307/corpus.json \
+            --shadow-corpus /tmp/ap-tuning-3307/corpus.json
       - name: Search development and replay validation plus shadow
         run: |
           set -euo pipefail

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "corpus_tiers": {
+    "regression": {
+      "rank": 10,
+      "optimizer_roles": ["development", "validation", "shadow"],
+      "blind": false,
+      "shipping_authority": false
+    },
+    "research-validation": {
+      "rank": 20,
+      "optimizer_roles": ["development", "validation", "shadow"],
+      "blind": false,
+      "shipping_authority": false
+    },
+    "validation-grade": {
+      "rank": 30,
+      "optimizer_roles": ["validation", "shadow"],
+      "blind": false,
+      "shipping_authority": false
+    },
+    "validation-grade-blind": {
+      "rank": 40,
+      "optimizer_roles": [],
+      "blind": true,
+      "shipping_authority": false
+    }
+  },
+  "terminal_authority": {
+    "product-certified": {
+      "system": "certification",
+      "record_schema_version": 4,
+      "shipping_authority": true
+    }
+  },
+  "candidate_promotion_chain": [
+    "development-search",
+    "independent-validation",
+    "validation-grade-blind",
+    "target-resource",
+    "hil-soak",
+    "product-certified"
+  ]
+}

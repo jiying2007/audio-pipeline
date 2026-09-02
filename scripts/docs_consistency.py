@@ -129,10 +129,20 @@ def validate_supply_chain(root: Path, errors: list[str]) -> None:
         "directory: /lab",
         "package-ecosystem: docker",
         "directory: /ci",
+        "lab-python-patch:",
+        "dependency-name: ubuntu",
     )
     for token in required_tokens:
         if token not in dependabot:
             errors.append(f"Dependabot supply-chain coverage missing token: {token}")
+    if "lab-python-dependencies:" in dependabot:
+        errors.append("lab dependency automation must not use the unrestricted legacy group")
+    if dependabot.count("version-update:semver-major") < 3:
+        errors.append("Dependabot must reject major updates for Actions, lab Python and CI Ubuntu")
+    if dependabot.count("version-update:semver-minor") < 2:
+        errors.append("Dependabot must reject minor updates for lab Python and CI Ubuntu")
+    if dependabot.count("          - patch") < 2:
+        errors.append("Dependabot must retain patch updates for Actions and lab Python")
 
 
 def validate_validation_framework(root: Path, errors: list[str]) -> None:

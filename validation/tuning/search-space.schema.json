@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jiying2007/audio-pipeline/validation/tuning/search-space.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "search_space_id", "strategy", "max_candidates", "baseline", "parameters", "objective"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "search_space_id": {"type": "string", "minLength": 1},
+    "strategy": {"enum": ["one-at-a-time", "cartesian"]},
+    "max_candidates": {"type": "integer", "minimum": 1, "maximum": 256},
+    "baseline": {"$ref": "#/$defs/tuning"},
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "aec_mu": {"$ref": "#/$defs/number_list"},
+        "ns_floor": {"$ref": "#/$defs/number_list"},
+        "agc_target_dbfs": {"$ref": "#/$defs/number_list"},
+        "limiter_dbfs": {"$ref": "#/$defs/number_list"}
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_improvement_score", "metrics"],
+      "properties": {
+        "minimum_improvement_score": {"type": "number", "minimum": 0},
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "direction", "weight", "scale", "max_regression"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "direction": {"enum": ["min", "max"]},
+              "weight": {"type": "number", "minimum": 0},
+              "scale": {"type": "number", "exclusiveMinimum": 0},
+              "max_regression": {"type": "number", "minimum": 0}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "number_list": {"type": "array", "minItems": 1, "items": {"type": "number"}},
+    "tuning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs"],
+      "properties": {
+        "aec_mu": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "ns_floor": {"type": "number", "minimum": 0.02, "maximum": 1},
+        "agc_target_dbfs": {"type": "number", "minimum": -60, "maximum": -1},
+        "limiter_dbfs": {"type": "number", "minimum": -20, "maximum": -0.1}
+      }
+    }
+  }
+}

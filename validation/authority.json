@@ -4,24 +4,36 @@
     "regression": {
       "rank": 10,
       "optimizer_roles": ["development", "validation", "shadow"],
+      "requires_sealed_data": false,
+      "allows_dev_split": true,
+      "requires_blind_key": false,
       "blind": false,
       "shipping_authority": false
     },
     "research-validation": {
       "rank": 20,
       "optimizer_roles": ["development", "validation", "shadow"],
+      "requires_sealed_data": true,
+      "allows_dev_split": true,
+      "requires_blind_key": false,
       "blind": false,
       "shipping_authority": false
     },
     "validation-grade": {
       "rank": 30,
       "optimizer_roles": ["validation", "shadow"],
+      "requires_sealed_data": true,
+      "allows_dev_split": false,
+      "requires_blind_key": false,
       "blind": false,
       "shipping_authority": false
     },
     "validation-grade-blind": {
       "rank": 40,
       "optimizer_roles": [],
+      "requires_sealed_data": true,
+      "allows_dev_split": false,
+      "requires_blind_key": true,
       "blind": true,
       "shipping_authority": false
     }

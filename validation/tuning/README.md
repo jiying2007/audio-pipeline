@@ -18,7 +18,7 @@ This directory closes the repeatable **dataset -> evaluate -> search -> independ
 4. product certification on the shipping device/corpus;
 5. normal source review before defaults or product configuration change.
 
-The optimizer never writes `main` and never consumes blind/product-certified data for candidate selection.
+The optimizer never writes `main`. Its development input must be `regression` or `research-validation`; `validation-grade`, `validation-grade-blind`, and product/certification evidence are never legal candidate-selection inputs.
 
 ## Data partition contract
 

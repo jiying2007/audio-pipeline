@@ -87,14 +87,16 @@ python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-
 
 音频 dump 可能包含用户语音，保留周期、访问控制与安全删除属于产品责任。详见 [`docs/DIAGNOSTICS.md`](docs/DIAGNOSTICS.md)。
 
-## 验证可信等级
+## 验证与发货权限
 
-`validation/` 强制区分四层证据：
+`validation/` 是仓库内唯一的声学数据、评测、调参和验证框架；机器可读权限真相源为 [`validation/authority.json`](validation/authority.json)，其中只定义四种 corpus tier：
 
-- `regression`：确定性生成的 CI fixture；
-- `validation-grade`：固定 revision 并本地 seal 的公共数据；
-- `validation-grade-blind`：仓库外 HMAC key 划分的 blind holdout；
-- `product-certified`：真实发货硬件/音频 route 加 performance、thermal、power、acoustic、soak 证据。
+- `regression`：确定性 CI fixture，可用于 development/search 与回归 replay；
+- `research-validation`：封存的研究/条件性数据，可用于算法研究，但不能作为商业或发货证据；
+- `validation-grade`：固定并封存的公共/批准衍生数据，只能用于独立 validation/shadow，不能作为 development 搜索数据；
+- `validation-grade-blind`：仓库外 HMAC holdout，只能作为候选后的晋级证据，不能进入 optimizer feedback。
+
+`product-certified` **不是** `validation/` corpus tier。它属于独立 `certification/` schema v4，是唯一终态发货权限，并要求真实发货硬件/音频 route、performance、thermal、power、acoustic 与 soak 证据。
 
 Compact/Full 继续固定 Microsoft AEC Challenge、Microsoft DNS Challenge 和 OpenSLR SLR28。v2.1.0 新增独立 **Extended Real**：商业验证层使用 RealMAN、BUT ReverbDB、MUSAN、Mini LibriSpeech，并可扩展 VOiCES/AMI/ICSI；AISHELL-4/FSD50K/WHAM 被隔离到 research。大型 corpus 不进入 Git。
 
@@ -152,7 +154,7 @@ CI 会从干净 install prefix 构建 CMake / pkg-config consumer。
 
 PR/main Verify 包含 strict compile/test、GCC/Clang、sanitizer、TSan、static analysis、coverage、backend/composition matrix、Arm cross-build/QEMU、RAM/ROM pruning、paired performance、diagnostics replay、确定性 acoustic regression，以及 v2 API/symbol hard-cut contract。
 
-所有 `main` push 都执行完整 Verify。Release 只有在 exact main SHA 的 required `summary` 成功后，才创建 tag、Release assets 与 attestation。
+任何会进入正式发布内容的 PR 都必须让仓库 SemVer 高于 base，并保持 CMake/CHANGELOG 版本一致。所有 `main` push 都执行完整 Verify；Release 只有在 exact main SHA 的 required `summary` 成功后，才创建 tag、Release assets 与 attestation。
 
 真实公共数据验证、HIL 与 Product Certification 始终与 hosted CI 分离。
 

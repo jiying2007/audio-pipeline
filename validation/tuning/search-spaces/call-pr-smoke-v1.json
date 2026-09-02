@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "search_space_id": "call-runtime-pr-smoke-v1",
+  "strategy": "one-at-a-time",
+  "max_candidates": 8,
+  "baseline": {
+    "aec_mu": 0.22,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20.0,
+    "limiter_dbfs": -2.0
+  },
+  "parameters": {
+    "aec_mu": [0.20, 0.22, 0.24],
+    "ns_floor": [0.10, 0.12, 0.14],
+    "agc_target_dbfs": [-20.0],
+    "limiter_dbfs": [-2.0]
+  },
+  "objective": {
+    "minimum_improvement_score": 0.10,
+    "metrics": [
+      {"name": "pass_rate", "direction": "max", "weight": 10.0, "scale": 0.02, "max_regression": 0.0},
+      {"name": "p10_near_si_sdr_improvement_db", "direction": "max", "weight": 1.4, "scale": 1.0, "max_regression": 0.75},
+      {"name": "p10_noise_only_attenuation_db", "direction": "max", "weight": 0.8, "scale": 1.0, "max_regression": 0.75},
+      {"name": "median_erle_db", "direction": "max", "weight": 1.0, "scale": 1.0, "max_regression": 1.0},
+      {"name": "min_vad_f1", "direction": "max", "weight": 1.0, "scale": 0.05, "max_regression": 0.05},
+      {"name": "max_vad_false_positive_rate", "direction": "min", "weight": 0.6, "scale": 0.05, "max_regression": 0.05},
+      {"name": "max_output_clip_fraction", "direction": "min", "weight": 2.0, "scale": 0.002, "max_regression": 0.002}
+    ]
+  }
+}

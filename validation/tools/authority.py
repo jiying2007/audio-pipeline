@@ -11,6 +11,13 @@ from typing import Any
 DEFAULT_AUTHORITY = Path(__file__).resolve().parents[1] / "authority.json"
 DEFAULT_CORPUS_SCHEMA = Path(__file__).resolve().parents[1] / "corpus.schema.json"
 VALID_OPTIMIZER_ROLES = {"development", "validation", "shadow"}
+REQUIRED_TIER_FLAGS = {
+    "requires_sealed_data",
+    "allows_dev_split",
+    "requires_blind_key",
+    "blind",
+    "shipping_authority",
+}
 
 
 def load_authority(path: Path = DEFAULT_AUTHORITY) -> dict[str, Any]:
@@ -36,8 +43,20 @@ def validate_authority(authority: dict[str, Any]) -> None:
         roles = spec.get("optimizer_roles", [])
         if not isinstance(roles, list) or any(role not in VALID_OPTIMIZER_ROLES for role in roles):
             raise ValueError(f"invalid optimizer_roles for {name}")
-        if bool(spec.get("shipping_authority", False)):
+        missing = REQUIRED_TIER_FLAGS - set(spec)
+        if missing:
+            raise ValueError(f"missing authority flags for {name}: {sorted(missing)}")
+        for flag in REQUIRED_TIER_FLAGS:
+            if not isinstance(spec[flag], bool):
+                raise ValueError(f"authority flag {name}.{flag} must be boolean")
+        if spec["shipping_authority"]:
             raise ValueError(f"validation corpus tier cannot be shipping authority: {name}")
+        if spec["blind"] != spec["requires_blind_key"]:
+            raise ValueError(f"blind/key authority mismatch for {name}")
+        if spec["blind"] and spec["optimizer_roles"]:
+            raise ValueError(f"blind corpus cannot be optimizer input: {name}")
+        if spec["blind"] and spec["allows_dev_split"]:
+            raise ValueError(f"blind corpus cannot allow dev split: {name}")
     if len(ranks) != len(set(ranks)):
         raise ValueError("corpus tier authority ranks must be unique")
 
@@ -61,11 +80,17 @@ def corpus_tiers(authority: dict[str, Any]) -> set[str]:
     return set(authority["corpus_tiers"])
 
 
+def tier_spec(authority: dict[str, Any], tier: str) -> dict[str, Any]:
+    spec = authority["corpus_tiers"].get(tier)
+    if not isinstance(spec, dict):
+        raise ValueError(f"unknown corpus tier: {tier}")
+    return spec
+
+
 def optimizer_role_allowed(authority: dict[str, Any], tier: str, role: str) -> bool:
     if role not in VALID_OPTIMIZER_ROLES:
         raise ValueError(f"unknown optimizer role: {role}")
-    spec = authority["corpus_tiers"].get(tier)
-    return isinstance(spec, dict) and role in spec.get("optimizer_roles", [])
+    return role in tier_spec(authority, tier).get("optimizer_roles", [])
 
 
 def validate_schema_sync(authority: dict[str, Any], schema_path: Path) -> None:
@@ -93,11 +118,7 @@ def corpus_identity(path: Path) -> dict[str, Any]:
 
 def validate_optimizer_partitions(authority: dict[str, Any], development: Path,
                                   validation: Path, shadow: Path) -> dict[str, Any]:
-    paths = {
-        "development": development,
-        "validation": validation,
-        "shadow": shadow,
-    }
+    paths = {"development": development, "validation": validation, "shadow": shadow}
     identities = {role: corpus_identity(path) for role, path in paths.items()}
     for role, identity in identities.items():
         tier = identity["tier"]
@@ -111,9 +132,15 @@ def validate_optimizer_partitions(authority: dict[str, Any], development: Path,
 def self_test() -> None:
     authority = load_authority()
     assert optimizer_role_allowed(authority, "regression", "development")
+    assert optimizer_role_allowed(authority, "research-validation", "development")
     assert optimizer_role_allowed(authority, "validation-grade", "validation")
     assert not optimizer_role_allowed(authority, "validation-grade", "development")
+    assert not optimizer_role_allowed(authority, "validation-grade-blind", "validation")
     assert not optimizer_role_allowed(authority, "validation-grade-blind", "shadow")
+    assert tier_spec(authority, "research-validation")["requires_sealed_data"] is True
+    assert tier_spec(authority, "research-validation")["allows_dev_split"] is True
+    assert tier_spec(authority, "validation-grade")["allows_dev_split"] is False
+    assert tier_spec(authority, "validation-grade-blind")["requires_blind_key"] is True
     validate_schema_sync(authority, DEFAULT_CORPUS_SCHEMA)
     print("validation authority self-test: OK")
 

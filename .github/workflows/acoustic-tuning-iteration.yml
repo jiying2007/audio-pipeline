@@ -1,15 +1,6 @@
-name: Acoustic Tuning Iteration
+name: Acoustic Tuning Search
 
 on:
-  pull_request:
-    paths:
-      - 'src/**'
-      - 'include/**'
-      - 'examples/process_pcm.c'
-      - 'validation/**'
-      - 'CMakeLists.txt'
-      - 'CMakePresets.json'
-      - '.github/workflows/acoustic-tuning-iteration.yml'
   schedule:
     - cron: '17 19 * * *'
   workflow_dispatch:
@@ -26,17 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      SEARCH_SPACE: ${{ github.event_name == 'pull_request' && 'validation/tuning/search-spaces/call-pr-smoke-v1.json' || 'validation/tuning/search-spaces/call-v1.json' }}
-      EXPECTED_MAX_CANDIDATES: ${{ github.event_name == 'pull_request' && '8' || '20' }}
+      SEARCH_SPACE: validation/tuning/search-spaces/call-v1.json
+      EXPECTED_MAX_CANDIDATES: '20'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
         with:
-          namespace: acoustic-tuning-iteration
-      - name: Validate iteration tooling contracts
+          namespace: acoustic-tuning-search
+      - name: Validate iteration and authority contracts
         run: |
           set -euo pipefail
           python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/authority.py --self-test
           python3 validation/tools/tuning_iteration.py --self-test
           python3 - <<'PY'
           import json, os
@@ -112,7 +104,7 @@ jobs:
           import json, os
           from pathlib import Path
           r = json.loads(Path('tuning-out/iteration-result.json').read_text())
-          print('## Acoustic tuning iteration')
+          print('## Acoustic tuning search')
           print(f"- Decision: `{r['decision']}`")
           print(f"- Iteration: `{r['iteration_id']}`")
           print(f"- Search space: `{os.environ['SEARCH_SPACE']}`")

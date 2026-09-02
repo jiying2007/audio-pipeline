@@ -34,7 +34,12 @@ Large/raw third-party audio is not committed to Git. GitHub stores manifests, lo
 
 ## Search model
 
-`search-spaces/call-v1.json` starts from the shipping CALL defaults and uses a bounded one-at-a-time search over the four runtime-safe controls exposed by `ap_tuning_t`:
+The search is intentionally tiered:
+
+- `search-spaces/call-pr-smoke-v1.json` is the bounded PR neighborhood. It probes representative AEC and NS neighbors while retaining the baseline and the full independent replay gates.
+- `search-spaces/call-v1.json` is the wider scheduled/manual search over all four runtime-safe controls.
+
+Both start from the shipping CALL defaults and use the controls exposed by `ap_tuning_t`:
 
 - `aec_mu`
 - `ns_floor`
@@ -43,7 +48,7 @@ Large/raw third-party audio is not committed to Git. GitHub stores manifests, lo
 
 One-at-a-time is intentional for the default CI loop: it keeps cost bounded, provides causal attribution for a gain/regression, and avoids blindly exploring an exponential grid. The engine also supports a capped Cartesian strategy for explicit research runs.
 
-Candidates are ranked relative to the baseline across pass rate, p10 speech/noise tails, ERLE, VAD and clipping. The selected development winner is replayed from scratch on validation and shadow data. Any configured regression beyond tolerance rejects the candidate.
+Candidates are ranked relative to the baseline across pass rate, p10 speech/noise tails, ERLE, VAD and clipping. The selected development winner is replayed from scratch on validation and shadow data. Any configured regression beyond tolerance rejects the candidate. A smaller PR search changes discovery breadth only; it does not weaken validation/shadow authority.
 
 ## Local run
 

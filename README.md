@@ -91,14 +91,16 @@ python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-
 
 Audio dumps may contain private speech; retention, access control and secure deletion are product responsibilities. See [`docs/DIAGNOSTICS.md`](docs/DIAGNOSTICS.md).
 
-## Validation trust levels
+## Validation and shipping authority
 
-`validation/` separates four evidence levels:
+`validation/` is the single repository-side acoustic data/evaluation/tuning framework. Its machine-readable authority source is [`validation/authority.json`](validation/authority.json), which defines four corpus tiers:
 
-- `regression`: deterministic generated CI fixtures;
-- `validation-grade`: pinned/sealed public data;
-- `validation-grade-blind`: HMAC-partitioned repository-external holdout;
-- `product-certified`: real shipping hardware/audio route plus performance, thermal, power, acoustic and soak evidence.
+- `regression`: deterministic generated CI fixtures; eligible for development/search and regression replay;
+- `research-validation`: sealed research/conditional data; eligible for algorithm research but never commercial/shipping evidence;
+- `validation-grade`: pinned/sealed public or approved derived data; independent validation/shadow evidence only, never development search input;
+- `validation-grade-blind`: repository-external HMAC holdout; post-candidate promotion evidence and never optimizer feedback.
+
+`product-certified` is intentionally **not** a `validation/` corpus tier. It is the terminal shipping authority owned by `certification/` schema v4 and requires real shipping hardware/audio-route, performance, thermal, power, acoustic and soak evidence.
 
 Pinned Compact/Full sources include Microsoft AEC Challenge, Microsoft DNS Challenge and OpenSLR SLR28 metadata. v2.1.0 adds a separate **Extended Real** family with license-isolated RealMAN, BUT ReverbDB, MUSAN, Mini LibriSpeech and optional VOiCES/AMI/ICSI plus research-only AISHELL-4/FSD50K/WHAM. Public corpora remain outside Git.
 
@@ -156,7 +158,7 @@ CMake and pkg-config consumers are built from a clean install prefix in CI.
 
 PR/main verification includes strict compile/tests, GCC/Clang, sanitizers, TSan, static analysis, coverage, backend/composition matrices, Arm cross-build/QEMU, resource/ROM pruning, paired performance comparisons, diagnostics replay, deterministic acoustic regression and v2 API/symbol contracts.
 
-Every `main` push runs the complete verification graph. Release automation requires the exact main SHA to pass the required `summary` check before creating the release tag/assets/attestations.
+Release-bearing pull requests must advance repository SemVer and keep CMake/CHANGELOG versions synchronized. Every `main` push runs the complete verification graph. Release automation requires the exact main SHA to pass the required `summary` check before creating the release tag/assets/attestations.
 
 Real public-data validation, HIL and product certification remain evidence-separated from hosted CI.
 

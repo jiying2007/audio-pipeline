@@ -1,0 +1,123 @@
+name: Acoustic Tuning Iteration
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'examples/process_pcm.c'
+      - 'validation/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - '.github/workflows/acoustic-tuning-iteration.yml'
+  schedule:
+    - cron: '17 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acoustic-tuning-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iterate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: acoustic-tuning-iteration
+      - name: Validate iteration tooling contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          space = json.loads(Path('validation/tuning/search-spaces/call-v1.json').read_text())
+          assert space['schema_version'] == 1
+          assert space['strategy'] == 'one-at-a-time'
+          assert space['max_candidates'] <= 20
+          assert set(space['baseline']) == {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
+          PY
+      - name: Configure offline tuning processor
+        run: >-
+          cmake -S . -B build-tuning -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build offline tuning processor
+        run: cmake --build build-tuning --target ap_process_pcm --parallel
+      - name: Build independent deterministic partitions
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-tuning-1307 --seed 1307
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-tuning-2307 --seed 2307
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-tuning-3307 --seed 3307
+      - name: Search development and replay validation plus shadow
+        run: |
+          set -euo pipefail
+          python3 validation/tools/tuning_iteration.py \
+            --processor build-tuning/ap_process_pcm \
+            --development-corpus /tmp/ap-tuning-1307/corpus.json \
+            --validation-corpus /tmp/ap-tuning-2307/corpus.json \
+            --shadow-corpus /tmp/ap-tuning-3307/corpus.json \
+            --policy validation/policies/validation-smoke.json \
+            --dataset-lock validation/datasets.lock.json \
+            --search-space validation/tuning/search-spaces/call-v1.json \
+            --output-dir tuning-out
+      - name: Enforce baseline health and evidence authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('tuning-out/iteration-result.json').read_text())
+          assert result['authority'] == 'non-shipping-acoustic-iteration'
+          assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
+          assert result['search_space']['candidate_count'] <= 20
+          assert result['bindings']['partitions']['development']['generator_seed'] == 1307
+          assert result['bindings']['partitions']['validation']['generator_seed'] == 2307
+          assert result['bindings']['partitions']['shadow']['generator_seed'] == 3307
+          baseline_dev = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
+          assert baseline_dev['validation_result'] == 'PASS'
+          assert result['validation']['baseline']['validation_result'] == 'PASS'
+          assert result['shadow']['baseline']['validation_result'] == 'PASS'
+          if result['decision'] == 'ACOUSTIC_CANDIDATE':
+              assert not result['validation']['regression_violations']
+              assert not result['shadow']['regression_violations']
+          print(json.dumps({
+              'decision': result['decision'],
+              'iteration_id': result['iteration_id'],
+              'selected': result['selected'],
+              'promotion_required': result['promotion_required'],
+          }, sort_keys=True))
+          PY
+      - name: Publish iteration summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f tuning-out/iteration-result.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('tuning-out/iteration-result.json').read_text())
+          print('## Acoustic tuning iteration')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Iteration: `{r['iteration_id']}`")
+          print(f"- Candidate count: `{r['search_space']['candidate_count']}`")
+          print(f"- Selected: `{r['selected']['label']}`")
+          print(f"- Development score: `{r['selected']['development_score']:.4f}`")
+          print('- Authority: non-shipping candidate only; blind + target + HIL + certification remain mandatory.')
+          PY
+          fi
+      - name: Upload hash-bound tuning evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: acoustic-tuning-${{ github.run_id }}
+          path: tuning-out/
+          if-no-files-found: warn
+          retention-days: 30

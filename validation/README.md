@@ -6,7 +6,7 @@
 
 ## Authority model
 
-The machine-readable source of truth is [`authority.json`](authority.json). `validation/tools/authority.py --self-test` verifies the authority contract and keeps the corpus schema tier enum synchronized.
+The machine-readable source of truth is [`validation/authority.json`](authority.json). `validation/tools/authority.py --self-test` verifies the authority contract and keeps the corpus schema tier enum synchronized.
 
 ### Validation corpus tiers
 

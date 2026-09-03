@@ -1,3 +1,9 @@
+# 2.3.4
+
+- Add a deterministic continuous-motion AEC development corpus with multi-seed smooth delay/gain/multipath variation, explicitly limited to regression/development authority.
+- Add a dedicated GitHub-hosted three-seed motion regression workflow using the canonical validation evaluator and sealed evidence artifacts.
+- Preserve DSP defaults, public API/ABI, real-data holdouts and shipping authority unchanged; hosted real AEC remains a one-way promotion gate and is never used as tuning input.
+
 # 2.3.3
 
 - Add a GitHub-hosted, hash-pinned Microsoft AEC Challenge real microset with two static and two moving far-end single-talk cases.

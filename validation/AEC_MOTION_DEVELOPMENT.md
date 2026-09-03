@@ -1,6 +1,6 @@
 # AEC continuous-motion development corpus
 
-`build_aec_motion_corpus.py` adds a deterministic development-only AEC layer for continuous, unannounced echo-path motion.
+`build_aec_motion_corpus.py` adds a deterministic development-only AEC layer for continuous, unannounced echo-path motion. The capability is versioned with repository release `2.3.4` as validation infrastructure only; it does not change DSP defaults.
 
 It exists because reset/recovery fixtures and a small hand-authored synthetic set can overestimate real moving-path robustness. The generator creates 12 far-end-only cases per seed across four motion families (`delay-wander`, `gain-crossfade`, `reflection-birth-death`, `compound`) and three intensities. Delay and gain trajectories are smooth knot interpolations, so no `echo_path_change` control notification is sent.
 

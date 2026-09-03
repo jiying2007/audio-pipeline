@@ -1,0 +1,105 @@
+name: AEC Motion Development
+
+on:
+  pull_request:
+    paths:
+      - 'validation/tools/build_aec_motion_corpus.py'
+      - 'validation/policies/validation-aec-motion-development.json'
+      - '.github/workflows/aec-motion-development.yml'
+      - 'validation/README.md'
+  schedule:
+    - cron: '41 18 * * 2,5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aec-motion-development-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [4107, 4207, 4307]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: aec-motion-${{ matrix.seed }}
+
+      - name: Validate development-only authority and determinism
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/build_aec_motion_corpus.py
+          python3 validation/tools/build_aec_motion_corpus.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          policy = json.loads(Path('validation/policies/validation-aec-motion-development.json').read_text())
+          assert policy['allowed_tiers'] == ['regression']
+          assert policy['minimum_cases'] == 12
+          assert policy['required_public_sources'] == []
+          assert policy['aggregate']['min_median_output_render_corr_reduction'] == 0.0
+          PY
+
+      - name: Build exact offline processor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-motion -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-motion --target ap_process_pcm ap_build_info_dump --parallel
+
+      - name: Build and enforce continuous-motion corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="motion-${{ matrix.seed }}"
+          python3 validation/tools/build_aec_motion_corpus.py \
+            --output "$root/corpus" --seed '${{ matrix.seed }}' --seconds 8
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ github.sha }}' \
+            --corpus "$root/corpus/corpus.json" \
+            --policy validation/policies/validation-aec-motion-development.json \
+            --dataset-lock validation/datasets.lock.json \
+            --source-manifest "$root/corpus/source-manifest.json" \
+            --processor build-motion/ap_process_pcm \
+            --output "$root/report.json" \
+            --evidence-manifest "$root/evidence-manifest.json" \
+            --enforce
+          build-motion/ap_build_info_dump > "$root/build-info.txt"
+          sha256sum build-motion/ap_process_pcm > "$root/processor.sha256"
+          cp validation/policies/validation-aec-motion-development.json "$root/"
+          find "$root" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$root/SHA256SUMS"
+
+      - name: Publish development summary
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          seed = '${{ matrix.seed }}'
+          report = json.loads(Path(f'motion-{seed}/report.json').read_text())
+          print(f'## AEC continuous-motion development seed {seed}')
+          print('')
+          print('- Authority: **regression / development-only / non-shipping**')
+          print(f"- Result: `{report['validation_result']}`")
+          print(f"- Cases: `{report['summary']['cases']}`")
+          print(f"- Pass rate: `{report['summary']['pass_rate']:.3f}`")
+          print(f"- Median render-correlation reduction: `{report['summary']['median_output_render_corr_reduction']:.6f}`")
+          print(f"- Max clip fraction: `{report['summary']['max_output_clip_fraction']:.6f}`")
+          PY
+
+      - name: Upload sealed development evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: aec-motion-development-${{ matrix.seed }}-${{ github.run_id }}
+          path: motion-${{ matrix.seed }}/
+          if-no-files-found: error
+          retention-days: 30

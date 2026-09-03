@@ -1,0 +1,102 @@
+name: Temporary Tail-aware Tuning Selector Upgrade
+
+on:
+  push:
+    branches: [opt/aec-motion-multiseed-iteration]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: opt/aec-motion-multiseed-iteration
+          fetch-depth: 0
+      - name: Add aligned case-delta eligibility to generic tuning engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = Path('validation/tools/tuning_iteration_engine.py')
+          text = p.read_text()
+
+          anchor = '''        if float(metric.get("max_regression", 0.0)) < 0.0:\n            raise ValueError("max_regression must be >= 0")\n'''
+          insert = anchor + '''    case_gates = objective.get("case_delta_gates", [])\n    if not isinstance(case_gates, list):\n        raise ValueError("objective.case_delta_gates must be a list")\n    for gate in case_gates:\n        if not isinstance(gate, dict) or not str(gate.get("metric", "")):\n            raise ValueError("case delta gate metric is required")\n        if gate.get("stat") not in {"min", "p10", "median"}:\n            raise ValueError("case delta gate stat must be min, p10 or median")\n        minimum = float(gate.get("minimum_delta", float("nan")))\n        if not math.isfinite(minimum):\n            raise ValueError("case delta gate minimum_delta must be finite")\n'''
+          if text.count(anchor) != 1 or 'objective.case_delta_gates' in text:
+              raise SystemExit('case gate validation anchor drift')
+          text = text.replace(anchor, insert)
+
+          anchor = '''def load_corpus_identity(path: Path) -> dict[str, Any]:\n'''
+          helper = '''def percentile(values: list[float], quantile: float) -> float:\n    if not values:\n        raise ValueError("percentile requires values")\n    ordered = sorted(values)\n    position = (len(ordered) - 1) * quantile\n    lower = int(math.floor(position))\n    upper = int(math.ceil(position))\n    if lower == upper:\n        return ordered[lower]\n    fraction = position - lower\n    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction\n\n\ndef case_delta_gate_violations(space: dict[str, Any], baseline: dict[str, Any],\n                               candidate: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:\n    gates = list(space.get("objective", {}).get("case_delta_gates", []))\n    if not gates:\n        return [], []\n    baseline_cases = {str(case.get("case_id")): case for case in baseline.get("cases", [])}\n    candidate_cases = {str(case.get("case_id")): case for case in candidate.get("cases", [])}\n    if not baseline_cases or set(baseline_cases) != set(candidate_cases):\n        return [], [{\n            "gate": "case_set_mismatch",\n            "baseline_cases": len(baseline_cases),\n            "candidate_cases": len(candidate_cases),\n        }]\n    summaries: list[dict[str, Any]] = []\n    violations: list[dict[str, Any]] = []\n    for gate in gates:\n        metric = str(gate["metric"])\n        stat = str(gate["stat"])\n        minimum = float(gate["minimum_delta"])\n        deltas: list[float] = []\n        missing: list[str] = []\n        for case_id in sorted(baseline_cases):\n            base_value = baseline_cases[case_id].get("metrics", {}).get(metric)\n            cand_value = candidate_cases[case_id].get("metrics", {}).get(metric)\n            if base_value is None or cand_value is None:\n                missing.append(case_id)\n                continue\n            base_float = float(base_value)\n            cand_float = float(cand_value)\n            if not math.isfinite(base_float) or not math.isfinite(cand_float):\n                missing.append(case_id)\n                continue\n            deltas.append(cand_float - base_float)\n        if missing:\n            violations.append({\n                "gate": "case_metric_missing", "metric": metric,\n                "missing_cases": missing[:8], "missing_count": len(missing),\n            })\n            continue\n        if stat == "min":\n            actual = min(deltas)\n        elif stat == "p10":\n            actual = percentile(deltas, 0.10)\n        else:\n            actual = percentile(deltas, 0.50)\n        summary = {\n            "metric": metric, "stat": stat, "actual_delta": actual,\n            "minimum_delta": minimum, "cases": len(deltas),\n            "worsened_cases": sum(delta < 0.0 for delta in deltas),\n        }\n        summaries.append(summary)\n        if actual < minimum - 1.0e-12:\n            violations.append({"gate": "case_delta_regression", **summary})\n    return summaries, violations\n\n\n''' + anchor
+          if text.count(anchor) != 1 or 'def case_delta_gate_violations' in text:
+              raise SystemExit('case gate helper anchor drift')
+          text = text.replace(anchor, helper)
+
+          old = '''    for result in dev_results:\n        score, deltas = score_against_baseline(space, baseline_dev_report, result["report"])\n        result["score"] = score\n        result["objective_deltas"] = deltas\n\n    eligible_dev = [result for result in dev_results if result["validation_result"] == "PASS"]\n'''
+          new = '''    for result in dev_results:\n        score, deltas = score_against_baseline(space, baseline_dev_report, result["report"])\n        case_summary, case_violations = case_delta_gate_violations(\n            space, baseline_dev_report, result["report"]\n        )\n        result["score"] = score\n        result["objective_deltas"] = deltas\n        result["case_delta_summary"] = case_summary\n        result["case_delta_violations"] = case_violations\n\n    eligible_dev = [\n        result for result in dev_results\n        if result["validation_result"] == "PASS" and not result["case_delta_violations"]\n    ]\n'''
+          if text.count(old) != 1:
+              raise SystemExit('development eligibility anchor drift')
+          text = text.replace(old, new)
+
+          old = '''    validation_violations = regression_violations(\n        space, validation_reports["baseline"][1], validation_reports["candidate"][1]\n    )\n    shadow_violations = regression_violations(\n        space, shadow_reports["baseline"][1], shadow_reports["candidate"][1]\n    )\n'''
+          new = '''    validation_case_summary, validation_case_violations = case_delta_gate_violations(\n        space, validation_reports["baseline"][1], validation_reports["candidate"][1]\n    )\n    shadow_case_summary, shadow_case_violations = case_delta_gate_violations(\n        space, shadow_reports["baseline"][1], shadow_reports["candidate"][1]\n    )\n    validation_violations = regression_violations(\n        space, validation_reports["baseline"][1], validation_reports["candidate"][1]\n    ) + validation_case_violations\n    shadow_violations = regression_violations(\n        space, shadow_reports["baseline"][1], shadow_reports["candidate"][1]\n    ) + shadow_case_violations\n'''
+          if text.count(old) != 1:
+              raise SystemExit('unseen case gate anchor drift')
+          text = text.replace(old, new)
+
+          old = '''                "report_sha256": item["report_sha256"],\n                "elapsed_s": item["elapsed_s"],\n'''
+          new = '''                "report_sha256": item["report_sha256"],\n                "elapsed_s": item["elapsed_s"],\n                "case_delta_summary": item["case_delta_summary"],\n                "case_delta_violations": item["case_delta_violations"],\n'''
+          if text.count(old) != 1:
+              raise SystemExit('development evidence anchor drift')
+          text = text.replace(old, new)
+
+          old = '''            "regression_violations": validation_violations,\n        },\n        "shadow": {\n'''
+          new = '''            "case_delta_summary": validation_case_summary,\n            "regression_violations": validation_violations,\n        },\n        "shadow": {\n'''
+          if text.count(old) != 1:
+              raise SystemExit('validation result anchor drift')
+          text = text.replace(old, new)
+          old = '''            "regression_violations": shadow_violations,\n        },\n        "promotion_required": [\n'''
+          new = '''            "case_delta_summary": shadow_case_summary,\n            "regression_violations": shadow_violations,\n        },\n        "promotion_required": [\n'''
+          if text.count(old) != 1:
+              raise SystemExit('shadow result anchor drift')
+          text = text.replace(old, new)
+
+          old = '''    worse = {"validation_result": "PASS", "summary": {"pass_rate": 0.98, "median_erle_db": 12.0}}\n    assert regression_violations(space, baseline, worse)\n'''
+          new = old + '''    tail_space = json.loads(json.dumps(space))\n    tail_space["objective"]["case_delta_gates"] = [\n        {"metric": "corr", "stat": "min", "minimum_delta": -0.015},\n        {"metric": "corr", "stat": "p10", "minimum_delta": -0.005},\n        {"metric": "erle", "stat": "min", "minimum_delta": -0.5},\n    ]\n    validate_search_space(tail_space)\n    tail_base = {"cases": [\n        {"case_id": "a", "metrics": {"corr": 0.10, "erle": 10.0}},\n        {"case_id": "b", "metrics": {"corr": 0.20, "erle": 11.0}},\n    ]}\n    tail_good = {"cases": [\n        {"case_id": "a", "metrics": {"corr": 0.09, "erle": 11.0}},\n        {"case_id": "b", "metrics": {"corr": 0.22, "erle": 12.0}},\n    ]}\n    summaries, violations = case_delta_gate_violations(tail_space, tail_base, tail_good)\n    assert len(summaries) == 3 and not violations\n    tail_bad = {"cases": [\n        {"case_id": "a", "metrics": {"corr": 0.07, "erle": 11.0}},\n        {"case_id": "b", "metrics": {"corr": 0.22, "erle": 12.0}},\n    ]}\n    _, violations = case_delta_gate_violations(tail_space, tail_base, tail_bad)\n    assert any(item["gate"] == "case_delta_regression" for item in violations)\n'''
+          if text.count(old) != 1:
+              raise SystemExit('self-test anchor drift')
+          text = text.replace(old, new)
+          p.write_text(text)
+
+          p = Path('validation/tuning/search-spaces/aec-motion-v1.json')
+          space = json.loads(p.read_text())
+          space['search_space_id'] = 'aec-motion-runtime-safe-v4'
+          space['objective']['case_delta_gates'] = [
+              {'metric': 'output_render_corr_reduction', 'stat': 'min', 'minimum_delta': -0.015},
+              {'metric': 'output_render_corr_reduction', 'stat': 'p10', 'minimum_delta': -0.005},
+              {'metric': 'erle_db', 'stat': 'min', 'minimum_delta': -0.5},
+          ]
+          p.write_text(json.dumps(space, indent=2) + '\n')
+          PY
+          git diff --check
+          python3 -m py_compile validation/tools/tuning_iteration_engine.py
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/aec_motion_tuning.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          s = json.loads(Path('validation/tuning/search-spaces/aec-motion-v1.json').read_text())
+          assert s['search_space_id'] == 'aec-motion-runtime-safe-v4'
+          assert len(s['objective']['case_delta_gates']) == 3
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add validation/tools/tuning_iteration_engine.py validation/tuning/search-spaces/aec-motion-v1.json
+          git commit -m 'validation: make motion selection tail aware'
+          git push origin HEAD:opt/aec-motion-multiseed-iteration

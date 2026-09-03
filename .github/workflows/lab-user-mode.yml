@@ -45,6 +45,7 @@ jobs:
           sudo cp -a lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
           sudo cp -a lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
           sudo cp -a lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
+          sudo cp -a lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
           sudo cp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
           sudo cp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
           sudo chmod -R a+rX /tmp/ap-lab
@@ -54,13 +55,15 @@ jobs:
           diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
           diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
           diff -qr lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
+          diff -qr lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
           cmp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
           cmp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
 
           sudo useradd --create-home --shell /bin/bash validationuser
           sudo useradd --create-home --shell /bin/bash targetuser
           sudo useradd --create-home --shell /bin/bash builderuser
-          for user in validationuser targetuser builderuser; do
+          sudo useradd --create-home --shell /bin/bash archiveuser
+          for user in validationuser targetuser builderuser archiveuser; do
             groups=$(id -nG "$user")
             case " $groups " in *' sudo '*|*' admin '*) echo "$user unexpectedly privileged: $groups" >&2; exit 1;; esac
             if sudo -u "$user" -H sudo -n true 2>/dev/null; then
@@ -108,10 +111,23 @@ jobs:
               - common
               - audio_builder
           YAML
+          sudo tee /tmp/ap-lab/ansible/archive.yml >/dev/null <<'YAML'
+          ---
+          - name: Runtime validate ordinary-user certification-archive provisioning
+            hosts: localhost
+            connection: local
+            gather_facts: true
+            vars:
+              lab_system_mode: false
+              certification_archive_command: /tmp/ap-lab/archive/audio-pipeline-cert-archive
+            roles:
+              - common
+              - certification_archive
+          YAML
           sudo tee /tmp/ap-lab/test-board.json >/dev/null <<'JSON'
           {"schema_version":1,"board_id":"runtime-validation-fixture","evidence_class":"test-only"}
           JSON
-          sudo install -d -m 0755 /tmp/ap-lab/shipping-toolchain/bin /tmp/ap-lab/shipping-toolchain/sysroot
+          sudo install -d -m 0755 /tmp/ap-lab/shipping-toolchain/bin /tmp/ap-lab/shipping-toolchain/sysroot /tmp/ap-lab/archive
           sudo tee /tmp/ap-lab/shipping-toolchain/bin/fake-cc >/dev/null <<'SH'
           #!/bin/sh
           case "${1:-}" in
@@ -120,11 +136,19 @@ jobs:
             *) exit 0 ;;
           esac
           SH
-          sudo chmod 0755 /tmp/ap-lab/shipping-toolchain/bin/fake-cc
+          sudo tee /tmp/ap-lab/archive/audio-pipeline-cert-archive >/dev/null <<'SH'
+          #!/bin/sh
+          case "${1:-}" in
+            --help) echo 'certification-archive runtime fixture'; exit 0 ;;
+            *) exit 2 ;;
+          esac
+          SH
+          sudo chmod 0755 /tmp/ap-lab/shipping-toolchain/bin/fake-cc /tmp/ap-lab/archive/audio-pipeline-cert-archive
           sudo chmod 0644 \
             /tmp/ap-lab/ansible/validation.yml \
             /tmp/ap-lab/ansible/target.yml \
             /tmp/ap-lab/ansible/builder.yml \
+            /tmp/ap-lab/ansible/archive.yml \
             /tmp/ap-lab/test-board.json
 
           sudo rm -rf \
@@ -238,6 +262,36 @@ jobs:
             test "$(sudo stat -c %U "$path")" = builderuser
           done
 
+      - name: Execute certification-archive as an ordinary user
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_archive_user() {
+            sudo -u archiveuser -H env -i \
+              HOME=/home/archiveuser \
+              USER=archiveuser \
+              LOGNAME=archiveuser \
+              PATH=/usr/local/bin:/usr/bin:/bin \
+              ANSIBLE_NOCOLOR=1 \
+              ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+              ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+              ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/archive.yml
+          }
+
+          run_archive_user
+          run_archive_user | tee /tmp/certification-archive-idempotent.log
+          grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/certification-archive-idempotent.log
+          sudo -u archiveuser /tmp/ap-lab/archive/audio-pipeline-cert-archive --help | grep -F 'runtime fixture'
+
+          for path in \
+            /home/archiveuser/.local/share/audio-pipeline-lab \
+            /home/archiveuser/.cache/audio-pipeline-lab \
+            /home/archiveuser/.local/state/audio-pipeline-lab \
+            /home/archiveuser/.local/state/audio-pipeline-lab/log; do
+            sudo -u archiveuser test -d "$path"
+            test "$(sudo stat -c %U "$path")" = archiveuser
+          done
+
       - name: Enforce privilege-free boundary and controller contracts
         shell: bash
         run: |
@@ -246,6 +300,7 @@ jobs:
           diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
           diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
           diff -qr lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
+          diff -qr lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
 
           for path in \
             /opt/audio-lab \
@@ -265,7 +320,7 @@ jobs:
           python3 scripts/docs_consistency.py
 
           cat >/tmp/lab-user-mode-evidence.json <<JSON
-          {"schema_version":1,"source_revision":"${{ inputs.source_sha }}","ubuntu":"24.04","audio_validation":"PASS","audio_target":"PASS","audio_builder":"PASS","idempotent":true,"system_path_writes":false,"board_manifest":"test-only-fixture","shipping_toolchain":"test-only-fixture"}
+          {"schema_version":1,"source_revision":"${{ inputs.source_sha }}","ubuntu":"24.04","audio_validation":"PASS","audio_target":"PASS","audio_builder":"PASS","certification_archive":"PASS","idempotent":true,"system_path_writes":false,"board_manifest":"test-only-fixture","shipping_toolchain":"test-only-fixture","archive_backend":"test-only-fixture"}
           JSON
           python3 -m json.tool /tmp/lab-user-mode-evidence.json >/dev/null
 

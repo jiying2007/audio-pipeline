@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "search_space_id": "aec-motion-runtime-safe-v2",
+  "search_space_id": "aec-motion-runtime-safe-v3",
   "strategy": "one-at-a-time",
   "max_candidates": 10,
   "baseline": {
@@ -10,13 +10,14 @@
     "limiter_dbfs": -2.0
   },
   "parameters": {
-    "aec_mu": [0.28, 0.30, 0.32, 0.34, 0.36, 0.38, 0.40]
+    "aec_mu": [0.36, 0.38, 0.40, 0.42, 0.44, 0.46, 0.48, 0.50, 0.52]
   },
   "objective": {
     "minimum_improvement_score": 0.10,
     "metrics": [
       {"name": "pass_rate", "direction": "max", "weight": 12.0, "scale": 0.02, "max_regression": 0.0},
       {"name": "median_output_render_corr_reduction", "direction": "max", "weight": 4.0, "scale": 0.05, "max_regression": 0.02},
+      {"name": "p10_output_render_corr_reduction", "direction": "max", "weight": 3.0, "scale": 0.03, "max_regression": 0.01},
       {"name": "median_erle_db", "direction": "max", "weight": 1.0, "scale": 1.0, "max_regression": 1.0},
       {"name": "max_output_clip_fraction", "direction": "min", "weight": 4.0, "scale": 0.002, "max_regression": 0.0}
     ]

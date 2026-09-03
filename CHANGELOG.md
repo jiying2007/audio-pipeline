@@ -1,9 +1,10 @@
 # 2.3.1
 
-- Add reproducible `audio-builder` Ansible provisioning beside `audio-validation` and `audio-target`, closing the infrastructure gap between the laboratory runbook and the formal Product Certification topology.
-- Fail provisioning closed unless the operator supplies an existing absolute shipping compiler, sysroot and toolchain-root path and the unprivileged runner account can execute/read them; vendor shipping toolchains remain external and are never downloaded or invented by repository automation.
-- Extend the required ordinary-user laboratory runtime gate to provision an isolated `builderuser`, exercise the builder role twice for idempotence, verify the test-only toolchain fixture, and preserve the no-sudo/no-system-path-write boundary.
-- Preserve realtime DSP behavior, public v2 API/ABI, acoustic/resource/HIL thresholds, dataset locks/licenses and Product Certification authority; formal certification still independently re-runs exact builder/toolchain preflight and requires real DUT/72 h evidence.
+- Add reproducible Ansible provisioning for the complete formal certification runner topology: `audio-validation`, `audio-target`, `audio-builder`, and `certification-archive` now share one versioned laboratory deployment model instead of leaving the shipping builder/archive roles as manual gaps.
+- Fail `audio-builder` provisioning closed unless the operator supplies an existing absolute shipping compiler, sysroot and toolchain-root path and the unprivileged runner account can execute/read them; vendor shipping toolchains remain external and are never downloaded or invented by repository automation.
+- Fail `certification-archive` provisioning closed unless the operator-installed absolute immutable lifecycle backend command exists and is executable; the reference inventory matches Product Certification's `/usr/local/bin/audio-pipeline-cert-archive` contract and never substitutes a fake/local archive implementation.
+- Extend the required ordinary-user laboratory runtime gate to provision isolated builder/archive users, exercise both new roles twice for idempotence with test-only fixtures under `/tmp`, and preserve the no-sudo/no-system-path-write boundary.
+- Preserve realtime DSP behavior, public v2 API/ABI, acoustic/resource/HIL thresholds, dataset locks/licenses and Product Certification authority; formal certification still independently re-runs exact builder/target/archive preflight and requires real DUT, lifecycle archive receipt, and shipping-policy 72 h evidence.
 
 # 2.3.0
 

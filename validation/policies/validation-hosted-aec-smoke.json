@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-hosted-aec-smoke-v1",
+  "allowed_tiers": ["validation-grade"],
+  "minimum_cases": 4,
+  "required_public_sources": ["microsoft-aec-challenge-hosted-real"],
+  "required_scenarios": [
+    "aec-farend-singletalk",
+    "aec-farend-singletalk-movement"
+  ],
+  "minimum_cases_by_scenario": {
+    "aec-farend-singletalk": 2,
+    "aec-farend-singletalk-movement": 2
+  },
+  "minimum_pass_rate_by_scenario": {
+    "aec-farend-singletalk": 1.0,
+    "aec-farend-singletalk-movement": 1.0
+  },
+  "required_dimension_values": {
+    "movement": [false, true]
+  },
+  "aggregate": {
+    "min_pass_rate": 1.0,
+    "min_median_output_render_corr_reduction": 0.0,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -20.0
+  }
+}

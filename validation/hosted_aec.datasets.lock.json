@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "catalog_id": "audio-pipeline-hosted-aec-real-v1",
+  "source_repository": "microsoft/AEC-Challenge",
+  "source_revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+  "usage_class": "validation-only-composite-upstream-terms",
+  "license": "Composite upstream dataset terms; see the pinned AEC-Challenge README Dataset licenses section.",
+  "license_evidence": "https://github.com/microsoft/AEC-Challenge/blob/6c633d0a9d2a143a0e364899b91b06f127315b18/README.md#dataset-licenses",
+  "cases": [
+    {
+      "id": "aec-farend-static-00113069",
+      "scenario": "aec-farend-singletalk",
+      "movement": false,
+      "mic": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/00113069-3e44-460a-be8d-9c252979a801_farend-singletalk_mic.wav",
+        "sha256": "352396e01b9b87db4dfeaa6523fe3cd194d0800d4cd656cf76f72cd981bbf0ad",
+        "size": 2315564
+      },
+      "render": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/00113069-3e44-460a-be8d-9c252979a801_farend-singletalk_lpb.wav",
+        "sha256": "2527ef0e49c7e90168728365e388f09e807acc485db1becb7ba7cceba09b736a",
+        "size": 2304044
+      }
+    },
+    {
+      "id": "aec-farend-static-02462e78",
+      "scenario": "aec-farend-singletalk",
+      "movement": false,
+      "mic": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/02462e78-f05c-4ea4-be89-f69f283f6d1c_farend-singletalk_mic.wav",
+        "sha256": "9890ae5512b3990cbd87c1b76cf247c01e01c3ff8ab3a223ea327a74000ad1c7",
+        "size": 2315564
+      },
+      "render": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/02462e78-f05c-4ea4-be89-f69f283f6d1c_farend-singletalk_lpb.wav",
+        "sha256": "ed48db070032d48bcfcd00613a1f9cb3401adf08bb04110c978e4205559e7055",
+        "size": 2304044
+      }
+    },
+    {
+      "id": "aec-farend-moving-00dppl",
+      "scenario": "aec-farend-singletalk-movement",
+      "movement": true,
+      "mic": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/00dPPLGk2UutnxcOfe5zTw_farend-singletalk-with-movement_mic.wav",
+        "sha256": "f58e4de71adbd9e08a75d85fc50f845f5d071d13db066bf64ceb1d10c9653871",
+        "size": 2333804
+      },
+      "render": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/00dPPLGk2UutnxcOfe5zTw_farend-singletalk-with-movement_lpb.wav",
+        "sha256": "a8ea00635b9b053d48c5f176359b74c0b247ed14fa6a09f7c08e2c8a73c0983e",
+        "size": 2329004
+      }
+    },
+    {
+      "id": "aec-farend-moving-01866103",
+      "scenario": "aec-farend-singletalk-movement",
+      "movement": true,
+      "mic": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/01866103-b85f-468a-94df-6becff38f663_farend-singletalk-with-movement_mic.wav",
+        "sha256": "708bf682cefd16fb698e948c7b3a9964e61eb3a80fc9decd074e26a2d9c7ee47",
+        "size": 2315564
+      },
+      "render": {
+        "path": "datasets/test_set_icassp2022/farend-singletalk/01866103-b85f-468a-94df-6becff38f663_farend-singletalk-with-movement_lpb.wav",
+        "sha256": "bc679bc1de5e4bdc8b9f7337317627e6fe0daea6fd36876f9f44edb2be9b2a43",
+        "size": 2304044
+      }
+    }
+  ]
+}

@@ -1,3 +1,9 @@
+# 2.3.3
+
+- Add a GitHub-hosted, hash-pinned Microsoft AEC Challenge real microset with two static and two moving far-end single-talk cases.
+- Enforce balanced static/movement coverage, overall render-correlation non-regression, and per-case far-end output RMS non-amplification.
+- Seal source, processor, compiler, build-info, policy and report bindings as validation-grade evidence without replacing blind, target/HIL or certification authority.
+
 # 2.3.2
 
 - Preserve AEC movement tracking by limiting the sustained far-end adaptation throttle to stride 2 instead of forcing stride 4; explicitly configured stride 1 may still settle to stride 2.

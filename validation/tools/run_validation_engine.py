@@ -555,6 +555,7 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict]) -> tuple[di
         "p10_noise_only_attenuation_db": percentile_metric(cases, "noise_only_attenuation_db", 0.10),
         "median_erle_db": median_metric(cases, "erle_db"),
         "median_output_render_corr_reduction": median_metric(cases, "output_render_corr_reduction"),
+        "p10_output_render_corr_reduction": percentile_metric(cases, "output_render_corr_reduction", 0.10),
         "min_vad_f1": min((float(case["metrics"]["vad_f1"]) for case in cases if case["metrics"].get("vad_f1") is not None), default=None),
         "min_vad_recall": min((float(case["metrics"]["vad_recall"]) for case in cases if case["metrics"].get("vad_recall") is not None), default=None),
         "max_vad_false_positive_rate": max((float(case["metrics"]["vad_false_positive_rate"]) for case in cases if case["metrics"].get("vad_false_positive_rate") is not None), default=None),

@@ -10,6 +10,7 @@ resource/HIL and product certification remain separate authorities.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import itertools
 import json
@@ -289,31 +290,39 @@ def bind_report(path: Path, report: dict[str, Any]) -> dict[str, Any]:
 
 
 def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shadow: Path,
-            policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path) -> dict[str, Any]:
+            policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path,
+            candidate_jobs: int = 1) -> dict[str, Any]:
     space = json.loads(search_space_path.read_text(encoding="utf-8"))
     validate_search_space(space)
     identities = enforce_partition_independence(dev, validation, shadow)
     candidates = generate_candidates(space)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if candidate_jobs < 1 or candidate_jobs > 8:
+        raise ValueError("candidate_jobs must be 1..8")
     baseline_candidate = candidates[0]
-    dev_results = []
-    baseline_dev_report = None
-    for candidate in candidates:
+
+    def evaluate_development(candidate: dict[str, Any]) -> dict[str, Any]:
         report_path = output_dir / "development" / f"{candidate['candidate_id']}.json"
         report, elapsed = run_validation(repo_root, processor, dev, policy, dataset_lock,
                                          candidate["tuning"], report_path)
-        if candidate["label"] == "baseline":
-            baseline_dev_report = report
-        dev_results.append({
+        return {
             **candidate,
             "report_path": str(report_path),
             "report_sha256": sha256_file(report_path),
             "validation_result": report.get("validation_result"),
             "elapsed_s": elapsed,
             "report": report,
-        })
-    assert baseline_dev_report is not None
+        }
+
+    if candidate_jobs == 1:
+        dev_results = [evaluate_development(candidate) for candidate in candidates]
+    else:
+        with ThreadPoolExecutor(max_workers=candidate_jobs) as executor:
+            dev_results = list(executor.map(evaluate_development, candidates))
+    baseline_dev_report = next(
+        item["report"] for item in dev_results if item["label"] == "baseline"
+    )
 
     for result in dev_results:
         score, deltas = score_against_baseline(space, baseline_dev_report, result["report"])
@@ -362,6 +371,7 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "sha256": sha256_file(search_space_path),
             "strategy": space.get("strategy", "one-at-a-time"),
             "candidate_count": len(candidates),
+            "candidate_jobs": candidate_jobs,
         },
         "bindings": {
             "processor_sha256": sha256_file(processor),
@@ -473,6 +483,8 @@ def main() -> int:
     parser.add_argument("--dataset-lock", type=Path, default=Path("validation/datasets.lock.json"))
     parser.add_argument("--search-space", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--candidate-jobs", type=int, default=1,
+                        help="parallel development candidates; deterministic output order is preserved")
     parser.add_argument("--require-candidate", action="store_true",
                         help="return non-zero unless an independent-gate ACOUSTIC_CANDIDATE is produced")
     args = parser.parse_args()
@@ -488,7 +500,7 @@ def main() -> int:
         args.repo_root.resolve(), args.processor.resolve(),
         args.development_corpus.resolve(), args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),
-        args.search_space.resolve(), args.output_dir.resolve(),
+        args.search_space.resolve(), args.output_dir.resolve(), args.candidate_jobs,
     )
     print(json.dumps({
         "decision": result["decision"], "iteration_id": result["iteration_id"],

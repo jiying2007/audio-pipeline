@@ -70,10 +70,13 @@ LAB_REQUIRED = (
     "lab/ansible/roles/github_runner/tasks/main.yml",
     "lab/ansible/roles/audio_validation/tasks/main.yml",
     "lab/ansible/roles/audio_target/tasks/main.yml",
+    "lab/ansible/roles/audio_builder/tasks/main.yml",
     "lab/examples/board.ssc305.example.json",
     ".github/workflows/extended-real-automation.yml",
     ".github/workflows/validation-extended-real.yml",
     ".github/workflows/hil-soak.yml",
+    ".github/workflows/product-certification.yml",
+    ".github/workflows/lab-user-mode.yml",
 )
 
 VALIDATION_REQUIRED = (
@@ -272,13 +275,31 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         errors.append(f"invalid laboratory data catalog: {exc}")
     inventory = read(root, "lab/ansible/inventory.example.yml")
     runner = read(root, "lab/ansible/roles/github_runner/tasks/main.yml")
+    builder = read(root, "lab/ansible/roles/audio_builder/tasks/main.yml")
     site = read(root, "lab/ansible/site.yml")
     if "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d" not in inventory:
         errors.append("lab GitHub Actions runner x64 SHA-256 pin drift")
     for token in ("github_runner_registration_token", "no_log: true", "--unattended", "--replace"):
         if token not in runner:
             errors.append(f"lab runner role missing security/idempotence token: {token}")
-    for token in ("hosts: audio_validation", "hosts: audio_target", "github_runner"):
+    for token in (
+        "audio_builder:",
+        'github_runner_labels: "audio-builder"',
+        "audio_builder_shipping_cc:",
+        "audio_builder_shipping_sysroot:",
+        "audio_builder_shipping_toolchain_root:",
+    ):
+        if token not in inventory:
+            errors.append(f"lab inventory missing audio-builder contract: {token}")
+    for token in (
+        "audio_builder_shipping_cc",
+        "audio_builder_shipping_sysroot",
+        "audio_builder_shipping_toolchain_root",
+        "--version",
+    ):
+        if token not in builder:
+            errors.append(f"audio-builder role missing fail-closed toolchain token: {token}")
+    for token in ("hosts: audio_validation", "hosts: audio_target", "hosts: audio_builder", "github_runner"):
         if token not in site:
             errors.append(f"lab Ansible site missing role/host contract: {token}")
     if read(root, "lab/requirements-validation.txt").strip() != "huggingface_hub==1.29.0":
@@ -300,6 +321,7 @@ def validate_lab(root: Path, errors: list[str]) -> None:
             errors.append(f"HIL workflow missing runner-local user-mode token: {token}")
     readiness = read(root, ".github/workflows/trusted-runner-readiness.yml")
     certification = read(root, ".github/workflows/product-certification.yml")
+    lab_user_mode = read(root, ".github/workflows/lab-user-mode.yml")
     for forbidden in ("default: /opt/audio-validation-data", "default: /etc/audio-pipeline/board.json"):
         if forbidden in readiness:
             errors.append(f"trusted runner readiness reintroduced stale system-mode default: {forbidden}")
@@ -308,9 +330,23 @@ def validate_lab(root: Path, errors: list[str]) -> None:
             errors.append(f"trusted runner readiness missing runner-local user-mode token: {token}")
     if "default: /etc/audio-pipeline/board.json" in certification:
         errors.append("Product Certification reintroduced a system-mode /etc board default")
-    for token in ("AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config", "/tmp/audio-target-board-path.txt"):
+    for token in (
+        "AUDIO_PIPELINE_LAB_BOARD",
+        "XDG_CONFIG_HOME",
+        "$HOME/.config",
+        "/tmp/audio-target-board-path.txt",
+        "runs-on: [self-hosted, linux, audio-builder]",
+    ):
         if token not in certification:
-            errors.append(f"Product Certification missing runner-local user-mode token: {token}")
+            errors.append(f"Product Certification missing runner-local/builder token: {token}")
+    for token in (
+        "audio_builder",
+        "builderuser",
+        "Execute audio-builder as an ordinary user",
+        '"audio_builder":"PASS"',
+    ):
+        if token not in lab_user_mode:
+            errors.append(f"required lab user-mode gate missing audio-builder token: {token}")
     try:
         completed = subprocess.run(
             [sys.executable, str(root / "lab/scripts/labctl.py"), "self-test"],

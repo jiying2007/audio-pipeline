@@ -201,7 +201,7 @@ jobs:
                   replay = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())
                   assert replay['decision'] == 'PASS'
                   assert not replay['regression_violations']
-          forbidden = ('hosted_aec.datasets.lock.json', 'validation-hosted-aec-smoke.json')
+          forbidden = ('hosted_' + 'aec.datasets.lock.json', 'validation-' + 'hosted-aec-smoke.json')
           text = Path('.github/workflows/aec-motion-tuning.yml').read_text()
           assert not any(item in text for item in forbidden)
           PY

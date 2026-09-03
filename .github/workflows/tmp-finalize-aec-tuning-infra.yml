@@ -1,0 +1,64 @@
+name: Temporary Finalize AEC Tuning Infrastructure
+
+on:
+  push:
+    branches: [opt/aec-motion-multiseed-iteration]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: opt/aec-motion-multiseed-iteration
+          fetch-depth: 0
+      - name: Harden case identity and version 2.3.5
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('validation/tools/tuning_iteration_engine.py')
+          text = p.read_text()
+          old = '''def case_delta_gate_violations(space: dict[str, Any], baseline: dict[str, Any],\n                               candidate: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:\n    gates = list(space.get("objective", {}).get("case_delta_gates", []))\n    if not gates:\n        return [], []\n    baseline_cases = {str(case.get("case_id")): case for case in baseline.get("cases", [])}\n    candidate_cases = {str(case.get("case_id")): case for case in candidate.get("cases", [])}\n    if not baseline_cases or set(baseline_cases) != set(candidate_cases):\n        return [], [{\n            "gate": "case_set_mismatch",\n            "baseline_cases": len(baseline_cases),\n            "candidate_cases": len(candidate_cases),\n        }]\n'''
+          new = '''def strict_report_case_map(report: dict[str, Any], role: str) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:\n    raw_cases = report.get("cases")\n    if not isinstance(raw_cases, list) or not raw_cases:\n        return {}, [{"gate": "case_set_invalid", "role": role, "reason": "non_empty_list_required"}]\n    result: dict[str, dict[str, Any]] = {}\n    violations: list[dict[str, Any]] = []\n    for index, case in enumerate(raw_cases):\n        if not isinstance(case, dict):\n            violations.append({"gate": "case_identity_invalid", "role": role, "index": index})\n            continue\n        case_id = case.get("case_id")\n        if not isinstance(case_id, str) or not case_id:\n            violations.append({"gate": "case_identity_invalid", "role": role, "index": index})\n            continue\n        if case_id in result:\n            violations.append({"gate": "case_identity_duplicate", "role": role, "case_id": case_id})\n            continue\n        result[case_id] = case\n    return result, violations\n\n\ndef case_delta_gate_violations(space: dict[str, Any], baseline: dict[str, Any],\n                               candidate: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:\n    gates = list(space.get("objective", {}).get("case_delta_gates", []))\n    if not gates:\n        return [], []\n    baseline_cases, baseline_identity = strict_report_case_map(baseline, "baseline")\n    candidate_cases, candidate_identity = strict_report_case_map(candidate, "candidate")\n    identity_violations = baseline_identity + candidate_identity\n    if identity_violations:\n        return [], identity_violations\n    if set(baseline_cases) != set(candidate_cases):\n        missing = sorted(set(baseline_cases) - set(candidate_cases))\n        extra = sorted(set(candidate_cases) - set(baseline_cases))\n        return [], [{\n            "gate": "case_set_mismatch",\n            "baseline_cases": len(baseline_cases),\n            "candidate_cases": len(candidate_cases),\n            "missing_cases": missing[:8],\n            "missing_count": len(missing),\n            "extra_cases": extra[:8],\n            "extra_count": len(extra),\n        }]\n'''
+          if text.count(old) != 1 or 'def strict_report_case_map' in text:
+              raise SystemExit('case identity anchor drift')
+          text = text.replace(old, new)
+
+          anchor = '''    _, violations = case_delta_gate_violations(tail_space, tail_base, tail_bad)\n    assert any(item["gate"] == "case_delta_regression" for item in violations)\n'''
+          insert = anchor + '''    duplicate = json.loads(json.dumps(tail_good))\n    duplicate["cases"].append(json.loads(json.dumps(duplicate["cases"][0])))\n    _, violations = case_delta_gate_violations(tail_space, tail_base, duplicate)\n    assert any(item["gate"] == "case_identity_duplicate" for item in violations)\n    missing_case = json.loads(json.dumps(tail_good))\n    missing_case["cases"].pop()\n    _, violations = case_delta_gate_violations(tail_space, tail_base, missing_case)\n    mismatch = next(item for item in violations if item["gate"] == "case_set_mismatch")\n    assert mismatch["missing_count"] == 1 and mismatch["extra_count"] == 0\n'''
+          if text.count(anchor) != 1:
+              raise SystemExit('case identity self-test anchor drift')
+          p.write_text(text.replace(anchor, insert))
+
+          p = Path('CMakeLists.txt')
+          text = p.read_text()
+          old = 'project(audio_pipeline VERSION 2.3.4 LANGUAGES C)'
+          new = 'project(audio_pipeline VERSION 2.3.5 LANGUAGES C)'
+          if text.count(old) != 1 or 'VERSION 2.3.5' in text:
+              raise SystemExit('CMake version anchor drift')
+          p.write_text(text.replace(old, new))
+
+          p = Path('CHANGELOG.md')
+          text = p.read_text()
+          if not text.startswith('# 2.3.4\n') or '# 2.3.5\n' in text:
+              raise SystemExit('CHANGELOG version anchor drift')
+          entry = '''# 2.3.5\n\n- Add tail-aware continuous-motion AEC tuning with deterministic candidate parallelism, p10 render-correlation scoring, aligned per-case delta eligibility, and independent validation/shadow replay.\n- Fail candidate selection closed on hard-case correlation/ERLE regressions; fixed high `aec_mu` values may improve aggregate ERLE while still being rejected from promotion.\n- Harden aligned-case evidence against empty, duplicate, missing, or extra case identities, and preserve product DSP defaults, public API/ABI, real-data holdouts, and shipping authority unchanged.\n\n'''
+          p.write_text(entry + text)
+          PY
+          git diff --check
+          python3 -m py_compile validation/tools/tuning_iteration_engine.py
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/aec_motion_tuning.py --self-test
+          grep -q 'project(audio_pipeline VERSION 2.3.5 LANGUAGES C)' CMakeLists.txt
+          head -1 CHANGELOG.md | grep -qx '# 2.3.5'
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add validation/tools/tuning_iteration_engine.py CMakeLists.txt CHANGELOG.md
+          git commit -m 'validation: finalize tail-aware AEC tuning infrastructure'
+          git push origin HEAD:opt/aec-motion-multiseed-iteration

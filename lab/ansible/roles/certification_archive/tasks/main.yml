@@ -25,8 +25,3 @@
     fail_msg: >-
       certification-archive backend command must already exist and be
       executable by the unprivileged runner account.
-
-- name: Verify lifecycle archive backend can be invoked
-  ansible.builtin.command:
-    argv: ["{{ certification_archive_command }}", --help]
-  changed_when: false

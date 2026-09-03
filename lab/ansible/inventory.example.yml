@@ -34,6 +34,15 @@ all:
           audio_builder_shipping_cc: "/path/to/shipping-toolchain/bin/arm-linux-gnueabihf-gcc"
           audio_builder_shipping_sysroot: "/path/to/shipping-toolchain/sysroot"
           audio_builder_shipping_toolchain_root: "/path/to/shipping-toolchain"
+    certification_archive:
+      hosts:
+        archive01:
+          ansible_host: 192.0.2.40
+          ansible_user: ubuntu
+          github_runner_name: certification-archive-01
+          github_runner_labels: "certification-archive"
+          # Must match the Product Certification immutable lifecycle backend path.
+          certification_archive_command: "/usr/local/bin/audio-pipeline-cert-archive"
 # Dedicated system mode is opt-in per host/group:
 # lab_system_mode: true
 # lab_service_user: audio-ci   # or audio-hil

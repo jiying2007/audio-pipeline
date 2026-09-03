@@ -13,7 +13,7 @@
 #define AP_AEC_BINS_MAX (AP_AEC_FFT_MAX / 2u + 1u)
 #define AP_AEC_PARTITIONS_MAX AP_BUILD_AEC_PARTITIONS_MAX
 #define AP_AEC_STEADY_FRAMES 50u
-#define AP_AEC_STEADY_MIN_STRIDE 4u
+#define AP_AEC_STEADY_MIN_STRIDE 2u
 
 typedef enum ap_aec_kind { AP_AEC_KIND_MDF = 0, AP_AEC_KIND_NLMS = 1 } ap_aec_kind_t;
 

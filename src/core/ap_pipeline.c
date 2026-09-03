@@ -653,7 +653,10 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
 
 #if AP_BUILD_STAGE_AGC
     if (AP_HAS_STAGE(pipeline, AP_STAGE_AGC))
-        ap_agc_process(&pipeline->agc, pipeline->processed, pipeline->internal_frame);
+        ap_agc_process_controlled(&pipeline->agc,
+                                  pipeline->processed,
+                                  pipeline->internal_frame,
+                                  !(far_end_active && !double_talk_active));
 #endif
 #if AP_BUILD_STAGE_VAD
     if (AP_HAS_STAGE(pipeline, AP_STAGE_VAD)) {

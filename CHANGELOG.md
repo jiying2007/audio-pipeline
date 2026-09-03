@@ -1,3 +1,9 @@
+# 2.3.2
+
+- Preserve AEC movement tracking by limiting the sustained far-end adaptation throttle to stride 2 instead of forcing stride 4; explicitly configured stride 1 may still settle to stride 2.
+- Prevent AGC from increasing gain during far-end-only activity while retaining attenuation and limiter behavior, so residual echo cannot be lifted toward the near-end speech target.
+- Add backend-independent AEC steady-stride and AGC no-gain-up regression coverage without changing the public API or ABI.
+
 # 2.3.1
 
 - Add reproducible Ansible provisioning for the complete formal certification runner topology: `audio-validation`, `audio-target`, `audio-builder`, and `certification-archive` now share one versioned laboratory deployment model instead of leaving the shipping builder/archive roles as manual gaps.

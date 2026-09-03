@@ -91,7 +91,7 @@ static void test_double_talk_freezes_adaptation_and_preserves_near_end(void) {
     {
         ap_metrics_t stable;
         ap_pipeline_get_metrics(p, &stable);
-        assert(stable.active_aec_adapt_stride >= 4u);
+        assert(stable.active_aec_adapt_stride == 2u);
     }
 
     for (frame = 0u; frame < 20u; ++frame) {

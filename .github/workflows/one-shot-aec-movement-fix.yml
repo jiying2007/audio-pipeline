@@ -1,0 +1,95 @@
+name: One-shot AEC Movement Fix
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/fix/aec-movement-tracking-agc'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: fix/aec-movement-tracking-agc
+          fetch-depth: 0
+      - name: Apply exact algorithm and regression-test changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if text.count(old) != 1:
+                  raise SystemExit(f'{path}: expected one exact match, got {text.count(old)}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          replace_once('src/aec/ap_aec.h',
+              '#define AP_AEC_STEADY_MIN_STRIDE 4u',
+              '#define AP_AEC_STEADY_MIN_STRIDE 2u')
+
+          replace_once('src/enhance/ap_enhance.h',
+              '''void ap_agc_process(ap_agc_state_t *state,\n                    float *samples,\n                    uint32_t frame_samples);''',
+              '''void ap_agc_process(ap_agc_state_t *state,\n                    float *samples,\n                    uint32_t frame_samples);\nvoid ap_agc_process_controlled(ap_agc_state_t *state,\n                               float *samples,\n                               uint32_t frame_samples,\n                               int allow_gain_increase);''')
+
+          replace_once('src/enhance/ap_agc.c',
+              '''void ap_agc_process(ap_agc_state_t *state,\n                    float *x,\n                    uint32_t n) {\n    uint32_t i;\n    float e = 1.0e-12f;\n    float peak = 0.0f, target_gain, alpha;\n    for (i = 0u; i < n; ++i) {\n        const float a = fabsf(x[i]);\n        e += x[i] * x[i];\n        if (a > peak) peak = a;\n    }\n    {\n        const float rms = sqrtf(e / (float)n);\n        target_gain = ap_agc_clamp(state->target_linear / (rms + 1.0e-6f), 0.25f, 8.0f);\n    }\n    alpha = target_gain < state->gain ? 0.25f : 0.015f;\n    state->gain += alpha * (target_gain - state->gain);\n    {\n        const float limit = state->limiter_linear;\n        float gain = state->gain;\n        if (peak * gain > limit && peak > 1.0e-6f) gain = limit / peak;\n        for (i = 0u; i < n; ++i) x[i] = ap_agc_clamp(x[i] * gain, -limit, limit);\n    }\n}\n''',
+              '''void ap_agc_process_controlled(ap_agc_state_t *state,\n                               float *x,\n                               uint32_t n,\n                               int allow_gain_increase) {\n    uint32_t i;\n    float e = 1.0e-12f;\n    float peak = 0.0f, target_gain, alpha;\n    for (i = 0u; i < n; ++i) {\n        const float a = fabsf(x[i]);\n        e += x[i] * x[i];\n        if (a > peak) peak = a;\n    }\n    {\n        const float rms = sqrtf(e / (float)n);\n        target_gain = ap_agc_clamp(state->target_linear / (rms + 1.0e-6f), 0.25f, 8.0f);\n        if (!allow_gain_increase && target_gain > 1.0f) target_gain = 1.0f;\n    }\n    alpha = target_gain < state->gain ? 0.25f : 0.015f;\n    state->gain += alpha * (target_gain - state->gain);\n    {\n        const float limit = state->limiter_linear;\n        float gain = state->gain;\n        if (!allow_gain_increase && gain > 1.0f) gain = 1.0f;\n        if (peak * gain > limit && peak > 1.0e-6f) gain = limit / peak;\n        for (i = 0u; i < n; ++i) x[i] = ap_agc_clamp(x[i] * gain, -limit, limit);\n    }\n}\n\nvoid ap_agc_process(ap_agc_state_t *state,\n                    float *x,\n                    uint32_t n) {\n    ap_agc_process_controlled(state, x, n, 1);\n}\n''')
+
+          replace_once('src/core/ap_pipeline.c',
+              '''#if AP_BUILD_STAGE_AGC\n    if (AP_HAS_STAGE(pipeline, AP_STAGE_AGC))\n        ap_agc_process(&pipeline->agc, pipeline->processed, pipeline->internal_frame);\n#endif''',
+              '''#if AP_BUILD_STAGE_AGC\n    if (AP_HAS_STAGE(pipeline, AP_STAGE_AGC))\n        ap_agc_process_controlled(&pipeline->agc,\n                                  pipeline->processed,\n                                  pipeline->internal_frame,\n                                  !(far_end_active && !double_talk_active));\n#endif''')
+
+          test_src = r'''#include "aec/ap_aec.h"\n#include "enhance/ap_enhance.h"\n#include <assert.h>\n#include <math.h>\n#include <stdint.h>\n\nstatic ap_aec_state_t aec_state;\nstatic float mic[160], ref_signal[160], out[160], echo[160];\n\nstatic float max_abs(const float *x, uint32_t n) {\n    float peak = 0.0f;\n    uint32_t i;\n    for (i = 0u; i < n; ++i) {\n        const float a = fabsf(x[i]);\n        if (a > peak) peak = a;\n    }\n    return peak;\n}\n\nstatic void fill_low(float *x, uint32_t n) {\n    uint32_t i;\n    for (i = 0u; i < n; ++i) x[i] = 0.01f * sinf(0.13f * (float)i);\n}\n\nstatic void test_far_end_agc_does_not_gain_up(void) {\n    ap_agc_state_t state;\n    float samples[160];\n    float boosted_gain;\n    uint32_t frame;\n    ap_agc_init(&state, -20.0f, -2.0f);\n    for (frame = 0u; frame < 40u; ++frame) {\n        fill_low(samples, 160u);\n        ap_agc_process(&state, samples, 160u);\n    }\n    boosted_gain = state.gain;\n    assert(boosted_gain > 1.0f);\n    fill_low(samples, 160u);\n    {\n        const float before = max_abs(samples, 160u);\n        ap_agc_process_controlled(&state, samples, 160u, 0);\n        assert(max_abs(samples, 160u) <= before + 1.0e-6f);\n        assert(state.gain < boosted_gain);\n    }\n    ap_agc_init(&state, -20.0f, -2.0f);\n    for (frame = 0u; frame < 80u; ++frame) {\n        fill_low(samples, 160u);\n        ap_agc_process_controlled(&state, samples, 160u, 0);\n    }\n    assert(state.gain <= 1.000001f);\n}\n\nstatic void fill_echo_frame(uint32_t frame) {\n    uint32_t i;\n    for (i = 0u; i < 160u; ++i) {\n        const float v = 0.08f * sinf(0.031f * (float)(frame * 160u + i));\n        ref_signal[i] = v;\n        mic[i] = 0.65f * v;\n    }\n}\n\nstatic void run_far_end_frames(uint32_t configured_stride, uint32_t expected_steady_stride) {\n    ap_aec_result_t result;\n    ap_aec_status_t status;\n    uint32_t frame;\n    ap_aec_backend_init(&aec_state, 160u, 960u, configured_stride);\n    for (frame = 0u; frame < AP_AEC_STEADY_FRAMES + 8u; ++frame) {\n        fill_echo_frame(frame);\n        ap_aec_backend_process(&aec_state, 1, 0.2f, 160u, mic, ref_signal,\n                               out, echo, 1, 0, &result);\n    }\n    ap_aec_backend_get_status(&aec_state, &status);\n    assert(status.active_adapt_stride == expected_steady_stride);\n}\n\nstatic void test_aec_steady_stride_preserves_movement_tracking(void) {\n    run_far_end_frames(2u, 2u);\n    run_far_end_frames(1u, 2u);\n}\n\nint main(void) {\n    test_far_end_agc_does_not_gain_up();\n    test_aec_steady_stride_preserves_movement_tracking();\n    return 0;\n}\n'''
+          Path('tests/test_echo_dynamics.c').write_text(test_src, encoding='utf-8')
+
+          replace_once('CMakeLists.txt',
+              '''    add_executable(ap_module_tests tests/test_modules.c)\n    target_link_libraries(ap_module_tests PRIVATE audio_pipeline)\n    add_test(NAME ap_module_tests COMMAND ap_module_tests)''',
+              '''    add_executable(ap_module_tests tests/test_modules.c)\n    target_link_libraries(ap_module_tests PRIVATE audio_pipeline)\n    add_test(NAME ap_module_tests COMMAND ap_module_tests)\n    if(AP_HAVE_AEC AND AP_HAVE_AGC)\n        add_executable(ap_echo_dynamics_tests tests/test_echo_dynamics.c)\n        target_include_directories(ap_echo_dynamics_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)\n        target_link_libraries(ap_echo_dynamics_tests PRIVATE audio_pipeline)\n        add_test(NAME ap_echo_dynamics_tests COMMAND ap_echo_dynamics_tests)\n    endif()''')
+
+          replace_once('CMakeLists.txt',
+              'project(audio_pipeline VERSION 2.3.1 LANGUAGES C)',
+              'project(audio_pipeline VERSION 2.3.2 LANGUAGES C)')
+
+          changelog = Path('CHANGELOG.md')
+          current = changelog.read_text(encoding='utf-8')
+          if not current.startswith('# 2.3.1\n'):
+              raise SystemExit('CHANGELOG no longer begins with # 2.3.1')
+          section = ('# 2.3.2\n\n'
+                     '- Preserve AEC movement tracking by limiting the sustained far-end adaptation throttle to stride 2 instead of forcing stride 4; explicitly configured stride 1 may still settle to stride 2.\n'
+                     '- Prevent AGC from increasing gain during far-end-only activity while retaining attenuation and limiter behavior, so residual echo cannot be lifted toward the near-end speech target.\n'
+                     '- Add backend-independent AEC steady-stride and AGC no-gain-up regression coverage without changing the public API or ABI.\n\n')
+          changelog.write_text(section + current, encoding='utf-8')
+          PY
+          rm .github/workflows/one-shot-aec-movement-fix.yml
+          git diff --check
+          git diff --stat
+
+      - name: Build and run focused regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-mdf -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-mdf --target ap_echo_dynamics_tests ap_module_tests --parallel
+          ctest --test-dir build-mdf --output-on-failure -R 'ap_(echo_dynamics|module)_tests'
+          cmake -S . -B build-nlms -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON -DAP_AEC_BACKEND=NLMS
+          cmake --build build-nlms --target ap_echo_dynamics_tests ap_module_tests --parallel
+          ctest --test-dir build-nlms --output-on-failure -R 'ap_(echo_dynamics|module)_tests'
+
+      - name: Commit exact fix and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=$(printf '%s\n' CMakeLists.txt CHANGELOG.md src/aec/ap_aec.h src/core/ap_pipeline.c src/enhance/ap_agc.c src/enhance/ap_enhance.h tests/test_echo_dynamics.c .github/workflows/one-shot-aec-movement-fix.yml | sort)
+          actual=$(git status --short | sed -E 's/^.. //' | sort)
+          test "$actual" = "$expected"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CMakeLists.txt CHANGELOG.md src/aec/ap_aec.h src/core/ap_pipeline.c src/enhance/ap_agc.c src/enhance/ap_enhance.h tests/test_echo_dynamics.c .github/workflows/one-shot-aec-movement-fix.yml
+          git commit -m 'fix: preserve AEC movement tracking and residual level'
+          git push origin HEAD:fix/aec-movement-tracking-agc

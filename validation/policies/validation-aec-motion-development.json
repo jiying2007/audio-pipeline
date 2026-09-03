@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-aec-motion-development-v1",
+  "allowed_tiers": ["regression"],
+  "minimum_cases": 12,
+  "required_public_sources": [],
+  "required_scenarios": ["aec-continuous-motion"],
+  "minimum_cases_by_scenario": {
+    "aec-continuous-motion": 12
+  },
+  "minimum_pass_rate_by_scenario": {
+    "aec-continuous-motion": 1.0
+  },
+  "aggregate": {
+    "min_pass_rate": 1.0,
+    "min_median_output_render_corr_reduction": 0.0,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -20.0
+  }
+}

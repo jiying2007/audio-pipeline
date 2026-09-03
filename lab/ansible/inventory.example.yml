@@ -22,6 +22,18 @@ all:
           github_runner_name: audio-target-ssc305-01
           github_runner_labels: "audio-target"
           audio_target_board_manifest_src: ""
+    audio_builder:
+      hosts:
+        builder01:
+          ansible_host: 192.0.2.30
+          ansible_user: ubuntu
+          github_runner_name: audio-builder-ssc305-01
+          github_runner_labels: "audio-builder"
+          # Product-specific shipping assets stay operator-managed and outside Git.
+          # Replace every placeholder with an absolute path readable by this user.
+          audio_builder_shipping_cc: "/path/to/shipping-toolchain/bin/arm-linux-gnueabihf-gcc"
+          audio_builder_shipping_sysroot: "/path/to/shipping-toolchain/sysroot"
+          audio_builder_shipping_toolchain_root: "/path/to/shipping-toolchain"
 # Dedicated system mode is opt-in per host/group:
 # lab_system_mode: true
 # lab_service_user: audio-ci   # or audio-hil

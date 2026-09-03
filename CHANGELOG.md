@@ -1,3 +1,9 @@
+# 2.3.5
+
+- Add tail-aware continuous-motion AEC tuning with deterministic candidate parallelism, p10 render-correlation scoring, aligned per-case delta eligibility, and independent validation/shadow replay.
+- Fail candidate selection closed on hard-case correlation/ERLE regressions; fixed high `aec_mu` values may improve aggregate ERLE while still being rejected from promotion.
+- Harden aligned-case evidence against empty, duplicate, missing, or extra case identities, and preserve product DSP defaults, public API/ABI, real-data holdouts, and shipping authority unchanged.
+
 # 2.3.4
 
 - Add a deterministic continuous-motion AEC development corpus with multi-seed smooth delay/gain/multipath variation, explicitly limited to regression/development authority.

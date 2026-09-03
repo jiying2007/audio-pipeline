@@ -10,6 +10,7 @@ resource/HIL and product certification remain separate authorities.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import itertools
 import json
@@ -105,6 +106,17 @@ def validate_search_space(space: dict[str, Any]) -> None:
             raise ValueError("metric weight/scale invalid")
         if float(metric.get("max_regression", 0.0)) < 0.0:
             raise ValueError("max_regression must be >= 0")
+    case_gates = objective.get("case_delta_gates", [])
+    if not isinstance(case_gates, list):
+        raise ValueError("objective.case_delta_gates must be a list")
+    for gate in case_gates:
+        if not isinstance(gate, dict) or not str(gate.get("metric", "")):
+            raise ValueError("case delta gate metric is required")
+        if gate.get("stat") not in {"min", "p10", "median"}:
+            raise ValueError("case delta gate stat must be min, p10 or median")
+        minimum = float(gate.get("minimum_delta", float("nan")))
+        if not math.isfinite(minimum):
+            raise ValueError("case delta gate minimum_delta must be finite")
 
 
 def tuning_id(tuning: dict[str, float]) -> str:
@@ -201,6 +213,105 @@ def regression_violations(space: dict[str, Any], baseline: dict[str, Any],
     return violations
 
 
+def percentile(values: list[float], quantile: float) -> float:
+    if not values:
+        raise ValueError("percentile requires values")
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * quantile
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    if lower == upper:
+        return ordered[lower]
+    fraction = position - lower
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
+def strict_report_case_map(report: dict[str, Any], role: str) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    raw_cases = report.get("cases")
+    if not isinstance(raw_cases, list) or not raw_cases:
+        return {}, [{"gate": "case_set_invalid", "role": role, "reason": "non_empty_list_required"}]
+    result: dict[str, dict[str, Any]] = {}
+    violations: list[dict[str, Any]] = []
+    for index, case in enumerate(raw_cases):
+        if not isinstance(case, dict):
+            violations.append({"gate": "case_identity_invalid", "role": role, "index": index})
+            continue
+        case_id = case.get("case_id")
+        if not isinstance(case_id, str) or not case_id:
+            violations.append({"gate": "case_identity_invalid", "role": role, "index": index})
+            continue
+        if case_id in result:
+            violations.append({"gate": "case_identity_duplicate", "role": role, "case_id": case_id})
+            continue
+        result[case_id] = case
+    return result, violations
+
+
+def case_delta_gate_violations(space: dict[str, Any], baseline: dict[str, Any],
+                               candidate: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    gates = list(space.get("objective", {}).get("case_delta_gates", []))
+    if not gates:
+        return [], []
+    baseline_cases, baseline_identity = strict_report_case_map(baseline, "baseline")
+    candidate_cases, candidate_identity = strict_report_case_map(candidate, "candidate")
+    identity_violations = baseline_identity + candidate_identity
+    if identity_violations:
+        return [], identity_violations
+    if set(baseline_cases) != set(candidate_cases):
+        missing = sorted(set(baseline_cases) - set(candidate_cases))
+        extra = sorted(set(candidate_cases) - set(baseline_cases))
+        return [], [{
+            "gate": "case_set_mismatch",
+            "baseline_cases": len(baseline_cases),
+            "candidate_cases": len(candidate_cases),
+            "missing_cases": missing[:8],
+            "missing_count": len(missing),
+            "extra_cases": extra[:8],
+            "extra_count": len(extra),
+        }]
+    summaries: list[dict[str, Any]] = []
+    violations: list[dict[str, Any]] = []
+    for gate in gates:
+        metric = str(gate["metric"])
+        stat = str(gate["stat"])
+        minimum = float(gate["minimum_delta"])
+        deltas: list[float] = []
+        missing: list[str] = []
+        for case_id in sorted(baseline_cases):
+            base_value = baseline_cases[case_id].get("metrics", {}).get(metric)
+            cand_value = candidate_cases[case_id].get("metrics", {}).get(metric)
+            if base_value is None or cand_value is None:
+                missing.append(case_id)
+                continue
+            base_float = float(base_value)
+            cand_float = float(cand_value)
+            if not math.isfinite(base_float) or not math.isfinite(cand_float):
+                missing.append(case_id)
+                continue
+            deltas.append(cand_float - base_float)
+        if missing:
+            violations.append({
+                "gate": "case_metric_missing", "metric": metric,
+                "missing_cases": missing[:8], "missing_count": len(missing),
+            })
+            continue
+        if stat == "min":
+            actual = min(deltas)
+        elif stat == "p10":
+            actual = percentile(deltas, 0.10)
+        else:
+            actual = percentile(deltas, 0.50)
+        summary = {
+            "metric": metric, "stat": stat, "actual_delta": actual,
+            "minimum_delta": minimum, "cases": len(deltas),
+            "worsened_cases": sum(delta < 0.0 for delta in deltas),
+        }
+        summaries.append(summary)
+        if actual < minimum - 1.0e-12:
+            violations.append({"gate": "case_delta_regression", **summary})
+    return summaries, violations
+
+
 def load_corpus_identity(path: Path) -> dict[str, Any]:
     corpus = json.loads(path.read_text(encoding="utf-8"))
     return {
@@ -289,38 +400,54 @@ def bind_report(path: Path, report: dict[str, Any]) -> dict[str, Any]:
 
 
 def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shadow: Path,
-            policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path) -> dict[str, Any]:
+            policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path,
+            candidate_jobs: int = 1) -> dict[str, Any]:
     space = json.loads(search_space_path.read_text(encoding="utf-8"))
     validate_search_space(space)
     identities = enforce_partition_independence(dev, validation, shadow)
     candidates = generate_candidates(space)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if candidate_jobs < 1 or candidate_jobs > 8:
+        raise ValueError("candidate_jobs must be 1..8")
     baseline_candidate = candidates[0]
-    dev_results = []
-    baseline_dev_report = None
-    for candidate in candidates:
+
+    def evaluate_development(candidate: dict[str, Any]) -> dict[str, Any]:
         report_path = output_dir / "development" / f"{candidate['candidate_id']}.json"
         report, elapsed = run_validation(repo_root, processor, dev, policy, dataset_lock,
                                          candidate["tuning"], report_path)
-        if candidate["label"] == "baseline":
-            baseline_dev_report = report
-        dev_results.append({
+        return {
             **candidate,
             "report_path": str(report_path),
             "report_sha256": sha256_file(report_path),
             "validation_result": report.get("validation_result"),
             "elapsed_s": elapsed,
             "report": report,
-        })
-    assert baseline_dev_report is not None
+        }
+
+    if candidate_jobs == 1:
+        dev_results = [evaluate_development(candidate) for candidate in candidates]
+    else:
+        with ThreadPoolExecutor(max_workers=candidate_jobs) as executor:
+            dev_results = list(executor.map(evaluate_development, candidates))
+    baseline_dev_report = next(
+        item["report"] for item in dev_results if item["label"] == "baseline"
+    )
 
     for result in dev_results:
         score, deltas = score_against_baseline(space, baseline_dev_report, result["report"])
+        case_summary, case_violations = case_delta_gate_violations(
+            space, baseline_dev_report, result["report"]
+        )
         result["score"] = score
         result["objective_deltas"] = deltas
+        result["case_delta_summary"] = case_summary
+        result["case_delta_violations"] = case_violations
 
-    eligible_dev = [result for result in dev_results if result["validation_result"] == "PASS"]
+    eligible_dev = [
+        result for result in dev_results
+        if result["validation_result"] == "PASS" and not result["case_delta_violations"]
+    ]
     eligible_dev.sort(key=lambda item: (-float(item["score"]), item["candidate_id"]))
     selected = eligible_dev[0] if eligible_dev else dev_results[0]
     min_score = float(space.get("objective", {}).get("minimum_improvement_score", 0.05))
@@ -341,12 +468,18 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
         )
         shadow_reports[role] = (shadow_path, shadow_report, shadow_elapsed)
 
-    validation_violations = regression_violations(
+    validation_case_summary, validation_case_violations = case_delta_gate_violations(
         space, validation_reports["baseline"][1], validation_reports["candidate"][1]
     )
-    shadow_violations = regression_violations(
+    shadow_case_summary, shadow_case_violations = case_delta_gate_violations(
         space, shadow_reports["baseline"][1], shadow_reports["candidate"][1]
     )
+    validation_violations = regression_violations(
+        space, validation_reports["baseline"][1], validation_reports["candidate"][1]
+    ) + validation_case_violations
+    shadow_violations = regression_violations(
+        space, shadow_reports["baseline"][1], shadow_reports["candidate"][1]
+    ) + shadow_case_violations
     same_as_baseline = selected["candidate_id"] == baseline_candidate["candidate_id"]
     decision = "KEEP_BASELINE" if same_as_baseline else (
         "ACOUSTIC_CANDIDATE" if not validation_violations and not shadow_violations else "REJECT_CANDIDATE"
@@ -362,6 +495,7 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "sha256": sha256_file(search_space_path),
             "strategy": space.get("strategy", "one-at-a-time"),
             "candidate_count": len(candidates),
+            "candidate_jobs": candidate_jobs,
         },
         "bindings": {
             "processor_sha256": sha256_file(processor),
@@ -383,17 +517,21 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
                 "validation_result": item["validation_result"],
                 "report_sha256": item["report_sha256"],
                 "elapsed_s": item["elapsed_s"],
+                "case_delta_summary": item["case_delta_summary"],
+                "case_delta_violations": item["case_delta_violations"],
             }
             for item in sorted(dev_results, key=lambda item: (-float(item["score"]), item["candidate_id"]))
         ],
         "validation": {
             "baseline": bind_report(validation_reports["baseline"][0], validation_reports["baseline"][1]),
             "candidate": bind_report(validation_reports["candidate"][0], validation_reports["candidate"][1]),
+            "case_delta_summary": validation_case_summary,
             "regression_violations": validation_violations,
         },
         "shadow": {
             "baseline": bind_report(shadow_reports["baseline"][0], shadow_reports["baseline"][1]),
             "candidate": bind_report(shadow_reports["candidate"][0], shadow_reports["candidate"][1]),
+            "case_delta_summary": shadow_case_summary,
             "regression_violations": shadow_violations,
         },
         "promotion_required": [
@@ -439,6 +577,38 @@ def self_test() -> None:
     assert not regression_violations(space, baseline, better)
     worse = {"validation_result": "PASS", "summary": {"pass_rate": 0.98, "median_erle_db": 12.0}}
     assert regression_violations(space, baseline, worse)
+    tail_space = json.loads(json.dumps(space))
+    tail_space["objective"]["case_delta_gates"] = [
+        {"metric": "corr", "stat": "min", "minimum_delta": -0.015},
+        {"metric": "corr", "stat": "p10", "minimum_delta": -0.005},
+        {"metric": "erle", "stat": "min", "minimum_delta": -0.5},
+    ]
+    validate_search_space(tail_space)
+    tail_base = {"cases": [
+        {"case_id": "a", "metrics": {"corr": 0.10, "erle": 10.0}},
+        {"case_id": "b", "metrics": {"corr": 0.20, "erle": 11.0}},
+    ]}
+    tail_good = {"cases": [
+        {"case_id": "a", "metrics": {"corr": 0.096, "erle": 11.0}},
+        {"case_id": "b", "metrics": {"corr": 0.22, "erle": 12.0}},
+    ]}
+    summaries, violations = case_delta_gate_violations(tail_space, tail_base, tail_good)
+    assert len(summaries) == 3 and not violations
+    tail_bad = {"cases": [
+        {"case_id": "a", "metrics": {"corr": 0.07, "erle": 11.0}},
+        {"case_id": "b", "metrics": {"corr": 0.22, "erle": 12.0}},
+    ]}
+    _, violations = case_delta_gate_violations(tail_space, tail_base, tail_bad)
+    assert any(item["gate"] == "case_delta_regression" for item in violations)
+    duplicate = json.loads(json.dumps(tail_good))
+    duplicate["cases"].append(json.loads(json.dumps(duplicate["cases"][0])))
+    _, violations = case_delta_gate_violations(tail_space, tail_base, duplicate)
+    assert any(item["gate"] == "case_identity_duplicate" for item in violations)
+    missing_case = json.loads(json.dumps(tail_good))
+    missing_case["cases"].pop()
+    _, violations = case_delta_gate_violations(tail_space, tail_base, missing_case)
+    mismatch = next(item for item in violations if item["gate"] == "case_set_mismatch")
+    assert mismatch["missing_count"] == 1 and mismatch["extra_count"] == 0
     with tempfile.TemporaryDirectory(prefix="ap-tuning-selftest-") as temporary:
         root = Path(temporary)
         for index, seed in enumerate((1, 2, 3)):
@@ -473,6 +643,8 @@ def main() -> int:
     parser.add_argument("--dataset-lock", type=Path, default=Path("validation/datasets.lock.json"))
     parser.add_argument("--search-space", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--candidate-jobs", type=int, default=1,
+                        help="parallel development candidates; deterministic output order is preserved")
     parser.add_argument("--require-candidate", action="store_true",
                         help="return non-zero unless an independent-gate ACOUSTIC_CANDIDATE is produced")
     args = parser.parse_args()
@@ -488,7 +660,7 @@ def main() -> int:
         args.repo_root.resolve(), args.processor.resolve(),
         args.development_corpus.resolve(), args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),
-        args.search_space.resolve(), args.output_dir.resolve(),
+        args.search_space.resolve(), args.output_dir.resolve(), args.candidate_jobs,
     )
     print(json.dumps({
         "decision": result["decision"], "iteration_id": result["iteration_id"],

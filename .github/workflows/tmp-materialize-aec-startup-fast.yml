@@ -1,0 +1,70 @@
+name: Temporary Materialize AEC Startup Fast
+on:
+  push:
+    branches: [fix/aec-startup-fast-adapt]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: fix/aec-startup-fast-adapt
+          fetch-depth: 0
+      - name: Materialize minimal product change
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/core/ap_pipeline.c')
+          s = p.read_text()
+          old = '    config.aec_adapt_stride = 2u;\n'
+          new = '    config.aec_adapt_stride = profile == AP_PROFILE_CALL ? 1u : 2u;\n'
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('tests/test_echo_dynamics.c')
+          s = p.read_text()
+          inc = '#include "audio_pipeline/audio_pipeline.h"\n'
+          if inc not in s:
+              s = inc + s
+          marker = 'static void test_aec_steady_stride_preserves_movement_tracking(void) {\n'
+          assert marker in s
+          fn = '''static void test_aec_profile_startup_stride_contract(void) {\n    ap_config_t cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_STANDARD);\n    assert(cfg.aec_adapt_stride == 1u);\n    cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_LOW);\n    assert(cfg.aec_adapt_stride == 1u);\n    cfg = ap_config_for_resource(AP_PROFILE_ASSISTANT, AP_RESOURCE_STANDARD);\n    assert(cfg.aec_adapt_stride == 2u);\n    cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_TINY);\n    assert(cfg.aec_adapt_stride == 3u);\n}\n\n'''
+          if 'test_aec_profile_startup_stride_contract' not in s:
+              s = s.replace(marker, fn + marker, 1)
+          old_main = '    test_far_end_agc_does_not_gain_up();\n    test_aec_steady_stride_preserves_movement_tracking();\n'
+          new_main = '    test_far_end_agc_does_not_gain_up();\n    test_aec_profile_startup_stride_contract();\n    test_aec_steady_stride_preserves_movement_tracking();\n'
+          assert old_main in s
+          s = s.replace(old_main, new_main, 1)
+          p.write_text(s)
+
+          p = Path('CMakeLists.txt')
+          s = p.read_text()
+          old = 'project(audio_pipeline VERSION 2.3.3 LANGUAGES C)'
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, 'project(audio_pipeline VERSION 2.3.4 LANGUAGES C)', 1))
+
+          p = Path('CHANGELOG.md')
+          s = p.read_text()
+          entry = '''# 2.3.4\n\n- Start CALL AEC standard/low adaptation at stride 1 for the first convergence window, then retain the existing automatic steady-state floor of stride 2; Assistant remains stride 2 and Tiny remains stride 3.\n- Preserve the existing AEC mu, tail, API/ABI, quality degradation rules and shipping authority while improving deterministic smooth-path startup tracking without adding a runtime detector or new control surface.\n- Add profile/resource startup-stride regression coverage; GitHub-hosted real AEC remains a one-way promotion check rather than a tuning input.\n\n'''
+          assert s.startswith('# 2.3.3\n')
+          p.write_text(entry + s)
+          PY
+
+          git diff --check
+          cmake -S . -B build-materialize -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-materialize --parallel
+          ctest --test-dir build-materialize --output-on-failure -R 'echo_dynamics|pipeline|contract'
+          grep -q 'project(audio_pipeline VERSION 2.3.4 LANGUAGES C)' CMakeLists.txt
+          head -1 CHANGELOG.md | grep -qx '# 2.3.4'
+          grep -q 'profile == AP_PROFILE_CALL ? 1u : 2u' src/core/ap_pipeline.c
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CMakeLists.txt CHANGELOG.md src/core/ap_pipeline.c tests/test_echo_dynamics.c
+          git commit -m 'fix: accelerate CALL AEC startup adaptation'
+          git push origin HEAD:fix/aec-startup-fast-adapt

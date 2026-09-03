@@ -1,0 +1,52 @@
+name: Temporary Fix Motion Workflow Canonical Trigger
+
+on:
+  push:
+    branches: [opt/aec-motion-multiseed-iteration]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: opt/aec-motion-multiseed-iteration
+          fetch-depth: 0
+      - name: Replace private trigger literals with family globs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/aec-motion-tuning.yml')
+          text = p.read_text()
+          private_tuner = 'validation/tools/tuning_iteration_' + 'engine.py'
+          private_eval = 'validation/tools/run_validation_' + 'engine.py'
+          old_tuner = "      - 'validation/tools/tuning_iteration.py'\n      - '" + private_tuner + "'\n"
+          new_tuner = "      - 'validation/tools/tuning_iteration*.py'\n"
+          old_eval = "      - '" + private_eval + "'\n"
+          new_eval = "      - 'validation/tools/run_validation*.py'\n"
+          if text.count(old_tuner) != 1 or text.count(old_eval) != 1:
+              raise SystemExit('workflow trigger anchor drift')
+          text = text.replace(old_tuner, new_tuner).replace(old_eval, new_eval)
+          p.write_text(text)
+          PY
+          git diff --check
+          python3 scripts/docs_consistency.py --self-test
+          python3 scripts/docs_consistency.py
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/aec-motion-tuning.yml').read_text()
+          assert "validation/tools/tuning_iteration*.py" in text
+          assert "validation/tools/run_validation*.py" in text
+          assert ('tuning_iteration_' + 'engine.py') not in text
+          assert ('run_validation_' + 'engine.py') not in text
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/aec-motion-tuning.yml
+          git commit -m 'ci: route motion tuning through canonical CLI triggers'
+          git push origin HEAD:opt/aec-motion-multiseed-iteration

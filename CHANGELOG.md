@@ -1,3 +1,9 @@
+# 2.3.4
+
+- Start CALL AEC standard/low adaptation at stride 1 for the first convergence window, then retain the existing automatic steady-state floor of stride 2; Assistant remains stride 2 and Tiny remains stride 3.
+- Preserve the existing AEC mu, tail, API/ABI, quality degradation rules and shipping authority while improving deterministic smooth-path startup tracking without adding a runtime detector or new control surface.
+- Add profile/resource startup-stride regression coverage; GitHub-hosted real AEC remains a one-way promotion check rather than a tuning input.
+
 # 2.3.3
 
 - Add a GitHub-hosted, hash-pinned Microsoft AEC Challenge real microset with two static and two moving far-end single-talk cases.

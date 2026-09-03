@@ -183,7 +183,7 @@ ap_config_t ap_config_for_resource(ap_profile_t profile,
     config.mic_spacing_mm = 35.0f;
     config.max_delay_ms = ap_min_u32(180u, AP_BUILD_MAX_DELAY_MS);
     config.initial_delay_ms = ap_min_u32(40u, config.max_delay_ms);
-    config.aec_adapt_stride = 2u;
+    config.aec_adapt_stride = profile == AP_PROFILE_CALL ? 1u : 2u;
     config.enable_delay_tracking = 1u;
     config.enable_clock_drift_compensation = 1u;
     config.resource_class = resource_class;

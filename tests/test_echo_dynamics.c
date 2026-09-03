@@ -1,3 +1,4 @@
+#include "audio_pipeline/audio_pipeline.h"
 #include "aec/ap_aec.h"
 #include "enhance/ap_enhance.h"
 #include <assert.h>
@@ -75,6 +76,17 @@ static void run_far_end_frames(uint32_t configured_stride,
     assert(status.active_adapt_stride == expected_steady_stride);
 }
 
+static void test_aec_profile_startup_stride_contract(void) {
+    ap_config_t cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_STANDARD);
+    assert(cfg.aec_adapt_stride == 1u);
+    cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_LOW);
+    assert(cfg.aec_adapt_stride == 1u);
+    cfg = ap_config_for_resource(AP_PROFILE_ASSISTANT, AP_RESOURCE_STANDARD);
+    assert(cfg.aec_adapt_stride == 2u);
+    cfg = ap_config_for_resource(AP_PROFILE_CALL, AP_RESOURCE_TINY);
+    assert(cfg.aec_adapt_stride == 3u);
+}
+
 static void test_aec_steady_stride_preserves_movement_tracking(void) {
     run_far_end_frames(2u, 2u);
     run_far_end_frames(1u, 2u);
@@ -82,6 +94,7 @@ static void test_aec_steady_stride_preserves_movement_tracking(void) {
 
 int main(void) {
     test_far_end_agc_does_not_gain_up();
+    test_aec_profile_startup_stride_contract();
     test_aec_steady_stride_preserves_movement_tracking();
     return 0;
 }

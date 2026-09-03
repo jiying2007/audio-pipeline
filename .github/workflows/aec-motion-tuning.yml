@@ -212,9 +212,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p tuning-out/bindings
-          cp motion-dev/corpus.json motion-dev/source-manifest.json tuning-out/bindings/dev-
-          cp motion-validation/corpus.json motion-validation/source-manifest.json tuning-out/bindings/validation-
-          cp motion-shadow/corpus.json motion-shadow/source-manifest.json tuning-out/bindings/shadow-
+          cp motion-dev/corpus.json tuning-out/bindings/motion-dev-corpus.json
+          cp motion-dev/source-manifest.json tuning-out/bindings/motion-dev-source-manifest.json
+          cp motion-validation/corpus.json tuning-out/bindings/motion-validation-corpus.json
+          cp motion-validation/source-manifest.json tuning-out/bindings/motion-validation-source-manifest.json
+          cp motion-shadow/corpus.json tuning-out/bindings/motion-shadow-corpus.json
+          cp motion-shadow/source-manifest.json tuning-out/bindings/motion-shadow-source-manifest.json
           cp "$MOTION_SEARCH_SPACE" "$GENERIC_SEARCH_SPACE" "$MOTION_POLICY" "$GENERIC_POLICY" "$DATASET_LOCK" tuning-out/bindings/
           build-motion-tuning/ap_build_info_dump > tuning-out/bindings/build-info.txt
           sha256sum build-motion-tuning/ap_process_pcm > tuning-out/bindings/processor.sha256

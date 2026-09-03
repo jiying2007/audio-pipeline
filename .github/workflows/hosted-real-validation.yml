@@ -1,0 +1,135 @@
+name: Hosted Real Audio Validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '47 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hosted-real-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p808-real-audio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: hosted-real-p808
+
+      - name: Validate pinned hosted-real dataset contract
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_hosted_real_corpus.py self-test
+          python3 validation/tools/build_hosted_real_corpus.py validate \
+            --lock validation/hosted_real.datasets.lock.json
+          python3 validation/tools/run_validation.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          lock = json.loads(Path('validation/hosted_real.datasets.lock.json').read_text())
+          policy = json.loads(Path('validation/policies/validation-hosted-real-smoke.json').read_text())
+          assert lock['schema_version'] == 1
+          assert lock['source_repository'] == 'microsoft/P.808'
+          assert len(lock['clips']) == 4
+          assert policy['minimum_cases'] == 4
+          assert policy['required_public_sources'] == ['microsoft-p808-hosted-real']
+          PY
+
+      - name: Build offline validation processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-hosted-real -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-hosted-real --target ap_process_pcm ap_build_info_dump --parallel
+          mkdir -p hosted-real-out
+          sha256sum build-hosted-real/ap_process_pcm > hosted-real-out/processor.sha256
+          build-hosted-real/ap_build_info_dump > hosted-real-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > hosted-real-out/compiler.txt
+
+      - name: Materialize SHA-pinned Microsoft P.808 clips
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_hosted_real_corpus.py build \
+            --lock validation/hosted_real.datasets.lock.json \
+            --output hosted-real-out/corpus \
+            | tee hosted-real-out/corpus-build.json
+
+      - name: Enforce hosted real-audio regression policy
+        run: |
+          set -euo pipefail
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ github.sha }}' \
+            --corpus hosted-real-out/corpus/corpus.json \
+            --policy validation/policies/validation-hosted-real-smoke.json \
+            --dataset-lock validation/hosted_real.datasets.lock.json \
+            --source-manifest hosted-real-out/corpus/source-manifest.json \
+            --processor build-hosted-real/ap_process_pcm \
+            --output hosted-real-out/report.json \
+            --evidence-manifest hosted-real-out/evidence-manifest.json \
+            --enforce
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('hosted-real-out/report.json').read_text())
+          assert report['validation_result'] == 'PASS'
+          assert report['tier'] == 'validation-grade'
+          assert report['summary']['cases'] == 4
+          assert report['summary']['pass_rate'] == 1.0
+          assert 'source_manifest_sha256' in report['bindings']
+          print(json.dumps({
+              'result': report['validation_result'],
+              'cases': report['summary']['cases'],
+              'pass_rate': report['summary']['pass_rate'],
+              'corpus_id': report['corpus_id'],
+          }, sort_keys=True))
+          PY
+
+      - name: Seal hosted-real evidence bundle
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d hosted-real-out ]; then
+            cp validation/hosted_real.datasets.lock.json hosted-real-out/
+            cp validation/policies/validation-hosted-real-smoke.json hosted-real-out/
+            find hosted-real-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+              xargs -0 sha256sum > /tmp/hosted-real-SHA256SUMS
+            mv /tmp/hosted-real-SHA256SUMS hosted-real-out/SHA256SUMS
+          fi
+
+      - name: Publish hosted-real summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f hosted-real-out/report.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          report = json.loads(Path('hosted-real-out/report.json').read_text())
+          print('## Hosted real-audio validation')
+          print('- Dataset: `microsoft/P.808` pinned by exact commit + SHA-256 + Git blob SHA-1')
+          print(f"- Result: `{report['validation_result']}`")
+          print(f"- Corpus: `{report['corpus_id']}`")
+          print(f"- Cases: `{report['summary']['cases']}`")
+          print(f"- Pass rate: `{report['summary']['pass_rate']:.3f}`")
+          print('- Authority: validation regression only; full public/extended-real, blind holdout, target and HIL gates remain mandatory for shipping.')
+          PY
+          fi
+
+      - name: Upload hash-bound hosted-real evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hosted-real-p808-${{ github.run_id }}
+          path: hosted-real-out/
+          retention-days: 30
+          if-no-files-found: error

@@ -226,18 +226,48 @@ def percentile(values: list[float], quantile: float) -> float:
     return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
 
 
+def strict_report_case_map(report: dict[str, Any], role: str) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    raw_cases = report.get("cases")
+    if not isinstance(raw_cases, list) or not raw_cases:
+        return {}, [{"gate": "case_set_invalid", "role": role, "reason": "non_empty_list_required"}]
+    result: dict[str, dict[str, Any]] = {}
+    violations: list[dict[str, Any]] = []
+    for index, case in enumerate(raw_cases):
+        if not isinstance(case, dict):
+            violations.append({"gate": "case_identity_invalid", "role": role, "index": index})
+            continue
+        case_id = case.get("case_id")
+        if not isinstance(case_id, str) or not case_id:
+            violations.append({"gate": "case_identity_invalid", "role": role, "index": index})
+            continue
+        if case_id in result:
+            violations.append({"gate": "case_identity_duplicate", "role": role, "case_id": case_id})
+            continue
+        result[case_id] = case
+    return result, violations
+
+
 def case_delta_gate_violations(space: dict[str, Any], baseline: dict[str, Any],
                                candidate: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     gates = list(space.get("objective", {}).get("case_delta_gates", []))
     if not gates:
         return [], []
-    baseline_cases = {str(case.get("case_id")): case for case in baseline.get("cases", [])}
-    candidate_cases = {str(case.get("case_id")): case for case in candidate.get("cases", [])}
-    if not baseline_cases or set(baseline_cases) != set(candidate_cases):
+    baseline_cases, baseline_identity = strict_report_case_map(baseline, "baseline")
+    candidate_cases, candidate_identity = strict_report_case_map(candidate, "candidate")
+    identity_violations = baseline_identity + candidate_identity
+    if identity_violations:
+        return [], identity_violations
+    if set(baseline_cases) != set(candidate_cases):
+        missing = sorted(set(baseline_cases) - set(candidate_cases))
+        extra = sorted(set(candidate_cases) - set(baseline_cases))
         return [], [{
             "gate": "case_set_mismatch",
             "baseline_cases": len(baseline_cases),
             "candidate_cases": len(candidate_cases),
+            "missing_cases": missing[:8],
+            "missing_count": len(missing),
+            "extra_cases": extra[:8],
+            "extra_count": len(extra),
         }]
     summaries: list[dict[str, Any]] = []
     violations: list[dict[str, Any]] = []
@@ -570,6 +600,15 @@ def self_test() -> None:
     ]}
     _, violations = case_delta_gate_violations(tail_space, tail_base, tail_bad)
     assert any(item["gate"] == "case_delta_regression" for item in violations)
+    duplicate = json.loads(json.dumps(tail_good))
+    duplicate["cases"].append(json.loads(json.dumps(duplicate["cases"][0])))
+    _, violations = case_delta_gate_violations(tail_space, tail_base, duplicate)
+    assert any(item["gate"] == "case_identity_duplicate" for item in violations)
+    missing_case = json.loads(json.dumps(tail_good))
+    missing_case["cases"].pop()
+    _, violations = case_delta_gate_violations(tail_space, tail_base, missing_case)
+    mismatch = next(item for item in violations if item["gate"] == "case_set_mismatch")
+    assert mismatch["missing_count"] == 1 and mismatch["extra_count"] == 0
     with tempfile.TemporaryDirectory(prefix="ap-tuning-selftest-") as temporary:
         root = Path(temporary)
         for index, seed in enumerate((1, 2, 3)):

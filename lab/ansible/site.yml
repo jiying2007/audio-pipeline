@@ -19,3 +19,10 @@
     - common
     - audio_builder
     - github_runner
+
+- name: Provision certification-archive lifecycle controller
+  hosts: certification_archive
+  roles:
+    - common
+    - certification_archive
+    - github_runner

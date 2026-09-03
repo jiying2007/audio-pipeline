@@ -92,6 +92,10 @@ void ap_agc_init(ap_agc_state_t *state,
 void ap_agc_process(ap_agc_state_t *state,
                     float *samples,
                     uint32_t frame_samples);
+void ap_agc_process_controlled(ap_agc_state_t *state,
+                               float *samples,
+                               uint32_t frame_samples,
+                               int allow_gain_increase);
 #endif
 
 #if AP_BUILD_STAGE_VAD

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "search_space_id": "aec-motion-runtime-safe-v1",
+  "search_space_id": "aec-motion-runtime-safe-v2",
   "strategy": "one-at-a-time",
   "max_candidates": 10,
   "baseline": {
@@ -10,7 +10,7 @@
     "limiter_dbfs": -2.0
   },
   "parameters": {
-    "aec_mu": [0.16, 0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.30, 0.32]
+    "aec_mu": [0.28, 0.30, 0.32, 0.34, 0.36, 0.38, 0.40]
   },
   "objective": {
     "minimum_improvement_score": 0.10,

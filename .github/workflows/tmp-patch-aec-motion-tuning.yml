@@ -1,0 +1,40 @@
+name: Temporary Patch AEC Motion Tuning
+
+on:
+  push:
+    branches: [opt/aec-motion-multiseed-iteration]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: opt/aec-motion-multiseed-iteration
+          fetch-depth: 0
+      - name: Patch evidence copy paths and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/aec-motion-tuning.yml')
+          text = path.read_text()
+          old = '''          cp motion-dev/corpus.json motion-dev/source-manifest.json tuning-out/bindings/dev-\n          cp motion-validation/corpus.json motion-validation/source-manifest.json tuning-out/bindings/validation-\n          cp motion-shadow/corpus.json motion-shadow/source-manifest.json tuning-out/bindings/shadow-\n'''
+          new = '''          cp motion-dev/corpus.json tuning-out/bindings/motion-dev-corpus.json\n          cp motion-dev/source-manifest.json tuning-out/bindings/motion-dev-source-manifest.json\n          cp motion-validation/corpus.json tuning-out/bindings/motion-validation-corpus.json\n          cp motion-validation/source-manifest.json tuning-out/bindings/motion-validation-source-manifest.json\n          cp motion-shadow/corpus.json tuning-out/bindings/motion-shadow-corpus.json\n          cp motion-shadow/source-manifest.json tuning-out/bindings/motion-shadow-source-manifest.json\n'''
+          if text.count(old) != 1:
+              raise SystemExit('expected evidence copy block not found exactly once')
+          path.write_text(text.replace(old, new))
+          Path('.github/workflows/tmp-patch-aec-motion-tuning.yml').unlink()
+          PY
+          git diff --check
+          ! grep -q 'tuning-out/bindings/dev-$' .github/workflows/aec-motion-tuning.yml
+          test ! -e .github/workflows/tmp-patch-aec-motion-tuning.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/aec-motion-tuning.yml .github/workflows/tmp-patch-aec-motion-tuning.yml
+          git commit -m 'ci: fix AEC motion tuning evidence bindings'
+          git push origin HEAD:opt/aec-motion-multiseed-iteration

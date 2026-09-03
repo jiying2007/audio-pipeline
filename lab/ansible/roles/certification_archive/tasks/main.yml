@@ -1,0 +1,27 @@
+---
+- name: Require operator-installed lifecycle archive backend
+  ansible.builtin.assert:
+    that:
+      - certification_archive_command is defined
+      - certification_archive_command | length > 1
+      - certification_archive_command is match('^/')
+    fail_msg: >-
+      certification-archive requires an absolute operator-installed immutable
+      archive backend command. The lab role never creates or substitutes a
+      product-lifecycle archive implementation.
+
+- name: Inspect lifecycle archive backend command
+  ansible.builtin.stat:
+    path: "{{ certification_archive_command }}"
+    follow: true
+  register: certification_archive_command_stat
+
+- name: Fail closed when lifecycle archive backend is unusable
+  ansible.builtin.assert:
+    that:
+      - certification_archive_command_stat.stat.exists
+      - certification_archive_command_stat.stat.isreg
+      - certification_archive_command_stat.stat.executable
+    fail_msg: >-
+      certification-archive backend command must already exist and be
+      executable by the unprivileged runner account.

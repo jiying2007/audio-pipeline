@@ -15,14 +15,22 @@ operator / Ansible controller
         |      RealMAN / BUT ReverbDB / MUSAN / Mini LibriSpeech / plus imports
         |
         +--> audio-target controller PC (Ubuntu x64)
-               label: self-hosted,linux,audio-target
-               |
-               +-- SSH/serial/ALSA/USB --> SSC305 DUT
-               +-- relay/power-cycle hook
-               +-- live temperature/power sensor exports
+        |      label: self-hosted,linux,audio-target
+        |      |
+        |      +-- SSH/serial/ALSA/USB --> SSC305 DUT
+        |      +-- relay/power-cycle hook
+        |      +-- live temperature/power sensor exports
+        |
+        +--> audio-builder PC (Ubuntu x64)
+        |      label: self-hosted,linux,audio-builder
+        |      operator-installed exact shipping compiler/sysroot/toolchain
+        |
+        +--> certification-archive PC/service host (Ubuntu x64)
+               label: self-hosted,linux,certification-archive
+               operator-installed immutable product-lifecycle archive backend
 ```
 
-Do not install the GitHub runner on the low-resource DUT unless there is a reviewed reason to do so. The reference design runs Actions on the controller and treats the product board as the DUT.
+Do not install the GitHub runner on the low-resource DUT unless there is a reviewed reason to do so. The reference design runs Actions on controllers and treats the product board as the DUT.
 
 Because this repository is public, never route untrusted fork pull-request code to these runners. The repository's trusted workflows use exact SHA/manual/schedule/repository-dispatch entrypoints instead.
 
@@ -49,7 +57,29 @@ ansible-playbook site.yml --limit audio_validation \
   --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'
 ansible-playbook site.yml --limit audio_target \
   --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'
+ansible-playbook site.yml --limit audio_builder \
+  --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'
+ansible-playbook site.yml --limit certification_archive \
+  --extra-vars 'github_runner_registration_token=<SHORT_LIVED_TOKEN>'
 ```
+
+Before provisioning `audio_builder`, replace the three inventory placeholders with absolute paths for the **operator-installed exact shipping toolchain**:
+
+```yaml
+audio_builder_shipping_cc: /real/toolchain/bin/arm-linux-gnueabihf-gcc
+audio_builder_shipping_sysroot: /real/toolchain/sysroot
+audio_builder_shipping_toolchain_root: /real/toolchain
+```
+
+The `audio_builder` role deliberately does not download or invent a vendor compiler. It fails closed unless the compiler exists, is executable by the runner user, and the sysroot/toolchain-root directories exist. Formal Product Certification independently repeats the exact-toolchain preflight, so successful provisioning is readiness only and never shipping authority.
+
+Before provisioning `certification_archive`, an administrator/operator must install the reviewed immutable lifecycle backend at the path Product Certification uses:
+
+```yaml
+certification_archive_command: /usr/local/bin/audio-pipeline-cert-archive
+```
+
+The role only verifies that this absolute command already exists and is executable by the unprivileged runner account. It never creates a fake archive, changes retention semantics, or substitutes local filesystem storage for the reviewed product-lifecycle backend. Product Certification re-runs the archive preflight and validates the resulting receipt.
 
 The ordinary-user runner is installed as a `systemd --user` service. For unattended reboot/no-login persistence only, an administrator may run once:
 
@@ -57,9 +87,9 @@ The ordinary-user runner is installed as a `systemd --user` service. For unatten
 sudo loginctl enable-linger <ubuntu-user>
 ```
 
-This linger step is optional for interactive/login-session use; it is not permission to write `/opt`.
+This linger step is optional for interactive/login-session use; it is not permission to write `/opt` or `/usr/local`.
 
-For a dedicated service-account deployment, explicitly set `lab_system_mode: true`, `lab_service_user`, and any desired `/opt` data paths in inventory. System mode retains apt/service-account/systemd-system behavior.
+For a dedicated service-account deployment, explicitly set `lab_system_mode: true`, `lab_service_user`, and any desired `/opt` data paths in inventory. System mode retains apt/service-account/systemd-system behavior. Product-specific shipping toolchains and lifecycle archive implementations remain operator-managed even in system mode.
 
 The runner distribution remains SHA-256 pinned and registration tokens remain runtime-only `no_log` inputs.
 
@@ -187,11 +217,41 @@ When `--board` is omitted, the HIL workflow resolves `AUDIO_PIPELINE_LAB_BOARD`,
 
 Do not set `HIL_ENABLED=true` until repeated manual accelerated runs demonstrate that the controller, DUT route, power-cycle/cleanup hooks and sensors are actually healthy.
 
-## 7. Activation gates
+## 7. Prepare the shipping audio-builder
+
+Provisioning verifies the operator-managed toolchain but does not replace the authoritative readiness check. Before formal Product Certification, run the shared preflight on the exact source revision and exact paths that certification will receive:
+
+```bash
+python3 tools/runner_preflight.py \
+  --source-revision "$SHA" \
+  --role audio-builder \
+  --shipping-cc /real/toolchain/bin/arm-linux-gnueabihf-gcc \
+  --shipping-sysroot /real/toolchain/sysroot \
+  --shipping-toolchain-root /real/toolchain \
+  --output /tmp/audio-builder-readiness.json
+```
+
+Require `READY`, retain the result with the toolchain change record, and still let Product Certification re-run the same boundary before it builds the exact shipping artifacts.
+
+## 8. Prepare the certification lifecycle archive
+
+The archive runner must have the reviewed backend installed at `/usr/local/bin/audio-pipeline-cert-archive`. Validate the exact source revision against that command before formal certification:
+
+```bash
+python3 tools/runner_preflight.py \
+  --source-revision "$SHA" \
+  --role certification-archive \
+  --archive-command /usr/local/bin/audio-pipeline-cert-archive \
+  --output /tmp/certification-archive-readiness.json
+```
+
+`READY` proves only that the command is present and executable. Product Certification remains responsible for invoking it with the sealed certification bundle, requiring `product-lifecycle` retention, and validating the returned immutable archive receipt against the exact bundle hash.
+
+## 9. Activation gates
 
 A lab is considered operational only when all applicable items are true:
 
-- self-hosted runner is online with the expected dedicated label;
+- self-hosted runners are online with the expected dedicated labels;
 - `labctl.py self-test` and catalog validation pass;
 - commercial-core materialization completes with acquisition seals;
 - canonical source scan + re-verification pass;
@@ -202,10 +262,12 @@ A lab is considered operational only when all applicable items are true:
 - `audio-target` runner and board preflight are `READY`;
 - accelerated HIL passes repeatedly before `HIL_ENABLED=true`;
 - Nightly 1 h, release 8 h and weekly 24 h evidence are accumulated before formal certification;
-- the separate `audio-builder -> audio-target -> certification-archive` topology is still required for 72 h Product Certification.
+- `audio-builder` runner is online and its operator-installed exact shipping compiler/sysroot/toolchain pass provisioning plus shared readiness;
+- `certification-archive` runner is online and the operator-installed immutable archive backend passes provisioning plus shared readiness;
+- the complete `audio-builder -> audio-target -> certification-archive` topology is operational before 72 h Product Certification.
 
 ## Recovery and upgrades
 
-Re-run Ansible and readiness after OS/tool/runner upgrades, dataset changes, board/codec/mic revisions, route changes, sensor changes or storage relocation. Do not treat old readiness JSON as evidence for a changed machine.
+Re-run Ansible and readiness after OS/tool/runner upgrades, dataset changes, board/codec/mic revisions, route changes, sensor changes, shipping compiler/sysroot/toolchain changes, lifecycle archive backend changes or storage relocation. Do not treat old readiness JSON as evidence for a changed machine.
 
 Changing a pinned GitHub Runner, Hugging Face revision, archive checksum or Python dependency is a reviewed repository change and must pass normal PR verification before lab rollout.

@@ -1,3 +1,11 @@
+# 2.3.1
+
+- Add reproducible Ansible provisioning for the complete formal certification runner topology: `audio-validation`, `audio-target`, `audio-builder`, and `certification-archive` now share one versioned laboratory deployment model instead of leaving the shipping builder/archive roles as manual gaps.
+- Fail `audio-builder` provisioning closed unless the operator supplies an existing absolute shipping compiler, sysroot and toolchain-root path and the unprivileged runner account can execute/read them; vendor shipping toolchains remain external and are never downloaded or invented by repository automation.
+- Fail `certification-archive` provisioning closed unless the operator-installed absolute immutable lifecycle backend command exists and is executable; the reference inventory matches Product Certification's `/usr/local/bin/audio-pipeline-cert-archive` contract and never substitutes a fake/local archive implementation.
+- Extend the required ordinary-user laboratory runtime gate to provision isolated builder/archive users, exercise both new roles twice for idempotence with test-only fixtures under `/tmp`, and preserve the no-sudo/no-system-path-write boundary.
+- Preserve realtime DSP behavior, public v2 API/ABI, acoustic/resource/HIL thresholds, dataset locks/licenses and Product Certification authority; formal certification still independently re-runs exact builder/target/archive preflight and requires real DUT, lifecycle archive receipt, and shipping-policy 72 h evidence.
+
 # 2.3.0
 
 - Hard-cut repository acoustic evaluation to one canonical `validation/` framework; remove the obsolete parallel `eval/` runner/schema and migrate Quality/Nightly/required Audio Quality entrypoints to the canonical evaluator.

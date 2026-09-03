@@ -12,3 +12,17 @@
     - common
     - audio_target
     - github_runner
+
+- name: Provision audio-builder shipping toolchain controller
+  hosts: audio_builder
+  roles:
+    - common
+    - audio_builder
+    - github_runner
+
+- name: Provision certification-archive lifecycle controller
+  hosts: certification_archive
+  roles:
+    - common
+    - certification_archive
+    - github_runner

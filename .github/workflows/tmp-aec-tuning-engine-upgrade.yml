@@ -1,0 +1,85 @@
+name: Temporary AEC Tuning Engine Upgrade
+
+on:
+  push:
+    branches: [opt/aec-motion-multiseed-iteration]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: opt/aec-motion-multiseed-iteration
+          fetch-depth: 0
+      - name: Add p10 motion metric and deterministic candidate parallelism
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # Canonical evaluator: add a p10 tail summary without changing existing metrics.
+          p = Path('validation/tools/run_validation_engine.py')
+          text = p.read_text()
+          old = '        "median_output_render_corr_reduction": median_metric(cases, "output_render_corr_reduction"),\n'
+          new = old + '        "p10_output_render_corr_reduction": percentile_metric(cases, "output_render_corr_reduction", 0.10),\n'
+          if text.count(old) != 1 or '"p10_output_render_corr_reduction"' in text:
+              raise SystemExit('unexpected run_validation_engine summary shape')
+          p.write_text(text.replace(old, new))
+
+          # Generic optimizer: candidate subprocesses are independent, so evaluate them
+          # concurrently while preserving candidates[] order via executor.map.
+          p = Path('validation/tools/tuning_iteration_engine.py')
+          text = p.read_text()
+          old = 'import argparse\nimport hashlib\n'
+          new = 'import argparse\nfrom concurrent.futures import ThreadPoolExecutor\nimport hashlib\n'
+          if text.count(old) != 1:
+              raise SystemExit('optimizer import anchor drift')
+          text = text.replace(old, new)
+
+          old = '''def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shadow: Path,\n            policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path) -> dict[str, Any]:\n'''
+          new = '''def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shadow: Path,\n            policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path,\n            candidate_jobs: int = 1) -> dict[str, Any]:\n'''
+          if text.count(old) != 1:
+              raise SystemExit('iterate signature anchor drift')
+          text = text.replace(old, new)
+
+          old = '''    baseline_candidate = candidates[0]\n    dev_results = []\n    baseline_dev_report = None\n    for candidate in candidates:\n        report_path = output_dir / "development" / f"{candidate['candidate_id']}.json"\n        report, elapsed = run_validation(repo_root, processor, dev, policy, dataset_lock,\n                                         candidate["tuning"], report_path)\n        if candidate["label"] == "baseline":\n            baseline_dev_report = report\n        dev_results.append({\n            **candidate,\n            "report_path": str(report_path),\n            "report_sha256": sha256_file(report_path),\n            "validation_result": report.get("validation_result"),\n            "elapsed_s": elapsed,\n            "report": report,\n        })\n    assert baseline_dev_report is not None\n'''
+          new = '''    if candidate_jobs < 1 or candidate_jobs > 8:\n        raise ValueError("candidate_jobs must be 1..8")\n    baseline_candidate = candidates[0]\n\n    def evaluate_development(candidate: dict[str, Any]) -> dict[str, Any]:\n        report_path = output_dir / "development" / f"{candidate['candidate_id']}.json"\n        report, elapsed = run_validation(repo_root, processor, dev, policy, dataset_lock,\n                                         candidate["tuning"], report_path)\n        return {\n            **candidate,\n            "report_path": str(report_path),\n            "report_sha256": sha256_file(report_path),\n            "validation_result": report.get("validation_result"),\n            "elapsed_s": elapsed,\n            "report": report,\n        }\n\n    if candidate_jobs == 1:\n        dev_results = [evaluate_development(candidate) for candidate in candidates]\n    else:\n        with ThreadPoolExecutor(max_workers=candidate_jobs) as executor:\n            dev_results = list(executor.map(evaluate_development, candidates))\n    baseline_dev_report = next(\n        item["report"] for item in dev_results if item["label"] == "baseline"\n    )\n'''
+          if text.count(old) != 1:
+              raise SystemExit('serial candidate loop anchor drift')
+          text = text.replace(old, new)
+
+          old = '''            "candidate_count": len(candidates),\n        },\n'''
+          new = '''            "candidate_count": len(candidates),\n            "candidate_jobs": candidate_jobs,\n        },\n'''
+          if text.count(old) != 1:
+              raise SystemExit('search-space result anchor drift')
+          text = text.replace(old, new)
+
+          old = '''    parser.add_argument("--output-dir", type=Path)\n    parser.add_argument("--require-candidate", action="store_true",\n'''
+          new = '''    parser.add_argument("--output-dir", type=Path)\n    parser.add_argument("--candidate-jobs", type=int, default=1,\n                        help="parallel development candidates; deterministic output order is preserved")\n    parser.add_argument("--require-candidate", action="store_true",\n'''
+          if text.count(old) != 1:
+              raise SystemExit('CLI parser anchor drift')
+          text = text.replace(old, new)
+
+          old = '''        args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),\n        args.search_space.resolve(), args.output_dir.resolve(),\n    )\n'''
+          new = '''        args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),\n        args.search_space.resolve(), args.output_dir.resolve(), args.candidate_jobs,\n    )\n'''
+          if text.count(old) != 1:
+              raise SystemExit('iterate call anchor drift')
+          text = text.replace(old, new)
+          p.write_text(text)
+          PY
+          git diff --check
+          python3 -m py_compile validation/tools/run_validation_engine.py validation/tools/tuning_iteration_engine.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
+          grep -q 'p10_output_render_corr_reduction' validation/tools/run_validation_engine.py
+          grep -q 'ThreadPoolExecutor' validation/tools/tuning_iteration_engine.py
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add validation/tools/run_validation_engine.py validation/tools/tuning_iteration_engine.py
+          git commit -m 'validation: add tail metric and parallel candidate execution'
+          git push origin HEAD:opt/aec-motion-multiseed-iteration

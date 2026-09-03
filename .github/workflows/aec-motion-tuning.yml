@@ -59,6 +59,7 @@ jobs:
           assert motion['strategy'] == 'one-at-a-time'
           assert set(motion['parameters']) == {'aec_mu'}
           assert motion['max_candidates'] <= 10
+          assert motion['parameters']['aec_mu'] == [0.28, 0.30, 0.32, 0.34, 0.36, 0.38, 0.40]
           assert any(m['name'] == 'median_output_render_corr_reduction' for m in motion['objective']['metrics'])
           assert motion['baseline'] == {
               'aec_mu': 0.22,
@@ -85,10 +86,10 @@ jobs:
             --seed 4107 --seed 4207 --seed 4307
           python3 validation/tools/build_aec_motion_bundle.py \
             --output motion-validation --role validation --seconds 8 \
-            --seed 5107 --seed 5207
+            --seed 7107 --seed 7207
           python3 validation/tools/build_aec_motion_bundle.py \
             --output motion-shadow --role shadow --seconds 8 \
-            --seed 6107 --seed 6207
+            --seed 8107 --seed 8207
           python3 validation/tools/authority.py \
             --development-corpus motion-dev/corpus.json \
             --validation-corpus motion-validation/corpus.json \
@@ -98,8 +99,8 @@ jobs:
           from pathlib import Path
           expected = {
               'motion-dev/corpus.json': (36, [4107, 4207, 4307], 'development'),
-              'motion-validation/corpus.json': (24, [5107, 5207], 'validation'),
-              'motion-shadow/corpus.json': (24, [6107, 6207], 'shadow'),
+              'motion-validation/corpus.json': (24, [7107, 7207], 'validation'),
+              'motion-shadow/corpus.json': (24, [8107, 8207], 'shadow'),
           }
           for raw, (cases, seeds, role) in expected.items():
               corpus = json.loads(Path(raw).read_text())
@@ -141,8 +142,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 validation/tools/build_validation_corpus.py --output call-validation --seed 2307
-          python3 validation/tools/build_validation_corpus.py --output call-shadow --seed 3307
+          python3 validation/tools/build_validation_corpus.py --output call-validation --seed 7307
+          python3 validation/tools/build_validation_corpus.py --output call-shadow --seed 8307
 
       - name: Replay motion-selected candidate on call validation
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
@@ -239,8 +240,9 @@ jobs:
           print(f"- Tuning: `{json.dumps(r['selected']['tuning'], sort_keys=True)}`")
           print(f"- Development score: `{r['selected']['development_score']:.6f}`")
           print('- Motion discovery: seeds `4107/4207/4307` (36 cases)')
-          print('- Unseen motion validation: seeds `5107/5207` (24 cases)')
-          print('- Unseen motion shadow: seeds `6107/6207` (24 cases)')
+          print('- Unseen motion validation: seeds `7107/7207` (24 cases)')
+          print('- Unseen motion shadow: seeds `8107/8207` (24 cases)')
+          print('- Generic call validation/shadow: seeds `7307/8307`')
           if r['decision'] == 'ACOUSTIC_CANDIDATE':
               for role in ('call-validation', 'call-shadow'):
                   rr = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())

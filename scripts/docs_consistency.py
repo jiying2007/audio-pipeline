@@ -304,7 +304,11 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     ):
         if token not in builder:
             errors.append(f"audio-builder role missing fail-closed toolchain token: {token}")
-    for token in ("certification_archive_command", "--help"):
+    for token in (
+        "certification_archive_command",
+        "certification_archive_command_stat.stat.isreg",
+        "certification_archive_command_stat.stat.executable",
+    ):
         if token not in archive:
             errors.append(f"certification-archive role missing fail-closed backend token: {token}")
     for token in (

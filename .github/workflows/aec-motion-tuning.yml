@@ -1,0 +1,257 @@
+name: AEC Motion Tuning Search
+
+on:
+  pull_request:
+    paths:
+      - 'validation/tools/build_aec_motion_corpus.py'
+      - 'validation/tools/build_aec_motion_bundle.py'
+      - 'validation/tools/aec_motion_tuning.py'
+      - 'validation/tools/tuning_replay.py'
+      - 'validation/tools/tuning_iteration.py'
+      - 'validation/tools/tuning_iteration_engine.py'
+      - 'validation/tuning/search-spaces/aec-motion-v1.json'
+      - 'validation/tuning/search-spaces/call-v1.json'
+      - 'validation/policies/validation-aec-motion-development.json'
+      - 'validation/policies/validation-smoke.json'
+      - '.github/workflows/aec-motion-tuning.yml'
+  schedule:
+    - cron: '13 20 * * 2,5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aec-motion-tuning-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iterate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MOTION_SEARCH_SPACE: validation/tuning/search-spaces/aec-motion-v1.json
+      GENERIC_SEARCH_SPACE: validation/tuning/search-spaces/call-v1.json
+      MOTION_POLICY: validation/policies/validation-aec-motion-development.json
+      GENERIC_POLICY: validation/policies/validation-smoke.json
+      DATASET_LOCK: validation/datasets.lock.json
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: aec-motion-tuning
+
+      - name: Validate tuning, bundle and authority contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/authority.py --self-test
+          python3 validation/tools/build_aec_motion_corpus.py --self-test
+          python3 validation/tools/build_aec_motion_bundle.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/aec_motion_tuning.py --self-test
+          python3 validation/tools/tuning_replay.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          motion = json.loads(Path('validation/tuning/search-spaces/aec-motion-v1.json').read_text())
+          assert motion['strategy'] == 'one-at-a-time'
+          assert set(motion['parameters']) == {'aec_mu'}
+          assert motion['max_candidates'] <= 10
+          assert any(m['name'] == 'median_output_render_corr_reduction' for m in motion['objective']['metrics'])
+          assert motion['baseline'] == {
+              'aec_mu': 0.22,
+              'ns_floor': 0.12,
+              'agc_target_dbfs': -20.0,
+              'limiter_dbfs': -2.0,
+          }
+          PY
+
+      - name: Build exact offline tuning processor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-motion-tuning \
+            -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-motion-tuning --target ap_process_pcm ap_build_info_dump --parallel
+
+      - name: Build independent multi-seed motion partitions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_aec_motion_bundle.py \
+            --output motion-dev --role development --seconds 8 \
+            --seed 4107 --seed 4207 --seed 4307
+          python3 validation/tools/build_aec_motion_bundle.py \
+            --output motion-validation --role validation --seconds 8 \
+            --seed 5107 --seed 5207
+          python3 validation/tools/build_aec_motion_bundle.py \
+            --output motion-shadow --role shadow --seconds 8 \
+            --seed 6107 --seed 6207
+          python3 validation/tools/authority.py \
+            --development-corpus motion-dev/corpus.json \
+            --validation-corpus motion-validation/corpus.json \
+            --shadow-corpus motion-shadow/corpus.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          expected = {
+              'motion-dev/corpus.json': (36, [4107, 4207, 4307], 'development'),
+              'motion-validation/corpus.json': (24, [5107, 5207], 'validation'),
+              'motion-shadow/corpus.json': (24, [6107, 6207], 'shadow'),
+          }
+          for raw, (cases, seeds, role) in expected.items():
+              corpus = json.loads(Path(raw).read_text())
+              assert corpus['tier'] == 'regression'
+              assert len(corpus['cases']) == cases
+              assert corpus['generator']['seeds'] == seeds
+              assert corpus['generator']['role'] == role
+              assert len({item['case_id'] for item in corpus['cases']}) == cases
+          PY
+
+      - name: Search motion development and replay unseen motion partitions
+        id: motion
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/aec_motion_tuning.py \
+            --processor build-motion-tuning/ap_process_pcm \
+            --development-corpus motion-dev/corpus.json \
+            --validation-corpus motion-validation/corpus.json \
+            --shadow-corpus motion-shadow/corpus.json \
+            --policy "$MOTION_POLICY" \
+            --dataset-lock "$DATASET_LOCK" \
+            --search-space "$MOTION_SEARCH_SPACE" \
+            --output-dir tuning-out/motion
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('tuning-out/motion/iteration-result.json').read_text())
+          Path('tuning-out/baseline-tuning.json').write_text(json.dumps(result['baseline'], indent=2, sort_keys=True) + '\n')
+          Path('tuning-out/candidate-tuning.json').write_text(json.dumps(result['selected']['tuning'], indent=2, sort_keys=True) + '\n')
+          with Path(__import__('os').environ['GITHUB_OUTPUT']).open('a') as handle:
+              handle.write(f"decision={result['decision']}\n")
+              handle.write(f"candidate={result['selected']['candidate_id']}\n")
+              handle.write(f"label={result['selected']['label']}\n")
+          PY
+
+      - name: Build unrelated call validation and shadow replay corpora
+        if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_validation_corpus.py --output call-validation --seed 2307
+          python3 validation/tools/build_validation_corpus.py --output call-shadow --seed 3307
+
+      - name: Replay motion-selected candidate on call validation
+        if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/tuning_replay.py \
+            --processor build-motion-tuning/ap_process_pcm \
+            --corpus call-validation/corpus.json \
+            --policy "$GENERIC_POLICY" \
+            --dataset-lock "$DATASET_LOCK" \
+            --search-space "$GENERIC_SEARCH_SPACE" \
+            --baseline-tuning tuning-out/baseline-tuning.json \
+            --candidate-tuning tuning-out/candidate-tuning.json \
+            --role validation \
+            --output-dir tuning-out/call-validation --enforce
+
+      - name: Replay motion-selected candidate on call shadow
+        if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/tuning_replay.py \
+            --processor build-motion-tuning/ap_process_pcm \
+            --corpus call-shadow/corpus.json \
+            --policy "$GENERIC_POLICY" \
+            --dataset-lock "$DATASET_LOCK" \
+            --search-space "$GENERIC_SEARCH_SPACE" \
+            --baseline-tuning tuning-out/baseline-tuning.json \
+            --candidate-tuning tuning-out/candidate-tuning.json \
+            --role shadow \
+            --output-dir tuning-out/call-shadow --enforce
+
+      - name: Enforce one-way candidate semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('tuning-out/motion/iteration-result.json').read_text())
+          assert result['authority'] == 'non-shipping-acoustic-iteration'
+          assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
+          assert result['search_space']['candidate_count'] <= 10
+          assert result['bindings']['partitions']['development']['corpus_id'].startswith('aec-motion-bundle-v1-development-')
+          assert result['bindings']['partitions']['validation']['corpus_id'].startswith('aec-motion-bundle-v1-validation-')
+          assert result['bindings']['partitions']['shadow']['corpus_id'].startswith('aec-motion-bundle-v1-shadow-')
+          baseline = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
+          assert baseline['validation_result'] == 'PASS'
+          assert result['validation']['baseline']['validation_result'] == 'PASS'
+          assert result['shadow']['baseline']['validation_result'] == 'PASS'
+          if result['decision'] == 'ACOUSTIC_CANDIDATE':
+              assert not result['validation']['regression_violations']
+              assert not result['shadow']['regression_violations']
+              for role in ('call-validation', 'call-shadow'):
+                  replay = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())
+                  assert replay['decision'] == 'PASS'
+                  assert not replay['regression_violations']
+          forbidden = ('hosted_aec.datasets.lock.json', 'validation-hosted-aec-smoke.json')
+          text = Path('.github/workflows/aec-motion-tuning.yml').read_text()
+          assert not any(item in text for item in forbidden)
+          PY
+
+      - name: Bind reproducible tuning evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tuning-out/bindings
+          cp motion-dev/corpus.json motion-dev/source-manifest.json tuning-out/bindings/dev-
+          cp motion-validation/corpus.json motion-validation/source-manifest.json tuning-out/bindings/validation-
+          cp motion-shadow/corpus.json motion-shadow/source-manifest.json tuning-out/bindings/shadow-
+          cp "$MOTION_SEARCH_SPACE" "$GENERIC_SEARCH_SPACE" "$MOTION_POLICY" "$GENERIC_POLICY" "$DATASET_LOCK" tuning-out/bindings/
+          build-motion-tuning/ap_build_info_dump > tuning-out/bindings/build-info.txt
+          sha256sum build-motion-tuning/ap_process_pcm > tuning-out/bindings/processor.sha256
+          find tuning-out -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > tuning-out/SHA256SUMS
+
+      - name: Publish iteration summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f tuning-out/motion/iteration-result.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('tuning-out/motion/iteration-result.json').read_text())
+          print('## Multi-seed AEC motion tuning')
+          print('')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Selected: `{r['selected']['label']}` / `{r['selected']['candidate_id']}`")
+          print(f"- Tuning: `{json.dumps(r['selected']['tuning'], sort_keys=True)}`")
+          print(f"- Development score: `{r['selected']['development_score']:.6f}`")
+          print('- Motion discovery: seeds `4107/4207/4307` (36 cases)')
+          print('- Unseen motion validation: seeds `5107/5207` (24 cases)')
+          print('- Unseen motion shadow: seeds `6107/6207` (24 cases)')
+          if r['decision'] == 'ACOUSTIC_CANDIDATE':
+              for role in ('call-validation', 'call-shadow'):
+                  rr = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())
+                  print(f"- {role}: `{rr['decision']}`, score `{rr['candidate_score_vs_baseline']:.6f}`")
+          print('- Hosted real AEC holdout is intentionally absent from this feedback loop.')
+          print('- Authority: non-shipping candidate only; blind + target + HIL + certification remain mandatory.')
+          PY
+          fi
+
+      - name: Upload hash-bound tuning evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: aec-motion-tuning-${{ github.run_id }}
+          path: tuning-out/
+          if-no-files-found: error
+          retention-days: 30

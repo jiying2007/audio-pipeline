@@ -1,0 +1,54 @@
+---
+- name: Require operator-installed shipping toolchain inputs
+  ansible.builtin.assert:
+    that:
+      - audio_builder_shipping_cc is defined
+      - audio_builder_shipping_cc | length > 1
+      - audio_builder_shipping_cc is match('^/')
+      - audio_builder_shipping_sysroot is defined
+      - audio_builder_shipping_sysroot | length > 1
+      - audio_builder_shipping_sysroot is match('^/')
+      - audio_builder_shipping_toolchain_root is defined
+      - audio_builder_shipping_toolchain_root | length > 1
+      - audio_builder_shipping_toolchain_root is match('^/')
+    fail_msg: >-
+      audio-builder requires absolute operator-installed shipping compiler,
+      sysroot and toolchain-root paths. The lab role never downloads or invents
+      a vendor shipping toolchain.
+
+- name: Inspect shipping compiler
+  ansible.builtin.stat:
+    path: "{{ audio_builder_shipping_cc }}"
+    follow: true
+  register: audio_builder_cc_stat
+
+- name: Inspect shipping sysroot
+  ansible.builtin.stat:
+    path: "{{ audio_builder_shipping_sysroot }}"
+    follow: true
+  register: audio_builder_sysroot_stat
+
+- name: Inspect shipping toolchain root
+  ansible.builtin.stat:
+    path: "{{ audio_builder_shipping_toolchain_root }}"
+    follow: true
+  register: audio_builder_toolchain_stat
+
+- name: Fail closed when shipping toolchain inputs are not usable
+  ansible.builtin.assert:
+    that:
+      - audio_builder_cc_stat.stat.exists
+      - audio_builder_cc_stat.stat.isreg
+      - audio_builder_cc_stat.stat.executable
+      - audio_builder_sysroot_stat.stat.exists
+      - audio_builder_sysroot_stat.stat.isdir
+      - audio_builder_toolchain_stat.stat.exists
+      - audio_builder_toolchain_stat.stat.isdir
+    fail_msg: >-
+      audio-builder shipping compiler/sysroot/toolchain-root must already exist
+      and be usable by the unprivileged runner account.
+
+- name: Verify shipping compiler executes as the runner user
+  ansible.builtin.command:
+    argv: ["{{ audio_builder_shipping_cc }}", --version]
+  changed_when: false

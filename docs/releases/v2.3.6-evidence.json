@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "release": {"version":"2.3.6","tag":"v2.3.6","release_id":382567878,"immutable":true,"published_at":"2026-09-04T08:09:01Z"},
+  "source": {"main_sha":"ca5866d8544cc7a6cd9c2b5caf13d0a9763fc75e","tag_object_sha":"bd27fb69a6d5c11d0c8496c6657d8990859b83f5","tag_target_sha":"ca5866d8544cc7a6cd9c2b5caf13d0a9763fc75e","pull_request":69},
+  "verification": {"research_admission_run":33843998920,"qualification_draft_pr":68,"qualification_hosted_real_aec_run":33850125730,"pr_verify_run":33850920010,"pr_hosted_real_aec_run":33850919686,"pr_hosted_real_audio_run":33850919719,"main_verify_run":33851609217,"main_hosted_real_aec_run":33851608913,"main_hosted_real_audio_run":33851608984,"release_run":33851987130},
+  "release_assets": {
+    "audio-pipeline-v2.3.6-sdk.tar.gz":"sha256:2b232fa6b432d88c0fad91bb4f79f851fe5f643aac8ae2a0ab5d0a024b5bd66c",
+    "audio-pipeline-v2.3.6-source.tar.gz":"sha256:62a6672ab346c0b01f3dd84949cb8a72082c58482748f7c84df1bb15f8fa5037",
+    "audio-pipeline-v2.3.6-validation-smoke-corpus.json":"sha256:342829d7d9ee4d46a8e60f89192d808f8f979ff26e97ccf64a5e5b88c8a53b80",
+    "audio-pipeline-v2.3.6-validation-smoke-evidence.json":"sha256:98b0b911911ea8eae96440e0d6633dbc71c584b3355626c8d7836aab3e2ac86f",
+    "audio-pipeline-v2.3.6-validation-smoke.json":"sha256:8aabff549b501283146f1e06bf6c66e46db7b2fb542536b8f054dad5de6c73d4",
+    "audio-pipeline-v2.3.6.spdx.json":"sha256:34d1fa12515cedc2be377d68cd02e29d425695300e4755470f04f462d45101c2",
+    "SHA256SUMS":"sha256:b1b91d4af4851244a223ec99be16de19caf8cbad078402d5e9266cc393030555"
+  },
+  "post_release_qualification": {
+    "hil":{"run":33852044025,"status":"BLOCKED_RUNNER","reason":"HIL_REQUIRED_BUT_DISABLED"},
+    "extended_real":{"run":33852044245,"status":"BLOCKED_CONFIG","reason":"EXTENDED_REAL_REQUIRED_BUT_DISABLED"}
+  }
+}

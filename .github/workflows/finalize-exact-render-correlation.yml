@@ -1,0 +1,74 @@
+name: Finalize Exact Render Correlation
+
+on:
+  push:
+    branches:
+      - validation/exact-render-correlation-v2.3.6
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Finalize v2.3.6 metadata and verify exact evaluator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          cmake = Path('CMakeLists.txt')
+          text = cmake.read_text(encoding='utf-8')
+          old = 'project(audio_pipeline VERSION 2.3.5 LANGUAGES C)'
+          new = 'project(audio_pipeline VERSION 2.3.6 LANGUAGES C)'
+          assert text.count(old) == 1, 'CMake version anchor drift'
+          cmake.write_text(text.replace(old, new), encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          text = changelog.read_text(encoding='utf-8')
+          assert text.startswith('# 2.3.5\n'), 'CHANGELOG head drift'
+          entry = '''# 2.3.6
+
+          - Replace the sparse render-correlation lag scan with phase-complete evaluation of every integer lag in the existing +/-100 ms window; a validation-only C11 helper selects the winning lag and the reported value is recomputed by canonical `normalized_corr(..., stride=4)`.
+          - Fail validation closed if the host helper cannot be compiled or if native/canonical scores drift, and bind the evaluator, loader, helper source/binary and compiler identity into validation evidence; no helper is installed or linked into the product SDK/runtime.
+          - Preserve `max_output_render_corr_ratio=1.20`, all acoustic policies/dataset locks, public API/ABI and realtime DSP behavior. Exact-search research run `33843998920` repaired known and fresh colored lag-grid false failures while retaining tonal/canonical/generic PASS results; one-way Hosted Real AEC qualification run `33850125730` passed 4/4 with positive aggregate render-correlation reduction.
+
+          '''
+          changelog.write_text(entry + text, encoding='utf-8')
+
+          zh = Path('docs/RENDER_CORRELATION_VALIDATION.zh-CN.md')
+          text = zh.read_text(encoding='utf-8')
+          anchor = '自 v2.3.6 起，canonical 离线 AEC render-correlation 指标在既有 +/-100 ms 窗口内检查每一个整数 sample lag。该修复用于消除窄带宽峰值落在历史 sparse grid 点之间造成的漏峰，不修改 metric 定义、dataset lock、policy 阈值、产品 DSP、公开 API/ABI 或 Product Certification 权限边界。\n'
+          insert = anchor + '\nexact 搜索窗口严格为 `max_lag = sample_rate // 10`；input-render 与 output-render 最大相关性使用同一个 backend 和同一组完整整数 lag。\n'
+          assert text.count(anchor) == 1, 'Chinese documentation anchor drift'
+          zh.write_text(text.replace(anchor, insert), encoding='utf-8')
+          PY
+
+          git rm .github/workflows/finalize-exact-render-correlation.yml
+          python3 validation/tools/run_validation.py --self-test
+          python3 scripts/ci_impact.py --self-test
+          python3 scripts/docs_consistency.py
+          git diff --check
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          cmake = Path('CMakeLists.txt').read_text(encoding='utf-8')
+          changelog = Path('CHANGELOG.md').read_text(encoding='utf-8')
+          assert 'project(audio_pipeline VERSION 2.3.6 LANGUAGES C)' in cmake
+          assert changelog.startswith('# 2.3.6\n')
+          assert changelog.count('# 2.3.6\n') == 1
+          assert 'max_output_render_corr_ratio=1.20' in changelog
+          assert not Path('.github/workflows/finalize-exact-render-correlation.yml').exists()
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CMakeLists.txt CHANGELOG.md docs/RENDER_CORRELATION_VALIDATION.zh-CN.md
+          git diff --cached --check
+          git commit -m 'validation: exact all-lag render correlation for 2.3.6'
+          git push origin HEAD:validation/exact-render-correlation-v2.3.6

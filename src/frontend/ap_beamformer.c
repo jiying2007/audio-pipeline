@@ -10,7 +10,7 @@
 #define AP_BF_FALLBACK_RECOVER_COHERENCE 0.988f
 #define AP_BF_FALLBACK_RECOVER_RATIO 0.52f
 #define AP_BF_FALLBACK_RECOVER_UPDATES 8u
-#define AP_BF_FALLBACK_MIN_SCORE_UPDATES 4u
+#define AP_BF_FALLBACK_MIN_SCORE_UPDATES 1u
 
 static float ap_beamformer_clampf(float value, float lo, float hi) {
     if (value < lo) return lo;
@@ -28,6 +28,7 @@ void ap_beamformer_init(ap_beamformer_state_t *s,
     if (max_lag > (int)AP_BF_HISTORY) max_lag = (int)AP_BF_HISTORY;
     if (max_lag < 0) max_lag = 0;
     s->max_lag = max_lag;
+    s->counter = 3u;
     s->fallback_gain = 1.0f;
 }
 

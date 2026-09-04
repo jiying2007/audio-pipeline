@@ -86,8 +86,6 @@ def aggregate(report_paths: list[Path]) -> dict:
                 "classification": classification,
             }
             rows.append(row)
-            # Ratio 1.0 is a corpus/evaluator sanity anchor, not a tuning target.
-            # If it cannot show a modest benefit, the sweep itself is invalid.
             if ratio == 1.0 and minimum < 0.5:
                 structural_violations.append({
                     "model": model,
@@ -95,8 +93,6 @@ def aggregate(report_paths: list[Path]) -> dict:
                     "actual_min_db": minimum,
                     "expected_min_db": 0.5,
                 })
-            # Product-candidate gates are deliberately asymmetric: preserve robust
-            # pure gain mismatch while requiring weak-SNR cases to stop being harmful.
             required = {
                 ("global-channel-gain", 0.35): 1.0,
                 ("sensitivity-floor", 0.55): 0.5,

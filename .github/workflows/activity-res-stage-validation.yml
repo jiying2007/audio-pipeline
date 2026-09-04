@@ -1,0 +1,68 @@
+name: Activity RES Stage Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/activity/**'
+      - 'src/enhance/ap_res.c'
+      - 'src/enhance/ap_enhance.h'
+      - 'tests/validation/activity_res_probe.c'
+      - '.github/workflows/activity-res-stage-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+
+      - name: Run ./.github/actions/setup-ccache
+        uses: ./.github/actions/setup-ccache
+        with:
+          namespace: activity-res-stage-validation
+
+      - name: Build strict standalone Activity RES probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -DAP_BUILD_STAGE_RES=1 \
+            -Isrc \
+            tests/validation/activity_res_probe.c \
+            src/activity/ap_activity.c \
+            src/enhance/ap_res.c \
+            -lm -o activity-res-probe
+
+      - name: Run all independent Activity RES partitions
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p activity-res-out
+          failed=0
+          for seed in 1307 2307 3307; do
+            if ! ./activity-res-probe "$seed" | tee "activity-res-out/${seed}.txt"; then
+              failed=1
+            fi
+          done
+          {
+            echo '## Activity / DTD / RES stage evidence'
+            echo '```text'
+            cat activity-res-out/*.txt
+            echo '```'
+            echo
+            echo 'All seeds run even after an earlier failure; no product defaults or acceptance gates are changed by this regression-only workflow.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$failed"
+
+      - name: Upload Activity RES evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: activity-res-stage-validation-${{ github.run_id }}
+          path: activity-res-out/
+          if-no-files-found: warn
+          retention-days: 30

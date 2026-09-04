@@ -8,7 +8,7 @@
 #define AP_VAD_FAST_NOISE_ALPHA 0.08f
 #define AP_VAD_UPSTREAM_SPEECH_GUARD 0.55f
 #define AP_VAD_LOCAL_SPEECH_GUARD 0.15f
-#define AP_VAD_UPSTREAM_BLEND 0.35f
+#define AP_VAD_UPSTREAM_BLEND 0.40f
 
 static float ap_vad_clamp(float x, float lo, float hi) {
     return x < lo ? lo : (x > hi ? hi : x);

@@ -5,9 +5,11 @@ on:
     paths:
       - 'src/activity/**'
       - 'src/enhance/ap_res.c'
+      - 'src/enhance/ap_ns.c'
       - 'src/enhance/ap_enhance.h'
       - 'tests/validation/activity_res_probe.c'
       - 'tests/validation/activity_res_handoff_probe.c'
+      - 'tests/validation/frequency_res_handoff_probe.c'
       - '.github/workflows/activity-res-stage-validation.yml'
   workflow_dispatch:
 
@@ -37,6 +39,12 @@ jobs:
           )
           cc tests/validation/activity_res_probe.c "${common[@]}" -o activity-res-probe
           cc tests/validation/activity_res_handoff_probe.c "${common[@]}" -o activity-res-handoff-probe
+          cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_STAGE_NS=1 -Isrc \
+            tests/validation/frequency_res_handoff_probe.c \
+            src/enhance/ap_ns.c src/enhance/ap_noise_tracker.c \
+            src/enhance/ap_window.c src/dsp/ap_fft.c \
+            -lm -o frequency-res-handoff-probe
 
       - name: Run all independent Activity RES partitions
         shell: bash
@@ -51,6 +59,9 @@ jobs:
             if ! ./activity-res-handoff-probe "$seed" | tee "activity-res-out/${seed}-handoff.txt"; then
               failed=1
             fi
+            if ! ./frequency-res-handoff-probe "$seed" | tee "activity-res-out/${seed}-frequency-res.txt"; then
+              failed=1
+            fi
           done
           {
             echo '## Activity / DTD / RES stage evidence'
@@ -58,7 +69,7 @@ jobs:
             cat activity-res-out/*.txt
             echo '```'
             echo
-            echo 'The HANDOFF recovery metrics are discovery evidence: they quantify near-end onset preservation before any product tuning decision.'
+            echo 'The HANDOFF and FREQ_RES_HANDOFF recovery metrics are discovery evidence: they quantify near-end onset preservation before any product tuning decision.'
             echo 'All seeds run even after an earlier failure; no product defaults or acceptance gates are changed by this regression-only workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$failed"

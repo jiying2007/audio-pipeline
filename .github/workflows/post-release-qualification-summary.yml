@@ -1,0 +1,56 @@
+name: Post Release Qualification Summary
+
+on:
+  workflow_run:
+    workflows: [HIL Tiered Soak, Extended Real Automation]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: post-release-qualification-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  summarize:
+    if: github.event.workflow_run.event == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: Resolve exact release and external qualification states
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          HIL_ENABLED: ${{ vars.HIL_ENABLED }}
+          EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
+        run: |
+          set -euo pipefail
+          tag=$(git tag --points-at "$SOURCE_SHA" | grep '^v' | sort -V | tail -n 1)
+          test -n "$tag"
+          hil=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/hil-soak.yml/runs" \
+            -f head_sha="$SOURCE_SHA" -f event=repository_dispatch -f per_page=20 \
+            --jq '[.workflow_runs[] | select(.display_title == "hil-post-release")][0].conclusion // ""')
+          extended=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/extended-real-automation.yml/runs" \
+            -f head_sha="$SOURCE_SHA" -f event=repository_dispatch -f per_page=20 \
+            --jq '[.workflow_runs[] | select(.display_title == "extended-real-post-release")][0].conclusion // ""')
+          python3 scripts/post_release_status.py \
+            --source-sha "$SOURCE_SHA" --tag "$tag" \
+            --hil-enabled "$HIL_ENABLED" --hil-conclusion "$hil" \
+            --extended-real-enabled "$EXTENDED_REAL_ENABLED" --extended-real-conclusion "$extended" \
+            --output post-release-qualification.json
+          echo '## Post-release qualification status' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat post-release-qualification.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload post-release status evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: post-release-qualification-${{ github.run_id }}
+          path: post-release-qualification.json
+          retention-days: 90
+          if-no-files-found: error

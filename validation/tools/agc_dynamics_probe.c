@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     AP_ALIGN16 static unsigned char state[AP_MODULE_STATE_MAX_BYTES];
     int16_t pcm[AP_BUILD_MAX_INTERNAL_RATE_HZ / 100u];
     float samples[AP_BUILD_MAX_INTERNAL_RATE_HZ / 100u];
-    ap_module_agc_t *agc = NULL;
+    ap_agc_module_t *agc = NULL;
     ap_module_agc_config_t cfg;
     FILE *input;
     const size_t frame = 160u;

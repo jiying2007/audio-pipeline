@@ -23,6 +23,7 @@ KNOWN_OBJECTIVE_METRICS = {
     "p10_noise_only_attenuation_db",
     "median_erle_db",
     "min_vad_f1",
+    "min_vad_recall",
     "max_vad_false_positive_rate",
     "max_output_clip_fraction",
 }

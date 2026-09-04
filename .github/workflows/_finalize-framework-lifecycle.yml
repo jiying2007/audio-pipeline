@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/_finalize-framework-lifecycle.yml'
       - 'scripts/_finalize_framework_lifecycle.py'
+      - 'scripts/_normalize_finalize_patcher.py'
+      - 'scripts/_finalize_docs_fix.py'
 
 permissions:
   contents: write
@@ -18,68 +20,15 @@ jobs:
         with:
           ref: chore/framework-lifecycle-v1
           fetch-depth: 0
-      - name: Normalize temporary patcher anchors
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/_finalize_framework_lifecycle.py')
-          text = path.read_text(encoding='utf-8')
-          function_anchor = '\n\ndef append_once(path: str, marker: str, addition: str) -> None:\n'
-          helper = '''\n\ndef replace_exact_two(path: str, old: str, new: str) -> None:\n    p = Path(path)\n    text = p.read_text(encoding="utf-8")\n    count = text.count(old)\n    if count != 2:\n        raise SystemExit(f"{path}: expected two anchors, found {count}: {old[:120]!r}")\n    p.write_text(text.replace(old, new), encoding="utf-8")\n'''
-          if function_anchor not in text:
-              raise SystemExit('temporary patcher helper anchor missing')
-          text = text.replace(function_anchor, helper + function_anchor, 1)
-          call_anchor = 'replace_once(\n    ".github/workflows/verify.yml",\n'
-          if text.count(call_anchor) != 1:
-              raise SystemExit('verify patch call anchor drift')
-          text = text.replace(call_anchor, 'replace_exact_two(\n    ".github/workflows/verify.yml",\n', 1)
-          path.write_text(text, encoding='utf-8')
-          PY
       - name: Apply exact lifecycle framework patches
         run: |
           set -euo pipefail
+          python3 scripts/_normalize_finalize_patcher.py
           python3 scripts/_finalize_framework_lifecycle.py
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('scripts/docs_consistency.py')
-          text = p.read_text(encoding='utf-8')
-          old = '''def validate(root: Path, *, require_lab: bool = True,
-             require_validation: bool = True,
-             require_supply_chain: bool = True) -> list[str]:
-'''
-          new = '''def validate(root: Path, *, require_lab: bool = True,
-             require_validation: bool = True,
-             require_supply_chain: bool = True,
-             require_lifecycle: bool = True) -> list[str]:
-'''
-          if text.count(old) != 1:
-              raise SystemExit('docs consistency validate signature drift')
-          text = text.replace(old, new, 1)
-          old = '''    if require_lab:
-        validate_lab(root, errors)
-    validate_lifecycle(root, errors)
-    return errors
-'''
-          new = '''    if require_lab:
-        validate_lab(root, errors)
-    if require_lifecycle:
-        validate_lifecycle(root, errors)
-    return errors
-'''
-          if text.count(old) != 1:
-              raise SystemExit('docs consistency lifecycle call drift')
-          text = text.replace(old, new, 1)
-          fixture = 'root, require_lab=False, require_validation=False, require_supply_chain=False\n'
-          if text.count(fixture) != 2:
-              raise SystemExit('docs consistency self-test fixture count drift')
-          text = text.replace(
-              fixture,
-              'root, require_lab=False, require_validation=False, require_supply_chain=False,\n            require_lifecycle=False\n',
-          )
-          p.write_text(text, encoding='utf-8')
-          PY
+          python3 scripts/_finalize_docs_fix.py
+          git rm -f scripts/_normalize_finalize_patcher.py
           git rm -f scripts/_finalize_framework_lifecycle.py
+          git rm -f scripts/_finalize_docs_fix.py
           git rm .github/workflows/_finalize-framework-lifecycle.yml
       - name: Validate final repository state
         run: |
@@ -97,7 +46,9 @@ jobs:
           python3 -m json.tool .github/research/qualification-policy.json >/dev/null
           git diff --check
           test ! -e .github/workflows/_finalize-framework-lifecycle.yml
+          test ! -e scripts/_normalize_finalize_patcher.py
           test ! -e scripts/_finalize_framework_lifecycle.py
+          test ! -e scripts/_finalize_docs_fix.py
       - name: Commit finalized framework
         run: |
           set -euo pipefail

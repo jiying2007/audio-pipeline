@@ -118,9 +118,13 @@ jobs:
       - name: Package reproducible SDK/source and checksums
         if: steps.existing.outputs.release != 'true'
         env:
+          VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          VERIFY_RUN_ID: ${{ github.event.workflow_run.id }}
           SOURCE_DATE_EPOCH: ${{ steps.version.outputs.epoch }}
+          HIL_ENABLED: ${{ vars.HIL_ENABLED }}
+          EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
         run: |
           find stage -exec touch -d "@$SOURCE_DATE_EPOCH" {} +
           package_sdk() {
@@ -141,13 +145,27 @@ jobs:
           package_source "audio-pipeline-${TAG}-source.tar.gz"
           package_source /tmp/source-repeat.tar.gz
           cmp "audio-pipeline-${TAG}-source.tar.gz" /tmp/source-repeat.tar.gz
+          python3 scripts/release_manifest.py --self-test
+          python3 scripts/release_manifest.py \
+            --version "$VERSION" --tag "$TAG" \
+            --source-sha "$VERIFIED_SHA" --verify-run-id "$VERIFY_RUN_ID" \
+            --prs-json /tmp/release-prs.json \
+            --hil-enabled "$HIL_ENABLED" --extended-real-enabled "$EXTENDED_REAL_ENABLED" \
+            --asset "audio-pipeline-${TAG}-sdk.tar.gz" \
+            --asset "audio-pipeline-${TAG}-source.tar.gz" \
+            --asset "audio-pipeline-${TAG}.spdx.json" \
+            --asset "audio-pipeline-${TAG}-validation-smoke-corpus.json" \
+            --asset "audio-pipeline-${TAG}-validation-smoke.json" \
+            --asset "audio-pipeline-${TAG}-validation-smoke-evidence.json" \
+            --output "audio-pipeline-${TAG}-release-manifest.json"
           sha256sum \
             "audio-pipeline-${TAG}-sdk.tar.gz" \
             "audio-pipeline-${TAG}-source.tar.gz" \
             "audio-pipeline-${TAG}.spdx.json" \
             "audio-pipeline-${TAG}-validation-smoke-corpus.json" \
             "audio-pipeline-${TAG}-validation-smoke.json" \
-            "audio-pipeline-${TAG}-validation-smoke-evidence.json" > SHA256SUMS
+            "audio-pipeline-${TAG}-validation-smoke-evidence.json" \
+            "audio-pipeline-${TAG}-release-manifest.json" > SHA256SUMS
       - name: Attest release build provenance
         if: steps.existing.outputs.release != 'true'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
@@ -159,6 +177,7 @@ jobs:
             audio-pipeline-${{ steps.version.outputs.tag }}-validation-smoke-corpus.json
             audio-pipeline-${{ steps.version.outputs.tag }}-validation-smoke.json
             audio-pipeline-${{ steps.version.outputs.tag }}-validation-smoke-evidence.json
+            audio-pipeline-${{ steps.version.outputs.tag }}-release-manifest.json
             SHA256SUMS
       - name: Attest SDK SBOM
         if: steps.existing.outputs.release != 'true'
@@ -193,6 +212,7 @@ jobs:
             "audio-pipeline-${TAG}-validation-smoke-corpus.json" \
             "audio-pipeline-${TAG}-validation-smoke.json" \
             "audio-pipeline-${TAG}-validation-smoke-evidence.json" \
+            "audio-pipeline-${TAG}-release-manifest.json" \
             SHA256SUMS
       - name: Publish complete release
         if: steps.existing.outputs.release != 'true'

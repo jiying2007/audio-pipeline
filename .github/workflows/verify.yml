@@ -91,6 +91,13 @@ jobs:
           python3 scripts/github_governance.py --self-test
           python3 scripts/resource_baseline.py --self-test
           python3 scripts/docs_consistency.py --self-test
+          python3 scripts/research_registry.py --self-test
+          python3 scripts/prepare_release.py --self-test
+          python3 scripts/release_manifest.py --self-test
+          python3 scripts/post_release_status.py --self-test
+          python3 scripts/qualification_fingerprint.py --self-test
+          python3 -m json.tool .github/research/evidence-index.json >/dev/null
+          python3 -m json.tool .github/research/qualification-policy.json >/dev/null
           python3 scripts/docs_consistency.py
 
   fast-code:
@@ -120,6 +127,13 @@ jobs:
           python3 scripts/github_governance.py --self-test
           python3 scripts/resource_baseline.py --self-test
           python3 scripts/docs_consistency.py --self-test
+          python3 scripts/research_registry.py --self-test
+          python3 scripts/prepare_release.py --self-test
+          python3 scripts/release_manifest.py --self-test
+          python3 scripts/post_release_status.py --self-test
+          python3 scripts/qualification_fingerprint.py --self-test
+          python3 -m json.tool .github/research/evidence-index.json >/dev/null
+          python3 -m json.tool .github/research/qualification-policy.json >/dev/null
           python3 scripts/docs_consistency.py
           python3 tools/hil_board.py --self-test
           python3 tools/target_evidence.py --self-test

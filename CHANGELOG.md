@@ -1,3 +1,9 @@
+# 2.3.6
+
+- Replace the sparse render-correlation lag scan with phase-complete evaluation of every integer lag in the existing +/-100 ms window; a validation-only C11 helper selects the winning lag and the reported value is recomputed by canonical `normalized_corr(..., stride=4)`.
+- Fail validation closed if the host helper cannot be compiled or if native/canonical scores drift, and bind the evaluator, loader, helper source/binary and compiler identity into validation evidence; no helper is installed or linked into the product SDK/runtime.
+- Preserve `max_output_render_corr_ratio=1.20`, all acoustic policies/dataset locks, public API/ABI and realtime DSP behavior. Exact-search research run `33843998920` repaired known and fresh colored lag-grid false failures while retaining tonal/canonical/generic PASS results; one-way Hosted Real AEC qualification run `33850125730` passed 4/4 with positive aggregate render-correlation reduction.
+
 # 2.3.5
 
 - Add tail-aware continuous-motion AEC tuning with deterministic candidate parallelism, p10 render-correlation scoring, aligned per-case delta eligibility, and independent validation/shadow replay.

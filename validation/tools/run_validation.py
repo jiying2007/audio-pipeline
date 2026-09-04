@@ -12,8 +12,14 @@ import argparse
 import json
 from pathlib import Path
 
+import render_corr_exact
 import run_validation_engine as engine
 from authority import corpus_tiers, load_authority, tier_spec
+
+# Canonical render-correlation search is installed once at the authority-guarded
+# entrypoint. The native helper selects the global lag only; final metric scores
+# remain run_validation_engine.normalized_corr(..., stride=4).
+render_corr_exact.install(engine)
 
 
 def validate_corpus_shape(corpus: dict, authority: dict) -> None:
@@ -77,6 +83,7 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict],
 
 def self_test() -> None:
     authority = load_authority()
+    render_corr_exact.self_test(engine.normalized_corr)
     engine.self_test()
     research = {
         "schema_version": 1,
@@ -156,6 +163,7 @@ def main() -> int:
             "dataset_lock_sha256": engine.sha256_file(args.dataset_lock),
             "corpus_sha256": engine.sha256_file(args.corpus),
             "policy_sha256": engine.sha256_file(args.policy),
+            **render_corr_exact.report_bindings(Path(engine.__file__)),
         },
         "summary": summary,
         "cases": report_cases,
@@ -169,6 +177,9 @@ def main() -> int:
         engine.write_evidence(
             args.evidence_manifest, args.output, args.corpus, args.policy,
             args.dataset_lock, args.source_manifest,
+        )
+        render_corr_exact.extend_evidence_manifest(
+            args.evidence_manifest, Path(engine.__file__)
         )
     print(json.dumps({"result": report["validation_result"], "tier": report["tier"], **summary}, sort_keys=True))
     return 1 if args.enforce and violations else 0

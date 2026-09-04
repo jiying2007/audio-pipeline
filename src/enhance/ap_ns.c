@@ -5,7 +5,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifndef AP_FREQ_RES_NEAR_PROTECTION_RELEASE_ALPHA
 #define AP_FREQ_RES_NEAR_PROTECTION_RELEASE_ALPHA 0.25f
+#endif
 #define AP_FREQ_RES_NORMAL_RELEASE_ALPHA 0.05f
 
 static uint32_t ap_ns_next_pow2(uint32_t x) {

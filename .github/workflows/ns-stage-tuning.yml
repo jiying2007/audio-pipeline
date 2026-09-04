@@ -1,6 +1,16 @@
 name: NS Stage Tuning
 
 on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_ns.c'
+      - 'src/enhance/ap_vad.c'
+      - 'validation/tools/build_ns_tuning_corpus.py'
+      - 'validation/tools/tuning_iteration.py'
+      - 'validation/tools/tuning_iteration_engine.py'
+      - 'validation/tuning/search-spaces/ns-stage-v1.json'
+      - 'validation/policies/validation-ns-stage-tuning.json'
+      - '.github/workflows/ns-stage-tuning.yml'
   schedule:
     - cron: '41 20 * * 6'
   workflow_dispatch:
@@ -42,6 +52,8 @@ jobs:
           assert space['strategy'] == 'one-at-a-time'
           assert set(space['parameters']) == {'ns_floor'}
           assert space['max_candidates'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
+          metrics = {item['name'] for item in space['objective']['metrics']}
+          assert {'min_vad_recall', 'max_vad_false_positive_rate'} <= metrics
           assert policy['required_scenarios'] == ['stage-ns-stationary', 'stage-ns-nonstationary']
           assert policy['minimum_cases'] == 2
           PY
@@ -120,6 +132,7 @@ jobs:
           print(f"- Selected: `{r['selected']['label']}`")
           print(f"- Development score: `{r['selected']['development_score']:.4f}`")
           print('- Corpus: NS-only stationary/non-stationary cases; unrelated VAD/AGC/BF cases are excluded from optimizer scoring.')
+          print('- Recall and false-positive objectives are both anti-regression protected.')
           print('- Authority: acoustic candidate only; no shipping default is mutated automatically.')
           PY
           fi

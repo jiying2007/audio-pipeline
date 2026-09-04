@@ -108,11 +108,21 @@ Activity/DTD is independently available for applications that compose SYNC + Act
 
 Neither mode is a compatibility alias.
 
+## Reference-alignment policy
+
+Reference alignment is orthogonal to CALL/ASSISTANT use case and resource class. The default remains `AP_REFERENCE_ALIGNMENT_ADAPTIVE`, which keeps acoustic correlation delay tracking and correlation-based clock-drift compensation enabled when SYNC is present.
+
+`AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY` is an explicit opt-in for products whose direct speaker/DAC-to-microphone/ADC geometry is stable. Apply it with `ap_config_apply_reference_alignment_policy()`. It sets the startup/fallback anchor delay and disables acoustic correlation delay chasing plus correlation-based drift compensation. It does **not** disable trusted hardware timestamp observation.
+
+Fixed geometry is not a generic replacement for adaptive alignment and must not be inferred from robot/device motion alone. See [`docs/FIXED_GEOMETRY_REFERENCE.md`](FIXED_GEOMETRY_REFERENCE.md) for the evidence boundary and promotion gates.
+
 ## Timestamp, discontinuity and echo-path contract
 
 `ap_pipeline_observe_io_timestamps()` is optional. Capture and render timestamps must describe corresponding hardware positions in the same monotonic clock domain. Invalid or out-of-envelope observations return `AP_EINVAL`.
 
 Correlation-based delay updates are ambiguity-gated. Small delay/drift corrections require the winning peak to be separated from non-local competitors; a large correlation route-change candidate must remain consistent for three search epochs before it is committed and stale AEC convergence is reset. Trusted hardware timestamps and explicit application path-change notifications remain authoritative and are not delayed by the correlation confirmation policy.
+
+This authority is unchanged under `AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY`: a valid hardware timestamp observation may update the active reference delay even though acoustic tracking and correlation-based drift compensation are disabled. The configured fixed delay is therefore a stable startup/fallback causal anchor rather than a ban on trusted calibration.
 
 `ap_pipeline_notify_echo_path_change()` represents product-known route/path replacement. `ap_pipeline_notify_stream_discontinuity()` represents capture/render gaps, clock reset, XRUN or codec reopen and clears time-dependent state deterministically.
 
@@ -198,6 +208,7 @@ Independent dimensions are:
 
 - use case: CALL / ASSISTANT;
 - runtime resource class: TINY / LOW / STANDARD;
+- reference alignment: ADAPTIVE / FIXED_GEOMETRY;
 - compiled module set;
 - compiled SKU envelope;
 - runtime stage subset;

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-04T16:30:00+08:00",
+  "policy": {
+    "terminal_statuses": ["ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED"],
+    "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match"],
+    "unclassified_refs_are_retained": true
+  },
+  "records": [
+    {"branch":"research/aec-corr-exact-native-v1","head_sha":"89a5ba0834afc384d284fe097a2eedd60b058610","status":"ACCEPTED","evidence":["run:33843998920","pr:69","release:v2.3.6"],"supersedes":["research/aec-corr-refined-search-v2"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/aec-corr-ground-truth-v1","head_sha":"1f300cf4752a2ec52ca437b84ab98b778540aff2","status":"SUPERSEDED","evidence":["run:33836378471","decision:ground-truth-diagnostic-established-sparse-grid-miss"],"superseded_by":"research/aec-corr-exact-native-v1","gc_eligible":true,"auto_gc":true},
+    {"branch":"research/aec-corr-metric-conditioning-v1","head_sha":"d745ebde5b79029579e73149d53261574b3335e9","status":"REJECTED","evidence":["run:33828983658","decision:REJECT_METRIC_CANDIDATE"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/aec-corr-refined-search-v1","head_sha":"7f3d9b2fd94abef9719c6653c9d6cce4882620b0","status":"REJECTED","evidence":["commit:7f3d9b2fd94abef9719c6653c9d6cce4882620b0","decision:correctness-oriented-but-runtime-too-high"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/aec-corr-refined-search-v2","head_sha":"fe17df7d5ee93857149feb895bfb275de7d44b89","status":"SUPERSEDED","evidence":["run:33839001381","pr:67","decision:superseded-after-one-way-real-holdout-rejected-heuristic-authority"],"superseded_by":"research/aec-corr-exact-native-v1","gc_eligible":true,"auto_gc":true},
+    {"branch":"validation/refine-render-correlation-search-v2.3.6","head_sha":"9735176522c491e51f342c88ad15f8b5b2dad9e7","status":"REJECTED","evidence":["pr:67","run:33842859179","decision:hosted-real-aec-holdout-rejected"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"validation/exact-render-correlation-v2.3.6","head_sha":"7436ef64d23c4af7f3177b844f6f29177985e417","status":"ACCEPTED","evidence":["pr:69","run:33850920010","run:33850919686","release:v2.3.6"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"feat/fixed-geometry-reference-policy-v1","head_sha":"d93f2dbf8aeca4b23e298e9a35e2e146df172fc6","status":"ACCEPTED","evidence":["pr:66","main:eb3407cf35550d3e15002065201a904fa12bec70"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"opt/aec-motion-multiseed-iteration","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-fixed-anchor-replay-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-motion-aware-mu","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-motion-aware-mu-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-motion-aware-mu-v2","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-motion-aware-mu-v3","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-motion-aware-mu-v4","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-motion-geometry-diagnostic-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-cadence-sweep-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-distance-confidence-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-fractional-assist-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-ground-truth-diagnostic-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-interleaved-local-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-medium-continuity-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-path-hysteresis-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-path-slew-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-peak-confidence-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-remote-agreement-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-sample-density-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-two-frame-agreement-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-two-frame-evidence-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/aec-sync-two-frame-remote-agreement-v1","head_sha":null,"status":"UNCLASSIFIED","evidence":[],"gc_eligible":false,"auto_gc":false}
+  ]
+}

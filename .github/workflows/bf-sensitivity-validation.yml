@@ -1,0 +1,104 @@
+name: BF Sensitivity Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/frontend/ap_beamformer.c'
+      - 'tests/validation/build_bf_sensitivity_sweep.py'
+      - 'tests/validation/bf_sensitivity_summary.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/policies/**'
+      - '.github/workflows/bf-sensitivity-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bf-sensitivity-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: bf-sensitivity-validation
+
+      - name: Validate sweep contracts
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/build_bf_sensitivity_sweep.py \
+            tests/validation/bf_sensitivity_summary.py
+          python3 tests/validation/build_bf_sensitivity_sweep.py --self-test
+          python3 tests/validation/bf_sensitivity_summary.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+
+      - name: Configure and build canonical BF processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-bf-sensitivity \
+            -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-bf-sensitivity --target ap_process_pcm --parallel
+
+      - name: Measure all independent BF sensitivity partitions
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -uo pipefail
+          mkdir -p bf-sensitivity-out
+          failed=0
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-bf-sensitivity-${seed}"
+            out="bf-sensitivity-out/${seed}"
+            mkdir -p "$out"
+            if ! python3 tests/validation/build_bf_sensitivity_sweep.py \
+              --output "$root" --seed "$seed"; then
+              failed=1
+              continue
+            fi
+            if ! python3 validation/tools/run_validation.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor build-bf-sensitivity/ap_process_pcm \
+              --output "$out/report.json" \
+              --evidence-manifest "$out/evidence-manifest.json"; then
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+      - name: Aggregate mismatch model and ratio evidence
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          python3 tests/validation/bf_sensitivity_summary.py \
+            --report bf-sensitivity-out/1307/report.json \
+            --report bf-sensitivity-out/2307/report.json \
+            --report bf-sensitivity-out/3307/report.json \
+            --output bf-sensitivity-out/summary.json | tee /tmp/bf-sensitivity-summary.txt
+          {
+            echo '## BF sensitivity mismatch sweep'
+            echo '```text'
+            cat /tmp/bf-sensitivity-summary.txt
+            echo '```'
+            echo
+            echo 'Ratios below 1.0 are discovery measurements. Negative values are preserved as evidence rather than hidden by a permissive pass gate.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload BF sensitivity evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bf-sensitivity-validation-${{ github.run_id }}
+          path: bf-sensitivity-out/
+          if-no-files-found: warn
+          retention-days: 30

@@ -88,7 +88,7 @@
 - Make Extended Real automation leave the dataset root unresolved until the `audio-validation` runner executes; blank input resolves to `AUDIO_PIPELINE_LAB_DATA_ROOT` or `$HOME/audio-validation-extended`.
 - Make HIL blank `board_manifest` resolve on the `audio-target` runner through `AUDIO_PIPELINE_LAB_BOARD`, XDG config, or `$HOME/.config/audio-pipeline/board.json` instead of a hard-coded `/etc` path.
 - Make `labctl.py dispatch-validation` and `dispatch-hil` avoid leaking the operator machine's HOME paths into a different self-hosted runner unless an explicit path override is supplied.
-- Preserve explicit system-mode `/opt`/`etc` overrides and keep DSP/API/ABI, dataset hashes/licenses, acoustic thresholds, HIL thresholds and Product Certification authority unchanged.
+- Preserve explicit system-mode `/opt`/`/etc` overrides and keep DSP/API/ABI, dataset hashes/licenses, acoustic thresholds, HIL thresholds and Product Certification authority unchanged.
 
 # 2.2.2
 

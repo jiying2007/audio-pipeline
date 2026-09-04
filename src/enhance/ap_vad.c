@@ -8,14 +8,7 @@
 #define AP_VAD_FAST_NOISE_ALPHA 0.08f
 #define AP_VAD_UPSTREAM_SPEECH_GUARD 0.55f
 #define AP_VAD_LOCAL_SPEECH_GUARD 0.15f
-#define AP_VAD_UPSTREAM_BLEND 0.40f
-#define AP_VAD_DECISION_THRESHOLD 0.45f
-#define AP_VAD_SOFT_ATTACK_THRESHOLD 0.30f
-#define AP_VAD_SOFT_UPSTREAM_THRESHOLD 0.45f
-#define AP_VAD_SOFT_ATTACK_FRAMES 3u
-#define AP_VAD_ACTIVE_STATE_BASE (AP_VAD_SOFT_ATTACK_FRAMES + 1u)
-#define AP_VAD_HANGOVER_FRAMES 8u
-#define AP_VAD_ACTIVE_STATE_MAX (AP_VAD_ACTIVE_STATE_BASE + AP_VAD_HANGOVER_FRAMES - 1u)
+#define AP_VAD_UPSTREAM_BLEND 0.55f
 
 static float ap_vad_clamp(float x, float lo, float hi) {
     return x < lo ? lo : (x > hi ? hi : x);
@@ -77,26 +70,8 @@ void ap_vad_process(ap_vad_state_t *state,
                            AP_VAD_FAST_NOISE_ALPHA * rms;
     }
 
-    /* Reuse the existing 32-bit hangover field as a compact decision state so
-     * the temporal discriminator adds no pipeline-state bytes. Values below
-     * AP_VAD_ACTIVE_STATE_BASE are an inactive soft-attack count; values at or
-     * above it are an active hangover countdown. A single high-confidence frame
-     * still activates immediately. Moderate NS-correlated evidence must persist
-     * for three consecutive frames, which recovers sustained speech near the
-     * threshold without making isolated non-stationary noise peaks authoritative. */
-    if (prob > AP_VAD_DECISION_THRESHOLD) {
-        state->hangover = AP_VAD_ACTIVE_STATE_MAX;
-    } else if (state->hangover >= AP_VAD_ACTIVE_STATE_BASE) {
-        state->hangover--;
-    } else if (use_upstream_probability &&
-               upstream_speech_probability > AP_VAD_SOFT_UPSTREAM_THRESHOLD &&
-               prob > AP_VAD_SOFT_ATTACK_THRESHOLD) {
-        if (state->hangover < AP_VAD_SOFT_ATTACK_FRAMES) state->hangover++;
-        if (state->hangover >= AP_VAD_SOFT_ATTACK_FRAMES)
-            state->hangover = AP_VAD_ACTIVE_STATE_MAX;
-    } else {
-        state->hangover = 0u;
-    }
+    if (prob > 0.45f) state->hangover = 8u;
+    else if (state->hangover) state->hangover--;
     result->probability = prob;
-    result->active = (uint8_t)(state->hangover >= AP_VAD_ACTIVE_STATE_BASE);
+    result->active = (uint8_t)(state->hangover > 0u);
 }

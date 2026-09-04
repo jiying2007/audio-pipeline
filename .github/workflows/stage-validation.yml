@@ -33,13 +33,14 @@ jobs:
           python3 validation/tools/authority.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/vad_probability_diagnostic.py --self-test
       - name: Configure processor
         run: >-
           cmake -S . -B build-stage-validation -DCMAKE_BUILD_TYPE=Release
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build processor
         run: cmake --build build-stage-validation --target ap_process_pcm --parallel
-      - name: Build and validate independent stage corpora
+      - name: Build, diagnose and validate independent stage corpora
         run: |
           set -euo pipefail
           mkdir -p stage-validation-out
@@ -49,6 +50,10 @@ jobs:
             mkdir -p "$out"
             python3 validation/tools/build_stage_validation_corpus.py \
               --output "$root" --seed "$seed"
+            python3 validation/tools/vad_probability_diagnostic.py \
+              --corpus "$root/corpus.json" \
+              --processor build-stage-validation/ap_process_pcm \
+              --output "$out/vad-probability.json"
             python3 validation/tools/run_validation.py \
               --corpus "$root/corpus.json" \
               --policy validation/policies/validation-smoke.json \
@@ -70,8 +75,18 @@ jobs:
               summary = report.get('summary', {})
               print(f"- seed `{path.parent.name}`: `{report['validation_result']}`, "
                     f"pass-rate `{summary.get('pass_rate')}`, "
-                    f"VAD F1 min `{summary.get('min_vad_f1')}`, "
+                    f"VAD recall min `{summary.get('min_vad_recall')}`, "
+                    f"VAD FPR max `{summary.get('max_vad_false_positive_rate')}`, "
                     f"NS attenuation p10 `{summary.get('p10_noise_only_attenuation_db')}`")
+              diagnostic_path = path.parent / 'vad-probability.json'
+              if diagnostic_path.exists():
+                  diagnostic = json.loads(diagnostic_path.read_text())
+                  for case in diagnostic.get('cases', []):
+                      if case.get('case_id') in {'stage-ns-stationary', 'stage-ns-nonstationary'}:
+                          print(f"  - `{case['case_id']}` probability margin p10-p90: "
+                                f"`{case.get('p10_p90_probability_margin')}`, "
+                                f"positive<=0.45 `{case.get('positive_below_threshold_fraction')}`, "
+                                f"negative>0.45 `{case.get('negative_above_threshold_fraction')}`")
           PY
       - name: Upload stage validation evidence
         if: always()

@@ -4,8 +4,8 @@
 This tool deliberately sits beside the canonical validation metrics rather than
 changing shipping acceptance. It reuses the canonical processor invocation and
 stage-profile routing, then reports stable-frame speech/noise probability
-quantiles so VAD/NS->VAD tuning can be evidence-driven instead of inferred from
-binary F1/FPR/recall alone.
+quantiles and fixed operating-point sweeps so VAD/NS->VAD tuning can be
+evidence-driven instead of inferred from binary F1/FPR/recall alone.
 """
 
 from __future__ import annotations
@@ -23,6 +23,7 @@ import stage_profile_support
 stage_profile_support.install(engine)
 
 DECISION_THRESHOLD = 0.45
+OPERATING_THRESHOLDS = (0.35, 0.40, 0.42, 0.45, 0.50)
 
 
 def percentile(values: Sequence[float], q: float) -> float | None:
@@ -60,6 +61,21 @@ def fraction(values: Sequence[float], predicate) -> float | None:
     return sum(1 for value in values if predicate(value)) / len(values)
 
 
+def operating_points(positive: Sequence[float], negative: Sequence[float]) -> list[dict]:
+    return [
+        {
+            "threshold": threshold,
+            "positive_above_fraction": fraction(
+                positive, lambda value, t=threshold: value > t
+            ),
+            "negative_above_fraction": fraction(
+                negative, lambda value, t=threshold: value > t
+            ),
+        }
+        for threshold in OPERATING_THRESHOLDS
+    ]
+
+
 def summarize(labels: list[int], trace: list[dict]) -> dict:
     positive, negative = stable_probability_sets(labels, trace)
     positive_p10 = percentile(positive, 0.10)
@@ -84,6 +100,7 @@ def summarize(labels: list[int], trace: list[dict]) -> dict:
             None if positive_p10 is None or negative_p90 is None
             else positive_p10 - negative_p90
         ),
+        "operating_points": operating_points(positive, negative),
     }
 
 
@@ -123,6 +140,9 @@ def self_test() -> None:
     assert abs(float(summary["positive_probability_p50"]) - 0.6) < 1.0e-9
     assert abs(float(summary["negative_probability_p50"]) - 0.2) < 1.0e-9
     assert summary["p10_p90_probability_margin"] is not None
+    points = {item["threshold"]: item for item in summary["operating_points"]}
+    assert points[0.45]["positive_above_fraction"] == 1.0
+    assert points[0.45]["negative_above_fraction"] == 0.0
     print("VAD probability diagnostic self-test: OK")
 
 

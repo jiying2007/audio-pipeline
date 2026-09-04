@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "mode": "one-way",
+  "confirmation": "ONE_WAY_HOLDOUT",
+  "qualification": "hosted-real-aec",
+  "fingerprint_files": [
+    "validation/tools/run_validation.py",
+    "validation/tools/run_validation_engine.py",
+    "validation/tools/render_corr_exact.py",
+    "validation/tools/render_corr_exact.c",
+    "validation/policies/validation-hosted-aec-smoke.json",
+    "validation/hosted_aec.datasets.lock.json"
+  ],
+  "policy": {
+    "exact_source_sha_required": true,
+    "threshold_tuning_from_holdout_forbidden": true,
+    "compiler_or_infrastructure_wiring_retry_allowed": true,
+    "acoustic_failure_rejects_candidate": true
+  }
+}

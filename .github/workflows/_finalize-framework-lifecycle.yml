@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/_finalize_framework_lifecycle.py
-          git rm scripts/_finalize_framework_lifecycle.py
+          git rm -f scripts/_finalize_framework_lifecycle.py
           git rm .github/workflows/_finalize-framework-lifecycle.yml
       - name: Validate final repository state
         run: |

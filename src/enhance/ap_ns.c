@@ -52,6 +52,7 @@ void ap_ns_process(ap_ns_state_t *s,
     uint32_t i, k;
     float speech_sum = 0.0f;
     float speech_sq_sum = 0.0f;
+    uint32_t speech_bins = 0u;
 #if AP_BUILD_STAGE_RES
     float res_gain_sum = 0.0f;
 #endif
@@ -129,6 +130,7 @@ void ap_ns_process(ap_ns_state_t *s,
         if (k > nfft / 64u && k < nfft * 7u / 16u) {
             speech_sum += speech;
             speech_sq_sum += speech * speech;
+            speech_bins++;
         }
         post = power / (noise + 1.0e-12f);
         gain = post > 1.0f ? sqrtf((post - 1.0f) / post) : 0.0f;
@@ -146,15 +148,16 @@ void ap_ns_process(ap_ns_state_t *s,
     ap_noise_tracker_next_frame(&s->noise_tracker);
 
     {
-        /* A flat average made broad non-stationary noise look more speech-like
-         * than sparse harmonic speech because many medium-probability bins
-         * outweighed a smaller set of high-confidence speech bins. Use the
-         * probability-weighted concentration (sum p^2 / sum p) instead. This
-         * changes only the NS->VAD evidence signal; suppression gains and the
-         * per-bin noise estimator remain untouched. */
-        const float speech_concentration = speech_sum > 1.0e-9f ?
-                                           speech_sq_sum / speech_sum : 0.0f;
-        s->speech_probability = ap_clampf(speech_concentration, 0.0f, 1.0f);
+        const float mean = speech_bins ? speech_sum / (float)speech_bins : 0.0f;
+        const float concentration = speech_sum > 1.0e-9f ?
+                                    speech_sq_sum / speech_sum : 0.0f;
+        /* Broad non-stationary noise raises many bins to a medium posterior,
+         * while speech tends to concentrate evidence into fewer stronger bins.
+         * The flat mean alone was inverted on the hard corpus; concentration
+         * alone saturated both classes. Their gap is a bounded spectral-sparsity
+         * cue that preserves the existing per-bin estimator and suppression
+         * gains while improving only the NS->VAD evidence signal. */
+        s->speech_probability = ap_clampf(concentration - mean, 0.0f, 1.0f);
         s->noise_rms_dbfs = 10.0f * log10f(
             noise_sum / (float)bins / ((float)nfft * (float)nfft) + 1.0e-18f);
     }

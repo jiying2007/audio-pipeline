@@ -39,6 +39,7 @@ jobs:
           python3 scripts/prepare_release.py --self-test
           python3 scripts/release_manifest.py --self-test
           python3 scripts/post_release_status.py --self-test
+          python3 scripts/qualification_fingerprint.py --self-test
           python3 scripts/ci_impact.py --self-test
           python3 scripts/docs_consistency.py --self-test
           python3 scripts/docs_consistency.py
@@ -49,11 +50,20 @@ jobs:
           test ! -e scripts/_normalize_finalize_patcher.py
           test ! -e scripts/_finalize_framework_lifecycle.py
           test ! -e scripts/_finalize_docs_fix.py
-      - name: Commit finalized framework
+      - name: Stage validated workflow blobs and push non-workflow changes
         run: |
           set -euo pipefail
+          mkdir -p ci/framework-lifecycle-snapshots
+          cp .github/workflows/verify.yml ci/framework-lifecycle-snapshots/verify.yml
+          cp .github/workflows/hosted-aec-real-validation.yml ci/framework-lifecycle-snapshots/hosted-aec-real-validation.yml
+          cp .github/workflows/release.yml ci/framework-lifecycle-snapshots/release.yml
+          git checkout HEAD -- \
+            .github/workflows/verify.yml \
+            .github/workflows/hosted-aec-real-validation.yml \
+            .github/workflows/release.yml \
+            .github/workflows/_finalize-framework-lifecycle.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
-          git commit -m 'chore: codify repository lifecycle and evidence cleanup'
+          git commit -m 'chore: stage repository lifecycle framework'
           git push origin HEAD:chore/framework-lifecycle-v1

@@ -17,6 +17,8 @@ jobs:
   summarize:
     if: github.event.workflow_run.event == 'repository_dispatch'
     runs-on: ubuntu-latest
+    env:
+      POST_RELEASE_BLOCKED_STATES: BLOCKED_RUNNER,BLOCKED_CONFIG
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -30,6 +32,7 @@ jobs:
           EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
         run: |
           set -euo pipefail
+          case "$POST_RELEASE_BLOCKED_STATES" in *BLOCKED_RUNNER*BLOCKED_CONFIG*) ;; *) exit 2 ;; esac
           tag=$(git tag --points-at "$SOURCE_SHA" | grep '^v' | sort -V | tail -n 1)
           test -n "$tag"
           hil=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/hil-soak.yml/runs" \

@@ -128,7 +128,7 @@ def build(output: Path, seed: int) -> dict:
     add_case(
         cases, output, "bf-edge-positive", "bf-edge-positive",
         interleave(left, right), 2, clean=clean, processor_profile="bf-isolated",
-        expected={"min_near_si_sdr_improvement_db": -0.25},
+        expected={"min_near_si_sdr_improvement_db": 1.5},
     )
     add_dimensions(cases, "bf-edge-positive", tdoa_samples=3, mic_gain_ratio=1.0)
 
@@ -137,7 +137,7 @@ def build(output: Path, seed: int) -> dict:
     add_case(
         cases, output, "bf-edge-negative", "bf-edge-negative",
         interleave(left, right), 2, clean=clean, processor_profile="bf-isolated",
-        expected={"min_near_si_sdr_improvement_db": -0.25},
+        expected={"min_near_si_sdr_improvement_db": 1.5},
     )
     add_dimensions(cases, "bf-edge-negative", tdoa_samples=-3, mic_gain_ratio=1.0)
 
@@ -147,7 +147,7 @@ def build(output: Path, seed: int) -> dict:
     add_case(
         cases, output, "bf-direction-switch", "bf-direction-switch",
         interleave(left, right), 2, clean=clean, processor_profile="bf-isolated",
-        expected={"min_near_si_sdr_improvement_db": -1.0},
+        expected={"min_near_si_sdr_improvement_db": 7.0},
     )
     add_dimensions(cases, "bf-direction-switch", tdoa_samples=2, direction_switch_frame=300)
 
@@ -156,7 +156,7 @@ def build(output: Path, seed: int) -> dict:
     add_case(
         cases, output, "bf-gain-mismatch", "bf-gain-mismatch",
         interleave(left, right), 2, clean=clean, processor_profile="bf-isolated",
-        expected={"min_near_si_sdr_improvement_db": -0.75},
+        expected={"min_near_si_sdr_improvement_db": 0.0},
     )
     add_dimensions(cases, "bf-gain-mismatch", tdoa_samples=2, mic_gain_ratio=0.55)
 
@@ -167,7 +167,7 @@ def build(output: Path, seed: int) -> dict:
     add_case(
         cases, output, "bf-diffuse-noise", "bf-diffuse-noise",
         interleave(left, right), 2, clean=clean, processor_profile="bf-isolated",
-        expected={"min_near_si_sdr_improvement_db": 0.0},
+        expected={"min_near_si_sdr_improvement_db": 2.0},
     )
     add_dimensions(cases, "bf-diffuse-noise", tdoa_samples=2, mic_gain_ratio=1.0)
 
@@ -177,7 +177,7 @@ def build(output: Path, seed: int) -> dict:
         "tier": "regression",
         "generator": {
             "name": "build_agc_bf_validation_corpus.py",
-            "version": 1,
+            "version": 2,
             "seed": seed,
         },
         "sources": ["deterministic-generator"],
@@ -198,9 +198,11 @@ def self_test() -> None:
         assert len(corpus["cases"]) == 9
         assert sum(case["processor_profile"] == "agc-isolated" for case in corpus["cases"]) == 4
         assert sum(case["processor_profile"] == "bf-isolated" for case in corpus["cases"]) == 5
-        assert {case["scenario"] for case in corpus["cases"]} >= {
-            "agc-level-step", "agc-transient", "bf-direction-switch", "bf-diffuse-noise"
-        }
+        by_id = {case["case_id"]: case for case in corpus["cases"]}
+        assert by_id["bf-edge-positive"]["expected"]["min_near_si_sdr_improvement_db"] == 1.5
+        assert by_id["bf-direction-switch"]["expected"]["min_near_si_sdr_improvement_db"] == 7.0
+        assert by_id["bf-gain-mismatch"]["expected"]["min_near_si_sdr_improvement_db"] == 0.0
+        assert by_id["bf-diffuse-noise"]["expected"]["min_near_si_sdr_improvement_db"] == 2.0
     print("AGC/BF validation corpus self-test: OK")
 
 

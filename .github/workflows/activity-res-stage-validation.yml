@@ -7,6 +7,7 @@ on:
       - 'src/enhance/ap_res.c'
       - 'src/enhance/ap_enhance.h'
       - 'tests/validation/activity_res_probe.c'
+      - 'tests/validation/activity_res_handoff_probe.c'
       - '.github/workflows/activity-res-stage-validation.yml'
   workflow_dispatch:
 
@@ -25,17 +26,17 @@ jobs:
         with:
           namespace: activity-res-stage-validation
 
-      - name: Build strict standalone Activity RES probe
+      - name: Build strict standalone Activity RES probes
         shell: bash
         run: |
           set -euo pipefail
-          cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
-            -DAP_BUILD_STAGE_RES=1 \
-            -Isrc \
-            tests/validation/activity_res_probe.c \
-            src/activity/ap_activity.c \
-            src/enhance/ap_res.c \
-            -lm -o activity-res-probe
+          common=(
+            -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror
+            -DAP_BUILD_STAGE_RES=1 -Isrc
+            src/activity/ap_activity.c src/enhance/ap_res.c -lm
+          )
+          cc tests/validation/activity_res_probe.c "${common[@]}" -o activity-res-probe
+          cc tests/validation/activity_res_handoff_probe.c "${common[@]}" -o activity-res-handoff-probe
 
       - name: Run all independent Activity RES partitions
         shell: bash
@@ -47,6 +48,9 @@ jobs:
             if ! ./activity-res-probe "$seed" | tee "activity-res-out/${seed}.txt"; then
               failed=1
             fi
+            if ! ./activity-res-handoff-probe "$seed" | tee "activity-res-out/${seed}-handoff.txt"; then
+              failed=1
+            fi
           done
           {
             echo '## Activity / DTD / RES stage evidence'
@@ -54,6 +58,7 @@ jobs:
             cat activity-res-out/*.txt
             echo '```'
             echo
+            echo 'The HANDOFF recovery metrics are discovery evidence: they quantify near-end onset preservation before any product tuning decision.'
             echo 'All seeds run even after an earlier failure; no product defaults or acceptance gates are changed by this regression-only workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$failed"

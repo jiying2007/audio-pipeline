@@ -11,6 +11,8 @@
 #define AP_BF_FALLBACK_RECOVER_RATIO 0.52f
 #define AP_BF_FALLBACK_RECOVER_UPDATES 8u
 #define AP_BF_FALLBACK_MIN_SCORE_UPDATES 1u
+#define AP_BF_FALLBACK_STRONG_WEIGHT 0.75f
+#define AP_BF_FALLBACK_WEAK_WEIGHT 0.25f
 
 static float ap_beamformer_clampf(float value, float lo, float hi) {
     if (value < lo) return lo;
@@ -134,14 +136,17 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
                           ratio > AP_BF_FALLBACK_RECOVER_RATIO;
     const uint32_t strong_channel = aa >= bb ? 0u : 1u;
     float projection;
-    float target_gain;
+    float normal_coherent_gain;
+    float fallback_coherent_gain;
 
     if (strong_channel == 0u)
         projection = xy / fmaxf(aa, 1.0e-12f);
     else
         projection = xy / fmaxf(bb, 1.0e-12f);
     projection = ap_beamformer_clampf(projection, 0.0f, 1.0f);
-    target_gain = 0.5f * (1.0f + projection);
+    normal_coherent_gain = 0.5f * (1.0f + projection);
+    fallback_coherent_gain = AP_BF_FALLBACK_STRONG_WEIGHT +
+                             AP_BF_FALLBACK_WEAK_WEIGHT * projection;
 
     if (!s->fallback_active) {
         if (!severe) return;
@@ -149,7 +154,8 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
         s->fallback_strong_channel = strong_channel;
         s->fallback_recovery_count = 0u;
         s->fallback_lag = s->lag;
-        s->fallback_gain = target_gain;
+        s->fallback_gain = normal_coherent_gain /
+                           fmaxf(fallback_coherent_gain, 1.0e-12f);
         return;
     }
 
@@ -202,7 +208,10 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
         }
         if (s->fallback_active) {
             const float strong = s->fallback_strong_channel == 0u ? x : y;
-            out[i] = s->fallback_gain * strong;
+            const float weak = s->fallback_strong_channel == 0u ? y : x;
+            out[i] = s->fallback_gain *
+                     (AP_BF_FALLBACK_STRONG_WEIGHT * strong +
+                      AP_BF_FALLBACK_WEAK_WEIGHT * weak);
         } else {
             out[i] = 0.5f * (x + y);
         }

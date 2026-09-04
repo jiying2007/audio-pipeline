@@ -10,6 +10,7 @@ on:
       - 'tests/validation/activity_res_probe.c'
       - 'tests/validation/activity_res_handoff_probe.c'
       - 'tests/validation/frequency_res_handoff_probe.c'
+      - 'tests/validation/res_release_sweep.py'
       - '.github/workflows/activity-res-stage-validation.yml'
   workflow_dispatch:
 
@@ -85,6 +86,14 @@ jobs:
             echo 'All seeds run even after an earlier failure; no threshold is weakened by this workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$failed"
+
+      - name: Select minimal bounded near-protection release alpha
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/res_release_sweep.py \
+            --json-output activity-res-out/res-release-sweep.json \
+            2>&1 | tee activity-res-out/res-release-sweep.txt
 
       - name: Upload Activity RES evidence
         if: always()

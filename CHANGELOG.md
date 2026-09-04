@@ -1,3 +1,9 @@
+# 2.3.7
+
+- Add stage-isolated canonical validation profiles for VAD, NS, AGC and two-mic beamforming, plus deterministic three-seed regression evidence so per-stage failures can be attributed before full-pipeline replay.
+- Fix the VAD noise-floor one-way latch with bounded crest-factor-aware noise adaptation and transient suppression; deterministic stationary/impulsive hard negatives now enforce `max_vad_false_positive_rate <= 0.25` instead of merely reporting the metric.
+- Add a bounded NS-only `ns_floor` tuning search that replays development candidates through independent validation/shadow partitions and can emit only a non-shipping acoustic candidate; public v2 API/ABI, shipping tuning authority and product-certification requirements remain unchanged.
+
 # 2.3.6
 
 - Replace the sparse render-correlation lag scan with phase-complete evaluation of every integer lag in the existing +/-100 ms window; a validation-only C11 helper selects the winning lag and the reported value is recomputed by canonical `normalized_corr(..., stride=4)`.
@@ -144,7 +150,7 @@
 - Add a shared fail-closed `tools/runner_preflight.py` contract for `audio-validation`, `audio-builder`, `audio-target`, and `certification-archive` self-hosted roles; `READY` is infrastructure readiness only and never acoustic/HIL/product evidence.
 - Add the manually dispatched Trusted Runner Readiness workflow so lab machines can be validated against an exact source ref before allocating public validation, 8/24 h HIL, or 72 h shipping certification work.
 - Make Compact/Full public validation capture the `audio-validation` runner readiness report in the sealed evidence bundle before dataset verification or acoustic execution.
-- Make HIL validate and seal `audio-target` runner readiness before board preflight, and classify missing runner prerequisites as `INFRA_FAILURE` rather than product failure.
+- Make HIL validate and seal `audio-target` runner readiness before board preflight, and classify missing runner prerequisites as `INFRA_FAILURE` rather than product/HIL failures.
 - Add one trusted-runner activation runbook covering public validation, HIL enablement, shipping builder/toolchain readiness, lifecycle archive readiness, and readiness invalidation after machine/input changes.
 - No DSP, public C API/ABI, acoustic thresholds, resource envelopes, or shipping-certification acceptance thresholds change in this maintenance release.
 

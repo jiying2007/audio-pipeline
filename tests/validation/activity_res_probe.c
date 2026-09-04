@@ -64,10 +64,16 @@ static int run_activity(uint32_t seed) {
     uint32_t i;
     uint32_t far_release;
     uint32_t dt_release;
+    uint32_t far_recall_frames;
+    uint32_t far_only_dt_frames;
+    uint32_t dt_recall_frames;
     uint32_t chatter_far = 0u;
     uint32_t chatter_dt = 0u;
     uint32_t near_false_far = 0u;
     uint32_t near_false_dt = 0u;
+    uint32_t transition_far_frames = 0u;
+    uint32_t transition_dt_frames = 0u;
+    int transition_dt_attack = -1;
     int far_attack;
     int dt_attack;
     int failed = 0;
@@ -87,8 +93,10 @@ static int run_activity(uint32_t seed) {
         dt_flags[i] = result.double_talk_active;
     }
     far_attack = first_true_frame(far_flags, 24u);
-    if (far_attack < 1 || far_attack > 6 || count_true(far_flags, 24u) < 21u ||
-        count_true(dt_flags, 24u) != 0u) failed = 1;
+    far_recall_frames = count_true(far_flags, 24u);
+    far_only_dt_frames = count_true(dt_flags, 24u);
+    if (far_attack < 1 || far_attack > 6 || far_recall_frames < 21u ||
+        far_only_dt_frames != 0u) failed = 1;
 
     far_release = frames_until_false(&state, 1.0e-10f, 1.0e-10f, 0, 50u);
     if (far_release > 36u) failed = 1;
@@ -102,7 +110,8 @@ static int run_activity(uint32_t seed) {
         dt_flags[i] = result.double_talk_active;
     }
     dt_attack = first_true_frame(dt_flags, 24u);
-    if (dt_attack < 1 || dt_attack > 6 || count_true(dt_flags, 24u) < 20u) failed = 1;
+    dt_recall_frames = count_true(dt_flags, 24u);
+    if (dt_attack < 1 || dt_attack > 6 || dt_recall_frames < 20u) failed = 1;
     dt_release = frames_until_false(&state, 1.0e-7f, 4.0e-7f, 1, 12u);
     if (dt_release > 5u) failed = 1;
 
@@ -126,19 +135,40 @@ static int run_activity(uint32_t seed) {
     }
     if (near_false_far != 0u || near_false_dt != 0u) failed = 1;
 
+    /* Far-end stopping while near-end speech begins is the critical DTD/RES
+     * hand-off. Far activity may decay slowly, but double-talk protection must
+     * engage quickly enough that downstream AEC/RES can preserve near speech. */
+    ap_activity_reset(&state);
+    for (i = 0u; i < 12u; ++i)
+        ap_activity_process(&state, 1.0e-7f, 4.0e-7f, &result);
+    for (i = 0u; i < 8u; ++i) {
+        ap_activity_process(&state, 8.0e-7f, 1.0e-10f, &result);
+        transition_far_frames += result.far_end_active ? 1u : 0u;
+        transition_dt_frames += result.double_talk_active ? 1u : 0u;
+        if (transition_dt_attack < 0 && result.double_talk_active)
+            transition_dt_attack = (int)i + 1;
+    }
+    if (transition_far_frames == 0u || transition_dt_attack < 1 ||
+        transition_dt_attack > 3 || transition_dt_frames < 5u)
+        failed = 1;
+
     ap_activity_reset(&state);
     for (i = 0u; i < 12u; ++i)
         ap_activity_process(&state, 1.0e-7f, 4.0e-7f, &result);
     ap_activity_process(&state, 1.0e-10f, 1.0e-10f, &result);
     if (!result.far_end_active) failed = 1;
 
-    printf("ACTIVITY seed=%u far_attack=%d far_recall_frames=%u/24 far_release=%u "
+    printf("ACTIVITY seed=%u far_attack=%d far_recall_frames=%u/24 "
+           "far_only_dt_frames=%u/24 far_release=%u "
            "dt_attack=%d dt_recall_frames=%u/24 dt_release=%u "
            "threshold_chatter_far=%u/32 threshold_chatter_dt=%u/32 "
-           "near_false_far=%u near_false_dt=%u result=%s\n",
-           seed, far_attack, count_true(far_flags, 24u), far_release,
-           dt_attack, count_true(dt_flags, 24u), dt_release,
+           "near_false_far=%u near_false_dt=%u "
+           "far_to_near_dt_attack=%d far_to_near_far_frames=%u/8 "
+           "far_to_near_dt_frames=%u/8 result=%s\n",
+           seed, far_attack, far_recall_frames, far_only_dt_frames, far_release,
+           dt_attack, dt_recall_frames, dt_release,
            chatter_far, chatter_dt, near_false_far, near_false_dt,
+           transition_dt_attack, transition_far_frames, transition_dt_frames,
            failed ? "FAIL" : "PASS");
     return failed;
 }

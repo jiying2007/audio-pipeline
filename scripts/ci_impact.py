@@ -29,6 +29,7 @@ DSP_ARM = ["cortex-a7-neon", "cortex-a32-neon", "aarch64-neon"]
 
 DOC_PREFIXES = ("docs/",)
 DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE", "SECURITY.md"}
+RESEARCH_REGISTRY_METADATA_FILES = {".github/research/evidence-index.json"}
 RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
 RELEASE_NEUTRAL_FILES = {
     ".gitignore", ".gitattributes",
@@ -135,32 +136,19 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         path for path in paths
         if not (cmake_version_only_change and path == 'CMakeLists.txt')
     ]
+    if (
+        not force_full
+        and effective_paths
+        and all(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
+    ):
+        return _fast_only("research registry metadata-only change", paths)
     if not force_full and all(is_docs(p) for p in effective_paths):
         reason = (
             'version-only release metadata'
             if cmake_version_only_change and not effective_paths
             else 'documentation-only change'
         )
-        return {
-            "docs_only": True,
-            "full": False,
-            "run_ci": False,
-            "run_quality": False,
-            "run_audio": False,
-            "run_resource": False,
-            "run_codeql": False,
-            "run_perf": False,
-            "run_alsa": False,
-            "run_aec_backend": False,
-            "run_ns_backend": False,
-            "run_extended": False,
-            "run_abi": False,
-            "run_lab": False,
-            "compositions": [],
-            "arm": [],
-            "reason": reason,
-            "paths": paths,
-        }
+        return _fast_only(reason, paths)
     if force_full:
         return _full("main push / explicit full verification", paths)
 
@@ -241,6 +229,29 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
     }
 
 
+def _fast_only(reason: str, paths: list[str]) -> dict:
+    return {
+        "docs_only": True,
+        "full": False,
+        "run_ci": False,
+        "run_quality": False,
+        "run_audio": False,
+        "run_resource": False,
+        "run_codeql": False,
+        "run_perf": False,
+        "run_alsa": False,
+        "run_aec_backend": False,
+        "run_ns_backend": False,
+        "run_extended": False,
+        "run_abi": False,
+        "run_lab": False,
+        "compositions": [],
+        "arm": [],
+        "reason": reason,
+        "paths": paths,
+    }
+
+
 def _full(reason: str, paths: list[str]) -> dict:
     return {
         "docs_only": False,
@@ -302,6 +313,16 @@ def self_test() -> None:
     assert versioned_val["run_audio"] and not versioned_val["full"]
     version_only = analyze(["CMakeLists.txt"], cmake_version_only_change=True)
     assert version_only["docs_only"] and not version_only["full"]
+    registry_only = analyze([".github/research/evidence-index.json"])
+    assert registry_only["docs_only"] and not registry_only["full"]
+    assert registry_only["reason"] == "research registry metadata-only change"
+    registry_mixed = analyze([
+        ".github/research/evidence-index.json",
+        "validation/tools/run_validation.py",
+    ])
+    assert registry_mixed["full"] and registry_mixed["run_lab"]
+    registry_main = analyze([".github/research/evidence-index.json"], True)
+    assert registry_main["full"] and registry_main["run_lab"]
     unknown = analyze(["scripts/new-thing.sh"])
     assert unknown["full"] and unknown["run_lab"] and len(unknown["arm"]) == len(FULL_ARM)
     lab = analyze(["lab/ansible/site.yml"])

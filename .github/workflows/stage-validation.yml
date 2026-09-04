@@ -49,7 +49,7 @@ jobs:
             validation/tools/ns_probability_probe.c \
             build-stage-validation/libaudio_pipeline.a -lm \
             -o build-stage-validation/ns_probability_probe
-      - name: Build, diagnose and validate independent stage corpora
+      - name: Build, diagnose and validate all independent stage corpora
         run: |
           set -euo pipefail
           mkdir -p stage-validation-out
@@ -73,9 +73,21 @@ jobs:
               --dataset-lock validation/datasets.lock.json \
               --processor build-stage-validation/ap_process_pcm \
               --output "$out/report.json" \
-              --evidence-manifest "$out/evidence-manifest.json" \
-              --enforce
+              --evidence-manifest "$out/evidence-manifest.json"
           done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          reports = sorted(Path('stage-validation-out').glob('*/report.json'))
+          assert len(reports) == 3, f'expected 3 stage reports, got {len(reports)}'
+          failed = []
+          for path in reports:
+              report = json.loads(path.read_text())
+              if report.get('validation_result') != 'PASS':
+                  failed.append(path.parent.name)
+          if failed:
+              raise SystemExit(f"stage validation failed seeds: {','.join(failed)}")
+          PY
       - name: Summarize stage metrics
         if: always()
         run: |

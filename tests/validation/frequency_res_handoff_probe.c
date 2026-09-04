@@ -7,6 +7,7 @@
 #define FRAME_SAMPLES 160u
 #define MAX_HALF_RECOVERY_FRAMES 5
 #define MAX_90_RECOVERY_FRAMES 12
+#define MAX_REENTRY_SUPPRESSION_FRAMES 4
 
 static uint32_t lcg_next(uint32_t *state) {
     *state = (*state * 1664525u) + 1013904223u;
@@ -61,8 +62,10 @@ int main(int argc, char **argv) {
     float pre_mean;
     float gain1 = 0.0f;
     float gain3 = 0.0f;
+    float reentry_gain1 = 1.0f;
     int first_half = -1;
     int first_90 = -1;
+    int reentry_suppressed = -1;
     int failed = 0;
 
     if (argc > 2) return 2;
@@ -77,7 +80,7 @@ int main(int argc, char **argv) {
     bins = state.nfft / 2u + 1u;
 
     /* Preserve the shipping far-only frequency-RES operating point as an
-     * anti-regression guard before measuring the near-protection release. */
+     * anti-regression guard before measuring state release during DT. */
     for (i = 0u; i < 40u; ++i) {
         make_frame(&rng, input, echo, 0);
         ap_ns_process(&state, AP_ENHANCE_FULL, 0.20f,
@@ -93,8 +96,8 @@ int main(int argc, char **argv) {
     pre_mean = mean_masked_gain(&state, suppressed, bins);
     if (suppressed_bins < bins / 2u || pre_mean > 0.22f) failed = 1;
 
-    /* Enter double-talk. Frequency RES must disable immediately and its
-     * historical gains must recover fast enough to preserve near-end onset. */
+    /* During double talk frequency RES is disabled for the current output;
+     * this gate measures how quickly stale historical suppression de-latches. */
     for (i = 0u; i < 60u; ++i) {
         float mean_gain;
         make_frame(&rng, input, echo, 1);
@@ -113,12 +116,31 @@ int main(int argc, char **argv) {
         first_90 < 1 || first_90 > MAX_90_RECOVERY_FRAMES)
         failed = 1;
 
+    /* When DT ends and far-only resumes, the de-latched state must still
+     * re-enter useful echo suppression quickly enough to avoid an echo leak. */
+    for (i = 0u; i < 8u; ++i) {
+        float mean_gain;
+        make_frame(&rng, input, echo, 0);
+        ap_ns_process(&state, AP_ENHANCE_FULL, 0.20f,
+                      input, echo, output, FRAME_SAMPLES,
+                      1, 1, 0, &result);
+        mean_gain = mean_masked_gain(&state, suppressed, bins);
+        if (i == 0u) reentry_gain1 = mean_gain;
+        if (reentry_suppressed < 0 && mean_gain <= 0.30f)
+            reentry_suppressed = (int)i + 1;
+        if (!result.frequency_res_active) failed = 1;
+    }
+    if (reentry_suppressed < 1 ||
+        reentry_suppressed > MAX_REENTRY_SUPPRESSION_FRAMES)
+        failed = 1;
+
     printf("FREQ_RES_HANDOFF seed=%u suppressed_bins=%u/%u pre_mean=%.6f "
            "gain_f1=%.6f gain_f3=%.6f gain_ge_0.50_frame=%d "
-           "gain_ge_0.90_frame=%d final_mean=%.6f result=%s\n",
+           "gain_ge_0.90_frame=%d final_mean=%.6f reentry_gain_f1=%.6f "
+           "reentry_le_0.30_frame=%d result=%s\n",
            seed, suppressed_bins, bins, pre_mean, gain1, gain3,
            first_half, first_90,
-           mean_masked_gain(&state, suppressed, bins),
-           failed ? "FAIL" : "PASS");
+           mean_masked_gain(&state, suppressed, bins), reentry_gain1,
+           reentry_suppressed, failed ? "FAIL" : "PASS");
     return failed ? 1 : 0;
 }

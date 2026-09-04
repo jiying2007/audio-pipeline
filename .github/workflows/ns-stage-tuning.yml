@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 30
     env:
       SEARCH_SPACE: validation/tuning/search-spaces/ns-stage-v1.json
+      POLICY: validation/policies/validation-ns-stage-tuning.json
       EXPECTED_MAX_CANDIDATES: '9'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -31,14 +32,18 @@ jobs:
           python3 validation/tools/authority.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/build_ns_tuning_corpus.py --self-test
           python3 - <<'PY'
           import json, os
           from pathlib import Path
           space = json.loads(Path(os.environ['SEARCH_SPACE']).read_text())
+          policy = json.loads(Path(os.environ['POLICY']).read_text())
           assert space['schema_version'] == 1
           assert space['strategy'] == 'one-at-a-time'
           assert set(space['parameters']) == {'ns_floor'}
           assert space['max_candidates'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
+          assert policy['required_scenarios'] == ['stage-ns-stationary', 'stage-ns-nonstationary']
+          assert policy['minimum_cases'] == 2
           PY
       - name: Configure tuning processor
         run: >-
@@ -46,16 +51,28 @@ jobs:
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build tuning processor
         run: cmake --build build-ns-tuning --target ap_process_pcm --parallel
-      - name: Build independent stage partitions
+      - name: Build independent NS-only partitions
         run: |
           set -euo pipefail
-          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-ns-stage-1307 --seed 1307
-          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-ns-stage-2307 --seed 2307
-          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-ns-stage-3307 --seed 3307
+          python3 validation/tools/build_ns_tuning_corpus.py --output /tmp/ap-ns-stage-1307 --seed 1307
+          python3 validation/tools/build_ns_tuning_corpus.py --output /tmp/ap-ns-stage-2307 --seed 2307
+          python3 validation/tools/build_ns_tuning_corpus.py --output /tmp/ap-ns-stage-3307 --seed 3307
           python3 validation/tools/authority.py \
             --development-corpus /tmp/ap-ns-stage-1307/corpus.json \
             --validation-corpus /tmp/ap-ns-stage-2307/corpus.json \
             --shadow-corpus /tmp/ap-ns-stage-3307/corpus.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for seed in (1307, 2307, 3307):
+              path = Path(f'/tmp/ap-ns-stage-{seed}/corpus.json')
+              corpus = json.loads(path.read_text())
+              assert len(corpus['cases']) == 2
+              assert {case['scenario'] for case in corpus['cases']} == {
+                  'stage-ns-stationary', 'stage-ns-nonstationary'
+              }
+              assert all(case['processor_profile'] == 'ns-isolated' for case in corpus['cases'])
+          PY
       - name: Search development and replay validation plus shadow
         run: |
           set -euo pipefail
@@ -64,7 +81,7 @@ jobs:
             --development-corpus /tmp/ap-ns-stage-1307/corpus.json \
             --validation-corpus /tmp/ap-ns-stage-2307/corpus.json \
             --shadow-corpus /tmp/ap-ns-stage-3307/corpus.json \
-            --policy validation/policies/validation-smoke.json \
+            --policy "$POLICY" \
             --dataset-lock validation/datasets.lock.json \
             --search-space "$SEARCH_SPACE" \
             --output-dir ns-stage-tuning-out
@@ -102,6 +119,7 @@ jobs:
           print(f"- Iteration: `{r['iteration_id']}`")
           print(f"- Selected: `{r['selected']['label']}`")
           print(f"- Development score: `{r['selected']['development_score']:.4f}`")
+          print('- Corpus: NS-only stationary/non-stationary cases; unrelated VAD/AGC/BF cases are excluded from optimizer scoring.')
           print('- Authority: acoustic candidate only; no shipping default is mutated automatically.')
           PY
           fi

@@ -4,6 +4,8 @@
 
 Since v2.3.6, canonical offline AEC render-correlation metrics evaluate every integer lag in the existing +/-100 ms window. This fixes sparse-grid misses on narrow broadband peaks without changing the metric definition, dataset locks, policy thresholds, product DSP, public API/ABI, or Product Certification authority.
 
+The exact search window is `max_lag = sample_rate // 10`; both input-render and output-render maximum correlation use the same backend and the same complete integer-lag set.
+
 The validation-only helper in `validation/tools/render_corr_exact.c` is compiled by `run_validation.py` on the host and is never installed, exported by CMake, or linked into the product SDK/runtime. The helper only selects the globally strongest integer lag using the same stride-4 normalization terms as the canonical evaluator. `run_validation.py` then recomputes the reported value with `run_validation_engine.normalized_corr(..., stride=4)` and fails closed if the native and canonical scores differ.
 
 ## Trust and evidence

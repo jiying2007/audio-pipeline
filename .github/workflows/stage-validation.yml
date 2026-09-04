@@ -1,0 +1,83 @@
+name: DSP Stage Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'examples/process_pcm.c'
+      - 'validation/**'
+      - '.github/workflows/stage-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dsp-stage-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: dsp-stage-validation
+      - name: Validate Python and authority contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/authority.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
+      - name: Configure processor
+        run: >-
+          cmake -S . -B build-stage-validation -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build processor
+        run: cmake --build build-stage-validation --target ap_process_pcm --parallel
+      - name: Build and validate independent stage corpora
+        run: |
+          set -euo pipefail
+          mkdir -p stage-validation-out
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-stage-${seed}"
+            out="stage-validation-out/${seed}"
+            mkdir -p "$out"
+            python3 validation/tools/build_stage_validation_corpus.py \
+              --output "$root" --seed "$seed"
+            python3 validation/tools/run_validation.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor build-stage-validation/ap_process_pcm \
+              --output "$out/report.json" \
+              --evidence-manifest "$out/evidence-manifest.json" \
+              --enforce
+          done
+      - name: Summarize stage metrics
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          print('## DSP stage validation')
+          for path in sorted(Path('stage-validation-out').glob('*/report.json')):
+              report = json.loads(path.read_text())
+              summary = report.get('summary', {})
+              print(f"- seed `{path.parent.name}`: `{report['validation_result']}`, "
+                    f"pass-rate `{summary.get('pass_rate')}`, "
+                    f"VAD F1 min `{summary.get('min_vad_f1')}`, "
+                    f"NS attenuation p10 `{summary.get('p10_noise_only_attenuation_db')}`")
+          PY
+      - name: Upload stage validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dsp-stage-validation-${{ github.run_id }}
+          path: stage-validation-out/
+          if-no-files-found: warn
+          retention-days: 30

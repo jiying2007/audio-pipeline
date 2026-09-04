@@ -87,19 +87,19 @@ def summarize_case(case: dict, rows: list[dict]) -> dict:
 
     if case["case_id"] == "agc-steady-low":
         actual = summary["tail_output_rms_dbfs"]
-        if not -22.0 <= actual <= -18.0:
+        if not -21.5 <= actual <= -19.5:
             violations.append({
                 "gate": "steady_low_output_level",
                 "actual": actual,
-                "expected_range": [-22.0, -18.0],
+                "expected_range": [-21.5, -19.5],
             })
     elif case["case_id"] == "agc-steady-hot":
         actual = summary["tail_output_rms_dbfs"]
-        if not -21.0 <= actual <= -17.0:
+        if not -20.8 <= actual <= -19.4:
             violations.append({
                 "gate": "steady_hot_output_level",
                 "actual": actual,
-                "expected_range": [-21.0, -17.0],
+                "expected_range": [-20.8, -19.4],
             })
     elif case["case_id"] == "agc-level-step":
         low_to_hot = int(dimensions["low_to_hot_frame"])
@@ -114,17 +114,23 @@ def summarize_case(case: dict, rows: list[dict]) -> dict:
             "low_to_hot_settle_frames": hot_settle,
             "hot_to_low_settle_frames": low_settle,
         })
-        if hot_settle is None or hot_settle > 35:
+        if hot_settle is None or hot_settle > 25:
             violations.append({
                 "gate": "low_to_hot_settle_frames",
                 "actual": hot_settle,
-                "expected_max": 35,
+                "expected_max": 25,
             })
-        if low_settle is None or low_settle > 210:
+        if low_settle is None or low_settle > 160:
             violations.append({
                 "gate": "hot_to_low_settle_frames",
                 "actual": low_settle,
-                "expected_max": 210,
+                "expected_max": 160,
+            })
+        if summary["p95_abs_gain_step_db"] is not None and summary["p95_abs_gain_step_db"] > 0.75:
+            violations.append({
+                "gate": "level_step_gain_slew_p95_db",
+                "actual": summary["p95_abs_gain_step_db"],
+                "expected_max": 0.75,
             })
 
     summary["passed"] = not violations
@@ -170,6 +176,11 @@ def self_test() -> None:
     assert settling_frames(rows, 0, 60, -20.0, tolerance_db=0.6, consecutive=3) == 19
     assert abs(tail_median(rows, 0, 60) + 20.0) < 1.0e-9
     assert percentile([1.0, 2.0, 3.0], 0.5) == 2.0
+    passing = summarize_case(
+        {"case_id": "agc-steady-low", "scenario": "agc-steady-low", "dimensions": {"limiter_dbfs": -2.0}},
+        [{"output_rms_dbfs": -20.7, "output_peak_dbfs": -15.0, "gain_db": 17.0}] * 50,
+    )
+    assert passing["passed"]
     print("AGC dynamics diagnostic self-test: OK")
 
 

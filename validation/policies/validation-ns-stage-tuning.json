@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-ns-stage-tuning-v1",
+  "allowed_tiers": ["regression"],
+  "minimum_cases": 2,
+  "required_public_sources": [],
+  "required_scenarios": [
+    "stage-ns-stationary",
+    "stage-ns-nonstationary"
+  ],
+  "minimum_cases_by_scenario": {
+    "stage-ns-stationary": 1,
+    "stage-ns-nonstationary": 1
+  },
+  "minimum_pass_rate_by_scenario": {
+    "stage-ns-stationary": 1.0,
+    "stage-ns-nonstationary": 1.0
+  },
+  "aggregate": {
+    "min_pass_rate": 1.0
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "search_space_id": "ns-stage-isolated-v1",
+  "strategy": "one-at-a-time",
+  "max_candidates": 9,
+  "baseline": {
+    "aec_mu": 0.22,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20.0,
+    "limiter_dbfs": -2.0
+  },
+  "parameters": {
+    "ns_floor": [0.06, 0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.22]
+  },
+  "objective": {
+    "minimum_improvement_score": 0.10,
+    "metrics": [
+      {"name": "pass_rate", "direction": "max", "weight": 10.0, "scale": 0.02, "max_regression": 0.0},
+      {"name": "p10_near_si_sdr_improvement_db", "direction": "max", "weight": 1.8, "scale": 1.0, "max_regression": 0.50},
+      {"name": "p10_noise_only_attenuation_db", "direction": "max", "weight": 1.5, "scale": 1.0, "max_regression": 0.50},
+      {"name": "min_vad_f1", "direction": "max", "weight": 0.8, "scale": 0.05, "max_regression": 0.05},
+      {"name": "min_vad_recall", "direction": "max", "weight": 1.0, "scale": 0.05, "max_regression": 0.03},
+      {"name": "max_vad_false_positive_rate", "direction": "min", "weight": 0.8, "scale": 0.05, "max_regression": 0.05},
+      {"name": "max_output_clip_fraction", "direction": "min", "weight": 2.0, "scale": 0.002, "max_regression": 0.002}
+    ],
+    "case_delta_gates": [
+      {"metric": "near_si_sdr_improvement_db", "stat": "p10", "minimum_delta": -0.50},
+      {"metric": "noise_only_attenuation_db", "stat": "p10", "minimum_delta": -0.50}
+    ]
+  }
+}

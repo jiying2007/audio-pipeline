@@ -14,12 +14,14 @@ from pathlib import Path
 
 import render_corr_exact
 import run_validation_engine as engine
+import stage_profile_support
 from authority import corpus_tiers, load_authority, tier_spec
 
 # Canonical render-correlation search is installed once at the authority-guarded
 # entrypoint. The native helper selects the global lag only; final metric scores
 # remain run_validation_engine.normalized_corr(..., stride=4).
 render_corr_exact.install(engine)
+stage_profile_support.install(engine)
 
 
 def validate_corpus_shape(corpus: dict, authority: dict) -> None:
@@ -33,7 +35,7 @@ def validate_corpus_shape(corpus: dict, authority: dict) -> None:
         raise ValueError("case_id values must be non-empty and unique")
     invalid_profiles = sorted(
         {case.get("processor_profile", "default") for case in corpus.get("cases", [])}
-        - {"default", "ns-isolated"}
+        - stage_profile_support.SUPPORTED_CAPTURE_PROFILES
     )
     if invalid_profiles:
         raise ValueError(f"invalid processor_profile values: {invalid_profiles}")
@@ -96,6 +98,10 @@ def self_test() -> None:
         }],
     }
     validate_corpus_shape(research, authority)
+    for profile in sorted(stage_profile_support.SUPPORTED_CAPTURE_PROFILES):
+        shaped = dict(research)
+        shaped["cases"] = [dict(research["cases"][0], processor_profile=profile)]
+        validate_corpus_shape(shaped, authority)
     summary, violations = policy_violations(
         {"allowed_tiers": ["research-validation"], "minimum_cases": 1},
         research,

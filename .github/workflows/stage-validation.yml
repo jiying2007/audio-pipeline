@@ -1,0 +1,130 @@
+name: DSP Stage Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'examples/process_pcm.c'
+      - 'validation/**'
+      - '.github/workflows/stage-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dsp-stage-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: dsp-stage-validation
+      - name: Validate Python and authority contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/authority.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/vad_probability_diagnostic.py --self-test
+          python3 validation/tools/ns_probability_diagnostic.py --self-test
+          python3 validation/tools/build_ns_tuning_corpus.py --self-test
+      - name: Configure processor
+        run: >-
+          cmake -S . -B build-stage-validation -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build processor and NS diagnostic probe
+        run: |
+          set -euo pipefail
+          cmake --build build-stage-validation --target ap_process_pcm --parallel
+          cc -std=c11 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-stage-validation/generated \
+            validation/tools/ns_probability_probe.c \
+            build-stage-validation/libaudio_pipeline.a -lm \
+            -o build-stage-validation/ns_probability_probe
+      - name: Build, diagnose and validate all independent stage corpora
+        run: |
+          set -euo pipefail
+          mkdir -p stage-validation-out
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-stage-${seed}"
+            out="stage-validation-out/${seed}"
+            mkdir -p "$out"
+            python3 validation/tools/build_stage_validation_corpus.py \
+              --output "$root" --seed "$seed"
+            python3 validation/tools/vad_probability_diagnostic.py \
+              --corpus "$root/corpus.json" \
+              --processor build-stage-validation/ap_process_pcm \
+              --output "$out/vad-probability.json"
+            python3 validation/tools/ns_probability_diagnostic.py \
+              --corpus "$root/corpus.json" \
+              --probe build-stage-validation/ns_probability_probe \
+              --output "$out/ns-probability.json"
+            python3 validation/tools/run_validation.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor build-stage-validation/ap_process_pcm \
+              --output "$out/report.json" \
+              --evidence-manifest "$out/evidence-manifest.json"
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          reports = sorted(Path('stage-validation-out').glob('*/report.json'))
+          assert len(reports) == 3, f'expected 3 stage reports, got {len(reports)}'
+          failed = []
+          for path in reports:
+              report = json.loads(path.read_text())
+              if report.get('validation_result') != 'PASS':
+                  failed.append(path.parent.name)
+          if failed:
+              raise SystemExit(f"stage validation failed seeds: {','.join(failed)}")
+          PY
+      - name: Summarize stage metrics
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          print('## DSP stage validation')
+          for path in sorted(Path('stage-validation-out').glob('*/report.json')):
+              report = json.loads(path.read_text())
+              summary = report.get('summary', {})
+              print(f"- seed `{path.parent.name}`: `{report['validation_result']}`, "
+                    f"pass-rate `{summary.get('pass_rate')}`, "
+                    f"VAD recall min `{summary.get('min_vad_recall')}`, "
+                    f"VAD FPR max `{summary.get('max_vad_false_positive_rate')}`, "
+                    f"NS attenuation p10 `{summary.get('p10_noise_only_attenuation_db')}`")
+              vad_path = path.parent / 'vad-probability.json'
+              ns_path = path.parent / 'ns-probability.json'
+              vad_cases = {}
+              ns_cases = {}
+              if vad_path.exists():
+                  vad_cases = {item['case_id']: item for item in json.loads(vad_path.read_text()).get('cases', [])}
+              if ns_path.exists():
+                  ns_cases = {item['case_id']: item for item in json.loads(ns_path.read_text()).get('cases', [])}
+              for case_id in ('stage-ns-stationary', 'stage-ns-nonstationary'):
+                  vad = vad_cases.get(case_id, {})
+                  ns = ns_cases.get(case_id, {})
+                  if vad or ns:
+                      print(f"  - `{case_id}`: VAD p50+ `{vad.get('positive_probability_p50')}`, "
+                            f"VAD p90- `{vad.get('negative_probability_p90')}`, "
+                            f"NS p50+ `{ns.get('positive_probability_p50')}`, "
+                            f"NS p90- `{ns.get('negative_probability_p90')}`")
+          PY
+      - name: Upload stage validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dsp-stage-validation-${{ github.run_id }}
+          path: stage-validation-out/
+          if-no-files-found: warn
+          retention-days: 30

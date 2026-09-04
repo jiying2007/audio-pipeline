@@ -122,7 +122,10 @@
           "processor_profile": {
             "enum": [
               "default",
-              "ns-isolated"
+              "ns-isolated",
+              "vad-isolated",
+              "agc-isolated",
+              "bf-isolated"
             ]
           }
         }

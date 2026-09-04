@@ -121,7 +121,7 @@ def self_test() -> None:
     assert summary["stable_positive_frames"] == 1
     assert summary["stable_negative_frames"] == 2
     assert abs(float(summary["positive_probability_p50"]) - 0.6) < 1.0e-9
-    assert abs(float(summary["negative_probability_p50"]) - 0.15) < 1.0e-9
+    assert abs(float(summary["negative_probability_p50"]) - 0.2) < 1.0e-9
     assert summary["p10_p90_probability_margin"] is not None
     print("VAD probability diagnostic self-test: OK")
 

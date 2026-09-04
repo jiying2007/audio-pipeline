@@ -14,7 +14,7 @@
 static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
-            "[--capture-only] [--capture-profile default|ns-isolated] [--metrics-jsonl FILE] "
+            "[--capture-only] [--capture-profile default|ns-isolated|vad-isolated|agc-isolated|bf-isolated] [--metrics-jsonl FILE] "
             "[--aec-mu VALUE] [--ns-floor VALUE] [--agc-target-dbfs VALUE] [--limiter-dbfs VALUE] "
             "[--echo-path-change-frame N] "
             "[--discontinuity-frame N --discontinuity-flags MASK "
@@ -41,6 +41,14 @@ static int parse_float(const char *text, float *value) {
     if (errno || !end || *end != '\0' || !isfinite(parsed)) return 0;
     *value = parsed;
     return 1;
+}
+
+static int valid_capture_profile(const char *profile) {
+    return strcmp(profile, "default") == 0 ||
+           strcmp(profile, "ns-isolated") == 0 ||
+           strcmp(profile, "vad-isolated") == 0 ||
+           strcmp(profile, "agc-isolated") == 0 ||
+           strcmp(profile, "bf-isolated") == 0;
 }
 
 int main(int argc, char **argv) {
@@ -90,8 +98,7 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[arg], "--capture-only") == 0) {
             capture_only = 1;
         } else if (strcmp(argv[arg], "--capture-profile") == 0) {
-            if (++arg >= argc ||
-                (strcmp(argv[arg], "default") != 0 && strcmp(argv[arg], "ns-isolated") != 0)) {
+            if (++arg >= argc || !valid_capture_profile(argv[arg])) {
                 usage(argv[0]);
                 return 2;
             }
@@ -178,6 +185,12 @@ int main(int argc, char **argv) {
         cfg.enable_clock_drift_compensation = 0u;
         if (strcmp(capture_profile, "ns-isolated") == 0)
             cfg.stages = AP_STAGE_NS | AP_STAGE_VAD;
+        else if (strcmp(capture_profile, "vad-isolated") == 0)
+            cfg.stages = AP_STAGE_VAD;
+        else if (strcmp(capture_profile, "agc-isolated") == 0)
+            cfg.stages = AP_STAGE_AGC;
+        else if (strcmp(capture_profile, "bf-isolated") == 0)
+            cfg.stages = AP_STAGE_BF;
     }
     if (ap_pipeline_validate_config(&cfg) != AP_OK) {
         fprintf(stderr, "invalid processor geometry/stage configuration\n");

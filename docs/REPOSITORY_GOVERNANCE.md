@@ -100,3 +100,11 @@ The checked-in `cortex-a32-low-shipping-v1` policy requires a 72-hour soak. The 
 During v1.6 assurance-closure preparation, the repository API reported no active Rulesets and the v1.5.0 Release reported `immutable=false`. Those are historical observations explaining why governance remains a platform-level closure prerequisite rather than a documentation-only recommendation.
 
 Before v1.6 is merged for release, repository administrators must make the live `scripts/github_governance.py` audit pass by enabling the required main/tag rulesets and repository immutable releases. The current ChatGPT GitHub connector exposes these administrative controls as read-only, so repository code cannot truthfully self-enable them.
+
+## Repository lifecycle state machine
+
+Research evidence, one-way validation qualification, immutable release lineage,
+post-release laboratory states, and evidence-bound branch garbage collection are
+specified in `docs/REPOSITORY_LIFECYCLE.md`. Research branches are not evidence
+archives: terminal evidence must be sealed in the registry/artifacts before a
+branch can become GC-eligible.

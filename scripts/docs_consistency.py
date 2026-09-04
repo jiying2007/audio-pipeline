@@ -96,6 +96,21 @@ VALIDATION_REQUIRED = (
     ".github/workflows/acoustic-tuning-iteration.yml",
 )
 
+LIFECYCLE_REQUIRED = (
+    "scripts/research_registry.py",
+    "scripts/prepare_release.py",
+    "scripts/release_manifest.py",
+    "scripts/post_release_status.py",
+    "scripts/qualification_fingerprint.py",
+    ".github/research/evidence-index.json",
+    ".github/research/qualification-policy.json",
+    ".github/workflows/research-branch-gc.yml",
+    ".github/workflows/validation-authority-qualification.yml",
+    ".github/workflows/post-release-qualification-summary.yml",
+    "docs/REPOSITORY_LIFECYCLE.md",
+    "docs/REPOSITORY_LIFECYCLE.zh-CN.md",
+)
+
 
 def read(root: Path, rel: str) -> str:
     path = root / rel
@@ -382,9 +397,50 @@ def validate_lab(root: Path, errors: list[str]) -> None:
         errors.append(f"unable to execute labctl self-test: {exc}")
 
 
+def validate_lifecycle(root: Path, errors: list[str]) -> None:
+    for rel in LIFECYCLE_REQUIRED:
+        if not (root / rel).is_file():
+            errors.append(f'missing lifecycle framework asset: {rel}')
+    if any(item.startswith('missing lifecycle') for item in errors):
+        return
+    registry = read(root, '.github/research/evidence-index.json')
+    qualification = read(root, '.github/research/qualification-policy.json')
+    gc = read(root, '.github/workflows/research-branch-gc.yml')
+    qualifier = read(root, '.github/workflows/validation-authority-qualification.yml')
+    post = read(root, '.github/workflows/post-release-qualification-summary.yml')
+    release = read(root, '.github/workflows/release.yml')
+    hosted_aec = read(root, '.github/workflows/hosted-aec-real-validation.yml')
+    for payload, name in ((registry, 'research registry'), (qualification, 'qualification policy')):
+        try:
+            json.loads(payload)
+        except json.JSONDecodeError as exc:
+            errors.append(f'invalid {name} JSON: {exc}')
+    for token in ('research_registry.py --self-test', 'DELETE_GC_ELIGIBLE_REFS'):
+        if token not in gc:
+            errors.append(f'research GC workflow missing token: {token}')
+    for token in ('workflow_call:', 'source_sha:', 'qualification_mode:', 'one-way'):
+        if token not in hosted_aec:
+            errors.append(f'Hosted Real AEC reusable qualification missing token: {token}')
+    if 'uses: ./.github/workflows/hosted-aec-real-validation.yml' not in qualifier:
+        errors.append('qualification workflow must reuse canonical Hosted Real AEC workflow')
+    if 'release-manifest.json' not in release:
+        errors.append('Release workflow must publish machine-readable release manifest')
+    for token in ('BLOCKED_RUNNER', 'BLOCKED_CONFIG'):
+        if token not in post:
+            errors.append(f'post-release summary missing explicit blocked state: {token}')
+    for tool in ('research_registry.py', 'prepare_release.py', 'release_manifest.py', 'post_release_status.py', 'qualification_fingerprint.py'):
+        completed = subprocess.run(
+            [sys.executable, str(root / 'scripts' / tool), '--self-test'],
+            cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+        )
+        if completed.returncode != 0:
+            errors.append(f'lifecycle {tool} self-test failed: ' + completed.stdout.strip())
+
+
 def validate(root: Path, *, require_lab: bool = True,
              require_validation: bool = True,
-             require_supply_chain: bool = True) -> list[str]:
+             require_supply_chain: bool = True,
+             require_lifecycle: bool = True) -> list[str]:
     errors: list[str] = []
     try:
         cmake_version = project_version(root)
@@ -447,6 +503,8 @@ def validate(root: Path, *, require_lab: bool = True,
         validate_supply_chain(root, errors)
     if require_lab:
         validate_lab(root, errors)
+    if require_lifecycle:
+        validate_lifecycle(root, errors)
     return errors
 
 
@@ -465,12 +523,14 @@ def self_test() -> None:
         (root / "CMakeLists.txt").write_text("project(audio_pipeline VERSION 1.6.0 LANGUAGES C)\n", encoding="utf-8")
         (root / "CHANGELOG.md").write_text("# 1.6.0\n\n- current\n\n# 1.5.0\n- historical 32,632 B\n", encoding="utf-8")
         assert validate(
-            root, require_lab=False, require_validation=False, require_supply_chain=False
+            root, require_lab=False, require_validation=False, require_supply_chain=False,
+            require_lifecycle=False
         ) == []
         with (root / "README.md").open("a", encoding="utf-8") as handle:
             handle.write("Runtime full 32,632 B\n")
         errors = validate(
-            root, require_lab=False, require_validation=False, require_supply_chain=False
+            root, require_lab=False, require_validation=False, require_supply_chain=False,
+            require_lifecycle=False
         )
         assert any("resource literal" in item for item in errors)
     print("documentation consistency self-test: OK")

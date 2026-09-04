@@ -115,3 +115,11 @@ Hosted x86, generated regression, cross-build and QEMU signals are software evid
 ## Hosted real-audio smoke
 
 Every PR and `main` Verify runs four SHA-pinned CC-BY-4.0 Microsoft P.808 clips on GitHub-hosted Linux. The gate verifies upstream bytes, WAV geometry, materialization, processor identity, clipping/DC/RMS safety and hash-bound evidence. It is required by `summary` but does not replace Extended Real, DUT HIL or Product Certification.
+
+## Validation authority qualification
+
+Validation-authority candidates can run the canonical Hosted Real AEC holdout at
+an exact 40-hex source SHA through `Validation Authority Qualification`. The
+workflow reuses `hosted-aec-real-validation.yml` in one-way mode, so no
+qualification-only Draft PR is required and holdout details are not optimizer
+feedback. `main` push and ordinary PR Hosted Real AEC behavior remains unchanged.

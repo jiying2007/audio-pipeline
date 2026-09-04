@@ -33,8 +33,14 @@ RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
 RELEASE_NEUTRAL_FILES = {
     ".gitignore", ".gitattributes",
     "scripts/ci_impact.py", "scripts/docs_consistency.py",
+    "scripts/research_registry.py", "scripts/prepare_release.py",
+    "scripts/release_manifest.py", "scripts/post_release_status.py",
+    "scripts/qualification_fingerprint.py",
 }
 VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
+VERSION_TOKEN_RE = re.compile(
+    r"(project\s*\([^)]*?\bVERSION\s+)([0-9]+\.[0-9]+\.[0-9]+)", re.S
+)
 CHANGELOG_RE = re.compile(r"^#\s+([0-9]+\.[0-9]+\.[0-9]+)\s*$", re.M)
 
 
@@ -83,6 +89,25 @@ def changelog_version(ref: str) -> str:
     return match.group(1)
 
 
+def normalized_cmake_version(text: str) -> str:
+    normalized, count = VERSION_TOKEN_RE.subn(
+        lambda match: match.group(1) + '<VERSION>', text, count=1
+    )
+    if count != 1:
+        raise ValueError('CMake project VERSION token missing')
+    return normalized
+
+
+def cmake_version_only(base: str, head: str) -> bool:
+    before = git_text(base, 'CMakeLists.txt')
+    after = git_text(head, 'CMakeLists.txt')
+    return (
+        before != after
+        and project_version(base) != project_version(head)
+        and normalized_cmake_version(before) == normalized_cmake_version(after)
+    )
+
+
 def enforce_release_version(base: str, head: str, paths: list[str]) -> None:
     release_paths = [path for path in paths if not is_release_neutral(path)]
     if not release_paths:
@@ -101,12 +126,21 @@ def enforce_release_version(base: str, head: str, paths: list[str]) -> None:
         )
 
 
-def analyze(paths: list[str], force_full: bool = False) -> dict:
+def analyze(paths: list[str], force_full: bool = False, cmake_version_only_change: bool = False) -> dict:
     if force_full:
         paths = paths or ["<forced-main-full>"]
     if not paths:
         return _full("empty diff conservatively expands to full", [])
-    if not force_full and all(is_docs(p) for p in paths):
+    effective_paths = [
+        path for path in paths
+        if not (cmake_version_only_change and path == 'CMakeLists.txt')
+    ]
+    if not force_full and all(is_docs(p) for p in effective_paths):
+        reason = (
+            'version-only release metadata'
+            if cmake_version_only_change and not effective_paths
+            else 'documentation-only change'
+        )
         return {
             "docs_only": True,
             "full": False,
@@ -124,7 +158,7 @@ def analyze(paths: list[str], force_full: bool = False) -> dict:
             "run_lab": False,
             "compositions": [],
             "arm": [],
-            "reason": "documentation-only change",
+            "reason": reason,
             "paths": paths,
         }
     if force_full:
@@ -135,7 +169,7 @@ def analyze(paths: list[str], force_full: bool = False) -> dict:
         "runtime": False, "validation": False, "certification": False,
         "bench": False, "alsa": False, "public": False, "unknown": False,
     }
-    for p in paths:
+    for p in effective_paths:
         if p.startswith(".github/") or p == "CMakeLists.txt" or p.startswith("cmake/"):
             flags["unknown"] = True
         elif p.startswith("include/"):
@@ -261,6 +295,13 @@ def self_test() -> None:
     assert aec["run_aec_backend"] and "composition-aec-only" in aec["compositions"]
     val = analyze(["validation/tools/run_validation.py"])
     assert val["run_audio"] and not val["run_ci"] and val["arm"] == [] and not val["run_lab"]
+    versioned_val = analyze(
+        ["CMakeLists.txt", "validation/tools/run_validation.py"],
+        cmake_version_only_change=True,
+    )
+    assert versioned_val["run_audio"] and not versioned_val["full"]
+    version_only = analyze(["CMakeLists.txt"], cmake_version_only_change=True)
+    assert version_only["docs_only"] and not version_only["full"]
     unknown = analyze(["scripts/new-thing.sh"])
     assert unknown["full"] and unknown["run_lab"] and len(unknown["arm"]) == len(FULL_ARM)
     lab = analyze(["lab/ansible/site.yml"])
@@ -290,7 +331,11 @@ def main() -> int:
         paths = changed_files(args.base, args.head)
     if args.base and args.head:
         enforce_release_version(args.base, args.head, paths)
-    emit(analyze(paths, args.force_full), args.github_output)
+    cmake_only = bool(
+        args.base and args.head and 'CMakeLists.txt' in paths
+        and cmake_version_only(args.base, args.head)
+    )
+    emit(analyze(paths, args.force_full, cmake_only), args.github_output)
     return 0
 
 

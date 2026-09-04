@@ -75,6 +75,66 @@ static void test_resource_classes(void) {
     }
 }
 
+static void test_reference_alignment_policy_contract(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    ap_metrics_t metrics;
+    uint32_t anchor_ms;
+    uint32_t observed_ms;
+
+    if ((c.stages & AP_STAGE_SYNC) == 0u) {
+        assert(ap_config_apply_reference_alignment_policy(
+                   &c, AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY, 0u) == AP_ESTATE);
+        return;
+    }
+
+    assert(c.enable_delay_tracking == 1u);
+    assert(c.enable_clock_drift_compensation == 1u);
+    anchor_ms = c.max_delay_ms < 40u ? c.max_delay_ms : 40u;
+    assert(ap_config_apply_reference_alignment_policy(
+               &c, AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY, anchor_ms) == AP_OK);
+    assert(c.initial_delay_ms == anchor_ms);
+    assert(c.enable_delay_tracking == 0u);
+    assert(c.enable_clock_drift_compensation == 0u);
+    assert(ap_pipeline_validate_config(&c) == AP_OK);
+
+    {
+        ap_config_t invalid = c;
+        assert(ap_config_apply_reference_alignment_policy(
+                   &invalid, AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY,
+                   invalid.max_delay_ms + 1u) == AP_EINVAL);
+        assert(invalid.initial_delay_ms == c.initial_delay_ms);
+        assert(invalid.enable_delay_tracking == c.enable_delay_tracking);
+        assert(invalid.enable_clock_drift_compensation ==
+               c.enable_clock_drift_compensation);
+    }
+    {
+        ap_config_t invalid = c;
+        assert(ap_config_apply_reference_alignment_policy(
+                   &invalid, (ap_reference_alignment_policy_t)99, anchor_ms) == AP_EINVAL);
+    }
+
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+    observed_ms = anchor_ms < c.max_delay_ms ? anchor_ms + 1u : anchor_ms;
+    if (observed_ms > 0u) {
+        assert(ap_pipeline_observe_io_timestamps(
+                   p, 1000000000ull + (uint64_t)observed_ms * 1000000ull,
+                   1000000000ull) == AP_OK);
+        ap_pipeline_get_metrics(p, &metrics);
+        assert(metrics.timestamp_observations == 1u);
+        assert(metrics.estimated_delay_ms == observed_ms);
+    }
+
+    assert(ap_config_apply_reference_alignment_policy(
+               &c, AP_REFERENCE_ALIGNMENT_ADAPTIVE, 0u) == AP_OK);
+    assert(c.enable_delay_tracking == 1u);
+    assert(c.enable_clock_drift_compensation == 1u);
+
+    c.stages &= ~AP_STAGE_SYNC;
+    assert(ap_config_apply_reference_alignment_policy(
+               &c, AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY, anchor_ms) == AP_ESTATE);
+}
+
 static void test_composition_contract(void) {
     const ap_stage_mask_t compiled = ap_pipeline_compiled_stages();
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
@@ -258,6 +318,7 @@ static void test_frame_contract_rejects_wrong_sizes(void) {
 int main(void) {
     test_supported_rates();
     test_resource_classes();
+    test_reference_alignment_policy_contract();
     test_composition_contract();
     test_finite_and_envelope_validation();
     test_init_contract();

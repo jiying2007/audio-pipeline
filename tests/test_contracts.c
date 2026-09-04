@@ -75,6 +75,107 @@ static void test_resource_classes(void) {
     }
 }
 
+static void test_fixed_geometry_reference_contract(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    ap_metrics_t metrics;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS];
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES];
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES];
+    uint32_t anchor_ms;
+    uint32_t observed_ms;
+    uint32_t rng = 0x31415926u;
+    size_t frame;
+    unsigned f;
+    size_t i;
+
+    if ((c.stages & AP_STAGE_SYNC) == 0u) return;
+
+    /* Named fixed-geometry policy uses only the existing v2 configuration
+     * surface: stable causal startup anchor, no acoustic correlation chasing,
+     * no correlation-derived drift. Trusted hardware timestamps stay active. */
+    assert(c.enable_delay_tracking == 1u);
+    assert(c.enable_clock_drift_compensation == 1u);
+    anchor_ms = c.max_delay_ms < 40u ? c.max_delay_ms : 40u;
+    c.initial_delay_ms = anchor_ms;
+    c.enable_delay_tracking = 0u;
+    c.enable_clock_drift_compensation = 0u;
+    assert(ap_pipeline_validate_config(&c) == AP_OK);
+    {
+        ap_config_t invalid = c;
+        invalid.initial_delay_ms = invalid.max_delay_ms + 1u;
+        assert(ap_pipeline_validate_config(&invalid) == AP_EINVAL);
+    }
+
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+    frame = ap_pipeline_frame_samples(p);
+    assert(frame > 0u && frame <= AP_MAX_IO_FRAME_SAMPLES);
+
+    /* Strong changing wideband content must not move the fixed anchor merely
+     * because an acoustic correlation peak exists. */
+    for (f = 0u; f < 40u; ++f) {
+        for (i = 0u; i < frame; ++i) {
+            uint32_t ch;
+            rng = rng * 1664525u + 1013904223u;
+            render[i] = (int16_t)((int32_t)(rng >> 16) - 32768);
+            for (ch = 0u; ch < c.mic_channels; ++ch) {
+                rng = rng * 1664525u + 1013904223u;
+                mic[i * c.mic_channels + ch] =
+                    (int16_t)((int32_t)(rng >> 16) - 32768);
+            }
+        }
+        assert(ap_pipeline_push_render(p, render, frame) == AP_OK);
+        assert(ap_pipeline_process_capture(p, mic, frame, out) == AP_OK);
+    }
+    ap_pipeline_get_metrics(p, &metrics);
+    assert(metrics.estimated_delay_ms == anchor_ms);
+    assert(metrics.reference_sample_slips == 0u);
+    assert(metrics.delay_jumps == 0u);
+    assert(metrics.timestamp_observations == 0u);
+
+    /* Timestamp calibration is intentionally independent from acoustic tracking. */
+    observed_ms = anchor_ms < c.max_delay_ms ? anchor_ms + 1u : anchor_ms;
+    assert(observed_ms > 0u);
+    assert(ap_pipeline_observe_io_timestamps(
+               p, 1000000000ull + (uint64_t)observed_ms * 1000000ull,
+               1000000000ull) == AP_OK);
+    ap_pipeline_get_metrics(p, &metrics);
+    assert(metrics.timestamp_observations == 1u);
+    assert(metrics.estimated_delay_ms == observed_ms);
+    assert(metrics.reference_sample_slips == 0u);
+    assert(metrics.delay_jumps == 0u);
+
+    /* Subsequent acoustic content cannot chase the trusted timestamp result. */
+    for (f = 0u; f < 40u; ++f) {
+        for (i = 0u; i < frame; ++i) {
+            uint32_t ch;
+            rng = rng * 1664525u + 1013904223u;
+            render[i] = (int16_t)((int32_t)(rng >> 16) - 32768);
+            for (ch = 0u; ch < c.mic_channels; ++ch) {
+                rng = rng * 1664525u + 1013904223u;
+                mic[i * c.mic_channels + ch] =
+                    (int16_t)((int32_t)(rng >> 16) - 32768);
+            }
+        }
+        assert(ap_pipeline_push_render(p, render, frame) == AP_OK);
+        assert(ap_pipeline_process_capture(p, mic, frame, out) == AP_OK);
+    }
+    ap_pipeline_get_metrics(p, &metrics);
+    assert(metrics.estimated_delay_ms == observed_ms);
+    assert(metrics.timestamp_observations == 1u);
+    assert(metrics.reference_sample_slips == 0u);
+    assert(metrics.delay_jumps == 0u);
+
+    /* A known timeline reset returns fixed geometry to its configured startup
+     * anchor; a later hardware observation may calibrate it again. */
+    assert(ap_pipeline_notify_stream_discontinuity(
+               p, AP_DISCONTINUITY_CLOCK_RESET, 1u) == AP_OK);
+    ap_pipeline_get_metrics(p, &metrics);
+    assert(metrics.estimated_delay_ms == anchor_ms);
+    assert(metrics.estimated_drift_ppm == 0.0f);
+    assert(metrics.timestamp_observations == 1u);
+}
+
 static void test_composition_contract(void) {
     const ap_stage_mask_t compiled = ap_pipeline_compiled_stages();
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
@@ -258,6 +359,7 @@ static void test_frame_contract_rejects_wrong_sizes(void) {
 int main(void) {
     test_supported_rates();
     test_resource_classes();
+    test_fixed_geometry_reference_contract();
     test_composition_contract();
     test_finite_and_envelope_validation();
     test_init_contract();

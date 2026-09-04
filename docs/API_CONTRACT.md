@@ -108,11 +108,30 @@ Activity/DTD is independently available for applications that compose SYNC + Act
 
 Neither mode is a compatibility alias.
 
+## Fixed-geometry reference policy
+
+Reference alignment is orthogonal to CALL/ASSISTANT use case and resource class. The shipped default remains adaptive: `initial_delay_ms` supplies the startup delay while `enable_delay_tracking=1` and `enable_clock_drift_compensation=1` allow acoustic correlation to update the reference alignment when SYNC is present.
+
+For products whose direct speaker/DAC-to-microphone/ADC geometry is stable, the existing v2 configuration surface also supports an explicit fixed-geometry policy without adding a second API generation or changing ABI:
+
+```c
+ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
+cfg.initial_delay_ms = calibrated_anchor_ms;
+cfg.enable_delay_tracking = 0u;
+cfg.enable_clock_drift_compensation = 0u;
+```
+
+Under this policy, the configured delay is a startup/fallback causal anchor, acoustic correlation delay chasing is disabled, and correlation-derived drift compensation is disabled. Trusted hardware timestamp observation remains authoritative and may update the active reference delay. A stream/timeline reset restores the configured `initial_delay_ms` anchor.
+
+Fixed geometry is not a generic replacement for adaptive alignment and must not be inferred from robot/device motion alone. See [`docs/FIXED_GEOMETRY_REFERENCE.md`](FIXED_GEOMETRY_REFERENCE.md) for the evidence boundary and promotion gates.
+
 ## Timestamp, discontinuity and echo-path contract
 
 `ap_pipeline_observe_io_timestamps()` is optional. Capture and render timestamps must describe corresponding hardware positions in the same monotonic clock domain. Invalid or out-of-envelope observations return `AP_EINVAL`.
 
 Correlation-based delay updates are ambiguity-gated. Small delay/drift corrections require the winning peak to be separated from non-local competitors; a large correlation route-change candidate must remain consistent for three search epochs before it is committed and stale AEC convergence is reset. Trusted hardware timestamps and explicit application path-change notifications remain authoritative and are not delayed by the correlation confirmation policy.
+
+This timestamp authority is unchanged when callers select fixed geometry through the existing configuration flags: a valid hardware timestamp observation may update the active reference delay even though acoustic tracking and correlation-derived drift compensation are disabled. Subsequent acoustic correlation cannot chase that timestamp-calibrated result while `enable_delay_tracking` remains zero.
 
 `ap_pipeline_notify_echo_path_change()` represents product-known route/path replacement. `ap_pipeline_notify_stream_discontinuity()` represents capture/render gaps, clock reset, XRUN or codec reopen and clears time-dependent state deterministically.
 
@@ -198,6 +217,7 @@ Independent dimensions are:
 
 - use case: CALL / ASSISTANT;
 - runtime resource class: TINY / LOW / STANDARD;
+- reference alignment policy: adaptive or fixed geometry through existing SYNC config fields;
 - compiled module set;
 - compiled SKU envelope;
 - runtime stage subset;

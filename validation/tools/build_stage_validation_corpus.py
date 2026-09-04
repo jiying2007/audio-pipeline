@@ -68,9 +68,9 @@ def build(output: Path, seed: int, seconds: float) -> dict:
         expected={"max_vad_false_positive_rate": 0.25},
     )
 
-    # NS: preserve the existing NS+VAD profile because VAD consumes the NS speech
-    # probability; clean reference and labels let the canonical evaluator score
-    # both suppression and speech preservation.
+    # NS: exercise the production NS->VAD interface. Besides suppression quality,
+    # gate false-positive reduction against recall so a VAD fusion change cannot
+    # pass merely by becoming less sensitive to all near-end speech.
     add_case(
         cases, output, "stage-ns-stationary", "stage-ns-stationary",
         mix(clean, stationary), 1, clean=clean, labels=labels,
@@ -79,6 +79,8 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             "min_near_si_sdr_improvement_db": -4.0,
             "min_noise_only_attenuation_db": 0.75,
             "min_vad_f1": 0.15,
+            "min_vad_recall": 0.45,
+            "max_vad_false_positive_rate": 0.45,
         },
     )
     add_case(
@@ -89,6 +91,8 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             "min_near_si_sdr_improvement_db": -6.0,
             "min_noise_only_attenuation_db": 0.20,
             "min_vad_f1": 0.10,
+            "min_vad_recall": 0.75,
+            "max_vad_false_positive_rate": 0.55,
         },
     )
 
@@ -135,7 +139,7 @@ def build(output: Path, seed: int, seconds: float) -> dict:
         "tier": "regression",
         "generator": {
             "name": "build_stage_validation_corpus.py",
-            "version": 2,
+            "version": 3,
             "seed": seed,
         },
         "sources": ["deterministic-generator"],

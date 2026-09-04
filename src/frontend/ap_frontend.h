@@ -15,6 +15,7 @@ typedef struct ap_hpf_state {
 
 typedef struct ap_beamformer_state {
     float history[AP_FRONTEND_MAX_MIC_CHANNELS][AP_BF_HISTORY];
+    float weight_a;
     int lag;
     int max_lag;
     uint32_t counter;

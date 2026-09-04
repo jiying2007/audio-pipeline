@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#define AP_RES_NEAR_PROTECTION_RELEASE_ALPHA 0.25f
+#define AP_RES_NORMAL_RELEASE_ALPHA 0.08f
+
 static float ap_res_clamp(float x, float lo, float hi) {
     return x < lo ? lo : (x > hi ? hi : x);
 }
@@ -29,10 +32,14 @@ float ap_res_process(ap_res_state_t *state,
                        (residual_energy + 0.8f * echo_energy + 1.0e-12f));
         target = ap_res_clamp(target, floor_gain, 1.0f);
     }
-    if (target < state->gain)
+    if (target < state->gain) {
         state->gain = 0.45f * state->gain + 0.55f * target;
-    else
-        state->gain = 0.92f * state->gain + 0.08f * target;
+    } else {
+        const float alpha = double_talk_active ?
+                            AP_RES_NEAR_PROTECTION_RELEASE_ALPHA :
+                            AP_RES_NORMAL_RELEASE_ALPHA;
+        state->gain = (1.0f - alpha) * state->gain + alpha * target;
+    }
     for (i = 0u; i < frame_samples; ++i) x[i] *= state->gain;
     return state->gain;
 }

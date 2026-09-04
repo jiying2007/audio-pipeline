@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#define AP_FREQ_RES_NEAR_PROTECTION_RELEASE_ALPHA 0.25f
+#define AP_FREQ_RES_NORMAL_RELEASE_ALPHA 0.05f
+
 static uint32_t ap_ns_next_pow2(uint32_t x) {
     uint32_t p = 1u;
     while (p < x) p <<= 1u;
@@ -119,7 +122,11 @@ void ap_ns_process(ap_ns_state_t *s,
                                       0.92f * old + 0.08f * target;
             s->residual_gain_bins[k] = res_gain;
         } else {
-            s->residual_gain_bins[k] = 0.95f * s->residual_gain_bins[k] + 0.05f;
+            const float alpha = double_talk_active ?
+                                AP_FREQ_RES_NEAR_PROTECTION_RELEASE_ALPHA :
+                                AP_FREQ_RES_NORMAL_RELEASE_ALPHA;
+            s->residual_gain_bins[k] =
+                (1.0f - alpha) * s->residual_gain_bins[k] + alpha;
         }
         res_gain_sum += res_gain;
 #endif

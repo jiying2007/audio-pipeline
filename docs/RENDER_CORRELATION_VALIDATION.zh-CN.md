@@ -4,6 +4,8 @@
 
 自 v2.3.6 起，canonical 离线 AEC render-correlation 指标在既有 +/-100 ms 窗口内检查每一个整数 sample lag。该修复用于消除窄带宽峰值落在历史 sparse grid 点之间造成的漏峰，不修改 metric 定义、dataset lock、policy 阈值、产品 DSP、公开 API/ABI 或 Product Certification 权限边界。
 
+exact 搜索窗口严格为 `max_lag = sample_rate // 10`；input-render 与 output-render 最大相关性使用同一个 backend 和同一组完整整数 lag。
+
 `validation/tools/render_corr_exact.c` 是纯 validation helper，由 `run_validation.py` 在 host 上编译；它不会进入 CMake 安装、不会导出为 SDK 组件，也不会链接进产品 runtime。helper 只使用 canonical stride-4 归一化项寻找全局最强整数 lag。随后 `run_validation.py` 再调用 `run_validation_engine.normalized_corr(..., stride=4)` 重新计算最终上报分数；native 与 canonical 分数不一致时直接 fail-closed。
 
 ## 信任与证据

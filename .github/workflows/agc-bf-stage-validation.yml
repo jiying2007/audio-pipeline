@@ -1,0 +1,122 @@
+name: AGC BF Stage Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_agc.c'
+      - 'src/frontend/ap_beamformer.c'
+      - 'tests/validation/agc_dynamics_probe.c'
+      - 'tests/validation/agc_dynamics_diagnostic.py'
+      - 'tests/validation/build_agc_bf_validation_corpus.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/policies/**'
+      - '.github/workflows/agc-bf-stage-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agc-bf-stage-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: agc-bf-stage-validation
+      - name: Validate diagnostic contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py tests/validation/*.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/build_agc_bf_validation_corpus.py --self-test
+          python3 tests/validation/agc_dynamics_diagnostic.py --self-test
+      - name: Configure validation build
+        run: >-
+          cmake -S . -B build-agc-bf-validation -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build canonical processor and AGC probe
+        run: |
+          set -euo pipefail
+          cmake --build build-agc-bf-validation --target ap_process_pcm --parallel
+          cc -std=c11 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-agc-bf-validation/generated \
+            tests/validation/agc_dynamics_probe.c \
+            build-agc-bf-validation/libaudio_pipeline.a -lm \
+            -o build-agc-bf-validation/agc_dynamics_probe
+      - name: Run all AGC BF stage partitions
+        run: |
+          set -uo pipefail
+          mkdir -p agc-bf-stage-out
+          failed=0
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-agc-bf-${seed}"
+            out="agc-bf-stage-out/${seed}"
+            mkdir -p "$out"
+            if ! python3 tests/validation/build_agc_bf_validation_corpus.py \
+              --output "$root" --seed "$seed"; then
+              failed=1
+              continue
+            fi
+            if ! python3 tests/validation/agc_dynamics_diagnostic.py \
+              --probe build-agc-bf-validation/agc_dynamics_probe \
+              --corpus "$root/corpus.json" \
+              --output "$out/agc-dynamics.json"; then
+              failed=1
+            fi
+            if ! python3 validation/tools/run_validation.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor build-agc-bf-validation/ap_process_pcm \
+              --output "$out/report.json" \
+              --evidence-manifest "$out/evidence-manifest.json" \
+              --enforce; then
+              failed=1
+            fi
+          done
+          exit "$failed"
+      - name: Summarize AGC BF evidence
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          print('## AGC / BF stage validation')
+          for directory in sorted(Path('agc-bf-stage-out').glob('*')):
+              report_path = directory / 'report.json'
+              dynamics_path = directory / 'agc-dynamics.json'
+              report = json.loads(report_path.read_text()) if report_path.exists() else {}
+              dynamics = json.loads(dynamics_path.read_text()) if dynamics_path.exists() else {}
+              bf = [case for case in report.get('cases', []) if case['case_id'].startswith('bf-')]
+              bf_delta = min(
+                  (float(case['metrics']['near_si_sdr_improvement_db']) for case in bf
+                   if case['metrics'].get('near_si_sdr_improvement_db') is not None),
+                  default=None,
+              )
+              step = next(
+                  (case for case in dynamics.get('cases', []) if case['case_id'] == 'agc-level-step'),
+                  {},
+              )
+              print(
+                  f"- seed `{directory.name}`: canonical `{report.get('validation_result')}`, "
+                  f"AGC `{dynamics.get('validation_result')}`, BF min SI-SDR delta `{bf_delta}`, "
+                  f"low->hot settle `{step.get('low_to_hot_settle_frames')}`, "
+                  f"hot->low settle `{step.get('hot_to_low_settle_frames')}`"
+              )
+          PY
+      - name: Upload AGC BF evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: agc-bf-stage-validation-${{ github.run_id }}
+          path: agc-bf-stage-out/
+          if-no-files-found: warn
+          retention-days: 30

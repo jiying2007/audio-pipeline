@@ -11,11 +11,6 @@ from pathlib import Path
 
 MODELS = ("global-channel-gain", "sensitivity-floor")
 RATIOS = (1.0, 0.8, 0.55, 0.35)
-PRODUCT_MINIMUMS = {
-    ("global-channel-gain", 0.35): 1.0,
-    ("sensitivity-floor", 0.55): 0.5,
-    ("sensitivity-floor", 0.35): 0.0,
-}
 
 
 def case_key(case_id: str) -> tuple[str, float] | None:
@@ -100,7 +95,13 @@ def aggregate(report_paths: list[Path]) -> dict:
                     "actual_min_db": minimum,
                     "expected_min_db": 0.5,
                 })
-            required = PRODUCT_MINIMUMS.get((model, ratio))
+            # Product-candidate gates are deliberately asymmetric: preserve robust
+            # pure gain mismatch while requiring weak-SNR cases to stop being harmful.
+            required = {
+                ("global-channel-gain", 0.35): 1.0,
+                ("sensitivity-floor", 0.55): 0.5,
+                ("sensitivity-floor", 0.35): 0.0,
+            }.get((model, ratio))
             if required is not None and minimum < required:
                 structural_violations.append({
                     "model": model,
@@ -124,9 +125,6 @@ def self_test() -> None:
     assert case_key("bf-global-gain-r055") == ("global-channel-gain", 0.55)
     assert case_key("bf-sensitivity-floor-r035") == ("sensitivity-floor", 0.35)
     assert case_key("other") is None
-    assert PRODUCT_MINIMUMS[("global-channel-gain", 0.35)] == 1.0
-    assert PRODUCT_MINIMUMS[("sensitivity-floor", 0.55)] == 0.5
-    assert PRODUCT_MINIMUMS[("sensitivity-floor", 0.35)] == 0.0
     print("BF sensitivity summary self-test: OK")
 
 

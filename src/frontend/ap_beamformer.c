@@ -201,7 +201,7 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
             y = b[i];
         }
         if (s->fallback_active) {
-            const float strong = s->fallback_strong_channel == 0u ? x : y;
+            const float strong = s->fallback_strong_channel == 0u ? a[i] : b[i];
             out[i] = s->fallback_gain * strong;
         } else {
             out[i] = 0.5f * (x + y);

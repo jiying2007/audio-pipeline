@@ -3,7 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifndef AP_RES_NEAR_PROTECTION_RELEASE_ALPHA
 #define AP_RES_NEAR_PROTECTION_RELEASE_ALPHA 0.25f
+#endif
 #define AP_RES_NORMAL_RELEASE_ALPHA 0.08f
 
 static float ap_res_clamp(float x, float lo, float hi) {

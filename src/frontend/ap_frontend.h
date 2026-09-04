@@ -5,6 +5,7 @@
 
 #define AP_FRONTEND_MAX_MIC_CHANNELS 2u
 #define AP_BF_HISTORY 8u
+#define AP_BF_LAG_SCORE_COUNT (2u * AP_BF_HISTORY + 1u)
 
 typedef struct ap_hpf_state {
     float r;
@@ -15,10 +16,14 @@ typedef struct ap_hpf_state {
 
 typedef struct ap_beamformer_state {
     float history[AP_FRONTEND_MAX_MIC_CHANNELS][AP_BF_HISTORY];
-    float weight_a;
+    float lag_score[AP_BF_LAG_SCORE_COUNT];
     int lag;
     int max_lag;
     uint32_t counter;
+    uint32_t score_updates;
+    uint32_t fallback_active;
+    uint32_t fallback_strong_channel;
+    uint32_t fallback_recovery_count;
 } ap_beamformer_state_t;
 
 void ap_hpf_init(ap_hpf_state_t *state,

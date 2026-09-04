@@ -24,13 +24,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       source_sha: ${{ steps.freeze.outputs.source_sha }}
-      fingerprint: ${{ steps.freeze.outputs.fingerprint }}
+      fingerprint: ${{ steps.fingerprint.outputs.fingerprint }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ inputs.source_sha }}
           fetch-depth: 0
-      - name: Freeze exact evaluator bytes and policy fingerprint
+      - name: Freeze exact candidate source
         id: freeze
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
@@ -41,22 +41,36 @@ jobs:
           test "$CONFIRMATION" = ONE_WAY_HOLDOUT || { echo 'one-way holdout acknowledgement required' >&2; exit 1; }
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 validation/tools/run_validation.py --self-test
-          fingerprint=$(sha256sum \
-            validation/tools/run_validation.py \
-            validation/tools/run_validation_engine.py \
-            validation/tools/render_corr_exact.py \
-            validation/tools/render_corr_exact.c \
-            validation/policies/validation-hosted-aec-smoke.json \
-            validation/hosted_aec.datasets.lock.json \
-            | sha256sum | awk '{print $1}')
           echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
-          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
-          printf 'source_sha=%s\nfingerprint=%s\nmode=one-way\n' "$SOURCE_SHA" "$fingerprint" > qualification-fingerprint.txt
+      - name: Bind evaluator and policy bytes
+        id: fingerprint
+        run: |
+          set -euo pipefail
+          python3 scripts/qualification_fingerprint.py --self-test
+          python3 scripts/qualification_fingerprint.py \
+            --output qualification-fingerprint.json \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Seal qualification fingerprint
+        env:
+          SOURCE_SHA: ${{ steps.freeze.outputs.source_sha }}
+          FINGERPRINT: ${{ steps.fingerprint.outputs.fingerprint }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path('qualification-fingerprint.json')
+          data = json.loads(path.read_text())
+          data['source_sha'] = os.environ['SOURCE_SHA']
+          data['qualification_mode'] = 'one-way'
+          assert data['fingerprint'] == os.environ['FINGERPRINT']
+          path.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
+          PY
       - name: Upload frozen qualification fingerprint
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: validation-qualification-fingerprint-${{ github.run_id }}
-          path: qualification-fingerprint.txt
+          path: qualification-fingerprint.json
           retention-days: 90
           if-no-files-found: error
 

@@ -39,12 +39,24 @@ jobs:
           )
           cc tests/validation/activity_res_probe.c "${common[@]}" -o activity-res-probe
           cc tests/validation/activity_res_handoff_probe.c "${common[@]}" -o activity-res-handoff-probe
+
+          cmake -S . -B build-frequency-res \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_PIPELINE=OFF \
+            -DAP_MODULES=NS,RES \
+            -DAP_BUILD_TESTS=OFF \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_BUILD_EXAMPLES=OFF \
+            -DAP_ENABLE_LINUX_RUNTIME=OFF \
+            -DAP_NS_ESTIMATOR=EMA \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-frequency-res --target audio_pipeline --parallel
           cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
-            -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_STAGE_NS=1 -Isrc \
+            -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_NS_EMA=1 \
+            -Ibuild-frequency-res/generated -Isrc \
             tests/validation/frequency_res_handoff_probe.c \
-            src/enhance/ap_ns.c src/enhance/ap_noise_tracker.c \
-            src/enhance/ap_window.c src/dsp/ap_fft.c \
-            -lm -o frequency-res-handoff-probe
+            build-frequency-res/libaudio_pipeline.a -lm \
+            -o frequency-res-handoff-probe
 
       - name: Run all independent Activity RES partitions
         shell: bash

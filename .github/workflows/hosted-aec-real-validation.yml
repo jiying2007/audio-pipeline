@@ -7,12 +7,34 @@ on:
   schedule:
     - cron: '23 18 * * *'
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: 'Optional exact 40-hex source SHA; defaults to event SHA'
+        required: false
+        default: ''
+        type: string
+      qualification_mode:
+        description: 'normal or one-way'
+        required: false
+        default: normal
+        type: choice
+        options: [normal, one-way]
+  workflow_call:
+    inputs:
+      source_sha:
+        required: false
+        default: ''
+        type: string
+      qualification_mode:
+        required: false
+        default: normal
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: hosted-real-aec-${{ github.ref }}
+  group: hosted-real-aec-${{ inputs.source_sha || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,8 +43,19 @@ jobs:
     timeout-minutes: 25
     env:
       AEC_REVISION: 6c633d0a9d2a143a0e364899b91b06f127315b18
+      SOURCE_REVISION: ${{ inputs.source_sha || github.sha }}
+      QUALIFICATION_MODE: ${{ inputs.qualification_mode || 'normal' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Enforce exact qualification source when supplied
+        if: inputs.source_sha != ''
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo 'source_sha must be exact 40-hex' >&2; exit 1; }
+          test "$(git rev-parse HEAD)" = "$SOURCE_REVISION"
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: hosted-real-aec
@@ -91,7 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 validation/tools/run_validation.py \
-            --source-revision '${{ github.sha }}' \
+            --source-revision "$SOURCE_REVISION" \
             --corpus hosted-aec-out/corpus/corpus.json \
             --policy validation/policies/validation-hosted-aec-smoke.json \
             --dataset-lock validation/hosted_aec.datasets.lock.json \
@@ -101,7 +134,7 @@ jobs:
             --evidence-manifest hosted-aec-out/evidence-manifest.json \
             --enforce
           python3 - <<'PY'
-          import json, statistics
+          import json, os, statistics
           from collections import defaultdict
           from pathlib import Path
           report = json.loads(Path('hosted-aec-out/report.json').read_text())
@@ -109,6 +142,14 @@ jobs:
           assert report['summary']['cases'] == 4
           assert report['summary']['pass_rate'] == 1.0
           assert report['summary']['median_output_render_corr_reduction'] is not None
+          if os.environ.get('QUALIFICATION_MODE') == 'one-way':
+              print(json.dumps({
+                  'result': report['validation_result'],
+                  'cases': report['summary']['cases'],
+                  'median_output_render_corr_reduction': report['summary']['median_output_render_corr_reduction'],
+                  'details': 'redacted-one-way',
+              }, sort_keys=True))
+              raise SystemExit(0)
           groups = defaultdict(list)
           for case in report['cases']:
               groups[case['scenario']].append(case['metrics']['output_render_corr_reduction'])
@@ -150,12 +191,18 @@ jobs:
         run: |
           if [ -f hosted-aec-out/report.json ]; then
             python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json, statistics
+          import json, os, statistics
           from collections import defaultdict
           from pathlib import Path
           report = json.loads(Path('hosted-aec-out/report.json').read_text())
           print('## Hosted real AEC validation')
           print('- Source: `microsoft/AEC-Challenge` ICASSP 2022 real test set, exact commit + Git LFS SHA-256')
+          if os.environ.get('QUALIFICATION_MODE') == 'one-way':
+              print(f"- Result: `{report['validation_result']}`")
+              print(f"- Cases: `{report['summary']['cases']}` (details redacted for one-way qualification)")
+              print(f"- Overall median render-correlation reduction: `{report['summary']['median_output_render_corr_reduction']:.6f}`")
+              print('- Authority: one-way real AEC qualification; do not tune from this result.')
+              raise SystemExit(0)
           print(f"- Result: `{report['validation_result']}`")
           print(f"- Cases: `{report['summary']['cases']}` (2 static + 2 movement)")
           print(f"- Overall median render-correlation reduction: `{report['summary']['median_output_render_corr_reduction']:.6f}`")

@@ -1,0 +1,78 @@
+name: Research Branch GC
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/evidence-index.json'
+      - 'scripts/research_registry.py'
+      - '.github/workflows/research-branch-gc.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run or apply all gc_eligible registry entries'
+        required: true
+        default: dry-run
+        type: choice
+        options: [dry-run, apply]
+      confirmation:
+        description: 'Required for apply: DELETE_GC_ELIGIBLE_REFS'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: research-branch-gc
+  cancel-in-progress: false
+
+jobs:
+  gc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Validate lifecycle registry tool
+        run: |
+          set -euo pipefail
+          python3 scripts/research_registry.py --self-test
+          python3 -m json.tool .github/research/evidence-index.json >/dev/null
+      - name: Plan or apply fail-closed branch GC
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          MODE: ${{ inputs.mode || 'dry-run' }}
+          CONFIRMATION: ${{ inputs.confirmation || '' }}
+        run: |
+          set -euo pipefail
+          args=(
+            --registry .github/research/evidence-index.json
+            --repository "$GITHUB_REPOSITORY"
+            --output research-branch-gc-plan.json
+          )
+          if [ "$EVENT_NAME" = push ]; then
+            args+=(--apply --auto-only --confirmation DELETE_GC_ELIGIBLE_REFS)
+          elif [ "$MODE" = apply ]; then
+            args+=(--apply --confirmation "$CONFIRMATION")
+          fi
+          python3 scripts/research_registry.py "${args[@]}"
+      - name: Publish GC summary
+        if: always()
+        run: |
+          if [ -f research-branch-gc-plan.json ]; then
+            echo '## Research branch lifecycle GC' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat research-branch-gc-plan.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload GC evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: research-branch-gc-${{ github.run_id }}
+          path: research-branch-gc-plan.json
+          retention-days: 90
+          if-no-files-found: error

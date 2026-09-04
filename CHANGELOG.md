@@ -1,3 +1,9 @@
+# 2.3.6
+
+- Correct canonical render-correlation max-lag evaluation with a monotonic bounded hierarchical search so narrow broadband echo peaks cannot fall between sparse lag-grid points.
+- Preserve every pre-2.3.6 sparse-grid observation as a strict lower bound and keep `max_output_render_corr_ratio=1.20` unchanged; coarse/medium stages only locate candidate basins and final added scores still use `normalized_corr(..., stride=4)`.
+- Add deterministic broadband/colored arbitrary-delay regression coverage while preserving realtime DSP/runtime behavior, public API/ABI, dataset locks, acoustic thresholds and Product Certification authority.
+
 # 2.3.5
 
 - Add tail-aware continuous-motion AEC tuning with deterministic candidate parallelism, p10 render-correlation scoring, aligned per-case delta eligibility, and independent validation/shadow replay.

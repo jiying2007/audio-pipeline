@@ -32,6 +32,10 @@ PR/main 音频 regression 使用 generator **v3** 与 seeds `1307 / 2307 / 3307`
 
 这 81 case 仅是 regression evidence。公共真实数据在独立 `audio-validation` runner 上按 Compact 100 / Full 160 profile 封存和执行，并可做 HMAC blind holdout。
 
+### Render-correlation lag 搜索
+
+AEC render-correlation 指标仍在既有 +/-100 ms lag 窗口内搜索。自 v2.3.6 起，evaluator 完整保留历史 sparse-grid lag 作为严格下界，再使用受限的 coarse-to-sample-exact refinement，避免窄带宽峰值落在 sparse grid 点之间时被误判为输入相关性很弱。coarse/medium 分数只用于定位候选 basin；新增的最终分数仍在原始波形上使用 canonical `normalized_corr(..., stride=4)`。指标名称以及 `max_output_render_corr_ratio` 接受阈值均不改变。
+
 ### Extended Real 验证
 
 v2.1.0 增加独立 Extended Real family，不修改 Compact100/Full160 历史基线。`commercial-core` 使用 RealMAN 真实远场/移动声源以及 BUT measured RIR、MUSAN、Mini LibriSpeech；`commercial-plus` 增加 VOiCES、AMI、ICSI。AISHELL-4、过滤后的 FSD50K、WHAM 只能进入 research/conditional 路径，不能满足 commercial gate。所有实际选择的 source file 在构建 corpus 前逐文件 SHA-256 绑定。

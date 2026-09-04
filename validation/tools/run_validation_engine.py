@@ -144,13 +144,81 @@ def normalized_corr(a: Sequence[int], b: Sequence[int], lag: int, stride: int = 
     return abs(xy / math.sqrt(xx * yy))
 
 
+def _corr_block_average(samples: Sequence[int], block: int) -> list[float]:
+    count = len(samples) // block
+    if count <= 0:
+        return []
+    out = [0.0] * count
+    inv = 1.0 / float(block)
+    for index in range(count):
+        start = index * block
+        total = 0.0
+        for offset in range(start, start + block):
+            total += float(samples[offset])
+        out[index] = total * inv
+    return out
+
+
+def _corr_top_nonlocal(scores: list[tuple[float, int]], limit: int, guard: int) -> list[int]:
+    selected: list[int] = []
+    for _score, lag in sorted(scores, reverse=True):
+        if all(abs(lag - prior) > guard for prior in selected):
+            selected.append(lag)
+            if len(selected) >= limit:
+                break
+    return selected
+
+
 def max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:
     max_lag = max(1, sample_rate // 10)
-    step = max(1, max_lag // 60)
-    lags = list(range(-max_lag, max_lag + 1, step))
-    if 0 not in lags:
-        lags.append(0)
-    return max((normalized_corr(a, b, lag) for lag in lags), default=0.0)
+    sparse_step = max(1, max_lag // 60)
+    sparse_lags = list(range(-max_lag, max_lag + 1, sparse_step))
+    if 0 not in sparse_lags:
+        sparse_lags.append(0)
+
+    # Retain the historical sparse search exactly as a strict lower bound.
+    # Refinement can discover a missed peak but can never reduce an existing
+    # correlation observation or weaken an established acceptance gate.
+    best = max(
+        (normalized_corr(a, b, lag) for lag in sparse_lags),
+        default=0.0,
+    )
+
+    # Use ~2 ms block averages only to locate a few distinct lag basins.
+    # These coarse scores never enter the reported metric.
+    block = max(4, sample_rate // 500)
+    aa = _corr_block_average(a, block)
+    bb = _corr_block_average(b, block)
+    if len(aa) < 64 or len(bb) < 64:
+        return best
+    block_max = (max_lag + block - 1) // block
+    coarse = [
+        (normalized_corr(aa, bb, lag, stride=1), lag)
+        for lag in range(-block_max, block_max + 1)
+    ]
+    coarse_lags = _corr_top_nonlocal(coarse, limit=3, guard=1)
+
+    # Search every sample lag inside the selected basins with a cheaper
+    # stride. This stage ranks candidates only; it is not a final score.
+    medium: list[tuple[float, int]] = []
+    for block_lag in coarse_lags:
+        center = block_lag * block
+        lo = max(-max_lag, center - block)
+        hi = min(max_lag, center + block)
+        for lag in range(lo, hi + 1):
+            medium.append((normalized_corr(a, b, lag, stride=32), lag))
+    medium_lags = _corr_top_nonlocal(medium, limit=2, guard=2)
+
+    # Final added scores use the original waveform and the canonical
+    # stride=4 correlation, matching the historical metric definition.
+    for center in medium_lags:
+        lo = max(-max_lag, center - 1)
+        hi = min(max_lag, center + 1)
+        for lag in range(lo, hi + 1):
+            score = normalized_corr(a, b, lag, stride=4)
+            if score > best:
+                best = score
+    return best
 
 
 def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
@@ -638,6 +706,28 @@ def self_test() -> None:
     for _ in range(rate):
         state = (1664525 * state + 1013904223) & 0xffffffff
         broadband.append(((state >> 16) & 0xffff) - 32768)
+
+    colored = []
+    colored_state = 0.0
+    for sample in broadband:
+        colored_state = 0.82 * colored_state + 0.18 * float(sample)
+        colored.append(int(colored_state))
+
+    corr_max_lag = max(1, rate // 10)
+    corr_sparse_step = max(1, corr_max_lag // 60)
+    corr_sparse_lags = list(range(-corr_max_lag, corr_max_lag + 1, corr_sparse_step))
+    if 0 not in corr_sparse_lags:
+        corr_sparse_lags.append(0)
+    for source, delay in ((broadband, 17), (broadband, 672), (colored, 829)):
+        shifted = [0] * delay + source[:-delay]
+        sparse = max(
+            (normalized_corr(shifted, source, lag) for lag in corr_sparse_lags),
+            default=0.0,
+        )
+        refined = max_abs_corr(shifted, source, rate)
+        assert refined + 1.0e-12 >= sparse, (delay, sparse, refined)
+        assert refined > 0.985, (delay, sparse, refined)
+
     delayed = [0] * 137 + broadband[:-137]
     delayed_sdr, alignment = aligned_si_sdr(broadband, delayed, rate, 137)
     assert alignment == 137

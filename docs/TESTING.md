@@ -32,6 +32,10 @@ PR/main audio-quality regression uses deterministic generator v3 and seeds `1307
 
 This 81-case generated suite is regression evidence only. Public validation remains separately materialized/sealed on trusted `audio-validation` runners using Compact 100 / Full 160 profiles and optional HMAC blind holdout.
 
+### Render-correlation lag search
+
+AEC render-correlation metrics search the existing +/-100 ms lag window. Since v2.3.6 the evaluator retains every historical sparse-grid lag as a strict lower bound, then performs bounded coarse-to-sample-exact refinement so narrow broadband peaks between sparse grid points are not mistaken for weak input correlation. Coarse/medium scores only locate candidate basins; newly admitted final scores use the original waveform and canonical `normalized_corr(..., stride=4)`. The metric names and `max_output_render_corr_ratio` acceptance threshold are unchanged.
+
 ### Extended Real validation
 
 v2.1.0 adds an independent Extended Real family; it does not mutate Compact100/Full160. `commercial-core` covers RealMAN real far-field/moving sources plus measured BUT RIR, MUSAN and Mini LibriSpeech combinations. `commercial-plus` adds VOiCES, AMI and ICSI. AISHELL-4, filtered FSD50K and WHAM are research-only/conditional and cannot satisfy commercial gates. Selected source files are SHA-256 bound before corpus construction.

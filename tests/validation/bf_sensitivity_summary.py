@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate multi-seed BF sensitivity reports and enforce product reliability gates."""
+"""Aggregate multi-seed BF sensitivity sweep reports without hiding weak ratios."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 
 MODELS = ("global-channel-gain", "sensitivity-floor")
 RATIOS = (1.0, 0.8, 0.55, 0.35)
-QUALITY_GATES = {
+PRODUCT_MINIMUMS = {
     ("global-channel-gain", 0.35): 1.0,
     ("sensitivity-floor", 0.55): 0.5,
     ("sensitivity-floor", 0.35): 0.0,
@@ -66,7 +66,6 @@ def aggregate(report_paths: list[Path]) -> dict:
 
     rows = []
     structural_violations = []
-    quality_violations = []
     for model in MODELS:
         for ratio in RATIOS:
             samples = values[(model, ratio)]
@@ -93,6 +92,7 @@ def aggregate(report_paths: list[Path]) -> dict:
             }
             rows.append(row)
             # Ratio 1.0 is a corpus/evaluator sanity anchor, not a tuning target.
+            # If it cannot show a modest benefit, the sweep itself is invalid.
             if ratio == 1.0 and minimum < 0.5:
                 structural_violations.append({
                     "model": model,
@@ -100,33 +100,23 @@ def aggregate(report_paths: list[Path]) -> dict:
                     "actual_min_db": minimum,
                     "expected_min_db": 0.5,
                 })
-            expected_minimum = QUALITY_GATES.get((model, ratio))
-            if expected_minimum is not None and minimum < expected_minimum:
-                quality_violations.append({
+            required = PRODUCT_MINIMUMS.get((model, ratio))
+            if required is not None and minimum < required:
+                structural_violations.append({
                     "model": model,
                     "weak_channel_ratio": ratio,
-                    "gate": "weak_channel_min_si_sdr_improvement_db",
+                    "gate": "product_candidate_min_si_sdr_improvement_db",
                     "actual_min_db": minimum,
-                    "expected_min_db": expected_minimum,
+                    "expected_min_db": required,
                 })
 
-    passed = not structural_violations and not quality_violations
     return {
-        "schema_version": 2,
-        "authority": "regression-quality-gate",
+        "schema_version": 1,
+        "authority": "diagnostic-regression-only",
         "reports": report_ids,
         "rows": rows,
-        "quality_gates": [
-            {
-                "model": model,
-                "weak_channel_ratio": ratio,
-                "min_si_sdr_improvement_db": minimum,
-            }
-            for (model, ratio), minimum in sorted(QUALITY_GATES.items())
-        ],
         "structural_violations": structural_violations,
-        "quality_violations": quality_violations,
-        "validation_result": "PASS" if passed else "FAIL",
+        "validation_result": "PASS" if not structural_violations else "FAIL",
     }
 
 
@@ -134,9 +124,9 @@ def self_test() -> None:
     assert case_key("bf-global-gain-r055") == ("global-channel-gain", 0.55)
     assert case_key("bf-sensitivity-floor-r035") == ("sensitivity-floor", 0.35)
     assert case_key("other") is None
-    assert QUALITY_GATES[("global-channel-gain", 0.35)] == 1.0
-    assert QUALITY_GATES[("sensitivity-floor", 0.55)] == 0.5
-    assert QUALITY_GATES[("sensitivity-floor", 0.35)] == 0.0
+    assert PRODUCT_MINIMUMS[("global-channel-gain", 0.35)] == 1.0
+    assert PRODUCT_MINIMUMS[("sensitivity-floor", 0.55)] == 0.5
+    assert PRODUCT_MINIMUMS[("sensitivity-floor", 0.35)] == 0.0
     print("BF sensitivity summary self-test: OK")
 
 
@@ -161,14 +151,13 @@ def main() -> int:
             f"min/median/max={stats['min']:.3f}/{stats['median']:.3f}/{stats['max']:.3f} dB "
             f"{row['classification']}"
         )
-    for violation in result["quality_violations"]:
-        print(
-            "QUALITY FAIL "
-            f"{violation['model']} ratio={violation['weak_channel_ratio']:.2f}: "
-            f"min={violation['actual_min_db']:.3f} dB < "
-            f"required={violation['expected_min_db']:.3f} dB"
-        )
-    return 0 if result["validation_result"] == "PASS" else 1
+    for violation in result["structural_violations"]:
+        if violation["gate"] == "product_candidate_min_si_sdr_improvement_db":
+            print(
+                f"QUALITY FAIL {violation['model']} ratio={violation['weak_channel_ratio']:.2f}: "
+                f"min={violation['actual_min_db']:.3f} dB < required={violation['expected_min_db']:.3f} dB"
+            )
+    return 1 if result["structural_violations"] else 0
 
 
 if __name__ == "__main__":

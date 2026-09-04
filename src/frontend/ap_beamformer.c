@@ -131,7 +131,7 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
                        ratio < AP_BF_FALLBACK_ENTER_RATIO;
     const int recovered = coherence > AP_BF_FALLBACK_RECOVER_COHERENCE ||
                           ratio > AP_BF_FALLBACK_RECOVER_RATIO;
-    uint32_t strong_channel = aa >= bb ? 0u : 1u;
+    const uint32_t strong_channel = aa >= bb ? 0u : 1u;
     float projection;
     float target_gain;
 
@@ -147,12 +147,10 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
         s->fallback_active = 1u;
         s->fallback_strong_channel = strong_channel;
         s->fallback_recovery_count = 0u;
+        s->fallback_lag = s->lag;
         s->fallback_gain = target_gain;
         return;
     }
-
-    if (s->fallback_strong_channel == strong_channel)
-        s->fallback_gain += 0.20f * (target_gain - s->fallback_gain);
 
     if (recovered) {
         if (s->fallback_recovery_count < AP_BF_FALLBACK_RECOVER_UPDATES)
@@ -191,17 +189,18 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
     }
 
     for (i = 0u; i < n; ++i) {
+        const int output_lag = s->fallback_active ? s->fallback_lag : s->lag;
         float x;
         float y;
-        if (s->lag >= 0) {
+        if (output_lag >= 0) {
             x = a[i];
-            y = ap_beamformer_past_sample(s, b, 1u, (int)i - s->lag);
+            y = ap_beamformer_past_sample(s, b, 1u, (int)i - output_lag);
         } else {
-            x = ap_beamformer_past_sample(s, a, 0u, (int)i + s->lag);
+            x = ap_beamformer_past_sample(s, a, 0u, (int)i + output_lag);
             y = b[i];
         }
         if (s->fallback_active) {
-            const float strong = s->fallback_strong_channel == 0u ? a[i] : b[i];
+            const float strong = s->fallback_strong_channel == 0u ? x : y;
             out[i] = s->fallback_gain * strong;
         } else {
             out[i] = 0.5f * (x + y);

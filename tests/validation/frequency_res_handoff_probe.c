@@ -5,6 +5,8 @@
 #include <stdlib.h>
 
 #define FRAME_SAMPLES 160u
+#define MAX_HALF_RECOVERY_FRAMES 5
+#define MAX_90_RECOVERY_FRAMES 12
 
 static uint32_t lcg_next(uint32_t *state) {
     *state = (*state * 1664525u) + 1013904223u;
@@ -74,8 +76,8 @@ int main(int argc, char **argv) {
     ap_ns_init(&state, FRAME_SAMPLES);
     bins = state.nfft / 2u + 1u;
 
-    /* Drive broadband far-only residual echo until the frequency-domain RES
-     * has a stable set of materially suppressed bins. */
+    /* Preserve the shipping far-only frequency-RES operating point as an
+     * anti-regression guard before measuring the near-protection release. */
     for (i = 0u; i < 40u; ++i) {
         make_frame(&rng, input, echo, 0);
         ap_ns_process(&state, AP_ENHANCE_FULL, 0.20f,
@@ -91,9 +93,8 @@ int main(int argc, char **argv) {
     pre_mean = mean_masked_gain(&state, suppressed, bins);
     if (suppressed_bins < bins / 2u || pre_mean > 0.22f) failed = 1;
 
-    /* Enter double-talk. frequency_res_active must turn off immediately, but
-     * historical per-bin gains may recover gradually. Measure that persistence
-     * on exactly the bins that were suppressed in the preceding far-only epoch. */
+    /* Enter double-talk. Frequency RES must disable immediately and its
+     * historical gains must recover fast enough to preserve near-end onset. */
     for (i = 0u; i < 60u; ++i) {
         float mean_gain;
         make_frame(&rng, input, echo, 1);
@@ -108,10 +109,8 @@ int main(int argc, char **argv) {
         if (result.frequency_res_active) failed = 1;
     }
 
-    /* Discovery bounds only: reject broken state release, not the current
-     * product-quality operating point. Candidate quality gates are added only
-     * in a separate SemVer-bearing product PR. */
-    if (first_half < 1 || first_half > 30 || first_90 < 1 || first_90 > 60)
+    if (first_half < 1 || first_half > MAX_HALF_RECOVERY_FRAMES ||
+        first_90 < 1 || first_90 > MAX_90_RECOVERY_FRAMES)
         failed = 1;
 
     printf("FREQ_RES_HANDOFF seed=%u suppressed_bins=%u/%u pre_mean=%.6f "

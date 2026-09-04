@@ -1,3 +1,9 @@
+# 2.3.8
+
+- Stabilize two-mic TDOA tracking with per-lag EWMA correlation scores while preserving the existing four-frame steady-state scan cadence and adding first-frame acquisition to remove the startup blind window.
+- Add fail-soft weak-microphone reliability handling for severe sensitivity/SNR loss: freeze the accepted lag and use a bounded 75/25 strong/weak mix with coherent-gain normalization, while normal and pure channel-gain mismatch cases retain ordinary delay-and-sum behavior.
+- Promote the three-seed BF sensitivity envelope to a product-candidate gate: global-gain 0.35x must retain at least +1.0 dB SI-SDR improvement, sensitivity-floor 0.55x at least +0.5 dB, and sensitivity-floor 0.35x must be non-degrading; public v2 API/ABI remains unchanged.
+
 # 2.3.7
 
 - Add stage-isolated canonical validation profiles for VAD, NS, AGC and two-mic beamforming, plus deterministic three-seed regression evidence so per-stage failures can be attributed before full-pipeline replay.

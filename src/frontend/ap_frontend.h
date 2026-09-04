@@ -20,6 +20,7 @@ typedef struct ap_beamformer_state {
     float fallback_gain;
     int lag;
     int max_lag;
+    int fallback_lag;
     uint32_t counter;
     uint32_t score_updates;
     uint32_t fallback_active;

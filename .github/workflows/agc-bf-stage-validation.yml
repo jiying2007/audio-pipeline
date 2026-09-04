@@ -5,9 +5,9 @@ on:
     paths:
       - 'src/enhance/ap_agc.c'
       - 'src/frontend/ap_beamformer.c'
-      - 'validation/tools/agc_dynamics_probe.c'
-      - 'validation/tools/agc_dynamics_diagnostic.py'
-      - 'validation/tools/build_agc_bf_validation_corpus.py'
+      - 'tests/validation/agc_dynamics_probe.c'
+      - 'tests/validation/agc_dynamics_diagnostic.py'
+      - 'tests/validation/build_agc_bf_validation_corpus.py'
       - 'validation/tools/run_validation*.py'
       - 'validation/policies/**'
       - '.github/workflows/agc-bf-stage-validation.yml'
@@ -24,6 +24,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PYTHONPATH: validation/tools
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
@@ -32,10 +34,10 @@ jobs:
       - name: Validate diagnostic contracts
         run: |
           set -euo pipefail
-          python3 -m py_compile validation/tools/*.py
+          python3 -m py_compile validation/tools/*.py tests/validation/*.py
           python3 validation/tools/run_validation.py --self-test
-          python3 validation/tools/build_agc_bf_validation_corpus.py --self-test
-          python3 validation/tools/agc_dynamics_diagnostic.py --self-test
+          python3 tests/validation/build_agc_bf_validation_corpus.py --self-test
+          python3 tests/validation/agc_dynamics_diagnostic.py --self-test
       - name: Configure validation build
         run: >-
           cmake -S . -B build-agc-bf-validation -DCMAKE_BUILD_TYPE=Release
@@ -46,7 +48,7 @@ jobs:
           cmake --build build-agc-bf-validation --target ap_process_pcm --parallel
           cc -std=c11 -Wall -Wextra -Werror \
             -Iinclude -Ibuild-agc-bf-validation/generated \
-            validation/tools/agc_dynamics_probe.c \
+            tests/validation/agc_dynamics_probe.c \
             build-agc-bf-validation/libaudio_pipeline.a -lm \
             -o build-agc-bf-validation/agc_dynamics_probe
       - name: Run all AGC BF stage partitions
@@ -58,12 +60,12 @@ jobs:
             root="/tmp/ap-agc-bf-${seed}"
             out="agc-bf-stage-out/${seed}"
             mkdir -p "$out"
-            if ! python3 validation/tools/build_agc_bf_validation_corpus.py \
+            if ! python3 tests/validation/build_agc_bf_validation_corpus.py \
               --output "$root" --seed "$seed"; then
               failed=1
               continue
             fi
-            if ! python3 validation/tools/agc_dynamics_diagnostic.py \
+            if ! python3 tests/validation/agc_dynamics_diagnostic.py \
               --probe build-agc-bf-validation/agc_dynamics_probe \
               --corpus "$root/corpus.json" \
               --output "$out/agc-dynamics.json"; then

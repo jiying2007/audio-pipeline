@@ -15,6 +15,10 @@ extern "C" {
 
 typedef enum ap_profile { AP_PROFILE_CALL = 0, AP_PROFILE_ASSISTANT = 1 } ap_profile_t;
 typedef enum ap_resource_class { AP_RESOURCE_TINY = 0, AP_RESOURCE_LOW = 1, AP_RESOURCE_STANDARD = 2 } ap_resource_class_t;
+typedef enum ap_reference_alignment_policy {
+    AP_REFERENCE_ALIGNMENT_ADAPTIVE = 0,
+    AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY = 1
+} ap_reference_alignment_policy_t;
 typedef uint32_t ap_stage_mask_t;
 enum {
     AP_STAGE_HPF=1u<<0, AP_STAGE_BF=1u<<1, AP_STAGE_SYNC=1u<<2, AP_STAGE_AEC=1u<<3,
@@ -40,6 +44,31 @@ typedef struct ap_config {
     uint8_t enable_delay_tracking;
     uint8_t enable_clock_drift_compensation;
 } ap_config_t;
+
+/* Reference-alignment policy is orthogonal to CALL/ASSISTANT and resource class.
+ * FIXED_GEOMETRY disables acoustic correlation delay chasing and correlation-based
+ * drift compensation while preserving trusted hardware timestamp observation as
+ * an authoritative alignment input through ap_pipeline_observe_io_timestamps(). */
+static inline ap_status_t ap_config_apply_reference_alignment_policy(
+    ap_config_t *config,
+    ap_reference_alignment_policy_t policy,
+    uint32_t anchor_delay_ms) {
+    if (!config) return AP_EINVAL;
+    if ((config->stages & AP_STAGE_SYNC) == 0u) return AP_ESTATE;
+    if (policy == AP_REFERENCE_ALIGNMENT_ADAPTIVE) {
+        config->enable_delay_tracking = 1u;
+        config->enable_clock_drift_compensation = 1u;
+        return AP_OK;
+    }
+    if (policy == AP_REFERENCE_ALIGNMENT_FIXED_GEOMETRY) {
+        if (anchor_delay_ms > config->max_delay_ms) return AP_EINVAL;
+        config->initial_delay_ms = anchor_delay_ms;
+        config->enable_delay_tracking = 0u;
+        config->enable_clock_drift_compensation = 0u;
+        return AP_OK;
+    }
+    return AP_EINVAL;
+}
 
 typedef struct ap_metrics {
     float input_rms_dbfs;

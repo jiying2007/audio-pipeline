@@ -60,10 +60,12 @@ def build(output: Path, seed: int, seconds: float) -> dict:
     add_case(
         cases, output, "stage-vad-stationary-negative", "stage-vad-hard-negative",
         stationary, 1, labels=zeros, processor_profile="vad-isolated",
+        expected={"max_vad_false_positive_rate": 0.25},
     )
     add_case(
         cases, output, "stage-vad-impulsive-negative", "stage-vad-hard-negative",
         hard_negative, 1, labels=zeros, processor_profile="vad-isolated",
+        expected={"max_vad_false_positive_rate": 0.25},
     )
 
     # NS: preserve the existing NS+VAD profile because VAD consumes the NS speech
@@ -133,7 +135,7 @@ def build(output: Path, seed: int, seconds: float) -> dict:
         "tier": "regression",
         "generator": {
             "name": "build_stage_validation_corpus.py",
-            "version": 1,
+            "version": 2,
             "seed": seed,
         },
         "sources": ["deterministic-generator"],

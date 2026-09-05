@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "root_cause_id": "aec-motion-continuous-tracking",
+  "result": "CLOSED_KEEP_BASELINE",
+  "decision": "REJECT_CANDIDATE",
+  "candidate": "incumbent-qualified",
+  "base_sha": "783a8d1f27bae03b97e57b74e47cede5cf07bb6d",
+  "candidate_implementation_sha": "82ae56d8148e1a19f62250072bd45563eaffdde5",
+  "candidate_version_not_released": "2.3.13",
+  "engineering_precheck": {
+    "verify_run_id": 33976148746,
+    "summary_check_id": 101333707114,
+    "result": "PASS"
+  },
+  "confirmation": {
+    "metadata_head_sha": "1c8916089749ad1b99cf26ba53e3683e833d4fe0",
+    "workflow_run_id": 33976714064,
+    "artifact_id": 9972539010,
+    "artifact_digest": "sha256:f77826cc444c756d8a10fa3de48a4adb8c146ee8fb2d8fe8806e2227e04c0604",
+    "downloaded_zip_sha256": "f77826cc444c756d8a10fa3de48a4adb8c146ee8fb2d8fe8806e2227e04c0604",
+    "internal_sha256s_verified": 308,
+    "source_group": "aec-motion-geometry-v2-i003-confirmation-1",
+    "seeds": [51107, 52107, 53107],
+    "source_group_next_role": "regression-retired",
+    "candidate_search_performed": false,
+    "threshold_tuning_performed": false,
+    "budget_consumed": 1
+  },
+  "per_seed": [
+    {
+      "seed": 51107,
+      "canonical_validation": "PASS",
+      "cases_passed": 12,
+      "cases": 12,
+      "base": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+      "candidate": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+      "non_regression": true
+    },
+    {
+      "seed": 52107,
+      "canonical_validation": "PASS",
+      "cases_passed": 12,
+      "cases": 12,
+      "base": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+      "candidate": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+      "non_regression": true
+    },
+    {
+      "seed": 53107,
+      "canonical_validation": "PASS",
+      "cases_passed": 12,
+      "cases": 12,
+      "base": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+      "candidate": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+      "non_regression": true
+    }
+  ],
+  "aggregate": {
+    "observations": 28080,
+    "base": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+    "candidate": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+    "strict_improvement": false
+  },
+  "reason": "The first independently registered source group did not reproduce the late-route baseline defect: base and candidate are identical on all predeclared delay metrics. The candidate therefore fails the frozen strict-improvement requirement despite full non-regression and 12/12 canonical acoustic PASS on every seed.",
+  "next_action": "Keep immutable v2.3.12 shipping baseline. Do not merge or release the v2.3.13 candidate. Do not consume a second confirmation set to shop for a passing result; any future AEC/Sync candidate requires a new root-cause budget decision and new pre-registered hypothesis.",
+  "implementation_repair_lineage": [
+    "Initial engineering regression used an artificial 4.0x late/direct path outside the audited geometry-v2 envelope and was rejected as an invalid test model.",
+    "A temporary fixed route-anchor implementation did not fix the engineering regression and was reverted because it diverged from the frozen moving-incumbent selector semantics.",
+    "The in-envelope 1.0625x multipath test still failed with the legacy linear-index PRN excitation; diagnostic replication identified stable periodic aliasing in that test source.",
+    "The final frozen implementation restored the selected moving-incumbent semantics and changed only the new multipath test excitation to deterministic broadband; exact-head engineering Verify 33976148746 then passed before confirmation was registered."
+  ],
+  "authority_boundary": {
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

@@ -29,6 +29,10 @@
     "ns-burst-start-stop-speech": -5.0,
     "ns-mixed-dynamic-low-snr-speech": -8.0
   },
+  "diagnostic_preconditions": {
+    "min_clean_vad_isolated_recall": 0.90,
+    "min_clean_ns_isolated_recall": 0.85
+  },
   "diagnostic_flags": {
     "min_speech_si_sdr_improvement_db": 0.0,
     "min_noise_only_attenuation_db": 0.5,
@@ -38,8 +42,9 @@
     "max_clip_fraction": 0.02
   },
   "decision_contract": {
-    "BASELINE_ADEQUATE_NO_SEARCH": "all scenario-level and worst-window diagnostic flags pass",
-    "MEASURED_GAP_REVIEW_REQUIRED": "one or more frozen diagnostic flags fail",
+    "BASELINE_ADEQUATE_NO_SEARCH": "all clean-speech preconditions and all frozen scenario-level/worst-window diagnostic flags pass",
+    "MEASURED_GAP_REVIEW_REQUIRED": "clean-speech preconditions pass and one or more frozen dynamic-noise diagnostic flags fail",
+    "DIAGNOSTIC_INPUT_INVALID_REVIEW_REQUIRED": "one or more clean-speech preconditions fail; dynamic-noise failures cannot authorize an NS candidate",
     "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
   },
   "authority": {

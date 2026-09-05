@@ -3,8 +3,6 @@ name: AEC Motion Tuning Search
 on:
   pull_request:
     paths:
-      - 'validation/tools/build_aec_motion_corpus.py'
-      - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/tools/aec_motion_tuning.py'
       - 'validation/tools/tuning_replay.py'
       - 'validation/tools/tuning_tail_gate.py'
@@ -44,6 +42,7 @@ jobs:
           namespace: aec-motion-tuning
 
       - name: Validate tuning, tail and authority contracts
+        id: contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -74,6 +73,16 @@ jobs:
               'agc_target_dbfs': -20.0,
               'limiter_dbfs': -2.0,
           }
+          text = Path('.github/workflows/aec-motion-tuning.yml').read_text()
+          lower = text.lower()
+          trigger = text.split('  schedule:', 1)[0]
+          assert 'build_aec_motion_corpus.py' not in trigger
+          assert 'build_aec_motion_bundle.py' not in trigger
+          assert 'regression/replay' in text
+          for words in (('fresh', 'call'), ('unseen', 'motion'), ('independent', 'multi-seed')):
+              assert ' '.join(words) not in lower
+          assert 'effective_replay_authority' in text
+          assert 'non-shipping-regression-replay' in text
           PY
 
       - name: Build exact offline tuning processor
@@ -84,7 +93,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
           cmake --build build-motion-tuning --target ap_process_pcm ap_build_info_dump --parallel
 
-      - name: Build independent multi-seed motion partitions in parallel
+      - name: Build fixed regression/replay motion partitions in parallel
         shell: bash
         run: |
           set -euo pipefail
@@ -126,7 +135,7 @@ jobs:
               assert len({item['case_id'] for item in corpus['cases']}) == cases
           PY
 
-      - name: Search motion development and replay unseen motion partitions
+      - name: Search motion development and replay fixed regression partitions
         id: motion
         shell: bash
         run: |
@@ -180,7 +189,7 @@ jobs:
             --candidate tuning-out/motion/shadow/candidate.json \
             --output tuning-out/tail-shadow.json --enforce
 
-      - name: Build unrelated fresh call replay corpora
+      - name: Build fixed generic call regression/replay corpora
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
         shell: bash
         run: |
@@ -192,7 +201,7 @@ jobs:
           wait "$p_val"
           wait "$p_shadow"
 
-      - name: Replay motion-selected candidate on call validation
+      - name: Replay motion-selected candidate on call validation regression
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
         shell: bash
         run: |
@@ -208,7 +217,7 @@ jobs:
             --role validation \
             --output-dir tuning-out/call-validation
 
-      - name: Replay motion-selected candidate on call shadow
+      - name: Replay motion-selected candidate on call shadow regression
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
         shell: bash
         run: |
@@ -245,9 +254,11 @@ jobs:
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'
 
+          effective_replay_authority = 'non-shipping-regression-replay'
           final = {
               'schema_version': 1,
               'authority': 'non-shipping-one-way-finalizer',
+              'effective_replay_authority': effective_replay_authority,
               'motion_decision': result['decision'],
               'selected_candidate_id': result['selected']['candidate_id'],
               'selected_label': result['selected']['label'],
@@ -267,6 +278,8 @@ jobs:
                   assert replay['authority'] == 'non-shipping-independent-replay'
                   assert replay['role'] == role.removeprefix('call-')
                   final['call_replays'][role] = {
+                      'raw_authority': replay['authority'],
+                      'effective_authority': effective_replay_authority,
                       'decision': replay['decision'],
                       'score': replay['candidate_score_vs_baseline'],
                       'regression_violations': replay['regression_violations'],
@@ -280,6 +293,7 @@ jobs:
           assert not any(item in text for item in forbidden)
           Path('tuning-out/final-decision.json').write_text(json.dumps(final, indent=2, sort_keys=True) + '\n')
           print(json.dumps({'motion_decision': result['decision'], 'final_decision': final['decision'],
+                            'effective_replay_authority': effective_replay_authority,
                             'rejections': len(final['rejections'])}, sort_keys=True))
           PY
 
@@ -289,15 +303,38 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p tuning-out/bindings
-          cp motion-dev/corpus.json tuning-out/bindings/motion-dev-corpus.json
-          cp motion-dev/source-manifest.json tuning-out/bindings/motion-dev-source-manifest.json
-          cp motion-validation/corpus.json tuning-out/bindings/motion-validation-corpus.json
-          cp motion-validation/source-manifest.json tuning-out/bindings/motion-validation-source-manifest.json
-          cp motion-shadow/corpus.json tuning-out/bindings/motion-shadow-corpus.json
-          cp motion-shadow/source-manifest.json tuning-out/bindings/motion-shadow-source-manifest.json
-          cp "$MOTION_SEARCH_SPACE" "$GENERIC_SEARCH_SPACE" "$MOTION_POLICY" "$GENERIC_POLICY" "$DATASET_LOCK" tuning-out/bindings/
-          build-motion-tuning/ap_build_info_dump > tuning-out/bindings/build-info.txt
-          sha256sum build-motion-tuning/ap_process_pcm > tuning-out/bindings/processor.sha256
+          for pair in \
+            'motion-dev/corpus.json:tuning-out/bindings/motion-dev-corpus.json' \
+            'motion-dev/source-manifest.json:tuning-out/bindings/motion-dev-source-manifest.json' \
+            'motion-validation/corpus.json:tuning-out/bindings/motion-validation-corpus.json' \
+            'motion-validation/source-manifest.json:tuning-out/bindings/motion-validation-source-manifest.json' \
+            'motion-shadow/corpus.json:tuning-out/bindings/motion-shadow-corpus.json' \
+            'motion-shadow/source-manifest.json:tuning-out/bindings/motion-shadow-source-manifest.json'; do
+            src=${pair%%:*}
+            dst=${pair#*:}
+            if [ -f "$src" ]; then cp "$src" "$dst"; fi
+          done
+          for src in "$MOTION_SEARCH_SPACE" "$GENERIC_SEARCH_SPACE" "$MOTION_POLICY" "$GENERIC_POLICY" "$DATASET_LOCK"; do
+            if [ -f "$src" ]; then cp "$src" tuning-out/bindings/; fi
+          done
+          if [ -x build-motion-tuning/ap_build_info_dump ]; then
+            build-motion-tuning/ap_build_info_dump > tuning-out/bindings/build-info.txt
+          fi
+          if [ -f build-motion-tuning/ap_process_pcm ]; then
+            sha256sum build-motion-tuning/ap_process_pcm > tuning-out/bindings/processor.sha256
+          fi
+          if [ ! -f tuning-out/motion/iteration-result.json ]; then
+            CONTRACTS_OUTCOME='${{ steps.contracts.outcome }}' python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path('tuning-out/integrity-failure.json').write_text(json.dumps({
+              'schema_version': 1,
+              'authority': 'workflow-integrity-diagnostic',
+              'contracts_outcome': os.environ.get('CONTRACTS_OUTCOME', 'unknown'),
+              'candidate_authority': 'NONE',
+          }, indent=2, sort_keys=True) + '\n')
+          PY
+          fi
           find tuning-out -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > tuning-out/SHA256SUMS
 
       - name: Publish iteration summary
@@ -316,14 +353,15 @@ jobs:
           print(f"- Motion decision: `{r['decision']}`")
           if final is not None:
               print(f"- Final one-way decision: `{final['decision']}`")
+              print(f"- Effective fixed-replay authority: `{final['effective_replay_authority']}`")
           print(f"- Selected: `{r['selected']['label']}` / `{r['selected']['candidate_id']}`")
           print(f"- Tuning: `{json.dumps(r['selected']['tuning'], sort_keys=True)}`")
           print(f"- Development score: `{r['selected']['development_score']:.6f}`")
           print(f"- Candidate jobs: `{r['search_space']['candidate_jobs']}`")
-          print('- Motion development: seeds `4107/4207/4307` (36 cases)')
-          print('- Motion validation: seeds `9107/9207` (24 cases)')
-          print('- Motion shadow: seeds `10107/10207` (24 cases)')
-          print('- Generic call validation/shadow: seeds `9307/10307`')
+          print('- Fixed regression/replay motion development: seeds `4107/4207/4307` (36 cases)')
+          print('- Fixed regression/replay motion validation: seeds `9107/9207` (24 cases)')
+          print('- Fixed regression/replay motion shadow: seeds `10107/10207` (24 cases)')
+          print('- Fixed generic call regression/replay: seeds `9307/10307`')
           if r['decision'] == 'ACOUSTIC_CANDIDATE':
               for tail in ('development', 'validation', 'shadow'):
                   g = json.loads(Path(f'tuning-out/tail-{tail}.json').read_text())
@@ -337,8 +375,14 @@ jobs:
                       print(f"- {role}: `{rr['decision']}`, score `{rr['candidate_score_vs_baseline']:.6f}`")
           print('- Candidate rejection is a valid research outcome; workflow failure is reserved for evidence/tool integrity failure.')
           print('- Hosted real AEC is intentionally absent from this feedback loop and repeated hosted data is regression-only.')
+          print('- Fixed partitions above are regression/replay evidence; the legacy raw replay label does not grant confirmation/promotion authority.')
           print('- Authority: non-shipping candidate only; current software/public-data phase cannot claim DUT/HIL/Product Certification.')
           PY
+          else
+            echo '## Multi-seed AEC motion tuning' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '- No candidate iteration was executed because a prerequisite/integrity gate failed.' >> "$GITHUB_STEP_SUMMARY"
+            echo '- Candidate authority: `NONE`.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload hash-bound tuning evidence

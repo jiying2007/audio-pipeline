@@ -46,8 +46,30 @@ Hosted Real Regression 可重复；Hosted Real Promotion 只做单向门禁。DU
 预注册每个 root-cause 的最大候选数、确认次数和停止规则；改 branch/iteration 不重置历史。
 预算耗尽输出 KEEP_BASELINE/INSUFFICIENT_EVIDENCE，不继续抽 holdout 直到碰到 PASS。
 
+“公开可查询”与“在候选选择前已经消费/观察”分开记录。公开数据集可以在候选冻结后作为
+一次固定假设确认来源，前提是对应 source-group 在候选选择前没有被查看、回放、排序或用于
+调参；一旦使用，无论 PASS/FAIL 都退役为 regression。已经反复运行的固定 seed、Hosted Real
+microset 或历史 confirmation source-group 永远不能通过换名字重新获得 confirmation/promotion 权限。
+
 已有 ES2003a/ES2004a 与已曝光 synthetic seeds 不自动成为未来 VAD 的独立确认集。
 现有 Hosted Real Audio/AEC 日常工作流是 regression；本程序不通过重命名赋予其新 holdout 权限。
+
+## Promotion gate plan 与研究预算
+
+`docs/program/promotion-policy.json` 是当前软件/开放数据阶段的机器可读 promotion SSOT。
+候选比较前先冻结 exact base、source-group 使用角色、gate plan 与 root-cause research budget。
+同一 root-cause 跨 branch、iteration、seed 或 workflow rerun 继承预算；相同实验契约的 replay
+不制造新的独立证据，也不能通过新 ID 清零已经消耗的搜索/确认次数。
+
+Gate 是否通过按四个条件合取：**存在 + completed + success + exact expected SHA**。
+required gate 缺失、skipped/cancelled、仍在运行或属于旧 SHA 都不是 PASS。首次失败、BLOCKED、
+候选被拒绝等历史尝试必须保留；后续 PASS 不能覆盖或删除先前事实。
+
+Measurement-authority 变更与 acoustic candidate search 分离：corpus/generator/bundle/metric/evaluator
+的迁移先完成测量工具链闭环，不因为文件变化自动启动参数搜索。AEC motion tuning 的 PR 自动触发
+仅面向 tuning/replay/search-space/policy 等真正搜索语义变化；measurement-only 变化由对应测量/
+regression gate 验收。schedule/manual tuning 可继续作为有界回归研究，但固定 seeds 必须明确标记
+为 regression/replay，不能称 fresh、unseen 或 independent confirmation。
 
 ## 测量工具链独立验证
 

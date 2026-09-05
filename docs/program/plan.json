@@ -6,11 +6,11 @@
   "auto_promote": false,
   "max_parallel_candidates": 1,
   "baseline": {
-    "source_sha": "2e98354dc54b23c019d30b1c75a6d304d5a09ccb",
-    "verify_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33961870472",
-    "software_release": "v2.3.11",
-    "release_url": "https://github.com/jiying2007/audio-pipeline/releases/tag/v2.3.11",
-    "note": "main snapshot includes governance after the immutable release; do not equate the two source identities"
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "verify_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33968963275",
+    "software_release": "v2.3.12",
+    "release_url": "https://github.com/jiying2007/audio-pipeline/releases/tag/v2.3.12",
+    "note": "immutable software/public-data baseline; product qualification remains deferred by scope"
   },
   "data_roles": [
     {"path": "validation/hosted_real.datasets.lock.json", "role": "hosted-regression", "exposed": true},
@@ -53,11 +53,15 @@
       "evidence": []
     },
     {
-      "id": "P001", "priority": 15, "status": "PLANNED", "lane": "governance",
+      "id": "P001", "priority": 15, "status": "CLOSED", "lane": "governance",
       "title": "Bind promotion gate plans, data source groups, exposure and inherited research budgets",
-      "depends_on": ["P000"], "handler": null, "contract": null,
+      "depends_on": ["P000"], "handler": null, "contract": "docs/program/iterations/P001.json",
       "exit": "Negative tests reject old SHA, missing gates, leaked confirmation, concealed failures and budget reset",
-      "evidence": []
+      "evidence": [
+        {"source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701734", "meaning": "Reviewed P001 governance execution completed on exact head; artifact 9971114684/digest 997f0c63... binds source exposure, fail-closed gate plans, failure lineage, inherited budgets and measurement-only trigger separation without acoustic authority."},
+        {"source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701778", "meaning": "AEC tuning workflow verification completed on exact head; fixed source groups are effective regression/replay only and aec_mu=0.52 remains final REJECT_CANDIDATE because call-validation min_vad_f1 regresses by 0.08393 > 0.05."},
+        {"source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701880", "meaning": "Exact-head Verify #474 and required summary succeeded after P001 governance and tuning workflow changes; Hosted Real Audio/AEC also passed on the same head. Full closure details are archived in docs/program/iterations/P001-result.json."}
+      ]
     },
     {
       "id": "I004", "priority": 40, "status": "PLANNED", "lane": "acoustic",

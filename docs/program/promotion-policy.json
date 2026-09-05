@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "phase": "software-public-data",
+  "baseline": {
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "verify_run_id": 33968963275,
+    "release": "v2.3.12",
+    "release_id": 383255512
+  },
+  "principles": {
+    "auto_promote": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "measurement_change_can_trigger_acoustic_search": false,
+    "repeated_execution_is_new_independent_evidence": false,
+    "failed_attempts_must_be_retained": true,
+    "budget_is_inherited_by_root_cause": true
+  },
+  "source_groups": [
+    {
+      "id": "hosted-p808-audio-v1",
+      "identity": "validation/hosted_real.datasets.lock.json",
+      "kind": "public-real",
+      "current_role": "hosted-regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["regression", "hosted-regression"],
+      "prohibited_roles": ["confirmation", "promotion"]
+    },
+    {
+      "id": "hosted-ms-aec-microset-v1",
+      "identity": "validation/hosted_aec.datasets.lock.json",
+      "kind": "public-real",
+      "current_role": "hosted-regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["regression", "hosted-regression"],
+      "prohibited_roles": ["confirmation", "promotion"]
+    },
+    {
+      "id": "ami-vad-microset-v1",
+      "identity": "tests/validation/data/ami_vad_microset.lock.json",
+      "kind": "public-real",
+      "current_role": "regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["regression"],
+      "prohibited_roles": ["confirmation", "promotion"]
+    },
+    {
+      "id": "ami-es2004a-vad-confirmation-retired",
+      "identity": "tests/validation/data/ami_vad_confirmation_es2004a.lock.json",
+      "kind": "public-real",
+      "current_role": "regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["regression"],
+      "prohibited_roles": ["confirmation", "promotion"]
+    },
+    {
+      "id": "aec-motion-geometry-v2-search-observed",
+      "identity": "generator-v2 seeds 4107,4207,4307,9107,9207,10107,10207",
+      "kind": "deterministic-synthetic",
+      "current_role": "regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["development", "validation", "shadow", "regression"],
+      "prohibited_roles": ["confirmation", "promotion"]
+    },
+    {
+      "id": "aec-motion-geometry-v2-i002-observed",
+      "identity": "generator-v2 seeds 17411,27411,37411",
+      "kind": "deterministic-synthetic",
+      "current_role": "regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["regression"],
+      "prohibited_roles": ["confirmation", "promotion"]
+    },
+    {
+      "id": "generic-call-replay-observed",
+      "identity": "build_validation_corpus seeds 9307,10307",
+      "kind": "deterministic-synthetic",
+      "current_role": "regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["regression", "validation", "shadow"],
+      "prohibited_roles": ["confirmation", "promotion"]
+    }
+  ],
+  "candidate_gate_plan": {
+    "ordered_gates": [
+      "base-identity",
+      "development-search",
+      "validation-selection",
+      "engineering-precheck",
+      "shadow-protection",
+      "independent-confirmation",
+      "hosted-regression",
+      "exact-head-verify",
+      "main-exact-sha-verify",
+      "release-identity"
+    ],
+    "required_before_candidate_freeze": [
+      "base-identity",
+      "development-search",
+      "validation-selection"
+    ],
+    "required_before_merge": [
+      "base-identity",
+      "development-search",
+      "validation-selection",
+      "engineering-precheck",
+      "shadow-protection",
+      "independent-confirmation",
+      "hosted-regression",
+      "exact-head-verify"
+    ],
+    "required_after_merge_for_release_bearing_change": [
+      "main-exact-sha-verify",
+      "release-identity"
+    ],
+    "gate_success": "present AND completed AND success AND exact expected SHA",
+    "skipped_is_success": false,
+    "old_sha_is_success": false,
+    "missing_gate_is_success": false
+  },
+  "confirmation_policy": {
+    "selection_must_be_frozen_before_source_group_consumption": true,
+    "source_group_must_not_have_been_observed_before_selection": true,
+    "confirmation_cannot_search_or_rank_candidates": true,
+    "failed_confirmation_retires_source_group_to_regression": true,
+    "passed_confirmation_retires_source_group_to_regression_after_use": true,
+    "publicly_cataloged_source_may_be_confirmation_if_unconsumed_before_freeze": true
+  },
+  "research_budgets": [
+    {
+      "root_cause_id": "aec-motion-continuous-tracking",
+      "search_rounds": {"limit": 3, "consumed": 1},
+      "candidate_variants": {"limit": 12, "consumed": 9},
+      "confirmation_sets": {"limit": 2, "consumed": 0},
+      "inherited_evidence": [
+        "run 33967578985: motion-only aec_mu=0.52 rejected by generic call validation",
+        "same-contract reruns are replay/reverification and do not reset or multiply the unique-search budget"
+      ]
+    }
+  ]
+}

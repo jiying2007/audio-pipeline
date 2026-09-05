@@ -2,8 +2,8 @@
 """Validate the committed software/public-data program and run registered work.
 
 This orchestrator is not an acoustic evaluator, optimizer, promotion authority,
-or product-certification substitute. A successful registered execution only
-means the task ran to completion and still requires evidence review.
+or product-certification substitute. Registered handlers are typed and bounded;
+a successful execution still requires evidence review and never auto-promotes.
 """
 from __future__ import annotations
 
@@ -24,10 +24,18 @@ STATES = {"PLANNED", "READY", "ACTIVE", "REVIEW_REQUIRED", "CLOSED", "DEFERRED"}
 LANES = {"governance", "measurement", "engineering", "acoustic", "external"}
 HANDLERS = {
     "aec-motion-model-qualification": {
+        "lane": "measurement",
         "path": "tests/validation/aec_motion_model_qualification.py",
         "contract": "docs/program/iterations/I002.json",
         "iteration_id": "I002",
         "decision": "NOT_AN_ACOUSTIC_CANDIDATE",
+    },
+    "promotion-governance": {
+        "lane": "governance",
+        "path": ".github/program/promotion_governance.py",
+        "contract": "docs/program/iterations/P001.json",
+        "iteration_id": "P001",
+        "decision": "GOVERNANCE_READY_NO_ACOUSTIC_CANDIDATE",
     },
 }
 
@@ -56,21 +64,31 @@ def repo_file(root: Path, value: str) -> Path:
 
 
 def validate_contract(task: dict, contract: dict, spec: dict) -> None:
-    require(task["lane"] == "measurement", "registered handlers are measurement-only in this phase")
-    require(task["contract"] == spec["contract"] and contract["iteration_id"] == spec["iteration_id"] == task["id"],
+    require(task["lane"] == spec["lane"], "handler lane mismatch")
+    require(task["contract"] == spec["contract"] and
+            contract["iteration_id"] == spec["iteration_id"] == task["id"],
             "handler/contract identity")
     require(sha(contract["base_sha"]), "contract base SHA")
-    require(contract["data_role"] == "development" and contract["promotion_allowed"] is False and
-            contract["candidate_limit"] == 0 and contract["confirmation_limit"] == 0,
-            "measurement task cannot acquire candidate/confirmation authority")
+    require(contract["promotion_allowed"] is False and contract["candidate_limit"] == 0 and
+            contract["confirmation_limit"] == 0,
+            "registered pre-candidate task cannot acquire acoustic authority")
     require(type(contract["run_timeout_seconds"]) is int and 1 <= contract["run_timeout_seconds"] <= 900,
             "timeout budget")
-    require(len(contract["seeds"]) == 3 and len(set(contract["seeds"])) == 3 and
-            all(type(seed) is int and 0 <= seed < 2 ** 32 for seed in contract["seeds"]), "seed budget")
-    if task["id"] == "I002":
-        require(contract["phase"] == "measurement-migration" and
+
+    if task["lane"] == "measurement":
+        require(contract["data_role"] == "development", "measurement task data role")
+        require(len(contract["seeds"]) == 3 and len(set(contract["seeds"])) == 3 and
+                all(type(seed) is int and 0 <= seed < 2 ** 32 for seed in contract["seeds"]), "seed budget")
+        require(task["id"] == "I002" and contract["phase"] == "measurement-migration" and
                 contract["canonical_generator"] == "validation/tools/build_aec_motion_corpus.py" and
                 contract["generator_version"] == 2, "I002 measurement migration contract")
+    elif task["lane"] == "governance":
+        require(task["id"] == "P001" and contract["phase"] == "governance-qualification" and
+                contract["root_cause_id"] == "promotion-governance" and
+                contract["policy"] == "docs/program/promotion-policy.json",
+                "P001 governance contract")
+    else:
+        raise ValueError("registered handler lane is not approved in this phase")
 
 
 def validate(plan: dict, root: Path | None = None) -> None:
@@ -83,7 +101,16 @@ def validate(plan: dict, root: Path | None = None) -> None:
             "hardware and automatic promotion are forbidden in this phase")
     require(type(plan["max_parallel_candidates"]) is int and plan["max_parallel_candidates"] == 1,
             "only one acoustic candidate at a time")
-    require(sha(plan["baseline"]["source_sha"]), "baseline must be an exact SHA")
+    baseline = plan["baseline"]
+    keys(baseline, {"source_sha", "verify_url", "software_release", "release_url", "note"})
+    require(sha(baseline["source_sha"]), "baseline must be an exact SHA")
+    require(isinstance(baseline["verify_url"], str) and "/actions/runs/" in baseline["verify_url"],
+            "baseline Verify URL")
+    require(re.fullmatch(r"v\d+\.\d+\.\d+", baseline["software_release"]) is not None,
+            "baseline release SemVer")
+    require(isinstance(baseline["release_url"], str) and baseline["release_url"].endswith(
+        "/releases/tag/" + baseline["software_release"]), "baseline release URL")
+
     require(isinstance(plan["data_roles"], list), "data_roles must be a list")
     seen_paths = set()
     for data in plan["data_roles"]:
@@ -128,7 +155,9 @@ def validate(plan: dict, root: Path | None = None) -> None:
         if task["handler"] is not None:
             require(task["handler"] in HANDLERS, "unregistered handler")
             spec = HANDLERS[task["handler"]]
-            require(task["status"] in {"READY", "ACTIVE", "REVIEW_REQUIRED"}, "handler on terminal/planned task")
+            require(task["status"] in {"READY", "ACTIVE", "REVIEW_REQUIRED"},
+                    "handler on terminal/planned task")
+            require(task["contract"] == spec["contract"], "handler contract path")
             if root is not None:
                 repo_file(root, spec["path"])
                 contract = json.loads(repo_file(root, task["contract"]).read_text())
@@ -173,18 +202,23 @@ def self_test() -> None:
     plan = json.loads((ROOT / PLAN).read_text())
     validate(plan)
     by_id = {task["id"]: task for task in plan["tasks"]}
-    i002 = by_id["I002"]
-    if i002["status"] == "READY":
-        require(next_task(plan) is not None and next_task(plan)["id"] == "I002",
-                "READY I002 must be the next reviewed task")
-        require(view(plan)["automation_status"] == "READY", "I002 handler must be registered")
-    elif i002["status"] == "CLOSED":
-        require(i002["handler"] is None and bool(i002["evidence"]),
-                "reviewed I002 must be terminal and evidence-backed")
+    i002, p001 = by_id["I002"], by_id["P001"]
+    require(i002["status"] == "CLOSED" and i002["handler"] is None and bool(i002["evidence"]),
+            "I002 must remain reviewed and closed")
+
+    if p001["status"] == "READY":
+        require(next_task(plan) is not None and next_task(plan)["id"] == "P001",
+                "READY P001 must be next")
+        require(view(plan)["automation_status"] == "READY" and p001["handler"] == "promotion-governance",
+                "P001 handler must be registered")
+        require(by_id["I003"]["status"] == "PLANNED", "P001 cannot auto-activate I003")
+    elif p001["status"] == "CLOSED":
+        require(p001["handler"] is None and bool(p001["evidence"]), "closed P001 needs reviewed evidence")
         require(next_task(plan) is None and view(plan)["automation_status"] == "NO_READY_TASK",
-                "closing I002 must not silently auto-activate an unimplemented task")
+                "closing P001 must not silently activate unimplemented acoustic work")
+        require(by_id["I003"]["status"] == "PLANNED", "I003 needs its own later contract")
     else:
-        raise AssertionError("I002 must be READY or CLOSED in the current program phase")
+        raise AssertionError("P001 must be READY or CLOSED in this program phase")
 
     mutations = [
         lambda p: p.update(auto_promote=True),
@@ -194,8 +228,8 @@ def self_test() -> None:
         lambda p: p["baseline"].update(source_sha="main"),
         lambda p: p["data_roles"][0].update(role="confirmation"),
         lambda p: p["tasks"][0].update(status="CLOSED", evidence=[]),
-        lambda p: p["tasks"][2].update(handler="shell"),
-        lambda p: p["tasks"][2].update(depends_on=["UNKNOWN"]),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "P001").update(handler="shell"),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "P001").update(depends_on=["UNKNOWN"]),
         lambda p: p["tasks"][-1].update(status="READY"),
         lambda p: p["tasks"][0].update(depends_on=["P001"]),
     ]
@@ -204,23 +238,18 @@ def self_test() -> None:
         mutate(bad)
         try:
             validate(bad)
-        except (ValueError, KeyError, TypeError):
+        except (ValueError, KeyError, TypeError, StopIteration):
             continue
         raise AssertionError("negative program case was accepted")
 
     blocked = copy.deepcopy(plan)
-    for task in blocked["tasks"]:
-        if task["status"] == "READY":
-            task["status"] = "PLANNED"
-            task["handler"] = None
-            task["contract"] = None
     by_id_blocked = {task["id"]: task for task in blocked["tasks"]}
     by_id_blocked["P001"].update(status="READY", handler=None, contract=None)
     require(view(blocked)["automation_status"] == "BLOCKED_IMPLEMENTATION",
-            "missing handler must block rather than pretend to execute")
+            "missing P001 handler must block")
     by_id_blocked["P001"]["depends_on"] = ["I003"]
     require(next_task(blocked) is None, "unfinished dependency must block")
-    print("program self-test: I002 ready/closed lifecycle plus governance negative contracts OK")
+    print("program self-test: I002 closed + P001 ready/closed lifecycle and negative contracts OK")
 
 
 def main() -> int:
@@ -253,6 +282,7 @@ def main() -> int:
             return 2
         spec = HANDLERS[task["handler"]]
         contract = json.loads((ROOT / task["contract"]).read_text())
+        validate_contract(task, contract, spec)
         command = [sys.executable, str(ROOT / spec["path"]), "--contract", str(ROOT / task["contract"]),
                    "--output", str(output / "research")]
         result["execution_status"] = "FAILED"
@@ -272,6 +302,7 @@ def main() -> int:
             result["execution_status"] = "TIMEOUT"
             result["returncode"] = 124
         finally:
+            result["task_decision"] = spec["decision"]
             result["candidate_decision"] = spec["decision"]
             result["progress_transition"] = "REVIEW_REQUIRED_NOT_AUTOMATICALLY_CLOSED"
             (output / "execution-result.json").write_text(json.dumps(result, indent=2) + "\n")

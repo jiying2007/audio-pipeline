@@ -13,6 +13,7 @@ static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--spacing-mm MM] "
             "[--frontend bf-only|hpf-bf] "
+            "[--oracle-channel 0|1 --oracle-out FILE] "
             "<stereo-s16le.pcm> <mono-out.pcm> <trace.jsonl>\n",
             argv0);
 }
@@ -53,6 +54,7 @@ int main(int argc, char **argv) {
     ap_hpf_state_t hpf;
     int16_t input[AP_BF_PROBE_MAX_FRAME * 2u];
     int16_t output[AP_BF_PROBE_MAX_FRAME];
+    int16_t oracle_output[AP_BF_PROBE_MAX_FRAME];
     float mic0[AP_BF_PROBE_MAX_FRAME];
     float mic1[AP_BF_PROBE_MAX_FRAME];
     float beam[AP_BF_PROBE_MAX_FRAME];
@@ -60,8 +62,11 @@ int main(int argc, char **argv) {
     float spacing_mm = 50.0f;
     uint32_t frame_samples;
     uint32_t frame_index = 0u;
+    uint32_t oracle_channel = 0u;
+    int oracle_channel_set = 0;
     int use_hpf = 1;
     const char *frontend = "hpf-bf";
+    const char *oracle_path = NULL;
     int arg = 1;
     const char *input_path;
     const char *output_path;
@@ -69,6 +74,7 @@ int main(int argc, char **argv) {
     FILE *fi;
     FILE *fo;
     FILE *ft;
+    FILE *foracle = NULL;
 
     while (arg < argc && argv[arg][0] == '-') {
         if (strcmp(argv[arg], "--sample-rate") == 0) {
@@ -95,6 +101,18 @@ int main(int argc, char **argv) {
                 usage(argv[0]);
                 return 2;
             }
+        } else if (strcmp(argv[arg], "--oracle-channel") == 0) {
+            if (++arg >= argc || !parse_u32(argv[arg], &oracle_channel) || oracle_channel > 1u) {
+                usage(argv[0]);
+                return 2;
+            }
+            oracle_channel_set = 1;
+        } else if (strcmp(argv[arg], "--oracle-out") == 0) {
+            if (++arg >= argc) {
+                usage(argv[0]);
+                return 2;
+            }
+            oracle_path = argv[arg];
         } else {
             usage(argv[0]);
             return 2;
@@ -103,7 +121,7 @@ int main(int argc, char **argv) {
     }
 
     if (argc - arg != 3 || sample_rate == 0u || sample_rate % 100u != 0u ||
-        spacing_mm <= 0.0f) {
+        spacing_mm <= 0.0f || oracle_channel_set != (oracle_path != NULL)) {
         usage(argv[0]);
         return 2;
     }
@@ -119,17 +137,21 @@ int main(int argc, char **argv) {
     fi = fopen(input_path, "rb");
     fo = fopen(output_path, "wb");
     ft = fopen(trace_path, "wb");
-    if (!fi || !fo || !ft) {
+    if (oracle_path) foracle = fopen(oracle_path, "wb");
+    if (!fi || !fo || !ft || (oracle_path && !foracle)) {
         perror("fopen");
         if (fi) fclose(fi);
         if (fo) fclose(fo);
         if (ft) fclose(ft);
+        if (foracle) fclose(foracle);
         return 2;
     }
 
     ap_beamformer_init(&state, sample_rate, spacing_mm);
     ap_hpf_init(&hpf, sample_rate, 2u);
     while (fread(input, sizeof(int16_t) * 2u, frame_samples, fi) == frame_samples) {
+        double energy0 = 1.0e-12;
+        double energy1 = 1.0e-12;
         uint32_t i;
         for (i = 0u; i < frame_samples; ++i) {
             mic0[i] = (float)input[2u * i];
@@ -139,6 +161,24 @@ int main(int argc, char **argv) {
             ap_hpf_process(&hpf, mic0, frame_samples, 0u);
             ap_hpf_process(&hpf, mic1, frame_samples, 1u);
         }
+        for (i = 0u; i < frame_samples; ++i) {
+            energy0 += (double)mic0[i] * (double)mic0[i];
+            energy1 += (double)mic1[i] * (double)mic1[i];
+            if (foracle) {
+                const float oracle = oracle_channel == 0u ? mic0[i] : mic1[i];
+                oracle_output[i] = float_to_s16(oracle);
+            }
+        }
+        energy0 /= (double)frame_samples;
+        energy1 /= (double)frame_samples;
+        if (foracle && fwrite(oracle_output, sizeof(int16_t), frame_samples, foracle) != frame_samples) {
+            perror("fwrite oracle");
+            fclose(fi);
+            fclose(fo);
+            fclose(ft);
+            fclose(foracle);
+            return 5;
+        }
 
         ap_beamformer_process(&state, 1, mic0, mic1, beam, frame_samples);
         for (i = 0u; i < frame_samples; ++i) output[i] = float_to_s16(beam[i]);
@@ -147,16 +187,20 @@ int main(int argc, char **argv) {
             fclose(fi);
             fclose(fo);
             fclose(ft);
+            if (foracle) fclose(foracle);
             return 5;
         }
         if (fprintf(ft,
                     "{\"frame\":%u,\"frontend\":\"%s\","
+                    "\"pre_bf_energy0\":%.9g,\"pre_bf_energy1\":%.9g,"
                     "\"fallback_active\":%u,\"fallback_strong_channel\":%u,"
                     "\"fallback_recovery_count\":%u,"
                     "\"fallback_gain\":%.9g,\"fallback_lag\":%d,"
                     "\"lag\":%d,\"score_updates\":%u}\n",
                     frame_index,
                     frontend,
+                    energy0,
+                    energy1,
                     state.fallback_active,
                     state.fallback_strong_channel,
                     state.fallback_recovery_count,
@@ -168,6 +212,7 @@ int main(int argc, char **argv) {
             fclose(fi);
             fclose(fo);
             fclose(ft);
+            if (foracle) fclose(foracle);
             return 5;
         }
         frame_index++;
@@ -178,10 +223,11 @@ int main(int argc, char **argv) {
         fclose(fi);
         fclose(fo);
         fclose(ft);
+        if (foracle) fclose(foracle);
         return 5;
     }
     fclose(fi);
-    if (fclose(fo) != 0 || fclose(ft) != 0) {
+    if (fclose(fo) != 0 || fclose(ft) != 0 || (foracle && fclose(foracle) != 0)) {
         perror("fclose");
         return 5;
     }

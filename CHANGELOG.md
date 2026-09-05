@@ -1,3 +1,9 @@
+# 2.3.11
+
+- Add health-selected failover for one-sided low-frequency microphone contamination while preserving the existing severe-mismatch 75/25 fail-soft path for ordinary sensitivity/SNR degradation. Hard bypass is admitted only after two consecutive low-ratio/low-roughness tracking updates require an actual channel-selection flip, and exits through bounded eight-update recovery hysteresis.
+- Bind the BF hard-fault change to exact-source HPF→BF regression and frozen differential confirmation. On unseen seeds 13307/14307/15307, all six wind cases match the frontend-equivalent healthy single-microphone oracle while improving about +17.79..+17.89 dB over exact base `b68b862f98d8b3aa1ba77e384a5dd60d955c1f23`; every non-wind control/fault/soft-sensitivity output remains byte-exact to that base.
+- Preserve the public v2 API/ABI and the established BF sensitivity envelope; BF hard-fault development/confirmation, BF Sensitivity, AGC/BF Stage, DSP Stage, Hosted Real Audio and Hosted Real AEC gates all remain required evidence. Deterministic hosted evidence does not replace Extended Real, real DUT/HIL or formal Product Certification.
+
 # 2.3.10
 
 - Ship the independently confirmed VAD strong/weak hangover refresh policy: probability >=0.50 refreshes the historical 8-frame hold, while marginal admissions above the unchanged local/NS decision thresholds extend only to max(current, 6) and never truncate stronger continuity.

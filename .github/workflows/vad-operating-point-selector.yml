@@ -35,10 +35,18 @@ jobs:
       - name: Validate selector contracts
         run: |
           set -euo pipefail
-          python3 -m py_compile tests/validation/vad_operating_point_selector.py
+          python3 -m py_compile validation/tools/build_stage_validation_corpus.py tests/validation/vad_operating_point_selector.py
           python3 validation/tools/run_validation.py --self-test
-          python3 validation/tools/build_stage_validation_corpus.py --self-test
           python3 tests/validation/vad_operating_point_selector.py --self-test
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-selector-contract --seed 1307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          corpus = json.loads(Path('/tmp/ap-vad-selector-contract/corpus.json').read_text())
+          assert corpus['generator']['seed'] == 1307
+          profiles = {case.get('processor_profile') for case in corpus['cases'] if case.get('vad_labels')}
+          assert {'vad-isolated', 'ns-isolated'} <= profiles
+          PY
       - name: Configure selector processor
         run: >-
           cmake -S . -B build-vad-selector -DCMAKE_BUILD_TYPE=Release

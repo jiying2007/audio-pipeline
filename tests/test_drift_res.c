@@ -38,6 +38,26 @@ static void run_delay_frame(ap_pipeline_t *p, int16_t *history, uint32_t *wp,
     assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
 }
 
+static void run_multipath_frame(ap_pipeline_t *p, int16_t *history, uint32_t *wp,
+                                uint32_t *sample_index, uint32_t direct_delay,
+                                uint32_t late_delay, int16_t *out) {
+    int16_t render[160];
+    int16_t mic[160];
+    uint32_t i;
+    for (i = 0u; i < 160u; ++i) {
+        const int16_t r = (int16_t)(prn_sample((*sample_index)++) / 2);
+        const int16_t direct = history[(*wp + HIST - direct_delay) & (HIST - 1u)];
+        const int16_t late = history[(*wp + HIST - late_delay) & (HIST - 1u)];
+        const int32_t mixed = (int32_t)direct / 12 + (int32_t)late / 3;
+        history[*wp] = r;
+        *wp = (*wp + 1u) & (HIST - 1u);
+        render[i] = r;
+        mic[i] = (int16_t)mixed;
+    }
+    assert(ap_pipeline_push_render(p, render, 160u) == AP_OK);
+    assert(ap_pipeline_process_capture(p, mic, 160u, out) == AP_OK);
+}
+
 static void test_clock_drift_and_route_jump(void) {
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *p = NULL;
@@ -82,6 +102,40 @@ static void test_clock_drift_and_route_jump(void) {
     }
     ap_pipeline_get_metrics(p, &after_negative_drift);
     assert(after_negative_drift.reference_sample_slips > after_jump.reference_sample_slips);
+}
+
+static void test_incumbent_peak_avoids_late_reflection_and_keeps_route_fallback(void) {
+    ap_config_t c = ap_config_default(AP_PROFILE_CALL);
+    ap_pipeline_t *p = NULL;
+    int16_t history[HIST];
+    int16_t out[160];
+    uint32_t wp = 0u, sample_index = 0u, frame;
+    ap_metrics_t anchored, after_route_change;
+
+    memset(history, 0, sizeof(history));
+    c.mic_channels = 1u;
+    c.stages = AP_STAGE_SYNC | AP_STAGE_AEC;
+    c.enable_delay_tracking = 1u;
+    c.enable_clock_drift_compensation = 1u;
+    c.initial_delay_ms = 40u;
+    c.max_delay_ms = 100u;
+    assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_OK);
+
+    for (frame = 0u; frame < 450u; ++frame)
+        run_multipath_frame(p, history, &wp, &sample_index, 672u, 1280u, out);
+
+    ap_pipeline_get_metrics(p, &anchored);
+    assert(anchored.estimated_delay_ms >= 40u && anchored.estimated_delay_ms <= 45u);
+    assert(anchored.delay_jumps == 0u);
+    assert(anchored.reference_sample_slips > 0u);
+
+    for (frame = 0u; frame < 180u; ++frame)
+        run_delay_frame(p, history, &wp, &sample_index, 1280u, out);
+
+    ap_pipeline_get_metrics(p, &after_route_change);
+    assert(after_route_change.delay_jumps > anchored.delay_jumps);
+    assert(after_route_change.aec_resets > anchored.aec_resets);
+    assert(after_route_change.estimated_delay_ms >= 75u && after_route_change.estimated_delay_ms <= 85u);
 }
 
 static void test_delay_tracking_without_clock_drift_compensation(void) {
@@ -205,6 +259,7 @@ static void test_frequency_res_and_degradation(void) {
 
 int main(void) {
     test_clock_drift_and_route_jump();
+    test_incumbent_peak_avoids_late_reflection_and_keeps_route_fallback();
     test_delay_tracking_without_clock_drift_compensation();
     test_periodic_path_does_not_trigger_false_route_jumps();
     test_frequency_res_and_degradation();

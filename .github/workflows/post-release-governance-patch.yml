@@ -1,0 +1,138 @@
+name: Post Release Governance Patch
+
+on:
+  push:
+    branches:
+      - fix/post-release-qualification-dispatch
+    paths:
+      - '.github/workflows/post-release-governance-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: fix/post-release-qualification-dispatch
+          fetch-depth: 0
+      - name: Apply deterministic workflow edits
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              return text.replace(old, new, 1)
+
+          hil = Path('.github/workflows/hil-soak.yml')
+          text = hil.read_text(encoding='utf-8')
+          text = replace_once(
+              text,
+              'name: HIL Tiered Soak\n\non:\n',
+              "name: HIL Tiered Soak\nrun-name: ${{ github.event_name == 'repository_dispatch' && format('hil-post-release {0}', github.event.client_payload.tag) || format('HIL Tiered Soak {0}', github.event_name) }}\n\non:\n",
+              'HIL run-name',
+          )
+          if '  notify-post-release:\n' in text:
+              raise SystemExit('HIL notify job already present')
+          text += '''\n  notify-post-release:
+            needs: [availability, soak]
+            if: ${{ always() && github.event_name == 'repository_dispatch' && github.event.action == 'hil-post-release' }}
+            runs-on: ubuntu-latest
+            permissions:
+              contents: write
+            steps:
+              - name: Notify post-release qualification aggregator
+                env:
+                  GH_TOKEN: ${{ github.token }}
+                  RELEASE_REF: ${{ github.event.client_payload.release_ref }}
+                  RELEASE_TAG: ${{ github.event.client_payload.tag }}
+                run: |
+                  set -euo pipefail
+                  [[ "$RELEASE_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'invalid post-release SHA' >&2; exit 1; }
+                  case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 1 ;; esac
+                  gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \\
+                    -f event_type=post-release-qualification \\
+                    -f "client_payload[release_ref]=$RELEASE_REF" \\
+                    -f "client_payload[tag]=$RELEASE_TAG" \\
+                    -f 'client_payload[component]=hil' \\
+                    -f "client_payload[source_run_id]=$GITHUB_RUN_ID"
+          '''
+          # Remove helper-script indentation while retaining YAML job indentation.
+          text = text.replace('\n          \n  notify-post-release:', '\n\n  notify-post-release:')
+          hil.write_text(text, encoding='utf-8')
+
+          extended = Path('.github/workflows/validation-extended-real.yml')
+          text = extended.read_text(encoding='utf-8')
+          text = replace_once(
+              text,
+              'name: Extended Real Validation\n\non:\n',
+              "name: Extended Real Validation\nrun-name: ${{ inputs.post_release_tag != '' && format('extended-real-validation {0}', inputs.post_release_tag) || format('Extended Real Validation {0}', inputs.profile) }}\n\non:\n",
+              'Extended run-name',
+          )
+          text = replace_once(
+              text,
+              "      data_root:\n        description: Optional dataset root; blank resolves AUDIO_PIPELINE_LAB_DATA_ROOT or $HOME/audio-validation-extended on audio-validation runner\n        required: false\n        default: ''\n        type: string\n      limit_per_dataset:\n",
+              "      data_root:\n        description: Optional dataset root; blank resolves AUDIO_PIPELINE_LAB_DATA_ROOT or $HOME/audio-validation-extended on audio-validation runner\n        required: false\n        default: ''\n        type: string\n      post_release_tag:\n        description: Optional immutable release tag; non-empty enables post-release authority notification\n        required: false\n        default: ''\n        type: string\n      limit_per_dataset:\n",
+              'Extended post-release input',
+          )
+          text = replace_once(
+              text,
+              '        env:\n          SOURCE_SHA: ${{ inputs.source_sha }}\n        run: |\n',
+              '        env:\n          SOURCE_SHA: ${{ inputs.source_sha }}\n          POST_RELEASE_TAG: ${{ inputs.post_release_tag }}\n        run: |\n',
+              'Extended resolve env',
+          )
+          text = replace_once(
+              text,
+              '          git fetch --no-tags origin "$SOURCE_SHA"\n          git cat-file -e "$SOURCE_SHA^{commit}"\n          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"\n',
+              '          git fetch --no-tags origin "$SOURCE_SHA"\n          git cat-file -e "$SOURCE_SHA^{commit}"\n          if [ -n "$POST_RELEASE_TAG" ]; then\n            case "$POST_RELEASE_TAG" in v*) ;; *) echo "post_release_tag must begin with v" >&2; exit 1 ;; esac\n            git fetch --force origin "refs/tags/$POST_RELEASE_TAG:refs/tags/$POST_RELEASE_TAG"\n            test "$(git rev-list -n1 "$POST_RELEASE_TAG")" = "${SOURCE_SHA,,}"\n          fi\n          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"\n',
+              'Extended tag binding',
+          )
+          if '  notify-post-release:\n' in text:
+              raise SystemExit('Extended validation notify job already present')
+          text += '''\n  notify-post-release:
+            needs: [resolve, validate]
+            if: ${{ always() && inputs.post_release_tag != '' }}
+            runs-on: ubuntu-latest
+            permissions:
+              contents: write
+            steps:
+              - name: Notify post-release qualification aggregator
+                env:
+                  GH_TOKEN: ${{ github.token }}
+                  RELEASE_REF: ${{ inputs.source_sha }}
+                  RELEASE_TAG: ${{ inputs.post_release_tag }}
+                run: |
+                  set -euo pipefail
+                  [[ "$RELEASE_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'invalid post-release SHA' >&2; exit 1; }
+                  case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 1 ;; esac
+                  gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \\
+                    -f event_type=post-release-qualification \\
+                    -f "client_payload[release_ref]=$RELEASE_REF" \\
+                    -f "client_payload[tag]=$RELEASE_TAG" \\
+                    -f 'client_payload[component]=extended-real' \\
+                    -f "client_payload[source_run_id]=$GITHUB_RUN_ID"
+          '''
+          text = text.replace('\n          \n  notify-post-release:', '\n\n  notify-post-release:')
+          extended.write_text(text, encoding='utf-8')
+          PY
+          python3 scripts/post_release_status.py --self-test
+          ruby -e 'require "yaml"; ARGV.each { |path| Psych.parse_file(path) }' .github/workflows/*.yml
+          git diff --check
+          grep -q '^  notify-post-release:$' .github/workflows/hil-soak.yml
+          grep -q '^  notify-post-release:$' .github/workflows/validation-extended-real.yml
+          grep -q '^      post_release_tag:$' .github/workflows/validation-extended-real.yml
+      - name: Commit patched workflows
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/hil-soak.yml .github/workflows/validation-extended-real.yml
+          git diff --cached --check
+          git commit -m 'ci: emit terminal post-release qualification notifications'
+          git push origin HEAD:fix/post-release-qualification-dispatch

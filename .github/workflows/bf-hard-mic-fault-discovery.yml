@@ -10,6 +10,7 @@ on:
       - 'tests/validation/build_bf_hard_fault_sweep.py'
       - 'tests/validation/bf_hard_fault_evaluate.py'
       - 'tests/validation/bf_hard_fault_summary.py'
+      - 'tests/validation/bf_hard_fault_candidate_gate.py'
       - 'validation/tools/build_validation_corpus.py'
       - '.github/workflows/bf-hard-mic-fault-discovery.yml'
   workflow_dispatch:
@@ -36,10 +37,12 @@ jobs:
           python3 -m py_compile \
             tests/validation/build_bf_hard_fault_sweep.py \
             tests/validation/bf_hard_fault_evaluate.py \
-            tests/validation/bf_hard_fault_summary.py
+            tests/validation/bf_hard_fault_summary.py \
+            tests/validation/bf_hard_fault_candidate_gate.py
           python3 tests/validation/build_bf_hard_fault_sweep.py --self-test
           python3 tests/validation/bf_hard_fault_evaluate.py --self-test
           python3 tests/validation/bf_hard_fault_summary.py --self-test
+          python3 tests/validation/bf_hard_fault_candidate_gate.py --self-test
 
       - name: Build exact-source frontend probe
         run: |
@@ -94,20 +97,41 @@ jobs:
               --output "bf-hard-fault-out/${frontend}/summary.json" \
               | tee "bf-hard-fault-out/${frontend}/summary.txt"
           done
+
+      - name: Enforce hard-fault product-candidate regression gate
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          python3 tests/validation/bf_hard_fault_candidate_gate.py \
+            --report bf-hard-fault-out/hpf-bf/1307/report.json \
+            --report bf-hard-fault-out/hpf-bf/2307/report.json \
+            --report bf-hard-fault-out/hpf-bf/3307/report.json \
+            --output bf-hard-fault-out/hpf-bf/candidate-gate.json \
+            | tee bf-hard-fault-out/hpf-bf/candidate-gate.txt
+
+      - name: Publish BF hard-fault summary
+        if: always()
+        run: |
           {
             echo '## BF hard microphone fault discovery'
             echo
             echo '### BF-only module view'
             echo '```text'
-            cat bf-hard-fault-out/bf-only/summary.txt
+            cat bf-hard-fault-out/bf-only/summary.txt 2>/dev/null || true
             echo '```'
             echo
             echo '### HPF → BF shipping-frontend view'
             echo '```text'
-            cat bf-hard-fault-out/hpf-bf/summary.txt
+            cat bf-hard-fault-out/hpf-bf/summary.txt 2>/dev/null || true
             echo '```'
             echo
-            echo 'The HPF → BF view is the product-relevant decision authority for this discovery. BF-only is retained as module-level root-cause evidence. Both remain diagnostic-regression-only and cannot silently change shipping DSP.'
+            echo '### Product-candidate gate'
+            echo '```text'
+            cat bf-hard-fault-out/hpf-bf/candidate-gate.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo 'The HPF → BF view is the product-relevant candidate regression authority for this deterministic suite. BF-only is retained as module-level root-cause evidence. This synthetic gate does not constitute DUT/HIL or product certification.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload BF hard-fault evidence

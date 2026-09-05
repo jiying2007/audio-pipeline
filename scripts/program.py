@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Validate the committed program and execute only registered, non-shipping work.
+"""Validate the committed software/public-data program and run registered work.
 
-This is an orchestration/progress index, never a second acoustic evaluator or a
-promotion authority. Successful research execution is not candidate acceptance.
+This orchestrator is not an acoustic evaluator, optimizer, promotion authority,
+or product-certification substitute. A successful registered execution only
+means the task ran to completion and still requires evidence review.
 """
 from __future__ import annotations
 
@@ -11,8 +12,8 @@ import copy
 import hashlib
 import json
 import os
-import signal
 import re
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -21,7 +22,14 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN = "docs/program/plan.json"
 STATES = {"PLANNED", "READY", "ACTIVE", "REVIEW_REQUIRED", "CLOSED", "DEFERRED"}
 LANES = {"governance", "measurement", "engineering", "acoustic", "external"}
-HANDLERS = {"aec-model-audit": "tests/validation/aec_motion_model_audit.py"}
+HANDLERS = {
+    "aec-motion-model-qualification": {
+        "path": "tests/validation/aec_motion_model_qualification.py",
+        "contract": "docs/program/iterations/I002.json",
+        "iteration_id": "I002",
+        "decision": "NOT_AN_ACOUSTIC_CANDIDATE",
+    },
+}
 
 
 def require(ok: bool, message: str) -> None:
@@ -45,6 +53,24 @@ def repo_file(root: Path, value: str) -> Path:
     require(path.resolve().is_relative_to(root.resolve()) and path.is_file(),
             f"missing/escaping file: {value}")
     return path
+
+
+def validate_contract(task: dict, contract: dict, spec: dict) -> None:
+    require(task["lane"] == "measurement", "registered handlers are measurement-only in this phase")
+    require(task["contract"] == spec["contract"] and contract["iteration_id"] == spec["iteration_id"] == task["id"],
+            "handler/contract identity")
+    require(sha(contract["base_sha"]), "contract base SHA")
+    require(contract["data_role"] == "development" and contract["promotion_allowed"] is False and
+            contract["candidate_limit"] == 0 and contract["confirmation_limit"] == 0,
+            "measurement task cannot acquire candidate/confirmation authority")
+    require(type(contract["run_timeout_seconds"]) is int and 1 <= contract["run_timeout_seconds"] <= 900,
+            "timeout budget")
+    require(len(contract["seeds"]) == 3 and len(set(contract["seeds"])) == 3 and
+            all(type(seed) is int and 0 <= seed < 2 ** 32 for seed in contract["seeds"]), "seed budget")
+    if task["id"] == "I002":
+        require(contract["phase"] == "measurement-migration" and
+                contract["canonical_generator"] == "validation/tools/build_aec_motion_corpus.py" and
+                contract["generator_version"] == 2, "I002 measurement migration contract")
 
 
 def validate(plan: dict, root: Path | None = None) -> None:
@@ -71,11 +97,12 @@ def validate(plan: dict, root: Path | None = None) -> None:
                 "exposed data cannot be independent")
         if root is not None:
             repo_file(root, data["path"])
+
     tasks = plan["tasks"]
     require(isinstance(tasks, list) and tasks, "tasks must be nonempty")
-    ids = [t["id"] for t in tasks]
+    ids = [task["id"] for task in tasks]
     require(len(ids) == len(set(ids)), "duplicate task")
-    by_id = {t["id"]: t for t in tasks}
+    by_id = {task["id"]: task for task in tasks}
     for task in tasks:
         keys(task, {"id", "priority", "status", "lane", "title", "depends_on", "handler",
                     "contract", "exit", "evidence"})
@@ -85,7 +112,7 @@ def validate(plan: dict, root: Path | None = None) -> None:
         require(bool(task["title"]) and bool(task["exit"]), "task requires title/exit")
         require(isinstance(task["depends_on"], list) and
                 len(task["depends_on"]) == len(set(task["depends_on"])), "dependencies")
-        require(all(d in by_id and d != task["id"] for d in task["depends_on"]), "unknown dependency")
+        require(all(dep in by_id and dep != task["id"] for dep in task["depends_on"]), "unknown dependency")
         require(isinstance(task["evidence"], list), "evidence list")
         if task["status"] == "CLOSED":
             require(bool(task["evidence"]), "CLOSED requires reviewed evidence pointers")
@@ -99,20 +126,14 @@ def validate(plan: dict, root: Path | None = None) -> None:
             require(task["status"] == "DEFERRED" and task["handler"] is None,
                     "product capture/qualification is deferred")
         if task["handler"] is not None:
-            require(task["handler"] in HANDLERS and task["lane"] == "measurement", "unregistered handler")
-            require(task["contract"] == "docs/program/iterations/I001.json", "unapproved experiment contract")
+            require(task["handler"] in HANDLERS, "unregistered handler")
+            spec = HANDLERS[task["handler"]]
+            require(task["status"] in {"READY", "ACTIVE", "REVIEW_REQUIRED"}, "handler on terminal/planned task")
             if root is not None:
-                repo_file(root, HANDLERS[task["handler"]])
+                repo_file(root, spec["path"])
                 contract = json.loads(repo_file(root, task["contract"]).read_text())
-                require(contract["iteration_id"] == task["id"] and sha(contract["base_sha"]), "contract identity")
-                require(contract["data_role"] == "development" and
-                        contract["promotion_allowed"] is False and
-                        contract["candidate_limit"] == 0 and contract["confirmation_limit"] == 0,
-                        "discovery cannot acquire candidate/confirmation authority")
-                require(type(contract["run_timeout_seconds"]) is int and
-                        1 <= contract["run_timeout_seconds"] <= 900, "timeout budget")
-                require(len(contract["seeds"]) == 3 and len(set(contract["seeds"])) == 3 and
-                        all(type(s) is int and s >= 0 for s in contract["seeds"]), "seed budget")
+                validate_contract(task, contract, spec)
+
     visiting, visited = set(), set()
 
     def walk(task_id: str) -> None:
@@ -124,15 +145,16 @@ def validate(plan: dict, root: Path | None = None) -> None:
             walk(dep)
         visiting.remove(task_id)
         visited.add(task_id)
+
     for task_id in ids:
         walk(task_id)
 
 
 def next_task(plan: dict) -> dict | None:
     by_id = {task["id"]: task for task in plan["tasks"]}
-    ready = [t for t in plan["tasks"] if t["status"] == "READY" and
-             all(by_id[d]["status"] == "CLOSED" for d in t["depends_on"])]
-    return min(ready, key=lambda t: (t["priority"], t["id"])) if ready else None
+    ready = [task for task in plan["tasks"] if task["status"] == "READY" and
+             all(by_id[dep]["status"] == "CLOSED" for dep in task["depends_on"])]
+    return min(ready, key=lambda task: (task["priority"], task["id"])) if ready else None
 
 
 def view(plan: dict) -> dict:
@@ -143,12 +165,27 @@ def view(plan: dict) -> dict:
             "next_task": task["id"] if task else None,
             "automation_status": ("READY" if task["handler"] in HANDLERS else "BLOCKED_IMPLEMENTATION")
             if task else "NO_READY_TASK",
-            "tasks": [{"id": t["id"], "status": t["status"], "title": t["title"]} for t in plan["tasks"]]}
+            "tasks": [{"id": task["id"], "status": task["status"], "title": task["title"]}
+                      for task in plan["tasks"]]}
 
 
 def self_test() -> None:
     plan = json.loads((ROOT / PLAN).read_text())
     validate(plan)
+    by_id = {task["id"]: task for task in plan["tasks"]}
+    i002 = by_id["I002"]
+    if i002["status"] == "READY":
+        require(next_task(plan) is not None and next_task(plan)["id"] == "I002",
+                "READY I002 must be the next reviewed task")
+        require(view(plan)["automation_status"] == "READY", "I002 handler must be registered")
+    elif i002["status"] == "CLOSED":
+        require(i002["handler"] is None and bool(i002["evidence"]),
+                "reviewed I002 must be terminal and evidence-backed")
+        require(next_task(plan) is None and view(plan)["automation_status"] == "NO_READY_TASK",
+                "closing I002 must not silently auto-activate an unimplemented task")
+    else:
+        raise AssertionError("I002 must be READY or CLOSED in the current program phase")
+
     mutations = [
         lambda p: p.update(auto_promote=True),
         lambda p: p.update(hardware_collection=True),
@@ -157,8 +194,8 @@ def self_test() -> None:
         lambda p: p["baseline"].update(source_sha="main"),
         lambda p: p["data_roles"][0].update(role="confirmation"),
         lambda p: p["tasks"][0].update(status="CLOSED", evidence=[]),
-        lambda p: p["tasks"][1].update(handler="shell"),
-        lambda p: p["tasks"][1].update(depends_on=["UNKNOWN"]),
+        lambda p: p["tasks"][2].update(handler="shell"),
+        lambda p: p["tasks"][2].update(depends_on=["UNKNOWN"]),
         lambda p: p["tasks"][-1].update(status="READY"),
         lambda p: p["tasks"][0].update(depends_on=["P001"]),
     ]
@@ -170,15 +207,20 @@ def self_test() -> None:
         except (ValueError, KeyError, TypeError):
             continue
         raise AssertionError("negative program case was accepted")
+
     blocked = copy.deepcopy(plan)
     for task in blocked["tasks"]:
         if task["status"] == "READY":
             task["status"] = "PLANNED"
-    blocked["tasks"][0].update(status="READY", handler=None)
-    require(view(blocked)["automation_status"] == "BLOCKED_IMPLEMENTATION", "missing handler must block")
-    blocked["tasks"][0]["depends_on"] = ["I001"]
+            task["handler"] = None
+            task["contract"] = None
+    by_id_blocked = {task["id"]: task for task in blocked["tasks"]}
+    by_id_blocked["P001"].update(status="READY", handler=None, contract=None)
+    require(view(blocked)["automation_status"] == "BLOCKED_IMPLEMENTATION",
+            "missing handler must block rather than pretend to execute")
+    by_id_blocked["P001"]["depends_on"] = ["I003"]
     require(next_task(blocked) is None, "unfinished dependency must block")
-    print("program self-test: 13 positive/negative contracts OK")
+    print("program self-test: I002 ready/closed lifecycle plus governance negative contracts OK")
 
 
 def main() -> int:
@@ -190,6 +232,7 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
+
     plan_path = ROOT / PLAN
     plan = json.loads(plan_path.read_text())
     validate(plan, ROOT)
@@ -198,7 +241,7 @@ def main() -> int:
     if args.command == "run":
         require(args.output is not None, "run requires --output")
         output = args.output.resolve()
-        require(not output.exists() or not any(output.iterdir()), "output must be empty")
+        require(not output.exists() or (output.is_dir() and not any(output.iterdir())), "output must be empty")
         output.mkdir(parents=True, exist_ok=True)
         (output / "plan-progress.json").write_text(json.dumps(result, indent=2) + "\n")
         task = next_task(plan)
@@ -208,10 +251,10 @@ def main() -> int:
         if task["handler"] not in HANDLERS:
             print(json.dumps(result))
             return 2
+        spec = HANDLERS[task["handler"]]
         contract = json.loads((ROOT / task["contract"]).read_text())
-        command = [sys.executable, str(ROOT / HANDLERS[task["handler"]]),
-                   "--contract", str(ROOT / task["contract"]), "--output", str(output / "research")]
-        # No shell or arbitrary command from plan; all research runs are non-shipping.
+        command = [sys.executable, str(ROOT / spec["path"]), "--contract", str(ROOT / task["contract"]),
+                   "--output", str(output / "research")]
         result["execution_status"] = "FAILED"
         try:
             with (output / "execution.log").open("w") as log:
@@ -229,7 +272,7 @@ def main() -> int:
             result["execution_status"] = "TIMEOUT"
             result["returncode"] = 124
         finally:
-            result["candidate_decision"] = "NOT_A_CANDIDATE"
+            result["candidate_decision"] = spec["decision"]
             result["progress_transition"] = "REVIEW_REQUIRED_NOT_AUTOMATICALLY_CLOSED"
             (output / "execution-result.json").write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result))

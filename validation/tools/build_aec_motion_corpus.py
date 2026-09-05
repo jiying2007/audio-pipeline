@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""Build a deterministic continuous-motion AEC development corpus.
+"""Build the canonical deterministic continuous-motion AEC development corpus.
 
-The corpus is deliberately tier=regression and split=dev. It is suitable for
-candidate discovery and regression testing, never for blind/release/shipping
-authority. Echo paths change smoothly without calling the product's explicit
-echo-path-change notification, so the cases exercise continuous tracking rather
-than reset/recovery behavior.
+The model represents a rigid on-device speaker/microphone pair in a rectangular
+room. Device I/O plus the acoustic direct path is fixed at 42 ms, while six
+first-order wall reflections vary under quasi-static translation/rotation. The
+render probes are deterministic colored broadband signals, one with a smooth
+speech-like amplitude envelope. They are not recorded speech, measured RIRs, or
+DUT evidence.
+
+This corpus is always regression/development authority. It can expose AEC/sync
+failure modes and support bounded candidate development, but it cannot authorize
+shipping, HIL, Extended Real, or Product Certification.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -23,6 +27,26 @@ from pathlib import Path
 RATE = 16000
 FRAME = RATE // 100
 DEFAULT_SECONDS = 8.0
+GENERATOR_VERSION = 2
+DATASET_ID = "deterministic-aec-motion-geometry-v2"
+MODEL = {
+    "sample_rate_hz": RATE,
+    "direct_total_delay_ms": 42.0,
+    "nominal_reference_delay_ms": 40.0,
+    "speaker_mic_distance_m": 0.08,
+    "room_dimensions_m": [6.0, 5.0, 2.8],
+    "speed_of_sound_m_s": 343.0,
+    "paths": "direct plus six first-order wall images",
+    "approximation": "quasi-static moving geometry; linear fractional-delay interpolation; no full wave model, diffuse late tail, nonlinear transducer or real DUT",
+    "excitation": ["colored-broadband", "speech-envelope-broadband"],
+    "motion": ["stationary", "translation", "rotation"],
+    "direct_gain": [0.30, 0.03],
+}
+
+
+def require(ok: bool, message: str) -> None:
+    if not ok:
+        raise ValueError(message)
 
 
 def clamp16(value: float) -> int:
@@ -36,106 +60,13 @@ def write_pcm(path: Path, values: list[int]) -> None:
     path.write_bytes(data.tobytes())
 
 
-def smoothstep(x: float) -> float:
-    x = max(0.0, min(1.0, x))
-    return x * x * (3.0 - 2.0 * x)
-
-
-def interpolate(knots: list[float], position: float) -> float:
-    if len(knots) == 1:
-        return knots[0]
-    scaled = max(0.0, min(0.999999999, position)) * (len(knots) - 1)
-    index = int(scaled)
-    frac = smoothstep(scaled - index)
-    return knots[index] * (1.0 - frac) + knots[index + 1] * frac
-
-
 def sample(signal: list[int], position: float) -> float:
-    if position < 0.0:
-        return 0.0
-    base = int(position)
-    if base + 1 >= len(signal):
-        return 0.0
+    require(math.isfinite(position), "sample position must be finite")
+    base = math.floor(position)
     frac = position - base
-    return signal[base] * (1.0 - frac) + signal[base + 1] * frac
-
-
-def render_signal(samples: int, seed: int) -> list[int]:
-    rng = random.Random(seed)
-    phases = [rng.random() * math.tau for _ in range(5)]
-    freqs = [173.0, 277.0, 421.0, 683.0, 997.0]
-    out: list[int] = []
-    for n in range(samples):
-        t = n / RATE
-        envelope = 0.60 + 0.17 * math.sin(math.tau * 0.47 * t + phases[0])
-        envelope += 0.09 * math.sin(math.tau * 1.31 * t + phases[1])
-        value = 0.0
-        for index, freq in enumerate(freqs):
-            value += math.sin(math.tau * freq * t + phases[index]) / (1.0 + 0.55 * index)
-        out.append(clamp16(8200.0 * envelope * value / 2.6))
-    return out
-
-
-def make_knots(rng: random.Random, count: int, center: float, span: float,
-               floor: float | None = None, ceiling: float | None = None) -> list[float]:
-    values = [center + rng.uniform(-span, span) for _ in range(count)]
-    if floor is not None:
-        values = [max(floor, value) for value in values]
-    if ceiling is not None:
-        values = [min(ceiling, value) for value in values]
-    return values
-
-
-def motion_path(seed: int, family: str, intensity: int) -> tuple[list[list[float]], list[list[float]]]:
-    rng = random.Random(seed)
-    knot_count = 4 + intensity * 2
-    delay_span = 18.0 + intensity * 26.0
-    gain_span = 0.025 + intensity * 0.025
-    delays = [
-        make_knots(rng, knot_count, 280.0, delay_span, 120.0, 520.0),
-        make_knots(rng, knot_count, 760.0, delay_span * 1.35, 420.0, 1120.0),
-        make_knots(rng, knot_count, 1340.0, delay_span * 1.7, 820.0, 1880.0),
-    ]
-    gains = [
-        make_knots(rng, knot_count, 0.47, gain_span, 0.14, 0.68),
-        make_knots(rng, knot_count, 0.23, gain_span, 0.05, 0.52),
-        make_knots(rng, knot_count, 0.08, gain_span * 0.65, 0.01, 0.20),
-    ]
-
-    if family == "delay-wander":
-        for tap in range(3):
-            gains[tap] = [gains[tap][0]] * knot_count
-    elif family == "gain-crossfade":
-        for tap in range(3):
-            delays[tap] = [delays[tap][0]] * knot_count
-        for index in range(knot_count):
-            x = index / (knot_count - 1)
-            gains[0][index] = 0.58 - 0.36 * x
-            gains[1][index] = 0.10 + 0.38 * x
-    elif family == "reflection-birth-death":
-        for index in range(knot_count):
-            x = index / (knot_count - 1)
-            gains[2][index] = 0.015 + 0.16 * math.sin(math.pi * x) ** 2
-            gains[1][index] *= 0.80 + 0.20 * math.cos(math.tau * x) ** 2
-    elif family == "compound":
-        pass
-    else:
-        raise ValueError(family)
-    return delays, gains
-
-
-def moving_echo(render: list[int], delays: list[list[float]], gains: list[list[float]]) -> list[int]:
-    samples = len(render)
-    out: list[int] = []
-    for n in range(samples):
-        position = n / max(1, samples - 1)
-        value = 0.0
-        for tap in range(3):
-            delay = interpolate(delays[tap], position)
-            gain = interpolate(gains[tap], position)
-            value += gain * sample(render, n - delay)
-        out.append(clamp16(value))
-    return out
+    left = signal[base] if 0 <= base < len(signal) else 0
+    right = signal[base + 1] if 0 <= base + 1 < len(signal) else 0
+    return left * (1.0 - frac) + right * frac
 
 
 def file_sha256(path: Path) -> str:
@@ -144,6 +75,15 @@ def file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1 << 20), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def json_sha256(value: object) -> str:
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    return hashlib.sha256(raw).hexdigest()
+
+
+def write_json(path: Path, value: object) -> None:
+    path.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
 
 
 def tree_digest(root: Path) -> str:
@@ -155,108 +95,309 @@ def tree_digest(root: Path) -> str:
     return digest.hexdigest()
 
 
+def validate_model(model: dict) -> None:
+    require(set(model) == {"sample_rate_hz", "direct_total_delay_ms", "nominal_reference_delay_ms",
+                           "speaker_mic_distance_m", "room_dimensions_m", "speed_of_sound_m_s",
+                           "paths", "approximation", "excitation", "motion", "direct_gain"},
+            "model keys")
+    room = model["room_dimensions_m"]
+    require(isinstance(room, list) and len(room) == 3 and
+            all(isinstance(v, (int, float)) and math.isfinite(v) and v >= 2.0 for v in room),
+            "room geometry")
+    values = [model["direct_total_delay_ms"], model["nominal_reference_delay_ms"],
+              model["speaker_mic_distance_m"], model["speed_of_sound_m_s"]]
+    require(all(isinstance(v, (int, float)) and math.isfinite(v) for v in values), "finite model")
+    require(model["sample_rate_hz"] == RATE, "sample rate")
+    require(0.01 <= model["speaker_mic_distance_m"] <= 0.20, "speaker/mic distance")
+    require(300.0 <= model["speed_of_sound_m_s"] <= 370.0, "speed of sound")
+    require(0 <= model["nominal_reference_delay_ms"] < model["direct_total_delay_ms"] < 100,
+            "reference/direct delay")
+    require(model["direct_total_delay_ms"] / 1000.0 >
+            model["speaker_mic_distance_m"] / model["speed_of_sound_m_s"],
+            "device I/O latency must be nonnegative")
+    require(model["paths"] == "direct plus six first-order wall images", "path model")
+    require(model["excitation"] == ["colored-broadband", "speech-envelope-broadband"], "excitation set")
+    require(model["motion"] == ["stationary", "translation", "rotation"], "motion set")
+    require(model["direct_gain"] == [0.30, 0.03], "direct gain set")
+
+
+def excitation(samples: int, seed: int, kind: str) -> list[int]:
+    require(kind in set(MODEL["excitation"]), "excitation kind")
+    require(type(samples) is int and samples >= FRAME, "sample count")
+    rng = random.Random(seed)
+    state = 0.0
+    phase = rng.random() * math.tau
+    out: list[int] = []
+    for n in range(samples):
+        state = 0.65 * state + 0.35 * rng.uniform(-1.0, 1.0)
+        envelope = 1.0
+        if kind == "speech-envelope-broadband":
+            # Synthetic modulation only; this is not speech or VAD ground truth.
+            envelope = 0.12 + 0.88 * (0.5 + 0.5 * math.sin(math.tau * 2.7 * n / RATE + phase)) ** 2
+        out.append(clamp16(11000.0 * state * envelope))
+    return out
+
+
+def _path_state_validated(model: dict, time_s: float, motion: str, seed: int, direct_gain: float) -> tuple[list[float], list[float]]:
+    require(math.isfinite(time_s) and time_s >= 0.0, "time")
+    require(motion in set(model["motion"]), "motion kind")
+    require(direct_gain in model["direct_gain"], "direct gain")
+    room = model["room_dimensions_m"]
+    phase = (seed % 997) / 997.0 * math.tau
+    x, y, z = room[0] / 2.0, room[1] / 2.0, 0.7
+    yaw = phase
+    if motion == "translation":
+        x += 0.65 * math.sin(math.tau * 0.11 * time_s + phase)
+        y += 0.45 * math.sin(math.tau * 0.13 * time_s + phase)
+    elif motion == "rotation":
+        yaw += 2.0 * time_s
+
+    distance = model["speaker_mic_distance_m"]
+    dx = distance * math.cos(yaw) / 2.0
+    dy = distance * math.sin(yaw) / 2.0
+    speaker = [x + dx, y + dy, z]
+    mic = [x - dx, y - dy, z]
+    require(all(0.0 < speaker[i] < room[i] and 0.0 < mic[i] < room[i] for i in range(3)),
+            "device outside room")
+
+    images = [speaker]
+    for axis, length in enumerate(room):
+        low, high = speaker.copy(), speaker.copy()
+        low[axis] = -speaker[axis]
+        high[axis] = 2.0 * length - speaker[axis]
+        images.extend([low, high])
+    distances = [math.dist(mic, image) for image in images]
+    io_s = model["direct_total_delay_ms"] / 1000.0 - distance / model["speed_of_sound_m_s"]
+    delays = [(io_s + d / model["speed_of_sound_m_s"]) * RATE for d in distances]
+    wall_pressure = [0.75, 0.64, 0.60, 0.52, 0.45, 0.35]
+    gains = [direct_gain] + [0.10 * beta / d for beta, d in zip(wall_pressure, distances[1:])]
+    direct_samples = model["direct_total_delay_ms"] * RATE / 1000.0
+    require(abs(delays[0] - direct_samples) < 1e-6, "direct path moved")
+    require(min(delays[1:]) > delays[0], "reflection precedes direct path")
+    require(all(math.isfinite(v) and v > 0.0 for v in gains), "invalid gain")
+    return delays, gains
+
+
+def path_state(model: dict, time_s: float, motion: str, seed: int, direct_gain: float) -> tuple[list[float], list[float]]:
+    validate_model(model)
+    return _path_state_validated(model, time_s, motion, seed, direct_gain)
+
+
+def excitation_sidelobe(signal: list[int]) -> dict:
+    """Fixed ambiguity diagnostic; not the canonical render-correlation metric."""
+    indices = list(range(2048, min(len(signal), 10240), 4))
+    require(len(indices) >= 1024, "insufficient excitation support")
+    a = [signal[i] for i in indices]
+    mean_a = sum(a) / len(a)
+    aa = sum((v - mean_a) ** 2 for v in a)
+    scores: list[tuple[float, int]] = []
+    for lag in range(32, 1921):
+        b = [signal[i - lag] for i in indices]
+        mean_b = sum(b) / len(b)
+        bb = sum((v - mean_b) ** 2 for v in b)
+        cross = sum((u - mean_a) * (v - mean_b) for u, v in zip(a, b))
+        scores.append((abs(cross) / math.sqrt(max(1.0, aa * bb)), lag))
+    score, lag = max(scores)
+    return {"definition": "absolute mean-free cosine, indices 2048:10240:4, lags 32..1920",
+            "peak": score, "lag_samples": lag, "samples_compared": len(indices)}
+
+
+def validate_truth(truth: dict, model: dict) -> None:
+    require(truth["schema_version"] == 1 and truth["sample_rate_hz"] == RATE and
+            truth["frame_samples"] == FRAME, "truth header")
+    require(truth["model_sha256"] == json_sha256(model), "truth model binding")
+    lower = truth["path_min_samples"]
+    upper = truth["path_max_samples"]
+    require(len(lower) == len(upper) == 7, "path count")
+    direct = model["direct_total_delay_ms"] * RATE / 1000.0
+    require(abs(lower[0] - direct) < 1e-6 and abs(upper[0] - direct) < 1e-6, "truth direct path")
+    require(min(lower[1:]) > upper[0], "truth causal order")
+    margin = lower[0] - model["nominal_reference_delay_ms"] * RATE / 1000.0
+    require(abs(truth["initial_causal_margin_samples"] - margin) < 1e-6 and margin > 0.0,
+            "truth causal margin")
+    frames = truth["frame_start_paths"]
+    require(isinstance(frames, list) and frames, "truth frames")
+    previous = -1
+    for frame in frames:
+        require(frame["sample"] % FRAME == 0 and frame["sample"] > previous, "truth frame index")
+        previous = frame["sample"]
+        require(len(frame["delay_samples"]) == len(frame["gain"]) == 7, "truth frame paths")
+        require(abs(frame["delay_samples"][0] - direct) < 1e-6 and
+                min(frame["delay_samples"][1:]) > direct, "truth frame causality")
+
+
 def build(output: Path, seed: int, seconds: float) -> dict:
-    samples = max(4 * RATE, int(round(seconds * RATE)))
+    validate_model(MODEL)
+    require(type(seed) is int and 0 <= seed < 2 ** 32, "seed must be uint32")
+    require(isinstance(seconds, (int, float)) and math.isfinite(seconds) and 4.0 <= seconds <= 60.0,
+            "seconds must be finite within 4..60")
+    require(not output.is_symlink() and (not output.exists() or (output.is_dir() and not any(output.iterdir()))),
+            "output must be absent or empty")
+    samples = math.ceil(float(seconds) * 100.0) * FRAME
     output.mkdir(parents=True, exist_ok=True)
-    render = render_signal(samples, seed + 17)
     cases: list[dict] = []
-    families = ("delay-wander", "gain-crossfade", "reflection-birth-death", "compound")
 
-    for family_index, family in enumerate(families):
-        for intensity in (1, 2, 3):
-            case_seed = seed * 1009 + family_index * 101 + intensity * 17
-            delays, gains = motion_path(case_seed, family, intensity)
-            echo = moving_echo(render, delays, gains)
-            case_id = f"motion-{family}-i{intensity}"
-            case_dir = output / "cases" / case_id
-            case_dir.mkdir(parents=True, exist_ok=True)
-            mic_path = case_dir / "mic.pcm"
-            render_path = case_dir / "render.pcm"
-            echo_path = case_dir / "echo.pcm"
-            write_pcm(mic_path, echo)
-            write_pcm(render_path, render)
-            write_pcm(echo_path, echo)
-            cases.append({
-                "case_id": case_id,
-                "split": "dev",
-                "scenario": "aec-continuous-motion",
-                "sample_rate_hz": RATE,
-                "mic_channels": 1,
-                "mic_audio": str(mic_path.relative_to(output)),
-                "render_audio": str(render_path.relative_to(output)),
-                "clean_near_audio": None,
-                "echo_audio": str(echo_path.relative_to(output)),
-                "vad_labels": None,
-                "control": {},
-                "processor_profile": "default",
-                "expected": {
-                    "max_output_render_corr_ratio": 1.20,
-                    "max_output_rms_delta_db": 0.0,
-                    "min_erle_db": -6.0,
-                },
-                "source": {
-                    "dataset_id": "deterministic-aec-motion-v1",
-                    "source_id": case_id,
-                    "generator_seed": case_seed,
-                    "movement": True,
-                    "motion_family": family,
-                    "motion_intensity": intensity,
-                },
-            })
+    for kind_index, kind in enumerate(MODEL["excitation"]):
+        render = excitation(samples, seed * 17 + 101 + kind_index, kind)
+        for motion_index, motion in enumerate(MODEL["motion"]):
+            for gain_index, direct_gain in enumerate(MODEL["direct_gain"]):
+                case_seed = seed * 1009 + kind_index * 211 + motion_index * 37 + gain_index * 13
+                case_id = f"motion-{kind}-{motion}-direct-{direct_gain:.2f}"
+                folder = output / "cases" / case_id
+                folder.mkdir(parents=True, exist_ok=False)
+                echo: list[int] = []
+                truth_frames: list[dict] = []
+                lower, upper = [math.inf] * 7, [-math.inf] * 7
+                for n in range(samples):
+                    delays, gains = _path_state_validated(MODEL, n / RATE, motion, case_seed, direct_gain)
+                    value = 0.0
+                    for tap in range(7):
+                        lower[tap] = min(lower[tap], delays[tap])
+                        upper[tap] = max(upper[tap], delays[tap])
+                        value += gains[tap] * sample(render, n - delays[tap])
+                    echo.append(clamp16(value))
+                    if n % FRAME == 0:
+                        truth_frames.append({"sample": n, "delay_samples": delays, "gain": gains})
+                require(max(abs(v) for v in echo) < 32767, "generated echo clipped")
+                render_path, mic_path, echo_path = folder / "render.pcm", folder / "mic.pcm", folder / "echo.pcm"
+                write_pcm(render_path, render)
+                write_pcm(mic_path, echo)
+                write_pcm(echo_path, echo)
+                margin = lower[0] - MODEL["nominal_reference_delay_ms"] * RATE / 1000.0
+                truth = {
+                    "schema_version": 1,
+                    "sample_rate_hz": RATE,
+                    "frame_samples": FRAME,
+                    "model_sha256": json_sha256(MODEL),
+                    "case_seed": case_seed,
+                    "excitation": kind,
+                    "motion": motion,
+                    "direct_gain": direct_gain,
+                    "path_min_samples": lower,
+                    "path_max_samples": upper,
+                    "initial_causal_margin_samples": margin,
+                    "frame_start_paths": truth_frames,
+                }
+                validate_truth(truth, MODEL)
+                truth_path = folder / "ground-truth.json"
+                write_json(truth_path, truth)
+                rel = folder.relative_to(output)
+                cases.append({
+                    "case_id": case_id,
+                    "split": "dev",
+                    "scenario": "aec-continuous-motion",
+                    "sample_rate_hz": RATE,
+                    "mic_channels": 1,
+                    "mic_audio": str(rel / "mic.pcm"),
+                    "render_audio": str(rel / "render.pcm"),
+                    "clean_near_audio": None,
+                    "echo_audio": str(rel / "echo.pcm"),
+                    "vad_labels": None,
+                    "control": {},
+                    "processor_profile": "default",
+                    "expected": {
+                        "max_output_render_corr_ratio": 1.20,
+                        "max_output_rms_delta_db": 0.0,
+                        "min_erle_db": -6.0,
+                    },
+                    "source": {
+                        "dataset_id": DATASET_ID,
+                        "source_id": case_id,
+                        "generator_seed": case_seed,
+                        "movement": motion != "stationary",
+                        "motion": motion,
+                        "excitation": kind,
+                        "direct_gain": direct_gain,
+                        "ground_truth": str(rel / "ground-truth.json"),
+                        "model_sha256": json_sha256(MODEL),
+                    },
+                })
 
+    require(len(cases) == 12 and len({case["case_id"] for case in cases}) == 12, "case matrix")
     corpus = {
         "schema_version": 1,
-        "corpus_id": f"aec-motion-dev-v1-seed-{seed}",
+        "corpus_id": f"aec-motion-geometry-v{GENERATOR_VERSION}-seed-{seed}",
         "tier": "regression",
         "generator": {
-            "name": "build_aec_motion_corpus.py",
-            "version": 1,
+            "name": Path(__file__).name,
+            "version": GENERATOR_VERSION,
             "seed": seed,
-            "seconds": seconds,
+            "seconds": samples / RATE,
+            "requested_seconds": seconds,
             "continuous_motion": True,
             "explicit_path_change_notifications": False,
+            "model": MODEL,
+            "model_sha256": json_sha256(MODEL),
         },
-        "sources": ["deterministic-aec-motion-v1"],
+        "sources": [DATASET_ID],
         "sealed_data": False,
         "cases": cases,
     }
     corpus_path = output / "corpus.json"
-    corpus_path.write_text(json.dumps(corpus, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_json(corpus_path, corpus)
+    files = {
+        str(path.relative_to(output)): file_sha256(path)
+        for path in sorted(item for item in output.rglob("*") if item.is_file())
+    }
     manifest = {
         "schema_version": 1,
         "authority": "development-only-non-shipping",
         "seed": seed,
         "cases": len(cases),
+        "dataset_id": DATASET_ID,
+        "generator_version": GENERATOR_VERSION,
+        "generator_sha256": file_sha256(Path(__file__)),
+        "model_sha256": json_sha256(MODEL),
         "corpus_sha256": file_sha256(corpus_path),
-        "files": {
-            str(path.relative_to(output)): file_sha256(path)
-            for path in sorted(item for item in output.rglob("*.pcm"))
-        },
+        "files": files,
     }
-    (output / "source-manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    write_json(output / "source-manifest.json", manifest)
     return corpus
 
 
 def self_test() -> None:
-    with tempfile.TemporaryDirectory(prefix="ap-aec-motion-selftest-") as raw:
+    validate_model(MODEL)
+    direct = MODEL["direct_total_delay_ms"] * RATE / 1000.0
+    for motion in MODEL["motion"]:
+        for seed in (0, 16411, 36411):
+            states = [path_state(MODEL, t, motion, seed, 0.30)[0] for t in (0.0, 0.13, 1.7, 3.99)]
+            assert all(abs(delays[0] - direct) < 1e-6 and min(delays[1:]) > direct for delays in states)
+            if motion == "stationary":
+                assert all(states[0] == state for state in states[1:])
+    for kind in MODEL["excitation"]:
+        a = excitation(16000, 1, kind)
+        assert a == excitation(16000, 1, kind)
+        assert a != excitation(16000, 2, kind)
+        assert excitation_sidelobe(a)["peak"] < 0.30
+    periodic = [round(10000 * math.sin(math.tau * n / 80)) for n in range(16000)]
+    assert excitation_sidelobe(periodic)["peak"] > 0.999
+    assert sample([100, 200], -0.5) == 50.0
+    assert sample([100, 200], 0.5) == 150.0
+    assert sample([100, 200], 1.5) == 100.0
+    for field, value in (("direct_total_delay_ms", 39.0), ("speed_of_sound_m_s", float("nan")),
+                         ("speaker_mic_distance_m", -1.0)):
+        bad = dict(MODEL, **{field: value})
+        try:
+            validate_model(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("bad model accepted")
+    with tempfile.TemporaryDirectory(prefix="ap-aec-motion-v2-") as raw:
         root = Path(raw)
-        a = root / "a"
-        b = root / "b"
-        c = root / "c"
-        ca = build(a, 4107, 4.0)
-        cb = build(b, 4107, 4.0)
-        cc = build(c, 4207, 4.0)
-        assert len(ca["cases"]) == 12
-        assert len(cb["cases"]) == 12
-        assert len(cc["cases"]) == 12
-        assert all(case["control"] == {} for case in ca["cases"])
-        assert all(case["split"] == "dev" for case in ca["cases"])
-        assert all(case["scenario"] == "aec-continuous-motion" for case in ca["cases"])
+        a, b, c = root / "a", root / "b", root / "c"
+        ca, cb, cc = build(a, 4107, 4.0), build(b, 4107, 4.0), build(c, 4207, 4.0)
+        assert len(ca["cases"]) == len(cb["cases"]) == len(cc["cases"]) == 12
+        assert all(case["split"] == "dev" and case["control"] == {} for case in ca["cases"])
         assert tree_digest(a) == tree_digest(b)
         assert tree_digest(a) != tree_digest(c)
-    print("AEC motion development corpus self-test: OK")
+        try:
+            build(a, 4307, 4.0)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("nonempty output was reused")
+    print("AEC motion geometry v2 self-test: known-answer/causality/alias/determinism controls OK")
 
 
 def main() -> int:
@@ -269,15 +410,14 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
-    if args.output is None or args.seconds < 4.0:
-        parser.error("--output is required and --seconds must be >= 4")
-    corpus = build(args.output, args.seed, args.seconds)
-    print(json.dumps({
-        "corpus": str(args.output / "corpus.json"),
-        "corpus_id": corpus["corpus_id"],
-        "cases": len(corpus["cases"]),
-        "seed": args.seed,
-    }, sort_keys=True))
+    if args.output is None:
+        parser.error("--output is required")
+    try:
+        corpus = build(args.output, args.seed, args.seconds)
+    except ValueError as exc:
+        parser.error(str(exc))
+    print(json.dumps({"corpus": str(args.output / "corpus.json"), "corpus_id": corpus["corpus_id"],
+                      "cases": len(corpus["cases"]), "seed": args.seed}, sort_keys=True))
     return 0
 
 

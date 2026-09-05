@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I002",
+  "root_cause_id": "aec-motion-measurement-model",
+  "phase": "measurement-migration",
+  "base_sha": "f6b35e9e0c6581e7a2d83324f156189e9110335a",
+  "measurement_execution_head_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b",
+  "execution_result": "COMPLETE",
+  "decision": "MEASUREMENT_MIGRATION_ACCEPTED",
+  "acoustic_candidate_decision": "NONE",
+  "product_qualification": "DEFERRED_BY_SCOPE",
+  "authority": "measurement-migration-only-not-acoustic-promotion",
+  "version_candidate": "2.3.12",
+  "model_sha256": "ababe11b215f4c40266316174089ade4ca54aafb0f7e6ae05be060d602f6117c",
+  "generator_sha256": "79ab24963a38db811e9254959c80adf3d3e3f110824f72a5ba43a8fafaa87bf6",
+  "bundle_sha256": "4c096c569454f3ad1817ac1d6be9dc3932f8a7d6aac090937335f74422b0cdcb",
+  "program_evidence": {
+    "run_id": 33967578949,
+    "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578949",
+    "artifact_id": 9969943396,
+    "artifact_name": "program-evidence-33967578949-1",
+    "artifact_digest": "sha256:236cfc5e0d01e14cf2593b4c997517ae72d835f6f9402cbf8737976c2ec01846",
+    "artifact_digest_independently_verified": true,
+    "retention": "90 days",
+    "errors": []
+  },
+  "migration_seeds": [
+    {
+      "seed": 17411,
+      "cases": 12,
+      "passed_cases": 12,
+      "pass_rate": 1.0,
+      "median_erle_db": 5.591282392862202,
+      "median_output_render_corr_reduction": 0.1830228131265244,
+      "colored_broadband_sidelobe": 0.08019791219135476,
+      "speech_envelope_broadband_sidelobe": 0.10857210541768561,
+      "max_output_clip_fraction": 0.0,
+      "corpus_sha256": "069a1419d946c79283bdbf184c3d49d4b64fd841b47719a74a94e303fd94e92d",
+      "report_sha256": "033bf1a5a7b6f2fbb00a918420f92ca455c346e578609321a9a5206869334b35"
+    },
+    {
+      "seed": 27411,
+      "cases": 12,
+      "passed_cases": 12,
+      "pass_rate": 1.0,
+      "median_erle_db": 5.734689554794573,
+      "median_output_render_corr_reduction": 0.18646061055205085,
+      "colored_broadband_sidelobe": 0.08291303455061148,
+      "speech_envelope_broadband_sidelobe": 0.09315767258770682,
+      "max_output_clip_fraction": 0.0,
+      "corpus_sha256": "61f7d5f5ea9cfada47fe65ce2c59d4d57245d102270ae38f695cd9d9b497c4ec",
+      "report_sha256": "a2981871710375e78715777afc4b07d87f18f577c1a42a4699bc672599c8117d"
+    },
+    {
+      "seed": 37411,
+      "cases": 12,
+      "passed_cases": 12,
+      "pass_rate": 1.0,
+      "median_erle_db": 5.85516076769852,
+      "median_output_render_corr_reduction": 0.18988522189201978,
+      "colored_broadband_sidelobe": 0.0852446565119117,
+      "speech_envelope_broadband_sidelobe": 0.11014672638651271,
+      "max_output_clip_fraction": 0.0,
+      "corpus_sha256": "fbf5625a4e338fdfc44b271681d755e88c6aba987f188793dcb140cae0559e14",
+      "report_sha256": "4703ee834efcd756beb7800d1057db40cfc769f3eed65252cd522db775ff5717"
+    }
+  ],
+  "regression_evidence": {
+    "aec_motion_development": {
+      "run_id": 33967578953,
+      "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578953",
+      "conclusion": "success"
+    },
+    "dsp_stage": {
+      "run_id": 33967578961,
+      "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578961",
+      "conclusion": "success"
+    },
+    "hosted_real_audio": {
+      "run_id": 33967578996,
+      "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578996",
+      "conclusion": "success",
+      "role": "hosted-regression"
+    },
+    "hosted_real_aec": {
+      "run_id": 33967578972,
+      "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578972",
+      "conclusion": "success",
+      "role": "hosted-regression"
+    },
+    "verify": {
+      "run_id": 33967579059,
+      "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967579059",
+      "conclusion": "success",
+      "summary_check_id": 101310911004,
+      "summary_conclusion": "success"
+    }
+  },
+  "tuning_consumer_diagnostic": {
+    "meaning": "Diagnostic consumer replay only. I002 has candidate_limit=0 and this result cannot promote DSP.",
+    "initial_semantics_failure": {
+      "run_id": 33967206255,
+      "artifact_id": 9969857251,
+      "artifact_digest": "sha256:fe67c8aea29eead7313074610d198e78a7492d2193cf03853527143bd6cb4c23",
+      "finding": "A correctly rejected call-validation candidate aborted the workflow and skipped call shadow, conflating research rejection with infrastructure failure."
+    },
+    "corrected_run": {
+      "run_id": 33967578985,
+      "run_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578985",
+      "conclusion": "success",
+      "artifact_id": 9969993873,
+      "artifact_digest": "sha256:7da5231b1b19ebba5239bfff441b2d00d94da860743570d098a7fccf5d9e7560",
+      "artifact_digest_independently_verified": true,
+      "motion_decision": "ACOUSTIC_CANDIDATE",
+      "motion_selected_label": "aec_mu=0.52",
+      "final_decision": "REJECT_CANDIDATE",
+      "call_validation": {
+        "decision": "REJECT_CANDIDATE",
+        "baseline_min_vad_f1": 0.7599164926931107,
+        "candidate_min_vad_f1": 0.675990675990676,
+        "regression": 0.08392581670243471,
+        "allowed": 0.05
+      },
+      "call_shadow": {
+        "decision": "PASS",
+        "regression_violations": 0
+      }
+    }
+  },
+  "conclusion": "The geometry-v2 generator is accepted as the single canonical generated AEC continuous-motion development model. The measurement migration changes no shipping DSP/default/API/ABI/evaluator/policy/dataset lock/resource baseline. The migration seeds and repeated hosted/call data are exposed regression evidence and cannot be reused as independent confirmation. The observed aec_mu=0.52 motion-only candidate is explicitly rejected and is not a shipping or research-promotion result.",
+  "next_task": "P001",
+  "next_task_reason": "Bind promotion gate plans, source-group exposure and inherited research budgets before I003 may create any AEC/Sync acoustic candidate."
+}

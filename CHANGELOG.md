@@ -1,3 +1,9 @@
+# 2.3.12
+
+- Replace the legacy five-tone/moving-earliest-path AEC motion development generator with the I001-audited rigid 0.08 m speaker/microphone geometry: fixed 42 ms direct path, 40 ms nominal reference, first-order wall-image reflections, deterministic colored/speech-envelope broadband excitation, and model-hash-bound per-frame ground truth.
+- Add I002 measurement-migration qualification with deterministic known-answer and negative controls, fail-closed stale-output/scope checks, and one canonical bundle path. Shipping DSP, public API/ABI, defaults, canonical evaluator/policy, dataset locks and resource baselines are unchanged.
+- Keep authority boundaries explicit: generated motion and repeatedly observed Hosted Real Audio/AEC data are regression evidence, not fresh independent promotion data; real product capture, DUT/HIL, Extended Real and Product Certification remain outside the current software/public-data phase and are not inferred from hosted PASS results.
+
 # 2.3.11
 
 - Add health-selected failover for one-sided low-frequency microphone contamination while preserving the existing severe-mismatch 75/25 fail-soft path for ordinary sensitivity/SNR degradation. Hard bypass is admitted only after two consecutive low-ratio/low-roughness tracking updates require an actual channel-selection flip, and exits through bounded eight-update recovery hysteresis.

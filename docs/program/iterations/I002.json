@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I002",
+  "root_cause_id": "aec-motion-measurement-model",
+  "phase": "measurement-migration",
+  "base_sha": "f6b35e9e0c6581e7a2d83324f156189e9110335a",
+  "seeds": [17411, 27411, 37411],
+  "seconds": 4.0,
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "run_timeout_seconds": 900,
+  "data_role": "development",
+  "promotion_allowed": false,
+  "canonical_generator": "validation/tools/build_aec_motion_corpus.py",
+  "generator_version": 2,
+  "hypothesis": "The I001 fixed-geometry broadband model is sufficiently specified to replace the legacy five-tone/moving-earliest-path development generator without changing product DSP or acoustic acceptance thresholds",
+  "acceptance": [
+    "canonical generator and bundle have deterministic known-answer and negative tests",
+    "direct path is exactly 42 ms and does not move; nominal reference is 40 ms; every reflection remains later than direct",
+    "colored and speech-envelope broadband probes each stay below 0.30 on the frozen sidelobe diagnostic while a periodic negative control exceeds 0.999",
+    "ground truth is versioned, frame-indexed, model-hash-bound and included in source manifests",
+    "nonempty/stale output, invalid geometry and duplicate bundle seeds fail closed",
+    "legacy five-tone generator is removed from the current executable path; I001 exact-source evidence remains the historical authority",
+    "product DSP/public API/defaults/evaluator/policy/dataset locks are unchanged from the exact base except release metadata required by repository governance",
+    "all 12 cases on all three migration seeds pass the unchanged canonical development policy; failures are retained",
+    "dependent AEC motion tuning consumes geometry-v2 corpus identities and records call validation/shadow rejection as REJECT_CANDIDATE rather than workflow infrastructure failure",
+    "result is measurement-authority qualification only, never an acoustic candidate, independent confirmation, HIL, or Product Certification"
+  ],
+  "next_on_success": "Review I002 evidence, close measurement migration, then activate P001 promotion/data-budget governance before any AEC/Sync algorithm candidate",
+  "next_on_failure": "Keep I001/legacy baseline in history and correct the measurement migration without changing product DSP or acceptance thresholds"
+}

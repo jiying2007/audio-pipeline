@@ -20,26 +20,30 @@
   ],
   "tasks": [
     {
-      "id": "P000", "priority": 0, "status": "ACTIVE", "lane": "governance",
+      "id": "P000", "priority": 0, "status": "CLOSED", "lane": "governance",
       "title": "Archive goals, design, executable plan and scoped automation",
       "depends_on": [], "handler": null, "contract": null,
       "exit": "Program self/negative tests plus exact-head Verify; main verification; evidence-backed plan update",
-      "evidence": []
+      "evidence": [
+        {"source_sha": "f6b35e9e0c6581e7a2d83324f156189e9110335a", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33964608127", "meaning": "Main exact-SHA Verify after #89 closed the program/governance integration without changing shipping DSP or certification authority."}
+      ]
     },
     {
-      "id": "I001", "priority": 10, "status": "READY", "lane": "measurement",
+      "id": "I001", "priority": 10, "status": "CLOSED", "lane": "measurement",
       "title": "Audit tonal motion corpus against fixed-geometry broadband diagnostics on exact base",
-      "depends_on": [], "handler": "aec-model-audit",
-      "contract": "docs/program/iterations/I001.json",
+      "depends_on": [], "handler": null, "contract": "docs/program/iterations/I001.json",
       "exit": "All seeds and model invariants recorded; canonical quality failures retained; no DSP promotion",
-      "evidence": [{"source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029", "meaning": "First complete model-discovery execution; 72/72 case gates pass. I001-result.json indexes measured metrics and identity, not an algorithm candidate."}]
+      "evidence": [{"source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029", "meaning": "Complete fixed-product model audit: 72/72 case gates pass; legacy excitation has ~0.899 sidelobe peak and moving earliest path while the audited geometry keeps a 672-sample direct path and 32-sample causal margin. Different-corpus scores are not DSP improvement."}]
     },
     {
-      "id": "I002", "priority": 20, "status": "PLANNED", "lane": "measurement",
+      "id": "I002", "priority": 20, "status": "CLOSED", "lane": "measurement",
       "title": "Migrate the canonical motion model after the audit, with known-answer and negative gates",
-      "depends_on": ["I001"], "handler": null, "contract": null,
+      "depends_on": ["I001"], "handler": null, "contract": "docs/program/iterations/I002.json",
       "exit": "One canonical generator; old evidence preserved; versioned ground truth; same-product evaluator qualification",
-      "evidence": []
+      "evidence": [
+        {"source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578949", "meaning": "Reviewed I002 measurement migration: artifact 9969943396/digest 236cfc5e... independently verified; seeds 17411/27411/37411 all pass 12/12 unchanged canonical development gates with geometry-v2 model hash ababe11b...."},
+        {"source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578985", "meaning": "Corrected tuning consumer records motion-only aec_mu=0.52 as final REJECT_CANDIDATE because call-validation min_vad_f1 regresses by 0.08393 > 0.05, while preserving workflow success and call-shadow evidence."}
+      ]
     },
     {
       "id": "I003", "priority": 30, "status": "PLANNED", "lane": "acoustic",

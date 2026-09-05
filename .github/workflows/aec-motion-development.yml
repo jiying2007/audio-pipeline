@@ -4,8 +4,12 @@ on:
   pull_request:
     paths:
       - 'validation/tools/build_aec_motion_corpus.py'
+      - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/policies/validation-aec-motion-development.json'
+      - 'tests/validation/aec_motion_model_qualification.py'
+      - 'docs/program/iterations/I002.json'
       - '.github/workflows/aec-motion-development.yml'
+      - 'validation/AEC_MOTION_DEVELOPMENT.md'
       - 'validation/README.md'
   schedule:
     - cron: '41 18 * * 2,5'
@@ -28,16 +32,23 @@ jobs:
         seed: [4107, 4207, 4307]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: aec-motion-${{ matrix.seed }}
 
-      - name: Validate development-only authority and determinism
+      - name: Validate development authority and generator contracts
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile validation/tools/build_aec_motion_corpus.py
+          python3 -m py_compile \
+            validation/tools/build_aec_motion_corpus.py \
+            validation/tools/build_aec_motion_bundle.py \
+            tests/validation/aec_motion_model_qualification.py
           python3 validation/tools/build_aec_motion_corpus.py --self-test
+          python3 validation/tools/build_aec_motion_bundle.py --self-test
+          python3 tests/validation/aec_motion_model_qualification.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 - <<'PY'
           import json
@@ -47,6 +58,10 @@ jobs:
           assert policy['minimum_cases'] == 12
           assert policy['required_public_sources'] == []
           assert policy['aggregate']['min_median_output_render_corr_reduction'] == 0.0
+          contract = json.loads(Path('docs/program/iterations/I002.json').read_text())
+          assert contract['candidate_limit'] == 0
+          assert contract['confirmation_limit'] == 0
+          assert contract['promotion_allowed'] is False
           PY
 
       - name: Build exact offline processor
@@ -56,7 +71,7 @@ jobs:
           cmake -S . -B build-motion -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
           cmake --build build-motion --target ap_process_pcm ap_build_info_dump --parallel
 
-      - name: Build and enforce continuous-motion corpus
+      - name: Build and enforce canonical continuous-motion corpus
         shell: bash
         run: |
           set -euo pipefail
@@ -86,9 +101,11 @@ jobs:
           from pathlib import Path
           seed = '${{ matrix.seed }}'
           report = json.loads(Path(f'motion-{seed}/report.json').read_text())
-          print(f'## AEC continuous-motion development seed {seed}')
+          corpus = json.loads(Path(f'motion-{seed}/corpus/corpus.json').read_text())
+          print(f'## AEC motion geometry-v2 development seed {seed}')
           print('')
           print('- Authority: **regression / development-only / non-shipping**')
+          print(f"- Generator: `v{corpus['generator']['version']}` / `{corpus['generator']['model_sha256'][:12]}`")
           print(f"- Result: `{report['validation_result']}`")
           print(f"- Cases: `{report['summary']['cases']}`")
           print(f"- Pass rate: `{report['summary']['pass_rate']:.3f}`")

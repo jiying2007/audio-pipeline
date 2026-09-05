@@ -1,3 +1,9 @@
+# 2.3.13
+
+- Implement the I003-frozen `incumbent-qualified` Sync delay selector: prefer a qualified local correlation peak within +/-64 samples of the incumbent before falling back to the existing global route search, reducing late-reflection route capture without adding state or public configuration.
+- Preserve the existing three-confirmation large-route fallback and timestamp path, and add deterministic weak-direct/strong-late-reflection coverage that requires causal-route retention while still accepting a genuine 40 ms -> 80 ms route change.
+- Keep the public v2 API/ABI and Sync state layout unchanged. Promotion remains gated on engineering/resource/shadow validation and fresh fixed-candidate confirmation; previously observed geometry/Hosted data stay regression-only and product qualification remains deferred by scope.
+
 # 2.3.12
 
 - Replace the legacy five-tone/moving-earliest-path AEC motion development generator with the I001-audited rigid 0.08 m speaker/microphone geometry: fixed 42 ms direct path, 40 ms nominal reference, first-order wall-image reflections, deterministic colored/speech-envelope broadband excitation, and model-hash-bound per-frame ground truth.

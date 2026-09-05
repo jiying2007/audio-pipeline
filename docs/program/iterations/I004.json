@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I004",
+  "phase": "measurement-diagnostic",
+  "root_cause_id": "ns-nonstationary-low-snr",
+  "base_sha": "669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee",
+  "data_role": "development",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "run_timeout_seconds": 900,
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "seconds": 6.0,
+  "seeds": [14107, 24107, 34107],
+  "scenarios": [
+    "ns-motor-ramp-speech",
+    "ns-motor-ramp-noise",
+    "ns-fan-am-speech",
+    "ns-fan-am-noise",
+    "ns-burst-start-stop-speech",
+    "ns-burst-start-stop-noise",
+    "ns-mixed-dynamic-low-snr-speech",
+    "ns-mixed-dynamic-noise"
+  ],
+  "speech_snr_db": {
+    "ns-motor-ramp-speech": -5.0,
+    "ns-fan-am-speech": -5.0,
+    "ns-burst-start-stop-speech": -5.0,
+    "ns-mixed-dynamic-low-snr-speech": -8.0
+  },
+  "diagnostic_flags": {
+    "min_speech_si_sdr_improvement_db": 0.0,
+    "min_noise_only_attenuation_db": 0.5,
+    "min_vad_recall": 0.75,
+    "max_vad_false_positive_rate": 0.20,
+    "min_ns_probability_margin": 0.0,
+    "max_clip_fraction": 0.02
+  },
+  "decision_contract": {
+    "BASELINE_ADEQUATE_NO_SEARCH": "all scenario-level and worst-window diagnostic flags pass",
+    "MEASURED_GAP_REVIEW_REQUIRED": "one or more frozen diagnostic flags fail",
+    "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_tune_ns_floor": false,
+    "may_add_backend": false,
+    "may_create_candidate": false,
+    "may_consume_confirmation": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  },
+  "existing_exposed_ns_tuning_seeds": [1307, 2307, 3307],
+  "reference_practices": [
+    "Microsoft DNS Challenge: deterministic synthesizer/data-source separation and source-specific licensing",
+    "DEMAND: real-world noise source considered only after immutable source/license/hash admission"
+  ]
+}

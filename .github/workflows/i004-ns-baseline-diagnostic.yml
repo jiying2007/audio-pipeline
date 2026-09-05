@@ -1,0 +1,112 @@
+name: I004 NS Baseline Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/I004.json'
+      - 'tests/validation/i004_ns_exact_base_entry.py'
+      - 'tests/validation/i004_ns_nonstationary_diagnostic.py'
+      - '.github/workflows/i004-ns-baseline-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i004-ns-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i004-ns-baseline
+      - name: Validate frozen I004 diagnostic contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/i004_ns_exact_base_entry.py \
+            tests/validation/i004_ns_nonstationary_diagnostic.py
+          python3 tests/validation/i004_ns_exact_base_entry.py --self-test
+          python3 tests/validation/i004_ns_nonstationary_diagnostic.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c = json.loads(Path('docs/program/iterations/I004.json').read_text())
+          assert c['schema_version'] == 1
+          assert c['iteration_id'] == 'I004'
+          assert c['base_sha'] == '669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee'
+          assert c['candidate_limit'] == 0
+          assert c['confirmation_limit'] == 0
+          assert c['promotion_allowed'] is False
+          assert c['seeds'] == [14107, 24107, 34107]
+          assert c['existing_exposed_ns_tuning_seeds'] == [1307, 2307, 3307]
+          assert c['authority']['may_modify_shipping_dsp'] is False
+          assert c['authority']['may_tune_ns_floor'] is False
+          assert c['authority']['may_add_backend'] is False
+          assert c['authority']['may_create_candidate'] is False
+          assert c['authority']['may_consume_confirmation'] is False
+          PY
+      - name: Execute exact-baseline NS diagnostic
+        run: |
+          set -euo pipefail
+          python3 tests/validation/i004_ns_exact_base_entry.py \
+            --contract docs/program/iterations/I004.json \
+            --output i004-ns-baseline-out
+      - name: Enforce diagnostic-only authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('i004-ns-baseline-out/baseline-report.json').read_text())
+          binding = json.loads(Path('i004-ns-baseline-out/execution-binding.json').read_text())
+          assert report['authority'] == 'development-baseline-diagnostic-only'
+          assert report['candidate_limit'] == 0
+          assert report['confirmation_limit'] == 0
+          assert report['candidate_search_performed'] is False
+          assert report['ns_floor_tuning_performed'] is False
+          assert report['backend_change_performed'] is False
+          assert report['candidate_decision'] == 'NOT_AN_ACOUSTIC_CANDIDATE'
+          assert report['decision'] in {'BASELINE_ADEQUATE_NO_SEARCH', 'MEASURED_GAP_REVIEW_REQUIRED'}
+          assert binding['baseline_source_sha'] == '669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee'
+          assert binding['shipping_diff_zero'] is True
+          assert binding['candidate_limit'] == 0 and binding['confirmation_limit'] == 0
+          assert len(report['cases']) == 24
+          PY
+      - name: Publish baseline diagnostic summary
+        if: always()
+        run: |
+          if [ -f i004-ns-baseline-out/baseline-report.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('i004-ns-baseline-out/baseline-report.json').read_text())
+          print('## I004 NS nonstationary baseline diagnostic')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Baseline SHA: `{r['source_sha']}`")
+          print(f"- Cases: `{len(r['cases'])}`")
+          print(f"- Failed cases: `{len(r['failed_flags'])}`")
+          if r['failed_flags']:
+              for item in r['failed_flags']:
+                  print(f"  - seed `{item['seed']}` / `{item['scenario']}`: `{','.join(item['failures'])}`")
+          print('- Authority: development baseline diagnostic only; candidate_limit=0; confirmation_limit=0.')
+          print('- No shipping DSP, ns_floor, backend, release, or Product Certification authority.')
+          PY
+          fi
+      - name: Upload I004 baseline evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i004-ns-baseline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: i004-ns-baseline-out/
+          if-no-files-found: error
+          retention-days: 90

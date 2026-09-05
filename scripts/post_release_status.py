@@ -68,11 +68,14 @@ def _compact(run: dict | None, authority: str) -> dict | None:
 
 
 def _select(payload: dict, exact_title: str, legacy_title: str | None,
-            source_sha: str) -> dict | None:
+            source_sha: str, exact_requires_source: bool = False) -> dict | None:
     runs = _run_list(payload)
     for run in runs:
-        if run.get("display_title") == exact_title:
-            return run
+        if run.get("display_title") != exact_title:
+            continue
+        if exact_requires_source and run.get("head_sha") != source_sha:
+            continue
+        return run
     if legacy_title:
         for run in runs:
             if run.get("display_title") == legacy_title and run.get("head_sha") == source_sha:
@@ -93,12 +96,19 @@ def resolve_runs(source_sha: str, tag: str, hil_enabled: str,
     if not tag.startswith("v"):
         raise ValueError("tag must begin with v")
 
-    hil = _select(hil_payload, f"hil-post-release {tag}", "hil-post-release", source_sha)
+    hil = _select(
+        hil_payload,
+        f"hil-post-release {tag}",
+        "hil-post-release",
+        source_sha,
+        exact_requires_source=True,
+    )
     ext_auto = _select(
         extended_automation_payload,
         f"extended-real-post-release {tag}",
         "extended-real-post-release",
         source_sha,
+        exact_requires_source=True,
     )
     ext_validation = _select(
         extended_validation_payload,
@@ -178,8 +188,8 @@ def self_test() -> None:
     assert resolved["hil"]["run_id"] == 1
     assert resolved["extended_real"]["authority"] == "extended-real-automation-disabled-gate"
 
-    current_hil = {"workflow_runs": [_fake_run(3, f"hil-post-release {tag}", "c" * 40, "completed", "success", "repository_dispatch")]}
-    current_auto = {"workflow_runs": [_fake_run(4, f"extended-real-post-release {tag}", "c" * 40, "completed", "success", "repository_dispatch")]}
+    current_hil = {"workflow_runs": [_fake_run(3, f"hil-post-release {tag}", sha, "completed", "success", "repository_dispatch")]}
+    current_auto = {"workflow_runs": [_fake_run(4, f"extended-real-post-release {tag}", sha, "completed", "success", "repository_dispatch")]}
     current_validation = {"workflow_runs": [_fake_run(5, f"extended-real-validation {sha}", "d" * 40, "completed", "success", "workflow_dispatch")]}
     resolved = resolve_runs(sha, tag, "true", "true", current_hil, current_auto, current_validation)
     assert resolved["ready"] is True
@@ -191,11 +201,18 @@ def self_test() -> None:
     assert resolved["ready"] is False
     assert resolved["extended_real"]["authority"] == "extended-real-validation-pending"
 
-    failed_auto = {"workflow_runs": [_fake_run(7, f"extended-real-post-release {tag}", "c" * 40, "completed", "failure", "repository_dispatch")]}
+    failed_auto = {"workflow_runs": [_fake_run(7, f"extended-real-post-release {tag}", sha, "completed", "failure", "repository_dispatch")]}
     resolved = resolve_runs(sha, tag, "true", "true", current_hil, failed_auto, empty)
     assert resolved["ready"] is True
     assert resolved["extended_real"]["authority"] == "extended-real-automation-control-plane"
     assert resolved["extended_real_conclusion"] == "failure"
+
+    wrong_source_control = {
+        "workflow_runs": [_fake_run(8, f"extended-real-post-release {tag}", "c" * 40, "completed", "failure", "repository_dispatch")]
+    }
+    resolved = resolve_runs(sha, tag, "true", "true", current_hil, wrong_source_control, empty)
+    assert resolved["ready"] is False
+    assert resolved["extended_real"]["authority"] == "extended-real-validation-pending"
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "status.json"

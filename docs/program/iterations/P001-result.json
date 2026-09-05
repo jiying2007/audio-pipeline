@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "iteration_id": "P001",
+  "result": "CLOSED",
+  "decision": "GOVERNANCE_CLOSED_NO_ACOUSTIC_CANDIDATE",
+  "authority": "governance-only",
+  "base_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+  "reviewed_head_sha": "574f36027e5d4530944f24be5d958b45aa88fdde",
+  "software_baseline": "v2.3.12",
+  "product_qualification": "DEFERRED_BY_SCOPE",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "scope": {
+    "shipping_dsp_changed": false,
+    "public_api_abi_changed": false,
+    "acoustic_thresholds_changed": false,
+    "dataset_locks_changed": false,
+    "resource_baseline_changed": false,
+    "certification_authority_changed": false,
+    "changed_paths": [
+      ".github/program/promotion_governance.py",
+      ".github/workflows/aec-motion-tuning.yml",
+      ".github/workflows/program-iteration.yml",
+      "docs/program/PROCESS.md",
+      "docs/program/iterations/P001.json",
+      "docs/program/plan.json",
+      "docs/program/promotion-policy.json",
+      "scripts/program.py"
+    ]
+  },
+  "reviewed_evidence": {
+    "program": {
+      "run_id": 33971701734,
+      "conclusion": "success",
+      "artifact_id": 9971114684,
+      "artifact_digest": "sha256:997f0c638ef51268c4df8be24977c7f0acd40b97ba80809fd218a727f2223472",
+      "execution_status": "COMPLETED",
+      "task_decision": "GOVERNANCE_READY_NO_ACOUSTIC_CANDIDATE",
+      "checks_all_true": true
+    },
+    "aec_motion_tuning": {
+      "run_id": 33971701778,
+      "conclusion": "success",
+      "artifact_id": 9971180923,
+      "artifact_digest": "sha256:ff4008ae63231c52d67f8508df93a8348e16369ef1a46969c61f73bfab6b282e",
+      "internal_sha256_entries_verified": 58,
+      "motion_decision": "ACOUSTIC_CANDIDATE",
+      "selected_label": "aec_mu=0.52",
+      "final_decision": "REJECT_CANDIDATE",
+      "effective_replay_authority": "non-shipping-regression-replay",
+      "call_validation": {
+        "decision": "REJECT_CANDIDATE",
+        "metric": "min_vad_f1",
+        "baseline": 0.7599164926931107,
+        "candidate": 0.675990675990676,
+        "regression": 0.08392581670243471,
+        "allowed": 0.05
+      },
+      "call_shadow": {
+        "decision": "PASS"
+      }
+    },
+    "verify": {
+      "run_id": 33971701880,
+      "run_number": 474,
+      "conclusion": "success",
+      "summary_check_id": 101321790630,
+      "summary_head_sha": "574f36027e5d4530944f24be5d958b45aa88fdde",
+      "summary_conclusion": "success"
+    },
+    "hosted_real_audio": {
+      "run_id": 33971701735,
+      "conclusion": "success"
+    },
+    "hosted_real_aec": {
+      "run_id": 33971701736,
+      "conclusion": "success"
+    }
+  },
+  "failure_lineage": [
+    {
+      "run_id": 33969749300,
+      "kind": "ci-impact",
+      "result": "FAIL",
+      "meaning": "Initial P001 scope accidentally touched release-bearing paths; existing SemVer gate correctly rejected it. The classifier was not weakened; the scope was narrowed to release-neutral governance."
+    },
+    {
+      "run_id": 33970127008,
+      "kind": "program",
+      "result": "FAIL",
+      "meaning": "Governance runtime detected a self-referential prohibited-phrase check; evidence was preserved and the check was corrected without changing governance authority."
+    },
+    {
+      "run_id": 33970127010,
+      "kind": "aec-motion-tuning",
+      "result": "FAIL",
+      "meaning": "The same self-referential workflow check failed before candidate execution; downstream evidence handling was made fail-visible and non-cascading."
+    }
+  ],
+  "closure_checks": {
+    "known_observed_sources_locked_to_regression": true,
+    "gate_plan_fail_closed": true,
+    "attempt_history_retained": true,
+    "budget_inheritance_enforced": true,
+    "measurement_pr_tuning_trigger_disabled": true,
+    "fixed_data_effective_authority_is_regression_replay": true,
+    "i003_still_planned": true,
+    "no_acoustic_candidate_promoted": true
+  },
+  "next": "I003 remains PLANNED. Any activation requires a separate exact-base acoustic contract and inherits the existing aec-motion-continuous-tracking budget; P001 closure does not activate it."
+}

@@ -71,6 +71,15 @@
       "prohibited_roles": ["confirmation", "promotion"]
     },
     {
+      "id": "aec-motion-geometry-v2-i003-confirmation-1-retired",
+      "identity": "generator-v2 seeds 51107,52107,53107; fixed candidate 82ae56d8148e1a19f62250072bd45563eaffdde5",
+      "kind": "deterministic-synthetic",
+      "current_role": "regression",
+      "observed_before_future_selection": true,
+      "allowed_roles": ["regression"],
+      "prohibited_roles": ["development", "validation", "shadow", "confirmation", "promotion"]
+    },
+    {
       "id": "generic-call-replay-observed",
       "identity": "build_validation_corpus seeds 9307,10307",
       "kind": "deterministic-synthetic",
@@ -130,12 +139,14 @@
       "root_cause_id": "aec-motion-continuous-tracking",
       "search_rounds": {"limit": 3, "consumed": 2},
       "candidate_variants": {"limit": 12, "consumed": 12},
-      "confirmation_sets": {"limit": 2, "consumed": 0},
+      "confirmation_sets": {"limit": 2, "consumed": 1},
       "inherited_evidence": [
         "run 33967578985: motion-only aec_mu=0.52 rejected by generic call validation",
         "same-contract reruns are replay/reverification and do not reset or multiply the unique-search budget",
         "I003 selector-search contract consumes search round 2 and the final three candidate variants before execution; independent confirmation remains unconsumed",
-        "run 33973719651 on 6c0e8d94e9f1ff870a208e87c68b67f37853c1f7: incumbent-qualified was the only eligible frozen implementation candidate; confirmation remained unconsumed"
+        "run 33973719651 on 6c0e8d94e9f1ff870a208e87c68b67f37853c1f7: incumbent-qualified was the only eligible frozen implementation candidate; confirmation remained unconsumed",
+        "run 33976148746 on 82ae56d8148e1a19f62250072bd45563eaffdde5: frozen incumbent-qualified implementation passed full engineering/resource/shadow regression before confirmation registration",
+        "run 33976714064: first independent confirmation source group seeds 51107/52107/53107 was consumed and retired; base and candidate were identical on predeclared delay metrics, so strict improvement was not proven and candidate was REJECT_CANDIDATE"
       ]
     }
   ]

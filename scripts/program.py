@@ -258,8 +258,44 @@ def self_test() -> None:
         require(i003["handler"] is None and bool(i003["evidence"]),
                 "review-required I003 must be frozen and evidence-backed")
         require(next_task(plan) is None, "review-required I003 must not rerun automatically")
+    elif i003["status"] == "CLOSED":
+        require(i003["handler"] is None and bool(i003["evidence"]),
+                "closed I003 must be terminal and evidence-backed")
+        result = json.loads((ROOT / "docs/program/iterations/I003-confirmation-result.json").read_text())
+        require(result["schema_version"] == 1 and result["iteration_id"] == "I003" and
+                result["root_cause_id"] == "aec-motion-continuous-tracking" and
+                result["result"] == "CLOSED_KEEP_BASELINE" and
+                result["decision"] == "REJECT_CANDIDATE",
+                "I003 CLOSED requires reviewed rejection result")
+        require(result["candidate_version_not_released"] == "2.3.13" and
+                result["authority_boundary"]["software_candidate_promoted"] is False and
+                result["authority_boundary"]["release_created"] is False and
+                result["authority_boundary"]["product_qualification"] == "DEFERRED_BY_SCOPE",
+                "I003 rejection must preserve release/product boundary")
+        confirmation = result["confirmation"]
+        require(confirmation["workflow_run_id"] == 33976714064 and
+                confirmation["artifact_id"] == 9972539010 and
+                confirmation["budget_consumed"] == 1 and
+                confirmation["source_group_next_role"] == "regression-retired" and
+                confirmation["candidate_search_performed"] is False and
+                confirmation["threshold_tuning_performed"] is False,
+                "I003 rejection requires fixed-candidate confirmation evidence")
+        require(result["aggregate"]["strict_improvement"] is False,
+                "I003 rejection requires no independent strict improvement")
+        policy = json.loads((ROOT / "docs/program/promotion-policy.json").read_text())
+        budget = next(item for item in policy["research_budgets"]
+                      if item["root_cause_id"] == "aec-motion-continuous-tracking")
+        require(budget["confirmation_sets"] == {"limit": 2, "consumed": 1},
+                "I003 CLOSED must preserve consumed confirmation budget")
+        retired = next(item for item in policy["source_groups"]
+                       if item["id"] == "aec-motion-geometry-v2-i003-confirmation-1-retired")
+        require(retired["current_role"] == "regression" and
+                "confirmation" in retired["prohibited_roles"] and
+                "promotion" in retired["prohibited_roles"],
+                "I003 CLOSED must retire confirmation source group")
+        require(next_task(plan) is None, "closed I003 must not rerun automatically")
     else:
-        raise AssertionError("I003 must be PLANNED, READY or REVIEW_REQUIRED in this program phase")
+        raise AssertionError("I003 must be PLANNED, READY, REVIEW_REQUIRED or evidence-backed CLOSED")
 
     mutations = [
         lambda p: p.update(auto_promote=True),
@@ -290,7 +326,7 @@ def self_test() -> None:
             "missing I003 handler must block")
     by_id_blocked["I003"].update(depends_on=["I004"])
     require(next_task(blocked) is None, "unfinished dependency must block")
-    print("program self-test: I002/P001 closed + bounded I003 lifecycle and negative contracts OK")
+    print("program self-test: I002/P001 closed + bounded/evidence-backed I003 lifecycle and negative contracts OK")
 
 
 def main() -> int:

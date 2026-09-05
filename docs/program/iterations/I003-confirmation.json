@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "root_cause_id": "aec-motion-continuous-tracking",
+  "phase": "independent-confirmation",
+  "authority": "fixed-candidate-independent-confirmation",
+  "base_sha": "783a8d1f27bae03b97e57b74e47cede5cf07bb6d",
+  "candidate_implementation_sha": "82ae56d8148e1a19f62250072bd45563eaffdde5",
+  "candidate": "incumbent-qualified",
+  "candidate_fingerprint": {
+    "src/sync/ap_sync.c": "63c0a796a6f1bebd90965243ae1665f5e6c98df3",
+    "tests/test_drift_res.c": "f30fe484ac70dd5a07bed7504e467059564be80f",
+    "CMakeLists.txt": "435c3fc1971fa33da125fa804648010670923e99",
+    "CHANGELOG.md": "c6dc452540f0eec2db855907ca7ac628fcd949bd",
+    "docs/program/iterations/I003-selection-result.json": "a18dc78691dd9a4f671eec2d78d71f043820fc7e"
+  },
+  "engineering_evidence": {
+    "verify_run_id": 33976148746,
+    "verify_summary_check_id": 101333707114,
+    "exact_head": "82ae56d8148e1a19f62250072bd45563eaffdde5",
+    "result": "PASS"
+  },
+  "source_group": {
+    "id": "aec-motion-geometry-v2-i003-confirmation-1",
+    "kind": "deterministic-synthetic",
+    "generator": "validation/tools/build_aec_motion_corpus.py",
+    "generator_version": 2,
+    "generator_blob": "6549f926e2a5472ea723a593ddd2bafe0a23f333",
+    "seeds": [51107, 52107, 53107],
+    "seconds": 8.0,
+    "observed_before_candidate_freeze": false,
+    "role_before_execution": "confirmation-pending",
+    "role_after_execution": "regression-retired"
+  },
+  "budget": {
+    "confirmation_sets_limit": 2,
+    "confirmation_sets_consumed_before": 0,
+    "confirmation_sets_consumed_if_executed": 1
+  },
+  "acceptance": {
+    "warmup_frames": 20,
+    "direct_delay_ms": 42,
+    "late_error_ms": 4,
+    "severe_error_ms": 20,
+    "per_seed": {
+      "candidate_median_abs_delay_error_ms_must_not_exceed_base": true,
+      "candidate_p95_abs_delay_error_ms_must_not_exceed_base": true,
+      "candidate_late_error_count_must_not_exceed_base": true,
+      "candidate_severe_error_count_must_not_exceed_base": true,
+      "canonical_validation_must_pass": true
+    },
+    "aggregate": {
+      "strict_improvement_required": true,
+      "strict_improvement_metrics": ["p95_abs_delay_error_ms", "late_error_count", "severe_error_count"],
+      "all_three_seeds_must_pass": true
+    }
+  },
+  "constraints": {
+    "candidate_search_allowed": false,
+    "candidate_ranking_allowed": false,
+    "threshold_tuning_allowed": false,
+    "confirmation_result_may_change_candidate": false,
+    "failed_or_passed_source_group_is_retired_after_execution": true,
+    "promotion_allowed_by_confirmation_alone": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

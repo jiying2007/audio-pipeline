@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I004",
+  "root_cause_id": "ns-nonstationary-low-snr",
+  "result": "REVIEW_REQUIRED",
+  "decision": "MEASURED_GAP_REVIEW_REQUIRED",
+  "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE",
+  "baseline": {
+    "software_release": "v2.3.12",
+    "software_source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "diagnostic_base_sha": "669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee",
+    "measurement_tooling_main_sha": "268879d68cfeba3b024292cc29ffa43380f54a55"
+  },
+  "authoritative_execution": {
+    "research_head_sha": "2f2153a4dc71a93b284dd776f1c1a0a7f26984b6",
+    "workflow_run_id": 33999621434,
+    "artifact_id": 9979093460,
+    "artifact_digest": "sha256:331a6511d3cff82cb2787d8a1bc51f66e3c69a7ca7748b31d9794e0de646dd26",
+    "sha256sums_verified": {"entries": 159, "missing": 0, "mismatched": 0},
+    "manifest_matches_sha256sums": true,
+    "processor_sha256": "d0baa762a53ce77fe218e2b603a7eeae02cd15f92b7a9105b02df49a9e66b5c5",
+    "ns_probability_probe_sha256": "7c6a18c98d74b45a06feb686de0ad7cf0eedefbc370afb79471f5a0034766df0",
+    "diagnostic_implementation_sha256": "42374e440c96d101aa6f46532e12e5b08985814cc8bf0030cf557a59eb6b31e2",
+    "shipping_diff_zero": true
+  },
+  "input_preconditions": {
+    "passed": true,
+    "anchor_count": 6,
+    "all_anchor_vad_recall": 1.0,
+    "profiles": ["vad-isolated", "ns-isolated"],
+    "seeds": [14107, 24107, 34107]
+  },
+  "frozen_matrix": {
+    "data_role": "development",
+    "seeds": [14107, 24107, 34107],
+    "case_count": 24,
+    "failed_case_count": 12,
+    "failed_speech_case_count": 12,
+    "failed_noise_only_case_count": 0,
+    "existing_exposed_ns_tuning_seeds": [1307, 2307, 3307]
+  },
+  "scenario_summary": {
+    "ns-motor-ramp-speech": {
+      "si_sdr_improvement_db": {"min": 4.2094, "median": 4.3970, "max": 4.5596},
+      "worst_window_si_sdr_improvement_db": {"min": 1.4457, "median": 1.6979, "max": 1.9295},
+      "vad_recall": {"min": 0.1776, "median": 0.2322, "max": 0.3852},
+      "vad_false_positive_rate": {"min": 0.1340, "median": 0.1907, "max": 0.2371},
+      "ns_probability_margin": {"min": -0.6280, "median": -0.5712, "max": -0.5331}
+    },
+    "ns-fan-am-speech": {
+      "si_sdr_improvement_db": {"min": 0.4639, "median": 0.5314, "max": 0.5349},
+      "worst_window_si_sdr_improvement_db": {"min": -0.4467, "median": -0.4118, "max": -0.1475},
+      "vad_recall": {"min": 0.6202, "median": 0.6284, "max": 0.7022},
+      "vad_false_positive_rate": {"min": 0.3505, "median": 0.4639, "max": 0.4742},
+      "ns_probability_margin": {"min": -0.2037, "median": -0.1988, "max": -0.1974}
+    },
+    "ns-burst-start-stop-speech": {
+      "si_sdr_improvement_db": {"min": -3.9914, "median": -3.8047, "max": -3.7315},
+      "worst_window_si_sdr_improvement_db": {"min": -9.4938, "median": -9.2384, "max": -9.1255},
+      "vad_recall": {"min": 0.2486, "median": 0.2678, "max": 0.2978},
+      "ns_probability_margin": {"min": -0.3958, "median": -0.3884, "max": -0.3846}
+    },
+    "ns-mixed-dynamic-low-snr-speech": {
+      "si_sdr_improvement_db": {"min": 0.2050, "median": 0.3161, "max": 0.3938},
+      "worst_window_si_sdr_improvement_db": {"min": -0.8605, "median": -0.6028, "max": -0.4771},
+      "vad_recall": {"min": 0.2213, "median": 0.3142, "max": 0.4071},
+      "ns_probability_margin": {"min": -0.4747, "median": -0.4385, "max": -0.4116}
+    },
+    "noise_only": {
+      "motor_ramp_attenuation_db_min": 5.5979,
+      "fan_am_attenuation_db_min": 4.4217,
+      "burst_start_stop_attenuation_db_min": 0.8447,
+      "mixed_dynamic_attenuation_db_min": 3.5960,
+      "failed_case_count": 0
+    }
+  },
+  "root_cause_split": {
+    "evidence_path": {
+      "status": "MEASURED_GAP",
+      "evidence": "Motor/fan/mixed speech often retain nonnegative or positive aggregate SI-SDR while VAD recall collapses and standalone NS speech-probability margins are negative.",
+      "next_counterfactual": "Compare the same noisy mic in vad-isolated versus ns-isolated to separate local-VAD failure from NS-upstream evidence interaction."
+    },
+    "burst_protection": {
+      "status": "MEASURED_GAP",
+      "evidence": "Burst/start-stop speech loses about 3.7-4.0 dB aggregate SI-SDR and about 9.1-9.5 dB in the worst window while noise-only attenuation remains positive.",
+      "next_counterfactual": "Compare shipping EMA against the already-supported MCRA estimator on the same frozen 24-case development matrix."
+    }
+  },
+  "authority_boundary": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "candidate_search_performed": false,
+    "ns_floor_tuning_performed": false,
+    "backend_change_performed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  },
+  "superseded_bringup": {
+    "workflow_run_id": 33999401741,
+    "artifact_id": 9979030479,
+    "reason": "Used the synthetic PR merge ref and lacked clean-speech input preconditions; retained only as harness bring-up evidence.",
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0
+  },
+  "next_step": "Run candidate_limit=0 root-cause differential before authorizing any source change: noisy vad-isolated vs ns-isolated, and existing EMA vs MCRA."
+}

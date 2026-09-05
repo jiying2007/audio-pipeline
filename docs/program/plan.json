@@ -33,7 +33,9 @@
       "title": "Audit tonal motion corpus against fixed-geometry broadband diagnostics on exact base",
       "depends_on": [], "handler": null, "contract": "docs/program/iterations/I001.json",
       "exit": "All seeds and model invariants recorded; canonical quality failures retained; no DSP promotion",
-      "evidence": [{"source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029", "meaning": "Complete fixed-product model audit: 72/72 case gates pass; legacy excitation has ~0.899 sidelobe peak and moving earliest path while the audited geometry keeps a 672-sample direct path and 32-sample causal margin. Different-corpus scores are not DSP improvement."}]
+      "evidence": [
+        {"source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029", "meaning": "Complete fixed-product model audit: 72/72 case gates pass; legacy excitation has ~0.899 sidelobe peak and moving earliest path while the audited geometry keeps a 672-sample direct path and 32-sample causal margin. Different-corpus scores are not DSP improvement."}
+      ]
     },
     {
       "id": "I002", "priority": 20, "status": "CLOSED", "lane": "measurement",
@@ -68,11 +70,13 @@
       ]
     },
     {
-      "id": "I004", "priority": 40, "status": "PLANNED", "lane": "acoustic",
+      "id": "I004", "priority": 40, "status": "REVIEW_REQUIRED", "lane": "acoustic",
       "title": "NS nonstationary motor/fan and low-SNR speech envelope using pinned public data",
-      "depends_on": ["P001"], "handler": null, "contract": null,
-      "exit": "Speech preservation, noise reduction, worst-case and VAD constraints; no new backend without measured value",
-      "evidence": []
+      "depends_on": ["P001"], "handler": null, "contract": "docs/program/iterations/I004.json",
+      "exit": "Measured gap is archived; candidate_limit=0 root-cause differential must separate NS-to-VAD evidence-path failure from burst speech-protection/noise-tracker failure before any source candidate is authorized",
+      "evidence": [
+        {"source_sha": "2f2153a4dc71a93b284dd776f1c1a0a7f26984b6", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33999621434", "meaning": "Authoritative candidate_limit=0 I004 baseline diagnostic. Artifact 9979093460/digest 331a6511... independently verified all 159 SHA256 entries and exact research/baseline identities. Clean anchors passed 6/6 at recall 1.0. Final result MEASURED_GAP_REVIEW_REQUIRED: all 12 speech cases failed while all 12 noise-only cases had no failed flag; motor/fan/mixed expose NS-to-VAD evidence gaps and burst/start-stop additionally shows about 3.7-4.0 dB aggregate and 9.1-9.5 dB worst-window speech SI-SDR regression. No candidate, ns_floor tuning, backend change, confirmation, release or product qualification authority was consumed."}
+      ]
     },
     {
       "id": "I005", "priority": 50, "status": "PLANNED", "lane": "acoustic",

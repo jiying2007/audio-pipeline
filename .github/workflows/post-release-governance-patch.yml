@@ -21,7 +21,7 @@ jobs:
       - name: Apply deterministic workflow edits
         env:
           HIL_NOTIFY_B64: CiAgbm90aWZ5LXBvc3QtcmVsZWFzZToKICAgIG5lZWRzOiBbYXZhaWxhYmlsaXR5LCBzb2FrXQogICAgaWY6ICR7eyBhbHdheXMoKSAmJiBnaXRodWIuZXZlbnRfbmFtZSA9PSAncmVwb3NpdG9yeV9kaXNwYXRjaCcgJiYgZ2l0aHViLmV2ZW50LmFjdGlvbiA9PSAnaGlsLXBvc3QtcmVsZWFzZScgfX0KICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKICAgIHBlcm1pc3Npb25zOgogICAgICBjb250ZW50czogd3JpdGUKICAgIHN0ZXBzOgogICAgICAtIG5hbWU6IE5vdGlmeSBwb3N0LXJlbGVhc2UgcXVhbGlmaWNhdGlvbiBhZ2dyZWdhdG9yCiAgICAgICAgZW52OgogICAgICAgICAgR0hfVE9LRU46ICR7eyBnaXRodWIudG9rZW4gfX0KICAgICAgICAgIFJFTEVBU0VfUkVGOiAke3sgZ2l0aHViLmV2ZW50LmNsaWVudF9wYXlsb2FkLnJlbGVhc2VfcmVmIH19CiAgICAgICAgICBSRUxFQVNFX1RBRzogJHt7IGdpdGh1Yi5ldmVudC5jbGllbnRfcGF5bG9hZC50YWcgfX0KICAgICAgICBydW46IHwKICAgICAgICAgIHNldCAtZXVvIHBpcGVmYWlsCiAgICAgICAgICBbWyAiJFJFTEVBU0VfUkVGIiA9fiBeWzAtOWEtZl17NDB9JCBdXSB8fCB7IGVjaG8gJ2ludmFsaWQgcG9zdC1yZWxlYXNlIFNIQScgPiYyOyBleGl0IDE7IH0KICAgICAgICAgIGNhc2UgIiRSRUxFQVNFX1RBRyIgaW4gdiopIDs7ICopIGVjaG8gJ2ludmFsaWQgcG9zdC1yZWxlYXNlIHRhZycgPiYyOyBleGl0IDEgOzsgZXNhYwogICAgICAgICAgZ2ggYXBpIC0tbWV0aG9kIFBPU1QgInJlcG9zLyRHSVRIVUJfUkVQT1NJVE9SWS9kaXNwYXRjaGVzIiBcCiAgICAgICAgICAgIC1mIGV2ZW50X3R5cGU9cG9zdC1yZWxlYXNlLXF1YWxpZmljYXRpb24gXAogICAgICAgICAgICAtZiAiY2xpZW50X3BheWxvYWRbcmVsZWFzZV9yZWZdPSRSRUxFQVNFX1JFRiIgXAogICAgICAgICAgICAtZiAiY2xpZW50X3BheWxvYWRbdGFnXT0kUkVMRUFTRV9UQUciIFwKICAgICAgICAgICAgLWYgJ2NsaWVudF9wYXlsb2FkW2NvbXBvbmVudF09aGlsJyBcCiAgICAgICAgICAgIC1mICJjbGllbnRfcGF5bG9hZFtzb3VyY2VfcnVuX2lkXT0kR0lUSFVCX1JVTl9JRCIK
-          EXTENDED_NOTIFY_B64: CiAgbm90aWZ5LXBvc3QtcmVsZWFzZToKICAgIG5lZWRzOiBbcmVzb2x2ZSwgdmFsaWRhdGVdCiAgICBpZjogJHt7IGFsd2F5cygpICYmIGlucHV0cy5wb3N0X3JlbGVhc2VfdGFnICE9ICcnIH19CiAgICBydW5zLW9uOiB1YnVudHUtbGF0ZXN0CiAgICBwZXJtaXNzaW9uczoKICAgICAgY29udGVudHM6IHdyaXRlCiAgICBzdGVwczoKICAgICAgLSBuYW1lOiBOb3RpZnkgcG9zdC1yZWxlYXNlIHF1YWxpZmljYXRpb24gYWdncmVnYXRvcgogICAgICAgIGVudjoKICAgICAgICAgIEdIX1RPS0VOOiAke3sgZ2l0aHViLnRva2VuIH19CiAgICAgICAgICBSRUxFQVNFX1JFRjogJHt7IGlucHV0cy5zb3VyY2Vfc2hhIH19CiAgICAgICAgICBSRUxFQVNFX1RBRzogJHt7IGlucHV0cy5wb3N0X3JlbGVhc2VfdGFnIH19CiAgICAgICAgcnVuOiB8CiAgICAgICAgICBzZXQgLWV1byBwaXBlZmFpbAogICAgICAgICAgW1sgIiRSRUxFQVNFX1JFRiIgPX4gXlswLTlhLWZdezQwfSQgXV0gfHwgeyBlY2hvICdpbnZhbGlkIHBvc3QtcmVsZWFzZSBTSEEnID4mMjsgZXhpdCAxOyB9CiAgICAgICAgICBjYXNlICIkUkVMRUFTRV9UQUciIGluIHYqKSA7OyAqKSBlY2hvICdpbnZhbGlkIHBvc3QtcmVsZWFzZSB0YWcnID4mMjsgZXhpdCAxIDs7IGVzYWMKICAgICAgICAgIGdoIGFwaSAtLW1ldGhvZCBQT1NUICJyZXBvcy8kR0lUSFVCX1JFUE9TSVRPUlkvZGlzcGF0Y2hlcyIgXAogICAgICAgICAgICAtZiBldmVudF90eXBlPXBvc3QtcmVsZWFzZS1xdWFsaWZpY2F0aW9uIFwKICAgICAgICAgICAgLWYgImNsaWVudF9wYXlsb2FkW3JlbGVhc2VfcmVmXT0kUkVMRUFTRV9SRUYiIFwKICAgICAgICAgICAgLWYgImNsaWVudF9wYXlsb2FkW3RhZ109JFJFTEVBU0VfVEFHIiIFwKICAgICAgICAgICAgLWYgJ2NsaWVudF9wYXlsb2FkW2NvbXBvbmVudF09ZXh0ZW5kZWQtcmVhbCcgXAogICAgICAgICAgICAtZiAiY2xpZW50X3BheWxvYWRbc291cmNlX3J1bl9pZF09JEdJVEhVQl9SVU5fSUQiCg==
+          EXTENDED_NOTIFY_B64: CiAgbm90aWZ5LXBvc3QtcmVsZWFzZToKICAgIG5lZWRzOiBbcmVzb2x2ZSwgdmFsaWRhdGVdCiAgICBpZjogJHt7IGFsd2F5cygpICYmIGlucHV0cy5wb3N0X3JlbGVhc2VfdGFnICE9ICcnIH19CiAgICBydW5zLW9uOiB1YnVudHUtbGF0ZXN0CiAgICBwZXJtaXNzaW9uczoKICAgICAgY29udGVudHM6IHdyaXRlCiAgICBzdGVwczoKICAgICAgLSBuYW1lOiBOb3RpZnkgcG9zdC1yZWxlYXNlIHF1YWxpZmljYXRpb24gYWdncmVnYXRvcgogICAgICAgIGVudjoKICAgICAgICAgIEdIX1RPS0VOOiAke3sgZ2l0aHViLnRva2VuIH19CiAgICAgICAgICBSRUxFQVNFX1JFRjogJHt7IGlucHV0cy5zb3VyY2Vfc2hhIH19CiAgICAgICAgICBSRUxFQVNFX1RBRzogJHt7IGlucHV0cy5wb3N0X3JlbGVhc2VfdGFnIH19CiAgICAgICAgcnVuOiB8CiAgICAgICAgICBzZXQgLWV1byBwaXBlZmFpbAogICAgICAgICAgW1sgIiRSRUxFQVNFX1JFRiIgPX4gXlswLTlhLWZdezQwfSQgXV0gfHwgeyBlY2hvICdpbnZhbGlkIHBvc3QtcmVsZWFzZSBTSEEnID4mMjsgZXhpdCAxOyB9CiAgICAgICAgICBjYXNlICIkUkVMRUFTRV9UQUciIGluIHYqKSA7OyAqKSBlY2hvICdpbnZhbGlkIHBvc3QtcmVsZWFzZSB0YWcnID4mMjsgZXhpdCAxIDs7IGVzYWMKICAgICAgICAgIGdoIGFwaSAtLW1ldGhvZCBQT1NUICJyZXBvcy8kR0lUSFVCX1JFUE9TSVRPUlkvZGlzcGF0Y2hlcyIgXAogICAgICAgICAgICAtZiBldmVudF90eXBlPXBvc3QtcmVsZWFzZS1xdWFsaWZpY2F0aW9uIFwKICAgICAgICAgICAgLWYgImNsaWVudF9wYXlsb2FkW3JlbGVhc2VfcmVmXT0kUkVMRUFTRV9SRUYiIFwKICAgICAgICAgICAgLWYgImNsaWVudF9wYXlsb2FkW3RhZ109JFJFTEVBU0VfVEFHIiBcCiAgICAgICAgICAgIC1mICdjbGllbnRfcGF5bG9hZFtjb21wb25lbnRdPWV4dGVuZGVkLXJlYWwnIFwKICAgICAgICAgICAgLWYgImNsaWVudF9wYXlsb2FkW3NvdXJjZV9ydW5faWRdPSRHSVRIVUJfUlVOX0lEIgo=
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -35,14 +35,17 @@ jobs:
                   raise SystemExit(f'{label}: expected one match, found {count}')
               return text.replace(old, new, 1)
 
+          expr_open = '$' + '{{'
+          expr_close = '}}'
+
           hil = Path('.github/workflows/hil-soak.yml')
           text = hil.read_text(encoding='utf-8')
-          text = replace_once(
-              text,
-              'name: HIL Tiered Soak\n\non:\n',
-              "name: HIL Tiered Soak\nrun-name: ${{ github.event_name == 'repository_dispatch' && format('hil-post-release {0}', github.event.client_payload.tag) || format('HIL Tiered Soak {0}', github.event_name) }}\n\non:\n",
-              'HIL run-name',
+          hil_run_name = (
+              'name: HIL Tiered Soak\nrun-name: ' + expr_open +
+              " github.event_name == 'repository_dispatch' && format('hil-post-release {0}', github.event.client_payload.tag) || format('HIL Tiered Soak {0}', github.event_name) " +
+              expr_close + '\n\non:\n'
           )
+          text = replace_once(text, 'name: HIL Tiered Soak\n\non:\n', hil_run_name, 'HIL run-name')
           if '  notify-post-release:\n' in text:
               raise SystemExit('HIL notify job already present')
           text += base64.b64decode(os.environ['HIL_NOTIFY_B64']).decode('utf-8')
@@ -50,22 +53,24 @@ jobs:
 
           extended = Path('.github/workflows/validation-extended-real.yml')
           text = extended.read_text(encoding='utf-8')
-          text = replace_once(
-              text,
-              'name: Extended Real Validation\n\non:\n',
-              "name: Extended Real Validation\nrun-name: ${{ inputs.post_release_tag != '' && format('extended-real-validation {0}', inputs.post_release_tag) || format('Extended Real Validation {0}', inputs.profile) }}\n\non:\n",
-              'Extended run-name',
+          extended_run_name = (
+              'name: Extended Real Validation\nrun-name: ' + expr_open +
+              " inputs.post_release_tag != '' && format('extended-real-validation {0}', inputs.post_release_tag) || format('Extended Real Validation {0}', inputs.profile) " +
+              expr_close + '\n\non:\n'
           )
+          text = replace_once(text, 'name: Extended Real Validation\n\non:\n', extended_run_name, 'Extended run-name')
           text = replace_once(
               text,
               "      data_root:\n        description: Optional dataset root; blank resolves AUDIO_PIPELINE_LAB_DATA_ROOT or $HOME/audio-validation-extended on audio-validation runner\n        required: false\n        default: ''\n        type: string\n      limit_per_dataset:\n",
               "      data_root:\n        description: Optional dataset root; blank resolves AUDIO_PIPELINE_LAB_DATA_ROOT or $HOME/audio-validation-extended on audio-validation runner\n        required: false\n        default: ''\n        type: string\n      post_release_tag:\n        description: Optional immutable release tag; non-empty enables post-release authority notification\n        required: false\n        default: ''\n        type: string\n      limit_per_dataset:\n",
               'Extended post-release input',
           )
+          source_expr = expr_open + ' inputs.source_sha ' + expr_close
+          tag_expr = expr_open + ' inputs.post_release_tag ' + expr_close
           text = replace_once(
               text,
-              '        env:\n          SOURCE_SHA: ${{ inputs.source_sha }}\n        run: |\n',
-              '        env:\n          SOURCE_SHA: ${{ inputs.source_sha }}\n          POST_RELEASE_TAG: ${{ inputs.post_release_tag }}\n        run: |\n',
+              '        env:\n          SOURCE_SHA: ' + source_expr + '\n        run: |\n',
+              '        env:\n          SOURCE_SHA: ' + source_expr + '\n          POST_RELEASE_TAG: ' + tag_expr + '\n        run: |\n',
               'Extended resolve env',
           )
           text = replace_once(

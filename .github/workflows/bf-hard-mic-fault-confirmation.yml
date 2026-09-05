@@ -76,7 +76,7 @@ jobs:
           PYTHONPATH: validation/tools:tests/validation
         run: |
           set -euo pipefail
-          for seed in 7307 8307 9307; do
+          for seed in 10307 11307 12307; do
             root="/tmp/ap-bf-hard-confirm-${seed}"
             python3 tests/validation/build_bf_hard_fault_sweep.py \
               --output "$root" --seed "$seed"
@@ -88,7 +88,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p bf-hard-confirm-out/candidate bf-hard-confirm-out/base
-          for seed in 7307 8307 9307; do
+          for seed in 10307 11307 12307; do
             root="/tmp/ap-bf-hard-confirm-${seed}"
             for side in candidate base; do
               out="bf-hard-confirm-out/${side}/${seed}"
@@ -108,9 +108,9 @@ jobs:
           set -euo pipefail
           for side in candidate base; do
             python3 tests/validation/bf_hard_fault_summary.py \
-              --report "bf-hard-confirm-out/${side}/7307/report.json" \
-              --report "bf-hard-confirm-out/${side}/8307/report.json" \
-              --report "bf-hard-confirm-out/${side}/9307/report.json" \
+              --report "bf-hard-confirm-out/${side}/10307/report.json" \
+              --report "bf-hard-confirm-out/${side}/11307/report.json" \
+              --report "bf-hard-confirm-out/${side}/12307/report.json" \
               --output "bf-hard-confirm-out/${side}/summary.json" \
               | tee "bf-hard-confirm-out/${side}/summary.txt"
           done
@@ -121,12 +121,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 tests/validation/bf_hard_fault_differential_confirmation.py \
-            --candidate-report bf-hard-confirm-out/candidate/7307/report.json \
-            --candidate-report bf-hard-confirm-out/candidate/8307/report.json \
-            --candidate-report bf-hard-confirm-out/candidate/9307/report.json \
-            --base-report bf-hard-confirm-out/base/7307/report.json \
-            --base-report bf-hard-confirm-out/base/8307/report.json \
-            --base-report bf-hard-confirm-out/base/9307/report.json \
+            --candidate-report bf-hard-confirm-out/candidate/10307/report.json \
+            --candidate-report bf-hard-confirm-out/candidate/11307/report.json \
+            --candidate-report bf-hard-confirm-out/candidate/12307/report.json \
+            --base-report bf-hard-confirm-out/base/10307/report.json \
+            --base-report bf-hard-confirm-out/base/11307/report.json \
+            --base-report bf-hard-confirm-out/base/12307/report.json \
             --output bf-hard-confirm-out/differential-gate.json \
             | tee bf-hard-confirm-out/differential-gate.txt
 
@@ -136,9 +136,9 @@ jobs:
           {
             echo '## BF hard microphone fault differential confirmation'
             echo
-            echo 'Fresh frozen seeds: 7307 / 8307 / 9307.'
+            echo 'Fresh frozen seeds: 10307 / 11307 / 12307.'
             echo "Exact comparison base: ${BASE_SHA}."
-            echo 'The earlier 4307/5307/6307 confirmation remains a recorded failed experiment: exact-base replay proved its sole stuck-DC failure was already present in the base and therefore exposed an invalid absolute non-target gate. Those seeds are not reused here.'
+            echo '4307/5307/6307 remain the recorded first failed confirmation that exposed an invalid absolute non-target gate. 7307/8307/9307 remain the recorded second failed confirmation that exposed post-DC-release hard promotion when the soft fallback had already selected the healthy microphone. Neither set is reused here.'
             echo
             echo '### Candidate'
             echo '```text'

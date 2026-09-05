@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "authority": "research-external-timing-only",
+  "dataset": {
+    "name": "AMI Meeting Corpus",
+    "meeting": "ES2004a",
+    "license": "CC-BY-4.0",
+    "official_corpus_url": "https://groups.inf.ed.ac.uk/ami/corpus/",
+    "official_audio_url": "https://groups.inf.ed.ac.uk/ami/AMICorpusMirror/amicorpus/ES2004a/audio/ES2004a.Mix-Headset.wav",
+    "annotation_semantics": "manual transcription segment timing; external human-adjusted timing, not a dedicated audited speech-activity-detection gold label"
+  },
+  "transport_mirror": {
+    "repository": "ggfox00000/dia-AMICorpus-all",
+    "revision": "a249db53de253a3a0a864c93a51d613159dfec7c"
+  },
+  "audio": {
+    "path": "amicorpus/ES2004a/audio/ES2004a.Mix-Headset.wav",
+    "size_bytes": 33579394,
+    "tree_object_id": "ab247a61f224bb3ffafd7c654ac6932634c80951",
+    "lfs_sha256": "3e2560b19bee6952c7c7ce041b0f1ea8a7ea9468044c4eea79d2a2c67e24ab0f",
+    "xet_hash": "05aa81d8d78ea3da4bd449a211665462e4fd56a4dac087579d9a3fd19151e0a6",
+    "wav": {
+      "audio_format": 1,
+      "channels": 1,
+      "sample_rate_hz": 16000,
+      "bits_per_sample": 16,
+      "byte_rate": 32000,
+      "block_align": 2,
+      "data_offset": 44,
+      "data_size": 33579350,
+      "duration_s": 1049.3546875
+    }
+  },
+  "annotations": [
+    {
+      "speaker": "A",
+      "path": "ami_public_manual_1.6.2/segments/ES2004a.A.segments.xml",
+      "sha256": "fdba87577fb6f36139a0f62d5c249921635b53bec92ed127cdfee959f6a8cb2c",
+      "size_bytes": 10232,
+      "segments": 48
+    },
+    {
+      "speaker": "B",
+      "path": "ami_public_manual_1.6.2/segments/ES2004a.B.segments.xml",
+      "sha256": "130b464da1979e2b269c6b860eb046ac26e2d13b7482752d9befe3146bfc17f4",
+      "size_bytes": 19951,
+      "segments": 94
+    },
+    {
+      "speaker": "C",
+      "path": "ami_public_manual_1.6.2/segments/ES2004a.C.segments.xml",
+      "sha256": "fc1cdb6c1fd673d35caa84190a85c827db08da60bdcb2a856eca785f4a3b8bde",
+      "size_bytes": 11557,
+      "segments": 54
+    },
+    {
+      "speaker": "D",
+      "path": "ami_public_manual_1.6.2/segments/ES2004a.D.segments.xml",
+      "sha256": "1ecca19454d5c92b92c8c1825935b24262a355778c7138492dbacf10db9aa83d",
+      "size_bytes": 18503,
+      "segments": 87
+    }
+  ],
+  "windows": [
+    {
+      "window_id": "ES2004a-w1",
+      "start_s": 55.0,
+      "end_s": 75.0,
+      "activity_fraction": 0.24449999999999933,
+      "start_byte": 1760044,
+      "end_byte": 2400043,
+      "length_bytes": 640000,
+      "sha256": "53040d20ad19fa0c78f00e4d6f1da2d67c0344b2315e45efa6c7aa11f078841b"
+    },
+    {
+      "window_id": "ES2004a-w2",
+      "start_s": 255.0,
+      "end_s": 275.0,
+      "activity_fraction": 0.500049999999996,
+      "start_byte": 8160044,
+      "end_byte": 8800043,
+      "length_bytes": 640000,
+      "sha256": "2b9f2c70e667f7ef308833cb6e2db969de4948e3499b3672a2e6db2dec650f2a"
+    },
+    {
+      "window_id": "ES2004a-w3",
+      "start_s": 480.0,
+      "end_s": 500.0,
+      "activity_fraction": 0.743700000000004,
+      "start_byte": 15360044,
+      "end_byte": 16000043,
+      "length_bytes": 640000,
+      "sha256": "62c5c82dab2a7114d491d197390c7cbdf240f15c7bdc7ace4b5f01b8e00e3d4a"
+    }
+  ],
+  "labeling": {
+    "frame_ms": 10,
+    "rule": "frame center timestamp is inside the union of manual transcription segments across speakers A/B/C/D"
+  },
+  "confirmation_policy": {
+    "candidate_search": false,
+    "fixed_strong_threshold": 0.5,
+    "fixed_weak_hold_frames": 6,
+    "strong_hold_frames": 8,
+    "local_decision_threshold": 0.45,
+    "ns_decision_threshold": 0.35,
+    "synthetic_seeds": [4307, 5307, 6307],
+    "real_authority_meeting": "ES2004a"
+  }
+}

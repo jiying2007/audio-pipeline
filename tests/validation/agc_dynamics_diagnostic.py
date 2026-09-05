@@ -61,7 +61,7 @@ def settling_frames(rows: list[dict], start: int, end: int, target: float,
     return None
 
 
-def summarize_case(case: dict, rows: list[dict]) -> dict:
+def summarize_case(case: dict, rows: list[dict], limiter_override: float | None = None) -> dict:
     dimensions = case.get("dimensions", {})
     gain = [float(row["gain_db"]) for row in rows]
     gain_steps = [abs(gain[index] - gain[index - 1]) for index in range(1, len(gain))]
@@ -77,7 +77,10 @@ def summarize_case(case: dict, rows: list[dict]) -> dict:
         "violations": [],
     }
     violations = summary["violations"]
-    limiter = float(dimensions.get("limiter_dbfs", -2.0))
+    limiter = float(
+        limiter_override if limiter_override is not None
+        else dimensions.get("limiter_dbfs", -2.0)
+    )
     if summary["max_output_peak_dbfs"] > limiter + 0.20:
         violations.append({
             "gate": "limiter_peak",
@@ -137,9 +140,11 @@ def summarize_case(case: dict, rows: list[dict]) -> dict:
     return summary
 
 
-def diagnose(probe: Path, corpus_path: Path) -> dict:
+def diagnose(probe: Path, corpus_path: Path, target_override: float | None = None,
+             limiter_override: float | None = None) -> dict:
     corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
     cases = []
+    effective = set()
     for case in corpus.get("cases", []):
         if case.get("processor_profile") != "agc-isolated":
             continue
@@ -147,10 +152,21 @@ def diagnose(probe: Path, corpus_path: Path) -> dict:
         if mic_path is None:
             raise ValueError("mic_audio is required")
         dimensions = case.get("dimensions", {})
-        target = float(dimensions.get("agc_target_dbfs", -20.0))
-        limiter = float(dimensions.get("limiter_dbfs", -2.0))
+        target = float(
+            target_override if target_override is not None
+            else dimensions.get("agc_target_dbfs", -20.0)
+        )
+        limiter = float(
+            limiter_override if limiter_override is not None
+            else dimensions.get("limiter_dbfs", -2.0)
+        )
+        if not math.isfinite(target) or not math.isfinite(limiter):
+            raise ValueError("AGC tuning overrides must be finite")
+        if not -60.0 <= target <= -1.0 or not -20.0 <= limiter <= -0.1 or target >= limiter:
+            raise ValueError("AGC tuning overrides violate product tuning bounds")
+        effective.add((target, limiter))
         rows = run_probe(probe, mic_path, target, limiter)
-        cases.append(summarize_case(case, rows))
+        cases.append(summarize_case(case, rows, limiter_override=limiter))
     violations = [
         {"case_id": case["case_id"], "violations": case["violations"]}
         for case in cases if case["violations"]
@@ -161,6 +177,10 @@ def diagnose(probe: Path, corpus_path: Path) -> dict:
         "corpus_id": corpus.get("corpus_id"),
         "processor_sha256": engine.sha256_file(probe),
         "corpus_sha256": engine.sha256_file(corpus_path),
+        "effective_tuning": (
+            {"agc_target_dbfs": next(iter(effective))[0], "limiter_dbfs": next(iter(effective))[1]}
+            if len(effective) == 1 else None
+        ),
         "validation_result": "PASS" if not violations else "FAIL",
         "cases": cases,
         "violations": violations,
@@ -181,6 +201,12 @@ def self_test() -> None:
         [{"output_rms_dbfs": -20.7, "output_peak_dbfs": -15.0, "gain_db": 17.0}] * 50,
     )
     assert passing["passed"]
+    tighter = summarize_case(
+        {"case_id": "agc-transient", "scenario": "agc-transient", "dimensions": {"limiter_dbfs": -2.0}},
+        [{"output_rms_dbfs": -20.0, "output_peak_dbfs": -3.7, "gain_db": 0.0}] * 50,
+        limiter_override=-4.0,
+    )
+    assert not tighter["passed"] and tighter["violations"][0]["gate"] == "limiter_peak"
     print("AGC dynamics diagnostic self-test: OK")
 
 
@@ -189,6 +215,8 @@ def main() -> int:
     parser.add_argument("--probe", type=Path)
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--agc-target-dbfs", type=float)
+    parser.add_argument("--limiter-dbfs", type=float)
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -197,12 +225,17 @@ def main() -> int:
     for name in ("probe", "corpus", "output"):
         if getattr(args, name) is None:
             parser.error(f"--{name} is required")
-    result = diagnose(args.probe.resolve(), args.corpus.resolve())
+    result = diagnose(
+        args.probe.resolve(), args.corpus.resolve(),
+        target_override=args.agc_target_dbfs,
+        limiter_override=args.limiter_dbfs,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({
         "result": result["validation_result"],
         "cases": len(result["cases"]),
+        "effective_tuning": result["effective_tuning"],
         "output": str(args.output),
     }, sort_keys=True))
     return 1 if result["violations"] else 0

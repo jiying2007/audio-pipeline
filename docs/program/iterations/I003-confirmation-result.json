@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "result": "CLOSED_KEEP_BASELINE",
+  "decision": "REJECT_CANDIDATE",
+  "candidate": "incumbent-qualified",
+  "base_sha": "783a8d1f27bae03b97e57b74e47cede5cf07bb6d",
+  "candidate_implementation_sha": "82ae56d8148e1a19f62250072bd45563eaffdde5",
+  "candidate_version_not_released": "2.3.13",
+  "confirmation": {
+    "workflow_run_id": 33976714064,
+    "artifact_id": 9972539010,
+    "artifact_digest": "sha256:f77826cc444c756d8a10fa3de48a4adb8c146ee8fb2d8fe8806e2227e04c0604",
+    "internal_sha256s_verified": 308,
+    "source_group": "aec-motion-geometry-v2-i003-confirmation-1",
+    "seeds": [51107, 52107, 53107],
+    "source_group_next_role": "regression-retired",
+    "budget_consumed": 1
+  },
+  "aggregate": {
+    "observations": 28080,
+    "base": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+    "candidate": {"median_abs_delay_error_ms": 1.0, "p95_abs_delay_error_ms": 2.0, "late_error_count": 0, "severe_error_count": 0},
+    "strict_improvement": false
+  },
+  "canonical_validation": "PASS_ALL_3_SEEDS_12_OF_12_EACH",
+  "reason": "Independent confirmation did not reproduce a baseline late-route defect and showed no strict improvement on any predeclared delay metric. The candidate is rejected despite non-regression.",
+  "next_action": "Keep immutable v2.3.12 baseline; do not merge or release the v2.3.13 candidate; do not consume a second confirmation set to shop for a passing result."
+}

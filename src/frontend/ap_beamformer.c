@@ -17,6 +17,7 @@
 #define AP_BF_HARD_FAULT_MAX_RATIO 0.28f
 #define AP_BF_HARD_FAULT_ROUGHNESS_RATIO 0.18f
 #define AP_BF_HARD_RECOVER_ROUGHNESS_RATIO 0.60f
+#define AP_BF_HARD_ARM_UPDATES 2u
 
 static float ap_beamformer_clampf(float value, float lo, float hi) {
     if (value < lo) return lo;
@@ -183,24 +184,33 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     if (!s->fallback_active) {
         if (!severe) return;
         s->fallback_active = 1u;
-        s->fallback_hard_fault = hard_contamination ? 1u : 0u;
-        s->fallback_strong_channel = hard_contamination ?
-                                     hard_target_channel : energy_strong_channel;
+        s->fallback_hard_fault = 0u;
+        s->fallback_strong_channel = energy_strong_channel;
+        s->fallback_hard_arm_count = hard_contamination ? 1u : 0u;
         s->fallback_recovery_count = 0u;
         s->fallback_lag = s->lag;
-        s->fallback_gain = hard_contamination ? 1.0f :
-                           normal_coherent_gain /
+        s->fallback_gain = normal_coherent_gain /
                            fmaxf(fallback_coherent_gain, 1.0e-12f);
         return;
     }
 
-    if (hard_contamination && !s->fallback_hard_fault &&
-        s->fallback_strong_channel != hard_target_channel) {
-        s->fallback_hard_fault = 1u;
-        s->fallback_strong_channel = hard_target_channel;
-        s->fallback_recovery_count = 0u;
-        s->fallback_lag = s->lag;
-        s->fallback_gain = 1.0f;
+    if (!s->fallback_hard_fault) {
+        if (hard_contamination && s->fallback_strong_channel != hard_target_channel) {
+            if (s->fallback_hard_arm_count < AP_BF_HARD_ARM_UPDATES)
+                s->fallback_hard_arm_count++;
+            if (s->fallback_hard_arm_count >= AP_BF_HARD_ARM_UPDATES) {
+                s->fallback_hard_fault = 1u;
+                s->fallback_strong_channel = hard_target_channel;
+                s->fallback_hard_arm_count = 0u;
+                s->fallback_recovery_count = 0u;
+                s->fallback_lag = s->lag;
+                s->fallback_gain = 1.0f;
+            }
+        } else {
+            s->fallback_hard_arm_count = 0u;
+        }
+    } else {
+        s->fallback_hard_arm_count = 0u;
     }
 
     recovered = s->fallback_hard_fault ? hard_recovered : soft_recovered;
@@ -210,6 +220,7 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
         if (s->fallback_recovery_count >= AP_BF_FALLBACK_RECOVER_UPDATES) {
             s->fallback_active = 0u;
             s->fallback_hard_fault = 0u;
+            s->fallback_hard_arm_count = 0u;
             s->fallback_recovery_count = 0u;
             s->fallback_gain = 1.0f;
         }
@@ -241,6 +252,7 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
     } else if (!track_direction) {
         s->fallback_active = 0u;
         s->fallback_hard_fault = 0u;
+        s->fallback_hard_arm_count = 0u;
         s->fallback_recovery_count = 0u;
         s->fallback_gain = 1.0f;
     }

@@ -1,0 +1,266 @@
+name: AMI VAD Independent Confirmation
+
+on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_vad.c'
+      - 'src/enhance/ap_ns.c'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/tools/stage_profile_support.py'
+      - 'tests/validation/discover_ami_vad_microset.py'
+      - 'tests/validation/discover_ami_vad_meeting.py'
+      - 'tests/validation/ami_vad_microset_eval.py'
+      - 'tests/validation/vad_operating_point_selector.py'
+      - 'tests/validation/vad_hangover_counterfactual.py'
+      - 'tests/validation/vad_strong_weak_refresh.py'
+      - 'tests/validation/vad_strong_weak_confirmation.py'
+      - 'tests/validation/data/ami_vad_confirmation_es2004a.lock.json'
+      - '.github/workflows/ami-vad-confirmation-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ami-vad-independent-confirmation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: validation/tools:tests/validation
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-independent-confirmation
+
+      - name: Validate confirmation contracts offline
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/discover_ami_vad_microset.py \
+            tests/validation/discover_ami_vad_meeting.py \
+            tests/validation/ami_vad_microset_eval.py \
+            tests/validation/vad_operating_point_selector.py \
+            tests/validation/vad_hangover_counterfactual.py \
+            tests/validation/vad_strong_weak_refresh.py \
+            tests/validation/vad_strong_weak_confirmation.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/discover_ami_vad_microset.py --self-test
+          python3 tests/validation/discover_ami_vad_meeting.py --self-test
+          python3 tests/validation/ami_vad_microset_eval.py --self-test
+          python3 tests/validation/vad_hangover_counterfactual.py --self-test
+          python3 tests/validation/vad_strong_weak_refresh.py --self-test
+          python3 tests/validation/vad_strong_weak_confirmation.py --self-test
+          python3 -m json.tool tests/validation/data/ami_vad_confirmation_es2004a.lock.json >/dev/null
+
+      - name: Re-discover predeclared ES2004a authority
+        run: |
+          set -euo pipefail
+          mkdir -p vad-confirmation-out
+          python3 tests/validation/discover_ami_vad_meeting.py \
+            --meeting ES2004a \
+            --output vad-confirmation-out/discovery.json \
+            | tee vad-confirmation-out/discovery-summary.json
+
+      - name: Bind ES2004a discovery to frozen confirmation lock
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          discovery = json.loads(Path('vad-confirmation-out/discovery.json').read_text())
+          lock = json.loads(Path('tests/validation/data/ami_vad_confirmation_es2004a.lock.json').read_text())
+
+          assert discovery['schema_version'] == lock['schema_version'] == 1
+          assert discovery['authority'] == 'research-discovery-only'
+          assert lock['authority'] == 'research-external-timing-only'
+          assert discovery['dataset']['meeting'] == lock['dataset']['meeting'] == 'ES2004a'
+          assert discovery['dataset']['license'] == lock['dataset']['license'] == 'CC-BY-4.0'
+          assert discovery['transport_mirror'] == lock['transport_mirror']
+
+          audio = discovery['audio']
+          pinned = lock['audio']
+          for key in ('path', 'size_bytes', 'tree_object_id', 'lfs_sha256', 'xet_hash'):
+              assert audio[key] == pinned[key], (key, audio[key], pinned[key])
+          for key in ('audio_format', 'channels', 'sample_rate_hz', 'bits_per_sample',
+                      'byte_rate', 'block_align', 'data_offset', 'data_size'):
+              assert audio['wav'][key] == pinned['wav'][key], key
+          assert abs(audio['duration_s'] - pinned['wav']['duration_s']) < 1e-9
+
+          current_annotations = {item['speaker']: item for item in discovery['annotations']['files']}
+          assert set(current_annotations) == {'A', 'B', 'C', 'D'}
+          for item in lock['annotations']:
+              current = current_annotations[item['speaker']]
+              for key in ('path', 'sha256', 'size_bytes', 'segments'):
+                  assert current[key] == item[key], (item['speaker'], key)
+
+          current_windows = {item['window_id']: item for item in discovery['window_plan']}
+          assert set(current_windows) == {'ES2004a-w1', 'ES2004a-w2', 'ES2004a-w3'}
+          for item in lock['windows']:
+              current = current_windows[item['window_id']]
+              assert current['start_s'] == item['start_s']
+              assert current['end_s'] == item['end_s']
+              assert abs(current['activity_fraction'] - item['activity_fraction']) < 1e-9
+              assert current['audio_range']['start_byte'] == item['start_byte']
+              assert current['audio_range']['end_byte'] == item['end_byte']
+              assert current['audio_range']['length_bytes'] == item['length_bytes']
+              assert current['audio_range']['sha256'] == item['sha256']
+
+          policy = lock['confirmation_policy']
+          assert policy == {
+              'candidate_search': False,
+              'fixed_strong_threshold': 0.5,
+              'fixed_weak_hold_frames': 6,
+              'strong_hold_frames': 8,
+              'local_decision_threshold': 0.45,
+              'ns_decision_threshold': 0.35,
+              'synthetic_seeds': [4307, 5307, 6307],
+              'real_authority_meeting': 'ES2004a',
+          }
+          PY
+
+      - name: Configure exact confirmation processor
+        run: >-
+          cmake -S . -B build-vad-confirmation -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+
+      - name: Build exact confirmation processor
+        run: cmake --build build-vad-confirmation --target ap_process_pcm --parallel
+
+      - name: Build new independent synthetic authorities
+        run: |
+          set -euo pipefail
+          for seed in 4307 5307 6307; do
+            python3 validation/tools/build_stage_validation_corpus.py \
+              --output "/tmp/ap-vad-confirmation-${seed}" --seed "${seed}"
+          done
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          hashes = []
+          for seed in (4307, 5307, 6307):
+              path = Path(f'/tmp/ap-vad-confirmation-{seed}/corpus.json')
+              corpus = json.loads(path.read_text())
+              assert corpus['generator']['seed'] == seed
+              profiles = {
+                  case.get('processor_profile')
+                  for case in corpus['cases'] if case.get('vad_labels')
+              }
+              assert {'vad-isolated', 'ns-isolated'} <= profiles
+              hashes.append(hashlib.sha256(path.read_bytes()).hexdigest())
+          assert len(set(hashes)) == 3
+          PY
+
+      - name: Replay fixed strong 0.50 weak 6 hypothesis
+        run: |
+          set -euo pipefail
+          python3 tests/validation/vad_strong_weak_confirmation.py \
+            --processor build-vad-confirmation/ap_process_pcm \
+            --corpus /tmp/ap-vad-confirmation-4307/corpus.json \
+            --corpus /tmp/ap-vad-confirmation-5307/corpus.json \
+            --corpus /tmp/ap-vad-confirmation-6307/corpus.json \
+            --ami-lock tests/validation/data/ami_vad_confirmation_es2004a.lock.json \
+            --output vad-confirmation-out/confirmation.json \
+            | tee vad-confirmation-out/confirmation-summary.json
+
+      - name: Enforce independent confirmation integrity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          r = json.loads(Path('vad-confirmation-out/confirmation.json').read_text())
+          assert r['schema_version'] == 1
+          assert r['authority'] == 'independent-vad-strong-weak-confirmation'
+          assert r['decision'] in {'CONFIRMED_RESEARCH_CANDIDATE', 'REJECT_CONFIRMATION'}
+          assert r['fixed_candidate'] == {
+              'strong_threshold': 0.5,
+              'weak_hold_frames': 6,
+              'strong_hold_frames': 8,
+              'local_threshold': 0.45,
+              'ns_threshold': 0.35,
+              'candidate_search': False,
+          }
+          seeds = [item['identity']['generator_seed'] for item in r['synthetic_authorities']]
+          assert seeds == [4307, 5307, 6307]
+          assert all(item['baseline']['validation_result'] == 'PASS' for item in r['synthetic_authorities'])
+          assert r['ami_authority']['identity']['meeting'] == 'ES2004a'
+          assert r['ami_authority']['identity']['license'] == 'CC-BY-4.0'
+          assert r['ami_authority']['low_activity_window_id'] == 'ES2004a-w1'
+          assert r['scope']['new_confirmation_seeds_only'] == [4307, 5307, 6307]
+          assert r['scope']['new_real_meeting_only'] == 'ES2004a'
+          assert r['scope']['old_1307_2307_3307_es2003a_not_promotion_authority'] is True
+          assert r['scope']['shipping_source_unchanged'] is True
+          assert r['scope']['candidate_search'] is False
+          if r['decision'] == 'CONFIRMED_RESEARCH_CANDIDATE':
+              assert all(item['confirmed'] for item in r['synthetic_authorities'])
+              assert r['ami_authority']['confirmed'] is True
+              assert all(not item['regression_violations'] for item in r['synthetic_authorities'])
+              assert not r['ami_authority']['regression_violations']
+          else:
+              assert (
+                  any(not item['confirmed'] for item in r['synthetic_authorities'])
+                  or not r['ami_authority']['confirmed']
+              )
+          assert 'cannot modify shipping policy directly' in r['promotion_boundary']
+          PY
+
+      - name: Publish independent confirmation summary
+        if: always()
+        run: |
+          if [ -f vad-confirmation-out/confirmation.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-confirmation-out/confirmation.json').read_text())
+          print('## Independent VAD strong/weak confirmation')
+          print('- Fixed candidate: `strong=0.50, weak=6`, strong hold `8`')
+          print(f"- Decision: `{r['decision']}`")
+          for item in r['synthetic_authorities']:
+              b = item['baseline']['summary']
+              c = item['candidate']['summary']
+              print(
+                  f"- seed {item['identity']['generator_seed']}: confirmed `{item['confirmed']}`, "
+                  f"score `{item['score']:+.3f}`, recall `{b['min_vad_recall']:.4f}->{c['min_vad_recall']:.4f}`, "
+                  f"F1 `{b['min_vad_f1']:.4f}->{c['min_vad_f1']:.4f}`, "
+                  f"max FPR `{b['max_vad_false_positive_rate']:.4f}->{c['max_vad_false_positive_rate']:.4f}`"
+              )
+          a = r['ami_authority']
+          b = a['baseline']['aggregate']
+          c = a['candidate']['aggregate']
+          low_id = a['low_activity_window_id']
+          low_b = next(x for x in a['baseline']['windows'] if x['window_id'] == low_id)['metrics']
+          low_c = next(x for x in a['candidate']['windows'] if x['window_id'] == low_id)['metrics']
+          print(
+              f"- ES2004a: confirmed `{a['confirmed']}`, score `{a['score']:+.4f}`, "
+              f"recall `{b['recall']:.4f}->{c['recall']:.4f}`, F1 `{b['f1']:.4f}->{c['f1']:.4f}`, "
+              f"FPR `{b['false_positive_rate']:.4f}->{c['false_positive_rate']:.4f}`"
+          )
+          print(
+              f"- low-activity {low_id}: FPR "
+              f"`{low_b['false_positive_rate']:.4f}->{low_c['false_positive_rate']:.4f}`"
+          )
+          print('- Authority: fixed-hypothesis confirmation only; no search and no shipping mutation.')
+          PY
+          else
+            echo '## Independent VAD strong/weak confirmation' >> "$GITHUB_STEP_SUMMARY"
+            echo '- Confirmation result unavailable because an integrity or execution gate failed.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload independent confirmation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vad-independent-confirmation-${{ github.run_id }}
+          path: vad-confirmation-out/
+          retention-days: 30
+          if-no-files-found: warn

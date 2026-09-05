@@ -1,4 +1,5 @@
 name: Extended Real Validation
+run-name: extended-real-validation ${{ inputs.source_sha }}
 
 on:
   workflow_dispatch:

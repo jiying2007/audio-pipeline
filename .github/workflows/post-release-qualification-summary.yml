@@ -1,59 +1,211 @@
 name: Post Release Qualification Summary
+run-name: ${{ github.event_name == 'schedule' && 'post-release-qualification convergence' || format('post-release-qualification {0}', github.event.client_payload.tag || inputs.tag || 'latest') }}
 
 on:
-  workflow_run:
-    workflows: [HIL Tiered Soak, Extended Real Automation]
-    types: [completed]
+  repository_dispatch:
+    types: [hil-post-release, extended-real-post-release]
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact released 40-character source commit SHA
+        required: true
+        type: string
+      tag:
+        description: Immutable release tag for source_sha
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/post-release-qualification-summary.yml'
 
 permissions:
-  actions: read
+  actions: write
   contents: read
 
 concurrency:
-  group: post-release-qualification-${{ github.event.workflow_run.head_sha }}
+  group: ${{ github.event_name == 'schedule' && 'post-release-qualification-convergence' || format('post-release-qualification-{0}', github.event.client_payload.release_ref || inputs.source_sha || 'latest') }}
   cancel-in-progress: true
 
 jobs:
+  schedule-convergence:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Fan out incomplete immutable releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api -X GET "repos/$GITHUB_REPOSITORY/releases?per_page=12" > /tmp/releases.json
+          python3 - <<'PY' > /tmp/release-tags.txt
+          import json
+          releases = json.load(open('/tmp/releases.json'))
+          for release in reversed(releases):
+              tag = str(release.get('tag_name') or '')
+              if release.get('draft') or release.get('prerelease'):
+                  continue
+              if release.get('immutable') is not True or not tag.startswith('v'):
+                  continue
+              print(tag)
+          PY
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            artifact="post-release-qualification-$tag"
+            count=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact&per_page=1" --jq '.total_count')
+            if [ "$count" != 0 ]; then
+              echo "post-release qualification already finalized: $tag"
+              continue
+            fi
+            git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
+            source_sha=$(git rev-list -n1 "$tag")
+            [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid immutable release SHA for $tag" >&2; exit 1; }
+            test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '.immutable')" = true
+            gh workflow run post-release-qualification-summary.yml \
+              --ref main \
+              -f "source_sha=$source_sha" \
+              -f "tag=$tag"
+            echo "post-release qualification convergence dispatched: $tag $source_sha"
+          done < /tmp/release-tags.txt
+
   summarize:
-    if: github.event.workflow_run.event == 'repository_dispatch'
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     env:
       POST_RELEASE_BLOCKED_STATES: BLOCKED_RUNNER,BLOCKED_CONFIG
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
-      - name: Resolve exact release and external qualification states
+
+      - name: Resolve immutable released source
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          PAYLOAD_SOURCE: ${{ github.event.client_payload.release_ref }}
+          PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          INPUT_SOURCE: ${{ inputs.source_sha }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          case "$POST_RELEASE_BLOCKED_STATES" in *BLOCKED_RUNNER*BLOCKED_CONFIG*) ;; *) exit 2 ;; esac
+          case "$EVENT_NAME" in
+            repository_dispatch)
+              source_sha=$PAYLOAD_SOURCE
+              tag=$PAYLOAD_TAG
+              ;;
+            workflow_dispatch)
+              source_sha=$INPUT_SOURCE
+              tag=$INPUT_TAG
+              ;;
+            push)
+              gh api "repos/$GITHUB_REPOSITORY/releases/latest" > /tmp/latest-release.json
+              tag=$(python3 -c 'import json; print(json.load(open("/tmp/latest-release.json"))["tag_name"])')
+              git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
+              source_sha=$(git rev-list -n1 "$tag")
+              ;;
+            *) echo "unsupported summary event: $EVENT_NAME" >&2; exit 2 ;;
+          esac
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'source_sha must be exact 40-hex commit' >&2; exit 1; }
+          case "$tag" in v*) ;; *) echo 'release tag must begin with v' >&2; exit 1 ;; esac
+          git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
+          test "$(git rev-list -n1 "$tag")" = "$source_sha"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '.immutable')" = true
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "post-release source=$source_sha tag=$tag event=$EVENT_NAME"
+
+      - name: Resolve terminal qualification authorities
+        id: runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.release.outputs.source_sha }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
           HIL_ENABLED: ${{ vars.HIL_ENABLED }}
           EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
         run: |
           set -euo pipefail
-          case "$POST_RELEASE_BLOCKED_STATES" in *BLOCKED_RUNNER*BLOCKED_CONFIG*) ;; *) exit 2 ;; esac
-          tag=$(git tag --points-at "$SOURCE_SHA" | grep '^v' | sort -V | tail -n 1)
-          test -n "$tag"
-          hil=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/hil-soak.yml/runs" \
-            -f head_sha="$SOURCE_SHA" -f event=repository_dispatch -f per_page=20 \
-            --jq '[.workflow_runs[] | select(.display_title == "hil-post-release")][0].conclusion // ""')
-          extended=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/extended-real-automation.yml/runs" \
-            -f head_sha="$SOURCE_SHA" -f event=repository_dispatch -f per_page=20 \
-            --jq '[.workflow_runs[] | select(.display_title == "extended-real-post-release")][0].conclusion // ""')
+          ready=false
+          for attempt in $(seq 1 8); do
+            gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/hil-soak.yml/runs?event=repository_dispatch&per_page=100" > /tmp/hil-runs.json
+            gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/extended-real-automation.yml/runs?event=repository_dispatch&per_page=100" > /tmp/extended-automation-runs.json
+            gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/validation-extended-real.yml/runs?event=workflow_dispatch&per_page=100" > /tmp/extended-validation-runs.json
+            python3 scripts/post_release_status.py --resolve-runs \
+              --source-sha "$SOURCE_SHA" --tag "$RELEASE_TAG" \
+              --hil-enabled "$HIL_ENABLED" --extended-real-enabled "$EXTENDED_REAL_ENABLED" \
+              --hil-runs /tmp/hil-runs.json \
+              --extended-automation-runs /tmp/extended-automation-runs.json \
+              --extended-validation-runs /tmp/extended-validation-runs.json \
+              --output post-release-qualification-sources.json >/tmp/post-release-sources.txt
+            ready=$(python3 -c 'import json; print(str(json.load(open("post-release-qualification-sources.json"))["ready"]).lower())')
+            [ "$ready" = true ] && break
+            [ "$attempt" = 8 ] || sleep 2
+          done
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          if [ "$ready" = true ]; then
+            python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          data = json.load(open('post-release-qualification-sources.json'))
+          print('hil_conclusion=' + str(data['hil_conclusion']))
+          print('extended_real_conclusion=' + str(data['extended_real_conclusion']))
+          PY
+          else
+            echo 'Post-release qualification is still PENDING; the hourly convergence scheduler will retry every incomplete immutable release.' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat post-release-qualification-sources.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Build final post-release status evidence
+        if: steps.runs.outputs.ready == 'true'
+        env:
+          SOURCE_SHA: ${{ steps.release.outputs.source_sha }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          HIL_ENABLED: ${{ vars.HIL_ENABLED }}
+          EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
+          HIL_CONCLUSION: ${{ steps.runs.outputs.hil_conclusion }}
+          EXTENDED_REAL_CONCLUSION: ${{ steps.runs.outputs.extended_real_conclusion }}
+        run: |
+          set -euo pipefail
+          python3 scripts/post_release_status.py --self-test
           python3 scripts/post_release_status.py \
-            --source-sha "$SOURCE_SHA" --tag "$tag" \
-            --hil-enabled "$HIL_ENABLED" --hil-conclusion "$hil" \
-            --extended-real-enabled "$EXTENDED_REAL_ENABLED" --extended-real-conclusion "$extended" \
+            --source-sha "$SOURCE_SHA" --tag "$RELEASE_TAG" \
+            --hil-enabled "$HIL_ENABLED" --hil-conclusion "$HIL_CONCLUSION" \
+            --extended-real-enabled "$EXTENDED_REAL_ENABLED" \
+            --extended-real-conclusion "$EXTENDED_REAL_CONCLUSION" \
             --output post-release-qualification.json
+          python3 - <<'PY'
+          import json
+          status = json.load(open('post-release-qualification.json'))
+          sources = json.load(open('post-release-qualification-sources.json'))
+          assert sources['ready'] is True
+          assert status['source_sha'] == sources['source_sha']
+          assert status['tag'] == sources['tag']
+          assert status['software_release'] == 'PASS'
+          assert sources['hil'] and sources['extended_real']
+          PY
           echo '## Post-release qualification status' >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat post-release-qualification.json >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload post-release status evidence
+          echo '### Authority runs' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat post-release-qualification-sources.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload final post-release status evidence
+        if: steps.runs.outputs.ready == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: post-release-qualification-${{ github.run_id }}
-          path: post-release-qualification.json
+          name: post-release-qualification-${{ steps.release.outputs.tag }}
+          path: |
+            post-release-qualification.json
+            post-release-qualification-sources.json
           retention-days: 90
           if-no-files-found: error

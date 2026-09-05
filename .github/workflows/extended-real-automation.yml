@@ -1,4 +1,5 @@
 name: Extended Real Automation
+run-name: ${{ github.event_name == 'repository_dispatch' && format('extended-real-post-release {0}', github.event.client_payload.tag) || format('Extended Real Automation {0}', github.event_name) }}
 
 on:
   repository_dispatch:
@@ -42,7 +43,7 @@ jobs:
               source_sha=$RELEASE_REF
               profile=commercial-core
               [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'release_ref must be exact 40-hex SHA' >&2; exit 2; }
-              test -n "$RELEASE_TAG"
+              case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 2 ;; esac
               git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
               test "$(git rev-list -n1 "$RELEASE_TAG")" = "$source_sha"
               ;;

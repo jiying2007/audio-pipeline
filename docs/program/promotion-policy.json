@@ -128,12 +128,13 @@
   "research_budgets": [
     {
       "root_cause_id": "aec-motion-continuous-tracking",
-      "search_rounds": {"limit": 3, "consumed": 1},
-      "candidate_variants": {"limit": 12, "consumed": 9},
+      "search_rounds": {"limit": 3, "consumed": 2},
+      "candidate_variants": {"limit": 12, "consumed": 12},
       "confirmation_sets": {"limit": 2, "consumed": 0},
       "inherited_evidence": [
         "run 33967578985: motion-only aec_mu=0.52 rejected by generic call validation",
-        "same-contract reruns are replay/reverification and do not reset or multiply the unique-search budget"
+        "same-contract reruns are replay/reverification and do not reset or multiply the unique-search budget",
+        "I003 selector-search contract consumes search round 2 and the final three candidate variants before execution; independent confirmation remains unconsumed"
       ]
     }
   ]

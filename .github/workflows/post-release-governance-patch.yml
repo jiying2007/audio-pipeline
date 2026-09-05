@@ -19,9 +19,14 @@ jobs:
           ref: fix/post-release-qualification-dispatch
           fetch-depth: 0
       - name: Apply deterministic workflow edits
+        env:
+          HIL_NOTIFY_B64: CiAgbm90aWZ5LXBvc3QtcmVsZWFzZToKICAgIG5lZWRzOiBbYXZhaWxhYmlsaXR5LCBzb2FrXQogICAgaWY6ICR7eyBhbHdheXMoKSAmJiBnaXRodWIuZXZlbnRfbmFtZSA9PSAncmVwb3NpdG9yeV9kaXNwYXRjaCcgJiYgZ2l0aHViLmV2ZW50LmFjdGlvbiA9PSAnaGlsLXBvc3QtcmVsZWFzZScgfX0KICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKICAgIHBlcm1pc3Npb25zOgogICAgICBjb250ZW50czogd3JpdGUKICAgIHN0ZXBzOgogICAgICAtIG5hbWU6IE5vdGlmeSBwb3N0LXJlbGVhc2UgcXVhbGlmaWNhdGlvbiBhZ2dyZWdhdG9yCiAgICAgICAgZW52OgogICAgICAgICAgR0hfVE9LRU46ICR7eyBnaXRodWIudG9rZW4gfX0KICAgICAgICAgIFJFTEVBU0VfUkVGOiAke3sgZ2l0aHViLmV2ZW50LmNsaWVudF9wYXlsb2FkLnJlbGVhc2VfcmVmIH19CiAgICAgICAgICBSRUxFQVNFX1RBRzogJHt7IGdpdGh1Yi5ldmVudC5jbGllbnRfcGF5bG9hZC50YWcgfX0KICAgICAgICBydW46IHwKICAgICAgICAgIHNldCAtZXVvIHBpcGVmYWlsCiAgICAgICAgICBbWyAiJFJFTEVBU0VfUkVGIiA9fiBeWzAtOWEtZl17NDB9JCBdXSB8fCB7IGVjaG8gJ2ludmFsaWQgcG9zdC1yZWxlYXNlIFNIQScgPiYyOyBleGl0IDE7IH0KICAgICAgICAgIGNhc2UgIiRSRUxFQVNFX1RBRyIgaW4gdiopIDs7ICopIGVjaG8gJ2ludmFsaWQgcG9zdC1yZWxlYXNlIHRhZycgPiYyOyBleGl0IDEgOzsgZXNhYwogICAgICAgICAgZ2ggYXBpIC0tbWV0aG9kIFBPU1QgInJlcG9zLyRHSVRIVUJfUkVQT1NJVE9SWS9kaXNwYXRjaGVzIiBcCiAgICAgICAgICAgIC1mIGV2ZW50X3R5cGU9cG9zdC1yZWxlYXNlLXF1YWxpZmljYXRpb24gXAogICAgICAgICAgICAtZiAiY2xpZW50X3BheWxvYWRbcmVsZWFzZV9yZWZdPSRSRUxFQVNFX1JFRiIgXAogICAgICAgICAgICAtZiAiY2xpZW50X3BheWxvYWRbdGFnXT0kUkVMRUFTRV9UQUciIFwKICAgICAgICAgICAgLWYgJ2NsaWVudF9wYXlsb2FkW2NvbXBvbmVudF09aGlsJyBcCiAgICAgICAgICAgIC1mICJjbGllbnRfcGF5bG9hZFtzb3VyY2VfcnVuX2lkXT0kR0lUSFVCX1JVTl9JRCIK
+          EXTENDED_NOTIFY_B64: CiAgbm90aWZ5LXBvc3QtcmVsZWFzZToKICAgIG5lZWRzOiBbcmVzb2x2ZSwgdmFsaWRhdGVdCiAgICBpZjogJHt7IGFsd2F5cygpICYmIGlucHV0cy5wb3N0X3JlbGVhc2VfdGFnICE9ICcnIH19CiAgICBydW5zLW9uOiB1YnVudHUtbGF0ZXN0CiAgICBwZXJtaXNzaW9uczoKICAgICAgY29udGVudHM6IHdyaXRlCiAgICBzdGVwczoKICAgICAgLSBuYW1lOiBOb3RpZnkgcG9zdC1yZWxlYXNlIHF1YWxpZmljYXRpb24gYWdncmVnYXRvcgogICAgICAgIGVudjoKICAgICAgICAgIEdIX1RPS0VOOiAke3sgZ2l0aHViLnRva2VuIH19CiAgICAgICAgICBSRUxFQVNFX1JFRjogJHt7IGlucHV0cy5zb3VyY2Vfc2hhIH19CiAgICAgICAgICBSRUxFQVNFX1RBRzogJHt7IGlucHV0cy5wb3N0X3JlbGVhc2VfdGFnIH19CiAgICAgICAgcnVuOiB8CiAgICAgICAgICBzZXQgLWV1byBwaXBlZmFpbAogICAgICAgICAgW1sgIiRSRUxFQVNFX1JFRiIgPX4gXlswLTlhLWZdezQwfSQgXV0gfHwgeyBlY2hvICdpbnZhbGlkIHBvc3QtcmVsZWFzZSBTSEEnID4mMjsgZXhpdCAxOyB9CiAgICAgICAgICBjYXNlICIkUkVMRUFTRV9UQUciIGluIHYqKSA7OyAqKSBlY2hvICdpbnZhbGlkIHBvc3QtcmVsZWFzZSB0YWcnID4mMjsgZXhpdCAxIDs7IGVzYWMKICAgICAgICAgIGdoIGFwaSAtLW1ldGhvZCBQT1NUICJyZXBvcy8kR0lUSFVCX1JFUE9TSVRPUlkvZGlzcGF0Y2hlcyIgXAogICAgICAgICAgICAtZiBldmVudF90eXBlPXBvc3QtcmVsZWFzZS1xdWFsaWZpY2F0aW9uIFwKICAgICAgICAgICAgLWYgImNsaWVudF9wYXlsb2FkW3JlbGVhc2VfcmVmXT0kUkVMRUFTRV9SRUYiIFwKICAgICAgICAgICAgLWYgImNsaWVudF9wYXlsb2FkW3RhZ109JFJFTEVBU0VfVEFHIiIFwKICAgICAgICAgICAgLWYgJ2NsaWVudF9wYXlsb2FkW2NvbXBvbmVudF09ZXh0ZW5kZWQtcmVhbCcgXAogICAgICAgICAgICAtZiAiY2xpZW50X3BheWxvYWRbc291cmNlX3J1bl9pZF09JEdJVEhVQl9SVU5fSUQiCg==
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import base64
+          import os
           from pathlib import Path
 
           def replace_once(text, old, new, label):
@@ -40,31 +45,7 @@ jobs:
           )
           if '  notify-post-release:\n' in text:
               raise SystemExit('HIL notify job already present')
-          text += '''\n  notify-post-release:
-            needs: [availability, soak]
-            if: ${{ always() && github.event_name == 'repository_dispatch' && github.event.action == 'hil-post-release' }}
-            runs-on: ubuntu-latest
-            permissions:
-              contents: write
-            steps:
-              - name: Notify post-release qualification aggregator
-                env:
-                  GH_TOKEN: ${{ github.token }}
-                  RELEASE_REF: ${{ github.event.client_payload.release_ref }}
-                  RELEASE_TAG: ${{ github.event.client_payload.tag }}
-                run: |
-                  set -euo pipefail
-                  [[ "$RELEASE_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'invalid post-release SHA' >&2; exit 1; }
-                  case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 1 ;; esac
-                  gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \\
-                    -f event_type=post-release-qualification \\
-                    -f "client_payload[release_ref]=$RELEASE_REF" \\
-                    -f "client_payload[tag]=$RELEASE_TAG" \\
-                    -f 'client_payload[component]=hil' \\
-                    -f "client_payload[source_run_id]=$GITHUB_RUN_ID"
-          '''
-          # Remove helper-script indentation while retaining YAML job indentation.
-          text = text.replace('\n          \n  notify-post-release:', '\n\n  notify-post-release:')
+          text += base64.b64decode(os.environ['HIL_NOTIFY_B64']).decode('utf-8')
           hil.write_text(text, encoding='utf-8')
 
           extended = Path('.github/workflows/validation-extended-real.yml')
@@ -95,30 +76,7 @@ jobs:
           )
           if '  notify-post-release:\n' in text:
               raise SystemExit('Extended validation notify job already present')
-          text += '''\n  notify-post-release:
-            needs: [resolve, validate]
-            if: ${{ always() && inputs.post_release_tag != '' }}
-            runs-on: ubuntu-latest
-            permissions:
-              contents: write
-            steps:
-              - name: Notify post-release qualification aggregator
-                env:
-                  GH_TOKEN: ${{ github.token }}
-                  RELEASE_REF: ${{ inputs.source_sha }}
-                  RELEASE_TAG: ${{ inputs.post_release_tag }}
-                run: |
-                  set -euo pipefail
-                  [[ "$RELEASE_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'invalid post-release SHA' >&2; exit 1; }
-                  case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 1 ;; esac
-                  gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \\
-                    -f event_type=post-release-qualification \\
-                    -f "client_payload[release_ref]=$RELEASE_REF" \\
-                    -f "client_payload[tag]=$RELEASE_TAG" \\
-                    -f 'client_payload[component]=extended-real' \\
-                    -f "client_payload[source_run_id]=$GITHUB_RUN_ID"
-          '''
-          text = text.replace('\n          \n  notify-post-release:', '\n\n  notify-post-release:')
+          text += base64.b64decode(os.environ['EXTENDED_NOTIFY_B64']).decode('utf-8')
           extended.write_text(text, encoding='utf-8')
           PY
           python3 scripts/post_release_status.py --self-test

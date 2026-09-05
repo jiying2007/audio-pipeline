@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 2.3.11 LANGUAGES C)
+project(audio_pipeline VERSION 2.3.12 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -498,7 +498,7 @@ install(TARGETS audio_pipeline EXPORT AudioPipelineTargets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 if(TARGET audio_pipeline_runtime)
     install(TARGETS audio_pipeline_runtime EXPORT AudioPipelineTargets
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 install(FILES
     include/audio_pipeline/audio_types.h

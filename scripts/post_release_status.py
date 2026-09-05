@@ -102,7 +102,7 @@ def resolve_runs(source_sha: str, tag: str, hil_enabled: str,
     )
     ext_validation = _select(
         extended_validation_payload,
-        f"extended-real-validation {tag}",
+        f"extended-real-validation {source_sha}",
         None,
         source_sha,
     )
@@ -180,13 +180,13 @@ def self_test() -> None:
 
     current_hil = {"workflow_runs": [_fake_run(3, f"hil-post-release {tag}", "c" * 40, "completed", "success", "repository_dispatch")]}
     current_auto = {"workflow_runs": [_fake_run(4, f"extended-real-post-release {tag}", "c" * 40, "completed", "success", "repository_dispatch")]}
-    current_validation = {"workflow_runs": [_fake_run(5, f"extended-real-validation {tag}", "d" * 40, "completed", "success", "workflow_dispatch")]}
+    current_validation = {"workflow_runs": [_fake_run(5, f"extended-real-validation {sha}", "d" * 40, "completed", "success", "workflow_dispatch")]}
     resolved = resolve_runs(sha, tag, "true", "true", current_hil, current_auto, current_validation)
     assert resolved["ready"] is True
     assert resolved["extended_real"]["run_id"] == 5
     assert resolved["extended_real"]["authority"] == "extended-real-validation"
 
-    pending_validation = {"workflow_runs": [_fake_run(6, f"extended-real-validation {tag}", "d" * 40, "in_progress", None, "workflow_dispatch")]}
+    pending_validation = {"workflow_runs": [_fake_run(6, f"extended-real-validation {sha}", "d" * 40, "in_progress", None, "workflow_dispatch")]}
     resolved = resolve_runs(sha, tag, "true", "true", current_hil, current_auto, pending_validation)
     assert resolved["ready"] is False
     assert resolved["extended_real"]["authority"] == "extended-real-validation-pending"

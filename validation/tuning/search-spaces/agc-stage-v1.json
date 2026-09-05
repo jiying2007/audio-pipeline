@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "search_space_id": "agc-stage-isolated-v1",
+  "strategy": "one-at-a-time",
+  "max_candidates": 8,
+  "baseline": {
+    "aec_mu": 0.22,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20.0,
+    "limiter_dbfs": -2.0
+  },
+  "parameters": {
+    "agc_target_dbfs": [-24.0, -22.0, -20.0, -18.0, -16.0],
+    "limiter_dbfs": [-4.0, -3.0, -2.0, -1.0]
+  },
+  "objective": {
+    "minimum_improvement_score": 0.10,
+    "metrics": [
+      {"name": "pass_rate", "direction": "max", "weight": 10.0, "scale": 0.02, "max_regression": 0.0},
+      {"name": "max_output_clip_fraction", "direction": "min", "weight": 4.0, "scale": 0.001, "max_regression": 0.0}
+    ]
+  }
+}

@@ -35,6 +35,10 @@ def aggregate(report_paths: list[Path]) -> dict:
     if len(report_paths) != 3:
         raise ValueError(f"expected exactly three independent reports, got {len(report_paths)}")
     reports = [json.loads(path.read_text(encoding="utf-8")) for path in report_paths]
+    frontends = {report.get("frontend") for report in reports}
+    if len(frontends) != 1 or None in frontends:
+        raise ValueError(f"reports must use one explicit frontend: {sorted(str(x) for x in frontends)}")
+    frontend = str(next(iter(frontends)))
     for report in reports:
         if report.get("authority") != "diagnostic-regression-only":
             raise ValueError("report authority drifted from diagnostic-regression-only")
@@ -65,28 +69,40 @@ def aggregate(report_paths: list[Path]) -> dict:
             reliable_selected = optional_metric(
                 matched, "dynamics", "reliable_selected_fraction_when_fallback"
             )
-            faulty_energy = optional_metric(
-                matched, "dynamics", "faulty_channel_energy_dominant_fraction"
+            raw_faulty_energy = optional_metric(
+                matched, "dynamics", "faulty_channel_raw_energy_dominant_fraction"
             )
-            dc = optional_metric(matched, "quality", "fault_output_dc_offset_dbfs")
-            clipping = optional_metric(matched, "quality", "fault_output_clip_fraction")
+            pre_bf_faulty_energy = optional_metric(
+                matched, "dynamics", "faulty_channel_pre_bf_energy_dominant_fraction"
+            )
+            output_dc = optional_metric(matched, "quality", "fault_output_dc_offset_dbfs")
+            output_clipping = optional_metric(matched, "quality", "fault_output_clip_fraction")
+            input_rms = optional_metric(matched, "input_health", "faulty_input_rms_dbfs")
+            input_dc = optional_metric(matched, "input_health", "faulty_input_dc_offset_dbfs")
+            input_clipping = optional_metric(matched, "input_health", "faulty_input_clip_fraction")
+            input_near_zero = optional_metric(
+                matched, "input_health", "faulty_input_near_zero_fraction"
+            )
 
             consistently_harmful = (
                 delta["max"] is not None and float(delta["max"]) <= -1.0
             )
             severe_output_pollution = (
-                (dc["median"] is not None and float(dc["median"]) > -30.0) or
-                (clipping["median"] is not None and float(clipping["median"]) > 0.01)
+                (output_dc["median"] is not None and float(output_dc["median"]) > -30.0) or
+                (output_clipping["median"] is not None and float(output_clipping["median"]) > 0.01)
             )
-            energy_selector_wrong = (
-                reliable_selected["max"] is not None and
-                float(reliable_selected["max"]) < 0.5 and
-                faulty_energy["min"] is not None and
-                float(faulty_energy["min"]) > 0.5
+            # This answers a narrower design question than current fallback behavior:
+            # if a future hard-fault mode simply bypasses to the larger-energy channel,
+            # would that channel actually be healthy?  A consistently energy-dominant
+            # faulty channel disproves that selector regardless of whether the current
+            # soft fallback happened to enter.
+            pure_energy_selector_wrong = (
+                pre_bf_faulty_energy["min"] is not None and
+                float(pre_bf_faulty_energy["min"]) > 0.5
             )
             if consistently_harmful or severe_output_pollution:
                 hard_fault_isolation_needed = True
-            if energy_selector_wrong:
+            if pure_energy_selector_wrong:
                 pure_energy_strong_bypass_safe = False
 
             rows.append({
@@ -97,20 +113,25 @@ def aggregate(report_paths: list[Path]) -> dict:
                 "fallback_entry_latency_frames": entry,
                 "stable_recovery_latency_frames": recovery,
                 "reliable_selected_fraction_when_fallback": reliable_selected,
-                "faulty_channel_energy_dominant_fraction": faulty_energy,
-                "fault_output_dc_offset_dbfs": dc,
-                "fault_output_clip_fraction": clipping,
+                "faulty_channel_raw_energy_dominant_fraction": raw_faulty_energy,
+                "faulty_channel_pre_bf_energy_dominant_fraction": pre_bf_faulty_energy,
+                "fault_output_dc_offset_dbfs": output_dc,
+                "fault_output_clip_fraction": output_clipping,
+                "faulty_input_rms_dbfs": input_rms,
+                "faulty_input_dc_offset_dbfs": input_dc,
+                "faulty_input_clip_fraction": input_clipping,
+                "faulty_input_near_zero_fraction": input_near_zero,
                 "classification": {
-                    "consistently_harmful_vs_reliable_single_mic": consistently_harmful,
+                    "consistently_harmful_vs_frontend_equivalent_reliable_single_mic": consistently_harmful,
                     "severe_output_pollution": severe_output_pollution,
-                    "energy_selector_consistently_chooses_faulty_channel": energy_selector_wrong,
+                    "pure_energy_selector_consistently_chooses_faulty_channel": pure_energy_selector_wrong,
                 },
             })
 
     if hard_fault_isolation_needed and not pure_energy_strong_bypass_safe:
         next_step = (
             "hard-fault isolation is justified, but pure current energy-strong bypass is unsafe; "
-            "add fault-type evidence and healthy-channel selection before bypass"
+            "add fault-type health evidence and healthy-channel selection before bypass"
         )
     elif hard_fault_isolation_needed:
         next_step = (
@@ -124,8 +145,9 @@ def aggregate(report_paths: list[Path]) -> dict:
         )
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "authority": "diagnostic-regression-only",
+        "frontend": frontend,
         "reports": [report["corpus_id"] for report in reports],
         "rows": rows,
         "decision": {
@@ -160,14 +182,16 @@ def main() -> int:
     result = aggregate(args.report)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"frontend={result['frontend']}")
     for row in result["rows"]:
         delta = row["fault_current_minus_reliable_db"]
         selected = row["reliable_selected_fraction_when_fallback"]
-        energy = row["faulty_channel_energy_dominant_fraction"]
+        pre_bf_energy = row["faulty_channel_pre_bf_energy_dominant_fraction"]
         print(
             f"{row['fault_type']} ch{row['faulty_channel']}: "
             f"delta min/med/max={delta['min']}/{delta['median']}/{delta['max']} dB; "
-            f"reliable-selected med={selected['median']}; faulty-energy-dominant med={energy['median']}; "
+            f"reliable-selected med={selected['median']}; "
+            f"faulty-pre-BF-energy-dominant med={pre_bf_energy['median']}; "
             f"class={json.dumps(row['classification'], sort_keys=True)}"
         )
     print("DECISION: " + json.dumps(result["decision"], sort_keys=True))

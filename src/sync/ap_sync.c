@@ -46,14 +46,15 @@ static int ap_sync_confirm_route_candidate(ap_sync_state_t *s,
                                            uint32_t candidate,
                                            uint32_t tolerance) {
     if (s->route_candidate_confirmations == 0u ||
-        ap_sync_distance(candidate, s->route_candidate_delay) > tolerance) {
-        s->route_candidate_delay = candidate;
+        ap_sync_distance(candidate, s->last_best_delay) > tolerance) {
+        s->last_best_delay = candidate;
         s->route_candidate_confirmations = 1u;
         return 0;
     }
     if (s->route_candidate_confirmations < UINT8_MAX)
         s->route_candidate_confirmations++;
     if (s->route_candidate_confirmations < AP_SYNC_ROUTE_CONFIRMATIONS) return 0;
+    s->route_candidate_delay = s->last_best_delay;
     s->route_candidate_confirmations = 0u;
     return 1;
 }
@@ -62,6 +63,7 @@ void ap_sync_init(ap_sync_state_t *s, uint32_t initial_delay_samples) {
     memset(s, 0, sizeof(*s));
     s->initial_delay_samples = initial_delay_samples;
     s->delay_samples = initial_delay_samples;
+    s->route_candidate_delay = initial_delay_samples;
 }
 
 void ap_sync_reset(ap_sync_state_t *s) {
@@ -136,14 +138,15 @@ static int ap_sync_select_incumbent_peak(const ap_sync_state_t *s,
                                          uint32_t *selected_delay,
                                          float *selected_score) {
     const uint32_t radius = 2u * coarse_step;
-    uint32_t local_delay = s->delay_samples;
+    const uint32_t anchor = s->route_candidate_delay;
+    uint32_t local_delay = anchor;
     float local_score = 0.0f;
     int found = 0;
     uint32_t d;
 
     for (d = 0u; d <= max_delay; d += coarse_step) {
         float score, left = -1.0f, right = -1.0f;
-        if (ap_sync_distance(d, s->delay_samples) > radius) continue;
+        if (ap_sync_distance(d, anchor) > radius) continue;
         score = ap_sync_delay_score(s, mic, frame_samples, d, sample_step);
         if (score < AP_SYNC_MIN_CORRELATION_SQUARED) continue;
         if (d >= coarse_step)
@@ -298,6 +301,7 @@ int ap_sync_observe_timestamps(ap_sync_state_t *s,
     old = s->delay_samples;
     jump = old > observed ? old - observed : observed - old;
     s->delay_samples = observed;
+    s->route_candidate_delay = observed;
     s->last_best_delay = observed;
     s->have_last_best_delay = 1u;
     s->drift_ppm = 0.0f;

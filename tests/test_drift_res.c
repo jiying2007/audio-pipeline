@@ -48,7 +48,9 @@ static void run_multipath_frame(ap_pipeline_t *p, int16_t *history, uint32_t *wp
         const int16_t r = (int16_t)(prn_sample((*sample_index)++) / 2);
         const int16_t direct = history[(*wp + HIST - direct_delay) & (HIST - 1u)];
         const int16_t late = history[(*wp + HIST - late_delay) & (HIST - 1u)];
-        const int32_t mixed = (int32_t)direct / 12 + (int32_t)late / 3;
+        /* geometry-v2 worst reflection/direct is about 1.0697x; keep the
+         * late path strictly stronger without exceeding that frozen model. */
+        const int32_t mixed = ((int32_t)direct * 16 + (int32_t)late * 17) / 64;
         history[*wp] = r;
         *wp = (*wp + 1u) & (HIST - 1u);
         render[i] = r;

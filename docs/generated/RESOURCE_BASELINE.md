@@ -8,8 +8,8 @@ These values are hosted build-contract measurements. They are **not ABI constant
 
 | Build envelope | Bytes |
 | --- | ---: |
-| FULL | 78,184 |
-| LOW | 47,016 |
+| FULL | 78,192 |
+| LOW | 47,024 |
 | TINY | 25,408 |
 | RAW / resampler-only | 1,064 |
 

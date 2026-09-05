@@ -21,9 +21,12 @@ jobs:
   diagnose:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      EXPECTED_RESEARCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup-ccache
@@ -32,6 +35,7 @@ jobs:
       - name: Validate frozen I004 diagnostic contracts
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RESEARCH_HEAD"
           python3 -m py_compile \
             tests/validation/i004_ns_exact_base_entry.py \
             tests/validation/i004_ns_nonstationary_diagnostic.py
@@ -49,6 +53,10 @@ jobs:
           assert c['promotion_allowed'] is False
           assert c['seeds'] == [14107, 24107, 34107]
           assert c['existing_exposed_ns_tuning_seeds'] == [1307, 2307, 3307]
+          assert c['diagnostic_preconditions'] == {
+              'min_clean_vad_isolated_recall': 0.90,
+              'min_clean_ns_isolated_recall': 0.85,
+          }
           assert c['authority']['may_modify_shipping_dsp'] is False
           assert c['authority']['may_tune_ns_floor'] is False
           assert c['authority']['may_add_backend'] is False
@@ -65,10 +73,11 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           report = json.loads(Path('i004-ns-baseline-out/baseline-report.json').read_text())
           binding = json.loads(Path('i004-ns-baseline-out/execution-binding.json').read_text())
+          pre = json.loads(Path('i004-ns-baseline-out/diagnostic-preconditions.json').read_text())
           assert report['authority'] == 'development-baseline-diagnostic-only'
           assert report['candidate_limit'] == 0
           assert report['confirmation_limit'] == 0
@@ -76,11 +85,21 @@ jobs:
           assert report['ns_floor_tuning_performed'] is False
           assert report['backend_change_performed'] is False
           assert report['candidate_decision'] == 'NOT_AN_ACOUSTIC_CANDIDATE'
-          assert report['decision'] in {'BASELINE_ADEQUATE_NO_SEARCH', 'MEASURED_GAP_REVIEW_REQUIRED'}
+          assert report['decision'] in {
+              'BASELINE_ADEQUATE_NO_SEARCH',
+              'MEASURED_GAP_REVIEW_REQUIRED',
+              'DIAGNOSTIC_INPUT_INVALID_REVIEW_REQUIRED',
+          }
           assert binding['baseline_source_sha'] == '669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee'
+          assert binding['research_head_sha'] == os.environ['EXPECTED_RESEARCH_HEAD']
           assert binding['shipping_diff_zero'] is True
           assert binding['candidate_limit'] == 0 and binding['confirmation_limit'] == 0
+          assert binding['clean_preconditions_passed'] is pre['passed']
           assert len(report['cases']) == 24
+          if report['decision'] == 'MEASURED_GAP_REVIEW_REQUIRED':
+              assert pre['passed'] is True and not pre['failures']
+          if report['decision'] == 'DIAGNOSTIC_INPUT_INVALID_REVIEW_REQUIRED':
+              assert pre['passed'] is False and pre['failures']
           PY
       - name: Publish baseline diagnostic summary
         if: always()
@@ -90,12 +109,16 @@ jobs:
           import json
           from pathlib import Path
           r = json.loads(Path('i004-ns-baseline-out/baseline-report.json').read_text())
+          p = r.get('diagnostic_preconditions', {})
           print('## I004 NS nonstationary baseline diagnostic')
           print(f"- Decision: `{r['decision']}`")
           print(f"- Baseline SHA: `{r['source_sha']}`")
+          print(f"- Clean preconditions: `{p.get('passed')}`")
           print(f"- Cases: `{len(r['cases'])}`")
-          print(f"- Failed cases: `{len(r['failed_flags'])}`")
-          if r['failed_flags']:
+          print(f"- Failed dynamic cases: `{len(r['failed_flags'])}`")
+          for item in p.get('failures', []):
+              print(f"  - invalid input anchor seed `{item['seed']}` / `{item['profile']}`: recall `{item['vad_recall']}` < `{item['minimum_recall']}`")
+          if p.get('passed') and r['failed_flags']:
               for item in r['failed_flags']:
                   print(f"  - seed `{item['seed']}` / `{item['scenario']}`: `{','.join(item['failures'])}`")
           print('- Authority: development baseline diagnostic only; candidate_limit=0; confirmation_limit=0.')

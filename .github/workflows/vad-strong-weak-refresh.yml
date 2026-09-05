@@ -1,0 +1,218 @@
+name: VAD Strong Weak Refresh Research
+
+on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_vad.c'
+      - 'src/enhance/ap_ns.c'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/tools/stage_profile_support.py'
+      - 'tests/validation/vad_operating_point_selector.py'
+      - 'tests/validation/vad_hangover_counterfactual.py'
+      - 'tests/validation/vad_strong_weak_refresh.py'
+      - 'tests/validation/ami_vad_microset_eval.py'
+      - 'tests/validation/discover_ami_vad_microset.py'
+      - 'tests/validation/data/ami_vad_microset.lock.json'
+      - '.github/workflows/vad-strong-weak-refresh.yml'
+  schedule:
+    - cron: '53 20 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vad-strong-weak-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: validation/tools:tests/validation
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-strong-weak-refresh
+
+      - name: Validate strong weak research contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/vad_strong_weak_refresh.py \
+            tests/validation/vad_hangover_counterfactual.py \
+            tests/validation/vad_operating_point_selector.py \
+            tests/validation/ami_vad_microset_eval.py \
+            tests/validation/discover_ami_vad_microset.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/vad_hangover_counterfactual.py --self-test
+          python3 tests/validation/vad_strong_weak_refresh.py --self-test
+          python3 tests/validation/ami_vad_microset_eval.py --self-test
+          python3 -m json.tool tests/validation/data/ami_vad_microset.lock.json >/dev/null
+
+      - name: Configure exact research processor
+        run: >-
+          cmake -S . -B build-vad-strong-weak -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+
+      - name: Build exact research processor
+        run: cmake --build build-vad-strong-weak --target ap_process_pcm --parallel
+
+      - name: Build independent synthetic partitions
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-strong-weak-1307 --seed 1307
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-strong-weak-2307 --seed 2307
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-strong-weak-3307 --seed 3307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          hashes = []
+          for seed in (1307, 2307, 3307):
+              path = Path(f'/tmp/ap-vad-strong-weak-{seed}/corpus.json')
+              corpus = json.loads(path.read_text())
+              assert corpus['generator']['seed'] == seed
+              profiles = {case.get('processor_profile') for case in corpus['cases'] if case.get('vad_labels')}
+              assert {'vad-isolated', 'ns-isolated'} <= profiles
+              import hashlib
+              hashes.append(hashlib.sha256(path.read_bytes()).hexdigest())
+          assert len(set(hashes)) == 3
+          PY
+
+      - name: Select on development and replay all holdouts
+        run: |
+          set -euo pipefail
+          mkdir -p vad-strong-weak-out
+          python3 tests/validation/vad_strong_weak_refresh.py \
+            --processor build-vad-strong-weak/ap_process_pcm \
+            --development-corpus /tmp/ap-vad-strong-weak-1307/corpus.json \
+            --validation-corpus /tmp/ap-vad-strong-weak-2307/corpus.json \
+            --shadow-corpus /tmp/ap-vad-strong-weak-3307/corpus.json \
+            --ami-lock tests/validation/data/ami_vad_microset.lock.json \
+            --output vad-strong-weak-out/selection.json \
+            | tee vad-strong-weak-out/summary.json
+
+      - name: Enforce non-shipping authority and holdout integrity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-strong-weak-out/selection.json').read_text())
+          assert r['schema_version'] == 1
+          assert r['authority'] == 'non-shipping-vad-strong-weak-refresh'
+          assert r['decision'] in {'KEEP_BASELINE', 'RESEARCH_CANDIDATE', 'REJECT_CANDIDATE'}
+          assert r['baseline'] == {
+              'local_threshold': 0.45,
+              'ns_threshold': 0.35,
+              'refresh_hold': 8,
+          }
+          assert r['search_space'] == {
+              'strong_thresholds': [0.5, 0.55, 0.6],
+              'weak_holds': [4, 6],
+              'candidate_count': 6,
+          }
+          assert r['development']['identity']['generator_seed'] == 1307
+          assert r['validation']['identity']['generator_seed'] == 2307
+          assert r['shadow']['identity']['generator_seed'] == 3307
+          assert r['development']['baseline']['validation_result'] == 'PASS'
+          assert r['validation']['baseline']['validation_result'] == 'PASS'
+          assert r['shadow']['baseline']['validation_result'] == 'PASS'
+          assert r['ami_holdout']['authority'] == 'research-external-timing-holdout'
+          assert r['ami_holdout']['identity']['meeting'] == 'ES2003a'
+          assert r['ami_holdout']['identity']['license'] == 'CC-BY-4.0'
+          scope = r['scope']
+          assert scope['shipping_source_unchanged'] is True
+          assert scope['probability_generation_unchanged'] is True
+          assert scope['noise_adaptation_unchanged'] is True
+          assert scope['ns_fusion_unchanged'] is True
+          assert scope['strong_hold_fixed'] == 8
+          assert scope['weak_evidence_never_truncates_existing_strong_hold'] is True
+          assert scope['candidate_selection_partition'] == 'development-seed-1307-only'
+          assert scope['holdouts_cannot_select'] is True
+          matrix = r['response_matrix']
+          assert len(matrix['development']) == 6
+          assert len(matrix['validation']) == 6
+          assert len(matrix['shadow']) == 6
+          assert len(matrix['ami']) == 6
+          ids = {f'strong={s:.2f},weak={w}' for s in (0.50, 0.55, 0.60) for w in (4, 6)}
+          assert {x['candidate_id'] for x in matrix['development']} == ids
+          assert {x['candidate_id'] for x in matrix['validation']} == ids
+          assert {x['candidate_id'] for x in matrix['shadow']} == ids
+          assert {x['candidate_id'] for x in matrix['ami']} == ids
+          if r['decision'] == 'KEEP_BASELINE':
+              assert r['selected']['candidate_id'] == 'baseline'
+          else:
+              assert r['selected']['candidate_id'] in ids
+              assert r['selected']['strong_threshold'] in {0.5, 0.55, 0.6}
+              assert r['selected']['weak_hold'] in {4, 6}
+          if r['decision'] == 'RESEARCH_CANDIDATE':
+              assert not r['selected']['regression_violations']
+              assert not r['validation']['regression_violations']
+              assert not r['shadow']['regression_violations']
+              assert not r['ami_holdout']['regression_violations']
+              assert r['validation']['score'] >= 0.0
+              assert r['shadow']['score'] >= 0.0
+              assert r['ami_holdout']['score'] >= 0.0
+          PY
+
+      - name: Publish strong weak research summary
+        if: always()
+        run: |
+          if [ -f vad-strong-weak-out/selection.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-strong-weak-out/selection.json').read_text())
+          print('## VAD strong/weak hangover refresh research')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Selected: `{r['selected']['candidate_id']}`")
+          print(f"- Development score: `{r['selected']['score']:.4f}`")
+          for role in ('development', 'validation', 'shadow'):
+              b = r[role]['baseline']['summary']
+              c = r[role]['candidate']['summary']
+              score = 0.0 if role == 'development' and r['selected']['candidate_id'] == 'baseline' else r[role].get('score', r['selected']['score'])
+              print(
+                  f"- {role}: recall `{b['min_vad_recall']:.4f} -> {c['min_vad_recall']:.4f}`, "
+                  f"F1 `{b['min_vad_f1']:.4f} -> {c['min_vad_f1']:.4f}`, "
+                  f"max FPR `{b['max_vad_false_positive_rate']:.4f} -> {c['max_vad_false_positive_rate']:.4f}`, "
+                  f"score `{score:.4f}`"
+              )
+          ab = r['ami_holdout']['baseline']['aggregate']
+          ac = r['ami_holdout']['candidate']['aggregate']
+          print(
+              f"- AMI selected replay: recall `{ab['recall']:.4f} -> {ac['recall']:.4f}`, "
+              f"F1 `{ab['f1']:.4f} -> {ac['f1']:.4f}`, "
+              f"FPR `{ab['false_positive_rate']:.4f} -> {ac['false_positive_rate']:.4f}`, "
+              f"score `{r['ami_holdout']['score']:.4f}`"
+          )
+          print('### Six-candidate response matrix')
+          dev = {x['candidate_id']: x for x in r['response_matrix']['development']}
+          val = {x['candidate_id']: x for x in r['response_matrix']['validation']}
+          shadow = {x['candidate_id']: x for x in r['response_matrix']['shadow']}
+          ami = {x['candidate_id']: x for x in r['response_matrix']['ami']}
+          for cid in sorted(dev):
+              a = ami[cid]
+              w2 = next(w for w in a['report']['windows'] if w['window_id'] == 'ES2003a-w2')['metrics']
+              print(
+                  f"- {cid}: dev `{dev[cid]['score']:+.3f}/{dev[cid]['validation_result']}`, "
+                  f"val `{val[cid]['score']:+.3f}/{val[cid]['validation_result']}`, "
+                  f"shadow `{shadow[cid]['score']:+.3f}/{shadow[cid]['validation_result']}`, "
+                  f"AMI `{a['score']:+.4f}`, w2 FPR `{w2['false_positive_rate']:.4f}`"
+              )
+          print('- Scope: thresholds remain local=0.45 / NS=0.35; strong hold remains 8; weak hold is research-only.')
+          print('- Authority: seed 1307 selects; 2307/3307/AMI only reject; no shipping source mutation.')
+          PY
+          fi
+
+      - name: Upload strong weak research evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vad-strong-weak-refresh-${{ github.run_id }}
+          path: vad-strong-weak-out/
+          retention-days: 30
+          if-no-files-found: warn

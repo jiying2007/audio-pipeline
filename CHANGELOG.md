@@ -168,7 +168,7 @@
 - Make product-certification records schema-v4-only; historical v2/v3 records remain historical release artifacts but are no longer accepted by the current validator or current shipping workflow.
 - Replace the v1.1.1 additive ABI gate with a v2 hard-cut symbol/header contract; after v2.0.0 is released, later 2.x releases use v2.0.0 as their ABI baseline.
 - Migrate native tests, fuzz targets, benchmarks, diagnostics, installed-SDK consumers and the real ALSA/HIL runtime path to the single v2 API.
-- Harden SYNC correlation tracking against ambiguous periodic peaks and require three consistent observations before committing a large route jump; trusted timestamps and explicit path-change notifications remain authoritative.
+- Harden SYNC correlation tracking against ambiguous periodic peaks and require three consistent observations before committing a large correlation-only route jump; trusted timestamps and explicit path-change notifications remain authoritative.
 - Reset all time-dependent pipeline state on declared stream discontinuity and add metamorphic coverage that the post-discontinuity algorithm state matches a fresh pipeline.
 - Replace process-global runtime `mlockall()` with best-effort bounded locking of the caller-owned runtime/pipeline arenas and expose direct multi-level quality downgrades through `AP_EVENT_QUALITY_DEGRADED`.
 - Add the conservative `ssc305-cortex-a32-low` 16 kHz/2-mic/60 ms-delay/64 ms-AEC-tail/queue-4 profile, make BF direction tracking an explicit build capability, and export its effective state through generated build info.
@@ -241,7 +241,7 @@
 
 - Reject ambiguous periodic SYNC peaks and confirm large route changes before resetting AEC.
 - Reset all time-dependent DSP state on stream discontinuity.
-- Replace process-global runtime `mlockall()` with bounded runtime/pipeline arena locking.
+- Replace process-global `mlockall()` with bounded runtime/pipeline arena locking.
 - Report direct multi-level quality downgrades accurately.
 - Add a conservative SSC305 Cortex-A32 LOW build profile with fixed-direction BF.
 

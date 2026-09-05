@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Build deterministic two-microphone hard-fault discovery corpora.
 
-This corpus is deliberately release-neutral.  It does not assert that the
-shipping beamformer must use any particular microphone-health classifier.  It
-creates physically distinct fault families and preserves an oracle reliable
-single-microphone reference so the existing 75/25 fallback can be measured
-without hiding negative evidence.
+This corpus is deliberately release-neutral. It creates physically distinct
+hard-fault families and preserves an oracle reliable single-microphone
+reference. Worst-case soft gain/sensitivity mismatches are included as negative
+controls so a microphone-health classifier cannot make hard-fault gains by
+silently converting normal weak-microphone degradation into a bypass.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from build_validation_corpus import (
     mix,
     noise,
     rotate,
+    scale,
     speech_like,
     write_pcm,
 )
@@ -32,6 +33,8 @@ FRAMES = 800
 FAULT_START_FRAME = 200
 FAULT_END_FRAME = 500
 FAULT_TYPES = ("mute", "dropout", "stuck-dc", "hard-clip", "wind-burst")
+SOFT_CONTROL_TYPES = ("soft-global-gain", "soft-sensitivity-floor")
+SOFT_CONTROL_RATIO = 0.35
 
 
 def inject_fault(signal: list[int], fault_type: str, seed: int) -> list[int]:
@@ -43,7 +46,7 @@ def inject_fault(signal: list[int], fault_type: str, seed: int) -> list[int]:
         if fault_type == "mute":
             out[index] = 0
         elif fault_type == "dropout":
-            # Deterministic 30-40 ms holes inside a 100 ms cadence.  This is
+            # Deterministic 30-40 ms holes inside a 100 ms cadence. This is
             # intentionally intermittent rather than one long mute.
             if local_frame % 10 in {2, 3, 4, 7}:
                 out[index] = 0
@@ -62,6 +65,16 @@ def inject_fault(signal: list[int], fault_type: str, seed: int) -> list[int]:
             out[index] = clamp16(signal[index] + wind)
         else:
             raise ValueError(f"unsupported fault type: {fault_type}")
+    return out
+
+
+def splice_fault_window(base: list[int], degraded: list[int]) -> list[int]:
+    if len(base) != len(degraded):
+        raise ValueError("soft-degradation signals must have identical lengths")
+    out = list(base)
+    start = FAULT_START_FRAME * FRAME
+    end = FAULT_END_FRAME * FRAME
+    out[start:end] = degraded[start:end]
     return out
 
 
@@ -102,10 +115,11 @@ def add_case(output: Path, cases: list[dict], case_id: str, fault_type: str,
 def build(output: Path, seed: int) -> dict:
     samples = FRAMES * FRAME
     clean, _ = speech_like(FRAMES, seed + 1, [(0.0, FRAMES / 100.0)], amplitude=9000.0)
+    delayed_clean = delayed(clean, 2)
     left_noise = noise(samples, seed + 2, 1700.0)
     right_noise = rotate(noise(samples, seed + 3, 1700.0), 173)
     mic0_base = mix(clean, left_noise)
-    mic1_base = mix(delayed(clean, 2), right_noise)
+    mic1_base = mix(delayed_clean, right_noise)
     cases: list[dict] = []
 
     add_case(output, cases, "bf-hard-control", "control",
@@ -129,14 +143,52 @@ def build(output: Path, seed: int) -> dict:
                 faulty_channel,
             )
 
+    for weak_channel in (0, 1):
+        if weak_channel == 0:
+            global_weak = splice_fault_window(mic0_base, scale(mic0_base, SOFT_CONTROL_RATIO))
+            sensitivity_weak = splice_fault_window(
+                mic0_base,
+                mix(scale(clean, SOFT_CONTROL_RATIO), left_noise),
+            )
+            controls = (
+                ("soft-global-gain", global_weak, list(mic1_base)),
+                ("soft-sensitivity-floor", sensitivity_weak, list(mic1_base)),
+            )
+        else:
+            global_weak = splice_fault_window(mic1_base, scale(mic1_base, SOFT_CONTROL_RATIO))
+            sensitivity_weak = splice_fault_window(
+                mic1_base,
+                mix(scale(delayed_clean, SOFT_CONTROL_RATIO), right_noise),
+            )
+            controls = (
+                ("soft-global-gain", list(mic0_base), global_weak),
+                ("soft-sensitivity-floor", list(mic0_base), sensitivity_weak),
+            )
+        for control_type, mic0, mic1 in controls:
+            add_case(
+                output,
+                cases,
+                f"bf-health-control-{control_type}-ch{weak_channel}",
+                control_type,
+                mic0,
+                mic1,
+                clean,
+                weak_channel,
+            )
+            cases[-1]["dimensions"].update({
+                "control_class": "soft-degradation-negative-control",
+                "weak_channel_ratio": SOFT_CONTROL_RATIO,
+                "hard_fault_expected": False,
+            })
+
     corpus = {
-        "schema_version": 1,
+        "schema_version": 2,
         "corpus_id": f"bf-hard-mic-fault-seed-{seed}",
         "tier": "regression",
         "authority": "diagnostic-regression-only",
         "generator": {
             "name": "build_bf_hard_fault_sweep.py",
-            "version": 1,
+            "version": 2,
             "seed": seed,
         },
         "sources": ["deterministic-generator"],
@@ -157,12 +209,19 @@ def self_test() -> None:
         root = Path(temporary)
         corpus = build(root, 1307)
         assert corpus["authority"] == "diagnostic-regression-only"
-        assert len(corpus["cases"]) == 1 + 2 * len(FAULT_TYPES)
+        assert len(corpus["cases"]) == 1 + 2 * len(FAULT_TYPES) + 2 * len(SOFT_CONTROL_TYPES)
         ids = {case["case_id"] for case in corpus["cases"]}
         assert "bf-hard-control" in ids
         for fault_type in FAULT_TYPES:
             for channel in (0, 1):
                 assert f"bf-hard-{fault_type}-ch{channel}" in ids
+        for control_type in SOFT_CONTROL_TYPES:
+            for channel in (0, 1):
+                case_id = f"bf-health-control-{control_type}-ch{channel}"
+                assert case_id in ids
+                case = next(item for item in corpus["cases"] if item["case_id"] == case_id)
+                assert case["dimensions"]["hard_fault_expected"] is False
+                assert case["dimensions"]["weak_channel_ratio"] == SOFT_CONTROL_RATIO
         for case in corpus["cases"]:
             assert case["frames"] == FRAMES
             assert case["fault_start_frame"] < case["fault_end_frame"]

@@ -26,6 +26,8 @@ typedef struct ap_beamformer_state {
     uint32_t fallback_active;
     uint32_t fallback_strong_channel;
     uint32_t fallback_recovery_count;
+    uint32_t fallback_hard_fault;
+    uint32_t fallback_hard_arm_count;
 } ap_beamformer_state_t;
 
 void ap_hpf_init(ap_hpf_state_t *state,

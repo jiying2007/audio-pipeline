@@ -1,0 +1,169 @@
+name: BF Hard Mic Fault Confirmation
+
+on:
+  pull_request:
+    paths:
+      - 'src/frontend/ap_beamformer.c'
+      - 'src/frontend/ap_frontend.h'
+      - 'src/frontend/ap_hpf.c'
+      - 'tests/validation/bf_hard_fault_probe.c'
+      - 'tests/validation/build_bf_hard_fault_sweep.py'
+      - 'tests/validation/bf_hard_fault_evaluate.py'
+      - 'tests/validation/bf_hard_fault_summary.py'
+      - 'tests/validation/bf_hard_fault_differential_confirmation.py'
+      - '.github/workflows/bf-hard-mic-fault-confirmation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bf-hard-mic-fault-confirmation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_SHA: b68b862f98d8b3aa1ba77e384a5dd60d955c1f23
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate frozen differential confirmation contracts
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/build_bf_hard_fault_sweep.py \
+            tests/validation/bf_hard_fault_evaluate.py \
+            tests/validation/bf_hard_fault_summary.py \
+            tests/validation/bf_hard_fault_differential_confirmation.py
+          python3 tests/validation/build_bf_hard_fault_sweep.py --self-test
+          python3 tests/validation/bf_hard_fault_evaluate.py --self-test
+          python3 tests/validation/bf_hard_fault_summary.py --self-test
+          python3 tests/validation/bf_hard_fault_differential_confirmation.py --self-test
+
+      - name: Materialize exact pre-candidate base
+        run: |
+          set -euo pipefail
+          git cat-file -e "${BASE_SHA}^{commit}"
+          rm -rf /tmp/audio-pipeline-bf-confirm-base
+          git worktree add --detach /tmp/audio-pipeline-bf-confirm-base "$BASE_SHA"
+          test "$(git -C /tmp/audio-pipeline-bf-confirm-base rev-parse HEAD)" = "$BASE_SHA"
+
+      - name: Build candidate and exact-base HPF to BF probes
+        run: |
+          set -euo pipefail
+          mkdir -p build-bf-hard-confirm
+          cc -std=c11 -O2 -Wall -Wextra -Werror -Isrc \
+            tests/validation/bf_hard_fault_probe.c \
+            src/frontend/ap_hpf.c \
+            src/frontend/ap_beamformer.c \
+            -lm -o build-bf-hard-confirm/candidate_probe
+          cc -std=c11 -O2 -Wall -Wextra -Werror \
+            -I/tmp/audio-pipeline-bf-confirm-base/src \
+            /tmp/audio-pipeline-bf-confirm-base/tests/validation/bf_hard_fault_probe.c \
+            /tmp/audio-pipeline-bf-confirm-base/src/frontend/ap_hpf.c \
+            /tmp/audio-pipeline-bf-confirm-base/src/frontend/ap_beamformer.c \
+            -lm -o build-bf-hard-confirm/base_probe
+
+      - name: Build fresh unseen confirmation partitions
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          for seed in 13307 14307 15307; do
+            root="/tmp/ap-bf-hard-confirm-${seed}"
+            python3 tests/validation/build_bf_hard_fault_sweep.py \
+              --output "$root" --seed "$seed"
+          done
+
+      - name: Measure candidate and exact base on identical unseen PCM
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          mkdir -p bf-hard-confirm-out/candidate bf-hard-confirm-out/base
+          for seed in 13307 14307 15307; do
+            root="/tmp/ap-bf-hard-confirm-${seed}"
+            for side in candidate base; do
+              out="bf-hard-confirm-out/${side}/${seed}"
+              mkdir -p "$out"
+              python3 tests/validation/bf_hard_fault_evaluate.py \
+                --probe "build-bf-hard-confirm/${side}_probe" \
+                --frontend hpf-bf \
+                --corpus "$root/corpus.json" \
+                --output "$out/report.json" | tee "$out/measurement.txt"
+            done
+          done
+
+      - name: Aggregate fresh candidate and base evidence
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          for side in candidate base; do
+            python3 tests/validation/bf_hard_fault_summary.py \
+              --report "bf-hard-confirm-out/${side}/13307/report.json" \
+              --report "bf-hard-confirm-out/${side}/14307/report.json" \
+              --report "bf-hard-confirm-out/${side}/15307/report.json" \
+              --output "bf-hard-confirm-out/${side}/summary.json" \
+              | tee "bf-hard-confirm-out/${side}/summary.txt"
+          done
+
+      - name: Enforce frozen differential confirmation gate
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          python3 tests/validation/bf_hard_fault_differential_confirmation.py \
+            --candidate-report bf-hard-confirm-out/candidate/13307/report.json \
+            --candidate-report bf-hard-confirm-out/candidate/14307/report.json \
+            --candidate-report bf-hard-confirm-out/candidate/15307/report.json \
+            --base-report bf-hard-confirm-out/base/13307/report.json \
+            --base-report bf-hard-confirm-out/base/14307/report.json \
+            --base-report bf-hard-confirm-out/base/15307/report.json \
+            --output bf-hard-confirm-out/differential-gate.json \
+            | tee bf-hard-confirm-out/differential-gate.txt
+
+      - name: Publish confirmation summary
+        if: always()
+        run: |
+          {
+            echo '## BF hard microphone fault differential confirmation'
+            echo
+            echo 'Fresh frozen seeds: 13307 / 14307 / 15307.'
+            echo "Exact comparison base: ${BASE_SHA}."
+            echo '4307/5307/6307 remain the recorded first failed confirmation that exposed an invalid absolute non-target gate. 7307/8307/9307 remain the second failed confirmation that exposed post-DC-release hard promotion. 10307/11307/12307 remain the third failed confirmation that exposed a one-scan soft-sensitivity false hard arm. None of those seed sets is reused here.'
+            echo 'The current product candidate keeps the same amplitude/roughness thresholds and adds a two-update temporal confirmation before hard promotion.'
+            echo
+            echo '### Candidate'
+            echo '```text'
+            cat bf-hard-confirm-out/candidate/summary.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '### Exact base'
+            echo '```text'
+            cat bf-hard-confirm-out/base/summary.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo '### Differential confirmation gate'
+            echo '```text'
+            cat bf-hard-confirm-out/differential-gate.txt 2>/dev/null || true
+            echo '```'
+            echo
+            echo 'Wind keeps absolute healthy-mic and improvement requirements; every non-wind case must be byte-exact versus the pinned base. This remains deterministic regression confirmation, not DUT/HIL or product certification.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload differential confirmation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bf-hard-mic-fault-confirmation-${{ github.run_id }}
+          path: bf-hard-confirm-out/
+          if-no-files-found: warn
+          retention-days: 30

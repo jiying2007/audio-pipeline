@@ -7,7 +7,7 @@ on:
       - 'src/enhance/ap_ns.c'
       - 'validation/tools/build_stage_validation_corpus.py'
       - 'validation/tools/stage_profile_support.py'
-      - 'validation/tools/run_validation_engine.py'
+      - 'validation/tools/run_validation*.py'
       - 'tests/validation/vad_operating_point_selector.py'
       - 'tests/validation/vad_operating_point_qualification.py'
       - '.github/workflows/vad-operating-point-selector.yml'

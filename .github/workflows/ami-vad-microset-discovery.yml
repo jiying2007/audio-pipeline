@@ -1,0 +1,95 @@
+name: AMI VAD Microset Discovery
+
+on:
+  pull_request:
+    paths:
+      - 'tests/validation/discover_ami_vad_microset.py'
+      - '.github/workflows/ami-vad-microset-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ami-vad-microset-discovery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate discovery contracts offline
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/discover_ami_vad_microset.py
+          python3 tests/validation/discover_ami_vad_microset.py --self-test
+      - name: Discover pinned AMI external-timing microset
+        run: |
+          set -euo pipefail
+          mkdir -p ami-vad-discovery-out
+          python3 tests/validation/discover_ami_vad_microset.py \
+            --output ami-vad-discovery-out/discovery.json \
+            | tee ami-vad-discovery-out/summary.json
+      - name: Enforce research-only discovery authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          d = json.loads(Path('ami-vad-discovery-out/discovery.json').read_text())
+          assert d['schema_version'] == 1
+          assert d['authority'] == 'research-discovery-only'
+          assert d['dataset']['meeting'] == 'ES2003a'
+          assert d['dataset']['license'] == 'CC-BY-4.0'
+          assert d['transport_mirror']['revision'] == 'a249db53de253a3a0a864c93a51d613159dfec7c'
+          assert d['audio']['range_supported'] is True
+          assert d['audio']['wav']['audio_format'] == 1
+          assert d['audio']['wav']['bits_per_sample'] == 16
+          assert d['audio']['duration_s'] > 1000.0
+          assert len(d['annotations']['files']) == 4
+          assert {f['speaker'] for f in d['annotations']['files']} == {'A', 'B', 'C', 'D'}
+          for item in d['annotations']['files']:
+              assert re.fullmatch(r'[0-9a-f]{64}', item['sha256'])
+              assert item['segments'] > 0
+          windows = d['window_plan']
+          assert len(windows) == 3
+          assert [w['window_id'] for w in windows] == ['ES2003a-w1', 'ES2003a-w2', 'ES2003a-w3']
+          assert all(0.0 < w['activity_fraction'] < 1.0 for w in windows)
+          assert len({w['audio_range']['sha256'] for w in windows}) == 3
+          for window in windows:
+              assert abs(window['end_s'] - window['start_s'] - 20.0) < 1e-9
+              assert re.fullmatch(r'[0-9a-f]{64}', window['audio_range']['sha256'])
+              assert window['audio_range']['status'] == 206
+          assert 'not a dedicated audited speech-activity-detection gold label' in d['dataset']['annotation_semantics']
+          PY
+      - name: Publish discovery summary
+        if: always()
+        run: |
+          if [ -f ami-vad-discovery-out/discovery.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          d = json.loads(Path('ami-vad-discovery-out/discovery.json').read_text())
+          print('## AMI external-timing VAD microset discovery')
+          print(f"- Meeting: `{d['dataset']['meeting']}`")
+          print(f"- Mirror revision: `{d['transport_mirror']['revision']}`")
+          print(f"- WAV: `{d['audio']['wav']['sample_rate_hz']} Hz`, `{d['audio']['wav']['channels']} ch`, `{d['audio']['duration_s']:.2f} s`")
+          print(f"- Range support: `{d['audio']['range_supported']}`")
+          for item in d['window_plan']:
+              print(
+                  f"- {item['window_id']}: `{item['start_s']:.1f}-{item['end_s']:.1f}s`, "
+                  f"activity `{item['activity_fraction']:.3f}`, range SHA-256 `{item['audio_range']['sha256']}`"
+              )
+          print('- Authority: research discovery only; manual transcription segment timing is not treated as audited SAD gold labels.')
+          PY
+          fi
+      - name: Upload discovery evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ami-vad-microset-discovery-${{ github.run_id }}
+          path: ami-vad-discovery-out/
+          retention-days: 30
+          if-no-files-found: warn

@@ -12,6 +12,7 @@
 static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--spacing-mm MM] "
+            "[--frontend bf-only|hpf-bf] "
             "<stereo-s16le.pcm> <mono-out.pcm> <trace.jsonl>\n",
             argv0);
 }
@@ -49,6 +50,7 @@ static int16_t float_to_s16(float value) {
 
 int main(int argc, char **argv) {
     ap_beamformer_state_t state;
+    ap_hpf_state_t hpf;
     int16_t input[AP_BF_PROBE_MAX_FRAME * 2u];
     int16_t output[AP_BF_PROBE_MAX_FRAME];
     float mic0[AP_BF_PROBE_MAX_FRAME];
@@ -58,6 +60,8 @@ int main(int argc, char **argv) {
     float spacing_mm = 50.0f;
     uint32_t frame_samples;
     uint32_t frame_index = 0u;
+    int use_hpf = 1;
+    const char *frontend = "hpf-bf";
     int arg = 1;
     const char *input_path;
     const char *output_path;
@@ -74,6 +78,20 @@ int main(int argc, char **argv) {
             }
         } else if (strcmp(argv[arg], "--spacing-mm") == 0) {
             if (++arg >= argc || !parse_float(argv[arg], &spacing_mm)) {
+                usage(argv[0]);
+                return 2;
+            }
+        } else if (strcmp(argv[arg], "--frontend") == 0) {
+            if (++arg >= argc) {
+                usage(argv[0]);
+                return 2;
+            }
+            frontend = argv[arg];
+            if (strcmp(frontend, "bf-only") == 0) {
+                use_hpf = 0;
+            } else if (strcmp(frontend, "hpf-bf") == 0) {
+                use_hpf = 1;
+            } else {
                 usage(argv[0]);
                 return 2;
             }
@@ -110,11 +128,16 @@ int main(int argc, char **argv) {
     }
 
     ap_beamformer_init(&state, sample_rate, spacing_mm);
+    ap_hpf_init(&hpf, sample_rate, 2u);
     while (fread(input, sizeof(int16_t) * 2u, frame_samples, fi) == frame_samples) {
         uint32_t i;
         for (i = 0u; i < frame_samples; ++i) {
             mic0[i] = (float)input[2u * i];
             mic1[i] = (float)input[2u * i + 1u];
+        }
+        if (use_hpf) {
+            ap_hpf_process(&hpf, mic0, frame_samples, 0u);
+            ap_hpf_process(&hpf, mic1, frame_samples, 1u);
         }
 
         ap_beamformer_process(&state, 1, mic0, mic1, beam, frame_samples);
@@ -127,12 +150,13 @@ int main(int argc, char **argv) {
             return 5;
         }
         if (fprintf(ft,
-                    "{\"frame\":%u,\"fallback_active\":%u,"
-                    "\"fallback_strong_channel\":%u,"
+                    "{\"frame\":%u,\"frontend\":\"%s\","
+                    "\"fallback_active\":%u,\"fallback_strong_channel\":%u,"
                     "\"fallback_recovery_count\":%u,"
                     "\"fallback_gain\":%.9g,\"fallback_lag\":%d,"
                     "\"lag\":%d,\"score_updates\":%u}\n",
                     frame_index,
+                    frontend,
                     state.fallback_active,
                     state.fallback_strong_channel,
                     state.fallback_recovery_count,

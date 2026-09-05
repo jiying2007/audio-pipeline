@@ -1,3 +1,9 @@
+# 2.3.10
+
+- Ship the independently confirmed VAD strong/weak hangover refresh policy: probability >=0.50 refreshes the historical 8-frame hold, while marginal admissions above the unchanged local/NS decision thresholds extend only to max(current, 6) and never truncate stronger continuity.
+- Bind promotion to independent fixed-hypothesis evidence: unseen synthetic seeds 4307/5307/6307 plus a separately selected and hash-pinned AMI ES2004a external-timing microset all pass the predeclared recall/F1/FPR regression contract with no candidate search on those authorities.
+- Add an exact-source shipping conformance gate across seeds 1307/2307/3307/4307/5307/6307 requiring zero frame-level `vad_active` mismatch against the confirmed policy while retaining all existing VAD case gates; public v2 API/ABI, VAD state layout, probability generation, NS fusion and decision thresholds remain unchanged.
+
 # 2.3.9
 
 - Accelerate scalar residual-echo suppression release only after double-talk/near-end protection engages, using the bounded-selected 0.20 release alpha while preserving normal release, far-only targets/floors and suppression attack behavior.

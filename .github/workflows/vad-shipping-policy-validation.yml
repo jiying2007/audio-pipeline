@@ -1,0 +1,139 @@
+name: VAD Shipping Policy Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_vad.c'
+      - 'tests/validation/vad_shipping_policy_conformance.py'
+      - 'tests/validation/vad_operating_point_selector.py'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/tools/stage_profile_support.py'
+      - '.github/workflows/vad-shipping-policy-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vad-shipping-policy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: validation/tools:tests/validation
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-shipping-policy
+
+      - name: Validate shipping-policy contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/vad_shipping_policy_conformance.py \
+            tests/validation/vad_operating_point_selector.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/vad_shipping_policy_conformance.py --self-test
+
+      - name: Configure exact shipping processor
+        run: >-
+          cmake -S . -B build-vad-shipping -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+
+      - name: Build exact shipping processor
+        run: cmake --build build-vad-shipping --target ap_process_pcm --parallel
+
+      - name: Build six deterministic VAD partitions
+        run: |
+          set -euo pipefail
+          for seed in 1307 2307 3307 4307 5307 6307; do
+            python3 validation/tools/build_stage_validation_corpus.py \
+              --output "/tmp/ap-vad-shipping-${seed}" --seed "${seed}"
+          done
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          hashes = []
+          for seed in (1307, 2307, 3307, 4307, 5307, 6307):
+              path = Path(f'/tmp/ap-vad-shipping-{seed}/corpus.json')
+              corpus = json.loads(path.read_text())
+              assert corpus['generator']['seed'] == seed
+              profiles = {
+                  case.get('processor_profile')
+                  for case in corpus['cases'] if case.get('vad_labels')
+              }
+              assert {'vad-isolated', 'ns-isolated'} <= profiles
+              hashes.append(hashlib.sha256(path.read_bytes()).hexdigest())
+          assert len(set(hashes)) == 6
+          PY
+
+      - name: Enforce frame-exact shipping policy and VAD case gates
+        run: |
+          set -euo pipefail
+          mkdir -p vad-shipping-policy-out
+          python3 tests/validation/vad_shipping_policy_conformance.py \
+            --processor build-vad-shipping/ap_process_pcm \
+            --corpus /tmp/ap-vad-shipping-1307/corpus.json \
+            --corpus /tmp/ap-vad-shipping-2307/corpus.json \
+            --corpus /tmp/ap-vad-shipping-3307/corpus.json \
+            --corpus /tmp/ap-vad-shipping-4307/corpus.json \
+            --corpus /tmp/ap-vad-shipping-5307/corpus.json \
+            --corpus /tmp/ap-vad-shipping-6307/corpus.json \
+            --output vad-shipping-policy-out/conformance.json \
+            | tee vad-shipping-policy-out/summary.json
+
+      - name: Enforce exact-source authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-shipping-policy-out/conformance.json').read_text())
+          assert r['schema_version'] == 1
+          assert r['authority'] == 'shipping-vad-policy-conformance'
+          assert r['validation_result'] == 'PASS'
+          assert r['total_active_mismatches'] == 0
+          assert r['policy'] == {
+              'local_threshold': 0.45,
+              'ns_threshold': 0.35,
+              'strong_threshold': 0.5,
+              'strong_hold_frames': 8,
+              'weak_hold_frames': 6,
+              'weak_refresh_never_truncates_strong_hold': True,
+          }
+          assert [x['generator_seed'] for x in r['partitions']] == [1307, 2307, 3307, 4307, 5307, 6307]
+          assert all(x['validation_result'] == 'PASS' for x in r['partitions'])
+          assert all(x['total_active_mismatches'] == 0 for x in r['partitions'])
+          PY
+
+      - name: Publish VAD shipping-policy summary
+        if: always()
+        run: |
+          if [ -f vad-shipping-policy-out/conformance.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-shipping-policy-out/conformance.json').read_text())
+          print('## VAD shipping policy conformance')
+          print(f"- Result: `{r['validation_result']}`")
+          print(f"- Active mismatches: `{r['total_active_mismatches']}`")
+          print('- Policy: local `0.45`, NS `0.35`, strong `0.50 -> 8`, weak `-> max(current, 6)`.')
+          for p in r['partitions']:
+              print(f"- seed {p['generator_seed']}: `{p['validation_result']}`, mismatches `{p['total_active_mismatches']}`")
+          PY
+          fi
+
+      - name: Upload VAD shipping-policy evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vad-shipping-policy-${{ github.run_id }}
+          path: vad-shipping-policy-out/
+          retention-days: 30
+          if-no-files-found: warn

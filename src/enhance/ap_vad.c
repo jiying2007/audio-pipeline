@@ -11,6 +11,9 @@
 #define AP_VAD_UPSTREAM_BLEND 0.40f
 #define AP_VAD_LOCAL_DECISION_THRESHOLD 0.45f
 #define AP_VAD_NS_DECISION_THRESHOLD 0.35f
+#define AP_VAD_STRONG_REFRESH_THRESHOLD 0.50f
+#define AP_VAD_STRONG_HOLD_FRAMES 8u
+#define AP_VAD_WEAK_HOLD_FRAMES 6u
 
 static float ap_vad_clamp(float x, float lo, float hi) {
     return x < lo ? lo : (x > hi ? hi : x);
@@ -74,17 +77,24 @@ void ap_vad_process(ap_vad_state_t *state,
     }
 
     /* Keep standalone/local VAD at the historical 0.45 decision point. The
-     * NS-assisted path uses the evidence-derived 0.35 operating point: after
-     * replacing the inverted flat NS mean with the sparsity-gap cue, three-seed
-     * diagnostics showed roughly +9 pp stable speech-frame coverage on the hard
-     * non-stationary seed for only ~+4 pp stable noise-frame admission, while
-     * stationary negative admission increased by only ~3.2 pp. Strong recall/FPR
-     * gates remain the authority; this is not a user-tunable shipping knob. */
+     * NS-assisted path uses the evidence-derived 0.35 operating point. Strong
+     * speech evidence refreshes the historical 8-frame hold, while marginal
+     * admissions only extend a shorter 6-frame tail and never truncate a longer
+     * hold already established by stronger evidence. The 0.50/6 policy was
+     * fixed before independent replay and confirmed on unseen synthetic seeds
+     * plus a separately hash-pinned AMI meeting; it remains an internal shipping
+     * policy rather than a public tuning knob. */
     decision_threshold = use_upstream_probability ?
                          AP_VAD_NS_DECISION_THRESHOLD :
                          AP_VAD_LOCAL_DECISION_THRESHOLD;
-    if (prob > decision_threshold) state->hangover = 8u;
-    else if (state->hangover) state->hangover--;
+    if (prob >= AP_VAD_STRONG_REFRESH_THRESHOLD) {
+        state->hangover = AP_VAD_STRONG_HOLD_FRAMES;
+    } else if (prob > decision_threshold) {
+        if (state->hangover < AP_VAD_WEAK_HOLD_FRAMES)
+            state->hangover = AP_VAD_WEAK_HOLD_FRAMES;
+    } else if (state->hangover) {
+        state->hangover--;
+    }
     result->probability = prob;
     result->active = (uint8_t)(state->hangover > 0u);
 }

@@ -10,6 +10,7 @@ on:
       - 'validation/tools/stage_profile_support.py'
       - 'tests/validation/vad_operating_point_selector.py'
       - 'tests/validation/vad_hangover_counterfactual.py'
+      - 'tests/validation/vad_hangover_curve.py'
       - 'tests/validation/ami_vad_microset_eval.py'
       - 'tests/validation/discover_ami_vad_microset.py'
       - 'tests/validation/data/ami_vad_microset.lock.json'
@@ -41,11 +42,13 @@ jobs:
           set -euo pipefail
           python3 -m py_compile \
             tests/validation/vad_hangover_counterfactual.py \
+            tests/validation/vad_hangover_curve.py \
             tests/validation/vad_operating_point_selector.py \
             tests/validation/ami_vad_microset_eval.py \
             tests/validation/discover_ami_vad_microset.py
           python3 validation/tools/run_validation.py --self-test
           python3 tests/validation/vad_hangover_counterfactual.py --self-test
+          python3 tests/validation/vad_hangover_curve.py --self-test
           python3 tests/validation/ami_vad_microset_eval.py --self-test
           python3 -m json.tool tests/validation/data/ami_vad_microset.lock.json >/dev/null
       - name: Configure exact research processor
@@ -81,6 +84,17 @@ jobs:
             --ami-lock tests/validation/data/ami_vad_microset.lock.json \
             --output vad-hangover-out/selection.json \
             | tee vad-hangover-out/summary.json
+      - name: Record full fixed-hangover response curve
+        run: |
+          set -euo pipefail
+          python3 tests/validation/vad_hangover_curve.py \
+            --processor build-vad-hangover/ap_process_pcm \
+            --development-corpus /tmp/ap-vad-hangover-1307/corpus.json \
+            --validation-corpus /tmp/ap-vad-hangover-2307/corpus.json \
+            --shadow-corpus /tmp/ap-vad-hangover-3307/corpus.json \
+            --ami-lock tests/validation/data/ami_vad_microset.lock.json \
+            --output vad-hangover-out/curve.json \
+            | tee vad-hangover-out/curve-summary.json
       - name: Enforce non-shipping authority and holdout integrity
         run: |
           set -euo pipefail
@@ -88,6 +102,7 @@ jobs:
           import json
           from pathlib import Path
           r = json.loads(Path('vad-hangover-out/selection.json').read_text())
+          curve = json.loads(Path('vad-hangover-out/curve.json').read_text())
           assert r['schema_version'] == 1
           assert r['authority'] == 'non-shipping-vad-hangover-counterfactual'
           assert r['decision'] in {'KEEP_BASELINE', 'RESEARCH_CANDIDATE', 'REJECT_CANDIDATE'}
@@ -106,6 +121,13 @@ jobs:
           assert r['ami_holdout']['identity']['meeting'] == 'ES2003a'
           assert r['ami_holdout']['identity']['license'] == 'CC-BY-4.0'
           assert r['selected']['hangover_frames'] in {2, 4, 6, 8}
+          assert curve['authority'] == 'diagnostic-only-vad-hangover-response-curve'
+          assert curve['scope']['candidate_selection'] is False
+          assert curve['scope']['hangover_candidates'] == [2, 4, 6, 8]
+          assert curve['scope']['baseline_hangover'] == 8
+          for role in ('development', 'validation', 'shadow'):
+              assert len(curve['synthetic'][role]['points']) == 4
+          assert len(curve['ami']['points']) == 4
           if r['decision'] == 'RESEARCH_CANDIDATE':
               assert r['selected']['hangover_frames'] != 8
               assert not r['validation']['regression_violations']
@@ -137,20 +159,33 @@ jobs:
           b = r['ami_holdout']['baseline']['aggregate']
           c = r['ami_holdout']['candidate']['aggregate']
           print(
-              f"- AMI: recall `{b['recall']:.4f} -> {c['recall']:.4f}`, "
+              f"- AMI selected replay: recall `{b['recall']:.4f} -> {c['recall']:.4f}`, "
               f"F1 `{b['f1']:.4f} -> {c['f1']:.4f}`, "
               f"FPR `{b['false_positive_rate']:.4f} -> {c['false_positive_rate']:.4f}`, "
               f"score `{r['ami_holdout']['score']:.4f}`"
           )
-          w2b = next(w for w in r['ami_holdout']['baseline']['windows'] if w['window_id'] == 'ES2003a-w2')['metrics']
-          w2c = next(w for w in r['ami_holdout']['candidate']['windows'] if w['window_id'] == 'ES2003a-w2')['metrics']
-          print(
-              f"- AMI low-activity w2: recall `{w2b['recall']:.4f} -> {w2c['recall']:.4f}`, "
-              f"F1 `{w2b['f1']:.4f} -> {w2c['f1']:.4f}`, "
-              f"FPR `{w2b['false_positive_rate']:.4f} -> {w2c['false_positive_rate']:.4f}`"
-          )
+          curve_path = Path('vad-hangover-out/curve.json')
+          if curve_path.exists():
+              curve = json.loads(curve_path.read_text())
+              print('### Fixed-hangover response curve')
+              for point in curve['synthetic']['development']['points']:
+                  s = point['summary']
+                  failed = ','.join(item['case_id'] for item in point['failed_cases']) or 'none'
+                  print(
+                      f"- dev h={point['hangover_frames']}: recall `{s['min_vad_recall']:.4f}`, "
+                      f"F1 `{s['min_vad_f1']:.4f}`, FPR `{s['max_vad_false_positive_rate']:.4f}`, "
+                      f"score `{point['score_vs_8']:.4f}`, failed `{failed}`"
+                  )
+              for point in curve['ami']['points']:
+                  a = point['aggregate']
+                  w2 = point['low_activity_w2']['metrics']
+                  print(
+                      f"- AMI h={point['hangover_frames']}: recall `{a['recall']:.4f}`, "
+                      f"F1 `{a['f1']:.4f}`, FPR `{a['false_positive_rate']:.4f}`, "
+                      f"w2 FPR `{w2['false_positive_rate']:.4f}`, score `{point['score_vs_8']:.4f}`"
+                  )
           print('- Scope: shared hangover only; thresholds remain local=0.45 and NS-assisted=0.35.')
-          print('- Authority: research only; candidate outcome never mutates shipping source.')
+          print('- Authority: research only; response curve never participates in candidate selection.')
           PY
           fi
       - name: Upload hangover research evidence

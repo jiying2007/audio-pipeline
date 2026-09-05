@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "phase": "frozen-candidate-implementation",
+  "root_cause_id": "aec-motion-continuous-tracking",
+  "base_sha": "783a8d1f27bae03b97e57b74e47cede5cf07bb6d",
+  "candidate": "incumbent-qualified",
+  "candidate_set_frozen": true,
+  "new_candidate_variants_allowed": 0,
+  "search_rounds_consumed": 2,
+  "candidate_variants_consumed": 12,
+  "confirmation_sets_consumed": 0,
+  "confirmation_source_group": null,
+  "selection_evidence": {
+    "path": "docs/program/iterations/I003-selection-result.json",
+    "execution_head_sha": "6c0e8d94e9f1ff870a208e87c68b67f37853c1f7",
+    "program_run_id": 33973719651,
+    "artifact_id": 9971684969,
+    "artifact_digest": "sha256:7b9943df762751750f295784265e889938aa00feae214f72b70c33e4e67a0af9"
+  },
+  "implementation": {
+    "shipping_file": "src/sync/ap_sync.c",
+    "test_file": "tests/test_drift_res.c",
+    "coarse_step_samples_at_16khz": 32,
+    "incumbent_radius_samples_at_16khz": 64,
+    "minimum_correlation_squared": 0.0324,
+    "new_public_configuration": false,
+    "new_state_or_ram": false,
+    "timestamp_path_changed": false,
+    "global_route_fallback_retained": true,
+    "large_route_confirmations_retained": 3
+  },
+  "required_before_confirmation": [
+    "exact-base implementation matches only incumbent-qualified",
+    "strict compile/unit/property tests pass",
+    "weak-direct/strong-late-reflection regression retains the incumbent causal route",
+    "genuine large route change still reaches the new route through the existing confirmation fallback",
+    "existing periodic-peak, drift, timestamp-route and discontinuity/reset protections pass",
+    "paired CPU/RAM/ROM and composition/resource gates pass without state-layout growth",
+    "hosted real Audio/AEC and already-observed geometry/call source groups pass as regression only",
+    "exact-head Verify summary succeeds"
+  ],
+  "confirmation_policy": {
+    "allowed_now": false,
+    "reason": "candidate implementation must complete engineering precheck and shadow/regression protection before an unobserved confirmation source group is registered",
+    "reuse_observed_sources_for_confirmation": false,
+    "candidate_mutation_after_confirmation_selection": false,
+    "confirmation_budget_limit": 2,
+    "confirmation_budget_consumed": 0
+  },
+  "release": {
+    "candidate_version": "2.3.13",
+    "release_allowed_now": false,
+    "requires_fixed_candidate_confirmation": true,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

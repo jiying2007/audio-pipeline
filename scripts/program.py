@@ -32,7 +32,7 @@ HANDLERS = {
     },
     "promotion-governance": {
         "lane": "governance",
-        "path": "scripts/promotion_governance.py",
+        "path": ".github/program/promotion_governance.py",
         "contract": "docs/program/iterations/P001.json",
         "iteration_id": "P001",
         "decision": "GOVERNANCE_READY_NO_ACOUSTIC_CANDIDATE",

@@ -7,6 +7,8 @@ on:
       - 'src/enhance/ap_ns.c'
       - 'tests/validation/discover_ami_vad_microset.py'
       - 'tests/validation/ami_vad_microset_eval.py'
+      - 'tests/validation/vad_fusion_diagnostic.py'
+      - 'tests/validation/vad_fusion_probe.c'
       - 'tests/validation/data/ami_vad_microset.lock.json'
       - '.github/workflows/ami-vad-microset-discovery.yml'
   schedule:
@@ -36,9 +38,11 @@ jobs:
           set -euo pipefail
           python3 -m py_compile \
             tests/validation/discover_ami_vad_microset.py \
-            tests/validation/ami_vad_microset_eval.py
+            tests/validation/ami_vad_microset_eval.py \
+            tests/validation/vad_fusion_diagnostic.py
           python3 tests/validation/discover_ami_vad_microset.py --self-test
           python3 tests/validation/ami_vad_microset_eval.py --self-test
+          python3 tests/validation/vad_fusion_diagnostic.py --self-test
           python3 -m json.tool tests/validation/data/ami_vad_microset.lock.json >/dev/null
       - name: Re-discover pinned AMI external-timing identities
         run: |
@@ -92,6 +96,15 @@ jobs:
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
       - name: Build exact research processor
         run: cmake --build build-ami-vad --target ap_process_pcm --parallel
+      - name: Build internal VAD fusion probe
+        run: |
+          set -euo pipefail
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_VAD=1 \
+            -Ibuild-ami-vad/generated -Iinclude -Isrc \
+            tests/validation/vad_fusion_probe.c \
+            build-ami-vad/libaudio_pipeline.a -lm -lpthread \
+            -o build-ami-vad/vad_fusion_probe
       - name: Compare shipping and research NS-assisted thresholds
         run: |
           set -euo pipefail
@@ -100,6 +113,15 @@ jobs:
             --lock tests/validation/data/ami_vad_microset.lock.json \
             --output ami-vad-research-out/qualification.json \
             | tee ami-vad-research-out/qualification-summary.json
+      - name: Decompose NS processing upstream fusion and hangover
+        run: |
+          set -euo pipefail
+          python3 tests/validation/vad_fusion_diagnostic.py \
+            --processor build-ami-vad/ap_process_pcm \
+            --probe build-ami-vad/vad_fusion_probe \
+            --lock tests/validation/data/ami_vad_microset.lock.json \
+            --output ami-vad-research-out/fusion-diagnostic.json \
+            | tee ami-vad-research-out/fusion-diagnostic-summary.json
       - name: Enforce research-only evidence integrity
         run: |
           set -euo pipefail
@@ -107,6 +129,7 @@ jobs:
           import json
           from pathlib import Path
           r = json.loads(Path('ami-vad-research-out/qualification.json').read_text())
+          d = json.loads(Path('ami-vad-research-out/fusion-diagnostic.json').read_text())
           assert r['schema_version'] == 1
           assert r['authority'] == 'research-external-timing-vad-qualification'
           assert r['decision'] in {'SUPPORT', 'MIXED', 'CONTRADICTED'}
@@ -124,6 +147,19 @@ jobs:
           assert r['aggregate']['frames'] >= 5700
           assert 0.0 < r['aggregate']['activity_fraction'] < 1.0
           assert 'cannot directly change shipping thresholds' in r['promotion_boundary']
+          assert d['schema_version'] == 1
+          assert d['authority'] == 'research-vad-fusion-causal-diagnostic'
+          assert d['shipping_contract']['ns_floor'] == 0.12
+          assert d['shipping_contract']['decision_threshold'] == 0.35
+          assert len(d['windows']) == 3
+          for window in d['windows']:
+              fidelity = window['probe_fidelity']
+              assert fidelity['active_mismatches'] == 0
+              assert fidelity['max_probability_error'] <= fidelity['tolerance']
+          assert d['low_activity_window']['window_id'] == 'ES2003a-w2'
+          assert d['low_activity_window']['dominant_false_positive_category'] in {
+              'raw_local_already_high', 'ns_processing_added', 'upstream_fusion_added', 'hangover_only'
+          }
           PY
       - name: Publish AMI research summary
         if: always()
@@ -135,20 +171,31 @@ jobs:
           r = json.loads(Path('ami-vad-research-out/qualification.json').read_text())
           b = r['aggregate']['baseline']
           c = r['aggregate']['candidate']
-          d = r['aggregate']['deltas']
+          x = r['aggregate']['deltas']
           print('## AMI external-timing real-VAD research')
           print(f"- Decision: `{r['decision']}`")
           print(f"- Aggregate activity fraction: `{r['aggregate']['activity_fraction']:.3f}`")
-          print(f"- Recall: `{b['recall']:.4f} -> {c['recall']:.4f}` (`{d['recall_delta']:+.4f}`)")
-          print(f"- F1: `{b['f1']:.4f} -> {c['f1']:.4f}` (`{d['f1_delta']:+.4f}`)")
-          print(f"- FPR: `{b['false_positive_rate']:.4f} -> {c['false_positive_rate']:.4f}` (`{d['fpr_delta']:+.4f}`)")
-          print(f"- Research score: `{d['score']:+.4f}`")
+          print(f"- Recall: `{b['recall']:.4f} -> {c['recall']:.4f}` (`{x['recall_delta']:+.4f}`)")
+          print(f"- F1: `{b['f1']:.4f} -> {c['f1']:.4f}` (`{x['f1_delta']:+.4f}`)")
+          print(f"- FPR: `{b['false_positive_rate']:.4f} -> {c['false_positive_rate']:.4f}` (`{x['fpr_delta']:+.4f}`)")
+          print(f"- Research score: `{x['score']:+.4f}`")
           for w in r['windows']:
-              x = w['deltas']
+              delta = w['deltas']
               print(
                   f"- {w['window_id']} activity `{w['activity_fraction']:.3f}`: "
-                  f"recall `{x['recall']:+.4f}`, F1 `{x['f1']:+.4f}`, FPR `{x['false_positive_rate']:+.4f}`"
+                  f"recall `{delta['recall']:+.4f}`, F1 `{delta['f1']:+.4f}`, FPR `{delta['false_positive_rate']:+.4f}`"
               )
+          diag = Path('ami-vad-research-out/fusion-diagnostic.json')
+          if diag.exists():
+              d = json.loads(diag.read_text())
+              low = d['low_activity_window']
+              print(
+                  f"- Low-activity false-positive dominant counterfactual: "
+                  f"`{low['dominant_false_positive_category']}` (`{low['dominant_fraction']:.3f}` of FP-active frames)"
+              )
+              categories = d['aggregate_false_positive_attribution']['categories']
+              for name, item in categories.items():
+                  print(f"- aggregate {name}: `{item['fraction_of_false_positive_active_frames']:.3f}` of FP-active frames")
           print('- Authority: research-only external transcription timing; SUPPORT is not shipping authorization.')
           PY
           fi

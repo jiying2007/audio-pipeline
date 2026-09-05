@@ -155,6 +155,7 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     const int soft_recovered = coherence > AP_BF_FALLBACK_RECOVER_COHERENCE ||
                                ratio > AP_BF_FALLBACK_RECOVER_RATIO;
     const uint32_t energy_strong_channel = aa >= bb ? 0u : 1u;
+    const uint32_t hard_target_channel = 1u - energy_strong_channel;
     const float strong_roughness = energy_strong_channel == 0u ? roughness_a : roughness_b;
     const float weak_roughness = energy_strong_channel == 0u ? roughness_b : roughness_a;
     const int hard_contamination = severe &&
@@ -184,7 +185,7 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
         s->fallback_active = 1u;
         s->fallback_hard_fault = hard_contamination ? 1u : 0u;
         s->fallback_strong_channel = hard_contamination ?
-                                     1u - energy_strong_channel : energy_strong_channel;
+                                     hard_target_channel : energy_strong_channel;
         s->fallback_recovery_count = 0u;
         s->fallback_lag = s->lag;
         s->fallback_gain = hard_contamination ? 1.0f :
@@ -193,9 +194,10 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
         return;
     }
 
-    if (hard_contamination && !s->fallback_hard_fault) {
+    if (hard_contamination && !s->fallback_hard_fault &&
+        s->fallback_strong_channel != hard_target_channel) {
         s->fallback_hard_fault = 1u;
-        s->fallback_strong_channel = 1u - energy_strong_channel;
+        s->fallback_strong_channel = hard_target_channel;
         s->fallback_recovery_count = 0u;
         s->fallback_lag = s->lag;
         s->fallback_gain = 1.0f;

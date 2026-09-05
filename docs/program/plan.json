@@ -36,11 +36,14 @@
       "evidence": [{"source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029", "meaning": "Complete fixed-product model audit: 72/72 case gates pass; legacy excitation has ~0.899 sidelobe peak and moving earliest path while the audited geometry keeps a 672-sample direct path and 32-sample causal margin. Different-corpus scores are not DSP improvement."}]
     },
     {
-      "id": "I002", "priority": 20, "status": "READY", "lane": "measurement",
+      "id": "I002", "priority": 20, "status": "CLOSED", "lane": "measurement",
       "title": "Migrate the canonical motion model after the audit, with known-answer and negative gates",
-      "depends_on": ["I001"], "handler": "aec-motion-model-qualification", "contract": "docs/program/iterations/I002.json",
+      "depends_on": ["I001"], "handler": null, "contract": "docs/program/iterations/I002.json",
       "exit": "One canonical generator; old evidence preserved; versioned ground truth; same-product evaluator qualification",
-      "evidence": []
+      "evidence": [
+        {"source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578949", "meaning": "Reviewed I002 measurement migration: artifact 9969943396/digest 236cfc5e... independently verified; seeds 17411/27411/37411 all pass 12/12 unchanged canonical development gates with geometry-v2 model hash ababe11b...."},
+        {"source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578985", "meaning": "Corrected tuning consumer records motion-only aec_mu=0.52 as final REJECT_CANDIDATE because call-validation min_vad_f1 regresses by 0.08393 > 0.05, while preserving workflow success and call-shadow evidence."}
+      ]
     },
     {
       "id": "I003", "priority": 30, "status": "PLANNED", "lane": "acoustic",

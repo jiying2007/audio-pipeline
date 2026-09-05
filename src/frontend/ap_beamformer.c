@@ -13,8 +13,9 @@
 #define AP_BF_FALLBACK_MIN_SCORE_UPDATES 1u
 #define AP_BF_FALLBACK_STRONG_WEIGHT 0.75f
 #define AP_BF_FALLBACK_WEAK_WEIGHT 0.25f
-#define AP_BF_HARD_FAULT_MIN_RATIO 0.25f
-#define AP_BF_HARD_FAULT_ROUGHNESS_RATIO 0.40f
+#define AP_BF_HARD_FAULT_MIN_RATIO 0.08f
+#define AP_BF_HARD_FAULT_MAX_RATIO 0.25f
+#define AP_BF_HARD_FAULT_ROUGHNESS_RATIO 0.25f
 
 static float ap_beamformer_clampf(float value, float lo, float hi) {
     if (value < lo) return lo;
@@ -150,18 +151,22 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     const int severe = s->score_updates >= AP_BF_FALLBACK_MIN_SCORE_UPDATES &&
                        coherence < AP_BF_FALLBACK_ENTER_COHERENCE &&
                        ratio < AP_BF_FALLBACK_ENTER_RATIO;
-    const int recovered = coherence > AP_BF_FALLBACK_RECOVER_COHERENCE ||
-                          ratio > AP_BF_FALLBACK_RECOVER_RATIO;
+    const int soft_recovered = coherence > AP_BF_FALLBACK_RECOVER_COHERENCE ||
+                               ratio > AP_BF_FALLBACK_RECOVER_RATIO;
+    const int hard_recovered = coherence > AP_BF_FALLBACK_RECOVER_COHERENCE &&
+                               ratio > AP_BF_FALLBACK_RECOVER_RATIO;
     const uint32_t energy_strong_channel = aa >= bb ? 0u : 1u;
     const float strong_roughness = energy_strong_channel == 0u ? roughness_a : roughness_b;
     const float weak_roughness = energy_strong_channel == 0u ? roughness_b : roughness_a;
     const int hard_contamination = severe &&
                                    ratio > AP_BF_HARD_FAULT_MIN_RATIO &&
+                                   ratio < AP_BF_HARD_FAULT_MAX_RATIO &&
                                    strong_roughness < AP_BF_HARD_FAULT_ROUGHNESS_RATIO *
                                                       fmaxf(weak_roughness, 1.0e-12f);
     float projection;
     float normal_coherent_gain;
     float fallback_coherent_gain;
+    int recovered;
 
     if (energy_strong_channel == 0u)
         projection = xy / fmaxf(aa, 1.0e-12f);
@@ -194,6 +199,7 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
         s->fallback_gain = 1.0f;
     }
 
+    recovered = s->fallback_hard_fault ? hard_recovered : soft_recovered;
     if (recovered) {
         if (s->fallback_recovery_count < AP_BF_FALLBACK_RECOVER_UPDATES)
             s->fallback_recovery_count++;

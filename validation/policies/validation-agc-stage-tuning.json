@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-agc-stage-tuning-v1",
+  "allowed_tiers": ["regression"],
+  "minimum_cases": 2,
+  "required_public_sources": [],
+  "required_scenarios": [
+    "stage-agc-low-level",
+    "stage-agc-hot-level"
+  ],
+  "minimum_cases_by_scenario": {
+    "stage-agc-low-level": 1,
+    "stage-agc-hot-level": 1
+  },
+  "minimum_pass_rate_by_scenario": {
+    "stage-agc-low-level": 1.0,
+    "stage-agc-hot-level": 1.0
+  },
+  "aggregate": {
+    "min_pass_rate": 1.0,
+    "max_output_clip_fraction": 0.001
+  }
+}

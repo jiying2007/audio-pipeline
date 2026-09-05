@@ -1,0 +1,73 @@
+name: Program Iteration
+run-name: software-public-data / ${{ github.event_name }} / ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'docs/program/**'
+      - 'scripts/program.py'
+      - 'tests/validation/aec_motion_model_audit.py'
+      - '.github/workflows/program-iteration.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'docs/program/**'
+      - 'scripts/program.py'
+      - 'tests/validation/aec_motion_model_audit.py'
+      - '.github/workflows/program-iteration.yml'
+  schedule:
+    - cron: '19 19 * * 2,5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: program-iteration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate program and model contracts
+        run: |
+          set -euo pipefail
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check
+          python3 tests/validation/aec_motion_model_audit.py --self-test
+      - name: Execute the next registered bounded research task
+        run: python3 scripts/program.py run --output program-evidence
+      - name: Report execution separately from candidate authority
+        if: always()
+        run: |
+          mkdir -p program-evidence
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          path = Path('program-evidence/execution-result.json')
+          progress = Path('program-evidence/plan-progress.json')
+          result = json.loads(path.read_text()) if path.exists() else (
+              json.loads(progress.read_text()) if progress.exists() else {'execution_status': 'NOT_EXECUTED'})
+          print('## Software/public-data program')
+          print('```json\n' + json.dumps(result, indent=2) + '\n```')
+          print('Research completion is not acoustic acceptance. Product qualification is DEFERRED_BY_SCOPE.')
+          Path('program-evidence/status.json').write_text(json.dumps(result, indent=2) + '\n')
+          PY
+      - name: Preserve reports, negative results and reproducer sources
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: program-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: program-evidence/
+          if-no-files-found: error
+          retention-days: 90

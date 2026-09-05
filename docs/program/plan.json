@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "phase": "software-public-data",
+  "product_qualification": "DEFERRED_BY_SCOPE",
+  "hardware_collection": false,
+  "auto_promote": false,
+  "max_parallel_candidates": 1,
+  "baseline": {
+    "source_sha": "2e98354dc54b23c019d30b1c75a6d304d5a09ccb",
+    "verify_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33961870472",
+    "software_release": "v2.3.11",
+    "release_url": "https://github.com/jiying2007/audio-pipeline/releases/tag/v2.3.11",
+    "note": "main snapshot includes governance after the immutable release; do not equate the two source identities"
+  },
+  "data_roles": [
+    {"path": "validation/hosted_real.datasets.lock.json", "role": "hosted-regression", "exposed": true},
+    {"path": "validation/hosted_aec.datasets.lock.json", "role": "hosted-regression", "exposed": true},
+    {"path": "tests/validation/data/ami_vad_microset.lock.json", "role": "regression", "exposed": true},
+    {"path": "tests/validation/data/ami_vad_confirmation_es2004a.lock.json", "role": "regression", "exposed": true}
+  ],
+  "tasks": [
+    {
+      "id": "P000", "priority": 0, "status": "ACTIVE", "lane": "governance",
+      "title": "Archive goals, design, executable plan and scoped automation",
+      "depends_on": [], "handler": null, "contract": null,
+      "exit": "Program self/negative tests plus exact-head Verify; main verification; evidence-backed plan update",
+      "evidence": []
+    },
+    {
+      "id": "I001", "priority": 10, "status": "READY", "lane": "measurement",
+      "title": "Audit tonal motion corpus against fixed-geometry broadband diagnostics on exact base",
+      "depends_on": [], "handler": "aec-model-audit",
+      "contract": "docs/program/iterations/I001.json",
+      "exit": "All seeds and model invariants recorded; canonical quality failures retained; no DSP promotion",
+      "evidence": []
+    },
+    {
+      "id": "I002", "priority": 20, "status": "PLANNED", "lane": "measurement",
+      "title": "Migrate the canonical motion model after the audit, with known-answer and negative gates",
+      "depends_on": ["I001"], "handler": null, "contract": null,
+      "exit": "One canonical generator; old evidence preserved; versioned ground truth; same-product evaluator qualification",
+      "evidence": []
+    },
+    {
+      "id": "I003", "priority": 30, "status": "PLANNED", "lane": "acoustic",
+      "title": "AEC/Sync causal-anchor and continuous-motion root-cause candidates, only if measured necessary",
+      "depends_on": ["I002", "P001"], "handler": null, "contract": null,
+      "exit": "Bounded development/selection; resource precheck; fresh confirmation; hosted regression/promotion; exact-source CI",
+      "evidence": []
+    },
+    {
+      "id": "P001", "priority": 15, "status": "PLANNED", "lane": "governance",
+      "title": "Bind promotion gate plans, data source groups, exposure and inherited research budgets",
+      "depends_on": ["P000"], "handler": null, "contract": null,
+      "exit": "Negative tests reject old SHA, missing gates, leaked confirmation, concealed failures and budget reset",
+      "evidence": []
+    },
+    {
+      "id": "I004", "priority": 40, "status": "PLANNED", "lane": "acoustic",
+      "title": "NS nonstationary motor/fan and low-SNR speech envelope using pinned public data",
+      "depends_on": ["P001"], "handler": null, "contract": null,
+      "exit": "Speech preservation, noise reduction, worst-case and VAD constraints; no new backend without measured value",
+      "evidence": []
+    },
+    {
+      "id": "I005", "priority": 50, "status": "PLANNED", "lane": "acoustic",
+      "title": "VAD event/onset/release evaluation on new public sessions and far-field simulation",
+      "depends_on": ["I004"], "handler": null, "contract": null,
+      "exit": "Frame/event recall and false-active duration; unused source groups; no retuning ES2003a/ES2004a as independent",
+      "evidence": []
+    },
+    {
+      "id": "I006", "priority": 60, "status": "PLANNED", "lane": "acoustic",
+      "title": "AGC near/far level mismatch, noise-floor and far-end residual protection",
+      "depends_on": ["P001"], "handler": null, "contract": null,
+      "exit": "No pure-far-end gain-up regression; clipping/slew/settling and speech-quality constraints",
+      "evidence": []
+    },
+    {
+      "id": "I007", "priority": 70, "status": "PLANNED", "lane": "acoustic",
+      "title": "BF wind, motion, phase mismatch and reverberant health evidence beyond the released hard-fault fixture",
+      "depends_on": ["P001"], "handler": null, "contract": null,
+      "exit": "Frontend-equivalent oracle, fault-specific health selection, exact-base non-target protection and recovery",
+      "evidence": []
+    },
+    {
+      "id": "I008", "priority": 80, "status": "PLANNED", "lane": "engineering",
+      "title": "Runtime/API/reset, bounded diagnostics/replay, resampler and composition resource audit",
+      "depends_on": ["P000"], "handler": null, "contract": null,
+      "exit": "TSan/realtime/SDK/ABI; FULL LOW TINY RAW custom; paired host CPU/RAM/ROM; no unproven DUT claims",
+      "evidence": []
+    },
+    {
+      "id": "P002", "priority": 90, "status": "PLANNED", "lane": "governance",
+      "title": "Release identity conflict and archival/GC in-flight safety audit",
+      "depends_on": ["P000"], "handler": null, "contract": null,
+      "exit": "Reject tag/asset identity conflicts; preserve exact replay evidence; no deletion on SHA drift or active dependency",
+      "evidence": []
+    },
+    {
+      "id": "E001", "priority": 100, "status": "DEFERRED", "lane": "external",
+      "title": "Real product capture, DUT/HIL and Product Certification",
+      "depends_on": [], "handler": null, "contract": null,
+      "exit": "Explicit future scope activation with real infrastructure; never inferred from synthetic/public PASS",
+      "evidence": []
+    }
+  ]
+}

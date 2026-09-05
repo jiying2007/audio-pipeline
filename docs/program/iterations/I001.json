@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I001",
+  "root_cause_id": "aec-motion-measurement-model",
+  "phase": "discovery",
+  "base_sha": "2e98354dc54b23c019d30b1c75a6d304d5a09ccb",
+  "seeds": [16411, 26411, 36411],
+  "seconds": 4.0,
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "run_timeout_seconds": 900,
+  "data_role": "development",
+  "promotion_allowed": false,
+  "hypothesis": "Existing five-tone excitation and moving earliest tap are not sufficient authority for rigid on-device speaker/mic motion optimization",
+  "model": {
+    "sample_rate_hz": 16000,
+    "direct_total_delay_ms": 42.0,
+    "nominal_reference_delay_ms": 40.0,
+    "speaker_mic_distance_m": 0.08,
+    "room_dimensions_m": [6.0, 5.0, 2.8],
+    "speed_of_sound_m_s": 343.0,
+    "paths": "direct plus six first-order wall images",
+    "approximation": "quasi-static moving geometry; linear fractional-delay interpolation; no full wave model, diffuse late tail, nonlinear transducer or real DUT",
+    "excitation": ["colored-broadband", "speech-envelope-broadband"],
+    "motion": ["stationary", "translation", "rotation"],
+    "direct_gain": [0.30, 0.03]
+  },
+  "acceptance": [
+    "determinism and seed sensitivity",
+    "constant direct delay; positive initial causal margin; all reflections no earlier than direct",
+    "negative geometry and reused nonempty output rejected",
+    "exact-base processor and canonical evaluator unchanged",
+    "all 12 cases per model and all seeds evaluated; quality FAIL retained rather than hidden",
+    "source/compiler/PCM/truth/policy/evaluator/report identities and logs archived",
+    "result is baseline characterization, never candidate acceptance or product certification"
+  ],
+  "next_on_success": "Review measurement evidence before designing I002 canonical migration",
+  "next_on_failure": "Keep baseline; correct integrity/implementation failure without consuming any confirmation data"
+}

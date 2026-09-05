@@ -52,9 +52,18 @@ def _run_list(payload: dict) -> list[dict]:
     return runs
 
 
-def _compact(run: dict | None, authority: str) -> dict | None:
+def _compact(run: dict | None, authority: str) -> dict:
     if run is None:
-        return None
+        return {
+            "authority": authority,
+            "run_id": None,
+            "url": None,
+            "event": None,
+            "display_title": None,
+            "head_sha": None,
+            "status": "pending",
+            "conclusion": None,
+        }
     return {
         "authority": authority,
         "run_id": run.get("id"),
@@ -213,6 +222,7 @@ def self_test() -> None:
     resolved = resolve_runs(sha, tag, "true", "true", current_hil, wrong_source_control, empty)
     assert resolved["ready"] is False
     assert resolved["extended_real"]["authority"] == "extended-real-validation-pending"
+    assert resolved["extended_real"]["run_id"] is None
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "status.json"

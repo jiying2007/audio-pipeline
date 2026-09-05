@@ -46,11 +46,13 @@
       ]
     },
     {
-      "id": "I003", "priority": 30, "status": "READY", "lane": "acoustic",
+      "id": "I003", "priority": 30, "status": "REVIEW_REQUIRED", "lane": "acoustic",
       "title": "AEC/Sync causal-anchor and continuous-motion root-cause candidates, only if measured necessary",
-      "depends_on": ["I002", "P001"], "handler": "aec-sync-selector-search", "contract": "docs/program/iterations/I003.json",
+      "depends_on": ["I002", "P001"], "handler": null, "contract": "docs/program/iterations/I003.json",
       "exit": "Bounded development/selection; resource precheck; fresh confirmation; hosted regression/promotion; exact-source CI",
-      "evidence": []
+      "evidence": [
+        {"source_sha": "6c0e8d94e9f1ff870a208e87c68b67f37853c1f7", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33973719651", "meaning": "Reviewed bounded I003 selector search. Artifact 9971684969/digest 7b9943df... consumed inherited search round 2 and final variants 10..12 without confirmation, rejected earliest-qualified and causal-cluster-leading-edge, and froze incumbent-qualified as the only eligible implementation candidate. Full reviewed metrics and hashes are archived in docs/program/iterations/I003-selection-result.json."}
+      ]
     },
     {
       "id": "P001", "priority": 15, "status": "CLOSED", "lane": "governance",

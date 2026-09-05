@@ -1,0 +1,166 @@
+name: I003 Sync Independent Confirmation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I003-confirmation.json'
+      - 'validation/tools/i003_sync_confirmation.py'
+      - '.github/workflows/i003-sync-confirmation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i003-sync-confirmation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i003-sync-confirmation
+
+      - name: Validate frozen confirmation contract and candidate fingerprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/i003_sync_confirmation.py
+          python3 validation/tools/i003_sync_confirmation.py --self-test
+          python3 -m json.tool docs/program/iterations/I003-confirmation.json >/dev/null
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          contract = json.loads(Path('docs/program/iterations/I003-confirmation.json').read_text())
+          assert contract['candidate_implementation_sha'] == '82ae56d8148e1a19f62250072bd45563eaffdde5'
+          assert contract['base_sha'] == '783a8d1f27bae03b97e57b74e47cede5cf07bb6d'
+          assert contract['source_group']['seeds'] == [51107, 52107, 53107]
+          assert contract['budget']['confirmation_sets_consumed_before'] == 0
+          assert contract['budget']['confirmation_sets_consumed_if_executed'] == 1
+          assert contract['constraints']['candidate_search_allowed'] is False
+          assert contract['constraints']['threshold_tuning_allowed'] is False
+          for path, expected in contract['candidate_fingerprint'].items():
+              actual = subprocess.check_output(['git', 'hash-object', path], text=True).strip()
+              if actual != expected:
+                  raise SystemExit(f'frozen candidate fingerprint drift: {path}: {actual} != {expected}')
+          generator = subprocess.check_output(
+              ['git', 'hash-object', contract['source_group']['generator']], text=True
+          ).strip()
+          if generator != contract['source_group']['generator_blob']:
+              raise SystemExit(f'confirmation generator drift: {generator}')
+          for sha in (contract['base_sha'], contract['candidate_implementation_sha']):
+              subprocess.run(['git', 'cat-file', '-e', f'{sha}^{{commit}}'], check=True)
+          PY
+
+      - name: Build exact base and frozen candidate processors
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='783a8d1f27bae03b97e57b74e47cede5cf07bb6d'
+          CANDIDATE='82ae56d8148e1a19f62250072bd45563eaffdde5'
+          rm -rf .confirmation-worktrees
+          mkdir -p .confirmation-worktrees
+          git worktree add --detach .confirmation-worktrees/base "$BASE"
+          git worktree add --detach .confirmation-worktrees/candidate "$CANDIDATE"
+          cmake -S .confirmation-worktrees/base -B .confirmation-worktrees/base-build \
+            -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$BASE"
+          cmake --build .confirmation-worktrees/base-build --target ap_process_pcm ap_build_info_dump --parallel
+          cmake -S .confirmation-worktrees/candidate -B .confirmation-worktrees/candidate-build \
+            -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$CANDIDATE"
+          cmake --build .confirmation-worktrees/candidate-build --target ap_process_pcm ap_build_info_dump --parallel
+          .confirmation-worktrees/base-build/ap_build_info_dump > base-build-info.txt
+          .confirmation-worktrees/candidate-build/ap_build_info_dump > candidate-build-info.txt
+
+      - name: Execute one-way fixed-candidate confirmation
+        id: confirmation
+        shell: bash
+        run: |
+          set -uo pipefail
+          rm -rf i003-confirmation-evidence
+          python3 validation/tools/i003_sync_confirmation.py \
+            --contract docs/program/iterations/I003-confirmation.json \
+            --base-processor .confirmation-worktrees/base-build/ap_process_pcm \
+            --candidate-processor .confirmation-worktrees/candidate-build/ap_process_pcm \
+            --output i003-confirmation-evidence \
+            2>&1 | tee i003-confirmation.log
+          rc=${PIPESTATUS[0]}
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Seal confirmation evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p i003-confirmation-evidence
+          cp docs/program/iterations/I003-confirmation.json i003-confirmation-evidence/contract.json
+          cp base-build-info.txt i003-confirmation-evidence/base-build-info.txt 2>/dev/null || true
+          cp candidate-build-info.txt i003-confirmation-evidence/candidate-build-info.txt 2>/dev/null || true
+          cp i003-confirmation.log i003-confirmation-evidence/execution.log 2>/dev/null || true
+          git rev-parse HEAD > i003-confirmation-evidence/metadata-head.txt
+          printf '%s\n' '783a8d1f27bae03b97e57b74e47cede5cf07bb6d' > i003-confirmation-evidence/base-sha.txt
+          printf '%s\n' '82ae56d8148e1a19f62250072bd45563eaffdde5' > i003-confirmation-evidence/candidate-implementation-sha.txt
+          find i003-confirmation-evidence -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > i003-confirmation-evidence/SHA256SUMS
+
+      - name: Publish confirmation summary
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          path = Path('i003-confirmation-evidence/confirmation-result.json')
+          print('## I003 Sync fixed-candidate independent confirmation')
+          print('')
+          print('- Candidate implementation: `82ae56d8148e1a19f62250072bd45563eaffdde5`')
+          print('- Source group: `aec-motion-geometry-v2-i003-confirmation-1`')
+          print('- Seeds: `51107 / 52107 / 53107`')
+          print('- Candidate search/tuning: **forbidden**')
+          if not path.exists():
+              print('- Result: `NO_FINAL_RESULT` (tool/infrastructure failure)')
+          else:
+              result = json.loads(path.read_text())
+              a = result['aggregate']
+              print(f"- Decision: **{result['decision']}**")
+              print(f"- p95 delay error: base `{a['base']['p95_abs_delay_error_ms']}` ms -> candidate `{a['candidate']['p95_abs_delay_error_ms']}` ms")
+              print(f"- >4 ms observations: base `{a['base']['late_error_count']}` -> candidate `{a['candidate']['late_error_count']}`")
+              print(f"- >20 ms observations: base `{a['base']['severe_error_count']}` -> candidate `{a['candidate']['severe_error_count']}`")
+          PY
+
+      - name: Upload sealed confirmation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i003-sync-confirmation-${{ github.run_id }}
+          path: i003-confirmation-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce fixed-candidate confirmation decision
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ steps.confirmation.outputs.rc }}' = '0'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('i003-confirmation-evidence/confirmation-result.json').read_text())
+          assert result['decision'] == 'CONFIRM_CANDIDATE'
+          assert result['candidate_search_performed'] is False
+          assert result['threshold_tuning_performed'] is False
+          assert result['budget_consumed'] == 1
+          assert result['source_group_next_role'] == 'regression-retired'
+          PY

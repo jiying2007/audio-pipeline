@@ -43,10 +43,10 @@
     "late_error_ms": 4,
     "severe_error_ms": 20,
     "per_seed": {
+      "candidate_median_abs_delay_error_ms_must_not_exceed_base": true,
       "candidate_p95_abs_delay_error_ms_must_not_exceed_base": true,
       "candidate_late_error_count_must_not_exceed_base": true,
       "candidate_severe_error_count_must_not_exceed_base": true,
-      "candidate_max_abs_delay_error_ms_must_not_exceed_base": true,
       "canonical_validation_must_pass": true
     },
     "aggregate": {

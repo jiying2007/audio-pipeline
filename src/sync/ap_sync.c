@@ -127,6 +127,42 @@ static float ap_sync_delay_score(const ap_sync_state_t *s, const float *mic,
     return (xy * xy) / (xx * yy);
 }
 
+static int ap_sync_select_incumbent_peak(const ap_sync_state_t *s,
+                                         const float *mic,
+                                         uint32_t frame_samples,
+                                         uint32_t max_delay,
+                                         uint32_t coarse_step,
+                                         uint32_t sample_step,
+                                         uint32_t *selected_delay,
+                                         float *selected_score) {
+    const uint32_t radius = 2u * coarse_step;
+    uint32_t local_delay = s->delay_samples;
+    float local_score = 0.0f;
+    int found = 0;
+    uint32_t d;
+
+    for (d = 0u; d <= max_delay; d += coarse_step) {
+        float score, left = -1.0f, right = -1.0f;
+        if (ap_sync_distance(d, s->delay_samples) > radius) continue;
+        score = ap_sync_delay_score(s, mic, frame_samples, d, sample_step);
+        if (score < AP_SYNC_MIN_CORRELATION_SQUARED) continue;
+        if (d >= coarse_step)
+            left = ap_sync_delay_score(s, mic, frame_samples, d - coarse_step, sample_step);
+        if (d + coarse_step <= max_delay)
+            right = ap_sync_delay_score(s, mic, frame_samples, d + coarse_step, sample_step);
+        if (score < left || score < right) continue;
+        if (!found || score > local_score || (score == local_score && d < local_delay)) {
+            found = 1;
+            local_delay = d;
+            local_score = score;
+        }
+    }
+    if (!found) return 0;
+    *selected_delay = local_delay;
+    *selected_score = local_score;
+    return 1;
+}
+
 static void ap_sync_apply_drift(ap_sync_state_t *s, uint32_t best_delay,
                                 uint32_t sample_rate_hz, uint32_t max_delay_ms,
                                 ap_sync_event_t *event) {
@@ -171,6 +207,7 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
     const uint32_t sample_step = 4u;
     float best = 0.0f;
     uint32_t best_delay = s->delay_samples, d;
+    int used_incumbent_peak;
     memset(event, 0, sizeof(*event));
     if (!enable_delay_tracking ||
         s->render_total < (uint64_t)(max_delay + frame_samples)) return;
@@ -183,6 +220,8 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
             best_delay = d;
         }
     }
+    used_incumbent_peak = ap_sync_select_incumbent_peak(
+        s, mic, frame_samples, max_delay, coarse_step, sample_step, &best_delay, &best);
     {
         const uint32_t lo = best_delay > coarse_step ? best_delay - coarse_step : 0u;
         const uint32_t hi = best_delay + coarse_step < max_delay ?
@@ -216,7 +255,8 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
             s->last_best_delay = best_delay;
             s->have_last_best_delay = 1u;
             event->route_jump = 1u;
-        } else if (!ap_sync_peak_is_unique(s, mic, frame_samples, max_delay,
+        } else if (!used_incumbent_peak &&
+                   !ap_sync_peak_is_unique(s, mic, frame_samples, max_delay,
                                            best_delay, best, coarse_step, sample_step)) {
             s->route_candidate_confirmations = 0u;
             event->delay_observed = 0u;

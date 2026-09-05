@@ -22,6 +22,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN = "docs/program/plan.json"
 STATES = {"PLANNED", "READY", "ACTIVE", "REVIEW_REQUIRED", "CLOSED", "DEFERRED"}
 LANES = {"governance", "measurement", "engineering", "acoustic", "external"}
+I003_CANDIDATES = [
+    "earliest-qualified",
+    "incumbent-qualified",
+    "causal-cluster-leading-edge",
+]
 HANDLERS = {
     "aec-motion-model-qualification": {
         "lane": "measurement",
@@ -36,6 +41,13 @@ HANDLERS = {
         "contract": "docs/program/iterations/P001.json",
         "iteration_id": "P001",
         "decision": "GOVERNANCE_READY_NO_ACOUSTIC_CANDIDATE",
+    },
+    "aec-sync-selector-search": {
+        "lane": "acoustic",
+        "path": "tests/validation/aec_sync_selector_search.py",
+        "contract": "docs/program/iterations/I003.json",
+        "iteration_id": "I003",
+        "decision": "BOUNDED_SELECTOR_SEARCH_REVIEW_REQUIRED",
     },
 }
 
@@ -69,13 +81,13 @@ def validate_contract(task: dict, contract: dict, spec: dict) -> None:
             contract["iteration_id"] == spec["iteration_id"] == task["id"],
             "handler/contract identity")
     require(sha(contract["base_sha"]), "contract base SHA")
-    require(contract["promotion_allowed"] is False and contract["candidate_limit"] == 0 and
-            contract["confirmation_limit"] == 0,
-            "registered pre-candidate task cannot acquire acoustic authority")
+    require(contract["promotion_allowed"] is False and contract["confirmation_limit"] == 0,
+            "registered task cannot acquire promotion/confirmation authority")
     require(type(contract["run_timeout_seconds"]) is int and 1 <= contract["run_timeout_seconds"] <= 900,
             "timeout budget")
 
     if task["lane"] == "measurement":
+        require(contract["candidate_limit"] == 0, "measurement task candidate authority")
         require(contract["data_role"] == "development", "measurement task data role")
         require(len(contract["seeds"]) == 3 and len(set(contract["seeds"])) == 3 and
                 all(type(seed) is int and 0 <= seed < 2 ** 32 for seed in contract["seeds"]), "seed budget")
@@ -83,10 +95,35 @@ def validate_contract(task: dict, contract: dict, spec: dict) -> None:
                 contract["canonical_generator"] == "validation/tools/build_aec_motion_corpus.py" and
                 contract["generator_version"] == 2, "I002 measurement migration contract")
     elif task["lane"] == "governance":
+        require(contract["candidate_limit"] == 0, "governance task candidate authority")
         require(task["id"] == "P001" and contract["phase"] == "governance-qualification" and
                 contract["root_cause_id"] == "promotion-governance" and
                 contract["policy"] == "docs/program/promotion-policy.json",
                 "P001 governance contract")
+    elif task["lane"] == "acoustic":
+        require(task["id"] == "I003" and contract["phase"] == "candidate-selection" and
+                contract["root_cause_id"] == "aec-motion-continuous-tracking",
+                "I003 acoustic selection contract")
+        require(contract["candidate_limit"] == 3 and contract["confirmation_limit"] == 0,
+                "I003 bounded candidate/confirmation budget")
+        require(contract["policy"] == "docs/program/promotion-policy.json" and
+                contract["canonical_generator"] == "validation/tools/build_aec_motion_corpus.py" and
+                contract["generator_version"] == 2 and contract["seconds"] == 4.0,
+                "I003 generator/policy contract")
+        require(contract["development_seeds"] == [4107, 4207] and
+                contract["validation_seeds"] == [9107, 9207], "I003 frozen observed seed partitions")
+        require(contract["selector_candidates"] == I003_CANDIDATES, "I003 frozen candidate set")
+        require(contract["budget_before"] == {
+                    "search_rounds_consumed": 1,
+                    "candidate_variants_consumed": 9,
+                    "confirmation_sets_consumed": 0,
+                } and contract["budget_after_this_run"] == {
+                    "search_rounds_consumed": 2,
+                    "candidate_variants_consumed": 12,
+                    "confirmation_sets_consumed": 0,
+                }, "I003 inherited budget transition")
+        require(contract["confirmation_source_group"] is None,
+                "I003 selection cannot consume confirmation")
     else:
         raise ValueError("registered handler lane is not approved in this phase")
 
@@ -164,7 +201,6 @@ def validate(plan: dict, root: Path | None = None) -> None:
                 validate_contract(task, contract, spec)
 
     visiting, visited = set(), set()
-
     def walk(task_id: str) -> None:
         require(task_id not in visiting, "dependency cycle")
         if task_id in visited:
@@ -174,7 +210,6 @@ def validate(plan: dict, root: Path | None = None) -> None:
             walk(dep)
         visiting.remove(task_id)
         visited.add(task_id)
-
     for task_id in ids:
         walk(task_id)
 
@@ -187,38 +222,44 @@ def next_task(plan: dict) -> dict | None:
 
 
 def view(plan: dict) -> dict:
-    task = next_task(plan)
+    current = next_task(plan)
     return {"schema_version": 1, "phase": plan["phase"],
             "product_qualification": plan["product_qualification"],
             "authority": "committed-plan-index-not-execution-proof",
-            "next_task": task["id"] if task else None,
-            "automation_status": ("READY" if task["handler"] in HANDLERS else "BLOCKED_IMPLEMENTATION")
-            if task else "NO_READY_TASK",
-            "tasks": [{"id": task["id"], "status": task["status"], "title": task["title"]}
-                      for task in plan["tasks"]]}
+            "next_task": current["id"] if current else None,
+            "automation_status": ("READY" if current["handler"] in HANDLERS else "BLOCKED_IMPLEMENTATION")
+            if current else "NO_READY_TASK",
+            "tasks": [{"id": item["id"], "status": item["status"], "title": item["title"]}
+                      for item in plan["tasks"]]}
 
 
 def self_test() -> None:
     plan = json.loads((ROOT / PLAN).read_text())
     validate(plan)
     by_id = {task["id"]: task for task in plan["tasks"]}
-    i002, p001 = by_id["I002"], by_id["P001"]
+    i002, p001, i003 = by_id["I002"], by_id["P001"], by_id["I003"]
     require(i002["status"] == "CLOSED" and i002["handler"] is None and bool(i002["evidence"]),
             "I002 must remain reviewed and closed")
+    require(p001["status"] == "CLOSED" and p001["handler"] is None and bool(p001["evidence"]),
+            "P001 must remain reviewed and closed")
 
-    if p001["status"] == "READY":
-        require(next_task(plan) is not None and next_task(plan)["id"] == "P001",
-                "READY P001 must be next")
-        require(view(plan)["automation_status"] == "READY" and p001["handler"] == "promotion-governance",
-                "P001 handler must be registered")
-        require(by_id["I003"]["status"] == "PLANNED", "P001 cannot auto-activate I003")
-    elif p001["status"] == "CLOSED":
-        require(p001["handler"] is None and bool(p001["evidence"]), "closed P001 needs reviewed evidence")
-        require(next_task(plan) is None and view(plan)["automation_status"] == "NO_READY_TASK",
-                "closing P001 must not silently activate unimplemented acoustic work")
-        require(by_id["I003"]["status"] == "PLANNED", "I003 needs its own later contract")
+    if i003["status"] == "PLANNED":
+        require(i003["handler"] is None and i003["contract"] is None,
+                "planned I003 cannot have executable authority")
+        require(next_task(plan) is None, "planned I003 cannot be next")
+    elif i003["status"] == "READY":
+        require(i003["handler"] == "aec-sync-selector-search" and
+                i003["contract"] == "docs/program/iterations/I003.json",
+                "I003 registered handler/contract")
+        require(next_task(plan) is not None and next_task(plan)["id"] == "I003",
+                "READY I003 must be next")
+        require(view(plan)["automation_status"] == "READY", "I003 automation readiness")
+    elif i003["status"] == "REVIEW_REQUIRED":
+        require(i003["handler"] is None and bool(i003["evidence"]),
+                "review-required I003 must be frozen and evidence-backed")
+        require(next_task(plan) is None, "review-required I003 must not rerun automatically")
     else:
-        raise AssertionError("P001 must be READY or CLOSED in this program phase")
+        raise AssertionError("I003 must be PLANNED, READY or REVIEW_REQUIRED in this program phase")
 
     mutations = [
         lambda p: p.update(auto_promote=True),
@@ -228,10 +269,10 @@ def self_test() -> None:
         lambda p: p["baseline"].update(source_sha="main"),
         lambda p: p["data_roles"][0].update(role="confirmation"),
         lambda p: p["tasks"][0].update(status="CLOSED", evidence=[]),
-        lambda p: next(t for t in p["tasks"] if t["id"] == "P001").update(handler="shell"),
-        lambda p: next(t for t in p["tasks"] if t["id"] == "P001").update(depends_on=["UNKNOWN"]),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "I003").update(handler="shell"),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "I003").update(depends_on=["UNKNOWN"]),
         lambda p: p["tasks"][-1].update(status="READY"),
-        lambda p: p["tasks"][0].update(depends_on=["P001"]),
+        lambda p: p["tasks"][0].update(depends_on=["I003"]),
     ]
     for mutate in mutations:
         bad = copy.deepcopy(plan)
@@ -244,12 +285,12 @@ def self_test() -> None:
 
     blocked = copy.deepcopy(plan)
     by_id_blocked = {task["id"]: task for task in blocked["tasks"]}
-    by_id_blocked["P001"].update(status="READY", handler=None, contract=None)
+    by_id_blocked["I003"].update(status="READY", handler=None, contract=None)
     require(view(blocked)["automation_status"] == "BLOCKED_IMPLEMENTATION",
-            "missing P001 handler must block")
-    by_id_blocked["P001"]["depends_on"] = ["I003"]
+            "missing I003 handler must block")
+    by_id_blocked["I003"].update(depends_on=["I004"])
     require(next_task(blocked) is None, "unfinished dependency must block")
-    print("program self-test: I002 closed + P001 ready/closed lifecycle and negative contracts OK")
+    print("program self-test: I002/P001 closed + bounded I003 lifecycle and negative contracts OK")
 
 
 def main() -> int:

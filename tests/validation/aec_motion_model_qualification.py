@@ -36,6 +36,7 @@ ALLOWED_PATHS = {
     "scripts/program.py",
     ".github/workflows/program-iteration.yml",
     ".github/workflows/aec-motion-development.yml",
+    ".github/workflows/aec-motion-tuning.yml",
 }
 FORBIDDEN_PREFIXES = (
     "src/", "include/", "ci/resource-baseline.json", "validation/policies/",

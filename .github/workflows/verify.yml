@@ -48,6 +48,10 @@ jobs:
         run: |
           set -euo pipefail
           ruby -e 'require "yaml"; ARGV.each { |path| abort("invalid workflow YAML: #{path}") unless Psych.parse_file(path) }' .github/workflows/*.yml
+      - name: Validate committed program contracts
+        run: |
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check
       - name: Resolve verification range
         id: refs
         shell: bash

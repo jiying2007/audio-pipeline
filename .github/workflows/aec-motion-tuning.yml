@@ -121,6 +121,8 @@ jobs:
               assert len(corpus['cases']) == cases
               assert corpus['generator']['seeds'] == seeds
               assert corpus['generator']['role'] == role
+              assert corpus['generator']['canonical_generator_version'] == 2
+              assert corpus['corpus_id'].startswith(f'aec-motion-geometry-bundle-v2-{role}-')
               assert len({item['case_id'] for item in corpus['cases']}) == cases
           PY
 
@@ -204,7 +206,7 @@ jobs:
             --baseline-tuning tuning-out/baseline-tuning.json \
             --candidate-tuning tuning-out/candidate-tuning.json \
             --role validation \
-            --output-dir tuning-out/call-validation --enforce
+            --output-dir tuning-out/call-validation
 
       - name: Replay motion-selected candidate on call shadow
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
@@ -220,27 +222,39 @@ jobs:
             --baseline-tuning tuning-out/baseline-tuning.json \
             --candidate-tuning tuning-out/candidate-tuning.json \
             --role shadow \
-            --output-dir tuning-out/call-shadow --enforce
+            --output-dir tuning-out/call-shadow
 
-      - name: Enforce one-way candidate semantics
+      - name: Finalize one-way candidate semantics
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import json
           from pathlib import Path
+
           result = json.loads(Path('tuning-out/motion/iteration-result.json').read_text())
           assert result['authority'] == 'non-shipping-acoustic-iteration'
           assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
           assert result['search_space']['candidate_count'] <= 10
           assert result['search_space']['candidate_jobs'] == 2
-          assert result['bindings']['partitions']['development']['corpus_id'].startswith('aec-motion-bundle-v1-development-')
-          assert result['bindings']['partitions']['validation']['corpus_id'].startswith('aec-motion-bundle-v1-validation-')
-          assert result['bindings']['partitions']['shadow']['corpus_id'].startswith('aec-motion-bundle-v1-shadow-')
+          for role in ('development', 'validation', 'shadow'):
+              corpus_id = result['bindings']['partitions'][role]['corpus_id']
+              assert corpus_id.startswith(f'aec-motion-geometry-bundle-v2-{role}-')
           baseline = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
           assert baseline['validation_result'] == 'PASS'
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'
+
+          final = {
+              'schema_version': 1,
+              'authority': 'non-shipping-one-way-finalizer',
+              'motion_decision': result['decision'],
+              'selected_candidate_id': result['selected']['candidate_id'],
+              'selected_label': result['selected']['label'],
+              'decision': result['decision'],
+              'rejections': [],
+              'call_replays': {},
+          }
           if result['decision'] == 'ACOUSTIC_CANDIDATE':
               assert not result['validation']['regression_violations']
               assert not result['shadow']['regression_violations']
@@ -250,11 +264,23 @@ jobs:
                   assert not gate['violations']
               for role in ('call-validation', 'call-shadow'):
                   replay = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())
-                  assert replay['decision'] == 'PASS'
-                  assert not replay['regression_violations']
+                  assert replay['authority'] == 'non-shipping-independent-replay'
+                  assert replay['role'] == role.removeprefix('call-')
+                  final['call_replays'][role] = {
+                      'decision': replay['decision'],
+                      'score': replay['candidate_score_vs_baseline'],
+                      'regression_violations': replay['regression_violations'],
+                  }
+                  if replay['decision'] != 'PASS' or replay['regression_violations']:
+                      final['rejections'].append({'role': role, 'violations': replay['regression_violations']})
+              final['decision'] = 'REJECT_CANDIDATE' if final['rejections'] else 'ACOUSTIC_CANDIDATE'
+
           forbidden = ('hosted_' + 'aec.datasets.lock.json', 'validation-' + 'hosted-aec-smoke.json')
           text = Path('.github/workflows/aec-motion-tuning.yml').read_text()
           assert not any(item in text for item in forbidden)
+          Path('tuning-out/final-decision.json').write_text(json.dumps(final, indent=2, sort_keys=True) + '\n')
+          print(json.dumps({'motion_decision': result['decision'], 'final_decision': final['decision'],
+                            'rejections': len(final['rejections'])}, sort_keys=True))
           PY
 
       - name: Bind reproducible tuning evidence
@@ -283,16 +309,20 @@ jobs:
           import json
           from pathlib import Path
           r = json.loads(Path('tuning-out/motion/iteration-result.json').read_text())
+          final_path = Path('tuning-out/final-decision.json')
+          final = json.loads(final_path.read_text()) if final_path.exists() else None
           print('## Multi-seed AEC motion tuning')
           print('')
-          print(f"- Decision: `{r['decision']}`")
+          print(f"- Motion decision: `{r['decision']}`")
+          if final is not None:
+              print(f"- Final one-way decision: `{final['decision']}`")
           print(f"- Selected: `{r['selected']['label']}` / `{r['selected']['candidate_id']}`")
           print(f"- Tuning: `{json.dumps(r['selected']['tuning'], sort_keys=True)}`")
           print(f"- Development score: `{r['selected']['development_score']:.6f}`")
           print(f"- Candidate jobs: `{r['search_space']['candidate_jobs']}`")
-          print('- Motion discovery: seeds `4107/4207/4307` (36 cases)')
-          print('- Unseen motion validation: seeds `9107/9207` (24 cases)')
-          print('- Unseen motion shadow: seeds `10107/10207` (24 cases)')
+          print('- Motion development: seeds `4107/4207/4307` (36 cases)')
+          print('- Motion validation: seeds `9107/9207` (24 cases)')
+          print('- Motion shadow: seeds `10107/10207` (24 cases)')
           print('- Generic call validation/shadow: seeds `9307/10307`')
           if r['decision'] == 'ACOUSTIC_CANDIDATE':
               for tail in ('development', 'validation', 'shadow'):
@@ -301,10 +331,13 @@ jobs:
                   e = g['summary']['erle']
                   print(f"- {tail} tail: corr worst `{c['worst_delta']:.6f}`, p10 `{c['p10_delta']:.6f}`, ERLE worst `{e['worst_delta_db']:.3f} dB`")
               for role in ('call-validation', 'call-shadow'):
-                  rr = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())
-                  print(f"- {role}: `{rr['decision']}`, score `{rr['candidate_score_vs_baseline']:.6f}`")
-          print('- Hosted real AEC holdout is intentionally absent from this feedback loop.')
-          print('- Authority: non-shipping candidate only; blind + target + HIL + certification remain mandatory.')
+                  path = Path(f'tuning-out/{role}/replay-result.json')
+                  if path.exists():
+                      rr = json.loads(path.read_text())
+                      print(f"- {role}: `{rr['decision']}`, score `{rr['candidate_score_vs_baseline']:.6f}`")
+          print('- Candidate rejection is a valid research outcome; workflow failure is reserved for evidence/tool integrity failure.')
+          print('- Hosted real AEC is intentionally absent from this feedback loop and repeated hosted data is regression-only.')
+          print('- Authority: non-shipping candidate only; current software/public-data phase cannot claim DUT/HIL/Product Certification.')
           PY
           fi
 

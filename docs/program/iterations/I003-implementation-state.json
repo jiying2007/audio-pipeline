@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "state": "ENGINEERING_PRECHECK",
+  "candidate": "incumbent-qualified",
+  "base_sha": "783a8d1f27bae03b97e57b74e47cede5cf07bb6d",
+  "candidate_version": "2.3.13",
+  "authority": "non-shipping-frozen-candidate",
+  "candidate_variants_remaining": 0,
+  "confirmation_sets_consumed": 0,
+  "confirmation_source_group": null,
+  "release_allowed": false,
+  "product_qualification": "DEFERRED_BY_SCOPE",
+  "next_gate": "engineering-precheck-and-shadow-regression",
+  "notes": [
+    "The only implementation authority is docs/program/iterations/I003-selection-result.json.",
+    "Observed development, validation, hosted and generic call sources remain regression-only and cannot be promoted to independent confirmation.",
+    "No confirmation source group may be registered until exact-head engineering/resource/shadow regression is reviewed.",
+    "Failure at this stage rejects or repairs the exact frozen implementation; it does not refund or create selector candidate budget."
+  ]
+}

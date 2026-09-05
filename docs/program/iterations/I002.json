@@ -23,6 +23,7 @@
     "legacy five-tone generator is removed from the current executable path; I001 exact-source evidence remains the historical authority",
     "product DSP/public API/defaults/evaluator/policy/dataset locks are unchanged from the exact base except release metadata required by repository governance",
     "all 12 cases on all three migration seeds pass the unchanged canonical development policy; failures are retained",
+    "dependent AEC motion tuning consumes geometry-v2 corpus identities and records call validation/shadow rejection as REJECT_CANDIDATE rather than workflow infrastructure failure",
     "result is measurement-authority qualification only, never an acoustic candidate, independent confirmation, HIL, or Product Certification"
   ],
   "next_on_success": "Review I002 evidence, close measurement migration, then activate P001 promotion/data-budget governance before any AEC/Sync algorithm candidate",

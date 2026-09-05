@@ -166,7 +166,7 @@
 - Collapse Linux runtime integration to one API generation: `ap_runtime_open()`, `ap_runtime_submit_frame()` and `ap_runtime_read_metrics()` with the current options, frame metadata, command, critical-state and full long-running metric contracts.
 - Remove runtime `init/init_ex`, `submit/submit_ex`, metrics v1/v2/v3 public generations and their exported compatibility symbols.
 - Make product-certification records schema-v4-only; historical v2/v3 records remain historical release artifacts but are no longer accepted by the current validator or current shipping workflow.
-- Replace the v1.1.1 additive ABI gate with a v2 hard-cut symbol/header contract; after v2.0.0 is released, later 2.x releases use v2.0.0 as the compatibility baseline.
+- Replace the v1.1.1 additive ABI gate with a v2 hard-cut symbol/header contract; after v2.0.0 is released, later 2.x releases use v2.0.0 as the ABI baseline.
 - Migrate native tests, fuzz targets, benchmarks, diagnostics, installed-SDK consumers and the real ALSA/HIL runtime path to the single v2 API.
 - Harden SYNC correlation tracking against ambiguous periodic peaks and require three consistent observations before committing a large correlation-only route jump; trusted timestamps and explicit path-change notifications remain authoritative.
 - Reset all time-dependent pipeline state on declared stream discontinuity and add metamorphic coverage that the post-discontinuity algorithm state matches a fresh pipeline.

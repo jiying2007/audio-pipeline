@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Discover a hash-bindable AMI external-timing VAD research microset.
 
-This is deliberately discovery-only. It does not create canonical validation
-corpora or shipping authority. It pins one AMI transport mirror commit, obtains
-LFS object identity for Mix-Headset audio, hashes the four small manual segment
-annotation XML files, derives deterministic windows from annotation timing only,
-and verifies that byte-range audio materialization is possible.
+Discovery only: no canonical validation or shipping authority is created here.
+One immutable transport-mirror commit is inspected, four manual segment XML
+files are hashed, deterministic windows are selected from annotation timing
+only, and the exact audio byte ranges for those windows are SHA-256 bound.
 """
 
 from __future__ import annotations
@@ -38,6 +37,7 @@ WINDOW_STEP_SECONDS = 5.0
 WINDOW_MIN_CENTER_GAP_SECONDS = 60.0
 HEADER_RANGE_BYTES = 256 * 1024
 MAX_XML_BYTES = 2 * 1024 * 1024
+MAX_WINDOW_BYTES = 4 * 1024 * 1024
 USER_AGENT = "audio-pipeline-ami-vad-discovery/1"
 
 
@@ -45,9 +45,16 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def request_bytes(url: str, *, max_bytes: int, headers: dict[str, str] | None = None) -> tuple[bytes, Any]:
-    request_headers = {"User-Agent": USER_AGENT, **(headers or {})}
-    request = urllib.request.Request(url, headers=request_headers)
+def request_bytes(
+    url: str,
+    *,
+    max_bytes: int,
+    headers: dict[str, str] | None = None,
+) -> tuple[bytes, Any]:
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": USER_AGENT, **(headers or {})},
+    )
     with urllib.request.urlopen(request, timeout=45) as response:
         data = response.read(max_bytes + 1)
         if len(data) > max_bytes:
@@ -71,6 +78,13 @@ def hf_resolve_url(path: str) -> str:
     )
 
 
+def normalize_lfs_sha256(lfs: dict[str, Any]) -> str | None:
+    raw = str(lfs.get("sha256") or lfs.get("oid") or "")
+    if raw.startswith("sha256:"):
+        raw = raw.split(":", 1)[1]
+    return raw if re.fullmatch(r"[0-9a-f]{64}", raw) else None
+
+
 def load_audio_metadata() -> dict[str, Any]:
     data, _ = request_bytes(hf_tree_url(), max_bytes=2 * 1024 * 1024)
     listing = json.loads(data.decode("utf-8"))
@@ -81,16 +95,19 @@ def load_audio_metadata() -> dict[str, Any]:
     if match is None:
         raise ValueError(f"Mix-Headset file missing from pinned mirror: {wanted}")
     size = int(match.get("size", 0))
-    lfs = match.get("lfs") or {}
-    lfs_sha256 = str(lfs.get("sha256", ""))
     if size <= 0:
         raise ValueError("invalid audio object size")
-    if re.fullmatch(r"[0-9a-f]{64}", lfs_sha256) is None:
-        raise ValueError("Mix-Headset must expose a pinned LFS SHA-256")
+    lfs_sha256 = normalize_lfs_sha256(match.get("lfs") or {})
+    object_id = str(match.get("oid") or "") or None
+    xet_hash = str(match.get("xetHash") or match.get("xet_hash") or "") or None
+    if lfs_sha256 is None and object_id is None and xet_hash is None:
+        raise ValueError("pinned mirror did not expose any immutable audio object identity")
     return {
         "path": wanted,
         "size_bytes": size,
+        "tree_object_id": object_id,
         "lfs_sha256": lfs_sha256,
+        "xet_hash": xet_hash,
         "mirror_resolve_url": hf_resolve_url(wanted),
     }
 
@@ -111,7 +128,7 @@ def parse_segments(xml_bytes: bytes, speaker: str) -> list[tuple[float, float]]:
             continue
         start = float(raw_start)
         end = float(raw_end)
-        if not (math.isfinite(start) and math.isfinite(end)) or end <= start or start < 0.0:
+        if not (math.isfinite(start) and math.isfinite(end)) or start < 0.0 or end <= start:
             continue
         intervals.append((start, end))
     if not intervals:
@@ -119,9 +136,21 @@ def parse_segments(xml_bytes: bytes, speaker: str) -> list[tuple[float, float]]:
     return sorted(intervals)
 
 
+def merge_intervals(intervals: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    if not intervals:
+        return []
+    merged: list[list[float]] = []
+    for start, end in sorted(intervals):
+        if not merged or start > merged[-1][1]:
+            merged.append([start, end])
+        else:
+            merged[-1][1] = max(merged[-1][1], end)
+    return [(item[0], item[1]) for item in merged]
+
+
 def load_segment_annotations() -> tuple[list[tuple[float, float]], list[dict[str, Any]]]:
     all_intervals: list[tuple[float, float]] = []
-    files = []
+    files: list[dict[str, Any]] = []
     for speaker in SPEAKERS:
         path = f"ami_public_manual_1.6.2/segments/{MEETING}.{speaker}.segments.xml"
         url = hf_resolve_url(path)
@@ -137,18 +166,6 @@ def load_segment_annotations() -> tuple[list[tuple[float, float]], list[dict[str
             "mirror_resolve_url": url,
         })
     return merge_intervals(all_intervals), files
-
-
-def merge_intervals(intervals: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    if not intervals:
-        return []
-    merged: list[list[float]] = []
-    for start, end in sorted(intervals):
-        if not merged or start > merged[-1][1]:
-            merged.append([start, end])
-        else:
-            merged[-1][1] = max(merged[-1][1], end)
-    return [(item[0], item[1]) for item in merged]
 
 
 def interval_overlap(intervals: list[tuple[float, float]], start: float, end: float) -> float:
@@ -167,16 +184,16 @@ def select_windows(intervals: list[tuple[float, float]], duration: float) -> lis
         raise ValueError("audio too short for discovery windows")
     first = 30.0
     last = max(first, duration - WINDOW_SECONDS - 30.0)
-    starts = []
-    value = first
-    while value <= last + 1.0e-9:
-        starts.append(round(value, 3))
-        value += WINDOW_STEP_SECONDS
-    candidates = []
-    for start in starts:
+    candidates: list[dict[str, float]] = []
+    start = first
+    while start <= last + 1.0e-9:
         end = start + WINDOW_SECONDS
-        occupancy = interval_overlap(intervals, start, end) / WINDOW_SECONDS
-        candidates.append({"start_s": start, "end_s": end, "activity_fraction": occupancy})
+        candidates.append({
+            "start_s": round(start, 3),
+            "end_s": round(end, 3),
+            "activity_fraction": interval_overlap(intervals, start, end) / WINDOW_SECONDS,
+        })
+        start += WINDOW_STEP_SECONDS
     chosen: list[dict[str, float]] = []
     for target in WINDOW_TARGET_OCCUPANCIES:
         eligible = [
@@ -191,7 +208,10 @@ def select_windows(intervals: list[tuple[float, float]], duration: float) -> lis
             eligible = [item for item in candidates if item not in chosen]
         if not eligible:
             raise ValueError("not enough distinct discovery windows")
-        best = min(eligible, key=lambda item: (abs(item["activity_fraction"] - target), item["start_s"]))
+        best = min(
+            eligible,
+            key=lambda item: (abs(item["activity_fraction"] - target), item["start_s"]),
+        )
         chosen.append({**best, "target_activity_fraction": target})
     return sorted(chosen, key=lambda item: item["start_s"])
 
@@ -201,15 +221,14 @@ def parse_wav_header(data: bytes) -> dict[str, int]:
         raise ValueError("Mix-Headset is not a RIFF/WAVE stream")
     offset = 12
     fmt: dict[str, int] | None = None
-    data_offset = None
-    data_size = None
+    data_offset = data_size = None
     while offset + 8 <= len(data):
         chunk_id = data[offset:offset + 4]
         chunk_size = struct.unpack_from("<I", data, offset + 4)[0]
         payload = offset + 8
-        if chunk_id == b"fmt " and payload + min(chunk_size, 16) <= len(data):
-            if chunk_size < 16:
-                raise ValueError("invalid WAV fmt chunk")
+        if chunk_id == b"fmt ":
+            if chunk_size < 16 or payload + 16 > len(data):
+                raise ValueError("invalid/truncated WAV fmt chunk")
             audio_format, channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack_from(
                 "<HHIIHH", data, payload
             )
@@ -222,13 +241,9 @@ def parse_wav_header(data: bytes) -> dict[str, int]:
                 "bits_per_sample": bits_per_sample,
             }
         elif chunk_id == b"data":
-            data_offset = payload
-            data_size = chunk_size
+            data_offset, data_size = payload, chunk_size
             break
-        next_offset = payload + chunk_size + (chunk_size & 1)
-        if next_offset <= offset:
-            break
-        offset = next_offset
+        offset = payload + chunk_size + (chunk_size & 1)
     if fmt is None or data_offset is None or data_size is None:
         raise ValueError("WAV fmt/data chunks not found in bounded header")
     if fmt["audio_format"] != 1 or fmt["bits_per_sample"] != 16:
@@ -238,7 +253,32 @@ def parse_wav_header(data: bytes) -> dict[str, int]:
     return {**fmt, "data_offset": data_offset, "data_size": data_size}
 
 
-def load_wav_header(audio_url: str) -> tuple[dict[str, int], dict[str, str | int | bool]]:
+def fetch_exact_range(url: str, start_byte: int, length: int) -> tuple[bytes, dict[str, Any]]:
+    if start_byte < 0 or length <= 0 or length > MAX_WINDOW_BYTES:
+        raise ValueError("invalid bounded range request")
+    end_byte = start_byte + length - 1
+    data, response = request_bytes(
+        url,
+        max_bytes=length,
+        headers={"Range": f"bytes={start_byte}-{end_byte}"},
+    )
+    status = int(getattr(response, "status", response.getcode()))
+    content_range = response.headers.get("Content-Range")
+    if status != 206 or not content_range:
+        raise ValueError(f"pinned AMI mirror does not honor HTTP Range: status={status}")
+    if len(data) != length:
+        raise ValueError(f"range byte count mismatch: {len(data)} != {length}")
+    return data, {
+        "status": status,
+        "content_range": content_range,
+        "start_byte": start_byte,
+        "end_byte": end_byte,
+        "length_bytes": length,
+        "sha256": sha256_bytes(data),
+    }
+
+
+def load_wav_header(audio_url: str) -> tuple[dict[str, int], dict[str, Any]]:
     data, response = request_bytes(
         audio_url,
         max_bytes=HEADER_RANGE_BYTES,
@@ -247,7 +287,7 @@ def load_wav_header(audio_url: str) -> tuple[dict[str, int], dict[str, str | int
     status = int(getattr(response, "status", response.getcode()))
     content_range = response.headers.get("Content-Range")
     if status != 206 or not content_range:
-        raise ValueError(f"pinned AMI mirror does not honor HTTP Range for audio: status={status}")
+        raise ValueError(f"pinned AMI mirror does not honor header Range: status={status}")
     return parse_wav_header(data), {
         "range_supported": True,
         "header_status": status,
@@ -256,33 +296,25 @@ def load_wav_header(audio_url: str) -> tuple[dict[str, int], dict[str, str | int
     }
 
 
-def probe_window_range(audio_url: str, wav: dict[str, int], window: dict[str, float]) -> dict[str, Any]:
+def bind_window_ranges(audio_url: str, wav: dict[str, int], windows: list[dict[str, float]]) -> list[dict[str, Any]]:
     byte_rate = int(wav["byte_rate"])
     block_align = int(wav["block_align"])
     data_offset = int(wav["data_offset"])
-    start_byte = data_offset + int(window["start_s"] * byte_rate)
-    start_byte -= (start_byte - data_offset) % block_align
-    probe_bytes = min(byte_rate, 256 * 1024)
-    end_byte = start_byte + probe_bytes - 1
-    data, response = request_bytes(
-        audio_url,
-        max_bytes=probe_bytes,
-        headers={"Range": f"bytes={start_byte}-{end_byte}"},
-    )
-    status = int(getattr(response, "status", response.getcode()))
-    content_range = response.headers.get("Content-Range")
-    if status != 206 or not content_range:
-        raise ValueError(f"audio window range request was not honored: status={status}")
-    if len(data) != probe_bytes:
-        raise ValueError(f"audio range byte count mismatch: {len(data)} != {probe_bytes}")
-    return {
-        "status": status,
-        "content_range": content_range,
-        "requested_start_byte": start_byte,
-        "requested_end_byte": end_byte,
-        "received_bytes": len(data),
-        "sha256": sha256_bytes(data),
-    }
+    materialized = []
+    for index, window in enumerate(windows):
+        start_byte = data_offset + int(round(window["start_s"] * byte_rate))
+        start_byte -= (start_byte - data_offset) % block_align
+        length = int(round(WINDOW_SECONDS * byte_rate))
+        length -= length % block_align
+        data, binding = fetch_exact_range(audio_url, start_byte, length)
+        if len(data) % block_align:
+            raise ValueError("window materialization is not frame aligned")
+        materialized.append({
+            **window,
+            "window_id": f"{MEETING}-w{index + 1}",
+            "audio_range": binding,
+        })
+    return materialized
 
 
 def discover() -> dict[str, Any]:
@@ -295,7 +327,7 @@ def discover() -> dict[str, Any]:
     if intervals[-1][1] > duration + 2.0:
         raise ValueError("manual segment timing extends beyond audio duration")
     windows = select_windows(intervals, duration)
-    range_probe = probe_window_range(audio["mirror_resolve_url"], wav, windows[0])
+    windows = bind_window_ranges(audio["mirror_resolve_url"], wav, windows)
     return {
         "schema_version": 1,
         "authority": "research-discovery-only",
@@ -319,7 +351,6 @@ def discover() -> dict[str, Any]:
             "wav": wav,
             "duration_s": duration,
             **range_info,
-            "range_probe": range_probe,
         },
         "annotations": {
             "files": annotation_files,
@@ -328,20 +359,20 @@ def discover() -> dict[str, Any]:
         },
         "window_plan": windows,
         "next_step": (
-            "pin discovered hashes/geometry into a research lock, then materialize only "
-            "the planned byte ranges and 10 ms external-timing labels"
+            "pin mirror object identity, annotation hashes, WAV geometry and each "
+            "window byte-range SHA-256 into a research lock"
         ),
     }
 
 
 def self_test() -> None:
+    assert normalize_lfs_sha256({"oid": "sha256:" + "a" * 64}) == "a" * 64
+    assert normalize_lfs_sha256({"sha256": "b" * 64}) == "b" * 64
     merged = merge_intervals([(2.0, 3.0), (1.0, 2.5), (5.0, 6.0)])
     assert merged == [(1.0, 3.0), (5.0, 6.0)]
     assert abs(interval_overlap(merged, 0.0, 2.0) - 1.0) < 1.0e-9
-
     xml = b'''<?xml version="1.0"?><root><segment transcriber_start="1.25" transcriber_end="2.75"/></root>'''
     assert parse_segments(xml, "A") == [(1.25, 2.75)]
-
     fmt_payload = struct.pack("<HHIIHH", 1, 1, 16000, 32000, 2, 16)
     wav = (
         b"RIFF" + struct.pack("<I", 1000) + b"WAVE" +
@@ -351,7 +382,6 @@ def self_test() -> None:
     parsed = parse_wav_header(wav)
     assert parsed["sample_rate_hz"] == 16000 and parsed["channels"] == 1
     assert abs(parsed["data_size"] / parsed["byte_rate"] - 0.03) < 1.0e-9
-
     windows = select_windows([(30.0, 40.0), (100.0, 118.0), (180.0, 200.0)], 260.0)
     assert len(windows) == 3
     assert all(0.0 <= item["activity_fraction"] <= 1.0 for item in windows)
@@ -373,10 +403,22 @@ def main() -> int:
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({
         "meeting": result["dataset"]["meeting"],
-        "audio_lfs_sha256": result["audio"]["lfs_sha256"],
+        "audio_object": {
+            "lfs_sha256": result["audio"]["lfs_sha256"],
+            "tree_object_id": result["audio"]["tree_object_id"],
+            "xet_hash": result["audio"]["xet_hash"],
+        },
         "annotation_files": len(result["annotations"]["files"]),
         "duration_s": result["audio"]["duration_s"],
-        "windows": result["window_plan"],
+        "windows": [
+            {
+                "window_id": item["window_id"],
+                "start_s": item["start_s"],
+                "activity_fraction": item["activity_fraction"],
+                "sha256": item["audio_range"]["sha256"],
+            }
+            for item in result["window_plan"]
+        ],
         "range_supported": result["audio"]["range_supported"],
     }, sort_keys=True))
     return 0

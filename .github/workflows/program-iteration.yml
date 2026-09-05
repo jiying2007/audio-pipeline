@@ -13,6 +13,7 @@ on:
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
       - 'tests/validation/aec_motion_model_qualification.py'
+      - 'tests/validation/aec_sync_selector_search.py'
       - '.github/workflows/program-iteration.yml'
   pull_request:
     branches: [main]
@@ -25,6 +26,7 @@ on:
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
       - 'tests/validation/aec_motion_model_qualification.py'
+      - 'tests/validation/aec_sync_selector_search.py'
       - '.github/workflows/program-iteration.yml'
   schedule:
     - cron: '19 19 * * 2,5'
@@ -47,7 +49,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate program, measurement and governance contracts
+      - name: Validate program, measurement, governance and I003 search contracts
         run: |
           set -euo pipefail
           python3 scripts/program.py --self-test
@@ -56,6 +58,7 @@ jobs:
           python3 validation/tools/build_aec_motion_corpus.py --self-test
           python3 validation/tools/build_aec_motion_bundle.py --self-test
           python3 tests/validation/aec_motion_model_qualification.py --self-test
+          python3 tests/validation/aec_sync_selector_search.py --self-test
       - name: Execute the next registered bounded program task
         run: python3 scripts/program.py run --output program-evidence
       - name: Report execution separately from candidate authority

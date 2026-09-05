@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "root_cause_id": "aec-motion-continuous-tracking",
+  "phase": "candidate-selection",
+  "base_sha": "3094375309bc98f026068187d3d458d1017e34a0",
+  "policy": "docs/program/promotion-policy.json",
+  "candidate_limit": 3,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "run_timeout_seconds": 900,
+  "canonical_generator": "validation/tools/build_aec_motion_corpus.py",
+  "generator_version": 2,
+  "seconds": 4.0,
+  "development_seeds": [4107, 4207],
+  "validation_seeds": [9107, 9207],
+  "selector_candidates": [
+    "earliest-qualified",
+    "incumbent-qualified",
+    "causal-cluster-leading-edge"
+  ],
+  "budget_before": {
+    "search_rounds_consumed": 1,
+    "candidate_variants_consumed": 9,
+    "confirmation_sets_consumed": 0
+  },
+  "budget_after_this_run": {
+    "search_rounds_consumed": 2,
+    "candidate_variants_consumed": 12,
+    "confirmation_sets_consumed": 0
+  },
+  "confirmation_source_group": null,
+  "acceptance": [
+    "the exact I003 base is the GitHub-Verified governance main 3094375309bc98f026068187d3d458d1017e34a0 whose shipping DSP remains the v2.3.12 software baseline",
+    "exactly three pre-registered selector architectures are evaluated; no threshold/parameter sweep or fourth architecture is permitted",
+    "development seeds 4107/4207 and validation seeds 9107/9207 are already-observed geometry-v2 authority and cannot be relabeled independent confirmation",
+    "the counterfactual score reproduces the current coarse Sync correlation definition at 16 kHz, 32-sample delay spacing and 4-sample frame subsampling",
+    "candidate constants derive only from existing Sync constants: minimum correlation squared 0.0324, 32-sample coarse step and three-step cluster span",
+    "validation selection may rank the frozen candidate set but cannot change candidate definitions after seeing validation results",
+    "the selected candidate, if any, is frozen for exact implementation; no shipping DSP change occurs in this search task",
+    "candidate selection must not consume any confirmation source group and confirmation_sets_consumed remains zero",
+    "search budget is inherited by root cause and this run advances search rounds 1->2 and candidate variants 9->12 even if no candidate is selected",
+    "a successful workflow means the bounded search executed correctly, not that an acoustic candidate passed shipping, HIL, Extended Real or Product Certification",
+    "after implementation, engineering precheck and shadow protection must pass before a new unobserved confirmation source group can be consumed",
+    "all detailed development/validation observations and a compact selector-search-result are retained as review evidence"
+  ],
+  "next_on_success": "Review the selector-search artifact; freeze at most one winning architecture for exact C implementation without creating a new candidate variant, then run engineering/shadow gates before defining any independent confirmation source",
+  "next_on_failure": "Retain the failed search evidence and correct only the search harness/contract; do not add candidates, reset inherited budgets, change shipping DSP, or consume confirmation"
+}

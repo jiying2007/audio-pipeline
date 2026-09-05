@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "result": "REVIEW_REQUIRED",
+  "decision": "SELECT_CANDIDATE_FOR_IMPLEMENTATION",
+  "selected_candidate": "incumbent-qualified",
+  "freeze_state": "FROZEN_FOR_IMPLEMENTATION",
+  "authority": "non-shipping-development-validation-selection",
+  "base_sha": "3094375309bc98f026068187d3d458d1017e34a0",
+  "execution_head_sha": "6c0e8d94e9f1ff870a208e87c68b67f37853c1f7",
+  "program_run_id": 33973719651,
+  "artifact_id": 9971684969,
+  "artifact_digest": "sha256:7b9943df762751750f295784265e889938aa00feae214f72b70c33e4e67a0af9",
+  "artifact_file_sha256": {
+    "selector-search-result.json": "5c743f3df148c39b43aaf2aa9b2abf31555c9e9bb69634739e8c04431a22c496",
+    "development-detail.json": "dc5aace29c0d3b43609855a4f400c71d752d8b5ace63ca64b0c845cf7ad71dbe",
+    "validation-detail.json": "44f675c6118a64613310d7fa242587e024e027bd87a62c017000c228a537d23b"
+  },
+  "budget": {
+    "before": {
+      "search_rounds_consumed": 1,
+      "candidate_variants_consumed": 9,
+      "confirmation_sets_consumed": 0
+    },
+    "after": {
+      "search_rounds_consumed": 2,
+      "candidate_variants_consumed": 12,
+      "confirmation_sets_consumed": 0
+    }
+  },
+  "confirmation_consumed": false,
+  "confirmation_source_group": null,
+  "candidate_set": [
+    "earliest-qualified",
+    "incumbent-qualified",
+    "causal-cluster-leading-edge"
+  ],
+  "validation_summary": {
+    "baseline-global-max": {
+      "observations": 912,
+      "median_abs_error_samples": 0.0,
+      "p95_abs_error_samples": 220.79999999999563,
+      "near_32_rate": 0.9287280701754386,
+      "late_64_rate": 0.06140350877192982,
+      "severe_320_rate": 0.03837719298245614,
+      "median_score_retention": 1.0
+    },
+    "incumbent-qualified": {
+      "observations": 912,
+      "median_abs_error_samples": 0.0,
+      "p95_abs_error_samples": 0.0,
+      "near_32_rate": 0.9868421052631579,
+      "late_64_rate": 0.0,
+      "severe_320_rate": 0.0,
+      "median_score_retention": 1.0,
+      "observations_with_64_sample_error": 12,
+      "observations_over_64_samples": 0,
+      "observations_over_320_samples": 0
+    },
+    "earliest-qualified": {
+      "observations": 912,
+      "median_abs_error_samples": 608.0,
+      "p95_abs_error_samples": 672.0,
+      "late_64_rate": 1.0,
+      "severe_320_rate": 0.9671052631578947
+    },
+    "causal-cluster-leading-edge": {
+      "observations": 912,
+      "median_abs_error_samples": 0.0,
+      "p95_abs_error_samples": 448.0,
+      "late_64_rate": 0.3793859649122807,
+      "severe_320_rate": 0.0756578947368421
+    }
+  },
+  "independent_review": {
+    "artifact_unpacked": true,
+    "selector_result_sha256_verified": true,
+    "development_detail_sha256_verified": true,
+    "validation_detail_sha256_verified": true,
+    "winner_recomputed_from_validation_detail": true,
+    "winner_is_only_eligible_candidate": true,
+    "all_12_winner_errors_over_32_samples_are_exactly_64_samples": true,
+    "all_12_winner_64_sample_errors_occur_at_direct_gain_0.03": true
+  },
+  "implementation_contract": [
+    "Only incumbent-qualified may be implemented from this search result; introducing a fourth selector or redefining the frozen winner would require a new root-cause budget decision and is not authorized by I003.",
+    "The implementation must preserve the existing ability to follow a genuine large route change when the incumbent neighborhood has no qualified peak; existing route-jump/drift tests remain mandatory.",
+    "The implementation is not a shipping decision. It must pass engineering precheck and shadow protection before any new unobserved confirmation source group is selected or consumed.",
+    "The already-observed geometry-v2 and generic-call source groups remain regression/selection evidence only and cannot serve independent confirmation.",
+    "Shipping DSP, API/ABI, defaults, thresholds, dataset locks, resource baselines, release identity and Product Certification remain unchanged by this selection result."
+  ]
+}

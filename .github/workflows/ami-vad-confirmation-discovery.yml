@@ -1,0 +1,105 @@
+name: AMI VAD Confirmation Discovery
+
+on:
+  pull_request:
+    paths:
+      - 'tests/validation/discover_ami_vad_microset.py'
+      - 'tests/validation/discover_ami_vad_meeting.py'
+      - '.github/workflows/ami-vad-confirmation-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ami-vad-confirmation-discovery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: tests/validation
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Validate discovery contracts offline
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/discover_ami_vad_microset.py \
+            tests/validation/discover_ami_vad_meeting.py
+          python3 tests/validation/discover_ami_vad_microset.py --self-test
+          python3 tests/validation/discover_ami_vad_meeting.py --self-test
+
+      - name: Discover predeclared ES2004a confirmation authority
+        run: |
+          set -euo pipefail
+          mkdir -p ami-confirmation-discovery-out
+          python3 tests/validation/discover_ami_vad_meeting.py \
+            --meeting ES2004a \
+            --output ami-confirmation-discovery-out/discovery.json \
+            | tee ami-confirmation-discovery-out/summary.json
+
+      - name: Enforce discovery-only authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d = json.loads(Path('ami-confirmation-discovery-out/discovery.json').read_text())
+          assert d['schema_version'] == 1
+          assert d['authority'] == 'research-discovery-only'
+          assert d['dataset']['meeting'] == 'ES2004a'
+          assert d['dataset']['license'] == 'CC-BY-4.0'
+          assert d['transport_mirror']['repository'] == 'ggfox00000/dia-AMICorpus-all'
+          assert d['transport_mirror']['revision'] == 'a249db53de253a3a0a864c93a51d613159dfec7c'
+          assert d['audio']['wav']['audio_format'] == 1
+          assert d['audio']['wav']['channels'] == 1
+          assert d['audio']['wav']['sample_rate_hz'] == 16000
+          assert d['audio']['wav']['bits_per_sample'] == 16
+          assert d['audio']['range_supported'] is True
+          assert len(d['annotations']['files']) == 4
+          assert {x['speaker'] for x in d['annotations']['files']} == {'A', 'B', 'C', 'D'}
+          assert len(d['window_plan']) == 3
+          assert [x['window_id'] for x in d['window_plan']] == ['ES2004a-w1', 'ES2004a-w2', 'ES2004a-w3']
+          assert all(abs((x['end_s'] - x['start_s']) - 20.0) < 1e-9 for x in d['window_plan'])
+          assert all(x['audio_range']['length_bytes'] == 640000 for x in d['window_plan'])
+          assert all(len(x['audio_range']['sha256']) == 64 for x in d['window_plan'])
+          assert all(0.0 <= x['activity_fraction'] <= 1.0 for x in d['window_plan'])
+          # Discovery must not contain any candidate policy or processor result.
+          text = json.dumps(d, sort_keys=True)
+          assert 'strong_threshold' not in text
+          assert 'weak_hold' not in text
+          assert 'validation_result' not in text
+          PY
+
+      - name: Publish discovery summary
+        if: always()
+        run: |
+          if [ -f ami-confirmation-discovery-out/discovery.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          d = json.loads(Path('ami-confirmation-discovery-out/discovery.json').read_text())
+          print('## AMI ES2004a confirmation discovery')
+          print(f"- Duration: `{d['audio']['duration_s']:.3f}s`")
+          print(f"- Audio object LFS SHA-256: `{d['audio']['lfs_sha256']}`")
+          for x in d['window_plan']:
+              print(
+                  f"- {x['window_id']}: `{x['start_s']:.1f}-{x['end_s']:.1f}s`, "
+                  f"activity `{x['activity_fraction']:.3f}`, range SHA-256 `{x['audio_range']['sha256']}`"
+              )
+          print('- Authority: discovery only; no VAD candidate has been replayed on ES2004a.')
+          PY
+          fi
+
+      - name: Upload ES2004a discovery evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ami-vad-confirmation-discovery-${{ github.run_id }}
+          path: ami-confirmation-discovery-out/
+          retention-days: 30
+          if-no-files-found: warn

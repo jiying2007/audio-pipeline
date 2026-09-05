@@ -4,6 +4,8 @@
 This is a release-neutral research wrapper. It deliberately reuses the exact
 ES2003a discovery implementation and only replaces the meeting token before any
 network access, so the window-selection and hash-binding policy cannot drift.
+Transient mirror throttling is handled with bounded retries; integrity failures
+remain fail-closed.
 """
 
 from __future__ import annotations
@@ -11,11 +13,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import time
+import urllib.error
 from pathlib import Path
 
 import discover_ami_vad_microset as base
 
 MEETING_RE = re.compile(r"^[A-Z]{2}[0-9]{4}[a-z]$")
+RETRYABLE_HTTP_STATUS = {429, 500, 502, 503, 504}
+MAX_ATTEMPTS = 5
+_BASE_REQUEST_BYTES = base.request_bytes
 
 
 def configure_meeting(meeting: str) -> None:
@@ -28,9 +35,41 @@ def configure_meeting(meeting: str) -> None:
     )
 
 
+def _retry_delay_seconds(error: urllib.error.HTTPError, attempt: int) -> float:
+    raw = error.headers.get("Retry-After") if error.headers is not None else None
+    if raw:
+        try:
+            value = float(raw)
+            if value >= 0.0:
+                return min(max(value, 0.25), 8.0)
+        except ValueError:
+            pass
+    return min(float(1 << attempt), 8.0)
+
+
+def retrying_request_bytes(url: str, *, max_bytes: int,
+                           headers: dict[str, str] | None = None):
+    last_error: urllib.error.HTTPError | None = None
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            return _BASE_REQUEST_BYTES(url, max_bytes=max_bytes, headers=headers)
+        except urllib.error.HTTPError as error:
+            last_error = error
+            if error.code not in RETRYABLE_HTTP_STATUS or attempt + 1 >= MAX_ATTEMPTS:
+                raise
+            time.sleep(_retry_delay_seconds(error, attempt))
+    assert last_error is not None
+    raise last_error
+
+
 def run(meeting: str, output: Path) -> dict:
     configure_meeting(meeting)
-    result = base.discover()
+    original_request = base.request_bytes
+    base.request_bytes = retrying_request_bytes
+    try:
+        result = base.discover()
+    finally:
+        base.request_bytes = original_request
     if result["dataset"]["meeting"] != meeting:
         raise ValueError("discovery meeting mismatch")
     if not all(item["window_id"].startswith(meeting + "-w") for item in result["window_plan"]):
@@ -52,6 +91,15 @@ def self_test() -> None:
             raise AssertionError("invalid meeting token was accepted")
         except ValueError:
             pass
+        fake = urllib.error.HTTPError(
+            "https://example.invalid", 429, "rate limited", {"Retry-After": "0.5"}, None
+        )
+        assert abs(_retry_delay_seconds(fake, 0) - 0.5) < 1.0e-9
+        fake_no_header = urllib.error.HTTPError(
+            "https://example.invalid", 503, "busy", {}, None
+        )
+        assert _retry_delay_seconds(fake_no_header, 0) == 1.0
+        assert _retry_delay_seconds(fake_no_header, 4) == 8.0
     finally:
         base.MEETING = original_meeting
         base.OFFICIAL_AUDIO = original_audio

@@ -8,7 +8,7 @@ on:
       - 'AGENTS.md'
       - 'docs/program/**'
       - 'scripts/program.py'
-      - 'scripts/promotion_governance.py'
+      - '.github/program/promotion_governance.py'
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
@@ -20,7 +20,7 @@ on:
       - 'AGENTS.md'
       - 'docs/program/**'
       - 'scripts/program.py'
-      - 'scripts/promotion_governance.py'
+      - '.github/program/promotion_governance.py'
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           python3 scripts/program.py --self-test
           python3 scripts/program.py check
-          python3 scripts/promotion_governance.py --self-test
+          python3 .github/program/promotion_governance.py --self-test
           python3 validation/tools/build_aec_motion_corpus.py --self-test
           python3 validation/tools/build_aec_motion_bundle.py --self-test
           python3 tests/validation/aec_motion_model_qualification.py --self-test

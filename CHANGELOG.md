@@ -1,3 +1,9 @@
+# 2.3.12
+
+- Replace the legacy five-tone/moving-earliest-path AEC motion development generator with the I001-audited rigid 0.08 m speaker/microphone geometry: fixed 42 ms direct path, 40 ms nominal reference, first-order wall-image reflections, deterministic colored/speech-envelope broadband excitation, and model-hash-bound per-frame ground truth.
+- Add I002 measurement-migration qualification with deterministic known-answer and negative controls, fail-closed stale-output/scope checks, and one canonical bundle path. Shipping DSP, public API/ABI, defaults, canonical evaluator/policy, dataset locks and resource baselines are unchanged.
+- Keep authority boundaries explicit: generated motion and repeatedly observed Hosted Real Audio/AEC data are regression evidence, not fresh independent promotion data; real product capture, DUT/HIL, Extended Real and Product Certification remain outside the current software/public-data phase and are not inferred from hosted PASS results.
+
 # 2.3.11
 
 - Add health-selected failover for one-sided low-frequency microphone contamination while preserving the existing severe-mismatch 75/25 fail-soft path for ordinary sensitivity/SNR degradation. Hard bypass is admitted only after two consecutive low-ratio/low-roughness tracking updates require an actual channel-selection flip, and exits through bounded eight-update recovery hysteresis.
@@ -160,7 +166,7 @@
 - Collapse Linux runtime integration to one API generation: `ap_runtime_open()`, `ap_runtime_submit_frame()` and `ap_runtime_read_metrics()` with the current options, frame metadata, command, critical-state and full long-running metric contracts.
 - Remove runtime `init/init_ex`, `submit/submit_ex`, metrics v1/v2/v3 public generations and their exported compatibility symbols.
 - Make product-certification records schema-v4-only; historical v2/v3 records remain historical release artifacts but are no longer accepted by the current validator or current shipping workflow.
-- Replace the v1.1.1 additive ABI gate with a v2 hard-cut symbol/header contract; after v2.0.0 is released, later 2.x releases use v2.0.0 as their ABI baseline.
+- Replace the v1.1.1 additive ABI gate with a v2 hard-cut symbol/header contract; after v2.0.0 is released, later 2.x releases use v2.0.0 as the compatibility baseline.
 - Migrate native tests, fuzz targets, benchmarks, diagnostics, installed-SDK consumers and the real ALSA/HIL runtime path to the single v2 API.
 - Harden SYNC correlation tracking against ambiguous periodic peaks and require three consistent observations before committing a large correlation-only route jump; trusted timestamps and explicit path-change notifications remain authoritative.
 - Reset all time-dependent pipeline state on declared stream discontinuity and add metamorphic coverage that the post-discontinuity algorithm state matches a fresh pipeline.

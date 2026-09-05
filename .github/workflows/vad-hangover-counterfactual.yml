@@ -1,0 +1,198 @@
+name: VAD Hangover Counterfactual
+
+on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_vad.c'
+      - 'src/enhance/ap_ns.c'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/tools/stage_profile_support.py'
+      - 'tests/validation/vad_operating_point_selector.py'
+      - 'tests/validation/vad_hangover_counterfactual.py'
+      - 'tests/validation/vad_hangover_curve.py'
+      - 'tests/validation/ami_vad_microset_eval.py'
+      - 'tests/validation/discover_ami_vad_microset.py'
+      - 'tests/validation/data/ami_vad_microset.lock.json'
+      - '.github/workflows/vad-hangover-counterfactual.yml'
+  schedule:
+    - cron: '41 20 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vad-hangover-counterfactual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: validation/tools:tests/validation
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-hangover-counterfactual
+      - name: Validate hangover research contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/vad_hangover_counterfactual.py \
+            tests/validation/vad_hangover_curve.py \
+            tests/validation/vad_operating_point_selector.py \
+            tests/validation/ami_vad_microset_eval.py \
+            tests/validation/discover_ami_vad_microset.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/vad_hangover_counterfactual.py --self-test
+          python3 tests/validation/vad_hangover_curve.py --self-test
+          python3 tests/validation/ami_vad_microset_eval.py --self-test
+          python3 -m json.tool tests/validation/data/ami_vad_microset.lock.json >/dev/null
+      - name: Configure exact research processor
+        run: >-
+          cmake -S . -B build-vad-hangover -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build exact research processor
+        run: cmake --build build-vad-hangover --target ap_process_pcm --parallel
+      - name: Build independent synthetic partitions
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-hangover-1307 --seed 1307
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-hangover-2307 --seed 2307
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-hangover-3307 --seed 3307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for seed in (1307, 2307, 3307):
+              corpus = json.loads(Path(f'/tmp/ap-vad-hangover-{seed}/corpus.json').read_text())
+              assert corpus['generator']['seed'] == seed
+              profiles = {case.get('processor_profile') for case in corpus['cases'] if case.get('vad_labels')}
+              assert {'vad-isolated', 'ns-isolated'} <= profiles
+          PY
+      - name: Select on development and replay synthetic plus AMI holdouts
+        run: |
+          set -euo pipefail
+          mkdir -p vad-hangover-out
+          python3 tests/validation/vad_hangover_counterfactual.py \
+            --processor build-vad-hangover/ap_process_pcm \
+            --development-corpus /tmp/ap-vad-hangover-1307/corpus.json \
+            --validation-corpus /tmp/ap-vad-hangover-2307/corpus.json \
+            --shadow-corpus /tmp/ap-vad-hangover-3307/corpus.json \
+            --ami-lock tests/validation/data/ami_vad_microset.lock.json \
+            --output vad-hangover-out/selection.json \
+            | tee vad-hangover-out/summary.json
+      - name: Record full fixed-hangover response curve
+        run: |
+          set -euo pipefail
+          python3 tests/validation/vad_hangover_curve.py \
+            --processor build-vad-hangover/ap_process_pcm \
+            --development-corpus /tmp/ap-vad-hangover-1307/corpus.json \
+            --validation-corpus /tmp/ap-vad-hangover-2307/corpus.json \
+            --shadow-corpus /tmp/ap-vad-hangover-3307/corpus.json \
+            --ami-lock tests/validation/data/ami_vad_microset.lock.json \
+            --output vad-hangover-out/curve.json \
+            | tee vad-hangover-out/curve-summary.json
+      - name: Enforce non-shipping authority and holdout integrity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-hangover-out/selection.json').read_text())
+          curve = json.loads(Path('vad-hangover-out/curve.json').read_text())
+          assert r['schema_version'] == 1
+          assert r['authority'] == 'non-shipping-vad-hangover-counterfactual'
+          assert r['decision'] in {'KEEP_BASELINE', 'RESEARCH_CANDIDATE', 'REJECT_CANDIDATE'}
+          assert r['baseline'] == {'hangover_frames': 8}
+          assert r['scope']['shared_hangover_only'] is True
+          assert r['scope']['local_threshold'] == 0.45
+          assert r['scope']['ns_threshold'] == 0.35
+          assert r['scope']['shipping_source_unchanged'] is True
+          assert r['development']['identity']['generator_seed'] == 1307
+          assert r['validation']['identity']['generator_seed'] == 2307
+          assert r['shadow']['identity']['generator_seed'] == 3307
+          assert r['development']['baseline']['validation_result'] == 'PASS'
+          assert r['validation']['baseline']['validation_result'] == 'PASS'
+          assert r['shadow']['baseline']['validation_result'] == 'PASS'
+          assert r['ami_holdout']['authority'] == 'research-external-timing-holdout'
+          assert r['ami_holdout']['identity']['meeting'] == 'ES2003a'
+          assert r['ami_holdout']['identity']['license'] == 'CC-BY-4.0'
+          assert r['selected']['hangover_frames'] in {2, 4, 6, 8}
+          assert curve['authority'] == 'diagnostic-only-vad-hangover-response-curve'
+          assert curve['scope']['candidate_selection'] is False
+          assert curve['scope']['hangover_candidates'] == [2, 4, 6, 8]
+          assert curve['scope']['baseline_hangover'] == 8
+          for role in ('development', 'validation', 'shadow'):
+              assert len(curve['synthetic'][role]['points']) == 4
+          assert len(curve['ami']['points']) == 4
+          if r['decision'] == 'RESEARCH_CANDIDATE':
+              assert r['selected']['hangover_frames'] != 8
+              assert not r['validation']['regression_violations']
+              assert not r['shadow']['regression_violations']
+              assert not r['ami_holdout']['regression_violations']
+          PY
+      - name: Publish hangover research summary
+        if: always()
+        run: |
+          if [ -f vad-hangover-out/selection.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-hangover-out/selection.json').read_text())
+          print('## VAD shared-hangover counterfactual')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Selected: `{r['selected']['candidate_id']}`")
+          print(f"- Development score: `{r['selected']['score']:.4f}`")
+          for role in ('development', 'validation', 'shadow'):
+              b = r[role]['baseline']['summary']
+              c = r[role]['candidate']['summary']
+              score = r[role].get('score')
+              suffix = '' if score is None else f", score `{score:.4f}`"
+              print(
+                  f"- {role}: recall `{b['min_vad_recall']:.4f} -> {c['min_vad_recall']:.4f}`, "
+                  f"F1 `{b['min_vad_f1']:.4f} -> {c['min_vad_f1']:.4f}`, "
+                  f"max FPR `{b['max_vad_false_positive_rate']:.4f} -> {c['max_vad_false_positive_rate']:.4f}`{suffix}"
+              )
+          b = r['ami_holdout']['baseline']['aggregate']
+          c = r['ami_holdout']['candidate']['aggregate']
+          print(
+              f"- AMI selected replay: recall `{b['recall']:.4f} -> {c['recall']:.4f}`, "
+              f"F1 `{b['f1']:.4f} -> {c['f1']:.4f}`, "
+              f"FPR `{b['false_positive_rate']:.4f} -> {c['false_positive_rate']:.4f}`, "
+              f"score `{r['ami_holdout']['score']:.4f}`"
+          )
+          curve_path = Path('vad-hangover-out/curve.json')
+          if curve_path.exists():
+              curve = json.loads(curve_path.read_text())
+              print('### Fixed-hangover response curve')
+              for point in curve['synthetic']['development']['points']:
+                  s = point['summary']
+                  failed = ','.join(item['case_id'] for item in point['failed_cases']) or 'none'
+                  print(
+                      f"- dev h={point['hangover_frames']}: recall `{s['min_vad_recall']:.4f}`, "
+                      f"F1 `{s['min_vad_f1']:.4f}`, FPR `{s['max_vad_false_positive_rate']:.4f}`, "
+                      f"score `{point['score_vs_8']:.4f}`, failed `{failed}`"
+                  )
+              for point in curve['ami']['points']:
+                  a = point['aggregate']
+                  w2 = point['low_activity_w2']['metrics']
+                  print(
+                      f"- AMI h={point['hangover_frames']}: recall `{a['recall']:.4f}`, "
+                      f"F1 `{a['f1']:.4f}`, FPR `{a['false_positive_rate']:.4f}`, "
+                      f"w2 FPR `{w2['false_positive_rate']:.4f}`, score `{point['score_vs_8']:.4f}`"
+                  )
+          print('- Scope: shared hangover only; thresholds remain local=0.45 and NS-assisted=0.35.')
+          print('- Authority: research only; response curve never participates in candidate selection.')
+          PY
+          fi
+      - name: Upload hangover research evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vad-hangover-counterfactual-${{ github.run_id }}
+          path: vad-hangover-out/
+          retention-days: 30
+          if-no-files-found: warn

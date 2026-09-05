@@ -20,6 +20,16 @@ static int16_t prn_sample(uint32_t n) {
     return (int16_t)((int32_t)(x >> 16u) - 32768);
 }
 
+static int16_t broadband_sample(uint32_t n) {
+    uint32_t x = n + 0x9e3779b9u;
+    x ^= x >> 16u;
+    x *= 0x7feb352du;
+    x ^= x >> 15u;
+    x *= 0x846ca68bu;
+    x ^= x >> 16u;
+    return (int16_t)((int32_t)(x >> 16u) - 32768);
+}
+
 static void run_delay_frame(ap_pipeline_t *p, int16_t *history, uint32_t *wp,
                             uint32_t *sample_index, uint32_t delay_samples,
                             int16_t *out) {
@@ -45,7 +55,7 @@ static void run_multipath_frame(ap_pipeline_t *p, int16_t *history, uint32_t *wp
     int16_t mic[160];
     uint32_t i;
     for (i = 0u; i < 160u; ++i) {
-        const int16_t r = (int16_t)(prn_sample((*sample_index)++) / 2);
+        const int16_t r = (int16_t)(broadband_sample((*sample_index)++) / 2);
         const int16_t direct = history[(*wp + HIST - direct_delay) & (HIST - 1u)];
         const int16_t late = history[(*wp + HIST - late_delay) & (HIST - 1u)];
         /* geometry-v2 worst reflection/direct is about 1.0697x; keep the

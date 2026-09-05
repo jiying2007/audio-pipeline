@@ -38,6 +38,11 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/release_manifest.py", "scripts/post_release_status.py",
     "scripts/qualification_fingerprint.py",
 }
+RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
+    re.compile(r"validation/tools/build_[A-Za-z0-9_]+_tuning_corpus\.py"),
+    re.compile(r"validation/policies/validation-[A-Za-z0-9-]+-stage-tuning\.json"),
+    re.compile(r"validation/tuning/search-spaces/[A-Za-z0-9._-]+\.json"),
+)
 VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
 VERSION_TOKEN_RE = re.compile(
     r"(project\s*\([^)]*?\bVERSION\s+)([0-9]+\.[0-9]+\.[0-9]+)", re.S
@@ -62,6 +67,7 @@ def is_release_neutral(path: str) -> bool:
         is_docs(path)
         or path in RELEASE_NEUTRAL_FILES
         or path.startswith(RELEASE_NEUTRAL_PREFIXES)
+        or any(pattern.fullmatch(path) for pattern in RELEASE_NEUTRAL_VALIDATION_PATTERNS)
     )
 
 
@@ -296,8 +302,15 @@ def self_test() -> None:
     assert is_release_neutral("fuzz/fuzz_pipeline.c")
     assert is_release_neutral("scripts/ci_impact.py")
     assert is_release_neutral("scripts/docs_consistency.py")
-    assert not is_release_neutral("lab/requirements-ansible.txt")
+    assert is_release_neutral("validation/tools/build_agc_tuning_corpus.py")
+    assert is_release_neutral("validation/tools/build_ns_tuning_corpus.py")
+    assert is_release_neutral("validation/policies/validation-agc-stage-tuning.json")
+    assert is_release_neutral("validation/policies/validation-ns-stage-tuning.json")
+    assert is_release_neutral("validation/tuning/search-spaces/agc-stage-v1.json")
+    assert not is_release_neutral("validation/authority.json")
     assert not is_release_neutral("validation/tools/run_validation.py")
+    assert not is_release_neutral("validation/policies/validation-smoke.json")
+    assert not is_release_neutral("lab/requirements-ansible.txt")
     assert not is_release_neutral("src/core/ap_pipeline.c")
     assert parse_semver("2.3.1") > parse_semver("2.3.0")
     ns = analyze(["src/modules/ap_ns_module.c"])
@@ -306,6 +319,12 @@ def self_test() -> None:
     assert aec["run_aec_backend"] and "composition-aec-only" in aec["compositions"]
     val = analyze(["validation/tools/run_validation.py"])
     assert val["run_audio"] and not val["run_ci"] and val["arm"] == [] and not val["run_lab"]
+    tuning_val = analyze([
+        "validation/tools/build_agc_tuning_corpus.py",
+        "validation/policies/validation-agc-stage-tuning.json",
+        "validation/tuning/search-spaces/agc-stage-v1.json",
+    ])
+    assert tuning_val["run_audio"] and not tuning_val["run_ci"] and not tuning_val["full"]
     versioned_val = analyze(
         ["CMakeLists.txt", "validation/tools/run_validation.py"],
         cmake_version_only_change=True,

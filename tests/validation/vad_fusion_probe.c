@@ -1,3 +1,7 @@
+#ifndef AP_BUILD_NS_EMA
+#define AP_BUILD_NS_EMA 1
+#endif
+
 #include "enhance/ap_enhance.h"
 #include <math.h>
 #include <stdint.h>

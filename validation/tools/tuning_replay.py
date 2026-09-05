@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Replay one already-selected acoustic candidate on an independent corpus.
+"""Replay one already-selected acoustic candidate on a non-search corpus.
 
 This tool never searches. It compares an explicit candidate with an explicit
 baseline under the same fail-closed objective/regression semantics used by the
-optimizer, so a motion-selected candidate can be checked on unrelated call
-validation/shadow corpora without letting those corpora influence selection.
+optimizer. The current fixed workflow corpora are repeatedly observed
+regression/replay data; this tool does not claim independent-confirmation or
+promotion authority merely because the replay role is validation or shadow.
 """
 
 from __future__ import annotations
@@ -62,7 +63,7 @@ def replay(repo_root: Path, processor: Path, corpus: Path, policy: Path,
     violations = guarded.strict_regression(space, baseline_report, candidate_report)
     result = {
         "schema_version": 1,
-        "authority": "non-shipping-independent-replay",
+        "authority": "non-shipping-regression-replay",
         "role": role,
         "tier": tier,
         "decision": "PASS" if not violations else "REJECT_CANDIDATE",
@@ -112,7 +113,7 @@ def self_test() -> None:
         path = root / "tuning.json"
         path.write_text(json.dumps(valid), encoding="utf-8")
         assert load_tuning(path) == valid
-    print("tuning replay self-test: OK")
+    print("tuning replay self-test: regression/replay authority OK")
 
 
 def main() -> int:

@@ -172,8 +172,20 @@ def view(plan: dict) -> dict:
 def self_test() -> None:
     plan = json.loads((ROOT / PLAN).read_text())
     validate(plan)
-    require(next_task(plan) is not None and next_task(plan)["id"] == "I002", "I002 must be next reviewed task")
-    require(view(plan)["automation_status"] == "READY", "I002 handler must be registered")
+    by_id = {task["id"]: task for task in plan["tasks"]}
+    i002 = by_id["I002"]
+    if i002["status"] == "READY":
+        require(next_task(plan) is not None and next_task(plan)["id"] == "I002",
+                "READY I002 must be the next reviewed task")
+        require(view(plan)["automation_status"] == "READY", "I002 handler must be registered")
+    elif i002["status"] == "CLOSED":
+        require(i002["handler"] is None and bool(i002["evidence"]),
+                "reviewed I002 must be terminal and evidence-backed")
+        require(next_task(plan) is None and view(plan)["automation_status"] == "NO_READY_TASK",
+                "closing I002 must not silently auto-activate an unimplemented task")
+    else:
+        raise AssertionError("I002 must be READY or CLOSED in the current program phase")
+
     mutations = [
         lambda p: p.update(auto_promote=True),
         lambda p: p.update(hardware_collection=True),
@@ -195,17 +207,20 @@ def self_test() -> None:
         except (ValueError, KeyError, TypeError):
             continue
         raise AssertionError("negative program case was accepted")
+
     blocked = copy.deepcopy(plan)
     for task in blocked["tasks"]:
         if task["status"] == "READY":
             task["status"] = "PLANNED"
             task["handler"] = None
             task["contract"] = None
-    blocked["tasks"][4].update(status="READY", handler=None, contract=None)
-    require(view(blocked)["automation_status"] == "BLOCKED_IMPLEMENTATION", "missing handler must block")
-    blocked["tasks"][4]["depends_on"] = ["I002"]
+    by_id_blocked = {task["id"]: task for task in blocked["tasks"]}
+    by_id_blocked["P001"].update(status="READY", handler=None, contract=None)
+    require(view(blocked)["automation_status"] == "BLOCKED_IMPLEMENTATION",
+            "missing handler must block rather than pretend to execute")
+    by_id_blocked["P001"]["depends_on"] = ["I003"]
     require(next_task(blocked) is None, "unfinished dependency must block")
-    print("program self-test: I002 readiness plus positive/negative governance contracts OK")
+    print("program self-test: I002 ready/closed lifecycle plus governance negative contracts OK")
 
 
 def main() -> int:

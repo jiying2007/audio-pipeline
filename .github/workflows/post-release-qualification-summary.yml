@@ -1,5 +1,5 @@
 name: Post Release Qualification Summary
-run-name: post-release-qualification ${{ github.event.client_payload.tag || inputs.tag || 'latest' }}
+run-name: ${{ github.event_name == 'schedule' && 'post-release-qualification convergence' || format('post-release-qualification {0}', github.event.client_payload.tag || inputs.tag || 'latest') }}
 
 on:
   repository_dispatch:
@@ -22,15 +22,59 @@ on:
       - '.github/workflows/post-release-qualification-summary.yml'
 
 permissions:
-  actions: read
+  actions: write
   contents: read
 
 concurrency:
-  group: post-release-qualification-${{ github.event.client_payload.release_ref || inputs.source_sha || 'latest' }}
+  group: ${{ github.event_name == 'schedule' && 'post-release-qualification-convergence' || format('post-release-qualification-{0}', github.event.client_payload.release_ref || inputs.source_sha || 'latest') }}
   cancel-in-progress: true
 
 jobs:
+  schedule-convergence:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Fan out incomplete immutable releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api -X GET "repos/$GITHUB_REPOSITORY/releases?per_page=12" > /tmp/releases.json
+          python3 - <<'PY' > /tmp/release-tags.txt
+          import json
+          releases = json.load(open('/tmp/releases.json'))
+          for release in reversed(releases):
+              tag = str(release.get('tag_name') or '')
+              if release.get('draft') or release.get('prerelease'):
+                  continue
+              if release.get('immutable') is not True or not tag.startswith('v'):
+                  continue
+              print(tag)
+          PY
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            artifact="post-release-qualification-$tag"
+            count=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact&per_page=1" --jq '.total_count')
+            if [ "$count" != 0 ]; then
+              echo "post-release qualification already finalized: $tag"
+              continue
+            fi
+            git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
+            source_sha=$(git rev-list -n1 "$tag")
+            [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid immutable release SHA for $tag" >&2; exit 1; }
+            test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '.immutable')" = true
+            gh workflow run post-release-qualification-summary.yml \
+              --ref main \
+              -f "source_sha=$source_sha" \
+              -f "tag=$tag"
+            echo "post-release qualification convergence dispatched: $tag $source_sha"
+          done < /tmp/release-tags.txt
+
   summarize:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     env:
       POST_RELEASE_BLOCKED_STATES: BLOCKED_RUNNER,BLOCKED_CONFIG
@@ -60,7 +104,7 @@ jobs:
               source_sha=$INPUT_SOURCE
               tag=$INPUT_TAG
               ;;
-            schedule|push)
+            push)
               gh api "repos/$GITHUB_REPOSITORY/releases/latest" > /tmp/latest-release.json
               tag=$(python3 -c 'import json; print(json.load(open("/tmp/latest-release.json"))["tag_name"])')
               git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
@@ -112,7 +156,7 @@ jobs:
           print('extended_real_conclusion=' + str(data['extended_real_conclusion']))
           PY
           else
-            echo 'Post-release qualification is still PENDING; the hourly convergence run will retry the latest immutable release.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Post-release qualification is still PENDING; the hourly convergence scheduler will retry every incomplete immutable release.' >> "$GITHUB_STEP_SUMMARY"
             echo '```json' >> "$GITHUB_STEP_SUMMARY"
             cat post-release-qualification-sources.json >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
@@ -159,7 +203,7 @@ jobs:
         if: steps.runs.outputs.ready == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: post-release-qualification-${{ steps.release.outputs.tag }}-${{ github.run_id }}
+          name: post-release-qualification-${{ steps.release.outputs.tag }}
           path: |
             post-release-qualification.json
             post-release-qualification-sources.json

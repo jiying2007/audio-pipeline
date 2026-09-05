@@ -24,9 +24,7 @@
       "title": "Archive goals, design, executable plan and scoped automation",
       "depends_on": [], "handler": null, "contract": null,
       "exit": "Program self/negative tests plus exact-head Verify; main verification; evidence-backed plan update",
-      "evidence": [
-        {"source_sha": "f6b35e9e0c6581e7a2d83324f156189e9110335a", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33964608127", "meaning": "Main exact-SHA Verify after #89 closed the program/governance integration without changing shipping DSP or certification authority."}
-      ]
+      "evidence": [{"source_sha": "f6b35e9e0c6581e7a2d83324f156189e9110335a", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33964608127", "meaning": "Main exact-SHA Verify after #89 closed the program/governance integration without changing shipping DSP or certification authority."}]
     },
     {
       "id": "I001", "priority": 10, "status": "CLOSED", "lane": "measurement",
@@ -68,53 +66,47 @@
       ]
     },
     {
-      "id": "I004", "priority": 40, "status": "PLANNED", "lane": "acoustic",
+      "id": "I004", "priority": 40, "status": "READY", "lane": "acoustic",
       "title": "NS nonstationary motor/fan and low-SNR speech envelope using pinned public data",
-      "depends_on": ["P001"], "handler": null, "contract": null,
-      "exit": "Speech preservation, noise reduction, worst-case and VAD constraints; no new backend without measured value",
+      "depends_on": ["P001"], "handler": "ns-nonstationary-baseline-diagnostic", "contract": "docs/program/iterations/I004.json",
+      "exit": "First measure deterministic motor/fan/start-stop/low-SNR baseline with candidate_limit=0; only authorize later candidate work when a reviewed measurable gap exists; public-source admission remains separately pinned",
       "evidence": []
     },
     {
       "id": "I005", "priority": 50, "status": "PLANNED", "lane": "acoustic",
       "title": "VAD event/onset/release evaluation on new public sessions and far-field simulation",
       "depends_on": ["I004"], "handler": null, "contract": null,
-      "exit": "Frame/event recall and false-active duration; unused source groups; no retuning ES2003a/ES2004a as independent",
-      "evidence": []
+      "exit": "Frame/event recall and false-active duration; unused source groups; no retuning ES2003a/ES2004a as independent", "evidence": []
     },
     {
       "id": "I006", "priority": 60, "status": "PLANNED", "lane": "acoustic",
       "title": "AGC near/far level mismatch, noise-floor and far-end residual protection",
       "depends_on": ["P001"], "handler": null, "contract": null,
-      "exit": "No pure-far-end gain-up regression; clipping/slew/settling and speech-quality constraints",
-      "evidence": []
+      "exit": "No pure-far-end gain-up regression; clipping/slew/settling and speech-quality constraints", "evidence": []
     },
     {
       "id": "I007", "priority": 70, "status": "PLANNED", "lane": "acoustic",
       "title": "BF wind, motion, phase mismatch and reverberant health evidence beyond the released hard-fault fixture",
       "depends_on": ["P001"], "handler": null, "contract": null,
-      "exit": "Frontend-equivalent oracle, fault-specific health selection, exact-base non-target protection and recovery",
-      "evidence": []
+      "exit": "Frontend-equivalent oracle, fault-specific health selection, exact-base non-target protection and recovery", "evidence": []
     },
     {
       "id": "I008", "priority": 80, "status": "PLANNED", "lane": "engineering",
       "title": "Runtime/API/reset, bounded diagnostics/replay, resampler and composition resource audit",
       "depends_on": ["P000"], "handler": null, "contract": null,
-      "exit": "TSan/realtime/SDK/ABI; FULL LOW TINY RAW custom; paired host CPU/RAM/ROM; no unproven DUT claims",
-      "evidence": []
+      "exit": "TSan/realtime/SDK/ABI; FULL LOW TINY RAW custom; paired host CPU/RAM/ROM; no unproven DUT claims", "evidence": []
     },
     {
       "id": "P002", "priority": 90, "status": "PLANNED", "lane": "governance",
       "title": "Release identity conflict and archival/GC in-flight safety audit",
       "depends_on": ["P000"], "handler": null, "contract": null,
-      "exit": "Reject tag/asset identity conflicts; preserve exact replay evidence; no deletion on SHA drift or active dependency",
-      "evidence": []
+      "exit": "Reject tag/asset identity conflicts; preserve exact replay evidence; no deletion on SHA drift or active dependency", "evidence": []
     },
     {
       "id": "E001", "priority": 100, "status": "DEFERRED", "lane": "external",
       "title": "Real product capture, DUT/HIL and Product Certification",
       "depends_on": [], "handler": null, "contract": null,
-      "exit": "Explicit future scope activation with real infrastructure; never inferred from synthetic/public PASS",
-      "evidence": []
+      "exit": "Explicit future scope activation with real infrastructure; never inferred from synthetic/public PASS", "evidence": []
     }
   ]
 }

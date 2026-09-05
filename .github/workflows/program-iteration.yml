@@ -8,6 +8,7 @@ on:
       - 'AGENTS.md'
       - 'docs/program/**'
       - 'scripts/program.py'
+      - 'scripts/promotion_governance.py'
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
@@ -19,6 +20,7 @@ on:
       - 'AGENTS.md'
       - 'docs/program/**'
       - 'scripts/program.py'
+      - 'scripts/promotion_governance.py'
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
@@ -45,15 +47,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate program and measurement contracts
+      - name: Validate program, measurement and governance contracts
         run: |
           set -euo pipefail
           python3 scripts/program.py --self-test
           python3 scripts/program.py check
+          python3 scripts/promotion_governance.py --self-test
           python3 validation/tools/build_aec_motion_corpus.py --self-test
           python3 validation/tools/build_aec_motion_bundle.py --self-test
           python3 tests/validation/aec_motion_model_qualification.py --self-test
-      - name: Execute the next registered bounded research task
+      - name: Execute the next registered bounded program task
         run: python3 scripts/program.py run --output program-evidence
       - name: Report execution separately from candidate authority
         if: always()
@@ -68,7 +71,7 @@ jobs:
               json.loads(progress.read_text()) if progress.exists() else {'execution_status': 'NOT_EXECUTED'})
           print('## Software/public-data program')
           print('```json\n' + json.dumps(result, indent=2) + '\n```')
-          print('Measurement execution is not acoustic acceptance. Product qualification is DEFERRED_BY_SCOPE.')
+          print('Registered task completion is not acoustic acceptance. Product qualification is DEFERRED_BY_SCOPE.')
           Path('program-evidence/status.json').write_text(json.dumps(result, indent=2) + '\n')
           PY
       - name: Preserve reports, negative results and reproducer sources

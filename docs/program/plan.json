@@ -32,7 +32,7 @@
       "depends_on": [], "handler": "aec-model-audit",
       "contract": "docs/program/iterations/I001.json",
       "exit": "All seeds and model invariants recorded; canonical quality failures retained; no DSP promotion",
-      "evidence": []
+      "evidence": [{"source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029", "meaning": "First complete model-discovery execution; 72/72 case gates pass. I001-result.json indexes measured metrics and identity, not an algorithm candidate."}]
     },
     {
       "id": "I002", "priority": 20, "status": "PLANNED", "lane": "measurement",

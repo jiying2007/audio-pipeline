@@ -36,7 +36,7 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/ci_impact.py", "scripts/docs_consistency.py",
     "scripts/research_registry.py", "scripts/prepare_release.py",
     "scripts/release_manifest.py", "scripts/post_release_status.py",
-    "scripts/qualification_fingerprint.py",
+    "scripts/qualification_fingerprint.py", "scripts/program.py",
 }
 RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
     re.compile(r"validation/tools/build_[A-Za-z0-9_]+_tuning_corpus\.py"),
@@ -59,6 +59,9 @@ def changed_files(base: str, head: str) -> list[str]:
 
 
 def is_docs(path: str) -> bool:
+    # Executable program contracts are governance, not documentation-only.
+    if path.startswith("docs/program/") and not path.endswith(".md"):
+        return False
     return path in DOC_FILES or path.startswith(DOC_PREFIXES) or path.endswith(".md")
 
 
@@ -66,6 +69,7 @@ def is_release_neutral(path: str) -> bool:
     return (
         is_docs(path)
         or path in RELEASE_NEUTRAL_FILES
+        or path.startswith("docs/program/")
         or path.startswith(RELEASE_NEUTRAL_PREFIXES)
         or any(pattern.fullmatch(path) for pattern in RELEASE_NEUTRAL_VALIDATION_PATTERNS)
     )
@@ -302,6 +306,15 @@ def self_test() -> None:
     assert is_release_neutral("fuzz/fuzz_pipeline.c")
     assert is_release_neutral("scripts/ci_impact.py")
     assert is_release_neutral("scripts/docs_consistency.py")
+    assert is_release_neutral("scripts/program.py")
+    assert is_release_neutral("docs/program/plan.json")
+    assert is_release_neutral("docs/program/iterations/I001.json")
+    assert not is_release_neutral("scripts/unregistered-program.py")
+    assert not is_release_neutral("validation/tools/build_aec_motion_corpus.py")
+    for path in ["scripts/program.py", "docs/program/plan.json",
+                 "docs/program/iterations/I001.json"]:
+        program = analyze([path])
+        assert program["full"] and program["run_lab"] and not program["docs_only"]
     assert is_release_neutral("validation/tools/build_agc_tuning_corpus.py")
     assert is_release_neutral("validation/tools/build_ns_tuning_corpus.py")
     assert is_release_neutral("validation/policies/validation-agc-stage-tuning.json")

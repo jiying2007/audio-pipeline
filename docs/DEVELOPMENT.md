@@ -1,5 +1,8 @@
 # Development Rules
 
+Project goals, phase scope, iteration contracts and progress are indexed in
+[the software/public-data program](program/README.md).
+
 ## Stable v2 policy
 
 Version 2.0.0 establishes the current public API/ABI baseline. Within the 2.x line, public structures and exported symbols are compatibility contracts; incompatible public changes require the next major version.
@@ -77,7 +80,16 @@ A backend exists only when its owning module is compiled. BANDLIMITED is the def
 
 ## Acoustic-complexity rule
 
-Fractional-delay BF, microphone gain/phase calibration, wind/clipping/microphone-health detection, interference-direction logic or more advanced drift control are eligible only when real SKU acoustic evidence fails an approved shipping threshold and the change addresses that measured failure. If the corpus passes, keep the lower-cost implementation.
+Added acoustic complexity requires a measured failure inside a declared evaluation
+scope and evidence that the change addresses its root cause. In the current
+software/public-data phase, physically audited simulation and hash-pinned public
+data can justify bounded software research, not real-SKU performance claims.
+Freeze acceptance rules and data roles before searching; require engineering,
+anti-regression and independent confirmation gates before shipping a behavior
+change. If no candidate demonstrates useful improvement, keep the lower-cost
+implementation. Actual SKU performance and product certification still require
+real device evidence; product capture/DUT/HIL work is deferred in this phase, not
+marked PASS. See [the iteration process](program/PROCESS.md).
 
 ## Telemetry and standalone APIs
 

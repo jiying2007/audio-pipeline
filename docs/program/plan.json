@@ -46,9 +46,9 @@
       ]
     },
     {
-      "id": "I003", "priority": 30, "status": "PLANNED", "lane": "acoustic",
+      "id": "I003", "priority": 30, "status": "READY", "lane": "acoustic",
       "title": "AEC/Sync causal-anchor and continuous-motion root-cause candidates, only if measured necessary",
-      "depends_on": ["I002", "P001"], "handler": null, "contract": null,
+      "depends_on": ["I002", "P001"], "handler": "aec-sync-selector-search", "contract": "docs/program/iterations/I003.json",
       "exit": "Bounded development/selection; resource precheck; fresh confirmation; hosted regression/promotion; exact-source CI",
       "evidence": []
     },

@@ -3,7 +3,9 @@ run-name: post-release-qualification ${{ github.event.client_payload.tag || inpu
 
 on:
   repository_dispatch:
-    types: [post-release-qualification]
+    types: [hil-post-release, extended-real-post-release]
+  schedule:
+    - cron: '23 * * * *'
   workflow_dispatch:
     inputs:
       source_sha:
@@ -24,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: post-release-qualification-${{ github.event.client_payload.release_ref || inputs.source_sha || github.sha }}
+  group: post-release-qualification-${{ github.event.client_payload.release_ref || inputs.source_sha || 'latest' }}
   cancel-in-progress: true
 
 jobs:
@@ -58,7 +60,7 @@ jobs:
               source_sha=$INPUT_SOURCE
               tag=$INPUT_TAG
               ;;
-            push)
+            schedule|push)
               gh api "repos/$GITHUB_REPOSITORY/releases/latest" > /tmp/latest-release.json
               tag=$(python3 -c 'import json; print(json.load(open("/tmp/latest-release.json"))["tag_name"])')
               git fetch --force origin "refs/tags/$tag:refs/tags/$tag"
@@ -110,8 +112,10 @@ jobs:
           print('extended_real_conclusion=' + str(data['extended_real_conclusion']))
           PY
           else
-            echo 'Post-release qualification is still PENDING; a terminal authority notification will retry aggregation.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Post-release qualification is still PENDING; the hourly convergence run will retry the latest immutable release.' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
             cat post-release-qualification-sources.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Build final post-release status evidence

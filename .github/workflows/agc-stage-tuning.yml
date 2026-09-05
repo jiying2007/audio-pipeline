@@ -12,6 +12,10 @@ on:
       - 'validation/tools/tuning_iteration*.py'
       - 'validation/tuning/search-spaces/agc-stage-v1.json'
       - 'validation/policies/validation-agc-stage-tuning.json'
+      - 'tests/validation/agc_dynamics_diagnostic.py'
+      - 'tests/validation/agc_dynamics_probe.c'
+      - 'tests/validation/agc_tuning_qualification.py'
+      - 'tests/validation/build_agc_bf_validation_corpus.py'
       - '.github/workflows/agc-stage-tuning.yml'
   schedule:
     - cron: '17 21 * * 6'
@@ -32,6 +36,7 @@ jobs:
       SEARCH_SPACE: validation/tuning/search-spaces/agc-stage-v1.json
       POLICY: validation/policies/validation-agc-stage-tuning.json
       EXPECTED_MAX_CANDIDATES: '8'
+      PYTHONPATH: validation/tools:tests/validation
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
@@ -40,11 +45,13 @@ jobs:
       - name: Validate tuning contracts
         run: |
           set -euo pipefail
-          python3 -m py_compile validation/tools/*.py
+          python3 -m py_compile validation/tools/*.py tests/validation/*.py
           python3 validation/tools/authority.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 validation/tools/tuning_iteration.py --self-test
           python3 validation/tools/build_agc_tuning_corpus.py --self-test
+          python3 tests/validation/agc_dynamics_diagnostic.py --self-test
+          python3 tests/validation/agc_tuning_qualification.py --self-test
           python3 - <<'PY'
           import json, os
           from pathlib import Path
@@ -66,8 +73,15 @@ jobs:
         run: >-
           cmake -S . -B build-agc-tuning -DCMAKE_BUILD_TYPE=Release
           -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-      - name: Build tuning processor
-        run: cmake --build build-agc-tuning --target ap_process_pcm --parallel
+      - name: Build tuning processor and dynamic probe
+        run: |
+          set -euo pipefail
+          cmake --build build-agc-tuning --target ap_process_pcm --parallel
+          cc -std=c11 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-agc-tuning/generated \
+            tests/validation/agc_dynamics_probe.c \
+            build-agc-tuning/libaudio_pipeline.a -lm \
+            -o build-agc-tuning/agc_dynamics_probe
       - name: Build independent AGC-only partitions
         run: |
           set -euo pipefail
@@ -90,6 +104,25 @@ jobs:
               }
               assert all(case['processor_profile'] == 'agc-isolated' for case in corpus['cases'])
           PY
+      - name: Build independent AGC dynamics qualification partitions
+        run: |
+          set -euo pipefail
+          python3 tests/validation/build_agc_bf_validation_corpus.py \
+            --output /tmp/ap-agc-dynamic-2307 --seed 2307
+          python3 tests/validation/build_agc_bf_validation_corpus.py \
+            --output /tmp/ap-agc-dynamic-3307 --seed 3307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for seed in (2307, 3307):
+              corpus = json.loads(Path(f'/tmp/ap-agc-dynamic-{seed}/corpus.json').read_text())
+              agc = [case for case in corpus['cases'] if case.get('processor_profile') == 'agc-isolated']
+              assert len(agc) == 4
+              assert {case['case_id'] for case in agc} == {
+                  'agc-steady-low', 'agc-steady-hot', 'agc-level-step', 'agc-transient'
+              }
+              assert corpus['generator']['seed'] == seed
+          PY
       - name: Search development and replay validation plus shadow
         run: |
           set -euo pipefail
@@ -102,6 +135,15 @@ jobs:
             --dataset-lock validation/datasets.lock.json \
             --search-space "$SEARCH_SPACE" \
             --output-dir agc-stage-tuning-out
+      - name: Qualify selected tuning with AGC dynamics replay
+        run: |
+          set -euo pipefail
+          python3 tests/validation/agc_tuning_qualification.py \
+            --iteration-result agc-stage-tuning-out/iteration-result.json \
+            --probe build-agc-tuning/agc_dynamics_probe \
+            --validation-corpus /tmp/ap-agc-dynamic-2307/corpus.json \
+            --shadow-corpus /tmp/ap-agc-dynamic-3307/corpus.json \
+            --output-dir agc-stage-tuning-out/dynamic
       - name: Enforce non-shipping candidate authority
         run: |
           set -euo pipefail
@@ -109,8 +151,10 @@ jobs:
           import json, os
           from pathlib import Path
           result = json.loads(Path('agc-stage-tuning-out/iteration-result.json').read_text())
+          final = json.loads(Path('agc-stage-tuning-out/dynamic/agc-dynamic-qualification.json').read_text())
           assert result['authority'] == 'non-shipping-acoustic-iteration'
-          assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
+          assert final['authority'] == 'non-shipping-agc-dynamic-qualification'
+          assert final['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
           assert result['search_space']['candidate_count'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
           assert result['bindings']['partitions']['development']['generator_seed'] == 1307
           assert result['bindings']['partitions']['validation']['generator_seed'] == 2307
@@ -119,7 +163,11 @@ jobs:
           assert baseline['validation_result'] == 'PASS'
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'
-          if result['decision'] == 'ACOUSTIC_CANDIDATE':
+          for partition in ('validation', 'shadow'):
+              assert final['partitions'][partition]['baseline']['validation_result'] == 'PASS'
+          if final['decision'] == 'ACOUSTIC_CANDIDATE':
+              assert result['decision'] == 'ACOUSTIC_CANDIDATE'
+              assert final['candidate_dynamic_pass']
               assert not result['validation']['regression_violations']
               assert not result['shadow']['regression_violations']
               label = result['selected']['label']
@@ -133,12 +181,25 @@ jobs:
           import json
           from pathlib import Path
           r = json.loads(Path('agc-stage-tuning-out/iteration-result.json').read_text())
+          qpath = Path('agc-stage-tuning-out/dynamic/agc-dynamic-qualification.json')
+          q = json.loads(qpath.read_text()) if qpath.exists() else None
           print('## AGC stage tuning')
-          print(f"- Decision: `{r['decision']}`")
+          print(f"- Optimizer decision: `{r['decision']}`")
+          print(f"- Final dynamic-qualified decision: `{q['decision'] if q else 'UNAVAILABLE'}`")
           print(f"- Iteration: `{r['iteration_id']}`")
           print(f"- Selected: `{r['selected']['label']}`")
           print(f"- Development score: `{r['selected']['development_score']:.4f}`")
-          print('- Corpus: AGC-only low-level/hot-level cases; unrelated VAD/NS/BF cases are excluded from optimizer scoring.')
+          if q:
+              for partition in ('validation', 'shadow'):
+                  c = q['partitions'][partition]['candidate']
+                  print(
+                      f"- {partition} dynamics: `{c['validation_result']}`, "
+                      f"low->hot `{c['low_to_hot_settle_frames']}`, "
+                      f"hot->low `{c['hot_to_low_settle_frames']}`, "
+                      f"slew p95 `{c['level_step_gain_slew_p95_db']}`"
+                  )
+          print('- Canonical search corpus: AGC-only low-level/hot-level cases; unrelated VAD/NS/BF cases are excluded from optimizer scoring.')
+          print('- Dynamic qualification: existing steady-low/hot, level-step and transient AGC regression gates on independent validation/shadow seeds.')
           print('- Search: existing runtime-safe AGC target and limiter controls only; AGC attack/release constants are not tuned.')
           print('- Authority: acoustic candidate only; no shipping default is mutated automatically.')
           PY

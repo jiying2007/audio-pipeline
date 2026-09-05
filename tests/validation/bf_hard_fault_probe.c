@@ -193,7 +193,8 @@ int main(int argc, char **argv) {
         if (fprintf(ft,
                     "{\"frame\":%u,\"frontend\":\"%s\","
                     "\"pre_bf_energy0\":%.9g,\"pre_bf_energy1\":%.9g,"
-                    "\"fallback_active\":%u,\"fallback_strong_channel\":%u,"
+                    "\"fallback_active\":%u,\"fallback_hard_fault\":%u,"
+                    "\"fallback_strong_channel\":%u,"
                     "\"fallback_recovery_count\":%u,"
                     "\"fallback_gain\":%.9g,\"fallback_lag\":%d,"
                     "\"lag\":%d,\"score_updates\":%u}\n",
@@ -202,6 +203,7 @@ int main(int argc, char **argv) {
                     energy0,
                     energy1,
                     state.fallback_active,
+                    state.fallback_hard_fault,
                     state.fallback_strong_channel,
                     state.fallback_recovery_count,
                     (double)state.fallback_gain,

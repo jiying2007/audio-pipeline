@@ -1,21 +1,29 @@
 {
   "schema_version": 1,
   "iteration_id": "I003",
-  "state": "ENGINEERING_PRECHECK",
+  "state": "CONFIRMATION_REGISTERED",
   "candidate": "incumbent-qualified",
   "base_sha": "783a8d1f27bae03b97e57b74e47cede5cf07bb6d",
+  "candidate_implementation_sha": "82ae56d8148e1a19f62250072bd45563eaffdde5",
   "candidate_version": "2.3.13",
   "authority": "non-shipping-frozen-candidate",
   "candidate_variants_remaining": 0,
   "confirmation_sets_consumed": 0,
-  "confirmation_source_group": null,
+  "confirmation_source_group": "aec-motion-geometry-v2-i003-confirmation-1",
   "release_allowed": false,
   "product_qualification": "DEFERRED_BY_SCOPE",
-  "next_gate": "engineering-precheck-and-shadow-regression",
+  "next_gate": "fixed-candidate-independent-confirmation",
+  "engineering_evidence": {
+    "verify_run_id": 33976148746,
+    "summary_check_id": 101333707114,
+    "exact_head": "82ae56d8148e1a19f62250072bd45563eaffdde5",
+    "result": "PASS"
+  },
   "notes": [
-    "The only implementation authority is docs/program/iterations/I003-selection-result.json.",
+    "The only implementation authority remains docs/program/iterations/I003-selection-result.json; candidate source is frozen at 82ae56d8148e1a19f62250072bd45563eaffdde5.",
+    "Engineering/resource/shadow regression completed before confirmation registration.",
+    "Seeds 51107/52107/53107 are registered but not yet executed; confirmation budget remains 0/2 until execution starts.",
     "Observed development, validation, hosted and generic call sources remain regression-only and cannot be promoted to independent confirmation.",
-    "No confirmation source group may be registered until exact-head engineering/resource/shadow regression is reviewed.",
-    "Failure at this stage rejects or repairs the exact frozen implementation; it does not refund or create selector candidate budget."
+    "No selector, threshold or tuning search is allowed during confirmation."
   ]
 }

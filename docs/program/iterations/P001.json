@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "iteration_id": "P001",
+  "root_cause_id": "promotion-governance",
+  "phase": "governance-qualification",
+  "base_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+  "policy": "docs/program/promotion-policy.json",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "run_timeout_seconds": 120,
+  "acceptance": [
+    "program baseline is the immutable v2.3.12 software release source and exact successful main Verify",
+    "all known previously observed source groups are explicitly prohibited from confirmation and promotion",
+    "candidate gate plan fails closed on missing, skipped, incomplete or old-SHA gates",
+    "confirmation source groups must be unobserved before candidate freeze and become regression-only after use",
+    "failed attempts remain in lineage and cannot be concealed by a later passing attempt",
+    "research budgets are inherited by root_cause_id and cannot be reset by branch, iteration or seed changes",
+    "measurement-only generator/bundle PR changes do not automatically trigger acoustic tuning search",
+    "fixed repeated tuning seeds are described as regression/replay rather than fresh, unseen or independent evidence",
+    "shipping DSP, public API/ABI, product defaults, acoustic thresholds, dataset locks and resource baselines remain unchanged",
+    "result is governance readiness only and cannot create or promote an acoustic candidate"
+  ],
+  "next_on_success": "Close P001 after reviewed exact-head evidence; define I003 contract separately before activating any AEC/Sync acoustic candidate",
+  "next_on_failure": "Keep P001 open and correct governance/tooling without changing DSP, acoustic thresholds or evidence history"
+}

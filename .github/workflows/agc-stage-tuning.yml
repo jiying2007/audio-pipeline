@@ -1,0 +1,153 @@
+name: AGC Stage Tuning
+
+on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_agc.c'
+      - 'src/core/ap_pipeline.c'
+      - 'examples/process_pcm.c'
+      - 'validation/tools/build_agc_tuning_corpus.py'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - 'validation/tools/stage_profile_support.py'
+      - 'validation/tools/tuning_iteration*.py'
+      - 'validation/tuning/search-spaces/agc-stage-v1.json'
+      - 'validation/policies/validation-agc-stage-tuning.json'
+      - '.github/workflows/agc-stage-tuning.yml'
+  schedule:
+    - cron: '17 21 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agc-stage-tuning-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iterate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SEARCH_SPACE: validation/tuning/search-spaces/agc-stage-v1.json
+      POLICY: validation/policies/validation-agc-stage-tuning.json
+      EXPECTED_MAX_CANDIDATES: '8'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: agc-stage-tuning
+      - name: Validate tuning contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/authority.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/build_agc_tuning_corpus.py --self-test
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          space = json.loads(Path(os.environ['SEARCH_SPACE']).read_text())
+          policy = json.loads(Path(os.environ['POLICY']).read_text())
+          assert space['schema_version'] == 1
+          assert space['strategy'] == 'one-at-a-time'
+          assert set(space['parameters']) == {'agc_target_dbfs', 'limiter_dbfs'}
+          assert space['max_candidates'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
+          assert space['baseline']['agc_target_dbfs'] == -20.0
+          assert space['baseline']['limiter_dbfs'] == -2.0
+          metrics = {item['name'] for item in space['objective']['metrics']}
+          assert metrics == {'pass_rate', 'max_output_clip_fraction'}
+          assert policy['required_scenarios'] == ['stage-agc-low-level', 'stage-agc-hot-level']
+          assert policy['minimum_cases'] == 2
+          assert policy['aggregate']['max_output_clip_fraction'] == 0.001
+          PY
+      - name: Configure tuning processor
+        run: >-
+          cmake -S . -B build-agc-tuning -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build tuning processor
+        run: cmake --build build-agc-tuning --target ap_process_pcm --parallel
+      - name: Build independent AGC-only partitions
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_agc_tuning_corpus.py --output /tmp/ap-agc-stage-1307 --seed 1307
+          python3 validation/tools/build_agc_tuning_corpus.py --output /tmp/ap-agc-stage-2307 --seed 2307
+          python3 validation/tools/build_agc_tuning_corpus.py --output /tmp/ap-agc-stage-3307 --seed 3307
+          python3 validation/tools/authority.py \
+            --development-corpus /tmp/ap-agc-stage-1307/corpus.json \
+            --validation-corpus /tmp/ap-agc-stage-2307/corpus.json \
+            --shadow-corpus /tmp/ap-agc-stage-3307/corpus.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for seed in (1307, 2307, 3307):
+              path = Path(f'/tmp/ap-agc-stage-{seed}/corpus.json')
+              corpus = json.loads(path.read_text())
+              assert len(corpus['cases']) == 2
+              assert {case['scenario'] for case in corpus['cases']} == {
+                  'stage-agc-low-level', 'stage-agc-hot-level'
+              }
+              assert all(case['processor_profile'] == 'agc-isolated' for case in corpus['cases'])
+          PY
+      - name: Search development and replay validation plus shadow
+        run: |
+          set -euo pipefail
+          python3 validation/tools/tuning_iteration.py \
+            --processor build-agc-tuning/ap_process_pcm \
+            --development-corpus /tmp/ap-agc-stage-1307/corpus.json \
+            --validation-corpus /tmp/ap-agc-stage-2307/corpus.json \
+            --shadow-corpus /tmp/ap-agc-stage-3307/corpus.json \
+            --policy "$POLICY" \
+            --dataset-lock validation/datasets.lock.json \
+            --search-space "$SEARCH_SPACE" \
+            --output-dir agc-stage-tuning-out
+      - name: Enforce non-shipping candidate authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads(Path('agc-stage-tuning-out/iteration-result.json').read_text())
+          assert result['authority'] == 'non-shipping-acoustic-iteration'
+          assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
+          assert result['search_space']['candidate_count'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
+          assert result['bindings']['partitions']['development']['generator_seed'] == 1307
+          assert result['bindings']['partitions']['validation']['generator_seed'] == 2307
+          assert result['bindings']['partitions']['shadow']['generator_seed'] == 3307
+          baseline = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
+          assert baseline['validation_result'] == 'PASS'
+          assert result['validation']['baseline']['validation_result'] == 'PASS'
+          assert result['shadow']['baseline']['validation_result'] == 'PASS'
+          if result['decision'] == 'ACOUSTIC_CANDIDATE':
+              assert not result['validation']['regression_violations']
+              assert not result['shadow']['regression_violations']
+              label = result['selected']['label']
+              assert label.startswith('agc_target_dbfs=') or label.startswith('limiter_dbfs=')
+          PY
+      - name: Publish tuning summary
+        if: always()
+        run: |
+          if [ -f agc-stage-tuning-out/iteration-result.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('agc-stage-tuning-out/iteration-result.json').read_text())
+          print('## AGC stage tuning')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Iteration: `{r['iteration_id']}`")
+          print(f"- Selected: `{r['selected']['label']}`")
+          print(f"- Development score: `{r['selected']['development_score']:.4f}`")
+          print('- Corpus: AGC-only low-level/hot-level cases; unrelated VAD/NS/BF cases are excluded from optimizer scoring.')
+          print('- Search: existing runtime-safe AGC target and limiter controls only; AGC attack/release constants are not tuned.')
+          print('- Authority: acoustic candidate only; no shipping default is mutated automatically.')
+          PY
+          fi
+      - name: Upload tuning evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: agc-stage-tuning-${{ github.run_id }}
+          path: agc-stage-tuning-out/
+          if-no-files-found: warn
+          retention-days: 30

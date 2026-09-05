@@ -1,95 +1,162 @@
-name: AMI VAD Microset Discovery
+name: AMI VAD Microset Research
 
 on:
   pull_request:
     paths:
+      - 'src/enhance/ap_vad.c'
+      - 'src/enhance/ap_ns.c'
       - 'tests/validation/discover_ami_vad_microset.py'
+      - 'tests/validation/ami_vad_microset_eval.py'
+      - 'tests/validation/data/ami_vad_microset.lock.json'
       - '.github/workflows/ami-vad-microset-discovery.yml'
+  schedule:
+    - cron: '13 20 * * 6'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ami-vad-microset-discovery-${{ github.ref }}
+  group: ami-vad-microset-research-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  discover:
+  qualify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: validation/tools:tests/validation
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Validate discovery contracts offline
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: ami-vad-microset-research
+      - name: Validate research contracts offline
         run: |
           set -euo pipefail
-          python3 -m py_compile tests/validation/discover_ami_vad_microset.py
+          python3 -m py_compile \
+            tests/validation/discover_ami_vad_microset.py \
+            tests/validation/ami_vad_microset_eval.py
           python3 tests/validation/discover_ami_vad_microset.py --self-test
-      - name: Discover pinned AMI external-timing microset
+          python3 tests/validation/ami_vad_microset_eval.py --self-test
+          python3 -m json.tool tests/validation/data/ami_vad_microset.lock.json >/dev/null
+      - name: Re-discover pinned AMI external-timing identities
         run: |
           set -euo pipefail
-          mkdir -p ami-vad-discovery-out
+          mkdir -p ami-vad-research-out
           python3 tests/validation/discover_ami_vad_microset.py \
-            --output ami-vad-discovery-out/discovery.json \
-            | tee ami-vad-discovery-out/summary.json
-      - name: Enforce research-only discovery authority
+            --output ami-vad-research-out/discovery.json \
+            | tee ami-vad-research-out/discovery-summary.json
+      - name: Bind discovery to frozen research lock
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, re
+          import json
           from pathlib import Path
-          d = json.loads(Path('ami-vad-discovery-out/discovery.json').read_text())
-          assert d['schema_version'] == 1
+          d = json.loads(Path('ami-vad-research-out/discovery.json').read_text())
+          lock = json.loads(Path('tests/validation/data/ami_vad_microset.lock.json').read_text())
           assert d['authority'] == 'research-discovery-only'
-          assert d['dataset']['meeting'] == 'ES2003a'
-          assert d['dataset']['license'] == 'CC-BY-4.0'
-          assert d['transport_mirror']['revision'] == 'a249db53de253a3a0a864c93a51d613159dfec7c'
-          assert d['audio']['range_supported'] is True
-          assert d['audio']['wav']['audio_format'] == 1
-          assert d['audio']['wav']['bits_per_sample'] == 16
-          assert d['audio']['duration_s'] > 1000.0
-          assert len(d['annotations']['files']) == 4
-          assert {f['speaker'] for f in d['annotations']['files']} == {'A', 'B', 'C', 'D'}
-          for item in d['annotations']['files']:
-              assert re.fullmatch(r'[0-9a-f]{64}', item['sha256'])
-              assert item['segments'] > 0
-          windows = d['window_plan']
-          assert len(windows) == 3
-          assert [w['window_id'] for w in windows] == ['ES2003a-w1', 'ES2003a-w2', 'ES2003a-w3']
-          assert all(0.0 < w['activity_fraction'] < 1.0 for w in windows)
-          assert len({w['audio_range']['sha256'] for w in windows}) == 3
-          for window in windows:
-              assert abs(window['end_s'] - window['start_s'] - 20.0) < 1e-9
-              assert re.fullmatch(r'[0-9a-f]{64}', window['audio_range']['sha256'])
-              assert window['audio_range']['status'] == 206
-          assert 'not a dedicated audited speech-activity-detection gold label' in d['dataset']['annotation_semantics']
+          assert lock['authority'] == 'research-external-timing-only'
+          assert d['dataset']['meeting'] == lock['dataset']['meeting'] == 'ES2003a'
+          assert d['dataset']['license'] == lock['dataset']['license'] == 'CC-BY-4.0'
+          assert d['transport_mirror'] == lock['transport_mirror']
+          audio = d['audio']
+          pinned = lock['audio']
+          assert audio['path'] == pinned['path']
+          assert audio['size_bytes'] == pinned['size_bytes']
+          assert audio['tree_object_id'] == pinned['tree_object_id']
+          assert audio['lfs_sha256'] == pinned['lfs_sha256']
+          assert audio['xet_hash'] == pinned['xet_hash']
+          for key in ('audio_format', 'channels', 'sample_rate_hz', 'bits_per_sample', 'byte_rate', 'block_align', 'data_offset', 'data_size'):
+              assert audio['wav'][key] == pinned['wav'][key]
+          assert abs(audio['duration_s'] - pinned['wav']['duration_s']) < 1e-9
+          discovered_annotations = {x['speaker']: x for x in d['annotations']['files']}
+          for item in lock['annotations']:
+              current = discovered_annotations[item['speaker']]
+              for key in ('path', 'sha256', 'size_bytes', 'segments'):
+                  assert current[key] == item[key]
+          discovered_windows = {x['window_id']: x for x in d['window_plan']}
+          for item in lock['windows']:
+              current = discovered_windows[item['window_id']]
+              assert current['start_s'] == item['start_s']
+              assert current['end_s'] == item['end_s']
+              assert abs(current['activity_fraction'] - item['activity_fraction']) < 1e-9
+              assert current['audio_range']['start_byte'] == item['start_byte']
+              assert current['audio_range']['end_byte'] == item['end_byte']
+              assert current['audio_range']['length_bytes'] == item['length_bytes']
+              assert current['audio_range']['sha256'] == item['sha256']
           PY
-      - name: Publish discovery summary
+      - name: Configure exact research processor
+        run: >-
+          cmake -S . -B build-ami-vad -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build exact research processor
+        run: cmake --build build-ami-vad --target ap_process_pcm --parallel
+      - name: Compare shipping and research NS-assisted thresholds
+        run: |
+          set -euo pipefail
+          python3 tests/validation/ami_vad_microset_eval.py \
+            --processor build-ami-vad/ap_process_pcm \
+            --lock tests/validation/data/ami_vad_microset.lock.json \
+            --output ami-vad-research-out/qualification.json \
+            | tee ami-vad-research-out/qualification-summary.json
+      - name: Enforce research-only evidence integrity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('ami-vad-research-out/qualification.json').read_text())
+          assert r['schema_version'] == 1
+          assert r['authority'] == 'research-external-timing-vad-qualification'
+          assert r['decision'] in {'SUPPORT', 'MIXED', 'CONTRADICTED'}
+          assert r['source']['meeting'] == 'ES2003a'
+          assert r['source']['license'] == 'CC-BY-4.0'
+          assert r['operating_points'] == {
+              'shipping_ns_threshold': 0.35,
+              'research_ns_threshold': 0.30,
+              'hangover_frames': 8,
+          }
+          assert len(r['annotations']) == 4
+          assert len(r['windows']) == 3
+          assert [w['window_id'] for w in r['windows']] == ['ES2003a-w1', 'ES2003a-w2', 'ES2003a-w3']
+          assert all(w['frames'] >= 1900 for w in r['windows'])
+          assert r['aggregate']['frames'] >= 5700
+          assert 0.0 < r['aggregate']['activity_fraction'] < 1.0
+          assert 'cannot directly change shipping thresholds' in r['promotion_boundary']
+          PY
+      - name: Publish AMI research summary
         if: always()
         run: |
-          if [ -f ami-vad-discovery-out/discovery.json ]; then
+          if [ -f ami-vad-research-out/qualification.json ]; then
             python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json
           from pathlib import Path
-          d = json.loads(Path('ami-vad-discovery-out/discovery.json').read_text())
-          print('## AMI external-timing VAD microset discovery')
-          print(f"- Meeting: `{d['dataset']['meeting']}`")
-          print(f"- Mirror revision: `{d['transport_mirror']['revision']}`")
-          print(f"- WAV: `{d['audio']['wav']['sample_rate_hz']} Hz`, `{d['audio']['wav']['channels']} ch`, `{d['audio']['duration_s']:.2f} s`")
-          print(f"- Range support: `{d['audio']['range_supported']}`")
-          for item in d['window_plan']:
+          r = json.loads(Path('ami-vad-research-out/qualification.json').read_text())
+          b = r['aggregate']['baseline']
+          c = r['aggregate']['candidate']
+          d = r['aggregate']['deltas']
+          print('## AMI external-timing real-VAD research')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Aggregate activity fraction: `{r['aggregate']['activity_fraction']:.3f}`")
+          print(f"- Recall: `{b['recall']:.4f} -> {c['recall']:.4f}` (`{d['recall_delta']:+.4f}`)")
+          print(f"- F1: `{b['f1']:.4f} -> {c['f1']:.4f}` (`{d['f1_delta']:+.4f}`)")
+          print(f"- FPR: `{b['false_positive_rate']:.4f} -> {c['false_positive_rate']:.4f}` (`{d['fpr_delta']:+.4f}`)")
+          print(f"- Research score: `{d['score']:+.4f}`")
+          for w in r['windows']:
+              x = w['deltas']
               print(
-                  f"- {item['window_id']}: `{item['start_s']:.1f}-{item['end_s']:.1f}s`, "
-                  f"activity `{item['activity_fraction']:.3f}`, range SHA-256 `{item['audio_range']['sha256']}`"
+                  f"- {w['window_id']} activity `{w['activity_fraction']:.3f}`: "
+                  f"recall `{x['recall']:+.4f}`, F1 `{x['f1']:+.4f}`, FPR `{x['false_positive_rate']:+.4f}`"
               )
-          print('- Authority: research discovery only; manual transcription segment timing is not treated as audited SAD gold labels.')
+          print('- Authority: research-only external transcription timing; SUPPORT is not shipping authorization.')
           PY
           fi
-      - name: Upload discovery evidence
+      - name: Upload hash-bound AMI research evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ami-vad-microset-discovery-${{ github.run_id }}
-          path: ami-vad-discovery-out/
+          name: ami-vad-microset-research-${{ github.run_id }}
+          path: ami-vad-research-out/
           retention-days: 30
           if-no-files-found: warn

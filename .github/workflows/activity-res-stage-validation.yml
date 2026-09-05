@@ -10,6 +10,7 @@ on:
       - 'tests/validation/activity_res_probe.c'
       - 'tests/validation/activity_res_handoff_probe.c'
       - 'tests/validation/frequency_res_handoff_probe.c'
+      - 'tests/validation/res_release_sweep.py'
       - '.github/workflows/activity-res-stage-validation.yml'
   workflow_dispatch:
 
@@ -81,10 +82,18 @@ jobs:
             cat activity-res-out/*.txt
             echo '```'
             echo
-            echo 'The HANDOFF and FREQ_RES_HANDOFF recovery metrics are discovery evidence: they quantify near-end onset preservation before any product tuning decision.'
-            echo 'All seeds run even after an earlier failure; no product defaults or acceptance gates are changed by this regression-only workflow.'
+            echo 'HANDOFF measures scalar near-end protection and far-only re-entry. FREQ_RES_HANDOFF measures double-talk state de-latch and frequency-RES far-only re-entry; frequency RES is disabled for the current DT output frame.'
+            echo 'All seeds run even after an earlier failure; no threshold is weakened by this workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$failed"
+
+      - name: Select minimal bounded near-protection release alpha
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/res_release_sweep.py \
+            --json-output activity-res-out/res-release-sweep.json \
+            2>&1 | tee activity-res-out/res-release-sweep.txt
 
       - name: Upload Activity RES evidence
         if: always()

@@ -9,6 +9,9 @@
 #define FAR_THRESHOLD 1.0e-7f
 #define DT_RATIO 1.5f
 #define HANGOVER 3u
+#define MAX_HALF_RECOVERY_FRAMES 5
+#define MAX_90_RECOVERY_FRAMES 12
+#define MAX_REENTRY_SUPPRESSION_FRAMES 3
 
 static uint32_t lcg_next(uint32_t *state) {
     *state = (*state * 1664525u) + 1013904223u;
@@ -42,11 +45,13 @@ int main(int argc, char **argv) {
     int dt_attack = -1;
     int first_half = -1;
     int first_90 = -1;
+    int reentry_suppressed = -1;
     float pre_gain = 1.0f;
     float gain1 = 0.0f;
     float gain2 = 0.0f;
     float gain3 = 0.0f;
     float gain_at_dt = 0.0f;
+    float reentry_gain1 = 1.0f;
     int failed = 0;
 
     if (argc > 2) return 2;
@@ -61,8 +66,8 @@ int main(int argc, char **argv) {
     ap_activity_init(&activity, FAR_THRESHOLD, DT_RATIO, HANGOVER);
     ap_res_init(&res);
 
-    /* Establish a stable far-only epoch with severe residual echo, matching
-     * the standalone RES floor test before switching to near-end speech. */
+    /* Preserve the shipping far-only operating point as an anti-regression
+     * guard before measuring the near-protection transition. */
     for (i = 0u; i < 30u; ++i) {
         const float ref = 4.0e-7f * jitter(&rng, 0.04f);
         const float mic = 1.0e-7f * jitter(&rng, 0.04f);
@@ -74,9 +79,8 @@ int main(int argc, char **argv) {
     if (pre_gain < 0.099f || pre_gain > 0.105f) failed = 1;
 
     /* Render stops and near-end speech begins while the acoustic/AEC echo
-     * estimate is conservatively allowed to linger. Activity output drives
-     * RES exactly as the composed pipeline does. These recovery numbers are
-     * discovery evidence; the loose bounds below only reject broken coupling. */
+     * estimate is conservatively allowed to linger. The product candidate
+     * must restore usable near-end gain quickly once DTD protection engages. */
     for (i = 0u; i < 40u; ++i) {
         const float ref = 1.0e-10f;
         const float mic = 8.0e-7f * jitter(&rng, 0.08f);
@@ -98,15 +102,36 @@ int main(int argc, char **argv) {
         if (first_90 < 0 && gain >= 0.90f) first_90 = (int)i + 1;
     }
 
-    if (dt_attack < 1 || dt_attack > 3 || first_half < 1 || first_half > 15 ||
-        first_90 < 1 || first_90 > 40 || res.gain < 0.95f)
+    if (dt_attack < 1 || dt_attack > 3 ||
+        first_half < 1 || first_half > MAX_HALF_RECOVERY_FRAMES ||
+        first_90 < 1 || first_90 > MAX_90_RECOVERY_FRAMES ||
+        res.gain < 0.95f)
+        failed = 1;
+
+    /* Once double talk ends and far-only activity resumes, the faster release
+     * must not leave RES effectively bypassed for a long echo-leak window. */
+    for (i = 0u; i < 8u; ++i) {
+        const float ref = 4.0e-7f * jitter(&rng, 0.04f);
+        const float mic = 1.0e-7f * jitter(&rng, 0.04f);
+        float gain;
+        ap_activity_process(&activity, mic, ref, &result);
+        gain = process_res_frame(&res, 1.0e-3f, 1.0e-6f,
+                                 result.far_end_active,
+                                 result.double_talk_active);
+        if (i == 0u) reentry_gain1 = gain;
+        if (reentry_suppressed < 0 && gain <= 0.30f)
+            reentry_suppressed = (int)i + 1;
+    }
+    if (reentry_suppressed < 1 ||
+        reentry_suppressed > MAX_REENTRY_SUPPRESSION_FRAMES)
         failed = 1;
 
     printf("HANDOFF seed=%u pre_gain=%.6f dt_attack=%d gain_f1=%.6f "
            "gain_f2=%.6f gain_f3=%.6f gain_at_dt=%.6f "
            "gain_ge_0.50_frame=%d gain_ge_0.90_frame=%d final_gain=%.6f "
-           "result=%s\n",
+           "reentry_gain_f1=%.6f reentry_le_0.30_frame=%d result=%s\n",
            seed, pre_gain, dt_attack, gain1, gain2, gain3, gain_at_dt,
-           first_half, first_90, res.gain, failed ? "FAIL" : "PASS");
+           first_half, first_90, res.gain, reentry_gain1,
+           reentry_suppressed, failed ? "FAIL" : "PASS");
     return failed ? 1 : 0;
 }

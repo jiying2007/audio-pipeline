@@ -1,3 +1,9 @@
+# 2.3.9
+
+- Accelerate scalar residual-echo suppression release only after double-talk/near-end protection engages, using the bounded-selected 0.20 release alpha while preserving normal release, far-only targets/floors and suppression attack behavior.
+- De-latch frequency-domain RES history during double talk with the same 0.20 release alpha; frequency RES remains disabled for the current double-talk output, and explicit far-only re-entry gates prevent the faster state release from creating a prolonged echo-leak window.
+- Add deterministic three-seed Activity/DTD/RES hand-off and re-entry gates plus a bounded 0.15/0.20/0.25/0.30 selector; 0.15 fails the joint scalar/frequency contract and 0.20 is the minimum passing candidate. Public v2 API/ABI remains unchanged.
+
 # 2.3.8
 
 - Stabilize two-mic TDOA tracking with per-lag EWMA correlation scores while preserving the existing four-frame steady-state scan cadence and adding first-frame acquisition to remove the startup blind window.

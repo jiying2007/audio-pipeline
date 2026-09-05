@@ -3,8 +3,6 @@ name: AEC Motion Tuning Search
 on:
   pull_request:
     paths:
-      - 'validation/tools/build_aec_motion_corpus.py'
-      - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/tools/aec_motion_tuning.py'
       - 'validation/tools/tuning_replay.py'
       - 'validation/tools/tuning_tail_gate.py'
@@ -74,6 +72,13 @@ jobs:
               'agc_target_dbfs': -20.0,
               'limiter_dbfs': -2.0,
           }
+          text = Path('.github/workflows/aec-motion-tuning.yml').read_text()
+          trigger = text.split('  schedule:', 1)[0]
+          assert 'build_aec_motion_corpus.py' not in trigger
+          assert 'build_aec_motion_bundle.py' not in trigger
+          assert 'regression/replay' in text
+          assert 'fresh call' not in text.lower()
+          assert 'unseen motion' not in text.lower()
           PY
 
       - name: Build exact offline tuning processor
@@ -84,7 +89,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
           cmake --build build-motion-tuning --target ap_process_pcm ap_build_info_dump --parallel
 
-      - name: Build independent multi-seed motion partitions in parallel
+      - name: Build fixed regression/replay motion partitions in parallel
         shell: bash
         run: |
           set -euo pipefail
@@ -126,7 +131,7 @@ jobs:
               assert len({item['case_id'] for item in corpus['cases']}) == cases
           PY
 
-      - name: Search motion development and replay unseen motion partitions
+      - name: Search motion development and replay fixed regression partitions
         id: motion
         shell: bash
         run: |
@@ -180,7 +185,7 @@ jobs:
             --candidate tuning-out/motion/shadow/candidate.json \
             --output tuning-out/tail-shadow.json --enforce
 
-      - name: Build unrelated fresh call replay corpora
+      - name: Build fixed generic call regression/replay corpora
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
         shell: bash
         run: |
@@ -192,7 +197,7 @@ jobs:
           wait "$p_val"
           wait "$p_shadow"
 
-      - name: Replay motion-selected candidate on call validation
+      - name: Replay motion-selected candidate on call validation regression
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
         shell: bash
         run: |
@@ -208,7 +213,7 @@ jobs:
             --role validation \
             --output-dir tuning-out/call-validation
 
-      - name: Replay motion-selected candidate on call shadow
+      - name: Replay motion-selected candidate on call shadow regression
         if: steps.motion.outputs.decision == 'ACOUSTIC_CANDIDATE'
         shell: bash
         run: |
@@ -264,7 +269,7 @@ jobs:
                   assert not gate['violations']
               for role in ('call-validation', 'call-shadow'):
                   replay = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())
-                  assert replay['authority'] == 'non-shipping-independent-replay'
+                  assert replay['authority'] == 'non-shipping-regression-replay'
                   assert replay['role'] == role.removeprefix('call-')
                   final['call_replays'][role] = {
                       'decision': replay['decision'],
@@ -320,10 +325,10 @@ jobs:
           print(f"- Tuning: `{json.dumps(r['selected']['tuning'], sort_keys=True)}`")
           print(f"- Development score: `{r['selected']['development_score']:.6f}`")
           print(f"- Candidate jobs: `{r['search_space']['candidate_jobs']}`")
-          print('- Motion development: seeds `4107/4207/4307` (36 cases)')
-          print('- Motion validation: seeds `9107/9207` (24 cases)')
-          print('- Motion shadow: seeds `10107/10207` (24 cases)')
-          print('- Generic call validation/shadow: seeds `9307/10307`')
+          print('- Fixed regression/replay motion development: seeds `4107/4207/4307` (36 cases)')
+          print('- Fixed regression/replay motion validation: seeds `9107/9207` (24 cases)')
+          print('- Fixed regression/replay motion shadow: seeds `10107/10207` (24 cases)')
+          print('- Fixed generic call regression/replay: seeds `9307/10307`')
           if r['decision'] == 'ACOUSTIC_CANDIDATE':
               for tail in ('development', 'validation', 'shadow'):
                   g = json.loads(Path(f'tuning-out/tail-{tail}.json').read_text())
@@ -337,6 +342,7 @@ jobs:
                       print(f"- {role}: `{rr['decision']}`, score `{rr['candidate_score_vs_baseline']:.6f}`")
           print('- Candidate rejection is a valid research outcome; workflow failure is reserved for evidence/tool integrity failure.')
           print('- Hosted real AEC is intentionally absent from this feedback loop and repeated hosted data is regression-only.')
+          print('- Fixed partitions above are regression/replay evidence, never independent confirmation or promotion authority.')
           print('- Authority: non-shipping candidate only; current software/public-data phase cannot claim DUT/HIL/Product Certification.')
           PY
           fi

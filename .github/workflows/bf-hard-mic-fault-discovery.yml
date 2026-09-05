@@ -1,0 +1,120 @@
+name: BF Hard Mic Fault Discovery
+
+on:
+  pull_request:
+    paths:
+      - 'src/frontend/ap_beamformer.c'
+      - 'src/frontend/ap_frontend.h'
+      - 'src/frontend/ap_hpf.c'
+      - 'tests/validation/bf_hard_fault_probe.c'
+      - 'tests/validation/build_bf_hard_fault_sweep.py'
+      - 'tests/validation/bf_hard_fault_evaluate.py'
+      - 'tests/validation/bf_hard_fault_summary.py'
+      - 'validation/tools/build_validation_corpus.py'
+      - '.github/workflows/bf-hard-mic-fault-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bf-hard-mic-fault-discovery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Validate discovery contracts
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/build_bf_hard_fault_sweep.py \
+            tests/validation/bf_hard_fault_evaluate.py \
+            tests/validation/bf_hard_fault_summary.py
+          python3 tests/validation/build_bf_hard_fault_sweep.py --self-test
+          python3 tests/validation/bf_hard_fault_evaluate.py --self-test
+          python3 tests/validation/bf_hard_fault_summary.py --self-test
+
+      - name: Build exact-source frontend probe
+        run: |
+          set -euo pipefail
+          mkdir -p build-bf-hard-fault
+          cc -std=c11 -O2 -Wall -Wextra -Werror -Isrc \
+            tests/validation/bf_hard_fault_probe.c \
+            src/frontend/ap_hpf.c \
+            src/frontend/ap_beamformer.c \
+            -lm -o build-bf-hard-fault/bf_hard_fault_probe
+
+      - name: Build deterministic hard-fault partitions
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          for seed in 1307 2307 3307; do
+            root="/tmp/ap-bf-hard-fault-${seed}"
+            python3 tests/validation/build_bf_hard_fault_sweep.py \
+              --output "$root" --seed "$seed"
+          done
+
+      - name: Measure BF-only and shipping frontend views
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          mkdir -p bf-hard-fault-out
+          for frontend in bf-only hpf-bf; do
+            for seed in 1307 2307 3307; do
+              root="/tmp/ap-bf-hard-fault-${seed}"
+              out="bf-hard-fault-out/${frontend}/${seed}"
+              mkdir -p "$out"
+              python3 tests/validation/bf_hard_fault_evaluate.py \
+                --probe build-bf-hard-fault/bf_hard_fault_probe \
+                --frontend "$frontend" \
+                --corpus "$root/corpus.json" \
+                --output "$out/report.json" | tee "$out/measurement.txt"
+            done
+          done
+
+      - name: Aggregate hard-fault evidence
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        run: |
+          set -euo pipefail
+          for frontend in bf-only hpf-bf; do
+            python3 tests/validation/bf_hard_fault_summary.py \
+              --report "bf-hard-fault-out/${frontend}/1307/report.json" \
+              --report "bf-hard-fault-out/${frontend}/2307/report.json" \
+              --report "bf-hard-fault-out/${frontend}/3307/report.json" \
+              --output "bf-hard-fault-out/${frontend}/summary.json" \
+              | tee "bf-hard-fault-out/${frontend}/summary.txt"
+          done
+          {
+            echo '## BF hard microphone fault discovery'
+            echo
+            echo '### BF-only module view'
+            echo '```text'
+            cat bf-hard-fault-out/bf-only/summary.txt
+            echo '```'
+            echo
+            echo '### HPF → BF shipping-frontend view'
+            echo '```text'
+            cat bf-hard-fault-out/hpf-bf/summary.txt
+            echo '```'
+            echo
+            echo 'The HPF → BF view is the product-relevant decision authority for this discovery. BF-only is retained as module-level root-cause evidence. Both remain diagnostic-regression-only and cannot silently change shipping DSP.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload BF hard-fault evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bf-hard-mic-fault-discovery-${{ github.run_id }}
+          path: bf-hard-fault-out/
+          if-no-files-found: warn
+          retention-days: 30

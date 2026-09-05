@@ -38,12 +38,10 @@ jobs:
             exit 1
           fi
           data_root=${EXTENDED_REAL_DATA_ROOT:-}
-          post_release_tag=
           case "$EVENT_NAME" in
             repository_dispatch)
               source_sha=$RELEASE_REF
               profile=commercial-core
-              post_release_tag=$RELEASE_TAG
               [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'release_ref must be exact 40-hex SHA' >&2; exit 2; }
               case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 2 ;; esac
               git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
@@ -60,7 +58,6 @@ jobs:
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
           echo "profile=$profile" >> "$GITHUB_OUTPUT"
           echo "data_root=$data_root" >> "$GITHUB_OUTPUT"
-          echo "post_release_tag=$post_release_tag" >> "$GITHUB_OUTPUT"
           if [ -n "$data_root" ]; then
             echo "extended-real automation: event=$EVENT_NAME profile=$profile source=$source_sha root=$data_root"
           else
@@ -72,7 +69,6 @@ jobs:
           SOURCE_SHA: ${{ steps.request.outputs.source_sha }}
           PROFILE: ${{ steps.request.outputs.profile }}
           DATA_ROOT: ${{ steps.request.outputs.data_root }}
-          POST_RELEASE_TAG: ${{ steps.request.outputs.post_release_tag }}
         run: |
           set -euo pipefail
           gh workflow run validation-extended-real.yml \
@@ -80,34 +76,8 @@ jobs:
             -f "source_sha=$SOURCE_SHA" \
             -f "profile=$PROFILE" \
             -f "data_root=$DATA_ROOT" \
-            -f "post_release_tag=$POST_RELEASE_TAG" \
             -f limit_per_dataset=48 \
             -f direct_limit=24 \
             -f derived_limit=16 \
             -f holdout_percent=20
-          echo "EXTENDED_REAL_DISPATCHED profile=$PROFILE source=$SOURCE_SHA tag=${POST_RELEASE_TAG:-none}"
-
-  notify-post-release:
-    needs: dispatch
-    if: ${{ always() && github.event_name == 'repository_dispatch' && github.event.action == 'extended-real-post-release' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Notify post-release qualification aggregator
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_REF: ${{ github.event.client_payload.release_ref }}
-          RELEASE_TAG: ${{ github.event.client_payload.tag }}
-          CONTROL_RESULT: ${{ needs.dispatch.result }}
-        run: |
-          set -euo pipefail
-          [[ "$RELEASE_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'invalid post-release SHA' >&2; exit 1; }
-          case "$RELEASE_TAG" in v*) ;; *) echo 'invalid post-release tag' >&2; exit 1 ;; esac
-          gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \
-            -f event_type=post-release-qualification \
-            -f "client_payload[release_ref]=$RELEASE_REF" \
-            -f "client_payload[tag]=$RELEASE_TAG" \
-            -f 'client_payload[component]=extended-automation' \
-            -f "client_payload[source_run_id]=$GITHUB_RUN_ID" \
-            -f "client_payload[result]=$CONTROL_RESULT"
+          echo "EXTENDED_REAL_DISPATCHED profile=$PROFILE source=$SOURCE_SHA"

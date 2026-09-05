@@ -498,7 +498,7 @@ install(TARGETS audio_pipeline EXPORT AudioPipelineTargets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 if(TARGET audio_pipeline_runtime)
     install(TARGETS audio_pipeline_runtime EXPORT AudioPipelineTargets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 install(FILES
     include/audio_pipeline/audio_types.h

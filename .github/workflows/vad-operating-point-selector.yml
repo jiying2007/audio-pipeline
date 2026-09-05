@@ -1,0 +1,161 @@
+name: VAD Operating Point Selector
+
+on:
+  pull_request:
+    paths:
+      - 'src/enhance/ap_vad.c'
+      - 'src/enhance/ap_ns.c'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - 'validation/tools/stage_profile_support.py'
+      - 'validation/tools/run_validation*.py'
+      - 'tests/validation/vad_operating_point_selector.py'
+      - 'tests/validation/vad_operating_point_qualification.py'
+      - '.github/workflows/vad-operating-point-selector.yml'
+  schedule:
+    - cron: '29 21 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vad-operating-point-selector-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-operating-point-selector
+      - name: Validate selector contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            validation/tools/build_stage_validation_corpus.py \
+            tests/validation/vad_operating_point_selector.py \
+            tests/validation/vad_operating_point_qualification.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/vad_operating_point_selector.py --self-test
+          python3 tests/validation/vad_operating_point_qualification.py --self-test
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-selector-contract --seed 1307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          corpus = json.loads(Path('/tmp/ap-vad-selector-contract/corpus.json').read_text())
+          assert corpus['generator']['seed'] == 1307
+          profiles = {case.get('processor_profile') for case in corpus['cases'] if case.get('vad_labels')}
+          assert {'vad-isolated', 'ns-isolated'} <= profiles
+          PY
+      - name: Configure selector processor
+        run: >-
+          cmake -S . -B build-vad-selector -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+      - name: Build selector processor
+        run: cmake --build build-vad-selector --target ap_process_pcm --parallel
+      - name: Build independent stage partitions
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-selector-1307 --seed 1307
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-selector-2307 --seed 2307
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-selector-3307 --seed 3307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for seed in (1307, 2307, 3307):
+              corpus = json.loads(Path(f'/tmp/ap-vad-selector-{seed}/corpus.json').read_text())
+              assert corpus['generator']['seed'] == seed
+              profiles = {case.get('processor_profile') for case in corpus['cases'] if case.get('vad_labels')}
+              assert {'vad-isolated', 'ns-isolated'} <= profiles
+          PY
+      - name: Select decision operating point and replay validation plus shadow
+        run: |
+          set -euo pipefail
+          mkdir -p vad-selector-out
+          python3 tests/validation/vad_operating_point_selector.py \
+            --processor build-vad-selector/ap_process_pcm \
+            --development-corpus /tmp/ap-vad-selector-1307/corpus.json \
+            --validation-corpus /tmp/ap-vad-selector-2307/corpus.json \
+            --shadow-corpus /tmp/ap-vad-selector-3307/corpus.json \
+            --output vad-selector-out/selection.json
+      - name: Qualify research candidate on both holdouts
+        run: |
+          set -euo pipefail
+          python3 tests/validation/vad_operating_point_qualification.py \
+            --selection vad-selector-out/selection.json \
+            --output vad-selector-out/qualification.json
+      - name: Enforce non-shipping selector authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('vad-selector-out/selection.json').read_text())
+          final = json.loads(Path('vad-selector-out/qualification.json').read_text())
+          assert result['authority'] == 'non-shipping-vad-operating-point-selection'
+          assert final['authority'] == 'non-shipping-vad-operating-point-qualification'
+          assert result['decision'] in {'KEEP_BASELINE', 'RESEARCH_CANDIDATE', 'REJECT_CANDIDATE'}
+          assert final['decision'] in {'KEEP_BASELINE', 'RESEARCH_CANDIDATE', 'REJECT_CANDIDATE'}
+          assert result['baseline'] == {'local_threshold': 0.45, 'ns_threshold': 0.35}
+          assert result['development']['identity']['generator_seed'] == 1307
+          assert result['validation']['identity']['generator_seed'] == 2307
+          assert result['shadow']['identity']['generator_seed'] == 3307
+          assert result['validation']['baseline']['validation_result'] == 'PASS'
+          assert result['shadow']['baseline']['validation_result'] == 'PASS'
+          assert result['scope']['decision_only'] is True
+          assert result['scope']['hangover_frames'] == 8
+          if final['decision'] == 'RESEARCH_CANDIDATE':
+              assert result['decision'] == 'RESEARCH_CANDIDATE'
+              assert final['partitions']['validation']['passed']
+              assert final['partitions']['shadow']['passed']
+              assert final['partitions']['validation']['score'] >= final['minimum_holdout_score']
+              assert final['partitions']['shadow']['score'] >= final['minimum_holdout_score']
+              assert not final['partitions']['validation']['case_regression_violations']
+              assert not final['partitions']['shadow']['case_regression_violations']
+              assert result['selected']['candidate_id'] != 'local=0.45,ns=0.35'
+          PY
+      - name: Publish selector summary
+        if: always()
+        run: |
+          if [ -f vad-selector-out/selection.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('vad-selector-out/selection.json').read_text())
+          qpath = Path('vad-selector-out/qualification.json')
+          q = json.loads(qpath.read_text()) if qpath.exists() else None
+          print('## VAD decision operating-point selector')
+          print(f"- Selector decision: `{r['decision']}`")
+          print(f"- Holdout-qualified decision: `{q['decision'] if q else 'UNAVAILABLE'}`")
+          print(f"- Selected: `{r['selected']['candidate_id']}`")
+          print(f"- Development score: `{r['selected']['score']:.4f}`")
+          for role in ('development', 'validation', 'shadow'):
+              b = r[role]['baseline']['summary']
+              c = r[role]['candidate']['summary']
+              print(
+                  f"- {role}: recall `{b['min_vad_recall']:.4f} -> {c['min_vad_recall']:.4f}`, "
+                  f"F1 `{b['min_vad_f1']:.4f} -> {c['min_vad_f1']:.4f}`, "
+                  f"max FPR `{b['max_vad_false_positive_rate']:.4f} -> {c['max_vad_false_positive_rate']:.4f}`"
+              )
+          if q:
+              print(
+                  f"- holdout scores: validation `{q['partitions']['validation']['score']:.4f}`, "
+                  f"shadow `{q['partitions']['shadow']['score']:.4f}`"
+              )
+          print('- Scope: final VAD decision thresholds only; probability generation, noise adaptation, NS fusion and 8-frame hangover are unchanged.')
+          print('- Authority: research selector only; it never mutates shipping thresholds or version metadata.')
+          PY
+          fi
+      - name: Upload selector evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vad-operating-point-selector-${{ github.run_id }}
+          path: vad-selector-out/
+          if-no-files-found: warn
+          retention-days: 30

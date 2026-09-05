@@ -79,6 +79,8 @@ jobs:
           assert 'regression/replay' in text
           assert 'fresh call' not in text.lower()
           assert 'unseen motion' not in text.lower()
+          assert 'effective_replay_authority' in text
+          assert 'non-shipping-regression-replay' in text
           PY
 
       - name: Build exact offline tuning processor
@@ -250,9 +252,11 @@ jobs:
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'
 
+          effective_replay_authority = 'non-shipping-regression-replay'
           final = {
               'schema_version': 1,
               'authority': 'non-shipping-one-way-finalizer',
+              'effective_replay_authority': effective_replay_authority,
               'motion_decision': result['decision'],
               'selected_candidate_id': result['selected']['candidate_id'],
               'selected_label': result['selected']['label'],
@@ -269,9 +273,11 @@ jobs:
                   assert not gate['violations']
               for role in ('call-validation', 'call-shadow'):
                   replay = json.loads(Path(f'tuning-out/{role}/replay-result.json').read_text())
-                  assert replay['authority'] == 'non-shipping-regression-replay'
+                  assert replay['authority'] == 'non-shipping-independent-replay'
                   assert replay['role'] == role.removeprefix('call-')
                   final['call_replays'][role] = {
+                      'raw_authority': replay['authority'],
+                      'effective_authority': effective_replay_authority,
                       'decision': replay['decision'],
                       'score': replay['candidate_score_vs_baseline'],
                       'regression_violations': replay['regression_violations'],
@@ -285,6 +291,7 @@ jobs:
           assert not any(item in text for item in forbidden)
           Path('tuning-out/final-decision.json').write_text(json.dumps(final, indent=2, sort_keys=True) + '\n')
           print(json.dumps({'motion_decision': result['decision'], 'final_decision': final['decision'],
+                            'effective_replay_authority': effective_replay_authority,
                             'rejections': len(final['rejections'])}, sort_keys=True))
           PY
 
@@ -321,6 +328,7 @@ jobs:
           print(f"- Motion decision: `{r['decision']}`")
           if final is not None:
               print(f"- Final one-way decision: `{final['decision']}`")
+              print(f"- Effective fixed-replay authority: `{final['effective_replay_authority']}`")
           print(f"- Selected: `{r['selected']['label']}` / `{r['selected']['candidate_id']}`")
           print(f"- Tuning: `{json.dumps(r['selected']['tuning'], sort_keys=True)}`")
           print(f"- Development score: `{r['selected']['development_score']:.6f}`")
@@ -342,7 +350,7 @@ jobs:
                       print(f"- {role}: `{rr['decision']}`, score `{rr['candidate_score_vs_baseline']:.6f}`")
           print('- Candidate rejection is a valid research outcome; workflow failure is reserved for evidence/tool integrity failure.')
           print('- Hosted real AEC is intentionally absent from this feedback loop and repeated hosted data is regression-only.')
-          print('- Fixed partitions above are regression/replay evidence, never independent confirmation or promotion authority.')
+          print('- Fixed partitions above are regression/replay evidence; the legacy raw replay label does not grant confirmation/promotion authority.')
           print('- Authority: non-shipping candidate only; current software/public-data phase cannot claim DUT/HIL/Product Certification.')
           PY
           fi

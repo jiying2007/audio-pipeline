@@ -49,6 +49,20 @@ static int16_t float_to_s16(float value) {
     return (int16_t)rounded;
 }
 
+static float frame_roughness(const float *x, uint32_t n) {
+    float energy = 1.0e-12f;
+    float diff_energy = 1.0e-12f;
+    uint32_t i;
+    if (n == 0u) return 1.0f;
+    energy += x[0] * x[0];
+    for (i = 1u; i < n; ++i) {
+        const float delta = x[i] - x[i - 1u];
+        energy += x[i] * x[i];
+        diff_energy += delta * delta;
+    }
+    return diff_energy / energy;
+}
+
 int main(int argc, char **argv) {
     ap_beamformer_state_t state;
     ap_hpf_state_t hpf;
@@ -152,6 +166,9 @@ int main(int argc, char **argv) {
     while (fread(input, sizeof(int16_t) * 2u, frame_samples, fi) == frame_samples) {
         double energy0 = 1.0e-12;
         double energy1 = 1.0e-12;
+        double amplitude_ratio;
+        float roughness0;
+        float roughness1;
         uint32_t i;
         for (i = 0u; i < frame_samples; ++i) {
             mic0[i] = (float)input[2u * i];
@@ -161,6 +178,8 @@ int main(int argc, char **argv) {
             ap_hpf_process(&hpf, mic0, frame_samples, 0u);
             ap_hpf_process(&hpf, mic1, frame_samples, 1u);
         }
+        roughness0 = frame_roughness(mic0, frame_samples);
+        roughness1 = frame_roughness(mic1, frame_samples);
         for (i = 0u; i < frame_samples; ++i) {
             energy0 += (double)mic0[i] * (double)mic0[i];
             energy1 += (double)mic1[i] * (double)mic1[i];
@@ -171,6 +190,7 @@ int main(int argc, char **argv) {
         }
         energy0 /= (double)frame_samples;
         energy1 /= (double)frame_samples;
+        amplitude_ratio = sqrt(fmin(energy0, energy1) / fmax(fmax(energy0, energy1), 1.0e-24));
         if (foracle && fwrite(oracle_output, sizeof(int16_t), frame_samples, foracle) != frame_samples) {
             perror("fwrite oracle");
             fclose(fi);
@@ -193,6 +213,8 @@ int main(int argc, char **argv) {
         if (fprintf(ft,
                     "{\"frame\":%u,\"frontend\":\"%s\","
                     "\"pre_bf_energy0\":%.9g,\"pre_bf_energy1\":%.9g,"
+                    "\"pre_bf_amplitude_ratio\":%.9g,"
+                    "\"pre_bf_roughness0\":%.9g,\"pre_bf_roughness1\":%.9g,"
                     "\"fallback_active\":%u,\"fallback_hard_fault\":%u,"
                     "\"fallback_strong_channel\":%u,"
                     "\"fallback_recovery_count\":%u,"
@@ -202,6 +224,9 @@ int main(int argc, char **argv) {
                     frontend,
                     energy0,
                     energy1,
+                    amplitude_ratio,
+                    (double)roughness0,
+                    (double)roughness1,
                     state.fallback_active,
                     state.fallback_hard_fault,
                     state.fallback_strong_channel,

@@ -6,11 +6,11 @@
   "auto_promote": false,
   "max_parallel_candidates": 1,
   "baseline": {
-    "source_sha": "2e98354dc54b23c019d30b1c75a6d304d5a09ccb",
-    "verify_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33961870472",
-    "software_release": "v2.3.11",
-    "release_url": "https://github.com/jiying2007/audio-pipeline/releases/tag/v2.3.11",
-    "note": "main snapshot includes governance after the immutable release; do not equate the two source identities"
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "verify_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33968963275",
+    "software_release": "v2.3.12",
+    "release_url": "https://github.com/jiying2007/audio-pipeline/releases/tag/v2.3.12",
+    "note": "immutable software/public-data baseline; product qualification remains deferred by scope"
   },
   "data_roles": [
     {"path": "validation/hosted_real.datasets.lock.json", "role": "hosted-regression", "exposed": true},
@@ -53,9 +53,9 @@
       "evidence": []
     },
     {
-      "id": "P001", "priority": 15, "status": "PLANNED", "lane": "governance",
+      "id": "P001", "priority": 15, "status": "READY", "lane": "governance",
       "title": "Bind promotion gate plans, data source groups, exposure and inherited research budgets",
-      "depends_on": ["P000"], "handler": null, "contract": null,
+      "depends_on": ["P000"], "handler": "promotion-governance", "contract": "docs/program/iterations/P001.json",
       "exit": "Negative tests reject old SHA, missing gates, leaked confirmation, concealed failures and budget reset",
       "evidence": []
     },

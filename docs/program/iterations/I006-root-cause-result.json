@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "phase": "root-cause-differential-reviewed",
+  "root_cause_id": "agc-noise-floor-and-activity-control-dependency",
+  "decision": "AUTHORIZE_ONE_MAX_GAIN_CANDIDATE_AND_HANDOFF_ACTIVITY",
+  "candidate_decision": "NOT_YET_AN_ACOUSTIC_CANDIDATE",
+  "authority": "reviewed-exposed-regression-root-cause-only",
+  "base_sha": "54a6c60b17d6a910843b5e23e6eb7f2976953cb5",
+  "research_head_sha": "c60ad87b29c3d1a941ccdb02b28418cdbb8f1c55",
+  "review_merge_sha": "945344a29a826bbf5330baf3382cb3e34c8f4160",
+  "workflow_run_id": 34020771042,
+  "artifact_id": 9985408103,
+  "artifact_digest": "sha256:0529d77839c49379f554e5ef0b19d80a65c401e4ac2d009a33f7902a7d515a8b",
+  "downloaded_zip_sha256": "0529d77839c49379f554e5ef0b19d80a65c401e4ac2d009a33f7902a7d515a8b",
+  "internal_sha256s_verified": 283,
+  "shipping_diff_zero": true,
+  "candidate_limit_consumed": 0,
+  "confirmation_limit_consumed": 0,
+  "root_cause_findings": {
+    "noise_floor": {
+      "cases": 6,
+      "max_gain_hypothesis_confirmed": "6/6",
+      "shipping_max_gain_linear": 8.0,
+      "shipping_max_gain_db": 18.06179973983887,
+      "observed_p95_gain_db": 18.061723795,
+      "max_gain_saturation_fraction": 0.7013513513513514,
+      "far_end_active_fraction": 0.0,
+      "conclusion": "The frozen 15 dB noise-floor incremental-gain gate fails because shipping AGC converges to the explicit 8x maximum-gain clamp when no far-end-only prohibition is active. The result is deterministic across all six exposed regression cases."
+    },
+    "double_talk_activity": {
+      "cases": 6,
+      "classification_distribution": {
+        "DT_SMOOTHED_RATIO_GATE_LIMIT": 3,
+        "DT_BOTH_RATIO_GATES_LIMIT": 3,
+        "DT_INSTANT_RATIO_GATE_LIMIT": 0,
+        "DT_NOT_EXPLAINED_BY_CURRENT_RATIO_GATES": 0
+      },
+      "balanced_case_interpretation": "Most missed balanced near+far frames satisfy the frozen instant hold proxy but fail the smoothed on-gate, identifying state admission as the dominant limitation on these exposed cases.",
+      "weak_near_interpretation": "All three weak-near cases are dominated by simultaneous smoothed and instant on-gate failure; this is an activity-control dependency rather than evidence to tune AGC target, limiter, attack or release.",
+      "conclusion": "All six exposed double-talk gaps are explained by the current activity ratio predicates; none requires an AGC parameter search."
+    }
+  },
+  "reviewed_candidate_authority": {
+    "authorized_now": true,
+    "root_cause": "noise-floor-max-gain-cap",
+    "maximum_source_candidates": 1,
+    "exact_variant": "max-gain-cap-15db",
+    "candidate_max_gain_db": 15.0,
+    "candidate_max_gain_linear": 5.623413251903491,
+    "basis": "The value is the pre-registered I006 noise-floor max_p95_frame_gain_db gate, not a post-result grid or ranking outcome.",
+    "candidate_data_role": "already-exposed-development-regression-only",
+    "confirmation_allowed_during_candidate_search": false,
+    "promotion_allowed_during_candidate_search": false,
+    "forbidden": [
+      "agc_target_dbfs change or search",
+      "limiter_dbfs change or search",
+      "attack/release change or search",
+      "activity ratio threshold change or search",
+      "additional max-gain variants",
+      "candidate ranking",
+      "confirmation consumption before candidate review",
+      "automatic promotion or release"
+    ],
+    "required_protection": [
+      "noise-floor incremental p95 frame gain <= 15.0 dB in all exposed cases",
+      "noise-floor absolute tail output <= -28.0 dBFS",
+      "pure far-end output-vs-input gain <= 0.75 dB and far-only activity precondition remains valid",
+      "near/far paired AGC speech SI-SDR delta >= -0.50 dB",
+      "no clip-fraction regression beyond frozen I006 gates",
+      "no API/ABI/resource/performance regression",
+      "no behavior change to activity-control predicates"
+    ]
+  },
+  "activity_handoff": {
+    "iteration_id": "I009",
+    "root_cause_id": "activity-double-talk-ratio-admission",
+    "source_role": "already-observed-regression-root-cause-context-only",
+    "seeds": [16107, 26107, 36107],
+    "may_be_independent_confirmation": false,
+    "may_be_candidate_selection_data": false,
+    "threshold_search_authorized": false,
+    "shipping_change_authorized": false,
+    "note": "I006 does not absorb an Activity threshold search into an AGC candidate. I009 must obtain a separate bounded contract and fresh independent source before any confirmation claim."
+  },
+  "shipping_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "software_release": "v2.3.12"
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I009",
+  "phase": "inherited-evidence",
+  "root_cause_id": "activity-double-talk-ratio-admission",
+  "source_iteration": "I006",
+  "source_role": "already-observed-regression-root-cause-context-only",
+  "source_sha": "54a6c60b17d6a910843b5e23e6eb7f2976953cb5",
+  "workflow_run_id": 34020771042,
+  "artifact_id": 9985408103,
+  "artifact_digest": "sha256:0529d77839c49379f554e5ef0b19d80a65c401e4ac2d009a33f7902a7d515a8b",
+  "seeds": [16107, 26107, 36107],
+  "scenarios": ["near-far-doubletalk", "near-far-weak-near"],
+  "observed_classification_distribution": {
+    "DT_SMOOTHED_RATIO_GATE_LIMIT": 3,
+    "DT_BOTH_RATIO_GATES_LIMIT": 3,
+    "DT_INSTANT_RATIO_GATE_LIMIT": 0,
+    "DT_NOT_EXPLAINED_BY_CURRENT_RATIO_GATES": 0
+  },
+  "authority": {
+    "may_be_independent_confirmation": false,
+    "may_be_candidate_selection_data": false,
+    "may_tune_activity_thresholds": false,
+    "may_modify_shipping_source": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false
+  },
+  "required_next_step": "Create a separate candidate-zero Activity baseline/root-cause contract on current main, then authorize at most a tightly bounded structural candidate only if fresh measurement requires it. Do not convert the exposed I006 seeds into confirmation or threshold-search authority.",
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

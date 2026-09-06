@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I008",
+  "action_id": "resampler-perf-comparator-equivalence-v1",
+  "state": "BOUNDED_ENGINEERING_FIX",
+  "exact_base_sha": "54fd0cdb5ff7197748fa52d07e0cb83e465a6b57",
+  "root_cause": {
+    "source": "I008 candidate-zero audit run 34038886087",
+    "reviewed_decision": "ENGINEERING_GAP_REVIEW_REQUIRED",
+    "defect": "scripts/compare-resampler-perf.sh configured base with project-default BANDLIMITED while configuring head explicitly FAST",
+    "effect": "same-source evidence reported non-causal apparent FAST improvements of roughly 72-90 percent",
+    "scope": "performance-evidence comparator only",
+    "shipping_dsp_defect": false
+  },
+  "frozen_change_scope": {
+    "allowed_paths": [
+      "scripts/compare-resampler-perf.sh",
+      "docs/program/iterations/I008-resampler-perf-comparator-fix.json",
+      ".github/workflows/i008-resampler-perf-comparator-fix.yml"
+    ],
+    "shipping_source_paths_forbidden": ["src/", "include/", "CMakeLists.txt"],
+    "acoustic_parameter_changes": false,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "required_fix": {
+    "base_resampler_mode": "FAST",
+    "head_resampler_mode": "FAST",
+    "require_base_head_ap_cache_equivalence": true,
+    "excluded_equivalence_key": "AP_BUILD_SOURCE_REVISION",
+    "keep_existing_regression_gate": {
+      "relative_regression_pct": 10.0,
+      "absolute_regression_us": 0.05,
+      "logic": "fail only when both are exceeded"
+    }
+  },
+  "fresh_rerun": {
+    "base_sha": "54fd0cdb5ff7197748fa52d07e0cb83e465a6b57",
+    "repetitions": 7,
+    "frames": 100000,
+    "paths": [
+      "24000->16000", "32000->16000", "48000->16000",
+      "24000->8000", "32000->8000", "48000->8000",
+      "8000->16000", "16000->8000"
+    ],
+    "required_outcome": "existing regression gate PASS with base/head AP_* caches behavior-equivalent",
+    "review_note": "The rerun is engineering development evidence and cannot become acoustic confirmation. Review must confirm the former 72-90 percent artifact disappears rather than interpreting a green exit code alone."
+  },
+  "authority_boundary": {
+    "shipping_release": "v2.3.12",
+    "shipping_source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

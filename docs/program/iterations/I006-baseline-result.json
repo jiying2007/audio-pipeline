@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "phase": "baseline-measurement-reviewed",
+  "measurement_revision": 3,
+  "root_cause_id": "agc-residual-floor-mismatch-baseline",
+  "source_sha": "ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b",
+  "research_head_sha": "2480522b136ace18df4654bdce2ed6d7be0bb047",
+  "decision": "MEASURED_GAP_REVIEW_REQUIRED",
+  "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE",
+  "candidate_limit_consumed": 0,
+  "confirmation_limit_consumed": 0,
+  "agc_target_tuning_performed": false,
+  "limiter_tuning_performed": false,
+  "attack_release_tuning_performed": false,
+  "candidate_search_performed": false,
+  "promotion_allowed": false,
+  "authoritative_execution": {
+    "workflow_run_id": 34011652196,
+    "artifact_id": 9982646065,
+    "artifact_digest": "sha256:f175dc88aef99181d7e1fd8568ffc015ba5fc00065b5d36e2f787c38a6188b6f",
+    "downloaded_zip_sha256": "f175dc88aef99181d7e1fd8568ffc015ba5fc00065b5d36e2f787c38a6188b6f",
+    "internal_sha256s_verified": 341,
+    "authority": "paired-exact-production-agc-on-vs-off",
+    "cases": 18,
+    "precondition_failures": 0,
+    "gate_failure_cases": 11
+  },
+  "fresh_development_source": {
+    "seeds": [16107, 26107, 36107],
+    "scenarios": [
+      "pure-far-end-residual-low",
+      "pure-far-end-residual-ramp",
+      "noise-floor-low",
+      "noise-floor-step",
+      "near-far-doubletalk",
+      "near-far-weak-near"
+    ],
+    "current_role": "development-exposed",
+    "next_role_after_review": "regression-only",
+    "future_independent_confirmation": false,
+    "promotion": false
+  },
+  "reviewed_findings": {
+    "pure_far_end": {
+      "cases": 6,
+      "passed": 6,
+      "far_only_fraction": 1.0,
+      "agc_on_minus_off_rms_gain_db_range": [0.0, 0.0],
+      "conclusion": "production pure-far-end activity gating completely prevents AGC gain-up on the frozen matrix"
+    },
+    "noise_floor": {
+      "cases": 6,
+      "passed": 0,
+      "failure_gate": "noise_floor_gain",
+      "agc_on_minus_off_p95_gain_db_range": [18.06292600454119, 18.065727082363402],
+      "low_floor_tail_output_dbfs_range": [-37.44977499308956, -37.36093667448306],
+      "step_floor_tail_output_dbfs_range": [-29.8408495159889, -29.564552453880715],
+      "absolute_tail_gate_passed": true,
+      "conclusion": "AGC adds about 18 dB p95 gain to low/noise-floor inputs, exceeding the frozen 15 dB ceiling even though absolute output remains below the -28 dBFS tail ceiling"
+    },
+    "near_far_speech_preservation": {
+      "cases": 6,
+      "passed": 6,
+      "agc_on_minus_off_si_sdr_db_range": [-0.06019323636241042, 0.23491246212977948],
+      "frozen_min_db": -0.5,
+      "conclusion": "paired exact-production evidence rejects the revision-1 hypothesis that AGC itself causes the large near/far speech SI-SDR loss"
+    },
+    "double_talk_activity": {
+      "cases": 6,
+      "passed": 1,
+      "balanced_fractions": [0.3183098591549296, 0.428169014084507, 0.2563380281690141],
+      "weak_near_fractions": [0.03943661971830986, 0.03943661971830986, 0.03943661971830986],
+      "frozen_min_fraction": 0.35,
+      "conclusion": "activity-control dependency under-detects double talk on most balanced cases and all weak-near cases; this is not authority to tune AGC target/limiter"
+    }
+  },
+  "gate_failure_counts": {
+    "noise_floor_gain": 6,
+    "double_talk_activity": 5,
+    "pure_far_gain_up": 0,
+    "speech_preservation": 0,
+    "clip_fraction": 0
+  },
+  "measurement_lineage": {
+    "revision_1": {
+      "workflow_run_id": 34011048045,
+      "artifact_id": 9982461168,
+      "artifact_digest": "sha256:91ff98c91fa7b74e7b4039b1121745639f7f190e3dd7eaf857d615cee472911e",
+      "internal_sha256s_verified": 340,
+      "authority_after_review": "measurement-attribution-lineage-only",
+      "issue": "full-pipeline output versus raw capture confounded AGC attribution"
+    },
+    "revision_2_infrastructure_failure": {
+      "workflow_run_id": 34011365790,
+      "artifact_id": 9982554051,
+      "artifact_digest": "sha256:bc1b34281f73bf48bbc157fc87fd6e0c3be3e9c88ea8ad26c395ab775d55c640",
+      "valid_measurement_completed": false,
+      "issue": "standalone feature macro mapping stopped compilation before corrected cases"
+    },
+    "revision_2": {
+      "workflow_run_id": 34011423624,
+      "artifact_id": 9982575584,
+      "artifact_digest": "sha256:bad8a7749aeb2f71b463175fd0ca3099d267e5a11167223d9ab8e69483af7723",
+      "internal_sha256s_verified": 415,
+      "authority_after_review": "measurement-attribution-lineage-only",
+      "issue": "controlled AGC received raw mic rather than production post-AEC/RES/NS audio"
+    },
+    "revision_3": {
+      "same_seeds": true,
+      "same_scenarios": true,
+      "same_gate_values": true,
+      "new_confirmation_data": false,
+      "authority": "paired exact-production full pipelines differing only by AP_STAGE_AGC"
+    }
+  },
+  "reviewed_next_action": {
+    "state": "REVIEW_REQUIRED",
+    "allow_agc_target_or_limiter_search": false,
+    "allow_attack_release_search": false,
+    "allow_confirmation": false,
+    "root_cause_differentials": [
+      "noise-floor gain protection",
+      "activity double-talk mismatch"
+    ],
+    "note": "separate AGC noise-floor behavior from activity-control dependency before authorizing any bounded source candidate"
+  },
+  "shipping_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "software_release": "v2.3.12"
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

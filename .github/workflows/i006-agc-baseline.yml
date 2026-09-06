@@ -1,0 +1,260 @@
+name: I006 AGC Candidate-Zero Baseline
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I006-baseline.json'
+      - 'docs/program/iterations/I006-baseline-result.json'
+      - 'tests/validation/i006_agc_residual_floor_baseline.py'
+      - 'tests/validation/i006_agc_controlled_baseline.py'
+      - 'tests/validation/i006_agc_activity_control_probe.c'
+      - 'tests/validation/i006_agc_paired_baseline.py'
+      - 'tests/validation/i006_agc_paired_pipeline_probe.c'
+      - '.github/workflows/i006-agc-baseline.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i006-agc-baseline-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_SHA: ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b
+      PYTHONPATH: tests/validation:validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate frozen I006 paired-production contract and research scope
+        id: contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/i006_agc_residual_floor_baseline.py \
+            tests/validation/i006_agc_controlled_baseline.py \
+            tests/validation/i006_agc_paired_baseline.py
+          PYTHONPATH=tests/validation:validation/tools \
+            python3 tests/validation/i006_agc_residual_floor_baseline.py --self-test
+          PYTHONPATH=tests/validation:validation/tools \
+            python3 tests/validation/i006_agc_controlled_baseline.py --self-test
+          PYTHONPATH=tests/validation:validation/tools \
+            python3 tests/validation/i006_agc_paired_baseline.py --self-test
+          python3 -m json.tool docs/program/iterations/I006-baseline.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c = json.loads(Path('docs/program/iterations/I006-baseline.json').read_text())
+          assert c['schema_version'] == 1 and c['iteration_id'] == 'I006'
+          assert c['phase'] == 'baseline-measurement'
+          assert c['measurement_revision'] == 3
+          assert c['root_cause_id'] == 'agc-residual-floor-mismatch-baseline'
+          assert c['base_sha'] == 'ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b'
+          assert c['candidate_limit'] == 0 and c['confirmation_limit'] == 0
+          assert c['promotion_allowed'] is False
+          assert c['shipping_authority'] == 'paired-exact-production-agc-on-vs-off'
+          assert c['seeds'] == [16107, 26107, 36107]
+          assert c['existing_exposed_agc_search']['seeds'] == [1307, 2307, 3307]
+          assert c['existing_exposed_agc_search']['prohibited_for_this_measurement'] is True
+          assert all(value is False for value in c['authority'].values())
+          lineage = c['measurement_lineage']
+          assert lineage['revision_1']['workflow_run_id'] == 34011048045
+          assert lineage['revision_1']['artifact_id'] == 9982461168
+          assert lineage['revision_1']['internal_sha256s_verified'] == 340
+          assert lineage['revision_2_infrastructure_failure']['workflow_run_id'] == 34011365790
+          assert lineage['revision_2_infrastructure_failure']['valid_measurement_completed'] is False
+          assert lineage['revision_2']['workflow_run_id'] == 34011423624
+          assert lineage['revision_2']['artifact_id'] == 9982575584
+          assert lineage['revision_2']['artifact_digest'] == 'sha256:bad8a7749aeb2f71b463175fd0ca3099d267e5a11167223d9ab8e69483af7723'
+          assert lineage['revision_2']['internal_sha256s_verified'] == 415
+          assert lineage['revision_3']['same_seeds'] is True
+          assert lineage['revision_3']['same_scenarios'] is True
+          assert lineage['revision_3']['same_gate_values'] is True
+          assert lineage['revision_3']['new_confirmation_data'] is False
+          assert c['product_qualification'] == 'DEFERRED_BY_SCOPE'
+          PY
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(\.github/workflows/i006-agc-baseline\.yml|docs/program/iterations/I006-baseline\.json|docs/program/iterations/I006-baseline-result\.json|tests/validation/i006_agc_residual_floor_baseline\.py|tests/validation/i006_agc_controlled_baseline\.py|tests/validation/i006_agc_activity_control_probe\.c|tests/validation/i006_agc_paired_baseline\.py|tests/validation/i006_agc_paired_pipeline_probe\.c)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)"
+          test "$count" -eq 7 -o "$count" -eq 8
+          for path in \
+            docs/program/iterations/I006-baseline.json \
+            tests/validation/i006_agc_residual_floor_baseline.py \
+            tests/validation/i006_agc_controlled_baseline.py \
+            tests/validation/i006_agc_activity_control_probe.c \
+            tests/validation/i006_agc_paired_baseline.py \
+            tests/validation/i006_agc_paired_pipeline_probe.c \
+            .github/workflows/i006-agc-baseline.yml; do
+            printf '%s\n' "$changed" | grep -Fx "$path"
+          done
+          if test -f docs/program/iterations/I006-baseline-result.json; then
+            echo 'sealed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'sealed=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate terminal sealed result without re-executing baseline
+        if: steps.contract.outputs.sealed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          r = json.loads(Path('docs/program/iterations/I006-baseline-result.json').read_text())
+          assert r['schema_version'] == 1 and r['iteration_id'] == 'I006'
+          assert r['phase'] == 'baseline-measurement-reviewed'
+          assert r['measurement_revision'] == 3
+          assert r['root_cause_id'] == 'agc-residual-floor-mismatch-baseline'
+          assert r['source_sha'] == 'ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b'
+          assert r['decision'] in {
+              'BASELINE_ADEQUATE_NO_SEARCH',
+              'MEASURED_GAP_REVIEW_REQUIRED',
+              'INPUT_OR_ACTIVITY_INVALID_REVIEW_REQUIRED',
+          }
+          assert r['candidate_limit_consumed'] == 0
+          assert r['confirmation_limit_consumed'] == 0
+          assert r['candidate_decision'] == 'NOT_AN_ACOUSTIC_CANDIDATE'
+          assert r['agc_target_tuning_performed'] is False
+          assert r['limiter_tuning_performed'] is False
+          assert r['attack_release_tuning_performed'] is False
+          assert r['candidate_search_performed'] is False
+          assert r['promotion_allowed'] is False
+          a = r['authoritative_execution']
+          assert isinstance(a['workflow_run_id'], int) and a['workflow_run_id'] > 0
+          assert isinstance(a['artifact_id'], int) and a['artifact_id'] > 0
+          assert re.fullmatch(r'sha256:[0-9a-f]{64}', a['artifact_digest'])
+          assert a['internal_sha256s_verified'] > 0
+          assert r['fresh_development_source']['seeds'] == [16107, 26107, 36107]
+          assert r['fresh_development_source']['future_independent_confirmation'] is False
+          assert r['measurement_lineage']['revision_1']['workflow_run_id'] == 34011048045
+          assert r['measurement_lineage']['revision_2']['workflow_run_id'] == 34011423624
+          assert r['product_qualification'] == 'DEFERRED_BY_SCOPE'
+          PY
+          rm -rf i006-agc-baseline-evidence
+          mkdir -p i006-agc-baseline-evidence
+          cp docs/program/iterations/I006-baseline-result.json i006-agc-baseline-evidence/committed-result.json
+          printf '%s\n' 'SEALED_REVIEW_REPLAY_NO_BASELINE_EXECUTION' > i006-agc-baseline-evidence/replay-mode.txt
+          find i006-agc-baseline-evidence -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > i006-agc-baseline-evidence/SHA256SUMS
+
+      - name: Prepare exact-base detached worktree
+        if: steps.contract.outputs.sealed == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf exact-base
+          git worktree add --detach exact-base "$BASE_SHA"
+          test "$(git -C exact-base rev-parse HEAD)" = "$BASE_SHA"
+          mkdir -p exact-base/docs/program/iterations exact-base/tests/validation
+          cp docs/program/iterations/I006-baseline.json exact-base/docs/program/iterations/I006-baseline.json
+          cp tests/validation/i006_agc_residual_floor_baseline.py exact-base/tests/validation/i006_agc_residual_floor_baseline.py
+          cp tests/validation/i006_agc_controlled_baseline.py exact-base/tests/validation/i006_agc_controlled_baseline.py
+          cp tests/validation/i006_agc_activity_control_probe.c exact-base/tests/validation/i006_agc_activity_control_probe.c
+          cp tests/validation/i006_agc_paired_baseline.py exact-base/tests/validation/i006_agc_paired_baseline.py
+          cp tests/validation/i006_agc_paired_pipeline_probe.c exact-base/tests/validation/i006_agc_paired_pipeline_probe.c
+          test "$(git -C exact-base rev-parse HEAD)" = "$BASE_SHA"
+
+      - name: Execute paired exact-production candidate-zero I006 baseline
+        if: steps.contract.outputs.sealed == 'false'
+        working-directory: exact-base
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf i006-agc-baseline-evidence
+          PYTHONPATH=tests/validation:validation/tools \
+          python3 tests/validation/i006_agc_paired_baseline.py \
+            --contract docs/program/iterations/I006-baseline.json \
+            --output i006-agc-baseline-evidence \
+            | tee i006-agc-baseline-summary.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('i006-agc-baseline-evidence/baseline-result.json').read_text())
+          assert r['schema_version'] == 1 and r['iteration_id'] == 'I006'
+          assert r['measurement_revision'] == 3
+          assert r['source_sha'] == 'ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b'
+          assert r['authority'] == 'candidate-zero-paired-exact-production-agc-baseline-only'
+          assert r['production_gate']['controlled_call_present'] is True
+          assert r['production_gate']['allow_gain_expression'] == '!(far_end_active && !double_talk_active)'
+          assert r['candidate_limit'] == 0 and r['confirmation_limit'] == 0
+          assert r['candidate_search_performed'] is False
+          assert r['agc_target_tuning_performed'] is False
+          assert r['limiter_tuning_performed'] is False
+          assert r['attack_release_tuning_performed'] is False
+          assert r['promotion_allowed'] is False
+          assert r['candidate_decision'] == 'NOT_AN_ACOUSTIC_CANDIDATE'
+          assert r['decision'] in {
+              'BASELINE_ADEQUATE_NO_SEARCH',
+              'MEASURED_GAP_REVIEW_REQUIRED',
+              'INPUT_OR_ACTIVITY_INVALID_REVIEW_REQUIRED',
+          }
+          assert len(r['cases']) == 18
+          assert r['measurement_lineage']['revision_1']['workflow_run_id'] == 34011048045
+          assert r['measurement_lineage']['revision_2']['workflow_run_id'] == 34011423624
+          assert r['measurement_lineage']['revision_3']['same_gate_values'] is True
+          assert r['product_qualification'] == 'DEFERRED_BY_SCOPE'
+          PY
+          cp ../docs/program/iterations/I006-baseline.json i006-agc-baseline-evidence/contract.json
+          cp ../tests/validation/i006_agc_residual_floor_baseline.py i006-agc-baseline-evidence/evaluator-v1.py
+          cp ../tests/validation/i006_agc_controlled_baseline.py i006-agc-baseline-evidence/evaluator-v2.py
+          cp ../tests/validation/i006_agc_activity_control_probe.c i006-agc-baseline-evidence/controlled-probe-v2.c
+          cp ../tests/validation/i006_agc_paired_baseline.py i006-agc-baseline-evidence/evaluator-v3.py
+          cp ../tests/validation/i006_agc_paired_pipeline_probe.c i006-agc-baseline-evidence/paired-probe-v3.c
+          printf '%s\n' "$BASE_SHA" > i006-agc-baseline-evidence/base-sha.txt
+          git -C .. rev-parse HEAD > i006-agc-baseline-evidence/research-head.txt
+          cp i006-agc-baseline-summary.json i006-agc-baseline-evidence/execution-summary.json
+          find i006-agc-baseline-evidence -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > i006-agc-baseline-evidence/SHA256SUMS
+
+      - name: Publish I006 baseline summary
+        if: always()
+        shell: bash
+        run: |
+          result='exact-base/i006-agc-baseline-evidence/baseline-result.json'
+          if test -f "$result"; then
+            RESULT="$result" python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from pathlib import Path
+          r = json.loads(Path(os.environ['RESULT']).read_text())
+          print('## I006 paired exact-production candidate-zero AGC baseline')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Measurement revision: `{r['measurement_revision']}`")
+          print(f"- Paired-production AGC gate failures: `{len(r['gate_failures'])}`")
+          print(f"- Input/activity precondition failures: `{len(r['precondition_failures'])}`")
+          by_cat = {}
+          for case in r['cases']:
+              by_cat.setdefault(case['category'], []).append(case)
+          for category, rows in sorted(by_cat.items()):
+              print(f"- {category}: `{len(rows)}` cases, failed `{sum(bool(x['failures']) for x in rows)}`")
+          print('- Decision authority: exact production full-call AGC ON vs AGC OFF paired differential; all upstream stages and inputs are identical.')
+          print('- Raw AGC remains diagnostic only. Frozen seeds/scenarios/gate values are unchanged from revisions 1/2; no confirmation data was added.')
+          print('- Candidate/confirmation budget consumed: `0/0`.')
+          print('- Product qualification: `DEFERRED_BY_SCOPE`.')
+          PY
+          elif test -f i006-agc-baseline-evidence/committed-result.json; then
+            echo '## I006 candidate-zero AGC baseline' >> "$GITHUB_STEP_SUMMARY"
+            echo '- Terminal mode: `SEALED_REVIEW_REPLAY_NO_BASELINE_EXECUTION`' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload sealed I006 baseline evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i006-agc-baseline-${{ github.run_id }}
+          path: |
+            exact-base/i006-agc-baseline-evidence/
+            i006-agc-baseline-evidence/
+          retention-days: 90
+          if-no-files-found: error

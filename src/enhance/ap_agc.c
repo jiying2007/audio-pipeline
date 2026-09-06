@@ -30,7 +30,7 @@ void ap_agc_process_controlled(ap_agc_state_t *state,
     }
     {
         const float rms = sqrtf(e / (float)n);
-        target_gain = ap_agc_clamp(state->target_linear / (rms + 1.0e-6f), 0.25f, 8.0f);
+        target_gain = ap_agc_clamp(state->target_linear / (rms + 1.0e-6f), 0.25f, 5.623413f);
         if (!allow_gain_increase && target_gain > 1.0f) target_gain = 1.0f;
     }
     alpha = target_gain < state->gain ? 0.25f : 0.015f;

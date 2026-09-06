@@ -1,0 +1,187 @@
+name: I009 Residual-Echo Source Candidate
+
+on:
+  pull_request:
+    paths:
+      - 'src/activity/ap_activity.c'
+      - 'src/activity/ap_activity.h'
+      - 'src/core/ap_pipeline.c'
+      - 'docs/program/iterations/I009-residual-echo-candidate.json'
+      - 'tests/validation/i009_activity_candidate_eval.py'
+      - '.github/workflows/i009-residual-echo-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BASE_SHA: 497c3ca3a6be0a4e319a3493e256eac7391a7f18
+      PYTHONPATH: tests/validation:validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate frozen candidate contract and exact source boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/program/iterations/I009-residual-echo-candidate.json >/dev/null
+          python3 -m py_compile tests/validation/i009_activity_candidate_eval.py
+          python3 scripts/program.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/I009-residual-echo-candidate.json').read_text())
+          assert c['schema_version']==1 and c['iteration_id']=='I009'
+          assert c['candidate_id']=='activity-residual-echo-rescue-v1'
+          assert c['program_base_sha']==c['acoustic_base_sha']=='497c3ca3a6be0a4e319a3493e256eac7391a7f18'
+          assert c['candidate_limit']==c['candidate_limit_consumed']==1
+          assert c['confirmation_limit']==c['confirmation_limit_consumed']==0
+          assert c['root_cause_execution']['workflow_run_id']==34033842566
+          assert c['root_cause_execution']['artifact_id']==9989499865
+          assert c['root_cause_execution']['internal_sha256s_verified']==301
+          assert c['root_cause_execution']['near_far_passed']==6
+          assert c['root_cause_execution']['pure_far_passed']==3
+          d=c['source_delta']
+          assert d['paths']==['src/activity/ap_activity.c','src/activity/ap_activity.h','src/core/ap_pipeline.c']
+          assert d['public_api_changed'] is False and d['public_abi_changed'] is False
+          assert d['existing_numeric_thresholds_changed'] is False
+          assert d['new_numeric_thresholds'] is False and d['parameter_grid_search'] is False
+          assert c['development_evaluation']['seeds']==[18109,28109,38109]
+          assert c['development_evaluation']['previously_exposed'] is False
+          r=c['reserved_confirmation_source']
+          assert r['status']=='RESERVED_NOT_EXECUTABLE_IN_THIS_PR'
+          assert r['seeds']==[19109,29109,39109]
+          assert r['may_execute_only_after_candidate_review'] is True
+          assert r['may_be_used_for_candidate_change_or_selection'] is False
+          assert all(v is False for v in c['authority'].values())
+          assert c['product_qualification']=='DEFERRED_BY_SCOPE'
+          PY
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(src/activity/ap_activity\.c|src/activity/ap_activity\.h|src/core/ap_pipeline\.c|docs/program/iterations/I009-residual-echo-candidate\.json|tests/validation/i009_activity_candidate_eval\.py|\.github/workflows/i009-residual-echo-candidate\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 6
+          test "${{ github.event.pull_request.base.sha }}" = "$BASE_SHA"
+          test "$(grep -c '0.90f \* s->double_talk_ratio' src/activity/ap_activity.c)" -ge 1
+          test "$(grep -c '0.72f \* s->double_talk_ratio' src/activity/ap_activity.c)" -ge 1
+          grep -q 'AP_ACTIVITY_DT_RATIO 1.5f' src/core/ap_pipeline.c
+          grep -q 'previous_residual_echo_valid = pipeline->metrics.aec_converged != 0u;' src/core/ap_pipeline.c
+          grep -q 'ap_activity_process_with_residual_echo' src/core/ap_pipeline.c
+
+      - name: Prepare identical base and frozen candidate worktrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf exact-base exact-candidate candidate-evidence
+          git worktree add --detach exact-base "$BASE_SHA"
+          git worktree add --detach exact-candidate "$BASE_SHA"
+          for root in exact-base exact-candidate; do
+            mkdir -p "$root/tests/validation"
+            cp tests/validation/i009_activity_candidate_eval.py "$root/tests/validation/"
+          done
+          cp src/activity/ap_activity.c exact-candidate/src/activity/ap_activity.c
+          cp src/activity/ap_activity.h exact-candidate/src/activity/ap_activity.h
+          cp src/core/ap_pipeline.c exact-candidate/src/core/ap_pipeline.c
+          test "$(git -C exact-base rev-parse HEAD)" = "$BASE_SHA"
+          test "$(git -C exact-candidate rev-parse HEAD)" = "$BASE_SHA"
+          source_changed="$(git -C exact-candidate diff --name-only -- src | sort)"
+          test "$source_changed" = $'src/activity/ap_activity.c\nsrc/activity/ap_activity.h\nsrc/core/ap_pipeline.c'
+          mkdir -p candidate-evidence
+          sha256sum src/activity/ap_activity.c src/activity/ap_activity.h src/core/ap_pipeline.c > candidate-evidence/candidate-source.sha256
+
+      - name: Run fresh Development exact-base and candidate A/B
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd exact-base && PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i009_activity_candidate_eval.py --seeds 18109,28109,38109 --role fresh-development-candidate-gate --output i009-base-fresh)
+          (cd exact-candidate && PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i009_activity_candidate_eval.py --seeds 18109,28109,38109 --role fresh-development-candidate-gate --output i009-candidate-fresh)
+          cp exact-base/i009-base-fresh/candidate-eval.json candidate-evidence/base-fresh.json
+          cp exact-candidate/i009-candidate-fresh/candidate-eval.json candidate-evidence/candidate-fresh.json
+
+      - name: Run exposed root-cause regression-only matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd exact-candidate && PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i009_activity_candidate_eval.py --seeds 17109,27109,37109 --role regression-only --output i009-candidate-regression)
+          cp exact-candidate/i009-candidate-regression/candidate-eval.json candidate-evidence/candidate-regression.json
+
+      - name: Run candidate repository unit contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S exact-candidate -B candidate-test-build -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build candidate-test-build --parallel
+          set +e
+          ctest --test-dir candidate-test-build --output-on-failure >candidate-evidence/ctest.txt 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" > candidate-evidence/ctest.exit
+
+      - name: Decide frozen candidate without confirmation authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          base=json.loads(Path('candidate-evidence/base-fresh.json').read_text())
+          fresh=json.loads(Path('candidate-evidence/candidate-fresh.json').read_text())
+          regression=json.loads(Path('candidate-evidence/candidate-regression.json').read_text())
+          ctest=int(Path('candidate-evidence/ctest.exit').read_text().strip())
+          fresh_ok=fresh['decision']=='PASS' and fresh['aggregate']['near_far_passed']==6 and fresh['aggregate']['pure_far_passed']==3
+          regression_ok=regression['decision']=='PASS' and regression['aggregate']['near_far_passed']==6 and regression['aggregate']['pure_far_passed']==3
+          eligible=fresh_ok and regression_ok and ctest==0
+          result={
+            'schema_version':1,
+            'iteration_id':'I009',
+            'candidate_id':'activity-residual-echo-rescue-v1',
+            'candidate_limit_consumed':1,
+            'confirmation_limit_consumed':0,
+            'fresh_development_seeds':[18109,28109,38109],
+            'base_fresh_decision':base['decision'],
+            'base_fresh_near_far_passed':base['aggregate']['near_far_passed'],
+            'base_fresh_pure_far_passed':base['aggregate']['pure_far_passed'],
+            'candidate_fresh_decision':fresh['decision'],
+            'candidate_fresh_near_far_passed':fresh['aggregate']['near_far_passed'],
+            'candidate_fresh_pure_far_passed':fresh['aggregate']['pure_far_passed'],
+            'root_cause_regression_decision':regression['decision'],
+            'root_cause_regression_near_far_passed':regression['aggregate']['near_far_passed'],
+            'root_cause_regression_pure_far_passed':regression['aggregate']['pure_far_passed'],
+            'ctest_exit':ctest,
+            'decision':'ELIGIBLE_FOR_FRESH_CONFIRMATION' if eligible else 'KEEP_BASELINE_CANDIDATE_REJECTED',
+            'fresh_confirmation_required':eligible,
+            'reserved_confirmation_executed':False,
+            'promotion_allowed':False,
+            'shipping_release':'v2.3.12',
+            'product_qualification':'DEFERRED_BY_SCOPE',
+          }
+          Path('candidate-evidence/candidate-result.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,sort_keys=True))
+          PY
+          cp docs/program/iterations/I009-residual-echo-candidate.json candidate-evidence/contract.json
+          find candidate-evidence -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > candidate-evidence/SHA256SUMS
+
+      - name: Publish candidate decision
+        if: always()
+        shell: bash
+        run: |
+          if test -f candidate-evidence/candidate-result.json; then
+            cat candidate-evidence/candidate-result.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload I009 candidate evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i009-residual-echo-candidate-${{ github.run_id }}
+          path: candidate-evidence/
+          retention-days: 90
+          if-no-files-found: error

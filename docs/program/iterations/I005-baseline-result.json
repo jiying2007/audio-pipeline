@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I005",
+  "phase": "baseline-measurement-reviewed",
+  "root_cause_id": "vad-event-onset-release-baseline",
+  "source_sha": "fec515eb759fb62ef61b44cb86fc83cbb1fbbffb",
+  "decision": "BASELINE_ADEQUATE_NO_SEARCH",
+  "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE",
+  "candidate_limit_consumed": 0,
+  "confirmation_limit_consumed": 0,
+  "threshold_tuning_performed": false,
+  "hangover_tuning_performed": false,
+  "candidate_search_performed": false,
+  "promotion_allowed": false,
+  "authoritative_execution": {
+    "research_head_sha": "f05c0bcefedc7acb5634dd7cba95ca193c0687ee",
+    "workflow_run_id": 34007957381,
+    "artifact_id": 9981552960,
+    "artifact_digest": "sha256:9af2fe4946ca47bff2b1eccee6d45d2812e813b9787667cd754dfd4a44eb4a1f",
+    "downloaded_zip_sha256": "9af2fe4946ca47bff2b1eccee6d45d2812e813b9787667cd754dfd4a44eb4a1f",
+    "internal_sha256s_verified": 18,
+    "processor_sha256": "c2342b05adb461f3764fbf820d0c14e60e0f32bb9b474224dafc9103c957fa8a"
+  },
+  "public_source": {
+    "dataset": "AMI Meeting Corpus",
+    "meeting": "ES2005b",
+    "role": "development-exposed",
+    "lock": "tests/validation/data/i005_ami_vad_development_es2005b.lock.json",
+    "lock_sha256": "d03b37c0994238738b86cf102dba61ccd3920622bb52185a0df07d5f572f7f8d",
+    "timing_authority": "manual-transcription-proxy",
+    "future_independent_confirmation": false,
+    "future_promotion": false,
+    "shipping_ns_isolated": {
+      "frame_f1": 0.6395673412421493,
+      "frame_precision": 0.7727655986509275,
+      "frame_recall": 0.5455357142857142,
+      "frame_false_positive_rate": 0.20416666666666666,
+      "event_count": 16,
+      "event_recall": 1.0,
+      "onset_delay_p95_ms": 135.0,
+      "release_tail_p95_ms": 267.5,
+      "false_active_fraction": 0.20416666666666666
+    },
+    "observed_window_variability": {
+      "max_window_false_positive_rate": 0.30624465355004277,
+      "minimum_window_frame_f1": 0.5535279805352799,
+      "authority": "regression-context-only-not-a-post-hoc-gate"
+    }
+  },
+  "synthetic_farfield": {
+    "role": "development-exposed",
+    "seeds": [15107, 25107, 35107],
+    "cases": 9,
+    "exact_events": 27,
+    "shipping_ns_isolated": {
+      "frame_f1": 0.7161693268563497,
+      "frame_precision": 0.8356275303643724,
+      "frame_recall": 0.6265938069216758,
+      "frame_false_positive_rate": 0.19278252611585944,
+      "event_recall": 1.0,
+      "onset_delay_p95_ms": 157.0,
+      "release_tail_p95_ms": 100.0,
+      "false_active_fraction": 0.19278252611585944
+    },
+    "observed_low_snr_variability": {
+      "minus5db_frame_f1_range": [0.5, 0.5816326530612245],
+      "minus5db_frame_recall_range": [0.38524590163934425, 0.4672131147540984],
+      "authority": "regression-context-only-not-a-post-hoc-gate"
+    }
+  },
+  "evidence_path_diagnostic": {
+    "real_ns_minus_local_frame_recall": 0.17380952380952375,
+    "real_ns_minus_local_event_recall": 0.0,
+    "synthetic_ns_minus_local_event_recall": 0.5925925925925926,
+    "interpretation": "The current NS-to-VAD evidence path materially helps far-field event detection; local VAD alone is not an equivalent replacement. Diagnostic only; no source candidate is authorized."
+  },
+  "gate_failures": [],
+  "reviewed_conclusion": {
+    "keep_shipping_baseline": "v2.3.12",
+    "close_i005_keep_baseline": true,
+    "do_not_start_threshold_search": true,
+    "do_not_start_hangover_search": true,
+    "do_not_create_vad_source_candidate": true,
+    "retire_es2005b_to_regression_after_i005_closure": true,
+    "future_new_vad_candidate_requires_new_root_cause_budget_decision": true
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

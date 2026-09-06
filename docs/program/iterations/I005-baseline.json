@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I005",
+  "phase": "baseline-measurement",
+  "root_cause_id": "vad-event-onset-release-baseline",
+  "base_sha": "fec515eb759fb62ef61b44cb86fc83cbb1fbbffb",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_profile": "ns-isolated",
+  "diagnostic_profile": "vad-isolated",
+  "public_source": {
+    "lock": "tests/validation/data/i005_ami_vad_development_es2005b.lock.json",
+    "meeting": "ES2005b",
+    "role": "development-exposed",
+    "timing_authority": "manual-transcription-proxy",
+    "event_bridge_gap_ms": 200,
+    "min_event_ms": 100
+  },
+  "synthetic_farfield": {
+    "role": "development-exposed",
+    "seconds": 6.0,
+    "seeds": [15107, 25107, 35107],
+    "scenarios": [
+      "reverb-only",
+      "reverb-mixed-noise-0db",
+      "reverb-mixed-noise-minus5db"
+    ],
+    "room_taps_samples_and_gains": [
+      [0, 0.52],
+      [288, 0.24],
+      [672, 0.13],
+      [1136, 0.08]
+    ],
+    "snr_db": {
+      "reverb-mixed-noise-0db": 0.0,
+      "reverb-mixed-noise-minus5db": -5.0
+    },
+    "event_bridge_gap_ms": 0,
+    "min_event_ms": 10
+  },
+  "input_preconditions": {
+    "min_real_trace_frames_per_window": 1900,
+    "min_real_events_aggregate": 5,
+    "min_synthetic_trace_frames_per_case": 580,
+    "expected_synthetic_events_per_case": 3,
+    "require_exact_public_hashes": true,
+    "require_non_degenerate_real_activity": true
+  },
+  "diagnostic_gates": {
+    "real_proxy": {
+      "min_ns_frame_f1": 0.45,
+      "min_ns_event_recall": 0.70,
+      "max_ns_false_positive_rate": 0.30
+    },
+    "synthetic_exact": {
+      "min_ns_frame_f1": 0.60,
+      "min_ns_event_recall": 0.90,
+      "max_ns_onset_delay_p95_ms": 250.0,
+      "max_ns_release_tail_p95_ms": 350.0,
+      "max_ns_false_active_fraction": 0.25
+    }
+  },
+  "decision_contract": {
+    "BASELINE_ADEQUATE_NO_SEARCH": "all source/input preconditions and all frozen shipping-profile real-proxy and synthetic-exact diagnostic gates pass",
+    "MEASURED_GAP_REVIEW_REQUIRED": "source/input preconditions pass and one or more frozen shipping-profile diagnostic gates fail",
+    "INPUT_OR_LABEL_INVALID_REVIEW_REQUIRED": "one or more source identity, trace, event-count or label preconditions fail; no candidate may be authorized from the affected result",
+    "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_tune_thresholds": false,
+    "may_tune_hangover": false,
+    "may_rank_candidates": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_product_qualification": false
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

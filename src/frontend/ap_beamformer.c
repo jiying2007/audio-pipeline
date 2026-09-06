@@ -140,6 +140,15 @@ static int ap_beamformer_estimate_lag(ap_beamformer_state_t *s,
     return best_score > 0.15f ? best : s->lag;
 }
 
+static void ap_beamformer_clear_fallback(ap_beamformer_state_t *s) {
+    s->fallback_active = 0u;
+    s->fallback_hard_fault = 0u;
+    s->fallback_hard_arm_count = 0u;
+    s->fallback_decorrelated_single = 0u;
+    s->fallback_recovery_count = 0u;
+    s->fallback_gain = 1.0f;
+}
+
 static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
                                           float coherence,
                                           float aa,
@@ -153,10 +162,15 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     const int severe = s->score_updates >= AP_BF_FALLBACK_MIN_SCORE_UPDATES &&
                        coherence < AP_BF_FALLBACK_ENTER_COHERENCE &&
                        ratio < AP_BF_FALLBACK_ENTER_RATIO;
+    const int decorrelated_equal_energy =
+        s->score_updates >= AP_BF_FALLBACK_MIN_SCORE_UPDATES &&
+        coherence < AP_BF_FALLBACK_ENTER_COHERENCE &&
+        ratio > AP_BF_FALLBACK_RECOVER_RATIO;
     const int soft_recovered = coherence > AP_BF_FALLBACK_RECOVER_COHERENCE ||
                                ratio > AP_BF_FALLBACK_RECOVER_RATIO;
     const uint32_t energy_strong_channel = aa >= bb ? 0u : 1u;
     const uint32_t hard_target_channel = 1u - energy_strong_channel;
+    const uint32_t smoother_channel = roughness_a <= roughness_b ? 0u : 1u;
     const float strong_roughness = energy_strong_channel == 0u ? roughness_a : roughness_b;
     const float weak_roughness = energy_strong_channel == 0u ? roughness_b : roughness_a;
     const int hard_contamination = severe &&
@@ -172,6 +186,20 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     float fallback_coherent_gain;
     int recovered;
 
+    if (s->fallback_decorrelated_single) {
+        s->fallback_strong_channel = smoother_channel;
+        s->fallback_hard_arm_count = 0u;
+        if (coherence > AP_BF_FALLBACK_RECOVER_COHERENCE) {
+            if (s->fallback_recovery_count < AP_BF_FALLBACK_RECOVER_UPDATES)
+                s->fallback_recovery_count++;
+            if (s->fallback_recovery_count >= AP_BF_FALLBACK_RECOVER_UPDATES)
+                ap_beamformer_clear_fallback(s);
+        } else {
+            s->fallback_recovery_count = 0u;
+        }
+        return;
+    }
+
     if (energy_strong_channel == 0u)
         projection = xy / fmaxf(aa, 1.0e-12f);
     else
@@ -182,6 +210,17 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
                              AP_BF_FALLBACK_WEAK_WEIGHT * projection;
 
     if (!s->fallback_active) {
+        if (decorrelated_equal_energy) {
+            s->fallback_active = 1u;
+            s->fallback_hard_fault = 0u;
+            s->fallback_hard_arm_count = 0u;
+            s->fallback_decorrelated_single = 1u;
+            s->fallback_strong_channel = smoother_channel;
+            s->fallback_recovery_count = 0u;
+            s->fallback_lag = s->lag;
+            s->fallback_gain = 1.0f;
+            return;
+        }
         if (!severe) return;
         s->fallback_active = 1u;
         s->fallback_hard_fault = 0u;
@@ -217,13 +256,8 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     if (recovered) {
         if (s->fallback_recovery_count < AP_BF_FALLBACK_RECOVER_UPDATES)
             s->fallback_recovery_count++;
-        if (s->fallback_recovery_count >= AP_BF_FALLBACK_RECOVER_UPDATES) {
-            s->fallback_active = 0u;
-            s->fallback_hard_fault = 0u;
-            s->fallback_hard_arm_count = 0u;
-            s->fallback_recovery_count = 0u;
-            s->fallback_gain = 1.0f;
-        }
+        if (s->fallback_recovery_count >= AP_BF_FALLBACK_RECOVER_UPDATES)
+            ap_beamformer_clear_fallback(s);
     } else {
         s->fallback_recovery_count = 0u;
     }
@@ -250,11 +284,7 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
         ap_beamformer_update_fallback(s, coherence, aa, bb, xy,
                                       roughness_a, roughness_b);
     } else if (!track_direction) {
-        s->fallback_active = 0u;
-        s->fallback_hard_fault = 0u;
-        s->fallback_hard_arm_count = 0u;
-        s->fallback_recovery_count = 0u;
-        s->fallback_gain = 1.0f;
+        ap_beamformer_clear_fallback(s);
     }
 
     for (i = 0u; i < n; ++i) {
@@ -270,7 +300,7 @@ void ap_beamformer_process(ap_beamformer_state_t *s,
         }
         if (s->fallback_active) {
             const float strong = s->fallback_strong_channel == 0u ? x : y;
-            if (s->fallback_hard_fault) {
+            if (s->fallback_hard_fault || s->fallback_decorrelated_single) {
                 out[i] = strong;
             } else {
                 const float weak = s->fallback_strong_channel == 0u ? y : x;

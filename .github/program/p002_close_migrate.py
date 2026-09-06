@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
+import subprocess
 from pathlib import Path
 
-plan=Path('docs/program/plan.json')
-s=plan.read_text()
-old='''    {
+BASE = "0f3a2ec707631b836fe5e0aafaea44543cd36e85"
+
+def base_text(path: str) -> str:
+    return subprocess.check_output(["git", "show", f"{BASE}:{path}"], text=True)
+
+plan = Path("docs/program/plan.json")
+s = base_text("docs/program/plan.json")
+old = '''    {
       "id": "P002", "priority": 90, "status": "PLANNED", "lane": "governance",
       "title": "Release identity conflict and archival/GC in-flight safety audit",
       "depends_on": ["P000"], "handler": null, "contract": null,
@@ -11,7 +17,7 @@ old='''    {
       "evidence": []
     },
 '''
-new='''    {
+new = '''    {
       "id": "P002", "priority": 90, "status": "CLOSED", "lane": "governance",
       "title": "Release identity conflict and archival/GC in-flight safety audit",
       "depends_on": ["P000"], "handler": null, "contract": "docs/program/iterations/P002-closure.json",
@@ -24,13 +30,13 @@ new='''    {
       ]
     },
 '''
-assert s.count(old)==1, s.count(old)
-plan.write_text(s.replace(old,new))
+assert s.count(old) == 1, s.count(old)
+plan.write_text(s.replace(old, new))
 
-program=Path('scripts/program.py')
-p=program.read_text()
-marker='\ndef validate(plan: dict, root: Path | None = None) -> None:\n'
-validator=r'''
+program = Path("scripts/program.py")
+p = base_text("scripts/program.py")
+marker = "\ndef validate(plan: dict, root: Path | None = None) -> None:\n"
+validator = r'''
 def validate_p002_closed(plan: dict, root: Path) -> None:
     by_id = {task["id"]: task for task in plan["tasks"]}
     p002 = by_id["P002"]
@@ -140,25 +146,26 @@ def validate_p002_closed(plan: dict, root: Path) -> None:
             }, "P002 authority boundary")
 
 '''
-assert p.count(marker)==1, p.count(marker)
-p=p.replace(marker,'\n'+validator+'def validate(plan: dict, root: Path | None = None) -> None:\n')
-old_calls='''        validate_i009_closed(plan, root)\n        validate_i008_review_required(plan, root)\n'''
-new_calls='''        validate_i009_closed(plan, root)\n        validate_i008_review_required(plan, root)\n        validate_p002_closed(plan, root)\n'''
-assert p.count(old_calls)==1, p.count(old_calls)
-p=p.replace(old_calls,new_calls)
-old_self='''    i008 = by_id["I008"]\n'''
-new_self='''    i008 = by_id["I008"]\n    p002 = by_id["P002"]\n'''
-assert p.count(old_self)==1, p.count(old_self)
-p=p.replace(old_self,new_self)
-anchor='''    if i003["status"] == "PLANNED":\n'''
-p002_self='''    if p002["status"] == "PLANNED":\n        require(p002["handler"] is None and p002["contract"] is None and not p002["evidence"],\n                "planned P002 cannot have terminal/executable authority")\n    elif p002["status"] == "CLOSED":\n        require(p002["handler"] is None and\n                p002["contract"] == "docs/program/iterations/P002-closure.json" and\n                len(p002["evidence"]) == 4,\n                "closed P002 must be terminal and evidence-backed")\n    else:\n        raise AssertionError("P002 must be PLANNED or evidence-backed CLOSED")\n\n'''
-assert p.count(anchor)==1, p.count(anchor)
-p=p.replace(anchor,p002_self+anchor)
-mut_anchor='''        lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="CLOSED", evidence=[]),\n'''
-mut_new=mut_anchor+'''        lambda p: next(t for t in p["tasks"] if t["id"] == "P002").update(status="CLOSED", evidence=[]),\n'''
-assert p.count(mut_anchor)==1, p.count(mut_anchor)
-p=p.replace(mut_anchor,mut_new)
-p=p.replace(
-    'program self-test: I002/P001/I003/I004/I005/I006/I008 evidence-backed lifecycles + negative contracts OK',
-    'program self-test: I002/P001/I003/I004/I005/I006/I008/P002 evidence-backed lifecycles + negative contracts OK')
+assert p.count(marker) == 1, p.count(marker)
+p = p.replace(marker, "\n" + validator + "def validate(plan: dict, root: Path | None = None) -> None:\n")
+old_calls = '''        validate_i009_closed(plan, root)\n        validate_i008_review_required(plan, root)\n'''
+new_calls = '''        validate_i009_closed(plan, root)\n        validate_i008_review_required(plan, root)\n        validate_p002_closed(plan, root)\n'''
+assert p.count(old_calls) == 1, p.count(old_calls)
+p = p.replace(old_calls, new_calls)
+old_self = '''    by_id = {task["id"]: task for task in plan["tasks"]}\n    i002, p001, i003, i004, i005, i006 = (by_id["I002"], by_id["P001"], by_id["I003"],\n                                           by_id["I004"], by_id["I005"], by_id["I006"])\n    i008 = by_id["I008"]\n'''
+new_self = '''    by_id = {task["id"]: task for task in plan["tasks"]}\n    i002, p001, i003, i004, i005, i006 = (by_id["I002"], by_id["P001"], by_id["I003"],\n                                           by_id["I004"], by_id["I005"], by_id["I006"])\n    i008 = by_id["I008"]\n    p002 = by_id["P002"]\n'''
+assert p.count(old_self) == 1, p.count(old_self)
+p = p.replace(old_self, new_self)
+anchor = '''    if i003["status"] == "PLANNED":\n'''
+p002_self = '''    if p002["status"] == "PLANNED":\n        require(p002["handler"] is None and p002["contract"] is None and not p002["evidence"],\n                "planned P002 cannot have terminal/executable authority")\n    elif p002["status"] == "CLOSED":\n        require(p002["handler"] is None and\n                p002["contract"] == "docs/program/iterations/P002-closure.json" and\n                len(p002["evidence"]) == 4,\n                "closed P002 must be terminal and evidence-backed")\n    else:\n        raise AssertionError("P002 must be PLANNED or evidence-backed CLOSED")\n\n'''
+assert p.count(anchor) == 1, p.count(anchor)
+p = p.replace(anchor, p002_self + anchor)
+mut_anchor = '''        lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="CLOSED", evidence=[]),\n'''
+mut_new = mut_anchor + '''        lambda p: next(t for t in p["tasks"] if t["id"] == "P002").update(status="CLOSED", evidence=[]),\n'''
+assert p.count(mut_anchor) == 1, p.count(mut_anchor)
+p = p.replace(mut_anchor, mut_new)
+old_msg = "program self-test: I002/P001/I003/I004/I005/I006/I008 evidence-backed lifecycles + negative contracts OK"
+new_msg = "program self-test: I002/P001/I003/I004/I005/I006/I008/P002 evidence-backed lifecycles + negative contracts OK"
+assert p.count(old_msg) == 1, p.count(old_msg)
+p = p.replace(old_msg, new_msg)
 program.write_text(p)

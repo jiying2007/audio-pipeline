@@ -3,10 +3,7 @@ name: I009 Closure
 on:
   pull_request:
     paths:
-      - 'docs/program/plan.json'
       - 'docs/program/iterations/I009-closure.json'
-      - 'scripts/program.py'
-      - '.github/workflows/i009-closure.yml'
 
 permissions:
   contents: read

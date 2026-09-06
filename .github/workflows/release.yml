@@ -76,6 +76,33 @@ jobs:
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Verify existing immutable release identity
+        if: steps.existing.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          python3 .github/program/existing_release_identity.py --self-test
+          work=/tmp/existing-release-identity
+          rm -rf "$work"
+          mkdir -p "$work"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$work/release.json"
+          ref_json=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG")
+          object_type=$(jq -r '.object.type' <<<"$ref_json")
+          object_sha=$(jq -r '.object.sha' <<<"$ref_json")
+          while [ "$object_type" = tag ]; do
+            tag_json=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")
+            object_type=$(jq -r '.object.type' <<<"$tag_json")
+            object_sha=$(jq -r '.object.sha' <<<"$tag_json")
+          done
+          test "$object_type" = commit
+          git merge-base --is-ancestor "$object_sha" "$VERIFIED_SHA"
+          gh release download "$TAG"             --pattern "audio-pipeline-${TAG}-release-manifest.json"             --pattern SHA256SUMS             --dir "$work"
+          python3 .github/program/existing_release_identity.py             --release-json "$work/release.json"             --manifest "$work/audio-pipeline-${TAG}-release-manifest.json"             --sha256s "$work/SHA256SUMS"             --tag "$TAG" --version "$VERSION"             --tag-peel-sha "$object_sha" --verified-sha "$VERIFIED_SHA"             --release-source-is-ancestor             --output "$work/result.json"
+          cat "$work/result.json" >> "$GITHUB_STEP_SUMMARY"
       - name: Build, test and install SDK
         if: steps.existing.outputs.release != 'true'
         run: |

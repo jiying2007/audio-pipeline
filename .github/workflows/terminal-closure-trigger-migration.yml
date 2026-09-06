@@ -1,0 +1,34 @@
+name: Terminal Closure Trigger Migration
+
+on:
+  push:
+    branches:
+      - governance/i009-close-keep-baseline
+    paths:
+      - '.github/workflows/terminal-closure-trigger-migration.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: governance/i009-close-keep-baseline
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Scope terminal closure triggers to their own contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/terminal_closure_trigger_migrate.py
+          ruby -e 'require "yaml"; ARGV.each { |path| abort("invalid workflow YAML: #{path}") unless Psych.parse_file(path) }' .github/workflows/i007-closure.yml .github/workflows/i009-closure.yml
+          git diff --check
+          rm scripts/terminal_closure_trigger_migrate.py .github/workflows/terminal-closure-trigger-migration.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/i007-closure.yml .github/workflows/i009-closure.yml scripts/terminal_closure_trigger_migrate.py .github/workflows/terminal-closure-trigger-migration.yml
+          git commit -m 'ci: make terminal closure gates one-shot'
+          git push origin HEAD:governance/i009-close-keep-baseline

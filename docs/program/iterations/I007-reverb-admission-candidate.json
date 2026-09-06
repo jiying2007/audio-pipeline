@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I007",
+  "phase": "bounded-structural-candidate",
+  "candidate_id": "reverb-equal-energy-decorrelated-single-v1",
+  "domain": "equal-energy-reverberation-admission",
+  "program_base_sha": "af9601b7805c8543feddc34c71a555c8abc6b672",
+  "acoustic_base_sha": "dd15a956e52e9bc04fe103c62163c6cfa870b57b",
+  "root_cause_run_id": 34028010442,
+  "root_cause_artifact_id": 9987677794,
+  "root_cause_artifact_digest": "sha256:38a6b4838d212b1ebbf46548715e3e918cf04ecd9edd0aa92ab473e1abb2d9a9",
+  "root_cause_internal_sha256s_verified": 343,
+  "candidate_limit": 1,
+  "candidate_limit_consumed": 1,
+  "confirmation_limit": 0,
+  "confirmation_limit_consumed": 0,
+  "source_delta": {
+    "paths": ["src/frontend/ap_beamformer.c", "src/frontend/ap_frontend.h"],
+    "intent": "add an explicit decorrelated-single fallback state for low-coherence near-equal-energy input, selecting the lower-roughness channel instead of requiring the existing ratio<0.45 severe conjunction; preserve the existing soft and hard fallback state machines separately",
+    "new_numeric_thresholds": false,
+    "parameter_grid_search": false
+  },
+  "development_matrix": {
+    "i007_seeds": [1707, 2707, 3707],
+    "frontends": ["bf-only", "hpf-bf"],
+    "i007_partitions": 48,
+    "target_scenarios": ["asymmetric-reverb-ch0", "asymmetric-reverb-ch1"],
+    "non_target_scenarios": ["healthy-control", "soft-wind-ch0", "soft-wind-ch1", "phase-mismatch-ch0", "phase-mismatch-ch1", "motion-tdoa-sweep"],
+    "hard_fault_regression_seeds": [1307, 2307, 3307]
+  },
+  "decision_contract": {
+    "ELIGIBLE_FOR_FRESH_CONFIRMATION": "all 12 asymmetric-reverb partitions pass the frozen I007 gates, no new non-target I007 partition fails versus exact base, and the established hard-fault/soft-control candidate gate passes",
+    "KEEP_BASELINE_CANDIDATE_REJECTED": "any target reverb partition remains failed or any non-target/hard-fault protection regresses"
+  },
+  "authority": {
+    "may_modify_this_candidate_source": true,
+    "may_add_second_reverb_candidate": false,
+    "may_change_candidate_after_observing_results": false,
+    "may_use_exposed_data_as_confirmation": false,
+    "may_promote_without_fresh_confirmation": false,
+    "may_combine_with_wind_candidate": false,
+    "may_claim_product_qualification": false
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

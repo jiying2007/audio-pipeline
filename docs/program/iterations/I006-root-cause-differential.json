@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "phase": "root-cause-differential",
+  "root_cause_id": "agc-noise-floor-and-activity-control-dependency",
+  "base_sha": "54a6c60b17d6a910843b5e23e6eb7f2976953cb5",
+  "source_authority": "exposed-regression-root-cause-context-only",
+  "seeds": [16107, 26107, 36107],
+  "scenarios": [
+    "noise-floor-low",
+    "noise-floor-step",
+    "near-far-doubletalk",
+    "near-far-weak-near"
+  ],
+  "seconds": 8.0,
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "hypotheses": {
+    "noise_floor": {
+      "id": "max-gain-saturation-without-near-speech-permission",
+      "shipping_max_gain_linear": 8.0,
+      "expected_max_gain_db": 18.06179973983887,
+      "saturation_linear_floor": 7.9,
+      "p95_match_tolerance_db": 0.10,
+      "classification": {
+        "confirmed": "NOISE_FLOOR_MAX_GAIN_SATURATION_CONFIRMED",
+        "not_confirmed": "NOISE_FLOOR_MAX_GAIN_SATURATION_NOT_CONFIRMED"
+      }
+    },
+    "double_talk": {
+      "id": "current-ratio-predicate-limitation",
+      "smoothed_ratio_threshold": 1.5,
+      "instant_on_ratio_threshold": 1.35,
+      "instant_hold_ratio_threshold": 1.08,
+      "classification": [
+        "DT_SMOOTHED_RATIO_GATE_LIMIT",
+        "DT_INSTANT_RATIO_GATE_LIMIT",
+        "DT_BOTH_RATIO_GATES_LIMIT",
+        "DT_NOT_EXPLAINED_BY_CURRENT_RATIO_GATES"
+      ]
+    }
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_tune_agc_target": false,
+    "may_tune_limiter": false,
+    "may_tune_attack_release": false,
+    "may_tune_activity_thresholds": false,
+    "may_rank_candidates": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false
+  },
+  "expected_output": {
+    "decision": "ROOT_CAUSE_DIFFERENTIAL_REVIEW_REQUIRED",
+    "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE",
+    "next_step": "review mechanism evidence before any bounded source-candidate contract"
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

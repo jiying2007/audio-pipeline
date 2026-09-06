@@ -37,17 +37,20 @@ def expected_names(tag: str) -> tuple[set[str], set[str], set[str]]:
     return payload, payload | {manifest}, payload | {manifest, sums}
 
 
-def asset_digests(release: dict) -> dict[str, str]:
-    result: dict[str, str] = {}
+def asset_records(release: dict) -> dict[str, dict[str, int | str]]:
+    result: dict[str, dict[str, int | str]] = {}
     for asset in release.get("assets", []):
         name = asset.get("name")
         digest = asset.get("digest")
+        size = asset.get("size")
         if not isinstance(name, str) or not name or name in result:
             raise ValueError("release asset names must be unique non-empty strings")
         match = DIGEST_RE.fullmatch(str(digest))
         if not match:
             raise ValueError(f"release asset lacks sha256 digest: {name}")
-        result[name] = match.group(1)
+        if type(size) is not int or size < 0:
+            raise ValueError(f"release asset lacks valid size: {name}")
+        result[name] = {"sha256": match.group(1), "size": size}
     return result
 
 
@@ -76,7 +79,7 @@ def validate(*, release: dict, manifest: dict, sums_path: Path, manifest_path: P
         raise ValueError("existing release must be immutable, published and exact-tagged")
 
     payload_names, checksummed_names, all_names = expected_names(tag)
-    assets = asset_digests(release)
+    assets = asset_records(release)
     if set(assets) != all_names:
         raise ValueError(f"existing release asset contract mismatch: {sorted(assets)}")
 
@@ -97,30 +100,36 @@ def validate(*, release: dict, manifest: dict, sums_path: Path, manifest_path: P
     manifest_assets = manifest.get("assets")
     if not isinstance(manifest_assets, list):
         raise ValueError("release manifest assets missing")
-    records = {}
+    records: dict[str, dict[str, int | str]] = {}
     for item in manifest_assets:
         if not isinstance(item, dict) or set(item) != {"name", "sha256", "size"}:
             raise ValueError("release manifest asset record malformed")
-        name, digest = item["name"], item["sha256"]
+        name, digest, size = item["name"], item["sha256"], item["size"]
         if name in records or name not in payload_names or not re.fullmatch(r"[0-9a-f]{64}", str(digest)):
             raise ValueError("release manifest payload asset identity mismatch")
-        records[name] = digest
+        if type(size) is not int or size < 0:
+            raise ValueError("release manifest payload size invalid")
+        records[name] = {"sha256": digest, "size": size}
     if set(records) != payload_names:
         raise ValueError("release manifest payload set mismatch")
-    for name, digest in records.items():
-        if assets[name] != digest:
-            raise ValueError(f"release asset digest disagrees with manifest: {name}")
+    for name, record in records.items():
+        if assets[name] != record:
+            raise ValueError(f"release asset identity disagrees with manifest: {name}")
 
     manifest_name = f"audio-pipeline-{tag}-release-manifest.json"
-    if sha256(manifest_path) != assets[manifest_name]:
+    if sha256(manifest_path) != assets[manifest_name]["sha256"]:
         raise ValueError("release manifest file digest disagrees with GitHub asset metadata")
-    if sha256(sums_path) != assets["SHA256SUMS"]:
+    if manifest_path.stat().st_size != assets[manifest_name]["size"]:
+        raise ValueError("release manifest file size disagrees with GitHub asset metadata")
+    if sha256(sums_path) != assets["SHA256SUMS"]["sha256"]:
         raise ValueError("SHA256SUMS file digest disagrees with GitHub asset metadata")
+    if sums_path.stat().st_size != assets["SHA256SUMS"]["size"]:
+        raise ValueError("SHA256SUMS file size disagrees with GitHub asset metadata")
     sums = checksum_records(sums_path)
     if set(sums) != checksummed_names:
         raise ValueError("SHA256SUMS asset set mismatch")
     for name, digest in sums.items():
-        if assets[name] != digest:
+        if assets[name]["sha256"] != digest:
             raise ValueError(f"SHA256SUMS disagrees with GitHub asset digest: {name}")
 
     return {
@@ -159,14 +168,16 @@ def self_test() -> None:
         }
         manifest_path = root / f"audio-pipeline-{tag}-release-manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
-        digests = {name: hashlib.sha256(data).hexdigest() for name, data in payload_bytes.items()}
-        digests[manifest_path.name] = sha256(manifest_path)
+        records = {name: {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
+                   for name, data in payload_bytes.items()}
+        records[manifest_path.name] = {"sha256": sha256(manifest_path), "size": manifest_path.stat().st_size}
         sums_path = root / "SHA256SUMS"
-        sums_path.write_text("".join(f"{digests[name]}  {name}\n" for name in sorted(checksummed)))
-        digests["SHA256SUMS"] = sha256(sums_path)
+        sums_path.write_text("".join(f"{records[name]['sha256']}  {name}\n" for name in sorted(checksummed)))
+        records["SHA256SUMS"] = {"sha256": sha256(sums_path), "size": sums_path.stat().st_size}
         release = {
             "tag_name": tag, "draft": False, "prerelease": False, "immutable": True,
-            "assets": [{"name": name, "digest": "sha256:" + digests[name]} for name in sorted(all_names)],
+            "assets": [{"name": name, "digest": "sha256:" + str(records[name]["sha256"]),
+                        "size": records[name]["size"]} for name in sorted(all_names)],
         }
         good = dict(release=release, manifest=manifest, sums_path=sums_path,
                     manifest_path=manifest_path, tag=tag, version=version,
@@ -176,6 +187,7 @@ def self_test() -> None:
             lambda x: x.update(tag_peel_sha="d" * 40),
             lambda x: x.update(release_source_is_ancestor=False),
             lambda x: x["release"]["assets"].pop(),
+            lambda x: x["release"]["assets"][0].update(size=x["release"]["assets"][0]["size"] + 1),
         ):
             bad = dict(good)
             bad["release"] = json.loads(json.dumps(release))

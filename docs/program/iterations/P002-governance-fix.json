@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "iteration_id": "P002",
+  "phase": "bounded-governance-fix",
+  "lane": "governance",
+  "base_sha": "699c1f604611b5018ab3cb7a712ed1a8942cedcb",
+  "candidate_limit": 1,
+  "candidate_limit_consumed": 1,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "release_allowed": false,
+  "destructive_gc_allowed": false,
+  "semver_change_allowed": false,
+  "shipping_source_change_allowed": false,
+  "fixes": [
+    {
+      "id": "existing-release-identity-preflight",
+      "files": [".github/program/existing_release_identity.py", ".github/workflows/release.yml"],
+      "requirements": [
+        "existing release must be immutable and non-draft/non-prerelease",
+        "asset names must match the exact 8-asset release contract",
+        "manifest tag/version/source and tag peel must agree",
+        "manifest/checksum digests must agree with GitHub asset digests",
+        "release source must be an ancestor of current verified main SHA"
+      ]
+    },
+    {
+      "id": "gc-active-dependency-block",
+      "files": ["scripts/research_registry.py", ".github/research/evidence-index.json"],
+      "requirements": [
+        "retain BLOCK_SHA_DRIFT and BLOCK_OPEN_PR",
+        "explicit active dependency matching branch or head SHA returns BLOCK_ACTIVE_DEPENDENCY",
+        "apply aborts all deletions when any active dependency is blocked"
+      ]
+    },
+    {
+      "id": "terminal-closure-trigger-scope",
+      "files": [".github/workflows/i007-closure.yml", ".github/workflows/i009-closure.yml"],
+      "requirements": [
+        "terminal workflow triggers only when its own closure JSON changes",
+        "shared plan/program integrity remains covered by Program and Verify"
+      ]
+    }
+  ],
+  "frozen_regression_gates": {
+    "release_identity_self_test": "PASS",
+    "live_v2_3_12_identity_preflight": "PASS",
+    "research_registry_self_test": "PASS",
+    "gc_sha_drift": "BLOCK_SHA_DRIFT",
+    "gc_open_pr": "BLOCK_OPEN_PR",
+    "gc_active_dependency": "BLOCK_ACTIVE_DEPENDENCY",
+    "terminal_trigger_shared_program_paths": 0
+  },
+  "authority_boundary": {
+    "real_release_created_or_modified": false,
+    "real_tag_created_or_modified": false,
+    "real_branch_deleted": false,
+    "shipping_source_changed": false,
+    "software_release": "v2.3.12",
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

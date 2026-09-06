@@ -1,0 +1,393 @@
+name: I008 Engineering Candidate-Zero Audit
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I008-engineering-audit.json'
+      - '.github/workflows/i008-engineering-audit.yml'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    env:
+      PROGRAM_BASE: 54fd0cdb5ff7197748fa52d07e0cb83e465a6b57
+      SHIPPING_SHA: d82cb6d2be76497d1d66dd16da00924411207046
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate frozen candidate-zero contract and exact delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.event.pull_request.base.sha }}" = "$PROGRAM_BASE"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python3 -m json.tool docs/program/iterations/I008-engineering-audit.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/I008-engineering-audit.json').read_text())
+          assert c['schema_version']==1 and c['iteration_id']=='I008'
+          assert c['state']=='PLANNED_CANDIDATE_ZERO_AUDIT' and c['lane']=='engineering'
+          assert c['exact_base_sha']=='54fd0cdb5ff7197748fa52d07e0cb83e465a6b57'
+          assert c['shipping_baseline']=={
+              'release':'v2.3.12','source_sha':'d82cb6d2be76497d1d66dd16da00924411207046','unchanged':True}
+          a=c['authority']
+          assert a['candidate_limit']==a['candidate_limit_consumed']==0
+          assert a['confirmation_limit']==a['confirmation_limit_consumed']==0
+          assert a['shipping_source_change_authorized'] is False
+          assert a['acoustic_parameter_search_authorized'] is False
+          assert a['software_candidate_promotion_authorized'] is False
+          assert a['release_authorized'] is False
+          assert a['product_qualification']=='DEFERRED_BY_SCOPE' and a['dut_hil']=='DEFERRED_BY_SCOPE'
+          assert c['audit_matrix']['composition']['presets']==[
+              'composition-full','composition-low','composition-tiny','composition-raw']
+          assert c['audit_matrix']['host_performance']['authority']=='engineering-regression-only-no-dut-claim'
+          assert c['audit_matrix']['ci_hygiene']['no_ruleset_bypass'] is True
+          assert c['evidence_policy']['may_be_independent_acoustic_confirmation'] is False
+          PY
+          changed="$(git diff --name-only "$PROGRAM_BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(docs/program/iterations/I008-engineering-audit\.json|\.github/workflows/i008-engineering-audit\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 2
+          git diff --quiet "$PROGRAM_BASE" HEAD -- src include CMakeLists.txt
+          git cat-file -e "$SHIPPING_SHA^{commit}"
+          git diff --check "$PROGRAM_BASE"...HEAD
+
+  audit:
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PROGRAM_BASE: 54fd0cdb5ff7197748fa52d07e0cb83e465a6b57
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i008-engineering-audit
+      - name: Initialize exact-source evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          git diff --quiet "$PROGRAM_BASE" HEAD -- src include CMakeLists.txt
+          rm -rf i008-evidence stage-i008
+          mkdir -p i008-evidence
+          printf 'base_sha=%s\nhead_sha=%s\nshipping_release=v2.3.12\nshipping_source_sha=d82cb6d2be76497d1d66dd16da00924411207046\n' \
+            "$PROGRAM_BASE" "$HEAD_SHA" > i008-evidence/identity.txt
+      - name: Runtime API reset SDK and ABI
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build/i008-runtime -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+          cmake --build build/i008-runtime --parallel
+          ctest --test-dir build/i008-runtime --output-on-failure \
+            -R 'ap_runtime_tests|ap_runtime_extended_tests|ap_contract_tests' | tee i008-evidence/runtime-tests.log
+          sh scripts/check-abi-contract.sh | tee i008-evidence/abi.log
+          cmake --install build/i008-runtime --prefix "$PWD/stage-i008"
+          test -f stage-i008/lib/libaudio_pipeline.a
+          test -f stage-i008/lib/libaudio_pipeline_runtime.a
+          test -f stage-i008/include/audio_pipeline/audio_pipeline.h
+          test -f stage-i008/include/audio_pipeline/audio_runtime.h
+          cmake -S tests/consumer -B build/i008-consumer -DCMAKE_PREFIX_PATH="$PWD/stage-i008"
+          cmake --build build/i008-consumer --parallel
+          ./build/i008-consumer/audio_pipeline_consumer | tee i008-evidence/find-package-consumer.log
+          export PKG_CONFIG_PATH="$PWD/stage-i008/lib/pkgconfig:$PWD/stage-i008/lib64/pkgconfig"
+          cc tests/consumer/consumer.c -o /tmp/i008-pc $(pkg-config --cflags --libs audio-pipeline)
+          /tmp/i008-pc | tee i008-evidence/pkg-config-consumer.log
+      - name: ThreadSanitizer runtime boundary
+        shell: bash
+        env:
+          CC: clang
+          TSAN_OPTIONS: halt_on_error=1
+        run: |
+          set -euo pipefail
+          cmake -S . -B build/i008-tsan -DCMAKE_BUILD_TYPE=Debug \
+            -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF \
+            -DCMAKE_C_FLAGS='-fsanitize=thread -fno-omit-frame-pointer -O1' \
+            -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=thread'
+          cmake --build build/i008-tsan --target ap_runtime_tests --parallel
+          ./build/i008-tsan/ap_runtime_tests 2>&1 | tee i008-evidence/tsan-runtime.log
+      - name: Deterministic diagnostics inspect extract and bit-exact replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror tests/generate_diag_dump.c \
+            -Iinclude -Ibuild/i008-runtime/generated \
+            build/i008-runtime/libaudio_pipeline_runtime.a build/i008-runtime/libaudio_pipeline.a \
+            -lm -pthread -o /tmp/i008_diag_dump_fixture
+          /tmp/i008_diag_dump_fixture /tmp/i008.apd
+          python3 tools/apdump.py info /tmp/i008.apd | tee i008-evidence/apdump-info.json
+          python3 tools/apdump.py extract /tmp/i008.apd --output-dir /tmp/i008-apd-extract
+          python3 tools/apreplay.py /tmp/i008.apd --processor ./build/i008-runtime/ap_process_pcm --require-bit-exact \
+            | tee i008-evidence/apreplay.log
+      - name: Resampler boundary modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build/i008-bandlimited -DCMAKE_BUILD_TYPE=Release \
+            -DAP_RESAMPLER_MODE=BANDLIMITED -DAP_ENABLE_LINUX_RUNTIME=OFF \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build/i008-bandlimited --parallel
+          ctest --test-dir build/i008-bandlimited --output-on-failure \
+            -R 'ap_resampler_tests|ap_contract_tests|ap_drift_res_tests' | tee i008-evidence/resampler-bandlimited.log
+          cmake -S . -B build/i008-fast -DCMAKE_BUILD_TYPE=Release \
+            -DAP_RESAMPLER_MODE=FAST -DAP_ENABLE_LINUX_RUNTIME=OFF \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build/i008-fast --parallel
+          ctest --test-dir build/i008-fast --output-on-failure \
+            -R 'ap_resampler_tests|ap_contract_tests' | tee i008-evidence/resampler-fast.log
+      - name: FULL LOW TINY RAW composition and resource matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > i008-evidence/resource-metrics.txt
+          for p in full low tiny raw; do
+            cmake --preset "composition-$p"
+            cmake --build "build/composition-$p" --parallel
+            ctest --test-dir "build/composition-$p" --output-on-failure | tee "i008-evidence/composition-$p-ctest.log"
+            prefix="$PWD/stage-i008-$p"
+            cmake --install "build/composition-$p" --prefix "$prefix"
+            test -f "$prefix/lib/libaudio_pipeline.a"
+            test -f "$prefix/include/audio_pipeline/audio_pipeline_build.h"
+          done
+          for p in full low tiny raw; do cmake --build "build/composition-$p" --target ap_state_size --parallel; done
+          full=$(./build/composition-full/ap_state_size)
+          low=$(./build/composition-low/ap_state_size)
+          tiny=$(./build/composition-tiny/ap_state_size)
+          raw=$(./build/composition-raw/ap_state_size)
+          printf 'pipeline_state_bytes full=%s low=%s tiny=%s raw=%s\n' "$full" "$low" "$tiny" "$raw" | tee -a i008-evidence/resource-metrics.txt
+          test "$full" -le 80000
+          test "$low" -le 50000
+          test "$tiny" -le 28000
+          test "$raw" -le 2048
+          test "$raw" -lt "$tiny" && test "$tiny" -lt "$low" && test "$low" -lt "$full"
+
+          cmake -S . -B build/i008-rt-full -DCMAKE_BUILD_TYPE=Release -DAP_RUNTIME_QUEUE_DEPTH=8
+          cmake -S . -B build/i008-rt-tiny -DCMAKE_BUILD_TYPE=Release \
+            -DAP_RUNTIME_QUEUE_DEPTH=4 -DAP_BUILD_MAX_IO_RATE_HZ=16000 \
+            -DAP_BUILD_MAX_INTERNAL_RATE_HZ=8000 -DAP_BUILD_MAX_MIC_CHANNELS=1 \
+            -DAP_BUILD_MAX_DELAY_MS=120 -DAP_BUILD_MAX_AEC_TAIL_MS=48 \
+            -DAP_MODULES=RESAMPLER,HPF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          cmake --build build/i008-rt-full --parallel
+          cmake --build build/i008-rt-tiny --parallel
+          cc tests/print_runtime_state.c -Iinclude -Ibuild/i008-rt-full/generated \
+            build/i008-rt-full/libaudio_pipeline_runtime.a build/i008-rt-full/libaudio_pipeline.a -lm -pthread -o /tmp/i008-rt-full
+          cc tests/print_runtime_state.c -Iinclude -Ibuild/i008-rt-tiny/generated \
+            build/i008-rt-tiny/libaudio_pipeline_runtime.a build/i008-rt-tiny/libaudio_pipeline.a -lm -pthread -o /tmp/i008-rt-tiny
+          rt_full=$(/tmp/i008-rt-full)
+          rt_tiny=$(/tmp/i008-rt-tiny)
+          printf 'runtime_state_bytes full=%s tiny=%s\n' "$rt_full" "$rt_tiny" | tee -a i008-evidence/resource-metrics.txt
+          test "$rt_full" -le 32768
+          test "$rt_tiny" -le 8192
+          test "$rt_tiny" -lt "$rt_full"
+
+          common="-DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DCMAKE_C_FLAGS=-ffunction-sections\ -fdata-sections -DCMAKE_EXE_LINKER_FLAGS=-Wl,--gc-sections"
+          eval cmake -S . -B build/i008-elf-full $common -DAP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          eval cmake -S . -B build/i008-elf-voice $common -DAP_MODULES=RESAMPLER,HPF,BF,NS,AGC,VAD
+          eval cmake -S . -B build/i008-elf-raw $common -DAP_MODULES=RESAMPLER
+          for p in full voice raw; do cmake --build "build/i008-elf-$p" --target ap_consumer_smoke --parallel; done
+          elf_bytes() { size "$1" | awk 'NR==2 {print $1+$2+$3}'; }
+          elf_full=$(elf_bytes build/i008-elf-full/ap_consumer_smoke)
+          elf_voice=$(elf_bytes build/i008-elf-voice/ap_consumer_smoke)
+          elf_raw=$(elf_bytes build/i008-elf-raw/ap_consumer_smoke)
+          printf 'consumer_elf_bytes full=%s voice=%s raw=%s\n' "$elf_full" "$elf_voice" "$elf_raw" | tee -a i008-evidence/resource-metrics.txt
+          test "$elf_raw" -lt "$elf_voice" && test "$elf_voice" -lt "$elf_full"
+          test $((elf_full - elf_voice)) -ge 64
+          test $((elf_voice - elf_raw)) -ge 64
+      - name: Same-runner paired host CPU and runtime performance
+        shell: bash
+        env:
+          CC: gcc
+        run: |
+          set -euo pipefail
+          sh scripts/compare-perf.sh "$PROGRAM_BASE" 7 20 | tee i008-evidence/perf-pipeline.log
+          sh scripts/compare-ns-perf.sh "$PROGRAM_BASE" 7 50000 | tee i008-evidence/perf-ns.log
+          sh scripts/compare-resampler-perf.sh "$PROGRAM_BASE" 7 100000 | tee i008-evidence/perf-resampler.log
+          sh scripts/compare-runtime-perf.sh "$PROGRAM_BASE" 7 100000 10000 | tee i008-evidence/perf-runtime.log
+      - name: Seal candidate-zero engineering evidence
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path('i008-evidence'); root.mkdir(exist_ok=True)
+          metrics=(root/'resource-metrics.txt').read_text().splitlines() if (root/'resource-metrics.txt').exists() else []
+          status=os.environ['JOB_STATUS']
+          result={
+            'schema_version':1,
+            'iteration_id':'I008',
+            'authority':'engineering-development-evidence-only',
+            'base_sha':os.environ['PROGRAM_BASE'],
+            'head_sha':os.environ['HEAD_SHA'],
+            'candidate_limit_consumed':0,
+            'confirmation_limit_consumed':0,
+            'shipping_release':'v2.3.12',
+            'shipping_source_changed':False,
+            'dut_hil':'DEFERRED_BY_SCOPE',
+            'product_qualification':'DEFERRED_BY_SCOPE',
+            'job_status':status,
+            'decision':'ENGINEERING_BASELINE_ADEQUATE' if status=='success' else 'ENGINEERING_GAP_REVIEW_REQUIRED',
+            'resource_metrics':metrics,
+          }
+          (root/'result.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          PY
+          (cd i008-evidence && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum) > i008-evidence/SHA256SUMS
+      - name: Upload hash-bound I008 engineering evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i008-engineering-audit-${{ github.run_id }}
+          path: i008-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+  arm-qemu:
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    env:
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i008-arm-qemu
+      - name: Execute Cortex-A7 and AArch64 contracts under QEMU
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p i008-arm-evidence
+          cmake -S . -B build/i008-qemu-a7 \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-linux-gnueabihf.cmake -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_FLAGS='-O2 -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+            -DAP_SIMD_BACKEND=NEON -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DAP_BUILD_TESTS=ON
+          cmake --build build/i008-qemu-a7 --parallel \
+            --target ap_module_tests ap_contract_tests ap_fft_tests ap_resampler_tests ap_runtime_tests
+          for t in ap_module_tests ap_contract_tests ap_fft_tests ap_resampler_tests ap_runtime_tests; do \
+            qemu-arm -cpu cortex-a7 -L /usr/arm-linux-gnueabihf "./build/i008-qemu-a7/$t"; done \
+            | tee i008-arm-evidence/cortex-a7-qemu.log
+
+          cmake -S . -B build/i008-qemu-a64 \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/aarch64-linux-gnu.cmake -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_FLAGS='-O2 -march=armv8-a' \
+            -DAP_SIMD_BACKEND=NEON -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DAP_BUILD_TESTS=ON
+          cmake --build build/i008-qemu-a64 --parallel \
+            --target ap_module_tests ap_contract_tests ap_fft_tests ap_resampler_tests ap_runtime_tests
+          for t in ap_module_tests ap_contract_tests ap_fft_tests ap_resampler_tests ap_runtime_tests; do \
+            qemu-aarch64 -cpu cortex-a53 -L /usr/aarch64-linux-gnu "./build/i008-qemu-a64/$t"; done \
+            | tee i008-arm-evidence/aarch64-qemu.log
+      - name: Enforce Cortex-A32 ROM envelope and TINY module pruning
+        shell: bash
+        run: |
+          set -euo pipefail
+          common="-DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-linux-gnueabihf.cmake -DCMAKE_BUILD_TYPE=Release -DAP_ENABLE_LINUX_RUNTIME=OFF -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DCMAKE_C_FLAGS=-O2\ -mcpu=cortex-a32\ -mfpu=neon-vfpv4\ -mfloat-abi=hard\ -ffunction-sections\ -fdata-sections"
+          eval cmake -S . -B build/i008-arm-full $common -DAP_SIMD_BACKEND=NEON \
+            -DAP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          eval cmake -S . -B build/i008-arm-tiny $common -DAP_SIMD_BACKEND=NEON \
+            -DAP_BUILD_MAX_IO_RATE_HZ=16000 -DAP_BUILD_MAX_INTERNAL_RATE_HZ=8000 \
+            -DAP_BUILD_MAX_MIC_CHANNELS=1 -DAP_BUILD_MAX_DELAY_MS=120 -DAP_BUILD_MAX_AEC_TAIL_MS=48 \
+            -DAP_MODULES=RESAMPLER,HPF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
+          cmake --build build/i008-arm-full --target audio_pipeline --parallel
+          cmake --build build/i008-arm-tiny --target audio_pipeline --parallel
+          flags='-O2 -mcpu=cortex-a32 -mfpu=neon-vfpv4 -mfloat-abi=hard -ffunction-sections -fdata-sections -Wl,--gc-sections'
+          arm-linux-gnueabihf-gcc $flags -Iinclude -Ibuild/i008-arm-full/generated tests/rom_probe.c build/i008-arm-full/libaudio_pipeline.a -lm -o /tmp/i008-rom-full
+          arm-linux-gnueabihf-gcc $flags -Iinclude -Ibuild/i008-arm-tiny/generated tests/rom_probe.c build/i008-arm-tiny/libaudio_pipeline.a -lm -o /tmp/i008-rom-tiny
+          rom_bytes() { arm-linux-gnueabihf-size "$1" | awk 'NR==2 {print $1+$2}'; }
+          full=$(rom_bytes /tmp/i008-rom-full)
+          tiny=$(rom_bytes /tmp/i008-rom-tiny)
+          printf 'cortex_a32_pipeline_rom_bytes full=%s tiny=%s\n' "$full" "$tiny" | tee i008-arm-evidence/rom-metrics.txt
+          test "$full" -le 40960 && test "$tiny" -le 40960
+          arm-linux-gnueabihf-nm /tmp/i008-rom-full | grep -q 'ap_beamformer'
+          if arm-linux-gnueabihf-nm /tmp/i008-rom-tiny | grep -q 'ap_beamformer'; then
+            echo 'TINY Cortex-A32 ROM unexpectedly retains beamformer symbols' >&2
+            exit 3
+          fi
+      - name: Seal ARM evidence
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          mkdir -p i008-arm-evidence
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path('i008-arm-evidence')
+          result={
+            'schema_version':1,'iteration_id':'I008','authority':'engineering-development-evidence-only',
+            'head_sha':os.environ['HEAD_SHA'],'job_status':os.environ['JOB_STATUS'],
+            'dut_hil':'DEFERRED_BY_SCOPE','product_qualification':'DEFERRED_BY_SCOPE'}
+          (root/'result.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          PY
+          (cd i008-arm-evidence && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum) > i008-arm-evidence/SHA256SUMS
+      - name: Upload hash-bound ARM evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i008-arm-qemu-${{ github.run_id }}
+          path: i008-arm-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+  lab:
+    needs: contract
+    uses: ./.github/workflows/lab-user-mode.yml
+    with:
+      source_sha: ${{ github.event.pull_request.head.sha }}
+
+  i008-audit-report:
+    if: always()
+    needs: [contract, audit, arm-qemu, lab]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail closed unless every I008 engineering surface passed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ needs.contract.result }}' = success
+          test '${{ needs.audit.result }}' = success
+          test '${{ needs.arm-qemu.result }}' = success
+          test '${{ needs.lab.result }}' = success
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## I008 candidate-zero engineering audit
+          - Exact main base: `54fd0cdb5ff7197748fa52d07e0cb83e465a6b57`
+          - Candidate / confirmation: `0 / 0`
+          - Runtime/API/reset, SDK/ABI, TSan, diagnostics/replay: PASS
+          - BANDLIMITED/FAST resampler contracts: PASS
+          - FULL/LOW/TINY/RAW composition/resource pruning: PASS
+          - Paired host pipeline/runtime/NS/resampler performance: PASS
+          - Cortex-A7 + AArch64 QEMU executable contracts: PASS
+          - Cortex-A32 ROM/TINY pruning: PASS
+          - Ordinary-user laboratory provisioning boundary: PASS
+          - Shipping `v2.3.12`: unchanged
+          - DUT/HIL and Product Qualification: `DEFERRED_BY_SCOPE`
+          - This workflow intentionally does **not** define a `summary` job/check.
+          EOF

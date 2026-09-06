@@ -113,11 +113,17 @@
       ]
     },
     {
-      "id": "I009", "priority": 75, "status": "PLANNED", "lane": "acoustic",
+      "id": "I009", "priority": 75, "status": "CLOSED", "lane": "acoustic",
       "title": "Activity double-talk admission root cause after I006 handoff",
-      "depends_on": ["I006", "P001"], "handler": null, "contract": "docs/program/iterations/I009-inherited-double-talk-evidence.json",
-      "exit": "Use I006 observations only as regression/root-cause context; any Activity candidate requires a new bounded contract and independent confirmation source",
-      "evidence": []
+      "depends_on": ["I006", "P001"], "handler": null, "contract": "docs/program/iterations/I009-closure.json",
+      "exit": "Fresh Activity gap and signal-domain root cause are archived; the only authorized residual/echo source candidate is rejected by frozen fresh pure-far and Hosted Real AEC movement regressions; confirmation remains unused and v2.3.12 stays shipping",
+      "evidence": [
+        {"source_sha": "e61b2998bde4902159eed07c8befc9703f014c1d", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34031305098", "meaning": "Fresh I009 Development baseline: artifact 9988691434/digest ab6f36bc... independently verified 284/284; 5/6 partitions fail the frozen double-talk activity gate with the inherited 3 smoothed-limit + 3 both-gates mechanism reproduced on new seeds."},
+        {"source_sha": "317756d9feb17de5f7065b619e08dd7a77b9f166", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34031731756", "meaning": "Candidate-zero direct echo-normalization differential: artifact 9988834254/digest 3111f6ac... independently verified 301/301; 6/6 near/far repaired but 0/3 pure-far protected, so direct mic/echo normalization was rejected without source candidate authority."},
+        {"source_sha": "497c3ca3a6be0a4e319a3493e256eac7391a7f18", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34033842566", "meaning": "Candidate-zero residual/echo rescue differential: artifact 9989499865/digest 1965a49e... independently verified 301/301; frozen 6/6 near/far + 3/3 pure-far support gates all pass with no Activity numeric threshold changes, authorizing exactly one structural source candidate."},
+        {"source_sha": "7acd0a3a944573f35a4c60644f9d94e7aa20cf29", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34034482037", "meaning": "Only authorized I009 source candidate consumed 1/1 candidate and 0 confirmation. Artifact 9989713478/digest 51e5023b... independently verified 8/8; fresh near/far improves 0/6 to 6/6 but pure-far is only 2/3 with seed 18109 at 5.3521% false double-talk. Final decision KEEP_BASELINE_CANDIDATE_REJECTED; PR #119 closed unmerged."},
+        {"source_sha": "7acd0a3a944573f35a4c60644f9d94e7aa20cf29", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34034482048", "meaning": "Independent Hosted Real AEC regression for the same frozen candidate: artifact 9989725745/digest ec24563f... independently verified 18/18; only 2/4 cases pass, static 2/2 but movement 0/2 with correlation-reduction regressions. Confirmation is not executed and shipping remains v2.3.12."}
+      ]
     },
     {
       "id": "I008", "priority": 80, "status": "PLANNED", "lane": "engineering",

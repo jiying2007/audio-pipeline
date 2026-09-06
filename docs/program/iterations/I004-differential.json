@@ -3,7 +3,7 @@
   "iteration_id": "I004",
   "phase": "root-cause-differential",
   "root_cause_id": "ns-nonstationary-low-snr",
-  "base_sha": "669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee",
+  "base_sha": "74661cb1d732f4baa13cd5fce6f8cd05f3b5779e",
   "data_role": "development-exposed-after-baseline",
   "candidate_limit": 0,
   "confirmation_limit": 0,

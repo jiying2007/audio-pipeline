@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I009",
+  "phase": "activity-double-talk-signal-domain-differential",
+  "root_cause_id": "activity-double-talk-render-vs-echo-scale-mismatch",
+  "base_sha": "e61b2998bde4902159eed07c8befc9703f014c1d",
+  "baseline_execution": {
+    "workflow_run_id": 34031305098,
+    "artifact_id": 9988691434,
+    "artifact_digest": "sha256:ab6f36bc7252a988ff5228230137436bf75ea500c6d9a884c8f8ddf5f5299229",
+    "internal_sha256s_verified": 284,
+    "decision": "MEASURED_GAP_REVIEW_REQUIRED",
+    "fresh_development_seeds": [17109, 27109, 37109],
+    "gate_failure_partitions": 5
+  },
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "data_role": "already-exposed-development-root-cause-only",
+  "seeds": [17109, 27109, 37109],
+  "scenarios": [
+    "pure-far-end-residual-low",
+    "near-far-doubletalk",
+    "near-far-weak-near"
+  ],
+  "counterfactual": {
+    "name": "previous-aec-echo-energy-dtd-reference-v1",
+    "far_detection": "unchanged shipping raw/synchronized reference energy",
+    "dtd_reference_before_aec_convergence": "unchanged shipping reference energy",
+    "dtd_reference_after_aec_convergence": "previous-frame AEC echo-estimate energy",
+    "echo_energy_smoothing": "same 0.35 rise / 0.08 decay EMA maintained independently from raw reference",
+    "double_talk_ratio": 1.5,
+    "instant_on_multiplier": 0.9,
+    "instant_hold_multiplier": 0.72,
+    "double_talk_hangover_frames": 3,
+    "new_numeric_thresholds": false,
+    "parameter_search": false
+  },
+  "input_preconditions": {
+    "min_trace_frames": 760,
+    "warmup_frames": 60,
+    "min_near_active_frames": 120,
+    "min_far_active_frames": 120
+  },
+  "diagnostic_gates": {
+    "near_far": {
+      "min_counterfactual_double_talk_fraction_on_near_active": 0.35,
+      "required_partitions_pass": 6
+    },
+    "pure_far": {
+      "max_counterfactual_double_talk_fraction_on_far_active": 0.0,
+      "required_partitions_pass": 3
+    }
+  },
+  "decision_contract": {
+    "ECHO_NORMALIZED_STRUCTURE_SUPPORTED_REVIEW_REQUIRED": "all six near/far Development partitions satisfy the unchanged 0.35 gate under the frozen echo-normalized counterfactual and all three pure-far controls remain at exactly zero false double-talk",
+    "ECHO_NORMALIZED_STRUCTURE_NOT_SUPPORTED_REVIEW_REQUIRED": "input/source preconditions pass but the frozen counterfactual does not satisfy all near/far and pure-far diagnostic gates",
+    "INPUT_INVALID_REVIEW_REQUIRED": "exact-base, generator, trace, Activity/AEC source, or labeling preconditions fail"
+  },
+  "authority": {
+    "may_modify_shipping_activity": false,
+    "may_modify_shipping_aec": false,
+    "may_tune_existing_activity_thresholds": false,
+    "may_add_numeric_thresholds": false,
+    "may_rank_candidates": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_product_qualification": false
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

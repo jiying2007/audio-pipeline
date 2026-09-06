@@ -1,0 +1,85 @@
+name: P002 Candidate-Zero Governance Audit
+
+on:
+  pull_request:
+    paths:
+      - docs/program/iterations/P002-candidate-zero-audit.json
+      - .github/program/p002_candidate_zero_audit.py
+      - .github/workflows/p002-candidate-zero-audit.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  p002-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Enforce exact candidate-zero scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          test "$base" = '1e4d13598f7cc497c8ebd7415bf4343acb587a89'
+          mapfile -t actual < <(git diff --name-only "$base...$head" | sort)
+          expected=(
+            .github/program/p002_candidate_zero_audit.py
+            .github/workflows/p002-candidate-zero-audit.yml
+            docs/program/iterations/P002-candidate-zero-audit.json
+          )
+          printf '%s\n' "${actual[@]}" >/tmp/actual
+          printf '%s\n' "${expected[@]}" | sort >/tmp/expected
+          diff -u /tmp/expected /tmp/actual
+          git diff --check "$base...$head"
+          git diff --exit-code "$base...$head" -- src include CMakeLists.txt scripts/prepare_release.py scripts/release_manifest.py scripts/research_registry.py .github/workflows/release.yml .github/workflows/i007-closure.yml .github/workflows/i009-closure.yml
+      - name: Execute non-destructive governance counterexamples
+        run: python3 .github/program/p002_candidate_zero_audit.py
+      - name: Capture live release and historical trigger facts read-only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/p002-candidate-zero/live
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v2.3.12" > /tmp/p002-candidate-zero/live/release-v2.3.12.json
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v2.3.12" > /tmp/p002-candidate-zero/live/tag-ref-v2.3.12.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34040720729" > /tmp/p002-candidate-zero/live/i007-mistrigger-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34040720772" > /tmp/p002-candidate-zero/live/i009-mistrigger-run.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/p002-candidate-zero/live')
+          release=json.load(open(root/'release-v2.3.12.json'))
+          assert release['tag_name']=='v2.3.12' and release['immutable'] is True and release['draft'] is False
+          assert len(release['assets']) == 8, len(release['assets'])
+          for name in ['i007-mistrigger-run.json','i009-mistrigger-run.json']:
+              run=json.load(open(root/name))
+              assert run['conclusion']=='failure' and run['event']=='pull_request'
+          facts={
+              'live_release': {
+                  'tag':'v2.3.12', 'immutable':release['immutable'],
+                  'asset_count':len(release['assets']),
+                  'asset_names':sorted(a['name'] for a in release['assets']),
+              },
+              'historical_terminal_mistrigger_runs': [34040720729,34040720772],
+          }
+          (root/'facts.json').write_text(json.dumps(facts,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Seal evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/p002-candidate-zero
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - name: Upload candidate-zero evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p002-candidate-zero-${{ github.run_id }}
+          path: /tmp/p002-candidate-zero/
+          retention-days: 30
+          if-no-files-found: error

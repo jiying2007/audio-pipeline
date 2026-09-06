@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "phase": "baseline-measurement",
+  "root_cause_id": "agc-residual-floor-mismatch-baseline",
+  "base_sha": "ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_authority": "full-call-production-controlled-agc",
+  "diagnostic_authority": "raw-agc-uncontrolled-diagnostic-only",
+  "seeds": [16107, 26107, 36107],
+  "seconds": 8.0,
+  "scenarios": [
+    "pure-far-end-residual-low",
+    "pure-far-end-residual-ramp",
+    "noise-floor-low",
+    "noise-floor-step",
+    "near-far-doubletalk",
+    "near-far-weak-near"
+  ],
+  "generator": {
+    "speech_source": "tests/validation/i004_ns_nonstationary_diagnostic.py:speech_like",
+    "noise_source": "tests/validation/i004_ns_nonstationary_diagnostic.py:hash_noise",
+    "far_echo_delays_samples": [640, 960],
+    "far_echo_gains_low": [0.16, 0.06],
+    "far_echo_gains_ramp_before": [0.10, 0.04],
+    "far_echo_gains_ramp_after": [0.28, 0.10],
+    "near_scale_balanced": 1.30,
+    "near_scale_weak": 0.72,
+    "noise_floor_low_rms": 0.0025,
+    "noise_floor_step_rms_before": 0.0020,
+    "noise_floor_step_rms_after": 0.0060
+  },
+  "input_preconditions": {
+    "min_trace_frames": 760,
+    "warmup_frames": 60,
+    "min_pure_far_active_frames": 120,
+    "min_near_active_frames": 120,
+    "min_noise_frames": 500
+  },
+  "diagnostic_gates": {
+    "pure_far_end": {
+      "min_far_only_fraction_on_far_active": 0.85,
+      "max_output_vs_input_rms_gain_db": 0.75,
+      "max_clip_fraction": 0.001
+    },
+    "noise_floor": {
+      "max_tail_output_rms_dbfs": -28.0,
+      "max_p95_frame_gain_db": 15.0,
+      "max_clip_fraction": 0.001
+    },
+    "near_far": {
+      "min_far_active_fraction_on_near_active": 0.70,
+      "min_double_talk_fraction_on_near_active": 0.35,
+      "min_speech_si_sdr_improvement_db": -0.50,
+      "max_clip_fraction": 0.002
+    }
+  },
+  "decision_contract": {
+    "BASELINE_ADEQUATE_NO_SEARCH": "all input preconditions and all frozen production-path gates pass",
+    "MEASURED_GAP_REVIEW_REQUIRED": "input preconditions pass and one or more frozen production-path gates fail",
+    "INPUT_OR_ACTIVITY_INVALID_REVIEW_REQUIRED": "activity/trace/input preconditions fail; no candidate may be authorized from the affected result",
+    "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_tune_agc_target": false,
+    "may_tune_limiter": false,
+    "may_tune_attack_release": false,
+    "may_rank_candidates": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_product_qualification": false
+  },
+  "existing_exposed_agc_search": {
+    "seeds": [1307, 2307, 3307],
+    "parameters": ["agc_target_dbfs", "limiter_dbfs"],
+    "role": "regression-only",
+    "prohibited_for_this_measurement": true
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

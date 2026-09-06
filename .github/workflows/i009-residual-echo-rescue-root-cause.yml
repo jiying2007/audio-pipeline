@@ -1,0 +1,148 @@
+name: I009 Residual-Echo Rescue Root Cause
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I009-residual-echo-rescue-root-cause.json'
+      - 'tests/validation/i009_residual_echo_probe.c'
+      - 'tests/validation/i009_residual_echo_root_cause.py'
+      - '.github/workflows/i009-residual-echo-rescue-root-cause.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  differential:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BASE_SHA: 317756d9feb17de5f7065b619e08dd7a77b9f166
+      PYTHONPATH: tests/validation:validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate candidate-zero differential contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/i009_residual_echo_root_cause.py
+          PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i009_residual_echo_root_cause.py --self-test
+          python3 -m json.tool docs/program/iterations/I009-residual-echo-rescue-root-cause.json >/dev/null
+          python3 scripts/program.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/I009-residual-echo-rescue-root-cause.json').read_text())
+          assert c['schema_version']==1 and c['iteration_id']=='I009'
+          assert c['phase']=='activity-double-talk-residual-echo-differential'
+          assert c['base_sha']=='317756d9feb17de5f7065b619e08dd7a77b9f166'
+          assert c['candidate_limit']==0 and c['confirmation_limit']==0
+          assert c['data_role']=='already-exposed-development-root-cause-only'
+          assert c['seeds']==[17109,27109,37109]
+          cf=c['counterfactual']
+          assert cf['name']=='shipping-raw-or-previous-residual-over-echo-v1'
+          assert cf['double_talk_ratio']==1.5
+          assert cf['instant_on_multiplier']==0.90
+          assert cf['instant_hold_multiplier']==0.72
+          assert cf['energy_attack_alpha']==0.35 and cf['energy_release_alpha']==0.08
+          assert cf['new_numeric_thresholds'] is False and cf['parameter_search'] is False
+          assert all(v is False for v in c['authority'].values())
+          assert c['product_qualification']=='DEFERRED_BY_SCOPE'
+          PY
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(docs/program/iterations/I009-residual-echo-rescue-root-cause\.json|tests/validation/i009_residual_echo_probe\.c|tests/validation/i009_residual_echo_root_cause\.py|\.github/workflows/i009-residual-echo-rescue-root-cause\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 4
+          test "${{ github.event.pull_request.base.sha }}" = "$BASE_SHA"
+          git diff --quiet "$BASE_SHA" HEAD -- src include CMakeLists.txt
+
+      - name: Prepare immutable baseline main
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf exact-base
+          git worktree add --detach exact-base "$BASE_SHA"
+          test "$(git -C exact-base rev-parse HEAD)" = "$BASE_SHA"
+          mkdir -p exact-base/docs/program/iterations exact-base/tests/validation
+          cp docs/program/iterations/I009-residual-echo-rescue-root-cause.json exact-base/docs/program/iterations/
+          cp tests/validation/i009_residual_echo_probe.c exact-base/tests/validation/
+          cp tests/validation/i009_residual_echo_root_cause.py exact-base/tests/validation/
+          test -z "$(git -C exact-base diff --name-only -- src include CMakeLists.txt)"
+
+      - name: Execute residual-over-echo counterfactual
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd exact-base
+          rm -rf i009-residual-echo-evidence
+          PYTHONPATH=tests/validation:validation/tools \
+            python3 tests/validation/i009_residual_echo_root_cause.py \
+              --contract docs/program/iterations/I009-residual-echo-rescue-root-cause.json \
+              --i006-contract docs/program/iterations/I006-baseline.json \
+              --output i009-residual-echo-evidence | tee i009-residual-echo-summary.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('i009-residual-echo-evidence/root-cause-result.json').read_text())
+          assert r['schema_version']==1 and r['iteration_id']=='I009'
+          assert r['source_sha']=='317756d9feb17de5f7065b619e08dd7a77b9f166'
+          assert r['authority']=='candidate-zero-exposed-development-residual-echo-only'
+          assert r['candidate_limit']==0 and r['confirmation_limit']==0
+          assert r['candidate_search_performed'] is False
+          assert r['parameter_tuning_performed'] is False
+          assert r['shipping_source_changed'] is False and r['promotion_allowed'] is False
+          assert r['aggregate']['partitions']==9
+          assert r['decision'] in (
+              'RESIDUAL_ECHO_RESCUE_SUPPORTED_REVIEW_REQUIRED',
+              'RESIDUAL_ECHO_RESCUE_NOT_SUPPORTED_REVIEW_REQUIRED',
+              'INPUT_INVALID_REVIEW_REQUIRED')
+          assert r['product_qualification']=='DEFERRED_BY_SCOPE'
+          if r['decision']=='INPUT_INVALID_REVIEW_REQUIRED':
+              raise SystemExit('I009 residual/echo input preconditions invalid; fail closed')
+          PY
+
+      - name: Freeze differential evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=exact-base/i009-residual-echo-evidence
+          cp docs/program/iterations/I009-residual-echo-rescue-root-cause.json "$out/contract.json"
+          cp tests/validation/i009_residual_echo_probe.c "$out/probe.c"
+          cp tests/validation/i009_residual_echo_root_cause.py "$out/evaluator.py"
+          printf '%s\n' "$BASE_SHA" > "$out/base-sha.txt"
+          git rev-parse HEAD > "$out/research-head.txt"
+          cp exact-base/i009-residual-echo-summary.json "$out/execution-summary.json"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish differential summary
+        shell: bash
+        run: |
+          RESULT=exact-base/i009-residual-echo-evidence/root-cause-result.json python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from pathlib import Path
+          r=json.loads(Path(os.environ['RESULT']).read_text())
+          a=r['aggregate']
+          print('## I009 residual/echo rescue differential')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Exact main: `{r['source_sha']}`")
+          print(f"- Near/far gates: `{a['near_far_passed']}/{a['near_far_partitions']}`")
+          print(f"- Pure-far gates: `{a['pure_far_passed']}/{a['pure_far_partitions']}`")
+          print('- Existing Activity constants changed/searched: `false/false`.')
+          print('- Candidate/confirmation consumed: `0/0`.')
+          print('- Shipping source change / promotion: `false/false`.')
+          print('- Product Qualification: `DEFERRED_BY_SCOPE`.')
+          PY
+
+      - name: Upload I009 residual/echo evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i009-residual-echo-root-cause-${{ github.run_id }}
+          path: exact-base/i009-residual-echo-evidence/
+          retention-days: 90
+          if-no-files-found: error

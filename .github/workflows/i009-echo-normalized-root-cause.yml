@@ -1,0 +1,151 @@
+name: I009 Echo-Normalized DTD Root Cause
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I009-echo-normalized-root-cause.json'
+      - 'tests/validation/i009_echo_normalized_probe.c'
+      - 'tests/validation/i009_echo_normalized_root_cause.py'
+      - '.github/workflows/i009-echo-normalized-root-cause.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  differential:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BASE_SHA: e61b2998bde4902159eed07c8befc9703f014c1d
+      PYTHONPATH: tests/validation:validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate candidate-zero differential contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/i009_echo_normalized_root_cause.py
+          PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i009_echo_normalized_root_cause.py --self-test
+          python3 -m json.tool docs/program/iterations/I009-echo-normalized-root-cause.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/I009-echo-normalized-root-cause.json').read_text())
+          assert c['schema_version']==1 and c['iteration_id']=='I009'
+          assert c['phase']=='activity-double-talk-signal-domain-differential'
+          assert c['base_sha']=='e61b2998bde4902159eed07c8befc9703f014c1d'
+          assert c['candidate_limit']==0 and c['confirmation_limit']==0
+          assert c['data_role']=='already-exposed-development-root-cause-only'
+          assert c['seeds']==[17109,27109,37109]
+          assert c['counterfactual']['new_numeric_thresholds'] is False
+          assert c['counterfactual']['parameter_search'] is False
+          assert c['counterfactual']['double_talk_ratio']==1.5
+          assert c['counterfactual']['instant_on_multiplier']==0.9
+          assert c['counterfactual']['instant_hold_multiplier']==0.72
+          assert all(v is False for v in c['authority'].values())
+          assert c['product_qualification']=='DEFERRED_BY_SCOPE'
+          PY
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(docs/program/iterations/I009-echo-normalized-root-cause\.json|tests/validation/i009_echo_normalized_probe\.c|tests/validation/i009_echo_normalized_root_cause\.py|\.github/workflows/i009-echo-normalized-root-cause\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 4
+          test "${{ github.event.pull_request.base.sha }}" = "$BASE_SHA"
+          git diff --quiet "$BASE_SHA" HEAD -- src include CMakeLists.txt
+
+      - name: Prepare immutable baseline main
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf exact-base
+          git worktree add --detach exact-base "$BASE_SHA"
+          test "$(git -C exact-base rev-parse HEAD)" = "$BASE_SHA"
+          mkdir -p exact-base/docs/program/iterations exact-base/tests/validation
+          cp docs/program/iterations/I009-echo-normalized-root-cause.json exact-base/docs/program/iterations/
+          cp tests/validation/i009_echo_normalized_probe.c exact-base/tests/validation/
+          cp tests/validation/i009_echo_normalized_root_cause.py exact-base/tests/validation/
+          test -z "$(git -C exact-base diff --name-only -- src include CMakeLists.txt)"
+
+      - name: Execute causal signal-domain counterfactual
+        shell: bash
+        working-directory: exact-base
+        run: |
+          set -euo pipefail
+          rm -rf i009-echo-normalized-evidence
+          PYTHONPATH=tests/validation:validation/tools \
+            python3 tests/validation/i009_echo_normalized_root_cause.py \
+              --contract docs/program/iterations/I009-echo-normalized-root-cause.json \
+              --i006-contract docs/program/iterations/I006-baseline.json \
+              --output i009-echo-normalized-evidence | tee i009-echo-normalized-summary.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('i009-echo-normalized-evidence/root-cause-result.json').read_text())
+          assert r['schema_version']==1 and r['iteration_id']=='I009'
+          assert r['source_sha']=='e61b2998bde4902159eed07c8befc9703f014c1d'
+          assert r['authority']=='candidate-zero-exposed-development-signal-domain-only'
+          assert r['candidate_limit']==0 and r['confirmation_limit']==0
+          assert r['candidate_search_performed'] is False
+          assert r['parameter_tuning_performed'] is False
+          assert r['shipping_source_changed'] is False and r['promotion_allowed'] is False
+          assert r['aggregate']['partitions']==9
+          assert r['decision'] in ('ECHO_NORMALIZED_STRUCTURE_SUPPORTED_REVIEW_REQUIRED','ECHO_NORMALIZED_STRUCTURE_NOT_SUPPORTED_REVIEW_REQUIRED','INPUT_INVALID_REVIEW_REQUIRED')
+          assert r['product_qualification']=='DEFERRED_BY_SCOPE'
+          if r['decision']=='INPUT_INVALID_REVIEW_REQUIRED':
+              raise SystemExit('I009 signal-domain input/source preconditions invalid; fail closed')
+          PY
+
+      - name: Freeze differential evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=exact-base/i009-echo-normalized-evidence
+          if test -d "$out"; then
+            cp docs/program/iterations/I009-echo-normalized-root-cause.json "$out/contract.json"
+            cp tests/validation/i009_echo_normalized_probe.c "$out/probe.c"
+            cp tests/validation/i009_echo_normalized_root_cause.py "$out/evaluator.py"
+            printf '%s\n' "$BASE_SHA" > "$out/base-sha.txt"
+            git rev-parse HEAD > "$out/research-head.txt"
+            if test -f exact-base/i009-echo-normalized-summary.json; then
+              cp exact-base/i009-echo-normalized-summary.json "$out/execution-summary.json"
+            fi
+            find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+          fi
+
+      - name: Publish differential summary
+        if: always()
+        shell: bash
+        run: |
+          result=exact-base/i009-echo-normalized-evidence/root-cause-result.json
+          if test -f "$result"; then
+            RESULT="$result" python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from pathlib import Path
+          r=json.loads(Path(os.environ['RESULT']).read_text())
+          a=r['aggregate']
+          print('## I009 echo-normalized DTD differential')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Exact main: `{r['source_sha']}`")
+          print(f"- Near/far counterfactual gates: `{a['near_far_passed']}/{a['near_far_partitions']}`")
+          print(f"- Pure-far protection gates: `{a['pure_far_passed']}/{a['pure_far_partitions']}`")
+          print('- Candidate/confirmation consumed: `0/0`.')
+          print('- Existing thresholds changed/searched: `false/false`.')
+          print('- Product Qualification: `DEFERRED_BY_SCOPE`.')
+          PY
+          fi
+
+      - name: Upload I009 differential evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i009-echo-normalized-root-cause-${{ github.run_id }}
+          path: exact-base/i009-echo-normalized-evidence/
+          retention-days: 90
+          if-no-files-found: error

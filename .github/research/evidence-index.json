@@ -3,9 +3,10 @@
   "updated_at": "2026-09-04T17:55:22+08:00",
   "policy": {
     "terminal_statuses": ["ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED"],
-    "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match"],
+    "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match", "no active dependency"],
     "unclassified_refs_are_retained": true
   },
+  "active_dependencies": [],
   "records": [
     {"branch":"research/aec-corr-exact-native-v1","head_sha":"89a5ba0834afc384d284fe097a2eedd60b058610","status":"ACCEPTED","evidence":["run:33843998920","pr:69","release:v2.3.6"],"supersedes":["research/aec-corr-refined-search-v2"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/aec-corr-ground-truth-v1","head_sha":"1f300cf4752a2ec52ca437b84ab98b778540aff2","status":"SUPERSEDED","evidence":["run:33836378471","decision:ground-truth-diagnostic-established-sparse-grid-miss"],"superseded_by":"research/aec-corr-exact-native-v1","gc_eligible":true,"auto_gc":true},

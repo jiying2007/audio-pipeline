@@ -31,6 +31,28 @@ def validate_registry(data: dict) -> None:
     records = data.get("records")
     if not isinstance(records, list):
         raise ValueError("research registry records must be a list")
+    active_dependencies = data.get("active_dependencies", [])
+    if not isinstance(active_dependencies, list):
+        raise ValueError("active_dependencies must be a list")
+    seen_dependencies: set[tuple[str | None, str | None]] = set()
+    for index, dependency in enumerate(active_dependencies):
+        if not isinstance(dependency, dict) or set(dependency) != {"branch", "head_sha", "reason"}:
+            raise ValueError(f"active dependency {index} must have branch/head_sha/reason")
+        branch = dependency["branch"]
+        head_sha = dependency["head_sha"]
+        reason = dependency["reason"]
+        if branch is not None and (not isinstance(branch, str) or not branch.startswith(GC_PREFIXES)):
+            raise ValueError(f"invalid active dependency branch at {index}")
+        if head_sha is not None and not SHA_RE.fullmatch(str(head_sha)):
+            raise ValueError(f"invalid active dependency head_sha at {index}")
+        if branch is None and head_sha is None:
+            raise ValueError(f"active dependency {index} must bind branch or head_sha")
+        if not isinstance(reason, str) or not reason:
+            raise ValueError(f"active dependency {index} requires reason")
+        key = (branch, head_sha)
+        if key in seen_dependencies:
+            raise ValueError(f"duplicate active dependency at {index}")
+        seen_dependencies.add(key)
     branches: set[str] = set()
     for index, record in enumerate(records):
         if not isinstance(record, dict):
@@ -96,6 +118,14 @@ def open_prs(repository: str, branch: str) -> list[dict]:
     return payload
 
 
+def active_dependency_reasons(data: dict, branch: str, head_sha: str) -> list[str]:
+    reasons = []
+    for dependency in data.get("active_dependencies", []):
+        if dependency["branch"] == branch or dependency["head_sha"] == head_sha:
+            reasons.append(dependency["reason"])
+    return reasons
+
+
 def delete_branch(repository: str, branch: str) -> None:
     endpoint = f"repos/{repository}/git/refs/heads/{quote(branch, safe='/')}"
     completed = subprocess.run(
@@ -123,13 +153,18 @@ def plan(data: dict, repository: str, *, auto_only: bool = False, apply: bool = 
         elif current != expected:
             item["action"] = "BLOCK_SHA_DRIFT"
         else:
-            prs = open_prs(repository, branch)
-            if prs:
-                item["action"] = "BLOCK_OPEN_PR"
-                item["open_prs"] = [int(pr["number"]) for pr in prs]
+            dependencies = active_dependency_reasons(data, branch, expected)
+            if dependencies:
+                item["action"] = "BLOCK_ACTIVE_DEPENDENCY"
+                item["active_dependencies"] = dependencies
             else:
-                item["action"] = "DELETE_DRY_RUN"
-                deletable.append((item, branch))
+                prs = open_prs(repository, branch)
+                if prs:
+                    item["action"] = "BLOCK_OPEN_PR"
+                    item["open_prs"] = [int(pr["number"]) for pr in prs]
+                else:
+                    item["action"] = "DELETE_DRY_RUN"
+                    deletable.append((item, branch))
         actions.append(item)
     blocked = [item for item in actions if item["action"].startswith("BLOCK_")]
     if apply and not blocked:
@@ -153,6 +188,7 @@ def plan(data: dict, repository: str, *, auto_only: bool = False, apply: bool = 
 def self_test() -> None:
     good = {
         "schema_version": 1,
+        "active_dependencies": [],
         "records": [
             {"branch": "research/example-v1", "head_sha": "a" * 40, "status": "REJECTED",
              "evidence": ["run:1"], "gc_eligible": True, "auto_gc": True},
@@ -161,6 +197,12 @@ def self_test() -> None:
         ],
     }
     validate_registry(good)
+    active = json.loads(json.dumps(good))
+    active["active_dependencies"] = [{
+        "branch": "research/example-v1", "head_sha": None, "reason": "program:P002-fixture"
+    }]
+    validate_registry(active)
+    assert active_dependency_reasons(active, "research/example-v1", "a" * 40) == ["program:P002-fixture"]
     for mutation in (
         lambda d: d["records"].append(dict(d["records"][0])),
         lambda d: d["records"][0].update(status="ACTIVE"),

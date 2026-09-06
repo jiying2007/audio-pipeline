@@ -1,0 +1,179 @@
+name: P002 Governance Fix
+
+on:
+  pull_request:
+    paths:
+      - '.github/program/existing_release_identity.py'
+      - '.github/research/evidence-index.json'
+      - '.github/workflows/i007-closure.yml'
+      - '.github/workflows/i009-closure.yml'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/p002-governance-fix.yml'
+      - 'docs/program/iterations/P002-governance-fix.json'
+      - 'scripts/research_registry.py'
+
+permissions:
+  contents: read
+
+jobs:
+  p002-governance-fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      P002_BASE: 699c1f604611b5018ab3cb7a712ed1a8942cedcb
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Enforce exact bounded P002 fix scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only "$P002_BASE"...HEAD)
+          printf '%s\n' "$changed"
+          allowed='^(\.github/program/existing_release_identity\.py|\.github/research/evidence-index\.json|\.github/workflows/i007-closure\.yml|\.github/workflows/i009-closure\.yml|\.github/workflows/release\.yml|\.github/workflows/p002-governance-fix\.yml|docs/program/iterations/P002-governance-fix\.json|scripts/research_registry\.py)$'
+          unexpected=$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 8
+          git diff --check "$P002_BASE"...HEAD
+          git diff --exit-code "$P002_BASE"...HEAD -- src include CMakeLists.txt CHANGELOG.md
+          python3 -m json.tool docs/program/iterations/P002-governance-fix.json >/dev/null
+
+      - name: Verify existing-release identity validator self-test
+        run: python3 .github/program/existing_release_identity.py --self-test
+
+      - name: Read-only preflight live immutable v2.3.12
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v2.3.12
+          VERSION: 2.3.12
+          VERIFIED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          work=/tmp/p002-release
+          rm -rf "$work"
+          mkdir -p "$work"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$work/release.json"
+          test "$(jq -r '.immutable' "$work/release.json")" = true
+          test "$(jq '.assets | length' "$work/release.json")" -eq 8
+          ref_json=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG")
+          object_type=$(jq -r '.object.type' <<<"$ref_json")
+          object_sha=$(jq -r '.object.sha' <<<"$ref_json")
+          while [ "$object_type" = tag ]; do
+            tag_json=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")
+            object_type=$(jq -r '.object.type' <<<"$tag_json")
+            object_sha=$(jq -r '.object.sha' <<<"$tag_json")
+          done
+          test "$object_type" = commit
+          git merge-base --is-ancestor "$object_sha" "$VERIFIED_SHA"
+          gh release download "$TAG" \
+            --pattern "audio-pipeline-${TAG}-release-manifest.json" \
+            --pattern SHA256SUMS \
+            --dir "$work"
+          python3 .github/program/existing_release_identity.py \
+            --release-json "$work/release.json" \
+            --manifest "$work/audio-pipeline-${TAG}-release-manifest.json" \
+            --sha256s "$work/SHA256SUMS" \
+            --tag "$TAG" --version "$VERSION" \
+            --tag-peel-sha "$object_sha" --verified-sha "$VERIFIED_SHA" \
+            --release-source-is-ancestor \
+            --output "$work/result.json"
+          test "$(jq -r '.result' "$work/result.json")" = EXISTING_RELEASE_IDENTITY_PASS
+          test "$(jq -r '.asset_count' "$work/result.json")" -eq 8
+
+      - name: Verify GC protections including active dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/research_registry.py --self-test
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('rr', Path('scripts/research_registry.py'))
+          rr=importlib.util.module_from_spec(spec); spec.loader.exec_module(rr)
+          A='a'*40; B='b'*40; C='c'*40; D='d'*40
+          data={
+            'schema_version':1,
+            'active_dependencies':[{'branch':'research/active','head_sha':None,'reason':'program:P002-test'}],
+            'records':[
+              {'branch':'research/drift','head_sha':A,'status':'REJECTED','evidence':['x'],'gc_eligible':True,'auto_gc':True},
+              {'branch':'research/active','head_sha':B,'status':'REJECTED','evidence':['x'],'gc_eligible':True,'auto_gc':True},
+              {'branch':'research/open','head_sha':C,'status':'REJECTED','evidence':['x'],'gc_eligible':True,'auto_gc':True},
+              {'branch':'research/clean','head_sha':D,'status':'REJECTED','evidence':['x'],'gc_eligible':True,'auto_gc':True},
+            ],
+          }
+          rr.validate_registry(data)
+          current={'research/drift':'f'*40,'research/active':B,'research/open':C,'research/clean':D}
+          rr.branch_sha=lambda _repo, branch: current[branch]
+          rr.open_prs=lambda _repo, branch: [{'number':77}] if branch=='research/open' else []
+          deleted=[]; rr.delete_branch=lambda _repo, branch: deleted.append(branch)
+          dry=rr.plan(data,'owner/repo')
+          actions={x['branch']:x['action'] for x in dry['actions']}
+          assert actions=={
+            'research/drift':'BLOCK_SHA_DRIFT',
+            'research/active':'BLOCK_ACTIVE_DEPENDENCY',
+            'research/open':'BLOCK_OPEN_PR',
+            'research/clean':'DELETE_DRY_RUN',
+          }, actions
+          assert dry['blocked']==3 and dry['deletions']==0
+          applied=rr.plan(data,'owner/repo',apply=True)
+          actions={x['branch']:x['action'] for x in applied['actions']}
+          assert actions['research/clean']=='ABORT_BLOCKED'
+          assert applied['deletions']==0 and deleted==[]
+          print('P002 GC regression fixtures: PASS')
+          PY
+
+      - name: Verify terminal closure trigger scoping
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for ident in ('I007','I009'):
+              path=Path(f'.github/workflows/{ident.lower()}-closure.yml')
+              text=path.read_text()
+              trigger=text.split('permissions:',1)[0]
+              expected=f"docs/program/iterations/{ident}-closure.json"
+              assert expected in trigger
+              assert 'docs/program/plan.json' not in trigger
+              assert 'scripts/program.py' not in trigger
+              assert f'.github/workflows/{ident.lower()}-closure.yml' not in trigger
+          print('terminal closure trigger scope: PASS')
+          PY
+
+      - name: Verify release workflow actually gates existing releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          text=Path('.github/workflows/release.yml').read_text()
+          check=text.index('- name: Check existing release')
+          gate=text.index('- name: Verify existing immutable release identity')
+          build=text.index('- name: Build, test and install SDK')
+          assert check < gate < build
+          assert "if: steps.existing.outputs.release == 'true'" in text[gate:build]
+          assert '.github/program/existing_release_identity.py' in text[gate:build]
+          print('release existing-identity integration: PASS')
+          PY
+
+      - name: Preserve P002 authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          c=json.load(open('docs/program/iterations/P002-governance-fix.json'))
+          assert c['candidate_limit']==c['candidate_limit_consumed']==1
+          assert c['confirmation_limit']==0
+          assert c['promotion_allowed'] is False and c['release_allowed'] is False
+          assert c['destructive_gc_allowed'] is False and c['semver_change_allowed'] is False
+          assert c['shipping_source_change_allowed'] is False
+          assert c['authority_boundary']['software_release']=='v2.3.12'
+          assert c['authority_boundary']['product_qualification']=='DEFERRED_BY_SCOPE'
+          assert c['authority_boundary']['dut_hil']=='DEFERRED_BY_SCOPE'
+          PY

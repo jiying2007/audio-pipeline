@@ -2,14 +2,13 @@
   "schema_version": 1,
   "iteration_id": "I006",
   "phase": "baseline-measurement",
-  "measurement_revision": 2,
+  "measurement_revision": 3,
   "root_cause_id": "agc-residual-floor-mismatch-baseline",
   "base_sha": "ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b",
   "candidate_limit": 0,
   "confirmation_limit": 0,
   "promotion_allowed": false,
-  "shipping_authority": "production-activity-plus-ap_agc_process_controlled",
-  "full_pipeline_context_authority": "end-to-end-context-non-gating",
+  "shipping_authority": "paired-exact-production-agc-on-vs-off",
   "diagnostic_authority": "raw-agc-uncontrolled-diagnostic-only",
   "seeds": [16107, 26107, 36107],
   "seconds": 8.0,
@@ -59,31 +58,58 @@
       "max_clip_fraction": 0.002
     }
   },
+  "paired_metric_semantics": {
+    "pure_far_end.output_vs_input_rms_gain_db": "AGC_ON output RMS minus AGC_OFF output RMS on otherwise identical exact-production pipelines",
+    "noise_floor.p95_frame_gain_db": "p95 frame-wise AGC_ON minus AGC_OFF RMS delta",
+    "noise_floor.tail_output_rms_dbfs": "absolute AGC_ON tail output level",
+    "near_far.speech_si_sdr_improvement_db": "SI-SDR(AGC_ON, near reference) minus SI-SDR(AGC_OFF, near reference)",
+    "activity_metrics": "read from AGC_ON pipeline and asserted equal to AGC_OFF because activity precedes AGC"
+  },
   "decision_contract": {
-    "BASELINE_ADEQUATE_NO_SEARCH": "all input preconditions and all unchanged frozen AGC-specific controlled-path gates pass",
-    "MEASURED_GAP_REVIEW_REQUIRED": "input preconditions pass and one or more unchanged frozen AGC-specific controlled-path gates fail",
+    "BASELINE_ADEQUATE_NO_SEARCH": "all input preconditions and all unchanged frozen paired-production AGC gates pass",
+    "MEASURED_GAP_REVIEW_REQUIRED": "input preconditions pass and one or more unchanged frozen paired-production AGC gates fail",
     "INPUT_OR_ACTIVITY_INVALID_REVIEW_REQUIRED": "activity/trace/input preconditions fail; no candidate may be authorized from the affected result",
     "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
   },
   "measurement_lineage": {
-    "first_execution": {
+    "revision_1": {
       "workflow_run_id": 34011048045,
       "artifact_id": 9982461168,
       "artifact_digest": "sha256:91ff98c91fa7b74e7b4039b1121745639f7f190e3dd7eaf857d615cee472911e",
       "internal_sha256s_verified": 340,
       "decision": "MEASURED_GAP_REVIEW_REQUIRED",
       "authority_after_review": "measurement-attribution-lineage-only",
-      "reviewed_issue": "near/far speech-preservation gate used full AEC/RES/NS/AGC/VAD pipeline output and therefore could not attribute the observed SI-SDR loss to AGC; pure-far and noise-floor observations remain diagnostic context",
+      "reviewed_issue": "near/far speech-preservation gate used full AEC/RES/NS/AGC/VAD output versus raw capture, so the SI-SDR loss could not be attributed specifically to AGC",
       "candidate_budget_consumed": 0,
       "confirmation_budget_consumed": 0
     },
-    "correction": {
+    "revision_2_infrastructure_failure": {
+      "workflow_run_id": 34011365790,
+      "artifact_id": 9982554051,
+      "artifact_digest": "sha256:bc1b34281f73bf48bbc157fc87fd6e0c3be3e9c88ea8ad26c395ab775d55c640",
+      "valid_measurement_completed": false,
+      "reason": "standalone internal control probe did not map generated AP_HAVE_MODULE_AGC into AP_BUILD_STAGE_AGC, so compilation stopped before any corrected case executed",
+      "candidate_budget_consumed": 0,
+      "confirmation_budget_consumed": 0
+    },
+    "revision_2": {
+      "workflow_run_id": 34011423624,
+      "artifact_id": 9982575584,
+      "artifact_digest": "sha256:bad8a7749aeb2f71b463175fd0ca3099d267e5a11167223d9ab8e69483af7723",
+      "internal_sha256s_verified": 415,
+      "decision": "MEASURED_GAP_REVIEW_REQUIRED",
+      "authority_after_review": "measurement-attribution-lineage-only",
+      "reviewed_issue": "activity plus ap_agc_process_controlled semantics were correct, but the probe fed raw mic directly to AGC while production AGC receives post-AEC/RES/NS processed audio",
+      "candidate_budget_consumed": 0,
+      "confirmation_budget_consumed": 0
+    },
+    "revision_3": {
       "same_seeds": true,
       "same_scenarios": true,
       "same_gate_values": true,
       "new_confirmation_data": false,
-      "decision_authority": "validation-only probe reproducing production ap_activity_process plus ap_agc_process_controlled semantics",
-      "full_pipeline_role": "non-gating end-to-end context"
+      "decision_authority": "two exact-base full call pipelines with identical inputs and upstream stages; only AP_STAGE_AGC differs",
+      "raw_agc_role": "diagnostic-only"
     }
   },
   "authority": {

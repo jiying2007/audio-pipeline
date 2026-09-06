@@ -8,6 +8,8 @@ typedef struct ap_activity_state {
     float double_talk_ratio;
     float smoothed_mic_energy;
     float smoothed_reference_energy;
+    float smoothed_residual_energy;
+    float smoothed_echo_energy;
     uint32_t hangover_frames;
     uint32_t double_talk_hangover;
     uint32_t far_end_hangover;
@@ -21,5 +23,9 @@ typedef struct ap_activity_result {
 void ap_activity_init(ap_activity_state_t *, float, float, uint32_t);
 void ap_activity_reset(ap_activity_state_t *);
 void ap_activity_process(ap_activity_state_t *, float, float, ap_activity_result_t *);
+void ap_activity_process_with_residual_echo(ap_activity_state_t *,
+                                            float, float,
+                                            float, float, int,
+                                            ap_activity_result_t *);
 
 #endif

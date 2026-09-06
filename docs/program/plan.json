@@ -136,11 +136,16 @@
       ]
     },
     {
-      "id": "P002", "priority": 90, "status": "PLANNED", "lane": "governance",
+      "id": "P002", "priority": 90, "status": "CLOSED", "lane": "governance",
       "title": "Release identity conflict and archival/GC in-flight safety audit",
-      "depends_on": ["P000"], "handler": null, "contract": null,
-      "exit": "Reject tag/asset identity conflicts; preserve exact replay evidence; no deletion on SHA drift or active dependency",
-      "evidence": []
+      "depends_on": ["P000"], "handler": null, "contract": "docs/program/iterations/P002-closure.json",
+      "exit": "Candidate-zero reproduced all three governance gaps; the single bounded fix closed existing-release identity, GC active-dependency and terminal-trigger gaps; exact-main Verify and existing v2.3.12 Release identity preflight both pass without release/tag/GC mutation",
+      "evidence": [
+        {"source_sha": "9100fd7adee6939082f0f95a867325a7e1a49b78", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34041186187", "meaning": "P002 candidate-zero audit artifact 9991709188/digest 0fb55ac3... independently verified 6/6 hashes and reproduced all three frozen governance gaps without destructive mutation."},
+        {"source_sha": "2e8ac905ec8417a60c45c4015d7ff96f37f12ff6", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34043470402", "meaning": "The only bounded P002 governance fix passed live immutable v2.3.12 identity preflight, GC active-dependency regression fixtures and terminal-trigger scoping before merge; candidate budget 1/1, confirmation 0."},
+        {"source_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34043737389", "meaning": "Post-merge exact-main Verify #600 completed success on the P002 fix SHA; Hosted Real Audio/AEC also pass on the same main."},
+        {"source_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34043955335", "meaning": "Post-Verify Release #591 executed the existing-release identity step and returned EXISTING_RELEASE_IDENTITY_PASS for immutable v2.3.12: 8 assets, 7 checksums, tag/manifest source d82cb6d... and ancestor relation to current main; build/tag/publish remained skipped."}
+      ]
     },
     {
       "id": "E001", "priority": 100, "status": "DEFERRED", "lane": "external",

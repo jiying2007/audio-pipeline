@@ -13,126 +13,317 @@
     "note": "immutable software/public-data baseline; product qualification remains deferred by scope"
   },
   "data_roles": [
-    {"path": "validation/hosted_real.datasets.lock.json", "role": "hosted-regression", "exposed": true},
-    {"path": "validation/hosted_aec.datasets.lock.json", "role": "hosted-regression", "exposed": true},
-    {"path": "tests/validation/data/ami_vad_microset.lock.json", "role": "regression", "exposed": true},
-    {"path": "tests/validation/data/ami_vad_confirmation_es2004a.lock.json", "role": "regression", "exposed": true},
-    {"path": "tests/validation/data/i005_ami_vad_development_es2005b.lock.json", "role": "regression", "exposed": true}
+    {
+      "path": "validation/hosted_real.datasets.lock.json",
+      "role": "hosted-regression",
+      "exposed": true
+    },
+    {
+      "path": "validation/hosted_aec.datasets.lock.json",
+      "role": "hosted-regression",
+      "exposed": true
+    },
+    {
+      "path": "tests/validation/data/ami_vad_microset.lock.json",
+      "role": "regression",
+      "exposed": true
+    },
+    {
+      "path": "tests/validation/data/ami_vad_confirmation_es2004a.lock.json",
+      "role": "regression",
+      "exposed": true
+    },
+    {
+      "path": "tests/validation/data/i005_ami_vad_development_es2005b.lock.json",
+      "role": "regression",
+      "exposed": true
+    }
   ],
   "tasks": [
     {
-      "id": "P000", "priority": 0, "status": "CLOSED", "lane": "governance",
+      "id": "P000",
+      "priority": 0,
+      "status": "CLOSED",
+      "lane": "governance",
       "title": "Archive goals, design, executable plan and scoped automation",
-      "depends_on": [], "handler": null, "contract": null,
+      "depends_on": [],
+      "handler": null,
+      "contract": null,
       "exit": "Program self/negative tests plus exact-head Verify; main verification; evidence-backed plan update",
       "evidence": [
-        {"source_sha": "f6b35e9e0c6581e7a2d83324f156189e9110335a", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33964608127", "meaning": "Main exact-SHA Verify after #89 closed the program/governance integration without changing shipping DSP or certification authority."}
+        {
+          "source_sha": "f6b35e9e0c6581e7a2d83324f156189e9110335a",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33964608127",
+          "meaning": "Main exact-SHA Verify after #89 closed the program/governance integration without changing shipping DSP or certification authority."
+        }
       ]
     },
     {
-      "id": "I001", "priority": 10, "status": "CLOSED", "lane": "measurement",
+      "id": "I001",
+      "priority": 10,
+      "status": "CLOSED",
+      "lane": "measurement",
       "title": "Audit tonal motion corpus against fixed-geometry broadband diagnostics on exact base",
-      "depends_on": [], "handler": null, "contract": "docs/program/iterations/I001.json",
+      "depends_on": [],
+      "handler": null,
+      "contract": "docs/program/iterations/I001.json",
       "exit": "All seeds and model invariants recorded; canonical quality failures retained; no DSP promotion",
       "evidence": [
-        {"source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029", "meaning": "Complete fixed-product model audit: 72/72 case gates pass; legacy excitation has ~0.899 sidelobe peak and moving earliest path while the audited geometry keeps a 672-sample direct path and 32-sample causal margin. Different-corpus scores are not DSP improvement."}
+        {
+          "source_sha": "c8d4879809e0cce5539c320de45a7aebd36fc141",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33963971029",
+          "meaning": "Complete fixed-product model audit: 72/72 case gates pass; legacy excitation has ~0.899 sidelobe peak and moving earliest path while the audited geometry keeps a 672-sample direct path and 32-sample causal margin. Different-corpus scores are not DSP improvement."
+        }
       ]
     },
     {
-      "id": "I002", "priority": 20, "status": "CLOSED", "lane": "measurement",
+      "id": "I002",
+      "priority": 20,
+      "status": "CLOSED",
+      "lane": "measurement",
       "title": "Migrate the canonical motion model after the audit, with known-answer and negative gates",
-      "depends_on": ["I001"], "handler": null, "contract": "docs/program/iterations/I002.json",
+      "depends_on": [
+        "I001"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I002.json",
       "exit": "One canonical generator; old evidence preserved; versioned ground truth; same-product evaluator qualification",
       "evidence": [
-        {"source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578949", "meaning": "Reviewed I002 measurement migration: artifact 9969943396/digest 236cfc5e... independently verified; seeds 17411/27411/37411 all pass 12/12 unchanged canonical development gates with geometry-v2 model hash ababe11b...."},
-        {"source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578985", "meaning": "Corrected tuning consumer records motion-only aec_mu=0.52 as final REJECT_CANDIDATE because call-validation min_vad_f1 regresses by 0.08393 > 0.05, while preserving workflow success and call-shadow evidence."}
+        {
+          "source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578949",
+          "meaning": "Reviewed I002 measurement migration: artifact 9969943396/digest 236cfc5e... independently verified; seeds 17411/27411/37411 all pass 12/12 unchanged canonical development gates with geometry-v2 model hash ababe11b...."
+        },
+        {
+          "source_sha": "be64f85a328fa9926a50d50062b17d9930fc3b0b",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33967578985",
+          "meaning": "Corrected tuning consumer records motion-only aec_mu=0.52 as final REJECT_CANDIDATE because call-validation min_vad_f1 regresses by 0.08393 > 0.05, while preserving workflow success and call-shadow evidence."
+        }
       ]
     },
     {
-      "id": "I003", "priority": 30, "status": "CLOSED", "lane": "acoustic",
+      "id": "I003",
+      "priority": 30,
+      "status": "CLOSED",
+      "lane": "acoustic",
       "title": "AEC/Sync causal-anchor and continuous-motion root-cause candidates, only if measured necessary",
-      "depends_on": ["I002", "P001"], "handler": null, "contract": "docs/program/iterations/I003.json",
+      "depends_on": [
+        "I002",
+        "P001"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I003.json",
       "exit": "Bounded development/selection; engineering precheck; one fresh fixed-candidate confirmation; keep baseline when independent strict improvement is not proven",
       "evidence": [
-        {"source_sha": "6c0e8d94e9f1ff870a208e87c68b67f37853c1f7", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33973719651", "meaning": "Reviewed bounded I003 selector search. Artifact 9971684969/digest 7b9943df... consumed inherited search round 2 and final variants 10..12 without confirmation, rejected earliest-qualified and causal-cluster-leading-edge, and froze incumbent-qualified as the only eligible implementation candidate. Full reviewed metrics and hashes are archived in docs/program/iterations/I003-selection-result.json."},
-        {"source_sha": "82ae56d8148e1a19f62250072bd45563eaffdde5", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33976148746", "meaning": "Frozen incumbent-qualified shipping implementation passed strict compile/unit, ABI, resource/ROM, performance, QEMU, sanitizer, CodeQL, validation-smoke, timestamp-route and ordinary-user engineering gates before confirmation was registered."},
-        {"source_sha": "1c8916089749ad1b99cf26ba53e3683e833d4fe0", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33976714064", "meaning": "First independent confirmation source group seeds 51107/52107/53107 was consumed once. Artifact 9972539010/digest f77826cc... independently verified 308 internal hashes. All three canonical acoustic runs passed 12/12, but base and candidate were identical across 28,080 delay observations (median 1 ms, p95 2 ms, zero >4 ms and zero >20 ms), so the frozen strict-improvement requirement failed and the candidate was REJECT_CANDIDATE. v2.3.12 remains the shipping baseline."}
+        {
+          "source_sha": "6c0e8d94e9f1ff870a208e87c68b67f37853c1f7",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33973719651",
+          "meaning": "Reviewed bounded I003 selector search. Artifact 9971684969/digest 7b9943df... consumed inherited search round 2 and final variants 10..12 without confirmation, rejected earliest-qualified and causal-cluster-leading-edge, and froze incumbent-qualified as the only eligible implementation candidate. Full reviewed metrics and hashes are archived in docs/program/iterations/I003-selection-result.json."
+        },
+        {
+          "source_sha": "82ae56d8148e1a19f62250072bd45563eaffdde5",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33976148746",
+          "meaning": "Frozen incumbent-qualified shipping implementation passed strict compile/unit, ABI, resource/ROM, performance, QEMU, sanitizer, CodeQL, validation-smoke, timestamp-route and ordinary-user engineering gates before confirmation was registered."
+        },
+        {
+          "source_sha": "1c8916089749ad1b99cf26ba53e3683e833d4fe0",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33976714064",
+          "meaning": "First independent confirmation source group seeds 51107/52107/53107 was consumed once. Artifact 9972539010/digest f77826cc... independently verified 308 internal hashes. All three canonical acoustic runs passed 12/12, but base and candidate were identical across 28,080 delay observations (median 1 ms, p95 2 ms, zero >4 ms and zero >20 ms), so the frozen strict-improvement requirement failed and the candidate was REJECT_CANDIDATE. v2.3.12 remains the shipping baseline."
+        }
       ]
     },
     {
-      "id": "P001", "priority": 15, "status": "CLOSED", "lane": "governance",
+      "id": "P001",
+      "priority": 15,
+      "status": "CLOSED",
+      "lane": "governance",
       "title": "Bind promotion gate plans, data source groups, exposure and inherited research budgets",
-      "depends_on": ["P000"], "handler": null, "contract": "docs/program/iterations/P001.json",
+      "depends_on": [
+        "P000"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/P001.json",
       "exit": "Negative tests reject old SHA, missing gates, leaked confirmation, concealed failures and budget reset",
       "evidence": [
-        {"source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701734", "meaning": "Reviewed P001 governance execution completed on exact head; artifact 9971114684/digest 997f0c63... binds source exposure, fail-closed gate plans, failure lineage, inherited budgets and measurement-only trigger separation without acoustic authority."},
-        {"source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701778", "meaning": "AEC tuning workflow verification completed on exact head; fixed source groups are effective regression/replay only and aec_mu=0.52 remains final REJECT_CANDIDATE because call-validation min_vad_f1 regresses by 0.08393 > 0.05."},
-        {"source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701880", "meaning": "Exact-head Verify #474 and required summary succeeded after P001 governance and tuning workflow changes; Hosted Real Audio/AEC also passed on the same head. Full closure details are archived in docs/program/iterations/P001-result.json."}
+        {
+          "source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701734",
+          "meaning": "Reviewed P001 governance execution completed on exact head; artifact 9971114684/digest 997f0c63... binds source exposure, fail-closed gate plans, failure lineage, inherited budgets and measurement-only trigger separation without acoustic authority."
+        },
+        {
+          "source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701778",
+          "meaning": "AEC tuning workflow verification completed on exact head; fixed source groups are effective regression/replay only and aec_mu=0.52 remains final REJECT_CANDIDATE because call-validation min_vad_f1 regresses by 0.08393 > 0.05."
+        },
+        {
+          "source_sha": "574f36027e5d4530944f24be5d958b45aa88fdde",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33971701880",
+          "meaning": "Exact-head Verify #474 and required summary succeeded after P001 governance and tuning workflow changes; Hosted Real Audio/AEC also passed on the same head. Full closure details are archived in docs/program/iterations/P001-result.json."
+        }
       ]
     },
     {
-      "id": "I004", "priority": 40, "status": "CLOSED", "lane": "acoustic",
+      "id": "I004",
+      "priority": 40,
+      "status": "CLOSED",
+      "lane": "acoustic",
       "title": "NS nonstationary motor/fan and low-SNR speech envelope using pinned public data",
-      "depends_on": ["P001"], "handler": null, "contract": "docs/program/iterations/I004.json",
+      "depends_on": [
+        "P001"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I004.json",
       "exit": "Baseline gap and root-cause split are archived; bounded EMA burst-protection search consumed the two pre-registered source candidates with no eligible winner, confirmation remained unused, and v2.3.12 stays the shipping baseline",
       "evidence": [
-        {"source_sha": "2f2153a4dc71a93b284dd776f1c1a0a7f26984b6", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33999621434", "meaning": "Authoritative candidate_limit=0 I004 baseline diagnostic. Artifact 9979093460/digest 331a6511... independently verified all 159 SHA256 entries and exact research/baseline identities. Clean anchors passed 6/6 at recall 1.0. Final result MEASURED_GAP_REVIEW_REQUIRED: all 12 speech cases failed while all 12 noise-only cases had no failed flag; motor/fan/mixed expose NS-to-VAD evidence gaps and burst/start-stop additionally shows about 3.7-4.0 dB aggregate and 9.1-9.5 dB worst-window speech SI-SDR regression. No candidate, ns_floor tuning, backend change, confirmation, release or product qualification authority was consumed."},
-        {"source_sha": "a3d1fc8f42b305cd8853d9f723f2f50d8f6452ba", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34001530589", "meaning": "Candidate-zero root-cause differential independently verified artifact 9979625108/digest c8acde7e... with 218/218 checksums. NS assistance improved aggregate VAD recall versus local VAD, so the VAD limit was handed to I005 as already-observed regression context; MCRA improved burst speech but materially regressed non-burst noise attenuation, narrowing I004 to EMA burst protection without authorizing MCRA."},
-        {"source_sha": "d6bac778c2c4a6e99fa53f9d047feb29178beb19", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34004833190", "meaning": "Bounded exact-base EMA burst-protection search consumed exactly two pre-registered structural variants and no confirmation. Artifact 9980617637/digest 669cedca... independently verified 1399/1399 checksums. Both candidates passed stage regression but failed the frozen eligibility gates; final decision KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE with winner=null. The reviewed result is archived in docs/program/iterations/I004-burst-candidate-search-result.json and closure details in docs/program/iterations/I004-closure.json."}
+        {
+          "source_sha": "2f2153a4dc71a93b284dd776f1c1a0a7f26984b6",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/33999621434",
+          "meaning": "Authoritative candidate_limit=0 I004 baseline diagnostic. Artifact 9979093460/digest 331a6511... independently verified all 159 SHA256 entries and exact research/baseline identities. Clean anchors passed 6/6 at recall 1.0. Final result MEASURED_GAP_REVIEW_REQUIRED: all 12 speech cases failed while all 12 noise-only cases had no failed flag; motor/fan/mixed expose NS-to-VAD evidence gaps and burst/start-stop additionally shows about 3.7-4.0 dB aggregate and 9.1-9.5 dB worst-window speech SI-SDR regression. No candidate, ns_floor tuning, backend change, confirmation, release or product qualification authority was consumed."
+        },
+        {
+          "source_sha": "a3d1fc8f42b305cd8853d9f723f2f50d8f6452ba",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34001530589",
+          "meaning": "Candidate-zero root-cause differential independently verified artifact 9979625108/digest c8acde7e... with 218/218 checksums. NS assistance improved aggregate VAD recall versus local VAD, so the VAD limit was handed to I005 as already-observed regression context; MCRA improved burst speech but materially regressed non-burst noise attenuation, narrowing I004 to EMA burst protection without authorizing MCRA."
+        },
+        {
+          "source_sha": "d6bac778c2c4a6e99fa53f9d047feb29178beb19",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34004833190",
+          "meaning": "Bounded exact-base EMA burst-protection search consumed exactly two pre-registered structural variants and no confirmation. Artifact 9980617637/digest 669cedca... independently verified 1399/1399 checksums. Both candidates passed stage regression but failed the frozen eligibility gates; final decision KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE with winner=null. The reviewed result is archived in docs/program/iterations/I004-burst-candidate-search-result.json and closure details in docs/program/iterations/I004-closure.json."
+        }
       ]
     },
     {
-      "id": "I005", "priority": 50, "status": "CLOSED", "lane": "acoustic",
+      "id": "I005",
+      "priority": 50,
+      "status": "CLOSED",
+      "lane": "acoustic",
       "title": "VAD event/onset/release evaluation on new public sessions and far-field simulation",
-      "depends_on": ["I004"], "handler": null, "contract": "docs/program/iterations/I005-baseline.json",
+      "depends_on": [
+        "I004"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I005-baseline.json",
       "exit": "Pinned ES2005b public timing proxy and deterministic exact-timing far-field baseline both pass the frozen candidate-zero gates; no threshold/hangover/source search is authorized and v2.3.12 remains the shipping baseline",
       "evidence": [
-        {"source_sha": "f05c0bcefedc7acb5634dd7cba95ca193c0687ee", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34007957381", "meaning": "Authoritative candidate-zero I005 baseline on exact fec515eb... source. Artifact 9981552960/digest 9af2fe49... independently verified 18/18 SHA256 entries. ES2005b shipping ns-isolated frame F1=0.6396, event recall=1.0, onset p95=135 ms, release p95=267.5 ms; deterministic far-field 9 cases/27 exact events achieve frame F1=0.7162, event recall=1.0, onset p95=157 ms, release p95=100 ms. Frozen decision BASELINE_ADEQUATE_NO_SEARCH with zero gate failures; candidate/confirmation budgets remain 0/0 and no threshold/hangover/source candidate search or release authority was consumed."}
+        {
+          "source_sha": "f05c0bcefedc7acb5634dd7cba95ca193c0687ee",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34007957381",
+          "meaning": "Authoritative candidate-zero I005 baseline on exact fec515eb... source. Artifact 9981552960/digest 9af2fe49... independently verified 18/18 SHA256 entries. ES2005b shipping ns-isolated frame F1=0.6396, event recall=1.0, onset p95=135 ms, release p95=267.5 ms; deterministic far-field 9 cases/27 exact events achieve frame F1=0.7162, event recall=1.0, onset p95=157 ms, release p95=100 ms. Frozen decision BASELINE_ADEQUATE_NO_SEARCH with zero gate failures; candidate/confirmation budgets remain 0/0 and no threshold/hangover/source candidate search or release authority was consumed."
+        }
       ]
     },
     {
-      "id": "I006", "priority": 60, "status": "CLOSED", "lane": "acoustic",
+      "id": "I006",
+      "priority": 60,
+      "status": "CLOSED",
+      "lane": "acoustic",
       "title": "AGC near/far level mismatch, noise-floor and far-end residual protection",
-      "depends_on": ["P001"], "handler": null, "contract": "docs/program/iterations/I006-closure.json",
+      "depends_on": [
+        "P001"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I006-closure.json",
       "exit": "Candidate-zero root cause is archived; the single pre-registered 15 dB max-gain candidate is rejected by unchanged I006 and established low-level AGC regression gates; confirmation remains unused and v2.3.12 stays the shipping baseline",
       "evidence": [
-        {"source_sha": "f48559f55791cc72a69befdd79472d908c93803d", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34011652196", "meaning": "Authoritative revision-3 paired-production baseline: 18/18 cases complete with noise-floor and Activity dependency gaps isolated; candidate/confirmation remained 0/0."},
-        {"source_sha": "945344a29a826bbf5330baf3382cb3e34c8f4160", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34020771042", "meaning": "Candidate-zero root-cause differential: artifact 9985408103/digest 0529d778... independently verified 283/283 hashes. Noise-floor 6/6 is explained by the shipping 8x max-gain clamp; double-talk cases split 3 smoothed-gate and 3 both-gate limits with zero unexplained cases."},
-        {"source_sha": "4c7c9664ad7016f956d4735e0ac959b50d2d066f", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34021522805", "meaning": "The only authorized max-gain-cap-15db candidate consumed 1/1 candidate and 0 confirmation. Artifact 9985656336/digest 6af7e8ee... independently verified 670/670 hashes. Shipping-base noise-floor failures reproduce 6/6; candidate still passes 0/6 with p95 gain 15.00118..15.00399 dB versus the unchanged 15.0000 dB gate, and established AGC steady-low regression fails 3/3. Final decision KEEP_BASELINE_CANDIDATE_REJECTED; PR #108 is closed unmerged."}
+        {
+          "source_sha": "f48559f55791cc72a69befdd79472d908c93803d",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34011652196",
+          "meaning": "Authoritative revision-3 paired-production baseline: 18/18 cases complete with noise-floor and Activity dependency gaps isolated; candidate/confirmation remained 0/0."
+        },
+        {
+          "source_sha": "945344a29a826bbf5330baf3382cb3e34c8f4160",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34020771042",
+          "meaning": "Candidate-zero root-cause differential: artifact 9985408103/digest 0529d778... independently verified 283/283 hashes. Noise-floor 6/6 is explained by the shipping 8x max-gain clamp; double-talk cases split 3 smoothed-gate and 3 both-gate limits with zero unexplained cases."
+        },
+        {
+          "source_sha": "4c7c9664ad7016f956d4735e0ac959b50d2d066f",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34021522805",
+          "meaning": "The only authorized max-gain-cap-15db candidate consumed 1/1 candidate and 0 confirmation. Artifact 9985656336/digest 6af7e8ee... independently verified 670/670 hashes. Shipping-base noise-floor failures reproduce 6/6; candidate still passes 0/6 with p95 gain 15.00118..15.00399 dB versus the unchanged 15.0000 dB gate, and established AGC steady-low regression fails 3/3. Final decision KEEP_BASELINE_CANDIDATE_REJECTED; PR #108 is closed unmerged."
+        }
       ]
     },
     {
-      "id": "I007", "priority": 70, "status": "PLANNED", "lane": "acoustic",
+      "id": "I007",
+      "priority": 70,
+      "status": "CLOSED",
+      "lane": "acoustic",
       "title": "BF wind, motion, phase mismatch and reverberant health evidence beyond the released hard-fault fixture",
-      "depends_on": ["P001"], "handler": null, "contract": null,
-      "exit": "Frontend-equivalent oracle, fault-specific health selection, exact-base non-target protection and recovery",
-      "evidence": []
+      "depends_on": [
+        "P001"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I007-closure.json",
+      "exit": "Exact-main BF health baseline/root cause is archived; the independently bounded wind and reverb structural candidates are both rejected by frozen target/non-target and established hard-fault gates; no confirmation is consumed and v2.3.12 remains shipping",
+      "evidence": [
+        {
+          "source_sha": "88e59917d0f7cc75d88c647a41d2a186509bdd13",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34028010442",
+          "meaning": "I007 candidate-zero root-cause differential: artifact 9987677794 / digest 38a6b483... independently verified 343/343; final reviewed attribution 24/24 explained, candidate/confirmation 0/0."
+        },
+        {
+          "source_sha": "bf62bbbeca353cf54c2075eb806bbf07fabac7b8",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34028699391",
+          "meaning": "Single authorized wind candidate: artifact 9987898553 / digest eba06e39... independently verified 288/288; 24->19 failures but 7/12 wind targets remain failing and hard-fault/soft-control gate fails; PR #113 closed unmerged."
+        },
+        {
+          "source_sha": "6dba87f2f35e20fac4203e4f99c816ae8147bab4",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34028778900",
+          "meaning": "Single authorized reverb candidate: artifact 9987923038 / digest 5e6702fb... independently verified 288/288; 12/12 reverb targets pass but two wind regressions and broad hard-fault recovery/coverage regressions reject the candidate; PR #114 closed unmerged."
+        }
+      ]
     },
     {
-      "id": "I009", "priority": 75, "status": "PLANNED", "lane": "acoustic",
+      "id": "I009",
+      "priority": 75,
+      "status": "PLANNED",
+      "lane": "acoustic",
       "title": "Activity double-talk admission root cause after I006 handoff",
-      "depends_on": ["I006", "P001"], "handler": null, "contract": "docs/program/iterations/I009-inherited-double-talk-evidence.json",
+      "depends_on": [
+        "I006",
+        "P001"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I009-inherited-double-talk-evidence.json",
       "exit": "Use I006 observations only as regression/root-cause context; any Activity candidate requires a new bounded contract and independent confirmation source",
       "evidence": []
     },
     {
-      "id": "I008", "priority": 80, "status": "PLANNED", "lane": "engineering",
+      "id": "I008",
+      "priority": 80,
+      "status": "PLANNED",
+      "lane": "engineering",
       "title": "Runtime/API/reset, bounded diagnostics/replay, resampler and composition resource audit",
-      "depends_on": ["P000"], "handler": null, "contract": null,
+      "depends_on": [
+        "P000"
+      ],
+      "handler": null,
+      "contract": null,
       "exit": "TSan/realtime/SDK/ABI; FULL LOW TINY RAW custom; paired host CPU/RAM/ROM; no unproven DUT claims",
       "evidence": []
     },
     {
-      "id": "P002", "priority": 90, "status": "PLANNED", "lane": "governance",
+      "id": "P002",
+      "priority": 90,
+      "status": "PLANNED",
+      "lane": "governance",
       "title": "Release identity conflict and archival/GC in-flight safety audit",
-      "depends_on": ["P000"], "handler": null, "contract": null,
+      "depends_on": [
+        "P000"
+      ],
+      "handler": null,
+      "contract": null,
       "exit": "Reject tag/asset identity conflicts; preserve exact replay evidence; no deletion on SHA drift or active dependency",
       "evidence": []
     },
     {
-      "id": "E001", "priority": 100, "status": "DEFERRED", "lane": "external",
+      "id": "E001",
+      "priority": 100,
+      "status": "DEFERRED",
+      "lane": "external",
       "title": "Real product capture, DUT/HIL and Product Certification",
-      "depends_on": [], "handler": null, "contract": null,
+      "depends_on": [],
+      "handler": null,
+      "contract": null,
       "exit": "Explicit future scope activation with real infrastructure; never inferred from synthetic/public PASS",
       "evidence": []
     }

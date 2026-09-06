@@ -430,9 +430,12 @@ def validate_i006_closed(plan: dict, root: Path) -> None:
             result_handoff["may_authorize_threshold_search"] is False,
             "I006 result cannot grant Activity threshold-search authority")
     i007 = by_id["I007"]
-    require(i007["status"] == "PLANNED" and i007["handler"] is None and
-            i007["contract"] is None and not i007["evidence"],
-            "I006 CLOSED must not auto-activate I007")
+    require(i007["handler"] is None and (
+                (i007["status"] == "PLANNED" and i007["contract"] is None and not i007["evidence"]) or
+                (i007["status"] == "CLOSED" and
+                 i007["contract"] == "docs/program/iterations/I007-closure.json" and
+                 bool(i007["evidence"]))),
+            "I006 CLOSED permits only non-executable PLANNED or evidence-backed CLOSED I007")
     i009 = by_id["I009"]
     require(i009["status"] == "PLANNED" and i009["handler"] is None and
             i009["contract"] == "docs/program/iterations/I009-inherited-double-talk-evidence.json" and

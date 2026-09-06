@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I009",
+  "phase": "activity-double-talk-baseline",
+  "root_cause_id": "activity-double-talk-ratio-admission",
+  "base_sha": "dd3e541c740640412c9b8b76c77cee269563e5b8",
+  "inherited_context": "docs/program/iterations/I009-inherited-double-talk-evidence.json",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "data_role": "development",
+  "seeds": [17109, 27109, 37109],
+  "seconds": 8.0,
+  "scenarios": [
+    "near-far-doubletalk",
+    "near-far-weak-near"
+  ],
+  "generator_contract": {
+    "source": "tests/validation/i006_agc_residual_floor_baseline.py:generate_case",
+    "frozen_from": "docs/program/iterations/I006-baseline.json",
+    "near_scale_balanced": 1.3,
+    "near_scale_weak": 0.72,
+    "far_echo_delays_samples": [640, 960],
+    "far_echo_gains_low": [0.16, 0.06]
+  },
+  "input_preconditions": {
+    "min_trace_frames": 760,
+    "warmup_frames": 60,
+    "min_near_active_frames": 120,
+    "min_far_active_fraction_on_near_active": 0.7
+  },
+  "frozen_gate": {
+    "min_double_talk_fraction_on_near_active": 0.35
+  },
+  "diagnostics": {
+    "classify_misses_by_current_shipping_predicates": true,
+    "allowed_classifications": [
+      "DT_SMOOTHED_RATIO_GATE_LIMIT",
+      "DT_INSTANT_RATIO_GATE_LIMIT",
+      "DT_BOTH_RATIO_GATES_LIMIT",
+      "DT_NOT_EXPLAINED_BY_CURRENT_RATIO_GATES"
+    ],
+    "report_instant_hold_gate_true_fraction_on_misses": true
+  },
+  "decision_contract": {
+    "BASELINE_ADEQUATE_NO_SEARCH": "all six fresh Development partitions satisfy the unchanged 0.35 double-talk gate and all input/source preconditions",
+    "MEASURED_GAP_REVIEW_REQUIRED": "input/source preconditions pass and one or more fresh Development partitions fail the unchanged 0.35 double-talk gate",
+    "INPUT_INVALID_REVIEW_REQUIRED": "exact-base, Activity source, generator, trace, or near/far preconditions fail"
+  },
+  "authority": {
+    "may_modify_shipping_activity": false,
+    "may_tune_double_talk_ratio": false,
+    "may_tune_instant_on_multiplier": false,
+    "may_tune_instant_hold_multiplier": false,
+    "may_tune_smoothing": false,
+    "may_rank_candidates": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_product_qualification": false
+  },
+  "source_retirement": {
+    "after_review_role": "regression-only",
+    "may_be_future_independent_confirmation": false,
+    "may_be_promotion_data": false
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

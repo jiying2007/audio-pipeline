@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I004",
+  "state": "CLOSED_KEEP_BASELINE",
+  "lane": "acoustic",
+  "root_cause_id": "ema-burst-start-stop-speech-protection",
+  "closed_on_main_sha": "5d5fed094b5a51af2f503d1556e8f6fbce82af07",
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "evidence_chain": {
+    "baseline_diagnostic": {
+      "run_id": 33999621434,
+      "artifact_id": 9979093460,
+      "decision": "MEASURED_GAP_REVIEW_REQUIRED"
+    },
+    "root_cause_differential": {
+      "run_id": 34001530589,
+      "artifact_id": 9979625108,
+      "artifact_digest": "sha256:c8acde7e44ab7059ffe87fa29d9a086ed8f2cd81c696c215039ba8fc135d6cff",
+      "internal_sha256s_verified": 218,
+      "conclusion": "VAD gap is local/shared-input dominated; MCRA demonstrates estimator/adaptation sensitivity but materially regresses non-burst noise attenuation"
+    },
+    "bounded_source_search": {
+      "effective_run_id": 34004833190,
+      "effective_search_head_sha": "d6bac778c2c4a6e99fa53f9d047feb29178beb19",
+      "artifact_id": 9980617637,
+      "artifact_digest": "sha256:669cedca1f19564d67b3079f471d3bfe4c03f02cef8bfbc658a60d455da6416a",
+      "internal_sha256s_verified": 1399,
+      "candidate_limit": 2,
+      "candidates_consumed": 2,
+      "confirmation_consumed": 0,
+      "decision": "KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE",
+      "winner": null,
+      "invalid_infrastructure_run_retained": 34004750656
+    },
+    "reviewed_merge": {
+      "pull_request": 99,
+      "main_sha": "5d5fed094b5a51af2f503d1556e8f6fbce82af07",
+      "shipping_source_changed": false
+    }
+  },
+  "candidate_results": [
+    {
+      "name": "continuous-confidence-schedule",
+      "eligible": false,
+      "burst_speech_si_sdr_delta_db": 0.4833495253229554,
+      "required_minimum_db": 1.0,
+      "protected_regressions": [
+        "fan noise attenuation",
+        "mixed noise attenuation",
+        "mixed low-SNR VAD recall",
+        "motor-ramp speech"
+      ]
+    },
+    {
+      "name": "rise-only-midconfidence-protection",
+      "eligible": false,
+      "burst_speech_si_sdr_delta_db": 0.6991758475572656,
+      "required_minimum_db": 1.0,
+      "protected_regressions": [
+        "fan noise attenuation",
+        "mixed noise attenuation",
+        "mixed low-SNR VAD recall",
+        "motor-ramp speech"
+      ]
+    }
+  ],
+  "closure_decision": {
+    "keep_baseline": true,
+    "merge_shipping_candidate": false,
+    "create_release": false,
+    "consume_confirmation_to_rescue_failed_candidates": false,
+    "allow_third_candidate": false,
+    "future_I004_candidate_requires_new_root_cause_budget_decision": true
+  },
+  "handoff": {
+    "I005": {
+      "status": "PLANNED",
+      "evidence_file": "docs/program/iterations/I005-inherited-evidence.json",
+      "authority": "already-observed-regression-root-cause-context-only",
+      "may_be_independent_confirmation": false,
+      "may_be_candidate_selection_data": false
+    }
+  },
+  "authority_boundary": {
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

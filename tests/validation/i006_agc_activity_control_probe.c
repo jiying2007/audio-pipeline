@@ -27,6 +27,16 @@ static float peak_dbfs(const float *x, size_t n) {
     return 20.0f * log10f(peak);
 }
 
+static int16_t to_pcm16(float value) {
+    long sample;
+    if (value > 0.999969482421875f) value = 0.999969482421875f;
+    if (value < -1.0f) value = -1.0f;
+    sample = lroundf(value * 32768.0f);
+    if (sample > 32767l) sample = 32767l;
+    if (sample < -32768l) sample = -32768l;
+    return (int16_t)sample;
+}
+
 int main(int argc, char **argv) {
 #if !AP_BUILD_STAGE_AGC
     (void)argc;
@@ -36,23 +46,27 @@ int main(int argc, char **argv) {
 #else
     FILE *fm;
     FILE *fr;
+    FILE *fo;
     int16_t mic_pcm[I006_FRAME];
     int16_t ref_pcm[I006_FRAME];
+    int16_t out_pcm[I006_FRAME];
     float mic[I006_FRAME];
     ap_activity_state_t activity;
     ap_agc_state_t agc;
     unsigned frame = 0u;
     size_t i;
 
-    if (argc != 3) {
-        fprintf(stderr, "usage: %s MIC_PCM RENDER_PCM\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "usage: %s MIC_PCM RENDER_PCM OUT_PCM\n", argv[0]);
         return 2;
     }
     fm = fopen(argv[1], "rb");
     fr = fopen(argv[2], "rb");
-    if (!fm || !fr) {
+    fo = fopen(argv[3], "wb");
+    if (!fm || !fr || !fo) {
         if (fm) fclose(fm);
         if (fr) fclose(fr);
+        if (fo) fclose(fo);
         return 2;
     }
     ap_activity_init(&activity, I006_FAR_THRESHOLD, I006_DT_RATIO, I006_HANGOVER);
@@ -86,6 +100,13 @@ int main(int argc, char **argv) {
         ap_agc_process_controlled(&agc, mic, I006_FRAME, allow_gain);
         output_rms = rms_dbfs(mic, I006_FRAME);
         output_peak = peak_dbfs(mic, I006_FRAME);
+        for (i = 0u; i < I006_FRAME; ++i) out_pcm[i] = to_pcm16(mic[i]);
+        if (fwrite(out_pcm, sizeof(out_pcm[0]), I006_FRAME, fo) != I006_FRAME) {
+            fclose(fm);
+            fclose(fr);
+            fclose(fo);
+            return 5;
+        }
         printf("{\"frame\":%u,\"far_end_active\":%u,\"double_talk_active\":%u,"
                "\"allow_gain_increase\":%u,\"input_rms_dbfs\":%.7g,"
                "\"output_rms_dbfs\":%.7g,\"input_peak_dbfs\":%.7g,"
@@ -103,6 +124,7 @@ int main(int argc, char **argv) {
     }
     fclose(fm);
     fclose(fr);
+    fclose(fo);
     return 0;
 #endif
 }

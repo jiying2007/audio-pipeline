@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I005",
+  "phase": "public-source-admission",
+  "root_cause_id": "vad-event-onset-release-baseline",
+  "base_sha": "1cd72790f5ecaf841de83ed367cadffb970a0a9a",
+  "requested_data_role": "development",
+  "selected_source": {
+    "dataset": "AMI Meeting Corpus",
+    "meeting": "ES2005b",
+    "license": "CC-BY-4.0",
+    "transport_mirror_repository": "ggfox00000/dia-AMICorpus-all",
+    "transport_mirror_revision": "a249db53de253a3a0a864c93a51d613159dfec7c"
+  },
+  "prohibited_reuse": [
+    {
+      "meeting": "ES2003a",
+      "reason": "already exposed by ami_vad_microset.lock.json; regression/root-cause context only"
+    },
+    {
+      "meeting": "ES2004a",
+      "reason": "already consumed by fixed-candidate confirmation; regression-retired for future independent use"
+    }
+  ],
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "source_admission_requirements": {
+    "annotation_files": 4,
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bits_per_sample": 16,
+    "window_count": 3,
+    "window_seconds": 20.0,
+    "activity_targets": [0.25, 0.5, 0.75],
+    "immutable_audio_identity_required": true,
+    "immutable_annotation_hashes_required": true,
+    "immutable_window_range_hashes_required": true,
+    "http_range_required": true
+  },
+  "decision_contract": {
+    "ADMIT_DEVELOPMENT_SOURCE": "all immutable source, annotation, PCM geometry and bounded-window identities are materialized and pass the frozen contract",
+    "REJECT_SOURCE_IDENTITY_OR_TRANSPORT": "any source identity, annotation, WAV geometry, range, license or window-binding requirement fails",
+    "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_tune_thresholds": false,
+    "may_tune_hangover": false,
+    "may_select_acoustic_candidate": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_product_qualification": false
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

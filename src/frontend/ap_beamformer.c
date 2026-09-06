@@ -140,6 +140,17 @@ static int ap_beamformer_estimate_lag(ap_beamformer_state_t *s,
     return best_score > 0.15f ? best : s->lag;
 }
 
+static void ap_beamformer_enter_hard(ap_beamformer_state_t *s,
+                                     uint32_t target_channel) {
+    s->fallback_active = 1u;
+    s->fallback_hard_fault = 1u;
+    s->fallback_strong_channel = target_channel;
+    s->fallback_hard_arm_count = 0u;
+    s->fallback_recovery_count = 0u;
+    s->fallback_lag = s->lag;
+    s->fallback_gain = 1.0f;
+}
+
 static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
                                           float coherence,
                                           float aa,
@@ -164,6 +175,11 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
                                    ratio < AP_BF_HARD_FAULT_MAX_RATIO &&
                                    strong_roughness < AP_BF_HARD_FAULT_ROUGHNESS_RATIO *
                                                       fmaxf(weak_roughness, 1.0e-12f);
+    const int wind_contamination = severe &&
+                                   ratio > AP_BF_HARD_FAULT_MIN_RATIO &&
+                                   ratio < AP_BF_HARD_FAULT_MAX_RATIO &&
+                                   strong_roughness < AP_BF_HARD_RECOVER_ROUGHNESS_RATIO *
+                                                      fmaxf(weak_roughness, 1.0e-12f);
     const int hard_recovered = ratio > AP_BF_FALLBACK_RECOVER_RATIO &&
                                strong_roughness > AP_BF_HARD_RECOVER_ROUGHNESS_RATIO *
                                                   fmaxf(weak_roughness, 1.0e-12f);
@@ -183,6 +199,10 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
 
     if (!s->fallback_active) {
         if (!severe) return;
+        if (wind_contamination) {
+            ap_beamformer_enter_hard(s, hard_target_channel);
+            return;
+        }
         s->fallback_active = 1u;
         s->fallback_hard_fault = 0u;
         s->fallback_strong_channel = energy_strong_channel;
@@ -195,16 +215,13 @@ static void ap_beamformer_update_fallback(ap_beamformer_state_t *s,
     }
 
     if (!s->fallback_hard_fault) {
-        if (hard_contamination && s->fallback_strong_channel != hard_target_channel) {
+        if (wind_contamination && s->fallback_strong_channel != hard_target_channel) {
+            ap_beamformer_enter_hard(s, hard_target_channel);
+        } else if (hard_contamination && s->fallback_strong_channel != hard_target_channel) {
             if (s->fallback_hard_arm_count < AP_BF_HARD_ARM_UPDATES)
                 s->fallback_hard_arm_count++;
             if (s->fallback_hard_arm_count >= AP_BF_HARD_ARM_UPDATES) {
-                s->fallback_hard_fault = 1u;
-                s->fallback_strong_channel = hard_target_channel;
-                s->fallback_hard_arm_count = 0u;
-                s->fallback_recovery_count = 0u;
-                s->fallback_lag = s->lag;
-                s->fallback_gain = 1.0f;
+                ap_beamformer_enter_hard(s, hard_target_channel);
             }
         } else {
             s->fallback_hard_arm_count = 0u;

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I007",
+  "phase": "bf-health-baseline-measurement",
+  "measurement_revision": 2,
+  "root_cause_id": "bf-soft-health-wind-motion-phase-reverb",
+  "base_sha": "dd15a956e52e9bc04fe103c62163c6cfa870b57b",
+  "source_authority": "fresh-development-candidate-zero",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "seeds": [1707, 2707, 3707],
+  "seconds": 8.0,
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "mic_spacing_mm": 50.0,
+  "fault_window_frames": [200, 500],
+  "frontends": ["bf-only", "hpf-bf"],
+  "scenarios": [
+    "healthy-control",
+    "soft-wind-ch0",
+    "soft-wind-ch1",
+    "phase-mismatch-ch0",
+    "phase-mismatch-ch1",
+    "asymmetric-reverb-ch0",
+    "asymmetric-reverb-ch1",
+    "motion-tdoa-sweep"
+  ],
+  "generator": {
+    "clean_amplitude": 9000.0,
+    "noise_rms": 1200.0,
+    "fixed_tdoa_samples": 2,
+    "wind_rms": 5200.0,
+    "wind_frequencies_hz": [61.0, 97.0, 137.0],
+    "wind_colored_noise_fraction": 0.45,
+    "phase_mismatch_delayed_mix": 0.24,
+    "phase_mismatch_delay_samples": 1,
+    "reverb_delays_samples": [48, 123, 241],
+    "reverb_gains": [0.24, -0.13, 0.08],
+    "motion_tdoa_samples": [-2, -1, 0, 1, 2]
+  },
+  "measurement_semantics": {
+    "fixed_geometry_quality": "one fixed clean/output alignment per case because physical TDOA is fixed",
+    "motion_quality": "score each frozen TDOA segment after 20-frame settling with independently estimated clean/output alignment, then gate the worst segment; do not score moving output with a single fixed alignment",
+    "motion_lag": "compare internal BF lag against the signed expected lag after the same 20-frame settling window",
+    "wind": "low-frequency multi-tone pressure component plus deterministic low-pass colored noise, normalized to the same pre-registered RMS"
+  },
+  "diagnostic_gates": {
+    "global": {
+      "max_output_clip_fraction": 0.001,
+      "max_output_dc_offset_dbfs": -45.0,
+      "max_pre_fault_fallback_fraction": 0.10
+    },
+    "healthy_control": {
+      "min_output_minus_best_single_si_sdr_db": -0.50,
+      "max_fault_window_fallback_fraction": 0.10
+    },
+    "soft_channel_impairment": {
+      "min_output_minus_reliable_si_sdr_db": -1.00,
+      "max_post_output_minus_reliable_regression_db": 0.75,
+      "max_stable_recovery_frames": 80,
+      "min_reliable_selected_fraction_when_fallback": 0.80
+    },
+    "motion": {
+      "max_lag_abs_error_p95_samples": 1.0,
+      "max_fallback_fraction": 0.20,
+      "min_output_minus_best_single_si_sdr_db": -0.75
+    }
+  },
+  "decision_contract": {
+    "BASELINE_ADEQUATE_NO_SEARCH": "all frozen candidate-zero diagnostic gates pass on both frontends and all seeds",
+    "MEASURED_GAP_REVIEW_REQUIRED": "inputs are valid and one or more frozen BF health gates fail",
+    "INPUT_INVALID_REVIEW_REQUIRED": "corpus/probe/oracle preconditions fail; no candidate may be authorized",
+    "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
+  },
+  "measurement_lineage": {
+    "revision_1": {
+      "workflow_run_id": 34022991376,
+      "artifact_id": 9986124236,
+      "artifact_digest": "sha256:507fab08b9afa4e562c47a16260b5fbc2df79198ee3df5a837df7efd9efc8218",
+      "internal_sha256s_verified": 509,
+      "authority_after_review": "measurement-attribution-lineage-only",
+      "issues": [
+        "motion quality used one fixed pre-motion alignment even though BF output timing follows tracked TDOA; internal lag tracking itself was exact at p95",
+        "wind stimulus used only three deterministic low-frequency tones and is strengthened to include deterministic low-pass colored energy without changing RMS or gates"
+      ],
+      "candidate_budget_consumed": 0,
+      "confirmation_budget_consumed": 0
+    },
+    "revision_2": {
+      "same_seeds": true,
+      "same_scenarios": true,
+      "same_frontends": true,
+      "same_gate_values": true,
+      "new_confirmation_data": false,
+      "authority": "corrected-current-main-candidate-zero-measurement",
+      "pre_I006_closure_run_id": 34023281489,
+      "pre_I006_closure_artifact_id": 9986228358,
+      "pre_I006_closure_artifact_digest": "sha256:3a939ed32fab0fb5aab2bfd41ed2781d7ec4cc633c03eff3ad6fe2158044154b",
+      "pre_I006_closure_internal_sha256s_verified": 509,
+      "pre_I006_closure_result": "MEASURED_GAP_REVIEW_REQUIRED",
+      "pre_I006_closure_failure_counts": {
+        "soft_impairment_quality": 24,
+        "fallback_channel_selection": 10
+      },
+      "note": "I006 closure changed governance only, not beamformer shipping code; rerun on dd15a956... is required for exact-current-main archival authority."
+    }
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_reuse_old_bf_candidate_branch": false,
+    "may_tune_coherence_thresholds": false,
+    "may_tune_energy_ratio_thresholds": false,
+    "may_tune_roughness_thresholds": false,
+    "may_rank_candidates": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_product_qualification": false
+  },
+  "historical_context": {
+    "research_bf_hard_mic_fault_discovery": "regression-and-test-design-context-only",
+    "feat_bf_wind_health_bypass": "stale-candidate-context-only",
+    "must_remeasure_current_main": true
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

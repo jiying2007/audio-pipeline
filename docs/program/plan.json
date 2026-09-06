@@ -102,11 +102,15 @@
       ]
     },
     {
-      "id": "I007", "priority": 70, "status": "PLANNED", "lane": "acoustic",
+      "id": "I007", "priority": 70, "status": "CLOSED", "lane": "acoustic",
       "title": "BF wind, motion, phase mismatch and reverberant health evidence beyond the released hard-fault fixture",
-      "depends_on": ["P001"], "handler": null, "contract": null,
-      "exit": "Frontend-equivalent oracle, fault-specific health selection, exact-base non-target protection and recovery",
-      "evidence": []
+      "depends_on": ["P001"], "handler": null, "contract": "docs/program/iterations/I007-closure.json",
+      "exit": "Exact-main BF health baseline/root cause is archived; the independently bounded wind and reverb structural candidates are both rejected by frozen target/non-target and established hard-fault gates; no confirmation is consumed and v2.3.12 remains shipping",
+      "evidence": [
+        {"source_sha": "88e59917d0f7cc75d88c647a41d2a186509bdd13", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34028010442", "meaning": "I007 candidate-zero root-cause differential: artifact 9987677794 / digest 38a6b483... independently verified 343/343; final reviewed attribution 24/24 explained, candidate/confirmation 0/0."},
+        {"source_sha": "bf62bbbeca353cf54c2075eb806bbf07fabac7b8", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34028699391", "meaning": "Single authorized wind candidate: artifact 9987898553 / digest eba06e39... independently verified 288/288; 24->19 failures but 7/12 wind targets remain failing and hard-fault/soft-control gate fails; PR #113 closed unmerged."},
+        {"source_sha": "6dba87f2f35e20fac4203e4f99c816ae8147bab4", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34028778900", "meaning": "Single authorized reverb candidate: artifact 9987923038 / digest 5e6702fb... independently verified 288/288; 12/12 reverb targets pass but two wind regressions and broad hard-fault recovery/coverage regressions reject the candidate; PR #114 closed unmerged."}
+      ]
     },
     {
       "id": "I009", "priority": 75, "status": "PLANNED", "lane": "acoustic",

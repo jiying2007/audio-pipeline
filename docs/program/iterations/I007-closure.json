@@ -1,0 +1,89 @@
+{
+  "authority_boundary": {
+    "dut_hil": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "release_created": false,
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false
+  },
+  "baseline_measurement": {
+    "artifact_id": 9986124236,
+    "lineage_only": true,
+    "revision": 1,
+    "run_id": 34022991376
+  },
+  "bounded_candidates": {
+    "reverb": {
+      "artifact_digest": "sha256:5e6702fb6312a1ce3daa32e8e67fa6f7e170d7b4acf35974e3b36c2585ff0234",
+      "artifact_id": 9987923038,
+      "base_gate_failure_partitions": 24,
+      "candidate_gate_failure_partitions": 12,
+      "candidate_id": "reverb-equal-energy-decorrelated-single-v1",
+      "candidate_limit": 1,
+      "candidate_limit_consumed": 1,
+      "confirmation_limit_consumed": 0,
+      "decision": "KEEP_BASELINE_CANDIDATE_REJECTED",
+      "hard_fault_regression_result": "FAIL",
+      "head_sha": "6dba87f2f35e20fac4203e4f99c816ae8147bab4",
+      "internal_sha256s_verified": 288,
+      "non_target_regressions": 2,
+      "pr": 114,
+      "pr_closed": true,
+      "pr_merged": false,
+      "run_id": 34028778900,
+      "target_failed_partitions": 0
+    },
+    "wind": {
+      "artifact_digest": "sha256:eba06e39e49a2a4620f59decfed6e0dbddb40869eae0f853a55d0bcc87a1d1aa",
+      "artifact_id": 9987898553,
+      "base_gate_failure_partitions": 24,
+      "candidate_gate_failure_partitions": 19,
+      "candidate_id": "wind-roughness-directed-hard-selection-v1",
+      "candidate_limit": 1,
+      "candidate_limit_consumed": 1,
+      "confirmation_limit_consumed": 0,
+      "decision": "KEEP_BASELINE_CANDIDATE_REJECTED",
+      "hard_fault_regression_result": "FAIL",
+      "head_sha": "bf62bbbeca353cf54c2075eb806bbf07fabac7b8",
+      "internal_sha256s_verified": 288,
+      "pr": 113,
+      "pr_closed": true,
+      "pr_merged": false,
+      "run_id": 34028699391,
+      "target_failed_partitions": 7
+    }
+  },
+  "closed_from_main_sha": "af9601b7805c8543feddc34c71a555c8abc6b672",
+  "closure_decision": {
+    "allow_combined_wind_reverb_candidate": false,
+    "allow_second_reverb_candidate": false,
+    "allow_second_wind_candidate": false,
+    "consume_confirmation": false,
+    "create_release": false,
+    "future_I007_candidate_requires_new_root_cause_and_budget_decision": true,
+    "keep_baseline": true,
+    "merge_shipping_candidate": false
+  },
+  "iteration_id": "I007",
+  "lane": "acoustic",
+  "root_cause": {
+    "artifact_digest": "sha256:38a6b4838d212b1ebbf46548715e3e918cf04ecd9edd0aa92ab473e1abb2d9a9",
+    "artifact_id": 9987677794,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit_consumed": 0,
+    "explained": 24,
+    "internal_sha256s_verified": 343,
+    "partitions": 24,
+    "run_id": 34028010442,
+    "unexplained": 0
+  },
+  "root_cause_id": "bf-soft-health-wind-reverb-admission-selection",
+  "schema_version": 1,
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "state": "CLOSED_KEEP_BASELINE"
+}

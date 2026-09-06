@@ -62,7 +62,7 @@
   "handoff": {
     "I009": {
       "topic": "Activity double-talk admission dependency",
-      "authority": "already-exposed regression/root-cause context only",
+      "authority": "already-observed-regression-root-cause-context-only",
       "may_be_independent_confirmation": false,
       "may_authorize_threshold_search": false
     }

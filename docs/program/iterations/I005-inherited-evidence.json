@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I005",
+  "status": "PLANNED_NOT_ACTIVATED",
+  "inherited_from": "I004",
+  "authority": "inherited-regression-evidence-only",
+  "source_run_id": 34001530589,
+  "source_artifact_id": 9979625108,
+  "source_artifact_digest": "sha256:c8acde7e44ab7059ffe87fa29d9a086ed8f2cd81c696c215039ba8fc135d6cff",
+  "source_research_sha": "a3d1fc8f42b305cd8853d9f723f2f50d8f6452ba",
+  "source_base_sha": "74661cb1d732f4baa13cd5fce6f8cd05f3b5779e",
+  "finding": {
+    "local_vad_recall_median": 0.16666666666666669,
+    "shipping_ns_assisted_vad_recall_median": 0.30601092896174864,
+    "shipping_ns_minus_local_recall": 0.13934426229508196,
+    "conclusion": "LOCAL_VAD_LIMIT_DOMINANT_OR_SHARED_INPUT_LIMIT"
+  },
+  "constraints": {
+    "does_not_activate_I005": true,
+    "not_independent_confirmation": true,
+    "not_candidate_selection_data": true,
+    "already_observed": true,
+    "future_role": "regression_and_root_cause_context_only",
+    "must_not_be_used_to_weaken_ns_upstream_evidence": true,
+    "fresh_I005_source_groups_still_required": true
+  },
+  "note": "On the exact same noisy speech PCM, shipping NS assistance materially improves aggregate VAD recall versus local VAD. The I004 recall failure therefore must not be attributed to NS upstream evidence. I005 should treat this as inherited regression/root-cause context and use new source groups for its own selection and confirmation."
+}

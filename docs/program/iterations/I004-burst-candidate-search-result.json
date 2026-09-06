@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I004",
+  "root_cause_id": "ema-burst-start-stop-speech-protection",
+  "phase": "bounded-source-candidate-search-reviewed",
+  "decision": "KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE",
+  "winner": null,
+  "base_sha": "c425252e43e88ec0a9f8f440fb8cbf4f0c908b18",
+  "effective_search_head_sha": "d6bac778c2c4a6e99fa53f9d047feb29178beb19",
+  "candidate_budget": {
+    "limit": 2,
+    "consumed": 2,
+    "remaining": 0
+  },
+  "confirmation_budget_consumed": 0,
+  "promotion_allowed": false,
+  "authoritative_execution": {
+    "workflow_run_id": 34004833190,
+    "artifact_id": 9980617637,
+    "artifact_digest": "sha256:669cedca1f19564d67b3079f471d3bfe4c03f02cef8bfbc658a60d455da6416a",
+    "downloaded_zip_sha256": "669cedca1f19564d67b3079f471d3bfe4c03f02cef8bfbc658a60d455da6416a",
+    "internal_sha256s_verified": 1399,
+    "source_sha": "c425252e43e88ec0a9f8f440fb8cbf4f0c908b18",
+    "development_seeds": [14107, 24107, 34107],
+    "stage_regression_seeds": [1307, 2307, 3307]
+  },
+  "baseline": {
+    "burst_speech_si_sdr_improvement_db": -3.8046886229031145,
+    "motor_speech_si_sdr_improvement_db": 4.396956646386224,
+    "fan_noise_attenuation_db": 4.467389323864026,
+    "mixed_noise_attenuation_db": 3.675731290610173,
+    "motor_noise_attenuation_db": 5.632167667361188,
+    "mixed_speech_vad_recall": 0.31420765027322406
+  },
+  "candidates": [
+    {
+      "variant": "continuous-confidence-schedule",
+      "eligible": false,
+      "burst_speech_si_sdr_delta_db": 0.4833495253229554,
+      "stage_regression": {"1307": "PASS", "2307": "PASS", "3307": "PASS"},
+      "failures": [
+        "burst_speech_improvement",
+        "noise_attenuation:ns-fan-am-noise",
+        "vad_recall:ns-mixed-dynamic-low-snr-speech",
+        "noise_attenuation:ns-mixed-dynamic-noise",
+        "speech_si_sdr:ns-motor-ramp-speech"
+      ],
+      "selected_metrics": {
+        "burst_speech_si_sdr_improvement_db": -3.321339097580159,
+        "motor_speech_si_sdr_improvement_db": 3.4982738785415712,
+        "fan_noise_attenuation_db": 2.7424321103604647,
+        "mixed_noise_attenuation_db": 2.7787722178546623,
+        "mixed_speech_vad_recall": 0.2650273224043716
+      },
+      "patch_fingerprint": {
+        "candidate_sha256": "e96535521d0139a89b23228d42439f67fb4623d69088ec1e1a2f76e0ee9e69bd",
+        "replacement_sha256": "44d028af8a6da6a0ade8198cabfd326fc7d5a3b60af68a8ff28452904c21eb6d"
+      }
+    },
+    {
+      "variant": "rise-only-midconfidence-protection",
+      "eligible": false,
+      "burst_speech_si_sdr_delta_db": 0.6991758475572656,
+      "stage_regression": {"1307": "PASS", "2307": "PASS", "3307": "PASS"},
+      "failures": [
+        "burst_speech_improvement",
+        "noise_attenuation:ns-fan-am-noise",
+        "vad_recall:ns-mixed-dynamic-low-snr-speech",
+        "noise_attenuation:ns-mixed-dynamic-noise",
+        "speech_si_sdr:ns-motor-ramp-speech"
+      ],
+      "selected_metrics": {
+        "burst_speech_si_sdr_improvement_db": -3.105512775345849,
+        "motor_speech_si_sdr_improvement_db": 3.044493290745147,
+        "fan_noise_attenuation_db": 2.5886122961988924,
+        "mixed_noise_attenuation_db": 2.6391166236697785,
+        "mixed_speech_vad_recall": 0.24316939890710382
+      },
+      "patch_fingerprint": {
+        "candidate_sha256": "e1c45281b3fd2e3e3369f0addff42e1227e36e1df6a89ae94302e966c8010df8",
+        "replacement_sha256": "d1ee3149eb65c77e223ef13b9f138b3e8a88ad3cdc5e7e660e8d9d9c8224d255"
+      }
+    }
+  ],
+  "invalid_execution_lineage": [
+    {
+      "workflow_run_id": 34004750656,
+      "artifact_id": 9980581431,
+      "artifact_digest": "sha256:c904ab65e57b0776300f1f1658cbb234871329d51f1dca4658b3c7b748ce1b46",
+      "classification": "INFRASTRUCTURE_TOOL_STAGING_FAILURE",
+      "reason": "The temporary source-copy helper incorrectly excluded the real source file examples/build_info.c by matching names that start with build. Baseline built, but the first candidate could not configure; no candidate was validly evaluated and the effective candidate budget remained 0/2 for this run.",
+      "candidate_budget_consumed": 0
+    }
+  ],
+  "reviewed_conclusion": {
+    "keep_shipping_baseline": "v2.3.12",
+    "do_not_add_third_candidate": true,
+    "do_not_use_confirmation_to_rescue_failed_development_candidates": true,
+    "future_I004_source_candidate_requires_new_root_cause_budget_decision": true,
+    "I005_inherited_VAD_evidence_remains_regression_only": true
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

@@ -1,0 +1,172 @@
+name: I007 Wind Selection Candidate
+
+on:
+  pull_request:
+    paths:
+      - 'src/frontend/ap_beamformer.c'
+      - 'docs/program/iterations/I007-wind-selection-candidate.json'
+      - '.github/workflows/i007-wind-selection-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PROGRAM_BASE: af9601b7805c8543feddc34c71a555c8abc6b672
+      ACOUSTIC_BASE: dd15a956e52e9bc04fe103c62163c6cfa870b57b
+      PYTHONPATH: tests/validation:validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate frozen candidate and exact source boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/program/iterations/I007-wind-selection-candidate.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/I007-wind-selection-candidate.json').read_text())
+          assert c['candidate_id']=='wind-roughness-directed-hard-selection-v1'
+          assert c['candidate_limit']==c['candidate_limit_consumed']==1
+          assert c['confirmation_limit']==c['confirmation_limit_consumed']==0
+          assert c['program_base_sha']=='af9601b7805c8543feddc34c71a555c8abc6b672'
+          assert c['acoustic_base_sha']=='dd15a956e52e9bc04fe103c62163c6cfa870b57b'
+          assert c['source_delta']['new_numeric_thresholds'] is False
+          assert c['source_delta']['parameter_grid_search'] is False
+          assert c['authority']['may_add_second_wind_candidate'] is False
+          assert c['authority']['may_change_candidate_after_observing_results'] is False
+          assert c['authority']['may_use_exposed_data_as_confirmation'] is False
+          assert c['product_qualification']=='DEFERRED_BY_SCOPE'
+          PY
+          changed="$(git diff --name-only "$PROGRAM_BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(src/frontend/ap_beamformer\.c|docs/program/iterations/I007-wind-selection-candidate\.json|\.github/workflows/i007-wind-selection-candidate\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 3
+          cmp <(git show "$ACOUSTIC_BASE:src/frontend/ap_beamformer.c") <(git show "$PROGRAM_BASE:src/frontend/ap_beamformer.c")
+
+      - name: Prepare identical acoustic base and candidate worktrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf exact-base exact-candidate candidate-evidence
+          git worktree add --detach exact-base "$ACOUSTIC_BASE"
+          git worktree add --detach exact-candidate "$ACOUSTIC_BASE"
+          for root in exact-base exact-candidate; do
+            mkdir -p "$root/docs/program/iterations" "$root/tests/validation"
+            cp docs/program/iterations/I007-bf-health-baseline.json "$root/docs/program/iterations/"
+            cp tests/validation/i007_bf_health_corpus.py "$root/tests/validation/"
+            cp tests/validation/i007_bf_health_probe.c "$root/tests/validation/"
+            cp tests/validation/i007_bf_health_baseline.py "$root/tests/validation/"
+            cp tests/validation/build_bf_hard_fault_sweep.py "$root/tests/validation/"
+            cp tests/validation/bf_hard_fault_probe.c "$root/tests/validation/"
+            cp tests/validation/bf_hard_fault_evaluate.py "$root/tests/validation/"
+            cp tests/validation/bf_hard_fault_candidate_gate.py "$root/tests/validation/"
+          done
+          cp src/frontend/ap_beamformer.c exact-candidate/src/frontend/ap_beamformer.c
+          test "$(git -C exact-base rev-parse HEAD)" = "$ACOUSTIC_BASE"
+          test "$(git -C exact-candidate rev-parse HEAD)" = "$ACOUSTIC_BASE"
+          test -z "$(git -C exact-base status --porcelain)" || true
+          test "$(git -C exact-candidate status --porcelain | awk '{print $2}')" = 'src/frontend/ap_beamformer.c'
+          mkdir -p candidate-evidence
+          sha256sum src/frontend/ap_beamformer.c > candidate-evidence/candidate-source.sha256
+
+      - name: Run exact-base and frozen-candidate I007 matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd exact-base && PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i007_bf_health_baseline.py --contract docs/program/iterations/I007-bf-health-baseline.json --output i007-base-evidence)
+          (cd exact-candidate && PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i007_bf_health_baseline.py --contract docs/program/iterations/I007-bf-health-baseline.json --output i007-candidate-evidence)
+          cp exact-base/i007-base-evidence/baseline-result.json candidate-evidence/i007-base-result.json
+          cp exact-candidate/i007-candidate-evidence/baseline-result.json candidate-evidence/i007-candidate-result.json
+
+      - name: Run established hard-fault and soft-control regression matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -O2 -Wall -Wextra -Werror -Iexact-candidate/src \
+            exact-candidate/tests/validation/bf_hard_fault_probe.c \
+            exact-candidate/src/frontend/ap_hpf.c exact-candidate/src/frontend/ap_beamformer.c \
+            -lm -o candidate-evidence/bf_hard_fault_probe
+          mkdir -p candidate-evidence/hard
+          for seed in 1307 2307 3307; do
+            root="candidate-evidence/hard/corpus-$seed"
+            out="candidate-evidence/hard/$seed"
+            PYTHONPATH=validation/tools:tests/validation python3 tests/validation/build_bf_hard_fault_sweep.py --output "$root" --seed "$seed"
+            mkdir -p "$out"
+            PYTHONPATH=validation/tools:tests/validation python3 tests/validation/bf_hard_fault_evaluate.py \
+              --probe candidate-evidence/bf_hard_fault_probe --frontend hpf-bf --corpus "$root/corpus.json" --output "$out/report.json" >"$out/measurement.txt"
+          done
+          set +e
+          PYTHONPATH=validation/tools:tests/validation python3 tests/validation/bf_hard_fault_candidate_gate.py \
+            --report candidate-evidence/hard/1307/report.json \
+            --report candidate-evidence/hard/2307/report.json \
+            --report candidate-evidence/hard/3307/report.json \
+            --output candidate-evidence/hard-gate.json >candidate-evidence/hard-gate.txt
+          status=$?
+          set -e
+          printf '%s\n' "$status" > candidate-evidence/hard-gate.exit
+
+      - name: Decide the single wind candidate without confirmation authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          base=json.loads(Path('candidate-evidence/i007-base-result.json').read_text())
+          cand=json.loads(Path('candidate-evidence/i007-candidate-result.json').read_text())
+          hard=json.loads(Path('candidate-evidence/hard-gate.json').read_text())
+          target={'soft-wind-ch0','soft-wind-ch1'}
+          b={(r['seed'],r['scenario'],r['frontend']):set(r['failures']) for r in base['cases']}
+          c={(r['seed'],r['scenario'],r['frontend']):set(r['failures']) for r in cand['cases']}
+          target_failed=[{'key':k,'failures':sorted(v)} for k,v in c.items() if k[1] in target and v]
+          regress=[]
+          for k,v in c.items():
+            if k[1] in target: continue
+            if not v.issubset(b[k]):
+              regress.append({'key':k,'base':sorted(b[k]),'candidate':sorted(v)})
+          hard_pass=hard.get('validation_result')=='PASS'
+          eligible=not target_failed and not regress and hard_pass
+          result={
+            'schema_version':1,'iteration_id':'I007','candidate_id':'wind-roughness-directed-hard-selection-v1',
+            'candidate_limit_consumed':1,'confirmation_limit_consumed':0,
+            'base_gate_failure_partitions':base['aggregate']['gate_failure_partitions'],
+            'candidate_gate_failure_partitions':cand['aggregate']['gate_failure_partitions'],
+            'target_failed':target_failed,'non_target_regressions':regress,
+            'hard_fault_regression_result':hard.get('validation_result'),
+            'decision':'ELIGIBLE_FOR_FRESH_CONFIRMATION' if eligible else 'KEEP_BASELINE_CANDIDATE_REJECTED',
+            'fresh_confirmation_required':eligible,'promotion_allowed':False,
+            'product_qualification':'DEFERRED_BY_SCOPE'
+          }
+          Path('candidate-evidence/candidate-result.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,sort_keys=True))
+          PY
+          cp docs/program/iterations/I007-wind-selection-candidate.json candidate-evidence/contract.json
+          find candidate-evidence -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > candidate-evidence/SHA256SUMS
+
+      - name: Publish candidate decision
+        if: always()
+        shell: bash
+        run: |
+          if test -f candidate-evidence/candidate-result.json; then
+            cat candidate-evidence/candidate-result.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload wind candidate evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i007-wind-selection-candidate-${{ github.run_id }}
+          path: candidate-evidence/
+          retention-days: 90
+          if-no-files-found: error

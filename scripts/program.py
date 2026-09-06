@@ -659,6 +659,115 @@ def validate_i008_review_required(plan: dict, root: Path) -> None:
                 "dut_hil": "DEFERRED_BY_SCOPE",
             }, "I008 authority boundary")
 
+
+def validate_p002_closed(plan: dict, root: Path) -> None:
+    by_id = {task["id"]: task for task in plan["tasks"]}
+    p002 = by_id["P002"]
+    if p002["status"] != "CLOSED":
+        return
+    require(p002["handler"] is None and
+            p002["contract"] == "docs/program/iterations/P002-closure.json" and
+            len(p002["evidence"]) == 4,
+            "P002 CLOSED must be terminal and evidence-backed")
+    c = json.loads(repo_file(root, p002["contract"]).read_text())
+    require(c["schema_version"] == 1 and c["iteration_id"] == "P002" and
+            c["state"] == "CLOSED_GOVERNANCE_GAPS_FIXED" and
+            c["lane"] == "governance" and
+            c["closed_from_main_sha"] == "0f3a2ec707631b836fe5e0aafaea44543cd36e85" and
+            c["root_cause_id"] == "release-identity-gc-active-dependency-terminal-trigger-safety",
+            "P002 closure identity")
+    require(c["shipping_baseline"] == {
+                "release": "v2.3.12",
+                "source_sha": plan["baseline"]["source_sha"],
+                "unchanged": True,
+            } and plan["baseline"]["software_release"] == "v2.3.12",
+            "P002 closure must preserve immutable shipping baseline")
+    audit = c["candidate_zero_audit"]
+    require(audit["pr"] == 124 and
+            audit["merge_main_sha"] == "699c1f604611b5018ab3cb7a712ed1a8942cedcb" and
+            audit["audit_head_sha"] == "9100fd7adee6939082f0f95a867325a7e1a49b78" and
+            audit["run_id"] == 34041186187 and audit["artifact_id"] == 9991709188 and
+            audit["artifact_digest"] == "sha256:0fb55ac3e6d116826c46fa9a1b5171cc3acd74aed5b6467e36c6a0c959d46e65" and
+            audit["internal_sha256s_verified"] == 6 and
+            audit["decision"] == "GOVERNANCE_GAPS_REVIEW_REQUIRED" and
+            audit["reproduced_gaps"] == [
+                "existing-release-identity", "gc-active-dependency", "terminal-closure-trigger-scope"] and
+            audit["real_release_or_tag_mutation"] is False and audit["real_branch_deletion"] is False,
+            "P002 candidate-zero evidence")
+    fix = c["bounded_governance_fix"]
+    require(fix["candidate_limit"] == fix["candidate_limit_consumed"] == 1 and
+            fix["confirmation_limit_consumed"] == 0 and fix["pr"] == 125 and
+            fix["head_sha"] == "2e8ac905ec8417a60c45c4015d7ff96f37f12ff6" and
+            fix["merge_main_sha"] == "0f3a2ec707631b836fe5e0aafaea44543cd36e85" and
+            fix["dedicated_run_id"] == 34043470402 and fix["dedicated_run_conclusion"] == "success" and
+            fix["fixes"] == {
+                "existing_release_identity_preflight": True,
+                "gc_active_dependency_block": True,
+                "terminal_closure_trigger_scope": True,
+            } and fix["shipping_source_changed"] is False and fix["semver_changed"] is False and
+            fix["release_created_or_modified"] is False and fix["real_branch_deleted"] is False,
+            "P002 bounded governance fix")
+    post = c["post_merge_verification"]
+    require(post == {
+                "main_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85",
+                "verify_run_id": 34043737389,
+                "verify_run_number": 600,
+                "verify_conclusion": "success",
+                "hosted_real_audio_run_id": 34043737228,
+                "hosted_real_audio_conclusion": "success",
+                "hosted_real_aec_run_id": 34043737310,
+                "hosted_real_aec_conclusion": "success",
+                "historical_terminal_closure_misfires_observed": 0,
+            }, "P002 post-merge verification")
+    release = c["existing_release_identity_proof"]
+    require(release == {
+                "release_run_id": 34043955335,
+                "release_run_number": 591,
+                "release_conclusion": "success",
+                "identity_step": "Verify existing immutable release identity",
+                "identity_step_conclusion": "success",
+                "validator_result": "EXISTING_RELEASE_IDENTITY_PASS",
+                "tag": "v2.3.12",
+                "release_source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+                "verified_main_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85",
+                "release_source_is_ancestor": True,
+                "immutable": True,
+                "asset_count": 8,
+                "checksummed_assets": 7,
+                "manifest_payload_assets": 6,
+                "release_build_publish_steps_skipped": True,
+                "new_release_or_tag_created": False,
+            }, "P002 existing release identity proof")
+    require(c["closure_decision"] == {
+                "status": "CLOSED",
+                "governance_gaps_fixed": True,
+                "additional_p002_candidate_authorized": False,
+                "confirmation_consumed": 0,
+                "destructive_gc_executed": False,
+                "release_created": False,
+                "semver_changed": False,
+                "shipping_baseline_changed": False,
+            }, "P002 closure decision")
+    i008 = by_id["I008"]
+    require(i008["status"] == "REVIEW_REQUIRED" and i008["handler"] is None and
+            i008["contract"] == "docs/program/iterations/I008-review-required.json" and
+            len(i008["evidence"]) == 2 and
+            c["handoff"]["I008"] == {
+                "status": "REVIEW_REQUIRED",
+                "authority": "verified-release-bearing-comparator-fix-carry-only",
+                "may_bypass_semver_policy": False,
+                "may_claim_product_qualification": False,
+                "future_real_patch_release_must_reverify_required_summary": True,
+            }, "P002 closure must leave I008 REVIEW_REQUIRED")
+    require(c["authority_boundary"] == {
+                "shipping_source_changed": False,
+                "software_candidate_promoted": False,
+                "release_created": False,
+                "product_qualification": "DEFERRED_BY_SCOPE",
+                "hardware_collection": False,
+                "dut_hil": "DEFERRED_BY_SCOPE",
+            }, "P002 authority boundary")
+
 def validate(plan: dict, root: Path | None = None) -> None:
     keys(plan, {"schema_version", "phase", "product_qualification", "hardware_collection",
                 "auto_promote", "max_parallel_candidates", "baseline", "data_roles", "tasks"})
@@ -749,6 +858,7 @@ def validate(plan: dict, root: Path | None = None) -> None:
         validate_i006_closed(plan, root)
         validate_i009_closed(plan, root)
         validate_i008_review_required(plan, root)
+        validate_p002_closed(plan, root)
 
 
 def next_task(plan: dict) -> dict | None:
@@ -777,6 +887,7 @@ def self_test() -> None:
     i002, p001, i003, i004, i005, i006 = (by_id["I002"], by_id["P001"], by_id["I003"],
                                            by_id["I004"], by_id["I005"], by_id["I006"])
     i008 = by_id["I008"]
+    p002 = by_id["P002"]
     require(i002["status"] == "CLOSED" and i002["handler"] is None and bool(i002["evidence"]),
             "I002 must remain reviewed and closed")
     require(p001["status"] == "CLOSED" and p001["handler"] is None and bool(p001["evidence"]),
@@ -822,6 +933,17 @@ def self_test() -> None:
                 "review-required I008 must be frozen, evidence-backed and non-executable")
     else:
         raise AssertionError("I008 must be PLANNED or evidence-backed REVIEW_REQUIRED in this phase")
+
+    if p002["status"] == "PLANNED":
+        require(p002["handler"] is None and p002["contract"] is None and not p002["evidence"],
+                "planned P002 cannot have terminal/executable authority")
+    elif p002["status"] == "CLOSED":
+        require(p002["handler"] is None and
+                p002["contract"] == "docs/program/iterations/P002-closure.json" and
+                len(p002["evidence"]) == 4,
+                "closed P002 must be terminal and evidence-backed")
+    else:
+        raise AssertionError("P002 must be PLANNED or evidence-backed CLOSED")
 
     if i003["status"] == "PLANNED":
         require(i003["handler"] is None and i003["contract"] is None,
@@ -892,6 +1014,7 @@ def self_test() -> None:
         lambda p: next(t for t in p["tasks"] if t["id"] == "I005").update(status="CLOSED", evidence=[]),
         lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="REVIEW_REQUIRED", evidence=[]),
         lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="CLOSED", evidence=[]),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "P002").update(status="CLOSED", evidence=[]),
     ]
     for mutate in mutations:
         bad = copy.deepcopy(plan)
@@ -910,7 +1033,7 @@ def self_test() -> None:
     by_id_blocked["I004"].update(status="REVIEW_REQUIRED")
     by_id_blocked["I003"].update(depends_on=["I004"])
     require(next_task(blocked) is None, "explicit unfinished dependency must block")
-    print("program self-test: I002/P001/I003/I004/I005/I006/I008 evidence-backed lifecycles + negative contracts OK")
+    print("program self-test: I002/P001/I003/I004/I005/I006/I008/P002 evidence-backed lifecycles + negative contracts OK")
 
 
 def main() -> int:

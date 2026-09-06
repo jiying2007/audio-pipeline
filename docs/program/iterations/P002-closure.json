@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "iteration_id": "P002",
+  "state": "CLOSED_GOVERNANCE_GAPS_FIXED",
+  "lane": "governance",
+  "closed_from_main_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85",
+  "root_cause_id": "release-identity-gc-active-dependency-terminal-trigger-safety",
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "candidate_zero_audit": {
+    "pr": 124,
+    "merge_main_sha": "699c1f604611b5018ab3cb7a712ed1a8942cedcb",
+    "audit_head_sha": "9100fd7adee6939082f0f95a867325a7e1a49b78",
+    "run_id": 34041186187,
+    "artifact_id": 9991709188,
+    "artifact_digest": "sha256:0fb55ac3e6d116826c46fa9a1b5171cc3acd74aed5b6467e36c6a0c959d46e65",
+    "internal_sha256s_verified": 6,
+    "decision": "GOVERNANCE_GAPS_REVIEW_REQUIRED",
+    "reproduced_gaps": [
+      "existing-release-identity",
+      "gc-active-dependency",
+      "terminal-closure-trigger-scope"
+    ],
+    "real_release_or_tag_mutation": false,
+    "real_branch_deletion": false
+  },
+  "bounded_governance_fix": {
+    "candidate_limit": 1,
+    "candidate_limit_consumed": 1,
+    "confirmation_limit_consumed": 0,
+    "pr": 125,
+    "head_sha": "2e8ac905ec8417a60c45c4015d7ff96f37f12ff6",
+    "merge_main_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85",
+    "dedicated_run_id": 34043470402,
+    "dedicated_run_conclusion": "success",
+    "fixes": {
+      "existing_release_identity_preflight": true,
+      "gc_active_dependency_block": true,
+      "terminal_closure_trigger_scope": true
+    },
+    "shipping_source_changed": false,
+    "semver_changed": false,
+    "release_created_or_modified": false,
+    "real_branch_deleted": false
+  },
+  "post_merge_verification": {
+    "main_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85",
+    "verify_run_id": 34043737389,
+    "verify_run_number": 600,
+    "verify_conclusion": "success",
+    "hosted_real_audio_run_id": 34043737228,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 34043737310,
+    "hosted_real_aec_conclusion": "success",
+    "historical_terminal_closure_misfires_observed": 0
+  },
+  "existing_release_identity_proof": {
+    "release_run_id": 34043955335,
+    "release_run_number": 591,
+    "release_conclusion": "success",
+    "identity_step": "Verify existing immutable release identity",
+    "identity_step_conclusion": "success",
+    "validator_result": "EXISTING_RELEASE_IDENTITY_PASS",
+    "tag": "v2.3.12",
+    "release_source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "verified_main_sha": "0f3a2ec707631b836fe5e0aafaea44543cd36e85",
+    "release_source_is_ancestor": true,
+    "immutable": true,
+    "asset_count": 8,
+    "checksummed_assets": 7,
+    "manifest_payload_assets": 6,
+    "release_build_publish_steps_skipped": true,
+    "new_release_or_tag_created": false
+  },
+  "closure_decision": {
+    "status": "CLOSED",
+    "governance_gaps_fixed": true,
+    "additional_p002_candidate_authorized": false,
+    "confirmation_consumed": 0,
+    "destructive_gc_executed": false,
+    "release_created": false,
+    "semver_changed": false,
+    "shipping_baseline_changed": false
+  },
+  "handoff": {
+    "I008": {
+      "status": "REVIEW_REQUIRED",
+      "authority": "verified-release-bearing-comparator-fix-carry-only",
+      "may_bypass_semver_policy": false,
+      "may_claim_product_qualification": false,
+      "future_real_patch_release_must_reverify_required_summary": true
+    }
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

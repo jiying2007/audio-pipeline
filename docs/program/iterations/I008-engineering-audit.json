@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I008",
+  "state": "PLANNED_CANDIDATE_ZERO_AUDIT",
+  "lane": "engineering",
+  "exact_base_sha": "54fd0cdb5ff7197748fa52d07e0cb83e465a6b57",
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "purpose": "Execute and archive an exact-main engineering audit for runtime/API/reset semantics, diagnostics/replay, resampler boundaries, composition/resource pruning, host performance, SDK/ABI, sanitizers and executable cross-architecture contracts without changing shipping DSP or claiming DUT performance.",
+  "authority": {
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "shipping_source_change_authorized": false,
+    "acoustic_parameter_search_authorized": false,
+    "software_candidate_promotion_authorized": false,
+    "release_authorized": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  },
+  "source_boundary": {
+    "forbidden_paths": ["src/", "include/", "CMakeLists.txt"],
+    "allowed_initial_delta": [
+      "docs/program/iterations/I008-engineering-audit.json",
+      ".github/workflows/i008-engineering-audit.yml"
+    ],
+    "require_exact_pr_base": true,
+    "require_shipping_source_tree_identical_to_base": true
+  },
+  "audit_matrix": {
+    "runtime_api_reset": {
+      "required": true,
+      "checks": [
+        "ap_runtime_tests",
+        "ap_runtime_extended_tests",
+        "ap_contract_tests",
+        "ordinary-user laboratory provisioning and privilege boundary"
+      ]
+    },
+    "sdk_abi": {
+      "required": true,
+      "checks": [
+        "v2 ABI hard-cut contract",
+        "installed SDK artifacts",
+        "find_package consumer",
+        "pkg-config consumer"
+      ]
+    },
+    "sanitizers": {
+      "required": true,
+      "checks": ["ThreadSanitizer runtime/control-plane race contract"]
+    },
+    "diagnostics_replay": {
+      "required": true,
+      "checks": [
+        "deterministic APD dump generation",
+        "apdump info/extract",
+        "bit-exact apreplay",
+        "runtime continuity"
+      ]
+    },
+    "resampler": {
+      "required": true,
+      "modes": ["BANDLIMITED", "FAST"],
+      "checks": ["ap_resampler_tests", "ap_contract_tests", "ap_drift_res_tests when available"]
+    },
+    "composition": {
+      "required": true,
+      "presets": ["composition-full", "composition-low", "composition-tiny", "composition-raw"],
+      "require_build": true,
+      "require_ctest": true,
+      "require_install": true,
+      "require_ram_pruning": "raw < tiny < low < full"
+    },
+    "resource": {
+      "required": true,
+      "pipeline_state_byte_ceilings": {"full": 80000, "low": 50000, "tiny": 28000, "raw": 2048},
+      "runtime_state_byte_ceilings": {"full": 32768, "tiny": 8192},
+      "require_consumer_elf_pruning": true,
+      "require_cortex_a32_rom_ceiling_bytes": 40960,
+      "require_tiny_beamformer_symbol_pruned": true
+    },
+    "host_performance": {
+      "required": true,
+      "paired_base_sha": "54fd0cdb5ff7197748fa52d07e0cb83e465a6b57",
+      "checks": ["pipeline host perf", "runtime host perf", "isolated NS perf", "resampler perf"],
+      "authority": "engineering-regression-only-no-dut-claim"
+    },
+    "cross_arch_execution": {
+      "required": true,
+      "targets": ["cortex-a7-neon", "aarch64-neon"],
+      "checks": ["module", "contract", "FFT", "resampler", "runtime tests under QEMU"]
+    },
+    "ci_hygiene": {
+      "required": true,
+      "findings_to_record": [
+        "terminal closure workflows currently retrigger on later plan/program edits because their path filters include shared governance files",
+        "I008 must not define a job/check named summary because main ruleset reserves required context summary"
+      ],
+      "no_ruleset_bypass": true
+    }
+  },
+  "evidence_policy": {
+    "data_role": "engineering-development-evidence",
+    "exposed": true,
+    "may_be_independent_acoustic_confirmation": false,
+    "must_preserve_failures": true,
+    "artifact_sha256_manifest_required": true,
+    "exact_source_sha_required": true
+  },
+  "exit_decisions": [
+    "ENGINEERING_BASELINE_ADEQUATE",
+    "ENGINEERING_GAP_REVIEW_REQUIRED"
+  ]
+}

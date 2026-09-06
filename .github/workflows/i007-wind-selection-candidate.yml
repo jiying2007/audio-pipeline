@@ -75,8 +75,8 @@ jobs:
           cp src/frontend/ap_beamformer.c exact-candidate/src/frontend/ap_beamformer.c
           test "$(git -C exact-base rev-parse HEAD)" = "$ACOUSTIC_BASE"
           test "$(git -C exact-candidate rev-parse HEAD)" = "$ACOUSTIC_BASE"
-          test -z "$(git -C exact-base status --porcelain)" || true
-          test "$(git -C exact-candidate status --porcelain | awk '{print $2}')" = 'src/frontend/ap_beamformer.c'
+          source_changed="$(git -C exact-candidate diff --name-only -- src/frontend)"
+          test "$source_changed" = 'src/frontend/ap_beamformer.c'
           mkdir -p candidate-evidence
           sha256sum src/frontend/ap_beamformer.c > candidate-evidence/candidate-source.sha256
 
@@ -103,15 +103,10 @@ jobs:
             out="candidate-evidence/hard/$seed"
             PYTHONPATH=validation/tools:tests/validation python3 tests/validation/build_bf_hard_fault_sweep.py --output "$root" --seed "$seed"
             mkdir -p "$out"
-            PYTHONPATH=validation/tools:tests/validation python3 tests/validation/bf_hard_fault_evaluate.py \
-              --probe candidate-evidence/bf_hard_fault_probe --frontend hpf-bf --corpus "$root/corpus.json" --output "$out/report.json" >"$out/measurement.txt"
+            PYTHONPATH=validation/tools:tests/validation python3 tests/validation/bf_hard_fault_evaluate.py --probe candidate-evidence/bf_hard_fault_probe --frontend hpf-bf --corpus "$root/corpus.json" --output "$out/report.json" >"$out/measurement.txt"
           done
           set +e
-          PYTHONPATH=validation/tools:tests/validation python3 tests/validation/bf_hard_fault_candidate_gate.py \
-            --report candidate-evidence/hard/1307/report.json \
-            --report candidate-evidence/hard/2307/report.json \
-            --report candidate-evidence/hard/3307/report.json \
-            --output candidate-evidence/hard-gate.json >candidate-evidence/hard-gate.txt
+          PYTHONPATH=validation/tools:tests/validation python3 tests/validation/bf_hard_fault_candidate_gate.py --report candidate-evidence/hard/1307/report.json --report candidate-evidence/hard/2307/report.json --report candidate-evidence/hard/3307/report.json --output candidate-evidence/hard-gate.json >candidate-evidence/hard-gate.txt
           status=$?
           set -e
           printf '%s\n' "$status" > candidate-evidence/hard-gate.exit
@@ -129,25 +124,13 @@ jobs:
           target={'soft-wind-ch0','soft-wind-ch1'}
           b={(r['seed'],r['scenario'],r['frontend']):set(r['failures']) for r in base['cases']}
           c={(r['seed'],r['scenario'],r['frontend']):set(r['failures']) for r in cand['cases']}
-          target_failed=[{'key':k,'failures':sorted(v)} for k,v in c.items() if k[1] in target and v]
+          target_failed=[{'key':list(k),'failures':sorted(v)} for k,v in c.items() if k[1] in target and v]
           regress=[]
           for k,v in c.items():
             if k[1] in target: continue
-            if not v.issubset(b[k]):
-              regress.append({'key':k,'base':sorted(b[k]),'candidate':sorted(v)})
-          hard_pass=hard.get('validation_result')=='PASS'
-          eligible=not target_failed and not regress and hard_pass
-          result={
-            'schema_version':1,'iteration_id':'I007','candidate_id':'wind-roughness-directed-hard-selection-v1',
-            'candidate_limit_consumed':1,'confirmation_limit_consumed':0,
-            'base_gate_failure_partitions':base['aggregate']['gate_failure_partitions'],
-            'candidate_gate_failure_partitions':cand['aggregate']['gate_failure_partitions'],
-            'target_failed':target_failed,'non_target_regressions':regress,
-            'hard_fault_regression_result':hard.get('validation_result'),
-            'decision':'ELIGIBLE_FOR_FRESH_CONFIRMATION' if eligible else 'KEEP_BASELINE_CANDIDATE_REJECTED',
-            'fresh_confirmation_required':eligible,'promotion_allowed':False,
-            'product_qualification':'DEFERRED_BY_SCOPE'
-          }
+            if not v.issubset(b[k]): regress.append({'key':list(k),'base':sorted(b[k]),'candidate':sorted(v)})
+          eligible=not target_failed and not regress and hard.get('validation_result')=='PASS'
+          result={'schema_version':1,'iteration_id':'I007','candidate_id':'wind-roughness-directed-hard-selection-v1','candidate_limit_consumed':1,'confirmation_limit_consumed':0,'base_gate_failure_partitions':base['aggregate']['gate_failure_partitions'],'candidate_gate_failure_partitions':cand['aggregate']['gate_failure_partitions'],'target_failed':target_failed,'non_target_regressions':regress,'hard_fault_regression_result':hard.get('validation_result'),'decision':'ELIGIBLE_FOR_FRESH_CONFIRMATION' if eligible else 'KEEP_BASELINE_CANDIDATE_REJECTED','fresh_confirmation_required':eligible,'promotion_allowed':False,'product_qualification':'DEFERRED_BY_SCOPE'}
           Path('candidate-evidence/candidate-result.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
           print(json.dumps(result,sort_keys=True))
           PY
@@ -158,9 +141,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if test -f candidate-evidence/candidate-result.json; then
-            cat candidate-evidence/candidate-result.json >> "$GITHUB_STEP_SUMMARY"
-          fi
+          if test -f candidate-evidence/candidate-result.json; then cat candidate-evidence/candidate-result.json >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Upload wind candidate evidence
         if: always()

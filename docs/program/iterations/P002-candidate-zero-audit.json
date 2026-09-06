@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "iteration_id": "P002",
+  "phase": "candidate-zero-governance-audit",
+  "lane": "governance",
+  "base_sha": "1e4d13598f7cc497c8ebd7415bf4343acb587a89",
+  "data_role": "development",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "release_allowed": false,
+  "destructive_gc_allowed": false,
+  "shipping_source_change_allowed": false,
+  "scopes": [
+    {
+      "id": "existing-release-identity",
+      "target": ".github/workflows/release.yml",
+      "question": "Does an already-existing release fail closed unless its tag peel, source identity and complete immutable asset identity match the current release intent?"
+    },
+    {
+      "id": "gc-active-dependency",
+      "target": "scripts/research_registry.py",
+      "question": "Does GC block a terminal exact-SHA branch with no open PR when current program/release/evidence still has an active dependency on that branch or head?"
+    },
+    {
+      "id": "terminal-closure-trigger-scope",
+      "targets": [".github/workflows/i007-closure.yml", ".github/workflows/i009-closure.yml"],
+      "question": "Can unrelated later program governance changes retrigger historical terminal closure exact-delta gates and create false failures?"
+    }
+  ],
+  "frozen_decision_rules": {
+    "all_three_protected": "GOVERNANCE_BASELINE_ADEQUATE",
+    "one_or_more_reproducible_gap": "GOVERNANCE_GAPS_REVIEW_REQUIRED"
+  },
+  "authority_boundary": {
+    "real_release_created_or_modified": false,
+    "real_tag_created_or_modified": false,
+    "real_branch_deleted": false,
+    "research_registry_modified": false,
+    "semver_policy_modified": false,
+    "shipping_source_changed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

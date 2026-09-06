@@ -1,0 +1,158 @@
+name: I008 Review Required
+
+on:
+  pull_request:
+    paths:
+      - docs/program/iterations/I008-review-required.json
+      - docs/program/plan.json
+      - scripts/program.py
+      - .github/workflows/i008-review-required.yml
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  i008-review-required:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Enforce exact reviewed-state delta and program contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          mapfile -t files < <(git diff --name-only "$base...$head" | sort)
+          expected=(
+            .github/workflows/i008-review-required.yml
+            docs/program/iterations/I008-review-required.json
+            docs/program/plan.json
+            scripts/program.py
+          )
+          printf '%s\n' "${files[@]}" > /tmp/actual
+          printf '%s\n' "${expected[@]}" | sort > /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+          git diff --check "$base...$head"
+          git diff --exit-code "$base...$head" -- src include CMakeLists.txt
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check
+      - name: Revalidate PR and workflow external facts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          token = os.environ['GH_TOKEN']
+          def get(url):
+              req = urllib.request.Request(url, headers={
+                  'Authorization': f'Bearer {token}',
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+              })
+              with urllib.request.urlopen(req) as r:
+                  return json.load(r)
+          repo='https://api.github.com/repos/jiying2007/audio-pipeline'
+          expected_prs={
+              121:'665f766c0519bd3d58b8381deae2381f30dcce97',
+              122:'03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a',
+          }
+          for number, sha in expected_prs.items():
+              pr=get(f'{repo}/pulls/{number}')
+              assert pr['state']=='closed' and pr['merged_at'] is None and pr['head']['sha']==sha, (number, pr['state'], pr['merged_at'], pr['head']['sha'])
+          runs={
+              34038886087:'success',
+              34039351719:'success',
+              34039351669:'success',
+              34039351747:'success',
+              34039351683:'success',
+              34039351916:'failure',
+          }
+          for run_id, conclusion in runs.items():
+              run=get(f'{repo}/actions/runs/{run_id}')
+              assert run['status']=='completed' and run['conclusion']==conclusion, (run_id, run['status'], run['conclusion'])
+          jobs=get(f'{repo}/actions/runs/34039351916/jobs?per_page=100')['jobs']
+          impact=next(j for j in jobs if j['name']=='impact')
+          assert impact['conclusion']=='failure'
+          step=next(s for s in impact['steps'] if s['name']=='Select conservative CI impact')
+          assert step['conclusion']=='failure'
+          print('I008 external facts: OK')
+          PY
+      - name: Download and reverify frozen I008 artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=/tmp/i008-artifacts
+          mkdir -p "$root"
+          download() {
+            id=$1; expected=$2; name=$3
+            zip="$root/$name.zip"
+            curl --fail --silent --show-error --location \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/jiying2007/audio-pipeline/actions/artifacts/$id/zip" \
+              -o "$zip"
+            actual=$(sha256sum "$zip" | awk '{print $1}')
+            test "$actual" = "$expected"
+            mkdir "$root/$name"
+            unzip -q "$zip" -d "$root/$name"
+          }
+          download 9991073229 3f1f3b33f989cf617b0e9a58076d5b0ff89e84a03f1673ee2398ef2fc11af26c engineering
+          download 9991049048 e8294b5084577ea123f8a2c0f91bd360b1589338049900fe85bc2cf6c9fd0821 arm
+          download 9991080810 ece2a5fe18c34c514b6aea770fff48be25283c8520dae265c17167caf1bca7c5 lab
+          download 9991183617 b6c82e12e6e27529861e95cc3c1c29751d88d7d2d22522595c188524d1884ebd fix
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          root=Path('/tmp/i008-artifacts')
+          def verify_manifest(name, expected_count):
+              d=root/name
+              manifests=list(d.rglob('SHA256SUMS'))
+              assert len(manifests)==1, (name, manifests)
+              rows=[line.strip().split(maxsplit=1) for line in manifests[0].read_text().splitlines() if line.strip()]
+              assert len(rows)==expected_count, (name, len(rows), expected_count)
+              files=[p for p in d.rglob('*') if p.is_file() and p != manifests[0]]
+              for digest, rel in rows:
+                  rel=rel.lstrip('*')
+                  exact=d/rel
+                  candidates=[exact] if exact.is_file() else [p for p in files if str(p.relative_to(d)).endswith(rel)]
+                  assert len(candidates)==1, (name, rel, [str(p) for p in candidates])
+                  actual=hashlib.sha256(candidates[0].read_bytes()).hexdigest()
+                  assert actual==digest, (name, rel, actual, digest)
+              print(f'{name}: {expected_count}/{expected_count} hashes OK')
+          verify_manifest('engineering',20)
+          verify_manifest('arm',4)
+          verify_manifest('fix',2)
+          lab_files=[p for p in (root/'lab').rglob('*') if p.is_file()]
+          assert lab_files
+          text='\n'.join(p.read_text(errors='ignore') for p in lab_files)
+          for role in ['audio_validation','audio_target','audio_builder','certification_archive']:
+              assert role in text and 'PASS' in text
+          assert 'idempotent' in text.lower()
+          assert 'system_path_writes' in text
+          print('lab artifact content: OK')
+          PY
+      - name: Preserve authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          c=json.load(open('docs/program/iterations/I008-review-required.json'))
+          assert c['state']=='REVIEW_REQUIRED_RELEASE_BEARING_FIX'
+          assert c['review_decision']['status']=='REVIEW_REQUIRED'
+          assert c['review_decision']['fix_authorized_to_merge_without_semver'] is False
+          assert c['review_decision']['candidate_limit_consumed']==0
+          assert c['review_decision']['confirmation_limit_consumed']==0
+          assert c['shipping_baseline']['release']=='v2.3.12' and c['shipping_baseline']['unchanged'] is True
+          assert c['authority_boundary']['release_created'] is False
+          assert c['authority_boundary']['product_qualification']=='DEFERRED_BY_SCOPE'
+          assert c['authority_boundary']['dut_hil']=='DEFERRED_BY_SCOPE'
+          PY

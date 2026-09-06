@@ -8,6 +8,18 @@
 #define AP_BUILD_STAGE_NS AP_HAVE_MODULE_NS
 #define AP_BUILD_STAGE_AGC AP_HAVE_MODULE_AGC
 #define AP_BUILD_STAGE_VAD AP_HAVE_MODULE_VAD
+/* The differential is pinned to exact reviewed main 54a6c60..., whose frozen
+ * default build contract is AEC=MDF and NS=EMA. The library receives these as
+ * PRIVATE CMake definitions, so this standalone internal-observability probe
+ * must mirror that exact-base contract before including internal state types.
+ * The evaluator separately verifies the shipping source mechanisms and exact
+ * base SHA; this does not select a different runtime backend. */
+#if AP_HAVE_MODULE_AEC
+#define AP_BUILD_AEC_MDF 1
+#endif
+#if AP_HAVE_MODULE_NS
+#define AP_BUILD_NS_EMA 1
+#endif
 #include "core/ap_pipeline_internal.h"
 #include <math.h>
 #include <stdint.h>

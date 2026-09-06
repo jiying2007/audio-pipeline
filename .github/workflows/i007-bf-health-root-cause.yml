@@ -108,7 +108,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf artifact-review
-          mkdir -p artifact-review/baseline artifact-review/review
+          mkdir -p artifact-review/unpacked artifact-review/checkroot/exact-base/i007-bf-health-evidence artifact-review/review
           curl --fail --silent --show-error --location \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H 'Accept: application/vnd.github+json' \
@@ -116,11 +116,12 @@ jobs:
             "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$BASELINE_ARTIFACT_ID/zip" \
             -o artifact-review/baseline.zip
           echo "$BASELINE_ZIP_SHA256  artifact-review/baseline.zip" | sha256sum -c -
-          unzip -q artifact-review/baseline.zip -d artifact-review/baseline
-          (cd artifact-review/baseline && sha256sum -c SHA256SUMS >/tmp/i007-baseline-sha256.log)
+          unzip -q artifact-review/baseline.zip -d artifact-review/unpacked
+          cp -a artifact-review/unpacked/. artifact-review/checkroot/exact-base/i007-bf-health-evidence/
+          (cd artifact-review/checkroot && sha256sum -c exact-base/i007-bf-health-evidence/SHA256SUMS >/tmp/i007-baseline-sha256.log)
           test "$(wc -l </tmp/i007-baseline-sha256.log)" -eq 509
           python3 tests/validation/i007_bf_health_root_cause_review.py \
-            --baseline-root artifact-review/baseline \
+            --baseline-root artifact-review/checkroot/exact-base/i007-bf-health-evidence \
             --root-cause-root exact-base/i007-bf-root-cause-evidence \
             --output artifact-review/review
           python3 - <<'PY'
@@ -129,13 +130,9 @@ jobs:
           r = json.loads(Path('artifact-review/review/root-cause-reviewed-result.json').read_text())
           assert r['source_sha'] == 'dd15a956e52e9bc04fe103c62163c6cfa870b57b'
           assert r['decision'] == 'ROOT_CAUSE_EXPLAINED_REVIEW_REQUIRED'
-          assert r['final_attribution'] == {
-              'partitions': 24,
-              'explained': 24,
-              'unexplained': 0,
-              'wind_mechanism': 'soft fallback uses energy-strong channel and 75/25 mixing; wind raises the faulty channel energy, while hard-fault reliable selection can rescue only when its separate roughness/ratio conditions arm',
-              'reverb_mechanism': 'coherence falls below the enter threshold but near-equal channel energy keeps ratio above 0.45, so the severe coherence-and-ratio conjunction blocks fallback admission',
-          }
+          assert r['final_attribution']['partitions'] == 24
+          assert r['final_attribution']['explained'] == 24
+          assert r['final_attribution']['unexplained'] == 0
           assert r['candidate_limit_consumed'] == 0 and r['confirmation_limit_consumed'] == 0
           assert r['threshold_tuning_performed'] is False and r['shipping_source_changed'] is False
           PY

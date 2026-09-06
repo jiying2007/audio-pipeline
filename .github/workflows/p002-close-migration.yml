@@ -1,0 +1,38 @@
+name: P002 Closure Migration
+
+on:
+  push:
+    branches: [governance/p002-close]
+    paths:
+      - .github/program/p002_close_migrate.py
+      - .github/workflows/p002-close-migration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: governance/p002-close
+          fetch-depth: 0
+      - name: Apply exact P002 closure migration
+        run: |
+          set -euo pipefail
+          python3 .github/program/p002_close_migrate.py
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check
+          python3 -m json.tool docs/program/iterations/P002-closure.json >/dev/null
+          git diff --check
+          git diff --exit-code 0f3a2ec707631b836fe5e0aafaea44543cd36e85 -- src include CMakeLists.txt CHANGELOG.md
+      - name: Commit only terminal program state
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/program/plan.json scripts/program.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'program: migrate P002 to evidence-backed CLOSED'
+          git push origin HEAD:governance/p002-close

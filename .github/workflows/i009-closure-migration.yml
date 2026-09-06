@@ -23,6 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Temporary helper extracts the frozen patch body from the original bootstrap commit.
           python3 scripts/i009_closure_migrate.py
           python3 -m json.tool docs/program/plan.json >/dev/null
           python3 -m json.tool docs/program/iterations/I009-closure.json >/dev/null

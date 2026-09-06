@@ -213,6 +213,86 @@ def validate_i004_closed(plan: dict, root: Path) -> None:
             }, "I004 CLOSED cannot claim product qualification")
 
 
+def validate_i006_review_required(plan: dict, root: Path) -> None:
+    by_id = {task["id"]: task for task in plan["tasks"]}
+    i006 = by_id["I006"]
+    if i006["status"] != "REVIEW_REQUIRED":
+        return
+    require(i006["handler"] is None and
+            i006["contract"] == "docs/program/iterations/I006-baseline.json" and
+            bool(i006["evidence"]),
+            "I006 REVIEW_REQUIRED must be frozen, evidence-backed and non-executable")
+    review = json.loads(repo_file(root, "docs/program/iterations/I006-review.json").read_text())
+    result = json.loads(repo_file(root, "docs/program/iterations/I006-baseline-result.json").read_text())
+    require(review["schema_version"] == 1 and review["iteration_id"] == "I006" and
+            review["phase"] == "reviewed-baseline-gap" and
+            review["state"] == "REVIEW_REQUIRED" and
+            review["decision"] == "MEASURED_GAP_REVIEW_REQUIRED" and
+            review["measurement_main_sha"] == "f48559f55791cc72a69befdd79472d908c93803d",
+            "I006 REVIEW_REQUIRED requires reviewed baseline-gap identity")
+    execution = review["authoritative_execution"]
+    require(execution["workflow_run_id"] == 34011652196 and
+            execution["artifact_id"] == 9982646065 and
+            execution["artifact_digest"] ==
+            "sha256:f175dc88aef99181d7e1fd8568ffc015ba5fc00065b5d36e2f787c38a6188b6f" and
+            execution["internal_sha256s_verified"] == 341 and
+            execution["measurement_revision"] == 3 and
+            execution["cases_complete"] == 18 and
+            execution["precondition_failures"] == 0,
+            "I006 REVIEW_REQUIRED requires exact revision-3 evidence")
+    authority = review["authority"]
+    require(authority["candidate_limit_consumed"] == 0 and
+            authority["confirmation_limit_consumed"] == 0 and
+            authority["shipping_candidate_authorized"] is False and
+            authority["root_cause_differential_authorized"] is True and
+            authority["parameter_search_authorized"] is False and
+            authority["promotion_allowed"] is False and
+            authority["release_allowed"] is False,
+            "I006 REVIEW_REQUIRED cannot acquire candidate/promotion authority")
+    retirement = review["development_source_retirement"]
+    require(retirement["seeds"] == [16107, 26107, 36107] and
+            retirement["next_role"] == "regression" and
+            retirement["future_independent_confirmation"] is False and
+            retirement["promotion_authority"] is False,
+            "I006 Development source must retire to regression")
+    require(result["schema_version"] == 1 and result["iteration_id"] == "I006" and
+            result["measurement_revision"] == 3 and
+            result["decision"] == "MEASURED_GAP_REVIEW_REQUIRED" and
+            result["candidate_decision"] == "NOT_AN_ACOUSTIC_CANDIDATE" and
+            result["candidate_limit_consumed"] == 0 and
+            result["confirmation_limit_consumed"] == 0 and
+            result["promotion_allowed"] is False,
+            "I006 review/result authority mismatch")
+    authoritative = result["authoritative_execution"]
+    require(authoritative["workflow_run_id"] == execution["workflow_run_id"] and
+            authoritative["artifact_id"] == execution["artifact_id"] and
+            authoritative["artifact_digest"] == execution["artifact_digest"] and
+            authoritative["internal_sha256s_verified"] == execution["internal_sha256s_verified"] and
+            authoritative["cases"] == 18 and authoritative["precondition_failures"] == 0,
+            "I006 review/result evidence mismatch")
+    require(result["reviewed_findings"]["pure_far_end"]["passed"] == 6 and
+            result["reviewed_findings"]["near_far_speech_preservation"]["passed"] == 6 and
+            result["reviewed_findings"]["noise_floor"]["passed"] == 0 and
+            result["reviewed_findings"]["double_talk_activity"]["passed"] == 1,
+            "I006 reviewed finding partition drift")
+    require(result["reviewed_next_action"]["state"] == "REVIEW_REQUIRED" and
+            result["reviewed_next_action"]["allow_agc_target_or_limiter_search"] is False and
+            result["reviewed_next_action"]["allow_attack_release_search"] is False and
+            result["reviewed_next_action"]["allow_confirmation"] is False,
+            "I006 review may authorize root-cause differential only")
+    require(result["shipping_boundary"] == {
+                "shipping_source_changed": False,
+                "software_candidate_promoted": False,
+                "release_created": False,
+                "software_release": "v2.3.12",
+            } and result["product_qualification"] == "DEFERRED_BY_SCOPE",
+            "I006 review must preserve shipping/product boundary")
+    i007 = by_id["I007"]
+    require(i007["status"] == "PLANNED" and i007["handler"] is None and
+            i007["contract"] is None and not i007["evidence"],
+            "I006 REVIEW_REQUIRED must not auto-activate I007")
+
+
 def validate(plan: dict, root: Path | None = None) -> None:
     keys(plan, {"schema_version", "phase", "product_qualification", "hardware_collection",
                 "auto_promote", "max_parallel_candidates", "baseline", "data_roles", "tasks"})
@@ -299,6 +379,7 @@ def validate(plan: dict, root: Path | None = None) -> None:
         walk(task_id)
     if root is not None:
         validate_i004_closed(plan, root)
+        validate_i006_review_required(plan, root)
 
 
 def next_task(plan: dict) -> dict | None:
@@ -340,10 +421,18 @@ def self_test() -> None:
                 i005["contract"] == "docs/program/iterations/I005-baseline.json" and
                 bool(i005["evidence"]),
                 "closed I005 must be evidence-backed and non-executable")
-        require(i006["status"] == "PLANNED" and i006["handler"] is None and i006["contract"] is None,
-                "I005 closure must not auto-activate I006")
+        if i006["status"] == "PLANNED":
+            require(i006["handler"] is None and i006["contract"] is None and not i006["evidence"],
+                    "planned I006 cannot have executable/review authority")
+        elif i006["status"] == "REVIEW_REQUIRED":
+            require(i006["handler"] is None and
+                    i006["contract"] == "docs/program/iterations/I006-baseline.json" and
+                    bool(i006["evidence"]),
+                    "review-required I006 must be evidence-backed and non-executable")
+        else:
+            raise AssertionError("I005 closure allows only PLANNED or independently reviewed I006")
         require(next_task(plan) is None and view(plan)["automation_status"] == "NO_READY_TASK",
-                "I005 closure cannot create an automatic next task")
+                "I005 closure/I006 review cannot create an automatic next task")
     else:
         raise AssertionError("I005 must be PLANNED or evidence-backed CLOSED")
 
@@ -414,6 +503,7 @@ def self_test() -> None:
         lambda p: p["tasks"][-1].update(status="READY"),
         lambda p: p["tasks"][0].update(depends_on=["I003"]),
         lambda p: next(t for t in p["tasks"] if t["id"] == "I005").update(status="CLOSED", evidence=[]),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="REVIEW_REQUIRED", evidence=[]),
     ]
     for mutate in mutations:
         bad = copy.deepcopy(plan)
@@ -432,7 +522,7 @@ def self_test() -> None:
     by_id_blocked["I004"].update(status="REVIEW_REQUIRED")
     by_id_blocked["I003"].update(depends_on=["I004"])
     require(next_task(blocked) is None, "explicit unfinished dependency must block")
-    print("program self-test: I002/P001/I003/I004/I005 evidence-backed lifecycles + negative contracts OK")
+    print("program self-test: I002/P001/I003/I004/I005/I006 evidence-backed lifecycles + negative contracts OK")
 
 
 def main() -> int:

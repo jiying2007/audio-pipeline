@@ -343,8 +343,8 @@ def validate(plan: dict, root: Path | None = None) -> None:
                 len(task["depends_on"]) == len(set(task["depends_on"])), "dependencies")
         require(all(dep in by_id and dep != task["id"] for dep in task["depends_on"]), "unknown dependency")
         require(isinstance(task["evidence"], list), "evidence list")
-        if task["status"] == "CLOSED":
-            require(bool(task["evidence"]), "CLOSED requires reviewed evidence pointers")
+        if task["status"] in {"CLOSED", "REVIEW_REQUIRED"}:
+            require(bool(task["evidence"]), "CLOSED/REVIEW_REQUIRED requires reviewed evidence pointers")
         for evidence in task["evidence"]:
             keys(evidence, {"source_sha", "url", "meaning"})
             require(sha(evidence["source_sha"]), "evidence exact SHA")

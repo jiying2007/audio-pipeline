@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I009",
+  "phase": "inherited-root-cause-context",
+  "root_cause_id": "activity-double-talk-ratio-admission",
+  "source_iteration": "I006",
+  "authority": "already-observed-regression-root-cause-context-only",
+  "may_be_independent_confirmation": false,
+  "may_be_candidate_selection_data": false,
+  "may_authorize_threshold_search": false,
+  "may_authorize_shipping_change": false,
+  "paired_baseline": {
+    "workflow_run_id": 34011652196,
+    "artifact_id": 9982646065,
+    "artifact_digest": "sha256:f175dc88aef99181d7e1fd8568ffc015ba5fc00065b5d36e2f787c38a6188b6f",
+    "internal_sha256s_verified": 341,
+    "seeds": [16107, 26107, 36107],
+    "near_far_cases": 6,
+    "double_talk_gate_passes": 1,
+    "frozen_min_double_talk_fraction_on_near_active": 0.35,
+    "balanced_fractions": [0.3183098591549296, 0.428169014084507, 0.2563380281690141],
+    "weak_near_fractions": [0.03943661971830986, 0.03943661971830986, 0.03943661971830986]
+  },
+  "root_cause_differential": {
+    "workflow_run_id": 34020771042,
+    "artifact_id": 9985408103,
+    "artifact_digest": "sha256:0529d77839c49379f554e5ef0b19d80a65c401e4ac2d009a33f7902a7d515a8b",
+    "internal_sha256s_verified": 283,
+    "cases": 6,
+    "classification_distribution": {
+      "DT_SMOOTHED_RATIO_GATE_LIMIT": 3,
+      "DT_BOTH_RATIO_GATES_LIMIT": 3,
+      "DT_INSTANT_RATIO_GATE_LIMIT": 0,
+      "DT_NOT_EXPLAINED_BY_CURRENT_RATIO_GATES": 0
+    },
+    "conclusion": "All six exposed I006 double-talk gaps are explained by the current smoothed/instant Activity admission predicates; these observations are retired to regression/root-cause context and cannot select an I009 candidate."
+  },
+  "shipping_activity_contract": {
+    "double_talk_ratio": 1.5,
+    "instant_on_multiplier": 0.9,
+    "instant_hold_multiplier": 0.72,
+    "smoothed_rise_alpha": 0.35,
+    "smoothed_decay_alpha": 0.08
+  },
+  "handoff": {
+    "fresh_development_measurement_required": true,
+    "fresh_candidate_contract_required_after_review": true,
+    "fresh_independent_confirmation_required_for_any_candidate": true
+  },
+  "shipping_boundary": {
+    "software_release": "v2.3.12",
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

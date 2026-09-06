@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "phase": "reviewed-baseline-gap",
+  "state": "REVIEW_REQUIRED",
+  "decision": "MEASURED_GAP_REVIEW_REQUIRED",
+  "base_sha": "ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b",
+  "measurement_main_sha": "f48559f55791cc72a69befdd79472d908c93803d",
+  "authoritative_execution": {
+    "workflow_run_id": 34011652196,
+    "artifact_id": 9982646065,
+    "artifact_digest": "sha256:f175dc88aef99181d7e1fd8568ffc015ba5fc00065b5d36e2f787c38a6188b6f",
+    "internal_sha256s_verified": 341,
+    "measurement_revision": 3,
+    "cases_complete": 18,
+    "precondition_failures": 0
+  },
+  "authority": {
+    "candidate_limit_consumed": 0,
+    "confirmation_limit_consumed": 0,
+    "shipping_candidate_authorized": false,
+    "root_cause_differential_authorized": true,
+    "parameter_search_authorized": false,
+    "promotion_allowed": false,
+    "release_allowed": false
+  },
+  "reviewed_findings": {
+    "pure_far_end_no_gain_up": {
+      "result": "PASS",
+      "cases": "6/6",
+      "meaning": "Shipping far-end-only activity control correctly prevents AGC gain increase; this path requires no AGC candidate."
+    },
+    "near_far_agc_speech_preservation": {
+      "result": "PASS",
+      "cases": "6/6",
+      "meaning": "Paired AGC ON/OFF exact-production SI-SDR contribution is within the frozen -0.5 dB constraint; the earlier large apparent loss was measurement attribution error."
+    },
+    "noise_floor_gain": {
+      "result": "GAP",
+      "cases": "6/6",
+      "observed_incremental_p95_gain_db": "approximately 18.06",
+      "frozen_max_p95_gain_db": 15.0,
+      "meaning": "Low and stepped noise floors receive more AGC incremental gain than the pre-registered envelope, while absolute tail output and clipping constraints still pass."
+    },
+    "double_talk_activity_coverage": {
+      "result": "DEPENDENCY_GAP",
+      "cases_failed": "5/6",
+      "frozen_min_fraction": 0.35,
+      "meaning": "Activity double-talk coverage is weak, especially weak-near, but paired AGC speech preservation still passes. This must be investigated as activity-control dependency, not AGC target/limiter tuning."
+    }
+  },
+  "measurement_lineage": [
+    "Revision 1 retained as attribution-invalid lineage: full-pipeline SI-SDR could not isolate AGC.",
+    "Revision 2 retained as attribution-limited lineage: activity+controlled AGC used raw mic rather than production post-AEC/RES/NS input; one pre-execution feature-macro infrastructure failure is also retained.",
+    "Revision 3 paired exact-production AGC ON/OFF is the final authority; upstream processing and activity are identical and the only pipeline-stage difference is AGC."
+  ],
+  "development_source_retirement": {
+    "source_group": "i006-agc-residual-floor-development-v1",
+    "seeds": [16107, 26107, 36107],
+    "next_role": "regression",
+    "future_independent_confirmation": false,
+    "promotion_authority": false
+  },
+  "next_action": {
+    "allowed": [
+      "candidate-zero noise-floor gain-control root-cause differential",
+      "candidate-zero activity double-talk mismatch root-cause differential"
+    ],
+    "prohibited": [
+      "agc_target_dbfs grid/search",
+      "limiter_dbfs grid/search",
+      "attack/release tuning",
+      "candidate ranking",
+      "confirmation consumption",
+      "shipping source modification before a later explicit bounded candidate contract"
+    ]
+  },
+  "shipping_release": "v2.3.12",
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

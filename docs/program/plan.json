@@ -91,11 +91,13 @@
       ]
     },
     {
-      "id": "I006", "priority": 60, "status": "PLANNED", "lane": "acoustic",
+      "id": "I006", "priority": 60, "status": "REVIEW_REQUIRED", "lane": "acoustic",
       "title": "AGC near/far level mismatch, noise-floor and far-end residual protection",
-      "depends_on": ["P001"], "handler": null, "contract": null,
-      "exit": "No pure-far-end gain-up regression; clipping/slew/settling and speech-quality constraints",
-      "evidence": []
+      "depends_on": ["P001"], "handler": null, "contract": "docs/program/iterations/I006-baseline.json",
+      "exit": "Paired exact-production AGC ON/OFF baseline isolates the remaining noise-floor gain and activity double-talk dependency gaps; no candidate or confirmation is authorized until candidate-zero root-cause differential is reviewed",
+      "evidence": [
+        {"source_sha": "f48559f55791cc72a69befdd79472d908c93803d", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34011652196", "meaning": "Authoritative I006 measurement revision 3. Artifact 9982646065/digest f175dc88... independently verified 341/341 hashes and 18/18 paired exact-production cases with zero precondition failures. Pure far-end no-gain-up and paired AGC speech preservation pass 6/6 each. Noise-floor incremental p95 gain is about 18.06 dB versus frozen 15 dB in 6/6 cases, while double-talk activity coverage misses the frozen 0.35 threshold in 5/6 near+far cases. Final decision MEASURED_GAP_REVIEW_REQUIRED; candidate/confirmation remain 0/0. Revisions 1/2 are retained as measurement-attribution lineage only."}
+      ]
     },
     {
       "id": "I007", "priority": 70, "status": "PLANNED", "lane": "acoustic",

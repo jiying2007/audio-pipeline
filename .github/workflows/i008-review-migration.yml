@@ -1,0 +1,38 @@
+name: I008 Review-Required Migration
+
+on:
+  push:
+    branches:
+      - governance/i008-review-required
+    paths:
+      - .github/workflows/i008-review-migration.yml
+      - scripts/i008_review_migrate.py
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: governance/i008-review-required
+          fetch-depth: 0
+      - name: Apply exact I008 reviewed-state migration
+        run: |
+          set -euo pipefail
+          python3 scripts/i008_review_migrate.py
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check
+          git diff --check
+          git diff --exit-code 54fd0cdb5ff7197748fa52d07e0cb83e465a6b57 -- src include CMakeLists.txt
+      - name: Commit only reviewed program state
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/program/plan.json scripts/program.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'program: migrate I008 to evidence-backed review required'
+          git push origin HEAD:governance/i008-review-required

@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I009",
+  "phase": "bounded-source-candidate",
+  "root_cause_id": "activity-double-talk-near-evidence-after-echo-cancellation",
+  "candidate_id": "activity-residual-echo-rescue-v1",
+  "program_base_sha": "497c3ca3a6be0a4e319a3493e256eac7391a7f18",
+  "acoustic_base_sha": "497c3ca3a6be0a4e319a3493e256eac7391a7f18",
+  "root_cause_execution": {
+    "workflow_run_id": 34033842566,
+    "artifact_id": 9989499865,
+    "artifact_digest": "sha256:1965a49e87016994d57cc119d2dd11f0d1523dc1a32a3701904fbf0776efd238",
+    "internal_sha256s_verified": 301,
+    "decision": "RESIDUAL_ECHO_RESCUE_SUPPORTED_REVIEW_REQUIRED",
+    "near_far_passed": 6,
+    "pure_far_passed": 3
+  },
+  "candidate_limit": 1,
+  "candidate_limit_consumed": 1,
+  "confirmation_limit": 0,
+  "confirmation_limit_consumed": 0,
+  "promotion_allowed": false,
+  "shipping_release": "v2.3.12",
+  "source_delta": {
+    "paths": [
+      "src/activity/ap_activity.c",
+      "src/activity/ap_activity.h",
+      "src/core/ap_pipeline.c"
+    ],
+    "public_api_changed": false,
+    "public_abi_changed": false,
+    "existing_numeric_thresholds_changed": false,
+    "new_numeric_thresholds": false,
+    "parameter_grid_search": false,
+    "exact_structure": "shipping raw DTD OR previous-frame AEC residual/echo DTD after previous AEC convergence; both paths use the same Activity thresholds/EMA/hangover"
+  },
+  "frozen_activity_constants": {
+    "double_talk_ratio": 1.5,
+    "instant_on_multiplier": 0.90,
+    "instant_hold_multiplier": 0.72,
+    "hangover_frames": 3,
+    "energy_attack_alpha": 0.35,
+    "energy_release_alpha": 0.08
+  },
+  "development_evaluation": {
+    "role": "fresh-development-candidate-gate",
+    "seeds": [18109, 28109, 38109],
+    "previously_exposed": false,
+    "scenarios": [
+      "pure-far-end-residual-low",
+      "near-far-doubletalk",
+      "near-far-weak-near"
+    ],
+    "gate": {
+      "min_double_talk_fraction_on_near_active": 0.35,
+      "max_false_double_talk_fraction_on_far_active": 0.0,
+      "required_near_far_partitions_pass": 6,
+      "required_pure_far_partitions_pass": 3
+    },
+    "after_execution_role": "regression-only",
+    "may_be_future_confirmation": false
+  },
+  "reserved_confirmation_source": {
+    "status": "RESERVED_NOT_EXECUTABLE_IN_THIS_PR",
+    "seeds": [19109, 29109, 39109],
+    "previously_exposed": false,
+    "echo_taps_samples_gain": [
+      [480, 0.13],
+      [1120, 0.08],
+      [1680, 0.04]
+    ],
+    "near_scale_balanced": 1.15,
+    "near_scale_weak": 0.58,
+    "may_execute_only_after_candidate_review": true,
+    "may_be_used_for_candidate_change_or_selection": false
+  },
+  "required_regression_protection": {
+    "full_repository_verify": true,
+    "hosted_real_audio": true,
+    "hosted_real_aec": true,
+    "activity_res_unit_and_transition_contracts": true,
+    "resource_and_abi_gates": true,
+    "root_cause_regression_seeds": [17109, 27109, 37109]
+  },
+  "authority": {
+    "may_add_second_candidate": false,
+    "may_change_candidate_after_observing_results": false,
+    "may_change_activity_thresholds": false,
+    "may_search_any_numeric_parameter": false,
+    "may_execute_reserved_confirmation": false,
+    "may_use_exposed_data_as_confirmation": false,
+    "may_promote_or_release": false
+  },
+  "decision_contract": {
+    "ELIGIBLE_FOR_FRESH_CONFIRMATION": "fresh Development target/control gates pass, root-cause regression gates pass, dedicated Activity/RES regression passes, and no repository required-check regression is accepted",
+    "KEEP_BASELINE_CANDIDATE_REJECTED": "one or more frozen candidate or regression gates fail; no second candidate or post-result source change is allowed"
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

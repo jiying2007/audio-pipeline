@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "phase": "bounded-source-candidate-search",
+  "root_cause_id": "noise-floor-max-gain-cap",
+  "base_sha": "945344a29a826bbf5330baf3382cb3e34c8f4160",
+  "data_role": "development-exposed-regression-only",
+  "candidate_limit": 1,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "development_seeds": [16107, 26107, 36107],
+  "scenarios": [
+    "pure-far-end-residual-low",
+    "pure-far-end-residual-ramp",
+    "noise-floor-low",
+    "noise-floor-step",
+    "near-far-doubletalk",
+    "near-far-weak-near"
+  ],
+  "candidate_variants": [
+    {
+      "name": "max-gain-cap-15db",
+      "shipping_max_gain_linear": 8.0,
+      "candidate_max_gain_db": 15.0,
+      "candidate_max_gain_linear": 5.623413251903491,
+      "source_change": "replace only the AGC target-gain upper clamp 8.0f with the pre-registered 15 dB linear cap",
+      "basis": "I006-baseline.json pre-registered noise_floor.max_p95_frame_gain_db=15.0 before the measured 18.06 dB failure was observed"
+    }
+  ],
+  "winner_policy": "single-candidate-pass-or-keep-baseline",
+  "gates": {
+    "noise_floor": {
+      "max_p95_frame_gain_db": 15.0,
+      "max_tail_output_rms_dbfs": -28.0,
+      "max_clip_fraction": 0.001
+    },
+    "pure_far_end": {
+      "min_far_only_fraction_on_far_active": 0.85,
+      "max_output_vs_input_rms_gain_db": 0.75,
+      "max_clip_fraction": 0.001
+    },
+    "near_far": {
+      "min_far_active_fraction_on_near_active": 0.70,
+      "min_speech_si_sdr_improvement_db": -0.50,
+      "max_clip_fraction": 0.002,
+      "double_talk_activity_is_protection_context_only": true
+    }
+  },
+  "engineering_protection": {
+    "api_abi_change_allowed": false,
+    "resource_regression_allowed": false,
+    "runtime_performance_regression_allowed": false,
+    "activity_source_change_allowed": false,
+    "agc_target_change_allowed": false,
+    "limiter_change_allowed": false,
+    "attack_release_change_allowed": false
+  },
+  "authority": {
+    "may_edit_checked_out_source": false,
+    "may_apply_exact_pre_registered_candidate": true,
+    "may_add_candidate": false,
+    "may_change_candidate_value": false,
+    "may_tune_agc_target": false,
+    "may_tune_limiter": false,
+    "may_tune_attack_release": false,
+    "may_tune_activity_thresholds": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false
+  },
+  "lineage": {
+    "baseline_run": 34011652196,
+    "baseline_artifact": 9982646065,
+    "baseline_digest": "sha256:f175dc88aef99181d7e1fd8568ffc015ba5fc00065b5d36e2f787c38a6188b6f",
+    "root_cause_run": 34020771042,
+    "root_cause_artifact": 9985408103,
+    "root_cause_digest": "sha256:0529d77839c49379f554e5ef0b19d80a65c401e4ac2d009a33f7902a7d515a8b",
+    "root_cause_result": "docs/program/iterations/I006-root-cause-result.json"
+  },
+  "constraints": {
+    "same_exposed_development_data_is_not_confirmation": true,
+    "double_talk_gap_is_handed_to_I009": true,
+    "candidate_value_is_not_searchable": true,
+    "candidate_failure_means_keep_shipping_baseline": true,
+    "candidate_pass_requires_later_fresh_independent_confirmation": true,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

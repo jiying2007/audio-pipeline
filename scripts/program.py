@@ -199,11 +199,13 @@ def validate_i004_closed(plan: dict, root: Path) -> None:
             decision["future_I004_candidate_requires_new_root_cause_budget_decision"] is True,
             "I004 closure decision must be terminal KEEP_BASELINE")
     handoff = closure["handoff"]["I005"]
-    require(by_id["I005"]["status"] == handoff["status"] == "PLANNED" and
+    require(handoff["status"] == "PLANNED" and
             handoff["authority"] == "already-observed-regression-root-cause-context-only" and
             handoff["may_be_independent_confirmation"] is False and
             handoff["may_be_candidate_selection_data"] is False,
-            "I004 closure cannot activate or contaminate I005")
+            "I004 closure handoff must remain non-executable and non-independent")
+    require(by_id["I005"]["status"] in {"PLANNED", "CLOSED"},
+            "I004 closure cannot directly place I005 in an executable state")
     require(closure["authority_boundary"] == {
                 "product_qualification": "DEFERRED_BY_SCOPE",
                 "hardware_collection": False,
@@ -322,16 +324,28 @@ def self_test() -> None:
     plan = json.loads((ROOT / PLAN).read_text())
     validate(plan, ROOT)
     by_id = {task["id"]: task for task in plan["tasks"]}
-    i002, p001, i003, i004, i005 = (by_id["I002"], by_id["P001"], by_id["I003"],
-                                    by_id["I004"], by_id["I005"])
+    i002, p001, i003, i004, i005, i006 = (by_id["I002"], by_id["P001"], by_id["I003"],
+                                           by_id["I004"], by_id["I005"], by_id["I006"])
     require(i002["status"] == "CLOSED" and i002["handler"] is None and bool(i002["evidence"]),
             "I002 must remain reviewed and closed")
     require(p001["status"] == "CLOSED" and p001["handler"] is None and bool(p001["evidence"]),
             "P001 must remain reviewed and closed")
     require(i004["status"] == "CLOSED" and i004["handler"] is None and bool(i004["evidence"]),
             "I004 must remain reviewed CLOSED_KEEP_BASELINE")
-    require(i005["status"] == "PLANNED" and i005["handler"] is None and i005["contract"] is None,
-            "I004 closure must not auto-activate I005")
+    if i005["status"] == "PLANNED":
+        require(i005["handler"] is None and i005["contract"] is None and not i005["evidence"],
+                "planned I005 cannot have executable/review authority")
+    elif i005["status"] == "CLOSED":
+        require(i005["handler"] is None and
+                i005["contract"] == "docs/program/iterations/I005-baseline.json" and
+                bool(i005["evidence"]),
+                "closed I005 must be evidence-backed and non-executable")
+        require(i006["status"] == "PLANNED" and i006["handler"] is None and i006["contract"] is None,
+                "I005 closure must not auto-activate I006")
+        require(next_task(plan) is None and view(plan)["automation_status"] == "NO_READY_TASK",
+                "I005 closure cannot create an automatic next task")
+    else:
+        raise AssertionError("I005 must be PLANNED or evidence-backed CLOSED")
 
     if i003["status"] == "PLANNED":
         require(i003["handler"] is None and i003["contract"] is None,
@@ -399,6 +413,7 @@ def self_test() -> None:
         lambda p: next(t for t in p["tasks"] if t["id"] == "I003").update(depends_on=["UNKNOWN"]),
         lambda p: p["tasks"][-1].update(status="READY"),
         lambda p: p["tasks"][0].update(depends_on=["I003"]),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "I005").update(status="CLOSED", evidence=[]),
     ]
     for mutate in mutations:
         bad = copy.deepcopy(plan)
@@ -417,7 +432,7 @@ def self_test() -> None:
     by_id_blocked["I004"].update(status="REVIEW_REQUIRED")
     by_id_blocked["I003"].update(depends_on=["I004"])
     require(next_task(blocked) is None, "explicit unfinished dependency must block")
-    print("program self-test: I002/P001/I003/I004 evidence-backed lifecycles + negative contracts OK")
+    print("program self-test: I002/P001/I003/I004/I005 evidence-backed lifecycles + negative contracts OK")
 
 
 def main() -> int:

@@ -16,7 +16,8 @@
     {"path": "validation/hosted_real.datasets.lock.json", "role": "hosted-regression", "exposed": true},
     {"path": "validation/hosted_aec.datasets.lock.json", "role": "hosted-regression", "exposed": true},
     {"path": "tests/validation/data/ami_vad_microset.lock.json", "role": "regression", "exposed": true},
-    {"path": "tests/validation/data/ami_vad_confirmation_es2004a.lock.json", "role": "regression", "exposed": true}
+    {"path": "tests/validation/data/ami_vad_confirmation_es2004a.lock.json", "role": "regression", "exposed": true},
+    {"path": "tests/validation/data/i005_ami_vad_development_es2005b.lock.json", "role": "regression", "exposed": true}
   ],
   "tasks": [
     {
@@ -81,11 +82,13 @@
       ]
     },
     {
-      "id": "I005", "priority": 50, "status": "PLANNED", "lane": "acoustic",
+      "id": "I005", "priority": 50, "status": "CLOSED", "lane": "acoustic",
       "title": "VAD event/onset/release evaluation on new public sessions and far-field simulation",
-      "depends_on": ["I004"], "handler": null, "contract": null,
-      "exit": "Frame/event recall and false-active duration; unused source groups; no retuning ES2003a/ES2004a as independent",
-      "evidence": []
+      "depends_on": ["I004"], "handler": null, "contract": "docs/program/iterations/I005-baseline.json",
+      "exit": "Pinned ES2005b public timing proxy and deterministic exact-timing far-field baseline both pass the frozen candidate-zero gates; no threshold/hangover/source search is authorized and v2.3.12 remains the shipping baseline",
+      "evidence": [
+        {"source_sha": "f05c0bcefedc7acb5634dd7cba95ca193c0687ee", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34007957381", "meaning": "Authoritative candidate-zero I005 baseline on exact fec515eb... source. Artifact 9981552960/digest 9af2fe49... independently verified 18/18 SHA256 entries. ES2005b shipping ns-isolated frame F1=0.6396, event recall=1.0, onset p95=135 ms, release p95=267.5 ms; deterministic far-field 9 cases/27 exact events achieve frame F1=0.7162, event recall=1.0, onset p95=157 ms, release p95=100 ms. Frozen decision BASELINE_ADEQUATE_NO_SEARCH with zero gate failures; candidate/confirmation budgets remain 0/0 and no threshold/hangover/source candidate search or release authority was consumed."}
+      ]
     },
     {
       "id": "I006", "priority": 60, "status": "PLANNED", "lane": "acoustic",

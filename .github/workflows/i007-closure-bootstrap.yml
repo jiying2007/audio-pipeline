@@ -1,0 +1,171 @@
+name: I007 Closure Bootstrap
+
+on:
+  push:
+    branches:
+      - governance/i007-close-keep-baseline
+    paths:
+      - '.github/workflows/i007-closure-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Materialize evidence-backed I007 closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('.')
+          closure = {
+            'schema_version': 1,
+            'iteration_id': 'I007',
+            'state': 'CLOSED_KEEP_BASELINE',
+            'lane': 'acoustic',
+            'root_cause_id': 'bf-soft-health-wind-reverb-admission-selection',
+            'closed_from_main_sha': 'af9601b7805c8543feddc34c71a555c8abc6b672',
+            'shipping_baseline': {
+              'release': 'v2.3.12',
+              'source_sha': 'd82cb6d2be76497d1d66dd16da00924411207046',
+              'unchanged': True,
+            },
+            'baseline_measurement': {
+              'run_id': 34022991376,
+              'artifact_id': 9986124236,
+              'revision': 1,
+              'lineage_only': True,
+            },
+            'root_cause': {
+              'run_id': 34028010442,
+              'artifact_id': 9987677794,
+              'artifact_digest': 'sha256:38a6b4838d212b1ebbf46548715e3e918cf04ecd9edd0aa92ab473e1abb2d9a9',
+              'internal_sha256s_verified': 343,
+              'partitions': 24,
+              'explained': 24,
+              'unexplained': 0,
+              'candidate_limit_consumed': 0,
+              'confirmation_limit_consumed': 0,
+            },
+            'bounded_candidates': {
+              'wind': {
+                'candidate_id': 'wind-roughness-directed-hard-selection-v1',
+                'pr': 113,
+                'pr_closed': True,
+                'pr_merged': False,
+                'head_sha': 'bf62bbbeca353cf54c2075eb806bbf07fabac7b8',
+                'run_id': 34028699391,
+                'artifact_id': 9987898553,
+                'artifact_digest': 'sha256:eba06e39e49a2a4620f59decfed6e0dbddb40869eae0f853a55d0bcc87a1d1aa',
+                'internal_sha256s_verified': 288,
+                'candidate_limit': 1,
+                'candidate_limit_consumed': 1,
+                'confirmation_limit_consumed': 0,
+                'decision': 'KEEP_BASELINE_CANDIDATE_REJECTED',
+                'base_gate_failure_partitions': 24,
+                'candidate_gate_failure_partitions': 19,
+                'target_failed_partitions': 7,
+                'hard_fault_regression_result': 'FAIL',
+              },
+              'reverb': {
+                'candidate_id': 'reverb-equal-energy-decorrelated-single-v1',
+                'pr': 114,
+                'pr_closed': True,
+                'pr_merged': False,
+                'head_sha': '6dba87f2f35e20fac4203e4f99c816ae8147bab4',
+                'run_id': 34028778900,
+                'artifact_id': 9987923038,
+                'artifact_digest': 'sha256:5e6702fb6312a1ce3daa32e8e67fa6f7e170d7b4acf35974e3b36c2585ff0234',
+                'internal_sha256s_verified': 288,
+                'candidate_limit': 1,
+                'candidate_limit_consumed': 1,
+                'confirmation_limit_consumed': 0,
+                'decision': 'KEEP_BASELINE_CANDIDATE_REJECTED',
+                'base_gate_failure_partitions': 24,
+                'candidate_gate_failure_partitions': 12,
+                'target_failed_partitions': 0,
+                'non_target_regressions': 2,
+                'hard_fault_regression_result': 'FAIL',
+              },
+            },
+            'closure_decision': {
+              'keep_baseline': True,
+              'merge_shipping_candidate': False,
+              'create_release': False,
+              'consume_confirmation': False,
+              'allow_second_wind_candidate': False,
+              'allow_second_reverb_candidate': False,
+              'allow_combined_wind_reverb_candidate': False,
+              'future_I007_candidate_requires_new_root_cause_and_budget_decision': True,
+            },
+            'authority_boundary': {
+              'shipping_source_changed': False,
+              'software_candidate_promoted': False,
+              'release_created': False,
+              'product_qualification': 'DEFERRED_BY_SCOPE',
+              'hardware_collection': False,
+              'dut_hil': 'DEFERRED_BY_SCOPE',
+            },
+          }
+          path = root / 'docs/program/iterations/I007-closure.json'
+          path.write_text(json.dumps(closure, indent=2, sort_keys=True) + '\n')
+
+          plan_path = root / 'docs/program/plan.json'
+          plan = json.loads(plan_path.read_text())
+          i007 = next(t for t in plan['tasks'] if t['id'] == 'I007')
+          i007['status'] = 'CLOSED'
+          i007['handler'] = None
+          i007['contract'] = 'docs/program/iterations/I007-closure.json'
+          i007['exit'] = ('Exact-main BF health baseline/root cause is archived; the independently bounded wind and reverb structural candidates are both rejected by frozen target/non-target and established hard-fault gates; no confirmation is consumed and v2.3.12 remains shipping')
+          i007['evidence'] = [
+            {
+              'source_sha': '88e59917d0f7cc75d88c647a41d2a186509bdd13',
+              'url': 'https://github.com/jiying2007/audio-pipeline/actions/runs/34028010442',
+              'meaning': 'I007 candidate-zero root-cause differential: artifact 9987677794 / digest 38a6b483... independently verified 343/343; final reviewed attribution 24/24 explained, candidate/confirmation 0/0.'
+            },
+            {
+              'source_sha': 'bf62bbbeca353cf54c2075eb806bbf07fabac7b8',
+              'url': 'https://github.com/jiying2007/audio-pipeline/actions/runs/34028699391',
+              'meaning': 'Single authorized wind candidate: artifact 9987898553 / digest eba06e39... independently verified 288/288; 24->19 failures but 7/12 wind targets remain failing and hard-fault/soft-control gate fails; PR #113 closed unmerged.'
+            },
+            {
+              'source_sha': '6dba87f2f35e20fac4203e4f99c816ae8147bab4',
+              'url': 'https://github.com/jiying2007/audio-pipeline/actions/runs/34028778900',
+              'meaning': 'Single authorized reverb candidate: artifact 9987923038 / digest 5e6702fb... independently verified 288/288; 12/12 reverb targets pass but two wind regressions and broad hard-fault recovery/coverage regressions reject the candidate; PR #114 closed unmerged.'
+            },
+          ]
+          plan_path.write_text(json.dumps(plan, indent=2) + '\n')
+
+          program = root / 'scripts/program.py'
+          text = program.read_text()
+          old = '''    i007 = by_id["I007"]\n    require(i007["status"] == "PLANNED" and i007["handler"] is None and\n            i007["contract"] is None and not i007["evidence"],\n            "I006 CLOSED must not auto-activate I007")\n'''
+          new = '''    i007 = by_id["I007"]\n    require(i007["handler"] is None and (\n                (i007["status"] == "PLANNED" and i007["contract"] is None and not i007["evidence"]) or\n                (i007["status"] == "CLOSED" and\n                 i007["contract"] == "docs/program/iterations/I007-closure.json" and\n                 bool(i007["evidence"]))),\n            "I006 CLOSED permits only non-executable PLANNED or evidence-backed CLOSED I007")\n'''
+          if text.count(old) != 1:
+              raise SystemExit('program.py I007 lifecycle anchor drift')
+          program.write_text(text.replace(old, new, 1))
+          PY
+
+          python3 -m json.tool docs/program/iterations/I007-closure.json >/dev/null
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check >/dev/null
+
+      - name: Commit migration and remove bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/i007-closure-bootstrap.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/program.py docs/program/plan.json docs/program/iterations/I007-closure.json .github/workflows/i007-closure-bootstrap.yml
+          git diff --cached --check
+          git commit -m 'program: close I007 after bounded BF candidate rejection'
+          git push origin HEAD:governance/i007-close-keep-baseline

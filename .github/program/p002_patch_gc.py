@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import json
+import subprocess
 
 path=Path('scripts/research_registry.py')
 text=path.read_text()
@@ -26,12 +27,10 @@ assert text.count(needle)==1
 text=text.replace(needle,extra)
 path.write_text(text)
 
-idx=Path('.github/research/evidence-index.json')
-data=json.loads(idx.read_text())
-data['policy']['gc_requires']=[
-    'terminal status','exact head_sha','sealed evidence','no open PR','live ref SHA match','no active dependency'
-]
-data['active_dependencies']=[]
-# Keep stable top-level presentation: schema, updated_at, policy, active_dependencies, records.
-ordered={k:data[k] for k in ('schema_version','updated_at','policy','active_dependencies','records')}
-idx.write_text(json.dumps(ordered, separators=(',',':'))+'\n')
+base = subprocess.check_output([
+    'git','show','699c1f604611b5018ab3cb7a712ed1a8942cedcb:.github/research/evidence-index.json'
+], text=True)
+old_registry='''    "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match"],\n    "unclassified_refs_are_retained": true\n  },\n  "records": [\n'''
+new_registry='''    "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match", "no active dependency"],\n    "unclassified_refs_are_retained": true\n  },\n  "active_dependencies": [],\n  "records": [\n'''
+assert base.count(old_registry)==1
+Path('.github/research/evidence-index.json').write_text(base.replace(old_registry,new_registry))

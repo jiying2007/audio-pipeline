@@ -3,8 +3,9 @@ from pathlib import Path
 import json
 import subprocess
 
+BASE='699c1f604611b5018ab3cb7a712ed1a8942cedcb'
+text=subprocess.check_output(['git','show',f'{BASE}:scripts/research_registry.py'], text=True)
 path=Path('scripts/research_registry.py')
-text=path.read_text()
 anchor='''    records = data.get("records")\n    if not isinstance(records, list):\n        raise ValueError("research registry records must be a list")\n'''
 insert='''    records = data.get("records")\n    if not isinstance(records, list):\n        raise ValueError("research registry records must be a list")\n    active_dependencies = data.get("active_dependencies", [])\n    if not isinstance(active_dependencies, list):\n        raise ValueError("active_dependencies must be a list")\n    seen_dependencies: set[tuple[str | None, str | None]] = set()\n    for index, dependency in enumerate(active_dependencies):\n        if not isinstance(dependency, dict) or set(dependency) != {"branch", "head_sha", "reason"}:\n            raise ValueError(f"active dependency {index} must have branch/head_sha/reason")\n        branch = dependency["branch"]\n        head_sha = dependency["head_sha"]\n        reason = dependency["reason"]\n        if branch is not None and (not isinstance(branch, str) or not branch.startswith(GC_PREFIXES)):\n            raise ValueError(f"invalid active dependency branch at {index}")\n        if head_sha is not None and not SHA_RE.fullmatch(str(head_sha)):\n            raise ValueError(f"invalid active dependency head_sha at {index}")\n        if branch is None and head_sha is None:\n            raise ValueError(f"active dependency {index} must bind branch or head_sha")\n        if not isinstance(reason, str) or not reason:\n            raise ValueError(f"active dependency {index} requires reason")\n        key = (branch, head_sha)\n        if key in seen_dependencies:\n            raise ValueError(f"duplicate active dependency at {index}")\n        seen_dependencies.add(key)\n'''
 assert text.count(anchor)==1
@@ -27,9 +28,7 @@ assert text.count(needle)==1
 text=text.replace(needle,extra)
 path.write_text(text)
 
-base = subprocess.check_output([
-    'git','show','699c1f604611b5018ab3cb7a712ed1a8942cedcb:.github/research/evidence-index.json'
-], text=True)
+base=subprocess.check_output(['git','show',f'{BASE}:.github/research/evidence-index.json'], text=True)
 old_registry='''    "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match"],\n    "unclassified_refs_are_retained": true\n  },\n  "records": [\n'''
 new_registry='''    "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match", "no active dependency"],\n    "unclassified_refs_are_retained": true\n  },\n  "active_dependencies": [],\n  "records": [\n'''
 assert base.count(old_registry)==1

@@ -1,4 +1,7 @@
 #include "audio_pipeline/audio_pipeline_build.h"
+#ifndef AP_BUILD_STAGE_AGC
+#define AP_BUILD_STAGE_AGC AP_HAVE_MODULE_AGC
+#endif
 #include "activity/ap_activity.h"
 #include "enhance/ap_enhance.h"
 #include <math.h>
@@ -38,7 +41,7 @@ static int16_t to_pcm16(float value) {
 }
 
 int main(int argc, char **argv) {
-#if !AP_BUILD_STAGE_AGC
+#if !AP_HAVE_MODULE_AGC
     (void)argc;
     (void)argv;
     fputs("AGC module is not compiled\n", stderr);

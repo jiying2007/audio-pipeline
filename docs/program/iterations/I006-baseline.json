@@ -2,12 +2,14 @@
   "schema_version": 1,
   "iteration_id": "I006",
   "phase": "baseline-measurement",
+  "measurement_revision": 2,
   "root_cause_id": "agc-residual-floor-mismatch-baseline",
   "base_sha": "ee7b3e4cc2d5e4faaabf58a58eb5a6e3c3c2893b",
   "candidate_limit": 0,
   "confirmation_limit": 0,
   "promotion_allowed": false,
-  "shipping_authority": "full-call-production-controlled-agc",
+  "shipping_authority": "production-activity-plus-ap_agc_process_controlled",
+  "full_pipeline_context_authority": "end-to-end-context-non-gating",
   "diagnostic_authority": "raw-agc-uncontrolled-diagnostic-only",
   "seeds": [16107, 26107, 36107],
   "seconds": 8.0,
@@ -58,10 +60,31 @@
     }
   },
   "decision_contract": {
-    "BASELINE_ADEQUATE_NO_SEARCH": "all input preconditions and all frozen production-path gates pass",
-    "MEASURED_GAP_REVIEW_REQUIRED": "input preconditions pass and one or more frozen production-path gates fail",
+    "BASELINE_ADEQUATE_NO_SEARCH": "all input preconditions and all unchanged frozen AGC-specific controlled-path gates pass",
+    "MEASURED_GAP_REVIEW_REQUIRED": "input preconditions pass and one or more unchanged frozen AGC-specific controlled-path gates fail",
     "INPUT_OR_ACTIVITY_INVALID_REVIEW_REQUIRED": "activity/trace/input preconditions fail; no candidate may be authorized from the affected result",
     "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE"
+  },
+  "measurement_lineage": {
+    "first_execution": {
+      "workflow_run_id": 34011048045,
+      "artifact_id": 9982461168,
+      "artifact_digest": "sha256:91ff98c91fa7b74e7b4039b1121745639f7f190e3dd7eaf857d615cee472911e",
+      "internal_sha256s_verified": 340,
+      "decision": "MEASURED_GAP_REVIEW_REQUIRED",
+      "authority_after_review": "measurement-attribution-lineage-only",
+      "reviewed_issue": "near/far speech-preservation gate used full AEC/RES/NS/AGC/VAD pipeline output and therefore could not attribute the observed SI-SDR loss to AGC; pure-far and noise-floor observations remain diagnostic context",
+      "candidate_budget_consumed": 0,
+      "confirmation_budget_consumed": 0
+    },
+    "correction": {
+      "same_seeds": true,
+      "same_scenarios": true,
+      "same_gate_values": true,
+      "new_confirmation_data": false,
+      "decision_authority": "validation-only probe reproducing production ap_activity_process plus ap_agc_process_controlled semantics",
+      "full_pipeline_role": "non-gating end-to-end context"
+    }
   },
   "authority": {
     "may_modify_shipping_dsp": false,

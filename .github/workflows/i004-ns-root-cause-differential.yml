@@ -48,7 +48,7 @@ jobs:
           c = json.loads(Path('docs/program/iterations/I004-differential.json').read_text())
           assert c['schema_version'] == 1 and c['iteration_id'] == 'I004'
           assert c['phase'] == 'root-cause-differential'
-          assert c['base_sha'] == '669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee'
+          assert c['base_sha'] == '74661cb1d732f4baa13cd5fce6f8cd05f3b5779e'
           assert c['candidate_limit'] == 0 and c['confirmation_limit'] == 0
           assert c['promotion_allowed'] is False
           assert c['seeds'] == [14107, 24107, 34107]
@@ -79,7 +79,7 @@ jobs:
           assert r['candidate_decision'] == 'NOT_AN_ACOUSTIC_CANDIDATE'
           assert r['decision'] == 'ROOT_CAUSE_DIFFERENTIAL_REVIEW_REQUIRED'
           assert len(r['cases']) == 24
-          assert b['baseline_source_sha'] == '669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee'
+          assert b['baseline_source_sha'] == '74661cb1d732f4baa13cd5fce6f8cd05f3b5779e'
           assert b['research_head_sha'] == os.environ['EXPECTED_RESEARCH_HEAD']
           assert b['shipping_diff_zero'] is True
           assert b['candidate_limit'] == 0 and b['confirmation_limit'] == 0

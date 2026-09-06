@@ -1,0 +1,120 @@
+name: I008 Resampler Perf Comparator Fix
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/compare-resampler-perf.sh'
+      - 'docs/program/iterations/I008-resampler-perf-comparator-fix.json'
+      - '.github/workflows/i008-resampler-perf-comparator-fix.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  comparator-fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PROGRAM_BASE: 54fd0cdb5ff7197748fa52d07e0cb83e465a6b57
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate exact bounded comparator-fix delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.event.pull_request.base.sha }}" = "$PROGRAM_BASE"
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          python3 -m json.tool docs/program/iterations/I008-resampler-perf-comparator-fix.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/I008-resampler-perf-comparator-fix.json').read_text())
+          assert c['schema_version']==1 and c['iteration_id']=='I008'
+          assert c['action_id']=='resampler-perf-comparator-equivalence-v1'
+          assert c['state']=='BOUNDED_ENGINEERING_FIX'
+          assert c['exact_base_sha']=='54fd0cdb5ff7197748fa52d07e0cb83e465a6b57'
+          assert c['root_cause']['shipping_dsp_defect'] is False
+          assert c['frozen_change_scope']['candidate_limit']==0
+          assert c['frozen_change_scope']['confirmation_limit']==0
+          assert c['required_fix']['base_resampler_mode']=='FAST'
+          assert c['required_fix']['head_resampler_mode']=='FAST'
+          assert c['required_fix']['require_base_head_ap_cache_equivalence'] is True
+          assert c['required_fix']['excluded_equivalence_key']=='AP_BUILD_SOURCE_REVISION'
+          assert c['required_fix']['keep_existing_regression_gate']=={
+              'relative_regression_pct':10.0,'absolute_regression_us':0.05,
+              'logic':'fail only when both are exceeded'}
+          assert c['fresh_rerun']['repetitions']==7 and c['fresh_rerun']['frames']==100000
+          assert c['authority_boundary']['shipping_source_changed'] is False
+          assert c['authority_boundary']['software_candidate_promoted'] is False
+          assert c['authority_boundary']['release_created'] is False
+          assert c['authority_boundary']['product_qualification']=='DEFERRED_BY_SCOPE'
+          assert c['authority_boundary']['dut_hil']=='DEFERRED_BY_SCOPE'
+          PY
+          changed="$(git diff --name-only "$PROGRAM_BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(scripts/compare-resampler-perf\.sh|docs/program/iterations/I008-resampler-perf-comparator-fix\.json|\.github/workflows/i008-resampler-perf-comparator-fix\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 3
+          git diff --quiet "$PROGRAM_BASE" HEAD -- src include CMakeLists.txt
+          git diff --check "$PROGRAM_BASE"...HEAD
+      - name: Run fresh behavior-equivalent FAST paired measurement
+        shell: bash
+        env:
+          CC: gcc
+        run: |
+          set -euo pipefail
+          rm -rf i008-comparator-evidence
+          mkdir i008-comparator-evidence
+          sh scripts/compare-resampler-perf.sh "$PROGRAM_BASE" 7 100000 0.05 \
+            | tee i008-comparator-evidence/resampler-fast-paired.log
+          test "$(grep -c '^resampler_fast_path ' i008-comparator-evidence/resampler-fast-paired.log)" -eq 8
+      - name: Seal comparator evidence
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          mkdir -p i008-comparator-evidence
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          root=Path('i008-comparator-evidence')
+          log=root/'resampler-fast-paired.log'
+          rows=[]
+          if log.exists():
+              pat=re.compile(r'^resampler_fast_path io=(\d+) internal=(\d+) base_median_us=([0-9.]+) head_median_us=([0-9.]+) paired_delta_pct=(-?[0-9.]+) abs_delta_us=(-?[0-9.]+)$')
+              for line in log.read_text().splitlines():
+                  m=pat.match(line)
+                  if m:
+                      rows.append({
+                          'io_hz':int(m.group(1)),'internal_hz':int(m.group(2)),
+                          'base_median_us':float(m.group(3)),'head_median_us':float(m.group(4)),
+                          'paired_delta_pct':float(m.group(5)),'abs_delta_us':float(m.group(6))})
+          result={
+              'schema_version':1,'iteration_id':'I008',
+              'action_id':'resampler-perf-comparator-equivalence-v1',
+              'base_sha':os.environ['PROGRAM_BASE'],'head_sha':os.environ['HEAD_SHA'],
+              'job_status':os.environ['JOB_STATUS'],
+              'behavior_equivalent_cache_required':True,
+              'candidate_limit_consumed':0,'confirmation_limit_consumed':0,
+              'shipping_source_changed':False,'product_qualification':'DEFERRED_BY_SCOPE','dut_hil':'DEFERRED_BY_SCOPE',
+              'paths':rows,
+              'decision':'COMPARATOR_FIX_RUN_COMPLETE_REVIEW_REQUIRED' if os.environ['JOB_STATUS']=='success' else 'COMPARATOR_FIX_FAILED_REVIEW_REQUIRED'}
+          (root/'result.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          PY
+          (cd i008-comparator-evidence && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum) > i008-comparator-evidence/SHA256SUMS
+      - name: Upload hash-bound comparator evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i008-resampler-comparator-fix-${{ github.run_id }}
+          path: i008-comparator-evidence/
+          retention-days: 30
+          if-no-files-found: error

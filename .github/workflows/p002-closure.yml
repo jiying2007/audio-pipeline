@@ -1,0 +1,232 @@
+name: P002 Closure
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/P002-closure.json'
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PROGRAM_BASE: 0f3a2ec707631b836fe5e0aafaea44543cd36e85
+      SHIPPING_SHA: d82cb6d2be76497d1d66dd16da00924411207046
+      CANDIDATE_ZERO_ARTIFACT: 9991709188
+      CANDIDATE_ZERO_ZIP_SHA256: 0fb55ac3e6d116826c46fa9a1b5171cc3acd74aed5b6467e36c6a0c959d46e65
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate exact terminal delta and committed program
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/program/iterations/P002-closure.json >/dev/null
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check >/dev/null
+          changed="$(git diff --name-only "$PROGRAM_BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(docs/program/plan\.json|docs/program/iterations/P002-closure\.json|scripts/program\.py|\.github/workflows/p002-closure\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 4
+          test "${{ github.event.pull_request.base.sha }}" = "$PROGRAM_BASE"
+          git diff --check
+          git diff --quiet "$PROGRAM_BASE"...HEAD -- src include CMakeLists.txt CHANGELOG.md
+
+      - name: Validate terminal P002 contract and I008 handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/P002-closure.json').read_text())
+          p=json.loads(Path('docs/program/plan.json').read_text())
+          p002=next(t for t in p['tasks'] if t['id']=='P002')
+          i008=next(t for t in p['tasks'] if t['id']=='I008')
+          assert c['schema_version']==1 and c['iteration_id']=='P002'
+          assert c['state']=='CLOSED_GOVERNANCE_GAPS_FIXED' and c['lane']=='governance'
+          assert c['closed_from_main_sha']=='0f3a2ec707631b836fe5e0aafaea44543cd36e85'
+          assert c['root_cause_id']=='release-identity-gc-active-dependency-terminal-trigger-safety'
+          assert c['shipping_baseline']=={
+              'release':'v2.3.12','source_sha':'d82cb6d2be76497d1d66dd16da00924411207046','unchanged':True}
+          assert c['candidate_zero_audit']['reproduced_gaps']==[
+              'existing-release-identity','gc-active-dependency','terminal-closure-trigger-scope']
+          assert c['bounded_governance_fix']['candidate_limit']==1
+          assert c['bounded_governance_fix']['candidate_limit_consumed']==1
+          assert c['bounded_governance_fix']['confirmation_limit_consumed']==0
+          assert c['bounded_governance_fix']['pr']==125
+          assert c['bounded_governance_fix']['merge_main_sha']=='0f3a2ec707631b836fe5e0aafaea44543cd36e85'
+          assert c['post_merge_verification']['verify_run_id']==34043737389
+          assert c['existing_release_identity_proof']['release_run_id']==34043955335
+          assert c['existing_release_identity_proof']['validator_result']=='EXISTING_RELEASE_IDENTITY_PASS'
+          assert c['closure_decision']=={
+              'status':'CLOSED','governance_gaps_fixed':True,
+              'additional_p002_candidate_authorized':False,'confirmation_consumed':0,
+              'destructive_gc_executed':False,'release_created':False,
+              'semver_changed':False,'shipping_baseline_changed':False}
+          assert c['authority_boundary']=={
+              'shipping_source_changed':False,'software_candidate_promoted':False,'release_created':False,
+              'product_qualification':'DEFERRED_BY_SCOPE','hardware_collection':False,'dut_hil':'DEFERRED_BY_SCOPE'}
+          assert p002['status']=='CLOSED' and p002['handler'] is None
+          assert p002['contract']=='docs/program/iterations/P002-closure.json'
+          assert len(p002['evidence'])==4
+          assert i008['status']=='REVIEW_REQUIRED' and i008['handler'] is None
+          assert i008['contract']=='docs/program/iterations/I008-review-required.json'
+          assert len(i008['evidence'])==2
+          assert c['handoff']['I008']=={
+              'status':'REVIEW_REQUIRED','authority':'verified-release-bearing-comparator-fix-carry-only',
+              'may_bypass_semver_policy':False,'may_claim_product_qualification':False,
+              'future_real_patch_release_must_reverify_required_summary':True}
+          assert p['baseline']['software_release']=='v2.3.12'
+          assert p['baseline']['source_sha']=='d82cb6d2be76497d1d66dd16da00924411207046'
+          assert p['product_qualification']=='DEFERRED_BY_SCOPE'
+          PY
+          git cat-file -e "$PROGRAM_BASE^{commit}"
+          git cat-file -e "$SHIPPING_SHA^{commit}"
+          git diff --quiet "$SHIPPING_SHA" "$PROGRAM_BASE" -- src include CMakeLists.txt
+
+      - name: Reverify candidate-zero frozen artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$CANDIDATE_ZERO_ARTIFACT/zip" \
+            -o /tmp/p002-candidate-zero.zip
+          echo "$CANDIDATE_ZERO_ZIP_SHA256  /tmp/p002-candidate-zero.zip" | sha256sum -c -
+          python3 - <<'PY'
+          import hashlib, zipfile
+          z=zipfile.ZipFile('/tmp/p002-candidate-zero.zip')
+          names=z.namelist()
+          sums=[n for n in names if n.endswith('SHA256SUMS')]
+          assert len(sums)==1, sums
+          lines=[x for x in z.read(sums[0]).decode().splitlines() if x.strip()]
+          assert len(lines)==6, len(lines)
+          for line in lines:
+              h,path=line.split(None,1); path=path.strip()
+              matches=[n for n in names if n==path or n.endswith('/'+path)]
+              if not matches:
+                  parts=path.split('/')
+                  matches=[n for n in names if any(n=='/'.join(parts[i:]) for i in range(len(parts)))]
+              assert len(matches)==1, (path,matches)
+              assert hashlib.sha256(z.read(matches[0])).hexdigest()==h, path
+          PY
+
+      - name: Reverify GitHub lineage and terminal workflow facts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/pulls/125" >/tmp/pr125.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34043470402" >/tmp/fix-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34043737389" >/tmp/verify-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34043737228" >/tmp/audio-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34043737310" >/tmp/aec-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34043955335" >/tmp/release-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/34043955335/jobs?per_page=100" >/tmp/release-jobs.json
+          python3 - <<'PY'
+          import json
+          load=lambda n: json.load(open('/tmp/'+n+'.json'))
+          pr=load('pr125')
+          assert pr['state']=='closed' and pr['merged_at'] is not None
+          assert pr['head']['sha']=='2e8ac905ec8417a60c45c4015d7ff96f37f12ff6'
+          assert pr['merge_commit_sha']=='0f3a2ec707631b836fe5e0aafaea44543cd36e85'
+          fix=load('fix-run')
+          assert fix['head_sha']=='2e8ac905ec8417a60c45c4015d7ff96f37f12ff6'
+          assert fix['status']=='completed' and fix['conclusion']=='success'
+          verify=load('verify-run')
+          assert verify['head_sha']=='0f3a2ec707631b836fe5e0aafaea44543cd36e85'
+          assert verify['event']=='push' and verify['run_number']==600
+          assert verify['status']=='completed' and verify['conclusion']=='success'
+          for name in ['audio-run','aec-run']:
+              r=load(name)
+              assert r['head_sha']=='0f3a2ec707631b836fe5e0aafaea44543cd36e85'
+              assert r['status']=='completed' and r['conclusion']=='success'
+          release=load('release-run')
+          assert release['head_sha']=='0f3a2ec707631b836fe5e0aafaea44543cd36e85'
+          assert release['event']=='workflow_run' and release['run_number']==591
+          assert release['status']=='completed' and release['conclusion']=='success'
+          jobs=load('release-jobs')['jobs']
+          job=next(j for j in jobs if j['name']=='release')
+          assert job['conclusion']=='success'
+          steps={s['name']:s['conclusion'] for s in job['steps']}
+          assert steps['Verify existing immutable release identity']=='success'
+          for name in ['Build, test and install SDK','Create exact-SHA release tag',
+                       'Create draft GitHub Release with complete asset set','Publish complete release',
+                       'Trigger exact-SHA post-release HIL','Trigger exact-SHA post-release Extended Real validation']:
+              assert steps[name]=='skipped', (name,steps[name])
+          PY
+
+      - name: Reverify live immutable v2.3.12 identity
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          work=/tmp/p002-live-release
+          rm -rf "$work" && mkdir -p "$work"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v2.3.12" > "$work/release.json"
+          ref_json=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v2.3.12")
+          object_type=$(jq -r '.object.type' <<<"$ref_json")
+          object_sha=$(jq -r '.object.sha' <<<"$ref_json")
+          while [ "$object_type" = tag ]; do
+            tag_json=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha")
+            object_type=$(jq -r '.object.type' <<<"$tag_json")
+            object_sha=$(jq -r '.object.sha' <<<"$tag_json")
+          done
+          test "$object_type" = commit
+          test "$object_sha" = "$SHIPPING_SHA"
+          git merge-base --is-ancestor "$object_sha" "$PROGRAM_BASE"
+          gh release download v2.3.12 \
+            --pattern 'audio-pipeline-v2.3.12-release-manifest.json' \
+            --pattern SHA256SUMS --dir "$work"
+          python3 .github/program/existing_release_identity.py --self-test
+          python3 .github/program/existing_release_identity.py \
+            --release-json "$work/release.json" \
+            --manifest "$work/audio-pipeline-v2.3.12-release-manifest.json" \
+            --sha256s "$work/SHA256SUMS" \
+            --tag v2.3.12 --version 2.3.12 \
+            --tag-peel-sha "$object_sha" --verified-sha "$PROGRAM_BASE" \
+            --release-source-is-ancestor --output "$work/result.json"
+          python3 - <<'PY'
+          import json
+          r=json.load(open('/tmp/p002-live-release/result.json'))
+          assert r=={
+              'schema_version':1,'result':'EXISTING_RELEASE_IDENTITY_PASS','tag':'v2.3.12','version':'2.3.12',
+              'release_source_sha':'d82cb6d2be76497d1d66dd16da00924411207046',
+              'verified_main_sha':'0f3a2ec707631b836fe5e0aafaea44543cd36e85',
+              'release_source_is_ancestor':True,'immutable':True,'asset_count':8,
+              'checksummed_assets':7,'manifest_payload_assets':6}
+          PY
+
+      - name: Publish terminal closure summary
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## P002 terminal closure
+          - State: `CLOSED_GOVERNANCE_GAPS_FIXED`.
+          - Candidate-zero reproduced `3/3` frozen governance gaps; artifact reverified `6/6`.
+          - Bounded governance candidate budget: `1/1`; confirmation: `0`.
+          - PR #125 merged to exact main `0f3a2ec707631b836fe5e0aafaea44543cd36e85`.
+          - Exact-main Verify #600 plus Hosted Real Audio/AEC: `success`.
+          - Release #591 existing-release gate: `EXISTING_RELEASE_IDENTITY_PASS`; no build/tag/publish/HIL mutation.
+          - Immutable shipping baseline: `v2.3.12` / `d82cb6d2be76497d1d66dd16da00924411207046` unchanged.
+          - I008 remains `REVIEW_REQUIRED`; SemVer policy is not bypassed.
+          - Product Qualification / DUT-HIL remain `DEFERRED_BY_SCOPE`.
+          EOF

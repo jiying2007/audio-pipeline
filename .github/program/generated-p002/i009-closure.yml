@@ -1,0 +1,200 @@
+name: I009 Closure
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I009-closure.json'
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PROGRAM_BASE: 497c3ca3a6be0a4e319a3493e256eac7391a7f18
+      SHIPPING_SHA: d82cb6d2be76497d1d66dd16da00924411207046
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate exact closure delta and committed program
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/program/iterations/I009-closure.json >/dev/null
+          python3 scripts/program.py --self-test
+          python3 scripts/program.py check >/dev/null
+          changed="$(git diff --name-only "$PROGRAM_BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(docs/program/plan\.json|docs/program/iterations/I009-closure\.json|scripts/program\.py|\.github/workflows/i009-closure\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 4
+          test "${{ github.event.pull_request.base.sha }}" = "$PROGRAM_BASE"
+
+      - name: Validate terminal I009 contract and shipping boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/I009-closure.json').read_text())
+          p=json.loads(Path('docs/program/plan.json').read_text())
+          i009=next(t for t in p['tasks'] if t['id']=='I009')
+          assert c['schema_version']==1 and c['iteration_id']=='I009'
+          assert c['state']=='CLOSED_KEEP_BASELINE' and c['lane']=='acoustic'
+          assert c['root_cause_id']=='activity-double-talk-energy-domain-ambiguity'
+          assert c['closed_from_main_sha']=='497c3ca3a6be0a4e319a3493e256eac7391a7f18'
+          assert c['shipping_baseline']=={
+              'release':'v2.3.12','source_sha':'d82cb6d2be76497d1d66dd16da00924411207046','unchanged':True}
+          e=c['evidence_chain']
+          b=e['fresh_baseline']
+          assert b['run_id']==34031305098 and b['artifact_id']==9988691434
+          assert b['artifact_digest']=='sha256:ab6f36bc7252a988ff5228230137436bf75ea500c6d9a884c8f8ddf5f5299229'
+          assert b['internal_sha256s_verified']==284 and b['seeds']==[17109,27109,37109]
+          assert b['partitions']==6 and b['gate_failure_partitions']==5
+          assert b['failure_classification']=={'smoothed_gate_limit':3,'both_gates_limit':3}
+          d=e['rejected_echo_normalized_differential']
+          assert d['run_id']==34031731756 and d['artifact_id']==9988834254
+          assert d['artifact_digest']=='sha256:3111f6acc2e851cd94d59520dad58f07d5aaf4c4ac7070621e083fe58e766a2e'
+          assert d['internal_sha256s_verified']==301 and d['near_far_passed']==6 and d['pure_far_passed']==0
+          assert d['decision']=='ECHO_NORMALIZED_STRUCTURE_NOT_SUPPORTED_REVIEW_REQUIRED'
+          r=e['supported_residual_echo_differential']
+          assert r['run_id']==34033842566 and r['artifact_id']==9989499865
+          assert r['artifact_digest']=='sha256:1965a49e87016994d57cc119d2dd11f0d1523dc1a32a3701904fbf0776efd238'
+          assert r['internal_sha256s_verified']==301 and r['near_far_passed']==6 and r['pure_far_passed']==3
+          assert r['decision']=='RESIDUAL_ECHO_RESCUE_SUPPORTED_REVIEW_REQUIRED'
+          s=e['bounded_source_candidate']
+          assert s['candidate_id']=='activity-residual-echo-rescue-v1'
+          assert s['pr']==119 and s['pr_closed'] is True and s['pr_merged'] is False
+          assert s['head_sha']=='7acd0a3a944573f35a4c60644f9d94e7aa20cf29'
+          assert s['run_id']==34034482037 and s['artifact_id']==9989713478
+          assert s['artifact_digest']=='sha256:51e5023be5bfbcf4246da49f07bf50a2f8d35c12ebb3e72b52ae636fa360936b'
+          assert s['internal_sha256s_verified']==8
+          assert s['fresh_development_seeds']==[18109,28109,38109]
+          assert s['base_fresh_near_far_passed']==0 and s['base_fresh_pure_far_passed']==3
+          assert s['candidate_fresh_near_far_passed']==6 and s['candidate_fresh_pure_far_passed']==2
+          assert s['failing_pure_far_seed']==18109
+          assert abs(s['failing_pure_far_false_double_talk_fraction']-0.05352112676056338)<1e-15
+          assert s['regression_only_near_far_passed']==6 and s['regression_only_pure_far_passed']==3
+          assert s['ctest_passed'] is True and s['decision']=='KEEP_BASELINE_CANDIDATE_REJECTED'
+          assert s['candidate_limit']==s['candidate_limit_consumed']==1
+          assert s['confirmation_limit_consumed']==0 and s['reserved_confirmation_executed'] is False
+          h=e['hosted_real_aec_regression']
+          assert h['run_id']==34034482048 and h['artifact_id']==9989725745
+          assert h['artifact_digest']=='sha256:ec24563fa182f13beb83c74086ecb77cf5c37036150a4151080d5ae454789937'
+          assert h['internal_sha256s_verified']==18 and h['cases']==4 and h['passed_cases']==2 and h['pass_rate']==0.5
+          assert h['static_passed']==h['static_cases']==2 and h['movement_passed']==0 and h['movement_cases']==2
+          assert h['movement_corr_reduction']==[-0.0016180328069426986,-0.03955294463793517]
+          assert abs(h['worst_movement_output_rms_delta_db']-9.935877991664285)<1e-12
+          assert c['candidate_budget']=={
+              'limit':1,'consumed':1,'remaining':0,'second_candidate_authorized':False,
+              'post_result_candidate_change_authorized':False}
+          assert c['confirmation']=={
+              'consumed':0,'reserved_source_executed':False,'reserved_seeds':[19109,29109,39109],
+              'may_rescue_rejected_candidate':False,'may_be_used_for_post_result_candidate_change':False}
+          assert c['closure_decision']=={
+              'keep_baseline':True,'merge_shipping_candidate':False,'create_release':False,
+              'consume_confirmation':False,'allow_second_candidate':False,
+              'allow_post_result_candidate_change':False,
+              'future_I009_candidate_requires_new_root_cause_and_budget_decision':True}
+          assert c['authority_boundary']=={
+              'shipping_source_changed':False,'software_candidate_promoted':False,'release_created':False,
+              'product_qualification':'DEFERRED_BY_SCOPE','hardware_collection':False,'dut_hil':'DEFERRED_BY_SCOPE'}
+          assert i009['status']=='CLOSED' and i009['handler'] is None
+          assert i009['contract']=='docs/program/iterations/I009-closure.json'
+          assert len(i009['evidence'])==5
+          assert p['baseline']['software_release']=='v2.3.12'
+          assert p['baseline']['source_sha']=='d82cb6d2be76497d1d66dd16da00924411207046'
+          assert p['product_qualification']=='DEFERRED_BY_SCOPE'
+          PY
+          git cat-file -e "$SHIPPING_SHA^{commit}"
+          git cat-file -e "$PROGRAM_BASE^{commit}"
+          git diff --quiet "$SHIPPING_SHA" "$PROGRAM_BASE" -- src include CMakeLists.txt
+
+      - name: Verify rejected candidate PR fact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          req=urllib.request.Request('https://api.github.com/repos/jiying2007/audio-pipeline/pulls/119', headers={
+              'Authorization':f"Bearer {os.environ['GH_TOKEN']}",
+              'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+          with urllib.request.urlopen(req) as r: pr=json.load(r)
+          assert pr['state']=='closed' and pr['merged_at'] is None
+          assert pr['head']['sha']=='7acd0a3a944573f35a4c60644f9d94e7aa20cf29'
+          PY
+
+      - name: Reverify all frozen I009 artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf artifact-check
+          mkdir -p artifact-check
+          while read -r id digest count name; do
+            curl --fail --silent --show-error --location \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" \
+              -o "artifact-check/$name.zip"
+            echo "$digest  artifact-check/$name.zip" | sha256sum -c -
+          done <<'SPECS'
+          9988691434 ab6f36bc7252a988ff5228230137436bf75ea500c6d9a884c8f8ddf5f5299229 284 baseline
+          9988834254 3111f6acc2e851cd94d59520dad58f07d5aaf4c4ac7070621e083fe58e766a2e 301 echo-normalized
+          9989499865 1965a49e87016994d57cc119d2dd11f0d1523dc1a32a3701904fbf0776efd238 301 residual-echo-root-cause
+          9989713478 51e5023be5bfbcf4246da49f07bf50a2f8d35c12ebb3e72b52ae636fa360936b 8 candidate
+          9989725745 ec24563fa182f13beb83c74086ecb77cf5c37036150a4151080d5ae454789937 18 hosted-aec
+          SPECS
+          python3 - <<'PY'
+          import hashlib, zipfile
+          from pathlib import Path
+          specs=[
+            ('baseline',284),('echo-normalized',301),('residual-echo-root-cause',301),
+            ('candidate',8),('hosted-aec',18),
+          ]
+          for name,count in specs:
+              with zipfile.ZipFile(Path('artifact-check')/f'{name}.zip') as z:
+                  names=z.namelist()
+                  sums=[n for n in names if n.endswith('SHA256SUMS')]
+                  assert len(sums)==1, (name,sums)
+                  lines=[x for x in z.read(sums[0]).decode().splitlines() if x.strip()]
+                  assert len(lines)==count, (name,len(lines),count)
+                  for line in lines:
+                      h,path=line.split(None,1); path=path.strip()
+                      matches=[n for n in names if n==path or path.endswith('/'+n) or n.endswith('/'+path)]
+                      if not matches:
+                          parts=path.split('/')
+                          matches=[n for n in names if any(n=='/'.join(parts[i:]) for i in range(len(parts)))]
+                      assert len(matches)==1, (name,path,matches)
+                      assert hashlib.sha256(z.read(matches[0])).hexdigest()==h, (name,path)
+          PY
+
+      - name: Publish terminal closure summary
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## I009 terminal closure
+          - State: `CLOSED_KEEP_BASELINE`
+          - Fresh baseline gap: `5/6` partitions fail; artifact reverified `284/284`.
+          - Direct echo-normalization: rejected (`6/6` near/far, `0/3` pure-far); `301/301`.
+          - Residual/echo candidate-zero structure: supported (`6/6` near/far, `3/3` pure-far); `301/301`.
+          - Only source candidate: rejected on fresh pure-far (`2/3`) and Hosted Real AEC movement (`0/2`); candidate `8/8`, hosted AEC `18/18`.
+          - Candidate budget: `1/1`; confirmation: `0`; reserved confirmation not executed.
+          - Second/post-result candidate authority: `false`.
+          - Shipping: `v2.3.12` unchanged; release: `false`.
+          - Product Qualification / DUT-HIL: `DEFERRED_BY_SCOPE`.
+          EOF

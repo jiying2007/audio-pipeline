@@ -293,6 +293,159 @@ def validate_i006_review_required(plan: dict, root: Path) -> None:
             "I006 REVIEW_REQUIRED must not auto-activate I007")
 
 
+def validate_i006_closed(plan: dict, root: Path) -> None:
+    by_id = {task["id"]: task for task in plan["tasks"]}
+    i006 = by_id["I006"]
+    if i006["status"] != "CLOSED":
+        return
+    require(i006["handler"] is None and
+            i006["contract"] == "docs/program/iterations/I006-closure.json" and
+            bool(i006["evidence"]),
+            "I006 CLOSED must be terminal, evidence-backed and bound to closure")
+    closure = json.loads(repo_file(root, "docs/program/iterations/I006-closure.json").read_text())
+    result = json.loads(repo_file(
+        root, "docs/program/iterations/I006-max-gain-candidate-result.json").read_text())
+
+    require(closure["schema_version"] == 1 and closure["iteration_id"] == "I006" and
+            closure["state"] == "CLOSED_KEEP_BASELINE" and closure["lane"] == "acoustic" and
+            closure["root_cause_id"] == "agc-noise-floor-and-activity-control-dependency" and
+            closure["closed_from_main_sha"] == "bba5e702694847624d6836790ba93118297d8994",
+            "I006 CLOSED requires reviewed closure identity")
+    shipping = closure["shipping_baseline"]
+    require(shipping["release"] == plan["baseline"]["software_release"] == "v2.3.12" and
+            shipping["source_sha"] == plan["baseline"]["source_sha"] and
+            shipping["unchanged"] is True,
+            "I006 closure must keep immutable shipping baseline")
+
+    require(result["schema_version"] == 1 and result["iteration_id"] == "I006" and
+            result["phase"] == "bounded-source-candidate-search-reviewed" and
+            result["root_cause_id"] == "noise-floor-max-gain-cap" and
+            result["decision"] == "KEEP_BASELINE_CANDIDATE_REJECTED" and
+            result["candidate"] == "max-gain-cap-15db" and
+            result["shipping_base_sha"] == "945344a29a826bbf5330baf3382cb3e34c8f4160" and
+            result["candidate_head_sha"] == "4c7c9664ad7016f956d4735e0ac959b50d2d066f",
+            "I006 CLOSED requires exact rejected candidate identity")
+    source_delta = result["candidate_source_delta"]
+    require(source_delta["path"] == "src/enhance/ap_agc.c" and
+            source_delta["shipping_max_gain_linear"] == 8.0 and
+            source_delta["candidate_max_gain_db"] == 15.0 and
+            abs(source_delta["candidate_max_gain_linear"] - 5.623413251903491) < 1e-12 and
+            source_delta["exact_change"] == "AGC target-gain upper clamp only",
+            "I006 candidate source delta drift")
+
+    execution = result["authoritative_execution"]
+    require(execution["workflow_run_id"] == 34021522805 and
+            execution["artifact_id"] == 9985656336 and
+            execution["artifact_digest"] ==
+            "sha256:6af7e8eea3a7fd16afc6f1433bdc8ee1ace77a0aad82375887b20f1ec58195aa" and
+            execution["downloaded_zip_sha256"] == execution["artifact_digest"].removeprefix("sha256:") and
+            execution["internal_sha256s_verified"] == 670 and execution["cases"] == 18 and
+            execution["activity_drift_cases"] == 0,
+            "I006 CLOSED requires independently verified candidate evidence")
+    frozen = result["frozen_i006_result"]
+    require(frozen["shipping_base_noise_floor_gain_failures"] == "6/6" and
+            frozen["candidate_noise_floor_gain_passes"] == "0/6" and
+            frozen["candidate_gate_failures"] == 6 and
+            frozen["frozen_max_p95_gain_db"] == 15.0 and
+            len(frozen["candidate_p95_gain_db_range"]) == 2 and
+            min(frozen["candidate_p95_gain_db_range"]) > frozen["frozen_max_p95_gain_db"],
+            "I006 candidate must fail the unchanged 15 dB gate")
+
+    regression = result["independent_regression_protection"]
+    require(regression["workflow_run_id"] == 34021522773 and
+            regression["artifact_id"] == 9985654833 and
+            regression["artifact_digest"] ==
+            "sha256:1336e76191e9a24971932c873d6c462de2884479773d176a1633a2d3fde5df7a" and
+            regression["seeds"] == [1307, 2307, 3307] and
+            regression["agc_steady_low_failures"] == "3/3" and
+            regression["candidate_tail_output_rms_dbfs"] < regression["frozen_expected_range_dbfs"][0] and
+            regression["canonical_agc_bf_pipeline_pass_rate"] == 1.0,
+            "I006 rejected candidate must preserve independent AGC regression evidence")
+
+    require(result["budget"] == {
+                "candidate_limit": 1,
+                "candidate_limit_consumed": 1,
+                "confirmation_limit": 0,
+                "confirmation_limit_consumed": 0,
+                "additional_max_gain_candidate_authorized": False,
+                "fresh_confirmation_authorized": False,
+            }, "I006 CLOSED must seal candidate/confirmation authority")
+    require(result["shipping_boundary"] == {
+                "candidate_pr": 108,
+                "candidate_pr_closed_unmerged": True,
+                "shipping_source_changed": False,
+                "software_candidate_promoted": False,
+                "release_created": False,
+                "software_release": "v2.3.12",
+            }, "I006 rejected candidate must never enter shipping")
+
+    root_cause = closure["evidence_chain"]["candidate_zero_root_cause"]
+    require(root_cause["run_id"] == 34020771042 and
+            root_cause["artifact_id"] == 9985408103 and
+            root_cause["artifact_digest"] ==
+            "sha256:0529d77839c49379f554e5ef0b19d80a65c401e4ac2d009a33f7902a7d515a8b" and
+            root_cause["internal_sha256s_verified"] == 283,
+            "I006 CLOSED requires reviewed candidate-zero root-cause evidence")
+    bounded = closure["evidence_chain"]["bounded_source_candidate"]
+    require(bounded["run_id"] == execution["workflow_run_id"] and
+            bounded["candidate_head_sha"] == result["candidate_head_sha"] and
+            bounded["artifact_id"] == execution["artifact_id"] and
+            bounded["artifact_digest"] == execution["artifact_digest"] and
+            bounded["internal_sha256s_verified"] == execution["internal_sha256s_verified"] and
+            bounded["candidate_limit"] == 1 and bounded["candidates_consumed"] == 1 and
+            bounded["confirmation_consumed"] == 0 and
+            bounded["decision"] == result["decision"] and
+            bounded["candidate_noise_floor_gain_passes"] == "0/6",
+            "I006 closure/result candidate evidence mismatch")
+    closure_regression = closure["evidence_chain"]["existing_regression_protection"]
+    require(closure_regression["run_id"] == regression["workflow_run_id"] and
+            closure_regression["artifact_id"] == regression["artifact_id"] and
+            closure_regression["artifact_digest"] == regression["artifact_digest"] and
+            closure_regression["agc_steady_low_failures"] == regression["agc_steady_low_failures"],
+            "I006 closure/result regression evidence mismatch")
+    require(closure["evidence_chain"]["candidate_pr"] == {
+                "number": 108, "closed": True, "merged": False,
+            }, "I006 CLOSED requires candidate PR closed unmerged")
+
+    decision = closure["closure_decision"]
+    require(decision["keep_baseline"] is True and
+            decision["merge_shipping_candidate"] is False and
+            decision["create_release"] is False and
+            decision["consume_confirmation"] is False and
+            decision["allow_second_max_gain_candidate"] is False and
+            decision["allow_rounding_or_relaxing_frozen_15db_gate"] is False and
+            decision["future_I006_candidate_requires_new_root_cause_and_budget_decision"] is True,
+            "I006 closure decision must be terminal KEEP_BASELINE")
+
+    handoff = closure["handoff"]["I009"]
+    require(handoff["status"] == "PLANNED" and
+            handoff["evidence_file"] == "docs/program/iterations/I009-inherited-double-talk-evidence.json" and
+            handoff["authority"] == "already-observed-regression-root-cause-context-only" and
+            handoff["may_be_independent_confirmation"] is False and
+            handoff["may_be_candidate_selection_data"] is False,
+            "I006 CLOSED Activity handoff must remain non-independent")
+    result_handoff = result["handoff"]["I009"]
+    require(result_handoff["authority"] == handoff["authority"] and
+            result_handoff["may_be_independent_confirmation"] is False and
+            result_handoff["may_authorize_threshold_search"] is False,
+            "I006 result cannot grant Activity threshold-search authority")
+    i007 = by_id["I007"]
+    require(i007["status"] == "PLANNED" and i007["handler"] is None and
+            i007["contract"] is None and not i007["evidence"],
+            "I006 CLOSED must not auto-activate I007")
+    i009 = by_id["I009"]
+    require(i009["status"] == "PLANNED" and i009["handler"] is None and
+            i009["contract"] == "docs/program/iterations/I009-inherited-double-talk-evidence.json" and
+            not i009["evidence"],
+            "I006 CLOSED must register I009 as non-executable inherited context")
+    require(closure["authority_boundary"] == {
+                "product_qualification": "DEFERRED_BY_SCOPE",
+                "hardware_collection": False,
+                "dut_hil": "DEFERRED_BY_SCOPE",
+            } and result["product_qualification"] == "DEFERRED_BY_SCOPE",
+            "I006 CLOSED cannot claim product qualification")
+
+
 def validate(plan: dict, root: Path | None = None) -> None:
     keys(plan, {"schema_version", "phase", "product_qualification", "hardware_collection",
                 "auto_promote", "max_parallel_candidates", "baseline", "data_roles", "tasks"})
@@ -380,6 +533,7 @@ def validate(plan: dict, root: Path | None = None) -> None:
     if root is not None:
         validate_i004_closed(plan, root)
         validate_i006_review_required(plan, root)
+        validate_i006_closed(plan, root)
 
 
 def next_task(plan: dict) -> dict | None:
@@ -429,10 +583,16 @@ def self_test() -> None:
                     i006["contract"] == "docs/program/iterations/I006-baseline.json" and
                     bool(i006["evidence"]),
                     "review-required I006 must be evidence-backed and non-executable")
+        elif i006["status"] == "CLOSED":
+            require(i006["handler"] is None and
+                    i006["contract"] == "docs/program/iterations/I006-closure.json" and
+                    bool(i006["evidence"]),
+                    "closed I006 must be evidence-backed, terminal and non-executable")
         else:
-            raise AssertionError("I005 closure allows only PLANNED or independently reviewed I006")
+            raise AssertionError(
+                "I005 closure allows PLANNED, REVIEW_REQUIRED or evidence-backed CLOSED I006")
         require(next_task(plan) is None and view(plan)["automation_status"] == "NO_READY_TASK",
-                "I005 closure/I006 review cannot create an automatic next task")
+                "I005/I006 lifecycle cannot create an automatic next task")
     else:
         raise AssertionError("I005 must be PLANNED or evidence-backed CLOSED")
 
@@ -504,6 +664,7 @@ def self_test() -> None:
         lambda p: p["tasks"][0].update(depends_on=["I003"]),
         lambda p: next(t for t in p["tasks"] if t["id"] == "I005").update(status="CLOSED", evidence=[]),
         lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="REVIEW_REQUIRED", evidence=[]),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="CLOSED", evidence=[]),
     ]
     for mutate in mutations:
         bad = copy.deepcopy(plan)

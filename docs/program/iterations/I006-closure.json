@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "state": "CLOSED_KEEP_BASELINE",
+  "lane": "acoustic",
+  "root_cause_id": "agc-noise-floor-and-activity-control-dependency",
+  "closed_from_main_sha": "bba5e702694847624d6836790ba93118297d8994",
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "evidence_chain": {
+    "paired_production_baseline": {
+      "run_id": 34011652196,
+      "artifact_id": 9982646065,
+      "decision": "MEASURED_GAP_REVIEW_REQUIRED"
+    },
+    "candidate_zero_root_cause": {
+      "run_id": 34020771042,
+      "artifact_id": 9985408103,
+      "artifact_digest": "sha256:0529d77839c49379f554e5ef0b19d80a65c401e4ac2d009a33f7902a7d515a8b",
+      "internal_sha256s_verified": 283,
+      "conclusion": "Noise-floor gain is explained by shipping 8x max-gain saturation; double-talk misses are fully explained by current smoothed/instant ratio admission gates."
+    },
+    "bounded_source_candidate": {
+      "run_id": 34021522805,
+      "candidate_head_sha": "4c7c9664ad7016f956d4735e0ac959b50d2d066f",
+      "artifact_id": 9985656336,
+      "artifact_digest": "sha256:6af7e8eea3a7fd16afc6f1433bdc8ee1ace77a0aad82375887b20f1ec58195aa",
+      "internal_sha256s_verified": 670,
+      "candidate_limit": 1,
+      "candidates_consumed": 1,
+      "confirmation_consumed": 0,
+      "decision": "KEEP_BASELINE_CANDIDATE_REJECTED",
+      "candidate_noise_floor_gain_passes": "0/6",
+      "candidate_p95_gain_db_range": [15.001184626685781, 15.003992102434447]
+    },
+    "existing_regression_protection": {
+      "run_id": 34021522773,
+      "artifact_id": 9985654833,
+      "artifact_digest": "sha256:1336e76191e9a24971932c873d6c462de2884479773d176a1633a2d3fde5df7a",
+      "agc_steady_low_failures": "3/3",
+      "tail_output_rms_dbfs": -23.793465,
+      "expected_range_dbfs": [-21.5, -19.5]
+    },
+    "candidate_pr": {
+      "number": 108,
+      "closed": true,
+      "merged": false
+    }
+  },
+  "closure_decision": {
+    "keep_baseline": true,
+    "merge_shipping_candidate": false,
+    "create_release": false,
+    "consume_confirmation": false,
+    "allow_second_max_gain_candidate": false,
+    "allow_rounding_or_relaxing_frozen_15db_gate": false,
+    "future_I006_candidate_requires_new_root_cause_and_budget_decision": true
+  },
+  "handoff": {
+    "I009": {
+      "status": "PLANNED",
+      "evidence_file": "docs/program/iterations/I009-inherited-double-talk-evidence.json",
+      "authority": "already-observed-regression-root-cause-context-only",
+      "may_be_independent_confirmation": false,
+      "may_be_candidate_selection_data": false,
+      "note": "Activity double-talk dependency remains a separate problem; I006 closure does not authorize Activity threshold tuning."
+    }
+  },
+  "authority_boundary": {
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

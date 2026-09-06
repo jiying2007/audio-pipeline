@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I006",
+  "phase": "bounded-source-candidate-search-reviewed",
+  "root_cause_id": "noise-floor-max-gain-cap",
+  "decision": "KEEP_BASELINE_CANDIDATE_REJECTED",
+  "candidate": "max-gain-cap-15db",
+  "shipping_base_sha": "945344a29a826bbf5330baf3382cb3e34c8f4160",
+  "candidate_head_sha": "4c7c9664ad7016f956d4735e0ac959b50d2d066f",
+  "candidate_source_delta": {
+    "path": "src/enhance/ap_agc.c",
+    "shipping_max_gain_linear": 8.0,
+    "shipping_max_gain_db": 18.06179973983887,
+    "candidate_max_gain_linear": 5.623413251903491,
+    "candidate_max_gain_db": 15.0,
+    "exact_change": "AGC target-gain upper clamp only"
+  },
+  "authoritative_execution": {
+    "workflow_run_id": 34021522805,
+    "artifact_id": 9985656336,
+    "artifact_digest": "sha256:6af7e8eea3a7fd16afc6f1433bdc8ee1ace77a0aad82375887b20f1ec58195aa",
+    "downloaded_zip_sha256": "6af7e8eea3a7fd16afc6f1433bdc8ee1ace77a0aad82375887b20f1ec58195aa",
+    "internal_sha256s_verified": 670,
+    "cases": 18,
+    "activity_drift_cases": 0
+  },
+  "frozen_i006_result": {
+    "shipping_base_noise_floor_gain_failures": "6/6",
+    "candidate_noise_floor_gain_passes": "0/6",
+    "candidate_gate_failures": 6,
+    "candidate_p95_gain_db_range": [15.001184626685781, 15.003992102434447],
+    "frozen_max_p95_gain_db": 15.0,
+    "meaning": "The single pre-registered candidate does not satisfy the unchanged frozen I006 gate; numerical closeness is not authority to round or relax the gate."
+  },
+  "independent_regression_protection": {
+    "workflow_run_id": 34021522773,
+    "artifact_id": 9985654833,
+    "artifact_digest": "sha256:1336e76191e9a24971932c873d6c462de2884479773d176a1633a2d3fde5df7a",
+    "seeds": [1307, 2307, 3307],
+    "agc_steady_low_failures": "3/3",
+    "candidate_tail_output_rms_dbfs": -23.793465,
+    "frozen_expected_range_dbfs": [-21.5, -19.5],
+    "canonical_agc_bf_pipeline_pass_rate": 1.0,
+    "meaning": "The global max-gain cap materially under-gains established low-level AGC behavior while the canonical AGC/BF pipeline matrix remains otherwise healthy."
+  },
+  "budget": {
+    "candidate_limit": 1,
+    "candidate_limit_consumed": 1,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "additional_max_gain_candidate_authorized": false,
+    "fresh_confirmation_authorized": false
+  },
+  "shipping_boundary": {
+    "candidate_pr": 108,
+    "candidate_pr_closed_unmerged": true,
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "software_release": "v2.3.12"
+  },
+  "handoff": {
+    "I009": {
+      "topic": "Activity double-talk admission dependency",
+      "authority": "already-observed-regression-root-cause-context-only",
+      "may_be_independent_confirmation": false,
+      "may_authorize_threshold_search": false
+    }
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

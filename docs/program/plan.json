@@ -91,12 +91,14 @@
       ]
     },
     {
-      "id": "I006", "priority": 60, "status": "REVIEW_REQUIRED", "lane": "acoustic",
+      "id": "I006", "priority": 60, "status": "CLOSED", "lane": "acoustic",
       "title": "AGC near/far level mismatch, noise-floor and far-end residual protection",
-      "depends_on": ["P001"], "handler": null, "contract": "docs/program/iterations/I006-baseline.json",
-      "exit": "Paired exact-production AGC ON/OFF baseline isolates the remaining noise-floor gain and activity double-talk dependency gaps; no candidate or confirmation is authorized until candidate-zero root-cause differential is reviewed",
+      "depends_on": ["P001"], "handler": null, "contract": "docs/program/iterations/I006-closure.json",
+      "exit": "Candidate-zero root cause is archived; the single pre-registered 15 dB max-gain candidate is rejected by unchanged I006 and established low-level AGC regression gates; confirmation remains unused and v2.3.12 stays the shipping baseline",
       "evidence": [
-        {"source_sha": "f48559f55791cc72a69befdd79472d908c93803d", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34011652196", "meaning": "Authoritative I006 measurement revision 3. Artifact 9982646065/digest f175dc88... independently verified 341/341 hashes and 18/18 paired exact-production cases with zero precondition failures. Pure far-end no-gain-up and paired AGC speech preservation pass 6/6 each. Noise-floor incremental p95 gain is about 18.06 dB versus frozen 15 dB in 6/6 cases, while double-talk activity coverage misses the frozen 0.35 threshold in 5/6 near+far cases. Final decision MEASURED_GAP_REVIEW_REQUIRED; candidate/confirmation remain 0/0. Revisions 1/2 are retained as measurement-attribution lineage only."}
+        {"source_sha": "f48559f55791cc72a69befdd79472d908c93803d", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34011652196", "meaning": "Authoritative revision-3 paired-production baseline: 18/18 cases complete with noise-floor and Activity dependency gaps isolated; candidate/confirmation remained 0/0."},
+        {"source_sha": "945344a29a826bbf5330baf3382cb3e34c8f4160", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34020771042", "meaning": "Candidate-zero root-cause differential: artifact 9985408103/digest 0529d778... independently verified 283/283 hashes. Noise-floor 6/6 is explained by the shipping 8x max-gain clamp; double-talk cases split 3 smoothed-gate and 3 both-gate limits with zero unexplained cases."},
+        {"source_sha": "4c7c9664ad7016f956d4735e0ac959b50d2d066f", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34021522805", "meaning": "The only authorized max-gain-cap-15db candidate consumed 1/1 candidate and 0 confirmation. Artifact 9985656336/digest 6af7e8ee... independently verified 670/670 hashes. Shipping-base noise-floor failures reproduce 6/6; candidate still passes 0/6 with p95 gain 15.00118..15.00399 dB versus the unchanged 15.0000 dB gate, and established AGC steady-low regression fails 3/3. Final decision KEEP_BASELINE_CANDIDATE_REJECTED; PR #108 is closed unmerged."}
       ]
     },
     {
@@ -104,6 +106,13 @@
       "title": "BF wind, motion, phase mismatch and reverberant health evidence beyond the released hard-fault fixture",
       "depends_on": ["P001"], "handler": null, "contract": null,
       "exit": "Frontend-equivalent oracle, fault-specific health selection, exact-base non-target protection and recovery",
+      "evidence": []
+    },
+    {
+      "id": "I009", "priority": 75, "status": "PLANNED", "lane": "acoustic",
+      "title": "Activity double-talk admission root cause after I006 handoff",
+      "depends_on": ["I006", "P001"], "handler": null, "contract": "docs/program/iterations/I009-inherited-double-talk-evidence.json",
+      "exit": "Use I006 observations only as regression/root-cause context; any Activity candidate requires a new bounded contract and independent confirmation source",
       "evidence": []
     },
     {

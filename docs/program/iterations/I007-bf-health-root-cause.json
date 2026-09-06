@@ -44,6 +44,16 @@
     "may_promote_release": false,
     "may_claim_product_qualification": false
   },
+  "development_authorization": {
+    "granted": true,
+    "scope": "after this root-cause evidence is archived, create and evaluate two independent bounded structural candidates: wind selection/mixing and equal-energy reverberation admission",
+    "wind_candidate_limit": 1,
+    "reverb_candidate_limit": 1,
+    "combined_candidate_authorized": false,
+    "parameter_grid_search_authorized": false,
+    "reuse_exposed_data_as_confirmation": false,
+    "fresh_independent_confirmation_required_before_promotion": true
+  },
   "source_reuse": {
     "baseline_development_data_already_exposed": true,
     "may_be_independent_confirmation": false,

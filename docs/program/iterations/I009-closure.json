@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I009",
+  "state": "CLOSED_KEEP_BASELINE",
+  "lane": "acoustic",
+  "root_cause_id": "activity-double-talk-energy-domain-ambiguity",
+  "closed_from_main_sha": "497c3ca3a6be0a4e319a3493e256eac7391a7f18",
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "evidence_chain": {
+    "fresh_baseline": {
+      "run_id": 34031305098,
+      "artifact_id": 9988691434,
+      "artifact_digest": "sha256:ab6f36bc7252a988ff5228230137436bf75ea500c6d9a884c8f8ddf5f5299229",
+      "internal_sha256s_verified": 284,
+      "seeds": [17109, 27109, 37109],
+      "partitions": 6,
+      "gate_failure_partitions": 5,
+      "failure_classification": {
+        "smoothed_gate_limit": 3,
+        "both_gates_limit": 3
+      },
+      "data_role_after_review": "regression-root-cause-only"
+    },
+    "rejected_echo_normalized_differential": {
+      "run_id": 34031731756,
+      "artifact_id": 9988834254,
+      "artifact_digest": "sha256:3111f6acc2e851cd94d59520dad58f07d5aaf4c4ac7070621e083fe58e766a2e",
+      "internal_sha256s_verified": 301,
+      "near_far_passed": 6,
+      "pure_far_passed": 0,
+      "decision": "ECHO_NORMALIZED_STRUCTURE_NOT_SUPPORTED_REVIEW_REQUIRED",
+      "candidate_consumed": 0,
+      "confirmation_consumed": 0
+    },
+    "supported_residual_echo_differential": {
+      "run_id": 34033842566,
+      "artifact_id": 9989499865,
+      "artifact_digest": "sha256:1965a49e87016994d57cc119d2dd11f0d1523dc1a32a3701904fbf0776efd238",
+      "internal_sha256s_verified": 301,
+      "near_far_passed": 6,
+      "pure_far_passed": 3,
+      "decision": "RESIDUAL_ECHO_RESCUE_SUPPORTED_REVIEW_REQUIRED",
+      "candidate_consumed": 0,
+      "confirmation_consumed": 0,
+      "authorized_next_candidate": "activity-residual-echo-rescue-v1"
+    },
+    "bounded_source_candidate": {
+      "candidate_id": "activity-residual-echo-rescue-v1",
+      "pr": 119,
+      "pr_closed": true,
+      "pr_merged": false,
+      "head_sha": "7acd0a3a944573f35a4c60644f9d94e7aa20cf29",
+      "run_id": 34034482037,
+      "artifact_id": 9989713478,
+      "artifact_digest": "sha256:51e5023be5bfbcf4246da49f07bf50a2f8d35c12ebb3e72b52ae636fa360936b",
+      "internal_sha256s_verified": 8,
+      "fresh_development_seeds": [18109, 28109, 38109],
+      "base_fresh_near_far_passed": 0,
+      "base_fresh_pure_far_passed": 3,
+      "candidate_fresh_near_far_passed": 6,
+      "candidate_fresh_pure_far_passed": 2,
+      "failing_pure_far_seed": 18109,
+      "failing_pure_far_false_double_talk_fraction": 0.05352112676056338,
+      "regression_only_near_far_passed": 6,
+      "regression_only_pure_far_passed": 3,
+      "ctest_passed": true,
+      "decision": "KEEP_BASELINE_CANDIDATE_REJECTED",
+      "candidate_limit": 1,
+      "candidate_limit_consumed": 1,
+      "confirmation_limit_consumed": 0,
+      "reserved_confirmation_executed": false
+    },
+    "hosted_real_aec_regression": {
+      "run_id": 34034482048,
+      "artifact_id": 9989725745,
+      "artifact_digest": "sha256:ec24563fa182f13beb83c74086ecb77cf5c37036150a4151080d5ae454789937",
+      "internal_sha256s_verified": 18,
+      "cases": 4,
+      "passed_cases": 2,
+      "pass_rate": 0.5,
+      "static_passed": 2,
+      "static_cases": 2,
+      "movement_passed": 0,
+      "movement_cases": 2,
+      "movement_corr_reduction": [-0.0016180328069426986, -0.03955294463793517],
+      "worst_movement_output_rms_delta_db": 9.935877991664285,
+      "decision": "REGRESSION_FAIL"
+    }
+  },
+  "candidate_budget": {
+    "limit": 1,
+    "consumed": 1,
+    "remaining": 0,
+    "second_candidate_authorized": false,
+    "post_result_candidate_change_authorized": false
+  },
+  "confirmation": {
+    "consumed": 0,
+    "reserved_source_executed": false,
+    "reserved_seeds": [19109, 29109, 39109],
+    "may_rescue_rejected_candidate": false,
+    "may_be_used_for_post_result_candidate_change": false
+  },
+  "closure_decision": {
+    "keep_baseline": true,
+    "merge_shipping_candidate": false,
+    "create_release": false,
+    "consume_confirmation": false,
+    "allow_second_candidate": false,
+    "allow_post_result_candidate_change": false,
+    "future_I009_candidate_requires_new_root_cause_and_budget_decision": true
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

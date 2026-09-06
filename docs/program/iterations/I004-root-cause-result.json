@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I004",
+  "phase": "root-cause-differential-reviewed",
+  "root_cause_id": "ns-nonstationary-low-snr",
+  "decision": "NARROW_TO_EMA_BURST_PROTECTION_AND_HANDOFF_VAD",
+  "candidate_decision": "NOT_AN_ACOUSTIC_CANDIDATE",
+  "authority": "reviewed-development-counterfactual-only",
+  "base_sha": "74661cb1d732f4baa13cd5fce6f8cd05f3b5779e",
+  "research_head_sha": "a3d1fc8f42b305cd8853d9f723f2f50d8f6452ba",
+  "workflow_run_id": 34001530589,
+  "artifact_id": 9979625108,
+  "artifact_digest": "sha256:c8acde7e44ab7059ffe87fa29d9a086ed8f2cd81c696c215039ba8fc135d6cff",
+  "downloaded_zip_sha256": "c8acde7e44ab7059ffe87fa29d9a086ed8f2cd81c696c215039ba8fc135d6cff",
+  "internal_sha256s_verified": 218,
+  "shipping_diff_zero": true,
+  "candidate_limit_consumed": 0,
+  "confirmation_limit_consumed": 0,
+  "evidence_path": {
+    "local_vad_recall_median": 0.16666666666666669,
+    "ema_ns_vad_recall_median": 0.30601092896174864,
+    "ema_ns_minus_local_recall": 0.13934426229508196,
+    "conclusion": "LOCAL_VAD_LIMIT_DOMINANT_OR_SHARED_INPUT_LIMIT",
+    "handoff": "I005",
+    "handoff_role": "inherited-regression-evidence-only",
+    "interpretation": "Shipping NS assistance improves aggregate VAD recall rather than causing the I004 recall collapse. I004 must not weaken or remove NS upstream evidence to chase this metric."
+  },
+  "estimator": {
+    "ema_backend": "shipping",
+    "mcra_backend": "existing-supported-diagnostic-counterfactual",
+    "mcra_minus_ema_burst_si_sdr_db_median": 2.6633411895525985,
+    "mcra_minus_ema_all_speech_si_sdr_db_median": -0.13796762336677837,
+    "maximum_noise_attenuation_regression_db": 2.401007966815836,
+    "conclusion": "MCRA_MATERIALLY_IMPROVES_BURST_SPEECH",
+    "tradeoff": "MCRA_HAS_MATERIAL_NOISE_ATTENUATION_REGRESSION",
+    "interpretation": "Burst/start-stop speech damage is estimator/adaptation-sensitive, but MCRA is not a shipping candidate because it materially sacrifices EMA noise attenuation and degrades motor-ramp speech."
+  },
+  "scenario_medians": {
+    "burst_start_stop_speech": {
+      "ema_si_sdr_improvement_db": -3.8046886229031145,
+      "mcra_si_sdr_improvement_db": -1.328010930068661,
+      "mcra_minus_ema_db": 2.6633411895525985,
+      "ema_vad_recall": 0.2677595628415301,
+      "local_vad_recall": 0.12568306010928962
+    },
+    "motor_ramp_speech": {
+      "ema_si_sdr_improvement_db": 4.396956646386224,
+      "mcra_si_sdr_improvement_db": 2.390081716395269,
+      "mcra_minus_ema_db": -2.006874929990955
+    },
+    "fan_am_noise": {
+      "ema_noise_attenuation_db": 4.467389323864026,
+      "mcra_noise_attenuation_db": 2.1244296057409464,
+      "mcra_minus_ema_db": -2.298872556142385
+    },
+    "motor_ramp_noise": {
+      "ema_noise_attenuation_db": 5.632167667361188,
+      "mcra_noise_attenuation_db": 3.8272023271886475,
+      "mcra_minus_ema_db": -1.805324192707939
+    },
+    "mixed_dynamic_noise": {
+      "ema_noise_attenuation_db": 3.675731290610173,
+      "mcra_noise_attenuation_db": 2.169334951331912,
+      "mcra_minus_ema_db": -1.506396339278261
+    }
+  },
+  "next_candidate_authority": {
+    "authorized_now": false,
+    "recommended_root_cause": "ema-burst-start-stop-speech-protection",
+    "maximum_structural_variants": 2,
+    "forbidden": [
+      "ns_floor_grid_search",
+      "backend_search",
+      "remove_or_weaken_ns_upstream_vad_evidence",
+      "confirmation_consumption_before_candidate_freeze",
+      "automatic_promotion"
+    ],
+    "required_protection": [
+      "burst speech SI-SDR improvement versus shipping EMA",
+      "motor-ramp speech regression no worse than 0.5 dB",
+      "fan/motor/mixed noise attenuation regression no worse than 0.5 dB",
+      "VAD recall no material regression on exposed development/regression cases",
+      "no resource or API/ABI regression before independent confirmation"
+    ]
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

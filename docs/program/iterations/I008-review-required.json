@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I008",
+  "state": "REVIEW_REQUIRED_RELEASE_BEARING_FIX",
+  "lane": "engineering",
+  "reviewed_from_main_sha": "54fd0cdb5ff7197748fa52d07e0cb83e465a6b57",
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "candidate_zero_audit": {
+    "pr": 121,
+    "pr_closed": true,
+    "pr_merged": false,
+    "head_sha": "665f766c0519bd3d58b8381deae2381f30dcce97",
+    "run_id": 34038886087,
+    "run_conclusion": "success",
+    "automated_decision": "ENGINEERING_BASELINE_ADEQUATE",
+    "reviewed_decision": "ENGINEERING_GAP_REVIEW_REQUIRED",
+    "engineering_artifact": {
+      "artifact_id": 9991073229,
+      "artifact_digest": "sha256:3f1f3b33f989cf617b0e9a58076d5b0ff89e84a03f1673ee2398ef2fc11af26c",
+      "independent_zip_sha256_verified": true,
+      "internal_sha256s_verified": 20,
+      "job_status": "success"
+    },
+    "arm_qemu_artifact": {
+      "artifact_id": 9991049048,
+      "artifact_digest": "sha256:e8294b5084577ea123f8a2c0f91bd360b1589338049900fe85bc2cf6c9fd0821",
+      "independent_zip_sha256_verified": true,
+      "internal_sha256s_verified": 4,
+      "job_status": "success"
+    },
+    "ordinary_user_lab_artifact": {
+      "artifact_id": 9991080810,
+      "artifact_digest": "sha256:ece2a5fe18c34c514b6aea770fff48be25283c8520dae265c17167caf1bca7c5",
+      "independent_zip_sha256_verified": true,
+      "source_revision": "665f766c0519bd3d58b8381deae2381f30dcce97",
+      "audio_validation": "PASS",
+      "audio_target": "PASS",
+      "audio_builder": "PASS",
+      "certification_archive": "PASS",
+      "idempotent": true,
+      "system_path_writes": false
+    },
+    "passed_surfaces": [
+      "runtime-api-reset",
+      "sdk-find-package-pkg-config-abi",
+      "thread-sanitizer-runtime-control-plane",
+      "deterministic-diagnostics-inspect-extract-bit-exact-replay",
+      "bandlimited-and-fast-resampler-functional-contracts",
+      "full-low-tiny-raw-build-test-install",
+      "pipeline-and-runtime-state-ceilings",
+      "consumer-elf-pruning",
+      "cortex-a7-and-aarch64-qemu-execution",
+      "cortex-a32-rom-and-tiny-pruning",
+      "ordinary-user-lab-provisioning-and-privilege-boundary",
+      "paired-pipeline-ns-runtime-host-performance"
+    ],
+    "resource_metrics": {
+      "pipeline_state_bytes": {"full": 78192, "low": 47024, "tiny": 25408, "raw": 1064},
+      "runtime_state_bytes": {"full": 32752, "tiny": 5168},
+      "consumer_elf_bytes": {"full": 3704, "voice": 3588, "raw": 3384},
+      "cortex_a32_pipeline_rom_bytes": {"full": 34348, "tiny": 34120}
+    },
+    "invalid_resampler_perf_evidence": {
+      "reason": "base used project-default BANDLIMITED while head explicitly used FAST",
+      "base_project_default": "BANDLIMITED",
+      "head_explicit_mode": "FAST",
+      "same_product_source": true,
+      "paired_delta_pct": [-89.435081, -83.860893, -82.778193, -82.698791, -78.901963, -72.245599, -89.976952, -83.725744],
+      "authority_after_review": "measurement-attribution-lineage-only"
+    }
+  },
+  "root_cause": {
+    "id": "resampler-perf-base-head-backend-asymmetry",
+    "file": "scripts/compare-resampler-perf.sh",
+    "base_config_missing": "-DAP_RESAMPLER_MODE=FAST",
+    "head_config_present": "-DAP_RESAMPLER_MODE=FAST",
+    "cmake_default": "BANDLIMITED",
+    "other_paired_comparators_reviewed": ["compare-perf", "compare-ns-perf", "compare-runtime-perf"],
+    "other_paired_comparators_have_symmetric_common_flags": true,
+    "shipping_dsp_defect": false
+  },
+  "verified_fix": {
+    "pr": 122,
+    "pr_closed": true,
+    "pr_merged": false,
+    "head_sha": "03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a",
+    "dedicated_run_id": 34039351719,
+    "dedicated_run_conclusion": "success",
+    "artifact_id": 9991183617,
+    "artifact_digest": "sha256:b6c82e12e6e27529861e95cc3c1c29751d88d7d2d22522595c188524d1884ebd",
+    "independent_zip_sha256_verified": true,
+    "internal_sha256s_verified": 2,
+    "behavior_equivalent_ap_cache_required": true,
+    "base_mode": "FAST",
+    "head_mode": "FAST",
+    "repetitions": 7,
+    "frames": 100000,
+    "paired_delta_pct": [0.068688, -0.009317, -0.014095, 0.165614, -0.139386, -0.005558, -0.205423, 0.016036],
+    "abs_delta_us": [0.000001, 0.000499, -0.000754, 0.000777, 0.000391, 0.000650, -0.000361, -0.000826],
+    "max_abs_delta_us": 0.000826,
+    "former_72_to_90_percent_artifact_disappeared": true,
+    "hosted_real_audio_run_id": 34039351669,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 34039351747,
+    "hosted_real_aec_conclusion": "success",
+    "program_run_id": 34039351683,
+    "program_conclusion": "success"
+  },
+  "release_policy_block": {
+    "verify_run_id": 34039351916,
+    "verify_conclusion": "failure",
+    "failed_job": "impact",
+    "failed_step": "Select conservative CI impact",
+    "policy_file": "scripts/ci_impact.py",
+    "policy": "release-bearing change must advance SemVer",
+    "base_version": "2.3.12",
+    "head_version": "2.3.12",
+    "release_bearing_path": "scripts/compare-resampler-perf.sh",
+    "exact_error": "release-bearing change must advance SemVer: base=2.3.12 head=2.3.12 paths=['scripts/compare-resampler-perf.sh']",
+    "policy_preserved": true,
+    "comparator_whitelisted_release_neutral": false,
+    "fake_semver_bump_used": false
+  },
+  "review_decision": {
+    "status": "REVIEW_REQUIRED",
+    "engineering_baseline_capabilities_passed": true,
+    "performance_evidence_bug_root_caused": true,
+    "fix_implementation_verified": true,
+    "fix_authorized_to_merge_without_semver": false,
+    "shipping_baseline_changed": false,
+    "release_created": false,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit_consumed": 0
+  },
+  "handoff": {
+    "P002": {
+      "authority": "release-identity-and-ci-governance-context-only",
+      "review_release_bearing_comparator_carry": true,
+      "review_terminal_closure_trigger_scope": true,
+      "may_bypass_semver_policy": false
+    },
+    "future_semver_software_change": {
+      "may_carry_verified_fix": true,
+      "must_reverify_required_summary": true,
+      "must_not_change_acoustic_thresholds_from_I008": true
+    }
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

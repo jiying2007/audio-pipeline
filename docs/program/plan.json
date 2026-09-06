@@ -126,11 +126,14 @@
       ]
     },
     {
-      "id": "I008", "priority": 80, "status": "PLANNED", "lane": "engineering",
+      "id": "I008", "priority": 80, "status": "REVIEW_REQUIRED", "lane": "engineering",
       "title": "Runtime/API/reset, bounded diagnostics/replay, resampler and composition resource audit",
-      "depends_on": ["P000"], "handler": null, "contract": null,
-      "exit": "TSan/realtime/SDK/ABI; FULL LOW TINY RAW custom; paired host CPU/RAM/ROM; no unproven DUT claims",
-      "evidence": []
+      "depends_on": ["P000"], "handler": null, "contract": "docs/program/iterations/I008-review-required.json",
+      "exit": "Engineering matrix passes and the resampler paired-perf measurement bug is root-caused with a verified fix, but the fix is release-bearing and must not merge without an authorized future SemVer change; v2.3.12 remains shipping",
+      "evidence": [
+        {"source_sha": "665f766c0519bd3d58b8381deae2381f30dcce97", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34038886087", "meaning": "I008 candidate-zero engineering audit: runtime/API/reset, SDK/ABI, TSan, diagnostics/replay, resampler functional contracts, FULL/LOW/TINY/RAW resources, ARM/QEMU and ordinary-user lab all pass. Artifacts 9991073229/9991049048/9991080810 were independently digest-verified, but review rejects the automated ADEQUATE decision because same-source resampler perf compared BANDLIMITED base against FAST head."},
+        {"source_sha": "03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a", "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34039351719", "meaning": "Bounded comparator repair proves FAST-vs-FAST AP-cache-equivalent measurements: artifact 9991183617/digest b6c82e12... independently verified 2/2; all eight deltas collapse to about -0.21%..+0.17% with max |median delta| 0.000826 us. PR #122 remains unmerged because required Verify 34039351916 correctly enforces the release-bearing SemVer policy."}
+      ]
     },
     {
       "id": "P002", "priority": 90, "status": "PLANNED", "lane": "governance",

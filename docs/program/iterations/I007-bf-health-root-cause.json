@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I007",
+  "phase": "bf-health-root-cause-differential",
+  "root_cause_id": "bf-soft-health-wind-reverb-admission-selection",
+  "base_sha": "dd15a956e52e9bc04fe103c62163c6cfa870b57b",
+  "baseline_contract": "docs/program/iterations/I007-bf-health-baseline.json",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "seeds": [1707, 2707, 3707],
+  "frontends": ["bf-only", "hpf-bf"],
+  "scenarios": [
+    "soft-wind-ch0",
+    "soft-wind-ch1",
+    "asymmetric-reverb-ch0",
+    "asymmetric-reverb-ch1"
+  ],
+  "shipping_constants": {
+    "fallback_enter_coherence": 0.98,
+    "fallback_enter_ratio": 0.45,
+    "hard_fault_min_ratio": 0.08,
+    "hard_fault_max_ratio": 0.28,
+    "hard_fault_roughness_ratio": 0.18
+  },
+  "preconditions": {
+    "min_window_updates": 60,
+    "min_wind_fallback_fraction": 0.80,
+    "max_reverb_fallback_fraction_for_admission_analysis": 0.10
+  },
+  "decision_contract": {
+    "ROOT_CAUSE_EXPLAINED_REVIEW_REQUIRED": "all measured quality failures are attributable to current shipping admission/selection mechanics with no unexplained partition",
+    "ROOT_CAUSE_PARTIAL_REVIEW_REQUIRED": "one or more partitions remain unexplained after exact-mechanism differential",
+    "INPUT_INVALID_REVIEW_REQUIRED": "exact-base, source, corpus, trace, or feature preconditions fail"
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_tune_coherence_thresholds": false,
+    "may_tune_energy_ratio_thresholds": false,
+    "may_tune_roughness_thresholds": false,
+    "may_rank_candidates": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_product_qualification": false
+  },
+  "development_authorization": {
+    "granted": true,
+    "scope": "after this root-cause evidence is archived, create and evaluate two independent bounded structural candidates: wind selection/mixing and equal-energy reverberation admission",
+    "wind_candidate_limit": 1,
+    "reverb_candidate_limit": 1,
+    "combined_candidate_authorized": false,
+    "parameter_grid_search_authorized": false,
+    "reuse_exposed_data_as_confirmation": false,
+    "fresh_independent_confirmation_required_before_promotion": true
+  },
+  "source_reuse": {
+    "baseline_development_data_already_exposed": true,
+    "may_be_independent_confirmation": false,
+    "may_be_promotion_data": false,
+    "purpose": "root-cause attribution only"
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE"
+}

@@ -1,0 +1,199 @@
+name: I007 BF Health Root Cause
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I007-bf-health-root-cause.json'
+      - 'tests/validation/i007_bf_health_root_cause_probe.c'
+      - 'tests/validation/i007_bf_health_root_cause.py'
+      - 'tests/validation/i007_bf_health_root_cause_review.py'
+      - '.github/workflows/i007-bf-health-root-cause.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  differential:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      BASE_SHA: dd15a956e52e9bc04fe103c62163c6cfa870b57b
+      PYTHONPATH: tests/validation:validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate candidate-zero root-cause contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/i007_bf_health_root_cause.py tests/validation/i007_bf_health_root_cause_review.py
+          PYTHONPATH=tests/validation:validation/tools python3 tests/validation/i007_bf_health_root_cause.py --self-test
+          python3 tests/validation/i007_bf_health_root_cause_review.py --self-test
+          python3 -m json.tool docs/program/iterations/I007-bf-health-root-cause.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c = json.loads(Path('docs/program/iterations/I007-bf-health-root-cause.json').read_text())
+          assert c['schema_version'] == 1 and c['iteration_id'] == 'I007'
+          assert c['phase'] == 'bf-health-root-cause-differential'
+          assert c['base_sha'] == 'dd15a956e52e9bc04fe103c62163c6cfa870b57b'
+          assert c['candidate_limit'] == 0 and c['confirmation_limit'] == 0
+          assert c['promotion_allowed'] is False and c['shipping_source_change_allowed'] is False
+          assert c['seeds'] == [1707, 2707, 3707]
+          assert len(c['scenarios']) == 4 and c['frontends'] == ['bf-only', 'hpf-bf']
+          assert all(value is False for value in c['authority'].values())
+          assert c['source_reuse']['may_be_independent_confirmation'] is False
+          assert c['product_qualification'] == 'DEFERRED_BY_SCOPE'
+          PY
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(docs/program/iterations/I007-bf-health-root-cause\.json|tests/validation/i007_bf_health_root_cause_probe\.c|tests/validation/i007_bf_health_root_cause\.py|tests/validation/i007_bf_health_root_cause_review\.py|\.github/workflows/i007-bf-health-root-cause\.yml)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 5
+
+      - name: Prepare immutable I006-closed main
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf exact-base
+          git worktree add --detach exact-base "$BASE_SHA"
+          test "$(git -C exact-base rev-parse HEAD)" = "$BASE_SHA"
+          mkdir -p exact-base/docs/program/iterations exact-base/tests/validation
+          cp docs/program/iterations/I007-bf-health-baseline.json exact-base/docs/program/iterations/
+          cp docs/program/iterations/I007-bf-health-root-cause.json exact-base/docs/program/iterations/
+          cp tests/validation/i007_bf_health_corpus.py exact-base/tests/validation/
+          cp tests/validation/i007_bf_health_root_cause_probe.c exact-base/tests/validation/
+          cp tests/validation/i007_bf_health_root_cause.py exact-base/tests/validation/
+          test "$(git -C exact-base rev-parse HEAD)" = "$BASE_SHA"
+
+      - name: Execute wind/reverb mechanism differential
+        shell: bash
+        working-directory: exact-base
+        run: |
+          set -euo pipefail
+          rm -rf i007-bf-root-cause-evidence
+          PYTHONPATH=tests/validation:validation/tools \
+            python3 tests/validation/i007_bf_health_root_cause.py \
+              --contract docs/program/iterations/I007-bf-health-root-cause.json \
+              --baseline-contract docs/program/iterations/I007-bf-health-baseline.json \
+              --output i007-bf-root-cause-evidence | tee i007-bf-root-cause-summary.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('i007-bf-root-cause-evidence/root-cause-result.json').read_text())
+          assert r['schema_version'] == 1 and r['iteration_id'] == 'I007'
+          assert r['source_sha'] == 'dd15a956e52e9bc04fe103c62163c6cfa870b57b'
+          assert r['authority'] == 'candidate-zero-mechanism-attribution-only'
+          assert r['candidate_limit'] == 0 and r['confirmation_limit'] == 0
+          assert r['candidate_search_performed'] is False
+          assert r['threshold_tuning_performed'] is False
+          assert r['promotion_allowed'] is False
+          assert r['aggregate']['partitions'] == 24
+          assert r['decision'] in ('ROOT_CAUSE_EXPLAINED_REVIEW_REQUIRED', 'ROOT_CAUSE_PARTIAL_REVIEW_REQUIRED', 'INPUT_INVALID_REVIEW_REQUIRED')
+          assert r['product_qualification'] == 'DEFERRED_BY_SCOPE'
+          PY
+
+      - name: Review low-duty wind mechanism against frozen exact-main baseline
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASELINE_ARTIFACT_ID: '9986900999'
+          BASELINE_ZIP_SHA256: 'b34188a0518ae993ff820ec684c0a15b45838bd5fd5dc82f87051de69f7e6259'
+        run: |
+          set -euo pipefail
+          rm -rf artifact-review
+          mkdir -p artifact-review/unpacked artifact-review/checkroot/exact-base/i007-bf-health-evidence artifact-review/review
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$BASELINE_ARTIFACT_ID/zip" \
+            -o artifact-review/baseline.zip
+          echo "$BASELINE_ZIP_SHA256  artifact-review/baseline.zip" | sha256sum -c -
+          unzip -q artifact-review/baseline.zip -d artifact-review/unpacked
+          cp -a artifact-review/unpacked/. artifact-review/checkroot/exact-base/i007-bf-health-evidence/
+          (cd artifact-review/checkroot && sha256sum -c exact-base/i007-bf-health-evidence/SHA256SUMS >/tmp/i007-baseline-sha256.log)
+          test "$(wc -l </tmp/i007-baseline-sha256.log)" -eq 509
+          python3 tests/validation/i007_bf_health_root_cause_review.py \
+            --baseline-root artifact-review/checkroot/exact-base/i007-bf-health-evidence \
+            --root-cause-root exact-base/i007-bf-root-cause-evidence \
+            --output artifact-review/review
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('artifact-review/review/root-cause-reviewed-result.json').read_text())
+          assert r['source_sha'] == 'dd15a956e52e9bc04fe103c62163c6cfa870b57b'
+          assert r['decision'] == 'ROOT_CAUSE_EXPLAINED_REVIEW_REQUIRED'
+          assert r['final_attribution']['partitions'] == 24
+          assert r['final_attribution']['explained'] == 24
+          assert r['final_attribution']['unexplained'] == 0
+          assert r['candidate_limit_consumed'] == 0 and r['confirmation_limit_consumed'] == 0
+          assert r['threshold_tuning_performed'] is False and r['shipping_source_changed'] is False
+          PY
+          cp artifact-review/review/root-cause-reviewed-result.json \
+             exact-base/i007-bf-root-cause-evidence/root-cause-reviewed-result.json
+
+      - name: Freeze root-cause evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=exact-base/i007-bf-root-cause-evidence
+          if test -d "$out"; then
+            cp docs/program/iterations/I007-bf-health-baseline.json "$out/baseline-contract.json"
+            cp docs/program/iterations/I007-bf-health-root-cause.json "$out/root-cause-contract.json"
+            cp tests/validation/i007_bf_health_root_cause_probe.c "$out/probe.c"
+            cp tests/validation/i007_bf_health_root_cause.py "$out/evaluator.py"
+            cp tests/validation/i007_bf_health_root_cause_review.py "$out/reviewer.py"
+            printf '%s\n' "$BASE_SHA" > "$out/base-sha.txt"
+            git rev-parse HEAD > "$out/research-head.txt"
+            if test -f exact-base/i007-bf-root-cause-summary.json; then
+              cp exact-base/i007-bf-root-cause-summary.json "$out/execution-summary.json"
+            fi
+            find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+          fi
+
+      - name: Publish root-cause summary
+        if: always()
+        shell: bash
+        run: |
+          first=exact-base/i007-bf-root-cause-evidence/root-cause-result.json
+          reviewed=exact-base/i007-bf-root-cause-evidence/root-cause-reviewed-result.json
+          if test -f "$first"; then
+            FIRST="$first" REVIEWED="$reviewed" python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from pathlib import Path
+          r = json.loads(Path(os.environ['FIRST']).read_text())
+          print('## I007 BF health root-cause differential')
+          print(f"- First-pass decision: `{r['decision']}`")
+          print(f"- Exact main: `{r['source_sha']}`")
+          print(f"- Partitions: `{r['aggregate']['partitions']}`")
+          print(f"- First-pass explained/unexplained: `{r['aggregate']['explained_partitions']}/{r['aggregate']['unexplained_partitions']}`")
+          reviewed = Path(os.environ['REVIEWED'])
+          if reviewed.exists():
+              rr = json.loads(reviewed.read_text())
+              print(f"- Reviewed decision: `{rr['decision']}`")
+              print(f"- Final explained/unexplained: `{rr['final_attribution']['explained']}/{rr['final_attribution']['unexplained']}`")
+              c = rr['conditional_review']
+              print(f"- Low-duty wind target hard-correct/soft-wrong frames: `{c['hard_correct_frames']}/{c['soft_wrong_frames']}`")
+              print(f"- Conditional SI-SDR deltas: hard-correct `{c['hard_correct_output_minus_reliable_si_sdr_db']:.3f}` dB, soft-wrong `{c['soft_wrong_output_minus_reliable_si_sdr_db']:.3f}` dB")
+          print('- Candidate/confirmation consumed: `0/0`.')
+          print('- Threshold tuning: `false`.')
+          print('- Product qualification: `DEFERRED_BY_SCOPE`.')
+          PY
+          fi
+
+      - name: Upload I007 root-cause evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i007-bf-health-root-cause-${{ github.run_id }}
+          path: exact-base/i007-bf-root-cause-evidence/
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I004",
+  "phase": "bounded-source-candidate-search",
+  "root_cause_id": "ema-burst-start-stop-speech-protection",
+  "base_sha": "c425252e43e88ec0a9f8f440fb8cbf4f0c908b18",
+  "data_role": "development-exposed",
+  "candidate_limit": 2,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "seconds": 6.0,
+  "development_seeds": [14107, 24107, 34107],
+  "protection_regression_seeds": [1307, 2307, 3307],
+  "scenarios": [
+    "ns-motor-ramp-speech",
+    "ns-motor-ramp-noise",
+    "ns-fan-am-speech",
+    "ns-fan-am-noise",
+    "ns-burst-start-stop-speech",
+    "ns-burst-start-stop-noise",
+    "ns-mixed-dynamic-low-snr-speech",
+    "ns-mixed-dynamic-noise"
+  ],
+  "speech_snr_db": {
+    "ns-motor-ramp-speech": -5.0,
+    "ns-fan-am-speech": -5.0,
+    "ns-burst-start-stop-speech": -5.0,
+    "ns-mixed-dynamic-low-snr-speech": -8.0
+  },
+  "diagnostic_flags": {
+    "min_speech_si_sdr_improvement_db": 0.0,
+    "min_noise_only_attenuation_db": 0.5,
+    "min_vad_recall": 0.75,
+    "max_vad_false_positive_rate": 0.20,
+    "min_ns_probability_margin": 0.0,
+    "max_clip_fraction": 0.02
+  },
+  "candidate_variants": [
+    "continuous-confidence-schedule",
+    "rise-only-midconfidence-protection"
+  ],
+  "winner_policy": "exactly-one-eligible",
+  "gates": {
+    "min_burst_speech_si_sdr_delta_db": 1.0,
+    "max_nonburst_speech_si_sdr_regression_db": 0.5,
+    "max_noise_attenuation_regression_db": 0.5,
+    "max_vad_recall_regression": 0.03,
+    "max_clip_fraction_increase": 0.002
+  },
+  "authority": {
+    "may_edit_checked_out_source": false,
+    "may_tune_ns_floor": false,
+    "may_search_backends": false,
+    "may_add_candidate": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false
+  },
+  "lineage": {
+    "baseline_diagnostic_run": 33999621434,
+    "root_cause_differential_run": 34001530589,
+    "root_cause_artifact": 9979625108,
+    "root_cause_digest": "sha256:c8acde7e44ab7059ffe87fa29d9a086ed8f2cd81c696c215039ba8fc135d6cff",
+    "root_cause_result": "docs/program/iterations/I004-root-cause-result.json"
+  },
+  "constraints": {
+    "MCRA_is_not_a_candidate": true,
+    "VAD_evidence_path_is_handed_to_I005": true,
+    "same_exposed_development_data_is_not_confirmation": true,
+    "no_candidate_ranking_when_multiple_are_eligible": true,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I004",
+  "phase": "root-cause-differential",
+  "root_cause_id": "ns-nonstationary-low-snr",
+  "base_sha": "669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee",
+  "data_role": "development-exposed-after-baseline",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "run_timeout_seconds": 900,
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "seconds": 6.0,
+  "seeds": [14107, 24107, 34107],
+  "scenarios": [
+    "ns-motor-ramp-speech",
+    "ns-motor-ramp-noise",
+    "ns-fan-am-speech",
+    "ns-fan-am-noise",
+    "ns-burst-start-stop-speech",
+    "ns-burst-start-stop-noise",
+    "ns-mixed-dynamic-low-snr-speech",
+    "ns-mixed-dynamic-noise"
+  ],
+  "speech_snr_db": {
+    "ns-motor-ramp-speech": -5.0,
+    "ns-fan-am-speech": -5.0,
+    "ns-burst-start-stop-speech": -5.0,
+    "ns-mixed-dynamic-low-snr-speech": -8.0
+  },
+  "counterfactuals": {
+    "evidence_path": {
+      "profiles": ["vad-isolated", "ns-isolated"],
+      "question": "Does adding the shipping NS stage/upstream speech evidence materially improve or degrade VAD on the exact same noisy mic?"
+    },
+    "estimator": {
+      "backends": ["EMA", "MCRA"],
+      "question": "Does the already-supported MCRA estimator materially change burst speech preservation or dynamic-noise VAD versus shipping EMA without a source change?"
+    }
+  },
+  "interpretation_thresholds": {
+    "material_vad_recall_delta": 0.05,
+    "material_si_sdr_delta_db": 1.0,
+    "material_noise_attenuation_regression_db": 0.5
+  },
+  "authority": {
+    "may_modify_shipping_dsp": false,
+    "may_tune_ns_floor": false,
+    "may_add_backend": false,
+    "may_rank_source_candidates": false,
+    "may_create_candidate": false,
+    "may_consume_confirmation": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  },
+  "source_evidence": {
+    "baseline_result": "docs/program/iterations/I004-baseline-result.json",
+    "authoritative_run_id": 33999621434,
+    "authoritative_artifact_id": 9979093460,
+    "authoritative_artifact_digest": "sha256:331a6511d3cff82cb2787d8a1bc51f66e3c69a7ca7748b31d9794e0de646dd26"
+  }
+}

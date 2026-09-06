@@ -1,0 +1,116 @@
+name: I004 NS Root-Cause Differential
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/I004-differential.json'
+      - 'tests/validation/i004_ns_root_cause_entry.py'
+      - 'tests/validation/i004_ns_root_cause_differential.py'
+      - '.github/workflows/i004-ns-root-cause-differential.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i004-ns-root-cause-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPECTED_RESEARCH_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i004-ns-root-cause
+      - name: Validate differential contracts
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_RESEARCH_HEAD"
+          python3 -m py_compile \
+            tests/validation/i004_ns_root_cause_entry.py \
+            tests/validation/i004_ns_root_cause_differential.py \
+            tests/validation/i004_ns_nonstationary_diagnostic.py
+          python3 tests/validation/i004_ns_root_cause_entry.py --self-test
+          python3 tests/validation/i004_ns_root_cause_differential.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c = json.loads(Path('docs/program/iterations/I004-differential.json').read_text())
+          assert c['schema_version'] == 1 and c['iteration_id'] == 'I004'
+          assert c['phase'] == 'root-cause-differential'
+          assert c['base_sha'] == '669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee'
+          assert c['candidate_limit'] == 0 and c['confirmation_limit'] == 0
+          assert c['promotion_allowed'] is False
+          assert c['seeds'] == [14107, 24107, 34107]
+          assert c['counterfactuals']['evidence_path']['profiles'] == ['vad-isolated', 'ns-isolated']
+          assert c['counterfactuals']['estimator']['backends'] == ['EMA', 'MCRA']
+          assert all(v is False for k, v in c['authority'].items() if k.startswith('may_'))
+          PY
+      - name: Execute exact-base counterfactuals
+        run: |
+          set -euo pipefail
+          python3 tests/validation/i004_ns_root_cause_entry.py \
+            --contract docs/program/iterations/I004-differential.json \
+            --output i004-root-cause-out
+      - name: Enforce diagnostic-only authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          r = json.loads(Path('i004-root-cause-out/root-cause-report.json').read_text())
+          b = json.loads(Path('i004-root-cause-out/execution-binding.json').read_text())
+          assert r['authority'] == 'development-counterfactual-diagnostic-only'
+          assert r['candidate_limit'] == 0 and r['confirmation_limit'] == 0
+          assert r['candidate_search_performed'] is False
+          assert r['source_change_performed'] is False
+          assert r['ns_floor_tuning_performed'] is False
+          assert r['new_backend_added'] is False
+          assert r['candidate_decision'] == 'NOT_AN_ACOUSTIC_CANDIDATE'
+          assert r['decision'] == 'ROOT_CAUSE_DIFFERENTIAL_REVIEW_REQUIRED'
+          assert len(r['cases']) == 24
+          assert b['baseline_source_sha'] == '669b3aaeb264efd1c0f09eddf5c8c7de9ca4dcee'
+          assert b['research_head_sha'] == os.environ['EXPECTED_RESEARCH_HEAD']
+          assert b['shipping_diff_zero'] is True
+          assert b['candidate_limit'] == 0 and b['confirmation_limit'] == 0
+          assert set(b['processors']) == {'EMA', 'MCRA'}
+          PY
+      - name: Publish root-cause summary
+        if: always()
+        run: |
+          if [ -f i004-root-cause-out/root-cause-report.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('i004-root-cause-out/root-cause-report.json').read_text())
+          s = r['summary']
+          print('## I004 NS root-cause differential')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Evidence-path conclusion: `{s['evidence_path']['conclusion']}`")
+          print(f"- Local-VAD median recall: `{s['evidence_path']['local_vad_recall_median']:.4f}`")
+          print(f"- EMA NS-assisted median recall: `{s['evidence_path']['ema_ns_vad_recall_median']:.4f}`")
+          print(f"- NS minus local recall: `{s['evidence_path']['ema_ns_minus_local_recall']:.4f}`")
+          print(f"- Estimator conclusion: `{s['estimator']['conclusion']}`")
+          print(f"- MCRA minus EMA burst SI-SDR: `{s['estimator']['mcra_minus_ema_burst_si_sdr_db_median']:.4f} dB`")
+          print(f"- MCRA noise tradeoff: `{s['estimator']['tradeoff']}`")
+          print('- Authority: counterfactual diagnostic only; no source candidate, ns_floor tuning, new backend, confirmation or promotion.')
+          PY
+          fi
+      - name: Upload I004 root-cause evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i004-ns-root-cause-${{ github.run_id }}-${{ github.run_attempt }}
+          path: i004-root-cause-out/
+          if-no-files-found: error
+          retention-days: 90

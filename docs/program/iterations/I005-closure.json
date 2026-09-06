@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I005",
+  "state": "CLOSED_KEEP_BASELINE",
+  "lane": "acoustic",
+  "root_cause_id": "vad-event-onset-release-baseline",
+  "reviewed_measurement_main_sha": "ddaa44ac6e432b36c57ec7d07bdf346e99949c7b",
+  "shipping_baseline": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged": true
+  },
+  "source_admission": {
+    "pull_request": 101,
+    "main_sha": "fec515eb759fb62ef61b44cb86fc83cbb1fbbffb",
+    "meeting": "ES2005b",
+    "admitted_role": "development-exposed",
+    "future_independent_confirmation": false,
+    "future_promotion": false
+  },
+  "baseline_measurement": {
+    "pull_request": 102,
+    "source_sha": "fec515eb759fb62ef61b44cb86fc83cbb1fbbffb",
+    "research_head_sha": "f05c0bcefedc7acb5634dd7cba95ca193c0687ee",
+    "workflow_run_id": 34007957381,
+    "artifact_id": 9981552960,
+    "artifact_digest": "sha256:9af2fe4946ca47bff2b1eccee6d45d2812e813b9787667cd754dfd4a44eb4a1f",
+    "internal_sha256s_verified": 18,
+    "decision": "BASELINE_ADEQUATE_NO_SEARCH",
+    "gate_failures": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit_consumed": 0,
+    "threshold_tuning_performed": false,
+    "hangover_tuning_performed": false,
+    "candidate_search_performed": false
+  },
+  "reviewed_metrics": {
+    "public_es2005b_ns_isolated": {
+      "frame_f1": 0.6395673412421493,
+      "frame_recall": 0.5455357142857142,
+      "frame_false_positive_rate": 0.20416666666666666,
+      "event_recall": 1.0,
+      "onset_delay_p95_ms": 135.0,
+      "release_tail_p95_ms": 267.5
+    },
+    "synthetic_farfield_ns_isolated": {
+      "cases": 9,
+      "exact_events": 27,
+      "frame_f1": 0.7161693268563497,
+      "frame_recall": 0.6265938069216758,
+      "frame_false_positive_rate": 0.19278252611585944,
+      "event_recall": 1.0,
+      "onset_delay_p95_ms": 157.0,
+      "release_tail_p95_ms": 100.0,
+      "false_active_fraction": 0.19278252611585944
+    }
+  },
+  "data_retirement": {
+    "source": "tests/validation/data/i005_ami_vad_development_es2005b.lock.json",
+    "next_role": "regression",
+    "exposed": true,
+    "independent_confirmation": false,
+    "promotion": false,
+    "reason": "Source was admitted and consumed as exposed I005 Development baseline evidence; it cannot regain freshness."
+  },
+  "closure_decision": {
+    "keep_baseline": true,
+    "merge_shipping_candidate": false,
+    "create_release": false,
+    "start_threshold_search": false,
+    "start_hangover_search": false,
+    "start_source_candidate_search": false,
+    "future_vad_candidate_requires_new_root_cause_budget_decision": true
+  },
+  "handoff": {
+    "I006": {
+      "status": "PLANNED",
+      "activated": false,
+      "authority": "no-automatic-transition"
+    }
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

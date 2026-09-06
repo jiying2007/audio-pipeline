@@ -128,6 +128,89 @@ def validate_contract(task: dict, contract: dict, spec: dict) -> None:
         raise ValueError("registered handler lane is not approved in this phase")
 
 
+def validate_i004_closed(plan: dict, root: Path) -> None:
+    by_id = {task["id"]: task for task in plan["tasks"]}
+    i004 = by_id["I004"]
+    if i004["status"] != "CLOSED":
+        return
+    require(i004["handler"] is None and bool(i004["evidence"]),
+            "I004 CLOSED must be terminal and evidence-backed")
+    closure = json.loads(repo_file(root, "docs/program/iterations/I004-closure.json").read_text())
+    result = json.loads(repo_file(
+        root, "docs/program/iterations/I004-burst-candidate-search-result.json").read_text())
+
+    require(closure["schema_version"] == 1 and closure["iteration_id"] == "I004" and
+            closure["state"] == "CLOSED_KEEP_BASELINE" and closure["lane"] == "acoustic" and
+            closure["root_cause_id"] == "ema-burst-start-stop-speech-protection",
+            "I004 CLOSED requires reviewed closure identity")
+    require(closure["closed_on_main_sha"] == "5d5fed094b5a51af2f503d1556e8f6fbce82af07",
+            "I004 closure must bind reviewed #99 main SHA")
+    shipping = closure["shipping_baseline"]
+    require(shipping["release"] == plan["baseline"]["software_release"] == "v2.3.12" and
+            shipping["source_sha"] == plan["baseline"]["source_sha"] and
+            shipping["unchanged"] is True,
+            "I004 closure must keep immutable shipping baseline")
+
+    require(result["schema_version"] == 1 and result["iteration_id"] == "I004" and
+            result["root_cause_id"] == "ema-burst-start-stop-speech-protection" and
+            result["decision"] == "KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE" and
+            result["winner"] is None and result["promotion_allowed"] is False,
+            "I004 CLOSED requires reviewed KEEP_BASELINE result")
+    require(result["candidate_budget"] == {"limit": 2, "consumed": 2, "remaining": 0} and
+            result["confirmation_budget_consumed"] == 0,
+            "I004 CLOSED requires exhausted bounded candidates and zero confirmation")
+    execution = result["authoritative_execution"]
+    require(execution["workflow_run_id"] == 34004833190 and
+            execution["artifact_id"] == 9980617637 and
+            execution["artifact_digest"] ==
+            "sha256:669cedca1f19564d67b3079f471d3bfe4c03f02cef8bfbc658a60d455da6416a" and
+            execution["internal_sha256s_verified"] == 1399,
+            "I004 CLOSED requires independently verified bounded-search evidence")
+    require(len(result["candidates"]) == 2 and
+            all(candidate["eligible"] is False for candidate in result["candidates"]),
+            "I004 CLOSED requires both frozen candidates to be ineligible")
+    require(result["reviewed_conclusion"]["do_not_add_third_candidate"] is True and
+            result["reviewed_conclusion"][
+                "do_not_use_confirmation_to_rescue_failed_development_candidates"] is True and
+            result["reviewed_conclusion"][
+                "future_I004_source_candidate_requires_new_root_cause_budget_decision"] is True,
+            "I004 CLOSED must seal exhausted search authority")
+    require(result["authority_boundary"] == {
+                "shipping_source_changed": False,
+                "software_candidate_promoted": False,
+                "release_created": False,
+                "product_qualification": "DEFERRED_BY_SCOPE",
+            }, "I004 closure must preserve release/product boundary")
+
+    bounded = closure["evidence_chain"]["bounded_source_search"]
+    require(bounded["effective_run_id"] == execution["workflow_run_id"] and
+            bounded["artifact_id"] == execution["artifact_id"] and
+            bounded["artifact_digest"] == execution["artifact_digest"] and
+            bounded["internal_sha256s_verified"] == execution["internal_sha256s_verified"] and
+            bounded["candidate_limit"] == 2 and bounded["candidates_consumed"] == 2 and
+            bounded["confirmation_consumed"] == 0 and
+            bounded["decision"] == result["decision"] and bounded["winner"] is None,
+            "I004 closure/result evidence mismatch")
+    decision = closure["closure_decision"]
+    require(decision["keep_baseline"] is True and decision["merge_shipping_candidate"] is False and
+            decision["create_release"] is False and
+            decision["consume_confirmation_to_rescue_failed_candidates"] is False and
+            decision["allow_third_candidate"] is False and
+            decision["future_I004_candidate_requires_new_root_cause_budget_decision"] is True,
+            "I004 closure decision must be terminal KEEP_BASELINE")
+    handoff = closure["handoff"]["I005"]
+    require(by_id["I005"]["status"] == handoff["status"] == "PLANNED" and
+            handoff["authority"] == "already-observed-regression-root-cause-context-only" and
+            handoff["may_be_independent_confirmation"] is False and
+            handoff["may_be_candidate_selection_data"] is False,
+            "I004 closure cannot activate or contaminate I005")
+    require(closure["authority_boundary"] == {
+                "product_qualification": "DEFERRED_BY_SCOPE",
+                "hardware_collection": False,
+                "dut_hil": "DEFERRED_BY_SCOPE",
+            }, "I004 CLOSED cannot claim product qualification")
+
+
 def validate(plan: dict, root: Path | None = None) -> None:
     keys(plan, {"schema_version", "phase", "product_qualification", "hardware_collection",
                 "auto_promote", "max_parallel_candidates", "baseline", "data_roles", "tasks"})
@@ -212,6 +295,8 @@ def validate(plan: dict, root: Path | None = None) -> None:
         visited.add(task_id)
     for task_id in ids:
         walk(task_id)
+    if root is not None:
+        validate_i004_closed(plan, root)
 
 
 def next_task(plan: dict) -> dict | None:
@@ -235,13 +320,18 @@ def view(plan: dict) -> dict:
 
 def self_test() -> None:
     plan = json.loads((ROOT / PLAN).read_text())
-    validate(plan)
+    validate(plan, ROOT)
     by_id = {task["id"]: task for task in plan["tasks"]}
-    i002, p001, i003 = by_id["I002"], by_id["P001"], by_id["I003"]
+    i002, p001, i003, i004, i005 = (by_id["I002"], by_id["P001"], by_id["I003"],
+                                    by_id["I004"], by_id["I005"])
     require(i002["status"] == "CLOSED" and i002["handler"] is None and bool(i002["evidence"]),
             "I002 must remain reviewed and closed")
     require(p001["status"] == "CLOSED" and p001["handler"] is None and bool(p001["evidence"]),
             "P001 must remain reviewed and closed")
+    require(i004["status"] == "CLOSED" and i004["handler"] is None and bool(i004["evidence"]),
+            "I004 must remain reviewed CLOSED_KEEP_BASELINE")
+    require(i005["status"] == "PLANNED" and i005["handler"] is None and i005["contract"] is None,
+            "I004 closure must not auto-activate I005")
 
     if i003["status"] == "PLANNED":
         require(i003["handler"] is None and i003["contract"] is None,
@@ -324,9 +414,10 @@ def self_test() -> None:
     by_id_blocked["I003"].update(status="READY", handler=None, contract=None)
     require(view(blocked)["automation_status"] == "BLOCKED_IMPLEMENTATION",
             "missing I003 handler must block")
+    by_id_blocked["I004"].update(status="REVIEW_REQUIRED")
     by_id_blocked["I003"].update(depends_on=["I004"])
-    require(next_task(blocked) is None, "unfinished dependency must block")
-    print("program self-test: I002/P001 closed + bounded/evidence-backed I003 lifecycle and negative contracts OK")
+    require(next_task(blocked) is None, "explicit unfinished dependency must block")
+    print("program self-test: I002/P001/I003/I004 evidence-backed lifecycles + negative contracts OK")
 
 
 def main() -> int:

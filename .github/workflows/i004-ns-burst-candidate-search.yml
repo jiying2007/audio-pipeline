@@ -1,0 +1,227 @@
+name: I004 EMA Burst Candidate Search
+
+on:
+  pull_request:
+    paths:
+      - 'docs/program/iterations/I004-burst-candidate-search.json'
+      - 'tests/validation/i004_ns_burst_candidate_search.py'
+      - '.github/workflows/i004-ns-burst-candidate-search.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: i004-ns-burst-candidate-search-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i004-ns-burst-candidate-search
+
+      - name: Detect sealed reviewed result
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f docs/program/iterations/I004-burst-candidate-search-result.json; then
+            echo 'sealed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'sealed=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate bounded search contract and research-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='c425252e43e88ec0a9f8f440fb8cbf4f0c908b18'
+          python3 -m py_compile tests/validation/i004_ns_burst_candidate_search.py
+          python3 tests/validation/i004_ns_burst_candidate_search.py --self-test
+          python3 -m json.tool docs/program/iterations/I004-burst-candidate-search.json >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          contract = json.loads(Path('docs/program/iterations/I004-burst-candidate-search.json').read_text())
+          assert contract['base_sha'] == 'c425252e43e88ec0a9f8f440fb8cbf4f0c908b18'
+          assert contract['candidate_limit'] == 2
+          assert contract['confirmation_limit'] == 0
+          assert contract['candidate_variants'] == [
+              'continuous-confidence-schedule',
+              'rise-only-midconfidence-protection',
+          ]
+          assert contract['winner_policy'] == 'exactly-one-eligible'
+          assert contract['promotion_allowed'] is False
+          assert all(value is False for value in contract['authority'].values())
+          PY
+          changed="$(git diff --name-only "$BASE"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(\.github/workflows/i004-ns-burst-candidate-search\.yml|docs/program/iterations/I004-burst-candidate-search\.json|docs/program/iterations/I004-burst-candidate-search-result\.json|tests/validation/i004_ns_burst_candidate_search\.py)$'
+          unexpected="$(printf '%s\n' "$changed" | sed '/^$/d' | grep -Ev "$allowed" || true)"
+          test -z "$unexpected"
+          printf '%s\n' "$changed" | grep -Fx 'docs/program/iterations/I004-burst-candidate-search.json'
+          printf '%s\n' "$changed" | grep -Fx 'tests/validation/i004_ns_burst_candidate_search.py'
+          printf '%s\n' "$changed" | grep -Fx '.github/workflows/i004-ns-burst-candidate-search.yml'
+          if test '${{ steps.mode.outputs.sealed }}' = 'true'; then
+            test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 4
+            printf '%s\n' "$changed" | grep -Fx 'docs/program/iterations/I004-burst-candidate-search-result.json'
+          else
+            test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 3
+          fi
+
+      - name: Validate sealed reviewed result
+        if: steps.mode.outputs.sealed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('docs/program/iterations/I004-burst-candidate-search-result.json').read_text())
+          assert result['schema_version'] == 1
+          assert result['iteration_id'] == 'I004'
+          assert result['root_cause_id'] == 'ema-burst-start-stop-speech-protection'
+          assert result['decision'] == 'KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE'
+          assert result['winner'] is None
+          assert result['base_sha'] == 'c425252e43e88ec0a9f8f440fb8cbf4f0c908b18'
+          assert result['effective_search_head_sha'] == 'd6bac778c2c4a6e99fa53f9d047feb29178beb19'
+          assert result['candidate_budget'] == {'limit': 2, 'consumed': 2, 'remaining': 0}
+          assert result['confirmation_budget_consumed'] == 0
+          assert result['promotion_allowed'] is False
+          execution = result['authoritative_execution']
+          assert execution['workflow_run_id'] == 34004833190
+          assert execution['artifact_id'] == 9980617637
+          assert execution['artifact_digest'] == 'sha256:669cedca1f19564d67b3079f471d3bfe4c03f02cef8bfbc658a60d455da6416a'
+          assert execution['downloaded_zip_sha256'] == '669cedca1f19564d67b3079f471d3bfe4c03f02cef8bfbc658a60d455da6416a'
+          assert execution['internal_sha256s_verified'] == 1399
+          assert len(result['candidates']) == 2
+          assert all(candidate['eligible'] is False for candidate in result['candidates'])
+          assert result['reviewed_conclusion']['do_not_add_third_candidate'] is True
+          assert result['reviewed_conclusion']['do_not_use_confirmation_to_rescue_failed_development_candidates'] is True
+          assert result['authority_boundary'] == {
+              'shipping_source_changed': False,
+              'software_candidate_promoted': False,
+              'release_created': False,
+              'product_qualification': 'DEFERRED_BY_SCOPE',
+          }
+          PY
+
+      - name: Execute exact-base two-candidate source experiment
+        if: steps.mode.outputs.sealed != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='c425252e43e88ec0a9f8f440fb8cbf4f0c908b18'
+          rm -rf /tmp/i004-burst-exact-base i004-burst-search-evidence
+          git worktree add --detach /tmp/i004-burst-exact-base "$BASE"
+          cp tests/validation/i004_ns_burst_candidate_search.py \
+            /tmp/i004-burst-exact-base/tests/validation/i004_ns_burst_candidate_search.py
+          cp docs/program/iterations/I004-burst-candidate-search.json \
+            /tmp/i004-burst-exact-base/docs/program/iterations/I004-burst-candidate-search.json
+          (
+            cd /tmp/i004-burst-exact-base
+            test "$(git rev-parse HEAD)" = "$BASE"
+            python3 tests/validation/i004_ns_burst_candidate_search.py \
+              --contract docs/program/iterations/I004-burst-candidate-search.json \
+              --output "$GITHUB_WORKSPACE/i004-burst-search-evidence"
+          )
+
+      - name: Seal and enforce search evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p i004-burst-search-evidence
+          cp docs/program/iterations/I004-burst-candidate-search.json i004-burst-search-evidence/contract.json
+          if test '${{ steps.mode.outputs.sealed }}' = 'true'; then
+            cp docs/program/iterations/I004-burst-candidate-search-result.json \
+              i004-burst-search-evidence/candidate-search-result.json
+            printf '%s\n' 'SEALED_REVIEW_REPLAY_NO_CANDIDATE_EXECUTION' > i004-burst-search-evidence/mode.txt
+          else
+            printf '%s\n' 'FRESH_BOUNDED_DEVELOPMENT_EXECUTION' > i004-burst-search-evidence/mode.txt
+          fi
+          git rev-parse HEAD > i004-burst-search-evidence/research-head.txt
+          printf '%s\n' 'c425252e43e88ec0a9f8f440fb8cbf4f0c908b18' > i004-burst-search-evidence/base-sha.txt
+          test -f i004-burst-search-evidence/candidate-search-result.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('i004-burst-search-evidence/candidate-search-result.json').read_text())
+          decision = result['decision']
+          assert decision in {
+              'FREEZE_UNIQUE_CANDIDATE',
+              'KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE',
+              'INCONCLUSIVE_MULTIPLE_ELIGIBLE_CANDIDATES',
+          }
+          if 'source_sha' in result:
+              assert result['source_sha'] == 'c425252e43e88ec0a9f8f440fb8cbf4f0c908b18'
+              assert result['candidate_limit'] == 2
+              assert result['confirmation_limit'] == 0
+              assert result['candidate_variants_consumed'] == 2
+              assert result['ns_floor_tuning_performed'] is False
+              assert result['backend_search_performed'] is False
+              assert result['checked_out_source_modified'] is False
+              assert result['promotion_allowed'] is False
+              if decision == 'FREEZE_UNIQUE_CANDIDATE':
+                  assert len(result['eligible_candidates']) == 1
+                  assert result['winner'] == result['eligible_candidates'][0]
+              else:
+                  assert result['winner'] is None
+          else:
+              assert decision == 'KEEP_BASELINE_NO_ELIGIBLE_CANDIDATE'
+              assert result['winner'] is None
+              assert result['candidate_budget']['consumed'] == 2
+              assert result['confirmation_budget_consumed'] == 0
+              assert result['promotion_allowed'] is False
+          PY
+          find i004-burst-search-evidence -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > i004-burst-search-evidence/SHA256SUMS
+
+      - name: Publish search summary
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          print('## I004 EMA burst-protection bounded source search')
+          path = Path('i004-burst-search-evidence/candidate-search-result.json')
+          if not path.exists():
+              print('- Result: `NO_FINAL_RESULT` (tool/infrastructure failure)')
+          else:
+              r = json.loads(path.read_text())
+              print(f"- Decision: **{r['decision']}**")
+              print(f"- Winner: `{r['winner']}`")
+              if 'eligible_candidates' in r:
+                  print(f"- Eligible: `{r['eligible_candidates']}`")
+              print('- Candidate budget consumed: `2/2`')
+              print('- Confirmation consumed: `0`')
+              mode = Path('i004-burst-search-evidence/mode.txt')
+              if mode.exists():
+                  print(f"- Mode: `{mode.read_text().strip()}`")
+          PY
+
+      - name: Upload sealed candidate-search evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i004-burst-candidate-search-${{ github.run_id }}
+          path: i004-burst-search-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Require terminal evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f i004-burst-search-evidence/candidate-search-result.json
+          test -f i004-burst-search-evidence/SHA256SUMS

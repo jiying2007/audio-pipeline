@@ -148,9 +148,15 @@ def validate_static(contract: dict) -> dict:
     require("release_tag:" in certification and
             "git cat-file -t \"$RELEASE_TAG\"" in certification and
             "gh api \"$api\" --jq '.immutable'" in certification and
-            "record['release'] = release" in certification and
-            "'type': 'release-identity'" in certification,
-            "Product Certification must bind and seal an immutable GitHub Release identity")
+            "'type': 'release-identity'" in certification and
+            "record['evidence_manifest_sha256'] = manifest_sha" in certification and
+            "schema-unknown top-level fields" in certification and
+            "record['release'] = release" not in certification,
+            "Product Certification must bind immutable Release identity through schema-compatible evidence")
+    record_schema = load("certification/record.schema.json")
+    require(record_schema.get("additionalProperties") is False and
+            "release" not in record_schema.get("properties", {}),
+            "v4 record schema must stay closed and must not acquire an ad-hoc release field")
     require("runs-on: [self-hosted, linux, audio-builder]" in certification and
             "runs-on: [self-hosted, linux, audio-target]" in certification,
             "Product Certification must use trusted shipping builder and DUT target")
@@ -287,7 +293,7 @@ def main() -> int:
         self_test()
         return 0
     contract = json.loads(args.contract.read_text(encoding="utf-8"))
-    result = build(contract, args.hil_enabled, args.extended_real_enabled)
+    result = build(contract, args.hil_enabled, args.extended_enabled if hasattr(args, 'extended_enabled') else args.extended_real_enabled)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.write_text(rendered, encoding="utf-8")

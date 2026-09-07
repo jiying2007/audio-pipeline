@@ -5,8 +5,8 @@ on:
     paths:
       - '.github/workflows/terminal-branch-gc.yml'
       - 'docs/program/terminal-branch-gc.json'
-      - 'scripts/terminal_branch_gc.py'
-      - 'scripts/merged_pr_head_gc.py'
+      - '.github/program/terminal_branch_gc.py'
+      - '.github/program/merged_pr_head_gc.py'
       - 'docs/program/plan.json'
       - 'docs/program/iterations/**'
       - '.github/research/evidence-index.json'
@@ -15,8 +15,8 @@ on:
     paths:
       - '.github/workflows/terminal-branch-gc.yml'
       - 'docs/program/terminal-branch-gc.json'
-      - 'scripts/terminal_branch_gc.py'
-      - 'scripts/merged_pr_head_gc.py'
+      - '.github/program/terminal_branch_gc.py'
+      - '.github/program/merged_pr_head_gc.py'
       - 'docs/program/plan.json'
       - 'docs/program/iterations/**'
       - '.github/research/evidence-index.json'
@@ -40,8 +40,8 @@ jobs:
       - name: Validate fail-closed terminal ref contracts
         run: |
           set -euo pipefail
-          python3 scripts/terminal_branch_gc.py --self-test
-          python3 scripts/merged_pr_head_gc.py --repository owner/repo --main-sha 1111111111111111111111111111111111111111 --self-test
+          python3 .github/program/terminal_branch_gc.py --self-test
+          python3 .github/program/merged_pr_head_gc.py --repository owner/repo --main-sha 1111111111111111111111111111111111111111 --self-test
           python3 -m json.tool docs/program/terminal-branch-gc.json >/dev/null
       - name: Audit or apply exact terminal refs
         env:
@@ -69,8 +69,8 @@ jobs:
             args+=(--apply --confirmation DELETE_TERMINAL_REFS)
             self_args+=(--apply)
           fi
-          python3 scripts/terminal_branch_gc.py "${args[@]}"
-          python3 scripts/merged_pr_head_gc.py "${self_args[@]}"
+          python3 .github/program/terminal_branch_gc.py "${args[@]}"
+          python3 .github/program/merged_pr_head_gc.py "${self_args[@]}"
       - name: Publish terminal ref audit
         if: always()
         run: |

@@ -454,24 +454,46 @@ jobs:
           })
           manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8')
           manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
-          record['release'] = release
           record['evidence_manifest_sha256'] = manifest_sha
           record['artifacts']['sha256'] = manifest_sha
+          schema = json.loads(Path('certification/record.schema.json').read_text(encoding='utf-8'))
+          if schema.get('additionalProperties') is False:
+              unknown = sorted(set(record) - set(schema.get('properties', {})))
+              if unknown:
+                  raise SystemExit(f'certification record contains schema-unknown top-level fields: {unknown}')
           record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-          print(f"sealed immutable release identity {tag} id={release_id} source={source}")
+          print(f"sealed immutable release identity evidence {tag} id={release_id} source={source}")
           PY
           python3 certification/validate_record.py certification-out/record.json \
             --policy "$POLICY" --corpus-manifest "$CORPUS" \
             --evidence-manifest certification-out/evidence-manifest.json
           python3 - <<'PY'
+          import hashlib
           import json
-          record = json.load(open('certification-out/record.json'))
-          release = record.get('release') or {}
+          from pathlib import Path
+
+          out = Path('certification-out')
+          record = json.loads((out / 'record.json').read_text(encoding='utf-8'))
+          manifest_path = out / 'evidence-manifest.json'
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          evidence_path = out / 'evidence' / 'release-identity.json'
+          release = json.loads(evidence_path.read_text(encoding='utf-8'))
+          assert 'release' not in record
           assert release.get('immutable') is True
           assert release.get('draft') is False
           assert release.get('prerelease') is False
           assert release.get('source_revision') == record['build']['source_revision']
           assert release.get('tag') == 'v' + record['build']['version']
+          entries = [item for item in manifest['artifacts'] if item.get('type') == 'release-identity']
+          assert len(entries) == 1
+          entry = entries[0]
+          assert entry.get('path') == 'evidence/release-identity.json'
+          payload = evidence_path.read_bytes()
+          assert entry.get('size') == len(payload)
+          assert entry.get('sha256') == hashlib.sha256(payload).hexdigest()
+          manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+          assert record['evidence_manifest_sha256'] == manifest_sha
+          assert record['artifacts']['sha256'] == manifest_sha
           PY
           tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
             -czf certification-out.tar.gz certification-out

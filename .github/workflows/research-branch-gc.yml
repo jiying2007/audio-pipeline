@@ -1,6 +1,11 @@
 name: Research Branch GC
 
 on:
+  pull_request:
+    paths:
+      - '.github/research/evidence-index.json'
+      - 'scripts/research_registry.py'
+      - '.github/workflows/research-branch-gc.yml'
   push:
     branches: [main]
     paths:

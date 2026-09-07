@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I003",
+  "evidence_kind": "terminal-branch-archive",
+  "state": "CLOSED_KEEP_BASELINE",
+  "decision": "REJECT_CANDIDATE",
+  "shipping_baseline_preserved": true,
+  "terminal_branches": [
+    {
+      "branch": "feat/i003-incumbent-qualified-sync",
+      "head_sha": "3dd1ca0213c6218adbe7a7e2eaabb1b30a88bda1",
+      "head_commit_subject": "research: archive I003 rejection on candidate branch",
+      "disposition": "REJECTED_NON_SHIPPING_ARCHIVE",
+      "preserved_result": "docs/program/iterations/I003-confirmation-result.json"
+    },
+    {
+      "branch": "feat/i003-incumbent-qualified-sync-probe",
+      "head_sha": "92e09eb1e88fcb4d912246c5a4c5da321e7d765d",
+      "head_commit_subject": "research: register I003 implementation as pre-confirmation candidate",
+      "disposition": "SUPERSEDED_PRECONFIRMATION_NON_SHIPPING",
+      "preserved_result": "docs/program/iterations/I003-confirmation-result.json"
+    }
+  ],
+  "candidate_implementation_sha": "82ae56d8148e1a19f62250072bd45563eaffdde5",
+  "confirmation": {
+    "metadata_head_sha": "1c8916089749ad1b99cf26ba53e3683e833d4fe0",
+    "workflow_run_id": 33976714064,
+    "artifact_id": 9972539010,
+    "artifact_digest": "sha256:f77826cc444c756d8a10fa3de48a4adb8c146ee8fb2d8fe8806e2227e04c0604",
+    "strict_improvement": false,
+    "canonical_validation": "PASS_ALL_3_SEEDS_12_OF_12_EACH"
+  },
+  "interpretation": "These exact branch heads are retained only as historical non-shipping lineage for the already committed I003 rejection. Deleting their mutable branch refs does not delete the committed main result, the confirmation workflow/artifact identity, or grant candidate/release authority.",
+  "authority_boundary": {
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "shipping_source_changed": false,
+    "hardware_test_executed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

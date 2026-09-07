@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import tempfile
 from pathlib import Path
@@ -118,6 +119,15 @@ def validate_committed_contract() -> None:
             "E001 activation readiness cannot acquire hardware/PQ authority")
 
 
+def validate_runtime_control_plane() -> None:
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    require(os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch",
+            "E001 activation preflight runtime must be manual workflow_dispatch")
+    require(os.environ.get("GITHUB_REF") == "refs/heads/main",
+            "E001 activation preflight must execute from refs/heads/main")
+
+
 def load_report(spec: str) -> tuple[str, dict]:
     role, sep, raw_path = spec.partition("=")
     require(bool(sep) and role in ROLES and bool(raw_path),
@@ -183,6 +193,7 @@ def aggregate(
         },
         "control_plane": {
             "source_sha": control_source_sha,
+            "main_ref_verified_at_runtime": True,
             "activation_controls_verified_by_workflow": True,
         },
         "roles": rendered_roles,
@@ -262,6 +273,7 @@ def main() -> int:
         self_test()
         return 0
     validate_committed_contract()
+    validate_runtime_control_plane()
     result = aggregate(
         args.source_sha or "",
         args.release_tag or "",

@@ -1,100 +1,60 @@
-name: Program Iteration
-run-name: software-public-data / ${{ github.event_name }} / ${{ github.ref_name }}
+name: Program Archive Contract
+run-name: program-archive / ${{ github.event_name }} / ${{ github.ref_name }}
 
 on:
   push:
     branches: [main]
     paths:
-      - 'AGENTS.md'
       - 'docs/program/**'
       - 'scripts/program.py'
       - '.github/program/promotion_governance.py'
       - '.github/program/terminal_workflow_retirement.py'
-      - '.github/workflows/i007-closure.yml'
-      - '.github/workflows/i008-review-required.yml'
-      - '.github/workflows/i009-closure.yml'
-      - '.github/workflows/p002-candidate-zero-audit.yml'
-      - '.github/workflows/p002-closure.yml'
-      - 'validation/tools/build_aec_motion_corpus.py'
-      - 'validation/tools/build_aec_motion_bundle.py'
-      - 'validation/AEC_MOTION_DEVELOPMENT.md'
-      - 'tests/validation/aec_motion_model_qualification.py'
-      - 'tests/validation/aec_sync_selector_search.py'
       - '.github/workflows/program-iteration.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'AGENTS.md'
       - 'docs/program/**'
       - 'scripts/program.py'
       - '.github/program/promotion_governance.py'
       - '.github/program/terminal_workflow_retirement.py'
-      - '.github/workflows/i007-closure.yml'
-      - '.github/workflows/i008-review-required.yml'
-      - '.github/workflows/i009-closure.yml'
-      - '.github/workflows/p002-candidate-zero-audit.yml'
-      - '.github/workflows/p002-closure.yml'
-      - 'validation/tools/build_aec_motion_corpus.py'
-      - 'validation/tools/build_aec_motion_bundle.py'
-      - 'validation/AEC_MOTION_DEVELOPMENT.md'
-      - 'tests/validation/aec_motion_model_qualification.py'
-      - 'tests/validation/aec_sync_selector_search.py'
       - '.github/workflows/program-iteration.yml'
-  schedule:
-    - cron: '19 19 * * 2,5'
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: program-iteration-${{ github.ref }}
-  cancel-in-progress: false
+  group: program-archive-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  research:
+  archive-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate program, measurement, governance, retirement and I003 search contracts
+      - name: Validate terminal program archive contracts
         run: |
           set -euo pipefail
           python3 scripts/program.py --self-test
           python3 scripts/program.py check
           python3 .github/program/promotion_governance.py --self-test
           python3 .github/program/terminal_workflow_retirement.py --self-test --check
-          python3 validation/tools/build_aec_motion_corpus.py --self-test
-          python3 validation/tools/build_aec_motion_bundle.py --self-test
-          python3 tests/validation/aec_motion_model_qualification.py --self-test
-          python3 tests/validation/aec_sync_selector_search.py --self-test
-      - name: Execute the next registered bounded program task
-        run: python3 scripts/program.py run --output program-evidence
-      - name: Report execution separately from candidate authority
-        if: always()
-        run: |
-          mkdir -p program-evidence
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
           import json
           from pathlib import Path
-          path = Path('program-evidence/execution-result.json')
-          progress = Path('program-evidence/plan-progress.json')
-          result = json.loads(path.read_text()) if path.exists() else (
-              json.loads(progress.read_text()) if progress.exists() else {'execution_status': 'NOT_EXECUTED'})
-          print('## Software/public-data program')
-          print('```json\n' + json.dumps(result, indent=2) + '\n```')
-          print('Registered task completion is not acoustic acceptance. Product qualification is DEFERRED_BY_SCOPE.')
-          Path('program-evidence/status.json').write_text(json.dumps(result, indent=2) + '\n')
+
+          plan = json.loads(Path('docs/program/plan.json').read_text())
+          tasks = plan.get('tasks', [])
+          ready = [task.get('id') for task in tasks if task.get('status') == 'READY']
+          assert ready == [], f'terminal program unexpectedly regained READY tasks: {ready}'
+          assert plan.get('hardware_collection') is False
+          assert plan.get('auto_promote') is False
+          assert plan.get('product_qualification') == 'DEFERRED_BY_SCOPE'
+          external = [task for task in tasks if task.get('id') == 'E001']
+          assert len(external) == 1 and external[0].get('status') == 'DEFERRED'
+          print('program archive contract: terminal software program; E001 remains external/deferred')
           PY
-      - name: Preserve reports, negative results and reproducer sources
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: program-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          path: program-evidence/
-          if-no-files-found: error
-          retention-days: 90

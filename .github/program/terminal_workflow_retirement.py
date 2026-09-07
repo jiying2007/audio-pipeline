@@ -10,15 +10,29 @@ from pathlib import Path
 
 MANIFEST = Path("docs/program/terminal-workflow-retirement.json")
 PLAN = Path("docs/program/plan.json")
+WORKFLOW_DIR = Path(".github/workflows")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+TASK_WORKFLOW_RE = re.compile(r"^(?P<task>[ip]\d{3})-.*\.ya?ml$", re.IGNORECASE)
 EXPECTED_PATHS = {
+    ".github/workflows/i004-ns-baseline-diagnostic.yml",
+    ".github/workflows/i004-ns-burst-candidate-search.yml",
+    ".github/workflows/i004-ns-root-cause-differential.yml",
+    ".github/workflows/i005-vad-baseline.yml",
+    ".github/workflows/i005-vad-source-admission.yml",
+    ".github/workflows/i006-agc-baseline.yml",
+    ".github/workflows/i006-agc-root-cause-differential.yml",
+    ".github/workflows/i007-bf-health-baseline.yml",
+    ".github/workflows/i007-bf-health-root-cause.yml",
     ".github/workflows/i007-closure.yml",
     ".github/workflows/i008-review-required.yml",
+    ".github/workflows/i009-activity-doubletalk-baseline.yml",
+    ".github/workflows/i009-echo-normalized-root-cause.yml",
+    ".github/workflows/i009-residual-echo-rescue-root-cause.yml",
     ".github/workflows/i009-closure.yml",
     ".github/workflows/p002-candidate-zero-audit.yml",
     ".github/workflows/p002-closure.yml",
 }
-EXPECTED_TASKS = {"I007", "I008", "I009", "P002"}
+EXPECTED_TASKS = {"I004", "I005", "I006", "I007", "I008", "I009", "P002"}
 FORBIDDEN_CONTINUOUS_TRIGGERS = ("workflow_call:", "workflow_run:", "schedule:", "push:")
 
 
@@ -43,12 +57,15 @@ def validate_manifest(data: dict) -> None:
     require(data.get("reintroduction_allowed") is False, "retired workflows must not be reintroduced")
     require(data.get("retained_reproducers") is True, "reproducer retention contract missing")
     records = data.get("workflows")
-    require(isinstance(records, list) and len(records) == 5, "expected exactly five retired workflows")
+    require(isinstance(records, list) and len(records) == len(EXPECTED_PATHS),
+            f"expected exactly {len(EXPECTED_PATHS)} retired workflows")
     require({r.get("path") for r in records} == EXPECTED_PATHS, "retired workflow set drift")
     require({r.get("task_id") for r in records} == EXPECTED_TASKS, "terminal task set drift")
+    require(len({r.get("blob_sha") for r in records}) == len(records), "retired workflow blob SHA reused")
     for r in records:
         require(set(r) == {"path", "blob_sha", "task_id", "terminal_evidence", "reason"},
                 f"retirement record fields drift: {r.get('path')}")
+        require(str(r["path"]).startswith(".github/workflows/"), f"invalid workflow path: {r['path']}")
         require(SHA_RE.fullmatch(str(r["blob_sha"])) is not None, f"invalid blob SHA: {r['path']}")
         require(isinstance(r["reason"], str) and r["reason"], f"missing reason: {r['path']}")
     require(data.get("authority_boundary") == {
@@ -104,6 +121,18 @@ def check(root: Path) -> dict:
                 f"retired workflow had a continuous/reusable trigger: {r['path']}")
         checked.append({"path": r["path"], "blob_sha": r["blob_sha"], "task_id": r["task_id"]})
 
+    # A terminal research task must not regain a standalone Actions entry under its task prefix.
+    # Reproducers/contracts/results stay in the repository; only the consumed orchestration entry is retired.
+    for pattern in ("*.yml", "*.yaml"):
+        for path in sorted((root / WORKFLOW_DIR).glob(pattern)):
+            match = TASK_WORKFLOW_RE.fullmatch(path.name)
+            if not match:
+                continue
+            task_id = match.group("task").upper()
+            task = tasks.get(task_id)
+            if task and task.get("status") == "CLOSED":
+                raise ValueError(f"live standalone workflow remains for CLOSED task {task_id}: {path.relative_to(root)}")
+
     return {
         "schema_version": 1,
         "result": "TERMINAL_WORKFLOW_RETIREMENT_PASS",
@@ -117,6 +146,25 @@ def check(root: Path) -> dict:
 
 
 def self_test() -> None:
+    pairs = [
+        (".github/workflows/i004-ns-baseline-diagnostic.yml", "I004"),
+        (".github/workflows/i004-ns-burst-candidate-search.yml", "I004"),
+        (".github/workflows/i004-ns-root-cause-differential.yml", "I004"),
+        (".github/workflows/i005-vad-baseline.yml", "I005"),
+        (".github/workflows/i005-vad-source-admission.yml", "I005"),
+        (".github/workflows/i006-agc-baseline.yml", "I006"),
+        (".github/workflows/i006-agc-root-cause-differential.yml", "I006"),
+        (".github/workflows/i007-bf-health-baseline.yml", "I007"),
+        (".github/workflows/i007-bf-health-root-cause.yml", "I007"),
+        (".github/workflows/i007-closure.yml", "I007"),
+        (".github/workflows/i008-review-required.yml", "I008"),
+        (".github/workflows/i009-activity-doubletalk-baseline.yml", "I009"),
+        (".github/workflows/i009-echo-normalized-root-cause.yml", "I009"),
+        (".github/workflows/i009-residual-echo-rescue-root-cause.yml", "I009"),
+        (".github/workflows/i009-closure.yml", "I009"),
+        (".github/workflows/p002-candidate-zero-audit.yml", "P002"),
+        (".github/workflows/p002-closure.yml", "P002"),
+    ]
     sample = {
         "schema_version": 1,
         "policy": "retired-terminal-workflow-set",
@@ -125,14 +173,9 @@ def self_test() -> None:
         "reintroduction_allowed": False,
         "retained_reproducers": True,
         "workflows": [
-            {"path": p, "blob_sha": "a" * 40, "task_id": t, "terminal_evidence": "x.json", "reason": "terminal"}
-            for p, t in [
-                (".github/workflows/i007-closure.yml", "I007"),
-                (".github/workflows/i008-review-required.yml", "I008"),
-                (".github/workflows/i009-closure.yml", "I009"),
-                (".github/workflows/p002-candidate-zero-audit.yml", "P002"),
-                (".github/workflows/p002-closure.yml", "P002"),
-            ]
+            {"path": p, "blob_sha": f"{index + 1:040x}", "task_id": t,
+             "terminal_evidence": "x.json", "reason": "terminal"}
+            for index, (p, t) in enumerate(pairs)
         ],
         "authority_boundary": {
             "shipping_source_changed": False,
@@ -145,6 +188,8 @@ def self_test() -> None:
     }
     validate_manifest(sample)
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
+    assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
+    assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")
     bad = json.loads(json.dumps(sample))
     bad["reintroduction_allowed"] = True
     try:

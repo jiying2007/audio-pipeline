@@ -6,6 +6,10 @@ on:
       source_sha:
         description: Exact 40-character source commit SHA to certify
         required: true
+      release_tag:
+        description: Immutable annotated GitHub Release tag bound to source_sha
+        required: true
+        default: v2.3.13
       sku:
         description: Shipping SKU id; must match policy.sku
         required: true
@@ -89,22 +93,44 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.resolve.outputs.sha }}
+      release_tag: ${{ steps.resolve.outputs.release_tag }}
+      release_id: ${{ steps.resolve.outputs.release_id }}
       required_soak_seconds: ${{ steps.policy.outputs.required_soak_seconds }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ inputs.source_sha }}
           fetch-depth: 0
-      - name: Validate immutable source revision
+      - name: Bind exact immutable GitHub Release source revision
         id: resolve
         env:
+          GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ inputs.source_sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
           [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "source_sha must be a 40-character commit SHA" >&2; exit 1; }
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "release_tag must be semantic vX.Y.Z" >&2; exit 1; }
+          SOURCE_SHA=${SOURCE_SHA,,}
           revision=$(git rev-parse HEAD)
-          test "$revision" = "${SOURCE_SHA,,}"
-          echo "sha=$revision" >> "$GITHUB_OUTPUT"
+          test "$revision" = "$SOURCE_SHA"
+          version=$(sed -n 's/^project(audio_pipeline VERSION \([0-9][0-9.]*\) LANGUAGES C)$/\1/p' CMakeLists.txt)
+          test -n "$version"
+          test "$RELEASE_TAG" = "v$version"
+          git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          test "$(git cat-file -t "$RELEASE_TAG")" = tag
+          test "$(git rev-list -n1 "$RELEASE_TAG")" = "$SOURCE_SHA"
+          api="repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG"
+          test "$(gh api "$api" --jq '.tag_name')" = "$RELEASE_TAG"
+          test "$(gh api "$api" --jq '.immutable')" = true
+          test "$(gh api "$api" --jq '.draft')" = false
+          test "$(gh api "$api" --jq '.prerelease')" = false
+          release_id=$(gh api "$api" --jq '.id')
+          [[ "$release_id" =~ ^[0-9]+$ ]] || { echo "release id must be numeric" >&2; exit 1; }
+          echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
+          printf 'immutable release=%s release_id=%s source=%s\n' "$RELEASE_TAG" "$release_id" "$SOURCE_SHA"
       - name: Validate shipping policy before hardware allocation
         id: policy
         env:
@@ -359,6 +385,9 @@ jobs:
           PLAYBACK: ${{ inputs.playback_device }}
           SAMPLE_RATE: ${{ inputs.sample_rate }}
           MIC_CHANNELS: ${{ inputs.mic_channels }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+          RELEASE_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
         run: |
           set -euo pipefail
           test -f "$CORPUS"
@@ -375,9 +404,75 @@ jobs:
             --build-info-bin "$DEPLOY_DIR/ap_build_info_dump" \
             --binary "$DEPLOY_DIR/ap_bench" --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" \
             --cmake-cache shipping-build/CMakeCache.txt
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          out = Path('certification-out')
+          record_path = out / 'record.json'
+          manifest_path = out / 'evidence-manifest.json'
+          evidence_path = out / 'evidence' / 'release-identity.json'
+          record = json.loads(record_path.read_text(encoding='utf-8'))
+          source = os.environ['RELEASE_SOURCE_SHA'].lower()
+          tag = os.environ['RELEASE_TAG']
+          release_id = os.environ['RELEASE_ID']
+          if not re.fullmatch(r'[0-9a-f]{40}', source):
+              raise SystemExit('release source must be exact 40-hex')
+          if not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', tag):
+              raise SystemExit('release tag must be semantic vX.Y.Z')
+          if not release_id.isdigit():
+              raise SystemExit('release id must be numeric')
+          build = record.get('build') or {}
+          if build.get('source_revision') != source or build.get('commit') != source:
+              raise SystemExit('certification record build is not the immutable release source')
+          if tag != 'v' + str(build.get('version', '')):
+              raise SystemExit('release tag does not match certified build version')
+          release = {
+              'schema_version': 1,
+              'repository': os.environ['GITHUB_REPOSITORY'],
+              'tag': tag,
+              'release_id': int(release_id),
+              'immutable': True,
+              'draft': False,
+              'prerelease': False,
+              'source_revision': source,
+          }
+          evidence_path.write_text(json.dumps(release, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          rel = evidence_path.relative_to(out).as_posix()
+          if any(item.get('path') == rel or item.get('type') == 'release-identity' for item in manifest.get('artifacts', [])):
+              raise SystemExit('duplicate release identity evidence')
+          payload = evidence_path.read_bytes()
+          manifest['artifacts'].append({
+              'path': rel,
+              'type': 'release-identity',
+              'size': len(payload),
+              'sha256': hashlib.sha256(payload).hexdigest(),
+          })
+          manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+          record['release'] = release
+          record['evidence_manifest_sha256'] = manifest_sha
+          record['artifacts']['sha256'] = manifest_sha
+          record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(f"sealed immutable release identity {tag} id={release_id} source={source}")
+          PY
           python3 certification/validate_record.py certification-out/record.json \
             --policy "$POLICY" --corpus-manifest "$CORPUS" \
             --evidence-manifest certification-out/evidence-manifest.json
+          python3 - <<'PY'
+          import json
+          record = json.load(open('certification-out/record.json'))
+          release = record.get('release') or {}
+          assert release.get('immutable') is True
+          assert release.get('draft') is False
+          assert release.get('prerelease') is False
+          assert release.get('source_revision') == record['build']['source_revision']
+          assert release.get('tag') == 'v' + record['build']['version']
+          PY
           tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
             -czf certification-out.tar.gz certification-out
           sha256sum certification-out.tar.gz | tee certification-out.tar.gz.sha256

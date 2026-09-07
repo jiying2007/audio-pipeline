@@ -145,6 +145,12 @@ def validate_static(contract: dict) -> dict:
     require("source_sha must be a 40-character commit SHA" in certification and
             "policy is not shipping_approved" in certification,
             "Product Certification must require exact source and shipping-approved policy")
+    require("release_tag:" in certification and
+            "git cat-file -t \"$RELEASE_TAG\"" in certification and
+            "gh api \"$api\" --jq '.immutable'" in certification and
+            "record['release'] = release" in certification and
+            "'type': 'release-identity'" in certification,
+            "Product Certification must bind and seal an immutable GitHub Release identity")
     require("runs-on: [self-hosted, linux, audio-builder]" in certification and
             "runs-on: [self-hosted, linux, audio-target]" in certification,
             "Product Certification must use trusted shipping builder and DUT target")

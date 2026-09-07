@@ -6,7 +6,7 @@
 
 ## 当前仓库状态
 
-仓库当前处于 **software-commercial-ready 稳定维护状态**：软件/public-data program 已无 READY task；E001 仍为 external/deferred。真实产品资格由 Issue #58 跟踪。
+仓库当前处于 **software-commercial-ready 稳定维护状态**：软件/public-data program 已无 READY task；E001 仍为 external/deferred。真实产品资格由 live open issue / external-evidence tracker 跟踪，而不是由本文件硬编码某个 issue 编号。
 
 默认行为因此不是“继续找新算法优化”，而是：
 
@@ -74,7 +74,7 @@
 
 ## 真实硬件阶段
 
-只有当外部基础设施真的上线后，助手才能沿 #58 执行：
+只有当外部基础设施真的上线后，助手才能沿 live external-evidence tracker 执行：
 
 ```text
 四类 trusted runner READY

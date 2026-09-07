@@ -17,10 +17,11 @@ Cross-build/QEMU are never reported as target-board performance.
 | Cortex-A7 | armhf | scalar/VFPv4 | build-supported | pending per SKU |
 | Cortex-A7 | armhf | NEON/VFPv4 | build + QEMU executed contracts | pending per SKU |
 | Cortex-A32 | armhf | NEON/FP-Armv8 | build-supported | pending per SKU |
+| SigmaStar SSC305 `ssc305-cortex-a32-low` | armhf | NEON/FP-Armv8 | exact preset build/install identity + QEMU consumer contract | real-board/Product Certification pending |
 | generic AArch64 | LP64 | NEON/ASIMD | build + QEMU executed contracts | pending per SKU |
 | Arm without hardware floating point | varies | none | unsupported by this profile | separate fixed-point profile required |
 
-Portable DSP code is CPU-model agnostic. CPU names appear only in presets, emulation/certification records and product build configuration.
+Portable DSP code is CPU-model agnostic. CPU names appear only in presets, emulation/certification records and product build configuration. The SSC305 repository signal proves the exact software build envelope and SDK consumption path only; it does not claim silicon timing, acoustic performance, power, thermal or route qualification.
 
 ## Compile-time SKU envelope
 

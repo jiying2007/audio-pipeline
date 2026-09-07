@@ -4,6 +4,8 @@
 
 `audio-pipeline` 是面向**低算力 Arm Linux 产品**的轻依赖、无动态分配实时语音前端与可组合 DSP SDK，覆盖 ARMv7-A/Cortex-A7、Cortex-A32 类 AArch32 和 AArch64 产品。CPU 型号只属于构建、测试和认证配置，不进入 DSP 算法依赖。
 
+> **商用就绪边界：**当当前 main 的 required gates 全部通过时，仓库可以标记为 **software-commercial-ready（软件商用集成就绪）**：公开 API/ABI、Runtime 所有权、安装后 SDK 消费、Arm/QEMU 可移植性、命名的 `ssc305-cortex-a32-low` 产品构建契约、资源/性能回归、声学验证权限、Release provenance/SBOM/attestation、诊断与回放均由仓库可重复、fail-closed 地验证。该状态可用于商业产品集成和预生产软件交付，但**不等于**板级验证或 Product Qualification：SSC305 真机 CPU/热/功耗、真实机壳与音频 route 声学、HIL 历史以及 72 小时 `product-certified` 记录仍必须由真实 DUT 证据完成。
+
 默认高层链路：
 
 `S16采集 -> 采样率适配 -> HPF -> 双麦BF -> SYNC -> Activity/DTD -> AEC -> RES -> NS -> AGC -> VAD -> 单声道S16`

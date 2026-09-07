@@ -396,9 +396,15 @@
       "title": "Real product capture, DUT/HIL and Product Certification",
       "depends_on": [],
       "handler": null,
-      "contract": null,
-      "exit": "Explicit future scope activation with real infrastructure; never inferred from synthetic/public PASS",
-      "evidence": []
+      "contract": "docs/program/iterations/E001-readiness.json",
+      "exit": "Software-side activation readiness and deferred evidence are sealed; real HIL, Extended Real and Product Certification remain explicitly deferred until trusted infrastructure is configured and exercised, and readiness evidence may never imply Product Qualification PASS",
+      "evidence": [
+        {
+          "source_sha": "06e9c30ef2d86c4a9291ecf1d38fc778264f7d6f",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/34078425136",
+          "meaning": "Exact-main E001 readiness #7 completed success and emitted E001_DEFERRED_INFRASTRUCTURE_DISABLED with HIL/Extended Real both disabled, static contracts PASS, minimum certification soak 72h, hardware/certification not executed and Product Qualification/DUT-HIL still DEFERRED_BY_SCOPE. Artifact 10002861733; digest 630e6c989a8e5bf2bbaa8a64c4f60c5dd26219b896ec4c92e5f1be772a15a5c1."
+        }
+      ]
     }
   ]
 }

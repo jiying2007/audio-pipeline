@@ -4,9 +4,6 @@ on:
   pull_request:
     paths:
       - docs/program/iterations/I008-review-required.json
-      - docs/program/plan.json
-      - scripts/program.py
-      - .github/workflows/i008-review-required.yml
 
 permissions:
   contents: read
@@ -27,17 +24,31 @@ jobs:
           base='${{ github.event.pull_request.base.sha }}'
           head='${{ github.event.pull_request.head.sha }}'
           mapfile -t files < <(git diff --name-only "$base...$head" | sort)
-          expected=(
+          review_snapshot=(
             .github/workflows/i008-review-required.yml
             docs/program/iterations/I008-review-required.json
             docs/program/plan.json
             scripts/program.py
           )
+          trigger_maintenance=(
+            .github/workflows/i008-review-required.yml
+          )
           printf '%s\n' "${files[@]}" > /tmp/actual
-          printf '%s\n' "${expected[@]}" | sort > /tmp/expected
-          diff -u /tmp/expected /tmp/actual
+          printf '%s\n' "${review_snapshot[@]}" | sort > /tmp/review-snapshot
+          printf '%s\n' "${trigger_maintenance[@]}" | sort > /tmp/trigger-maintenance
+          if diff -q /tmp/review-snapshot /tmp/actual >/dev/null; then
+            echo 'mode=review-snapshot'
+          elif diff -q /tmp/trigger-maintenance /tmp/actual >/dev/null; then
+            echo 'mode=trigger-maintenance'
+            grep -A4 '^  pull_request:' .github/workflows/i008-review-required.yml | grep -q 'docs/program/iterations/I008-review-required.json'
+            ! grep -A8 '^  pull_request:' .github/workflows/i008-review-required.yml | grep -Eq 'docs/program/plan.json|scripts/program.py|i008-review-required.yml'
+          else
+            echo 'unexpected I008 review-required delta' >&2
+            diff -u /tmp/review-snapshot /tmp/actual || true
+            exit 1
+          fi
           git diff --check "$base...$head"
-          git diff --exit-code "$base...$head" -- src include CMakeLists.txt
+          git diff --exit-code "$base...$head" -- src include CMakeLists.txt CHANGELOG.md
           python3 scripts/program.py --self-test
           python3 scripts/program.py check
       - name: Revalidate PR and workflow external facts

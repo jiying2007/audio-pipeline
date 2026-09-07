@@ -8,6 +8,7 @@ immutable software baseline and future trusted-runner / real-DUT work.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import tempfile
@@ -30,6 +31,46 @@ def text(path: str) -> str:
 
 def load(path: str) -> dict:
     return json.loads(text(path))
+
+
+def validate_deferred_evidence(evidence: dict, baseline: dict, minimum: int) -> None:
+    require(set(evidence) == {
+        "schema_version", "iteration_id", "state", "evidence_kind", "main_sha",
+        "workflow_run_id", "workflow_run_number", "workflow_conclusion", "artifact_id",
+        "artifact_digest", "result", "configuration", "static_contracts",
+        "software_baseline", "authority_boundary", "interpretation",
+    }, "E001 deferred evidence unknown/missing fields")
+    require(evidence["schema_version"] == 1 and evidence["iteration_id"] == "E001" and
+            evidence["state"] == "DEFERRED" and
+            evidence["evidence_kind"] == "software-side-hardware-activation-readiness",
+            "E001 deferred evidence identity")
+    require(evidence["main_sha"] == "06e9c30ef2d86c4a9291ecf1d38fc778264f7d6f" and
+            evidence["workflow_run_id"] == 34078425136 and
+            evidence["workflow_run_number"] == 7 and
+            evidence["workflow_conclusion"] == "success" and
+            evidence["artifact_id"] == 10002861733 and
+            evidence["artifact_digest"] ==
+            "sha256:630e6c989a8e5bf2bbaa8a64c4f60c5dd26219b896ec4c92e5f1be772a15a5c1",
+            "E001 deferred evidence must bind the verified main execution")
+    require(evidence["result"] == "E001_DEFERRED_INFRASTRUCTURE_DISABLED" and
+            evidence["configuration"] == {"hil_enabled": False, "extended_real_enabled": False} and
+            evidence["static_contracts"] == "PASS",
+            "E001 deferred evidence result/configuration drift")
+    require(evidence["software_baseline"] == {
+                "release": baseline["release"],
+                "source_sha": baseline["source_sha"],
+                "minimum_certification_soak_hours": minimum,
+            }, "E001 deferred evidence baseline drift")
+    require(evidence["authority_boundary"] == {
+                "hardware_test_executed": False,
+                "product_certification_executed": False,
+                "product_qualification": "DEFERRED_BY_SCOPE",
+                "dut_hil": "DEFERRED_BY_SCOPE",
+                "readiness_is_certification": False,
+                "shipping_source_changed": False,
+                "release_created": False,
+            }, "E001 deferred evidence cannot acquire certification authority")
+    require(bool(evidence["interpretation"]), "E001 deferred evidence interpretation")
 
 
 def validate_static(contract: dict) -> dict:
@@ -59,6 +100,8 @@ def validate_static(contract: dict) -> dict:
     require(e001["status"] == "DEFERRED" and e001["lane"] == "external" and
             e001["handler"] is None,
             "E001 may not become executable through software readiness")
+    require(e001["contract"] in (None, "docs/program/iterations/E001-readiness.json"),
+            "E001 may bind only the deferred readiness contract")
 
     hil = text(".github/workflows/hil-soak.yml")
     require("types: [hil-post-release]" in hil and
@@ -126,6 +169,11 @@ def validate_static(contract: dict) -> dict:
             observed["extended_real_control_result"] == "EXTENDED_REAL_REQUIRED_BUT_DISABLED",
             "observed E001 deferred evidence identity")
 
+    evidence_path = contract.get("deferred_evidence_file")
+    require(evidence_path == "docs/program/iterations/E001-deferred-evidence.json",
+            "E001 readiness must bind the reviewed deferred evidence file")
+    validate_deferred_evidence(load(evidence_path), baseline, minimum)
+
     authority = contract["authority_boundary"]
     require(authority == {
         "shipping_source_changed": False,
@@ -139,6 +187,7 @@ def validate_static(contract: dict) -> dict:
 
     return {
         "static_contracts": "PASS",
+        "deferred_evidence": "PASS",
         "software_release": baseline["release"],
         "software_source_sha": baseline["source_sha"],
         "minimum_certification_soak_hours": minimum,
@@ -195,6 +244,24 @@ def self_test() -> None:
         assert out["authority"]["hardware_test_executed"] is False
         assert out["authority"]["product_certification_executed"] is False
         assert out["authority"]["product_qualification"] == "DEFERRED_BY_SCOPE"
+        assert out["static"]["deferred_evidence"] == "PASS"
+    evidence = load(contract["deferred_evidence_file"])
+    bad = copy.deepcopy(evidence)
+    bad["authority_boundary"]["product_qualification"] = "PASS"
+    try:
+        validate_deferred_evidence(bad, contract["software_baseline"], 72)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("E001 false Product Qualification evidence was accepted")
+    bad = copy.deepcopy(evidence)
+    bad["artifact_digest"] = "sha256:" + "0" * 64
+    try:
+        validate_deferred_evidence(bad, contract["software_baseline"], 72)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("E001 evidence digest drift was accepted")
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp) / "result.json"
         p.write_text(json.dumps(build(contract, "", "")), encoding="utf-8")

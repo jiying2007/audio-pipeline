@@ -18,15 +18,27 @@ from pathlib import Path
 CURRENT_DOCS = (
     "README.md",
     "README.zh-CN.md",
+    "AGENTS.md",
+    "AGENTS.zh-CN.md",
+    "CONTRIBUTING.md",
+    "CONTRIBUTING.zh-CN.md",
+    "docs/README.zh-CN.md",
+    "docs/QUICKSTART.zh-CN.md",
+    "docs/API_CONTRACT.zh-CN.md",
     "docs/ARCHITECTURE.md",
+    "docs/ARCHITECTURE.zh-CN.md",
+    "docs/FLOWS.zh-CN.md",
     "docs/DEVELOPMENT.md",
+    "docs/DEVELOPMENT.zh-CN.md",
     "docs/PERFORMANCE.md",
     "docs/PLATFORM_SUPPORT.md",
     "docs/PRODUCT_ASSURANCE.md",
+    "docs/PRODUCT_ASSURANCE.zh-CN.md",
     "docs/REPOSITORY_GOVERNANCE.md",
     "docs/TESTING.md",
     "docs/TESTING.zh-CN.md",
     "docs/TRUSTED_RUNNERS.md",
+    "docs/TRUSTED_RUNNERS.zh-CN.md",
     "docs/TUNING.md",
     "validation/README.md",
     "hil/README.md",
@@ -55,6 +67,8 @@ STALE_PHRASES = (
     "Until then scheduled/post-release HIL jobs are intentionally skipped",
     "未设置或为 false 时自动 skip",
     "只有仓库变量 `HIL_ENABLED=true` 后才启用定时和 Release 后 HIL",
+    "Current phase is software-public-data",
+    "current software/public-data phase",
 )
 
 LAB_REQUIRED = (
@@ -483,6 +497,31 @@ def validate(root: Path, *, require_lab: bool = True,
         if require_lab and "lab/README.md" not in text:
             errors.append(f"{rel}: missing laboratory deployment link lab/README.md")
 
+    critical_tokens = {
+        "README.zh-CN.md": (
+            "docs/README.zh-CN.md", "docs/QUICKSTART.zh-CN.md",
+            "AGENTS.zh-CN.md", "CONTRIBUTING.zh-CN.md",
+        ),
+        "docs/README.zh-CN.md": (
+            "QUICKSTART.zh-CN.md", "FLOWS.zh-CN.md", "DEVELOPMENT.zh-CN.md",
+            "PRODUCT_ASSURANCE.zh-CN.md", "TRUSTED_RUNNERS.zh-CN.md",
+        ),
+        "AGENTS.md": (
+            "software-commercial-ready maintenance state",
+            "E001 remains external/deferred",
+            "stop generating software changes",
+        ),
+        "AGENTS.zh-CN.md": (
+            "software-commercial-ready", "E001", "停止制造软件改动",
+        ),
+        "docs/FLOWS.zh-CN.md": ("```mermaid", "Product Certification", "branch lifecycle"),
+    }
+    for rel, tokens in critical_tokens.items():
+        text = docs.get(rel, "")
+        for token in tokens:
+            if token not in text:
+                errors.append(f"{rel}: missing critical commercial-documentation token {token!r}")
+
     hil_docs = ("README.md", "README.zh-CN.md", "docs/TESTING.md", "docs/TESTING.zh-CN.md", "hil/README.md")
     for rel in hil_docs:
         text = docs.get(rel, "")
@@ -511,15 +550,20 @@ def validate(root: Path, *, require_lab: bool = True,
 def self_test() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
+        fixture = (
+            "current HIL_ENABLED fail-visible 72 product-lifecycle "
+            "ci/resource-baseline.json docs/generated/RESOURCE_BASELINE.md "
+            "validation/authority.json research-validation product-certified certification/ "
+            "docs/README.zh-CN.md docs/QUICKSTART.zh-CN.md AGENTS.zh-CN.md CONTRIBUTING.zh-CN.md "
+            "QUICKSTART.zh-CN.md FLOWS.zh-CN.md DEVELOPMENT.zh-CN.md PRODUCT_ASSURANCE.zh-CN.md "
+            "TRUSTED_RUNNERS.zh-CN.md software-commercial-ready maintenance state "
+            "E001 remains external/deferred stop generating software changes 停止制造软件改动 "
+            "```mermaid Product Certification branch lifecycle\n"
+        )
         for rel in CURRENT_DOCS:
             path = root / rel
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                "current HIL_ENABLED fail-visible 72 product-lifecycle "
-                "ci/resource-baseline.json docs/generated/RESOURCE_BASELINE.md "
-                "validation/authority.json research-validation product-certified certification/\n",
-                encoding="utf-8",
-            )
+            path.write_text(fixture, encoding="utf-8")
         (root / "CMakeLists.txt").write_text("project(audio_pipeline VERSION 1.6.0 LANGUAGES C)\n", encoding="utf-8")
         (root / "CHANGELOG.md").write_text("# 1.6.0\n\n- current\n\n# 1.5.0\n- historical 32,632 B\n", encoding="utf-8")
         assert validate(

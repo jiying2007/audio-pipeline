@@ -6,6 +6,69 @@
   "reintroduction_allowed": false,
   "workflows": [
     {
+      "path": ".github/workflows/i004-ns-baseline-diagnostic.yml",
+      "blob_sha": "bd76141478526ec735e26aa07c12e9fd41aa3aac",
+      "task_id": "I004",
+      "terminal_evidence": "docs/program/iterations/I004-closure.json",
+      "reason": "candidate-zero baseline diagnostic is consumed by terminal I004 closure; contracts and reproducible diagnostic tools remain committed"
+    },
+    {
+      "path": ".github/workflows/i004-ns-burst-candidate-search.yml",
+      "blob_sha": "636565944fbebb3f71d2891d64e0c743ee41cf3d",
+      "task_id": "I004",
+      "terminal_evidence": "docs/program/iterations/I004-closure.json",
+      "reason": "bounded two-candidate search budget is fully consumed with no eligible winner; reviewed result and reproducer remain committed"
+    },
+    {
+      "path": ".github/workflows/i004-ns-root-cause-differential.yml",
+      "blob_sha": "538afbd74d29ff8de5e332552b582ecbd04ad1dd",
+      "task_id": "I004",
+      "terminal_evidence": "docs/program/iterations/I004-closure.json",
+      "reason": "root-cause differential is incorporated into terminal I004 evidence; counterfactual tools remain available without an Actions entry"
+    },
+    {
+      "path": ".github/workflows/i005-vad-baseline.yml",
+      "blob_sha": "d13c377afa6c57f1cf0623855b0e2e68901efada",
+      "task_id": "I005",
+      "terminal_evidence": "docs/program/iterations/I005-closure.json",
+      "reason": "candidate-zero VAD baseline is sealed and I005 is CLOSED; measurement script and reviewed result remain committed"
+    },
+    {
+      "path": ".github/workflows/i005-vad-source-admission.yml",
+      "blob_sha": "81b561ef8c76c82309a4235cfd25b71be262d75b",
+      "task_id": "I005",
+      "terminal_evidence": "docs/program/iterations/I005-closure.json",
+      "reason": "one-shot public source admission is consumed; pinned source lock, admission result and discovery tool remain committed"
+    },
+    {
+      "path": ".github/workflows/i006-agc-baseline.yml",
+      "blob_sha": "feaec63e9733e759a36820bfba10268634f28ee2",
+      "task_id": "I006",
+      "terminal_evidence": "docs/program/iterations/I006-closure.json",
+      "reason": "AGC candidate-zero baseline is incorporated into terminal I006 closure; probes and measurement scripts remain committed"
+    },
+    {
+      "path": ".github/workflows/i006-agc-root-cause-differential.yml",
+      "blob_sha": "68d37d91140c0c6fe9b69a42e83a61dec0f49891",
+      "task_id": "I006",
+      "terminal_evidence": "docs/program/iterations/I006-closure.json",
+      "reason": "AGC root-cause differential is consumed by terminal I006 evidence; exact differential tools remain committed"
+    },
+    {
+      "path": ".github/workflows/i007-bf-health-baseline.yml",
+      "blob_sha": "04e0e78a37f7b9d1f1e7b432d26326f2d5ff1294",
+      "task_id": "I007",
+      "terminal_evidence": "docs/program/iterations/I007-closure.json",
+      "reason": "BF health baseline is sealed in terminal I007 evidence; corpus, probe and baseline evaluator remain committed"
+    },
+    {
+      "path": ".github/workflows/i007-bf-health-root-cause.yml",
+      "blob_sha": "65a9d5c4631ddd56af026ab2ed1834d8cbe7c0d1",
+      "task_id": "I007",
+      "terminal_evidence": "docs/program/iterations/I007-closure.json",
+      "reason": "BF root-cause experiment is consumed by I007 closure; differential/review tools remain committed"
+    },
+    {
       "path": ".github/workflows/i007-closure.yml",
       "blob_sha": "15a40ba9fb94d9c984c571281ea06e8ae3b0ef61",
       "task_id": "I007",
@@ -18,6 +81,27 @@
       "task_id": "I008",
       "terminal_evidence": "docs/program/iterations/I008-closure.json",
       "reason": "historical review-state materializer superseded by terminal I008 closure"
+    },
+    {
+      "path": ".github/workflows/i009-activity-doubletalk-baseline.yml",
+      "blob_sha": "ecae9c3fc4598acec16efc0e437fbdbd6843579b",
+      "task_id": "I009",
+      "terminal_evidence": "docs/program/iterations/I009-closure.json",
+      "reason": "activity double-talk baseline is incorporated into terminal I009 evidence; exact evaluator remains committed"
+    },
+    {
+      "path": ".github/workflows/i009-echo-normalized-root-cause.yml",
+      "blob_sha": "ab5d4821c51200680e3eb3ff41c13e71b5a8786d",
+      "task_id": "I009",
+      "terminal_evidence": "docs/program/iterations/I009-closure.json",
+      "reason": "echo-normalized root-cause experiment is consumed by I009 closure; probe and diagnostic remain committed"
+    },
+    {
+      "path": ".github/workflows/i009-residual-echo-rescue-root-cause.yml",
+      "blob_sha": "a13ee489713939f75c439087e28836f99cedacda",
+      "task_id": "I009",
+      "terminal_evidence": "docs/program/iterations/I009-closure.json",
+      "reason": "residual-echo rescue root-cause experiment is consumed by I009 closure; probe and diagnostic remain committed"
     },
     {
       "path": ".github/workflows/i009-closure.yml",

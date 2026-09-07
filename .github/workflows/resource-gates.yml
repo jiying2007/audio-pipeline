@@ -145,6 +145,9 @@ jobs:
 
   ssc305-commercial-profile:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     container:
       image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
       credentials:

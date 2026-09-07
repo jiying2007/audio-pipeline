@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Delete only the exact head ref of the PR that produced the current main commit.
+"""Delete only the exact same-repository head ref of the PR that produced main.
 
-This is a narrow companion to terminal_branch_gc.py. It exists because this
-repository does not enable GitHub's delete_branch_on_merge setting. The derived
-ref is never supplied by a caller: it must come from GitHub's commit->PR
-association for the exact main commit, must be a merged same-repository PR to
-main, must have merge_commit_sha equal to that main commit, and the live ref
-must still equal the recorded PR head SHA.
+The candidate branch is never supplied by a caller. It is derived from GitHub's
+commit->PR association for the exact main commit. The exact main commit must map
+to exactly one merged PR targeting main. If that PR comes from this repository,
+the live branch ref must still equal GitHub's recorded PR head SHA and have no
+open PR before deletion. External/fork PR heads are explicitly non-mutating.
 
 No hardware, HIL, acoustic, release, certification or Product Qualification
 authority is granted by this cleanup.
@@ -58,7 +57,8 @@ def validate_contract(contract: dict) -> None:
             "invalid allowed prefix")
 
 
-def select_merged_pr(payload: object, repository: str, main_sha: str) -> dict:
+def select_merged_pr(payload: object, main_sha: str) -> dict:
+    """Resolve the unique merged PR that produced the exact main commit."""
     require(isinstance(payload, list), "unexpected commit PR response")
     matches = []
     for pr in payload:
@@ -68,11 +68,10 @@ def select_merged_pr(payload: object, repository: str, main_sha: str) -> dict:
             pr.get("merged_at")
             and pr.get("base", {}).get("ref") == "main"
             and str(pr.get("merge_commit_sha", "")).lower() == main_sha
-            and pr.get("head", {}).get("repo", {}).get("full_name") == repository
         ):
             matches.append(pr)
     require(len(matches) == 1,
-            f"exact main commit must map to exactly one merged same-repo PR; matches={len(matches)}")
+            f"exact main commit must map to exactly one merged PR targeting main; matches={len(matches)}")
     return matches[0]
 
 
@@ -118,9 +117,29 @@ def evaluate(contract: dict, repository: str, main_sha: str, *, apply: bool) -> 
         }
 
     payload = gh_json(f"repos/{repository}/commits/{main_sha}/pulls")
-    pr = select_merged_pr(payload, repository, main_sha)
-    branch = str(pr.get("head", {}).get("ref") or "")
-    head_sha = str(pr.get("head", {}).get("sha") or "").lower()
+    pr = select_merged_pr(payload, main_sha)
+    head = pr.get("head", {}) if isinstance(pr.get("head"), dict) else {}
+    head_repo = head.get("repo", {}) if isinstance(head.get("repo"), dict) else {}
+    head_repo_full_name = str(head_repo.get("full_name") or "")
+    branch = str(head.get("ref") or "")
+    head_sha = str(head.get("sha") or "").lower()
+
+    # Never mutate a fork or any repository other than the current repository.
+    if head_repo_full_name != repository:
+        return {
+            "schema_version": 1,
+            "mode": "apply",
+            "repository": repository,
+            "main_sha": main_sha,
+            "pull_request": int(pr["number"]),
+            "branch": branch or None,
+            "expected_head_sha": head_sha or None,
+            "head_repository": head_repo_full_name or None,
+            "action": "SKIP_EXTERNAL_HEAD_REPOSITORY",
+            "derivation": "exact-main-commit-to-unique-merged-pr-external-head-no-mutation",
+            "authority": authority,
+        }
+
     require(branch and branch != "main", "merged PR head branch is invalid")
     require(SHA_RE.fullmatch(head_sha) is not None, "merged PR head SHA is invalid")
     require(any(branch.startswith(prefix) for prefix in contract["allowed_prefixes"]),
@@ -151,6 +170,7 @@ def evaluate(contract: dict, repository: str, main_sha: str, *, apply: bool) -> 
         "pull_request": int(pr["number"]),
         "branch": branch,
         "expected_head_sha": head_sha,
+        "head_repository": head_repo_full_name,
         "action": action,
         "derivation": "exact-main-commit-to-unique-merged-same-repository-pr",
         "authority": authority,
@@ -187,18 +207,20 @@ def self_test() -> None:
         "head": {"ref": "governance/current", "sha": "2" * 40,
                  "repo": {"full_name": "o/r"}},
     }]
-    assert select_merged_pr(good, "o/r", main_sha)["number"] == 7
+    assert select_merged_pr(good, main_sha)["number"] == 7
+    external = [{**good[0], "head": {**good[0]["head"], "repo": {"full_name": "fork/r"}}}]
+    assert select_merged_pr(external, main_sha)["number"] == 7
     for bad in (
         [{**good[0], "merge_commit_sha": "3" * 40}],
-        [{**good[0], "head": {**good[0]["head"], "repo": {"full_name": "other/r"}}}],
+        [{**good[0], "base": {"ref": "other"}}],
         good + [{**good[0], "number": 8}],
     ):
         try:
-            select_merged_pr(bad, "o/r", main_sha)
+            select_merged_pr(bad, main_sha)
         except ValueError:
             pass
         else:
-            raise AssertionError("unsafe merged PR head selection accepted")
+            raise AssertionError("ambiguous or non-main merged PR selection accepted")
     print("merged PR head GC self-test: OK")
 
 

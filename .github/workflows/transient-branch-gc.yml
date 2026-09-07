@@ -1,0 +1,120 @@
+name: Transient Branch GC
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/transient-branch-gc.yml'
+      - 'docs/program/transient-branch-gc.json'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/transient-branch-gc.yml'
+      - 'docs/program/transient-branch-gc.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  gc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Validate exact deletion contract
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          c = json.loads(Path('docs/program/transient-branch-gc.json').read_text())
+          assert c['schema_version'] == 1
+          assert c['policy'] == 'exact-transient-branch-gc'
+          assert c['mutation_on_pull_request'] is False
+          assert c['require_exact_live_sha'] is True
+          assert c['require_no_open_pull_request'] is True
+          assert c['require_head_ancestor_of_main'] is True
+          assert c['unlisted_branch_deletion_allowed'] is False
+          expected_names = {
+              'tmp-i007-rebase-anchor',
+              'tmp-i007-rebase-anchor-2',
+              'tmp-i007-rebase-anchor-3',
+          }
+          records = c['branches']
+          assert len(records) == 3
+          assert {r['name'] for r in records} == expected_names
+          for r in records:
+              assert re.fullmatch(r'[0-9a-f]{40}', r['expected_sha'])
+              assert r['expected_sha'] == 'dd15a956e52e9bc04fe103c62163c6cfa870b57b'
+              assert r['name'].startswith('tmp-i007-rebase-anchor')
+              assert r['reason']
+          assert c['authority_boundary'] == {
+              'research_or_candidate_prefixes_affected': False,
+              'governance_or_release_prefixes_affected': False,
+              'shipping_source_changed': False,
+              'release_changed': False,
+              'product_qualification': 'DEFERRED_BY_SCOPE',
+          }
+          print('transient branch GC contract: OK')
+          PY
+      - name: Audit and conditionally delete exact transient refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          git fetch --prune origin main
+          main_sha=$(git rev-parse origin/main)
+          python3 - <<'PY' > /tmp/gc-records.tsv
+          import json
+          c=json.load(open('docs/program/transient-branch-gc.json'))
+          for r in c['branches']:
+              print(r['name'] + '\t' + r['expected_sha'])
+          PY
+          printf '{"schema_version":1,"event":"%s","main_sha":"%s","records":[' "$EVENT_NAME" "$main_sha" > transient-branch-gc-result.json
+          first=true
+          while IFS=$'\t' read -r branch expected; do
+            [ -n "$branch" ] || continue
+            case "$branch" in
+              tmp-i007-rebase-anchor|tmp-i007-rebase-anchor-2|tmp-i007-rebase-anchor-3) ;;
+              *) echo "unlisted deletion target: $branch" >&2; exit 2 ;;
+            esac
+            status=already_absent
+            live=''
+            if ref_json=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" 2>/dev/null); then
+              live=$(jq -r '.object.sha' <<<"$ref_json")
+              test "$live" = "$expected" || { echo "live SHA mismatch for $branch: $live != $expected" >&2; exit 3; }
+              git cat-file -e "$live^{commit}"
+              git merge-base --is-ancestor "$live" "$main_sha" || { echo "$branch is not preserved in main history" >&2; exit 4; }
+              open_prs=$(gh api -X GET "repos/$GITHUB_REPOSITORY/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:$branch&per_page=100" --jq 'length')
+              test "$open_prs" = 0 || { echo "$branch still has an open PR" >&2; exit 5; }
+              status=audited_keep
+              if [ "$EVENT_NAME" = push ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
+                gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$branch"
+                status=deleted
+              fi
+            fi
+            $first || printf ',' >> transient-branch-gc-result.json
+            first=false
+            jq -nc --arg branch "$branch" --arg expected "$expected" --arg live "$live" --arg status "$status" \
+              '{branch:$branch,expected_sha:$expected,live_sha:($live|select(length>0)),status:$status}' >> transient-branch-gc-result.json
+          done < /tmp/gc-records.tsv
+          printf '],"authority":{"shipping_source_changed":false,"release_changed":false,"product_qualification":"DEFERRED_BY_SCOPE"}}\n' >> transient-branch-gc-result.json
+          jq . transient-branch-gc-result.json
+          if [ "$EVENT_NAME" = pull_request ]; then
+            test "$(jq '[.records[].status == "audited_keep" or .records[].status == "already_absent"] | all' transient-branch-gc-result.json)" = true
+          fi
+          cat transient-branch-gc-result.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload GC evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: transient-branch-gc-${{ github.run_id }}
+          path: |
+            transient-branch-gc-result.json
+            docs/program/transient-branch-gc.json
+          retention-days: 90
+          if-no-files-found: error

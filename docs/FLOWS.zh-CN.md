@@ -134,7 +134,7 @@ flowchart LR
 
 Realtime worker 不执行 dump 文件 I/O；dump 可能包含用户语音，产品必须定义访问控制、保留周期和安全删除。
 
-## 7. 分支/证据生命周期
+## 7. 分支/证据生命周期（branch lifecycle）
 
 ```mermaid
 flowchart TD

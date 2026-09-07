@@ -293,7 +293,7 @@ def main() -> int:
         self_test()
         return 0
     contract = json.loads(args.contract.read_text(encoding="utf-8"))
-    result = build(contract, args.hil_enabled, args.extended_enabled if hasattr(args, 'extended_enabled') else args.extended_real_enabled)
+    result = build(contract, args.hil_enabled, args.extended_real_enabled)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.write_text(rendered, encoding="utf-8")

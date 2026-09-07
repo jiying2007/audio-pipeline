@@ -2,7 +2,7 @@
 
 [简体中文](AGENTS.zh-CN.md)
 
-The repository is currently in a **software-commercial-ready maintenance state**. The software/public-data program has no READY task; E001 remains external/deferred and the remaining Product Qualification work is real-lab/physical evidence tracked by issue #58.
+The repository is currently in a **software-commercial-ready maintenance state**. The software/public-data program has no READY task; E001 remains external/deferred and the remaining Product Qualification work is real-lab/physical evidence tracked by the live external-evidence issue/tracker.
 
 Before acting, re-read live `main`, open PRs/issues and current GitHub checks/artifacts. Do not infer current state from chat history. Start from `docs/README.zh-CN.md` for the Chinese operator map or the task-specific canonical documents (`docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`, `validation/authority.json`, `docs/PRODUCT_ASSURANCE.md`, `docs/TRUSTED_RUNNERS.md`). Read `docs/program/*` when historical software-research evidence is actually relevant; it is no longer the default source of a new task.
 

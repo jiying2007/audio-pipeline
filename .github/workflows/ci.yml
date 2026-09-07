@@ -10,7 +10,7 @@ on:
       arm_matrix:
         type: string
         required: false
-        default: '["armv7a-scalar","cortex-a7-scalar","cortex-a7-neon","cortex-a32-neon","aarch64-neon"]'
+        default: '["armv7a-scalar","cortex-a7-scalar","cortex-a7-neon","cortex-a32-neon","ssc305-cortex-a32-low","aarch64-neon"]'
       perf_base:
         type: string
         required: false
@@ -345,5 +345,43 @@ jobs:
         run: cmake --preset ${{ matrix.preset }}
       - name: Build ${{ matrix.preset }}
         run: cmake --build build/${{ matrix.preset }} --parallel
+      - name: Validate SSC305 commercial build/install identity
+        if: matrix.preset == 'ssc305-cortex-a32-low'
+        run: |
+          set -euo pipefail
+          build=build/ssc305-cortex-a32-low
+          header="$build/generated/audio_pipeline/audio_pipeline_build.h"
+          grep -qx '#define AP_BUILD_MAX_IO_RATE_HZ 16000' "$header"
+          grep -qx '#define AP_BUILD_MAX_INTERNAL_RATE_HZ 16000' "$header"
+          grep -qx '#define AP_BUILD_MAX_MIC_CHANNELS 2' "$header"
+          grep -qx '#define AP_BUILD_MAX_DELAY_MS 60' "$header"
+          grep -qx '#define AP_BUILD_MAX_AEC_TAIL_MS 64' "$header"
+          grep -qx '#define AP_BUILD_RUNTIME_QUEUE_DEPTH 4' "$header"
+          grep -qx '#define AP_BUILD_BF_DIRECTION_TRACKING 0' "$header"
+          grep -qx '#define AP_HAVE_LINUX_RUNTIME 1' "$header"
+          grep -qx '#define AP_BUILD_AEC_BACKEND_NAME "MDF"' "$header"
+          grep -qx '#define AP_BUILD_SIMD_BACKEND_NAME "NEON"' "$header"
+          grep -qx '#define AP_BUILD_RESAMPLER_MODE_NAME "BANDLIMITED"' "$header"
+          grep -qx '#define AP_BUILD_FAST_MATH 0' "$header"
+
+          prefix="$PWD/stage/ssc305-cortex-a32-low"
+          cmake --install "$build" --prefix "$prefix"
+          test -f "$prefix/lib/libaudio_pipeline.a"
+          test -f "$prefix/lib/libaudio_pipeline_runtime.a"
+          test -f "$prefix/include/audio_pipeline/audio_pipeline.h"
+          test -f "$prefix/include/audio_pipeline/audio_runtime.h"
+          test -f "$prefix/include/audio_pipeline/audio_pipeline_build.h"
+
+          cflags='-O2 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard'
+          # shellcheck disable=SC2086
+          arm-linux-gnueabihf-gcc $cflags tests/test_build_info.c \
+            -I"$prefix/include" "$prefix/lib/libaudio_pipeline.a" -lm \
+            -o /tmp/ap-ssc305-build-info
+          # shellcheck disable=SC2086
+          arm-linux-gnueabihf-gcc $cflags tests/consumer/consumer.c \
+            -I"$prefix/include" "$prefix/lib/libaudio_pipeline.a" -lm \
+            -o /tmp/ap-ssc305-consumer
+          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ap-ssc305-build-info
+          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ap-ssc305-consumer
       - name: Cache statistics
         run: ccache --show-stats

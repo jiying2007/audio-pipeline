@@ -130,7 +130,7 @@ jobs:
           assert len(rows)==2, len(rows)
           files=[p for p in root.rglob('*') if p.is_file() and p!=manifests[0]]
           for digest, rel in rows:
-              rel=rel.strip().lstrip('*')
+              rel=rel.strip().lstrip('*').removeprefix('./')
               candidates=[p for p in files if str(p.relative_to(root))==rel or str(p.relative_to(root)).endswith('/'+rel)]
               assert len(candidates)==1, (rel,candidates)
               assert hashlib.sha256(candidates[0].read_bytes()).hexdigest()==digest

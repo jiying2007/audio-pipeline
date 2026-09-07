@@ -10,6 +10,10 @@
   "require_preserved_terminal_evidence": true,
   "require_software_program_terminal": true,
   "unlisted_branch_deletion_allowed": false,
+  "delete_current_merged_pr_head_on_main_push": true,
+  "merged_pr_head_same_repository_only": true,
+  "merged_pr_head_exact_main_commit_required": true,
+  "merged_pr_head_no_open_pr_required": true,
   "allowed_prefixes": [
     "automation/",
     "candidate/",

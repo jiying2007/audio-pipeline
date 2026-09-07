@@ -89,9 +89,8 @@ def validate_committed_contract() -> None:
             "release_tag does not match committed E001 software baseline" in workflow and
             "releases/tags/$RELEASE_TAG" in workflow and "--jq '.immutable'" in workflow,
             "E001 activation preflight must bind exact immutable release identity")
-    require("actions/runners?per_page=100" in workflow and
-            "E001 trusted runner roles not online" in workflow,
-            "E001 activation preflight must fail before allocation when trusted roles are offline")
+    require("actions/runners?" not in workflow,
+            "E001 activation preflight may not depend on privileged runner inventory APIs")
     for role in ROLES:
         require(f"runs-on: [self-hosted, linux, {role}]" in workflow,
                 f"E001 activation preflight missing trusted runner label: {role}")

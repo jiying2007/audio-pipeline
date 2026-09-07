@@ -9,6 +9,12 @@ on:
       - 'docs/program/**'
       - 'scripts/program.py'
       - '.github/program/promotion_governance.py'
+      - '.github/program/terminal_workflow_retirement.py'
+      - '.github/workflows/i007-closure.yml'
+      - '.github/workflows/i008-review-required.yml'
+      - '.github/workflows/i009-closure.yml'
+      - '.github/workflows/p002-candidate-zero-audit.yml'
+      - '.github/workflows/p002-closure.yml'
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
@@ -22,6 +28,12 @@ on:
       - 'docs/program/**'
       - 'scripts/program.py'
       - '.github/program/promotion_governance.py'
+      - '.github/program/terminal_workflow_retirement.py'
+      - '.github/workflows/i007-closure.yml'
+      - '.github/workflows/i008-review-required.yml'
+      - '.github/workflows/i009-closure.yml'
+      - '.github/workflows/p002-candidate-zero-audit.yml'
+      - '.github/workflows/p002-closure.yml'
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/tools/build_aec_motion_bundle.py'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
@@ -49,12 +61,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate program, measurement, governance and I003 search contracts
+      - name: Validate program, measurement, governance, retirement and I003 search contracts
         run: |
           set -euo pipefail
           python3 scripts/program.py --self-test
           python3 scripts/program.py check
           python3 .github/program/promotion_governance.py --self-test
+          python3 .github/program/terminal_workflow_retirement.py --self-test --check
           python3 validation/tools/build_aec_motion_corpus.py --self-test
           python3 validation/tools/build_aec_motion_bundle.py --self-test
           python3 tests/validation/aec_motion_model_qualification.py --self-test

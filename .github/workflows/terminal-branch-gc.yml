@@ -6,7 +6,6 @@ on:
       - '.github/workflows/terminal-branch-gc.yml'
       - 'docs/program/terminal-branch-gc.json'
       - '.github/program/terminal_branch_gc.py'
-      - '.github/program/merged_pr_head_gc.py'
       - 'docs/program/plan.json'
       - 'docs/program/iterations/**'
       - '.github/research/evidence-index.json'
@@ -16,7 +15,6 @@ on:
       - '.github/workflows/terminal-branch-gc.yml'
       - 'docs/program/terminal-branch-gc.json'
       - '.github/program/terminal_branch_gc.py'
-      - '.github/program/merged_pr_head_gc.py'
       - 'docs/program/plan.json'
       - 'docs/program/iterations/**'
       - '.github/research/evidence-index.json'
@@ -37,11 +35,10 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Validate fail-closed terminal ref contracts
+      - name: Validate fail-closed terminal ref contract
         run: |
           set -euo pipefail
           python3 .github/program/terminal_branch_gc.py --self-test
-          python3 .github/program/merged_pr_head_gc.py --repository owner/repo --main-sha 1111111111111111111111111111111111111111 --self-test
           python3 -m json.tool docs/program/terminal-branch-gc.json >/dev/null
       - name: Audit or apply exact terminal refs
         env:
@@ -59,18 +56,10 @@ jobs:
             --main-sha "$main_sha"
             --output terminal-branch-gc-result.json
           )
-          self_args=(
-            --contract docs/program/terminal-branch-gc.json
-            --repository "$GITHUB_REPOSITORY"
-            --main-sha "$main_sha"
-            --output merged-pr-head-gc-result.json
-          )
           if [ "$GITHUB_EVENT_NAME" = push ]; then
             args+=(--apply --confirmation DELETE_TERMINAL_REFS)
-            self_args+=(--apply)
           fi
           python3 .github/program/terminal_branch_gc.py "${args[@]}"
-          python3 .github/program/merged_pr_head_gc.py "${self_args[@]}"
       - name: Publish terminal ref audit
         if: always()
         run: |
@@ -80,12 +69,6 @@ jobs:
             cat terminal-branch-gc-result.json >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
-          if [ -f merged-pr-head-gc-result.json ]; then
-            echo '## Current merged PR head GC' >> "$GITHUB_STEP_SUMMARY"
-            echo '```json' >> "$GITHUB_STEP_SUMMARY"
-            cat merged-pr-head-gc-result.json >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
       - name: Upload terminal ref evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -93,7 +76,6 @@ jobs:
           name: terminal-branch-gc-${{ github.run_id }}
           path: |
             terminal-branch-gc-result.json
-            merged-pr-head-gc-result.json
             docs/program/terminal-branch-gc.json
           retention-days: 90
           if-no-files-found: error

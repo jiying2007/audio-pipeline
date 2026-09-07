@@ -1,0 +1,74 @@
+name: Merged PR Head GC
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/merged-pr-head-gc.yml'
+      - '.github/program/merged_pr_head_gc.py'
+      - 'docs/program/terminal-branch-gc.json'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: merged-pr-head-gc
+  cancel-in-progress: false
+
+jobs:
+  gc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Validate exact merged-PR head contract
+        run: |
+          set -euo pipefail
+          python3 .github/program/merged_pr_head_gc.py \
+            --repository owner/repo \
+            --main-sha 1111111111111111111111111111111111111111 \
+            --self-test
+          python3 -m json.tool docs/program/terminal-branch-gc.json >/dev/null
+      - name: Audit or delete current merged PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_sha="$GITHUB_SHA"
+          args=(
+            --contract docs/program/terminal-branch-gc.json
+            --repository "$GITHUB_REPOSITORY"
+            --main-sha "$main_sha"
+            --output merged-pr-head-gc-result.json
+          )
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            test "$GITHUB_REF" = refs/heads/main
+            args+=(--apply)
+          fi
+          python3 .github/program/merged_pr_head_gc.py "${args[@]}"
+      - name: Publish merged PR head audit
+        if: always()
+        run: |
+          if [ -f merged-pr-head-gc-result.json ]; then
+            echo '## Current merged PR head GC' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat merged-pr-head-gc-result.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload merged PR head evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: merged-pr-head-gc-${{ github.run_id }}
+          path: |
+            merged-pr-head-gc-result.json
+            docs/program/terminal-branch-gc.json
+          retention-days: 90
+          if-no-files-found: error

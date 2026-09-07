@@ -1,3 +1,9 @@
+# 2.3.13
+
+- Repair the I008 resampler performance comparator so base and head are both configured with the explicit FAST backend, preventing the project default BANDLIMITED backend from being compared against FAST and producing a false 72%–90% improvement artifact.
+- Fail the paired comparator closed unless every `AP_*` CMake cache entry is behavior-equivalent between base and head, excluding only `AP_BUILD_SOURCE_REVISION`; retain the existing seven-repetition/100000-frame, eight-path regression gate and its conjunctive >10% plus >0.05 us threshold.
+- This maintenance release changes performance-measurement infrastructure only: realtime DSP, public API/ABI, algorithm defaults, acoustic gates and Product Qualification authority are unchanged. The previously exposed I008 comparator evidence remains engineering lineage, not independent acoustic confirmation.
+
 # 2.3.12
 
 - Replace the legacy five-tone/moving-earliest-path AEC motion development generator with the I001-audited rigid 0.08 m speaker/microphone geometry: fixed 42 ms direct path, 40 ms nominal reference, first-order wall-image reflections, deterministic colored/speech-envelope broadband excitation, and model-hash-bound per-frame ground truth.

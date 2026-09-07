@@ -57,7 +57,9 @@
 
 ## 自动执行边界
 
-`Program Iteration` 在相关 PR/main、手动和定时入口执行机器计划校验与已注册的有界任务；这些入口用于维护/复现既有 contract，不代表 program 自动重新开放。历史 handler 构建 exact base、调用 canonical evaluator 并保存种子、负面结果、源码快照和命令日志；SUCCESS 只说明对应测量/检查完成。
+历史 `Program Iteration` 已收敛为 **Program Archive Contract**：只在 `docs/program/**`、`scripts/program.py`、program governance/retirement contract 或该 workflow 本身发生变更时，由 PR/main 做只读校验。它**不再定时运行、不提供手工“继续迭代”入口、不执行 next-task automation，也不为 `NO_READY_TASK` 生成周期性 artifact**。
+
+Archive Contract 只验证历史 plan 自洽、promotion/retirement 边界、没有重新出现 READY software task，以及 E001 继续保持 external/deferred。历史 handler、corpus builder、probe、result 与失败证据仍保留用于按需复现，但不再作为终态仓库的周期性研究工作负载。若未来确有新的软件研究任务，必须通过新的明确计划/PR 重新授权，而不是复活旧 program 的隐式自动化。
 
 自动化不写 main、不改 shipping defaults、不改版本、不放宽阈值、不用 holdout 循环选优，不假装存在无人值守的通用代码生成代理。新的软件实现仍必须通过 PR；编码代理的当前执行规则见根目录 `AGENTS.md`。
 

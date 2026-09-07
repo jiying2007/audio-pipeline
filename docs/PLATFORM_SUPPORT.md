@@ -17,10 +17,11 @@ Cross-build/QEMU are never reported as target-board performance.
 | Cortex-A7 | armhf | scalar/VFPv4 | build-supported | pending per SKU |
 | Cortex-A7 | armhf | NEON/VFPv4 | build + QEMU executed contracts | pending per SKU |
 | Cortex-A32 | armhf | NEON/FP-Armv8 | build-supported | pending per SKU |
+| SigmaStar SSC305 `ssc305-cortex-a32-low` | armhf | NEON/FP-Armv8 | exact preset build/install identity + QEMU consumer contract | real-board/Product Certification pending |
 | generic AArch64 | LP64 | NEON/ASIMD | build + QEMU executed contracts | pending per SKU |
 | Arm without hardware floating point | varies | none | unsupported by this profile | separate fixed-point profile required |
 
-Portable DSP code is CPU-model agnostic. CPU names appear only in presets, emulation/certification records and product build configuration.
+Portable DSP code is CPU-model agnostic. CPU names appear only in presets, emulation/certification records and product build configuration. The SSC305 repository signal proves the exact software build envelope and SDK consumption path only; it does not claim silicon timing, acoustic performance, power, thermal or route qualification.
 
 ## Compile-time SKU envelope
 
@@ -57,7 +58,7 @@ Compile-time caps may further restrict these defaults. `ap_config_for_resource()
 For each shipping SoC/SKU capture at least:
 
 - product/SKU/board identifier and date;
-- exact source revision and approved shipping policy hash;
+- immutable release tag/id plus exact release source revision and approved shipping policy hash;
 - CPU model/revision/core count and online cpuset;
 - exact shipping compiler executable hash/version, sysroot hash, toolchain-root hash and C flags;
 - `ap_build_info()` exact source/compiler/target/config identity and certification binary SHA-256 values;
@@ -79,7 +80,7 @@ For each shipping SoC/SKU capture at least:
 
 ## Acoustic certification
 
-Use the repository `eval/` schema/runner for public interchange and product-specific thresholding. Real/private WAV corpora remain outside the public repository. A release is not acoustically certified just because an eval or public validation self-test passes.
+Use the canonical repository [`validation/`](../validation/) framework and its machine-readable `validation/authority.json` for public/approved acoustic validation. Real/private WAV corpora remain outside the public repository. The legacy `eval/` path has been removed and must not be used as an authority source. A release is not acoustically certified just because a hosted/public validation or evaluator self-test passes.
 
 Advanced BF/SYNC/wind/microphone-health complexity remains evidence-triggered: if the real shipping corpus meets the approved SKU policy, retain the lower-cost implementation; if it fails, the failed gate becomes evidence for a scoped algorithm upgrade.
 

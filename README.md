@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 `audio-pipeline` is a dependency-light, allocation-free real-time speech front end and composable DSP SDK for **low-compute Arm Linux products**. It targets ARMv7-A/Cortex-A7, Cortex-A32-class AArch32 and AArch64 products without embedding CPU-model assumptions into DSP algorithms.
 
+> **Commercial-readiness boundary:** the repository can be treated as **software-commercial-ready** when its required exact-main gates pass: public API/ABI, runtime ownership, installed SDK consumption, Arm/QEMU portability, the named `ssc305-cortex-a32-low` product-build contract, resource/performance regressions, acoustic validation authority, release provenance/SBOM/attestation and diagnostics/replay are all repository-controlled and fail-closed. This status is suitable for commercial product integration and pre-production software delivery. It is **not** a board-validation or Product Qualification claim: SSC305 silicon CPU/thermal/power, real enclosure/route acoustics, HIL history and the 72 h `product-certified` record still require real DUT evidence.
+
 Default high-level graph:
 
 `S16 capture -> rate adapter -> HPF -> 2-mic BF -> SYNC -> Activity/DTD -> AEC -> RES -> NS -> AGC -> VAD -> mono S16`
@@ -58,7 +60,7 @@ AP_BUILD_MAX_AEC_TAIL_MS
 AP_RUNTIME_QUEUE_DEPTH
 ```
 
-Representative presets include `composition-full`, `composition-low`, `composition-tiny`, `composition-voice-frontend`, `composition-raw`, AEC/NS/Activity-only and FAST-resampler variants.
+Representative presets include `composition-full`, `composition-low`, `composition-tiny`, `composition-voice-frontend`, `composition-raw`, AEC/NS/Activity-only and FAST-resampler variants. The named `ssc305-cortex-a32-low` product preset is also exercised by an independent required resource gate that configures/builds the exact preset, verifies its generated build identity, installs the SDK, and executes AArch32 build-info/core/runtime consumers under QEMU. This is product-build integration evidence, not silicon performance evidence.
 
 Hosted resource measurements have one machine source of truth in [`ci/resource-baseline.json`](ci/resource-baseline.json); [`docs/generated/RESOURCE_BASELINE.md`](docs/generated/RESOURCE_BASELINE.md) is generated from it. Hosted measurements prove only the declared CI build contract, not target-board performance.
 

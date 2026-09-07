@@ -142,3 +142,69 @@ jobs:
             exit 3
           fi
           ccache --show-stats
+
+  ssc305-commercial-profile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: ssc305-commercial-profile
+      - name: Configure and build exact SSC305 LOW preset
+        run: |
+          set -euo pipefail
+          cmake --preset ssc305-cortex-a32-low
+          cmake --build build/ssc305-cortex-a32-low --parallel
+      - name: Enforce generated SSC305 product envelope and backend identity
+        run: |
+          set -euo pipefail
+          h=build/ssc305-cortex-a32-low/generated/audio_pipeline/audio_pipeline_build.h
+          grep -Fx '#define AP_BUILD_MAX_IO_RATE_HZ 16000' "$h"
+          grep -Fx '#define AP_BUILD_MAX_INTERNAL_RATE_HZ 16000' "$h"
+          grep -Fx '#define AP_BUILD_MAX_MIC_CHANNELS 2' "$h"
+          grep -Fx '#define AP_BUILD_MAX_DELAY_MS 60' "$h"
+          grep -Fx '#define AP_BUILD_MAX_AEC_TAIL_MS 64' "$h"
+          grep -Fx '#define AP_BUILD_RUNTIME_QUEUE_DEPTH 4' "$h"
+          grep -Fx '#define AP_BUILD_BF_DIRECTION_TRACKING 0' "$h"
+          grep -Fx '#define AP_HAVE_LINUX_RUNTIME 1' "$h"
+          grep -Fx '#define AP_BUILD_AEC_BACKEND_NAME "MDF"' "$h"
+          grep -Fx '#define AP_BUILD_SIMD_BACKEND_NAME "NEON"' "$h"
+          grep -Fx '#define AP_BUILD_RESAMPLER_MODE_NAME "BANDLIMITED"' "$h"
+          grep -Fx '#define AP_BUILD_FAST_MATH 0' "$h"
+      - name: Install exact SSC305 SDK
+        run: |
+          set -euo pipefail
+          prefix="$PWD/stage/ssc305-cortex-a32-low"
+          cmake --install build/ssc305-cortex-a32-low --prefix "$prefix"
+          test -f "$prefix/lib/libaudio_pipeline.a"
+          test -f "$prefix/lib/libaudio_pipeline_runtime.a"
+          test -f "$prefix/include/audio_pipeline/audio_pipeline.h"
+          test -f "$prefix/include/audio_pipeline/audio_runtime.h"
+          test -f "$prefix/include/audio_pipeline/audio_pipeline_build.h"
+      - name: Link and execute installed SSC305 build-info and SDK consumers
+        run: |
+          set -euo pipefail
+          prefix="$PWD/stage/ssc305-cortex-a32-low"
+          cflags='-O2 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard'
+          # shellcheck disable=SC2086
+          arm-linux-gnueabihf-gcc $cflags -I"$prefix/include" tests/test_build_info.c \
+            "$prefix/lib/libaudio_pipeline.a" -lm -o /tmp/ssc305-build-info
+          # shellcheck disable=SC2086
+          arm-linux-gnueabihf-gcc $cflags -I"$prefix/include" tests/consumer/consumer.c \
+            "$prefix/lib/libaudio_pipeline.a" -lm -o /tmp/ssc305-core-consumer
+          # shellcheck disable=SC2086
+          arm-linux-gnueabihf-gcc $cflags -I"$prefix/include" tests/consumer/runtime_main.c \
+            "$prefix/lib/libaudio_pipeline_runtime.a" "$prefix/lib/libaudio_pipeline.a" \
+            -lm -pthread -o /tmp/ssc305-runtime-consumer
+          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-build-info
+          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-core-consumer
+          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-runtime-consumer
+          ccache --show-stats

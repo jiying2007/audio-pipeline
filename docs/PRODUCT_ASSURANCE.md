@@ -15,6 +15,23 @@ A software release requires all of the following:
 
 Routine workflow `GITHUB_TOKEN` is not proof of repository administration state. Governance read and bootstrap write credentials stay separate and minimum-scope.
 
+## Repository-side commercial readiness
+
+`software-commercial-ready` is a repository/integration status, not a Product Qualification status. It may be claimed only when all of the following remain true:
+
+- the public v2 API/ABI, lifecycle, threading, ownership and realtime restrictions are machine-gated;
+- native GCC/Clang, sanitizer/TSan/static-analysis/fuzz, coverage, installed SDK consumers and representative composition/backend variants pass;
+- supported Arm architecture classes remain cross-build/QEMU covered, and each named product preset used for commercial integration is itself a required CI contract rather than an undocumented downstream configuration;
+- the current SSC305 starting profile `ssc305-cortex-a32-low` is configured and built directly, its generated envelope/build identity is checked, and a clean installed AArch32 SDK consumer is linked/executed under emulation;
+- hosted resource/performance measurements remain regression evidence only, while target performance/power/thermal claims stay blocked on real hardware;
+- `validation/authority.json` continues to separate development/search, validation/shadow, blind promotion and product-certified authority; validation-grade/blind data may not feed optimizer selection;
+- candidate tuning remains bounded, reproducible, exact-source/data/hash/seed bound and incapable of silently changing shipping defaults;
+- release artifacts, checksums, SBOM/provenance attestations, immutable tag/release identity and repository governance remain fail-closed;
+- diagnostics/replay, privacy boundaries, trusted-runner readiness, HIL and Product Certification control planes remain available without granting false hardware authority;
+- no unresolved software/public-data program task is READY and no known repository-side blocker is being hidden behind a deferred hardware task.
+
+This status means the repository is suitable for commercial product integration, controlled release and pre-production software qualification without fabricating missing physical evidence. It does **not** mean a named board/SKU is board-validated or product-certified.
+
 ## Governance bootstrap
 
 `scripts/bootstrap_github_governance.py` is the idempotent desired-state installer for the named main/tag Rulesets and Immutable Releases. `.github/workflows/repository-governance-bootstrap.yml` exposes it only as an explicit administrative operation. Untrusted PR code never receives the administration write credential.
@@ -36,7 +53,10 @@ Historical 1.x facts remain in `CHANGELOG.md`, but current API/CI/documentation 
 A `product-certified` schema-v4 record requires a shipping-approved SKU policy and the following trust chain:
 
 ```text
-reviewed source SHA
+annotated semantic release tag
+  -> non-draft/non-prerelease immutable GitHub Release
+     tag peel == exact release source SHA
+     release tag == v<project version>
   -> audio-builder
      exact shipping compiler + sysroot + CFLAGS + SKU CMake arguments
   -> sealed shipping binary artifact
@@ -44,12 +64,14 @@ reviewed source SHA
      deployed digest == built digest
      executed digest == deployed digest
      real route + real corpus + thermal/power + policy soak
-  -> attested certification bundle
+  -> release-identity-bound, attested certification bundle
   -> certification-archive
      immutable product-lifecycle archive receipt
 ```
 
-The builder must not resolve target libraries, headers or CMake packages from the host filesystem. Builder and DUT must be distinct runners. Missing builder, DUT, sensors, real acoustic files, archive backend or lifecycle receipt is failed/incomplete certification, never a synthetic pass.
+Release identity (`repository`, `tag`, `release_id`, immutable/draft/prerelease state and exact source revision) is sealed into the certification evidence before final acceptance. A reviewed commit SHA alone is not sufficient Product Certification authority.
+
+The builder must not resolve target libraries, headers or CMake packages from the host filesystem. Builder and DUT must be distinct runners. Missing immutable release identity, builder, DUT, sensors, real acoustic files, archive backend or lifecycle receipt is failed/incomplete certification, never a synthetic pass.
 
 ## HIL and maturity
 

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "policy": "exact-transient-branch-gc",
+  "mutation_on_pull_request": false,
+  "require_exact_live_sha": true,
+  "require_no_open_pull_request": true,
+  "require_head_ancestor_of_main": true,
+  "unlisted_branch_deletion_allowed": false,
+  "branches": [
+    {
+      "name": "tmp-i007-rebase-anchor",
+      "expected_sha": "dd15a956e52e9bc04fe103c62163c6cfa870b57b",
+      "reason": "temporary I007 rebase anchor; exact commit is already preserved in main history by I006 closure #109"
+    },
+    {
+      "name": "tmp-i007-rebase-anchor-2",
+      "expected_sha": "dd15a956e52e9bc04fe103c62163c6cfa870b57b",
+      "reason": "temporary I007 rebase anchor duplicate; no unique commit beyond preserved main history"
+    },
+    {
+      "name": "tmp-i007-rebase-anchor-3",
+      "expected_sha": "dd15a956e52e9bc04fe103c62163c6cfa870b57b",
+      "reason": "temporary I007 rebase anchor duplicate; no unique commit beyond preserved main history"
+    }
+  ],
+  "authority_boundary": {
+    "research_or_candidate_prefixes_affected": false,
+    "governance_or_release_prefixes_affected": false,
+    "shipping_source_changed": false,
+    "release_changed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

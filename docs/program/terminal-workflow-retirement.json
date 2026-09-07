@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "policy": "retired-terminal-workflow-set",
+  "software_release": "v2.3.13",
+  "release_source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+  "reintroduction_allowed": false,
+  "workflows": [
+    {
+      "path": ".github/workflows/i007-closure.yml",
+      "blob_sha": "15a40ba9fb94d9c984c571281ea06e8ae3b0ef61",
+      "task_id": "I007",
+      "terminal_evidence": "docs/program/iterations/I007-closure.json",
+      "reason": "one-shot terminal closure materializer; I007 is CLOSED and historical evidence is sealed"
+    },
+    {
+      "path": ".github/workflows/i008-review-required.yml",
+      "blob_sha": "85621091a9f3660cf62700f4b9d0597787e89889",
+      "task_id": "I008",
+      "terminal_evidence": "docs/program/iterations/I008-closure.json",
+      "reason": "historical review-state materializer superseded by terminal I008 closure"
+    },
+    {
+      "path": ".github/workflows/i009-closure.yml",
+      "blob_sha": "c9c86b7f663233caec5f863e98f552c2bd6f45f2",
+      "task_id": "I009",
+      "terminal_evidence": "docs/program/iterations/I009-closure.json",
+      "reason": "one-shot terminal closure materializer; I009 is CLOSED and historical evidence is sealed"
+    },
+    {
+      "path": ".github/workflows/p002-candidate-zero-audit.yml",
+      "blob_sha": "19205cab41026ecf64d26826ddf685502f3cb7e4",
+      "task_id": "P002",
+      "terminal_evidence": "docs/program/iterations/P002-closure.json",
+      "reason": "bounded candidate-zero governance audit is consumed and incorporated into terminal P002 closure"
+    },
+    {
+      "path": ".github/workflows/p002-closure.yml",
+      "blob_sha": "8ef7a1d6febcd1da01238ad2ed2fc2574cda71f8",
+      "task_id": "P002",
+      "terminal_evidence": "docs/program/iterations/P002-closure.json",
+      "reason": "one-shot terminal governance closure materializer; P002 is CLOSED"
+    }
+  ],
+  "retained_reproducers": true,
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "release_changed": false,
+    "hardware_test_executed": false,
+    "hardware_collection_performed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

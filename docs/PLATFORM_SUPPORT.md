@@ -57,7 +57,7 @@ Compile-time caps may further restrict these defaults. `ap_config_for_resource()
 For each shipping SoC/SKU capture at least:
 
 - product/SKU/board identifier and date;
-- exact source revision and approved shipping policy hash;
+- immutable release tag/id plus exact release source revision and approved shipping policy hash;
 - CPU model/revision/core count and online cpuset;
 - exact shipping compiler executable hash/version, sysroot hash, toolchain-root hash and C flags;
 - `ap_build_info()` exact source/compiler/target/config identity and certification binary SHA-256 values;
@@ -79,7 +79,7 @@ For each shipping SoC/SKU capture at least:
 
 ## Acoustic certification
 
-Use the repository `eval/` schema/runner for public interchange and product-specific thresholding. Real/private WAV corpora remain outside the public repository. A release is not acoustically certified just because an eval or public validation self-test passes.
+Use the canonical repository [`validation/`](../validation/) framework and its machine-readable `validation/authority.json` for public/approved acoustic validation. Real/private WAV corpora remain outside the public repository. The legacy `eval/` path has been removed and must not be used as an authority source. A release is not acoustically certified just because a hosted/public validation or evaluator self-test passes.
 
 Advanced BF/SYNC/wind/microphone-health complexity remains evidence-triggered: if the real shipping corpus meets the approved SKU policy, retain the lower-cost implementation; if it fails, the failed gate becomes evidence for a scoped algorithm upgrade.
 

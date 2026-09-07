@@ -32,15 +32,14 @@ jobs:
           test "$(sed -n '1s/^# //p' CHANGELOG.md)" = 2.3.13
           git show 03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a:scripts/compare-resampler-perf.sh > /tmp/verified.sh
           cmp scripts/compare-resampler-perf.sh /tmp/verified.sh
-      - name: Commit production release-carry files only
+      - name: Commit non-workflow release-carry files
         shell: bash
         run: |
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add CMakeLists.txt CHANGELOG.md scripts/compare-resampler-perf.sh \
-            docs/program/iterations/I008-release-carry-v2.3.13.json \
-            .github/workflows/i008-release-carry.yml
+            docs/program/iterations/I008-release-carry-v2.3.13.json
           git diff --cached --quiet && { echo 'no production changes'; exit 1; }
           git commit -m 'release: materialize I008 comparator carry for v2.3.13'
           git push origin HEAD:release/i008-resampler-comparator-v2.3.13

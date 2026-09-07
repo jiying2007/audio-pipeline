@@ -1,0 +1,46 @@
+name: I008 Release Carry Materialize
+
+on:
+  push:
+    branches:
+      - release/i008-resampler-comparator-v2.3.13
+    paths:
+      - '.github/program/i008_release_carry_materialize.py'
+      - '.github/workflows/i008-release-carry-materialize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: release/i008-resampler-comparator-v2.3.13
+          fetch-depth: 0
+      - name: Materialize exact five-file release carry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/i008_release_carry_materialize.py
+          python3 -m json.tool docs/program/iterations/I008-release-carry-v2.3.13.json >/dev/null
+          git diff --check
+          git diff --quiet d36755720e2fd34e59abc51b215d42b78fb6d9a3 -- src include docs/program/plan.json scripts/program.py
+          test "$(sed -n 's/^project(audio_pipeline VERSION \([0-9][0-9.]*\).*/\1/p' CMakeLists.txt)" = 2.3.13
+          test "$(sed -n '1s/^# //p' CHANGELOG.md)" = 2.3.13
+          git show 03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a:scripts/compare-resampler-perf.sh > /tmp/verified.sh
+          cmp scripts/compare-resampler-perf.sh /tmp/verified.sh
+      - name: Commit production release-carry files only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add CMakeLists.txt CHANGELOG.md scripts/compare-resampler-perf.sh \
+            docs/program/iterations/I008-release-carry-v2.3.13.json \
+            .github/workflows/i008-release-carry.yml
+          git diff --cached --quiet && { echo 'no production changes'; exit 1; }
+          git commit -m 'release: materialize I008 comparator carry for v2.3.13'
+          git push origin HEAD:release/i008-resampler-comparator-v2.3.13

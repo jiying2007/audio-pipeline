@@ -2,21 +2,50 @@
 
 [English](README.md) | 简体中文
 
-`audio-pipeline` 是面向**低算力 Arm Linux 产品**的轻依赖、无动态分配实时语音前端与可组合 DSP SDK，覆盖 ARMv7-A/Cortex-A7、Cortex-A32 类 AArch32 和 AArch64 产品。CPU 型号只属于构建、测试和认证配置，不进入 DSP 算法依赖。
+`audio-pipeline` 是面向**低算力 Arm Linux 产品**的轻依赖、无动态分配实时语音前端与可组合 DSP SDK，覆盖 ARMv7-A/Cortex-A7、Cortex-A32 类 AArch32 和 AArch64 产品。CPU/SOC 型号只属于构建、测试和认证配置，不进入通用 DSP 算法依赖。
 
-> **商用就绪边界：**当当前 main 的 required gates 全部通过时，仓库可以标记为 **software-commercial-ready（软件商用集成就绪）**：公开 API/ABI、Runtime 所有权、安装后 SDK 消费、Arm/QEMU 可移植性、命名的 `ssc305-cortex-a32-low` 产品构建契约、资源/性能回归、声学验证权限、Release provenance/SBOM/attestation、诊断与回放均由仓库可重复、fail-closed 地验证。该状态可用于商业产品集成和预生产软件交付，但**不等于**板级验证或 Product Qualification：SSC305 真机 CPU/热/功耗、真实机壳与音频 route 声学、HIL 历史以及 72 小时 `product-certified` 记录仍必须由真实 DUT 证据完成。
+> **软件商用就绪边界：**当前仓库可标记为 `software-commercial-ready`：公开 API/ABI、Runtime 所有权、安装后 SDK、Arm/QEMU、命名的 `ssc305-cortex-a32-low` 产品构建契约、资源/性能回归、数据验证权限、Release provenance/SBOM/attestation、诊断/回放和认证控制面均由仓库 fail-closed 地验证。它可用于商业产品集成和预生产软件交付，但**不等于**板级验证或 Product Qualification。SSC305 真机 CPU/热/功耗、实际机壳/route 声学、HIL 历史和至少 72 h `product-certified` 记录仍必须由真实 DUT 证据完成。
 
-默认高层链路：
+## 中文用户从这里开始
 
-`S16采集 -> 采样率适配 -> HPF -> 双麦BF -> SYNC -> Activity/DTD -> AEC -> RES -> NS -> AGC -> VAD -> 单声道S16`
+- **中文总导航**：[`docs/README.zh-CN.md`](docs/README.zh-CN.md)
+- **快速构建/集成/Runtime/Dump**：[`docs/QUICKSTART.zh-CN.md`](docs/QUICKSTART.zh-CN.md)
+- **架构与线程/内存边界**：[`docs/ARCHITECTURE.zh-CN.md`](docs/ARCHITECTURE.zh-CN.md)
+- **关键流程图**：[`docs/FLOWS.zh-CN.md`](docs/FLOWS.zh-CN.md)
+- **开发与代码规范**：[`docs/DEVELOPMENT.zh-CN.md`](docs/DEVELOPMENT.zh-CN.md)
+- **贡献规范**：[`CONTRIBUTING.zh-CN.md`](CONTRIBUTING.zh-CN.md)
+- **AI/Codex/助手规范**：[`AGENTS.zh-CN.md`](AGENTS.zh-CN.md)
+- **产品保障/认证边界**：[`docs/PRODUCT_ASSURANCE.zh-CN.md`](docs/PRODUCT_ASSURANCE.zh-CN.md)
+- **可信 Runner 操作**：[`docs/TRUSTED_RUNNERS.zh-CN.md`](docs/TRUSTED_RUNNERS.zh-CN.md)
+- **测试/数据集自测**：[`docs/TESTING.zh-CN.md`](docs/TESTING.zh-CN.md)
+- **Extended Real**：[`docs/EXTENDED_REAL_VALIDATION.zh-CN.md`](docs/EXTENDED_REAL_VALIDATION.zh-CN.md)
 
-帧长固定为 10 ms。设备 I/O 在编译包络内支持 8/16/24/32/48 kHz；重 DSP 运行在 8 或 16 kHz。DSP 与 Runtime 的持久状态均由调用方提供有界内存。
+低层 API、schema 与机器配置仍保持一个 canonical truth；中文层用于商用集成、操作和维护，不复制出第二套独立协议。
 
-## v2 硬切 API
+## 默认音频链路
 
-2.0.0 建立新的公开 C API/ABI 基线。已经移除的 1.x 代际 wrapper **不声明、不导出、也不提供兼容 alias**。
+```text
+S16 采集
+-> 采样率适配
+-> HPF
+-> 双麦 BF
+-> SYNC
+-> Activity / DTD
+-> AEC
+-> RES
+-> NS
+-> AGC
+-> VAD
+-> 单声道 S16
+```
 
-当前 Linux Runtime 只有一套入口：
+帧长固定 10 ms。设备 I/O 在编译 envelope 内支持 8/16/24/32/48 kHz；重 DSP 运行于 8/16 kHz。Pipeline/standalone module/Runtime 的持久状态均由调用方提供有界内存。
+
+## v2 API / Runtime
+
+2.0.0 建立当前 public C API/ABI 基线，移除的 1.x wrapper 不重新声明、导出或提供兼容 alias。
+
+Linux Runtime 典型生命周期：
 
 ```c
 ap_runtime_config_t cfg = ap_runtime_config_default();
@@ -31,27 +60,16 @@ ap_runtime_stop(runtime);
 ap_runtime_deinit(runtime);
 ```
 
-`ap_build_info()` 同样只返回一套完整 `ap_build_info_t`，包含版本、模块组合、几何上限、后端、源码 revision、编译器/目标/build identity 和配置 SHA-256。
+worker started 后独占 live Pipeline。公开契约以 [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) 为准。
 
-公开契约以 [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) 为准。
+`ap_build_info()` 暴露版本、模块组合、几何上限、backend、source revision、compiler/target、配置 SHA-256 和 build identity；商用定位问题应优先保存这份身份。
 
-## 组合与产品包络
+## 产品组合与 SSC305
 
-高层 Pipeline 使用 `ap_config_t.stages` 选择合法 stage 子集；`audio_pipeline/audio_modules.h` 提供 resampler、HPF、BF、SYNC、Activity/DTD、AEC、RES、NS、AGC、VAD 的 standalone API。
-
-编译期组合：
+主要 build envelope：
 
 ```text
-AP_BUILD_PIPELINE=ON|OFF
-AP_MODULES=RESAMPLER,HPF,BF,SYNC,ACTIVITY,AEC,RES,NS,AGC,VAD
-AP_ENABLE_BF_DIRECTION_TRACKING=ON|OFF
-```
-
-未加入 `AP_MODULES` 的模块会真实移除实现 TU 与 resident state，不是运行时 bypass。
-
-发货 SKU 还可以限制最大几何：
-
-```text
+AP_MODULES
 AP_BUILD_MAX_IO_RATE_HZ
 AP_BUILD_MAX_INTERNAL_RATE_HZ
 AP_BUILD_MAX_MIC_CHANNELS
@@ -60,26 +78,44 @@ AP_BUILD_MAX_AEC_TAIL_MS
 AP_RUNTIME_QUEUE_DEPTH
 ```
 
-Hosted 资源测量只有一个机器真相源：[`ci/resource-baseline.json`](ci/resource-baseline.json)；[`docs/generated/RESOURCE_BASELINE.md`](docs/generated/RESOURCE_BASELINE.md) 由它生成。Hosted 测量只证明 CI 声明的 build contract，不代表实板性能。
+Backend：
 
-## DSP 与实时策略
+```text
+AP_AEC_BACKEND=MDF|NLMS
+AP_NS_ESTIMATOR=EMA|MCRA
+AP_SIMD_BACKEND=SCALAR|NEON
+AP_RESAMPLER_MODE=BANDLIMITED|FAST
+```
 
-- AEC：MDF 默认，NLMS 可选。
-- NS：EMA 默认，MCRA 可选。
-- SIMD：编译期 SCALAR / NEON。
-- Resampler：BANDLIMITED 默认，FAST 为显式低成本模式。
-- fast-math：默认关闭。
-- BF direction tracking：显式编译期能力；保守的 `ssc305-cortex-a32-low` preset 默认关闭，并通过 build info 暴露最终生效状态。
-- Linux Runtime：有界 SPSC 数据队列、有界控制/事件队列、单 DSP worker。
-- worker 启动后独占 Pipeline；output backpressure 只丢发布结果，不跳过已经接受的 DSP frame。
-- frame metadata 统一携带时间戳、断流、XRUN、clock reset、codec reopen 和 lost-frame 信息。
-- Runtime metrics 统一提供长期计数、failed frame、queue pressure、scheduler 状态以及 DSP p50/p95/p99。
+保守的 `ssc305-cortex-a32-low` 是当前商用起始 preset，required CI 会直接 configure/build 它、检查 generated envelope/build identity、clean install SDK，并以 AArch32/QEMU 运行 build-info/core/runtime consumer。
 
-算法细节见 [`docs/DSP_DESIGN.md`](docs/DSP_DESIGN.md)，性能策略见 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)。
+该 Gate 证明**软件构建与集成**，不代表 SSC305 真机性能。
 
-## Diagnostics / Dump / Replay
+## Native 构建与安装
 
-`audio_pipeline/audio_diag.h` 提供固定大小事件与可选 Flight Recorder。10 ms realtime worker 不执行文件 I/O、heap allocation、JSON 编码或格式化日志。
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DAP_STRICT_WARNINGS=ON
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+cmake --install build --prefix "$PWD/install"
+```
+
+安装后：
+
+```cmake
+find_package(AudioPipeline CONFIG REQUIRED)
+target_link_libraries(app PRIVATE AudioPipeline::core)
+# Linux Runtime 可选
+target_link_libraries(app PRIVATE AudioPipeline::runtime)
+```
+
+详细步骤见 [`docs/QUICKSTART.zh-CN.md`](docs/QUICKSTART.zh-CN.md)。
+
+## Realtime / Diagnostics
+
+Realtime stage/core/module 禁止 heap、mutex、文件/网络 I/O、RPC、格式化日志和无界工作。Linux 控制面与 realtime data plane 分离。
+
+Dump/Replay：
 
 ```bash
 python3 tools/apdump.py info failure.apd
@@ -87,99 +123,53 @@ python3 tools/apdump.py extract failure.apd --out-dir extracted
 python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-dir replay
 ```
 
-音频 dump 可能包含用户语音，保留周期、访问控制与安全删除属于产品责任。详见 [`docs/DIAGNOSTICS.md`](docs/DIAGNOSTICS.md)。
+`.apd` 可能包含用户语音；保留周期、访问控制和安全删除属于产品责任。
 
-## 验证与发货权限
+## 数据集自测与迭代
 
-`validation/` 是仓库内唯一的声学数据、评测、调参和验证框架；机器可读权限真相源为 [`validation/authority.json`](validation/authority.json)，其中只定义四种 corpus tier：
+`validation/` 是仓库唯一 canonical 声学验证框架，权限真相源是 [`validation/authority.json`](validation/authority.json)：
 
-- `regression`：确定性 CI fixture，可用于 development/search 与回归 replay；
-- `research-validation`：封存的研究/条件性数据，可用于算法研究，但不能作为商业或发货证据；
-- `validation-grade`：固定并封存的公共/批准衍生数据，只能用于独立 validation/shadow，不能作为 development 搜索数据；
-- `validation-grade-blind`：仓库外 HMAC holdout，只能作为候选后的晋级证据，不能进入 optimizer feedback。
+- `regression`：development/search 与回归；
+- `research-validation`：研究/条件性验证，不能作为商业发货证据；
+- `validation-grade`：只能 validation/shadow，不能反馈 optimizer；
+- `validation-grade-blind`：仓库外 blind key，只用于独立晋级，不能进入 optimizer。
 
-`product-certified` **不是** `validation/` corpus tier。它属于独立 `certification/` schema v4，是唯一终态发货权限，并要求真实发货硬件/音频 route、performance、thermal、power、acoustic 与 soak 证据。
+`product-certified` **不是** validation corpus tier，而是独立 `certification/` schema/policy 权限。
 
-Compact/Full 继续固定 Microsoft AEC Challenge、Microsoft DNS Challenge 和 OpenSLR SLR28。v2.1.0 新增独立 **Extended Real**：商业验证层使用 RealMAN、BUT ReverbDB、MUSAN、Mini LibriSpeech，并可扩展 VOiCES/AMI/ICSI；AISHELL-4/FSD50K/WHAM 被隔离到 research。大型 corpus 不进入 Git。
+Extended Real 可使用 RealMAN、BUT ReverbDB、MUSAN、Mini LibriSpeech 等真实公开数据扩大远场/房间/会议/环境负例覆盖，但仍不能代替真实 DUT Product Certification。
 
-Extended Real 增加真实 far-field/moving source、实测房间、meeting/overlap、hard-negative、逐文件 SHA-256、scenario 分层 blind、tail metric、clipping/DC/VAD error 和 scenario/dimension gate，但仍不具备 product certification 权限。
+## 资源与性能
 
-大规模公共验证只在可信 `audio-validation` runner 上执行，并先通过 readiness 和 dataset verify。详见 [`validation/README.md`](validation/README.md)、[`docs/EXTENDED_REAL_VALIDATION.zh-CN.md`](docs/EXTENDED_REAL_VALIDATION.zh-CN.md) 与 [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md)。
+Hosted 资源机器真相源只有 [`ci/resource-baseline.json`](ci/resource-baseline.json)，生成文档为 [`docs/generated/RESOURCE_BASELINE.md`](docs/generated/RESOURCE_BASELINE.md)。Hosted/QEMU 只用于 regression、构建与可执行契约，不得解释成芯片性能。
 
-## HIL 与发货认证
+真机性能需真实测量 CPU p95/p99、RSS/cache/context switch、XRUN/route、thermal、power 等。
 
-真实板 HIL 使用可信 `[self-hosted, linux, audio-target]` runner，并执行板卡本地 metadata、readiness、preflight/cleanup 与 evidence sealing。
+## HIL / Product Certification
 
-分层 soak 为 10 分钟 / 1 小时 / 8 小时 / 24 小时 / 72 小时。Scheduled / Release 后 HIL 是 **fail-visible**：当 `HIL_ENABLED!=true` 时 availability gate 必须失败，不能静默 skip，更不能伪造 PASS。
+真实 HIL 使用 `[self-hosted, linux, audio-target]`。Scheduled/Release 后要求硬件时执行 **fail-visible** 策略：`HIL_ENABLED!=true` 时不能静默伪装为健康 PASS。
 
-HIL 历史不等于产品认证。当前 `product-certified` 只接受 **certification schema v4**，并绑定：
+最终 `product-certified` 要求：
 
-- shipping-approved SKU policy；
-- exact source/build/toolchain identity；
-- 独立 `audio-builder` 与 `audio-target` runner；
-- build/deployed/executed binary SHA-256 完全一致；
-- 真实 CPU/RSS/p95/p99 与 audio route evidence；
-- 真实声学 corpus；
-- 实测 thermal / power；
-- policy 要求的 route soak；
+- annotated semantic release tag + immutable GitHub Release；
+- exact release source/build/toolchain identity；
+- 独立 `audio-builder` 与 `audio-target`；
+- build/deployed/executed binary SHA-256 一致；
+- 真实 route/acoustic/performance/thermal/power；
+- shipping-approved policy；
+- 至少 **72 h** soak（当前 Cortex-A32 LOW policy）；
 - artifact attestation；
 - immutable `product-lifecycle` archive receipt。
 
-仓库内 Cortex-A32 LOW shipping policy 要求至少 **72 h**。Hosted CI、QEMU、公共数据验证以及较短 HIL 都不能替代这一步。
+Hosted CI、QEMU、公开数据、较短 HIL 或 E001 readiness 均不能替代这一步。
 
-详见 [`certification/README.md`](certification/README.md) 与 [`docs/PRODUCT_ASSURANCE.md`](docs/PRODUCT_ASSURANCE.md)。
-
-## 构建与安装
-
-Native Linux：
-
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure
-```
-
-Arm presets 覆盖 generic ARMv7-A、Cortex-A7 scalar/NEON、Cortex-A32 NEON、保守的 `ssc305-cortex-a32-low` 产品配置和 AArch64 NEON。部分可执行 contract 会在 QEMU 下运行，但 QEMU 时间不能作为芯片性能结论。
-
-安装后的 SDK：
-
-```cmake
-find_package(AudioPipeline CONFIG REQUIRED)
-target_link_libraries(app PRIVATE AudioPipeline::core)
-# 可选 Linux Runtime：
-target_link_libraries(app PRIVATE AudioPipeline::runtime)
-```
-
-CI 会从干净 install prefix 构建 CMake / pkg-config consumer。
+详见 [`docs/PRODUCT_ASSURANCE.zh-CN.md`](docs/PRODUCT_ASSURANCE.zh-CN.md) 和 [`docs/TRUSTED_RUNNERS.zh-CN.md`](docs/TRUSTED_RUNNERS.zh-CN.md)。实验室部署入口仍为 [`lab/README.md`](lab/README.md)。
 
 ## 仓库 Gate
 
-PR/main Verify 包含 strict compile/test、GCC/Clang、sanitizer、TSan、static analysis、coverage、backend/composition matrix、Arm cross-build/QEMU、RAM/ROM pruning、paired performance、diagnostics replay、确定性 acoustic regression，以及 v2 API/symbol hard-cut contract。
+PR/main Verify 覆盖 strict compile/test、GCC/Clang、sanitizer、TSan、CodeQL/static analysis、coverage、backend/composition、Arm/QEMU、SSC305 exact product profile、RAM/ROM pruning、paired performance、SDK consumer、diagnostics replay、deterministic acoustic regression、bounded tuning、ordinary-user lab contract 和 v2 ABI。
 
-任何会进入正式发布内容的 PR 都必须让仓库 SemVer 高于 base，并保持 CMake/CHANGELOG 版本一致。所有 `main` push 都执行完整 Verify；Release 只有在 exact main SHA 的 required `summary` 成功后，才创建 tag、Release assets 与 attestation。
-
-真实公共数据验证、HIL 与 Product Certification 始终与 hosted CI 分离。
-
-## 文档
-
-- [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) — v2 API/状态/线程契约
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — 架构与所有权
-- [`docs/DSP_DESIGN.md`](docs/DSP_DESIGN.md) — 算法设计
-- [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — 性能/资源 Gate
-- [`docs/DIAGNOSTICS.md`](docs/DIAGNOSTICS.md) — 事件、Dump、Replay
-- [`docs/PORTING.md`](docs/PORTING.md) — BSP/ALSA/toolchain 集成
-- [`docs/TESTING.zh-CN.md`](docs/TESTING.zh-CN.md) — CI/HIL 策略
-- [`docs/TRUSTED_RUNNERS.md`](docs/TRUSTED_RUNNERS.md) — self-hosted runner readiness
-- [`docs/EXTENDED_REAL_VALIDATION.zh-CN.md`](docs/EXTENDED_REAL_VALIDATION.zh-CN.md) — 真实远场/房间/会议/环境负例验证
-- [`certification/README.md`](certification/README.md) — v4 发货认证
-- [`THIRD_PARTY.md`](THIRD_PARTY.md) — 第三方/reference 规则
+只有 exact PR/main SHA 的 required `summary=success` 才是合并/Release 权威证据。release-bearing 变化遵循 SemVer/CHANGELOG；release-neutral 文档/治理变化不得人为制造新版本。
 
 ## License
 
 见 [LICENSE](LICENSE)。
-
-Hosted CI 还会强制运行 **Microsoft P.808 真实音频 smoke**：4 个 CC-BY-4.0 clip 固定到 exact revision，并校验 SHA-256/Git blob；不把音频提交进 Git，同时覆盖 stereo-to-mono materialization 与 48 kHz 边界重采样。这只是 validation-grade safety evidence，不代表远场或 product-certified 证据。
-
-## 可复现实验室部署
-
-可信 `audio-validation` / `audio-target` 控制机、commercial-core 真实数据 materialize、readiness 与首次验证 dispatch 已版本化到 [`lab/README.md`](lab/README.md)。实验室 READY 与公开真实数据结果仍不能替代 DUT HIL 和 72 小时 Product Certification。

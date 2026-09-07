@@ -146,8 +146,8 @@ def validate_i004_closed(plan: dict, root: Path) -> None:
     require(closure["closed_on_main_sha"] == "5d5fed094b5a51af2f503d1556e8f6fbce82af07",
             "I004 closure must bind reviewed #99 main SHA")
     shipping = closure["shipping_baseline"]
-    require(shipping["release"] == plan["baseline"]["software_release"] == "v2.3.12" and
-            shipping["source_sha"] == plan["baseline"]["source_sha"] and
+    require(shipping["release"] == "v2.3.12" and
+            shipping["source_sha"] == "d82cb6d2be76497d1d66dd16da00924411207046" and
             shipping["unchanged"] is True,
             "I004 closure must keep immutable shipping baseline")
 
@@ -312,8 +312,8 @@ def validate_i006_closed(plan: dict, root: Path) -> None:
             closure["closed_from_main_sha"] == "bba5e702694847624d6836790ba93118297d8994",
             "I006 CLOSED requires reviewed closure identity")
     shipping = closure["shipping_baseline"]
-    require(shipping["release"] == plan["baseline"]["software_release"] == "v2.3.12" and
-            shipping["source_sha"] == plan["baseline"]["source_sha"] and
+    require(shipping["release"] == "v2.3.12" and
+            shipping["source_sha"] == "d82cb6d2be76497d1d66dd16da00924411207046" and
             shipping["unchanged"] is True,
             "I006 closure must keep immutable shipping baseline")
 
@@ -471,7 +471,7 @@ def validate_i009_closed(plan: dict, root: Path) -> None:
             "I009 closure identity")
     require(c["shipping_baseline"] == {
                 "release": "v2.3.12",
-                "source_sha": plan["baseline"]["source_sha"],
+                "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
                 "unchanged": True,
             }, "I009 shipping baseline")
     e = c["evidence_chain"]
@@ -660,6 +660,76 @@ def validate_i008_review_required(plan: dict, root: Path) -> None:
             }, "I008 authority boundary")
 
 
+def validate_i008_closed(plan: dict, root: Path) -> None:
+    by_id = {task["id"]: task for task in plan["tasks"]}
+    i008 = by_id["I008"]
+    if i008["status"] != "CLOSED":
+        return
+    require(i008["handler"] is None and
+            i008["contract"] == "docs/program/iterations/I008-closure.json" and
+            len(i008["evidence"]) == 5,
+            "I008 CLOSED must be terminal, evidence-backed and bound to closure")
+    c = json.loads(repo_file(root, i008["contract"]).read_text())
+    require(c["schema_version"] == 1 and c["iteration_id"] == "I008" and
+            c["state"] == "CLOSED_RELEASE_CARRIED" and c["lane"] == "engineering" and
+            c["root_cause_id"] == "resampler-perf-base-head-backend-asymmetry" and
+            c["closed_from_release_source_sha"] == "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+            "I008 closure identity")
+    shipping = c["shipping_baseline"]
+    require(shipping["release"] == plan["baseline"]["software_release"] == "v2.3.13" and
+            shipping["source_sha"] == plan["baseline"]["source_sha"] ==
+            "d70e18b12b899a67fa20adf3d281d10b901afbe8" and
+            shipping["verify_run_id"] == 34070711899 and
+            shipping["release_run_id"] == 34070954317 and
+            shipping["release_id"] == 383770060 and shipping["immutable"] is True and
+            shipping["latest"] is True, "I008 verified v2.3.13 baseline")
+    fix = c["evidence_chain"]["verified_fix_lineage"]
+    require(fix["pr"] == 122 and fix["head_sha"] == "03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a" and
+            fix["run_id"] == 34039351719 and fix["artifact_id"] == 9991183617 and
+            fix["artifact_digest"] == "sha256:b6c82e12e6e27529861e95cc3c1c29751d88d7d2d22522595c188524d1884ebd" and
+            fix["internal_sha256s_verified"] == 2 and fix["may_be_independent_confirmation"] is False,
+            "I008 historical fix lineage")
+    carry = c["evidence_chain"]["release_carry"]
+    require(carry["pr"] == 128 and carry["merge_main_sha"] == shipping["source_sha"] and
+            carry["run_id"] == 34070314088 and carry["artifact_id"] == 10000238388 and
+            carry["artifact_digest"] == "sha256:e867ff74ee6834031d711686a3b6d190610480544806330dda61f475514e7202" and
+            carry["internal_sha256s_verified"] == 2 and
+            carry["decision"] == "RELEASE_CARRY_ENGINEERING_PASS_REVIEW_REQUIRED" and
+            carry["candidate_limit_consumed"] == carry["confirmation_limit_consumed"] == 0 and
+            carry["threshold_tuning_performed"] is False, "I008 release carry evidence")
+    verify = c["evidence_chain"]["main_verify"]
+    require(verify == {"run_id": 34070711899, "run_number": 608, "conclusion": "success",
+                       "source_sha": shipping["source_sha"]}, "I008 exact-main Verify evidence")
+    release = c["evidence_chain"]["immutable_release"]
+    require(release["run_id"] == 34070954317 and release["run_number"] == 599 and
+            release["conclusion"] == "success" and release["release_id"] == 383770060 and
+            release["tag"] == "v2.3.13" and
+            release["tag_object_sha"] == "d830b7023acde1af79f8f040a4c7b0d4cb2c3e46" and
+            release["tag_peel_sha"] == shipping["source_sha"] and release["immutable"] is True and
+            release["latest"] is True and release["asset_count"] == 8 and
+            release["checksummed_assets"] == 7 and release["manifest_payload_assets"] == 6,
+            "I008 immutable release identity")
+    preflight = c["evidence_chain"]["terminal_preflight"]
+    require(type(preflight["workflow_run_id"]) is int and preflight["workflow_run_id"] > 0 and
+            preflight["release_assets_downloaded"] is True and preflight["sha256sums_verified"] == 7 and
+            preflight["manifest_payloads_verified"] == 6 and
+            preflight["release_api_asset_digests_verified"] == 8, "I008 terminal payload preflight")
+    require(c["closure_decision"] == {
+                "status": "CLOSED", "release_bearing_fix_carried": True,
+                "semver_policy_preserved": True,
+                "shipping_baseline_migrated_after_release_verification": True,
+                "additional_i008_candidate_authorized": False, "candidate_limit_consumed": 0,
+                "confirmation_limit_consumed": 0, "acoustic_threshold_search_authorized": False,
+            }, "I008 terminal closure decision")
+    require(c["authority_boundary"] == {
+                "shipping_source_changed": False, "software_candidate_promoted": False,
+                "acoustic_confirmation_consumed": False,
+                "product_qualification": "DEFERRED_BY_SCOPE", "hardware_collection": False,
+                "dut_hil": "DEFERRED_BY_SCOPE",
+                "post_release_dispatch_is_product_qualification": False,
+            }, "I008 closure authority boundary")
+
+
 def validate_p002_closed(plan: dict, root: Path) -> None:
     by_id = {task["id"]: task for task in plan["tasks"]}
     p002 = by_id["P002"]
@@ -678,10 +748,9 @@ def validate_p002_closed(plan: dict, root: Path) -> None:
             "P002 closure identity")
     require(c["shipping_baseline"] == {
                 "release": "v2.3.12",
-                "source_sha": plan["baseline"]["source_sha"],
+                "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
                 "unchanged": True,
-            } and plan["baseline"]["software_release"] == "v2.3.12",
-            "P002 closure must preserve immutable shipping baseline")
+            }, "P002 closure must preserve its historical shipping baseline")
     audit = c["candidate_zero_audit"]
     require(audit["pr"] == 124 and
             audit["merge_main_sha"] == "699c1f604611b5018ab3cb7a712ed1a8942cedcb" and
@@ -749,16 +818,21 @@ def validate_p002_closed(plan: dict, root: Path) -> None:
                 "shipping_baseline_changed": False,
             }, "P002 closure decision")
     i008 = by_id["I008"]
-    require(i008["status"] == "REVIEW_REQUIRED" and i008["handler"] is None and
-            i008["contract"] == "docs/program/iterations/I008-review-required.json" and
-            len(i008["evidence"]) == 2 and
-            c["handoff"]["I008"] == {
+    require(c["handoff"]["I008"] == {
                 "status": "REVIEW_REQUIRED",
                 "authority": "verified-release-bearing-comparator-fix-carry-only",
                 "may_bypass_semver_policy": False,
                 "may_claim_product_qualification": False,
                 "future_real_patch_release_must_reverify_required_summary": True,
-            }, "P002 closure must leave I008 REVIEW_REQUIRED")
+            }, "P002 historical handoff must remain REVIEW_REQUIRED")
+    require(i008["handler"] is None and (
+                (i008["status"] == "REVIEW_REQUIRED" and
+                 i008["contract"] == "docs/program/iterations/I008-review-required.json" and
+                 len(i008["evidence"]) == 2) or
+                (i008["status"] == "CLOSED" and
+                 i008["contract"] == "docs/program/iterations/I008-closure.json" and
+                 len(i008["evidence"]) == 5)),
+            "P002 historical handoff permits later evidence-backed I008 closure")
     require(c["authority_boundary"] == {
                 "shipping_source_changed": False,
                 "software_candidate_promoted": False,
@@ -858,6 +932,7 @@ def validate(plan: dict, root: Path | None = None) -> None:
         validate_i006_closed(plan, root)
         validate_i009_closed(plan, root)
         validate_i008_review_required(plan, root)
+        validate_i008_closed(plan, root)
         validate_p002_closed(plan, root)
 
 
@@ -931,8 +1006,13 @@ def self_test() -> None:
                 i008["contract"] == "docs/program/iterations/I008-review-required.json" and
                 len(i008["evidence"]) == 2,
                 "review-required I008 must be frozen, evidence-backed and non-executable")
+    elif i008["status"] == "CLOSED":
+        require(i008["handler"] is None and
+                i008["contract"] == "docs/program/iterations/I008-closure.json" and
+                len(i008["evidence"]) == 5,
+                "closed I008 must be terminal and evidence-backed")
     else:
-        raise AssertionError("I008 must be PLANNED or evidence-backed REVIEW_REQUIRED in this phase")
+        raise AssertionError("I008 must be PLANNED, REVIEW_REQUIRED or evidence-backed CLOSED")
 
     if p002["status"] == "PLANNED":
         require(p002["handler"] is None and p002["contract"] is None and not p002["evidence"],
@@ -1015,6 +1095,7 @@ def self_test() -> None:
         lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="REVIEW_REQUIRED", evidence=[]),
         lambda p: next(t for t in p["tasks"] if t["id"] == "I006").update(status="CLOSED", evidence=[]),
         lambda p: next(t for t in p["tasks"] if t["id"] == "P002").update(status="CLOSED", evidence=[]),
+        lambda p: next(t for t in p["tasks"] if t["id"] == "I008").update(status="CLOSED", evidence=[]),
     ]
     for mutate in mutations:
         bad = copy.deepcopy(plan)

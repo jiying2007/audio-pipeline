@@ -1,0 +1,95 @@
+{
+  "authority_boundary": {
+    "acoustic_confirmation_consumed": false,
+    "dut_hil": "DEFERRED_BY_SCOPE",
+    "hardware_collection": false,
+    "post_release_dispatch_is_product_qualification": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false
+  },
+  "closed_from_release_source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+  "closure_decision": {
+    "acoustic_threshold_search_authorized": false,
+    "additional_i008_candidate_authorized": false,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit_consumed": 0,
+    "release_bearing_fix_carried": true,
+    "semver_policy_preserved": true,
+    "shipping_baseline_migrated_after_release_verification": true,
+    "status": "CLOSED"
+  },
+  "evidence_chain": {
+    "candidate_zero_review": {
+      "authority": "historical-engineering-diagnostic-only",
+      "decision": "ENGINEERING_GAP_REVIEW_REQUIRED",
+      "pr": 121,
+      "run_id": 34038886087
+    },
+    "immutable_release": {
+      "asset_count": 8,
+      "checksummed_assets": 7,
+      "conclusion": "success",
+      "immutable": true,
+      "latest": true,
+      "manifest_payload_assets": 6,
+      "release_id": 383770060,
+      "run_id": 34070954317,
+      "run_number": 599,
+      "tag": "v2.3.13",
+      "tag_object_sha": "d830b7023acde1af79f8f040a4c7b0d4cb2c3e46",
+      "tag_peel_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8"
+    },
+    "main_verify": {
+      "conclusion": "success",
+      "run_id": 34070711899,
+      "run_number": 608,
+      "source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8"
+    },
+    "release_carry": {
+      "artifact_digest": "sha256:e867ff74ee6834031d711686a3b6d190610480544806330dda61f475514e7202",
+      "artifact_id": 10000238388,
+      "candidate_limit_consumed": 0,
+      "confirmation_limit_consumed": 0,
+      "decision": "RELEASE_CARRY_ENGINEERING_PASS_REVIEW_REQUIRED",
+      "internal_sha256s_verified": 2,
+      "merge_main_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+      "pr": 128,
+      "run_id": 34070314088,
+      "threshold_tuning_performed": false
+    },
+    "terminal_preflight": {
+      "manifest_payloads_verified": 6,
+      "release_api_asset_digests_verified": 8,
+      "release_assets_downloaded": true,
+      "sha256sums_verified": 7,
+      "workflow_run_id": 34072758609
+    },
+    "verified_fix_lineage": {
+      "artifact_digest": "sha256:b6c82e12e6e27529861e95cc3c1c29751d88d7d2d22522595c188524d1884ebd",
+      "artifact_id": 9991183617,
+      "authority": "already-exposed-engineering-lineage-only",
+      "head_sha": "03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a",
+      "internal_sha256s_verified": 2,
+      "may_be_independent_confirmation": false,
+      "pr": 122,
+      "run_id": 34039351719
+    }
+  },
+  "iteration_id": "I008",
+  "lane": "engineering",
+  "previous_review_contract": "docs/program/iterations/I008-review-required.json",
+  "release_carry_contract": "docs/program/iterations/I008-release-carry-v2.3.13.json",
+  "root_cause_id": "resampler-perf-base-head-backend-asymmetry",
+  "schema_version": 1,
+  "shipping_baseline": {
+    "immutable": true,
+    "latest": true,
+    "release": "v2.3.13",
+    "release_id": 383770060,
+    "release_run_id": 34070954317,
+    "source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+    "verify_run_id": 34070711899
+  },
+  "state": "CLOSED_RELEASE_CARRIED"
+}

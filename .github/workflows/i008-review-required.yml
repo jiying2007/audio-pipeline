@@ -4,9 +4,6 @@ on:
   pull_request:
     paths:
       - docs/program/iterations/I008-review-required.json
-      - docs/program/plan.json
-      - scripts/program.py
-      - .github/workflows/i008-review-required.yml
 
 permissions:
   contents: read

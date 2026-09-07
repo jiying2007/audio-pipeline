@@ -39,6 +39,7 @@
     "extended_real_control_result": "EXTENDED_REAL_REQUIRED_BUT_DISABLED",
     "interpretation": "infrastructure-unavailable-not-product-regression"
   },
+  "deferred_evidence_file": "docs/program/iterations/E001-deferred-evidence.json",
   "allowed_readiness_results": [
     "E001_DEFERRED_INFRASTRUCTURE_DISABLED",
     "E001_PARTIAL_CONFIGURATION_REQUIRES_COMPLETION",

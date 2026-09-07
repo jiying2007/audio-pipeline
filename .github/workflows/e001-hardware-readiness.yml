@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/e001-hardware-readiness.yml'
       - 'docs/program/iterations/E001-readiness.json'
+      - 'docs/program/iterations/E001-deferred-evidence.json'
       - '.github/program/e001_hardware_readiness.py'
       - '.github/workflows/hil-soak.yml'
       - '.github/workflows/extended-real-automation.yml'
@@ -19,6 +20,7 @@ on:
     paths:
       - '.github/workflows/e001-hardware-readiness.yml'
       - 'docs/program/iterations/E001-readiness.json'
+      - 'docs/program/iterations/E001-deferred-evidence.json'
       - '.github/program/e001_hardware_readiness.py'
       - '.github/workflows/hil-soak.yml'
       - '.github/workflows/extended-real-automation.yml'
@@ -60,6 +62,7 @@ jobs:
           }
           assert result['result'] in allowed
           assert result['static']['static_contracts'] == 'PASS'
+          assert result['static']['deferred_evidence'] == 'PASS'
           assert result['authority']['hardware_test_executed'] is False
           assert result['authority']['product_certification_executed'] is False
           assert result['authority']['product_qualification'] == 'DEFERRED_BY_SCOPE'
@@ -76,5 +79,6 @@ jobs:
           path: |
             e001-hardware-readiness.json
             docs/program/iterations/E001-readiness.json
+            docs/program/iterations/E001-deferred-evidence.json
           retention-days: 90
           if-no-files-found: error

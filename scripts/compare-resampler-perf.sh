@@ -12,7 +12,10 @@ if [ "$REPS" -lt 3 ]; then echo "repetitions must be >= 3" >&2; exit 2; fi
 
 git fetch origin main --depth=1
 git worktree add --detach "$TMP/base" "$BASE_REF" >/dev/null
-COMMON_FLAGS='-DCMAKE_BUILD_TYPE=Release -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF'
+# The comparator is explicitly a FAST-vs-FAST engineering regression gate.
+# Keep the backend in COMMON_FLAGS so base/head cannot silently diverge when
+# the project default changes.
+COMMON_FLAGS='-DCMAKE_BUILD_TYPE=Release -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF -DAP_RESAMPLER_MODE=FAST'
 # The regression comparator measures the behavior-equivalent FAST backend.
 # BANDLIMITED is a deliberate quality backend change and is covered by its
 # anti-alias contracts plus full-graph performance reporting.
@@ -22,9 +25,27 @@ COMMON_FLAGS='-DCMAKE_BUILD_TYPE=Release -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=O
 # when a regression is both >10% and >MAX_ABS_REGRESSION_US per 10 ms frame.
 # shellcheck disable=SC2086
 cmake -S "$TMP/base" -B "$TMP/base/build-resampler-perf" $COMMON_FLAGS >/dev/null
-cmake --build "$TMP/base/build-resampler-perf" --target audio_pipeline --parallel >/dev/null
 # shellcheck disable=SC2086
-cmake -S "$ROOT" -B "$TMP/head-build" $COMMON_FLAGS -DAP_RESAMPLER_MODE=FAST >/dev/null
+cmake -S "$ROOT" -B "$TMP/head-build" $COMMON_FLAGS >/dev/null
+
+# Fail closed before benchmarking if any audio-pipeline CMake option differs.
+# Source revision is intentionally different for a real base/head comparison;
+# every other AP_* cache entry must be behavior-equivalent.
+normalize_ap_cache() {
+  grep '^AP_[A-Z0-9_]*:' "$1/CMakeCache.txt" \
+    | grep -v '^AP_BUILD_SOURCE_REVISION:' \
+    | sort
+}
+normalize_ap_cache "$TMP/base/build-resampler-perf" > "$TMP/base-ap-cache"
+normalize_ap_cache "$TMP/head-build" > "$TMP/head-ap-cache"
+grep -qx 'AP_RESAMPLER_MODE:STRING=FAST' "$TMP/base-ap-cache"
+grep -qx 'AP_RESAMPLER_MODE:STRING=FAST' "$TMP/head-ap-cache"
+if ! diff -u "$TMP/base-ap-cache" "$TMP/head-ap-cache"; then
+  echo "resampler performance comparison requires behavior-equivalent AP_* CMake caches" >&2
+  exit 2
+fi
+
+cmake --build "$TMP/base/build-resampler-perf" --target audio_pipeline --parallel >/dev/null
 cmake --build "$TMP/head-build" --target audio_pipeline --parallel >/dev/null
 
 compile_harness() {

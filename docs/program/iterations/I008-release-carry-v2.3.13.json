@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I008",
+  "action_id": "resampler-perf-comparator-release-carry-v2.3.13",
+  "state": "RELEASE_CARRY_REVIEW_REQUIRED",
+  "lane": "engineering",
+  "exact_base_sha": "d36755720e2fd34e59abc51b215d42b78fb6d9a3",
+  "target_version": "2.3.13",
+  "target_tag": "v2.3.13",
+  "tag_absent_at_authorization": true,
+  "release_absent_at_authorization": true,
+  "shipping_baseline_before_release": {
+    "release": "v2.3.12",
+    "source_sha": "d82cb6d2be76497d1d66dd16da00924411207046",
+    "unchanged_until_release_verified": true
+  },
+  "source_fix_lineage": {
+    "pr": 122,
+    "pr_closed": true,
+    "pr_merged": false,
+    "verified_fix_sha": "03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a",
+    "dedicated_run_id": 34039351719,
+    "artifact_id": 9991183617,
+    "artifact_digest": "sha256:b6c82e12e6e27529861e95cc3c1c29751d88d7d2d22522595c188524d1884ebd",
+    "internal_sha256s_verified": 2,
+    "authority": "already-exposed-engineering-lineage-only",
+    "may_be_independent_confirmation": false
+  },
+  "root_cause": {
+    "id": "resampler-perf-base-head-backend-asymmetry",
+    "shipping_dsp_defect": false,
+    "base_before_fix": "CMake default BANDLIMITED",
+    "head_before_fix": "explicit FAST",
+    "false_improvement_artifact_pct": "approximately -72% to -90%"
+  },
+  "frozen_change_scope": {
+    "allowed_paths": [
+      "scripts/compare-resampler-perf.sh",
+      "CMakeLists.txt",
+      "CHANGELOG.md",
+      "docs/program/iterations/I008-release-carry-v2.3.13.json",
+      ".github/workflows/i008-release-carry.yml"
+    ],
+    "shipping_dsp_source_change_allowed": false,
+    "public_api_change_allowed": false,
+    "program_baseline_change_allowed_before_release": false,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit_consumed": 0,
+    "threshold_tuning_allowed": false
+  },
+  "required_fix": {
+    "base_resampler_mode": "FAST",
+    "head_resampler_mode": "FAST",
+    "require_base_head_ap_cache_equivalence": true,
+    "excluded_equivalence_key": "AP_BUILD_SOURCE_REVISION",
+    "repetitions": 7,
+    "frames": 100000,
+    "paths": 8,
+    "regression_gate": {
+      "relative_regression_pct": 10.0,
+      "absolute_regression_us": 0.05,
+      "logic": "fail only when both are exceeded"
+    }
+  },
+  "release_policy": {
+    "semver_bump_required": true,
+    "base_version": "2.3.12",
+    "target_version": "2.3.13",
+    "changelog_top_must_match": "2.3.13",
+    "release_must_not_exist_before_merge": true,
+    "program_shipping_baseline_migrates_only_after_release_exists_and_is_verified": true
+  },
+  "post_merge_requirements": {
+    "exact_main_verify_success": true,
+    "release_workflow_must_create_new_release": true,
+    "tag_peel_must_equal_release_source_sha": true,
+    "immutable_release_required": true,
+    "asset_count": 8,
+    "checksummed_assets": 7,
+    "manifest_payload_assets": 6,
+    "product_qualification_inferred_from_hosted_or_dispatch_results": false
+  },
+  "authority_boundary": {
+    "release_created_before_merge": false,
+    "shipping_baseline_changed_before_release": false,
+    "software_candidate_promoted": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

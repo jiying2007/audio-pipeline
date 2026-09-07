@@ -122,4 +122,4 @@ product-certified
     = shipping-approved policy + >=72 h + 全部物理/声学/identity/archive gate PASS
 ```
 
-在 Issue #58 正式关闭前，中文和英文材料都必须保留这三个状态的区别。
+只要真实 DUT/HIL/72 h Product Certification 与 immutable lifecycle evidence 尚未完成，中文和英文材料都必须保留这三个状态的区别；具体剩余工作以 live external-evidence tracker 与实际 workflow evidence 为准，不在长期规范中绑定固定 issue 编号。

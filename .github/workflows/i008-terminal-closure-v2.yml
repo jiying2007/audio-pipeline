@@ -1,0 +1,464 @@
+name: I008 Terminal Closure v2
+
+on:
+  push:
+    branches:
+      - program/i008-terminal-closure-v1
+    paths:
+      - '.github/workflows/i008-terminal-closure-v2.yml'
+      - 'docs/program/iterations/I008-closure.json'
+      - 'docs/program/plan.json'
+      - 'scripts/program.py'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/i008-terminal-closure-v2.yml'
+      - 'docs/program/iterations/I008-closure.json'
+      - 'docs/program/plan.json'
+      - 'scripts/program.py'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: i008-terminal-closure-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BASE_SHA: d70e18b12b899a67fa20adf3d281d10b901afbe8
+      BASE_TREE_SHA: dcfb4f149f3eca87e7faaa018d12571937d7855f
+      RELEASE_TAG: v2.3.13
+      RELEASE_ID: '383770060'
+      VERIFY_RUN_ID: '34070711899'
+      RELEASE_RUN_ID: '34070954317'
+      RELEASE_CARRY_RUN_ID: '34070314088'
+      RELEASE_CARRY_ARTIFACT_ID: '10000238388'
+      RELEASE_CARRY_ARTIFACT_DIGEST: sha256:e867ff74ee6834031d711686a3b6d190610480544806330dda61f475514e7202
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Detect closure state
+        id: state
+        shell: bash
+        run: |
+          if test -f docs/program/iterations/I008-closure.json; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify immutable v2.3.13 payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p i008-terminal-evidence/release-assets
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VERIFY_RUN_ID}" > i008-terminal-evidence/main-verify.json
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RELEASE_RUN_ID}" > i008-terminal-evidence/release-run.json
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" > i008-terminal-evidence/release.json
+          gh api "repos/${GITHUB_REPOSITORY}/releases/latest" > i008-terminal-evidence/latest-release.json
+          gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" > i008-terminal-evidence/tag-ref.json
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          root = Path('i008-terminal-evidence')
+          base = os.environ['BASE_SHA']
+          verify = json.loads((root / 'main-verify.json').read_text())
+          release_run = json.loads((root / 'release-run.json').read_text())
+          release = json.loads((root / 'release.json').read_text())
+          latest = json.loads((root / 'latest-release.json').read_text())
+          assert verify['id'] == int(os.environ['VERIFY_RUN_ID']) and verify['head_sha'] == base
+          assert verify['event'] == 'push' and verify['status'] == 'completed' and verify['conclusion'] == 'success'
+          assert release_run['id'] == int(os.environ['RELEASE_RUN_ID']) and release_run['head_sha'] == base
+          assert release_run['event'] == 'workflow_run' and release_run['status'] == 'completed' and release_run['conclusion'] == 'success'
+          assert release['id'] == int(os.environ['RELEASE_ID']) == latest['id']
+          assert release['tag_name'] == latest['tag_name'] == os.environ['RELEASE_TAG']
+          assert release['draft'] is False and release['prerelease'] is False and release['immutable'] is True
+          assert latest['draft'] is False and latest['prerelease'] is False and latest['immutable'] is True
+          expected = {
+              'audio-pipeline-v2.3.13-release-manifest.json': 'sha256:07168dd7c7b0ccce1bf3b67f54d38ac0df035a9b74ece78e2cc0392e782f872b',
+              'audio-pipeline-v2.3.13-sdk.tar.gz': 'sha256:4bde38e32fc108049dd1f95647b4b1ad07e31d842311d3da29892072074434d3',
+              'audio-pipeline-v2.3.13-source.tar.gz': 'sha256:d5942ad14f43188e2236d6dc61da00ac132be256bcb7e0a5e7570e28a9a23466',
+              'audio-pipeline-v2.3.13-validation-smoke-corpus.json': 'sha256:342829d7d9ee4d46a8e60f89192d808f8f979ff26e97ccf64a5e5b88c8a53b80',
+              'audio-pipeline-v2.3.13-validation-smoke-evidence.json': 'sha256:f35b768377c6583f083b190863d4bfeba79074ff35c4e2050bc11b83b12b3c66',
+              'audio-pipeline-v2.3.13-validation-smoke.json': 'sha256:ff958705e7d2818c624f3db567d810ef9bbeea5e150d4c65ebe1930152cfdac0',
+              'audio-pipeline-v2.3.13.spdx.json': 'sha256:1ed656da437fdc0a31d746b121260baf093f187422e7e003e682490dc59681e3',
+              'SHA256SUMS': 'sha256:28eec6fea1b224f873e36bb33f23095cf3d75d2c5a34938197bba0102720abe0',
+          }
+          assert {a['name']: a.get('digest') for a in release['assets']} == expected
+          tag_ref = json.loads((root / 'tag-ref.json').read_text())
+          assert tag_ref['object']['type'] == 'tag'
+          tag_obj = json.loads(subprocess.check_output(
+              ['gh', 'api', f"repos/{os.environ['GITHUB_REPOSITORY']}/git/tags/{tag_ref['object']['sha']}"], text=True))
+          (root / 'tag-object.json').write_text(json.dumps(tag_obj, indent=2) + '\n')
+          assert tag_obj['tag'] == os.environ['RELEASE_TAG']
+          assert tag_obj['object']['type'] == 'commit' and tag_obj['object']['sha'] == base
+          PY
+          gh release download "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --dir i008-terminal-evidence/release-assets
+          (
+            cd i008-terminal-evidence/release-assets
+            test "$(wc -l < SHA256SUMS)" -eq 7
+            sha256sum -c SHA256SUMS | tee ../sha256sum-check.log
+          )
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path('i008-terminal-evidence/release-assets')
+          manifest = json.loads((root / 'audio-pipeline-v2.3.13-release-manifest.json').read_text())
+          assert manifest['schema_version'] == 1
+          assert manifest['release'] == {'version': '2.3.13', 'tag': 'v2.3.13', 'immutable_required': True}
+          assert manifest['source'] == {'commit_sha': os.environ['BASE_SHA'], 'tree_sha': os.environ['BASE_TREE_SHA']}
+          assert manifest['lineage']['main_verify_run_id'] == os.environ['VERIFY_RUN_ID']
+          assert 128 in manifest['lineage']['merged_pr_numbers']
+          expected = {
+              'audio-pipeline-v2.3.13-sdk.tar.gz', 'audio-pipeline-v2.3.13-source.tar.gz',
+              'audio-pipeline-v2.3.13-validation-smoke-corpus.json',
+              'audio-pipeline-v2.3.13-validation-smoke-evidence.json',
+              'audio-pipeline-v2.3.13-validation-smoke.json', 'audio-pipeline-v2.3.13.spdx.json',
+          }
+          assert len(manifest['assets']) == 6 and {a['name'] for a in manifest['assets']} == expected
+          for item in manifest['assets']:
+              p = root / item['name']
+              assert p.stat().st_size == item['size']
+              assert hashlib.sha256(p.read_bytes()).hexdigest() == item['sha256']
+          assert manifest['lab_qualification']['hil'] in {'DISPATCH_PENDING', 'BLOCKED_RUNNER'}
+          assert manifest['lab_qualification']['extended_real'] in {'DISPATCH_PENDING', 'BLOCKED_CONFIG'}
+          assert 'separate from immutable software release authority' in manifest['lab_qualification']['note']
+          PY
+
+      - name: Materialize I008 terminal closure
+        if: github.event_name == 'push' && steps.state.outputs.present == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only "${BASE_SHA}...HEAD" | sort > /tmp/pre-actual
+          printf '%s\n' '.github/workflows/i008-terminal-closure-v2.yml' > /tmp/pre-expected
+          diff -u /tmp/pre-expected /tmp/pre-actual
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          base = os.environ['BASE_SHA']
+          verify_run = int(os.environ['VERIFY_RUN_ID'])
+          release_run = int(os.environ['RELEASE_RUN_ID'])
+          carry_run = int(os.environ['RELEASE_CARRY_RUN_ID'])
+          carry_artifact = int(os.environ['RELEASE_CARRY_ARTIFACT_ID'])
+          carry_digest = os.environ['RELEASE_CARRY_ARTIFACT_DIGEST']
+          run_id = int(os.environ['GITHUB_RUN_ID'])
+          old_sha = 'd82cb6d2be76497d1d66dd16da00924411207046'
+
+          closure = {
+              'schema_version': 1, 'iteration_id': 'I008', 'state': 'CLOSED_RELEASE_CARRIED',
+              'lane': 'engineering', 'root_cause_id': 'resampler-perf-base-head-backend-asymmetry',
+              'closed_from_release_source_sha': base,
+              'previous_review_contract': 'docs/program/iterations/I008-review-required.json',
+              'release_carry_contract': 'docs/program/iterations/I008-release-carry-v2.3.13.json',
+              'shipping_baseline': {
+                  'release': 'v2.3.13', 'source_sha': base, 'verify_run_id': verify_run,
+                  'release_run_id': release_run, 'release_id': 383770060, 'immutable': True, 'latest': True,
+              },
+              'evidence_chain': {
+                  'candidate_zero_review': {
+                      'pr': 121, 'run_id': 34038886087, 'decision': 'ENGINEERING_GAP_REVIEW_REQUIRED',
+                      'authority': 'historical-engineering-diagnostic-only',
+                  },
+                  'verified_fix_lineage': {
+                      'pr': 122, 'head_sha': '03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a',
+                      'run_id': 34039351719, 'artifact_id': 9991183617,
+                      'artifact_digest': 'sha256:b6c82e12e6e27529861e95cc3c1c29751d88d7d2d22522595c188524d1884ebd',
+                      'internal_sha256s_verified': 2, 'authority': 'already-exposed-engineering-lineage-only',
+                      'may_be_independent_confirmation': False,
+                  },
+                  'release_carry': {
+                      'pr': 128, 'merge_main_sha': base, 'run_id': carry_run, 'artifact_id': carry_artifact,
+                      'artifact_digest': carry_digest, 'internal_sha256s_verified': 2,
+                      'decision': 'RELEASE_CARRY_ENGINEERING_PASS_REVIEW_REQUIRED',
+                      'candidate_limit_consumed': 0, 'confirmation_limit_consumed': 0,
+                      'threshold_tuning_performed': False,
+                  },
+                  'main_verify': {'run_id': verify_run, 'run_number': 608, 'conclusion': 'success', 'source_sha': base},
+                  'immutable_release': {
+                      'run_id': release_run, 'run_number': 599, 'conclusion': 'success', 'release_id': 383770060,
+                      'tag': 'v2.3.13', 'tag_object_sha': 'd830b7023acde1af79f8f040a4c7b0d4cb2c3e46',
+                      'tag_peel_sha': base, 'immutable': True, 'latest': True,
+                      'asset_count': 8, 'checksummed_assets': 7, 'manifest_payload_assets': 6,
+                  },
+                  'terminal_preflight': {
+                      'workflow_run_id': run_id, 'release_assets_downloaded': True,
+                      'sha256sums_verified': 7, 'manifest_payloads_verified': 6,
+                      'release_api_asset_digests_verified': 8,
+                  },
+              },
+              'closure_decision': {
+                  'status': 'CLOSED', 'release_bearing_fix_carried': True, 'semver_policy_preserved': True,
+                  'shipping_baseline_migrated_after_release_verification': True,
+                  'additional_i008_candidate_authorized': False, 'candidate_limit_consumed': 0,
+                  'confirmation_limit_consumed': 0, 'acoustic_threshold_search_authorized': False,
+              },
+              'authority_boundary': {
+                  'shipping_source_changed': False, 'software_candidate_promoted': False,
+                  'acoustic_confirmation_consumed': False, 'product_qualification': 'DEFERRED_BY_SCOPE',
+                  'hardware_collection': False, 'dut_hil': 'DEFERRED_BY_SCOPE',
+                  'post_release_dispatch_is_product_qualification': False,
+              },
+          }
+          Path('docs/program/iterations/I008-closure.json').write_text(json.dumps(closure, indent=2, sort_keys=True) + '\n')
+
+          plan_path = Path('docs/program/plan.json')
+          plan = json.loads(plan_path.read_text())
+          assert plan['baseline']['software_release'] == 'v2.3.12' and plan['baseline']['source_sha'] == old_sha
+          plan['baseline'] = {
+              'source_sha': base,
+              'verify_url': f'https://github.com/jiying2007/audio-pipeline/actions/runs/{verify_run}',
+              'software_release': 'v2.3.13',
+              'release_url': 'https://github.com/jiying2007/audio-pipeline/releases/tag/v2.3.13',
+              'note': 'immutable software/public-data baseline after I008 comparator-only maintenance release; product qualification remains deferred by scope',
+          }
+          i008 = next(t for t in plan['tasks'] if t['id'] == 'I008')
+          assert i008['status'] == 'REVIEW_REQUIRED' and i008['contract'] == 'docs/program/iterations/I008-review-required.json'
+          assert len(i008['evidence']) == 2
+          i008['status'] = 'CLOSED'
+          i008['contract'] = 'docs/program/iterations/I008-closure.json'
+          i008['exit'] = ('Verified FAST-vs-FAST comparator fix is carried by SemVer v2.3.13; exact-main Verify, annotated exact-SHA tag, immutable latest Release, eight asset digests, seven SHA256SUMS entries and six manifest payloads are verified; no acoustic candidate/confirmation or PQ authority is consumed')
+          i008['evidence'].extend([
+              {'source_sha': 'c1181747d59f56d93fa9323946243170c3690264',
+               'url': f'https://github.com/jiying2007/audio-pipeline/actions/runs/{carry_run}',
+               'meaning': f'Release-carry PR #128 dedicated gate revalidated the historical fix lineage and fresh FAST-vs-FAST eight-path comparator under unchanged frozen gates; artifact {carry_artifact}/digest {carry_digest.removeprefix("sha256:")} independently verified 2/2. Candidate and confirmation budgets remained 0/0.'},
+              {'source_sha': base, 'url': f'https://github.com/jiying2007/audio-pipeline/actions/runs/{verify_run}',
+               'meaning': 'Exact-main Verify #608 completed success on the v2.3.13 release source before release creation; full engineering, quality, resource, hosted-real and validation-smoke matrix passed.'},
+              {'source_sha': base, 'url': 'https://github.com/jiying2007/audio-pipeline/releases/tag/v2.3.13',
+               'meaning': 'Release #599 created immutable latest v2.3.13 from the exact source SHA with an annotated tag, eight assets, seven checksummed assets and six manifest payload assets. Post-release HIL/Extended Real dispatch is explicitly not Product Qualification evidence.'},
+          ])
+          plan_path.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + '\n')
+
+          program_path = Path('scripts/program.py')
+          text = program_path.read_text()
+          old_release_expr = 'shipping["release"] == plan["baseline"]["software_release"] == "v2.3.12"'
+          old_source_expr = 'shipping["source_sha"] == plan["baseline"]["source_sha"]'
+          assert text.count(old_release_expr) == 2
+          assert text.count(old_source_expr) == 2
+          text = text.replace(old_release_expr, 'shipping["release"] == "v2.3.12"')
+          text = text.replace(old_source_expr, f'shipping["source_sha"] == "{old_sha}"')
+
+          i009_start = text.index('def validate_i009_closed(')
+          i009_end = text.index('def validate_i008_review_required(', i009_start)
+          i009_section = text[i009_start:i009_end]
+          target = '"source_sha": plan["baseline"]["source_sha"],'
+          assert i009_section.count(target) == 1
+          i009_section = i009_section.replace(target, f'"source_sha": "{old_sha}",', 1)
+          text = text[:i009_start] + i009_section + text[i009_end:]
+
+          p002_start = text.index('def validate_p002_closed(')
+          validate_start = text.index('def validate(plan:', p002_start)
+          p002 = text[p002_start:validate_start]
+          assert p002.count(target) == 1
+          p002 = p002.replace(target, f'"source_sha": "{old_sha}",', 1)
+          current_release_clause = '            } and plan["baseline"]["software_release"] == "v2.3.12",\n            "P002 closure must preserve immutable shipping baseline")'
+          historical_release_clause = '            }, "P002 closure must preserve its historical shipping baseline")'
+          assert p002.count(current_release_clause) == 1
+          p002 = p002.replace(current_release_clause, historical_release_clause, 1)
+          hstart = p002.index('    i008 = by_id["I008"]\n')
+          hend = p002.index('    require(c["authority_boundary"] == {', hstart)
+          handoff = '\n'.join([
+              '    i008 = by_id["I008"]',
+              '    require(c["handoff"]["I008"] == {',
+              '                "status": "REVIEW_REQUIRED",',
+              '                "authority": "verified-release-bearing-comparator-fix-carry-only",',
+              '                "may_bypass_semver_policy": False,',
+              '                "may_claim_product_qualification": False,',
+              '                "future_real_patch_release_must_reverify_required_summary": True,',
+              '            }, "P002 historical handoff must remain REVIEW_REQUIRED")',
+              '    require(i008["handler"] is None and (',
+              '                (i008["status"] == "REVIEW_REQUIRED" and',
+              '                 i008["contract"] == "docs/program/iterations/I008-review-required.json" and',
+              '                 len(i008["evidence"]) == 2) or',
+              '                (i008["status"] == "CLOSED" and',
+              '                 i008["contract"] == "docs/program/iterations/I008-closure.json" and',
+              '                 len(i008["evidence"]) == 5)),',
+              '            "P002 historical handoff permits later evidence-backed I008 closure")',
+              '',
+          ])
+          p002 = p002[:hstart] + handoff + p002[hend:]
+          text = text[:p002_start] + p002 + text[validate_start:]
+
+          marker = '\n\ndef validate_p002_closed(plan: dict, root: Path) -> None:\n'
+          assert text.count(marker) == 1
+          closed = '\n'.join([
+              '', '',
+              'def validate_i008_closed(plan: dict, root: Path) -> None:',
+              '    by_id = {task["id"]: task for task in plan["tasks"]}',
+              '    i008 = by_id["I008"]',
+              '    if i008["status"] != "CLOSED":',
+              '        return',
+              '    require(i008["handler"] is None and',
+              '            i008["contract"] == "docs/program/iterations/I008-closure.json" and',
+              '            len(i008["evidence"]) == 5,',
+              '            "I008 CLOSED must be terminal, evidence-backed and bound to closure")',
+              '    c = json.loads(repo_file(root, i008["contract"]).read_text())',
+              '    require(c["schema_version"] == 1 and c["iteration_id"] == "I008" and',
+              '            c["state"] == "CLOSED_RELEASE_CARRIED" and c["lane"] == "engineering" and',
+              '            c["root_cause_id"] == "resampler-perf-base-head-backend-asymmetry" and',
+              '            c["closed_from_release_source_sha"] == "d70e18b12b899a67fa20adf3d281d10b901afbe8",',
+              '            "I008 closure identity")',
+              '    shipping = c["shipping_baseline"]',
+              '    require(shipping["release"] == plan["baseline"]["software_release"] == "v2.3.13" and',
+              '            shipping["source_sha"] == plan["baseline"]["source_sha"] ==',
+              '            "d70e18b12b899a67fa20adf3d281d10b901afbe8" and',
+              '            shipping["verify_run_id"] == 34070711899 and',
+              '            shipping["release_run_id"] == 34070954317 and',
+              '            shipping["release_id"] == 383770060 and shipping["immutable"] is True and',
+              '            shipping["latest"] is True, "I008 verified v2.3.13 baseline")',
+              '    fix = c["evidence_chain"]["verified_fix_lineage"]',
+              '    require(fix["pr"] == 122 and fix["head_sha"] == "03a3bd9a85bb15e1a783ed78f4d2efc0b4bb966a" and',
+              '            fix["run_id"] == 34039351719 and fix["artifact_id"] == 9991183617 and',
+              '            fix["artifact_digest"] == "sha256:b6c82e12e6e27529861e95cc3c1c29751d88d7d2d22522595c188524d1884ebd" and',
+              '            fix["internal_sha256s_verified"] == 2 and fix["may_be_independent_confirmation"] is False,',
+              '            "I008 historical fix lineage")',
+              '    carry = c["evidence_chain"]["release_carry"]',
+              '    require(carry["pr"] == 128 and carry["merge_main_sha"] == shipping["source_sha"] and',
+              '            carry["run_id"] == 34070314088 and carry["artifact_id"] == 10000238388 and',
+              '            carry["artifact_digest"] == "sha256:e867ff74ee6834031d711686a3b6d190610480544806330dda61f475514e7202" and',
+              '            carry["internal_sha256s_verified"] == 2 and',
+              '            carry["decision"] == "RELEASE_CARRY_ENGINEERING_PASS_REVIEW_REQUIRED" and',
+              '            carry["candidate_limit_consumed"] == carry["confirmation_limit_consumed"] == 0 and',
+              '            carry["threshold_tuning_performed"] is False, "I008 release carry evidence")',
+              '    verify = c["evidence_chain"]["main_verify"]',
+              '    require(verify == {"run_id": 34070711899, "run_number": 608, "conclusion": "success",',
+              '                       "source_sha": shipping["source_sha"]}, "I008 exact-main Verify evidence")',
+              '    release = c["evidence_chain"]["immutable_release"]',
+              '    require(release["run_id"] == 34070954317 and release["run_number"] == 599 and',
+              '            release["conclusion"] == "success" and release["release_id"] == 383770060 and',
+              '            release["tag"] == "v2.3.13" and',
+              '            release["tag_object_sha"] == "d830b7023acde1af79f8f040a4c7b0d4cb2c3e46" and',
+              '            release["tag_peel_sha"] == shipping["source_sha"] and release["immutable"] is True and',
+              '            release["latest"] is True and release["asset_count"] == 8 and',
+              '            release["checksummed_assets"] == 7 and release["manifest_payload_assets"] == 6,',
+              '            "I008 immutable release identity")',
+              '    preflight = c["evidence_chain"]["terminal_preflight"]',
+              '    require(type(preflight["workflow_run_id"]) is int and preflight["workflow_run_id"] > 0 and',
+              '            preflight["release_assets_downloaded"] is True and preflight["sha256sums_verified"] == 7 and',
+              '            preflight["manifest_payloads_verified"] == 6 and',
+              '            preflight["release_api_asset_digests_verified"] == 8, "I008 terminal payload preflight")',
+              '    require(c["closure_decision"] == {',
+              '                "status": "CLOSED", "release_bearing_fix_carried": True,',
+              '                "semver_policy_preserved": True,',
+              '                "shipping_baseline_migrated_after_release_verification": True,',
+              '                "additional_i008_candidate_authorized": False, "candidate_limit_consumed": 0,',
+              '                "confirmation_limit_consumed": 0, "acoustic_threshold_search_authorized": False,',
+              '            }, "I008 terminal closure decision")',
+              '    require(c["authority_boundary"] == {',
+              '                "shipping_source_changed": False, "software_candidate_promoted": False,',
+              '                "acoustic_confirmation_consumed": False,',
+              '                "product_qualification": "DEFERRED_BY_SCOPE", "hardware_collection": False,',
+              '                "dut_hil": "DEFERRED_BY_SCOPE",',
+              '                "post_release_dispatch_is_product_qualification": False,',
+              '            }, "I008 closure authority boundary")',
+              '',
+          ])
+          text = text.replace(marker, closed + marker, 1)
+
+          call = '        validate_i008_review_required(plan, root)\n        validate_p002_closed(plan, root)'
+          assert text.count(call) == 1
+          text = text.replace(call, '        validate_i008_review_required(plan, root)\n        validate_i008_closed(plan, root)\n        validate_p002_closed(plan, root)', 1)
+
+          self_start = text.index('def self_test() -> None:')
+          life_start = text.index('    if i008["status"] == "PLANNED":', self_start)
+          life_end = text.index('\n\n    if p002["status"] == "PLANNED":', life_start)
+          lifecycle = '\n'.join([
+              '    if i008["status"] == "PLANNED":',
+              '        require(i008["handler"] is None and i008["contract"] is None and not i008["evidence"],',
+              '                "planned I008 cannot have review/executable authority")',
+              '    elif i008["status"] == "REVIEW_REQUIRED":',
+              '        require(i008["handler"] is None and',
+              '                i008["contract"] == "docs/program/iterations/I008-review-required.json" and',
+              '                len(i008["evidence"]) == 2,',
+              '                "review-required I008 must be frozen, evidence-backed and non-executable")',
+              '    elif i008["status"] == "CLOSED":',
+              '        require(i008["handler"] is None and',
+              '                i008["contract"] == "docs/program/iterations/I008-closure.json" and',
+              '                len(i008["evidence"]) == 5,',
+              '                "closed I008 must be terminal and evidence-backed")',
+              '    else:',
+              '        raise AssertionError("I008 must be PLANNED, REVIEW_REQUIRED or evidence-backed CLOSED")',
+          ])
+          text = text[:life_start] + lifecycle + text[life_end:]
+          neg = '        lambda p: next(t for t in p["tasks"] if t["id"] == "P002").update(status="CLOSED", evidence=[]),\n'
+          assert text.count(neg) == 1
+          text = text.replace(neg, neg + '        lambda p: next(t for t in p["tasks"] if t["id"] == "I008").update(status="CLOSED", evidence=[]),\n', 1)
+          compile(text, 'scripts/program.py', 'exec')
+          program_path.write_text(text)
+          PY
+          python3 scripts/program.py check
+          python3 scripts/program.py --self-test
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/program/iterations/I008-closure.json docs/program/plan.json scripts/program.py
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git commit -m "program: close I008 on immutable v2.3.13"
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Enforce final exact four-file closure
+        if: steps.state.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only "${BASE_SHA}...HEAD" | sort > /tmp/actual
+          cat > /tmp/expected <<'EOF'
+          .github/workflows/i008-terminal-closure-v2.yml
+          docs/program/iterations/I008-closure.json
+          docs/program/plan.json
+          scripts/program.py
+          EOF
+          sort -o /tmp/expected /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+          test "$(wc -l < /tmp/actual)" -eq 4
+          git diff --check "${BASE_SHA}...HEAD"
+          if git diff --name-only "${BASE_SHA}...HEAD" -- src include | grep -q .; then
+            echo 'shipping DSP/API change forbidden in I008 terminal closure' >&2
+            exit 1
+          fi
+
+      - name: Validate committed I008 closure
+        if: steps.state.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/program.py check | tee i008-terminal-evidence/program-check.log
+          python3 scripts/program.py --self-test | tee i008-terminal-evidence/program-self-test.log
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          plan = json.loads(Path('docs/program/plan.json').read_text())
+          closure = json.loads(Path('docs/program/iterations/I008-closure.json').read_text())
+          i008 = next(t for t in plan['tasks'] if t['id'] == 'I008')
+          assert plan['baseline']['software_release'] == 'v2.3.13' and plan['baseline']['source_sha'] == os.environ['BASE_SHA']
+          assert i008['status'] == 'CLOSED' and i008['contract'] == 'docs/program/iterations/I008-closure.json'
+          assert len(i008['evidence']) == 5
+          assert closure['authority_boundary']['product_qualification'] == 'DEFERRED_BY_SCOPE'
+          assert closure['authority_boundary']['dut_hil'] == 'DEFERRED_BY_SCOPE'
+          assert closure['authority_boundary']['post_release_dispatch_is_product_qualification'] is False
+          run_id = closure['evidence_chain']['terminal_preflight']['workflow_run_id']
+          run = json.loads(subprocess.check_output(['gh', 'api', f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{run_id}"], text=True))
+          Path('i008-terminal-evidence/materialization-run.json').write_text(json.dumps(run, indent=2) + '\n')
+          assert run['status'] == 'completed' and run['conclusion'] == 'success'
+          assert run['path'] == '.github/workflows/i008-terminal-closure-v2.yml'
+          PY
+          current_main="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
+          test "${current_main}" = "${BASE_SHA}"
+
+      - name: Upload terminal evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: i008-terminal-closure-v2-${{ github.run_id }}
+          path: i008-terminal-evidence/
+          retention-days: 30
+          if-no-files-found: error

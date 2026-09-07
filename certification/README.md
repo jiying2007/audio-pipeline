@@ -4,7 +4,7 @@
 
 ## Current record contract
 
-The v2 repository accepts **schema v4 only** for formal product certification. `tools/ap_certify.py` emits the release-source v4 payload and the current Product Certification control plane adds the immutable GitHub Release identity before final validation, attestation and archival. `certification/validate_record.py` rejects older certification schemas. Historical v1.x v2/v3 records may be retained externally for audit history, but they are not accepted as current shipping evidence and must not be used to satisfy v2 certification gates.
+The v2 repository accepts **schema v4 only** for formal product certification. `tools/ap_certify.py` emits the release-source v4 payload. The current Product Certification control plane seals the immutable GitHub Release identity as materialized `release-identity` evidence, appends that evidence to the evidence manifest, and refreshes the record's existing evidence-manifest hash bindings before final validation, attestation and archival. It does **not** add an ad-hoc top-level field to the closed v4 record schema. `certification/validate_record.py` rejects older certification schemas. Historical v1.x v2/v3 records may be retained externally for audit history, but they are not accepted as current shipping evidence and must not be used to satisfy v2 certification gates.
 
 A formal v4 certification bundle binds all of the following to one immutable GitHub Release, one exact source revision and one exact shipping binary set:
 
@@ -27,7 +27,7 @@ A formal v4 certification bundle binds all of the following to one immutable Git
 - cryptographic artifact attestation for the final certification bundle;
 - an immutable `product-lifecycle` archive receipt whose bundle hash matches that attested certification bundle.
 
-`record.json` is a core evidence document, not by itself the final lifecycle authority. Formal completion requires the **Product Certification workflow** to finish successfully through the `certification-archive` job, including validation of the immutable `product-lifecycle` archive receipt for the exact final bundle hash. A locally assembled record, a transport artifact, or an otherwise valid record without that workflow/archive lineage must not be interpreted as final Product Certification PASS.
+`record.json` is a core evidence document, not by itself the final lifecycle authority. The immutable Release identity is transitively bound by `record.evidence_manifest_sha256` and the materialized evidence-manifest entry for `evidence/release-identity.json`; the record itself remains valid against the release-source v4 JSON Schema. Formal completion requires the **Product Certification workflow** to finish successfully through the `certification-archive` job, including validation of the immutable `product-lifecycle` archive receipt for the exact final bundle hash. A locally assembled record, a transport artifact, or an otherwise valid record without that workflow/archive lineage must not be interpreted as final Product Certification PASS.
 
 ## Formal policy
 
@@ -67,6 +67,8 @@ trusted exact release source SHA
   collect executed hash
   require build == deployed == executed
   combine immutable release identity + real corpus + target performance/thermal/power + route soak
+  append release identity to evidence manifest; refresh record manifest hashes
+  require record top-level fields remain compatible with release-source v4 schema
   validate v4 record/evidence -> deterministic bundle -> artifact attestation
         |
         | Actions artifact is transport/cache only
@@ -126,7 +128,7 @@ python3 tools/target_evidence.py route-soak \
 
 ## Provenance helpers
 
-`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` assembles the release-source v4 record and materialized evidence. The Product Certification control plane then seals the immutable Release identity into the evidence set and record before validation. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
+`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` assembles the release-source v4 record and materialized evidence. The Product Certification control plane then seals the immutable Release identity into `evidence/release-identity.json`, adds that file to the evidence manifest, and refreshes the record's existing manifest SHA bindings without extending the v4 record schema. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
 
 For diagnostic inspection of an unpacked bundle, the record/evidence validator can be run as follows:
 

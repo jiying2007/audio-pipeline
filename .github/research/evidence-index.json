@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-07T12:56:00+08:00",
+  "updated_at": "2026-09-07T13:14:00+08:00",
   "policy": {
     "terminal_statuses": ["ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED"],
     "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match", "no active dependency"],
@@ -58,6 +58,9 @@
     {"branch":"research/i007-bf-health-root-cause-v1","head_sha":"88e59917d0f7cc75d88c647a41d2a186509bdd13","status":"ACCEPTED","evidence":["pr:111","run:34028010442","artifact:9987677794","decision:root-cause-24-of-24-explained"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/i009-activity-doubletalk-baseline-v1","head_sha":"086f8b5b26b76b48024a8493138a8f7b03cd1fb1","status":"ACCEPTED","evidence":["pr:116","run:34031305098","artifact:9988691434","decision:fresh-development-baseline-archived"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/i009-echo-normalized-root-cause-v1","head_sha":"9602a082d264e494b4fbb3d28f843507b08ab507","status":"ACCEPTED","evidence":["pr:117","run:34031731756","artifact:9988834254","decision:ECHO_NORMALIZED_STRUCTURE_NOT_SUPPORTED_REVIEW_REQUIRED"],"gc_eligible":true,"auto_gc":true},
-    {"branch":"research/i009-residual-echo-rescue-v1","head_sha":"8b2757a2e512bbbe752729fc26c47d45329f966d","status":"ACCEPTED","evidence":["pr:118","run:34033842566","artifact:9989499865","decision:RESIDUAL_ECHO_RESCUE_SUPPORTED_REVIEW_REQUIRED"],"gc_eligible":true,"auto_gc":true}
+    {"branch":"research/i009-residual-echo-rescue-v1","head_sha":"8b2757a2e512bbbe752729fc26c47d45329f966d","status":"ACCEPTED","evidence":["pr:118","run:34033842566","artifact:9989499865","decision:RESIDUAL_ECHO_RESCUE_SUPPORTED_REVIEW_REQUIRED"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/aec-motion-broadband-v2","head_sha":"2e98354dc54b23c019d30b1c75a6d304d5a09ccb","status":"ABANDONED","evidence":["commit:2e98354dc54b23c019d30b1c75a6d304d5a09ccb","pr:89","run:33963971029","artifact:9968834503","artifact_sha256:4ad48ed897dc72b0876ccc4142aa1a56cb81fdb9b95d091416a8de9690b708f7","decision:stale-product-base-anchor-never-executed-as-branch"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/bf-hard-mic-fault-discovery","head_sha":"efded2fd9b85a60968737e42d3b4ff8a4b16134d","status":"ACCEPTED","evidence":["pr:86","run:33955053364","artifact:9966075144","artifact_sha256:3c7798cf6201d018d5a6f2d82b686dff1d7d553a32ae67e3db398a83741dec19","decision:hard-mic-fault-discovery-merged"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/i004-ns-baseline-work","head_sha":"ef051dd2455932a30ec3ca2c1f586a2a37887551","status":"ABANDONED","evidence":["commit:ef051dd2455932a30ec3ca2c1f586a2a37887551","pr:95","run:33999621434","artifact:9979093460","artifact_sha256:331a6511d3cff82cb2787d8a1bc51f66e3c69a7ca7748b31d9794e0de646dd26","decision:abandoned-before-execution-superseded-by-pr95"],"gc_eligible":true,"auto_gc":true}
   ]
 }

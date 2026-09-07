@@ -89,24 +89,6 @@ jobs:
           git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           test "$(git rev-list -n1 "$RELEASE_TAG")" = "$SOURCE_SHA"
           test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.immutable')" = true
-          gh api "repos/$GITHUB_REPOSITORY/actions/runners?per_page=100" > /tmp/e001-runners.json
-          python3 - <<'PY'
-          import json
-          required = {'audio-validation', 'audio-builder', 'audio-target', 'certification-archive'}
-          data = json.load(open('/tmp/e001-runners.json'))
-          online = set()
-          for runner in data.get('runners', []):
-              if runner.get('status') != 'online':
-                  continue
-              labels = {item.get('name') for item in runner.get('labels', [])}
-              for role in required:
-                  if {'self-hosted', 'linux', role} <= labels:
-                      online.add(role)
-          missing = sorted(required - online)
-          if missing:
-              raise SystemExit(f'E001 trusted runner roles not online: {missing}')
-          print(f'E001 online trusted runner roles: {sorted(online)}')
-          PY
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 

@@ -4,9 +4,11 @@ on:
   pull_request:
     paths:
       - '.github/workflows/e001-hardware-readiness.yml'
+      - '.github/workflows/e001-activation-preflight.yml'
       - 'docs/program/iterations/E001-readiness.json'
       - 'docs/program/iterations/E001-deferred-evidence.json'
       - '.github/program/e001_hardware_readiness.py'
+      - '.github/program/e001_activation_preflight.py'
       - '.github/workflows/hil-soak.yml'
       - '.github/workflows/extended-real-automation.yml'
       - '.github/workflows/validation-extended-real.yml'
@@ -19,9 +21,11 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/e001-hardware-readiness.yml'
+      - '.github/workflows/e001-activation-preflight.yml'
       - 'docs/program/iterations/E001-readiness.json'
       - 'docs/program/iterations/E001-deferred-evidence.json'
       - '.github/program/e001_hardware_readiness.py'
+      - '.github/program/e001_activation_preflight.py'
       - '.github/workflows/hil-soak.yml'
       - '.github/workflows/extended-real-automation.yml'
       - '.github/workflows/validation-extended-real.yml'
@@ -42,8 +46,11 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Self-test fail-closed readiness validator
-        run: python3 .github/program/e001_hardware_readiness.py --self-test
+      - name: Self-test fail-closed readiness validators
+        run: |
+          set -euo pipefail
+          python3 .github/program/e001_hardware_readiness.py --self-test
+          python3 .github/program/e001_activation_preflight.py --self-test
       - name: Evaluate software-side activation prerequisites
         env:
           HIL_ENABLED: ${{ vars.HIL_ENABLED }}

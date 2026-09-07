@@ -14,6 +14,7 @@
     "extended_real_automation": ".github/workflows/extended-real-automation.yml",
     "extended_real_validation": ".github/workflows/validation-extended-real.yml",
     "trusted_runner_readiness": ".github/workflows/trusted-runner-readiness.yml",
+    "activation_preflight": ".github/workflows/e001-activation-preflight.yml",
     "product_certification": ".github/workflows/product-certification.yml",
     "shipping_policy": "certification/policies/cortex-a32-low-shipping.json",
     "post_release_status": "scripts/post_release_status.py",
@@ -26,9 +27,18 @@
     "extended_real_runner_role": "audio-validation",
     "shipping_builder_role": "audio-builder",
     "archive_role": "certification-archive",
+    "trusted_runner_roles": [
+      "audio-validation",
+      "audio-builder",
+      "audio-target",
+      "certification-archive"
+    ],
+    "activation_preflight_result": "E001_TRUSTED_INFRASTRUCTURE_READY",
     "minimum_certification_soak_hours": 72,
+    "manual_activation_preflight_only": true,
     "manual_product_certification_only": true,
     "exact_source_sha_required": true,
+    "immutable_release_binding_required": true,
     "shipping_approved_policy_required": true
   },
   "observed_deferred_state": {

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "iteration_id": "E001",
+  "phase": "external-hardware-activation-readiness",
+  "state": "DEFERRED",
+  "lane": "external",
+  "software_baseline": {
+    "release": "v2.3.13",
+    "source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+    "immutable_required": true
+  },
+  "required_static_contracts": {
+    "hil_workflow": ".github/workflows/hil-soak.yml",
+    "extended_real_automation": ".github/workflows/extended-real-automation.yml",
+    "extended_real_validation": ".github/workflows/validation-extended-real.yml",
+    "trusted_runner_readiness": ".github/workflows/trusted-runner-readiness.yml",
+    "product_certification": ".github/workflows/product-certification.yml",
+    "shipping_policy": "certification/policies/cortex-a32-low-shipping.json",
+    "post_release_status": "scripts/post_release_status.py",
+    "program_plan": "docs/program/plan.json"
+  },
+  "activation_requirements": {
+    "hil_enabled_variable": "HIL_ENABLED",
+    "extended_real_enabled_variable": "EXTENDED_REAL_ENABLED",
+    "hil_runner_role": "audio-target",
+    "extended_real_runner_role": "audio-validation",
+    "shipping_builder_role": "audio-builder",
+    "archive_role": "certification-archive",
+    "minimum_certification_soak_hours": 72,
+    "manual_product_certification_only": true,
+    "exact_source_sha_required": true,
+    "shipping_approved_policy_required": true
+  },
+  "observed_deferred_state": {
+    "release": "v2.3.13",
+    "hil_post_release_run_id": 34070991028,
+    "hil_control_result": "HIL_REQUIRED_BUT_DISABLED",
+    "extended_real_post_release_run_id": 34070991134,
+    "extended_real_control_result": "EXTENDED_REAL_REQUIRED_BUT_DISABLED",
+    "interpretation": "infrastructure-unavailable-not-product-regression"
+  },
+  "allowed_readiness_results": [
+    "E001_DEFERRED_INFRASTRUCTURE_DISABLED",
+    "E001_PARTIAL_CONFIGURATION_REQUIRES_COMPLETION",
+    "E001_CONFIGURED_REQUIRES_TRUSTED_RUNNER_READINESS"
+  ],
+  "forbidden_claims": [
+    "PRODUCT_CERTIFIED",
+    "PRODUCT_QUALIFICATION_PASS",
+    "DUT_HIL_PASS",
+    "HARDWARE_VALIDATED"
+  ],
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "software_candidate_promoted": false,
+    "release_created": false,
+    "hardware_collection_performed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE",
+    "readiness_is_certification": false
+  }
+}

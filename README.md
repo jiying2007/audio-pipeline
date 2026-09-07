@@ -60,7 +60,7 @@ AP_BUILD_MAX_AEC_TAIL_MS
 AP_RUNTIME_QUEUE_DEPTH
 ```
 
-Representative presets include `composition-full`, `composition-low`, `composition-tiny`, `composition-voice-frontend`, `composition-raw`, AEC/NS/Activity-only and FAST-resampler variants.
+Representative presets include `composition-full`, `composition-low`, `composition-tiny`, `composition-voice-frontend`, `composition-raw`, AEC/NS/Activity-only and FAST-resampler variants. The named `ssc305-cortex-a32-low` product preset is also exercised by an independent required resource gate that configures/builds the exact preset, verifies its generated build identity, installs the SDK, and executes AArch32 build-info/core/runtime consumers under QEMU. This is product-build integration evidence, not silicon performance evidence.
 
 Hosted resource measurements have one machine source of truth in [`ci/resource-baseline.json`](ci/resource-baseline.json); [`docs/generated/RESOURCE_BASELINE.md`](docs/generated/RESOURCE_BASELINE.md) is generated from it. Hosted measurements prove only the declared CI build contract, not target-board performance.
 

@@ -2,7 +2,7 @@
 
 本页是 `audio-pipeline` 面向中文研发、集成、测试、实验室与发布人员的统一入口。
 
-> **当前状态边界**：仓库已经达到 `software-commercial-ready`（软件商用集成就绪）。这表示 API/ABI、Runtime、安装 SDK、SSC305 命名产品构建契约、资源/性能回归、数据验证权限、诊断、发布供应链和认证控制面均可由仓库重复验证；**不表示** SSC305 真机 CPU/热/功耗/声学、HIL 历史或 72 小时 Product Certification 已完成。真实物理证据仍由 Issue #58 跟踪。
+> **当前状态边界**：仓库已经达到 `software-commercial-ready`（软件商用集成就绪）。这表示 API/ABI、Runtime、安装 SDK、SSC305 命名产品构建契约、资源/性能回归、数据验证权限、诊断、发布供应链和认证控制面均可由仓库重复验证；**不表示** SSC305 真机 CPU/热/功耗/声学、HIL 历史或 72 小时 Product Certification 已完成。真实物理证据以 live open issue / external-evidence tracker 和实际 workflow evidence 为准。
 
 ## 按角色阅读
 
@@ -49,5 +49,5 @@
 1. 任何影响公开 API/ABI、线程所有权、产品 preset、验证权限、Release 或 Product Certification 的变更，必须同步检查中文主干文档。
 2. 中文文档不得把 hosted/QEMU/public-data 结果写成真机性能或 Product Qualification PASS。
 3. 流程图必须只表达现有机器流程，不发明新的 authority。
-4. 历史事实写入 `CHANGELOG.md`；当前文档只描述当前行为。
-5. Issue #58 关闭之前，任何中文材料都必须继续明确 `product-certified` 需要真实 DUT/HIL/72 h 物理证据。
+4. 历史事实写入 `CHANGELOG.md` 或对应 evidence/archive；当前文档只描述当前行为。
+5. 只要 Product Certification 所需真实 DUT/HIL/72 h 物理证据尚未完成，中文材料就必须继续明确 `software-commercial-ready != product-certified`；不得把该规则绑定到某个固定 issue 编号。

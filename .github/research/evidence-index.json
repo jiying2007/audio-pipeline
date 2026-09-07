@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-07T12:12:00+08:00",
+  "updated_at": "2026-09-07T12:44:00+08:00",
   "policy": {
     "terminal_statuses": ["ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED"],
     "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match", "no active dependency"],
@@ -38,6 +38,8 @@
     {"branch":"research/aec-sync-two-frame-agreement-v1","head_sha":"707c293e065fb3ef38d53eb8e4bd518f7b43b362","status":"REJECTED","evidence":["run:33818993009","artifact:9917640483","artifact_sha256:9462da48f21e2d8e54b85fd39684e74d0433e37101e383e510d2b178f45104d5","decision:median-correlation-and-erle-regressed-qualified-false"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/aec-sync-two-frame-evidence-v1","head_sha":"2605f70754267cc706caac38a4b0b278d34e6959","status":"REJECTED","evidence":["run:33818474413","artifact:9917463313","artifact_sha256:97a9e06950f24412da282a818afa81ba33bdf273a1153387b9254779526d6b73","decision:development-tail-rejected-qualified-false"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/aec-sync-two-frame-remote-agreement-v1","head_sha":"6e1567b16483af29e2245d8a189024b76de3e097","status":"REJECTED","evidence":["run:33820065297","artifact:9917975976","artifact_sha256:54bf910d07595ab997034a32a5be1e4effa364d66c300a61b264aebcf4eb7178","decision:median-erle-regressed-qualified-false"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/i003-sync-selector-search","head_sha":"4c8d445cdf91d6942da7caf3ae972ca6945cde19","status":"ACCEPTED","evidence":["pr:92","run:33973719651","artifact:9971684969","artifact_sha256:7b9943df762751750f295784265e889938aa00feae214f72b70c33e4e67a0af9","decision:incumbent-qualified-selector-frozen-and-merged"],"gc_eligible":true,"auto_gc":true},
+    {"branch":"research/i003-sync-selector-search-probe","head_sha":"d479c4d7c650e836f6f9a0c2e1a4d37bb4c96164","status":"SUPERSEDED","evidence":["commit:d479c4d7c650e836f6f9a0c2e1a4d37bb4c96164","pr:92","decision:strict-ancestor-of-merged-i003-selector-search"],"superseded_by":"research/i003-sync-selector-search","gc_eligible":true,"auto_gc":true},
     {"branch":"research/i003-confirmation-rejection-archive","head_sha":"ec51860bcc130475df89bf042c3aaacff1e931bf","status":"ACCEPTED","evidence":["pr:94","decision:I003-rejection-evidence-archived","confirmation_run:33976714064","artifact:9972539010"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/i004-ns-baseline-exact-v1","head_sha":"2f2153a4dc71a93b284dd776f1c1a0a7f26984b6","status":"ACCEPTED","evidence":["pr:95","run:33999621434","artifact:9979093460","decision:MEASURED_GAP_REVIEW_REQUIRED"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/i004-baseline-gap-archive","head_sha":"5ce116b53bfe0e5afb9a7b29bd198d2aca6353b9","status":"ACCEPTED","evidence":["pr:96","run:33999621434","artifact:9979093460","decision:reviewed-baseline-gap-archived"],"gc_eligible":true,"auto_gc":true},

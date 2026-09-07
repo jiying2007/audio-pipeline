@@ -59,17 +59,21 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Bind exact immutable E001 release baseline
+      - name: Bind exact immutable E001 release baseline and activation controls
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ inputs.source_sha }}
           RELEASE_TAG: ${{ inputs.release_tag }}
+          HIL_ENABLED: ${{ vars.HIL_ENABLED }}
+          EXTENDED_REAL_ENABLED: ${{ vars.EXTENDED_REAL_ENABLED }}
         shell: bash
         run: |
           set -euo pipefail
           [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'source_sha must be a 40-character commit SHA' >&2; exit 2; }
-          case "$RELEASE_TAG" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo 'release_tag must be semantic vX.Y.Z' >&2; exit 2 ;; esac
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'release_tag must be semantic vX.Y.Z' >&2; exit 2; }
+          test "$HIL_ENABLED" = true || { echo 'E001 activation requires HIL_ENABLED=true' >&2; exit 2; }
+          test "$EXTENDED_REAL_ENABLED" = true || { echo 'E001 activation requires EXTENDED_REAL_ENABLED=true' >&2; exit 2; }
           SOURCE_SHA=${SOURCE_SHA,,}
           python3 - <<'PY'
           import json, os
@@ -85,6 +89,24 @@ jobs:
           git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           test "$(git rev-list -n1 "$RELEASE_TAG")" = "$SOURCE_SHA"
           test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.immutable')" = true
+          gh api "repos/$GITHUB_REPOSITORY/actions/runners?per_page=100" > /tmp/e001-runners.json
+          python3 - <<'PY'
+          import json
+          required = {'audio-validation', 'audio-builder', 'audio-target', 'certification-archive'}
+          data = json.load(open('/tmp/e001-runners.json'))
+          online = set()
+          for runner in data.get('runners', []):
+              if runner.get('status') != 'online':
+                  continue
+              labels = {item.get('name') for item in runner.get('labels', [])}
+              for role in required:
+                  if {'self-hosted', 'linux', role} <= labels:
+                      online.add(role)
+          missing = sorted(required - online)
+          if missing:
+              raise SystemExit(f'E001 trusted runner roles not online: {missing}')
+          print(f'E001 online trusted runner roles: {sorted(online)}')
+          PY
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
@@ -114,11 +136,12 @@ jobs:
             --writable-path "$GITHUB_WORKSPACE" \
             --output runner-readiness.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
         with:
           name: e001-preflight-audio-validation-${{ github.run_id }}
           path: runner-readiness.json
           retention-days: 90
-          if-no-files-found: error
+          if-no-files-found: warn
 
   builder:
     needs: resolve
@@ -143,11 +166,12 @@ jobs:
             --writable-path "$GITHUB_WORKSPACE" \
             --output runner-readiness.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
         with:
           name: e001-preflight-audio-builder-${{ github.run_id }}
           path: runner-readiness.json
           retention-days: 90
-          if-no-files-found: error
+          if-no-files-found: warn
 
   target:
     needs: resolve
@@ -157,7 +181,7 @@ jobs:
         with:
           ref: ${{ needs.resolve.outputs.sha }}
           fetch-depth: 0
-      - name: Preflight isolated audio-target
+      - name: Preflight isolated audio-target without executing hardware tests
         env:
           INPUT_BOARD: ${{ inputs.board_manifest }}
         shell: bash
@@ -172,17 +196,16 @@ jobs:
             --source-revision '${{ needs.resolve.outputs.sha }}' \
             --board-manifest "$BOARD" \
             --require-command cmake --require-command cc \
+            --require-command arecord --require-command aplay \
             --writable-path /tmp \
             --output runner-readiness.json
-          python3 tools/hil_board.py preflight --board "$BOARD" --output board-preflight.json --settle-seconds 0
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
         with:
           name: e001-preflight-audio-target-${{ github.run_id }}
-          path: |
-            runner-readiness.json
-            board-preflight.json
+          path: runner-readiness.json
           retention-days: 90
-          if-no-files-found: error
+          if-no-files-found: warn
 
   archive:
     needs: resolve
@@ -204,19 +227,21 @@ jobs:
             --writable-path "$GITHUB_WORKSPACE" \
             --output runner-readiness.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
         with:
           name: e001-preflight-certification-archive-${{ github.run_id }}
           path: runner-readiness.json
           retention-days: 90
-          if-no-files-found: error
+          if-no-files-found: warn
 
   aggregate:
+    if: always() && needs.resolve.result == 'success'
     needs: [resolve, validation, builder, target, archive]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ needs.resolve.outputs.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -234,12 +259,13 @@ jobs:
         with:
           name: e001-preflight-certification-archive-${{ github.run_id }}
           path: preflight/certification-archive
-      - name: Aggregate exact-source trusted infrastructure readiness
+      - name: Aggregate exact-release trusted infrastructure readiness
         run: |
           set -euo pipefail
           python3 .github/program/e001_activation_preflight.py \
             --source-sha '${{ needs.resolve.outputs.sha }}' \
             --release-tag '${{ needs.resolve.outputs.tag }}' \
+            --control-source-sha '${{ github.sha }}' \
             --report audio-validation=preflight/audio-validation/runner-readiness.json \
             --report audio-builder=preflight/audio-builder/runner-readiness.json \
             --report audio-target=preflight/audio-target/runner-readiness.json \
@@ -259,3 +285,11 @@ jobs:
           path: e001-activation-evidence
           retention-days: 90
           if-no-files-found: error
+      - name: Enforce all trusted roles READY
+        run: |
+          python3 - <<'PY'
+          import json
+          result = json.load(open('e001-activation-preflight.json'))
+          if result['result'] != 'E001_TRUSTED_INFRASTRUCTURE_READY':
+              raise SystemExit(f"trusted infrastructure not ready: {result['result']}")
+          PY

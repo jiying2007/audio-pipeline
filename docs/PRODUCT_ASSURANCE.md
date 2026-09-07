@@ -36,7 +36,10 @@ Historical 1.x facts remain in `CHANGELOG.md`, but current API/CI/documentation 
 A `product-certified` schema-v4 record requires a shipping-approved SKU policy and the following trust chain:
 
 ```text
-reviewed source SHA
+annotated semantic release tag
+  -> non-draft/non-prerelease immutable GitHub Release
+     tag peel == exact release source SHA
+     release tag == v<project version>
   -> audio-builder
      exact shipping compiler + sysroot + CFLAGS + SKU CMake arguments
   -> sealed shipping binary artifact
@@ -44,12 +47,14 @@ reviewed source SHA
      deployed digest == built digest
      executed digest == deployed digest
      real route + real corpus + thermal/power + policy soak
-  -> attested certification bundle
+  -> release-identity-bound, attested certification bundle
   -> certification-archive
      immutable product-lifecycle archive receipt
 ```
 
-The builder must not resolve target libraries, headers or CMake packages from the host filesystem. Builder and DUT must be distinct runners. Missing builder, DUT, sensors, real acoustic files, archive backend or lifecycle receipt is failed/incomplete certification, never a synthetic pass.
+Release identity (`repository`, `tag`, `release_id`, immutable/draft/prerelease state and exact source revision) is sealed into the certification evidence before final acceptance. A reviewed commit SHA alone is not sufficient Product Certification authority.
+
+The builder must not resolve target libraries, headers or CMake packages from the host filesystem. Builder and DUT must be distinct runners. Missing immutable release identity, builder, DUT, sensors, real acoustic files, archive backend or lifecycle receipt is failed/incomplete certification, never a synthetic pass.
 
 ## HIL and maturity
 

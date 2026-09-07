@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 `audio-pipeline` is a dependency-light, allocation-free real-time speech front end and composable DSP SDK for **low-compute Arm Linux products**. It targets ARMv7-A/Cortex-A7, Cortex-A32-class AArch32 and AArch64 products without embedding CPU-model assumptions into DSP algorithms.
 
+> **Commercial-readiness boundary:** the repository can be treated as **software-commercial-ready** when its required exact-main gates pass: public API/ABI, runtime ownership, installed SDK consumption, Arm/QEMU portability, the named `ssc305-cortex-a32-low` product-build contract, resource/performance regressions, acoustic validation authority, release provenance/SBOM/attestation and diagnostics/replay are all repository-controlled and fail-closed. This status is suitable for commercial product integration and pre-production software delivery. It is **not** a board-validation or Product Qualification claim: SSC305 silicon CPU/thermal/power, real enclosure/route acoustics, HIL history and the 72 h `product-certified` record still require real DUT evidence.
+
 Default high-level graph:
 
 `S16 capture -> rate adapter -> HPF -> 2-mic BF -> SYNC -> Activity/DTD -> AEC -> RES -> NS -> AGC -> VAD -> mono S16`

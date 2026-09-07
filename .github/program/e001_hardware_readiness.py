@@ -11,7 +11,10 @@ import argparse
 import copy
 import json
 import os
+import subprocess
+import sys
 import tempfile
+import textwrap
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +34,129 @@ def text(path: str) -> str:
 
 def load(path: str) -> dict:
     return json.loads(text(path))
+
+
+def extract_release_seal_python(certification: str) -> str:
+    step = "- name: Assemble and validate v4 product certification"
+    heredoc = "          python3 - <<'PY'\n"
+    end = "\n          PY"
+    require(step in certification, "Product Certification release-seal step missing")
+    section = certification.split(step, 1)[1]
+    require(heredoc in section, "Product Certification release-seal Python missing")
+    raw = section.split(heredoc, 1)[1]
+    require(end in raw, "Product Certification release-seal Python terminator missing")
+    code = textwrap.dedent(raw.split(end, 1)[0])
+    require("record['release'] = release" in code and
+            "'type': 'release-identity'" in code and
+            "record['evidence_manifest_sha256'] = manifest_sha" in code,
+            "Product Certification release-seal Python contract drift")
+    return code
+
+
+def validate_release_seal_runtime(certification: str) -> None:
+    """Execute the exact workflow-embedded release sealing code on hermetic fixtures."""
+    code = extract_release_seal_python(certification)
+    source = "d70e18b12b899a67fa20adf3d281d10b901afbe8"
+
+    def write_fixture(root: Path) -> Path:
+        out = root / "certification-out"
+        (out / "evidence").mkdir(parents=True)
+        record = {
+            "schema_version": 4,
+            "build": {
+                "source_revision": source,
+                "commit": source,
+                "version": "2.3.13",
+            },
+            "artifacts": {"sha256": "0" * 64},
+        }
+        manifest = {
+            "schema_version": 1,
+            "collector_version": "3.1",
+            "generated_at": "fixture",
+            "artifacts": [],
+        }
+        (out / "record.json").write_text(
+            json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        (out / "evidence-manifest.json").write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        script = root / "release-seal.py"
+        script.write_text(code, encoding="utf-8")
+        return script
+
+    def run_case(root: Path, *, source_sha: str = source, tag: str = "v2.3.13",
+                 release_id: str = "383770060") -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env.update({
+            "RELEASE_SOURCE_SHA": source_sha,
+            "RELEASE_TAG": tag,
+            "RELEASE_ID": release_id,
+            "GITHUB_REPOSITORY": "jiying2007/audio-pipeline",
+        })
+        return subprocess.run(
+            [sys.executable, str(root / "release-seal.py")],
+            cwd=root, env=env, text=True, capture_output=True, check=False,
+        )
+
+    with tempfile.TemporaryDirectory(prefix="ap-cert-release-seal-") as temporary:
+        root = Path(temporary)
+
+        ok = root / "ok"
+        ok.mkdir()
+        write_fixture(ok)
+        proc = run_case(ok)
+        require(proc.returncode == 0, f"release-seal fixture failed: {proc.stderr}{proc.stdout}")
+        out = ok / "certification-out"
+        record = json.loads((out / "record.json").read_text(encoding="utf-8"))
+        manifest_path = out / "evidence-manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        release_path = out / "evidence" / "release-identity.json"
+        release = json.loads(release_path.read_text(encoding="utf-8"))
+        require(release == {
+            "schema_version": 1,
+            "repository": "jiying2007/audio-pipeline",
+            "tag": "v2.3.13",
+            "release_id": 383770060,
+            "immutable": True,
+            "draft": False,
+            "prerelease": False,
+            "source_revision": source,
+        }, "release-seal identity payload drift")
+        entries = [item for item in manifest["artifacts"] if item.get("type") == "release-identity"]
+        require(len(entries) == 1 and entries[0].get("path") == "evidence/release-identity.json",
+                "release-seal manifest entry drift")
+        import hashlib
+        payload = release_path.read_bytes()
+        require(entries[0].get("size") == len(payload) and
+                entries[0].get("sha256") == hashlib.sha256(payload).hexdigest(),
+                "release-seal evidence hash drift")
+        manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        require(record.get("evidence_manifest_sha256") == manifest_sha and
+                record.get("artifacts", {}).get("sha256") == manifest_sha,
+                "release-seal record manifest binding drift")
+        require(record.get("release") == release, "release-seal record identity drift")
+
+        duplicate = run_case(ok)
+        require(duplicate.returncode != 0 and
+                "duplicate release identity evidence" in (duplicate.stdout + duplicate.stderr),
+                "release-seal duplicate injection was not rejected")
+
+        for name, kwargs, message in (
+            ("bad-source", {"source_sha": "b" * 40},
+             "certification record build is not the immutable release source"),
+            ("bad-tag", {"tag": "v2.3.12"},
+             "release tag does not match certified build version"),
+            ("bad-release-id", {"release_id": "not-numeric"},
+             "release id must be numeric"),
+        ):
+            case = root / name
+            case.mkdir()
+            write_fixture(case)
+            failed = run_case(case, **kwargs)
+            require(failed.returncode != 0 and message in (failed.stdout + failed.stderr),
+                    f"release-seal negative contract failed: {name}")
 
 
 def validate_deferred_evidence(evidence: dict, baseline: dict, minimum: int) -> None:
@@ -151,6 +277,9 @@ def validate_static(contract: dict) -> dict:
             "record['release'] = release" in certification and
             "'type': 'release-identity'" in certification,
             "Product Certification must bind and seal an immutable GitHub Release identity")
+    record_schema = load("certification/record.schema.json")
+    require(record_schema.get("additionalProperties") is True,
+            "v4 record schema must permit the release identity extension")
     require("runs-on: [self-hosted, linux, audio-builder]" in certification and
             "runs-on: [self-hosted, linux, audio-target]" in certification,
             "Product Certification must use trusted shipping builder and DUT target")
@@ -241,6 +370,7 @@ def build(contract: dict, hil_enabled: str, extended_enabled: str) -> dict:
 def self_test() -> None:
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
     validate_static(contract)
+    validate_release_seal_runtime(text(".github/workflows/product-certification.yml"))
     assert classify("", "") == "E001_DEFERRED_INFRASTRUCTURE_DISABLED"
     assert classify("true", "") == "E001_PARTIAL_CONFIGURATION_REQUIRES_COMPLETION"
     assert classify("", "true") == "E001_PARTIAL_CONFIGURATION_REQUIRES_COMPLETION"

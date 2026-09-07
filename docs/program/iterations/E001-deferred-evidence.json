@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "iteration_id": "E001",
+  "state": "DEFERRED",
+  "evidence_kind": "software-side-hardware-activation-readiness",
+  "main_sha": "06e9c30ef2d86c4a9291ecf1d38fc778264f7d6f",
+  "workflow_run_id": 34078425136,
+  "workflow_run_number": 7,
+  "workflow_conclusion": "success",
+  "artifact_id": 10002861733,
+  "artifact_digest": "sha256:630e6c989a8e5bf2bbaa8a64c4f60c5dd26219b896ec4c92e5f1be772a15a5c1",
+  "result": "E001_DEFERRED_INFRASTRUCTURE_DISABLED",
+  "configuration": {
+    "hil_enabled": false,
+    "extended_real_enabled": false
+  },
+  "static_contracts": "PASS",
+  "software_baseline": {
+    "release": "v2.3.13",
+    "source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+    "minimum_certification_soak_hours": 72
+  },
+  "authority_boundary": {
+    "hardware_test_executed": false,
+    "product_certification_executed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE",
+    "readiness_is_certification": false,
+    "shipping_source_changed": false,
+    "release_created": false
+  },
+  "interpretation": "The software-side activation contract is present and fail-closed. Real HIL, Extended Real and Product Certification remain unavailable until trusted infrastructure is explicitly configured and independently exercised."
+}

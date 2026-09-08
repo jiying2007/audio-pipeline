@@ -250,9 +250,11 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
 
     if re.search(r"(?m)^\s*pull_request\s*:", tuning_workflow):
         errors.append("standalone acoustic tuning search must not duplicate required PR tuning")
-    for token in ("schedule:", "workflow_dispatch:", "call-v1.json", "validation/tools/authority.py"):
+    if re.search(r"(?m)^\s*schedule\s*:", tuning_workflow):
+        errors.append("standalone acoustic tuning search must be manual-only in maintenance state")
+    for token in ("workflow_dispatch:", "call-v1.json", "validation/tools/authority.py"):
         if token not in tuning_workflow:
-            errors.append(f"scheduled acoustic tuning workflow missing token: {token}")
+            errors.append(f"manual acoustic tuning workflow missing token: {token}")
     for token in (
         "validation/tools/authority.py --self-test",
         "call-pr-smoke-v1.json",

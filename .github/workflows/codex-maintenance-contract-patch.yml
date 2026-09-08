@@ -1,0 +1,44 @@
+name: Codex Maintenance Contract Patch
+
+on:
+  push:
+    branches:
+      - 'codex/maintenance-research-trigger-contract'
+    paths:
+      - '.github/workflows/codex-maintenance-contract-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/maintenance-research-trigger-contract
+          fetch-depth: 0
+      - name: Align documentation consistency contract with maintenance state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/docs_consistency.py')
+          text = path.read_text()
+          old = '''    for token in ("schedule:", "workflow_dispatch:", "call-v1.json", "validation/tools/authority.py"):\n        if token not in tuning_workflow:\n            errors.append(f"scheduled acoustic tuning workflow missing token: {token}")\n'''
+          new = '''    if re.search(r"(?m)^\\s*schedule\\s*:", tuning_workflow):\n        errors.append("standalone acoustic tuning search must be manual-only in maintenance state")\n    for token in ("workflow_dispatch:", "call-v1.json", "validation/tools/authority.py"):\n        if token not in tuning_workflow:\n            errors.append(f"manual acoustic tuning workflow missing token: {token}")\n'''
+          if text.count(old) != 1:
+              raise SystemExit('expected docs_consistency acoustic-trigger contract not found exactly once')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          python3 scripts/docs_consistency.py --self-test
+          rm .github/workflows/codex-maintenance-contract-patch.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/docs_consistency.py .github/workflows/codex-maintenance-contract-patch.yml
+          git diff --cached --check
+          git commit -m 'test: align docs consistency with maintenance tuning'
+          git push origin HEAD:codex/maintenance-research-trigger-contract

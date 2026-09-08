@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import statistics
 from pathlib import Path
 
@@ -55,20 +54,31 @@ def load_history(root: Path) -> list[dict]:
     return records
 
 
-def robust_z(value: float, values: list[float]) -> float:
+def robust_z(value: float, values: list[float]) -> tuple[float | None, str]:
+    """Return a robust z-score plus an explicit availability state.
+
+    A zero-MAD history contains no dispersion estimate. Treating any non-zero
+    delta as +/-infinity makes an accepted deterministic step unable to enter
+    the success-only history baseline, permanently deadlocking Nightly. Keep
+    the existing percentage gate authoritative in that degenerate case and
+    retain the zero-MAD condition as explicit diagnostic evidence.
+    """
     if len(values) < 3:
-        return 0.0
+        return None, "insufficient_samples"
     median = statistics.median(values)
     deviations = [abs(x - median) for x in values]
     mad = statistics.median(deviations)
     if mad <= 1.0e-12:
-        return 0.0 if abs(value - median) <= 1.0e-12 else math.inf
-    return 0.67448975 * (value - median) / mad
+        if abs(value - median) <= 1.0e-12:
+            return 0.0, "zero_mad_equal"
+        return None, "zero_mad"
+    return 0.67448975 * (value - median) / mad, "finite"
 
 
 def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samples: int,
              z_limit: float, pct_limit: float) -> dict:
     findings = []
+    diagnostics = []
     metrics = current["metrics"]
     sample_counts: dict[str, int] = {}
     evaluated_metrics = 0
@@ -81,17 +91,39 @@ def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samp
         value = float(value_raw)
         median = statistics.median(samples)
         pct = 0.0 if abs(median) <= 1.0e-12 else (value - median) / abs(median) * 100.0
-        z = robust_z(value, samples)
+        z, z_state = robust_z(value, samples)
         bad_direction = (name in LOWER_IS_BETTER and pct > 0) or (name in HIGHER_IS_BETTER and pct < 0)
-        regressed = bad_direction and (abs(pct) > pct_limit or abs(z) > z_limit)
-        if regressed:
+        pct_trigger = bad_direction and abs(pct) > pct_limit
+        z_trigger = bad_direction and z is not None and abs(z) > z_limit
+        if z_state == "zero_mad":
+            diagnostics.append({
+                "metric": name,
+                "current": value,
+                "median": median,
+                "delta_pct": pct,
+                "robust_z": None,
+                "robust_z_state": z_state,
+                "samples": len(samples),
+            })
+        if pct_trigger or z_trigger:
+            triggers = []
+            if pct_trigger:
+                triggers.append("pct_limit")
+            if z_trigger:
+                triggers.append("robust_z_limit")
             findings.append({
-                "metric": name, "current": value, "median": median,
-                "delta_pct": pct, "robust_z": z, "samples": len(samples),
+                "metric": name,
+                "current": value,
+                "median": median,
+                "delta_pct": pct,
+                "robust_z": z,
+                "robust_z_state": z_state,
+                "triggers": triggers,
+                "samples": len(samples),
             })
     mature = bool(metrics) and all(sample_counts.get(name, 0) >= maturity_samples for name in metrics)
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "source_revision": current.get("source_revision"),
         "history_records": len(history),
         "min_samples": min_samples,
@@ -103,6 +135,7 @@ def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samp
         "pct_limit": pct_limit,
         "result": "FAIL" if findings else "PASS",
         "findings": findings,
+        "diagnostics": diagnostics,
     }
 
 
@@ -112,11 +145,51 @@ def self_test() -> None:
     failed = evaluate(current, history, 5, 30, 4.0, 15.0)
     assert failed["result"] == "FAIL"
     assert failed["maturity_status"] == "WARMING_UP"
+    assert failed["findings"][0]["triggers"] == ["pct_limit", "robust_z_limit"]
     current["metrics"]["active_p99_us"] = 103.0
     assert evaluate(current, history, 5, 30, 4.0, 15.0)["result"] == "PASS"
-    mature_history = [{"metrics": {"active_p99_us": 100.0}} for _ in range(30)]
-    mature = evaluate(current, mature_history, 5, 30, 4.0, 15.0)
+
+    # With no historical dispersion, a small deterministic step is diagnostic
+    # evidence but cannot manufacture an infinite z-score regression.
+    degenerate_history = [{"metrics": {"active_p99_us": 100.0}} for _ in range(30)]
+    current["metrics"]["active_p99_us"] = 103.0
+    degenerate = evaluate(current, degenerate_history, 5, 30, 4.0, 15.0)
+    assert degenerate["result"] == "PASS"
+    assert degenerate["findings"] == []
+    assert degenerate["diagnostics"] == [{
+        "metric": "active_p99_us",
+        "current": 103.0,
+        "median": 100.0,
+        "delta_pct": 3.0,
+        "robust_z": None,
+        "robust_z_state": "zero_mad",
+        "samples": 30,
+    }]
+    json.dumps(degenerate, allow_nan=False)
+
+    # The existing 15 percent percentage gate remains fail-closed even when
+    # robust-z is unavailable because MAD is zero.
+    current["metrics"]["active_p99_us"] = 120.0
+    pct_only = evaluate(current, degenerate_history, 5, 30, 4.0, 15.0)
+    assert pct_only["result"] == "FAIL"
+    assert pct_only["findings"][0]["triggers"] == ["pct_limit"]
+    assert pct_only["findings"][0]["robust_z"] is None
+    assert pct_only["findings"][0]["robust_z_state"] == "zero_mad"
+
+    # A finite robust-z regression remains independently authoritative when
+    # the percent delta is below the existing percentage limit.
+    tight_history = [{"metrics": {"active_p99_us": x}} for x in (99.8, 100.0, 100.2, 100.0, 99.9, 100.1)]
+    current["metrics"]["active_p99_us"] = 103.0
+    z_only = evaluate(current, tight_history, 5, 30, 4.0, 15.0)
+    assert z_only["result"] == "FAIL"
+    assert z_only["findings"][0]["triggers"] == ["robust_z_limit"]
+    assert z_only["findings"][0]["robust_z_state"] == "finite"
+
+    current["metrics"]["active_p99_us"] = 100.0
+    mature = evaluate(current, degenerate_history, 5, 30, 4.0, 15.0)
+    assert mature["result"] == "PASS"
     assert mature["maturity_status"] == "MATURE"
+    assert mature["diagnostics"] == []
     print("test history self-test: OK")
 
 
@@ -156,8 +229,9 @@ def main() -> int:
     else:
         parser.error("collect or evaluate is required")
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps(result, sort_keys=True))
+    encoded = json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    args.output.write_text(encoded, encoding="utf-8")
+    print(json.dumps(result, sort_keys=True, allow_nan=False))
     return 1 if args.command == "evaluate" and result["result"] == "FAIL" else 0
 
 

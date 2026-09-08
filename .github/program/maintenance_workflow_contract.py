@@ -8,6 +8,10 @@ from pathlib import Path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+# The generic tuner has no PR-regression role and is therefore manual-only after
+# the terminal software program. Stage-specific research workflows are classified
+# separately before any future trigger retirement so required regression coverage
+# is never weakened as a side effect of maintenance cleanup.
 MANUAL_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/acoustic-tuning-iteration.yml'),
 )

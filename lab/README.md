@@ -129,7 +129,7 @@ This smoke proves the acquisition mechanism and the pinned SLR31 source remain u
 For the active qualification authority, keep the exact immutable source fixed:
 
 ```bash
-SHA=d70e18b12b899a67fa20adf3d281d10b901afbe8
+SHA=708d7a28d974ae0372498dfde69cce0bcf5ff514
 ```
 
 After the four dedicated runners are provisioned, dispatch the repository's canonical **Trusted Runner Readiness** workflow from a trusted operator machine authenticated with `gh`. Run each role separately against the immutable qualification source and retain its uploaded `runner-readiness.json` artifact:

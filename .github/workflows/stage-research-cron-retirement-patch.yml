@@ -24,9 +24,9 @@ jobs:
           from pathlib import Path
 
           targets = {
-              '.github/workflows/aec-motion-tuning.yml': "25 2 * * 2,5",
-              '.github/workflows/agc-stage-tuning.yml': "45 22 * * 6",
-              '.github/workflows/ns-stage-tuning.yml': "15 22 * * 6",
+              '.github/workflows/aec-motion-tuning.yml': "13 20 * * 2,5",
+              '.github/workflows/agc-stage-tuning.yml': "17 21 * * 6",
+              '.github/workflows/ns-stage-tuning.yml': "41 20 * * 6",
               '.github/workflows/ami-vad-microset-discovery.yml': "13 20 * * 6",
               '.github/workflows/vad-operating-point-selector.yml': "29 21 * * 6",
               '.github/workflows/vad-hangover-counterfactual.yml': "41 20 * * 6",

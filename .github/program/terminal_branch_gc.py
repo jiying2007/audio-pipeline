@@ -72,6 +72,13 @@ def validate_contract(data: dict) -> None:
     require(isinstance(prefixes, list) and prefixes, "allowed_prefixes must be non-empty")
     require(all(isinstance(item, str) and item.endswith("/") for item in prefixes),
             "invalid allowed prefix")
+    exact_names = data.get("allowed_exact_names", [])
+    require(isinstance(exact_names, list), "allowed_exact_names must be a list")
+    require(all(isinstance(item, str) and item and item != "main" for item in exact_names),
+            "invalid exact branch exception")
+    require(len(set(exact_names)) == len(exact_names), "duplicate exact branch exception")
+    require(all(not any(item.startswith(prefix) for prefix in prefixes) for item in exact_names),
+            "exact branch exceptions must remain outside allowed prefixes")
 
     records = data.get("branches")
     require(isinstance(records, list) and records, "branches must be a non-empty list")
@@ -82,12 +89,13 @@ def validate_contract(data: dict) -> None:
         sha = record["expected_sha"]
         require(isinstance(branch, str) and branch and branch != "main",
                 f"invalid branch at record {index}")
-        require(any(branch.startswith(prefix) for prefix in prefixes),
-                f"branch outside allowed prefixes: {branch}")
+        require(any(branch.startswith(prefix) for prefix in prefixes) or branch in exact_names,
+                f"branch outside allowed prefixes and exact exceptions: {branch}")
         require(branch not in seen, f"duplicate branch: {branch}")
         seen.add(branch)
         require(isinstance(sha, str) and SHA_RE.fullmatch(sha) is not None,
                 f"invalid expected SHA: {branch}")
+    require(set(exact_names).issubset(seen), "exact branch exception missing pinned branch record")
 
     authority = data.get("authority_boundary")
     require(authority == {
@@ -317,6 +325,18 @@ def self_test() -> None:
         },
     }
     validate_contract(sample)
+    exact = json.loads(json.dumps(sample))
+    exact["allowed_exact_names"] = ["codex/one-off"]
+    exact["branches"].append({"name": "codex/one-off", "expected_sha": "b" * 40})
+    validate_contract(exact)
+    unlisted = json.loads(json.dumps(exact))
+    unlisted["allowed_exact_names"] = []
+    try:
+        validate_contract(unlisted)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unlisted exact-name branch exception accepted")
     for mutation in (
         lambda d: d.update(mutation_on_pull_request=True),
         lambda d: d["branches"][0].update(expected_sha="bad"),

@@ -16,6 +16,9 @@ import re
 import subprocess
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+MAINTENANCE_WORKFLOW_CONTRACT = ROOT / ".github/program/maintenance_workflow_contract.py"
+
 FULL_COMPOSITIONS = [
     "composition-low", "composition-tiny", "composition-voice-frontend",
     "composition-raw", "composition-aec-only", "composition-ns-only",
@@ -48,6 +51,21 @@ VERSION_TOKEN_RE = re.compile(
     r"(project\s*\([^)]*?\bVERSION\s+)([0-9]+\.[0-9]+\.[0-9]+)", re.S
 )
 CHANGELOG_RE = re.compile(r"^#\s+([0-9]+\.[0-9]+\.[0-9]+)\s*$", re.M)
+
+
+def validate_maintenance_workflow_contract() -> None:
+    completed = subprocess.run(
+        ["python3", str(MAINTENANCE_WORKFLOW_CONTRACT), "--self-test", "--check"],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if completed.returncode:
+        raise RuntimeError(
+            "maintenance workflow contract failed:\n" + completed.stdout.strip()
+        )
 
 
 def changed_files(base: str, head: str) -> list[str]:
@@ -374,6 +392,7 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
+    validate_maintenance_workflow_contract()
     if args.self_test:
         self_test()
         return 0

@@ -126,6 +126,40 @@ This smoke proves the acquisition mechanism and the pinned SLR31 source remain u
 
 ## 3. Verify actual files and runner readiness
 
+For the active qualification authority, keep the exact immutable source fixed:
+
+```bash
+SHA=d70e18b12b899a67fa20adf3d281d10b901afbe8
+```
+
+After the four dedicated runners are provisioned, dispatch the repository's canonical **Trusted Runner Readiness** workflow from a trusted operator machine authenticated with `gh`. Run each role separately against the immutable qualification source and retain its uploaded `runner-readiness.json` artifact:
+
+```bash
+gh workflow run trusted-runner-readiness.yml --repo jiying2007/audio-pipeline --ref main \
+  -f source_sha="$SHA" -f role=audio-validation \
+  -f data_root="$HOME/audio-validation-data" \
+  -f seal_path="$HOME/audio-validation-data/datasets.seal.json"
+
+gh workflow run trusted-runner-readiness.yml --repo jiying2007/audio-pipeline --ref main \
+  -f source_sha="$SHA" -f role=audio-builder \
+  -f shipping_cc=/real/toolchain/bin/arm-linux-gnueabihf-gcc \
+  -f shipping_sysroot=/real/toolchain/sysroot \
+  -f shipping_toolchain_root=/real/toolchain
+
+gh workflow run trusted-runner-readiness.yml --repo jiying2007/audio-pipeline --ref main \
+  -f source_sha="$SHA" -f role=audio-target \
+  -f board_manifest="$HOME/.config/audio-pipeline/board.json" \
+  -f power_input=<live-power-path>
+
+gh workflow run trusted-runner-readiness.yml --repo jiying2007/audio-pipeline --ref main \
+  -f source_sha="$SHA" -f role=certification-archive \
+  -f archive_command=/usr/local/bin/audio-pipeline-cert-archive
+```
+
+The `audio-validation` workflow readiness command above checks the canonical public validation seal. The commercial-core/commercial-plus Extended Real cache is still verified separately by `verify-profile`, which uses the committed extended catalog; the two contracts are intentionally separate evidence layers.
+
+These commands only dispatch the existing `trusted-runner-readiness.yml` on `main` with exact workflow inputs; they do not create runners, enable `HIL_ENABLED` / `EXTENDED_REAL_ENABLED`, or turn readiness into HIL/Product Certification authority. Require all four role artifacts to report `READY` before moving to activation.
+
 Use the exact source commit that will be validated:
 
 ```bash

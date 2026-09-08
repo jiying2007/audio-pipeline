@@ -10,8 +10,6 @@ on:
       - 'validation/tuning/search-spaces/ns-stage-v1.json'
       - 'validation/policies/validation-ns-stage-tuning.json'
       - '.github/workflows/ns-stage-tuning.yml'
-  schedule:
-    - cron: '41 20 * * 6'
   workflow_dispatch:
 
 permissions:

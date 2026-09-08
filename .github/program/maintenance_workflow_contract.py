@@ -9,11 +9,20 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 # The generic tuner has no PR-regression role and is therefore manual-only after
-# the terminal software program. Stage-specific research workflows are classified
-# separately before any future trigger retirement so required regression coverage
-# is never weakened as a side effect of maintenance cleanup.
+# the terminal software program. Stage-specific research workflows keep their PR
+# regression coverage and explicit manual replay entry points, but must never run
+# autonomous scheduled or push-triggered candidate research in maintenance state.
 MANUAL_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/acoustic-tuning-iteration.yml'),
+)
+PR_MANUAL_RESEARCH_WORKFLOWS = (
+    Path('.github/workflows/aec-motion-tuning.yml'),
+    Path('.github/workflows/agc-stage-tuning.yml'),
+    Path('.github/workflows/ns-stage-tuning.yml'),
+    Path('.github/workflows/ami-vad-microset-discovery.yml'),
+    Path('.github/workflows/vad-operating-point-selector.yml'),
+    Path('.github/workflows/vad-hangover-counterfactual.yml'),
+    Path('.github/workflows/vad-strong-weak-refresh.yml'),
 )
 
 
@@ -27,19 +36,36 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
         assert '\n  push:' not in text, f'{relative} must not run autonomous push research in maintenance state'
         assert '\n  pull_request:' not in text, f'{relative} is the generic search entry point and must remain manual-only'
 
+    for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
+        path = root / relative
+        assert path.is_file(), f'missing stage research workflow: {relative}'
+        text = path.read_text(encoding='utf-8')
+        assert '\n  pull_request:' in text, f'{relative} must retain PR regression coverage'
+        assert '\n  workflow_dispatch:' in text, f'{relative} must retain an explicit manual replay entry point'
+        assert '\n  schedule:' not in text, f'{relative} must not run autonomous scheduled research in maintenance state'
+        assert '\n  push:' not in text, f'{relative} must not run autonomous push research in maintenance state'
+
 
 def self_test() -> None:
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        workflow = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
-        workflow.parent.mkdir(parents=True)
-        workflow.write_text('name: test\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
+        generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
+        generic.parent.mkdir(parents=True)
+        generic.write_text('name: generic\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
+        for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                'name: stage\n\non:\n  pull_request:\n  workflow_dispatch:\n',
+                encoding='utf-8',
+            )
         validate(root)
 
-        workflow.write_text(
-            "name: test\n\non:\n  schedule:\n    - cron: '17 19 * * *'\n  workflow_dispatch:\n",
+        stage = root / PR_MANUAL_RESEARCH_WORKFLOWS[0]
+        stage.write_text(
+            "name: stage\n\non:\n  pull_request:\n  schedule:\n    - cron: '17 19 * * *'\n  workflow_dispatch:\n",
             encoding='utf-8',
         )
         try:
@@ -47,7 +73,15 @@ def self_test() -> None:
         except AssertionError as exc:
             assert 'scheduled research' in str(exc)
         else:
-            raise AssertionError('scheduled research workflow was not rejected')
+            raise AssertionError('scheduled stage research workflow was not rejected')
+
+        stage.write_text('name: stage\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'PR regression coverage' in str(exc)
+        else:
+            raise AssertionError('stage research workflow without PR coverage was not rejected')
 
 
 def main() -> int:
@@ -62,7 +96,7 @@ def main() -> int:
         self_test()
     if args.check:
         validate()
-        print('maintenance workflow contract: generic acoustic tuning is manual-only')
+        print('maintenance workflow contract: generic research is manual-only; stage research is PR/manual-only')
     return 0
 
 

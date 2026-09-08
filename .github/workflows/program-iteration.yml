@@ -11,6 +11,13 @@ on:
       - '.github/program/terminal_workflow_retirement.py'
       - '.github/program/maintenance_workflow_contract.py'
       - '.github/workflows/acoustic-tuning-iteration.yml'
+      - '.github/workflows/aec-motion-tuning.yml'
+      - '.github/workflows/agc-stage-tuning.yml'
+      - '.github/workflows/ns-stage-tuning.yml'
+      - '.github/workflows/ami-vad-microset-discovery.yml'
+      - '.github/workflows/vad-operating-point-selector.yml'
+      - '.github/workflows/vad-hangover-counterfactual.yml'
+      - '.github/workflows/vad-strong-weak-refresh.yml'
       - '.github/workflows/program-iteration.yml'
   pull_request:
     branches: [main]
@@ -21,6 +28,13 @@ on:
       - '.github/program/terminal_workflow_retirement.py'
       - '.github/program/maintenance_workflow_contract.py'
       - '.github/workflows/acoustic-tuning-iteration.yml'
+      - '.github/workflows/aec-motion-tuning.yml'
+      - '.github/workflows/agc-stage-tuning.yml'
+      - '.github/workflows/ns-stage-tuning.yml'
+      - '.github/workflows/ami-vad-microset-discovery.yml'
+      - '.github/workflows/vad-operating-point-selector.yml'
+      - '.github/workflows/vad-hangover-counterfactual.yml'
+      - '.github/workflows/vad-strong-weak-refresh.yml'
       - '.github/workflows/program-iteration.yml'
 
 permissions:

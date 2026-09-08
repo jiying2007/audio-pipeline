@@ -11,8 +11,6 @@ on:
       - 'tests/validation/vad_operating_point_selector.py'
       - 'tests/validation/vad_operating_point_qualification.py'
       - '.github/workflows/vad-operating-point-selector.yml'
-  schedule:
-    - cron: '29 21 * * 6'
   workflow_dispatch:
 
 permissions:

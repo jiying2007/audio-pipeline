@@ -66,6 +66,16 @@ def robust_z(value: float, values: list[float]) -> float:
     return 0.67448975 * (value - median) / mad
 
 
+def _serialized_robust_z(value: float) -> tuple[float | None, str]:
+    if math.isfinite(value):
+        return value, "finite"
+    if value > 0:
+        return None, "positive_infinity"
+    if value < 0:
+        return None, "negative_infinity"
+    return None, "non_finite"
+
+
 def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samples: int,
              z_limit: float, pct_limit: float) -> dict:
     findings = []
@@ -83,11 +93,25 @@ def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samp
         pct = 0.0 if abs(median) <= 1.0e-12 else (value - median) / abs(median) * 100.0
         z = robust_z(value, samples)
         bad_direction = (name in LOWER_IS_BETTER and pct > 0) or (name in HIGHER_IS_BETTER and pct < 0)
-        regressed = bad_direction and (abs(pct) > pct_limit or abs(z) > z_limit)
+        pct_trigger = bad_direction and abs(pct) > pct_limit
+        z_trigger = bad_direction and abs(z) > z_limit
+        regressed = pct_trigger or z_trigger
         if regressed:
+            serialized_z, z_state = _serialized_robust_z(z)
+            triggers = []
+            if pct_trigger:
+                triggers.append("pct_limit")
+            if z_trigger:
+                triggers.append("robust_z_limit")
             findings.append({
-                "metric": name, "current": value, "median": median,
-                "delta_pct": pct, "robust_z": z, "samples": len(samples),
+                "metric": name,
+                "current": value,
+                "median": median,
+                "delta_pct": pct,
+                "robust_z": serialized_z,
+                "robust_z_state": z_state,
+                "triggers": triggers,
+                "samples": len(samples),
             })
     mature = bool(metrics) and all(sample_counts.get(name, 0) >= maturity_samples for name in metrics)
     return {
@@ -114,8 +138,26 @@ def self_test() -> None:
     assert failed["maturity_status"] == "WARMING_UP"
     current["metrics"]["active_p99_us"] = 103.0
     assert evaluate(current, history, 5, 30, 4.0, 15.0)["result"] == "PASS"
-    mature_history = [{"metrics": {"active_p99_us": 100.0}} for _ in range(30)]
-    mature = evaluate(current, mature_history, 5, 30, 4.0, 15.0)
+
+    # A zero-MAD history remains fail-closed exactly as before, but its evidence
+    # must be strict JSON instead of relying on Python's non-standard Infinity.
+    degenerate_history = [{"metrics": {"active_p99_us": 100.0}} for _ in range(30)]
+    current["metrics"]["active_p99_us"] = 103.0
+    degenerate = evaluate(current, degenerate_history, 5, 30, 4.0, 15.0)
+    assert degenerate["result"] == "FAIL"
+    finding = degenerate["findings"][0]
+    assert finding["robust_z"] is None
+    assert finding["robust_z_state"] == "positive_infinity"
+    assert finding["triggers"] == ["robust_z_limit"]
+    json.dumps(degenerate, allow_nan=False)
+
+    current["metrics"]["active_p99_us"] = 120.0
+    pct_and_z = evaluate(current, degenerate_history, 5, 30, 4.0, 15.0)
+    assert pct_and_z["result"] == "FAIL"
+    assert pct_and_z["findings"][0]["triggers"] == ["pct_limit", "robust_z_limit"]
+
+    current["metrics"]["active_p99_us"] = 103.0
+    mature = evaluate(current, degenerate_history, 5, 30, 4.0, 15.0)
     assert mature["maturity_status"] == "MATURE"
     print("test history self-test: OK")
 
@@ -156,8 +198,9 @@ def main() -> int:
     else:
         parser.error("collect or evaluate is required")
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps(result, sort_keys=True))
+    encoded = json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    args.output.write_text(encoded, encoding="utf-8")
+    print(json.dumps(result, sort_keys=True, allow_nan=False))
     return 1 if args.command == "evaluate" and result["result"] == "FAIL" else 0
 
 

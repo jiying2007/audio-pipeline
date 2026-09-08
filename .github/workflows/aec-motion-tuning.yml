@@ -73,7 +73,10 @@ jobs:
           }
           text = Path('.github/workflows/aec-motion-tuning.yml').read_text()
           lower = text.lower()
-          trigger = text.split('  schedule:', 1)[0]
+          trigger = text.split('\npermissions:', 1)[0]
+          assert '\n  pull_request:' in trigger
+          assert '\n  workflow_dispatch:' in trigger
+          assert '\n  schedule:' not in trigger
           assert 'build_aec_motion_corpus.py' not in trigger
           assert 'build_aec_motion_bundle.py' not in trigger
           assert 'regression/replay' in text

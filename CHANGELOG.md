@@ -1,3 +1,9 @@
+# 2.3.15
+
+- Add additive scenario-aware validation summaries so each acoustic scenario reports only the quality metrics actually materialized for its cases, with count/min/p10/median/max distributions instead of forcing engineers to interpret heterogeneous corpus-wide aggregates alone.
+- Preserve every existing corpus-wide summary field and every case/aggregate acoustic gate unchanged; `scenario_metrics` is diagnostic evidence only and cannot approve or reject a candidate. Self-tests require metric applicability to remain isolated between speech and echo scenarios.
+- This maintenance release changes validation evidence/reporting only. Realtime DSP, public API/ABI, algorithm defaults, acoustic thresholds, dataset authority, HIL and Product Qualification authority are unchanged.
+
 # 2.3.14
 
 - Repair Nightly historical-trend handling for zero-MAD baselines: an undefined robust z-score is retained as explicit `zero_mad` diagnostic evidence instead of being represented as infinite statistical significance.

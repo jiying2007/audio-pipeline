@@ -9,6 +9,8 @@ on:
       - 'scripts/program.py'
       - '.github/program/promotion_governance.py'
       - '.github/program/terminal_workflow_retirement.py'
+      - '.github/program/maintenance_workflow_contract.py'
+      - '.github/workflows/acoustic-tuning-iteration.yml'
       - '.github/workflows/program-iteration.yml'
   pull_request:
     branches: [main]
@@ -17,6 +19,8 @@ on:
       - 'scripts/program.py'
       - '.github/program/promotion_governance.py'
       - '.github/program/terminal_workflow_retirement.py'
+      - '.github/program/maintenance_workflow_contract.py'
+      - '.github/workflows/acoustic-tuning-iteration.yml'
       - '.github/workflows/program-iteration.yml'
 
 permissions:
@@ -43,6 +47,7 @@ jobs:
           python3 scripts/program.py check
           python3 .github/program/promotion_governance.py --self-test
           python3 .github/program/terminal_workflow_retirement.py --self-test --check
+          python3 .github/program/maintenance_workflow_contract.py --self-test --check
           python3 - <<'PY'
           import json
           from pathlib import Path

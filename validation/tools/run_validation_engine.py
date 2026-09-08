@@ -473,6 +473,64 @@ def percentile_metric(cases: list[dict], name: str, quantile: float) -> float | 
     fraction = position - lower
     return values[lower] * (1.0 - fraction) + values[upper] * fraction
 
+
+SCENARIO_SUMMARY_METRICS = (
+    "near_si_sdr_improvement_db",
+    "noise_only_attenuation_db",
+    "speech_active_attenuation_db",
+    "erle_db",
+    "output_render_corr_reduction",
+    "vad_f1",
+    "vad_recall",
+    "vad_false_positive_rate",
+    "output_clip_fraction",
+    "output_dc_offset_dbfs",
+)
+
+
+def metric_distribution(cases: list[dict], name: str) -> dict | None:
+    values = sorted(
+        float(case["metrics"][name])
+        for case in cases
+        if case.get("metrics", {}).get(name) is not None
+    )
+    if not values:
+        return None
+    if len(values) == 1:
+        p10 = values[0]
+    else:
+        position = 0.10 * (len(values) - 1)
+        lower = int(math.floor(position))
+        upper = int(math.ceil(position))
+        fraction = position - lower
+        p10 = values[lower] if lower == upper else (
+            values[lower] * (1.0 - fraction) + values[upper] * fraction
+        )
+    return {
+        "count": len(values),
+        "min": values[0],
+        "p10": p10,
+        "median": statistics.median(values),
+        "max": values[-1],
+    }
+
+
+def scenario_metric_summary(by_scenario: dict[str, list[dict]]) -> dict[str, dict]:
+    result: dict[str, dict] = {}
+    for scenario, group in sorted(by_scenario.items()):
+        metrics = {}
+        for name in SCENARIO_SUMMARY_METRICS:
+            distribution = metric_distribution(group, name)
+            if distribution is not None:
+                metrics[name] = distribution
+        result[scenario] = {
+            "cases": len(group),
+            "passed_cases": sum(1 for case in group if case["passed"]),
+            "metrics": metrics,
+        }
+    return result
+
+
 def load_revision(explicit: str | None) -> str:
     if explicit:
         return explicit
@@ -549,6 +607,7 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict]) -> tuple[di
         "passed_cases": sum(1 for case in cases if case["passed"]),
         "pass_rate": pass_rate,
         "scenario_pass_rate": scenario_pass_rate,
+        "scenario_metrics": scenario_metric_summary(by_scenario),
         "dimension_values": dimension_values,
         "median_near_si_sdr_improvement_db": median_metric(cases, "near_si_sdr_improvement_db"),
         "p10_near_si_sdr_improvement_db": percentile_metric(cases, "near_si_sdr_improvement_db", 0.10),
@@ -661,6 +720,21 @@ def self_test() -> None:
     policy = {"allowed_tiers": ["validation-grade"], "minimum_cases": 2, "required_scenarios": ["a"], "required_dimension_values": {"motion": ["static", "moving"]}, "aggregate": {"max_output_clip_fraction": 0.02}}
     summary, violations = policy_violations(policy, {"tier": "validation-grade", "sealed_data": True, "sources": [], "cases": [{"split": "validation"}, {"split": "validation"}]}, synthetic_cases)
     assert summary["scenario_pass_rate"]["a"] == 0.5 and not violations
+    scenario_summary = scenario_metric_summary({
+        "speech": [
+            {"passed": True, "metrics": {"near_si_sdr_improvement_db": 1.0, "vad_f1": 0.8}},
+            {"passed": True, "metrics": {"near_si_sdr_improvement_db": 3.0, "vad_f1": 0.9}},
+        ],
+        "echo": [
+            {"passed": True, "metrics": {"erle_db": 20.0, "output_render_corr_reduction": 0.5}},
+        ],
+    })
+    assert scenario_summary["speech"]["cases"] == 2
+    assert scenario_summary["speech"]["metrics"]["near_si_sdr_improvement_db"]["median"] == 2.0
+    assert scenario_summary["speech"]["metrics"]["vad_f1"]["count"] == 2
+    assert "erle_db" not in scenario_summary["speech"]["metrics"]
+    assert scenario_summary["echo"]["metrics"]["erle_db"]["median"] == 20.0
+    assert "near_si_sdr_improvement_db" not in scenario_summary["echo"]["metrics"]
     print("validation evaluator self-test: OK")
 
 def main() -> int:

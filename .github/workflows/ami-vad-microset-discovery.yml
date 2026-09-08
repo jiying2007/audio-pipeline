@@ -11,8 +11,6 @@ on:
       - 'tests/validation/vad_fusion_probe.c'
       - 'tests/validation/data/ami_vad_microset.lock.json'
       - '.github/workflows/ami-vad-microset-discovery.yml'
-  schedule:
-    - cron: '13 20 * * 6'
   workflow_dispatch:
 
 permissions:

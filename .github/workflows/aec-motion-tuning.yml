@@ -13,8 +13,6 @@ on:
       - 'validation/policies/validation-aec-motion-development.json'
       - 'validation/policies/validation-smoke.json'
       - '.github/workflows/aec-motion-tuning.yml'
-  schedule:
-    - cron: '13 20 * * 2,5'
   workflow_dispatch:
 
 permissions:

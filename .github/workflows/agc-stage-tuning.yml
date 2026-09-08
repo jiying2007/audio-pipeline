@@ -17,8 +17,6 @@ on:
       - 'tests/validation/agc_tuning_qualification.py'
       - 'tests/validation/build_agc_bf_validation_corpus.py'
       - '.github/workflows/agc-stage-tuning.yml'
-  schedule:
-    - cron: '17 21 * * 6'
   workflow_dispatch:
 
 permissions:

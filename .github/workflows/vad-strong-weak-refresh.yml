@@ -15,8 +15,6 @@ on:
       - 'tests/validation/discover_ami_vad_microset.py'
       - 'tests/validation/data/ami_vad_microset.lock.json'
       - '.github/workflows/vad-strong-weak-refresh.yml'
-  schedule:
-    - cron: '53 20 * * 6'
   workflow_dispatch:
 
 permissions:

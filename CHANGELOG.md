@@ -1,3 +1,9 @@
+# 2.3.14
+
+- Repair Nightly historical-trend handling for zero-MAD baselines: an undefined robust z-score is retained as explicit `zero_mad` diagnostic evidence instead of being represented as infinite statistical significance.
+- Preserve the existing fail-closed thresholds unchanged: bad-direction deltas above 15% still fail through the percentage gate, and finite robust z-scores above 4.0 still fail independently when historical dispersion exists. Zero-MAD deltas below the percentage limit may enter the success-only history so the baseline can converge instead of deadlocking permanently.
+- Emit strict JSON trend evidence (`allow_nan=False`) with explicit robust-z availability state, triggers and diagnostics. This maintenance release changes historical measurement/evidence behavior only; realtime DSP, public API/ABI, acoustic thresholds, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.13
 
 - Repair the I008 resampler performance comparator so base and head are both configured with the explicit FAST backend, preventing the project default BANDLIMITED backend from being compared against FAST and producing a false 72%–90% improvement artifact.

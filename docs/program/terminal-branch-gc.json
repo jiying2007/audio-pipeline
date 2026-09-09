@@ -28,10 +28,12 @@
     "validation/"
   ],
   "allowed_exact_names": [
-    "codex/maintenance-research-trigger-contract"
+    "codex/maintenance-research-trigger-contract",
+    "docs/refresh-v2315-qualification-authority"
   ],
   "branches": [
     {"name": "codex/maintenance-research-trigger-contract", "expected_sha": "3a6ac360056a838dbb4802856de934856142d7e9"},
+    {"name": "docs/refresh-v2315-qualification-authority", "expected_sha": "6c30565418a1aa080a64d456ddd1cd37ec28c89e"},
     {"name": "automation/activity-res-stage-validation-v1", "expected_sha": "fb999fc6fd6a39e69ceff50989e6311c4546ea88"},
     {"name": "automation/agc-bf-stage-validation-v1", "expected_sha": "9b7da0fe7232500452ecd6cace81c6c789330f94"},
     {"name": "automation/agc-stage-tuning-v1", "expected_sha": "668e83b0b19ff4402e37e436c71d3e6eb0ebdd04"},

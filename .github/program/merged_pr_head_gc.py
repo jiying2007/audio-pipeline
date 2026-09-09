@@ -55,6 +55,48 @@ def validate_contract(contract: dict) -> None:
     require(isinstance(prefixes, list) and prefixes, "allowed prefixes missing")
     require(all(isinstance(item, str) and item.endswith("/") for item in prefixes),
             "invalid allowed prefix")
+    exact_names = contract.get("allowed_exact_names", [])
+    require(isinstance(exact_names, list), "allowed_exact_names must be a list")
+    require(all(isinstance(item, str) and item and item != "main" for item in exact_names),
+            "invalid exact branch exception")
+    require(len(set(exact_names)) == len(exact_names), "duplicate exact branch exception")
+    require(all(not any(item.startswith(prefix) for prefix in prefixes) for item in exact_names),
+            "exact branch exceptions must remain outside allowed prefixes")
+    records = contract.get("branches")
+    require(isinstance(records, list) and records, "branches must be a non-empty list")
+    record_names = set()
+    for index, record in enumerate(records):
+        require(set(record) == {"name", "expected_sha"}, f"record {index} fields drift")
+        branch = record["name"]
+        sha = record["expected_sha"]
+        require(isinstance(branch, str) and branch and branch != "main",
+                f"invalid branch at record {index}")
+        require(branch not in record_names, f"duplicate branch: {branch}")
+        record_names.add(branch)
+        require(isinstance(sha, str) and SHA_RE.fullmatch(sha) is not None,
+                f"invalid expected SHA: {branch}")
+    require(set(exact_names).issubset(record_names),
+            "exact branch exception missing pinned branch record")
+
+
+def merged_head_policy(contract: dict, branch: str, head_sha: str) -> str:
+    prefix_allowed = any(branch.startswith(prefix) for prefix in contract["allowed_prefixes"])
+    exact_names = set(contract.get("allowed_exact_names", []))
+    static_records = {
+        record["name"]: str(record["expected_sha"]).lower()
+        for record in contract["branches"]
+    }
+    exact_allowed = branch in exact_names
+    require(prefix_allowed or exact_allowed,
+            f"merged PR head outside allowed prefixes and exact exceptions: {branch}")
+    if exact_allowed:
+        require(static_records.get(branch) == head_sha,
+                f"merged PR exact-name SHA drift: branch={branch} "
+                f"pinned={static_records.get(branch)} expected={head_sha}")
+        return "EXACT_NAME_AND_SHA"
+    require(branch not in static_records,
+            "current prefix-allowed merged PR head must not duplicate the static terminal-ref set")
+    return "ALLOWED_PREFIX"
 
 
 def select_merged_pr(payload: object, main_sha: str) -> dict:
@@ -142,12 +184,7 @@ def evaluate(contract: dict, repository: str, main_sha: str, *, apply: bool) -> 
 
     require(branch and branch != "main", "merged PR head branch is invalid")
     require(SHA_RE.fullmatch(head_sha) is not None, "merged PR head SHA is invalid")
-    require(any(branch.startswith(prefix) for prefix in contract["allowed_prefixes"]),
-            f"merged PR head outside allowed prefixes: {branch}")
-
-    static_names = {record["name"] for record in contract["branches"]}
-    require(branch not in static_names,
-            "current merged PR head must not duplicate the static terminal-ref set")
+    admission = merged_head_policy(contract, branch, head_sha)
     open_prs = open_pr_numbers(repository, branch)
     require(not open_prs, f"merged PR head unexpectedly has an open PR: {open_prs}")
 
@@ -172,6 +209,7 @@ def evaluate(contract: dict, repository: str, main_sha: str, *, apply: bool) -> 
         "expected_head_sha": head_sha,
         "head_repository": head_repo_full_name,
         "action": action,
+        "admission": admission,
         "derivation": "exact-main-commit-to-unique-merged-same-repository-pr",
         "authority": authority,
     }
@@ -187,7 +225,11 @@ def self_test() -> None:
         "merged_pr_head_exact_main_commit_required": True,
         "merged_pr_head_no_open_pr_required": True,
         "allowed_prefixes": ["governance/"],
-        "branches": [{"name": "governance/older", "expected_sha": "a" * 40}],
+        "allowed_exact_names": ["docs/special"],
+        "branches": [
+            {"name": "governance/older", "expected_sha": "a" * 40},
+            {"name": "docs/special", "expected_sha": "2" * 40},
+        ],
         "authority_boundary": {
             "hardware_test_executed": False,
             "hardware_collection_performed": False,
@@ -208,6 +250,15 @@ def self_test() -> None:
                  "repo": {"full_name": "o/r"}},
     }]
     assert select_merged_pr(good, main_sha)["number"] == 7
+    assert merged_head_policy(contract, "governance/current", "2" * 40) == "ALLOWED_PREFIX"
+    assert merged_head_policy(contract, "docs/special", "2" * 40) == "EXACT_NAME_AND_SHA"
+    for branch, sha in (("docs/special", "3" * 40), ("docs/unlisted", "2" * 40)):
+        try:
+            merged_head_policy(contract, branch, sha)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"unsafe merged-head admission accepted: {branch}")
     external = [{**good[0], "head": {**good[0]["head"], "repo": {"full_name": "fork/r"}}}]
     assert select_merged_pr(external, main_sha)["number"] == 7
     for bad in (

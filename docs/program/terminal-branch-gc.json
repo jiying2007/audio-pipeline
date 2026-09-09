@@ -29,7 +29,9 @@
   ],
   "allowed_exact_names": [
     "codex/maintenance-research-trigger-contract",
-    "docs/refresh-v2315-qualification-authority"
+    "docs/refresh-v2315-qualification-authority",
+    "research/dsp-data-coverage-v1",
+    "research/dsp-data-coverage-clean-v1"
   ],
   "branches": [
     {"name": "codex/maintenance-research-trigger-contract", "expected_sha": "3a6ac360056a838dbb4802856de934856142d7e9"},
@@ -83,7 +85,9 @@
     {"name": "program/i006-root-cause-review-v1", "expected_sha": "d154f5c80f9863fdf8c5e3c8e8e9856f72bfa3f2"},
     {"name": "program/i008-terminal-closure-v1", "expected_sha": "de4eb0ee290288ef40092ffedab65aa679c9561d"},
     {"name": "release/i008-resampler-comparator-v2.3.13", "expected_sha": "c1181747d59f56d93fa9323946243170c3690264"},
-    {"name": "validation/aec-motion-geometry-v2.3.12", "expected_sha": "cd732bfbb03b7c74ce21c3f25fa237c22b4f9fa7"}
+    {"name": "validation/aec-motion-geometry-v2.3.12", "expected_sha": "cd732bfbb03b7c74ce21c3f25fa237c22b4f9fa7"},
+    {"name": "research/dsp-data-coverage-v1", "expected_sha": "a185fd5c4726e660c00c573c3ff7af9f79149432"},
+    {"name": "research/dsp-data-coverage-clean-v1", "expected_sha": "66f1c595369f67c03943a83206f6e5eb8713d59c"}
   ],
   "authority_boundary": {
     "hardware_test_executed": false,

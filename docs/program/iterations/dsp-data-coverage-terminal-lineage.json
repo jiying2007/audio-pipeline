@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "record_type": "terminal-construction-lineage",
+  "program": "dsp-data-coverage-v1",
+  "status": "TERMINAL_CONSTRUCTION_SNAPSHOT",
+  "branch": "research/dsp-data-coverage-clean-v1",
+  "exact_sha": "66f1c595369f67c03943a83206f6e5eb8713d59c",
+  "purpose": "Preserve the intermediate construction snapshot before deleting its terminal branch ref.",
+  "authoritative_successor": {
+    "merged_pr": 158,
+    "clean_pr_head_sha": "a185fd5c4726e660c00c573c3ff7af9f79149432",
+    "release": "v2.3.16",
+    "release_source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "release_changed": false,
+    "hardware_test_executed": false,
+    "hardware_collection_performed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  },
+  "notes": [
+    "The preserved SHA is not a shipping or qualification authority.",
+    "Its remaining branch-only paths are construction-era versions superseded by PR #158 and immutable v2.3.16.",
+    "This committed exact-SHA record satisfies the existing terminal-branch GC preservation contract without weakening deletion guards."
+  ]
+}

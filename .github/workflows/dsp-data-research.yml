@@ -1,0 +1,229 @@
+name: DSP Data Research
+
+on:
+  pull_request:
+    paths:
+      - 'validation/extended.datasets.lock.json'
+      - 'validation/policies/validation-aec-research-coverage.json'
+      - 'validation/policies/validation-aec-research-doubletalk.json'
+      - 'validation/tools/build_aec_research_corpus.py'
+      - 'validation/tools/aec_route_ambiguity_probe.py'
+      - 'validation/tools/prepare_dsp_research.py'
+      - 'validation/tools/build_dsp_research_corpus.py'
+      - 'lab/data-sources.lock.json'
+      - 'lab/scripts/researchctl.py'
+      - 'lab/pcr02-self-noise.schema.json'
+      - 'lab/pcr02-self-noise.example.json'
+      - 'lab/validate_pcr02_self_noise.py'
+      - '.github/workflows/dsp-data-research.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dsp-data-research-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate research-only data boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            lab/scripts/researchctl.py \
+            lab/validate_pcr02_self_noise.py \
+            validation/tools/prepare_dsp_research.py \
+            validation/tools/build_dsp_research_corpus.py \
+            validation/tools/build_aec_research_corpus.py \
+            validation/tools/aec_route_ambiguity_probe.py
+          python3 validation/tools/extended_dataset_lock.py validate \
+            --catalog validation/extended.datasets.lock.json
+          python3 lab/scripts/researchctl.py self-test
+          python3 lab/scripts/researchctl.py validate
+          python3 validation/tools/prepare_dsp_research.py self-test
+          python3 validation/tools/build_dsp_research_corpus.py self-test
+          python3 validation/tools/build_aec_research_corpus.py self-test
+          python3 validation/tools/aec_route_ambiguity_probe.py --self-test
+          python3 lab/validate_pcr02_self_noise.py --self-test
+          python3 lab/validate_pcr02_self_noise.py \
+            --manifest lab/pcr02-self-noise.example.json \
+            --allow-example --skip-files
+          python3 validation/tools/run_validation.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          ext = json.loads(Path('validation/extended.datasets.lock.json').read_text())
+          lab = json.loads(Path('lab/data-sources.lock.json').read_text())
+          far = json.loads(Path('validation/policies/validation-aec-research-coverage.json').read_text())
+          dt = json.loads(Path('validation/policies/validation-aec-research-doubletalk.json').read_text())
+          assert {'locata','mimii','mimii-due'} <= set(ext['profiles']['research'])
+          assert set(lab['profiles']['dsp-research']) == {'locata','mimii','mimii-due'}
+          assert not ({'locata','mimii','mimii-due'} & set(lab['profiles']['commercial-core']))
+          assert not ({'locata','mimii','mimii-due'} & set(lab['profiles']['commercial-plus']))
+          due = next(x for x in ext['datasets'] if x['id'] == 'mimii-due')
+          assert due['usage_class'] == 'research-only'
+          assert far['allowed_tiers'] == ['research-validation']
+          assert far['minimum_cases'] == 4
+          assert set(far['required_scenarios']) == {'aec-farend-static','aec-farend-moving'}
+          assert far['aggregate']['min_median_output_render_corr_reduction'] == 0.0
+          assert dt['allowed_tiers'] == ['research-validation']
+          assert dt['minimum_cases'] == 4
+          assert set(dt['required_scenarios']) == {'aec-doubletalk-static','aec-doubletalk-moving'}
+          assert 'min_median_output_render_corr_reduction' not in dt['aggregate']
+          PY
+
+  aec-real-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AEC_REVISION: 6c633d0a9d2a143a0e364899b91b06f127315b18
+      SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: dsp-data-research-aec
+
+      - name: Select exact 8-case AEC research coverage from LFS pointer tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-research
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/AEC-Challenge.git /tmp/audio-pipeline-aec-research
+          git -C /tmp/audio-pipeline-aec-research -c advice.detachedHead=false checkout --detach "$AEC_REVISION"
+          test "$(git -C /tmp/audio-pipeline-aec-research rev-parse HEAD)" = "$AEC_REVISION"
+          python3 validation/tools/build_aec_research_corpus.py select \
+            --source-root /tmp/audio-pipeline-aec-research \
+            --output aec-research/selection.json
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+          x = json.loads(Path('aec-research/selection.json').read_text())
+          counts = Counter(c['scenario'] for c in x['cases'])
+          assert len(x['cases']) == 8
+          assert set(counts.values()) == {2}
+          print(json.dumps(counts, sort_keys=True))
+          PY
+
+      - name: Materialize selected real AEC WAV files and split semantic corpora
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs version
+          include=$(python3 - <<'PY'
+          import json
+          x=json.load(open('aec-research/selection.json'))
+          print(','.join(c[r] for c in x['cases'] for r in ('mic','render')))
+          PY
+          )
+          unset GIT_LFS_SKIP_SMUDGE
+          git -C /tmp/audio-pipeline-aec-research lfs pull --include="$include" --exclude=""
+          python3 validation/tools/build_aec_research_corpus.py build \
+            --selection aec-research/selection.json \
+            --source-root /tmp/audio-pipeline-aec-research \
+            --output aec-research/corpus \
+            | tee aec-research/corpus-build.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('aec-research/corpus')
+          corpus = json.loads((root / 'corpus.json').read_text())
+          groups = {
+              'farend': {'aec-farend-static', 'aec-farend-moving'},
+              'doubletalk': {'aec-doubletalk-static', 'aec-doubletalk-moving'},
+          }
+          for name, scenarios in groups.items():
+              subset = dict(corpus)
+              subset['corpus_id'] = f'aec-real-research-{name}-v1'
+              subset['cases'] = [case for case in corpus['cases'] if case['scenario'] in scenarios]
+              assert len(subset['cases']) == 4
+              assert {case['scenario'] for case in subset['cases']} == scenarios
+              (root / f'{name}-corpus.json').write_text(
+                  json.dumps(subset, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+
+      - name: Build exact offline processor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-aec-research -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-aec-research --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum build-aec-research/ap_process_pcm > aec-research/processor.sha256
+          build-aec-research/ap_build_info_dump > aec-research/build-info.txt
+
+      - name: Evaluate semantic AEC research policies and preserve diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/run_validation.py \
+            --source-revision "$SOURCE_REVISION" \
+            --corpus aec-research/corpus/farend-corpus.json \
+            --policy validation/policies/validation-aec-research-coverage.json \
+            --dataset-lock validation/datasets.lock.json \
+            --source-manifest aec-research/corpus/source-manifest.json \
+            --processor build-aec-research/ap_process_pcm \
+            --output aec-research/farend-report.json \
+            --evidence-manifest aec-research/farend-evidence-manifest.json
+          python3 validation/tools/run_validation.py \
+            --source-revision "$SOURCE_REVISION" \
+            --corpus aec-research/corpus/doubletalk-corpus.json \
+            --policy validation/policies/validation-aec-research-doubletalk.json \
+            --dataset-lock validation/datasets.lock.json \
+            --source-manifest aec-research/corpus/source-manifest.json \
+            --processor build-aec-research/ap_process_pcm \
+            --output aec-research/doubletalk-report.json \
+            --evidence-manifest aec-research/doubletalk-evidence-manifest.json
+          python3 validation/tools/aec_route_ambiguity_probe.py \
+            --selection aec-research/selection.json \
+            --source-root /tmp/audio-pipeline-aec-research \
+            --max-delay-ms 60 --initial-delay-ms 40 \
+            --output aec-research/route-ambiguity.json
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          far = json.loads(Path('aec-research/farend-report.json').read_text())
+          dt = json.loads(Path('aec-research/doubletalk-report.json').read_text())
+          diag = json.loads(Path('aec-research/route-ambiguity.json').read_text())
+          print('## DSP AEC real research coverage')
+          print('- Authority: `research-validation / development-shadow only / non-shipping`')
+          print(f"- Far-end suppression: `{far['validation_result']}`, cases=`{far['summary']['cases']}`, median corr reduction=`{far['summary']['median_output_render_corr_reduction']:.6f}`")
+          print(f"- Double-talk robustness: `{dt['validation_result']}`, cases=`{dt['summary']['cases']}`, pass rate=`{dt['summary']['pass_rate']:.3f}`")
+          print(f"- Large route candidates: `{diag['large_route_candidates']}`")
+          print(f"- Ambiguous large route candidates: `{diag['ambiguous_large_route_candidates']}`")
+          print('- Diagnostic ambiguity output is retained before enforcement and does not change SYNC.')
+          if far['validation_result'] != 'PASS' or dt['validation_result'] != 'PASS':
+              raise SystemExit('research AEC semantic policy failure')
+          PY
+
+      - name: Seal research evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d aec-research ]; then
+            cp validation/policies/validation-aec-research-coverage.json aec-research/
+            cp validation/policies/validation-aec-research-doubletalk.json aec-research/
+            find aec-research -type f ! -name SHA256SUMS -print0 | sort -z | \
+              xargs -0 sha256sum > /tmp/aec-research-SHA256SUMS
+            mv /tmp/aec-research-SHA256SUMS aec-research/SHA256SUMS
+          fi
+
+      - name: Upload hash-bound AEC research evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dsp-aec-data-research-${{ github.run_id }}
+          path: aec-research/
+          retention-days: 30
+          if-no-files-found: error

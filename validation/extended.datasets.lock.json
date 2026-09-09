@@ -27,7 +27,10 @@
       "icsi",
       "aishell4",
       "fsd50k",
-      "wham"
+      "wham",
+      "locata",
+      "mimii",
+      "mimii-due"
     ]
   },
   "datasets": [
@@ -150,6 +153,42 @@
       "validation_roles": ["noise", "reverberation", "speech-separation-stress"],
       "recommended_materialization": ["test"],
       "notes": "NonCommercial; never allowed in commercial validation or shipping evidence."
+    },
+    {
+      "id": "locata",
+      "source": "https://www.locata.lms.tf.fau.de/datasets/",
+      "license": "Open Data Commons upstream corpus terms",
+      "usage_class": "conditional",
+      "attribution": "LOCATA Challenge Data Corpus for Acoustic Source Localization and Tracking.",
+      "local_path": "LOCATA",
+      "transforms_allowed": true,
+      "validation_roles": ["moving-source", "moving-array", "multichannel", "source-localization", "beamforming", "reverberation"],
+      "recommended_materialization": ["development", "evaluation", "ground-truth"],
+      "notes": "Research/shadow only until the exact Open Data Commons license variant and downstream commercial obligations are reviewed."
+    },
+    {
+      "id": "mimii",
+      "source": "https://zenodo.org/records/3384388",
+      "license": "CC-BY-SA-4.0",
+      "usage_class": "conditional",
+      "attribution": "MIMII Dataset by Harsh Purohit et al., Hitachi, Ltd.",
+      "local_path": "MIMII",
+      "transforms_allowed": true,
+      "validation_roles": ["machine-noise", "tonal-noise", "transient-noise", "vad-negative", "noise-suppression", "domain-stress"],
+      "recommended_materialization": ["selected-machine-and-snr-subsets"],
+      "notes": "Research/shadow hard-negative source; ShareAlike obligations require separate legal/release handling before any commercial-validation use."
+    },
+    {
+      "id": "mimii-due",
+      "source": "https://zenodo.org/records/4740355",
+      "license": "CC-BY-NC-SA-4.0",
+      "usage_class": "research-only",
+      "attribution": "MIMII DUE by Ryo Tanabe et al., Hitachi, Ltd.",
+      "local_path": "MIMII_DUE",
+      "transforms_allowed": true,
+      "validation_roles": ["machine-noise", "gearbox", "operating-speed-shift", "environment-shift", "vad-negative", "noise-suppression"],
+      "recommended_materialization": ["selected-source-and-target-domain-test-subsets"],
+      "notes": "NonCommercial ShareAlike; never allowed in commercial validation, promotion, HIL qualification or Product Certification evidence."
     },
     {
       "id": "ace-challenge",

@@ -3,7 +3,8 @@
   "catalog_id": "audio-pipeline-lab-materialization-v1",
   "profiles": {
     "commercial-core": ["realman", "but-reverbdb", "musan", "openslr-slr31"],
-    "commercial-plus": ["realman", "but-reverbdb", "musan", "openslr-slr31", "voices", "ami", "icsi"]
+    "commercial-plus": ["realman", "but-reverbdb", "musan", "openslr-slr31", "voices", "ami", "icsi"],
+    "dsp-research": ["locata", "mimii", "mimii-due"]
   },
   "datasets": [
     {
@@ -73,6 +74,33 @@
       "license": "CC-BY-4.0",
       "usage_class": "commercial-validation",
       "required_hint": "meeting audio"
+    },
+    {
+      "id": "locata",
+      "provider": "operator_import",
+      "local_path": "LOCATA",
+      "license": "Open Data Commons Attribution License (ODC-By)",
+      "usage_class": "conditional",
+      "required_hint": "reviewed LOCATA corpus audio plus position/trajectory/orientation metadata",
+      "notes": "Research/shadow only until commercial/legal review is complete; never Product Certification authority."
+    },
+    {
+      "id": "mimii",
+      "provider": "operator_import",
+      "local_path": "MIMII",
+      "license": "CC-BY-SA-4.0",
+      "usage_class": "conditional",
+      "required_hint": "reviewed MIMII 16 kHz machine audio with machine-type metadata",
+      "notes": "Research hard-negative source; ShareAlike obligations require separate release handling."
+    },
+    {
+      "id": "mimii-due",
+      "provider": "operator_import",
+      "local_path": "MIMII_DUE",
+      "license": "CC-BY-NC-SA-4.0",
+      "usage_class": "research-only",
+      "required_hint": "reviewed MIMII-DUE machine audio/domain metadata",
+      "notes": "NonCommercial research-only; forbidden from commercial validation, HIL qualification and Product Certification."
     }
   ]
 }

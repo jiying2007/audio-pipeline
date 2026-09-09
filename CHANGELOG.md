@@ -1,3 +1,9 @@
+# 2.3.16
+
+- Add research-only DSP/data coverage infrastructure for LOCATA, MIMII and MIMII-DUE plus a hash-bound PCR02 dual-microphone self-noise capture contract; commercial-core/commercial-plus, Trusted Runner readiness, HIL and Product Certification authority remain unchanged.
+- Expand Microsoft AEC Challenge research coverage to eight real Git-LFS materialized cases spanning far-end static/movement and double-talk static/movement. Evaluate far-end echo suppression and double-talk robustness under separate research policies so heterogeneous scenario semantics cannot approve or reject each other through one corpus-wide aggregate.
+- Preserve acoustic thresholds and realtime DSP unchanged. Large-route correlation ambiguity remains diagnostic-only, research failures remain visible, and public/research data cannot promote shipping defaults or substitute for SSC305/HIL/Product Certification evidence.
+
 # 2.3.15
 
 - Add additive scenario-aware validation summaries so each acoustic scenario reports only the quality metrics actually materialized for its cases, with count/min/p10/median/max distributions instead of forcing engineers to interpret heterogeneous corpus-wide aggregates alone.

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "example_only": true,
+  "capture_id": "pcr02-example-turning-001",
+  "product": "PCR02",
+  "sample_rate_hz": 16000,
+  "mic_channels": 2,
+  "duration_seconds": 30.0,
+  "motion_class": "turning",
+  "clock": {
+    "domain": "monotonic",
+    "timestamp_unit": "ns"
+  },
+  "files": {
+    "mic_raw": {
+      "path": "captures/pcr02-example-turning-001/mic-2ch-s16le.pcm",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "render_reference": {
+      "path": "captures/pcr02-example-turning-001/render-s16le.pcm",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "telemetry": {
+      "path": "captures/pcr02-example-turning-001/telemetry.jsonl",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "telemetry_signals": [
+    "timestamp_ns",
+    "left_motor_rpm",
+    "right_motor_rpm",
+    "left_foc_iq",
+    "right_foc_iq",
+    "left_pwm",
+    "right_pwm",
+    "servo_state",
+    "motion_state"
+  ],
+  "context": {
+    "floor_surface": "hard-floor",
+    "battery_mv": 7600,
+    "load_state": "nominal"
+  }
+}

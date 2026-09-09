@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PCR02 self-noise capture manifest",
+  "type": "object",
+  "required": ["schema_version", "example_only", "capture_id", "product", "sample_rate_hz", "mic_channels", "duration_seconds", "motion_class", "clock", "files", "telemetry_signals", "context"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "example_only": {"type": "boolean"},
+    "capture_id": {"type": "string", "minLength": 1},
+    "product": {"const": "PCR02"},
+    "sample_rate_hz": {"type": "integer", "minimum": 8000, "maximum": 48000},
+    "mic_channels": {"const": 2},
+    "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "motion_class": {"enum": ["idle", "speaker-only", "near-speech", "double-talk", "straight", "turning", "acceleration", "braking", "servo", "floor-transition"]},
+    "clock": {
+      "type": "object",
+      "required": ["domain", "timestamp_unit"],
+      "properties": {
+        "domain": {"const": "monotonic"},
+        "timestamp_unit": {"const": "ns"}
+      },
+      "additionalProperties": false
+    },
+    "files": {
+      "type": "object",
+      "required": ["mic_raw", "render_reference", "telemetry"],
+      "properties": {
+        "mic_raw": {"$ref": "#/$defs/file"},
+        "render_reference": {"$ref": "#/$defs/file"},
+        "telemetry": {"$ref": "#/$defs/file"}
+      },
+      "additionalProperties": false
+    },
+    "telemetry_signals": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true,
+      "minItems": 8
+    },
+    "context": {
+      "type": "object",
+      "required": ["floor_surface", "battery_mv", "load_state"],
+      "properties": {
+        "floor_surface": {"type": "string", "minLength": 1},
+        "battery_mv": {"type": "integer", "minimum": 1},
+        "load_state": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

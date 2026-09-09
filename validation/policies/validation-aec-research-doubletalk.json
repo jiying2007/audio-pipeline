@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-aec-research-doubletalk-v1",
+  "allowed_tiers": [
+    "research-validation"
+  ],
+  "minimum_cases": 4,
+  "required_public_sources": [
+    "microsoft-aec-challenge"
+  ],
+  "required_scenarios": [
+    "aec-doubletalk-static",
+    "aec-doubletalk-moving"
+  ],
+  "minimum_cases_by_scenario": {
+    "aec-doubletalk-static": 2,
+    "aec-doubletalk-moving": 2
+  },
+  "minimum_pass_rate_by_scenario": {
+    "aec-doubletalk-static": 1.0,
+    "aec-doubletalk-moving": 1.0
+  },
+  "aggregate": {
+    "min_pass_rate": 1.0,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -20.0
+  }
+}

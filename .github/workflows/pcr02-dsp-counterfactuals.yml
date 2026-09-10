@@ -1,0 +1,286 @@
+name: PCR02 DSP Counterfactuals
+
+on:
+  pull_request:
+    paths:
+      - 'tests/validation/research_process_pcm.c'
+      - 'tests/validation/pcr02_bf_geometry_counterfactual.py'
+      - 'tests/validation/pcr02_mechanical_corpus.py'
+      - 'tests/validation/pcr02_ns_vad_summary.py'
+      - 'tests/validation/pcr02_aec_tail_summary.py'
+      - 'tests/validation/pcr02_capture_plan.json'
+      - 'tests/validation/validate_pcr02_capture_plan.py'
+      - 'docs/program/terminal-branch-gc.json'
+      - '.github/workflows/pcr02-dsp-counterfactuals.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pcr02-dsp-counterfactuals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Enforce measurement-only boundary
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          if grep -Eq '^(src/|include/|CMakeLists\.txt$|CMakePresets\.json$)' <<<"$changed"; then
+            echo "shipping/product build surface entered PCR02 counterfactual PR" >&2
+            exit 1
+          fi
+
+      - name: Validate counterfactual contracts
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/pcr02_bf_geometry_counterfactual.py \
+            tests/validation/pcr02_mechanical_corpus.py \
+            tests/validation/pcr02_ns_vad_summary.py \
+            tests/validation/pcr02_aec_tail_summary.py \
+            tests/validation/validate_pcr02_capture_plan.py
+          python3 tests/validation/pcr02_bf_geometry_counterfactual.py --self-test
+          python3 tests/validation/pcr02_mechanical_corpus.py --self-test
+          python3 tests/validation/pcr02_ns_vad_summary.py --self-test
+          python3 tests/validation/pcr02_aec_tail_summary.py --self-test
+          python3 tests/validation/validate_pcr02_capture_plan.py --self-test
+          python3 tests/validation/validate_pcr02_capture_plan.py \
+            --plan tests/validation/pcr02_capture_plan.json
+          python3 .github/program/terminal_branch_gc.py --self-test
+          python3 -m json.tool docs/program/terminal-branch-gc.json >/dev/null
+
+  bf-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: pcr02-bf-geometry
+
+      - name: Build shipping-fixed and integer-tracking BF processors
+        shell: bash
+        run: |
+          set -euo pipefail
+          common=(
+            -DCMAKE_BUILD_TYPE=Release
+            -DAP_ENABLE_LINUX_RUNTIME=OFF
+            -DAP_BUILD_TESTS=OFF
+            -DAP_BUILD_BENCH=OFF
+            -DAP_BUILD_EXAMPLES=OFF
+            -DAP_STRICT_WARNINGS=ON
+            -DAP_BUILD_MAX_IO_RATE_HZ=16000
+            -DAP_BUILD_MAX_INTERNAL_RATE_HZ=16000
+            -DAP_BUILD_MAX_MIC_CHANNELS=2
+            -DAP_MODULES=RESAMPLER,BF
+          )
+          cmake -S . -B build-bf-fixed "${common[@]}" -DAP_ENABLE_BF_DIRECTION_TRACKING=OFF
+          cmake --build build-bf-fixed --target audio_pipeline --parallel
+          cc -std=c11 -O2 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-bf-fixed/generated \
+            tests/validation/research_process_pcm.c \
+            build-bf-fixed/libaudio_pipeline.a -lm \
+            -o build-bf-fixed/research_process_pcm
+
+          cmake -S . -B build-bf-track "${common[@]}" -DAP_ENABLE_BF_DIRECTION_TRACKING=ON
+          cmake --build build-bf-track --target audio_pipeline --parallel
+          cc -std=c11 -O2 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-bf-track/generated \
+            tests/validation/research_process_pcm.c \
+            build-bf-track/libaudio_pipeline.a -lm \
+            -o build-bf-track/research_process_pcm
+
+      - name: Run 35 mm geometry and spacing counterfactual
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p pcr02-counterfactual/bf
+          python3 tests/validation/pcr02_bf_geometry_counterfactual.py \
+            --fixed-processor build-bf-fixed/research_process_pcm \
+            --tracking-processor build-bf-track/research_process_pcm \
+            --output pcr02-counterfactual/bf/summary.json \
+            | tee pcr02-counterfactual/bf/summary.txt
+          {
+            echo '## PCR02 35 mm BF geometry counterfactual'
+            echo '```text'
+            cat pcr02-counterfactual/bf/summary.txt
+            echo '```'
+            echo
+            echo 'Fractional/calibrated modes are non-shipping reference bounds; no candidate is promoted.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload BF counterfactual evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pcr02-bf-counterfactual-${{ github.run_id }}
+          path: pcr02-counterfactual/bf/
+          retention-days: 30
+
+  aec-tail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: pcr02-aec-tail
+
+      - name: Build identical motion corpora
+        shell: bash
+        run: |
+          set -euo pipefail
+          for seed in 4107 4207 4307; do
+            python3 validation/tools/build_aec_motion_corpus.py \
+              --output "/tmp/pcr02-aec-${seed}" --seed "$seed" --seconds 8
+          done
+
+      - name: Build and evaluate AEC tail counterfactuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p pcr02-counterfactual/aec
+          for tail in 32 48 64 80 96; do
+            build="build-aec-${tail}"
+            cmake -S . -B "$build" \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DAP_ENABLE_LINUX_RUNTIME=OFF \
+              -DAP_BUILD_BENCH=OFF \
+              -DAP_BUILD_EXAMPLES=ON \
+              -DAP_BUILD_TESTS=ON \
+              -DAP_STRICT_WARNINGS=ON \
+              -DAP_ENABLE_BF_DIRECTION_TRACKING=OFF \
+              -DAP_BUILD_MAX_IO_RATE_HZ=16000 \
+              -DAP_BUILD_MAX_INTERNAL_RATE_HZ=16000 \
+              -DAP_BUILD_MAX_MIC_CHANNELS=2 \
+              -DAP_BUILD_MAX_DELAY_MS=60 \
+              -DAP_BUILD_MAX_AEC_TAIL_MS="$tail"
+            cmake --build "$build" --target ap_process_pcm ap_state_size --parallel
+            "$build/ap_state_size" > "pcr02-counterfactual/aec/state-${tail}.txt"
+            for seed in 4107 4207 4307; do
+              corpus="/tmp/pcr02-aec-${seed}"
+              python3 validation/tools/run_validation.py \
+                --source-revision '${{ github.event.pull_request.head.sha || github.sha }}' \
+                --corpus "$corpus/corpus.json" \
+                --policy validation/policies/validation-aec-motion-development.json \
+                --dataset-lock validation/datasets.lock.json \
+                --source-manifest "$corpus/source-manifest.json" \
+                --processor "$build/ap_process_pcm" \
+                --output "pcr02-counterfactual/aec/report-tail-${tail}-seed-${seed}.json"
+            done
+          done
+          python3 tests/validation/pcr02_aec_tail_summary.py \
+            --root pcr02-counterfactual/aec \
+            --output pcr02-counterfactual/aec/summary.json \
+            | tee pcr02-counterfactual/aec/summary.txt
+          {
+            echo '## PCR02 AEC tail counterfactual'
+            echo '```text'
+            cat pcr02-counterfactual/aec/summary.txt
+            echo '```'
+            echo
+            echo '64 ms remains the SSC305 shipping incumbent; state-size values are host-build evidence, not SSC305 HIL RAM proof.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload AEC tail evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pcr02-aec-tail-counterfactual-${{ github.run_id }}
+          path: pcr02-counterfactual/aec/
+          retention-days: 30
+
+  ns-vad:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: pcr02-ns-vad
+
+      - name: Build identical PCR02-like mechanical corpus
+        env:
+          PYTHONPATH: validation/tools:tests/validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/pcr02_mechanical_corpus.py \
+            --output /tmp/pcr02-mechanical --seed 5107
+
+      - name: Build EMA and MCRA processors
+        shell: bash
+        run: |
+          set -euo pipefail
+          common=(
+            -DCMAKE_BUILD_TYPE=Release
+            -DAP_ENABLE_LINUX_RUNTIME=OFF
+            -DAP_BUILD_BENCH=OFF
+            -DAP_BUILD_TESTS=OFF
+            -DAP_BUILD_EXAMPLES=ON
+            -DAP_STRICT_WARNINGS=ON
+            -DAP_BUILD_MAX_IO_RATE_HZ=16000
+            -DAP_BUILD_MAX_INTERNAL_RATE_HZ=16000
+            -DAP_BUILD_MAX_MIC_CHANNELS=2
+            -DAP_MODULES=RESAMPLER,NS,VAD
+          )
+          cmake -S . -B build-ns-ema "${common[@]}" -DAP_NS_ESTIMATOR=EMA
+          cmake --build build-ns-ema --target ap_process_pcm --parallel
+          cmake -S . -B build-ns-mcra "${common[@]}" -DAP_NS_ESTIMATOR=MCRA
+          cmake --build build-ns-mcra --target ap_process_pcm --parallel
+
+      - name: Evaluate EMA versus MCRA without candidate promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p pcr02-counterfactual/ns-vad
+          for estimator in ema mcra; do
+            python3 validation/tools/run_validation.py \
+              --source-revision '${{ github.event.pull_request.head.sha || github.sha }}' \
+              --corpus /tmp/pcr02-mechanical/corpus.json \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor "build-ns-${estimator}/ap_process_pcm" \
+              --output "pcr02-counterfactual/ns-vad/${estimator}-report.json"
+          done
+          python3 tests/validation/pcr02_ns_vad_summary.py \
+            --ema-report pcr02-counterfactual/ns-vad/ema-report.json \
+            --mcra-report pcr02-counterfactual/ns-vad/mcra-report.json \
+            --output pcr02-counterfactual/ns-vad/summary.json \
+            | tee pcr02-counterfactual/ns-vad/summary.txt
+          {
+            echo '## PCR02-like mechanical NS/VAD counterfactual'
+            echo '```text'
+            cat pcr02-counterfactual/ns-vad/summary.txt
+            echo '```'
+            echo
+            echo 'Synthetic mechanical signals are development stress only; MCRA is not auto-selected over the EMA shipping incumbent.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload NS/VAD counterfactual evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pcr02-ns-vad-counterfactual-${{ github.run_id }}
+          path: pcr02-counterfactual/ns-vad/
+          retention-days: 30

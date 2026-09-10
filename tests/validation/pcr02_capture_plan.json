@@ -1,0 +1,82 @@
+{
+  "authority": "capture-plan-only",
+  "geometry": {
+    "mic_channels": 2,
+    "mic_spacing_mm": 35.0,
+    "sample_rate_hz": 16000
+  },
+  "groups": {
+    "aec-product-path": 12,
+    "bf-geometry": 16,
+    "self-noise": 14
+  },
+  "notes": [
+    "Every completed slot must be instantiated as a real lab/pcr02-self-noise manifest with real SHA-256 values.",
+    "This plan is not HIL, Extended Real, Product Qualification, or Product Certification evidence.",
+    "Public/synthetic counterfactuals may prioritize experiments but cannot replace these product captures."
+  ],
+  "product": "PCR02",
+  "promotion_allowed": false,
+  "real_evidence_created": false,
+  "required_files": [
+    "mic_raw",
+    "render_reference",
+    "telemetry"
+  ],
+  "required_telemetry_signals": [
+    "timestamp_ns",
+    "left_motor_rpm",
+    "right_motor_rpm",
+    "left_foc_iq",
+    "right_foc_iq",
+    "left_pwm",
+    "right_pwm",
+    "servo_state",
+    "motion_state"
+  ],
+  "schema_version": 1,
+  "slots": [
+    {"angle_deg":0,"distance_m":0.5,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-01","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":0,"distance_m":1.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-02","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":0,"distance_m":2.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-03","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":0,"distance_m":3.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-04","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":30,"distance_m":0.5,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-05","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":30,"distance_m":1.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-06","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":30,"distance_m":2.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-07","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":30,"distance_m":3.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-08","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":60,"distance_m":0.5,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-09","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":60,"distance_m":1.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-10","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":60,"distance_m":2.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-11","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":60,"distance_m":3.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-12","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":90,"distance_m":0.5,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-13","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":90,"distance_m":1.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-14","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":90,"distance_m":2.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-15","speech_state":"near-speech","track":"bf-geometry"},
+    {"angle_deg":90,"distance_m":3.0,"floor_surface":"hard-floor","motion_class":"idle","slot_id":"bf-16","speech_state":"near-speech","track":"bf-geometry"},
+    {"floor_surface":"hard-floor","motion_class":"idle","slot_id":"self-noise-01","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"carpet","motion_class":"idle","slot_id":"self-noise-02","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"hard-floor","motion_class":"straight","slot_id":"self-noise-03","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"carpet","motion_class":"straight","slot_id":"self-noise-04","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"hard-floor","motion_class":"turning","slot_id":"self-noise-05","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"carpet","motion_class":"turning","slot_id":"self-noise-06","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"hard-floor","motion_class":"acceleration","slot_id":"self-noise-07","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"carpet","motion_class":"acceleration","slot_id":"self-noise-08","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"hard-floor","motion_class":"braking","slot_id":"self-noise-09","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"carpet","motion_class":"braking","slot_id":"self-noise-10","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"hard-floor","motion_class":"servo","slot_id":"self-noise-11","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"carpet","motion_class":"servo","slot_id":"self-noise-12","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"hard-floor","motion_class":"floor-transition","slot_id":"self-noise-13","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"carpet","motion_class":"floor-transition","slot_id":"self-noise-14","speech_state":"none","track":"self-noise"},
+    {"floor_surface":"hard-floor","motion_class":"idle","slot_id":"aec-01","speech_state":"speaker-only","track":"aec-product-path"},
+    {"floor_surface":"carpet","motion_class":"idle","slot_id":"aec-02","speech_state":"speaker-only","track":"aec-product-path"},
+    {"floor_surface":"hard-floor","motion_class":"straight","slot_id":"aec-03","speech_state":"speaker-only","track":"aec-product-path"},
+    {"floor_surface":"carpet","motion_class":"straight","slot_id":"aec-04","speech_state":"speaker-only","track":"aec-product-path"},
+    {"floor_surface":"hard-floor","motion_class":"turning","slot_id":"aec-05","speech_state":"speaker-only","track":"aec-product-path"},
+    {"floor_surface":"carpet","motion_class":"turning","slot_id":"aec-06","speech_state":"speaker-only","track":"aec-product-path"},
+    {"floor_surface":"hard-floor","motion_class":"idle","slot_id":"aec-07","speech_state":"double-talk","track":"aec-product-path"},
+    {"floor_surface":"carpet","motion_class":"idle","slot_id":"aec-08","speech_state":"double-talk","track":"aec-product-path"},
+    {"floor_surface":"hard-floor","motion_class":"straight","slot_id":"aec-09","speech_state":"double-talk","track":"aec-product-path"},
+    {"floor_surface":"carpet","motion_class":"straight","slot_id":"aec-10","speech_state":"double-talk","track":"aec-product-path"},
+    {"floor_surface":"hard-floor","motion_class":"turning","slot_id":"aec-11","speech_state":"double-talk","track":"aec-product-path"},
+    {"floor_surface":"carpet","motion_class":"turning","slot_id":"aec-12","speech_state":"double-talk","track":"aec-product-path"}
+  ]
+}

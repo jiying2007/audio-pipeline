@@ -126,10 +126,10 @@ This smoke proves the acquisition mechanism and the pinned SLR31 source remain u
 
 ## 3. Verify actual files and runner readiness
 
-For the active qualification authority, keep the exact immutable source fixed:
+For the active Product Qualification authority, keep the exact immutable **v2.3.16** release source fixed for the entire readiness, Extended Real, HIL, E001 and Product Certification sequence. Do not substitute the release-neutral live `main` or another commit unless a later immutable product authority formally supersedes v2.3.16:
 
 ```bash
-SHA=708d7a28d974ae0372498dfde69cce0bcf5ff514
+SHA=57e4c64adc1cf06819e46e24e275ecd746d5f17f
 ```
 
 After the four dedicated runners are provisioned, dispatch the repository's canonical **Trusted Runner Readiness** workflow from a trusted operator machine authenticated with `gh`. Run each role separately against the immutable qualification source and retain its uploaded `runner-readiness.json` artifact:
@@ -160,11 +160,9 @@ The `audio-validation` workflow readiness command above checks the canonical pub
 
 These commands only dispatch the existing `trusted-runner-readiness.yml` on `main` with exact workflow inputs; they do not create runners, enable `HIL_ENABLED` / `EXTENDED_REAL_ENABLED`, or turn readiness into HIL/Product Certification authority. Require all four role artifacts to report `READY` before moving to activation.
 
-Use the exact source commit that will be validated:
+Continue using the same immutable `$SHA` defined above; do not reassign it within this qualification sequence:
 
 ```bash
-SHA=<40-hex-audio-pipeline-commit>
-
 $HOME/.local/share/audio-pipeline-lab/venv/bin/python lab/scripts/labctl.py verify-profile \
   --profile commercial-core \
   --source-revision "$SHA"
@@ -222,11 +220,9 @@ At that point post-release automation runs `commercial-core` and the weekly auto
 
 Start from `lab/examples/board.ssc305.example.json`, replace **every** placeholder with the real product route and install it as `$HOME/.config/audio-pipeline/board.json`. Hardware hooks and sensor paths are product/lab specific and must never be invented by automation.
 
-Then run:
+Continue using the same immutable `$SHA` from section 3:
 
 ```bash
-SHA=<40-hex-audio-pipeline-commit>
-
 python3 lab/scripts/labctl.py target-readiness \
   --source-revision "$SHA" \
   --board $HOME/.config/audio-pipeline/board.json \

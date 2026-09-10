@@ -1,0 +1,121 @@
+name: Diagnostic Triage
+
+on:
+  pull_request:
+    paths:
+      - 'include/audio_pipeline/audio_diag.h'
+      - 'include/audio_pipeline/audio_runtime.h'
+      - 'include/audio_pipeline/audio_pipeline.h'
+      - 'src/platform/linux/ap_runtime.c'
+      - 'examples/process_pcm.c'
+      - 'tools/apdump.py'
+      - 'tools/apreplay.py'
+      - 'tests/generate_diag_dump.c'
+      - 'tests/diagnostics/**'
+      - 'docs/DIAGNOSTICS.md'
+      - '.github/workflows/diagnostic-triage.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'include/audio_pipeline/audio_diag.h'
+      - 'include/audio_pipeline/audio_runtime.h'
+      - 'include/audio_pipeline/audio_pipeline.h'
+      - 'src/platform/linux/ap_runtime.c'
+      - 'examples/process_pcm.c'
+      - 'tools/apdump.py'
+      - 'tools/apreplay.py'
+      - 'tests/generate_diag_dump.c'
+      - 'tests/diagnostics/**'
+      - 'docs/DIAGNOSTICS.md'
+      - '.github/workflows/diagnostic-triage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnostic-triage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: diagnostic-triage
+
+      - name: Validate repository diagnostic harness
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tools/apdump.py tools/apreplay.py tests/diagnostics/aptriage.py
+          python3 tests/diagnostics/aptriage.py --self-test
+
+      - name: Configure diagnostics build
+        run: >-
+          cmake -S . -B build-diag -DCMAKE_BUILD_TYPE=Release
+          -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+
+      - name: Build runtime and offline processor
+        run: cmake --build build-diag --parallel
+
+      - name: Build deterministic APD fixture generator
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror tests/generate_diag_dump.c \
+            -Iinclude -Ibuild-diag/generated \
+            build-diag/libaudio_pipeline_runtime.a build-diag/libaudio_pipeline.a \
+            -lm -pthread -o /tmp/ap_diag_dump_fixture
+
+      - name: Generate, replay and triage APD fixture
+        run: |
+          set -euo pipefail
+          /tmp/ap_diag_dump_fixture /tmp/test.apd
+          python3 tools/apdump.py info /tmp/test.apd > /tmp/dump-info.json
+          python3 tools/apdump.py extract /tmp/test.apd --output-dir /tmp/apd-extract
+          python3 tools/apreplay.py /tmp/test.apd \
+            --processor ./build-diag/ap_process_pcm \
+            --output-pcm /tmp/replay-output.pcm \
+            --require-bit-exact > /tmp/replay.json
+          python3 tests/diagnostics/aptriage.py /tmp/test.apd \
+            --processor ./build-diag/ap_process_pcm \
+            --output-dir /tmp/apd-triage \
+            --require-bit-exact \
+            --stage-counterfactuals
+          test -s /tmp/apd-triage/extracted/metrics.jsonl
+          test -s /tmp/apd-triage/extracted/metrics.csv
+          test -s /tmp/apd-triage/analysis.json
+          test -s /tmp/apd-triage/triage.json
+          test -s /tmp/apd-triage/summary.md
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          replay = json.loads(Path('/tmp/replay.json').read_text())
+          triage = json.loads(Path('/tmp/apd-triage/triage.json').read_text())
+          assert replay['comparison']['bit_exact'] is True
+          assert triage['status'] == 'PASS'
+          assert triage['authority'] == 'repository-internal-diagnostic-only'
+          assert triage['analysis']['summary']['metrics_frames'] == 1
+          assert 'bf-isolated' in triage['stage_counterfactuals']
+          assert triage['stage_counterfactuals']['bf-isolated']['returncode'] == 0
+          PY
+
+      - name: Run runtime continuity and diagnostics contracts
+        run: ctest --test-dir build-diag --output-on-failure -R 'ap_runtime_tests'
+
+      - name: Upload diagnostic triage evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: diagnostic-triage-${{ github.run_id }}
+          path: |
+            /tmp/test.apd
+            /tmp/dump-info.json
+            /tmp/apd-extract/
+            /tmp/replay.json
+            /tmp/replay-output.pcm
+            /tmp/apd-triage/
+          retention-days: 30
+          if-no-files-found: warn

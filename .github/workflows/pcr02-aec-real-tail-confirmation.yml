@@ -1,0 +1,187 @@
+name: PCR02 Real AEC Tail Confirmation
+
+on:
+  pull_request:
+    paths:
+      - 'tests/validation/pcr02_aec_real_tail_confirmation.py'
+      - '.github/workflows/pcr02-aec-real-tail-confirmation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pcr02-real-aec-tail-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      AEC_REVISION: 6c633d0a9d2a143a0e364899b91b06f127315b18
+      SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Enforce confirmation-only boundary
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          if grep -Ev '^(tests/validation/pcr02_aec_real_tail_confirmation\.py|\.github/workflows/pcr02-aec-real-tail-confirmation\.yml)$' <<<"$changed" | grep -q .; then
+            echo 'real-AEC tail confirmation PR contains non-measurement paths' >&2
+            exit 1
+          fi
+
+      - name: Validate frozen contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/pcr02_aec_real_tail_confirmation.py
+          python3 tests/validation/pcr02_aec_real_tail_confirmation.py --self-test
+          python3 validation/tools/build_aec_research_corpus.py self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          far = json.loads(Path('validation/policies/validation-aec-research-coverage.json').read_text())
+          dt = json.loads(Path('validation/policies/validation-aec-research-doubletalk.json').read_text())
+          assert far['policy_id'] == 'validation-aec-research-farend-v1'
+          assert dt['policy_id'] == 'validation-aec-research-doubletalk-v1'
+          assert far['aggregate']['min_median_output_render_corr_reduction'] == 0.0
+          assert far['minimum_cases'] == 4 and dt['minimum_cases'] == 4
+          PY
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: pcr02-real-aec-tail
+
+      - name: Select and materialize the exact existing Microsoft 8-case corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/pcr02-real-aec
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/AEC-Challenge.git /tmp/pcr02-real-aec
+          git -C /tmp/pcr02-real-aec -c advice.detachedHead=false checkout --detach "$AEC_REVISION"
+          test "$(git -C /tmp/pcr02-real-aec rev-parse HEAD)" = "$AEC_REVISION"
+          mkdir -p real-aec-confirmation
+          python3 validation/tools/build_aec_research_corpus.py select \
+            --source-root /tmp/pcr02-real-aec \
+            --output real-aec-confirmation/selection.json
+          include=$(python3 - <<'PY'
+          import json
+          x=json.load(open('real-aec-confirmation/selection.json'))
+          print(','.join(c[r] for c in x['cases'] for r in ('mic','render')))
+          PY
+          )
+          unset GIT_LFS_SKIP_SMUDGE
+          git -C /tmp/pcr02-real-aec lfs pull --include="$include" --exclude=""
+          python3 validation/tools/build_aec_research_corpus.py build \
+            --selection real-aec-confirmation/selection.json \
+            --source-root /tmp/pcr02-real-aec \
+            --output real-aec-confirmation/corpus
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('real-aec-confirmation/corpus')
+          corpus = json.loads((root / 'corpus.json').read_text())
+          groups = {
+              'farend': {'aec-farend-static', 'aec-farend-moving'},
+              'doubletalk': {'aec-doubletalk-static', 'aec-doubletalk-moving'},
+          }
+          for name, scenarios in groups.items():
+              subset = dict(corpus)
+              subset['corpus_id'] = f'aec-real-tail-confirmation-{name}-v1'
+              subset['cases'] = [case for case in corpus['cases'] if case['scenario'] in scenarios]
+              assert len(subset['cases']) == 4
+              assert {case['scenario'] for case in subset['cases']} == scenarios
+              (root / f'{name}-corpus.json').write_text(
+                  json.dumps(subset, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+
+      - name: Build and evaluate 32/48/64 ms tails on identical real cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          for tail in 32 48 64; do
+            build="build-real-aec-${tail}"
+            cmake -S . -B "$build" \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DAP_ENABLE_LINUX_RUNTIME=OFF \
+              -DAP_BUILD_BENCH=OFF \
+              -DAP_BUILD_EXAMPLES=ON \
+              -DAP_BUILD_TESTS=ON \
+              -DAP_STRICT_WARNINGS=ON \
+              -DAP_ENABLE_BF_DIRECTION_TRACKING=OFF \
+              -DAP_BUILD_MAX_DELAY_MS=60 \
+              -DAP_BUILD_MAX_AEC_TAIL_MS="$tail"
+            cmake --build "$build" --target ap_process_pcm ap_state_size ap_build_info_dump --parallel
+            "$build/ap_state_size" > "real-aec-confirmation/state-${tail}.txt"
+            "$build/ap_build_info_dump" > "real-aec-confirmation/build-info-${tail}.txt"
+            sha256sum "$build/ap_process_pcm" > "real-aec-confirmation/processor-${tail}.sha256"
+
+            python3 validation/tools/run_validation.py \
+              --source-revision "$SOURCE_REVISION" \
+              --corpus real-aec-confirmation/corpus/farend-corpus.json \
+              --policy validation/policies/validation-aec-research-coverage.json \
+              --dataset-lock validation/datasets.lock.json \
+              --source-manifest real-aec-confirmation/corpus/source-manifest.json \
+              --processor "$build/ap_process_pcm" \
+              --output "real-aec-confirmation/farend-tail-${tail}.json"
+
+            python3 validation/tools/run_validation.py \
+              --source-revision "$SOURCE_REVISION" \
+              --corpus real-aec-confirmation/corpus/doubletalk-corpus.json \
+              --policy validation/policies/validation-aec-research-doubletalk.json \
+              --dataset-lock validation/datasets.lock.json \
+              --source-manifest real-aec-confirmation/corpus/source-manifest.json \
+              --processor "$build/ap_process_pcm" \
+              --output "real-aec-confirmation/doubletalk-tail-${tail}.json"
+          done
+
+      - name: Apply frozen confirmation rule and publish result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/pcr02_aec_real_tail_confirmation.py \
+            --root real-aec-confirmation \
+            --output real-aec-confirmation/summary.json \
+            | tee real-aec-confirmation/summary.txt
+          {
+            echo '## PCR02 real Microsoft AEC tail confirmation'
+            echo '```text'
+            cat real-aec-confirmation/summary.txt
+            echo '```'
+            echo
+            echo 'CONFIRMATION_POSITIVE only admits a shorter tail to PCR02/SSC305 HIL confirmation. It does not change shipping.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal confirmation evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d real-aec-confirmation ]; then
+            cp validation/policies/validation-aec-research-coverage.json real-aec-confirmation/
+            cp validation/policies/validation-aec-research-doubletalk.json real-aec-confirmation/
+            find real-aec-confirmation -type f ! -name SHA256SUMS -print0 | sort -z | \
+              xargs -0 sha256sum > /tmp/real-aec-confirmation-SHA256SUMS
+            mv /tmp/real-aec-confirmation-SHA256SUMS real-aec-confirmation/SHA256SUMS
+          fi
+
+      - name: Upload hash-bound real-AEC confirmation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pcr02-real-aec-tail-confirmation-${{ github.run_id }}
+          path: real-aec-confirmation/
+          retention-days: 30
+          if-no-files-found: error

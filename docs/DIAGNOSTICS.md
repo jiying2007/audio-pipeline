@@ -60,19 +60,56 @@ The recorder is a bounded circular buffer with configurable pre-roll and post-ro
 
 A dump contains audio geometry, record mask, trigger event and the exact library build fingerprint. Audio may contain private speech. Retention, consent, access control, upload and secure-erasure policy are product responsibilities; the SDK itself never uploads a dump.
 
-## PC-side inspection and replay
+## Released PC-side inspection and replay
+
+The v2.3.16 released tools remain the stable APD v1 inspection/replay surface:
 
 ```bash
 python3 tools/apdump.py info failure.apd
-python3 tools/apdump.py extract failure.apd --out-dir extracted
+python3 tools/apdump.py extract failure.apd --output-dir extracted
 python3 tools/apreplay.py failure.apd \
   --processor ./build/ap_process_pcm \
-  --work-dir replay
+  --output-pcm replay.pcm \
+  --require-bit-exact
 ```
 
-When mic/render/output PCM are present, replay can perform bit-exact comparison against the matching processor build. Repository Audio Quality CI generates, parses, extracts and replays deterministic dumps so this field-debug path remains executable rather than documentation-only.
+When microphone/render/output PCM are present, replay can perform bit-exact comparison against the matching processor build. A production dump should be replayed using the build fingerprint recorded in the `.apd`; a different binary is useful for A/B analysis but is not a deterministic reproduction claim.
 
-A production dump should be replayed using the build fingerprint recorded in the `.apd`; a different binary is useful for A/B analysis but is not a deterministic reproduction claim.
+## Repository-internal one-command triage
+
+For current engineering and CI work, the repository contains an internal triage harness under `tests/diagnostics/`. It deliberately does **not** modify the released `tools/*` surface or APD v1 format, so the active v2.3.16 Product Qualification identity remains unchanged.
+
+From a repository checkout:
+
+```bash
+python3 tests/diagnostics/aptriage.py failure.apd \
+  --processor ./build/ap_process_pcm \
+  --output-dir triage \
+  --require-bit-exact \
+  --stage-counterfactuals
+```
+
+The harness chains APD extraction, decoding of the stable 120-byte per-frame `ap_metrics_t` block, anomaly analysis and the released bit-exact replay path. It writes:
+
+- `triage.json` and a human-readable `summary.md`;
+- `analysis.json` with anomaly timeline and aggregate diagnostic state;
+- `extracted/metrics.jsonl` and `extracted/metrics.csv`;
+- replay output/logs;
+- optional `bf-isolated`, `ns-isolated`, `vad-isolated` and `agc-isolated` counterfactual outputs where applicable.
+
+The anomaly timeline reports metadata discontinuity/XRUN/codec-reopen observations, dump triggers, render-underrun/AEC-reset/delay-jump/reference-slip counter changes, quality transitions and AEC convergence loss. The summary also exposes maximum observed delay error and drift together with far-end, double-talk and AEC-convergence frame counts.
+
+The isolated outputs are **counterfactual reprocessing** of recorded microphone input, not live intermediate PCM captured from the original integrated execution. They are useful for narrowing a fault to a stage family, but must not be described as proof of the exact internal signal that existed during the original failure.
+
+`Diagnostic Triage` CI generates a deterministic APD fixture, validates the internal metrics decoder, performs released bit-exact replay, executes the one-command triage path and uploads the resulting diagnostic artifact. This keeps the engineering path executable rather than documentation-only.
+
+If the internal triage functionality is later promoted into `tools/*` as part of the shipped SDK/source tool surface, that promotion is release-bearing and must advance SemVer through the normal release process.
+
+## Current APD v1 boundary
+
+APD v1 records build fingerprint, audio geometry, frame metadata, optional microphone/render/final-output PCM and optional `ap_metrics_t`. It does **not** store a complete effective `ap_config_t`/live `ap_tuning_t` snapshot, nor integrated per-stage PCM such as BF output, synchronized reference, AEC output/predicted echo, RES output, NS output or AGC output.
+
+Adding those fields would be a diagnostic-format/API evolution and must use an explicit backward-compatible versioning and bounded-memory design. Do not infer live intermediate stage samples from isolated counterfactual replays.
 
 ## Recommended product triggers
 

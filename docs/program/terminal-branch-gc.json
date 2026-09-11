@@ -27,20 +27,7 @@
     "validation/"
   ],
   "allowed_exact_names": [],
-  "branches": [
-    {
-      "name": "engineering/diagnostic-reasoning-v1-final",
-      "expected_sha": "7a5d66194b86ec4be881dcbc16d9cc0164679be1"
-    },
-    {
-      "name": "engineering/diagnostic-reasoning-v1-open",
-      "expected_sha": "7a5d66194b86ec4be881dcbc16d9cc0164679be1"
-    },
-    {
-      "name": "engineering/diagnostic-reasoning-v1-pr",
-      "expected_sha": "7a5d66194b86ec4be881dcbc16d9cc0164679be1"
-    }
-  ],
+  "branches": [],
   "authority_boundary": {
     "hardware_test_executed": false,
     "hardware_collection_performed": false,

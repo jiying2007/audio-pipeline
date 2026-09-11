@@ -74,6 +74,12 @@ jobs:
           assert diagnosis['causal_proof'] is False
           assert 'delay_jump' in comparison['new_anomaly_kinds']
           assert comparison['summary_delta']['aec_converged_frames'] == -60
+          assert comparison['comparison_geometry']['frames_equal'] is False
+          assert comparison['comparison_geometry']['metrics_frames_equal'] is False
+          assert comparison['raw_count_comparability']['aec_converged_frames']['directly_comparable'] is False
+          assert abs(comparison['normalized_metrics']['aec_converged_ratio']['delta']) < 1e-12
+          assert abs(comparison['normalized_metrics']['far_end_active_ratio']['delta']) < 1e-12
+          assert comparison['warnings']
           PY
 
       - name: Configure diagnostics build

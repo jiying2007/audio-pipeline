@@ -28,7 +28,6 @@ KIND_SEVERITY = {
 CRITICAL_METADATA_FLAGS = {"clock_reset", "codec_reopen"}
 ERROR_METADATA_FLAGS = {"capture_discontinuity", "render_discontinuity", "xrun"}
 
-# Count metrics need equal exposure to make raw deltas directly comparable.
 RAW_COUNT_DENOMINATORS = {
     "anomaly_count": "frames",
     "quality_transitions": "metrics_frames",
@@ -38,24 +37,88 @@ RAW_COUNT_DENOMINATORS = {
     "aec_converged_frames": "metrics_frames",
 }
 
-# Normalized metrics are additive diagnostic views. They do not alter any gate.
 NORMALIZED_METRICS = {
-    "anomaly_rate_per_1000_frames": ("anomaly_count", "frames", 1000.0, "events/1000_frames"),
+    "anomaly_rate_per_1000_frames": (
+        "anomaly_count", "frames", 1000.0, "events/1000_frames"
+    ),
     "quality_transition_rate_per_1000_metrics_frames": (
-        "quality_transitions", "metrics_frames", 1000.0, "transitions/1000_metrics_frames"
+        "quality_transitions",
+        "metrics_frames",
+        1000.0,
+        "transitions/1000_metrics_frames",
     ),
     "vad_transition_rate_per_1000_metrics_frames": (
-        "vad_transitions", "metrics_frames", 1000.0, "transitions/1000_metrics_frames"
+        "vad_transitions",
+        "metrics_frames",
+        1000.0,
+        "transitions/1000_metrics_frames",
     ),
-    "far_end_active_ratio": ("far_end_active_frames", "metrics_frames", 1.0, "ratio"),
-    "double_talk_active_ratio": ("double_talk_active_frames", "metrics_frames", 1.0, "ratio"),
-    "aec_converged_ratio": ("aec_converged_frames", "metrics_frames", 1.0, "ratio"),
+    "far_end_active_ratio": (
+        "far_end_active_frames", "metrics_frames", 1.0, "ratio"
+    ),
+    "double_talk_active_ratio": (
+        "double_talk_active_frames", "metrics_frames", 1.0, "ratio"
+    ),
+    "aec_converged_ratio": (
+        "aec_converged_frames", "metrics_frames", 1.0, "ratio"
+    ),
 }
+
+# Explicit metadata-domain weights avoid accidental alphabetical tie-breaking.
+# A single metadata event contributes the maximum matching flag weight for a
+# hypothesis so multi-flag records are not double-counted as independent evidence.
+HYPOTHESIS_SPECS = (
+    {
+        "name": "sync-reference-path",
+        "kinds": {"delay_jump", "reference_sample_slip", "render_underrun"},
+        "kind_weights": {
+            "delay_jump": 3,
+            "reference_sample_slip": 3,
+            "render_underrun": 2,
+        },
+        "metadata_weights": {
+            "render_discontinuity": 4,
+            "clock_reset": 4,
+            "xrun": 1,
+        },
+    },
+    {
+        "name": "aec-adaptation",
+        "kinds": {"aec_reset", "aec_convergence_lost", "delay_jump"},
+        "kind_weights": {
+            "aec_reset": 3,
+            "aec_convergence_lost": 2,
+            "delay_jump": 1,
+        },
+        "metadata_weights": {
+            "render_discontinuity": 1,
+            "clock_reset": 1,
+        },
+    },
+    {
+        "name": "capture-io",
+        "kinds": set(),
+        "kind_weights": {},
+        "metadata_weights": {
+            "capture_discontinuity": 4,
+            "codec_reopen": 4,
+            "xrun": 1,
+        },
+    },
+    {
+        "name": "runtime-continuity",
+        "kinds": {"render_underrun"},
+        "kind_weights": {"render_underrun": 2},
+        "metadata_weights": {
+            "xrun": 4,
+            "codec_reopen": 1,
+        },
+    },
+)
 
 
 def _metadata_flags(item: dict[str, Any]) -> set[str]:
-    flags = item.get("flags") or []
-    return {str(flag) for flag in flags}
+    return {str(flag) for flag in (item.get("flags") or [])}
 
 
 def _severity(item: dict[str, Any]) -> str:
@@ -104,25 +167,6 @@ def annotate_anomalies(anomalies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
-def build_intervals(
-    annotated: list[dict[str, Any]], gap_frames: int = 10
-) -> list[dict[str, Any]]:
-    """Cluster temporally adjacent non-trigger anomalies without asserting causality."""
-    events = [item for item in annotated if item.get("kind") != "trigger_event"]
-    if not events:
-        return []
-    intervals: list[dict[str, Any]] = []
-    current: list[dict[str, Any]] = [events[0]]
-    for item in events[1:]:
-        if int(item["frame"]) - int(current[-1]["frame"]) <= gap_frames:
-            current.append(item)
-        else:
-            intervals.append(_interval(current))
-            current = [item]
-    intervals.append(_interval(current))
-    return intervals
-
-
 def _interval(events: list[dict[str, Any]]) -> dict[str, Any]:
     max_severity = max(
         events, key=lambda item: SEVERITY_ORDER[item["severity"]]
@@ -137,6 +181,25 @@ def _interval(events: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def build_intervals(
+    annotated: list[dict[str, Any]], gap_frames: int = 10
+) -> list[dict[str, Any]]:
+    """Cluster temporally adjacent non-trigger anomalies without asserting causality."""
+    events = [item for item in annotated if item.get("kind") != "trigger_event"]
+    if not events:
+        return []
+    intervals: list[dict[str, Any]] = []
+    current = [events[0]]
+    for item in events[1:]:
+        if int(item["frame"]) - int(current[-1]["frame"]) <= gap_frames:
+            current.append(item)
+        else:
+            intervals.append(_interval(current))
+            current = [item]
+    intervals.append(_interval(current))
+    return intervals
+
+
 def first_fault(annotated: list[dict[str, Any]]) -> dict[str, Any] | None:
     for item in annotated:
         if item.get("kind") != "trigger_event":
@@ -144,29 +207,35 @@ def first_fault(annotated: list[dict[str, Any]]) -> dict[str, Any] | None:
     return None
 
 
-def _evidence(
-    annotated: list[dict[str, Any]],
-    kinds: set[str],
-    metadata_flags: set[str] | None = None,
-) -> list[dict[str, Any]]:
-    result = []
+def _evidence_for_spec(
+    annotated: list[dict[str, Any]], spec: dict[str, Any]
+) -> tuple[list[dict[str, Any]], int]:
+    evidence: list[dict[str, Any]] = []
+    score = 0
+    kinds = set(spec["kinds"])
+    kind_weights = dict(spec["kind_weights"])
+    metadata_weights = dict(spec["metadata_weights"])
+
     for item in annotated:
-        if item.get("kind") in kinds:
-            result.append({"frame": item.get("frame"), "kind": item.get("kind")})
+        kind = str(item.get("kind"))
+        if kind in kinds:
+            evidence.append({"frame": item.get("frame"), "kind": kind})
+            score += int(kind_weights.get(kind, 1))
             continue
-        if (
-            item.get("kind") == "metadata"
-            and metadata_flags
-            and (_metadata_flags(item) & metadata_flags)
-        ):
-            result.append(
-                {
-                    "frame": item.get("frame"),
-                    "kind": "metadata",
-                    "flags": sorted(_metadata_flags(item) & metadata_flags),
-                }
-            )
-    return result
+        if kind != "metadata":
+            continue
+        matching = _metadata_flags(item) & set(metadata_weights)
+        if not matching:
+            continue
+        evidence.append(
+            {
+                "frame": item.get("frame"),
+                "kind": "metadata",
+                "flags": sorted(matching),
+            }
+        )
+        score += max(int(metadata_weights[flag]) for flag in matching)
+    return evidence, score
 
 
 def _strength(score: int) -> str:
@@ -180,57 +249,22 @@ def _strength(score: int) -> str:
 def root_cause_hypotheses(
     annotated: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Rank diagnostic hypotheses from explicit events only.
-
-    Scores are intentionally heuristic and diagnostic-only. They are not probabilities.
-    """
-    specs = [
-        (
-            "sync-reference-path",
-            {"delay_jump", "reference_sample_slip", "render_underrun"},
-            {"render_discontinuity", "clock_reset", "xrun"},
-            {"delay_jump": 3, "reference_sample_slip": 3, "render_underrun": 2},
-        ),
-        (
-            "aec-adaptation",
-            {"aec_reset", "aec_convergence_lost", "delay_jump"},
-            {"render_discontinuity", "clock_reset"},
-            {"aec_reset": 3, "aec_convergence_lost": 2, "delay_jump": 1},
-        ),
-        (
-            "capture-io",
-            set(),
-            {"capture_discontinuity", "codec_reopen", "xrun"},
-            {},
-        ),
-        (
-            "runtime-continuity",
-            {"render_underrun"},
-            {"xrun", "codec_reopen"},
-            {"render_underrun": 2},
-        ),
-    ]
+    """Rank explicit evidence using deterministic diagnostic-only weights."""
     hypotheses: list[dict[str, Any]] = []
-    for name, kinds, metadata_flags, weights in specs:
-        evidence = _evidence(annotated, kinds, metadata_flags)
-        score = 0
-        for item in evidence:
-            if item["kind"] == "metadata":
-                flags = set(item.get("flags", []))
-                score += 3 if "clock_reset" in flags or "codec_reopen" in flags else 2
-            else:
-                score += weights.get(str(item["kind"]), 1)
-        if score:
-            hypotheses.append(
-                {
-                    "rank": 0,
-                    "hypothesis": name,
-                    "heuristic_score": score,
-                    "strength": _strength(score),
-                    "evidence": evidence[:12],
-                    "causal_proof": False,
-                }
-            )
+    for spec in HYPOTHESIS_SPECS:
+        evidence, score = _evidence_for_spec(annotated, spec)
+        if not score:
+            continue
+        hypotheses.append(
+            {
+                "rank": 0,
+                "hypothesis": spec["name"],
+                "heuristic_score": score,
+                "strength": _strength(score),
+                "evidence": evidence[:12],
+                "causal_proof": False,
+            }
+        )
     hypotheses.sort(
         key=lambda item: (-int(item["heuristic_score"]), str(item["hypothesis"]))
     )
@@ -274,18 +308,19 @@ def candidate_chains(annotated: list[dict[str, Any]]) -> list[dict[str, Any]]:
     chains = []
     for name, kinds in patterns:
         frames = _ordered_frames(annotated, kinds)
-        if frames is not None:
-            chains.append(
-                {
-                    "name": name,
-                    "events": [
-                        {"kind": kind, "frame": frame}
-                        for kind, frame in zip(kinds, frames)
-                    ],
-                    "relation": "temporal-association-only",
-                    "causal_proof": False,
-                }
-            )
+        if frames is None:
+            continue
+        chains.append(
+            {
+                "name": name,
+                "events": [
+                    {"kind": kind, "frame": frame}
+                    for kind, frame in zip(kinds, frames)
+                ],
+                "relation": "temporal-association-only",
+                "causal_proof": False,
+            }
+        )
     return chains
 
 
@@ -298,12 +333,11 @@ def anomaly_counts(annotated: list[dict[str, Any]]) -> dict[str, int]:
 def build_diagnosis(analysis: dict[str, Any]) -> dict[str, Any]:
     annotated = annotate_anomalies(list(analysis.get("anomalies") or []))
     hypotheses = root_cause_hypotheses(annotated)
-    first = first_fault(annotated)
     return {
         "schema_version": 1,
         "authority": "repository-internal-heuristic-diagnostic-only",
         "causal_proof": False,
-        "first_fault": first,
+        "first_fault": first_fault(annotated),
         "intervals": build_intervals(annotated),
         "anomaly_counts": anomaly_counts(annotated),
         "root_cause_hypotheses": hypotheses,
@@ -311,6 +345,7 @@ def build_diagnosis(analysis: dict[str, Any]) -> dict[str, Any]:
         "top_hypothesis": hypotheses[0] if hypotheses else None,
         "notes": [
             "hypothesis scores are heuristic evidence ranks, not probabilities",
+            "metadata-domain weights prevent accidental tie-breaking across fault families",
             "candidate chains encode temporal association only and do not prove causality",
             "diagnosis is not Product Qualification, HIL, certification, or shipping authority",
         ],
@@ -326,17 +361,15 @@ def _numeric(summary: dict[str, Any], key: str) -> float | None:
 
 def _geometry(summary: dict[str, Any]) -> dict[str, float | int | None]:
     return {
-        "frames": summary.get("frames") if isinstance(summary.get("frames"), int) else None,
-        "metrics_frames": (
-            summary.get("metrics_frames")
-            if isinstance(summary.get("metrics_frames"), int)
-            else None
-        ),
-        "duration_ms": (
-            summary.get("duration_ms")
-            if isinstance(summary.get("duration_ms"), (int, float))
-            else None
-        ),
+        "frames": summary.get("frames")
+        if isinstance(summary.get("frames"), int)
+        else None,
+        "metrics_frames": summary.get("metrics_frames")
+        if isinstance(summary.get("metrics_frames"), int)
+        else None,
+        "duration_ms": summary.get("duration_ms")
+        if isinstance(summary.get("duration_ms"), (int, float))
+        else None,
     }
 
 
@@ -377,17 +410,16 @@ def _raw_count_comparability(
     for metric, denominator in RAW_COUNT_DENOMINATORS.items():
         reference_denominator = _numeric(ref_summary, denominator)
         candidate_denominator = _numeric(cand_summary, denominator)
-        directly_comparable = (
-            reference_denominator is not None
-            and candidate_denominator is not None
-            and reference_denominator > 0
-            and reference_denominator == candidate_denominator
-        )
         result[metric] = {
             "denominator": denominator,
             "reference_denominator": reference_denominator,
             "candidate_denominator": candidate_denominator,
-            "directly_comparable": directly_comparable,
+            "directly_comparable": (
+                reference_denominator is not None
+                and candidate_denominator is not None
+                and reference_denominator > 0
+                and reference_denominator == candidate_denominator
+            ),
         }
     return result
 
@@ -418,13 +450,12 @@ def compare_diagnoses(
     cand_summary = candidate_analysis.get("summary") or {}
     summary_delta = {}
     for key in summary_keys:
-        if key in ref_summary and key in cand_summary:
-            ref_value = ref_summary[key]
-            cand_value = cand_summary[key]
-            if isinstance(ref_value, (int, float)) and isinstance(
-                cand_value, (int, float)
-            ):
-                summary_delta[key] = cand_value - ref_value
+        ref_value = ref_summary.get(key)
+        cand_value = cand_summary.get(key)
+        if isinstance(ref_value, (int, float)) and isinstance(
+            cand_value, (int, float)
+        ):
+            summary_delta[key] = cand_value - ref_value
 
     ref_geometry = _geometry(ref_summary)
     cand_geometry = _geometry(cand_summary)
@@ -459,12 +490,15 @@ def compare_diagnoses(
         "authority": "repository-internal-heuristic-diagnostic-only",
         "anomaly_count_delta_by_kind": count_delta,
         "new_anomaly_kinds": [
-            kind for kind in all_kinds if ref_counts[kind] == 0 and cand_counts[kind] > 0
+            kind
+            for kind in all_kinds
+            if ref_counts[kind] == 0 and cand_counts[kind] > 0
         ],
         "resolved_anomaly_kinds": [
-            kind for kind in all_kinds if ref_counts[kind] > 0 and cand_counts[kind] == 0
+            kind
+            for kind in all_kinds
+            if ref_counts[kind] > 0 and cand_counts[kind] == 0
         ],
-        # Retained for compatibility. Count deltas require the comparability map below.
         "summary_delta": summary_delta,
         "comparison_geometry": {
             "reference": ref_geometry,
@@ -521,9 +555,7 @@ def write_markdown(
             )
     if comparison:
         lines.extend(["", "## Reference comparison", ""])
-        lines.append(
-            f"- new anomaly kinds: `{comparison['new_anomaly_kinds']}`"
-        )
+        lines.append(f"- new anomaly kinds: `{comparison['new_anomaly_kinds']}`")
         lines.append(
             f"- resolved anomaly kinds: `{comparison['resolved_anomaly_kinds']}`"
         )
@@ -558,6 +590,28 @@ def load_analysis(path: Path) -> dict[str, Any]:
     ):
         raise ValueError(f"{path}: expected aptriage triage.json or analysis.json")
     return payload
+
+
+def _metadata_self_test() -> None:
+    cases = (
+        ("capture_discontinuity", "capture-io", "capture-io"),
+        ("render_discontinuity", "sync-reference", "sync-reference-path"),
+        ("clock_reset", "sync-reference", "sync-reference-path"),
+        ("xrun", "runtime-continuity", "runtime-continuity"),
+        ("codec_reopen", "capture-io", "capture-io"),
+    )
+    for flag, family, hypothesis in cases:
+        diagnosis = build_diagnosis(
+            {
+                "summary": {},
+                "anomalies": [
+                    {"frame": 0, "kind": "metadata", "flags": [flag]}
+                ],
+            }
+        )
+        assert diagnosis["first_fault"]["family"] == family, flag
+        assert diagnosis["top_hypothesis"]["hypothesis"] == hypothesis, flag
+        assert diagnosis["top_hypothesis"]["causal_proof"] is False, flag
 
 
 def self_test() -> None:
@@ -613,8 +667,12 @@ def self_test() -> None:
         ]
         is False
     )
-    assert abs(comparison["normalized_metrics"]["aec_converged_ratio"]["delta"]) < 1e-12
+    assert (
+        abs(comparison["normalized_metrics"]["aec_converged_ratio"]["delta"])
+        < 1e-12
+    )
     assert comparison["warnings"]
+    _metadata_self_test()
     print("repository diagnostic reasoning self-test: OK")
 
 

@@ -89,7 +89,6 @@ def validate_case(
     triage: dict,
     diagnosis: dict,
     metric_rows: list[dict],
-    require_build_identity: bool,
 ) -> dict:
     trigger = diagnosis.get("recording_trigger") or {}
     first = diagnosis.get("first_fault") or {}
@@ -189,21 +188,19 @@ def validate_case(
     )
 
     build_identity = triage.get("build_identity") or {}
-    if require_build_identity:
-        assert (
-            build_identity.get("authority")
-            == "repository-internal-build-identity-subset-only"
-        ), (case, build_identity)
-        assert build_identity.get("status") == "MATCH", (case, build_identity)
-        assert build_identity.get("shared_fields_match") is True, (
-            case,
-            build_identity,
-        )
-        assert build_identity.get("mismatches") == [], (case, build_identity)
-        assert build_identity.get("require_match") is True, (case, build_identity)
-        assert (
-            build_identity.get("exact_source_config_match_authoritative") is False
-        ), (case, build_identity)
+    assert (
+        build_identity.get("authority")
+        == "repository-internal-build-identity-subset-only"
+    ), (case, build_identity)
+    assert build_identity.get("status") == "MATCH", (case, build_identity)
+    assert build_identity.get("shared_fields_match") is True, (
+        case,
+        build_identity,
+    )
+    assert build_identity.get("mismatches") == [], (case, build_identity)
+    assert (
+        build_identity.get("exact_source_config_match_authoritative") is False
+    ), (case, build_identity)
 
     return {
         "case": case,
@@ -295,6 +292,7 @@ def validate_bundle(bundle: dict) -> None:
     incidents_by_id = {item["id"]: item for item in bundle["incidents"]}
     assert set(incidents_by_id) == set(CASES)
     for case, incident in incidents_by_id.items():
+        assert "source" not in incident, (case, incident)
         source_evidence = incident["source_evidence"]
         expected_paths = {
             "triage": f"{case}/triage/triage.json",
@@ -356,7 +354,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--generator", type=Path, required=True)
     parser.add_argument("--processor", type=Path, required=True)
-    parser.add_argument("--processor-build-info", type=Path)
+    parser.add_argument("--processor-build-info", type=Path, required=True)
     parser.add_argument("--work-dir", type=Path, required=True)
     args = parser.parse_args()
 
@@ -389,17 +387,11 @@ def main() -> int:
             str(dump),
             "--processor",
             str(args.processor),
+            "--processor-build-info",
+            str(args.processor_build_info),
             "--output-dir",
             str(triage_dir),
         ]
-        if args.processor_build_info:
-            triage_command.extend(
-                [
-                    "--processor-build-info",
-                    str(args.processor_build_info),
-                    "--require-build-identity-match",
-                ]
-            )
         run(triage_command)
         run(
             [
@@ -421,7 +413,6 @@ def main() -> int:
                 triage,
                 diagnosis,
                 metric_rows,
-                args.processor_build_info is not None,
             )
         )
 

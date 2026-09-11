@@ -69,6 +69,7 @@ jobs:
           from pathlib import Path
           diagnosis = json.loads(Path('/tmp/reasoning-fixture/diagnosis.json').read_text())
           comparison = json.loads(Path('/tmp/reasoning-fixture/comparison.json').read_text())
+          assert diagnosis['recording_trigger'] is None
           assert diagnosis['first_fault']['kind'] == 'delay_jump'
           assert diagnosis['top_hypothesis']['hypothesis'] == 'sync-reference-path'
           assert diagnosis['candidate_chains'][0]['name'] == 'delay-instability-to-aec-loss'
@@ -137,10 +138,18 @@ jobs:
           assert replay['comparison']['bit_exact'] is True
           assert triage['status'] == 'PASS'
           assert triage['authority'] == 'repository-internal-diagnostic-only'
+          assert triage['header']['trigger_event'] == 50
           assert triage['analysis']['summary']['metrics_frames'] == 1
           assert 'bf-isolated' in triage['stage_counterfactuals']
           assert triage['stage_counterfactuals']['bf-isolated']['returncode'] == 0
           assert diagnosis['authority'] == 'repository-internal-heuristic-diagnostic-only'
+          assert diagnosis['recording_trigger']['event'] == 50
+          assert diagnosis['recording_trigger']['name'] == 'diag_triggered'
+          assert diagnosis['recording_trigger']['source'] == 'apd-header'
+          assert diagnosis['recording_trigger']['relation'] == 'recording-trigger-context-only'
+          assert diagnosis['recording_trigger']['causal_proof'] is False
+          assert diagnosis['first_fault'] is None
+          assert diagnosis['top_hypothesis'] is None
           assert diagnosis['causal_proof'] is False
           assert 'root_cause_hypotheses' in diagnosis
           assert 'candidate_chains' in diagnosis

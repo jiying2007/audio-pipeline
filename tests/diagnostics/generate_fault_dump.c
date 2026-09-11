@@ -14,13 +14,18 @@
 #define AP_ALIGN(N) _Alignas(N)
 #endif
 
+#define WINDOW_FRAMES 5u
+#define FAULT_FRAME 2u
+#define FIRST_SEQUENCE 40u
+#define FRAME_NS 10000000ull
+
 static AP_ALIGN(AP_PIPELINE_STATE_ALIGNMENT)
 unsigned char pipeline_state[AP_PIPELINE_STATE_MAX_BYTES];
 static AP_ALIGN(AP_RUNTIME_STATE_ALIGNMENT)
 unsigned char runtime_state[AP_RUNTIME_STATE_MAX_BYTES];
 static AP_ALIGN(AP_FLIGHT_RECORDER_STATE_ALIGNMENT)
-unsigned char recorder_state[8192];
-static unsigned char export_buffer[8192];
+unsigned char recorder_state[32768];
+static unsigned char export_buffer[32768];
 
 static void sleep_ms(unsigned ms) {
     struct timespec ts;
@@ -55,6 +60,44 @@ static int select_fault(const char *name, ap_frame_metadata_t *metadata) {
     return 0;
 }
 
+static void prepare_metadata(ap_frame_metadata_t *metadata, unsigned frame) {
+    memset(metadata, 0, sizeof(*metadata));
+    metadata->struct_size = sizeof(*metadata);
+    metadata->api_version = AP_RUNTIME_API_VERSION;
+    metadata->flags = AP_FRAME_CAPTURE_TIMESTAMP_VALID |
+                      AP_FRAME_RENDER_TIMESTAMP_VALID;
+    metadata->stream_sequence = FIRST_SEQUENCE + frame;
+    metadata->capture_timestamp_ns = 1000000000ull + (uint64_t)frame * FRAME_NS;
+    metadata->render_timestamp_ns = 960000000ull + (uint64_t)frame * FRAME_NS;
+}
+
+static void wait_for_completion(ap_runtime_t *runtime,
+                                uint64_t expected_processed,
+                                int16_t *output) {
+    ap_runtime_metrics_t runtime_metrics;
+    ap_metrics_t frame_metrics;
+    ap_status_t status = AP_EEMPTY;
+    unsigned i;
+
+    memset(&runtime_metrics, 0, sizeof(runtime_metrics));
+    runtime_metrics.struct_size = sizeof(runtime_metrics);
+    runtime_metrics.api_version = AP_RUNTIME_API_VERSION;
+    for (i = 0u; i < 2000u; ++i) {
+        assert(ap_runtime_read_metrics(runtime, &runtime_metrics) == AP_OK);
+        if (runtime_metrics.processed_frames >= expected_processed) break;
+        sleep_ms(1u);
+    }
+    assert(i < 2000u);
+
+    for (i = 0u; i < 2000u; ++i) {
+        status = ap_runtime_receive(runtime, output, &frame_metrics);
+        if (status != AP_EEMPTY) break;
+        sleep_ms(1u);
+    }
+    assert(i < 2000u);
+    assert(status == AP_OK);
+}
+
 int main(int argc, char **argv) {
     ap_config_t pipeline_config = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t runtime_config = ap_runtime_config_default();
@@ -66,9 +109,11 @@ int main(int argc, char **argv) {
     ap_frame_metadata_t metadata;
     int16_t mic[320];
     int16_t render[160];
+    int16_t output[160];
     size_t need;
     size_t written = 0u;
     FILE *file;
+    unsigned frame;
     unsigned i;
 
     if (argc != 3) {
@@ -78,14 +123,7 @@ int main(int argc, char **argv) {
         return 2;
     }
 
-    memset(&metadata, 0, sizeof(metadata));
-    metadata.struct_size = sizeof(metadata);
-    metadata.api_version = AP_RUNTIME_API_VERSION;
-    metadata.flags = AP_FRAME_CAPTURE_TIMESTAMP_VALID |
-                     AP_FRAME_RENDER_TIMESTAMP_VALID;
-    metadata.stream_sequence = 42u;
-    metadata.capture_timestamp_ns = 1000000000ull;
-    metadata.render_timestamp_ns = 960000000ull;
+    prepare_metadata(&metadata, FAULT_FRAME);
     if (!select_fault(argv[1], &metadata)) {
         fprintf(stderr, "unknown fault case: %s\n", argv[1]);
         return 2;
@@ -101,8 +139,8 @@ int main(int argc, char **argv) {
 
     recorder_config = ap_flight_recorder_config_default(16000u, 2u);
     recorder_config.record_mask = AP_DIAG_RECORD_ALL;
-    recorder_config.pre_roll_frames = 0u;
-    recorder_config.post_roll_frames = 0u;
+    recorder_config.pre_roll_frames = 2u;
+    recorder_config.post_roll_frames = 2u;
     recorder_config.trigger_severity = AP_EVENT_WARN;
     need = ap_flight_recorder_state_size(&recorder_config);
     assert(need > 0u && need <= sizeof(recorder_state));
@@ -122,13 +160,17 @@ int main(int argc, char **argv) {
                            &runtime) == AP_OK);
     assert(ap_runtime_attach_flight_recorder(runtime, recorder) == AP_OK);
     assert(ap_runtime_start(runtime) == AP_OK);
-    assert(ap_runtime_submit_frame(runtime, mic, render, &metadata) == AP_OK);
 
-    for (i = 0u; i < 1000u; ++i) {
-        if (ap_flight_recorder_is_frozen(recorder)) break;
-        sleep_ms(1u);
+    for (frame = 0u; frame < WINDOW_FRAMES; ++frame) {
+        prepare_metadata(&metadata, frame);
+        if (frame == FAULT_FRAME)
+            assert(select_fault(argv[1], &metadata));
+        assert(ap_runtime_submit_frame(runtime, mic, render, &metadata) == AP_OK);
+        wait_for_completion(runtime, (uint64_t)frame + 1u, output);
+        if (frame + 1u < WINDOW_FRAMES)
+            assert(!ap_flight_recorder_is_frozen(recorder));
     }
-    assert(i < 1000u);
+    assert(ap_flight_recorder_is_frozen(recorder));
     ap_runtime_deinit(runtime);
 
     assert(ap_flight_recorder_export_size(recorder) <= sizeof(export_buffer));

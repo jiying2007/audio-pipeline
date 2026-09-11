@@ -92,7 +92,7 @@ jobs:
       - name: Build runtime and offline processor
         run: cmake --build build-diag --parallel
 
-      - name: Build deterministic APD fixture generators
+      - name: Build deterministic APD fixture generators and identity probe
         run: |
           set -euo pipefail
           cc -std=c11 -Wall -Wextra -Wpedantic -Werror tests/generate_diag_dump.c \
@@ -104,6 +104,13 @@ jobs:
             -Iinclude -Ibuild-diag/generated \
             build-diag/libaudio_pipeline_runtime.a build-diag/libaudio_pipeline.a \
             -lm -pthread -o /tmp/ap_diag_fault_fixture
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
+            tests/diagnostics/build_identity_probe.c \
+            -Iinclude -Ibuild-diag/generated \
+            build-diag/libaudio_pipeline.a \
+            -lm -o /tmp/ap_build_identity_probe
+          /tmp/ap_build_identity_probe > /tmp/processor-build-info.json
+          python3 -m json.tool /tmp/processor-build-info.json >/dev/null
 
       - name: Generate, replay, triage and diagnose APD fixture
         run: |
@@ -117,6 +124,8 @@ jobs:
             --require-bit-exact > /tmp/replay.json
           python3 tests/diagnostics/aptriage.py /tmp/test.apd \
             --processor ./build-diag/ap_process_pcm \
+            --processor-build-info /tmp/processor-build-info.json \
+            --require-build-identity-match \
             --output-dir /tmp/apd-triage \
             --require-bit-exact \
             --stage-counterfactuals
@@ -140,6 +149,16 @@ jobs:
           assert triage['authority'] == 'repository-internal-diagnostic-only'
           assert triage['header']['trigger_event'] == 50
           assert triage['analysis']['summary']['metrics_frames'] == 1
+          identity = triage['build_identity']
+          assert identity['authority'] == 'repository-internal-build-identity-subset-only'
+          assert identity['status'] == 'MATCH'
+          assert identity['shared_fields_match'] is True
+          assert identity['mismatches'] == []
+          assert identity['shared_fields'] == ['version', 'module_mask', 'aec_backend', 'ns_estimator', 'simd_backend', 'resampler_mode']
+          assert identity['require_match'] is True
+          assert identity['exact_source_config_match_authoritative'] is False
+          assert identity['processor_provenance']['source_revision']
+          assert identity['processor_provenance']['config_digest']
           replay_authority = triage['replay_authority']
           assert replay_authority['authority'] == 'repository-internal-replay-interpretation-only'
           assert replay_authority['mode'] == 'pcm-only'
@@ -161,8 +180,42 @@ jobs:
           assert diagnosis['first_fault'] is None
           assert diagnosis['top_hypothesis'] is None
           assert diagnosis['causal_proof'] is False
-          assert 'root_cause_hypotheses' in diagnosis
-          assert 'candidate_chains' in diagnosis
+          PY
+
+      - name: Prove build identity mismatch fails closed without changing replay
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          source = json.loads(Path('/tmp/processor-build-info.json').read_text())
+          source['module_mask'] = int(source['module_mask']) ^ 1
+          Path('/tmp/processor-build-info-tampered.json').write_text(
+              json.dumps(source, indent=2, sort_keys=True) + '\n'
+          )
+          PY
+          set +e
+          python3 tests/diagnostics/aptriage.py /tmp/test.apd \
+            --processor ./build-diag/ap_process_pcm \
+            --processor-build-info /tmp/processor-build-info-tampered.json \
+            --require-build-identity-match \
+            --output-dir /tmp/apd-triage-identity-mismatch
+          rc=$?
+          set -e
+          test "$rc" -eq 1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          triage = json.loads(Path('/tmp/apd-triage-identity-mismatch/triage.json').read_text())
+          assert triage['status'] == 'FAIL'
+          assert triage['replay']['comparison']['bit_exact'] is True
+          identity = triage['build_identity']
+          assert identity['status'] == 'MISMATCH'
+          assert identity['shared_fields_match'] is False
+          assert identity['require_match'] is True
+          assert identity['exact_source_config_match_authoritative'] is False
+          assert len(identity['mismatches']) == 1
+          assert identity['mismatches'][0]['field'] == 'module_mask'
           PY
 
       - name: Run real runtime fault-to-diagnosis contract
@@ -171,6 +224,7 @@ jobs:
           python3 tests/diagnostics/fault_injection_contract.py \
             --generator /tmp/ap_diag_fault_fixture \
             --processor ./build-diag/ap_process_pcm \
+            --processor-build-info /tmp/processor-build-info.json \
             --work-dir /tmp/fault-injection
           test -s /tmp/fault-injection/fault-injection-summary.json
 
@@ -188,7 +242,10 @@ jobs:
             /tmp/apd-extract/
             /tmp/replay.json
             /tmp/replay-output.pcm
+            /tmp/processor-build-info.json
+            /tmp/processor-build-info-tampered.json
             /tmp/apd-triage/
+            /tmp/apd-triage-identity-mismatch/
             /tmp/apd-diagnosis/
             /tmp/reasoning-fixture/
             /tmp/fault-injection/

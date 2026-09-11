@@ -53,6 +53,25 @@ To prevent unequal capture lengths from creating a false apparent improvement or
 
 `summary_delta` is retained for compatibility. A raw count delta must not be interpreted as an improvement/regression when its `raw_count_comparability.*.directly_comparable` value is false; use the corresponding normalized rate/ratio instead. Max delay-error and drift extrema are not normalized because longer captures inherently have more opportunity to observe an extreme value; unequal durations are therefore warned explicitly.
 
-The runtime fault-injection contract additionally writes `fault-injection-summary.json` with schema version 1. Each case records the injected case name, preserved metadata flag, recording trigger context, diagnosed first-fault family, top hypothesis, heuristic score, optional replay bit-exact result, and `causal_proof=false`. The contract currently covers `capture-gap`, `render-gap`, `clock-reset`, `xrun`, and `codec-reopen` through the real runtime -> Flight Recorder -> APD v1 -> triage -> diagnosis path. Those runtime discontinuity cases must report `recording_trigger.event=23` / `recording_trigger.name=stream_discontinuity` while preserving their independently derived first-fault families and hypotheses.
+## Replay authority interpretation
+
+`aptriage.py` keeps the raw released `apreplay.py` result unchanged under `replay` and additively emits `replay_authority`. This interpretation layer is schema-version-1 repository-internal metadata; it does not change APD v1, the released `tools/*` surface, replay return codes, `--require-bit-exact`, or triage PASS/FAIL.
+
+`replay_authority` contains:
+
+- `authority`: always `repository-internal-replay-interpretation-only`;
+- `mode`: always `pcm-only` for the current replay path;
+- `state_replay`: always `false`; runtime metadata/state is not re-injected into `ap_process_pcm`;
+- `runtime_metadata_state_present`: whether the captured anomaly evidence contains a stateful runtime metadata fault;
+- `runtime_metadata_flags`: sorted captured stateful flags among `capture_discontinuity`, `render_discontinuity`, `clock_reset`, `xrun`, and `codec_reopen`;
+- `comparison_present`: whether the raw replay produced an output comparison;
+- `bit_exact`: the raw `replay.comparison.bit_exact` value when present, otherwise `null`;
+- `classification`: `pcm-only-replay-check` when no stateful runtime metadata fault is present, otherwise `stateful-runtime-context-not-replayed`;
+- `bit_exact_claim_scope`: a human-readable statement limiting the comparison to recorded PCM output;
+- `whole_incident_equivalence_authoritative`: always `false`.
+
+The classification is deliberately about **claim scope**, not about success. A `bit_exact=false` raw comparison remains false. When stateful runtime metadata is present, that mismatch cannot by itself distinguish a DSP regression from runtime state that the PCM-only path did not re-inject. Conversely, `bit_exact=true` proves only equality of the compared recorded/replayed PCM bytes for that invocation; it does not prove whole-runtime incident equivalence. The released replay tool reports the APD `dump_build`, but the repository-internal interpretation layer does not independently verify that an arbitrary supplied processor binary matches that build fingerprint.
+
+The runtime fault-injection contract additionally writes `fault-injection-summary.json` with schema version 1. Each case records the injected case name, preserved metadata flag, recording trigger context, diagnosed first-fault family, top hypothesis, heuristic score, raw replay comparison values, a compact copy of `replay_authority`, and `causal_proof=false`. The contract currently covers `capture-gap`, `render-gap`, `clock-reset`, `xrun`, and `codec-reopen` through the real runtime -> Flight Recorder -> APD v1 -> triage -> diagnosis path. Those runtime discontinuity cases must report `recording_trigger.event=23` / `recording_trigger.name=stream_discontinuity`, preserve their independently derived first-fault families and hypotheses, and classify replay authority as `stateful-runtime-context-not-replayed` with `state_replay=false` and `whole_incident_equivalence_authoritative=false`.
 
 The schema intentionally does not contain a probability or claim causal certainty. None of these fields participate in HIL, Product Qualification, Product Certification or shipping gates. A future promotion into the released SDK/tool surface requires the normal release-bearing review and SemVer process.

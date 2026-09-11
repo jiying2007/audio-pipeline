@@ -57,6 +57,24 @@ jobs:
             tests/diagnostics/apdiagnose.py
           python3 tests/diagnostics/aptriage.py --self-test
           python3 tests/diagnostics/apdiagnose.py --self-test
+          python3 tests/diagnostics/apdiagnose.py \
+            tests/diagnostics/fixtures/reasoning-candidate.json \
+            --reference tests/diagnostics/fixtures/reasoning-reference.json \
+            --output-dir /tmp/reasoning-fixture
+          test -s /tmp/reasoning-fixture/diagnosis.json
+          test -s /tmp/reasoning-fixture/comparison.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          diagnosis = json.loads(Path('/tmp/reasoning-fixture/diagnosis.json').read_text())
+          comparison = json.loads(Path('/tmp/reasoning-fixture/comparison.json').read_text())
+          assert diagnosis['first_fault']['kind'] == 'delay_jump'
+          assert diagnosis['top_hypothesis']['hypothesis'] == 'sync-reference-path'
+          assert diagnosis['candidate_chains'][0]['name'] == 'delay-instability-to-aec-loss'
+          assert diagnosis['causal_proof'] is False
+          assert 'delay_jump' in comparison['new_anomaly_kinds']
+          assert comparison['summary_delta']['aec_converged_frames'] == -60
+          PY
 
       - name: Configure diagnostics build
         run: >-
@@ -132,5 +150,6 @@ jobs:
             /tmp/replay-output.pcm
             /tmp/apd-triage/
             /tmp/apd-diagnosis/
+            /tmp/reasoning-fixture/
           retention-days: 30
           if-no-files-found: warn

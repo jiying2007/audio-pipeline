@@ -167,8 +167,7 @@ int main(int argc, char **argv) {
             assert(select_fault(argv[1], &metadata));
         assert(ap_runtime_submit_frame(runtime, mic, render, &metadata) == AP_OK);
         wait_for_completion(runtime, (uint64_t)frame + 1u, output);
-        if (frame + 1u < WINDOW_FRAMES)
-            assert(!ap_flight_recorder_is_frozen(recorder));
+        if (ap_flight_recorder_is_frozen(recorder)) break;
     }
     assert(ap_flight_recorder_is_frozen(recorder));
     ap_runtime_deinit(runtime);

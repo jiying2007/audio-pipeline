@@ -103,6 +103,7 @@ def main() -> int:
 
         triage = load_json(triage_dir / "triage.json")
         diagnosis = load_json(diagnosis_dir / "diagnosis.json")
+        trigger = diagnosis.get("recording_trigger") or {}
         first = diagnosis.get("first_fault") or {}
         top = diagnosis.get("top_hypothesis") or {}
         flags = set(first.get("flags") or [])
@@ -110,7 +111,12 @@ def main() -> int:
 
         assert triage["status"] == "PASS", case
         assert triage["authority"] == "repository-internal-diagnostic-only", case
-        assert header_trigger > 0, (case, "runtime event did not trigger Flight Recorder")
+        assert header_trigger == 23, (case, header_trigger)
+        assert trigger.get("event") == header_trigger, (case, trigger)
+        assert trigger.get("name") == "stream_discontinuity", (case, trigger)
+        assert trigger.get("source") == "apd-header", (case, trigger)
+        assert trigger.get("relation") == "recording-trigger-context-only", (case, trigger)
+        assert trigger.get("causal_proof") is False, case
         assert triage["analysis"]["summary"]["frames"] >= 1, case
         assert triage["analysis"]["summary"]["metrics_frames"] >= 1, case
         assert first.get("kind") == "metadata", (case, first)
@@ -126,7 +132,11 @@ def main() -> int:
             {
                 "case": case,
                 "metadata_flag": expected["flag"],
-                "trigger_event": header_trigger,
+                "recording_trigger": {
+                    "event": trigger.get("event"),
+                    "name": trigger.get("name"),
+                    "relation": trigger.get("relation"),
+                },
                 "first_fault_family": first.get("family"),
                 "top_hypothesis": top.get("hypothesis"),
                 "heuristic_score": top.get("heuristic_score"),
@@ -144,7 +154,12 @@ def main() -> int:
     summary_path.write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    print(json.dumps({"status": "PASS", "cases": len(CASES), "summary": str(summary_path)}, sort_keys=True))
+    print(
+        json.dumps(
+            {"status": "PASS", "cases": len(CASES), "summary": str(summary_path)},
+            sort_keys=True,
+        )
+    )
     return 0
 
 

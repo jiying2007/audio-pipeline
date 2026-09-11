@@ -6,6 +6,7 @@ The stable diagnosis fields are:
 
 - `authority`: always `repository-internal-heuristic-diagnostic-only`;
 - `causal_proof`: always `false`;
+- `recording_trigger`: APD file-header trigger context when `apdiagnose` receives a full `triage.json`, otherwise `null`;
 - `first_fault`: first non-trigger anomaly after deterministic frame/kind ordering, or `null`;
 - `intervals`: nearby non-trigger anomalies clustered only by frame distance;
 - `anomaly_counts`: counts by anomaly kind;
@@ -13,6 +14,20 @@ The stable diagnosis fields are:
 - `candidate_chains`: recognized ordered event patterns marked `temporal-association-only`;
 - `top_hypothesis`: first ranked hypothesis, or `null`;
 - `notes`: evidence-boundary reminders.
+
+## Recording trigger context
+
+`recording_trigger` consumes the numeric `header.trigger_event` already present in APD v1; it does not add or change any on-disk field. When present it contains:
+
+- `event`: the numeric public `ap_event_kind_t` value from the APD header;
+- `name`: repository-internal human-readable event name;
+- `source`: always `apd-header`;
+- `relation`: always `recording-trigger-context-only`;
+- `causal_proof`: always `false`.
+
+The recording trigger answers **why the Flight Recorder froze**. It is intentionally not inserted into `anomalies`, is not eligible to become `first_fault`, does not create an interval, and contributes zero evidence to every root-cause hypothesis. This distinction matters for manually triggered captures: `AP_EVENT_DIAG_TRIGGERED` can explain why the dump exists while the same dump can legitimately have `first_fault=null` and `top_hypothesis=null`.
+
+A standalone `analysis.json` has no APD file header, so `recording_trigger` remains `null`; this preserves compatibility with existing analysis-only consumers. Unknown positive event numbers are retained as the numeric source of truth and rendered as `unknown_event_<N>` rather than rejected.
 
 Hypothesis scores are deterministic evidence ranks, not probabilities. Metadata faults use explicit domain weights so the ranking cannot silently depend on alphabetical tie-breaking. The primary mapping is:
 
@@ -38,6 +53,6 @@ To prevent unequal capture lengths from creating a false apparent improvement or
 
 `summary_delta` is retained for compatibility. A raw count delta must not be interpreted as an improvement/regression when its `raw_count_comparability.*.directly_comparable` value is false; use the corresponding normalized rate/ratio instead. Max delay-error and drift extrema are not normalized because longer captures inherently have more opportunity to observe an extreme value; unequal durations are therefore warned explicitly.
 
-The runtime fault-injection contract additionally writes `fault-injection-summary.json` with schema version 1. Each case records the injected case name, preserved metadata flag, nonzero Flight Recorder trigger event, diagnosed first-fault family, top hypothesis, heuristic score, optional replay bit-exact result, and `causal_proof=false`. The contract currently covers `capture-gap`, `render-gap`, `clock-reset`, `xrun`, and `codec-reopen` through the real runtime -> Flight Recorder -> APD v1 -> triage -> diagnosis path.
+The runtime fault-injection contract additionally writes `fault-injection-summary.json` with schema version 1. Each case records the injected case name, preserved metadata flag, recording trigger context, diagnosed first-fault family, top hypothesis, heuristic score, optional replay bit-exact result, and `causal_proof=false`. The contract currently covers `capture-gap`, `render-gap`, `clock-reset`, `xrun`, and `codec-reopen` through the real runtime -> Flight Recorder -> APD v1 -> triage -> diagnosis path. Those runtime discontinuity cases must report `recording_trigger.event=23` / `recording_trigger.name=stream_discontinuity` while preserving their independently derived first-fault families and hypotheses.
 
 The schema intentionally does not contain a probability or claim causal certainty. None of these fields participate in HIL, Product Qualification, Product Certification or shipping gates. A future promotion into the released SDK/tool surface requires the normal release-bearing review and SemVer process.

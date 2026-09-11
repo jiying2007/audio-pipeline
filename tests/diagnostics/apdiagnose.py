@@ -28,6 +28,36 @@ KIND_SEVERITY = {
 CRITICAL_METADATA_FLAGS = {"clock_reset", "codec_reopen"}
 ERROR_METADATA_FLAGS = {"capture_discontinuity", "render_discontinuity", "xrun"}
 
+# Mirrors the stable public ap_event_kind_t values. This mapping is diagnostic
+# presentation only; the numeric APD v1 header remains the source of truth.
+EVENT_NAMES = {
+    1: "runtime_started",
+    2: "runtime_stopped",
+    3: "rt_affinity_failed",
+    4: "rt_priority_failed",
+    5: "rt_mlock_failed",
+    10: "input_queue_high",
+    11: "input_queue_full",
+    12: "output_dropped",
+    13: "dsp_deadline_miss",
+    20: "render_missing",
+    21: "render_underrun",
+    22: "delay_jump",
+    23: "stream_discontinuity",
+    24: "echo_path_change",
+    30: "aec_reset",
+    31: "aec_converged",
+    32: "erle_collapse",
+    40: "quality_full_to_lite",
+    41: "quality_lite_to_safe",
+    42: "quality_recovered",
+    43: "quality_degraded",
+    50: "diag_triggered",
+    51: "command_rejected",
+    52: "pipeline_error",
+    53: "cpu_migration",
+}
+
 RAW_COUNT_DENOMINATORS = {
     "anomaly_count": "frames",
     "quality_transitions": "metrics_frames",
@@ -115,6 +145,19 @@ HYPOTHESIS_SPECS = (
         },
     },
 )
+
+
+def recording_trigger_context(event: Any) -> dict[str, Any] | None:
+    """Describe why the Flight Recorder froze without treating it as a fault."""
+    if isinstance(event, bool) or not isinstance(event, int) or event <= 0:
+        return None
+    return {
+        "event": event,
+        "name": EVENT_NAMES.get(event, f"unknown_event_{event}"),
+        "source": "apd-header",
+        "relation": "recording-trigger-context-only",
+        "causal_proof": False,
+    }
 
 
 def _metadata_flags(item: dict[str, Any]) -> set[str]:
@@ -333,10 +376,12 @@ def anomaly_counts(annotated: list[dict[str, Any]]) -> dict[str, int]:
 def build_diagnosis(analysis: dict[str, Any]) -> dict[str, Any]:
     annotated = annotate_anomalies(list(analysis.get("anomalies") or []))
     hypotheses = root_cause_hypotheses(annotated)
+    trigger = recording_trigger_context(analysis.get("_recording_trigger_event"))
     return {
         "schema_version": 1,
         "authority": "repository-internal-heuristic-diagnostic-only",
         "causal_proof": False,
+        "recording_trigger": trigger,
         "first_fault": first_fault(annotated),
         "intervals": build_intervals(annotated),
         "anomaly_counts": anomaly_counts(annotated),
@@ -344,6 +389,8 @@ def build_diagnosis(analysis: dict[str, Any]) -> dict[str, Any]:
         "candidate_chains": candidate_chains(annotated),
         "top_hypothesis": hypotheses[0] if hypotheses else None,
         "notes": [
+            "recording_trigger explains why the dump was frozen; it is not a first-fault or causal claim",
+            "recording_trigger does not contribute to intervals or hypothesis scores",
             "hypothesis scores are heuristic evidence ranks, not probabilities",
             "metadata-domain weights prevent accidental tie-breaking across fault families",
             "candidate chains encode temporal association only and do not prove causality",
@@ -522,6 +569,7 @@ def write_markdown(
     diagnosis: dict[str, Any],
     comparison: dict[str, Any] | None = None,
 ) -> None:
+    trigger = diagnosis.get("recording_trigger")
     first = diagnosis.get("first_fault")
     top = diagnosis.get("top_hypothesis")
     lines = [
@@ -529,6 +577,8 @@ def write_markdown(
         "",
         "This report is repository-internal heuristic evidence, not causal proof or product qualification authority.",
         "",
+        f"- recording trigger: `{trigger.get('name') if trigger else 'none'}`"
+        + (f" (`{trigger.get('event')}`)" if trigger else ""),
         f"- first fault: `{first.get('kind') if first else 'none'}`"
         + (f" at frame `{first.get('frame')}`" if first else ""),
         f"- top hypothesis: `{top.get('hypothesis') if top else 'none'}`",
@@ -582,7 +632,14 @@ def write_markdown(
 def load_analysis(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if "analysis" in payload:
-        payload = payload["analysis"]
+        header = payload.get("header") or {}
+        analysis = payload["analysis"]
+        if not isinstance(analysis, dict):
+            raise ValueError(f"{path}: invalid analysis object")
+        payload = dict(analysis)
+        event = header.get("trigger_event") if isinstance(header, dict) else None
+        if isinstance(event, int) and not isinstance(event, bool):
+            payload["_recording_trigger_event"] = event
     if (
         not isinstance(payload, dict)
         or "summary" not in payload
@@ -612,6 +669,16 @@ def _metadata_self_test() -> None:
         assert diagnosis["first_fault"]["family"] == family, flag
         assert diagnosis["top_hypothesis"]["hypothesis"] == hypothesis, flag
         assert diagnosis["top_hypothesis"]["causal_proof"] is False, flag
+
+
+def _trigger_context_self_test() -> None:
+    trigger = recording_trigger_context(23)
+    assert trigger is not None
+    assert trigger["name"] == "stream_discontinuity"
+    assert trigger["relation"] == "recording-trigger-context-only"
+    assert trigger["causal_proof"] is False
+    assert recording_trigger_context(0) is None
+    assert recording_trigger_context(None) is None
 
 
 def self_test() -> None:
@@ -653,6 +720,7 @@ def self_test() -> None:
         "anomalies": [],
     }
     diagnosis = build_diagnosis(candidate)
+    assert diagnosis["recording_trigger"] is None
     assert diagnosis["first_fault"]["kind"] == "delay_jump"
     assert diagnosis["top_hypothesis"]["hypothesis"] == "sync-reference-path"
     assert diagnosis["candidate_chains"][0]["name"] == "delay-instability-to-aec-loss"
@@ -673,6 +741,7 @@ def self_test() -> None:
     )
     assert comparison["warnings"]
     _metadata_self_test()
+    _trigger_context_self_test()
     print("repository diagnostic reasoning self-test: OK")
 
 
@@ -717,6 +786,7 @@ def main() -> int:
         json.dumps(
             {
                 "status": "PASS",
+                "recording_trigger": diagnosis["recording_trigger"],
                 "first_fault": diagnosis["first_fault"],
                 "top_hypothesis": diagnosis["top_hypothesis"],
                 "output_dir": str(args.output_dir),

@@ -50,8 +50,31 @@ jobs:
       - name: Validate repository diagnostic harness
         run: |
           set -euo pipefail
-          python3 -m py_compile tools/apdump.py tools/apreplay.py tests/diagnostics/aptriage.py
+          python3 -m py_compile \
+            tools/apdump.py \
+            tools/apreplay.py \
+            tests/diagnostics/aptriage.py \
+            tests/diagnostics/apdiagnose.py
           python3 tests/diagnostics/aptriage.py --self-test
+          python3 tests/diagnostics/apdiagnose.py --self-test
+          python3 tests/diagnostics/apdiagnose.py \
+            tests/diagnostics/fixtures/reasoning-candidate.json \
+            --reference tests/diagnostics/fixtures/reasoning-reference.json \
+            --output-dir /tmp/reasoning-fixture
+          test -s /tmp/reasoning-fixture/diagnosis.json
+          test -s /tmp/reasoning-fixture/comparison.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          diagnosis = json.loads(Path('/tmp/reasoning-fixture/diagnosis.json').read_text())
+          comparison = json.loads(Path('/tmp/reasoning-fixture/comparison.json').read_text())
+          assert diagnosis['first_fault']['kind'] == 'delay_jump'
+          assert diagnosis['top_hypothesis']['hypothesis'] == 'sync-reference-path'
+          assert diagnosis['candidate_chains'][0]['name'] == 'delay-instability-to-aec-loss'
+          assert diagnosis['causal_proof'] is False
+          assert 'delay_jump' in comparison['new_anomaly_kinds']
+          assert comparison['summary_delta']['aec_converged_frames'] == -60
+          PY
 
       - name: Configure diagnostics build
         run: >-
@@ -69,7 +92,7 @@ jobs:
             build-diag/libaudio_pipeline_runtime.a build-diag/libaudio_pipeline.a \
             -lm -pthread -o /tmp/ap_diag_dump_fixture
 
-      - name: Generate, replay and triage APD fixture
+      - name: Generate, replay, triage and diagnose APD fixture
         run: |
           set -euo pipefail
           /tmp/ap_diag_dump_fixture /tmp/test.apd
@@ -84,22 +107,31 @@ jobs:
             --output-dir /tmp/apd-triage \
             --require-bit-exact \
             --stage-counterfactuals
+          python3 tests/diagnostics/apdiagnose.py /tmp/apd-triage/triage.json \
+            --output-dir /tmp/apd-diagnosis
           test -s /tmp/apd-triage/extracted/metrics.jsonl
           test -s /tmp/apd-triage/extracted/metrics.csv
           test -s /tmp/apd-triage/analysis.json
           test -s /tmp/apd-triage/triage.json
           test -s /tmp/apd-triage/summary.md
+          test -s /tmp/apd-diagnosis/diagnosis.json
+          test -s /tmp/apd-diagnosis/diagnosis.md
           python3 - <<'PY'
           import json
           from pathlib import Path
           replay = json.loads(Path('/tmp/replay.json').read_text())
           triage = json.loads(Path('/tmp/apd-triage/triage.json').read_text())
+          diagnosis = json.loads(Path('/tmp/apd-diagnosis/diagnosis.json').read_text())
           assert replay['comparison']['bit_exact'] is True
           assert triage['status'] == 'PASS'
           assert triage['authority'] == 'repository-internal-diagnostic-only'
           assert triage['analysis']['summary']['metrics_frames'] == 1
           assert 'bf-isolated' in triage['stage_counterfactuals']
           assert triage['stage_counterfactuals']['bf-isolated']['returncode'] == 0
+          assert diagnosis['authority'] == 'repository-internal-heuristic-diagnostic-only'
+          assert diagnosis['causal_proof'] is False
+          assert 'root_cause_hypotheses' in diagnosis
+          assert 'candidate_chains' in diagnosis
           PY
 
       - name: Run runtime continuity and diagnostics contracts
@@ -117,5 +149,7 @@ jobs:
             /tmp/replay.json
             /tmp/replay-output.pcm
             /tmp/apd-triage/
+            /tmp/apd-diagnosis/
+            /tmp/reasoning-fixture/
           retention-days: 30
           if-no-files-found: warn

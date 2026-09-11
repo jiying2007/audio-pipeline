@@ -101,9 +101,37 @@ The anomaly timeline reports metadata discontinuity/XRUN/codec-reopen observatio
 
 The isolated outputs are **counterfactual reprocessing** of recorded microphone input, not live intermediate PCM captured from the original integrated execution. They are useful for narrowing a fault to a stage family, but must not be described as proof of the exact internal signal that existed during the original failure.
 
-`Diagnostic Triage` CI generates a deterministic APD fixture, validates the internal metrics decoder, performs released bit-exact replay, executes the one-command triage path and uploads the resulting diagnostic artifact. This keeps the engineering path executable rather than documentation-only.
+## Repository-internal incident reasoning
 
-If the internal triage functionality is later promoted into `tools/*` as part of the shipped SDK/source tool surface, that promotion is release-bearing and must advance SemVer through the normal release process.
+`apdiagnose.py` adds a second, explicitly heuristic layer over `triage.json` or `analysis.json` without changing the captured evidence. It is useful when a dump contains multiple symptoms and an engineer needs a deterministic first-pass ordering before inspecting raw metrics.
+
+```bash
+python3 tests/diagnostics/apdiagnose.py triage/triage.json \
+  --output-dir diagnosis
+```
+
+For a known-good capture that was triaged separately, the same command can compare the two diagnostic views:
+
+```bash
+python3 tests/diagnostics/apdiagnose.py bad/triage.json \
+  --reference good/triage.json \
+  --output-dir comparison
+```
+
+The reasoning layer writes `diagnosis.json` and `diagnosis.md`, plus `comparison.json` when a reference is supplied. Its machine-readable output includes:
+
+- the first non-trigger anomaly (`first_fault`);
+- temporally clustered anomaly intervals;
+- anomaly-kind counts;
+- ranked `root_cause_hypotheses` for sync/reference, AEC adaptation, capture I/O and runtime continuity families;
+- recognized candidate event chains such as delay jump → reference slip → AEC convergence loss;
+- good/bad summary deltas and newly introduced or resolved anomaly kinds.
+
+The ranking score is a deterministic **heuristic evidence score**, not a probability. Candidate chains state only temporal association and set `causal_proof=false`; they must not be reported as proof of physical causation. These outputs are repository-internal diagnostic evidence only and are never HIL, Product Qualification, Product Certification or shipping authority.
+
+`Diagnostic Triage` CI self-tests the reasoning layer with a synthetic fault sequence, then runs it against the real deterministic APD fixture produced by the repository. The resulting diagnosis artifacts are uploaded together with extraction, replay and triage evidence.
+
+If the internal triage or reasoning functionality is later promoted into `tools/*` as part of the shipped SDK/source tool surface, that promotion is release-bearing and must advance SemVer through the normal release process.
 
 ## Current APD v1 boundary
 

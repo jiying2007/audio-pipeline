@@ -1,0 +1,18 @@
+{
+  "summary": {
+    "anomaly_count": 4,
+    "quality_transitions": 0,
+    "vad_transitions": 0,
+    "far_end_active_frames": 100,
+    "double_talk_active_frames": 0,
+    "aec_converged_frames": 40,
+    "max_abs_delay_error_samples": 320,
+    "max_abs_estimated_drift_ppm": 8.0
+  },
+  "anomalies": [
+    {"frame": 100, "kind": "delay_jump", "delta": 1},
+    {"frame": 104, "kind": "reference_sample_slip", "delta": 1},
+    {"frame": 110, "kind": "aec_convergence_lost"},
+    {"frame": 120, "kind": "trigger_event", "event": 3}
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "summary": {
+    "anomaly_count": 0,
+    "quality_transitions": 0,
+    "vad_transitions": 0,
+    "far_end_active_frames": 100,
+    "double_talk_active_frames": 0,
+    "aec_converged_frames": 100,
+    "max_abs_delay_error_samples": 4,
+    "max_abs_estimated_drift_ppm": 1.0
+  },
+  "anomalies": []
+}

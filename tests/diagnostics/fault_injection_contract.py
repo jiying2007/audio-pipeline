@@ -260,12 +260,57 @@ def validate_case(
     }
 
 
+def _is_sha256(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(char in "0123456789abcdef" for char in value)
+    )
+
+
 def validate_bundle(bundle: dict) -> None:
     assert bundle["schema_version"] == 1
     assert bundle["authority"] == "repository-internal-cross-dump-correlation-only"
     assert bundle["status"] == "PASS"
     assert bundle["incident_count"] == len(CASES)
     assert bundle["causal_proof"] is False
+
+    binding = bundle["source_binding"]
+    assert binding["algorithm"] == "sha256"
+    assert binding["source_file_count"] == len(CASES) * 2
+    assert binding["bound_source_file_count"] == len(CASES) * 2
+    assert binding["portable_relative_path_count"] == len(CASES) * 2
+    assert binding["all_sources_bound"] is True
+    assert binding["portable_relative_paths_complete"] is True
+
+    cohort = bundle["cohort_authority"]
+    assert cohort["authority"] == "repository-internal-caller-selected-cohort-only"
+    assert cohort["selection"] == "caller-supplied-input-set"
+    assert cohort["same_device_authoritative"] is False
+    assert cohort["same_session_authoritative"] is False
+    assert cohort["chronological_order_authoritative"] is False
+    assert cohort["capture_time_authoritative"] is False
+    assert cohort["shared_physical_root_cause_authoritative"] is False
+
+    incidents_by_id = {item["id"]: item for item in bundle["incidents"]}
+    assert set(incidents_by_id) == set(CASES)
+    for case, incident in incidents_by_id.items():
+        source_evidence = incident["source_evidence"]
+        expected_paths = {
+            "triage": f"{case}/triage/triage.json",
+            "diagnosis": f"{case}/diagnosis/diagnosis.json",
+        }
+        for role, expected_path in expected_paths.items():
+            evidence = source_evidence[role]
+            assert evidence["algorithm"] == "sha256", (case, role, evidence)
+            assert _is_sha256(evidence["sha256"]), (case, role, evidence)
+            assert int(evidence["size_bytes"]) > 0, (case, role, evidence)
+            assert evidence["relative_path"] == expected_path, (
+                case,
+                role,
+                evidence,
+            )
+
     assert bundle["consistency"]["build_identity_coverage"] == len(CASES)
     assert bundle["consistency"]["replay_authority_coverage"] == len(CASES)
     assert bundle["consistency"]["unique_build_identity_statuses"] == ["MATCH"]
@@ -383,7 +428,12 @@ def main() -> int:
     assert len(summary["cases"]) == len(CASES)
 
     bundle_dir = args.work_dir / "incident-bundle"
-    bundle_command = [sys.executable, str(incident_tool)]
+    bundle_command = [
+        sys.executable,
+        str(incident_tool),
+        "--source-root",
+        str(args.work_dir),
+    ]
     for case in CASES:
         case_dir = args.work_dir / case
         bundle_command.extend(
@@ -407,6 +457,8 @@ def main() -> int:
     summary["incident_bundle"] = {
         "authority": bundle["authority"],
         "incident_count": bundle["incident_count"],
+        "source_binding": bundle["source_binding"],
+        "cohort_authority": bundle["cohort_authority"],
         "repeated_domain_cluster_count": len(bundle["repeated_domain_clusters"]),
         "repeated_exact_pattern_cluster_count": len(
             bundle["repeated_exact_pattern_clusters"]

@@ -14,10 +14,13 @@
 #define AP_ALIGN(N) _Alignas(N)
 #endif
 
+#define WARMUP_FRAMES 40u
 #define WINDOW_FRAMES 5u
 #define FAULT_FRAME 2u
-#define FIRST_SEQUENCE 40u
+#define FIRST_SEQUENCE WARMUP_FRAMES
 #define FRAME_NS 10000000ull
+#define CAPTURE_BASE_NS 600000000ull
+#define RENDER_BASE_NS 560000000ull
 
 static AP_ALIGN(AP_PIPELINE_STATE_ALIGNMENT)
 unsigned char pipeline_state[AP_PIPELINE_STATE_MAX_BYTES];
@@ -60,15 +63,17 @@ static int select_fault(const char *name, ap_frame_metadata_t *metadata) {
     return 0;
 }
 
-static void prepare_metadata(ap_frame_metadata_t *metadata, unsigned frame) {
+static void prepare_metadata(ap_frame_metadata_t *metadata, unsigned sequence) {
     memset(metadata, 0, sizeof(*metadata));
     metadata->struct_size = sizeof(*metadata);
     metadata->api_version = AP_RUNTIME_API_VERSION;
     metadata->flags = AP_FRAME_CAPTURE_TIMESTAMP_VALID |
                       AP_FRAME_RENDER_TIMESTAMP_VALID;
-    metadata->stream_sequence = FIRST_SEQUENCE + frame;
-    metadata->capture_timestamp_ns = 1000000000ull + (uint64_t)frame * FRAME_NS;
-    metadata->render_timestamp_ns = 960000000ull + (uint64_t)frame * FRAME_NS;
+    metadata->stream_sequence = sequence;
+    metadata->capture_timestamp_ns =
+        CAPTURE_BASE_NS + (uint64_t)sequence * FRAME_NS;
+    metadata->render_timestamp_ns =
+        RENDER_BASE_NS + (uint64_t)sequence * FRAME_NS;
 }
 
 static void wait_for_completion(ap_runtime_t *runtime,
@@ -114,6 +119,7 @@ int main(int argc, char **argv) {
     size_t written = 0u;
     FILE *file;
     unsigned frame;
+    unsigned sequence;
     unsigned i;
 
     if (argc != 3) {
@@ -123,7 +129,7 @@ int main(int argc, char **argv) {
         return 2;
     }
 
-    prepare_metadata(&metadata, FAULT_FRAME);
+    prepare_metadata(&metadata, FIRST_SEQUENCE + FAULT_FRAME);
     if (!select_fault(argv[1], &metadata)) {
         fprintf(stderr, "unknown fault case: %s\n", argv[1]);
         return 2;
@@ -158,15 +164,30 @@ int main(int argc, char **argv) {
                            &runtime_config,
                            &runtime_options,
                            &runtime) == AP_OK);
+
+    /* Warm the sync/AEC graph without a recorder attached so startup reference
+     * underruns cannot become the incident trigger.  Stop/start preserves the
+     * pipeline state while satisfying the attach API's stopped-state contract. */
+    assert(ap_runtime_start(runtime) == AP_OK);
+    for (sequence = 0u; sequence < WARMUP_FRAMES; ++sequence) {
+        prepare_metadata(&metadata, sequence);
+        assert(ap_runtime_submit_frame(runtime, mic, render, &metadata) == AP_OK);
+        wait_for_completion(runtime, (uint64_t)sequence + 1u, output);
+    }
+    ap_runtime_stop(runtime);
+
     assert(ap_runtime_attach_flight_recorder(runtime, recorder) == AP_OK);
     assert(ap_runtime_start(runtime) == AP_OK);
-
     for (frame = 0u; frame < WINDOW_FRAMES; ++frame) {
-        prepare_metadata(&metadata, frame);
+        sequence = FIRST_SEQUENCE + frame;
+        prepare_metadata(&metadata, sequence);
         if (frame == FAULT_FRAME)
             assert(select_fault(argv[1], &metadata));
         assert(ap_runtime_submit_frame(runtime, mic, render, &metadata) == AP_OK);
-        wait_for_completion(runtime, (uint64_t)frame + 1u, output);
+        wait_for_completion(
+            runtime,
+            (uint64_t)WARMUP_FRAMES + (uint64_t)frame + 1u,
+            output);
         if (ap_flight_recorder_is_frozen(recorder)) break;
     }
     assert(ap_flight_recorder_is_frozen(recorder));

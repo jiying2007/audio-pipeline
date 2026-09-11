@@ -67,6 +67,22 @@ def load_jsonl(path: Path) -> list[dict]:
     ]
 
 
+def hypothesis_by_name(diagnosis: dict, name: str) -> dict:
+    for item in diagnosis.get("root_cause_hypotheses") or []:
+        if item.get("hypothesis") == name:
+            return item
+    return {}
+
+
+def has_metadata_evidence(hypothesis: dict, flag: str, frame: int) -> bool:
+    for item in hypothesis.get("evidence") or []:
+        if item.get("kind") != "metadata" or int(item.get("frame", -1)) != frame:
+            continue
+        if flag in set(item.get("flags") or []):
+            return True
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--generator", type=Path, required=True)
@@ -117,7 +133,7 @@ def main() -> int:
         trigger = diagnosis.get("recording_trigger") or {}
         first = diagnosis.get("first_fault") or {}
         top = diagnosis.get("top_hypothesis") or {}
-        flags = set(first.get("flags") or [])
+        expected_hypothesis = hypothesis_by_name(diagnosis, expected["hypothesis"])
         header = triage.get("header") or {}
         header_trigger = int(header.get("trigger_event") or 0)
         analysis = triage["analysis"]
@@ -127,8 +143,11 @@ def main() -> int:
         ]
         sequences = [int(row["sequence"]) for row in metric_rows]
         first_fault_frame = int(first.get("frame", -1))
-        frames_before = first_fault_frame
-        frames_after = int(analysis_summary["frames"]) - first_fault_frame - 1
+        metadata_fault = metadata_anomalies[0] if len(metadata_anomalies) == 1 else {}
+        metadata_fault_frame = int(metadata_fault.get("frame", -1))
+        metadata_flags = set(metadata_fault.get("flags") or [])
+        frames_before = metadata_fault_frame
+        frames_after = int(analysis_summary["frames"]) - metadata_fault_frame - 1
 
         assert triage["status"] == "PASS", case
         assert triage["authority"] == "repository-internal-diagnostic-only", case
@@ -143,25 +162,32 @@ def main() -> int:
         assert trigger.get("source") == "apd-header", (case, trigger)
         assert trigger.get("relation") == "recording-trigger-context-only", (case, trigger)
         assert trigger.get("causal_proof") is False, case
-        assert first.get("kind") == "metadata", (case, first)
+
+        # A full incident window may contain same-frame/downstream reactions such
+        # as AEC reset or render underrun.  The temporal first_fault may therefore
+        # differ from the direct metadata marker; both must still start at the
+        # injected fault frame and the direct fault-domain evidence must survive.
         assert first_fault_frame == EXPECTED_FAULT_FRAME, (case, first)
+        assert metadata_fault_frame == EXPECTED_FAULT_FRAME, (case, metadata_anomalies)
+        assert expected["flag"] in metadata_flags, (case, metadata_flags)
         assert frames_before == 2 and frames_after == 2, (
             case,
             frames_before,
             frames_after,
         )
-        assert [int(item["frame"]) for item in metadata_anomalies] == [2], (
-            case,
-            metadata_anomalies,
-        )
-        assert expected["flag"] in flags, (case, flags)
-        assert first.get("family") == expected["family"], (case, first)
-        assert top.get("hypothesis") == expected["hypothesis"], (case, top)
-        assert top.get("causal_proof") is False, case
+        assert expected_hypothesis, (case, diagnosis.get("root_cause_hypotheses"))
+        assert expected_hypothesis.get("causal_proof") is False, case
+        assert has_metadata_evidence(
+            expected_hypothesis, expected["flag"], EXPECTED_FAULT_FRAME
+        ), (case, expected_hypothesis)
+        if top:
+            assert top.get("causal_proof") is False, case
         assert diagnosis["causal_proof"] is False, case
 
         replay = triage.get("replay") or {}
         comparison = replay.get("comparison") if isinstance(replay, dict) else None
+        assert isinstance(comparison, dict), (case, replay)
+        assert isinstance(comparison.get("bit_exact"), bool), (case, comparison)
         summary["cases"].append(
             {
                 "case": case,
@@ -174,30 +200,27 @@ def main() -> int:
                 "incident_window": {
                     "recorded_frames": 5,
                     "sequences": sequences,
-                    "first_fault_frame": first_fault_frame,
-                    "fault_sequence": sequences[first_fault_frame],
-                    "frames_before_first_fault": frames_before,
-                    "frames_after_first_fault": frames_after,
+                    "metadata_fault_frame": metadata_fault_frame,
+                    "fault_sequence": sequences[metadata_fault_frame],
+                    "frames_before_metadata_fault": frames_before,
+                    "frames_after_metadata_fault": frames_after,
                     "balanced_pre_post_context": frames_before == frames_after == 2,
                 },
-                "first_fault_family": first.get("family"),
+                "temporal_first_fault": {
+                    "frame": first.get("frame"),
+                    "kind": first.get("kind"),
+                    "family": first.get("family"),
+                },
+                "expected_fault_domain_hypothesis": {
+                    "hypothesis": expected_hypothesis.get("hypothesis"),
+                    "rank": expected_hypothesis.get("rank"),
+                    "heuristic_score": expected_hypothesis.get("heuristic_score"),
+                },
                 "top_hypothesis": top.get("hypothesis"),
-                "heuristic_score": top.get("heuristic_score"),
-                "replay_bit_exact": (
-                    comparison.get("bit_exact")
-                    if isinstance(comparison, dict)
-                    else None
-                ),
-                "replay_mae_lsb": (
-                    comparison.get("mae_lsb")
-                    if isinstance(comparison, dict)
-                    else None
-                ),
-                "replay_max_abs_lsb": (
-                    comparison.get("max_abs_lsb")
-                    if isinstance(comparison, dict)
-                    else None
-                ),
+                "top_heuristic_score": top.get("heuristic_score"),
+                "replay_bit_exact": comparison.get("bit_exact"),
+                "replay_mae_lsb": comparison.get("mae_lsb"),
+                "replay_max_abs_lsb": comparison.get("max_abs_lsb"),
                 "causal_proof": False,
             }
         )

@@ -146,6 +146,7 @@ def main() -> int:
         metadata_fault = metadata_anomalies[0] if len(metadata_anomalies) == 1 else {}
         metadata_fault_frame = int(metadata_fault.get("frame", -1))
         metadata_flags = set(metadata_fault.get("flags") or [])
+        first_flags = set(first.get("flags") or [])
         frames_before = metadata_fault_frame
         frames_after = int(analysis_summary["frames"]) - metadata_fault_frame - 1
 
@@ -163,11 +164,14 @@ def main() -> int:
         assert trigger.get("relation") == "recording-trigger-context-only", (case, trigger)
         assert trigger.get("causal_proof") is False, case
 
-        # A full incident window may contain same-frame/downstream reactions such
-        # as AEC reset or render underrun.  The temporal first_fault may therefore
-        # differ from the direct metadata marker; both must still start at the
-        # injected fault frame and the direct fault-domain evidence must survive.
+        # Full incident windows contain same-frame and downstream reactions such
+        # as AEC reset/render underrun. Direct metadata remains the same-frame
+        # first observable input fault, while contiguous reaction runs count as
+        # one heuristic episode rather than being amplified by window length.
         assert first_fault_frame == EXPECTED_FAULT_FRAME, (case, first)
+        assert first.get("kind") == "metadata", (case, first)
+        assert first.get("family") == expected["family"], (case, first)
+        assert expected["flag"] in first_flags, (case, first_flags)
         assert metadata_fault_frame == EXPECTED_FAULT_FRAME, (case, metadata_anomalies)
         assert expected["flag"] in metadata_flags, (case, metadata_flags)
         assert frames_before == 2 and frames_after == 2, (
@@ -176,12 +180,13 @@ def main() -> int:
             frames_after,
         )
         assert expected_hypothesis, (case, diagnosis.get("root_cause_hypotheses"))
+        assert expected_hypothesis.get("rank") == 1, (case, expected_hypothesis)
         assert expected_hypothesis.get("causal_proof") is False, case
         assert has_metadata_evidence(
             expected_hypothesis, expected["flag"], EXPECTED_FAULT_FRAME
         ), (case, expected_hypothesis)
-        if top:
-            assert top.get("causal_proof") is False, case
+        assert top.get("hypothesis") == expected["hypothesis"], (case, top)
+        assert top.get("causal_proof") is False, case
         assert diagnosis["causal_proof"] is False, case
 
         replay = triage.get("replay") or {}

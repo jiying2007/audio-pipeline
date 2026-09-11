@@ -28,6 +28,12 @@ KIND_SEVERITY = {
 CRITICAL_METADATA_FLAGS = {"clock_reset", "codec_reopen"}
 ERROR_METADATA_FLAGS = {"capture_discontinuity", "render_discontinuity", "xrun"}
 
+# Same-frame ordering is semantic rather than alphabetical. Direct metadata
+# describes the runtime input condition observed on that frame; counter-derived
+# anomalies are reactions observed on the same frame. Trigger events remain
+# context-only and sort last. This ordering does not assert causality.
+KIND_ORDER = {"metadata": 0, "trigger_event": 2}
+
 # Mirrors the stable public ap_event_kind_t values. This mapping is diagnostic
 # presentation only; the numeric APD v1 header remains the source of truth.
 EVENT_NAMES = {
@@ -197,6 +203,10 @@ def _family(item: dict[str, Any]) -> str:
     return "other"
 
 
+def _kind_order(item: dict[str, Any]) -> int:
+    return KIND_ORDER.get(str(item.get("kind", "")), 1)
+
+
 def annotate_anomalies(anomalies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     annotated = []
     for anomaly in anomalies:
@@ -206,7 +216,11 @@ def annotate_anomalies(anomalies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         annotated.append(item)
     return sorted(
         annotated,
-        key=lambda item: (int(item.get("frame", 0)), str(item.get("kind", ""))),
+        key=lambda item: (
+            int(item.get("frame", 0)),
+            _kind_order(item),
+            str(item.get("kind", "")),
+        ),
     )
 
 
@@ -258,12 +272,17 @@ def _evidence_for_spec(
     kinds = set(spec["kinds"])
     kind_weights = dict(spec["kind_weights"])
     metadata_weights = dict(spec["metadata_weights"])
+    last_kind_frame: dict[str, int] = {}
 
     for item in annotated:
         kind = str(item.get("kind"))
         if kind in kinds:
+            frame = int(item.get("frame", 0))
             evidence.append({"frame": item.get("frame"), "kind": kind})
-            score += int(kind_weights.get(kind, 1))
+            previous_frame = last_kind_frame.get(kind)
+            if previous_frame is None or frame > previous_frame + 1:
+                score += int(kind_weights.get(kind, 1))
+            last_kind_frame[kind] = frame
             continue
         if kind != "metadata":
             continue
@@ -391,6 +410,8 @@ def build_diagnosis(analysis: dict[str, Any]) -> dict[str, Any]:
         "notes": [
             "recording_trigger explains why the dump was frozen; it is not a first-fault or causal claim",
             "recording_trigger does not contribute to intervals or hypothesis scores",
+            "same-frame metadata is ordered before downstream counter anomalies without asserting causality",
+            "contiguous repeated non-metadata anomalies contribute one heuristic episode score while retaining raw evidence",
             "hypothesis scores are heuristic evidence ranks, not probabilities",
             "metadata-domain weights prevent accidental tie-breaking across fault families",
             "candidate chains encode temporal association only and do not prove causality",
@@ -671,6 +692,39 @@ def _metadata_self_test() -> None:
         assert diagnosis["top_hypothesis"]["causal_proof"] is False, flag
 
 
+def _multi_event_self_test() -> None:
+    capture = build_diagnosis(
+        {
+            "summary": {},
+            "anomalies": [
+                {"frame": 2, "kind": "metadata", "flags": ["capture_discontinuity"]},
+                {"frame": 2, "kind": "render_underrun"},
+                {"frame": 2, "kind": "aec_reset"},
+                {"frame": 3, "kind": "render_underrun"},
+                {"frame": 4, "kind": "render_underrun"},
+            ],
+        }
+    )
+    assert capture["first_fault"]["kind"] == "metadata"
+    assert capture["first_fault"]["family"] == "capture-io"
+    assert capture["top_hypothesis"]["hypothesis"] == "capture-io"
+    assert capture["top_hypothesis"]["heuristic_score"] == 4
+
+    separated = build_diagnosis(
+        {
+            "summary": {},
+            "anomalies": [
+                {"frame": 2, "kind": "render_underrun"},
+                {"frame": 3, "kind": "render_underrun"},
+                {"frame": 4, "kind": "render_underrun"},
+                {"frame": 10, "kind": "render_underrun"},
+            ],
+        }
+    )
+    assert separated["top_hypothesis"]["hypothesis"] == "runtime-continuity"
+    assert separated["top_hypothesis"]["heuristic_score"] == 4
+
+
 def _trigger_context_self_test() -> None:
     trigger = recording_trigger_context(23)
     assert trigger is not None
@@ -741,6 +795,7 @@ def self_test() -> None:
     )
     assert comparison["warnings"]
     _metadata_self_test()
+    _multi_event_self_test()
     _trigger_context_self_test()
     print("repository diagnostic reasoning self-test: OK")
 

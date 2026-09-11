@@ -70,8 +70,38 @@ To prevent unequal capture lengths from creating a false apparent improvement or
 - `bit_exact_claim_scope`: a human-readable statement limiting the comparison to recorded PCM output;
 - `whole_incident_equivalence_authoritative`: always `false`.
 
-The classification is deliberately about **claim scope**, not about success. A `bit_exact=false` raw comparison remains false. When stateful runtime metadata is present, that mismatch cannot by itself distinguish a DSP regression from runtime state that the PCM-only path did not re-inject. Conversely, `bit_exact=true` proves only equality of the compared recorded/replayed PCM bytes for that invocation; it does not prove whole-runtime incident equivalence. The released replay tool reports the APD `dump_build`, but the repository-internal interpretation layer does not independently verify that an arbitrary supplied processor binary matches that build fingerprint.
+The classification is deliberately about **claim scope**, not about success. A `bit_exact=false` raw comparison remains false. When stateful runtime metadata is present, that mismatch cannot by itself distinguish a DSP regression from runtime state that the PCM-only path did not re-inject. Conversely, `bit_exact=true` proves only equality of the compared recorded/replayed PCM bytes for that invocation; it does not prove whole-runtime incident equivalence.
 
-The runtime fault-injection contract additionally writes `fault-injection-summary.json` with schema version 1. Each case records the injected case name, preserved metadata flag, recording trigger context, diagnosed first-fault family, top hypothesis, heuristic score, raw replay comparison values, a compact copy of `replay_authority`, and `causal_proof=false`. The contract currently covers `capture-gap`, `render-gap`, `clock-reset`, `xrun`, and `codec-reopen` through the real runtime -> Flight Recorder -> APD v1 -> triage -> diagnosis path. Those runtime discontinuity cases must report `recording_trigger.event=23` / `recording_trigger.name=stream_discontinuity`, preserve their independently derived first-fault families and hypotheses, and classify replay authority as `stateful-runtime-context-not-replayed` with `state_replay=false` and `whole_incident_equivalence_authoritative=false`.
+## Shared processor build identity
+
+`aptriage.py` additively emits `build_identity`. The current APD v1 header is itself populated by the runtime exporter from `ap_build_info()`, but it persists only a subset of that structure. Therefore the repository-internal check compares exactly the six fields present in both APD v1 and a processor-linked build-info probe:
+
+- `version`;
+- `module_mask`;
+- `aec_backend`;
+- `ns_estimator`;
+- `simd_backend`;
+- `resampler_mode`.
+
+`build_identity` contains:
+
+- `authority`: always `repository-internal-build-identity-subset-only`;
+- `processor_identity_supplied`: whether a build-info JSON was provided;
+- `require_match`: whether the caller requested fail-closed shared-subset matching;
+- `status`: `NOT_CHECKED`, `MATCH`, or `MISMATCH`;
+- `shared_fields`: the six fields above;
+- `shared_fields_match`: `null` when no identity is supplied, otherwise boolean;
+- `mismatches`: per-field APD and processor values;
+- `apd_identity`: the six values decoded from APD v1;
+- `processor_identity`: the six values emitted by the linked build-info probe;
+- `processor_provenance`: processor-side `source_revision`, `config_digest`, compiler, target and build-type values when supplied;
+- `exact_source_config_match_authoritative`: always `false`;
+- `claim_scope`: explicit statement that the check covers only the APD-v1 shared subset.
+
+`tests/diagnostics/build_identity_probe.c` obtains its values from the public `ap_build_info()` interface of the exact library it is linked against. `source_revision` and `config_digest` are useful processor provenance, but APD v1 does **not** record them, so they are never presented as APD-comparable evidence. Exact source/config fingerprint equality would require a future release-bearing dump-format contract and is outside this repository-internal check.
+
+By default, absence of `--processor-build-info` leaves the status `NOT_CHECKED` and does not change triage PASS/FAIL. `--require-build-identity-match` is explicitly fail-closed: missing identity or any shared-field mismatch makes triage `FAIL`. This gate is independent from raw PCM replay. CI deliberately proves that a tampered identity can make build identity `MISMATCH` while the unchanged processor still produces `replay.comparison.bit_exact=true`.
+
+The runtime fault-injection contract writes `fault-injection-summary.json` with schema version 1. Each case records the injected case name, preserved metadata flag, recording trigger context, diagnosed first-fault family, top hypothesis, heuristic score, raw replay values, replay authority, shared build-identity result, and `causal_proof=false`. The contract covers `capture-gap`, `render-gap`, `clock-reset`, `xrun`, and `codec-reopen` through the real runtime -> Flight Recorder -> APD v1 -> triage -> diagnosis path.
 
 The schema intentionally does not contain a probability or claim causal certainty. None of these fields participate in HIL, Product Qualification, Product Certification or shipping gates. A future promotion into the released SDK/tool surface requires the normal release-bearing review and SemVer process.

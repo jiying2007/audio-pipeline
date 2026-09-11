@@ -171,6 +171,26 @@ def analyze(records: list[dict]) -> dict:
     }
 
 
+def replay_comparison(replay: dict) -> dict | None:
+    """Read comparison JSON without changing the raw replay wrapper/return code."""
+    if not isinstance(replay, dict):
+        return None
+    comparison = replay.get("comparison")
+    if isinstance(comparison, dict):
+        return comparison
+    output = replay.get("output")
+    if not isinstance(output, str) or not output.strip():
+        return None
+    try:
+        decoded = json.loads(output)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(decoded, dict):
+        return None
+    comparison = decoded.get("comparison")
+    return comparison if isinstance(comparison, dict) else None
+
+
 def replay_authority(analysis: dict, replay: dict) -> dict:
     """Describe what the existing PCM-only replay result can and cannot prove."""
     stateful_flags = sorted({
@@ -180,7 +200,7 @@ def replay_authority(analysis: dict, replay: dict) -> dict:
         for flag in (item.get("flags") or [])
         if flag in STATEFUL_METADATA_FLAGS
     })
-    comparison = replay.get("comparison") if isinstance(replay, dict) else None
+    comparison = replay_comparison(replay)
     bit_exact = None
     if isinstance(comparison, dict) and isinstance(comparison.get("bit_exact"), bool):
         bit_exact = comparison["bit_exact"]
@@ -240,7 +260,7 @@ def run(command: list[str]) -> dict:
 
 def write_summary(path: Path, result: dict) -> None:
     summary = result["analysis"]["summary"]
-    comparison = result.get("replay", {}).get("comparison") or {}
+    comparison = replay_comparison(result.get("replay") or {}) or {}
     authority = result.get("replay_authority") or {}
     lines = [
         "# Audio dump triage",
@@ -399,6 +419,16 @@ def self_test() -> None:
     assert ordinary["runtime_metadata_state_present"] is False
     assert ordinary["bit_exact"] is True
     assert ordinary["whole_incident_equivalence_authoritative"] is False
+
+    failed_wrapper = {
+        "returncode": 1,
+        "output": json.dumps({"comparison": {"bit_exact": False}}),
+    }
+    failed = replay_authority({"anomalies": []}, failed_wrapper)
+    assert failed["classification"] == "pcm-only-replay-check"
+    assert failed["comparison_present"] is True
+    assert failed["bit_exact"] is False
+    assert failed_wrapper["returncode"] == 1
 
     stateful = replay_authority(
         {

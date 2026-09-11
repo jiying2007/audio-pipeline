@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "terminal-branch-alias-archive",
+  "state": "CLOSED",
+  "source_pr": 164,
+  "merged_pr_head_branch": "engineering/diagnostic-reasoning-v1",
+  "exact_head_sha": "7a5d66194b86ec4be881dcbc16d9cc0164679be1",
+  "terminal_aliases": [
+    "engineering/diagnostic-reasoning-v1-final",
+    "engineering/diagnostic-reasoning-v1-open",
+    "engineering/diagnostic-reasoning-v1-pr"
+  ],
+  "disposition": "DELETE_DUPLICATE_MUTABLE_REFS",
+  "interpretation": "The three live refs are duplicate aliases of the exact head used by merged PR #164. The PR, merged main history, and current diagnostics implementation preserve the software result; the alias refs carry no independent shipping, qualification, research, or release authority.",
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "release_changed": false,
+    "hardware_test_executed": false,
+    "hardware_collection_performed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

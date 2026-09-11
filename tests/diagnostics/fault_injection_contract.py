@@ -132,7 +132,7 @@ def main() -> int:
 
         assert triage["status"] == "PASS", case
         assert triage["authority"] == "repository-internal-diagnostic-only", case
-        assert int(header.get("frames") or 0) == 5, (case, header)
+        assert int(header.get("frame_count") or 0) == 5, (case, header)
         assert int(analysis_summary["frames"]) == 5, (case, analysis_summary)
         assert int(analysis_summary["metrics_frames"]) == 5, (case, analysis_summary)
         assert len(metric_rows) == 5, (case, len(metric_rows))

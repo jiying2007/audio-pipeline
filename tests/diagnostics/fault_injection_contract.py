@@ -42,6 +42,8 @@ CASES = {
         "hypothesis": "capture-io",
     },
 }
+EXPECTED_SEQUENCES = [40, 41, 42, 43, 44]
+EXPECTED_FAULT_FRAME = 2
 
 
 def run(command: list[str]) -> None:
@@ -55,6 +57,14 @@ def run(command: list[str]) -> None:
 
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_jsonl(path: Path) -> list[dict]:
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
 
 
 def main() -> int:
@@ -103,23 +113,47 @@ def main() -> int:
 
         triage = load_json(triage_dir / "triage.json")
         diagnosis = load_json(diagnosis_dir / "diagnosis.json")
+        metric_rows = load_jsonl(triage_dir / "extracted" / "metrics.jsonl")
         trigger = diagnosis.get("recording_trigger") or {}
         first = diagnosis.get("first_fault") or {}
         top = diagnosis.get("top_hypothesis") or {}
         flags = set(first.get("flags") or [])
-        header_trigger = int((triage.get("header") or {}).get("trigger_event") or 0)
+        header = triage.get("header") or {}
+        header_trigger = int(header.get("trigger_event") or 0)
+        analysis = triage["analysis"]
+        analysis_summary = analysis["summary"]
+        metadata_anomalies = [
+            item for item in analysis["anomalies"] if item.get("kind") == "metadata"
+        ]
+        sequences = [int(row["sequence"]) for row in metric_rows]
+        first_fault_frame = int(first.get("frame", -1))
+        frames_before = first_fault_frame
+        frames_after = int(analysis_summary["frames"]) - first_fault_frame - 1
 
         assert triage["status"] == "PASS", case
         assert triage["authority"] == "repository-internal-diagnostic-only", case
+        assert int(header.get("frames") or 0) == 5, (case, header)
+        assert int(analysis_summary["frames"]) == 5, (case, analysis_summary)
+        assert int(analysis_summary["metrics_frames"]) == 5, (case, analysis_summary)
+        assert len(metric_rows) == 5, (case, len(metric_rows))
+        assert sequences == EXPECTED_SEQUENCES, (case, sequences)
         assert header_trigger == 23, (case, header_trigger)
         assert trigger.get("event") == header_trigger, (case, trigger)
         assert trigger.get("name") == "stream_discontinuity", (case, trigger)
         assert trigger.get("source") == "apd-header", (case, trigger)
         assert trigger.get("relation") == "recording-trigger-context-only", (case, trigger)
         assert trigger.get("causal_proof") is False, case
-        assert triage["analysis"]["summary"]["frames"] >= 1, case
-        assert triage["analysis"]["summary"]["metrics_frames"] >= 1, case
         assert first.get("kind") == "metadata", (case, first)
+        assert first_fault_frame == EXPECTED_FAULT_FRAME, (case, first)
+        assert frames_before == 2 and frames_after == 2, (
+            case,
+            frames_before,
+            frames_after,
+        )
+        assert [int(item["frame"]) for item in metadata_anomalies] == [2], (
+            case,
+            metadata_anomalies,
+        )
         assert expected["flag"] in flags, (case, flags)
         assert first.get("family") == expected["family"], (case, first)
         assert top.get("hypothesis") == expected["hypothesis"], (case, top)
@@ -137,11 +171,30 @@ def main() -> int:
                     "name": trigger.get("name"),
                     "relation": trigger.get("relation"),
                 },
+                "incident_window": {
+                    "recorded_frames": 5,
+                    "sequences": sequences,
+                    "first_fault_frame": first_fault_frame,
+                    "fault_sequence": sequences[first_fault_frame],
+                    "frames_before_first_fault": frames_before,
+                    "frames_after_first_fault": frames_after,
+                    "balanced_pre_post_context": frames_before == frames_after == 2,
+                },
                 "first_fault_family": first.get("family"),
                 "top_hypothesis": top.get("hypothesis"),
                 "heuristic_score": top.get("heuristic_score"),
                 "replay_bit_exact": (
                     comparison.get("bit_exact")
+                    if isinstance(comparison, dict)
+                    else None
+                ),
+                "replay_mae_lsb": (
+                    comparison.get("mae_lsb")
+                    if isinstance(comparison, dict)
+                    else None
+                ),
+                "replay_max_abs_lsb": (
+                    comparison.get("max_abs_lsb")
                     if isinstance(comparison, dict)
                     else None
                 ),

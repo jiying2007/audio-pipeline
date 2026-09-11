@@ -31,29 +31,35 @@ def _sorted_strings(values: Any) -> list[str]:
     return sorted({item for item in values if isinstance(item, str) and item})
 
 
+def _resolve_source(path: Path, source_root: Path | None) -> tuple[Path, str | None]:
+    """Resolve and constrain a source before any source bytes are read."""
+    resolved = path.resolve(strict=True)
+    if source_root is None:
+        return resolved, None
+
+    resolved_root = source_root.resolve(strict=True)
+    if not resolved_root.is_dir():
+        raise ValueError(f"{source_root}: source root is not a directory")
+    try:
+        relative_path = resolved.relative_to(resolved_root).as_posix()
+    except ValueError as exc:
+        raise ValueError(
+            f"{path}: source resolves outside --source-root {resolved_root}"
+        ) from exc
+    return resolved, relative_path
+
+
 def _load_bound_json(
     path: Path, source_root: Path | None
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    raw = path.read_bytes()
+    resolved, relative_path = _resolve_source(path, source_root)
+    raw = resolved.read_bytes()
     try:
         payload = json.loads(raw.decode("utf-8"))
     except UnicodeDecodeError as exc:
         raise ValueError(f"{path}: expected UTF-8 JSON") from exc
     if not isinstance(payload, dict):
         raise ValueError(f"{path}: expected JSON object")
-
-    resolved = path.resolve(strict=True)
-    relative_path: str | None = None
-    if source_root is not None:
-        resolved_root = source_root.resolve(strict=True)
-        if not resolved_root.is_dir():
-            raise ValueError(f"{source_root}: source root is not a directory")
-        try:
-            relative_path = resolved.relative_to(resolved_root).as_posix()
-        except ValueError as exc:
-            raise ValueError(
-                f"{path}: source resolves outside --source-root {resolved_root}"
-            ) from exc
 
     evidence = {
         "algorithm": "sha256",
@@ -122,10 +128,7 @@ def load_incident(
             )
 
     if replay:
-        if (
-            replay.get("authority")
-            != "repository-internal-replay-interpretation-only"
-        ):
+        if replay.get("authority") != "repository-internal-replay-interpretation-only":
             raise ValueError(f"{incident_id}: unexpected replay authority")
         if replay.get("whole_incident_equivalence_authoritative") is not False:
             raise ValueError(
@@ -133,10 +136,7 @@ def load_incident(
             )
 
     if identity:
-        if (
-            identity.get("authority")
-            != "repository-internal-build-identity-subset-only"
-        ):
+        if identity.get("authority") != "repository-internal-build-identity-subset-only":
             raise ValueError(f"{incident_id}: unexpected build identity authority")
         if identity.get("exact_source_config_match_authoritative") is not False:
             raise ValueError(
@@ -507,10 +507,7 @@ def write_markdown(path: Path, bundle: dict[str, Any]) -> None:
             "",
             "## Cohort authority",
             "",
-            (
-                "- input selection: "
-                f"`{cohort['selection']}`"
-            ),
+            f"- input selection: `{cohort['selection']}`",
             "- same device authoritative: `false`",
             "- same session authoritative: `false`",
             "- chronological order authoritative: `false`",
@@ -689,10 +686,10 @@ def self_test() -> None:
         assert mutated["source_evidence"]["triage"]["sha256"] != first_digest
         assert mutated["source_evidence"]["triage"]["size_bytes"] == first_size + 1
 
+        # Containment must be enforced before bytes are read/decoded. Invalid
+        # outside bytes would otherwise raise a UTF-8 error before the root error.
         outside_triage = temp / "outside-triage.json"
-        outside_triage.write_text(
-            first_triage_path.read_text(encoding="utf-8"), encoding="utf-8"
-        )
+        outside_triage.write_bytes(b"\xff")
         try:
             load_incident(
                 "outside",
@@ -700,10 +697,29 @@ def self_test() -> None:
                 first_diagnosis_path,
                 source_root=root,
             )
-        except ValueError:
-            pass
+        except ValueError as exc:
+            assert "source resolves outside --source-root" in str(exc)
         else:
             raise AssertionError("source outside --source-root must fail closed")
+
+        # A symlink inside the root must not escape containment either.
+        outside_valid = temp / "outside-valid.json"
+        outside_valid.write_text(
+            first_triage_path.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        symlink_path = root / "outside-link.json"
+        symlink_path.symlink_to(outside_valid)
+        try:
+            load_incident(
+                "symlink-outside",
+                symlink_path,
+                first_diagnosis_path,
+                source_root=root,
+            )
+        except ValueError as exc:
+            assert "source resolves outside --source-root" in str(exc)
+        else:
+            raise AssertionError("symlink outside --source-root must fail closed")
 
         mixed = [dict(item) for item in incidents]
         mixed[-1] = dict(mixed[-1])

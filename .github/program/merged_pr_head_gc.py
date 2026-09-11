@@ -63,7 +63,7 @@ def validate_contract(contract: dict) -> None:
     require(all(not any(item.startswith(prefix) for prefix in prefixes) for item in exact_names),
             "exact branch exceptions must remain outside allowed prefixes")
     records = contract.get("branches")
-    require(isinstance(records, list) and records, "branches must be a non-empty list")
+    require(isinstance(records, list), "branches must be a list")
     record_names = set()
     for index, record in enumerate(records):
         require(set(record) == {"name", "expected_sha"}, f"record {index} fields drift")
@@ -166,7 +166,6 @@ def evaluate(contract: dict, repository: str, main_sha: str, *, apply: bool) -> 
     branch = str(head.get("ref") or "")
     head_sha = str(head.get("sha") or "").lower()
 
-    # Never mutate a fork or any repository other than the current repository.
     if head_repo_full_name != repository:
         return {
             "schema_version": 1,
@@ -240,6 +239,10 @@ def self_test() -> None:
         },
     }
     validate_contract(contract)
+    empty = json.loads(json.dumps(contract))
+    empty["allowed_exact_names"] = []
+    empty["branches"] = []
+    validate_contract(empty)
     main_sha = "1" * 40
     good = [{
         "number": 7,
@@ -251,6 +254,7 @@ def self_test() -> None:
     }]
     assert select_merged_pr(good, main_sha)["number"] == 7
     assert merged_head_policy(contract, "governance/current", "2" * 40) == "ALLOWED_PREFIX"
+    assert merged_head_policy(empty, "governance/current", "2" * 40) == "ALLOWED_PREFIX"
     assert merged_head_policy(contract, "docs/special", "2" * 40) == "EXACT_NAME_AND_SHA"
     for branch, sha in (("docs/special", "3" * 40), ("docs/unlisted", "2" * 40)):
         try:

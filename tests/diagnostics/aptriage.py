@@ -53,6 +53,14 @@ STATEFUL_METADATA_FLAGS = {
     "xrun",
     "codec_reopen",
 }
+SHARED_BUILD_IDENTITY_FIELDS = (
+    "version",
+    "module_mask",
+    "aec_backend",
+    "ns_estimator",
+    "simd_backend",
+    "resampler_mode",
+)
 
 
 def decode_metrics(raw: bytes) -> dict:
@@ -227,6 +235,64 @@ def replay_authority(analysis: dict, replay: dict) -> dict:
     }
 
 
+def load_build_identity(path: Path | None) -> dict | None:
+    if path is None:
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid processor build identity JSON: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError("processor build identity must be a JSON object")
+    return value
+
+
+def build_identity_subset(header: dict, processor: dict | None, require_match: bool) -> dict:
+    apd = {
+        "version": header["build"]["version"],
+        "module_mask": int(header["module_mask"]),
+        "aec_backend": header["build"]["aec_backend"],
+        "ns_estimator": header["build"]["ns_estimator"],
+        "simd_backend": header["build"]["simd_backend"],
+        "resampler_mode": header["build"]["resampler_mode"],
+    }
+    processor_shared = None
+    mismatches: list[dict] = []
+    if processor is not None:
+        processor_shared = {field: processor.get(field) for field in SHARED_BUILD_IDENTITY_FIELDS}
+        for field in SHARED_BUILD_IDENTITY_FIELDS:
+            expected = apd[field]
+            actual = processor_shared[field]
+            if actual != expected:
+                mismatches.append({"field": field, "apd": expected, "processor": actual})
+    match = None if processor is None else not mismatches
+    status = "NOT_CHECKED" if processor is None else ("MATCH" if match else "MISMATCH")
+    provenance = None
+    if processor is not None:
+        provenance = {
+            "source_revision": processor.get("source_revision"),
+            "config_digest": processor.get("config_digest"),
+            "compiler_id": processor.get("compiler_id"),
+            "compiler_version": processor.get("compiler_version"),
+            "target_triple": processor.get("target_triple"),
+            "build_type": processor.get("build_type"),
+        }
+    return {
+        "authority": "repository-internal-build-identity-subset-only",
+        "processor_identity_supplied": processor is not None,
+        "require_match": bool(require_match),
+        "status": status,
+        "shared_fields": list(SHARED_BUILD_IDENTITY_FIELDS),
+        "shared_fields_match": match,
+        "mismatches": mismatches,
+        "apd_identity": apd,
+        "processor_identity": processor_shared,
+        "processor_provenance": provenance,
+        "exact_source_config_match_authoritative": False,
+        "claim_scope": "APD v1 and processor-linked ap_build_info() shared subset only; APD v1 does not record source_revision or config_digest",
+    }
+
+
 def write_metrics(records: list[dict], directory: Path) -> dict:
     rows = [
         {"frame": r["index"], "sequence": r["sequence"], **r["metrics"]}
@@ -262,6 +328,7 @@ def write_summary(path: Path, result: dict) -> None:
     summary = result["analysis"]["summary"]
     comparison = replay_comparison(result.get("replay") or {}) or {}
     authority = result.get("replay_authority") or {}
+    identity = result.get("build_identity") or {}
     lines = [
         "# Audio dump triage",
         "",
@@ -288,6 +355,12 @@ def write_summary(path: Path, result: dict) -> None:
             f"- runtime metadata/state present: `{authority.get('runtime_metadata_state_present')}`",
             f"- whole-incident equivalence authoritative: `{authority.get('whole_incident_equivalence_authoritative')}`",
         ])
+    if identity:
+        lines.extend([
+            f"- shared build identity status: `{identity.get('status')}`",
+            f"- shared build identity required: `{identity.get('require_match')}`",
+            f"- exact source/config identity authoritative: `{identity.get('exact_source_config_match_authoritative')}`",
+        ])
     anomalies = result["analysis"]["anomalies"]
     if anomalies:
         lines.extend(["", "## Anomaly timeline", ""])
@@ -305,7 +378,7 @@ def write_summary(path: Path, result: dict) -> None:
         "Stage counterfactuals reprocess recorded microphone PCM through isolated profiles; they are not live intermediate taps from the original execution.",
         "The current replay path is PCM-only and does not prove whole runtime-execution equivalence.",
         "When stateful runtime metadata is present, a replay mismatch cannot by itself distinguish a DSP regression from runtime-state that was not re-injected.",
-        "Bit-exact PCM comparison additionally requires a processor matching the APD build fingerprint.",
+        "Shared build identity matching covers only fields present in both APD v1 and ap_build_info(); APD v1 omits source_revision and config_digest.",
     ])
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -313,11 +386,13 @@ def write_summary(path: Path, result: dict) -> None:
 def triage(
     dump: Path, processor: Path, output_dir: Path,
     stage_counterfactuals: bool, require_bit_exact: bool,
+    processor_build_info: Path | None, require_build_identity_match: bool,
 ) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     extracted_dir = output_dir / "extracted"
     manifest = apdump.extract(dump, extracted_dir)
     header, data = apdump.read_dump(dump)
+    header_dict = apdump.header_json(header)
     records = decoded_records(header, data)
     metric_paths = write_metrics(records, extracted_dir)
     analysis = analyze(records)
@@ -325,6 +400,8 @@ def triage(
     analysis_path.write_text(
         json.dumps(analysis, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    processor_identity = load_build_identity(processor_build_info)
+    identity = build_identity_subset(header_dict, processor_identity, require_build_identity_match)
 
     replay_command = [
         sys.executable, str(TOOLS / "apreplay.py"), str(dump),
@@ -371,22 +448,25 @@ def triage(
         isinstance(value, dict) and int(value.get("returncode", 0)) != 0
         for value in stages.values()
     )
+    identity_failed = require_build_identity_match and identity["shared_fields_match"] is not True
     result = {
         "schema_version": 1,
         "authority": "repository-internal-diagnostic-only",
         "dump": str(dump),
         "processor": str(processor),
-        "header": apdump.header_json(header),
+        "header": header_dict,
         "analysis": analysis,
         "metrics": metric_paths,
         "replay": replay,
         "replay_authority": authority,
+        "build_identity": identity,
         "stage_counterfactuals": stages,
-        "status": "FAIL" if replay_failed or stage_failed else "PASS",
+        "status": "FAIL" if replay_failed or stage_failed or identity_failed else "PASS",
         "notes": [
             "does not alter the released APD v1 format or tools/* surface",
             "stage counterfactuals are isolated reprocessing, not captured live intermediate taps",
             "replay_authority is interpretation metadata only and does not change raw replay comparison or PASS/FAIL",
+            "build_identity compares only the six fields shared by APD v1 and ap_build_info(); exact source/config match is not authoritative",
             "the current replay path is PCM-only and does not prove whole runtime-execution equivalence",
         ],
     }
@@ -420,10 +500,7 @@ def self_test() -> None:
     assert ordinary["bit_exact"] is True
     assert ordinary["whole_incident_equivalence_authoritative"] is False
 
-    failed_wrapper = {
-        "returncode": 1,
-        "output": json.dumps({"comparison": {"bit_exact": False}}),
-    }
+    failed_wrapper = {"returncode": 1, "output": json.dumps({"comparison": {"bit_exact": False}})}
     failed = replay_authority({"anomalies": []}, failed_wrapper)
     assert failed["classification"] == "pcm-only-replay-check"
     assert failed["comparison_present"] is True
@@ -431,11 +508,7 @@ def self_test() -> None:
     assert failed_wrapper["returncode"] == 1
 
     stateful = replay_authority(
-        {
-            "anomalies": [
-                {"frame": 2, "kind": "metadata", "flags": ["clock_reset", "xrun"]}
-            ]
-        },
+        {"anomalies": [{"frame": 2, "kind": "metadata", "flags": ["clock_reset", "xrun"]}]},
         {"comparison": {"bit_exact": False}},
     )
     assert stateful["classification"] == "stateful-runtime-context-not-replayed"
@@ -444,6 +517,38 @@ def self_test() -> None:
     assert stateful["bit_exact"] is False
     assert stateful["state_replay"] is False
     assert stateful["whole_incident_equivalence_authoritative"] is False
+
+    header = {
+        "module_mask": 7,
+        "build": {
+            "version": "2.3.16",
+            "aec_backend": "MDF",
+            "ns_estimator": "mcra",
+            "simd_backend": "scalar",
+            "resampler_mode": "bandlimited",
+        },
+    }
+    processor = {
+        "version": "2.3.16", "module_mask": 7, "aec_backend": "MDF",
+        "ns_estimator": "mcra", "simd_backend": "scalar",
+        "resampler_mode": "bandlimited", "source_revision": "abc",
+        "config_digest": "def",
+    }
+    identity = build_identity_subset(header, processor, True)
+    assert identity["status"] == "MATCH"
+    assert identity["shared_fields_match"] is True
+    assert identity["mismatches"] == []
+    assert identity["processor_provenance"]["source_revision"] == "abc"
+    assert identity["exact_source_config_match_authoritative"] is False
+    tampered = dict(processor)
+    tampered["module_mask"] = 8
+    mismatch = build_identity_subset(header, tampered, True)
+    assert mismatch["status"] == "MISMATCH"
+    assert mismatch["shared_fields_match"] is False
+    assert mismatch["mismatches"][0]["field"] == "module_mask"
+    unchecked = build_identity_subset(header, None, False)
+    assert unchecked["status"] == "NOT_CHECKED"
+    assert unchecked["shared_fields_match"] is None
     print("repository diagnostic triage self-test: OK")
 
 
@@ -454,6 +559,8 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--stage-counterfactuals", action="store_true")
     parser.add_argument("--require-bit-exact", action="store_true")
+    parser.add_argument("--processor-build-info", type=Path)
+    parser.add_argument("--require-build-identity-match", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
@@ -465,6 +572,7 @@ def main() -> int:
         result = triage(
             args.dump, args.processor, args.output_dir,
             args.stage_counterfactuals, args.require_bit_exact,
+            args.processor_build_info, args.require_build_identity_match,
         )
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         print(f"aptriage: {exc}", file=sys.stderr)
@@ -472,6 +580,7 @@ def main() -> int:
     print(json.dumps({
         "status": result["status"],
         "anomalies": result["analysis"]["summary"]["anomaly_count"],
+        "build_identity": result["build_identity"]["status"],
         "output_dir": str(args.output_dir),
     }, sort_keys=True))
     return 0 if result["status"] == "PASS" else 1

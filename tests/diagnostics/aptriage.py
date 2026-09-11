@@ -46,6 +46,13 @@ METADATA_FLAGS = {
     1 << 5: "xrun",
     1 << 6: "codec_reopen",
 }
+STATEFUL_METADATA_FLAGS = {
+    "capture_discontinuity",
+    "render_discontinuity",
+    "clock_reset",
+    "xrun",
+    "codec_reopen",
+}
 
 
 def decode_metrics(raw: bytes) -> dict:
@@ -164,6 +171,62 @@ def analyze(records: list[dict]) -> dict:
     }
 
 
+def replay_comparison(replay: dict) -> dict | None:
+    """Read comparison JSON without changing the raw replay wrapper/return code."""
+    if not isinstance(replay, dict):
+        return None
+    comparison = replay.get("comparison")
+    if isinstance(comparison, dict):
+        return comparison
+    output = replay.get("output")
+    if not isinstance(output, str) or not output.strip():
+        return None
+    try:
+        decoded = json.loads(output)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(decoded, dict):
+        return None
+    comparison = decoded.get("comparison")
+    return comparison if isinstance(comparison, dict) else None
+
+
+def replay_authority(analysis: dict, replay: dict) -> dict:
+    """Describe what the existing PCM-only replay result can and cannot prove."""
+    stateful_flags = sorted({
+        str(flag)
+        for item in analysis.get("anomalies") or []
+        if item.get("kind") == "metadata"
+        for flag in (item.get("flags") or [])
+        if flag in STATEFUL_METADATA_FLAGS
+    })
+    comparison = replay_comparison(replay)
+    bit_exact = None
+    if isinstance(comparison, dict) and isinstance(comparison.get("bit_exact"), bool):
+        bit_exact = comparison["bit_exact"]
+    stateful = bool(stateful_flags)
+    return {
+        "authority": "repository-internal-replay-interpretation-only",
+        "mode": "pcm-only",
+        "state_replay": False,
+        "runtime_metadata_state_present": stateful,
+        "runtime_metadata_flags": stateful_flags,
+        "comparison_present": isinstance(comparison, dict),
+        "bit_exact": bit_exact,
+        "classification": (
+            "stateful-runtime-context-not-replayed"
+            if stateful
+            else "pcm-only-replay-check"
+        ),
+        "bit_exact_claim_scope": (
+            "recorded PCM output comparison only; runtime metadata/state is present in the APD evidence but is not re-injected by the current replay path"
+            if stateful
+            else "recorded PCM output comparison only; does not prove whole runtime-execution equivalence"
+        ),
+        "whole_incident_equivalence_authoritative": False,
+    }
+
+
 def write_metrics(records: list[dict], directory: Path) -> dict:
     rows = [
         {"frame": r["index"], "sequence": r["sequence"], **r["metrics"]}
@@ -197,7 +260,8 @@ def run(command: list[str]) -> dict:
 
 def write_summary(path: Path, result: dict) -> None:
     summary = result["analysis"]["summary"]
-    comparison = result.get("replay", {}).get("comparison") or {}
+    comparison = replay_comparison(result.get("replay") or {}) or {}
+    authority = result.get("replay_authority") or {}
     lines = [
         "# Audio dump triage",
         "",
@@ -217,6 +281,13 @@ def write_summary(path: Path, result: dict) -> None:
             f"- replay MAE: `{comparison.get('mae_lsb')}` LSB",
             f"- replay max abs: `{comparison.get('max_abs_lsb')}` LSB",
         ])
+    if authority:
+        lines.extend([
+            f"- replay mode: `{authority.get('mode')}`",
+            f"- replay authority classification: `{authority.get('classification')}`",
+            f"- runtime metadata/state present: `{authority.get('runtime_metadata_state_present')}`",
+            f"- whole-incident equivalence authoritative: `{authority.get('whole_incident_equivalence_authoritative')}`",
+        ])
     anomalies = result["analysis"]["anomalies"]
     if anomalies:
         lines.extend(["", "## Anomaly timeline", ""])
@@ -232,7 +303,9 @@ def write_summary(path: Path, result: dict) -> None:
         "", "## Evidence boundary", "",
         "This repository-internal harness does not change APD v1 or the released tools/* surface.",
         "Stage counterfactuals reprocess recorded microphone PCM through isolated profiles; they are not live intermediate taps from the original execution.",
-        "Bit-exact reproduction is authoritative only with a processor matching the APD build fingerprint.",
+        "The current replay path is PCM-only and does not prove whole runtime-execution equivalence.",
+        "When stateful runtime metadata is present, a replay mismatch cannot by itself distinguish a DSP regression from runtime-state that was not re-injected.",
+        "Bit-exact PCM comparison additionally requires a processor matching the APD build fingerprint.",
     ])
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -268,6 +341,7 @@ def triage(
             replay = json.loads(replay_process["output"])
         except json.JSONDecodeError:
             pass
+    authority = replay_authority(analysis, replay)
 
     stages: dict[str, dict] = {}
     if stage_counterfactuals:
@@ -306,12 +380,14 @@ def triage(
         "analysis": analysis,
         "metrics": metric_paths,
         "replay": replay,
+        "replay_authority": authority,
         "stage_counterfactuals": stages,
         "status": "FAIL" if replay_failed or stage_failed else "PASS",
         "notes": [
             "does not alter the released APD v1 format or tools/* surface",
             "stage counterfactuals are isolated reprocessing, not captured live intermediate taps",
-            "bit-exact reproduction requires a processor matching the APD build fingerprint",
+            "replay_authority is interpretation metadata only and does not change raw replay comparison or PASS/FAIL",
+            "the current replay path is PCM-only and does not prove whole runtime-execution equivalence",
         ],
     }
     (output_dir / "triage.json").write_text(
@@ -336,6 +412,38 @@ def self_test() -> None:
     assert decoded["aec_backend_name"] == "MDF"
     assert decoded["delay_error_samples"] == -2
     assert metadata_flag_names((1 << 2) | (1 << 5)) == ["capture_discontinuity", "xrun"]
+
+    replay = {"comparison": {"bit_exact": True}}
+    ordinary = replay_authority({"anomalies": []}, replay)
+    assert ordinary["classification"] == "pcm-only-replay-check"
+    assert ordinary["runtime_metadata_state_present"] is False
+    assert ordinary["bit_exact"] is True
+    assert ordinary["whole_incident_equivalence_authoritative"] is False
+
+    failed_wrapper = {
+        "returncode": 1,
+        "output": json.dumps({"comparison": {"bit_exact": False}}),
+    }
+    failed = replay_authority({"anomalies": []}, failed_wrapper)
+    assert failed["classification"] == "pcm-only-replay-check"
+    assert failed["comparison_present"] is True
+    assert failed["bit_exact"] is False
+    assert failed_wrapper["returncode"] == 1
+
+    stateful = replay_authority(
+        {
+            "anomalies": [
+                {"frame": 2, "kind": "metadata", "flags": ["clock_reset", "xrun"]}
+            ]
+        },
+        {"comparison": {"bit_exact": False}},
+    )
+    assert stateful["classification"] == "stateful-runtime-context-not-replayed"
+    assert stateful["runtime_metadata_state_present"] is True
+    assert stateful["runtime_metadata_flags"] == ["clock_reset", "xrun"]
+    assert stateful["bit_exact"] is False
+    assert stateful["state_replay"] is False
+    assert stateful["whole_incident_equivalence_authoritative"] is False
     print("repository diagnostic triage self-test: OK")
 
 

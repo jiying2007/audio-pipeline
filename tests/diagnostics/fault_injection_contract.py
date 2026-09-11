@@ -193,6 +193,41 @@ def main() -> int:
         comparison = replay.get("comparison") if isinstance(replay, dict) else None
         assert isinstance(comparison, dict), (case, replay)
         assert isinstance(comparison.get("bit_exact"), bool), (case, comparison)
+
+        replay_authority = triage.get("replay_authority") or {}
+        assert replay_authority.get("authority") == (
+            "repository-internal-replay-interpretation-only"
+        ), (case, replay_authority)
+        assert replay_authority.get("mode") == "pcm-only", (case, replay_authority)
+        assert replay_authority.get("state_replay") is False, (case, replay_authority)
+        assert replay_authority.get("runtime_metadata_state_present") is True, (
+            case,
+            replay_authority,
+        )
+        assert set(replay_authority.get("runtime_metadata_flags") or []) == {
+            expected["flag"]
+        }, (case, replay_authority)
+        assert replay_authority.get("comparison_present") is True, (
+            case,
+            replay_authority,
+        )
+        assert replay_authority.get("bit_exact") == comparison.get("bit_exact"), (
+            case,
+            replay_authority,
+            comparison,
+        )
+        assert replay_authority.get("classification") == (
+            "stateful-runtime-context-not-replayed"
+        ), (case, replay_authority)
+        assert replay_authority.get("whole_incident_equivalence_authoritative") is False, (
+            case,
+            replay_authority,
+        )
+        assert "not re-injected" in str(replay_authority.get("bit_exact_claim_scope")), (
+            case,
+            replay_authority,
+        )
+
         summary["cases"].append(
             {
                 "case": case,
@@ -226,6 +261,20 @@ def main() -> int:
                 "replay_bit_exact": comparison.get("bit_exact"),
                 "replay_mae_lsb": comparison.get("mae_lsb"),
                 "replay_max_abs_lsb": comparison.get("max_abs_lsb"),
+                "replay_authority": {
+                    "mode": replay_authority.get("mode"),
+                    "state_replay": replay_authority.get("state_replay"),
+                    "runtime_metadata_state_present": replay_authority.get(
+                        "runtime_metadata_state_present"
+                    ),
+                    "runtime_metadata_flags": replay_authority.get(
+                        "runtime_metadata_flags"
+                    ),
+                    "classification": replay_authority.get("classification"),
+                    "whole_incident_equivalence_authoritative": replay_authority.get(
+                        "whole_incident_equivalence_authoritative"
+                    ),
+                },
                 "causal_proof": False,
             }
         )

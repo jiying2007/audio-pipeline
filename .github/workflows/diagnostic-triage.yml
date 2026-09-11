@@ -140,6 +140,16 @@ jobs:
           assert triage['authority'] == 'repository-internal-diagnostic-only'
           assert triage['header']['trigger_event'] == 50
           assert triage['analysis']['summary']['metrics_frames'] == 1
+          replay_authority = triage['replay_authority']
+          assert replay_authority['authority'] == 'repository-internal-replay-interpretation-only'
+          assert replay_authority['mode'] == 'pcm-only'
+          assert replay_authority['state_replay'] is False
+          assert replay_authority['runtime_metadata_state_present'] is False
+          assert replay_authority['runtime_metadata_flags'] == []
+          assert replay_authority['comparison_present'] is True
+          assert replay_authority['bit_exact'] is True
+          assert replay_authority['classification'] == 'pcm-only-replay-check'
+          assert replay_authority['whole_incident_equivalence_authoritative'] is False
           assert 'bf-isolated' in triage['stage_counterfactuals']
           assert triage['stage_counterfactuals']['bf-isolated']['returncode'] == 0
           assert diagnosis['authority'] == 'repository-internal-heuristic-diagnostic-only'

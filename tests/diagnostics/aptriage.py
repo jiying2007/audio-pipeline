@@ -235,9 +235,7 @@ def replay_authority(analysis: dict, replay: dict) -> dict:
     }
 
 
-def load_build_identity(path: Path | None) -> dict | None:
-    if path is None:
-        return None
+def load_build_identity(path: Path) -> dict:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
@@ -247,7 +245,7 @@ def load_build_identity(path: Path | None) -> dict | None:
     return value
 
 
-def build_identity_subset(header: dict, processor: dict | None, require_match: bool) -> dict:
+def build_identity_subset(header: dict, processor: dict) -> dict:
     apd = {
         "version": header["build"]["version"],
         "module_mask": int(header["module_mask"]),
@@ -256,32 +254,27 @@ def build_identity_subset(header: dict, processor: dict | None, require_match: b
         "simd_backend": header["build"]["simd_backend"],
         "resampler_mode": header["build"]["resampler_mode"],
     }
-    processor_shared = None
+    processor_shared = {
+        field: processor.get(field) for field in SHARED_BUILD_IDENTITY_FIELDS
+    }
     mismatches: list[dict] = []
-    if processor is not None:
-        processor_shared = {field: processor.get(field) for field in SHARED_BUILD_IDENTITY_FIELDS}
-        for field in SHARED_BUILD_IDENTITY_FIELDS:
-            expected = apd[field]
-            actual = processor_shared[field]
-            if actual != expected:
-                mismatches.append({"field": field, "apd": expected, "processor": actual})
-    match = None if processor is None else not mismatches
-    status = "NOT_CHECKED" if processor is None else ("MATCH" if match else "MISMATCH")
-    provenance = None
-    if processor is not None:
-        provenance = {
-            "source_revision": processor.get("source_revision"),
-            "config_digest": processor.get("config_digest"),
-            "compiler_id": processor.get("compiler_id"),
-            "compiler_version": processor.get("compiler_version"),
-            "target_triple": processor.get("target_triple"),
-            "build_type": processor.get("build_type"),
-        }
+    for field in SHARED_BUILD_IDENTITY_FIELDS:
+        expected = apd[field]
+        actual = processor_shared[field]
+        if actual != expected:
+            mismatches.append({"field": field, "apd": expected, "processor": actual})
+    match = not mismatches
+    provenance = {
+        "source_revision": processor.get("source_revision"),
+        "config_digest": processor.get("config_digest"),
+        "compiler_id": processor.get("compiler_id"),
+        "compiler_version": processor.get("compiler_version"),
+        "target_triple": processor.get("target_triple"),
+        "build_type": processor.get("build_type"),
+    }
     return {
         "authority": "repository-internal-build-identity-subset-only",
-        "processor_identity_supplied": processor is not None,
-        "require_match": bool(require_match),
-        "status": status,
+        "status": "MATCH" if match else "MISMATCH",
         "shared_fields": list(SHARED_BUILD_IDENTITY_FIELDS),
         "shared_fields_match": match,
         "mismatches": mismatches,
@@ -358,7 +351,6 @@ def write_summary(path: Path, result: dict) -> None:
     if identity:
         lines.extend([
             f"- shared build identity status: `{identity.get('status')}`",
-            f"- shared build identity required: `{identity.get('require_match')}`",
             f"- exact source/config identity authoritative: `{identity.get('exact_source_config_match_authoritative')}`",
         ])
     anomalies = result["analysis"]["anomalies"]
@@ -386,7 +378,7 @@ def write_summary(path: Path, result: dict) -> None:
 def triage(
     dump: Path, processor: Path, output_dir: Path,
     stage_counterfactuals: bool, require_bit_exact: bool,
-    processor_build_info: Path | None, require_build_identity_match: bool,
+    processor_build_info: Path,
 ) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     extracted_dir = output_dir / "extracted"
@@ -401,7 +393,7 @@ def triage(
         json.dumps(analysis, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     processor_identity = load_build_identity(processor_build_info)
-    identity = build_identity_subset(header_dict, processor_identity, require_build_identity_match)
+    identity = build_identity_subset(header_dict, processor_identity)
 
     replay_command = [
         sys.executable, str(TOOLS / "apreplay.py"), str(dump),
@@ -448,7 +440,7 @@ def triage(
         isinstance(value, dict) and int(value.get("returncode", 0)) != 0
         for value in stages.values()
     )
-    identity_failed = require_build_identity_match and identity["shared_fields_match"] is not True
+    identity_failed = identity["shared_fields_match"] is not True
     result = {
         "schema_version": 1,
         "authority": "repository-internal-diagnostic-only",
@@ -466,7 +458,7 @@ def triage(
             "does not alter the released APD v1 format or tools/* surface",
             "stage counterfactuals are isolated reprocessing, not captured live intermediate taps",
             "replay_authority is interpretation metadata only and does not change raw replay comparison or PASS/FAIL",
-            "build_identity compares only the six fields shared by APD v1 and ap_build_info(); exact source/config match is not authoritative",
+            "build_identity always compares the six fields shared by APD v1 and ap_build_info(); mismatch fails closed; exact source/config match is not authoritative",
             "the current replay path is PCM-only and does not prove whole runtime-execution equivalence",
         ],
     }
@@ -534,7 +526,7 @@ def self_test() -> None:
         "resampler_mode": "bandlimited", "source_revision": "abc",
         "config_digest": "def",
     }
-    identity = build_identity_subset(header, processor, True)
+    identity = build_identity_subset(header, processor)
     assert identity["status"] == "MATCH"
     assert identity["shared_fields_match"] is True
     assert identity["mismatches"] == []
@@ -542,13 +534,10 @@ def self_test() -> None:
     assert identity["exact_source_config_match_authoritative"] is False
     tampered = dict(processor)
     tampered["module_mask"] = 8
-    mismatch = build_identity_subset(header, tampered, True)
+    mismatch = build_identity_subset(header, tampered)
     assert mismatch["status"] == "MISMATCH"
     assert mismatch["shared_fields_match"] is False
     assert mismatch["mismatches"][0]["field"] == "module_mask"
-    unchecked = build_identity_subset(header, None, False)
-    assert unchecked["status"] == "NOT_CHECKED"
-    assert unchecked["shared_fields_match"] is None
     print("repository diagnostic triage self-test: OK")
 
 
@@ -560,19 +549,18 @@ def main() -> int:
     parser.add_argument("--stage-counterfactuals", action="store_true")
     parser.add_argument("--require-bit-exact", action="store_true")
     parser.add_argument("--processor-build-info", type=Path)
-    parser.add_argument("--require-build-identity-match", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return 0
-    if not args.dump or not args.processor or not args.output_dir:
-        parser.error("dump, --processor and --output-dir are required")
+    if not args.dump or not args.processor or not args.output_dir or not args.processor_build_info:
+        parser.error("dump, --processor, --output-dir and --processor-build-info are required")
     try:
         result = triage(
             args.dump, args.processor, args.output_dir,
             args.stage_counterfactuals, args.require_bit_exact,
-            args.processor_build_info, args.require_build_identity_match,
+            args.processor_build_info,
         )
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         print(f"aptriage: {exc}", file=sys.stderr)

@@ -54,7 +54,8 @@ jobs:
             tools/apdump.py \
             tools/apreplay.py \
             tests/diagnostics/aptriage.py \
-            tests/diagnostics/apdiagnose.py
+            tests/diagnostics/apdiagnose.py \
+            tests/diagnostics/fault_injection_contract.py
           python3 tests/diagnostics/aptriage.py --self-test
           python3 tests/diagnostics/apdiagnose.py --self-test
           python3 tests/diagnostics/apdiagnose.py \
@@ -90,13 +91,18 @@ jobs:
       - name: Build runtime and offline processor
         run: cmake --build build-diag --parallel
 
-      - name: Build deterministic APD fixture generator
+      - name: Build deterministic APD fixture generators
         run: |
           set -euo pipefail
           cc -std=c11 -Wall -Wextra -Wpedantic -Werror tests/generate_diag_dump.c \
             -Iinclude -Ibuild-diag/generated \
             build-diag/libaudio_pipeline_runtime.a build-diag/libaudio_pipeline.a \
             -lm -pthread -o /tmp/ap_diag_dump_fixture
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
+            tests/diagnostics/generate_fault_dump.c \
+            -Iinclude -Ibuild-diag/generated \
+            build-diag/libaudio_pipeline_runtime.a build-diag/libaudio_pipeline.a \
+            -lm -pthread -o /tmp/ap_diag_fault_fixture
 
       - name: Generate, replay, triage and diagnose APD fixture
         run: |
@@ -140,6 +146,15 @@ jobs:
           assert 'candidate_chains' in diagnosis
           PY
 
+      - name: Run real runtime fault-to-diagnosis contract
+        run: |
+          set -euo pipefail
+          python3 tests/diagnostics/fault_injection_contract.py \
+            --generator /tmp/ap_diag_fault_fixture \
+            --processor ./build-diag/ap_process_pcm \
+            --work-dir /tmp/fault-injection
+          test -s /tmp/fault-injection/fault-injection-summary.json
+
       - name: Run runtime continuity and diagnostics contracts
         run: ctest --test-dir build-diag --output-on-failure -R 'ap_runtime_tests'
 
@@ -157,5 +172,6 @@ jobs:
             /tmp/apd-triage/
             /tmp/apd-diagnosis/
             /tmp/reasoning-fixture/
+            /tmp/fault-injection/
           retention-days: 30
           if-no-files-found: warn

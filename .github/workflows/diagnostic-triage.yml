@@ -55,9 +55,29 @@ jobs:
             tools/apreplay.py \
             tests/diagnostics/aptriage.py \
             tests/diagnostics/apdiagnose.py \
+            tests/diagnostics/event_contract.py \
             tests/diagnostics/fault_injection_contract.py
           python3 tests/diagnostics/aptriage.py --self-test
           python3 tests/diagnostics/apdiagnose.py --self-test
+          python3 tests/diagnostics/event_contract.py --self-test
+          python3 tests/diagnostics/event_contract.py --output /tmp/event-contract.json
+          test -s /tmp/event-contract.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/event-contract.json').read_text())
+          assert result['schema_version'] == 1
+          assert result['authority'] == 'repository-internal-event-name-contract-only'
+          assert result['status'] == 'PASS'
+          assert result['public_event_count'] == result['diagnostic_event_count']
+          assert result['public_event_count'] > 0
+          assert result['missing_diagnostic_events'] == []
+          assert result['extra_diagnostic_events'] == []
+          assert result['name_mismatches'] == []
+          assert result['trigger_context_mismatches'] == []
+          assert result['unknown_event_fallback']['checked'] is True
+          assert result['unknown_event_fallback']['pass'] is True
+          PY
           python3 tests/diagnostics/apdiagnose.py \
             tests/diagnostics/fixtures/reasoning-candidate.json \
             --reference tests/diagnostics/fixtures/reasoning-reference.json \
@@ -237,6 +257,7 @@ jobs:
         with:
           name: diagnostic-triage-${{ github.run_id }}
           path: |
+            /tmp/event-contract.json
             /tmp/test.apd
             /tmp/dump-info.json
             /tmp/apd-extract/

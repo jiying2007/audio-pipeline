@@ -81,7 +81,7 @@ def validate_contract(data: dict) -> None:
             "exact branch exceptions must remain outside allowed prefixes")
 
     records = data.get("branches")
-    require(isinstance(records, list) and records, "branches must be a non-empty list")
+    require(isinstance(records, list), "branches must be a list")
     seen: set[str] = set()
     for index, record in enumerate(records):
         require(set(record) == {"name", "expected_sha"}, f"record {index} fields drift")
@@ -304,7 +304,6 @@ def self_test() -> None:
     sample = {
         "schema_version": 1,
         "policy": "terminal-non-main-ref-gc",
-        "baseline_main_sha": "1" * 40,
         "mutation_on_pull_request": False,
         "mutation_on_workflow_dispatch": False,
         "mutation_on_main_push": True,
@@ -325,6 +324,10 @@ def self_test() -> None:
         },
     }
     validate_contract(sample)
+    empty = json.loads(json.dumps(sample))
+    empty["branches"] = []
+    empty["allowed_exact_names"] = []
+    validate_contract(empty)
     exact = json.loads(json.dumps(sample))
     exact["allowed_exact_names"] = ["codex/one-off"]
     exact["branches"].append({"name": "codex/one-off", "expected_sha": "b" * 40})

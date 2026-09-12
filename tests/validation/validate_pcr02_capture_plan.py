@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import runpy
 from collections import Counter
 from pathlib import Path
 
@@ -79,6 +80,8 @@ def self_test() -> None:
     assert sum(EXPECTED_GROUPS.values()) == 42
     assert REQUIRED_FILES >= {"mic_raw", "render_reference", "pipeline_output", "frame_timeline", "telemetry"}
     assert REQUIRED_SIGNALS >= {"left_foc_iq", "right_foc_iq", "left_pwm", "right_pwm"}
+    bundle = runpy.run_path(str(Path(__file__).with_name("pcr02_capture_bundle.py")))
+    bundle["self_test"]()
     print("PCR02 capture plan validator self-test: OK")
 
 

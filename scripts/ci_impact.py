@@ -37,6 +37,7 @@ RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
 RELEASE_NEUTRAL_FILES = {
     ".gitignore", ".gitattributes",
     "scripts/ci_impact.py", "scripts/docs_consistency.py",
+    "scripts/public_surface_contract.py", "scripts/check-abi-contract.sh",
     "scripts/research_registry.py", "scripts/prepare_release.py",
     "scripts/release_manifest.py", "scripts/post_release_status.py",
     "scripts/qualification_fingerprint.py", "scripts/program.py",
@@ -324,13 +325,18 @@ def self_test() -> None:
     assert is_release_neutral("fuzz/fuzz_pipeline.c")
     assert is_release_neutral("scripts/ci_impact.py")
     assert is_release_neutral("scripts/docs_consistency.py")
+    assert is_release_neutral("scripts/public_surface_contract.py")
+    assert is_release_neutral("scripts/check-abi-contract.sh")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("docs/program/plan.json")
     assert is_release_neutral("docs/program/iterations/I001.json")
     assert not is_release_neutral("scripts/unregistered-program.py")
     assert not is_release_neutral("validation/tools/build_aec_motion_corpus.py")
-    for path in ["scripts/program.py", "docs/program/plan.json",
-                 "docs/program/iterations/I001.json"]:
+    for path in [
+        "scripts/program.py", "scripts/public_surface_contract.py",
+        "scripts/check-abi-contract.sh", "docs/program/plan.json",
+        "docs/program/iterations/I001.json",
+    ]:
         program = analyze([path])
         assert program["full"] and program["run_lab"] and not program["docs_only"]
     assert is_release_neutral("validation/tools/build_agc_tuning_corpus.py")

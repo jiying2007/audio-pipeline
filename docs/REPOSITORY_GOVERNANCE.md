@@ -68,16 +68,29 @@ When a new project version reaches `main`, `.github/workflows/release.yml`:
 
 1. accepts only a successful push-triggered Verify on `main` and checks out that exact SHA;
 2. requires merged-PR lineage for that SHA;
-3. resolves `vX.Y.Z` from the project version and skips an already-published version;
-4. rebuilds/tests and packages reproducible installed SDK and source archives;
+3. resolves `vX.Y.Z` from the project version and verifies an already-published version instead of rebuilding or republishing it;
+4. for a new version, rebuilds/tests and packages reproducible installed SDK and source archives;
 5. publishes checksums, SPDX SBOM and artifact attestations;
 6. creates/pushes the exact-SHA annotated `vX.Y.Z` tag when absent;
 7. creates a complete draft Release, then publishes it;
 8. reads the published Release and fails unless its `immutable` field is true.
 
-Repository immutable releases must therefore be enabled **before** a new shipping version is merged. A workflow failure after publication is intentionally not treated as an acceptable mutable release.
+Repository immutable releases must therefore be enabled before a new shipping version is merged. Release-neutral descendants of an already-published version must preserve and verify the existing immutable release identity rather than manufacturing a replacement release.
 
 A software Release is not a target-board product certification.
+
+## Dependency automation and evidence authority
+
+Dependabot is a **proposal generator**, not merge or release authority. Its configured update range controls which proposals may be opened; it does not override SemVer classification, evidence authority, exact-head CI, or release policy.
+
+Dependency classes have different authority:
+
+- GitHub Actions pins and the `ci/Dockerfile` base-image digest are repository CI/supply-chain maintenance. They may remain release-neutral when they do not alter the shipped SDK or product evidence authority, but they still require the change-aware verification selected by the repository.
+- `lab/requirements-validation.txt` and `lab/requirements-ansible.txt` define the approved trusted-lab/evidence execution environment. Changing either exact pin changes the environment that materializes validation data, provisions trusted runners, or supports certification evidence. Those changes are therefore **release-bearing** and require a project SemVer/CHANGELOG advance plus the applicable full lab/certification control-plane verification.
+- A patch-level version number does not make a trusted-lab dependency update release-neutral. If no release-bearing cycle is intended, the proposal remains deferred/closed and the currently approved exact pin remains authoritative.
+- An urgent security correction to a trusted-lab dependency is handled as an explicit release-bearing maintenance release; the evidence boundary is not relaxed to make the dependency PR green.
+
+All trusted-lab requirement files remain exact pins (`package==version`). Floating ranges are not accepted as evidence-environment identity.
 
 ## HIL and public-repository isolation
 
@@ -95,11 +108,11 @@ Every shipping SKU maintains a machine-readable v4 record conforming to `certifi
 
 The checked-in `cortex-a32-low-shipping-v1` policy requires a 72-hour soak. The policy itself is only an acceptance contract and must never be presented as a PASS result.
 
-## Live governance state and closure prerequisite
+## Live governance verification
 
-During v1.6 assurance-closure preparation, the repository API reported no active Rulesets and the v1.5.0 Release reported `immutable=false`. Those are historical observations explaining why governance remains a platform-level closure prerequisite rather than a documentation-only recommendation.
+Current governance is checked from live repository state, not inferred from an old release phase or documentation snapshot. Release execution reruns `scripts/github_governance.py` and requires the active main ruleset, version-tag ruleset and immutable-release setting to pass at that exact release attempt.
 
-Before v1.6 is merged for release, repository administrators must make the live `scripts/github_governance.py` audit pass by enabling the required main/tag rulesets and repository immutable releases. The current ChatGPT GitHub connector exposes these administrative controls as read-only, so repository code cannot truthfully self-enable them.
+Historical periods when those controls were not yet enabled belong in release/program history. Current operator documentation must not carry a past-version activation checklist as if it were still an outstanding action.
 
 ## Repository lifecycle state machine
 

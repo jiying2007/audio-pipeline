@@ -84,6 +84,8 @@ MIGRATION_PHRASES = (
     "legacy exported symbol",
     "legacy `eval/`",
     "no released v2 baseline yet",
+    "During v1.6 assurance-closure preparation",
+    "Before v1.6 is merged",
 )
 
 COMMAND_DOCS = (
@@ -222,6 +224,7 @@ def self_test() -> None:
     bad["docs/QUICKSTART.zh-CN.md"] += "ap_state_size(&cfg)\n"
     bad["docs/API_CONTRACT.md"] += STALE_PHRASES[0] + "\n"
     bad["docs/DIAGNOSTICS.md"] += RESOURCE_LITERALS[0] + "\n"
+    bad["docs/REPOSITORY_GOVERNANCE.md"] += "Before v1.6 is merged\n"
     bad["scripts/check-abi-contract.sh"] += (
         'git fetch origin "refs/tags/$BASE_REF:refs/tags/$BASE_REF" --force >/dev/null 2>&1 || true\n'
     )
@@ -231,6 +234,7 @@ def self_test() -> None:
     assert any("retired API snippet" in error for error in errors)
     assert any("stale current-document phrase" in error for error in errors)
     assert any("hosted resource literal" in error for error in errors)
+    assert any("Before v1.6 is merged" in error for error in errors)
     assert any("fail-open" in error for error in errors)
     print("public surface contract self-test: OK")
 

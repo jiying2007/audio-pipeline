@@ -168,7 +168,7 @@ jobs:
           cmake --build build-fast-gate --parallel
           ctest --test-dir build-fast-gate --output-on-failure
           ccache --show-stats
-      - name: V2 hard-cut ABI gate when impacted
+      - name: Public API/ABI contract gate when impacted
         if: needs.impact.outputs.run_abi == 'true'
         run: sh scripts/check-abi-contract.sh
 

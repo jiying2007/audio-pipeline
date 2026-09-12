@@ -4,13 +4,13 @@
 
 The repository is in a **software-commercial-ready maintenance state**. Historical software/public-data iteration evidence remains indexed under [the program archive](program/README.md), but there is no default READY software task. E001 remains external/deferred. New software work should start from a concrete defect, regression, integration need or verified control-plane/documentation drift rather than from a desire to add more complexity.
 
-## Stable v2 policy
+## Public API/ABI discipline
 
-Version 2.0.0 establishes the current public API/ABI baseline. Within the 2.x line, public structures and exported symbols are compatibility contracts; incompatible public changes require the next major version.
+The current 2.x line is the public C API/ABI compatibility line. Public structures and exported symbols are compatibility contracts; incompatible public changes require the next major version.
 
-The v2 baseline itself is a deliberate hard cut from 1.x. Do not reintroduce removed 1.x aliases, version-suffixed compatibility APIs, transitional wrappers, duplicate certification schemas, dead switches or migration-only architecture. Historical release facts belong in `CHANGELOG.md`, not in the current public surface.
+Do not reintroduce retired public names, version-suffixed compatibility APIs, parallel wrappers, duplicate certification schemas, dead switches or migration-only architecture. Historical release facts belong in `CHANGELOG.md`, not in the current public surface. The repository API/ABI contract keeps retired symbols negative-tested so accidental resurrection fails closed.
 
-Extensible structures use `struct_size`, `api_version` and reserved space so future 2.x additions can remain explicit and bounded.
+Extensible structures use `struct_size`, `api_version` and reserved space so compatible additions can remain explicit and bounded.
 
 ## Dependency direction
 
@@ -101,7 +101,7 @@ Standalone wrappers reuse stage implementations and remain separate TUs for link
 
 ## Verification before merge
 
-A production change is complete only when relevant gates pass: architecture/hard-cut contract, native GCC/Clang strict builds, ASan/UBSan, TSan for runtime changes, backend/composition variants, RAM/ELF pruning, paired hosted performance, Arm cross-build/QEMU, named commercial product-preset contracts, static analysis, hosted coverage, acoustic validation contracts and the v2 ABI gate.
+A production change is complete only when relevant gates pass: architecture/public-contract checks, native GCC/Clang strict builds, ASan/UBSan, TSan for runtime changes, backend/composition variants, RAM/ELF pruning, paired hosted performance, Arm cross-build/QEMU, named commercial product-preset contracts, static analysis, hosted coverage, acoustic validation contracts and the public API/ABI gate.
 
 Hosted performance is a regression signal, never a Cortex board claim.
 
@@ -119,7 +119,7 @@ Low-level machine schemas and explicitly canonical specifications remain the sin
 
 `project(audio_pipeline VERSION ...)`, generated build identity and the top `CHANGELOG.md` release must agree. A release SHA needs merged-PR lineage and successful exact-SHA main Verify. Release automation creates the matching annotated `vX.Y.Z` tag, reproducible SDK/source archives, checksums, SBOM and attestations, then requires an immutable published Release.
 
-The initial v2 ABI gate rejects any removed 1.x runtime/build-info symbols. After `v2.0.0` is published, subsequent 2.x releases use it as the compatibility baseline. Release-neutral maintenance must not manufacture a new release merely to advance documentation/governance.
+The public API/ABI gate requires the published compatibility baseline and fails closed if that baseline cannot be fetched or resolved. It rejects retired public names and any disappearance of baseline symbols. Release-neutral maintenance must not manufacture a new release merely to advance documentation/governance.
 
 ## Product certification
 

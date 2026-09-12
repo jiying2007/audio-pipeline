@@ -33,11 +33,13 @@ Once Linux Runtime is started, the DSP worker exclusively owns the live Pipeline
 
 ## Public API and compatibility
 
-The 2.x public C API/ABI is a compatibility contract. Do not restore removed 1.x aliases/wrappers. Public floating-point inputs must reject non-finite values before range checks. Preserve precise status meanings (`AP_EINVAL`, `AP_ENOMEM`, `AP_ESTATE`). Breaking public changes require the next major version.
+The current 2.x public C API/ABI is a compatibility contract. The current line has one public surface; do not introduce parallel compatibility wrappers or reintroduce retired public names. Public floating-point inputs must reject non-finite values before range checks. Preserve precise status meanings (`AP_EINVAL`, `AP_ENOMEM`, `AP_ESTATE`). Breaking public changes require the next major version.
+
+The API/ABI gate compares against the required published compatibility baseline and must fail closed if that baseline cannot be fetched or resolved.
 
 ## Tests
 
-Add the smallest targeted test that proves the fix, plus negative/boundary tests when applicable. Depending on scope, expect strict GCC/Clang, ASan/UBSan, TSan, static analysis, fuzz, coverage, backend/composition, SDK consumers, RAM/ELF pruning, paired performance, Arm cross-build/QEMU, acoustic validation and ABI gates.
+Add the smallest targeted test that proves the fix, plus negative/boundary tests when applicable. Depending on scope, expect strict GCC/Clang, ASan/UBSan, TSan, static analysis, fuzz, coverage, backend/composition, SDK consumers, RAM/ELF pruning, paired performance, Arm cross-build/QEMU, acoustic validation and public API/ABI gates.
 
 A PR is not merge-ready until the exact PR head has the required `summary=success`. If the head moves, old CI evidence is stale.
 

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Repository-internal reasoning over aptriage JSON evidence.
-
-This module is deliberately diagnostic-only. It ranks evidence-backed hypotheses and
-reports temporal associations; it does not claim causal proof, alter APD v1, change
-shipping DSP, or participate in product qualification gates.
-"""
+"""Repository-internal reasoning over terminal aptriage JSON evidence."""
 
 from __future__ import annotations
 
@@ -27,15 +22,8 @@ KIND_SEVERITY = {
 }
 CRITICAL_METADATA_FLAGS = {"clock_reset", "codec_reopen"}
 ERROR_METADATA_FLAGS = {"capture_discontinuity", "render_discontinuity", "xrun"}
-
-# Same-frame ordering is semantic rather than alphabetical. Direct metadata
-# describes the runtime input condition observed on that frame; counter-derived
-# anomalies are reactions observed on the same frame. Trigger events remain
-# context-only and sort last. This ordering does not assert causality.
 KIND_ORDER = {"metadata": 0, "trigger_event": 2}
 
-# Mirrors the stable public ap_event_kind_t values. This mapping is diagnostic
-# presentation only; the numeric APD v1 header remains the source of truth.
 EVENT_NAMES = {
     1: "runtime_started",
     2: "runtime_stopped",
@@ -78,16 +66,10 @@ NORMALIZED_METRICS = {
         "anomaly_count", "frames", 1000.0, "events/1000_frames"
     ),
     "quality_transition_rate_per_1000_metrics_frames": (
-        "quality_transitions",
-        "metrics_frames",
-        1000.0,
-        "transitions/1000_metrics_frames",
+        "quality_transitions", "metrics_frames", 1000.0, "transitions/1000_metrics_frames"
     ),
     "vad_transition_rate_per_1000_metrics_frames": (
-        "vad_transitions",
-        "metrics_frames",
-        1000.0,
-        "transitions/1000_metrics_frames",
+        "vad_transitions", "metrics_frames", 1000.0, "transitions/1000_metrics_frames"
     ),
     "far_end_active_ratio": (
         "far_end_active_frames", "metrics_frames", 1.0, "ratio"
@@ -100,9 +82,6 @@ NORMALIZED_METRICS = {
     ),
 }
 
-# Explicit metadata-domain weights avoid accidental alphabetical tie-breaking.
-# A single metadata event contributes the maximum matching flag weight for a
-# hypothesis so multi-flag records are not double-counted as independent evidence.
 HYPOTHESIS_SPECS = (
     {
         "name": "sync-reference-path",
@@ -154,7 +133,6 @@ HYPOTHESIS_SPECS = (
 
 
 def recording_trigger_context(event: Any) -> dict[str, Any] | None:
-    """Describe why the Flight Recorder froze without treating it as a fault."""
     if isinstance(event, bool) or not isinstance(event, int) or event <= 0:
         return None
     return {
@@ -203,10 +181,6 @@ def _family(item: dict[str, Any]) -> str:
     return "other"
 
 
-def _kind_order(item: dict[str, Any]) -> int:
-    return KIND_ORDER.get(str(item.get("kind", "")), 1)
-
-
 def annotate_anomalies(anomalies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     annotated = []
     for anomaly in anomalies:
@@ -218,16 +192,16 @@ def annotate_anomalies(anomalies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         annotated,
         key=lambda item: (
             int(item.get("frame", 0)),
-            _kind_order(item),
+            KIND_ORDER.get(str(item.get("kind", "")), 1),
             str(item.get("kind", "")),
         ),
     )
 
 
 def _interval(events: list[dict[str, Any]]) -> dict[str, Any]:
-    max_severity = max(
-        events, key=lambda item: SEVERITY_ORDER[item["severity"]]
-    )["severity"]
+    max_severity = max(events, key=lambda item: SEVERITY_ORDER[item["severity"]])[
+        "severity"
+    ]
     return {
         "start_frame": int(events[0]["frame"]),
         "end_frame": int(events[-1]["frame"]),
@@ -241,7 +215,6 @@ def _interval(events: list[dict[str, Any]]) -> dict[str, Any]:
 def build_intervals(
     annotated: list[dict[str, Any]], gap_frames: int = 10
 ) -> list[dict[str, Any]]:
-    """Cluster temporally adjacent non-trigger anomalies without asserting causality."""
     events = [item for item in annotated if item.get("kind") != "trigger_event"]
     if not events:
         return []
@@ -311,7 +284,6 @@ def _strength(score: int) -> str:
 def root_cause_hypotheses(
     annotated: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Rank explicit evidence using deterministic diagnostic-only weights."""
     hypotheses: list[dict[str, Any]] = []
     for spec in HYPOTHESIS_SPECS:
         evidence, score = _evidence_for_spec(annotated, spec)
@@ -387,9 +359,7 @@ def candidate_chains(annotated: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def anomaly_counts(annotated: list[dict[str, Any]]) -> dict[str, int]:
-    return dict(
-        sorted(Counter(str(item.get("kind")) for item in annotated).items())
-    )
+    return dict(sorted(Counter(str(item.get("kind")) for item in annotated).items()))
 
 
 def build_diagnosis(analysis: dict[str, Any]) -> dict[str, Any]:
@@ -429,9 +399,7 @@ def _numeric(summary: dict[str, Any], key: str) -> float | None:
 
 def _geometry(summary: dict[str, Any]) -> dict[str, float | int | None]:
     return {
-        "frames": summary.get("frames")
-        if isinstance(summary.get("frames"), int)
-        else None,
+        "frames": summary.get("frames") if isinstance(summary.get("frames"), int) else None,
         "metrics_frames": summary.get("metrics_frames")
         if isinstance(summary.get("metrics_frames"), int)
         else None,
@@ -520,9 +488,7 @@ def compare_diagnoses(
     for key in summary_keys:
         ref_value = ref_summary.get(key)
         cand_value = cand_summary.get(key)
-        if isinstance(ref_value, (int, float)) and isinstance(
-            cand_value, (int, float)
-        ):
+        if isinstance(ref_value, (int, float)) and isinstance(cand_value, (int, float)):
             summary_delta[key] = cand_value - ref_value
 
     ref_geometry = _geometry(ref_summary)
@@ -558,14 +524,10 @@ def compare_diagnoses(
         "authority": "repository-internal-heuristic-diagnostic-only",
         "anomaly_count_delta_by_kind": count_delta,
         "new_anomaly_kinds": [
-            kind
-            for kind in all_kinds
-            if ref_counts[kind] == 0 and cand_counts[kind] > 0
+            kind for kind in all_kinds if ref_counts[kind] == 0 and cand_counts[kind] > 0
         ],
         "resolved_anomaly_kinds": [
-            kind
-            for kind in all_kinds
-            if ref_counts[kind] > 0 and cand_counts[kind] == 0
+            kind for kind in all_kinds if ref_counts[kind] > 0 and cand_counts[kind] == 0
         ],
         "summary_delta": summary_delta,
         "comparison_geometry": {
@@ -574,9 +536,7 @@ def compare_diagnoses(
             "frames_equal": frames_equal,
             "metrics_frames_equal": metrics_frames_equal,
         },
-        "raw_count_comparability": _raw_count_comparability(
-            ref_summary, cand_summary
-        ),
+        "raw_count_comparability": _raw_count_comparability(ref_summary, cand_summary),
         "normalized_metrics": _normalized_comparison(ref_summary, cand_summary),
         "warnings": warnings,
         "reference_top_hypothesis": reference["top_hypothesis"],
@@ -621,15 +581,11 @@ def write_markdown(
             rendered = " → ".join(
                 f"{event['kind']}@{event['frame']}" for event in chain["events"]
             )
-            lines.append(
-                f"- `{chain['name']}`: {rendered} (temporal association only)"
-            )
+            lines.append(f"- `{chain['name']}`: {rendered} (temporal association only)")
     if comparison:
         lines.extend(["", "## Reference comparison", ""])
         lines.append(f"- new anomaly kinds: `{comparison['new_anomaly_kinds']}`")
-        lines.append(
-            f"- resolved anomaly kinds: `{comparison['resolved_anomaly_kinds']}`"
-        )
+        lines.append(f"- resolved anomaly kinds: `{comparison['resolved_anomaly_kinds']}`")
         lines.append(f"- raw summary deltas: `{comparison['summary_delta']}`")
         geometry = comparison["comparison_geometry"]
         lines.append(
@@ -650,24 +606,23 @@ def write_markdown(
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def load_analysis(path: Path) -> dict[str, Any]:
+def load_triage(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if "analysis" in payload:
-        header = payload.get("header") or {}
-        analysis = payload["analysis"]
-        if not isinstance(analysis, dict):
-            raise ValueError(f"{path}: invalid analysis object")
-        payload = dict(analysis)
-        event = header.get("trigger_event") if isinstance(header, dict) else None
-        if isinstance(event, int) and not isinstance(event, bool):
-            payload["_recording_trigger_event"] = event
-    if (
-        not isinstance(payload, dict)
-        or "summary" not in payload
-        or "anomalies" not in payload
-    ):
-        raise ValueError(f"{path}: expected aptriage triage.json or analysis.json")
-    return payload
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path}: expected triage JSON object")
+    if payload.get("authority") != "repository-internal-diagnostic-only":
+        raise ValueError(f"{path}: expected repository-internal triage authority")
+    analysis = payload.get("analysis")
+    header = payload.get("header")
+    if not isinstance(analysis, dict) or not isinstance(header, dict):
+        raise ValueError(f"{path}: expected aptriage triage.json with header and analysis")
+    if "summary" not in analysis or "anomalies" not in analysis:
+        raise ValueError(f"{path}: triage analysis is incomplete")
+    result = dict(analysis)
+    event = header.get("trigger_event")
+    if isinstance(event, int) and not isinstance(event, bool):
+        result["_recording_trigger_event"] = event
+    return result
 
 
 def _metadata_self_test() -> None:
@@ -680,12 +635,7 @@ def _metadata_self_test() -> None:
     )
     for flag, family, hypothesis in cases:
         diagnosis = build_diagnosis(
-            {
-                "summary": {},
-                "anomalies": [
-                    {"frame": 0, "kind": "metadata", "flags": [flag]}
-                ],
-            }
+            {"summary": {}, "anomalies": [{"frame": 0, "kind": "metadata", "flags": [flag]}]}
         )
         assert diagnosis["first_fault"]["family"] == family, flag
         assert diagnosis["top_hypothesis"]["hypothesis"] == hypothesis, flag
@@ -783,16 +733,9 @@ def self_test() -> None:
     assert "delay_jump" in comparison["new_anomaly_kinds"]
     assert comparison["summary_delta"]["aec_converged_frames"] == -40
     assert comparison["comparison_geometry"]["metrics_frames_equal"] is False
-    assert (
-        comparison["raw_count_comparability"]["aec_converged_frames"][
-            "directly_comparable"
-        ]
-        is False
-    )
-    assert (
-        abs(comparison["normalized_metrics"]["aec_converged_ratio"]["delta"])
-        < 1e-12
-    )
+    assert comparison["raw_count_comparability"]["aec_converged_frames"]["directly_comparable"] is False
+    assert abs(comparison["normalized_metrics"]["aec_converged_ratio"]["delta"]) < 1e-12
+    assert abs(comparison["normalized_metrics"]["far_end_active_ratio"]["delta"]) < 1e-12
     assert comparison["warnings"]
     _metadata_self_test()
     _multi_event_self_test()
@@ -802,12 +745,8 @@ def self_test() -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "input", nargs="?", type=Path, help="aptriage triage.json or analysis.json"
-    )
-    parser.add_argument(
-        "--reference", type=Path, help="reference triage.json or analysis.json"
-    )
+    parser.add_argument("input", nargs="?", type=Path, help="aptriage triage.json")
+    parser.add_argument("--reference", type=Path, help="reference aptriage triage.json")
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
@@ -816,14 +755,14 @@ def main() -> int:
         self_test()
         return 0
     if not args.input or not args.output_dir:
-        parser.error("input and --output-dir are required")
+        parser.error("input triage.json and --output-dir are required")
 
     try:
-        analysis = load_analysis(args.input)
+        analysis = load_triage(args.input)
         diagnosis = build_diagnosis(analysis)
         comparison = None
         if args.reference:
-            comparison = compare_diagnoses(load_analysis(args.reference), analysis)
+            comparison = compare_diagnoses(load_triage(args.reference), analysis)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"apdiagnose: {exc}", file=__import__("sys").stderr)
         return 2

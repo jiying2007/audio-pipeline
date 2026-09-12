@@ -31,12 +31,9 @@ def _sorted_strings(values: Any) -> list[str]:
     return sorted({item for item in values if isinstance(item, str) and item})
 
 
-def _resolve_source(path: Path, source_root: Path | None) -> tuple[Path, str | None]:
+def _resolve_source(path: Path, source_root: Path) -> tuple[Path, str]:
     """Resolve and constrain a source before any source bytes are read."""
     resolved = path.resolve(strict=True)
-    if source_root is None:
-        return resolved, None
-
     resolved_root = source_root.resolve(strict=True)
     if not resolved_root.is_dir():
         raise ValueError(f"{source_root}: source root is not a directory")
@@ -50,7 +47,7 @@ def _resolve_source(path: Path, source_root: Path | None) -> tuple[Path, str | N
 
 
 def _load_bound_json(
-    path: Path, source_root: Path | None
+    path: Path, source_root: Path
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     resolved, relative_path = _resolve_source(path, source_root)
     raw = resolved.read_bytes()
@@ -74,7 +71,7 @@ def load_incident(
     incident_id: str,
     triage_path: Path,
     diagnosis_path: Path,
-    source_root: Path | None = None,
+    source_root: Path,
 ) -> dict[str, Any]:
     if not incident_id:
         raise ValueError("incident id must be non-empty")
@@ -127,29 +124,24 @@ def load_incident(
                 f"{incident_id}: top hypothesis must preserve causal_proof=false"
             )
 
-    if replay:
-        if replay.get("authority") != "repository-internal-replay-interpretation-only":
-            raise ValueError(f"{incident_id}: unexpected replay authority")
-        if replay.get("whole_incident_equivalence_authoritative") is not False:
-            raise ValueError(
-                f"{incident_id}: whole-incident replay equivalence must remain false"
-            )
+    if replay.get("authority") != "repository-internal-replay-interpretation-only":
+        raise ValueError(f"{incident_id}: unexpected replay authority")
+    if replay.get("whole_incident_equivalence_authoritative") is not False:
+        raise ValueError(
+            f"{incident_id}: whole-incident replay equivalence must remain false"
+        )
 
-    if identity:
-        if identity.get("authority") != "repository-internal-build-identity-subset-only":
-            raise ValueError(f"{incident_id}: unexpected build identity authority")
-        if identity.get("exact_source_config_match_authoritative") is not False:
-            raise ValueError(
-                f"{incident_id}: exact source/config identity must remain "
-                "non-authoritative"
-            )
+    if identity.get("authority") != "repository-internal-build-identity-subset-only":
+        raise ValueError(f"{incident_id}: unexpected build identity authority")
+    if identity.get("status") not in {"MATCH", "MISMATCH"}:
+        raise ValueError(f"{incident_id}: invalid build identity status")
+    if identity.get("exact_source_config_match_authoritative") is not False:
+        raise ValueError(
+            f"{incident_id}: exact source/config identity must remain non-authoritative"
+        )
 
     return {
         "id": incident_id,
-        "source": {
-            "triage": str(triage_path),
-            "diagnosis": str(diagnosis_path),
-        },
         "source_evidence": {
             "triage": triage_evidence,
             "diagnosis": diagnosis_evidence,
@@ -388,6 +380,11 @@ def build_bundle(incidents: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
     source_binding = _source_binding(incidents)
+    if not source_binding["all_sources_bound"]:
+        raise ValueError("all incident sources must be SHA256-bound")
+    if not source_binding["portable_relative_paths_complete"]:
+        raise ValueError("all incident sources must have source-root-relative paths")
+
     return {
         "schema_version": 1,
         "authority": AUTHORITY,
@@ -686,8 +683,6 @@ def self_test() -> None:
         assert mutated["source_evidence"]["triage"]["sha256"] != first_digest
         assert mutated["source_evidence"]["triage"]["size_bytes"] == first_size + 1
 
-        # Containment must be enforced before bytes are read/decoded. Invalid
-        # outside bytes would otherwise raise a UTF-8 error before the root error.
         outside_triage = temp / "outside-triage.json"
         outside_triage.write_bytes(b"\xff")
         try:
@@ -702,7 +697,6 @@ def self_test() -> None:
         else:
             raise AssertionError("source outside --source-root must fail closed")
 
-        # A symlink inside the root must not escape containment either.
         outside_valid = temp / "outside-valid.json"
         outside_valid.write_text(
             first_triage_path.read_text(encoding="utf-8"), encoding="utf-8"
@@ -753,10 +747,7 @@ def main() -> int:
     parser.add_argument(
         "--source-root",
         type=Path,
-        help=(
-            "optional root that all source JSON files must resolve under; "
-            "enables portable relative-path evidence"
-        ),
+        help="required root that all source JSON files must resolve under",
     )
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--self-test", action="store_true")
@@ -765,8 +756,10 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
-    if not args.entry or not args.output_dir:
-        parser.error("--entry (at least twice) and --output-dir are required")
+    if not args.entry or not args.output_dir or not args.source_root:
+        parser.error(
+            "--source-root, --entry (at least twice), and --output-dir are required"
+        )
     try:
         incidents = [
             load_incident(

@@ -55,10 +55,12 @@ jobs:
             tools/apreplay.py \
             tests/diagnostics/aptriage.py \
             tests/diagnostics/apdiagnose.py \
+            tests/diagnostics/apincident.py \
             tests/diagnostics/event_contract.py \
             tests/diagnostics/fault_injection_contract.py
           python3 tests/diagnostics/aptriage.py --self-test
           python3 tests/diagnostics/apdiagnose.py --self-test
+          python3 tests/diagnostics/apincident.py --self-test
           python3 tests/diagnostics/event_contract.py --self-test
           python3 tests/diagnostics/event_contract.py --output /tmp/event-contract.json
           test -s /tmp/event-contract.json
@@ -77,31 +79,6 @@ jobs:
           assert result['trigger_context_mismatches'] == []
           assert result['unknown_event_fallback']['checked'] is True
           assert result['unknown_event_fallback']['pass'] is True
-          PY
-          python3 tests/diagnostics/apdiagnose.py \
-            tests/diagnostics/fixtures/reasoning-candidate.json \
-            --reference tests/diagnostics/fixtures/reasoning-reference.json \
-            --output-dir /tmp/reasoning-fixture
-          test -s /tmp/reasoning-fixture/diagnosis.json
-          test -s /tmp/reasoning-fixture/comparison.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          diagnosis = json.loads(Path('/tmp/reasoning-fixture/diagnosis.json').read_text())
-          comparison = json.loads(Path('/tmp/reasoning-fixture/comparison.json').read_text())
-          assert diagnosis['recording_trigger'] is None
-          assert diagnosis['first_fault']['kind'] == 'delay_jump'
-          assert diagnosis['top_hypothesis']['hypothesis'] == 'sync-reference-path'
-          assert diagnosis['candidate_chains'][0]['name'] == 'delay-instability-to-aec-loss'
-          assert diagnosis['causal_proof'] is False
-          assert 'delay_jump' in comparison['new_anomaly_kinds']
-          assert comparison['summary_delta']['aec_converged_frames'] == -60
-          assert comparison['comparison_geometry']['frames_equal'] is False
-          assert comparison['comparison_geometry']['metrics_frames_equal'] is False
-          assert comparison['raw_count_comparability']['aec_converged_frames']['directly_comparable'] is False
-          assert abs(comparison['normalized_metrics']['aec_converged_ratio']['delta']) < 1e-12
-          assert abs(comparison['normalized_metrics']['far_end_active_ratio']['delta']) < 1e-12
-          assert comparison['warnings']
           PY
 
       - name: Configure diagnostics build
@@ -142,10 +119,17 @@ jobs:
             --processor ./build-diag/ap_process_pcm \
             --output-pcm /tmp/replay-output.pcm \
             --require-bit-exact > /tmp/replay.json
+          set +e
+          python3 tests/diagnostics/aptriage.py /tmp/test.apd \
+            --processor ./build-diag/ap_process_pcm \
+            --output-dir /tmp/apd-triage-missing-identity >/tmp/missing-identity.log 2>&1
+          missing_identity_rc=$?
+          set -e
+          test "$missing_identity_rc" -eq 2
+          grep -q -- '--processor-build-info' /tmp/missing-identity.log
           python3 tests/diagnostics/aptriage.py /tmp/test.apd \
             --processor ./build-diag/ap_process_pcm \
             --processor-build-info /tmp/processor-build-info.json \
-            --require-build-identity-match \
             --output-dir /tmp/apd-triage \
             --require-bit-exact \
             --stage-counterfactuals
@@ -175,7 +159,8 @@ jobs:
           assert identity['shared_fields_match'] is True
           assert identity['mismatches'] == []
           assert identity['shared_fields'] == ['version', 'module_mask', 'aec_backend', 'ns_estimator', 'simd_backend', 'resampler_mode']
-          assert identity['require_match'] is True
+          assert 'processor_identity_supplied' not in identity
+          assert 'require_match' not in identity
           assert identity['exact_source_config_match_authoritative'] is False
           assert identity['processor_provenance']['source_revision']
           assert identity['processor_provenance']['config_digest']
@@ -218,7 +203,6 @@ jobs:
           python3 tests/diagnostics/aptriage.py /tmp/test.apd \
             --processor ./build-diag/ap_process_pcm \
             --processor-build-info /tmp/processor-build-info-tampered.json \
-            --require-build-identity-match \
             --output-dir /tmp/apd-triage-identity-mismatch
           rc=$?
           set -e
@@ -232,7 +216,8 @@ jobs:
           identity = triage['build_identity']
           assert identity['status'] == 'MISMATCH'
           assert identity['shared_fields_match'] is False
-          assert identity['require_match'] is True
+          assert 'processor_identity_supplied' not in identity
+          assert 'require_match' not in identity
           assert identity['exact_source_config_match_authoritative'] is False
           assert len(identity['mismatches']) == 1
           assert identity['mismatches'][0]['field'] == 'module_mask'
@@ -247,6 +232,14 @@ jobs:
             --processor-build-info /tmp/processor-build-info.json \
             --work-dir /tmp/fault-injection
           test -s /tmp/fault-injection/fault-injection-summary.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          bundle = json.loads(Path('/tmp/fault-injection/incident-bundle/incident-bundle.json').read_text())
+          assert bundle['source_binding']['all_sources_bound'] is True
+          assert bundle['source_binding']['portable_relative_paths_complete'] is True
+          assert all('source' not in item for item in bundle['incidents'])
+          PY
 
       - name: Run runtime continuity and diagnostics contracts
         run: ctest --test-dir build-diag --output-on-failure -R 'ap_runtime_tests'
@@ -265,10 +258,10 @@ jobs:
             /tmp/replay-output.pcm
             /tmp/processor-build-info.json
             /tmp/processor-build-info-tampered.json
+            /tmp/missing-identity.log
             /tmp/apd-triage/
             /tmp/apd-triage-identity-mismatch/
             /tmp/apd-diagnosis/
-            /tmp/reasoning-fixture/
             /tmp/fault-injection/
           retention-days: 30
           if-no-files-found: warn

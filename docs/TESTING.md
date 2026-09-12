@@ -4,19 +4,19 @@ This document is the normative test-routing and hardware-validation policy for `
 
 ## Fast Gate and Full Gate
 
-Pull requests enter a mandatory Fast Gate before expensive reusable workflows expand. The Fast Gate runs architecture/hard-cut checks, Python tool self-tests, strict Clang build, unit/contract/property tests and the v2 ABI gate when public/runtime ABI is impacted.
+Pull requests enter a mandatory Fast Gate before expensive reusable workflows expand. The Fast Gate runs architecture/public-surface checks, Python tool self-tests, strict Clang build, unit/contract/property tests and the public API/ABI gate when public/runtime ABI is impacted.
 
-Documentation-only changes run a whitespace/impact self-check. Any unknown path, public header, build-system file, workflow file, test-infrastructure file or unclassified core source conservatively expands to the full matrix. A `main` push always forces full verification.
+Documentation-only changes run a whitespace/impact self-check plus current public-surface/documentation contracts. Any unknown path, public header, build-system file, workflow file, test-infrastructure file or unclassified core source conservatively expands to the full matrix. A `main` push always forces full verification.
 
 The Full Gate retains `fail-fast: false` for diagnostic matrices. Required `summary` is the single aggregate merge/release status and verifies every expected domain succeeded and every non-selected domain was actually skipped.
 
 FULL includes paired performance comparison: pull requests compare `origin/main -> candidate`; main push verification compares exact `event.before -> HEAD`.
 
-## v2 API/ABI hard-cut gate
+## Public API/ABI contract gate
 
-The initial 2.0.0 gate is intentionally not additive against 1.x. It requires the terminal v2 symbols and rejects removed 1.x runtime/build-info symbols, types and compatibility headers. Current certification schema must be v4-only.
+The current 2.x compatibility line has one public API/ABI surface. The gate requires the current public build-info/runtime symbols, rejects retired public names and exported symbols, and compares current ABI/symbols against the required published `v2.0.0` compatibility baseline.
 
-After the immutable `v2.0.0` tag exists, subsequent 2.x ABI checks use v2.0.0 as their released compatibility baseline. This prevents compatibility residue from returning while restoring normal same-major ABI protection.
+The baseline is mandatory evidence, not an optional optimization. If the baseline tag cannot be fetched or resolved to a commit, the gate fails closed. Current certification schema must remain v4-only.
 
 ## Change-aware test selection
 

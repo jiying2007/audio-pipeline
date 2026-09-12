@@ -41,6 +41,18 @@ capture/<capture-id>/
 
 All three PCM streams must represent the same number of samples. Their sample count must be an integer number of 160-sample frames. The validator derives duration from PCM bytes instead of trusting a manually entered duration.
 
+## Capture context
+
+Each manifest also records the low-rate physical context that would otherwise be easy to lose after the PCM files leave the device:
+
+- `room_id` — a stable lab/room identifier, not a private street address;
+- `ambient_condition` — short condition text such as `quiet-lab`, `tv-background`, `fan-on` or another controlled description;
+- `speaker_volume_percent` — product playback-volume setting from 0 to 100;
+- `battery_mv` — battery voltage at the start of the run;
+- `charging_state` — e.g. `discharging`, `charging`, `dock`.
+
+These fields are intentionally snapshot metadata. Values that change during the run belong in `telemetry.jsonl` or optional `system_metrics` rather than being repeatedly copied into the manifest.
+
 ## Per-frame timeline
 
 `frame_timeline.jsonl` contains exactly one object per 10 ms audio frame. Every row must contain:
@@ -96,6 +108,11 @@ python3 tests/validation/pcr02_capture_bundle.py new \
   --binary-sha256 <executed-binary-sha256> \
   --board-revision <board-revision> \
   --device-id <pseudonymous-device-id> \
+  --room-id <lab-room-id> \
+  --ambient-condition <controlled-condition> \
+  --speaker-volume-percent <0-100> \
+  --battery-mv <battery-millivolts> \
+  --charging-state <charging-state> \
   --aec-backend <ap_build_info-value> \
   --ns-estimator <ap_build_info-value> \
   --simd-backend <ap_build_info-value> \
@@ -111,7 +128,7 @@ To attach data that are available on this run, add one or more optional roles at
   --optional-file dmesg=logs/dmesg.txt
 ```
 
-The `new` command creates an **unsealed working manifest**. It does not create audio or telemetry and it cannot be treated as real evidence.
+The `new` command creates an **unsealed working manifest** and the required parent directories. It does not create audio, timeline or telemetry bytes and it cannot be treated as real evidence.
 
 ## Record on the DUT
 
@@ -149,6 +166,8 @@ Independent verification is:
 python3 tests/validation/pcr02_capture_bundle.py validate \
   --manifest capture/pcr02-aec-07-unit01-run01/manifest.json
 ```
+
+Any post-seal modification to a bound PCM, timeline, telemetry, log or APD file causes validation to fail because its byte count and/or SHA-256 no longer matches the sealed manifest.
 
 ## Offline replay
 
@@ -196,7 +215,7 @@ The existing plan remains 42 slots rather than multiplying the scene count:
 - 14 self-noise slots: idle/straight/turning/acceleration/braking/servo/floor-transition × hard floor/carpet;
 - 12 AEC product-path slots: speaker-only/double-talk × idle/straight/turning × hard floor/carpet.
 
-The richer bundle format increases the evidence captured **inside each slot** instead of creating a much larger scene matrix. Additional angles, rear-field, mic fault, speaker-volume or long-duration stress runs can be added later as separate development captures after the base 42-slot product set exists.
+The richer bundle format increases the evidence captured **inside each slot** instead of creating a much larger scene matrix. Additional rear-field, mic-fault, speaker-volume sweep or long-duration stress runs can be added later as separate development captures after the base 42-slot product set exists.
 
 ## Privacy and evidence boundary
 

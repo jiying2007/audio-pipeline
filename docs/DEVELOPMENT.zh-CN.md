@@ -13,10 +13,11 @@
 - 不利用缺少真机证据作为理由降低 gate；
 - 不把公开数据/QEMU/Hosted CI 写成真实 SKU 性能或 PQ 证据。
 
-## v2 API/ABI
+## Public API/ABI 纪律
 
-- 2.x 公共结构、函数和导出符号属于兼容契约；
-- 不重新引入 1.x alias、wrapper、过渡 API 或重复 certification schema；
+- 当前 2.x 是公开 C API/ABI 兼容线；
+- 当前兼容线不提供平行 compatibility wrapper/alias；
+- 已退役 public name/symbol 必须由 API/ABI contract 持续 negative-test，禁止意外复活；
 - 需要扩展的结构使用 `struct_size`、`api_version` 与 reserved space；
 - 破坏性 public change 需要下一 major version；
 - public float 参数先检查 finite，再做范围检查。

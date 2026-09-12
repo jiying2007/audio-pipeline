@@ -12,6 +12,8 @@ import argparse
 from pathlib import Path
 from typing import Mapping
 
+from docs_consistency import RESOURCE_LITERALS, STALE_PHRASES
+
 ROOT = Path(__file__).resolve().parents[1]
 
 CURRENT_SURFACE = (
@@ -31,22 +33,40 @@ CURRENT_SURFACE = (
     "docs/DEVELOPMENT.md",
     "docs/DEVELOPMENT.zh-CN.md",
     "docs/DIAGNOSTICS.md",
+    "docs/DSP_DESIGN.md",
+    "docs/EXTENDED_REAL_VALIDATION.md",
+    "docs/EXTENDED_REAL_VALIDATION.zh-CN.md",
+    "docs/FIXED_GEOMETRY_REFERENCE.md",
     "docs/PERFORMANCE.md",
     "docs/PLATFORM_SUPPORT.md",
+    "docs/PORTING.md",
     "docs/PRODUCT_ASSURANCE.md",
     "docs/PRODUCT_ASSURANCE.zh-CN.md",
+    "docs/RENDER_CORRELATION_VALIDATION.md",
+    "docs/RENDER_CORRELATION_VALIDATION.zh-CN.md",
     "docs/REPOSITORY_GOVERNANCE.md",
+    "docs/REPOSITORY_LIFECYCLE.md",
+    "docs/REPOSITORY_LIFECYCLE.zh-CN.md",
     "docs/TESTING.md",
     "docs/TESTING.zh-CN.md",
     "docs/TRUSTED_RUNNERS.md",
     "docs/TRUSTED_RUNNERS.zh-CN.md",
     "docs/TUNING.md",
     "validation/README.md",
+    "validation/RUNNER.md",
+    "validation/tuning/README.md",
+    "lab/README.md",
     "hil/README.md",
     "certification/README.md",
+    "certification/policies/README.md",
     ".github/workflows/verify.yml",
     ".github/workflows/quality.yml",
     "scripts/check-abi-contract.sh",
+)
+
+DOCUMENT_SURFACE = tuple(
+    path for path in CURRENT_SURFACE
+    if path.endswith(".md")
 )
 
 MIGRATION_PHRASES = (
@@ -97,6 +117,21 @@ def validate_texts(texts: Mapping[str, str]) -> list[str]:
         for phrase in MIGRATION_PHRASES:
             if phrase in text:
                 errors.append(f"{path}: migration-era phrase remains: {phrase!r}")
+
+    # Reuse docs_consistency's current-document drift vocabulary instead of
+    # maintaining a second copy. Historical/program/generated documents remain
+    # outside DOCUMENT_SURFACE by construction.
+    for path in DOCUMENT_SURFACE:
+        text = texts.get(path, "")
+        for phrase in STALE_PHRASES:
+            if phrase in text:
+                errors.append(f"{path}: stale current-document phrase remains: {phrase!r}")
+        for literal in RESOURCE_LITERALS:
+            if literal in text:
+                errors.append(
+                    f"{path}: hosted resource literal {literal!r} must remain in the machine "
+                    "resource baseline/generated view rather than current operator docs"
+                )
 
     for path in COMMAND_DOCS:
         text = texts.get(path, "")
@@ -185,6 +220,8 @@ def self_test() -> None:
     bad = dict(base)
     bad["README.md"] += "## v2 hard-cut API\n--out-dir\n"
     bad["docs/QUICKSTART.zh-CN.md"] += "ap_state_size(&cfg)\n"
+    bad["docs/API_CONTRACT.md"] += STALE_PHRASES[0] + "\n"
+    bad["docs/DIAGNOSTICS.md"] += RESOURCE_LITERALS[0] + "\n"
     bad["scripts/check-abi-contract.sh"] += (
         'git fetch origin "refs/tags/$BASE_REF:refs/tags/$BASE_REF" --force >/dev/null 2>&1 || true\n'
     )
@@ -192,6 +229,8 @@ def self_test() -> None:
     assert any("migration-era phrase" in error for error in errors)
     assert any("--out-dir" in error for error in errors)
     assert any("retired API snippet" in error for error in errors)
+    assert any("stale current-document phrase" in error for error in errors)
+    assert any("hosted resource literal" in error for error in errors)
     assert any("fail-open" in error for error in errors)
     print("public surface contract self-test: OK")
 

@@ -22,6 +22,7 @@
     "feat/",
     "fix/",
     "governance/",
+    "measurement/",
     "program/",
     "release/",
     "validation/"

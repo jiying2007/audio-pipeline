@@ -13,7 +13,7 @@
 | Runtime/系统开发 | [架构](ARCHITECTURE.zh-CN.md) | [API_CONTRACT.md](API_CONTRACT.md)、[DIAGNOSTICS.md](DIAGNOSTICS.md) |
 | CI/Release 维护 | [流程图](FLOWS.zh-CN.md) | [PRODUCT_ASSURANCE 中文版](PRODUCT_ASSURANCE.zh-CN.md)、[REPOSITORY_GOVERNANCE.md](REPOSITORY_GOVERNANCE.md) |
 | 数据集自测/迭代 | [TESTING 中文版](TESTING.zh-CN.md) | [EXTENDED_REAL_VALIDATION 中文版](EXTENDED_REAL_VALIDATION.zh-CN.md)、[validation/README.md](../validation/README.md) |
-| 实验室/真机 | [可信 Runner 中文版](TRUSTED_RUNNERS.zh-CN.md) | [lab/README.md](../lab/README.md)、[hil/README.md](../hil/README.md) |
+| 实验室/真机 | [PCR02 真机采集](PCR02_REAL_CAPTURE.md) | [可信 Runner 中文版](TRUSTED_RUNNERS.zh-CN.md)、[lab/README.md](../lab/README.md)、[hil/README.md](../hil/README.md) |
 | Product Certification | [PRODUCT_ASSURANCE 中文版](PRODUCT_ASSURANCE.zh-CN.md) | [certification/README.md](../certification/README.md) |
 | 贡献者 | [CONTRIBUTING.zh-CN.md](../CONTRIBUTING.zh-CN.md) | [开发规范](DEVELOPMENT.zh-CN.md) |
 | AI/Codex/自动化助手 | [AGENTS.zh-CN.md](../AGENTS.zh-CN.md) | [AGENTS.md](../AGENTS.md) |
@@ -29,6 +29,7 @@
 - [TRUSTED_RUNNERS.zh-CN.md](TRUSTED_RUNNERS.zh-CN.md)：四类 self-hosted runner 上线和失效规则。
 - [TESTING.zh-CN.md](TESTING.zh-CN.md)：CI、公开数据、HIL 测试策略。
 - [EXTENDED_REAL_VALIDATION.zh-CN.md](EXTENDED_REAL_VALIDATION.zh-CN.md)：真实公开数据扩展验证。
+- [PCR02_REAL_CAPTURE.md](PCR02_REAL_CAPTURE.md)：PCR02/SSC305 双麦真机采集 bundle、哈希封存、离线 replay 与诊断接入流程。
 - [REPOSITORY_LIFECYCLE.zh-CN.md](REPOSITORY_LIFECYCLE.zh-CN.md)：研究、候选、分支和证据生命周期。
 
 ## 英文 canonical 文档与中文层的关系
@@ -37,6 +38,7 @@
 
 - `docs/API_CONTRACT.md`：公开 C API、状态码、生命周期、线程契约；
 - `docs/DSP_DESIGN.md`：算法公式、状态与实现细节；
+- `docs/PCR02_REAL_CAPTURE.md`：PCR02 真机采集、bundle/replay/diagnosis 与证据边界；
 - `docs/PERFORMANCE.md`：资源/性能机器 Gate；
 - `validation/authority.json`：数据权限真相源；
 - `certification/*.schema.json` 与 shipping policy：产品认证机器真相源；

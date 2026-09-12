@@ -41,9 +41,9 @@ S16 采集
 
 帧长固定 10 ms。设备 I/O 在编译 envelope 内支持 8/16/24/32/48 kHz；重 DSP 运行于 8/16 kHz。Pipeline/standalone module/Runtime 的持久状态均由调用方提供有界内存。
 
-## v2 API / Runtime
+## Public API / Runtime
 
-2.0.0 建立当前 public C API/ABI 基线，移除的 1.x wrapper 不重新声明、导出或提供兼容 alias。
+当前 2.x 是唯一 public C API/ABI 兼容线；不兼容的 public symbol/structure 变化必须进入下一 major version，当前兼容线不提供平行 compatibility alias。
 
 Linux Runtime 典型生命周期：
 
@@ -119,8 +119,10 @@ Dump/Replay：
 
 ```bash
 python3 tools/apdump.py info failure.apd
-python3 tools/apdump.py extract failure.apd --out-dir extracted
-python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-dir replay
+python3 tools/apdump.py extract failure.apd --output-dir extracted
+python3 tools/apreplay.py failure.apd \
+  --processor ./build/ap_process_pcm \
+  --output-pcm replay.pcm
 ```
 
 `.apd` 可能包含用户语音；保留周期、访问控制和安全删除属于产品责任。
@@ -166,7 +168,7 @@ Hosted CI、QEMU、公开数据、较短 HIL 或 E001 readiness 均不能替代�
 
 ## 仓库 Gate
 
-PR/main Verify 覆盖 strict compile/test、GCC/Clang、sanitizer、TSan、CodeQL/static analysis、coverage、backend/composition、Arm/QEMU、SSC305 exact product profile、RAM/ROM pruning、paired performance、SDK consumer、diagnostics replay、deterministic acoustic regression、bounded tuning、ordinary-user lab contract 和 v2 ABI。
+PR/main Verify 覆盖 strict compile/test、GCC/Clang、sanitizer、TSan、CodeQL/static analysis、coverage、backend/composition、Arm/QEMU、SSC305 exact product profile、RAM/ROM pruning、paired performance、SDK consumer、diagnostics replay、deterministic acoustic regression、bounded tuning、ordinary-user lab contract 和 public API/ABI contract。
 
 只有 exact PR/main SHA 的 required `summary=success` 才是合并/Release 权威证据。release-bearing 变化遵循 SemVer/CHANGELOG；release-neutral 文档/治理变化不得人为制造新版本。
 

@@ -2,8 +2,8 @@
 """Fail-closed checks for the current public/documentation surface.
 
 Historical release notes and archived iteration evidence are intentionally outside this
-contract. This guard covers only current integration entry points, current public API
-contracts, current CI labels, and the active ABI enforcement script.
+contract. This guard covers current integration/operator documentation, current public
+API contracts, current CI labels, and the active ABI enforcement script.
 """
 
 from __future__ import annotations
@@ -17,14 +17,33 @@ ROOT = Path(__file__).resolve().parents[1]
 CURRENT_SURFACE = (
     "README.md",
     "README.zh-CN.md",
+    "AGENTS.md",
+    "AGENTS.zh-CN.md",
     "CONTRIBUTING.md",
     "CONTRIBUTING.zh-CN.md",
+    "docs/README.zh-CN.md",
+    "docs/QUICKSTART.zh-CN.md",
     "docs/API_CONTRACT.md",
     "docs/API_CONTRACT.zh-CN.md",
+    "docs/ARCHITECTURE.md",
+    "docs/ARCHITECTURE.zh-CN.md",
+    "docs/FLOWS.zh-CN.md",
     "docs/DEVELOPMENT.md",
     "docs/DEVELOPMENT.zh-CN.md",
     "docs/DIAGNOSTICS.md",
-    "docs/QUICKSTART.zh-CN.md",
+    "docs/PERFORMANCE.md",
+    "docs/PLATFORM_SUPPORT.md",
+    "docs/PRODUCT_ASSURANCE.md",
+    "docs/PRODUCT_ASSURANCE.zh-CN.md",
+    "docs/REPOSITORY_GOVERNANCE.md",
+    "docs/TESTING.md",
+    "docs/TESTING.zh-CN.md",
+    "docs/TRUSTED_RUNNERS.md",
+    "docs/TRUSTED_RUNNERS.zh-CN.md",
+    "docs/TUNING.md",
+    "validation/README.md",
+    "hil/README.md",
+    "certification/README.md",
     ".github/workflows/verify.yml",
     ".github/workflows/quality.yml",
     "scripts/check-abi-contract.sh",
@@ -40,9 +59,11 @@ MIGRATION_PHRASES = (
     "1.x alias",
     "1.x wrapper",
     "1.x generational",
-    "no released v2 baseline yet",
+    "v1.x-era",
     "legacy public token",
     "legacy exported symbol",
+    "legacy `eval/`",
+    "no released v2 baseline yet",
 )
 
 COMMAND_DOCS = (
@@ -115,6 +136,8 @@ def validate_texts(texts: Mapping[str, str]) -> list[str]:
     quality = texts.get(".github/workflows/quality.yml", "")
     if "Public API/ABI contract gate when impacted" not in verify:
         errors.append("verify workflow: terminal public API/ABI gate label missing")
+    if "public_surface_contract.py --self-test" not in verify or "public_surface_contract.py" not in verify:
+        errors.append("verify workflow: current public-surface contract is not enforced")
     if "Prove missing public ABI baseline fails closed" not in quality:
         errors.append("quality workflow: missing-baseline negative proof missing")
     if "Enforce public API/ABI contract" not in quality:
@@ -148,7 +171,11 @@ def self_test() -> None:
         "public ABI regression\n"
         "public API/ABI contract OK against required baseline\n"
     )
-    base[".github/workflows/verify.yml"] += "Public API/ABI contract gate when impacted\n"
+    base[".github/workflows/verify.yml"] += (
+        "Public API/ABI contract gate when impacted\n"
+        "public_surface_contract.py --self-test\n"
+        "public_surface_contract.py\n"
+    )
     base[".github/workflows/quality.yml"] += (
         "Prove missing public ABI baseline fails closed\n"
         "Enforce public API/ABI contract\n"

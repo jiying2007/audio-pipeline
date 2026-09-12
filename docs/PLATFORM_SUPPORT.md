@@ -76,11 +76,11 @@ For each shipping SoC/SKU capture at least:
 - policy-required real route soak; the checked-in Cortex-A32 LOW shipping policy requires 72 hours;
 - attested certification bundle and immutable `product-lifecycle` archive receipt.
 
-`certification/record.schema.json` is the only current machine-readable certification record contract and accepts **schema v4 only**. v1.x-era schema v2/v3 records are historical artifacts outside the v2 certification acceptance path and must be migrated/re-certified rather than accepted by the current validator.
+`certification/record.schema.json` is the only current machine-readable certification record contract and accepts **schema v4 only**. Older record schemas are non-authoritative for current certification and require migration/re-certification rather than acceptance by the current validator.
 
 ## Acoustic certification
 
-Use the canonical repository [`validation/`](../validation/) framework and its machine-readable `validation/authority.json` for public/approved acoustic validation. Real/private WAV corpora remain outside the public repository. The legacy `eval/` path has been removed and must not be used as an authority source. A release is not acoustically certified just because a hosted/public validation or evaluator self-test passes.
+Use the canonical repository [`validation/`](../validation/) framework and its machine-readable `validation/authority.json` for public/approved acoustic validation. Real/private WAV corpora remain outside the public repository. The retired `eval/` path is not an authority source. A release is not acoustically certified just because a hosted/public validation or evaluator self-test passes.
 
 Advanced BF/SYNC/wind/microphone-health complexity remains evidence-triggered: if the real shipping corpus meets the approved SKU policy, retain the lower-cost implementation; if it fails, the failed gate becomes evidence for a scoped algorithm upgrade.
 

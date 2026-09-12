@@ -19,7 +19,7 @@ Routine workflow `GITHUB_TOKEN` is not proof of repository administration state.
 
 `software-commercial-ready` is a repository/integration status, not a Product Qualification status. It may be claimed only when all of the following remain true:
 
-- the public v2 API/ABI, lifecycle, threading, ownership and realtime restrictions are machine-gated;
+- the current public API/ABI compatibility line, lifecycle, threading, ownership and realtime restrictions are machine-gated;
 - native GCC/Clang, sanitizer/TSan/static-analysis/fuzz, coverage, installed SDK consumers and representative composition/backend variants pass;
 - supported Arm architecture classes remain cross-build/QEMU covered, and each named product preset used for commercial integration is itself a required CI contract rather than an undocumented downstream configuration;
 - the current SSC305 starting profile `ssc305-cortex-a32-low` is configured and built directly, its generated envelope/build identity is checked, and a clean installed AArch32 SDK consumer is linked/executed under emulation;
@@ -36,17 +36,18 @@ This status means the repository is suitable for commercial product integration,
 
 `scripts/bootstrap_github_governance.py` is the idempotent desired-state installer for the named main/tag Rulesets and Immutable Releases. `.github/workflows/repository-governance-bootstrap.yml` exposes it only as an explicit administrative operation. Untrusted PR code never receives the administration write credential.
 
-## v2 hard-cut assurance
+## Public API/ABI assurance
 
-Version 2.0.0 intentionally removes the 1.x compatibility surface rather than carrying migration aliases. Current assurance therefore requires:
+The current 2.x compatibility line has one public API/ABI surface. Current assurance requires:
 
 - one `ap_build_info()` surface;
 - one runtime lifecycle (`ap_runtime_open`, `ap_runtime_submit_frame`, `ap_runtime_read_metrics`);
-- no removed 1.x exported symbols/types or shadow compatibility headers;
-- a v2 hard-cut ABI gate for the initial release, followed by `v2.0.0` as the 2.x compatibility baseline;
+- no retired exported symbols/types or parallel compatibility headers;
+- a required published `v2.0.0` compatibility baseline whose fetch/resolve failure is itself a gate failure;
+- same-major ABI/symbol compatibility against that baseline;
 - certification schema v4 only.
 
-Historical 1.x facts remain in `CHANGELOG.md`, but current API/CI/documentation must not re-enable them.
+Historical API transitions remain in `CHANGELOG.md` and release archives. Current API/CI/documentation describe only the supported surface and must not reactivate retired names.
 
 ## Shipping certification gate
 

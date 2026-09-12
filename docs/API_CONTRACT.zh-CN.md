@@ -2,10 +2,11 @@
 
 本页是中文集成摘要。**函数签名、结构字段、ABI 和精确前置条件以 [`API_CONTRACT.md`](API_CONTRACT.md) 为唯一 canonical contract**；本页不得独立改变 public API。
 
-## v2 基线
+## 当前兼容线
 
 - 2.x 是当前公开 C API/ABI 兼容线；
-- 已移除的 1.x wrapper/alias 不重新引入；
+- 当前兼容线不提供平行 compatibility alias；
+- 已退役的 public symbol/name 由仓库 API/ABI contract 防止意外重新引入；
 - 破坏性的 public symbol/structure 变化需要下一 major version；
 - 可扩展结构使用 `struct_size`、`api_version` 和 reserved 字段维持有界兼容。
 
@@ -126,7 +127,7 @@ Hosted/QEMU metrics 不能直接解释成 SSC305 真机性能。
 
 至少回答：
 
-1. 是否兼容 2.x ABI？
+1. 是否兼容当前 2.x ABI？
 2. 是否需要 `struct_size`/reserved 扩展？
 3. invalid/lifecycle/error semantics 是否明确？
 4. caller memory/state size 是否变化？
@@ -134,4 +135,4 @@ Hosted/QEMU metrics 不能直接解释成 SSC305 真机性能。
 6. SDK consumer/ABI/negative test 是否覆盖？
 7. 是否属于 release-bearing/SemVer 变化？
 
-无法证明 2.x 兼容时，不应在当前 major line 中直接修改公开契约。
+无法证明当前兼容线内 ABI 兼容时，不应直接修改公开契约；应进入下一 major version 设计。

@@ -51,23 +51,33 @@ pkg-config consumer 也由 CI 从 clean install prefix 实际编译、链接和�
 典型调用顺序：
 
 ```c
-ap_config_t cfg = ap_config_default();
-size_t bytes = ap_state_size(&cfg);
+ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
+size_t bytes = ap_pipeline_state_size();
 
-/* 由调用方提供满足对齐/大小要求的持久内存。 */
-ap_state_t *state = NULL;
-ap_init(memory, bytes, &cfg, &state);
+/* 由调用方提供满足 AP_PIPELINE_STATE_ALIGNMENT / bytes 的持久内存。 */
+ap_pipeline_t *pipeline = NULL;
+ap_pipeline_init(memory, bytes, &cfg, &pipeline);
 
-/* 每次固定处理 10 ms。具体签名以 API_CONTRACT.md 为准。 */
-ap_process(state, mic_frame, render_or_null, metadata_or_null, output_frame, metrics_or_null);
+/* AEC 场景先提交实际送往 DAC 的 mono render reference。 */
+ap_pipeline_push_render(pipeline, render_frame, render_samples);
+
+/* 每次固定处理 10 ms capture；frames 为每声道帧数。 */
+ap_pipeline_process_capture(pipeline, mic_interleaved, frames, output_frame);
 ```
+
+如果需要显式传入时间线/route 事实，使用当前公开控制面：
+
+- `ap_pipeline_observe_io_timestamps()`：同一 monotonic clock domain 的 capture/render hardware timestamp；
+- `ap_pipeline_notify_stream_discontinuity()`：gap/XRUN/clock reset/codec reopen；
+- `ap_pipeline_notify_echo_path_change()`：产品已知的 route/path 变化；
+- `ap_pipeline_apply_tuning()`：调用方串行化后的 frame-boundary tuning。
 
 核心原则：
 
 - data plane 不动态分配内存；
 - 只处理构建 envelope 允许的采样率、麦克风数、delay/tail；
 - far-end render 仅在需要 AEC 的场景提供；
-- timestamp/gap/XRUN/reset 等 route 事实通过 metadata 明确传入；
+- timestamp/gap/XRUN/reset 等 route 事实通过公开控制面明确传入；
 - 不要在 stage/core 处理线程中执行日志格式化、文件 I/O、网络或 RPC。
 
 ## 4. Linux Runtime
@@ -118,7 +128,7 @@ python3 tools/apdump.py info failure.apd
 提取证据：
 
 ```bash
-python3 tools/apdump.py extract failure.apd --out-dir extracted
+python3 tools/apdump.py extract failure.apd --output-dir extracted
 ```
 
 确定性回放：
@@ -126,7 +136,8 @@ python3 tools/apdump.py extract failure.apd --out-dir extracted
 ```bash
 python3 tools/apreplay.py failure.apd \
   --processor ./build/ap_process_pcm \
-  --work-dir replay
+  --output-pcm replay.pcm \
+  --require-bit-exact
 ```
 
 `.apd` 可能包含用户语音。产品必须定义访问控制、保留时长、上传策略和安全删除；Realtime worker 不负责文件 I/O。

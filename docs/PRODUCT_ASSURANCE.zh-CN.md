@@ -21,7 +21,7 @@
 
 只有在以下能力持续成立时才可使用该表述：
 
-- public v2 API/ABI、lifecycle、ownership、realtime 规则由机器 Gate 约束；
+- 当前 public API/ABI compatibility line、lifecycle、ownership、realtime 规则由机器 Gate 约束；
 - GCC/Clang、sanitizer、TSan、static analysis、fuzz、coverage、SDK consumer 等通过；
 - 支持的 Arm 类别由 cross-build/QEMU 覆盖；
 - 每个命名商用 product preset 都是 required CI contract；
@@ -37,7 +37,21 @@
 
 它**不允许**声称：具体板卡已验证、真机性能已证明、Product Qualification PASS、`product-certified`。
 
-## 3. Product Certification 权威链
+## 3. Public API/ABI 保障
+
+当前 2.x 兼容线只有一套 public API/ABI surface：
+
+- `ap_build_info()` 只有一套正式入口；
+- Runtime 只有一套正式 lifecycle；
+- 已退役 public symbol/type/compatibility header 不允许复活；
+- `v2.0.0` 是 required published compatibility baseline；
+- baseline 无法 fetch/resolve 必须 fail closed；
+- 当前同 major 版本必须保持 ABI/symbol compatibility；
+- Certification 当前只接受 schema v4。
+
+历史 API 迁移事实只保留在 CHANGELOG/release archive；当前 API/CI/文档只描述当前支持的 surface。
+
+## 4. Product Certification 权威链
 
 ```text
 annotated semantic release tag
@@ -58,7 +72,7 @@ annotated semantic release tag
 
 仅有 reviewed commit SHA 不足以获得 Product Certification authority。
 
-## 4. 四类真实角色
+## 5. 四类真实角色
 
 - `audio-validation`：真实/授权数据缓存与 Extended Real；
 - `audio-builder`：量产编译器/sysroot/toolchain 与 sealed binary；
@@ -67,7 +81,7 @@ annotated semantic release tag
 
 这些角色必须由真实 self-hosted runner 提供。Hosted CI 只能验证控制面实现。
 
-## 5. HIL 与 Product Certification 的关系
+## 6. HIL 与 Product Certification 的关系
 
 HIL 是工程/运行历史证据，不等于产品认证。
 
@@ -82,7 +96,7 @@ HIL 是工程/运行历史证据，不等于产品认证。
 
 最终 Cortex-A32 LOW shipping policy 要求至少 **72 h** Product Certification。
 
-## 6. E001 Activation Preflight
+## 7. E001 Activation Preflight
 
 E001 preflight 用于证明基础设施已就绪：
 
@@ -94,7 +108,7 @@ E001 preflight 用于证明基础设施已就绪：
 
 输出 `E001_TRUSTED_INFRASTRUCTURE_READY` 仍然只是 infrastructure readiness，**不是** HIL、Extended Real、Product Certification 或 PQ PASS。
 
-## 7. 不可伪造的证据
+## 8. 不可伪造的证据
 
 以下内容不得由 mock、hosted runner、QEMU、复制文件或手工 JSON 代替：
 
@@ -109,7 +123,7 @@ E001 preflight 用于证明基础设施已就绪：
 
 缺失任一项时，状态必须是 blocked/incomplete/deferred，而不是 synthetic PASS。
 
-## 8. 软件与产品终态的区别
+## 9. 软件与产品终态的区别
 
 ```text
 software-commercial-ready

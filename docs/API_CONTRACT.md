@@ -1,10 +1,10 @@
 # Public API Contract
 
-## v2 boundary
+## Current compatibility line
 
-`audio-pipeline` 2.x starts a new public C API/ABI baseline. Version 2.0.0 is an intentional hard cut: removed 1.x generational wrappers, version-suffixed runtime metric types and parallel build-info surfaces are not declared, exported or aliased.
+`audio-pipeline` 2.x is the current public C API/ABI compatibility line. The installed headers under `include/audio_pipeline/` and their exported symbols are the supported public surface. Incompatible public symbol or structure changes require the next major version; parallel compatibility aliases are not part of the current line.
 
-The supported public surface is the installed headers under `include/audio_pipeline/`. Historical release notes describe older APIs only as history and are not compatibility promises.
+Historical release notes describe superseded APIs only as history and are not compatibility promises. Retired public names remain forbidden by the repository API/ABI contract so they cannot be reintroduced accidentally.
 
 New extensible control/diagnostic structures use `struct_size`, `api_version` and reserved fields. Callers initialize them with the current API version constant documented by the owning header.
 
@@ -112,7 +112,7 @@ Neither mode is a compatibility alias.
 
 Reference alignment is orthogonal to CALL/ASSISTANT use case and resource class. The shipped default remains adaptive: `initial_delay_ms` supplies the startup delay while `enable_delay_tracking=1` and `enable_clock_drift_compensation=1` allow acoustic correlation to update the reference alignment when SYNC is present.
 
-For products whose direct speaker/DAC-to-microphone/ADC geometry is stable, the existing v2 configuration surface also supports an explicit fixed-geometry policy without adding a second API generation or changing ABI:
+For products whose direct speaker/DAC-to-microphone/ADC geometry is stable, the current configuration surface supports an explicit fixed-geometry policy without adding a parallel API or changing ABI:
 
 ```c
 ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
@@ -139,7 +139,7 @@ With the Linux runtime, applications must not mutate the owned pipeline concurre
 
 ## Linux runtime lifecycle
 
-The v2 runtime has one lifecycle and one metric surface:
+The runtime has one lifecycle and one metric surface:
 
 ```c
 ap_runtime_config_t cfg = ap_runtime_config_default();
@@ -238,4 +238,4 @@ AP_ENABLE_FAST_MATH=ON|OFF
 AP_ENABLE_BF_DIRECTION_TRACKING=ON|OFF
 ```
 
-Removed v1 API generations and removed build/stage switches have no v2 compatibility aliases.
+The current public surface has no parallel compatibility aliases for retired API generations or removed build/stage switches.

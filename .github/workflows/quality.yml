@@ -28,7 +28,16 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Enforce v2 hard-cut and ABI contract
+      - name: Prove missing public ABI baseline fails closed
+        run: |
+          set -euo pipefail
+          set +e
+          sh scripts/check-abi-contract.sh v0.0.0-missing-contract-baseline > /tmp/missing-abi-baseline.log 2>&1
+          rc=$?
+          set -e
+          test "$rc" -eq 6
+          grep -q 'unable to fetch required baseline tag' /tmp/missing-abi-baseline.log
+      - name: Enforce public API/ABI contract
         run: sh scripts/check-abi-contract.sh
 
   sdk-consumer:

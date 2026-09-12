@@ -4,17 +4,17 @@
 
 ## Fast Gate 与 Full Gate
 
-PR 先经过强制 Fast Gate，再展开高成本矩阵。Fast Gate 执行架构/硬切边界检查、Python assurance/validation 工具自测、Clang strict build、unit/contract/property tests，并在公开/runtime ABI 被影响时执行 v2 ABI gate。
+PR 先经过强制 Fast Gate，再展开高成本矩阵。Fast Gate 执行架构/当前 public-surface 检查、Python assurance/validation 工具自测、Clang strict build、unit/contract/property tests，并在公开/runtime ABI 被影响时执行 public API/ABI gate。
 
-纯文档变更可只执行 diff/impact 检查；未知路径、公开头文件、构建系统、workflow、测试基础设施或无法精确归类的核心源码一律保守扩展为 FULL。`main` push 无条件执行完整 Verify。
+纯文档变更执行 diff/impact 与 current public-surface/documentation contract；未知路径、公开头文件、构建系统、workflow、测试基础设施或无法精确归类的核心源码一律保守扩展为 FULL。`main` push 无条件执行完整 Verify。
 
 性能比较基线：PR 使用 `origin/main -> candidate`，main push 使用精确 `github.event.before -> HEAD`。最终 `summary` 是唯一 merge/release 聚合状态。
 
-## v2 API/ABI 硬切门禁
+## Public API/ABI 门禁
 
-2.0.0 首版不再对 1.x 做 additive compatibility。门禁要求当前 `ap_build_info()`、`ap_runtime_open()`、`ap_runtime_submit_frame()`、`ap_runtime_read_metrics()` 等 v2 symbol 存在，同时明确禁止被移除的 1.x runtime/build-info symbol、类型和兼容 shadow header 回流；Certification 当前只接受 schema v4。
+当前 2.x 兼容线只有一套 public API/ABI surface。门禁要求当前 `ap_build_info()`、`ap_runtime_open()`、`ap_runtime_submit_frame()`、`ap_runtime_read_metrics()` 等公开 symbol 存在，持续禁止已退役 public name/exported symbol 复活，并以已发布 `v2.0.0` 作为 required same-major compatibility baseline。
 
-`v2.0.0` immutable tag 发布后，后续 2.x ABI 检查自动以 v2.0.0 为正式同 major baseline，从而同时做到“旧兼容残留不回流”和“2.x 稳定 ABI”。
+baseline 是强制证据而不是可选优化：tag 无法 fetch 或无法 resolve 到 commit 时必须 fail closed。Certification 当前只接受 schema v4。
 
 ## 变更感知测试选择
 

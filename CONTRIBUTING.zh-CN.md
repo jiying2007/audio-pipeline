@@ -30,16 +30,18 @@ Linux Runtime started 后，live Pipeline 由单 DSP worker 独占。ownership�
 
 ## API/ABI
 
-2.x public C API/ABI 是兼容契约：
+当前 2.x public C API/ABI 是兼容契约：
 
-- 不恢复 1.x alias/wrapper；
+- 当前兼容线只有一套 public surface，不新增平行 compatibility wrapper/alias；
+- 已退役 public name/symbol 由 API/ABI gate 持续 negative-test，禁止意外复活；
 - public float 先拒绝 NaN/±Inf，再检查范围；
 - 保持 `AP_EINVAL` / `AP_ENOMEM` / `AP_ESTATE` 语义；
-- 破坏性 public change 需要下一 major version。
+- 破坏性 public change 需要下一 major version；
+- required ABI baseline 无法 fetch/resolve 时必须 fail closed。
 
 ## 测试
 
-先加能证明根因/修复的最小 targeted test，并按需要加 negative/boundary test。依据 scope，CI 会覆盖 strict GCC/Clang、ASan/UBSan、TSan、static analysis、fuzz、coverage、backend/composition、SDK consumer、RAM/ELF pruning、paired performance、Arm/QEMU、acoustic validation 与 ABI。
+先加能证明根因/修复的最小 targeted test，并按需要加 negative/boundary test。依据 scope，CI 会覆盖 strict GCC/Clang、ASan/UBSan、TSan、static analysis、fuzz、coverage、backend/composition、SDK consumer、RAM/ELF pruning、paired performance、Arm/QEMU、acoustic validation 与 public API/ABI contract。
 
 只有 **exact PR head 的 required `summary=success`** 才是可合并证据。HEAD 一旦移动，旧 CI 不能复用。
 

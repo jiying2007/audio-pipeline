@@ -12,11 +12,11 @@ Default high-level graph:
 
 The frame contract is fixed at 10 ms. Device I/O supports 8/16/24/32/48 kHz within the compiled product envelope; heavy DSP runs at 8 or 16 kHz. Persistent DSP/runtime state is caller-owned and bounded.
 
-## v2 hard-cut API
+## Public API and runtime
 
-Version 2.0.0 establishes a new major-version API/ABI baseline. Removed 1.x generational wrappers are not declared, exported or aliased.
+The current 2.x line has one public C API/ABI surface. Incompatible public symbol or structure changes require the next major version; the current line does not carry parallel compatibility aliases.
 
-The current runtime integration has one surface:
+The runtime integration has one surface:
 
 ```c
 ap_runtime_config_t cfg = ap_runtime_config_default();
@@ -87,8 +87,10 @@ Algorithm details live in [`docs/DSP_DESIGN.md`](docs/DSP_DESIGN.md); performanc
 
 ```bash
 python3 tools/apdump.py info failure.apd
-python3 tools/apdump.py extract failure.apd --out-dir extracted
-python3 tools/apreplay.py failure.apd --processor ./build/ap_process_pcm --work-dir replay
+python3 tools/apdump.py extract failure.apd --output-dir extracted
+python3 tools/apreplay.py failure.apd \
+  --processor ./build/ap_process_pcm \
+  --output-pcm replay.pcm
 ```
 
 Audio dumps may contain private speech; retention, access control and secure deletion are product responsibilities. See [`docs/DIAGNOSTICS.md`](docs/DIAGNOSTICS.md).
@@ -158,7 +160,7 @@ CMake and pkg-config consumers are built from a clean install prefix in CI.
 
 ## Repository gates
 
-PR/main verification includes strict compile/tests, GCC/Clang, sanitizers, TSan, static analysis, coverage, backend/composition matrices, Arm cross-build/QEMU, resource/ROM pruning, paired performance comparisons, diagnostics replay, deterministic acoustic regression and v2 API/symbol contracts.
+PR/main verification includes strict compile/tests, GCC/Clang, sanitizers, TSan, static analysis, coverage, backend/composition matrices, Arm cross-build/QEMU, resource/ROM pruning, paired performance comparisons, diagnostics replay, deterministic acoustic regression and public API/ABI contracts.
 
 Release-bearing pull requests must advance repository SemVer and keep CMake/CHANGELOG versions synchronized. Every `main` push runs the complete verification graph. Release automation requires the exact main SHA to pass the required `summary` check before creating the release tag/assets/attestations.
 
@@ -166,7 +168,7 @@ Real public-data validation, HIL and product certification remain evidence-separ
 
 ## Documentation
 
-- [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) — v2 public lifecycle/state/threading contract
+- [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) — public lifecycle/state/threading contract
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — ownership and dependency direction
 - [`docs/DSP_DESIGN.md`](docs/DSP_DESIGN.md) — algorithms
 - [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) — performance/resource gates

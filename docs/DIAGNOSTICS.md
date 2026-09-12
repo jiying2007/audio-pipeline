@@ -18,7 +18,7 @@ Consumers should drain the bounded event ring from a non-realtime control thread
 
 `ap_runtime_command()` is a bounded control queue. Commands are consumed only by the DSP worker at frame boundaries, preserving single-owner access to the live pipeline. Supported controls include echo-path change, stream discontinuity, reset, explicit runtime quality and tuning updates.
 
-All extensible structures use `struct_size`, `api_version` and reserved fields with the current v2 API constants. Removed 1.x runtime entry points are not aliases and are not accepted by the v2 SDK.
+All extensible structures use `struct_size`, `api_version` and reserved fields with the current public API constants. The diagnostics/runtime surface follows the single current public API/ABI contract and does not expose parallel compatibility aliases.
 
 ## Runtime metrics
 
@@ -72,7 +72,7 @@ python3 tests/diagnostics/aptriage.py failure.apd \
   --stage-counterfactuals
 ```
 
-The six fields shared by APD v1 and `ap_build_info()` are always compared and a mismatch always makes triage fail closed. There is no `NOT_CHECKED` state and no opt-in match flag.
+The six fields shared by APD v1 and `ap_build_info()` are always compared and a mismatch always makes triage fail closed. There is no unchecked build-identity state and no opt-in match flag.
 
 The harness writes:
 
@@ -117,7 +117,7 @@ python3 tests/diagnostics/apincident.py \
   --output-dir fault-injection/incident-bundle
 ```
 
-Every source must resolve beneath `--source-root` before reading. Each source is represented only by SHA256, byte size and root-relative path under `source_evidence`; runner-local legacy path fields are not emitted. Missing source binding or root-relative identity fails closed.
+Every source must resolve beneath `--source-root` before reading. Each source is represented only by SHA256, byte size and root-relative path under `source_evidence`; runner-local source path fields are not emitted. Missing source binding or root-relative identity fails closed.
 
 The bundle can report repeated diagnostic domains and exact patterns, but caller-selected recurrence does not prove same device, same session, chronological capture order, authoritative capture time, or a shared physical root cause.
 

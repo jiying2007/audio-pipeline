@@ -9,6 +9,7 @@ API contracts, current CI labels, and the active ABI enforcement script.
 from __future__ import annotations
 
 import argparse
+import runpy
 from pathlib import Path
 from typing import Mapping
 
@@ -132,9 +133,6 @@ def validate_texts(texts: Mapping[str, str]) -> list[str]:
             if phrase in text:
                 errors.append(f"{path}: migration-era phrase remains: {phrase!r}")
 
-    # Reuse docs_consistency's current-document drift vocabulary instead of
-    # maintaining a second copy. Historical/program/generated documents remain
-    # outside DOCUMENT_SURFACE by construction.
     for path in DOCUMENT_SURFACE:
         text = texts.get(path, "")
         for phrase in STALE_PHRASES:
@@ -236,6 +234,8 @@ def self_test() -> None:
         "Enforce public API/ABI contract\n"
     )
     assert validate_texts(base) == []
+    bundle = runpy.run_path(str(ROOT / "tests/validation/pcr02_capture_bundle.py"))
+    bundle["self_test"]()
 
     bad = dict(base)
     bad["README.md"] += "## v2 hard-cut API\n--out-dir\n"

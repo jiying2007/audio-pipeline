@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PCR02 real capture bundle v1",
+  "type": "object",
+  "required": [
+    "schema_version", "authority", "sealed", "capture_id", "capture_purpose",
+    "product", "slot_id", "track", "created_utc", "release_authority",
+    "software", "hardware", "scene", "context", "clock", "duration_seconds",
+    "files", "telemetry_signals", "evidence_claims", "bundle_digest_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "authority": {"const": "pcr02-real-capture-bundle"},
+    "sealed": {"type": "boolean"},
+    "capture_id": {"type": "string", "minLength": 1},
+    "capture_purpose": {"enum": ["development", "qualification-candidate"]},
+    "product": {"const": "PCR02"},
+    "slot_id": {"type": "string", "minLength": 1},
+    "track": {"enum": ["bf-geometry", "self-noise", "aec-product-path"]},
+    "created_utc": {"type": "string", "minLength": 1},
+    "release_authority": {
+      "type": "object",
+      "required": ["tag", "source_sha"],
+      "properties": {
+        "tag": {"const": "v2.3.16"},
+        "source_sha": {"const": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"}
+      },
+      "additionalProperties": false
+    },
+    "software": {
+      "type": "object",
+      "required": ["git_sha", "version", "binary_sha256", "build_info"],
+      "properties": {
+        "git_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "version": {"type": "string", "minLength": 1},
+        "binary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "build_info": {
+          "type": "object",
+          "required": ["aec_backend", "ns_estimator", "simd_backend", "resampler_mode"],
+          "properties": {
+            "aec_backend": {"type": "string", "minLength": 1},
+            "ns_estimator": {"type": "string", "minLength": 1},
+            "simd_backend": {"type": "string", "minLength": 1},
+            "resampler_mode": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "hardware": {
+      "type": "object",
+      "required": [
+        "soc", "board_revision", "device_id", "mic_channels", "mic_spacing_mm",
+        "sample_rate_hz", "sample_format", "frame_samples"
+      ],
+      "properties": {
+        "soc": {"const": "SSC305"},
+        "board_revision": {"type": "string", "minLength": 1},
+        "device_id": {"type": "string", "minLength": 1},
+        "mic_channels": {"const": 2},
+        "mic_spacing_mm": {"const": 35.0},
+        "sample_rate_hz": {"const": 16000},
+        "sample_format": {"const": "s16le"},
+        "frame_samples": {"const": 160}
+      },
+      "additionalProperties": false
+    },
+    "scene": {"type": "object"},
+    "context": {
+      "type": "object",
+      "required": [
+        "room_id", "ambient_condition", "speaker_volume_percent",
+        "battery_mv", "charging_state"
+      ],
+      "properties": {
+        "room_id": {"type": "string", "minLength": 1},
+        "ambient_condition": {"type": "string", "minLength": 1},
+        "speaker_volume_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+        "battery_mv": {"type": "integer", "minimum": 1},
+        "charging_state": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "clock": {
+      "type": "object",
+      "required": ["domain", "timestamp_unit"],
+      "properties": {
+        "domain": {"const": "monotonic"},
+        "timestamp_unit": {"const": "ns"}
+      },
+      "additionalProperties": false
+    },
+    "duration_seconds": {"type": "number", "minimum": 0},
+    "files": {
+      "type": "object",
+      "required": [
+        "mic_raw", "render_reference", "pipeline_output", "frame_timeline", "telemetry"
+      ],
+      "properties": {
+        "mic_raw": {"$ref": "#/$defs/file"},
+        "render_reference": {"$ref": "#/$defs/file"},
+        "pipeline_output": {"$ref": "#/$defs/file"},
+        "frame_timeline": {"$ref": "#/$defs/file"},
+        "telemetry": {"$ref": "#/$defs/file"},
+        "aec_output": {"$ref": "#/$defs/file"},
+        "bf_output": {"$ref": "#/$defs/file"},
+        "ns_output": {"$ref": "#/$defs/file"},
+        "agc_output": {"$ref": "#/$defs/file"},
+        "frame_metrics": {"$ref": "#/$defs/file"},
+        "system_metrics": {"$ref": "#/$defs/file"},
+        "app_log": {"$ref": "#/$defs/file"},
+        "dmesg": {"$ref": "#/$defs/file"},
+        "apd": {"$ref": "#/$defs/file"},
+        "config_snapshot": {"$ref": "#/$defs/file"}
+      },
+      "additionalProperties": false
+    },
+    "telemetry_signals": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true,
+      "contains": {"const": "timestamp_ns"}
+    },
+    "evidence_claims": {
+      "type": "object",
+      "required": [
+        "real_capture", "hil_pass", "extended_real_pass",
+        "product_qualification_pass", "product_certification_pass"
+      ],
+      "properties": {
+        "real_capture": {"type": "boolean"},
+        "hil_pass": {"const": false},
+        "extended_real_pass": {"const": false},
+        "product_qualification_pass": {"const": false},
+        "product_certification_pass": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "bundle_digest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

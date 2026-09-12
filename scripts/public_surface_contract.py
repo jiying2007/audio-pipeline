@@ -9,6 +9,7 @@ API contracts, current CI labels, and the active ABI enforcement script.
 from __future__ import annotations
 
 import argparse
+import runpy
 from pathlib import Path
 from typing import Mapping
 
@@ -37,6 +38,7 @@ CURRENT_SURFACE = (
     "docs/EXTENDED_REAL_VALIDATION.md",
     "docs/EXTENDED_REAL_VALIDATION.zh-CN.md",
     "docs/FIXED_GEOMETRY_REFERENCE.md",
+    "docs/PCR02_REAL_CAPTURE.md",
     "docs/PERFORMANCE.md",
     "docs/PLATFORM_SUPPORT.md",
     "docs/PORTING.md",
@@ -108,6 +110,17 @@ QUICKSTART_REQUIRED_SNIPPETS = (
     "ap_pipeline_process_capture(",
 )
 
+PCR02_CAPTURE_REQUIRED_SNIPPETS = (
+    "tests/validation/pcr02_capture_bundle.py",
+    "tests/validation/pcr02_capture_bundle.schema.json",
+    "bundle_digest_sha256",
+    "qualification-candidate",
+    "pipeline_output.pcm",
+    "frame_timeline.jsonl",
+    "telemetry.jsonl",
+    "causal_proof=false",
+)
+
 
 def validate_texts(texts: Mapping[str, str]) -> list[str]:
     errors: list[str] = []
@@ -120,9 +133,6 @@ def validate_texts(texts: Mapping[str, str]) -> list[str]:
             if phrase in text:
                 errors.append(f"{path}: migration-era phrase remains: {phrase!r}")
 
-    # Reuse docs_consistency's current-document drift vocabulary instead of
-    # maintaining a second copy. Historical/program/generated documents remain
-    # outside DOCUMENT_SURFACE by construction.
     for path in DOCUMENT_SURFACE:
         text = texts.get(path, "")
         for phrase in STALE_PHRASES:
@@ -153,6 +163,11 @@ def validate_texts(texts: Mapping[str, str]) -> list[str]:
     for snippet in QUICKSTART_REQUIRED_SNIPPETS:
         if snippet not in quickstart:
             errors.append(f"docs/QUICKSTART.zh-CN.md: current API snippet missing: {snippet}")
+
+    capture_doc = texts.get("docs/PCR02_REAL_CAPTURE.md", "")
+    for snippet in PCR02_CAPTURE_REQUIRED_SNIPPETS:
+        if snippet not in capture_doc:
+            errors.append(f"docs/PCR02_REAL_CAPTURE.md: capture contract snippet missing: {snippet}")
 
     abi = texts.get("scripts/check-abi-contract.sh", "")
     required_abi = (
@@ -200,6 +215,7 @@ def self_test() -> None:
         "ap_pipeline_init(\n"
         "ap_pipeline_process_capture(\n"
     )
+    base["docs/PCR02_REAL_CAPTURE.md"] += "\n".join(PCR02_CAPTURE_REQUIRED_SNIPPETS) + "\n"
     base["scripts/check-abi-contract.sh"] += (
         "unable to fetch required baseline tag\n"
         "required baseline tag $BASE_REF does not resolve to a commit\n"
@@ -218,6 +234,8 @@ def self_test() -> None:
         "Enforce public API/ABI contract\n"
     )
     assert validate_texts(base) == []
+    bundle = runpy.run_path(str(ROOT / "tests/validation/pcr02_capture_bundle.py"))
+    bundle["self_test"]()
 
     bad = dict(base)
     bad["README.md"] += "## v2 hard-cut API\n--out-dir\n"
@@ -225,6 +243,7 @@ def self_test() -> None:
     bad["docs/API_CONTRACT.md"] += STALE_PHRASES[0] + "\n"
     bad["docs/DIAGNOSTICS.md"] += RESOURCE_LITERALS[0] + "\n"
     bad["docs/REPOSITORY_GOVERNANCE.md"] += "Before v1.6 is merged\n"
+    bad["docs/PCR02_REAL_CAPTURE.md"] = "terminal current surface\n"
     bad["scripts/check-abi-contract.sh"] += (
         'git fetch origin "refs/tags/$BASE_REF:refs/tags/$BASE_REF" --force >/dev/null 2>&1 || true\n'
     )
@@ -235,6 +254,7 @@ def self_test() -> None:
     assert any("stale current-document phrase" in error for error in errors)
     assert any("hosted resource literal" in error for error in errors)
     assert any("Before v1.6 is merged" in error for error in errors)
+    assert any("capture contract snippet missing" in error for error in errors)
     assert any("fail-open" in error for error in errors)
     print("public surface contract self-test: OK")
 

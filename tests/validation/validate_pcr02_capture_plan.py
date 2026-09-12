@@ -2,21 +2,27 @@
 """Validate the PCR02 35 mm real-capture plan contract.
 
 The plan intentionally creates no real evidence. Completed captures must be
-materialized separately through the existing PCR02 self-noise manifest contract.
+materialized separately as sealed PCR02 real-capture bundles.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import runpy
 from collections import Counter
 from pathlib import Path
 
 EXPECTED_GROUPS = {"bf-geometry": 16, "self-noise": 14, "aec-product-path": 12}
+REQUIRED_FILES = {
+    "mic_raw", "render_reference", "pipeline_output", "frame_timeline", "telemetry",
+}
 REQUIRED_SIGNALS = {
     "timestamp_ns", "left_motor_rpm", "right_motor_rpm",
     "left_foc_iq", "right_foc_iq", "left_pwm", "right_pwm",
     "servo_state", "motion_state",
 }
+BUNDLE_SCHEMA = "tests/validation/pcr02_capture_bundle.schema.json"
+BUNDLE_TOOL = "tests/validation/pcr02_capture_bundle.py"
 
 
 def validate(value: dict) -> None:
@@ -28,10 +34,12 @@ def validate(value: dict) -> None:
         raise ValueError("capture plan must not claim real evidence")
     if value.get("promotion_allowed") is not False:
         raise ValueError("capture plan cannot promote shipping")
+    if value.get("bundle_contract") != BUNDLE_SCHEMA or value.get("bundle_tool") != BUNDLE_TOOL:
+        raise ValueError("PCR02 capture bundle contract/tool binding drifted")
     geometry = value.get("geometry", {})
     if geometry != {"mic_channels": 2, "mic_spacing_mm": 35.0, "sample_rate_hz": 16000}:
         raise ValueError(f"PCR02 geometry drifted: {geometry}")
-    if set(value.get("required_files", [])) != {"mic_raw", "render_reference", "telemetry"}:
+    if set(value.get("required_files", [])) != REQUIRED_FILES:
         raise ValueError("required capture files drifted")
     if not REQUIRED_SIGNALS.issubset(set(value.get("required_telemetry_signals", []))):
         raise ValueError("required telemetry signals incomplete")
@@ -70,7 +78,10 @@ def validate(value: dict) -> None:
 
 def self_test() -> None:
     assert sum(EXPECTED_GROUPS.values()) == 42
+    assert REQUIRED_FILES >= {"mic_raw", "render_reference", "pipeline_output", "frame_timeline", "telemetry"}
     assert REQUIRED_SIGNALS >= {"left_foc_iq", "right_foc_iq", "left_pwm", "right_pwm"}
+    bundle = runpy.run_path(str(Path(__file__).with_name("pcr02_capture_bundle.py")))
+    bundle["self_test"]()
     print("PCR02 capture plan validator self-test: OK")
 
 
@@ -86,7 +97,14 @@ def main() -> int:
         p.error("--plan is required")
     value = json.loads(args.plan.read_text(encoding="utf-8"))
     validate(value)
-    print(json.dumps({"result": "PASS", "authority": value["authority"], "real_evidence_created": value["real_evidence_created"], "slots": len(value["slots"]), "groups": value["groups"]}, sort_keys=True))
+    print(json.dumps({
+        "result": "PASS",
+        "authority": value["authority"],
+        "real_evidence_created": value["real_evidence_created"],
+        "slots": len(value["slots"]),
+        "groups": value["groups"],
+        "bundle_contract": value["bundle_contract"],
+    }, sort_keys=True))
     return 0
 
 

@@ -1,5 +1,7 @@
 {
   "authority": "capture-plan-only",
+  "bundle_contract": "tests/validation/pcr02_capture_bundle.schema.json",
+  "bundle_tool": "tests/validation/pcr02_capture_bundle.py",
   "geometry": {
     "mic_channels": 2,
     "mic_spacing_mm": 35.0,
@@ -11,8 +13,10 @@
     "self-noise": 14
   },
   "notes": [
-    "Every completed slot must be instantiated as a real lab/pcr02-self-noise manifest with real SHA-256 values.",
-    "This plan is not HIL, Extended Real, Product Qualification, or Product Certification evidence.",
+    "Every completed slot must be materialized as a sealed PCR02 real-capture bundle with real file SHA-256 values.",
+    "The required five-file core is dual-mic raw PCM, render reference PCM, on-device pipeline output PCM, per-frame monotonic timeline JSONL, and robot telemetry JSONL.",
+    "Optional APD/intermediate PCM/system metrics/logs may be attached to the same bundle for diagnostics and root-cause analysis.",
+    "A sealed capture bundle proves capture integrity only; it is not HIL, Extended Real, Product Qualification, or Product Certification PASS evidence.",
     "Public/synthetic counterfactuals may prioritize experiments but cannot replace these product captures."
   ],
   "product": "PCR02",
@@ -21,6 +25,8 @@
   "required_files": [
     "mic_raw",
     "render_reference",
+    "pipeline_output",
+    "frame_timeline",
     "telemetry"
   ],
   "required_telemetry_signals": [

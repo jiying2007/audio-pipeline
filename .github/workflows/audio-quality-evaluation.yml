@@ -71,6 +71,7 @@ jobs:
             python3 validation/tools/audio_quality_contract.py \
               --corpus "$root/corpus.json" \
               --policy validation/policies/validation-audio-quality-development.json
+            set +e
             python3 validation/tools/run_validation.py \
               --source-revision "$GITHUB_SHA" \
               --corpus "$root/corpus.json" \
@@ -80,13 +81,30 @@ jobs:
               --output "$root/report.json" \
               --evidence-manifest "$root/evidence-manifest.json" \
               --enforce
+            rc=$?
+            set -e
+            cp "$root/corpus.json" "/tmp/audio-quality-evidence/corpus-$seed.json"
+            test -f "$root/report.json" && cp "$root/report.json" "/tmp/audio-quality-evidence/report-$seed.json"
+            test -f "$root/evidence-manifest.json" && cp "$root/evidence-manifest.json" "/tmp/audio-quality-evidence/evidence-$seed.json"
+            if [ "$rc" -ne 0 ]; then
+              python3 - "$root/report.json" <<'PY'
+          import json, sys
+          report = json.load(open(sys.argv[1]))
+          print(json.dumps({
+              'result': report['validation_result'],
+              'violations': report['violations'],
+              'failed_cases': [
+                  {'case_id': case['case_id'], 'violations': case['violations'], 'metrics': case['metrics']}
+                  for case in report['cases'] if case['violations']
+              ],
+          }, sort_keys=True))
+          PY
+              exit "$rc"
+            fi
             python3 validation/tools/audio_quality_contract.py \
               --corpus "$root/corpus.json" \
               --report "$root/report.json" \
               --policy validation/policies/validation-audio-quality-development.json
-            cp "$root/report.json" "/tmp/audio-quality-evidence/report-$seed.json"
-            cp "$root/corpus.json" "/tmp/audio-quality-evidence/corpus-$seed.json"
-            cp "$root/evidence-manifest.json" "/tmp/audio-quality-evidence/evidence-$seed.json"
           done
 
       - name: Enforce quality-aware bounded tuning

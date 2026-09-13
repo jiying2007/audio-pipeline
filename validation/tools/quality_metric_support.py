@@ -2,18 +2,19 @@
 """Ground-truth quality extensions for the canonical acoustic evaluator.
 
 The canonical engine remains the only source of the existing SI-SDR, ERLE,
-render-correlation, VAD and safety metrics.  This module adds the missing
+render-correlation, VAD and safety metrics. This module adds missing
 scale-sensitive and temporal measurements needed to decide whether an acoustic
 candidate is actually better rather than merely different:
 
 * near-end projection gain (detects RES/NS/BF over-suppression hidden by SI-SDR),
-* known interference correlation reduction (AEC double-talk/BF truth),
+* known-interference projection attenuation (detects real echo/competitor level change),
+* interference correlation reduction as a diagnostic only,
 * AEC convergence and post-event recovery time from known echo truth,
 * VAD onset/release delay from frame labels.
 
 Only cases that opt in through ``quality`` or an explicit truth reference are
-replayed a second time.  Existing public/regression corpora keep their historical
-metric behavior.  No result from this module has shipping authority.
+replayed a second time. Existing public/regression corpora keep their historical
+metric behavior. No result from this module has shipping authority.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from typing import Any, Sequence
 
 QUALITY_THRESHOLDS = {
     "min_near_projection_gain_db": ("near_projection_gain_db", "min"),
+    "min_interference_projection_attenuation_db": ("interference_projection_attenuation_db", "min"),
     "min_interference_corr_reduction": ("interference_corr_reduction", "min"),
     "min_noise_ref_corr_reduction": ("noise_ref_corr_reduction", "min"),
     "max_erle_convergence_ms": ("erle_convergence_ms", "max"),
@@ -37,6 +39,7 @@ QUALITY_THRESHOLDS = {
 
 QUALITY_AGGREGATES = {
     "min_p10_near_projection_gain_db": ("p10_near_projection_gain_db", "min"),
+    "min_p10_interference_projection_attenuation_db": ("p10_interference_projection_attenuation_db", "min"),
     "min_p10_interference_corr_reduction": ("p10_interference_corr_reduction", "min"),
     "max_p90_erle_convergence_ms": ("p90_erle_convergence_ms", "max"),
     "max_p90_erle_recovery_ms": ("p90_erle_recovery_ms", "max"),
@@ -215,10 +218,20 @@ def install(engine: Any) -> None:
             interference, _ = engine.read_audio(interference_path, rate, 1)
             input_corr = engine.max_abs_corr(mic0, interference, rate)
             output_corr = engine.max_abs_corr(output, interference, rate)
+            _, input_alignment = engine.aligned_si_sdr(interference, mic0, rate, 0)
+            _, output_alignment = engine.aligned_si_sdr(interference, output, rate, declared_delay)
+            input_projection = projection_gain_db(interference, mic0, input_alignment)
+            output_projection = projection_gain_db(interference, output, output_alignment)
+            attenuation = None
+            if input_projection is not None and output_projection is not None:
+                attenuation = input_projection - output_projection
             result["metrics"].update({
                 "input_interference_max_abs_corr": input_corr,
                 "output_interference_max_abs_corr": output_corr,
                 "interference_corr_reduction": input_corr - output_corr,
+                "input_interference_projection_gain_db": input_projection,
+                "output_interference_projection_gain_db": output_projection,
+                "interference_projection_attenuation_db": attenuation,
             })
 
         noise_path = engine.resolve(corpus_path, case.get("noise_audio"))
@@ -264,6 +277,7 @@ def install(engine: Any) -> None:
         summary, violations = original_policy_violations(base_policy, corpus, cases)
         summary.update({
             "p10_near_projection_gain_db": _summary_value(cases, "near_projection_gain_db", 0.10),
+            "p10_interference_projection_attenuation_db": _summary_value(cases, "interference_projection_attenuation_db", 0.10),
             "p10_interference_corr_reduction": _summary_value(cases, "interference_corr_reduction", 0.10),
             "p90_erle_convergence_ms": _summary_value(cases, "erle_convergence_ms", 0.90),
             "p90_erle_recovery_ms": _summary_value(cases, "erle_recovery_ms", 0.90),
@@ -297,6 +311,11 @@ def self_test() -> None:
     est = [0] * 160 + [500, -500] * 240
     gain = projection_gain_db(ref, est, 160)
     assert gain is not None and -6.2 < gain < -5.8
+    input_gain = projection_gain_db(ref, ref, 0)
+    output_gain = projection_gain_db(ref, [value // 2 for value in ref], 0)
+    assert input_gain is not None and output_gain is not None
+    attenuation = input_gain - output_gain
+    assert 5.9 < attenuation < 6.2
     labels = [0] * 10 + [1] * 20 + [0] * 20
     trace = [{"vad_active": 0}] * 12 + [{"vad_active": 1}] * 20 + [{"vad_active": 0}] * 18
     onset, release = vad_transition_delays_ms(labels, trace)

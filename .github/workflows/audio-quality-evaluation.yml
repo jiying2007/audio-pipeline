@@ -102,11 +102,12 @@ jobs:
           }, sort_keys=True))
           PY
               failed=1
+            else
+              python3 tests/validation/audio_quality_contract.py \
+                --corpus "$root/corpus.json" \
+                --report "$root/report.json" \
+                --policy tests/validation/validation-audio-quality-development.json
             fi
-            python3 tests/validation/audio_quality_contract.py \
-              --corpus "$root/corpus.json" \
-              --report "$root/report.json" \
-              --policy tests/validation/validation-audio-quality-development.json
           done
           exit "$failed"
 

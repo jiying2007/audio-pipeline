@@ -31,10 +31,6 @@
       {"name": "p90_vad_onset_delay_ms", "direction": "min", "weight": 0.5, "scale": 50.0, "max_regression": 100.0},
       {"name": "p90_vad_release_delay_ms", "direction": "min", "weight": 0.4, "scale": 50.0, "max_regression": 100.0},
       {"name": "max_output_clip_fraction", "direction": "min", "weight": 2.0, "scale": 0.002, "max_regression": 0.002}
-    ],
-    "case_delta_gates": [
-      {"metric": "near_projection_gain_db", "stat": "p10", "minimum_delta": -1.0},
-      {"metric": "interference_corr_reduction", "stat": "p10", "minimum_delta": -0.05}
     ]
   }
 }

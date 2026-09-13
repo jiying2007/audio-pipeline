@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-audio-quality-development-v1",
+  "allowed_tiers": ["regression"],
+  "minimum_cases": 12,
+  "required_public_sources": [],
+  "required_scenarios": [
+    "quality-aec-farend",
+    "quality-aec-path-change",
+    "quality-aec-delay",
+    "quality-aec-res-doubletalk",
+    "quality-ns-stationary",
+    "quality-ns-nonstationary",
+    "quality-bf-target-interferer",
+    "quality-vad-clean",
+    "quality-vad-quiet",
+    "quality-vad-negative"
+  ],
+  "minimum_pass_rate_by_scenario": {
+    "quality-aec-farend": 1.0,
+    "quality-aec-path-change": 1.0,
+    "quality-aec-delay": 1.0,
+    "quality-aec-res-doubletalk": 1.0,
+    "quality-ns-stationary": 1.0,
+    "quality-ns-nonstationary": 1.0,
+    "quality-bf-target-interferer": 1.0,
+    "quality-vad-clean": 1.0,
+    "quality-vad-quiet": 1.0,
+    "quality-vad-negative": 1.0
+  },
+  "aggregate": {
+    "min_pass_rate": 1.0,
+    "min_p10_near_si_sdr_improvement_db": -6.0,
+    "min_p10_near_projection_gain_db": -12.0,
+    "min_p10_interference_corr_reduction": -0.05,
+    "min_median_erle_db": -7.0,
+    "max_p90_erle_convergence_ms": 4000.0,
+    "max_p90_erle_recovery_ms": 3000.0,
+    "min_vad_recall": 0.10,
+    "max_vad_false_positive_rate": 0.60,
+    "max_p90_vad_onset_delay_ms": 700.0,
+    "max_p90_vad_release_delay_ms": 900.0,
+    "max_output_clip_fraction": 0.02
+  }
+}

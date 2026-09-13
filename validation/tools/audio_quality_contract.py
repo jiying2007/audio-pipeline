@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Fail-closed cross-stage ground-truth quality contract.
 
-This contract exists to prevent a regression from being called an acoustic
-quality evaluation merely because it is deterministic and crash-free.  It
-requires each algorithm family to carry the truth needed for the metrics that
-can actually decide quality.
+This contract prevents a deterministic/crash-free regression from being called
+an acoustic quality evaluation. Each algorithm family must carry the truth and
+product geometry needed for the metrics that can actually decide quality.
 """
 
 from __future__ import annotations
@@ -15,6 +14,8 @@ import math
 from pathlib import Path
 
 REQUIRED_ROLES = {"aec-farend", "aec-res-doubletalk", "ns", "bf", "vad"}
+PCR02_MIC_SPACING_MM = 35.0
+PCR02_MAX_TDOA_SAMPLES_16K = 35.0 * 16000.0 / 343000.0
 
 
 def require(condition: bool, message: str) -> None:
@@ -55,7 +56,7 @@ def validate_corpus(corpus: dict) -> dict:
                     f"AEC/RES double-talk separated truth missing: {case_id}")
             require("min_near_si_sdr_db" in expected and
                     "min_near_projection_gain_db" in expected and
-                    "min_interference_corr_reduction" in expected,
+                    "min_interference_projection_attenuation_db" in expected,
                     f"AEC/RES double-talk quality gates missing: {case_id}")
             require(case.get("echo_audio") is None,
                     f"double-talk must not misuse ERLE with near speech present: {case_id}")
@@ -74,15 +75,29 @@ def validate_corpus(corpus: dict) -> dict:
                     f"BF target/interferer truth missing: {case_id}")
             require("min_near_si_sdr_improvement_db" in expected and
                     "min_near_projection_gain_db" in expected and
-                    "min_interference_corr_reduction" in expected,
+                    "min_interference_projection_attenuation_db" in expected,
                     f"BF quality gates missing: {case_id}")
+            dimensions = case.get("dimensions", {})
+            require(float(dimensions.get("mic_spacing_mm", -1.0)) == PCR02_MIC_SPACING_MM,
+                    f"BF PCR02 spacing drift: {case_id}")
+            require(dimensions.get("shipping_steering") == "fixed-zero-integer-delay",
+                    f"BF shipping steering drift: {case_id}")
+            require(float(dimensions.get("target_angle_deg", 999.0)) == 0.0 and
+                    float(dimensions.get("target_tdoa_samples", 999.0)) == 0.0,
+                    f"BF desired target must remain broadside: {case_id}")
+            max_tdoa = float(dimensions.get("max_physical_tdoa_samples", -1.0))
+            interference_tdoa = abs(float(dimensions.get("interferer_tdoa_samples", 999.0)))
+            require(abs(max_tdoa - PCR02_MAX_TDOA_SAMPLES_16K) < 1.0e-6,
+                    f"BF physical TDOA bound drift: {case_id}")
+            require(0.0 < interference_tdoa <= max_tdoa,
+                    f"BF interferer exceeds PCR02 physical TDOA: {case_id}")
         elif role == "vad":
             require(case.get("processor_profile") == "vad-isolated" and case.get("vad_labels"),
                     f"VAD labels/isolation missing: {case_id}")
             require(any(name in expected for name in (
                 "min_vad_f1", "min_vad_recall", "max_vad_false_positive_rate"
             )), f"VAD classification gate missing: {case_id}")
-            if any(case.get("vad_labels") for _ in [0]) and not quality.get("negative"):
+            if not quality.get("negative"):
                 require("max_vad_onset_delay_ms" in expected and "max_vad_release_delay_ms" in expected,
                         f"VAD timing gates missing: {case_id}")
     require(set(roles) == REQUIRED_ROLES, f"quality role coverage drift: {sorted(set(roles))}")
@@ -116,7 +131,7 @@ def validate_report(corpus: dict, report: dict) -> dict:
         elif role == "aec-res-doubletalk":
             _finite_metric(case, "near_si_sdr_db")
             _finite_metric(case, "near_projection_gain_db")
-            _finite_metric(case, "interference_corr_reduction")
+            _finite_metric(case, "interference_projection_attenuation_db")
         elif role == "ns":
             _finite_metric(case, "near_si_sdr_improvement_db")
             _finite_metric(case, "near_projection_gain_db")
@@ -124,7 +139,7 @@ def validate_report(corpus: dict, report: dict) -> dict:
         elif role == "bf":
             _finite_metric(case, "near_si_sdr_improvement_db")
             _finite_metric(case, "near_projection_gain_db")
-            _finite_metric(case, "interference_corr_reduction")
+            _finite_metric(case, "interference_projection_attenuation_db")
         elif role == "vad":
             _finite_metric(case, "vad_false_positive_rate")
             if not source["quality"].get("negative"):
@@ -134,7 +149,7 @@ def validate_report(corpus: dict, report: dict) -> dict:
     summary = report.get("summary", {})
     for name in (
         "p10_near_projection_gain_db",
-        "p10_interference_corr_reduction",
+        "p10_interference_projection_attenuation_db",
         "p90_erle_convergence_ms",
         "p90_erle_recovery_ms",
         "p90_vad_onset_delay_ms",
@@ -151,7 +166,7 @@ def validate_policy(policy: dict) -> None:
     for gate in (
         "min_pass_rate",
         "min_p10_near_projection_gain_db",
-        "min_p10_interference_corr_reduction",
+        "min_p10_interference_projection_attenuation_db",
         "max_p90_erle_convergence_ms",
         "max_p90_erle_recovery_ms",
         "max_p90_vad_onset_delay_ms",
@@ -169,14 +184,14 @@ def self_test() -> None:
     }
     templates = {
         "aec-farend": {"render_audio": "r", "echo_audio": "e", "expected": {"min_erle_db": -6, "max_erle_convergence_ms": 1}},
-        "aec-res-doubletalk": {"render_audio": "r", "clean_near_audio": "c", "interference_audio": "i", "expected": {"min_near_si_sdr_db": -20, "min_near_projection_gain_db": -12, "min_interference_corr_reduction": -0.1}},
+        "aec-res-doubletalk": {"render_audio": "r", "clean_near_audio": "c", "interference_audio": "i", "expected": {"min_near_si_sdr_db": -20, "min_near_projection_gain_db": -12, "min_interference_projection_attenuation_db": 0.0}},
         "ns": {"processor_profile": "ns-isolated", "clean_near_audio": "c", "noise_audio": "n", "vad_labels": "v", "expected": {"min_near_si_sdr_improvement_db": -6, "min_near_projection_gain_db": -9, "min_noise_only_attenuation_db": 0.1}},
-        "bf": {"processor_profile": "bf-isolated", "mic_channels": 2, "clean_near_audio": "c", "interference_audio": "i", "expected": {"min_near_si_sdr_improvement_db": -1, "min_near_projection_gain_db": -6, "min_interference_corr_reduction": -0.1}},
+        "bf": {"processor_profile": "bf-isolated", "mic_channels": 2, "clean_near_audio": "c", "interference_audio": "i", "dimensions": {"mic_spacing_mm": 35.0, "shipping_steering": "fixed-zero-integer-delay", "target_angle_deg": 0.0, "target_tdoa_samples": 0.0, "interferer_tdoa_samples": 1.4, "max_physical_tdoa_samples": PCR02_MAX_TDOA_SAMPLES_16K}, "expected": {"min_near_si_sdr_improvement_db": -1, "min_near_projection_gain_db": -6, "min_interference_projection_attenuation_db": 0.0}},
         "vad": {"processor_profile": "vad-isolated", "vad_labels": "v", "expected": {"min_vad_f1": 0.1, "max_vad_onset_delay_ms": 500, "max_vad_release_delay_ms": 700}},
     }
     for index in range(2):
         for role, body in templates.items():
-            case = {"case_id": f"{role}-{index}", "quality": {"role": role, "ground_truth": True}, **body}
+            case = {"case_id": f"{role}-{index}", "quality": {"role": role, "ground_truth": True}, **json.loads(json.dumps(body))}
             if role == "vad" and index == 1:
                 case["quality"]["negative"] = True
                 case["expected"] = {"max_vad_false_positive_rate": 0.2}
@@ -190,6 +205,15 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("missing separated truth was accepted")
+    impossible = json.loads(json.dumps(good))
+    bf = next(case for case in impossible["cases"] if case["quality"]["role"] == "bf")
+    bf["dimensions"]["interferer_tdoa_samples"] = 4.0
+    try:
+        validate_corpus(impossible)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("physically impossible PCR02 BF geometry was accepted")
     print("audio quality contract self-test: OK")
 
 

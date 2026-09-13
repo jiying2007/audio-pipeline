@@ -12,6 +12,7 @@ import argparse
 import json
 from pathlib import Path
 
+import quality_metric_support
 import render_corr_exact
 import run_validation_engine as engine
 import stage_profile_support
@@ -22,6 +23,7 @@ from authority import corpus_tiers, load_authority, tier_spec
 # remain run_validation_engine.normalized_corr(..., stride=4).
 render_corr_exact.install(engine)
 stage_profile_support.install(engine)
+quality_metric_support.install(engine)
 
 
 def validate_corpus_shape(corpus: dict, authority: dict) -> None:
@@ -86,6 +88,7 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict],
 def self_test() -> None:
     authority = load_authority()
     render_corr_exact.self_test(engine.normalized_corr)
+    quality_metric_support.self_test()
     engine.self_test()
     research = {
         "schema_version": 1,

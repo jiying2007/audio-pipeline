@@ -1,0 +1,166 @@
+name: Audio Quality Evaluation
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'validation/**'
+      - 'tests/validation/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/audio-quality-evaluation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'validation/**'
+      - 'tests/validation/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/audio-quality-evaluation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audio-quality-evaluation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-ground-truth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: audio-quality-evaluation
+
+      - name: Validate quality metric and truth contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py
+          python3 validation/tools/quality_metric_support.py
+          python3 validation/tools/build_quality_validation_corpus.py --self-test
+          python3 validation/tools/audio_quality_contract.py --self-test
+          python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 -m json.tool validation/policies/validation-audio-quality-development.json >/dev/null
+          python3 -m json.tool validation/tuning/search-spaces/audio-quality-pr-v1.json >/dev/null
+          python3 -m json.tool validation/corpus.schema.json >/dev/null
+
+      - name: Build exact offline processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-quality -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-quality --target ap_process_pcm ap_build_info_dump --parallel
+          mkdir -p /tmp/audio-quality-evidence
+          sha256sum build-quality/ap_process_pcm > /tmp/audio-quality-evidence/processor.sha256
+          build-quality/ap_build_info_dump > /tmp/audio-quality-evidence/build-info.txt
+          ${CC:-cc} --version | head -n 1 > /tmp/audio-quality-evidence/compiler.txt
+
+      - name: Enforce Development Validation Shadow quality partitions
+        run: |
+          set -euo pipefail
+          for seed in 5107 6107 7107; do
+            root="/tmp/ap-quality-$seed"
+            python3 validation/tools/build_quality_validation_corpus.py \
+              --output "$root" --seed "$seed" --seconds 6.0
+            python3 validation/tools/audio_quality_contract.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-audio-quality-development.json
+            python3 validation/tools/run_validation.py \
+              --source-revision "$GITHUB_SHA" \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-audio-quality-development.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor ./build-quality/ap_process_pcm \
+              --output "$root/report.json" \
+              --evidence-manifest "$root/evidence-manifest.json" \
+              --enforce
+            python3 validation/tools/audio_quality_contract.py \
+              --corpus "$root/corpus.json" \
+              --report "$root/report.json" \
+              --policy validation/policies/validation-audio-quality-development.json
+            cp "$root/report.json" "/tmp/audio-quality-evidence/report-$seed.json"
+            cp "$root/corpus.json" "/tmp/audio-quality-evidence/corpus-$seed.json"
+            cp "$root/evidence-manifest.json" "/tmp/audio-quality-evidence/evidence-$seed.json"
+          done
+
+      - name: Enforce quality-aware bounded tuning
+        run: |
+          set -euo pipefail
+          python3 validation/tools/authority.py \
+            --development-corpus /tmp/ap-quality-5107/corpus.json \
+            --validation-corpus /tmp/ap-quality-6107/corpus.json \
+            --shadow-corpus /tmp/ap-quality-7107/corpus.json
+          python3 validation/tools/tuning_iteration.py \
+            --processor ./build-quality/ap_process_pcm \
+            --development-corpus /tmp/ap-quality-5107/corpus.json \
+            --validation-corpus /tmp/ap-quality-6107/corpus.json \
+            --shadow-corpus /tmp/ap-quality-7107/corpus.json \
+            --policy validation/policies/validation-audio-quality-development.json \
+            --dataset-lock validation/datasets.lock.json \
+            --search-space validation/tuning/search-spaces/audio-quality-pr-v1.json \
+            --output-dir /tmp/audio-quality-tuning
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/audio-quality-tuning/iteration-result.json').read_text())
+          assert result['authority'] == 'non-shipping-acoustic-iteration'
+          assert result['search_space']['candidate_count'] <= 8
+          assert result['validation']['baseline']['validation_result'] == 'PASS'
+          assert result['shadow']['baseline']['validation_result'] == 'PASS'
+          if result['decision'] == 'ACOUSTIC_CANDIDATE':
+              assert not result['validation']['regression_violations']
+              assert not result['shadow']['regression_violations']
+          print(json.dumps({
+              'decision': result['decision'],
+              'selected': result['selected'],
+              'iteration_id': result['iteration_id'],
+          }, sort_keys=True))
+          PY
+          cp -r /tmp/audio-quality-tuning /tmp/audio-quality-evidence/tuning
+
+      - name: Seal quality evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          cp validation/policies/validation-audio-quality-development.json /tmp/audio-quality-evidence/
+          cp validation/tuning/search-spaces/audio-quality-pr-v1.json /tmp/audio-quality-evidence/
+          find /tmp/audio-quality-evidence -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > /tmp/audio-quality-evidence/SHA256SUMS
+
+      - name: Publish quality summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          print('## Cross-stage ground-truth audio quality')
+          for seed, role in ((5107, 'Development'), (6107, 'Validation'), (7107, 'Shadow')):
+              path = Path(f'/tmp/audio-quality-evidence/report-{seed}.json')
+              if not path.exists():
+                  continue
+              report = json.loads(path.read_text())
+              s = report['summary']
+              print(f"- {role}: `{report['validation_result']}` cases={s['cases']} pass={s['pass_rate']:.3f}")
+              print(f"  - near projection p10: `{s.get('p10_near_projection_gain_db')}` dB")
+              print(f"  - interference corr reduction p10: `{s.get('p10_interference_corr_reduction')}`")
+              print(f"  - AEC ERLE median: `{s.get('median_erle_db')}` dB")
+              print(f"  - AEC convergence p90: `{s.get('p90_erle_convergence_ms')}` ms")
+              print(f"  - AEC recovery p90: `{s.get('p90_erle_recovery_ms')}` ms")
+              print(f"  - VAD onset/release p90: `{s.get('p90_vad_onset_delay_ms')}` / `{s.get('p90_vad_release_delay_ms')}` ms")
+          print('- Authority: regression/development quality evidence only; blind/public/DUT/HIL/Product Certification remain separate.')
+          PY
+
+      - name: Upload hash-bound quality evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: audio-quality-evaluation-${{ github.run_id }}
+          path: /tmp/audio-quality-evidence/
+          retention-days: 30
+          if-no-files-found: error

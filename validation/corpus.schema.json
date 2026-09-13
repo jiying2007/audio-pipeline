@@ -104,43 +104,10 @@
               "null"
             ]
           },
-          "interference_audio": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "noise_audio": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "vad_labels": {
             "type": [
               "string",
               "null"
-            ]
-          },
-          "quality": {
-            "type": "object",
-            "properties": {
-              "role": {
-                "enum": [
-                  "aec-farend",
-                  "aec-res-doubletalk",
-                  "ns",
-                  "bf",
-                  "vad"
-                ]
-              },
-              "ground_truth": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "role",
-              "ground_truth"
             ]
           },
           "control": {

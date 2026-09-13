@@ -21,16 +21,10 @@ KNOWN_OBJECTIVE_METRICS = {
     "pass_rate",
     "p10_near_si_sdr_improvement_db",
     "p10_noise_only_attenuation_db",
-    "p10_near_projection_gain_db",
-    "p10_interference_corr_reduction",
     "median_erle_db",
-    "p90_erle_convergence_ms",
-    "p90_erle_recovery_ms",
     "min_vad_f1",
     "min_vad_recall",
     "max_vad_false_positive_rate",
-    "p90_vad_onset_delay_ms",
-    "p90_vad_release_delay_ms",
     "max_output_clip_fraction",
 }
 _MISSING_METRIC_PENALTY = -1.0e12
@@ -158,14 +152,14 @@ def self_test() -> None:
         "parameters": {"aec_mu": [0.22]},
         "objective": {
             "metrics": [{
-                "name": "p10_near_projection_gain_db", "direction": "max", "weight": 1.0,
+                "name": "median_erle_db", "direction": "max", "weight": 1.0,
                 "scale": 1.0, "max_regression": 1.0,
             }],
         },
     }
     strict_validate_search_space(space)
-    baseline = {"validation_result": "PASS", "summary": {"p10_near_projection_gain_db": -2.0}}
-    missing = {"validation_result": "PASS", "summary": {"p10_near_projection_gain_db": None}}
+    baseline = {"validation_result": "PASS", "summary": {"median_erle_db": 8.0}}
+    missing = {"validation_result": "PASS", "summary": {"median_erle_db": None}}
     score, _ = strict_score(space, baseline, missing)
     assert score == _MISSING_METRIC_PENALTY
     assert any(item["gate"] == "objective_metric_missing"

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build a deterministic ground-truth corpus for AEC/RES, BF, NS and VAD quality.
 
-This corpus is deliberately ``tier=regression``.  It exists to make algorithm
+This corpus is deliberately ``tier=regression``. It exists to make algorithm
 quality measurable and tunable without confusing generated evidence with public
-validation or product qualification.  Independent seeds are used for
+validation or product qualification. Independent seeds are used for
 Development / Validation / Shadow replay by the caller.
 """
 
@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import tempfile
 from pathlib import Path
 
@@ -18,7 +19,6 @@ from build_validation_corpus import (
     FRAME,
     RATE,
     add_case,
-    delayed,
     echo_from_render,
     interleave,
     mix,
@@ -30,7 +30,10 @@ from build_validation_corpus import (
     write_pcm,
 )
 
-GENERATOR_VERSION = 1
+GENERATOR_VERSION = 2
+PCR02_MIC_SPACING_MM = 35.0
+SOUND_MM_S = 343000.0
+BF_INTERFERER_ANGLE_DEG = 60.0
 
 
 def _case(cases: list[dict], case_id: str) -> dict:
@@ -50,6 +53,29 @@ def _mark(cases: list[dict], case_id: str, role: str, **extra) -> None:
     case = _case(cases, case_id)
     case["quality"] = {"role": role, "ground_truth": True, **extra}
     case.setdefault("dimensions", {})["quality_role"] = role
+
+
+def physical_tdoa_samples(spacing_mm: float, angle_deg: float) -> float:
+    return spacing_mm * RATE / SOUND_MM_S * math.sin(math.radians(angle_deg))
+
+
+def fractional_delay(signal: list[int], delay_samples: float) -> list[int]:
+    if delay_samples < 0.0:
+        raise ValueError("fractional_delay expects non-negative delay")
+    out: list[int] = []
+    for index in range(len(signal)):
+        source = index - delay_samples
+        if source < 0.0:
+            out.append(0)
+            continue
+        lower = int(math.floor(source))
+        fraction = source - lower
+        if lower >= len(signal) - 1:
+            value = signal[-1]
+        else:
+            value = (1.0 - fraction) * signal[lower] + fraction * signal[lower + 1]
+        out.append(max(-32768, min(32767, int(round(value)))))
+    return out
 
 
 def build(output: Path, seed: int, seconds: float) -> dict:
@@ -108,8 +134,8 @@ def build(output: Path, seed: int, seconds: float) -> dict:
     )
     _mark(cases, "quality-aec-delay", "aec-farend", delay_ms=40)
 
-    # AEC + RES double-talk: clean near truth catches over-suppression while the
-    # known echo component catches solutions that preserve speech by doing no AEC.
+    # AEC + RES double-talk: clean-near projection protects user speech while
+    # scale-sensitive interference projection proves echo is actually reduced.
     for name, near_gain in (("nominal", 1.0), ("weak-near", 0.55)):
         near = scale(clean, near_gain)
         case_id = f"quality-aec-res-{name}"
@@ -119,14 +145,14 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             expected={
                 "min_near_si_sdr_db": -20.0,
                 "min_near_projection_gain_db": -12.0,
-                "min_interference_corr_reduction": -0.05,
+                "min_interference_projection_attenuation_db": 0.0,
                 "max_output_clip_fraction": 0.02,
             },
         )
         _attach_audio(output, cases, case_id, "interference_audio", "echo-truth.pcm", echo_a)
         _mark(cases, case_id, "aec-res-doubletalk", near_gain=near_gain)
 
-    # NS: clean + explicit noise truth + VAD labels.  SI-SDR measures waveform
+    # NS: clean + explicit noise truth + VAD labels. SI-SDR measures waveform
     # quality; projection gain prevents scale-invariant SI-SDR from hiding speech
     # attenuation; noise-only attenuation proves the suppressor is not a no-op.
     for name, noise_signal, attenuation in (
@@ -149,19 +175,22 @@ def build(output: Path, seed: int, seconds: float) -> dict:
         _attach_audio(output, cases, case_id, "noise_audio", "noise-truth.pcm", noise_signal)
         _mark(cases, case_id, "ns", noise=name)
 
-    # BF: target and interferer are separately known.  Opposite TDOA patterns
-    # make target preservation and competitor rejection independently measurable.
-    bf_cases = (
-        ("positive", 2, 4),
-        ("negative", 4, 2),
-    )
-    for name, target_delay, interferer_delay in bf_cases:
-        target_l = clean if name == "positive" else delayed(clean, target_delay)
-        target_r = delayed(clean, target_delay) if name == "positive" else clean
-        int_l = delayed(interferer, interferer_delay) if name == "positive" else interferer
-        int_r = interferer if name == "positive" else delayed(interferer, interferer_delay)
-        left = mix(target_l, scale(int_l, 0.75))
-        right = mix(target_r, scale(int_r, 0.75))
+    # BF quality must match the shipping PCR02 steering contract. Shipping is
+    # fixed broadside (zero integer delay), so the desired target stays at 0°.
+    # A coherent competing source is placed at +/-60° using the physical 35 mm
+    # fractional TDOA. Both directions are exercised without exceeding the real
+    # 1.63265-sample endfire bound.
+    max_tdoa = physical_tdoa_samples(PCR02_MIC_SPACING_MM, 90.0)
+    interferer_tdoa = physical_tdoa_samples(PCR02_MIC_SPACING_MM, BF_INTERFERER_ANGLE_DEG)
+    if not 0.0 < interferer_tdoa <= max_tdoa < 2.0:
+        raise ValueError("PCR02 BF physical TDOA contract drifted")
+    delayed_interferer = fractional_delay(interferer, interferer_tdoa)
+    for name, angle, int_l, int_r in (
+        ("left", -BF_INTERFERER_ANGLE_DEG, delayed_interferer, interferer),
+        ("right", BF_INTERFERER_ANGLE_DEG, interferer, delayed_interferer),
+    ):
+        left = mix(clean, scale(int_l, 0.75))
+        right = mix(clean, scale(int_r, 0.75))
         case_id = f"quality-bf-{name}"
         add_case(
             cases, output, case_id, "quality-bf-target-interferer",
@@ -170,16 +199,23 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             expected={
                 "min_near_si_sdr_improvement_db": -0.25,
                 "min_near_projection_gain_db": -6.0,
-                "min_interference_corr_reduction": -0.05,
+                "min_interference_projection_attenuation_db": 0.0,
                 "max_output_clip_fraction": 0.02,
             },
         )
-        # Use the non-delayed source as the canonical competitor identity; the
-        # evaluator searches bounded correlation lag, so both microphone paths
-        # remain comparable to the same truth signal.
         _attach_audio(output, cases, case_id, "interference_audio", "interferer-truth.pcm", interferer)
-        _mark(cases, case_id, "bf", target_tdoa_samples=target_delay,
-              interferer_tdoa_samples=-interferer_delay)
+        case = _case(cases, case_id)
+        case.setdefault("dimensions", {}).update({
+            "mic_spacing_mm": PCR02_MIC_SPACING_MM,
+            "target_angle_deg": 0.0,
+            "target_tdoa_samples": 0.0,
+            "interferer_angle_deg": angle,
+            "interferer_tdoa_samples": interferer_tdoa if angle > 0 else -interferer_tdoa,
+            "max_physical_tdoa_samples": max_tdoa,
+            "shipping_steering": "fixed-zero-integer-delay",
+        })
+        _mark(cases, case_id, "bf", target_angle_deg=0.0,
+              interferer_angle_deg=angle, mic_spacing_mm=PCR02_MIC_SPACING_MM)
 
     # VAD: classification metrics alone do not catch unusably slow onset/release.
     add_case(
@@ -225,6 +261,14 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             "version": GENERATOR_VERSION,
             "seed": seed,
             "seconds": seconds,
+            "bf_geometry": {
+                "mic_spacing_mm": PCR02_MIC_SPACING_MM,
+                "sound_mm_s": SOUND_MM_S,
+                "shipping_steering": "fixed-zero-integer-delay",
+                "target_angle_deg": 0.0,
+                "interferer_angle_deg": [-BF_INTERFERER_ANGLE_DEG, BF_INTERFERER_ANGLE_DEG],
+                "max_physical_tdoa_samples": max_tdoa,
+            },
         },
         "sources": ["deterministic-quality-ground-truth"],
         "sealed_data": False,
@@ -238,6 +282,7 @@ def build(output: Path, seed: int, seconds: float) -> dict:
 
 
 def self_test() -> None:
+    assert abs(physical_tdoa_samples(35.0, 90.0) - 1.6326530612) < 1.0e-6
     with tempfile.TemporaryDirectory(prefix="ap-quality-corpus-") as temporary:
         root = Path(temporary)
         corpus = build(root, 5107, 6.0)
@@ -250,6 +295,10 @@ def self_test() -> None:
         assert sum(role == "bf" for role in roles) == 2
         assert sum(role == "vad" for role in roles) == 3
         assert all(case["split"] == "validation" for case in corpus["cases"])
+        bf = [case for case in corpus["cases"] if case["quality"]["role"] == "bf"]
+        assert all(case["dimensions"]["target_tdoa_samples"] == 0.0 for case in bf)
+        assert all(abs(case["dimensions"]["interferer_tdoa_samples"]) <=
+                   case["dimensions"]["max_physical_tdoa_samples"] for case in bf)
     print("quality validation corpus self-test: OK")
 
 

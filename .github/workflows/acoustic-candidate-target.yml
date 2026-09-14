@@ -4,13 +4,14 @@ on:
   pull_request:
     paths:
       - '.github/workflows/acoustic-candidate-target.yml'
-      - 'validation/tools/acoustic_candidate.py'
-      - 'bench/bench_pipeline.c'
-      - 'examples/alsa_runtime_duplex.c'
+      - '.github/program/acoustic_candidate.py'
+      - '.github/program/candidate_pipeline_inject.h'
+      - '.github/program/candidate_bench.c'
+      - '.github/program/candidate_alsa_runtime_duplex.c'
   workflow_dispatch:
     inputs:
       source_sha:
-        description: Exact source revision containing candidate-injection infrastructure
+        description: Exact fresh-main source revision that reproduced the candidate and contains the CI adapters
         required: true
         type: string
       candidate_id:
@@ -18,7 +19,7 @@ on:
         default: '4a6a408bf0e3'
         type: string
       provenance_sha256:
-        description: SHA-256 of authoritative tuning artifact
+        description: SHA-256 of authoritative fresh-main tuning artifact
         required: true
         type: string
       aec_mu:
@@ -97,30 +98,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Build candidate-aware benchmark
+      - name: Build release-neutral candidate benchmark shim
         shell: bash
         run: |
           set -euo pipefail
-          cmake -S . -B build/candidate-contract -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=ON -DAP_BUILD_TESTS=OFF
-          cmake --build build/candidate-contract --target ap_bench ap_process_pcm --parallel
-      - name: Prove default and fixed-candidate benchmark paths
+          cmake -S . -B build/candidate-contract -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_BUILD_TESTS=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build/candidate-contract --target audio_pipeline ap_process_pcm --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -Iinclude -Ibuild/candidate-contract/generated \
+            .github/program/candidate_bench.c build/candidate-contract/libaudio_pipeline.a -lm \
+            -o build/candidate-contract/ap_candidate_bench
+      - name: Prove default-equivalent and fixed-candidate shim paths
         shell: bash
         run: |
           set -euo pipefail
-          ./build/candidate-contract/ap_bench 1 0 0 active 16000 2 > /tmp/default-bench.txt
+          ./build/candidate-contract/ap_candidate_bench 1 0 0 active 16000 2 > /tmp/default-bench.txt
           AP_TUNING_AEC_MU=0.24 \
           AP_TUNING_NS_FLOOR=0.12 \
           AP_TUNING_AGC_TARGET_DBFS=-20.0 \
           AP_TUNING_LIMITER_DBFS=-2.0 \
-            ./build/candidate-contract/ap_bench 1 0 0 active 16000 2 > /tmp/candidate-bench.txt
+            ./build/candidate-contract/ap_candidate_bench 1 0 0 active 16000 2 > /tmp/candidate-bench.txt
           grep -q 'sample_rate_hz=16000' /tmp/default-bench.txt
           grep -q 'sample_rate_hz=16000' /tmp/candidate-bench.txt
-          if AP_TUNING_AEC_MU=not-a-number ./build/candidate-contract/ap_bench 1 0 0 active 16000 2 >/dev/null 2>&1; then
+          if AP_TUNING_AEC_MU=not-a-number ./build/candidate-contract/ap_candidate_bench 1 0 0 active 16000 2 >/dev/null 2>&1; then
             echo 'invalid candidate tuning unexpectedly accepted' >&2
             exit 1
           fi
-      - name: Candidate identity helper self-test
-        run: python3 validation/tools/acoustic_candidate.py --self-test
+      - name: Candidate identity adapter self-test
+        run: python3 .github/program/acoustic_candidate.py --self-test
+      - name: Enforce CI-only injection boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code origin/main -- bench/bench_pipeline.c examples/alsa_runtime_duplex.c
+          grep -q '../../bench/bench_pipeline.c' .github/program/candidate_bench.c
+          grep -q '../../examples/alsa_runtime_duplex.c' .github/program/candidate_alsa_runtime_duplex.c
 
   resolve:
     if: github.event_name == 'workflow_dispatch'
@@ -132,7 +145,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Resolve exact source revision
+      - name: Resolve exact fresh-main candidate source revision
         id: source
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
@@ -142,6 +155,13 @@ jobs:
           [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'source_sha must be a 40-character commit SHA' >&2; exit 1; }
           git fetch --no-tags origin "$SOURCE_SHA"
           git cat-file -e "$SOURCE_SHA^{commit}"
+          for path in \
+            .github/program/acoustic_candidate.py \
+            .github/program/candidate_pipeline_inject.h \
+            .github/program/candidate_bench.c \
+            .github/program/candidate_alsa_runtime_duplex.c; do
+            git cat-file -e "$SOURCE_SHA:$path" || { echo "source revision lacks candidate adapter: $path" >&2; exit 1; }
+          done
           echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
 
   target-and-hil:
@@ -159,8 +179,6 @@ jobs:
         shell: bash
         env:
           INPUT_BOARD: ${{ inputs.board_manifest }}
-          INPUT_CAPTURE: ${{ inputs.capture_device }}
-          INPUT_PLAYBACK: ${{ inputs.playback_device }}
           INPUT_FAREND: ${{ inputs.farend_file }}
           INPUT_POWER: ${{ inputs.power_input }}
         run: |
@@ -184,24 +202,36 @@ jobs:
             --output /tmp/ap-candidate-evidence/board-preflight.json --settle-seconds 120
           cp "$board" /tmp/ap-candidate-evidence/board.json
           test -z "$(git status --porcelain=v1)"
-      - name: Build exact candidate evidence binaries
+      - name: Build exact candidate evidence binaries without changing SDK sources
         shell: bash
         run: |
           set -euo pipefail
           revision='${{ needs.resolve.outputs.source_sha }}'
           cmake -S . -B build/candidate-target -DCMAKE_BUILD_TYPE=Release \
-            -DAP_BUILD_SOURCE_REVISION="$revision" -DAP_BUILD_BENCH=ON \
+            -DAP_BUILD_SOURCE_REVISION="$revision" -DAP_BUILD_BENCH=OFF \
             -DAP_BUILD_ALSA_EXAMPLE=ON -DAP_STRICT_WARNINGS=ON
           cmake --build build/candidate-target --parallel \
-            --target ap_process_pcm ap_bench ap_alsa_runtime_duplex ap_build_info_dump
+            --target audio_pipeline audio_pipeline_runtime ap_process_pcm ap_build_info_dump
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -Iinclude -Ibuild/candidate-target/generated \
+            .github/program/candidate_bench.c build/candidate-target/libaudio_pipeline.a -lm \
+            -o build/candidate-target/ap_candidate_bench
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            -Iinclude -Ibuild/candidate-target/generated \
+            .github/program/candidate_alsa_runtime_duplex.c \
+            build/candidate-target/libaudio_pipeline_runtime.a \
+            build/candidate-target/libaudio_pipeline.a \
+            -lasound -pthread -lm -o build/candidate-target/ap_candidate_alsa_runtime_duplex
           build/candidate-target/ap_build_info_dump > /tmp/ap-candidate-evidence/build-info.txt
-          sha256sum build/candidate-target/ap_process_pcm build/candidate-target/ap_bench \
-            build/candidate-target/ap_alsa_runtime_duplex > /tmp/ap-candidate-evidence/binaries.sha256
+          sha256sum build/candidate-target/ap_process_pcm \
+            build/candidate-target/ap_candidate_bench \
+            build/candidate-target/ap_candidate_alsa_runtime_duplex \
+            > /tmp/ap-candidate-evidence/binaries.sha256
       - name: Seal candidate identity and runtime environment
         shell: bash
         run: |
           set -euo pipefail
-          python3 validation/tools/acoustic_candidate.py \
+          python3 .github/program/acoustic_candidate.py \
             --source-revision '${{ needs.resolve.outputs.source_sha }}' \
             --provenance-sha256 '${{ inputs.provenance_sha256 }}' \
             --candidate-id '${{ inputs.candidate_id }}' \
@@ -226,7 +256,7 @@ jobs:
         run: |
           set -euo pipefail
           args=(
-            benchmark --binary build/candidate-target/ap_bench
+            benchmark --binary build/candidate-target/ap_candidate_bench
             --output /tmp/ap-candidate-evidence/target-benchmark.json
             --seconds 120 --idle-seconds 30 --max-rtf 0.40 --max-p99-us 9000
             --dsp-cpu '${{ inputs.dsp_cpu }}' --sample-rate '${{ inputs.sample_rate }}'
@@ -245,7 +275,7 @@ jobs:
         run: |
           set -euo pipefail
           args=(
-            route-soak --binary build/candidate-target/ap_alsa_runtime_duplex
+            route-soak --binary build/candidate-target/ap_candidate_alsa_runtime_duplex
             --output /tmp/ap-candidate-evidence/hil-soak.json
             --capture-device '${{ inputs.capture_device }}' --seconds 600
             --dsp-cpu '${{ inputs.dsp_cpu }}' --sample-rate '${{ inputs.sample_rate }}'
@@ -270,8 +300,8 @@ jobs:
           def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
           if identity['authority'] != 'non-shipping-acoustic-candidate-qualification':
               raise SystemExit('candidate identity authority mismatch')
-          if not soak['soak']['passed']:
-              raise SystemExit('candidate accelerated HIL did not pass')
+          if benchmark.get('kind') != 'target-benchmark' or not soak['soak']['passed']:
+              raise SystemExit('candidate target/HIL evidence did not pass')
           summary = {
               'schema_version': 1,
               'authority': 'non-shipping-acoustic-candidate-target-qualification',

@@ -1,6 +1,6 @@
 # Data-driven Research Optimization
 
-This directory defines the permanent **research-continuous / shipping-frozen** optimization lane for audio-pipeline.
+This document describes the permanent **research-continuous / shipping-frozen** optimization lane for audio-pipeline. Its executable control plane lives under `.github/research/continuous-optimization/`; existing `validation/` files remain the validation/evidence authority rather than becoming an optimizer control surface.
 
 The immutable shipping baseline remains `v2.3.16` at `57e4c64adc1cf06819e46e24e275ecd746d5f17f` with shipping `aec_mu=0.22`. Research may generate new hypotheses, source revisions and parameter candidates, but no research artifact has shipping, HIL or Product Certification authority.
 
@@ -14,7 +14,7 @@ Only **development** data may rank candidates. Validation and shadow sources can
 
 ## Dataset registry
 
-`dataset-registry.json` is the machine-readable admission list. Each source declares:
+`.github/research/continuous-optimization/dataset-registry.json` is the machine-readable admission list. Each source declares:
 
 - covered DSP stages;
 - whether it is synthetic, public, hosted-real or external-product data;
@@ -29,13 +29,13 @@ The previously rejected `aec_mu=0.24` candidate is retained as terminal evidence
 
 ## Failure mining
 
-`validation/tools/failure_mining.py` consumes validation reports and deterministically maps failures into curriculum categories such as motion, far field, low SNR, double-talk, non-stationary noise, mic faults, clipping, reverberation, residual echo, VAD false positives and speech recall.
+`.github/research/continuous-optimization/failure_mining.py` consumes validation reports and deterministically maps failures into curriculum categories such as motion, far field, low SNR, double-talk, non-stationary noise, mic faults, clipping, reverberation, residual echo, VAD false positives and speech recall.
 
 The output is advisory research curriculum only. It cannot modify training/search weights automatically and cannot promote a candidate.
 
 ## Optimizer
 
-`validation/tools/research_optimizer.py` reuses the existing authority-guarded tuning engine and its runtime-safe parameter surface:
+`.github/research/continuous-optimization/research_optimizer.py` reuses the existing authority-guarded tuning engine and its runtime-safe parameter surface:
 
 - `aec_mu`
 - `ns_floor`
@@ -55,10 +55,15 @@ PR runs execute schema/registry/tool self-tests. Manual execution can additional
 ## Local checks
 
 ```sh
-python3 validation/tools/research_dataset_registry.py --self-test --check
-python3 validation/tools/failure_mining.py --self-test
-python3 validation/tools/research_optimizer.py --self-test
+PYTHONPATH=validation/tools:.github/research/continuous-optimization \
+  python3 .github/research/continuous-optimization/research_dataset_registry.py --self-test
+PYTHONPATH=validation/tools:.github/research/continuous-optimization \
+  python3 .github/research/continuous-optimization/failure_mining.py --self-test
+PYTHONPATH=validation/tools:.github/research/continuous-optimization \
+  python3 .github/research/continuous-optimization/research_optimizer.py --self-test
 python3 validation/tools/tuning_iteration.py --self-test
 ```
+
+The committed registry check is performed by the Research Optimization workflow with repository root supplied explicitly, so moving the research implementation does not change validation authority or the implementation logic.
 
 Never feed `validation-grade-blind`, product capture, HIL, soak or certification evidence back into search.

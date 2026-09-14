@@ -4,10 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'validation/research/**'
-      - 'validation/tools/research_dataset_registry.py'
-      - 'validation/tools/research_optimizer.py'
-      - 'validation/tools/failure_mining.py'
+      - '.github/research/continuous-optimization/**'
+      - 'validation/research/README.md'
       - 'validation/tools/tuning_iteration.py'
       - 'validation/tools/tuning_iteration_engine.py'
       - 'validation/tuning/**'
@@ -39,26 +37,39 @@ concurrency:
 jobs:
   contract:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: validation/tools:.github/research/continuous-optimization
+      RESEARCH_REGISTRY: .github/research/continuous-optimization/dataset-registry.json
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Validate research optimization authority and tooling
         run: |
           set -euo pipefail
-          python3 -m py_compile validation/tools/*.py
-          python3 -m json.tool validation/research/dataset-registry.json >/dev/null
-          python3 -m json.tool validation/research/dataset-registry.schema.json >/dev/null
+          python3 -m py_compile validation/tools/*.py .github/research/continuous-optimization/*.py
+          python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/dataset-registry.schema.json >/dev/null
           python3 validation/tools/authority.py --self-test
           python3 validation/tools/tuning_iteration.py --self-test
-          python3 validation/tools/research_dataset_registry.py --self-test --check
-          python3 validation/tools/failure_mining.py --self-test
-          python3 validation/tools/research_optimizer.py --self-test
+          python3 .github/research/continuous-optimization/research_dataset_registry.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import research_dataset_registry as registry
+          root = Path('.').resolve()
+          path = root / '.github/research/continuous-optimization/dataset-registry.json'
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          summary = registry.validate_registry(payload, root)
+          print(json.dumps({'result': 'PASS', **summary}, sort_keys=True))
+          PY
+          python3 .github/research/continuous-optimization/failure_mining.py --self-test
+          python3 .github/research/continuous-optimization/research_optimizer.py --self-test
       - name: Enforce immutable shipping and no-promotion boundary
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
-          registry = json.loads(Path('validation/research/dataset-registry.json').read_text())
+          registry = json.loads(Path(os.environ['RESEARCH_REGISTRY']).read_text())
           assert registry['shipping_baseline'] == {
               'tag': 'v2.3.16',
               'source_sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
@@ -86,6 +97,8 @@ jobs:
     timeout-minutes: 120
     env:
       SEARCH_SPACE: ${{ inputs.search_space }}
+      PYTHONPATH: validation/tools:.github/research/continuous-optimization
+      RESEARCH_REGISTRY: .github/research/continuous-optimization/dataset-registry.json
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -142,10 +155,10 @@ jobs:
       - name: Run multi-seed Pareto optimization and generalization gates
         run: |
           set -euo pipefail
-          python3 validation/tools/research_optimizer.py \
+          python3 .github/research/continuous-optimization/research_optimizer.py \
             --processor build-research-opt/ap_process_pcm \
             --run-spec /tmp/research-run.json \
-            --registry validation/research/dataset-registry.json \
+            --registry "$RESEARCH_REGISTRY" \
             --output-dir research-optimization-out
       - name: Mine failures into advisory curriculum
         if: always()
@@ -154,7 +167,7 @@ jobs:
           if [ -d research-optimization-out/reports ]; then
             mapfile -d '' reports < <(find research-optimization-out/reports -type f -name '*.json' -print0 | sort -z)
             if [ "${#reports[@]}" -gt 0 ]; then
-              python3 validation/tools/failure_mining.py "${reports[@]}" --output research-optimization-out/failure-curriculum.json
+              python3 .github/research/continuous-optimization/failure_mining.py "${reports[@]}" --output research-optimization-out/failure-curriculum.json
             fi
           fi
       - name: Enforce frozen research-only output

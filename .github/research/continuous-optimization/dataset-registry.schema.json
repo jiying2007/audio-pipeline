@@ -3,71 +3,69 @@
   "$id": "https://github.com/jiying2007/audio-pipeline/.github/research/continuous-optimization/dataset-registry.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "registry_id", "shipping_baseline", "terminal_rejections", "optimizer_roles", "catalogs", "required_failure_slices", "candidate_contract"],
+  "required": ["schema_version", "registry_id", "shipping_baseline", "forbidden_optimizer_tiers", "terminal_candidates", "datasets", "output_authority"],
   "properties": {
     "schema_version": {"const": 1},
     "registry_id": {"type": "string", "minLength": 1},
     "shipping_baseline": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["tag", "source_sha", "aec_mu", "mutable"],
+      "required": ["tag", "source_sha", "frozen"],
       "properties": {
-        "tag": {"const": "v2.3.16"},
-        "source_sha": {"const": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"},
-        "aec_mu": {"const": 0.22},
-        "mutable": {"const": false}
+        "tag": {"type": "string", "minLength": 1},
+        "source_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "frozen": {"const": true}
       }
     },
-    "terminal_rejections": {"type": "array", "items": {"type": "object"}},
-    "optimizer_roles": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["selection", "validation", "shadow", "blind", "product"],
-      "properties": {
-        "selection": {"const": "development-only"},
-        "validation": {"const": "reject-only"},
-        "shadow": {"const": "reject-only"},
-        "blind": {"const": "prohibited"},
-        "product": {"const": "prohibited"}
+    "forbidden_optimizer_tiers": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "terminal_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate_id", "source_sha", "decision"],
+        "properties": {
+          "candidate_id": {"type": "string", "minLength": 1},
+          "source_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "decision": {"type": "string", "minLength": 1}
+        }
       }
     },
-    "catalogs": {
+    "datasets": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "roles", "candidate_selection", "product_external", "notes"],
+        "additionalProperties": false,
+        "required": ["id", "source_kind", "stages", "lock_path", "builder_path", "identity_key", "identity_value", "selection_roles", "evaluation_roles", "frozen_holdout", "may_promote_shipping", "notes"],
         "properties": {
           "id": {"type": "string", "minLength": 1},
-          "lock": {"type": "string"},
-          "generator": {"type": "string"},
-          "plan": {"type": "string"},
-          "roles": {"type": "array", "items": {"enum": ["development", "validation", "shadow"]}, "uniqueItems": true},
-          "candidate_selection": {"type": "boolean"},
-          "product_external": {"type": "boolean"},
-          "seed_policy": {"type": "object"},
+          "source_kind": {"enum": ["synthetic", "public", "hosted-real", "product-external"]},
+          "stages": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["aec", "ns", "vad", "bf", "agc", "res", "sync", "pipeline"]}},
+          "lock_path": {"type": ["string", "null"]},
+          "builder_path": {"type": ["string", "null"]},
+          "identity_key": {"type": ["string", "null"]},
+          "identity_value": {"type": ["string", "null"]},
+          "selection_roles": {"type": "array", "uniqueItems": true, "items": {"enum": ["development"]}},
+          "evaluation_roles": {"type": "array", "uniqueItems": true, "items": {"enum": ["validation", "shadow"]}},
+          "frozen_holdout": {"type": "boolean"},
+          "may_promote_shipping": {"const": false},
           "notes": {"type": "string", "minLength": 1}
-        },
-        "additionalProperties": false
+        }
       }
     },
-    "required_failure_slices": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
-    "candidate_contract": {
+    "output_authority": {
       "type": "object",
-      "required": ["new_hypothesis_requires_new_identity", "identity_fields", "development_may_rank", "validation_may_rank", "shadow_may_rank", "fallback_after_validation_rejection", "blind_feedback", "automatic_shipping_mutation", "automatic_hil_or_pq", "terminal_output"],
+      "additionalProperties": false,
+      "required": ["candidate_status", "next_gate", "shipping_authority", "hil_authority", "product_certification_authority", "automatic_main_mutation"],
       "properties": {
-        "new_hypothesis_requires_new_identity": {"const": true},
-        "identity_fields": {"const": ["source_sha", "hypothesis_id", "tuning"]},
-        "development_may_rank": {"const": true},
-        "validation_may_rank": {"const": false},
-        "shadow_may_rank": {"const": false},
-        "fallback_after_validation_rejection": {"const": false},
-        "blind_feedback": {"const": false},
-        "automatic_shipping_mutation": {"const": false},
-        "automatic_hil_or_pq": {"const": false},
-        "terminal_output": {"const": "FROZEN_RESEARCH_CANDIDATE"}
-      },
-      "additionalProperties": false
+        "candidate_status": {"const": "FROZEN_RESEARCH_CANDIDATE"},
+        "next_gate": {"const": "validation-grade-blind"},
+        "shipping_authority": {"const": false},
+        "hil_authority": {"const": false},
+        "product_certification_authority": {"const": false},
+        "automatic_main_mutation": {"const": false}
+      }
     }
   }
 }

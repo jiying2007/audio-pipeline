@@ -1,9 +1,9 @@
-name: Acoustic Candidate Hosted Blind Terminal Guard
+name: Acoustic Candidate Terminal Guard
 
 on:
   pull_request:
     paths:
-      - '.github/workflows/acoustic-candidate-hosted-blind.yml'
+      - '.github/workflows/acoustic-candidate-terminal-guard.yml'
       - '.github/workflows/acoustic-candidate-qualification.yml'
       - '.github/workflows/acoustic-candidate-target.yml'
       - '.github/workflows/audio-quality-evaluation.yml'
@@ -19,7 +19,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '.github/workflows/acoustic-candidate-hosted-blind.yml'
+      - '.github/workflows/acoustic-candidate-terminal-guard.yml'
       - '.github/workflows/acoustic-candidate-qualification.yml'
       - '.github/workflows/acoustic-candidate-target.yml'
       - '.github/workflows/audio-quality-evaluation.yml'
@@ -247,7 +247,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          text = Path('.github/workflows/acoustic-candidate-hosted-blind.yml').read_text(encoding='utf-8')
+          text = Path('.github/workflows/acoustic-candidate-terminal-guard.yml').read_text(encoding='utf-8')
           forbidden = (
               'workflow_' + 'dispatch:',
               'repository_' + 'dispatch:',
@@ -262,14 +262,14 @@ jobs:
           present = [token for token in forbidden if token in text]
           if present:
               raise SystemExit(f'terminal guard acquired forbidden requalification/mutation path: {present}')
-          print('hosted blind terminal no-retry boundary: OK')
+          print('candidate terminal no-retry boundary: OK')
           PY
 
       - name: Publish terminal rejection summary
         shell: bash
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
-          ## Hosted blind candidate terminal state
+          ## Rejected acoustic candidate terminal state
           - Decision: `HOSTED_BLIND_REJECTED_NON_SHIPPING`
           - Candidate: `4a6a408bf0e3` / source `73ae803047d5e7a6b54cdf58b4a28331ab0c2163`
           - First authoritative run: `34802976289` — `FAIL`, 10/12 cases passed

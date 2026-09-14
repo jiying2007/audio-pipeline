@@ -3,6 +3,7 @@
 #include "audio_pipeline/audio_runtime.h"
 #include <alsa/asoundlib.h>
 #include <errno.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,6 +121,49 @@ static unsigned env_u32(const char *name, unsigned default_value) {
     return (unsigned)parsed;
 }
 
+static int env_float(const char *name, float *value) {
+    const char *text = getenv(name);
+    char *end = NULL;
+    float parsed;
+    if (!text || !*text) return 0;
+    errno = 0;
+    parsed = strtof(text, &end);
+    if (errno != 0 || !end || *end != '\0' || !isfinite(parsed)) {
+        fprintf(stderr, "invalid %s=%s\n", name, text);
+        return -1;
+    }
+    *value = parsed;
+    return 1;
+}
+
+static int apply_candidate_tuning(ap_pipeline_t *pipeline) {
+    ap_tuning_t tuning;
+    int present;
+    memset(&tuning, 0, sizeof(tuning));
+    tuning.struct_size = sizeof(tuning);
+    tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+
+    present = env_float("AP_TUNING_AEC_MU", &tuning.aec_mu);
+    if (present < 0) return -1;
+    if (present) tuning.mask |= AP_TUNING_AEC_MU;
+    present = env_float("AP_TUNING_NS_FLOOR", &tuning.ns_floor);
+    if (present < 0) return -1;
+    if (present) tuning.mask |= AP_TUNING_NS_FLOOR;
+    present = env_float("AP_TUNING_AGC_TARGET_DBFS", &tuning.agc_target_dbfs);
+    if (present < 0) return -1;
+    if (present) tuning.mask |= AP_TUNING_AGC_TARGET;
+    present = env_float("AP_TUNING_LIMITER_DBFS", &tuning.limiter_dbfs);
+    if (present < 0) return -1;
+    if (present) tuning.mask |= AP_TUNING_LIMITER;
+
+    if (tuning.mask == 0u) return 0;
+    if (ap_pipeline_apply_tuning(pipeline, &tuning) != AP_OK) {
+        fprintf(stderr, "invalid candidate tuning\n");
+        return -1;
+    }
+    return 0;
+}
+
 static int restart_pcm(snd_pcm_t *pcm) {
     int rc;
     if (!pcm) return 0;
@@ -221,6 +265,7 @@ int main(int argc, char **argv) {
         goto done;
     }
     if (ap_pipeline_init(pipeline_mem, sizeof(pipeline_mem), &cfg, &pipeline) != AP_OK ||
+        apply_candidate_tuning(pipeline) != 0 ||
         ap_runtime_open(runtime_mem, sizeof(runtime_mem), pipeline, &rt_cfg, &rt_opts, &runtime) != AP_OK ||
         ap_runtime_start(runtime) != AP_OK) {
         fprintf(stderr, "audio runtime init/start failed\n");

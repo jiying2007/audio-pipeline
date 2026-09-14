@@ -84,6 +84,7 @@ jobs:
           }
           rejected = {(item['candidate_id'], item['source_sha']) for item in registry['terminal_candidates']}
           assert ('4a6a408bf0e3', '73ae803047d5e7a6b54cdf58b4a28331ab0c2163') in rejected
+          assert '4a6a408bf0e3' in {item['candidate_id'] for item in registry['terminal_candidates']}
           product = next(item for item in registry['datasets'] if item['id'] == 'pcr02-product-external')
           assert product['selection_roles'] == [] and product['evaluation_roles'] == []
           print('research optimization authority boundary: PASS')
@@ -164,21 +165,25 @@ jobs:
         run: |
           set -euo pipefail
           if [ -d research-optimization-out/reports ]; then
-            mapfile -d '' reports < <(find research-optimization-out/reports -type f -name '*.json' -print0 | sort -z)
+            mapfile -d '' reports < <(find research-optimization-out/reports -type f -name '*.json' ! -name '*.evidence.json' -print0 | sort -z)
             if [ "${#reports[@]}" -gt 0 ]; then
               python3 .github/research/continuous-optimization/failure_mining.py "${reports[@]}" --output research-optimization-out/failure-curriculum.json
             fi
           fi
       - name: Enforce frozen research-only output
+        if: always()
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           result = json.loads(Path('research-optimization-out/optimization-result.json').read_text())
+          registry = json.loads(Path(os.environ['RESEARCH_REGISTRY']).read_text())
+          terminal_ids = {item['candidate_id'] for item in registry['terminal_candidates']}
           assert result['authority'] == 'research-only-data-driven-optimization'
           assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'FREEZE_RESEARCH_CANDIDATE'}
           assert result['status'] in {'NO_RESEARCH_CANDIDATE', 'RESEARCH_CANDIDATE_REJECTED', 'FROZEN_RESEARCH_CANDIDATE'}
+          assert result['selected']['candidate_id'] not in terminal_ids
           assert result['automatic_shipping_promotion'] is False
           assert result['automatic_main_mutation'] is False
           assert result['output_authority']['shipping_authority'] is False

@@ -50,48 +50,6 @@ static int supported_rate(unsigned rate) {
            rate == 32000u || rate == 48000u;
 }
 
-static int env_float(const char *name, float *value) {
-    const char *text = getenv(name);
-    char *end = NULL;
-    float parsed;
-    if (!text || !*text) return 0;
-    parsed = strtof(text, &end);
-    if (!end || *end != '\0' || !isfinite(parsed)) {
-        fprintf(stderr, "invalid %s=%s\n", name, text);
-        return -1;
-    }
-    *value = parsed;
-    return 1;
-}
-
-static int apply_candidate_tuning(ap_pipeline_t *pipeline) {
-    ap_tuning_t tuning;
-    int present;
-    memset(&tuning, 0, sizeof(tuning));
-    tuning.struct_size = sizeof(tuning);
-    tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
-
-    present = env_float("AP_TUNING_AEC_MU", &tuning.aec_mu);
-    if (present < 0) return -1;
-    if (present) tuning.mask |= AP_TUNING_AEC_MU;
-    present = env_float("AP_TUNING_NS_FLOOR", &tuning.ns_floor);
-    if (present < 0) return -1;
-    if (present) tuning.mask |= AP_TUNING_NS_FLOOR;
-    present = env_float("AP_TUNING_AGC_TARGET_DBFS", &tuning.agc_target_dbfs);
-    if (present < 0) return -1;
-    if (present) tuning.mask |= AP_TUNING_AGC_TARGET;
-    present = env_float("AP_TUNING_LIMITER_DBFS", &tuning.limiter_dbfs);
-    if (present < 0) return -1;
-    if (present) tuning.mask |= AP_TUNING_LIMITER;
-
-    if (tuning.mask == 0u) return 0;
-    if (ap_pipeline_apply_tuning(pipeline, &tuning) != AP_OK) {
-        fprintf(stderr, "invalid candidate tuning\n");
-        return -1;
-    }
-    return 0;
-}
-
 int main(int argc, char **argv) {
     AP_ALIGN16 static unsigned char state[AP_PIPELINE_STATE_MAX_BYTES];
     ap_config_t c = ap_config_default(AP_PROFILE_CALL);
@@ -133,8 +91,7 @@ int main(int argc, char **argv) {
     c.mic_channels = mic_channels;
     if (mic_channels == 1u) c.stages &= ~AP_STAGE_BF;
     if (ap_pipeline_validate_config(&c) != AP_OK ||
-        ap_pipeline_init(state, sizeof(state), &c, &p) != AP_OK ||
-        apply_candidate_tuning(p) != 0) return 2;
+        ap_pipeline_init(state, sizeof(state), &c, &p) != AP_OK) return 2;
     frame = rate / 100u;
     frames = seconds * 100u;
     memset(histogram, 0, sizeof(histogram));

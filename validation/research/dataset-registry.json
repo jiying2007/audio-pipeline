@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "registry_id": "audio-pipeline-research-datasets-v1",
+  "shipping_baseline": {
+    "tag": "v2.3.16",
+    "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "frozen": true
+  },
+  "forbidden_optimizer_tiers": [
+    "validation-grade-blind",
+    "product-certified"
+  ],
+  "terminal_candidates": [
+    {
+      "candidate_id": "4a6a408bf0e3",
+      "source_sha": "73ae803047d5e7a6b54cdf58b4a28331ab0c2163",
+      "decision": "HOSTED_BLIND_REJECTED_NON_SHIPPING"
+    }
+  ],
+  "datasets": [
+    {
+      "id": "synthetic-regression",
+      "source_kind": "synthetic",
+      "stages": ["aec", "ns", "vad", "bf", "agc", "res", "sync", "pipeline"],
+      "lock_path": null,
+      "builder_path": "validation/tools/build_validation_corpus.py",
+      "identity_key": null,
+      "identity_value": null,
+      "selection_roles": ["development"],
+      "evaluation_roles": ["validation", "shadow"],
+      "frozen_holdout": false,
+      "may_promote_shipping": false,
+      "notes": "Deterministic generated regression corpus. Development partitions may rank candidates; independent validation/shadow seeds only gate the selected development winner."
+    },
+    {
+      "id": "public-validation",
+      "source_kind": "public",
+      "stages": ["aec", "ns", "vad", "bf", "agc", "pipeline"],
+      "lock_path": "validation/datasets.lock.json",
+      "builder_path": null,
+      "identity_key": "lock_id",
+      "identity_value": "audio-pipeline-public-validation-v1",
+      "selection_roles": ["development"],
+      "evaluation_roles": ["validation", "shadow"],
+      "frozen_holdout": false,
+      "may_promote_shipping": false,
+      "notes": "Pinned public AEC/DNS/RIR sources. Only explicitly materialized development splits may influence candidate ranking; independent splits are evaluation-only."
+    },
+    {
+      "id": "extended-real-research",
+      "source_kind": "public",
+      "stages": ["aec", "ns", "vad", "bf", "agc", "pipeline"],
+      "lock_path": "validation/extended.datasets.lock.json",
+      "builder_path": null,
+      "identity_key": "catalog_id",
+      "identity_value": "audio-pipeline-extended-real-v1",
+      "selection_roles": [],
+      "evaluation_roles": ["validation", "shadow"],
+      "frozen_holdout": true,
+      "may_promote_shipping": false,
+      "notes": "Extended public/research corpus is a cross-dataset generalization holdout. It may reject a selected research winner but may not rank or rescue candidates."
+    },
+    {
+      "id": "hosted-real-p808",
+      "source_kind": "hosted-real",
+      "stages": ["ns", "vad", "agc", "pipeline"],
+      "lock_path": "validation/hosted_real.datasets.lock.json",
+      "builder_path": null,
+      "identity_key": "catalog_id",
+      "identity_value": "audio-pipeline-hosted-real-v1",
+      "selection_roles": [],
+      "evaluation_roles": ["validation", "shadow"],
+      "frozen_holdout": true,
+      "may_promote_shipping": false,
+      "notes": "Pinned hosted real speech is generalization evidence only. It is not PCR02 product capture and cannot participate in candidate selection."
+    },
+    {
+      "id": "hosted-real-aec",
+      "source_kind": "hosted-real",
+      "stages": ["aec", "res", "sync", "pipeline"],
+      "lock_path": "validation/hosted_aec.datasets.lock.json",
+      "builder_path": null,
+      "identity_key": "catalog_id",
+      "identity_value": "audio-pipeline-hosted-aec-real-v1",
+      "selection_roles": [],
+      "evaluation_roles": ["validation", "shadow"],
+      "frozen_holdout": true,
+      "may_promote_shipping": false,
+      "notes": "Pinned Microsoft AEC hosted-real cases are evaluation-only and cannot be used to select or rescue a candidate."
+    },
+    {
+      "id": "pcr02-product-external",
+      "source_kind": "product-external",
+      "stages": ["aec", "ns", "vad", "bf", "agc", "res", "sync", "pipeline"],
+      "lock_path": null,
+      "builder_path": null,
+      "identity_key": null,
+      "identity_value": null,
+      "selection_roles": [],
+      "evaluation_roles": [],
+      "frozen_holdout": true,
+      "may_promote_shipping": false,
+      "notes": "Real PCR02 capture remains outside hosted optimizer feedback. Physical qualification stays exclusively under issue #58 and the existing HIL/Product Certification authorities."
+    }
+  ],
+  "output_authority": {
+    "candidate_status": "FROZEN_RESEARCH_CANDIDATE",
+    "next_gate": "validation-grade-blind",
+    "shipping_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "automatic_main_mutation": false
+  }
+}

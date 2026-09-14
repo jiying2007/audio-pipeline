@@ -23,6 +23,7 @@ import tuning_iteration_engine as engine
 
 SHA_RE = dataset_registry.SHA_RE
 ROLES = ("development", "validation", "shadow")
+DEFAULT_REGISTRY = Path(".github/research/continuous-optimization/dataset-registry.json")
 
 
 def sha256_file(path: Path) -> str:
@@ -378,6 +379,9 @@ def execute(spec: dict[str, Any], *, repo_root: Path, processor: Path,
 
 def self_test() -> None:
     tuning_iteration.install_fail_closed_guards()
+    repo_root = Path(__file__).resolve().parents[3]
+    default_registry = _safe_path(repo_root, str(DEFAULT_REGISTRY))
+    dataset_registry.load_registry(default_registry, repo_root)
     space = {
         "schema_version": 1, "search_space_id": "research-self-test", "strategy": "one-at-a-time",
         "max_candidates": 4,
@@ -434,7 +438,7 @@ def main() -> int:
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--processor", type=Path)
     parser.add_argument("--run-spec", type=Path)
-    parser.add_argument("--registry", type=Path, default=Path("validation/research/dataset-registry.json"))
+    parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--require-frozen-candidate", action="store_true")
     args = parser.parse_args()

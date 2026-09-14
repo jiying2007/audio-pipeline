@@ -24,41 +24,44 @@ on:
         default: ''
         type: string
       capture_device:
-        description: Manual ALSA capture device; scheduled runs use board.route
-        required: true
+        description: Deprecated compatibility assertion; if set it must equal board.route.capture_device
+        required: false
+        default: ''
         type: string
       playback_device:
-        description: Manual ALSA playback device or none
-        required: true
-        default: none
+        description: Deprecated compatibility assertion; if set it must equal board.route.playback_device (or none)
+        required: false
+        default: ''
         type: string
       farend_file:
-        description: Optional manual board-local PCM16 far-end stimulus
+        description: Deprecated compatibility assertion; if set it must equal board.route.farend_file
         required: false
         default: ''
         type: string
       sample_rate:
-        required: true
-        default: '16000'
-        type: choice
-        options: ['8000','16000','24000','32000','48000']
+        description: Deprecated compatibility assertion; if set it must equal board.route.sample_rate_hz
+        required: false
+        default: ''
+        type: string
       mic_channels:
-        required: true
-        default: '2'
-        type: choice
-        options: ['1','2']
+        description: Deprecated compatibility assertion; if set it must equal board.route.mic_channels
+        required: false
+        default: ''
+        type: string
       dsp_cpu:
-        required: true
-        default: '1'
+        description: Deprecated compatibility assertion; if set it must equal board.route.dsp_cpu
+        required: false
+        default: ''
         type: string
       power_input:
-        description: Optional live numeric power sensor path
+        description: Deprecated compatibility assertion; if set it must equal board.power_sensor
         required: false
         default: ''
         type: string
       power_scale:
-        required: true
-        default: '1000000'
+        description: Deprecated compatibility assertion; if set it must equal board.power_scale (default 1000000)
+        required: false
+        default: ''
         type: string
 
 permissions:
@@ -112,7 +115,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}
           fetch-depth: 0
-      - name: Resolve exact revision tier and board route
+      - name: Resolve exact revision tier and board route authority
         id: route
         shell: bash
         env:
@@ -163,41 +166,113 @@ jobs:
           echo "revision=$revision" >> "$GITHUB_OUTPUT"
           export BOARD="$board" TIER="$tier" SECONDS="$seconds" FAULT="$fault" MAX_XRUNS="$max_xruns" MAX_OVERRUNS="$max_overruns"
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json, os
+          import hashlib
+          import json
+          import os
           from pathlib import Path
 
-          event = os.environ['EVENT_NAME']
           board_path = Path(os.environ['BOARD'])
-          board = json.loads(board_path.read_text(encoding='utf-8'))
-          if event == 'workflow_dispatch':
-              route = {
-                  'capture': os.environ['INPUT_CAPTURE'],
-                  'playback': os.environ.get('INPUT_PLAYBACK') or 'none',
-                  'farend': os.environ.get('INPUT_FAREND') or '',
-                  'rate': os.environ['INPUT_RATE'],
-                  'mics': os.environ['INPUT_MICS'],
-                  'cpu': os.environ['INPUT_CPU'],
-                  'power': os.environ.get('INPUT_POWER') or '',
-                  'power_scale': os.environ.get('INPUT_POWER_SCALE') or '1000000',
-              }
-          else:
-              configured = board.get('route')
-              if not configured:
-                  raise SystemExit('scheduled HIL requires board.route in board manifest')
-              route = {
-                  'capture': str(configured['capture_device']),
-                  'playback': str(configured.get('playback_device') or 'none'),
-                  'farend': str(configured.get('farend_file') or ''),
-                  'rate': str(configured['sample_rate_hz']),
-                  'mics': str(configured['mic_channels']),
-                  'cpu': str(configured['dsp_cpu']),
-                  'power': str(board.get('power_sensor') or ''),
-                  'power_scale': '1000000',
-              }
+          board_bytes = board_path.read_bytes()
+          board = json.loads(board_bytes.decode('utf-8'))
+          configured = board.get('route')
+          if not isinstance(configured, dict):
+              raise SystemExit('HIL requires board.route in the board manifest for every trigger mode')
+
+          required_route = ('capture_device', 'sample_rate_hz', 'mic_channels', 'dsp_cpu')
+          missing = [key for key in required_route if key not in configured]
+          if missing:
+              raise SystemExit(f'HIL board.route is missing required fields: {missing}')
+
+          labels = board.get('runner_labels')
+          required_labels = {'self-hosted', 'linux', 'audio-target'}
+          if not isinstance(labels, list) or not required_labels.issubset(set(map(str, labels))):
+              raise SystemExit('HIL board manifest must bind self-hosted/linux/audio-target runner labels')
+
+          def text(value, default=''):
+              if value is None:
+                  return default
+              return str(value)
+
+          def placeholder(name, value):
+              lowered = text(value).strip().lower()
+              if lowered and ('replace-with' in lowered or lowered.startswith('todo') or lowered.startswith('example-')):
+                  raise SystemExit(f'HIL board manifest contains placeholder {name}: {value!r}')
+
+          for key in ('revision', 'audio_codec', 'mic_board_revision', 'speaker_revision'):
+              placeholder(key, board.get(key))
+          for key in ('capture_device', 'playback_device', 'farend_file'):
+              placeholder(f'route.{key}', configured.get(key))
+          for key in ('thermal_sensor', 'power_sensor', 'power_cycle_hook', 'cleanup_hook'):
+              placeholder(key, board.get(key))
+
+          route = {
+              'capture': text(configured['capture_device']),
+              'playback': text(configured.get('playback_device'), 'none') or 'none',
+              'farend': text(configured.get('farend_file')),
+              'rate': text(configured['sample_rate_hz']),
+              'mics': text(configured['mic_channels']),
+              'cpu': text(configured['dsp_cpu']),
+              'power': text(board.get('power_sensor')),
+              'power_scale': text(board.get('power_scale', 1000000)),
+          }
+          if not route['capture']:
+              raise SystemExit('HIL board.route.capture_device must be non-empty')
+          if int(route['rate']) not in {8000, 16000, 24000, 32000, 48000}:
+              raise SystemExit(f"unsupported board.route.sample_rate_hz: {route['rate']}")
+          if int(route['mics']) not in {1, 2}:
+              raise SystemExit(f"unsupported board.route.mic_channels: {route['mics']}")
+          if int(route['cpu']) < -1:
+              raise SystemExit(f"invalid board.route.dsp_cpu: {route['cpu']}")
+          if float(route['power_scale']) <= 0:
+              raise SystemExit(f"invalid board.power_scale: {route['power_scale']}")
+
+          # Compatibility inputs may still be supplied by older operator tooling, but
+          # they are assertions only. The board manifest remains the single authority.
+          manual = {
+              'capture': os.environ.get('INPUT_CAPTURE', ''),
+              'playback': os.environ.get('INPUT_PLAYBACK', ''),
+              'farend': os.environ.get('INPUT_FAREND', ''),
+              'rate': os.environ.get('INPUT_RATE', ''),
+              'mics': os.environ.get('INPUT_MICS', ''),
+              'cpu': os.environ.get('INPUT_CPU', ''),
+              'power': os.environ.get('INPUT_POWER', ''),
+              'power_scale': os.environ.get('INPUT_POWER_SCALE', ''),
+          }
+          for key, supplied in manual.items():
+              if supplied and supplied != route[key]:
+                  raise SystemExit(
+                      f'manual HIL route assertion drifted from board authority: '
+                      f'{key} supplied={supplied!r} board={route[key]!r}'
+                  )
+
+          authority = {
+              'schema_version': 1,
+              'authority': 'board-manifest-hil-route',
+              'board_path': str(board_path),
+              'board_sha256': hashlib.sha256(board_bytes).hexdigest(),
+              'route': {
+                  'capture_device': route['capture'],
+                  'playback_device': None if route['playback'] == 'none' else route['playback'],
+                  'farend_file': route['farend'] or None,
+                  'sample_rate_hz': int(route['rate']),
+                  'mic_channels': int(route['mics']),
+                  'dsp_cpu': int(route['cpu']),
+                  'power_sensor': route['power'] or None,
+                  'power_scale': float(route['power_scale']),
+              },
+          }
+          canonical = json.dumps(authority, sort_keys=True, separators=(',', ':')).encode('utf-8')
+          authority['route_authority_sha256'] = hashlib.sha256(canonical).hexdigest()
+          Path('/tmp/hil-route-authority.json').write_text(
+              json.dumps(authority, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+
           values = {
               'board': str(board_path), 'tier': os.environ['TIER'],
               'seconds': os.environ['SECONDS'], 'fault': os.environ['FAULT'],
               'max_xruns': os.environ['MAX_XRUNS'], 'max_overruns': os.environ['MAX_OVERRUNS'],
+              'board_sha256': authority['board_sha256'],
+              'route_authority_sha256': authority['route_authority_sha256'],
               **route,
           }
           for key, value in values.items():
@@ -233,6 +308,7 @@ jobs:
             --output /tmp/ap-hil-evidence/preflight.json \
             --settle-seconds 120
           cp '${{ steps.route.outputs.board }}' /tmp/ap-hil-evidence/board.json
+          cp /tmp/hil-route-authority.json /tmp/ap-hil-evidence/route-authority.json
           cp /tmp/hil-revision.txt /tmp/ap-hil-evidence/source-revision.txt
       - name: Build exact HIL runtime
         shell: bash
@@ -280,13 +356,30 @@ jobs:
           root.mkdir(parents=True, exist_ok=True)
           runner = json.loads((root/'runner-preflight.json').read_text()) if (root/'runner-preflight.json').exists() else None
           preflight = json.loads((root/'preflight.json').read_text()) if (root/'preflight.json').exists() else None
+          authority = json.loads((root/'route-authority.json').read_text()) if (root/'route-authority.json').exists() else None
           soak = json.loads((root/'soak.json').read_text()) if (root/'soak.json').exists() else None
+          route_match = False
+          if authority is not None and soak is not None:
+              expected = authority['route']
+              actual = soak.get('route') or {}
+              route_match = actual == {
+                  'capture_device': expected['capture_device'],
+                  'playback_device': expected['playback_device'],
+                  'farend': expected['farend_file'],
+                  'sample_rate_hz': expected['sample_rate_hz'],
+                  'mic_channels': expected['mic_channels'],
+                  'dsp_cpu': expected['dsp_cpu'],
+              }
           if runner is None or runner.get('classification') != 'READY':
               category = 'INFRA_FAILURE'
           elif preflight is None or preflight.get('classification') != 'READY':
               category = 'INFRA_FAILURE'
+          elif authority is None:
+              category = 'INFRA_FAILURE'
           elif soak is None:
               category = 'HARDWARE_FAILURE'
+          elif not route_match:
+              category = 'INFRA_FAILURE'
           elif not soak['soak']['passed']:
               category = 'XRUN_FAILURE' if soak['soak']['xruns'] else 'HARDWARE_FAILURE'
           else:
@@ -296,6 +389,9 @@ jobs:
               'category': category,
               'tier': os.environ.get('TIER') or None,
               'source_revision': Path('/tmp/hil-revision.txt').read_text().strip() if Path('/tmp/hil-revision.txt').exists() else None,
+              'board_sha256': authority.get('board_sha256') if authority else None,
+              'route_authority_sha256': authority.get('route_authority_sha256') if authority else None,
+              'route_match': route_match,
           }
           (root/'classification.json').write_text(json.dumps(out, indent=2, sort_keys=True)+'\n')
           print(json.dumps(out, sort_keys=True))

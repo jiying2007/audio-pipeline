@@ -7,7 +7,6 @@ on:
       - '.github/research/continuous-optimization/**'
       - 'validation/research/README.md'
       - 'validation/tools/tuning_iteration.py'
-      - 'validation/tools/tuning_iteration_engine.py'
       - 'validation/tuning/**'
       - '.github/workflows/research-optimization.yml'
       - '.github/program/maintenance_workflow_contract.py'

@@ -4,8 +4,10 @@
 The candidate branch is never supplied by a caller. It is derived from GitHub's
 commit->PR association for the exact main commit. The exact main commit must map
 to exactly one merged PR targeting main. If that PR comes from this repository,
-the live branch ref must still equal GitHub's recorded PR head SHA and have no
-open PR before deletion. External/fork PR heads are explicitly non-mutating.
+a live branch ref must still equal GitHub's recorded PR head SHA, have no open PR,
+and satisfy the deletion allowlist before mutation. If the ref is already absent,
+that is recorded without requiring deletion admission because no ref mutation is
+possible. External/fork PR heads are explicitly non-mutating.
 
 No hardware, HIL, acoustic, release, certification or Product Qualification
 authority is granted by this cleanup.
@@ -99,6 +101,14 @@ def merged_head_policy(contract: dict, branch: str, head_sha: str) -> str:
     return "ALLOWED_PREFIX"
 
 
+def merged_head_admission(contract: dict, branch: str, head_sha: str,
+                          current_sha: str | None) -> str:
+    """Require deletion admission only when a live ref can actually be mutated."""
+    if current_sha is None:
+        return "NOT_REQUIRED_ALREADY_DELETED"
+    return merged_head_policy(contract, branch, head_sha)
+
+
 def select_merged_pr(payload: object, main_sha: str) -> dict:
     """Resolve the unique merged PR that produced the exact main commit."""
     require(isinstance(payload, list), "unexpected commit PR response")
@@ -183,11 +193,11 @@ def evaluate(contract: dict, repository: str, main_sha: str, *, apply: bool) -> 
 
     require(branch and branch != "main", "merged PR head branch is invalid")
     require(SHA_RE.fullmatch(head_sha) is not None, "merged PR head SHA is invalid")
-    admission = merged_head_policy(contract, branch, head_sha)
     open_prs = open_pr_numbers(repository, branch)
     require(not open_prs, f"merged PR head unexpectedly has an open PR: {open_prs}")
 
     current = branch_sha(repository, branch)
+    admission = merged_head_admission(contract, branch, head_sha, current)
     if current is None:
         action = "ALREADY_DELETED"
     else:
@@ -256,6 +266,10 @@ def self_test() -> None:
     assert merged_head_policy(contract, "governance/current", "2" * 40) == "ALLOWED_PREFIX"
     assert merged_head_policy(empty, "governance/current", "2" * 40) == "ALLOWED_PREFIX"
     assert merged_head_policy(contract, "docs/special", "2" * 40) == "EXACT_NAME_AND_SHA"
+    assert merged_head_admission(contract, "cleanup/already-gone", "2" * 40, None) == \
+        "NOT_REQUIRED_ALREADY_DELETED"
+    assert merged_head_admission(contract, "governance/current", "2" * 40, "2" * 40) == \
+        "ALLOWED_PREFIX"
     for branch, sha in (("docs/special", "3" * 40), ("docs/unlisted", "2" * 40)):
         try:
             merged_head_policy(contract, branch, sha)
@@ -263,6 +277,12 @@ def self_test() -> None:
             pass
         else:
             raise AssertionError(f"unsafe merged-head admission accepted: {branch}")
+    try:
+        merged_head_admission(contract, "cleanup/live-unlisted", "2" * 40, "2" * 40)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("live unlisted branch bypassed deletion admission")
     external = [{**good[0], "head": {**good[0]["head"], "repo": {"full_name": "fork/r"}}}]
     assert select_merged_pr(external, main_sha)["number"] == 7
     for bad in (

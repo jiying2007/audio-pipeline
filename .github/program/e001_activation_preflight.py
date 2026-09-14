@@ -26,6 +26,10 @@ FORBIDDEN = {
     "DUT_HIL_PASS",
     "HARDWARE_VALIDATED",
 }
+HISTORICAL_RELEASE = "v2.3.13"
+HISTORICAL_SOURCE = "d70e18b12b899a67fa20adf3d281d10b901afbe8"
+ACTIVATION_RELEASE = "v2.3.16"
+ACTIVATION_SOURCE = "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
 
 
 def require(ok: bool, message: str) -> None:
@@ -44,12 +48,20 @@ def validate_committed_contract() -> None:
             "E001 activation contract identity")
     require(contract.get("state") == "DEFERRED" and contract.get("lane") == "external",
             "E001 activation must remain external and deferred")
-    baseline = contract.get("software_baseline") or {}
-    require(baseline == {
-        "release": "v2.3.13",
-        "source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+
+    historical = contract.get("software_baseline") or {}
+    require(historical == {
+        "release": HISTORICAL_RELEASE,
+        "source_sha": HISTORICAL_SOURCE,
         "immutable_required": True,
-    }, "E001 activation preflight must bind the immutable v2.3.13 baseline")
+    }, "E001 historical software baseline must remain immutable audit lineage")
+
+    baseline = contract.get("activation_baseline") or {}
+    require(baseline == {
+        "release": ACTIVATION_RELEASE,
+        "source_sha": ACTIVATION_SOURCE,
+        "immutable_required": True,
+    }, "E001 activation preflight must bind the immutable v2.3.16 baseline")
 
     static = contract.get("required_static_contracts") or {}
     require(static.get("activation_preflight") == ".github/workflows/e001-activation-preflight.yml",
@@ -85,10 +97,12 @@ def validate_committed_contract() -> None:
             "E001 activation requires HIL_ENABLED=true" in workflow and
             "E001 activation requires EXTENDED_REAL_ENABLED=true" in workflow,
             "E001 activation controls must be enabled fail-closed")
-    require("source_sha does not match committed E001 software baseline" in workflow and
-            "release_tag does not match committed E001 software baseline" in workflow and
+    require("default: v2.3.16" in workflow and
+            "baseline = contract['activation_baseline']" in workflow and
+            "source_sha does not match committed E001 activation baseline" in workflow and
+            "release_tag does not match committed E001 activation baseline" in workflow and
             "releases/tags/$RELEASE_TAG" in workflow and "--jq '.immutable'" in workflow,
-            "E001 activation preflight must bind exact immutable release identity")
+            "E001 activation preflight must bind exact immutable v2.3.16 release identity")
     require("actions/runners?" not in workflow,
             "E001 activation preflight may not depend on privileged runner inventory APIs")
     for role in ROLES:
@@ -232,7 +246,7 @@ def self_test() -> None:
             path.write_text(json.dumps(report), encoding="utf-8")
             specs.append(f"{role}={path}")
         parsed = [load_report(spec) for spec in specs]
-        out = aggregate(sha, "v2.3.13", control_sha, parsed)
+        out = aggregate(sha, ACTIVATION_RELEASE, control_sha, parsed)
         assert out["result"] == READY_RESULT
         assert set(out["roles"]) == set(ROLES)
         assert out["control_plane"]["source_sha"] == control_sha
@@ -242,7 +256,7 @@ def self_test() -> None:
         bad["classification"] = "NOT_READY"
         bad["failure_count"] = 1
         (root / "audio-target.json").write_text(json.dumps(bad), encoding="utf-8")
-        out = aggregate(sha, "v2.3.13", control_sha, [load_report(spec) for spec in specs])
+        out = aggregate(sha, ACTIVATION_RELEASE, control_sha, [load_report(spec) for spec in specs])
         assert out["result"] == NOT_READY_RESULT
         assert out["roles"]["audio-target"]["failure_count"] == 1
 
@@ -251,7 +265,7 @@ def self_test() -> None:
         bad["source_revision"] = "2" * 40
         (root / "audio-target.json").write_text(json.dumps(bad), encoding="utf-8")
         try:
-            aggregate(sha, "v2.3.13", control_sha, [load_report(spec) for spec in specs])
+            aggregate(sha, ACTIVATION_RELEASE, control_sha, [load_report(spec) for spec in specs])
         except ValueError:
             pass
         else:

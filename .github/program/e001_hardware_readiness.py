@@ -2,8 +2,8 @@
 """Validate software-side prerequisites for future E001 hardware activation.
 
 This tool is deliberately not a HIL runner and not a Product Qualification authority.
-It proves only that the committed contracts preserve the boundary between the current
-immutable software baseline and future trusted-runner / real-DUT work.
+It proves only that committed historical evidence remains immutable while the current
+activation baseline is bound to the exact immutable release awaiting trusted-runner work.
 """
 from __future__ import annotations
 
@@ -19,6 +19,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = ROOT / "docs/program/iterations/E001-readiness.json"
+HISTORICAL_RELEASE = "v2.3.13"
+HISTORICAL_SOURCE = "d70e18b12b899a67fa20adf3d281d10b901afbe8"
+ACTIVATION_RELEASE = "v2.3.16"
+ACTIVATION_SOURCE = "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+ACTIVATION_RELEASE_ID = 385651708
 
 
 def require(ok: bool, message: str) -> None:
@@ -56,7 +61,7 @@ def extract_release_seal_python(certification: str) -> str:
 def validate_release_seal_runtime(certification: str) -> None:
     """Execute the exact workflow-embedded release sealing code on hermetic fixtures."""
     code = extract_release_seal_python(certification)
-    source = "d70e18b12b899a67fa20adf3d281d10b901afbe8"
+    source = ACTIVATION_SOURCE
 
     def write_fixture(root: Path) -> Path:
         out = root / "certification-out"
@@ -66,7 +71,7 @@ def validate_release_seal_runtime(certification: str) -> None:
             "build": {
                 "source_revision": source,
                 "commit": source,
-                "version": "2.3.13",
+                "version": "2.3.16",
             },
             "artifacts": {"sha256": "0" * 64},
         }
@@ -86,8 +91,8 @@ def validate_release_seal_runtime(certification: str) -> None:
         script.write_text(code, encoding="utf-8")
         return script
 
-    def run_case(root: Path, *, source_sha: str = source, tag: str = "v2.3.13",
-                 release_id: str = "383770060") -> subprocess.CompletedProcess[str]:
+    def run_case(root: Path, *, source_sha: str = source, tag: str = ACTIVATION_RELEASE,
+                 release_id: str = str(ACTIVATION_RELEASE_ID)) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
         env.update({
             "RELEASE_SOURCE_SHA": source_sha,
@@ -117,8 +122,8 @@ def validate_release_seal_runtime(certification: str) -> None:
         require(release == {
             "schema_version": 1,
             "repository": "jiying2007/audio-pipeline",
-            "tag": "v2.3.13",
-            "release_id": 383770060,
+            "tag": ACTIVATION_RELEASE,
+            "release_id": ACTIVATION_RELEASE_ID,
             "immutable": True,
             "draft": False,
             "prerelease": False,
@@ -146,7 +151,7 @@ def validate_release_seal_runtime(certification: str) -> None:
         for name, kwargs, message in (
             ("bad-source", {"source_sha": "b" * 40},
              "certification record build is not the immutable release source"),
-            ("bad-tag", {"tag": "v2.3.12"},
+            ("bad-tag", {"tag": "v2.3.15"},
              "release tag does not match certified build version"),
             ("bad-release-id", {"release_id": "not-numeric"},
              "release id must be numeric"),
@@ -186,7 +191,7 @@ def validate_deferred_evidence(evidence: dict, baseline: dict, minimum: int) -> 
                 "release": baseline["release"],
                 "source_sha": baseline["source_sha"],
                 "minimum_certification_soak_hours": minimum,
-            }, "E001 deferred evidence baseline drift")
+            }, "E001 deferred evidence historical baseline drift")
     require(evidence["authority_boundary"] == {
                 "hardware_test_executed": False,
                 "product_certification_executed": False,
@@ -206,21 +211,28 @@ def validate_static(contract: dict) -> dict:
             contract["state"] == "DEFERRED" and contract["lane"] == "external",
             "E001 readiness must remain external and deferred")
 
-    baseline = contract["software_baseline"]
-    require(baseline == {
-        "release": "v2.3.13",
-        "source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
+    historical_baseline = contract["software_baseline"]
+    require(historical_baseline == {
+        "release": HISTORICAL_RELEASE,
+        "source_sha": HISTORICAL_SOURCE,
         "immutable_required": True,
-    }, "E001 readiness must bind the current immutable software baseline")
+    }, "E001 historical software baseline must remain immutable audit lineage")
+
+    activation_baseline = contract["activation_baseline"]
+    require(activation_baseline == {
+        "release": ACTIVATION_RELEASE,
+        "source_sha": ACTIVATION_SOURCE,
+        "immutable_required": True,
+    }, "E001 readiness must bind the current immutable v2.3.16 activation baseline")
 
     plan = load("docs/program/plan.json")
     require(plan["phase"] == "software-public-data" and
             plan["product_qualification"] == "DEFERRED_BY_SCOPE" and
             plan["hardware_collection"] is False and plan["auto_promote"] is False,
             "program must preserve the software/public-data authority boundary")
-    require(plan["baseline"]["software_release"] == baseline["release"] and
-            plan["baseline"]["source_sha"] == baseline["source_sha"],
-            "E001 readiness baseline must match the committed program baseline")
+    require(plan["baseline"]["software_release"] == historical_baseline["release"] and
+            plan["baseline"]["source_sha"] == historical_baseline["source_sha"],
+            "historical E001 baseline must match the committed program baseline")
     tasks = {item["id"]: item for item in plan["tasks"]}
     e001 = tasks["E001"]
     require(e001["status"] == "DEFERRED" and e001["lane"] == "external" and
@@ -298,7 +310,8 @@ def validate_static(contract: dict) -> dict:
             "post-release status must reject false success while infrastructure is disabled")
 
     observed = contract["observed_deferred_state"]
-    require(observed["hil_post_release_run_id"] == 34070991028 and
+    require(observed["release"] == HISTORICAL_RELEASE and
+            observed["hil_post_release_run_id"] == 34070991028 and
             observed["hil_control_result"] == "HIL_REQUIRED_BUT_DISABLED" and
             observed["extended_real_post_release_run_id"] == 34070991134 and
             observed["extended_real_control_result"] == "EXTENDED_REAL_REQUIRED_BUT_DISABLED",
@@ -307,7 +320,7 @@ def validate_static(contract: dict) -> dict:
     evidence_path = contract.get("deferred_evidence_file")
     require(evidence_path == "docs/program/iterations/E001-deferred-evidence.json",
             "E001 readiness must bind the reviewed deferred evidence file")
-    validate_deferred_evidence(load(evidence_path), baseline, minimum)
+    validate_deferred_evidence(load(evidence_path), historical_baseline, minimum)
 
     authority = contract["authority_boundary"]
     require(authority == {
@@ -323,8 +336,10 @@ def validate_static(contract: dict) -> dict:
     return {
         "static_contracts": "PASS",
         "deferred_evidence": "PASS",
-        "software_release": baseline["release"],
-        "software_source_sha": baseline["source_sha"],
+        "software_release": activation_baseline["release"],
+        "software_source_sha": activation_baseline["source_sha"],
+        "historical_deferred_release": historical_baseline["release"],
+        "historical_deferred_source_sha": historical_baseline["source_sha"],
         "minimum_certification_soak_hours": minimum,
         "product_qualification": "DEFERRED_BY_SCOPE",
         "dut_hil": "DEFERRED_BY_SCOPE",
@@ -369,7 +384,11 @@ def build(contract: dict, hil_enabled: str, extended_enabled: str) -> dict:
 
 def self_test() -> None:
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
-    validate_static(contract)
+    static = validate_static(contract)
+    assert static["software_release"] == ACTIVATION_RELEASE
+    assert static["software_source_sha"] == ACTIVATION_SOURCE
+    assert static["historical_deferred_release"] == HISTORICAL_RELEASE
+    assert static["historical_deferred_source_sha"] == HISTORICAL_SOURCE
     validate_release_seal_runtime(text(".github/workflows/product-certification.yml"))
     assert classify("", "") == "E001_DEFERRED_INFRASTRUCTURE_DISABLED"
     assert classify("true", "") == "E001_PARTIAL_CONFIGURATION_REQUIRES_COMPLETION"
@@ -381,6 +400,7 @@ def self_test() -> None:
         assert out["authority"]["product_certification_executed"] is False
         assert out["authority"]["product_qualification"] == "DEFERRED_BY_SCOPE"
         assert out["static"]["deferred_evidence"] == "PASS"
+        assert out["static"]["software_release"] == ACTIVATION_RELEASE
     evidence = load(contract["deferred_evidence_file"])
     bad = copy.deepcopy(evidence)
     bad["authority_boundary"]["product_qualification"] = "PASS"
@@ -398,6 +418,14 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("E001 evidence digest drift was accepted")
+    bad_contract = copy.deepcopy(contract)
+    bad_contract["activation_baseline"]["source_sha"] = "0" * 40
+    try:
+        validate_static(bad_contract)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("E001 activation baseline drift was accepted")
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp) / "result.json"
         p.write_text(json.dumps(build(contract, "", "")), encoding="utf-8")

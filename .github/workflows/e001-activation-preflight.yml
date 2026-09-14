@@ -11,7 +11,7 @@ on:
       release_tag:
         description: Immutable release tag bound to source_sha
         required: true
-        default: v2.3.13
+        default: v2.3.16
         type: string
       extended_data_root:
         description: Optional Extended Real data root on audio-validation; blank resolves AUDIO_PIPELINE_LAB_DATA_ROOT or $HOME/audio-validation-extended
@@ -78,13 +78,13 @@ jobs:
           python3 - <<'PY'
           import json, os
           contract = json.load(open('docs/program/iterations/E001-readiness.json'))
-          baseline = contract['software_baseline']
+          baseline = contract['activation_baseline']
           if baseline['source_sha'] != os.environ['SOURCE_SHA'].lower():
-              raise SystemExit('source_sha does not match committed E001 software baseline')
+              raise SystemExit('source_sha does not match committed E001 activation baseline')
           if baseline['release'] != os.environ['RELEASE_TAG']:
-              raise SystemExit('release_tag does not match committed E001 software baseline')
+              raise SystemExit('release_tag does not match committed E001 activation baseline')
           if baseline.get('immutable_required') is not True:
-              raise SystemExit('E001 baseline must require immutable release')
+              raise SystemExit('E001 activation baseline must require immutable release')
           PY
           git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           test "$(git rev-list -n1 "$RELEASE_TAG")" = "$SOURCE_SHA"

@@ -9,6 +9,11 @@
     "source_sha": "d70e18b12b899a67fa20adf3d281d10b901afbe8",
     "immutable_required": true
   },
+  "activation_baseline": {
+    "release": "v2.3.16",
+    "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "immutable_required": true
+  },
   "required_static_contracts": {
     "hil_workflow": ".github/workflows/hil-soak.yml",
     "extended_real_automation": ".github/workflows/extended-real-automation.yml",

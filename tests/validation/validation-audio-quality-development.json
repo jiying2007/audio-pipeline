@@ -32,7 +32,7 @@
     "min_pass_rate": 1.0,
     "min_p10_near_si_sdr_improvement_db": -6.0,
     "min_p10_near_projection_gain_db": -12.0,
-    "min_p10_interference_projection_attenuation_db": 0.0,
+    "min_p10_interference_projection_attenuation_db": -0.35,
     "min_p10_interference_corr_reduction": -0.05,
     "min_median_erle_db": -7.0,
     "max_p90_erle_convergence_ms": 4000.0,

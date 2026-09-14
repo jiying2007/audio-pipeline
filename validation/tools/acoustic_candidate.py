@@ -2,7 +2,7 @@
 """Create and verify a non-shipping acoustic candidate identity.
 
 This helper deliberately reuses the tuning canonicalization and wrapper semantics
-from tuning_iteration_engine.py.  It does not alter product defaults and it is
+from tuning_iteration_engine.py. It does not alter product defaults and it is
 not a promotion authority.
 """
 
@@ -19,6 +19,12 @@ import tuning_iteration_engine as engine
 
 _SHA40 = re.compile(r"^[0-9a-fA-F]{40}$")
 _SHA256 = re.compile(r"^(?:sha256:)?[0-9a-fA-F]{64}$")
+_RUNTIME_ENV = {
+    "aec_mu": "AP_TUNING_AEC_MU",
+    "ns_floor": "AP_TUNING_NS_FLOOR",
+    "agc_target_dbfs": "AP_TUNING_AGC_TARGET_DBFS",
+    "limiter_dbfs": "AP_TUNING_LIMITER_DBFS",
+}
 
 
 def sha256_file(path: Path) -> str:
@@ -38,6 +44,10 @@ def parse_tuning(args: argparse.Namespace) -> dict[str, float]:
     })
 
 
+def runtime_env(tuning: dict[str, float]) -> dict[str, str]:
+    return {_RUNTIME_ENV[key]: repr(float(tuning[key])) for key in engine.TUNING_KEYS}
+
+
 def create_identity(args: argparse.Namespace) -> dict:
     if not _SHA40.fullmatch(args.source_revision):
         raise ValueError("source revision must be an exact 40-character commit SHA")
@@ -52,12 +62,20 @@ def create_identity(args: argparse.Namespace) -> dict:
     if not args.processor.is_file():
         raise ValueError(f"processor does not exist: {args.processor}")
     engine.write_wrapper(args.wrapper, args.processor, tuning)
+    env = runtime_env(tuning)
+    env_output = getattr(args, "env_output", None)
+    if env_output is not None:
+        env_output.parent.mkdir(parents=True, exist_ok=True)
+        lines = [f"AP_ACOUSTIC_CANDIDATE_ID={actual_id}"]
+        lines.extend(f"{key}={env[key]}" for key in sorted(env))
+        env_output.write_text("\n".join(lines) + "\n", encoding="utf-8")
     result = {
         "schema_version": 1,
         "authority": "non-shipping-acoustic-candidate-qualification",
         "source_revision": args.source_revision.lower(),
         "candidate_id": actual_id,
         "tuning": tuning,
+        "runtime_env": env,
         "processor_sha256": sha256_file(args.processor),
         "provenance_sha256": args.provenance_sha256.lower().removeprefix("sha256:"),
         "wrapper": str(args.wrapper),
@@ -79,6 +97,7 @@ def self_test() -> None:
         "limiter_dbfs": -2.0,
     })
     assert engine.tuning_id(tuning) == "4a6a408bf0e3"
+    assert runtime_env(tuning)["AP_TUNING_AEC_MU"] == "0.24"
     with tempfile.TemporaryDirectory(prefix="ap-acoustic-candidate-") as temporary:
         root = Path(temporary)
         processor = root / "processor"
@@ -94,12 +113,15 @@ def self_test() -> None:
             limiter_dbfs=-2.0,
             processor=processor,
             wrapper=root / "wrapper",
+            env_output=root / "candidate.env",
             output=root / "identity.json",
         )
         result = create_identity(namespace)
         assert result["candidate_id"] == "4a6a408bf0e3"
         assert result["authority"] == "non-shipping-acoustic-candidate-qualification"
+        assert result["runtime_env"]["AP_TUNING_AEC_MU"] == "0.24"
         assert namespace.wrapper.is_file()
+        assert "AP_ACOUSTIC_CANDIDATE_ID=4a6a408bf0e3" in namespace.env_output.read_text()
         bad = argparse.Namespace(**vars(namespace))
         bad.candidate_id = "000000000000"
         try:
@@ -123,6 +145,7 @@ def main() -> int:
     parser.add_argument("--limiter-dbfs", type=float)
     parser.add_argument("--processor", type=Path)
     parser.add_argument("--wrapper", type=Path)
+    parser.add_argument("--env-output", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.self_test:

@@ -8,12 +8,10 @@ on:
       - 'validation/policies/validation-aec-motion-development.json'
       - 'tests/validation/aec_motion_model_qualification.py'
       - 'docs/program/iterations/I002.json'
+      - 'docs/program/plan.json'
       - '.github/workflows/aec-motion-development.yml'
       - 'validation/AEC_MOTION_DEVELOPMENT.md'
       - 'validation/README.md'
-  schedule:
-    - cron: '41 18 * * 2,5'
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -62,6 +60,16 @@ jobs:
           assert contract['candidate_limit'] == 0
           assert contract['confirmation_limit'] == 0
           assert contract['promotion_allowed'] is False
+          plan = json.loads(Path('docs/program/plan.json').read_text())
+          task = next(item for item in plan['tasks'] if item['id'] == 'I002')
+          assert task['status'] == 'CLOSED'
+          assert task['handler'] is None
+          workflow = Path('.github/workflows/aec-motion-development.yml').read_text()
+          trigger = workflow.split('\npermissions:', 1)[0]
+          assert '\n  pull_request:' in trigger
+          assert '\n  schedule:' not in trigger
+          assert '\n  workflow_dispatch:' not in trigger
+          assert '\n  workflow_call:' not in trigger
           PY
 
       - name: Build exact offline processor

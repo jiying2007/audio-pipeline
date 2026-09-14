@@ -16,9 +16,10 @@ I002_CONTRACT = Path('docs/program/iterations/I002.json')
 AEC_MOTION_MAINTENANCE_WORKFLOW = Path('.github/workflows/aec-motion-development.yml')
 
 # The generic tuner has no PR-regression role and is therefore manual-only after
-# the terminal software program. Stage-specific research workflows keep their PR
-# regression coverage and explicit manual replay entry points, but must never run
-# autonomous scheduled or push-triggered candidate research in maintenance state.
+# the terminal software program. PR/manual non-shipping workflows keep their PR
+# regression or measurement coverage and explicit manual replay entry points,
+# but must never run autonomous scheduled or push-triggered research/confirmation
+# work in maintenance state.
 MANUAL_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/acoustic-tuning-iteration.yml'),
 )
@@ -30,6 +31,13 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/vad-operating-point-selector.yml'),
     Path('.github/workflows/vad-hangover-counterfactual.yml'),
     Path('.github/workflows/vad-strong-weak-refresh.yml'),
+    Path('.github/workflows/ami-vad-confirmation-discovery.yml'),
+    Path('.github/workflows/bf-hard-mic-fault-discovery.yml'),
+    Path('.github/workflows/bf-hard-mic-fault-confirmation.yml'),
+    Path('.github/workflows/bf-hard-mic-fault-base-replay.yml'),
+    Path('.github/workflows/dsp-data-research.yml'),
+    Path('.github/workflows/pcr02-aec-real-tail-confirmation.yml'),
+    Path('.github/workflows/pcr02-dsp-counterfactuals.yml'),
 )
 
 # Recurring execution is an explicit maintenance capability, not a default.
@@ -97,12 +105,12 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
 
     for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
         path = root / relative
-        assert path.is_file(), f'missing stage research workflow: {relative}'
+        assert path.is_file(), f'missing PR/manual non-shipping workflow: {relative}'
         text = path.read_text(encoding='utf-8')
-        assert '\n  pull_request:' in text, f'{relative} must retain PR regression coverage'
+        assert '\n  pull_request:' in text, f'{relative} must retain PR regression or measurement coverage'
         assert '\n  workflow_dispatch:' in text, f'{relative} must retain an explicit manual replay entry point'
-        assert '\n  schedule:' not in text, f'{relative} must not run autonomous scheduled research in maintenance state'
-        assert '\n  push:' not in text, f'{relative} must not run autonomous push research in maintenance state'
+        assert '\n  schedule:' not in text, f'{relative} must not run autonomous scheduled non-shipping work in maintenance state'
+        assert '\n  push:' not in text, f'{relative} must not run autonomous push non-shipping work in maintenance state'
 
     validate_aec_motion_maintenance_boundary(root)
 
@@ -169,7 +177,7 @@ def self_test() -> None:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
-                'name: stage\n\non:\n  pull_request:\n  workflow_dispatch:\n',
+                'name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n',
                 encoding='utf-8',
             )
         for relative, crons in ALLOWED_SCHEDULED_WORKFLOWS.items():
@@ -199,26 +207,26 @@ def self_test() -> None:
             raise AssertionError('approved workflow cron drift was accepted')
         _write_allowed_schedule(root / allowed, ALLOWED_SCHEDULED_WORKFLOWS[allowed])
 
-        stage = root / PR_MANUAL_RESEARCH_WORKFLOWS[0]
-        stage.write_text(
-            "name: stage\n\non:\n  pull_request:\n  schedule:\n    - cron: '17 19 * * *'\n  workflow_dispatch:\n",
+        nonshipping = root / PR_MANUAL_RESEARCH_WORKFLOWS[0]
+        nonshipping.write_text(
+            "name: non-shipping\n\non:\n  pull_request:\n  schedule:\n    - cron: '17 19 * * *'\n  workflow_dispatch:\n",
             encoding='utf-8',
         )
         try:
             validate(root)
         except AssertionError as exc:
-            assert 'scheduled research' in str(exc)
+            assert 'scheduled non-shipping work' in str(exc)
         else:
-            raise AssertionError('scheduled stage research workflow was not rejected')
+            raise AssertionError('scheduled PR/manual non-shipping workflow was not rejected')
 
-        stage.write_text('name: stage\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
+        nonshipping.write_text('name: non-shipping\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
         try:
             validate(root)
         except AssertionError as exc:
-            assert 'PR regression coverage' in str(exc)
+            assert 'PR regression or measurement coverage' in str(exc)
         else:
-            raise AssertionError('stage research workflow without PR coverage was not rejected')
-        stage.write_text('name: stage\n\non:\n  pull_request:\n  workflow_dispatch:\n', encoding='utf-8')
+            raise AssertionError('PR/manual non-shipping workflow without PR coverage was not rejected')
+        nonshipping.write_text('name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n', encoding='utf-8')
 
         i002 = root / I002_CONTRACT
         payload = json.loads(i002.read_text(encoding='utf-8'))
@@ -245,8 +253,9 @@ def main() -> int:
     if args.check:
         validate()
         print(
-            'maintenance workflow contract: generic research manual-only; stage research PR/manual-only; '
-            'scheduled workflows exact-allowlisted; AEC motion schedule bound to terminal zero-budget I002'
+            'maintenance workflow contract: generic research manual-only; PR/manual non-shipping workflows '
+            'have PR coverage and explicit replay only; scheduled workflows exact-allowlisted; '
+            'AEC motion schedule bound to terminal zero-budget I002'
         )
     return 0
 

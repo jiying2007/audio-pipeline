@@ -60,16 +60,16 @@ def validate_registry(registry: dict[str, Any], root: Path) -> dict[str, Any]:
     terminal = registry["terminal_candidates"]
     if not isinstance(terminal, list):
         raise ValueError("terminal_candidates must be a list")
-    terminal_keys: set[tuple[str, str]] = set()
+    terminal_ids: set[str] = set()
     for item in terminal:
         if set(item) != {"candidate_id", "source_sha", "decision"}:
             raise ValueError("terminal candidate record fields invalid")
         if not str(item["candidate_id"]) or not SHA_RE.fullmatch(str(item["source_sha"])):
             raise ValueError("terminal candidate identity invalid")
-        key = (str(item["candidate_id"]), str(item["source_sha"]))
-        if key in terminal_keys:
-            raise ValueError("duplicate terminal candidate identity")
-        terminal_keys.add(key)
+        candidate_id = str(item["candidate_id"])
+        if candidate_id in terminal_ids:
+            raise ValueError("duplicate terminal candidate id")
+        terminal_ids.add(candidate_id)
         if not str(item["decision"]):
             raise ValueError("terminal candidate decision required")
 
@@ -204,10 +204,9 @@ def role_allowed(registry: dict[str, Any], dataset_id: str, role: str, *, select
 
 
 def is_terminal_candidate(registry: dict[str, Any], candidate_id: str, source_sha: str) -> bool:
-    return any(
-        item["candidate_id"] == candidate_id and item["source_sha"] == source_sha
-        for item in registry["terminal_candidates"]
-    )
+    if not SHA_RE.fullmatch(str(source_sha)):
+        raise ValueError("source_sha must be an exact 40-char commit SHA")
+    return any(item["candidate_id"] == candidate_id for item in registry["terminal_candidates"])
 
 
 def self_test() -> None:
@@ -265,6 +264,17 @@ def self_test() -> None:
         assert role_allowed(fixture, "synthetic", "development", selection=True)
         assert not role_allowed(fixture, "holdout-a", "development", selection=True)
         assert is_terminal_candidate(fixture, "old", "a" * 40)
+        assert is_terminal_candidate(fixture, "old", "b" * 40)
+        bad = json.loads(json.dumps(fixture))
+        bad["terminal_candidates"].append({
+            "candidate_id": "old", "source_sha": "b" * 40, "decision": "REJECTED_AGAIN"
+        })
+        try:
+            validate_registry(bad, root)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("terminal candidate id was duplicated across source SHAs")
         bad = json.loads(json.dumps(fixture))
         bad["datasets"][1]["selection_roles"] = ["development"]
         try:

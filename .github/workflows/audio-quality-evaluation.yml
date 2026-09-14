@@ -8,6 +8,12 @@ on:
       - 'tests/validation/**'
       - 'docs/AUDIO_QUALITY_EVALUATION.md'
       - 'CMakeLists.txt'
+      - '.github/program/acoustic_candidate.py'
+      - '.github/program/candidate_pipeline_inject.h'
+      - '.github/program/candidate_bench.c'
+      - '.github/program/candidate_alsa_runtime_duplex.c'
+      - '.github/workflows/acoustic-candidate-qualification.yml'
+      - '.github/workflows/acoustic-candidate-target.yml'
       - '.github/workflows/audio-quality-evaluation.yml'
   push:
     branches: [main]
@@ -17,6 +23,12 @@ on:
       - 'tests/validation/**'
       - 'docs/AUDIO_QUALITY_EVALUATION.md'
       - 'CMakeLists.txt'
+      - '.github/program/acoustic_candidate.py'
+      - '.github/program/candidate_pipeline_inject.h'
+      - '.github/program/candidate_bench.c'
+      - '.github/program/candidate_alsa_runtime_duplex.c'
+      - '.github/workflows/acoustic-candidate-qualification.yml'
+      - '.github/workflows/acoustic-candidate-target.yml'
       - '.github/workflows/audio-quality-evaluation.yml'
   workflow_dispatch:
 
@@ -50,6 +62,22 @@ jobs:
           python3 tests/validation/audio_quality_tuning.py --self-test
           python3 -m json.tool tests/validation/validation-audio-quality-development.json >/dev/null
           python3 -m json.tool tests/validation/audio-quality-pr-v1.json >/dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+          workflow = Path('.github/workflows/audio-quality-evaluation.yml').read_text(encoding='utf-8')
+          required = (
+              '.github/program/acoustic_candidate.py',
+              '.github/program/candidate_pipeline_inject.h',
+              '.github/program/candidate_bench.c',
+              '.github/program/candidate_alsa_runtime_duplex.c',
+              '.github/workflows/acoustic-candidate-qualification.yml',
+              '.github/workflows/acoustic-candidate-target.yml',
+          )
+          missing = [path for path in required if workflow.count(f"- '{path}'") != 2]
+          if missing:
+              raise SystemExit(f'candidate quality trigger coverage missing from PR/push paths: {missing}')
+          print('candidate quality trigger coverage: OK')
+          PY
 
       - name: Build exact offline processor
         run: |

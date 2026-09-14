@@ -9,8 +9,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_REGISTRY = REPO_ROOT / "validation/research/dataset-registry.json"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_REGISTRY = Path(__file__).resolve().with_name("dataset-registry.json")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 OPTIMIZER_ROLES = {"development", "validation", "shadow"}
 SOURCE_KINDS = {"synthetic", "public", "hosted-real", "product-external"}
@@ -211,6 +211,8 @@ def is_terminal_candidate(registry: dict[str, Any], candidate_id: str, source_sh
 
 
 def self_test() -> None:
+    live = json.loads(DEFAULT_REGISTRY.read_text(encoding="utf-8"))
+    validate_registry(live, REPO_ROOT)
     with tempfile.TemporaryDirectory(prefix="ap-dataset-registry-") as temporary:
         root = Path(temporary)
         (root / "validation").mkdir(parents=True)

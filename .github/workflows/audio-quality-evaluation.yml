@@ -8,14 +8,6 @@ on:
       - 'tests/validation/**'
       - 'docs/AUDIO_QUALITY_EVALUATION.md'
       - 'CMakeLists.txt'
-      - '.github/program/acoustic_candidate.py'
-      - '.github/program/acoustic_candidate_request.py'
-      - '.github/program/acoustic_candidate_request.json'
-      - '.github/program/candidate_pipeline_inject.h'
-      - '.github/program/candidate_bench.c'
-      - '.github/program/candidate_alsa_runtime_duplex.c'
-      - '.github/workflows/acoustic-candidate-qualification.yml'
-      - '.github/workflows/acoustic-candidate-target.yml'
       - '.github/workflows/audio-quality-evaluation.yml'
   push:
     branches: [main]
@@ -25,14 +17,6 @@ on:
       - 'tests/validation/**'
       - 'docs/AUDIO_QUALITY_EVALUATION.md'
       - 'CMakeLists.txt'
-      - '.github/program/acoustic_candidate.py'
-      - '.github/program/acoustic_candidate_request.py'
-      - '.github/program/acoustic_candidate_request.json'
-      - '.github/program/candidate_pipeline_inject.h'
-      - '.github/program/candidate_bench.c'
-      - '.github/program/candidate_alsa_runtime_duplex.c'
-      - '.github/workflows/acoustic-candidate-qualification.yml'
-      - '.github/workflows/acoustic-candidate-target.yml'
       - '.github/workflows/audio-quality-evaluation.yml'
   workflow_dispatch:
 
@@ -58,36 +42,14 @@ jobs:
       - name: Validate quality metric and truth contracts
         run: |
           set -euo pipefail
-          python3 -m py_compile tests/validation/*.py .github/program/acoustic_candidate_request.py
+          python3 -m py_compile tests/validation/*.py
           python3 tests/validation/quality_metric_support.py
           python3 tests/validation/build_quality_validation_corpus.py --self-test
           python3 tests/validation/audio_quality_contract.py --self-test
           python3 tests/validation/audio_quality_evaluate.py --self-test
           python3 tests/validation/audio_quality_tuning.py --self-test
-          python3 .github/program/acoustic_candidate_request.py --self-test
-          python3 .github/program/acoustic_candidate_request.py \
-            --request .github/program/acoustic_candidate_request.json \
-            --output /tmp/acoustic-candidate-request.json
           python3 -m json.tool tests/validation/validation-audio-quality-development.json >/dev/null
           python3 -m json.tool tests/validation/audio-quality-pr-v1.json >/dev/null
-          python3 - <<'PY'
-          from pathlib import Path
-          workflow = Path('.github/workflows/audio-quality-evaluation.yml').read_text(encoding='utf-8')
-          required = (
-              '.github/program/acoustic_candidate.py',
-              '.github/program/acoustic_candidate_request.py',
-              '.github/program/acoustic_candidate_request.json',
-              '.github/program/candidate_pipeline_inject.h',
-              '.github/program/candidate_bench.c',
-              '.github/program/candidate_alsa_runtime_duplex.c',
-              '.github/workflows/acoustic-candidate-qualification.yml',
-              '.github/workflows/acoustic-candidate-target.yml',
-          )
-          missing = [path for path in required if workflow.count(f"- '{path}'") != 2]
-          if missing:
-              raise SystemExit(f'candidate quality trigger coverage missing from PR/push paths: {missing}')
-          print('candidate quality trigger coverage: OK')
-          PY
 
       - name: Build exact offline processor
         run: |
@@ -169,34 +131,23 @@ jobs:
           import json
           from pathlib import Path
           result = json.loads(Path('/tmp/audio-quality-tuning/iteration-result.json').read_text())
-          request = json.loads(Path('/tmp/acoustic-candidate-request.json').read_text())
           assert result['authority'] == 'non-shipping-acoustic-iteration'
           assert result['search_space']['candidate_count'] <= 8
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'
-          if result['decision'] != 'ACOUSTIC_CANDIDATE':
-              raise SystemExit(
-                  f"frozen qualification request is no longer selected: decision={result['decision']}"
-              )
           assert not result['validation']['regression_violations']
           assert not result['shadow']['regression_violations']
-          selected = result['selected']
-          if selected['candidate_id'] != request['candidate_id']:
-              raise SystemExit(
-                  f"frozen qualification request drifted: selected={selected['candidate_id']} "
-                  f"request={request['candidate_id']}"
-              )
-          if selected['tuning'] != request['tuning']:
-              raise SystemExit('frozen qualification request tuning no longer matches selected candidate')
+          decision = result.get('decision')
+          if not isinstance(decision, str) or not decision:
+              raise SystemExit('bounded tuning must produce a non-empty decision')
+          selected = result.get('selected')
           print(json.dumps({
-              'decision': result['decision'],
-              'selected': result['selected'],
+              'decision': decision,
+              'selected': selected,
               'iteration_id': result['iteration_id'],
           }, sort_keys=True))
           PY
           cp -r /tmp/audio-quality-tuning /tmp/audio-quality-evidence/tuning
-          cp .github/program/acoustic_candidate_request.json /tmp/audio-quality-evidence/qualification-request.json
-          cp /tmp/acoustic-candidate-request.json /tmp/audio-quality-evidence/qualification-request-normalized.json
 
       - name: Seal quality evidence
         if: always()

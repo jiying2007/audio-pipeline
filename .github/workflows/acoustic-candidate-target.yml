@@ -7,6 +7,7 @@ on:
       - '.github/program/acoustic_candidate.py'
       - '.github/program/acoustic_candidate_request.py'
       - '.github/program/acoustic_candidate_request.json'
+      - '.github/program/candidate_target_route.py'
       - '.github/program/candidate_pipeline_inject.h'
       - '.github/program/candidate_bench.c'
       - '.github/program/candidate_alsa_runtime_duplex.c'
@@ -17,45 +18,13 @@ on:
         required: false
         default: ''
         type: string
-      capture_device:
-        description: ALSA capture device for manual candidate HIL
-        required: true
-        type: string
-      playback_device:
-        description: ALSA playback device or none
-        required: true
-        default: none
-        type: string
-      farend_file:
-        description: Optional board-local PCM16 far-end stimulus
-        required: false
-        default: ''
-        type: string
-      sample_rate:
-        required: true
-        default: '16000'
-        type: choice
-        options: ['8000','16000','24000','32000','48000']
-      mic_channels:
-        required: true
-        default: '2'
-        type: choice
-        options: ['1','2']
-      dsp_cpu:
-        required: true
-        default: '1'
-        type: string
       ambient_c:
         description: Measured ambient temperature for target benchmark evidence
         required: true
         default: '25.0'
         type: string
-      power_input:
-        description: Optional live numeric power sensor path
-        required: false
-        default: ''
-        type: string
       power_scale:
+        description: Numeric scale applied to the board manifest power_sensor value
         required: true
         default: '1000000'
         type: string
@@ -74,12 +43,17 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Validate frozen candidate qualification request
+      - name: Validate frozen candidate qualification request and target route authority
         shell: bash
         run: |
           set -euo pipefail
           python3 .github/program/acoustic_candidate.py --self-test
           python3 .github/program/acoustic_candidate_request.py --self-test
+          python3 .github/program/candidate_target_route.py --self-test
+          python3 -m py_compile \
+            .github/program/acoustic_candidate.py \
+            .github/program/acoustic_candidate_request.py \
+            .github/program/candidate_target_route.py
           python3 .github/program/acoustic_candidate_request.py \
             --request .github/program/acoustic_candidate_request.json \
             --env-output /tmp/acoustic-candidate-request.env \
@@ -110,7 +84,7 @@ jobs:
             echo 'invalid candidate tuning unexpectedly accepted' >&2
             exit 1
           fi
-      - name: Enforce CI-only injection and request boundary
+      - name: Enforce CI-only injection and single target route authority
         shell: bash
         run: |
           set -euo pipefail
@@ -124,12 +98,24 @@ jobs:
               'inputs.' + name for name in (
                   'source_sha', 'candidate_id', 'provenance_sha256',
                   'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs',
+                  'capture_device', 'playback_device', 'farend_file',
+                  'sample_rate', 'mic_channels', 'dsp_cpu', 'power_input',
               )
           )
           present = [item for item in forbidden_inputs if item in text]
           if present:
-              raise SystemExit(f'candidate identity must come only from qualification request: {present}')
-          print('candidate target request boundary: OK')
+              raise SystemExit(f'candidate identity/target route must come only from sealed authorities: {present}')
+          required = (
+              '.github/program/acoustic_candidate_request.json',
+              '.github/program/candidate_target_route.py',
+              'route-authority.json',
+              'AP_TARGET_CAPTURE_DEVICE',
+              'AP_TARGET_FAREND_FILE',
+          )
+          missing = [item for item in required if item not in text]
+          if missing:
+              raise SystemExit(f'candidate target route authority contract missing: {missing}')
+          print('candidate target request and route authority boundary: OK')
           PY
 
   resolve:
@@ -206,13 +192,11 @@ jobs:
           ref: ${{ needs.resolve.outputs.source_sha }}
           fetch-depth: 0
           path: source
-      - name: Resolve board route and preflight isolated target
+      - name: Resolve board route authority and preflight isolated target
         id: route
         shell: bash
         env:
           INPUT_BOARD: ${{ inputs.board_manifest }}
-          INPUT_FAREND: ${{ inputs.farend_file }}
-          INPUT_POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
           test "$(git -C source rev-parse HEAD)" = '${{ needs.resolve.outputs.source_sha }}'
@@ -227,14 +211,21 @@ jobs:
           python3 infra/.github/program/acoustic_candidate_request.py \
             --request infra/.github/program/acoustic_candidate_request.json \
             --output /tmp/ap-candidate-evidence/qualification-request-normalized.json
+          python3 infra/.github/program/candidate_target_route.py \
+            --board "$board" \
+            --output /tmp/ap-candidate-evidence/route-authority.json \
+            --env-output /tmp/ap-candidate-evidence/route.env
+          set -a
+          . /tmp/ap-candidate-evidence/route.env
+          set +a
           printf 'board=%s\n' "$board" >> "$GITHUB_OUTPUT"
           args=(
             --role audio-target --source-revision '${{ needs.resolve.outputs.source_sha }}'
             --board-manifest "$board" --require-command cmake --require-command cc
+            --farend-file "$AP_TARGET_FAREND_FILE"
             --writable-path /tmp --output /tmp/ap-candidate-evidence/runner-preflight.json
           )
-          if [ -n "$INPUT_FAREND" ]; then args+=(--farend-file "$INPUT_FAREND"); fi
-          if [ -n "$INPUT_POWER" ]; then args+=(--power-input "$INPUT_POWER"); fi
+          if [ -n "$AP_TARGET_POWER_INPUT" ]; then args+=(--power-input "$AP_TARGET_POWER_INPUT"); fi
           python3 source/tools/runner_preflight.py "${args[@]}"
           python3 source/tools/hil_board.py preflight --board "$board" \
             --output /tmp/ap-candidate-evidence/board-preflight.json --settle-seconds 120
@@ -301,16 +292,17 @@ jobs:
           set -euo pipefail
           set -a
           . /tmp/ap-candidate-evidence/candidate.env
+          . /tmp/ap-candidate-evidence/route.env
           set +a
           args=(
             benchmark --binary source/build/candidate-target/ap_candidate_bench
             --output /tmp/ap-candidate-evidence/target-benchmark.json
             --seconds 120 --idle-seconds 30 --max-rtf 0.40 --max-p99-us 9000
-            --dsp-cpu '${{ inputs.dsp_cpu }}' --sample-rate '${{ inputs.sample_rate }}'
-            --mic-channels '${{ inputs.mic_channels }}' --ambient-c '${{ inputs.ambient_c }}'
+            --dsp-cpu "$AP_TARGET_DSP_CPU" --sample-rate "$AP_TARGET_SAMPLE_RATE"
+            --mic-channels "$AP_TARGET_MIC_CHANNELS" --ambient-c '${{ inputs.ambient_c }}'
             --power-scale '${{ inputs.power_scale }}'
           )
-          if [ -n '${{ inputs.power_input }}' ]; then args+=(--power-input '${{ inputs.power_input }}'); fi
+          if [ -n "$AP_TARGET_POWER_INPUT" ]; then args+=(--power-input "$AP_TARGET_POWER_INPUT"); fi
           python3 source/tools/target_evidence.py "${args[@]}"
       - name: Execute same-candidate accelerated HIL route soak
         shell: bash
@@ -318,18 +310,19 @@ jobs:
           set -euo pipefail
           set -a
           . /tmp/ap-candidate-evidence/candidate.env
+          . /tmp/ap-candidate-evidence/route.env
           set +a
           args=(
             route-soak --binary source/build/candidate-target/ap_candidate_alsa_runtime_duplex
             --output /tmp/ap-candidate-evidence/hil-soak.json
-            --capture-device '${{ inputs.capture_device }}' --seconds 600
-            --dsp-cpu '${{ inputs.dsp_cpu }}' --sample-rate '${{ inputs.sample_rate }}'
-            --mic-channels '${{ inputs.mic_channels }}' --max-xruns 5 --max-overruns 5
+            --capture-device "$AP_TARGET_CAPTURE_DEVICE" --seconds 600
+            --dsp-cpu "$AP_TARGET_DSP_CPU" --sample-rate "$AP_TARGET_SAMPLE_RATE"
+            --mic-channels "$AP_TARGET_MIC_CHANNELS" --max-xruns 5 --max-overruns 5
             --power-scale '${{ inputs.power_scale }}' --fault-profile accelerated
+            --farend "$AP_TARGET_FAREND_FILE"
           )
-          if [ '${{ inputs.playback_device }}' != none ]; then args+=(--playback-device '${{ inputs.playback_device }}'); fi
-          if [ -n '${{ inputs.farend_file }}' ]; then args+=(--farend '${{ inputs.farend_file }}'); fi
-          if [ -n '${{ inputs.power_input }}' ]; then args+=(--power-input '${{ inputs.power_input }}'); fi
+          if [ -n "$AP_TARGET_PLAYBACK_DEVICE" ]; then args+=(--playback-device "$AP_TARGET_PLAYBACK_DEVICE"); fi
+          if [ -n "$AP_TARGET_POWER_INPUT" ]; then args+=(--power-input "$AP_TARGET_POWER_INPUT"); fi
           python3 source/tools/target_evidence.py "${args[@]}"
       - name: Classify non-shipping target qualification
         shell: bash
@@ -341,6 +334,7 @@ jobs:
           root = Path('/tmp/ap-candidate-evidence')
           identity = json.loads((root/'candidate-identity.json').read_text())
           request = json.loads((root/'qualification-request-normalized.json').read_text())
+          route_authority = json.loads((root/'route-authority.json').read_text())
           benchmark = json.loads((root/'target-benchmark.json').read_text())
           soak = json.loads((root/'hil-soak.json').read_text())
           def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -352,6 +346,24 @@ jobs:
               raise SystemExit('candidate provenance/request mismatch')
           if benchmark.get('kind') != 'target-benchmark' or not soak['soak']['passed']:
               raise SystemExit('candidate target/HIL evidence did not pass')
+          expected = route_authority['route']
+          benchmark_route = benchmark.get('route') or {}
+          if benchmark_route != {
+              'sample_rate_hz': expected['sample_rate_hz'],
+              'mic_channels': expected['mic_channels'],
+          }:
+              raise SystemExit('target benchmark route does not match board manifest authority')
+          soak_route = soak.get('route') or {}
+          normalized_soak = {
+              'capture_device': soak_route.get('capture_device'),
+              'playback_device': soak_route.get('playback_device'),
+              'farend_file': soak_route.get('farend'),
+              'sample_rate_hz': soak_route.get('sample_rate_hz'),
+              'mic_channels': soak_route.get('mic_channels'),
+              'dsp_cpu': soak_route.get('dsp_cpu'),
+          }
+          if normalized_soak != expected:
+              raise SystemExit('HIL route does not match board manifest authority')
           summary = {
               'schema_version': 1,
               'authority': 'non-shipping-acoustic-candidate-target-qualification',
@@ -362,6 +374,11 @@ jobs:
               'qualification_request_sha256': sha(root/'qualification-request.json'),
               'provenance_sha256': identity['provenance_sha256'],
               'tuning': identity['tuning'],
+              'board_id': route_authority['board_id'],
+              'board_revision': route_authority['board_revision'],
+              'board_manifest_sha256': sha(root/'board.json'),
+              'route_authority_sha256': sha(root/'route-authority.json'),
+              'route': expected,
               'target_benchmark_sha256': sha(root/'target-benchmark.json'),
               'hil_soak_sha256': sha(root/'hil-soak.json'),
               'remaining_required': [

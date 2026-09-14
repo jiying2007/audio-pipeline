@@ -38,6 +38,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/dsp-data-research.yml'),
     Path('.github/workflows/pcr02-aec-real-tail-confirmation.yml'),
     Path('.github/workflows/pcr02-dsp-counterfactuals.yml'),
+    Path('.github/workflows/research-optimization.yml'),
 )
 
 # Recurring execution is an explicit maintenance capability, not a default.

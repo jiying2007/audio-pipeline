@@ -4,12 +4,16 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_DIR = Path('.github/workflows')
+PROGRAM_PLAN = Path('docs/program/plan.json')
+I002_CONTRACT = Path('docs/program/iterations/I002.json')
+AEC_MOTION_MAINTENANCE_WORKFLOW = Path('.github/workflows/aec-motion-development.yml')
 
 # The generic tuner has no PR-regression role and is therefore manual-only after
 # the terminal software program. Stage-specific research workflows keep their PR
@@ -32,7 +36,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
 # Every legal cron below is validation, data-integrity, HIL or qualification
 # convergence work. Candidate/research search is intentionally absent.
 ALLOWED_SCHEDULED_WORKFLOWS = {
-    Path('.github/workflows/aec-motion-development.yml'): ('41 18 * * 2,5',),
+    AEC_MOTION_MAINTENANCE_WORKFLOW: ('41 18 * * 2,5',),
     Path('.github/workflows/extended-real-automation.yml'): ('17 3 * * 0',),
     Path('.github/workflows/hil-soak.yml'): ('43 18 * * *', '17 17 * * 0'),
     Path('.github/workflows/hosted-aec-real-validation.yml'): ('23 18 * * *',),
@@ -65,6 +69,22 @@ def scheduled_crons(text: str) -> tuple[str, ...]:
     return crons
 
 
+def validate_aec_motion_maintenance_boundary(root: Path) -> None:
+    """Prove the recurring motion job is regression maintenance, not reopened I002 research."""
+    contract = json.loads((root / I002_CONTRACT).read_text(encoding='utf-8'))
+    assert contract['iteration_id'] == 'I002', 'AEC motion maintenance lost I002 contract identity'
+    assert contract['candidate_limit'] == 0, 'AEC motion maintenance cannot regain candidate search budget'
+    assert contract['confirmation_limit'] == 0, 'AEC motion maintenance cannot consume confirmation data'
+    assert contract['promotion_allowed'] is False, 'AEC motion maintenance cannot gain promotion authority'
+    assert contract['data_role'] == 'development', 'AEC motion maintenance must remain development-only'
+
+    plan = json.loads((root / PROGRAM_PLAN).read_text(encoding='utf-8'))
+    task = next((item for item in plan.get('tasks', []) if item.get('id') == 'I002'), None)
+    assert task is not None, 'I002 missing from canonical program plan'
+    assert task.get('status') == 'CLOSED', 'scheduled AEC motion validation requires terminal I002'
+    assert task.get('handler') is None, 'scheduled AEC motion validation cannot restore an I002 handler'
+
+
 def validate(root: Path = REPOSITORY_ROOT) -> None:
     for relative in MANUAL_ONLY_RESEARCH_WORKFLOWS:
         path = root / relative
@@ -83,6 +103,8 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
         assert '\n  workflow_dispatch:' in text, f'{relative} must retain an explicit manual replay entry point'
         assert '\n  schedule:' not in text, f'{relative} must not run autonomous scheduled research in maintenance state'
         assert '\n  push:' not in text, f'{relative} must not run autonomous push research in maintenance state'
+
+    validate_aec_motion_maintenance_boundary(root)
 
     actual: dict[Path, tuple[str, ...]] = {}
     workflow_root = root / WORKFLOW_DIR
@@ -113,11 +135,33 @@ def _write_allowed_schedule(path: Path, crons: tuple[str, ...]) -> None:
     )
 
 
+def _write_i002_terminal_fixture(root: Path) -> None:
+    contract = root / I002_CONTRACT
+    contract.parent.mkdir(parents=True, exist_ok=True)
+    contract.write_text(
+        json.dumps({
+            'iteration_id': 'I002',
+            'candidate_limit': 0,
+            'confirmation_limit': 0,
+            'promotion_allowed': False,
+            'data_role': 'development',
+        }) + '\n',
+        encoding='utf-8',
+    )
+    plan = root / PROGRAM_PLAN
+    plan.parent.mkdir(parents=True, exist_ok=True)
+    plan.write_text(
+        json.dumps({'tasks': [{'id': 'I002', 'status': 'CLOSED', 'handler': None}]}) + '\n',
+        encoding='utf-8',
+    )
+
+
 def self_test() -> None:
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
+        _write_i002_terminal_fixture(root)
         generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
         generic.parent.mkdir(parents=True)
         generic.write_text('name: generic\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
@@ -174,6 +218,18 @@ def self_test() -> None:
             assert 'PR regression coverage' in str(exc)
         else:
             raise AssertionError('stage research workflow without PR coverage was not rejected')
+        stage.write_text('name: stage\n\non:\n  pull_request:\n  workflow_dispatch:\n', encoding='utf-8')
+
+        i002 = root / I002_CONTRACT
+        payload = json.loads(i002.read_text(encoding='utf-8'))
+        payload['promotion_allowed'] = True
+        i002.write_text(json.dumps(payload) + '\n', encoding='utf-8')
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'promotion authority' in str(exc)
+        else:
+            raise AssertionError('scheduled AEC motion validation regained promotion authority')
 
 
 def main() -> int:
@@ -190,7 +246,7 @@ def main() -> int:
         validate()
         print(
             'maintenance workflow contract: generic research manual-only; stage research PR/manual-only; '
-            'scheduled workflows exact-allowlisted'
+            'scheduled workflows exact-allowlisted; AEC motion schedule bound to terminal zero-budget I002'
         )
     return 0
 

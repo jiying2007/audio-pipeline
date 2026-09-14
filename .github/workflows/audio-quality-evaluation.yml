@@ -174,17 +174,20 @@ jobs:
           assert result['search_space']['candidate_count'] <= 8
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'
-          if result['decision'] == 'ACOUSTIC_CANDIDATE':
-              assert not result['validation']['regression_violations']
-              assert not result['shadow']['regression_violations']
-              selected = result['selected']
-              if selected['candidate_id'] != request['candidate_id']:
-                  raise SystemExit(
-                      f"frozen qualification request drifted: selected={selected['candidate_id']} "
-                      f"request={request['candidate_id']}"
-                  )
-              if selected['tuning'] != request['tuning']:
-                  raise SystemExit('frozen qualification request tuning no longer matches selected candidate')
+          if result['decision'] != 'ACOUSTIC_CANDIDATE':
+              raise SystemExit(
+                  f"frozen qualification request is no longer selected: decision={result['decision']}"
+              )
+          assert not result['validation']['regression_violations']
+          assert not result['shadow']['regression_violations']
+          selected = result['selected']
+          if selected['candidate_id'] != request['candidate_id']:
+              raise SystemExit(
+                  f"frozen qualification request drifted: selected={selected['candidate_id']} "
+                  f"request={request['candidate_id']}"
+              )
+          if selected['tuning'] != request['tuning']:
+              raise SystemExit('frozen qualification request tuning no longer matches selected candidate')
           print(json.dumps({
               'decision': result['decision'],
               'selected': result['selected'],

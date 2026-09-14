@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/acoustic-candidate-qualification.yml'
-      - 'validation/tools/acoustic_candidate.py'
+      - '.github/program/acoustic_candidate.py'
       - 'validation/tools/tuning_iteration_engine.py'
   workflow_dispatch:
     inputs:
@@ -88,7 +88,7 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Candidate identity contract self-test
-        run: python3 validation/tools/acoustic_candidate.py --self-test
+        run: python3 .github/program/acoustic_candidate.py --self-test
       - name: Enforce non-shipping workflow boundary
         shell: bash
         run: |
@@ -211,7 +211,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 infra/validation/tools/acoustic_candidate.py \
+          python3 infra/.github/program/acoustic_candidate.py \
             --source-revision '${{ needs.resolve.outputs.source_sha }}' \
             --provenance-sha256 '${{ inputs.provenance_sha256 }}' \
             --candidate-id '${{ inputs.candidate_id }}' \

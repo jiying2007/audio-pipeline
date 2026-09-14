@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """CI-only identity adapter for a fixed non-shipping acoustic candidate.
 
-This adapter reuses the authoritative tuning canonicalization and wrapper
-semantics from validation/tools/tuning_iteration_engine.py. It does not define
-shipping defaults, modify the SDK, or grant release promotion authority.
+This file intentionally contains only the small canonicalization/identity/wrapper
+contract needed by candidate evidence workflows. It does not define shipping
+defaults, modify the SDK, consume blind data for tuning, or grant promotion
+authority.
 """
 
 from __future__ import annotations
@@ -11,17 +12,21 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
-import sys
 import tempfile
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "validation" / "tools"))
-import tuning_iteration_engine as engine  # noqa: E402
+from typing import Any
 
 _SHA40 = re.compile(r"^[0-9a-fA-F]{40}$")
 _SHA256 = re.compile(r"^(?:sha256:)?[0-9a-fA-F]{64}$")
+TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
+TUNING_FLAGS = {
+    "aec_mu": "--aec-mu",
+    "ns_floor": "--ns-floor",
+    "agc_target_dbfs": "--agc-target-dbfs",
+    "limiter_dbfs": "--limiter-dbfs",
+}
 _RUNTIME_ENV = {
     "aec_mu": "AP_TUNING_AEC_MU",
     "ns_floor": "AP_TUNING_NS_FLOOR",
@@ -38,8 +43,53 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def canonical_tuning(raw: dict[str, Any]) -> dict[str, float]:
+    unknown = set(raw) - set(TUNING_KEYS)
+    if unknown:
+        raise ValueError(f"unknown tuning keys: {sorted(unknown)}")
+    if set(raw) != set(TUNING_KEYS):
+        raise ValueError("fixed candidate must define all supported tuning keys")
+    tuning = {key: float(raw[key]) for key in TUNING_KEYS}
+    for key, value in tuning.items():
+        if not math.isfinite(value):
+            raise ValueError(f"{key} must be finite")
+    if not 0.0 < tuning["aec_mu"] <= 1.0:
+        raise ValueError("aec_mu must be in (0, 1]")
+    if not 0.02 <= tuning["ns_floor"] <= 1.0:
+        raise ValueError("ns_floor must be in [0.02, 1]")
+    if not -60.0 <= tuning["agc_target_dbfs"] <= -1.0:
+        raise ValueError("agc_target_dbfs must be in [-60, -1]")
+    if not -20.0 <= tuning["limiter_dbfs"] <= -0.1:
+        raise ValueError("limiter_dbfs must be in [-20, -0.1]")
+    if tuning["agc_target_dbfs"] >= tuning["limiter_dbfs"]:
+        raise ValueError("agc_target_dbfs must be below limiter_dbfs")
+    return tuning
+
+
+def tuning_id(tuning: dict[str, float]) -> str:
+    payload = json.dumps(tuning, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(payload).hexdigest()[:12]
+
+
+def write_wrapper(path: Path, processor: Path, tuning: dict[str, float]) -> None:
+    flags: list[str] = []
+    for key in TUNING_KEYS:
+        flags += [TUNING_FLAGS[key], repr(float(tuning[key]))]
+    script = [
+        "#!/usr/bin/env python3",
+        "import os, sys",
+        f"processor = {str(processor.resolve())!r}",
+        f"prefix = {flags!r}",
+        "os.execv(processor, [processor] + prefix + sys.argv[1:])",
+        "",
+    ]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(script), encoding="utf-8")
+    path.chmod(0o700)
+
+
 def parse_tuning(args: argparse.Namespace) -> dict[str, float]:
-    return engine.canonical_tuning({
+    return canonical_tuning({
         "aec_mu": args.aec_mu,
         "ns_floor": args.ns_floor,
         "agc_target_dbfs": args.agc_target_dbfs,
@@ -48,23 +98,27 @@ def parse_tuning(args: argparse.Namespace) -> dict[str, float]:
 
 
 def runtime_env(tuning: dict[str, float]) -> dict[str, str]:
-    return {_RUNTIME_ENV[key]: repr(float(tuning[key])) for key in engine.TUNING_KEYS}
+    return {_RUNTIME_ENV[key]: repr(float(tuning[key])) for key in TUNING_KEYS}
 
 
-def create_identity(args: argparse.Namespace) -> dict:
+def create_identity(args: argparse.Namespace) -> dict[str, Any]:
     if not _SHA40.fullmatch(args.source_revision):
         raise ValueError("source revision must be an exact 40-character commit SHA")
     if not _SHA256.fullmatch(args.provenance_sha256):
-        raise ValueError("provenance SHA-256 must be 64 hex characters, optionally prefixed by sha256:")
+        raise ValueError(
+            "provenance SHA-256 must be 64 hex characters, optionally prefixed by sha256:"
+        )
+    if not re.fullmatch(r"[0-9a-f]{12}", args.candidate_id):
+        raise ValueError("candidate id must be exactly 12 lowercase hex characters")
     tuning = parse_tuning(args)
-    actual_id = engine.tuning_id(tuning)
+    actual_id = tuning_id(tuning)
     if actual_id != args.candidate_id:
         raise ValueError(
             f"candidate identity mismatch: expected {args.candidate_id}, canonical tuning yields {actual_id}"
         )
     if not args.processor.is_file():
         raise ValueError(f"processor does not exist: {args.processor}")
-    engine.write_wrapper(args.wrapper, args.processor, tuning)
+    write_wrapper(args.wrapper, args.processor, tuning)
     env = runtime_env(tuning)
     if args.env_output is not None:
         args.env_output.parent.mkdir(parents=True, exist_ok=True)
@@ -83,7 +137,7 @@ def create_identity(args: argparse.Namespace) -> dict:
         "wrapper": str(args.wrapper),
         "rule": (
             "This CI identity may qualify a fixed acoustic candidate only. It never changes shipping defaults "
-            "and cannot substitute for target, HIL, real-device, soak, or product-certification evidence."
+            "and cannot substitute for target, HIL, real-device, soak, product-certification, or release evidence."
         ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -92,13 +146,13 @@ def create_identity(args: argparse.Namespace) -> dict:
 
 
 def self_test() -> None:
-    tuning = engine.canonical_tuning({
+    tuning = canonical_tuning({
         "aec_mu": 0.24,
         "ns_floor": 0.12,
         "agc_target_dbfs": -20.0,
         "limiter_dbfs": -2.0,
     })
-    assert engine.tuning_id(tuning) == "4a6a408bf0e3"
+    assert tuning_id(tuning) == "4a6a408bf0e3"
     assert runtime_env(tuning)["AP_TUNING_AEC_MU"] == "0.24"
     with tempfile.TemporaryDirectory(prefix="ap-acoustic-candidate-") as temporary:
         root = Path(temporary)
@@ -121,7 +175,8 @@ def self_test() -> None:
         result = create_identity(namespace)
         assert result["candidate_id"] == "4a6a408bf0e3"
         assert result["runtime_env"]["AP_TUNING_AEC_MU"] == "0.24"
-        assert namespace.wrapper.is_file()
+        wrapper_text = namespace.wrapper.read_text(encoding="utf-8")
+        assert "--aec-mu" in wrapper_text and "0.24" in wrapper_text
         assert "AP_ACOUSTIC_CANDIDATE_ID=4a6a408bf0e3" in namespace.env_output.read_text()
         bad = argparse.Namespace(**vars(namespace))
         bad.candidate_id = "000000000000"
@@ -131,6 +186,15 @@ def self_test() -> None:
             assert "identity mismatch" in str(exc)
         else:
             raise AssertionError("mismatched candidate id must fail closed")
+    try:
+        canonical_tuning({
+            "aec_mu": float("nan"), "ns_floor": 0.12,
+            "agc_target_dbfs": -20.0, "limiter_dbfs": -2.0,
+        })
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("non-finite tuning must fail closed")
     print("acoustic candidate identity self-test: OK")
 
 

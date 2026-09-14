@@ -120,9 +120,11 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           text = Path('.github/workflows/acoustic-candidate-target.yml').read_text(encoding='utf-8')
-          forbidden_inputs = (
-              'inputs.source_sha', 'inputs.candidate_id', 'inputs.provenance_sha256',
-              'inputs.aec_mu', 'inputs.ns_floor', 'inputs.agc_target_dbfs', 'inputs.limiter_dbfs',
+          forbidden_inputs = tuple(
+              'inputs.' + name for name in (
+                  'source_sha', 'candidate_id', 'provenance_sha256',
+                  'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs',
+              )
           )
           present = [item for item in forbidden_inputs if item in text]
           if present:

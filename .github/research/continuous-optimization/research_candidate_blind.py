@@ -266,19 +266,42 @@ def classify(identity: dict[str, Any], visible: dict[str, Any] | None,
              blind: dict[str, Any] | None, output: Path) -> tuple[dict[str, Any], int]:
     if identity.get("authority") != "non-shipping-research-candidate-blind-qualification":
         raise ValueError("invalid qualification identity authority")
-    visible_pass = visible is not None and visible.get("validation_result") == "PASS"
-    blind_pass = blind is not None and blind.get("validation_result") == "PASS"
-    passed = visible_pass and blind_pass
-    if passed:
+
+    visible_result = None if visible is None else visible.get("validation_result")
+    blind_result = None if blind is None else blind.get("validation_result")
+    complete_results = {"PASS", "FAIL"}
+
+    if visible_result not in complete_results:
+        decision = "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING"
+        next_gate = EXPECTED_NEXT_GATE
+        terminal = False
+        failed_stage = "visible-evidence-incomplete"
+        rc = 2
+    elif visible_result == "FAIL":
+        decision = "BLIND_REJECTED_NON_SHIPPING"
+        next_gate = None
+        terminal = True
+        failed_stage = "visible-validation"
+        rc = 1
+    elif blind_result not in complete_results:
+        decision = "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING"
+        next_gate = EXPECTED_NEXT_GATE
+        terminal = False
+        failed_stage = "blind-evidence-incomplete"
+        rc = 2
+    elif blind_result == "FAIL":
+        decision = "BLIND_REJECTED_NON_SHIPPING"
+        next_gate = None
+        terminal = True
+        failed_stage = "blind-holdout"
+        rc = 1
+    else:
         decision = "BLIND_QUALIFIED_NON_SHIPPING"
         next_gate = "target-resource"
         terminal = False
         failed_stage = None
-    else:
-        decision = "BLIND_REJECTED_NON_SHIPPING"
-        next_gate = None
-        terminal = True
-        failed_stage = "visible-validation" if not visible_pass else "blind-holdout"
+        rc = 0
+
     result = {
         "schema_version": 1,
         "authority": "non-shipping-research-candidate-blind-qualification",
@@ -290,8 +313,8 @@ def classify(identity: dict[str, Any], visible: dict[str, Any] | None,
         "next_gate": next_gate,
         "terminal_candidate": terminal,
         "failed_stage": failed_stage,
-        "visible_result": None if visible is None else visible.get("validation_result"),
-        "blind_result": None if blind is None else blind.get("validation_result"),
+        "visible_result": visible_result,
+        "blind_result": blind_result,
         "shipping_authority": False,
         "target_execution_authority": False,
         "hil_authority": False,
@@ -299,13 +322,14 @@ def classify(identity: dict[str, Any], visible: dict[str, Any] | None,
         "automatic_main_mutation": False,
         "automatic_promotion": False,
         "rule": (
-            "PASS only admits this exact frozen candidate to separate target-resource review; "
-            "REJECT is terminal for this tuning identity. Neither outcome changes shipping."
+            "PASS+PASS only admits this exact frozen candidate to separate target-resource review; "
+            "an explicit validation FAIL is terminal for this tuning identity; missing or invalid "
+            "evidence is INCOMPLETE and keeps the candidate frozen. Neither outcome changes shipping."
         ),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return result, 0 if passed else 1
+    return result, rc
 
 
 def self_test() -> None:
@@ -374,8 +398,37 @@ def self_test() -> None:
         assert "--ns-floor" in (root / "wrapper").read_text(encoding="utf-8")
         passed, rc = classify(identity, {"validation_result": "PASS"}, {"validation_result": "PASS"}, root / "pass.json")
         assert rc == 0 and passed["decision"] == "BLIND_QUALIFIED_NON_SHIPPING"
+        assert passed["next_gate"] == "target-resource" and passed["terminal_candidate"] is False
+
         rejected, rc = classify(identity, {"validation_result": "PASS"}, {"validation_result": "FAIL"}, root / "reject.json")
-        assert rc == 1 and rejected["terminal_candidate"] is True
+        assert rc == 1 and rejected["decision"] == "BLIND_REJECTED_NON_SHIPPING"
+        assert rejected["terminal_candidate"] is True and rejected["failed_stage"] == "blind-holdout"
+
+        visible_rejected, rc = classify(
+            identity, {"validation_result": "FAIL"}, None, root / "visible-reject.json"
+        )
+        assert rc == 1 and visible_rejected["terminal_candidate"] is True
+        assert visible_rejected["failed_stage"] == "visible-validation"
+
+        missing_visible, rc = classify(identity, None, None, root / "missing-visible.json")
+        assert rc == 2 and missing_visible["decision"] == "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING"
+        assert missing_visible["terminal_candidate"] is False
+        assert missing_visible["next_gate"] == EXPECTED_NEXT_GATE
+        assert missing_visible["failed_stage"] == "visible-evidence-incomplete"
+
+        missing_blind, rc = classify(
+            identity, {"validation_result": "PASS"}, None, root / "missing-blind.json"
+        )
+        assert rc == 2 and missing_blind["decision"] == "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING"
+        assert missing_blind["terminal_candidate"] is False
+        assert missing_blind["next_gate"] == EXPECTED_NEXT_GATE
+        assert missing_blind["failed_stage"] == "blind-evidence-incomplete"
+
+        invalid_visible, rc = classify(
+            identity, {"validation_result": "ERROR"}, {"validation_result": "PASS"}, root / "invalid-visible.json"
+        )
+        assert rc == 2 and invalid_visible["terminal_candidate"] is False
+        assert invalid_visible["failed_stage"] == "visible-evidence-incomplete"
     print("research candidate blind helper self-test: OK")
 
 

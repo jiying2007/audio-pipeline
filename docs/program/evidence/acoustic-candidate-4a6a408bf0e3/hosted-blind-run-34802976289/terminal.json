@@ -14,6 +14,16 @@
       "limiter_dbfs": -2.0
     }
   },
+  "frozen_request": {
+    "authority": "non-shipping-acoustic-candidate-qualification-request",
+    "audio_quality_run_id": 34796251702,
+    "artifact_id": 10329589387,
+    "artifact_archive_sha256": "7d1d4e221fc07b45cb7e92cfb2a6dcae1b88503a6c09b34ee167f9e570479eb0",
+    "iteration_result_sha256": "1f00ec48b1467fd39b13044ced41f1016818c5a24a2894799d83eb5e7082b6f2",
+    "dataset_lock_sha256": "46b854fc54be3a4c454c4fd17a1f0b582f37f62ca1cd7ae9bc2128d4c96e40dc",
+    "policy_sha256": "d2b56fb7fa826ac0b88859e58a93baeaa09c88d65f7f0661c2246901b83eba15",
+    "search_space_sha256": "0b3006ec7d2fec1bb703f6f756e204a6f6fcf241f7a646557cb1a85c4d876d92"
+  },
   "qualification": {
     "infrastructure_revision": "70f2c4fbad31da5294ec8734fe41d417c3c60301",
     "workflow_run_id": 34802976289,

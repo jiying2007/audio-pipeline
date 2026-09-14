@@ -1,0 +1,213 @@
+name: Research Optimization
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'validation/research/**'
+      - 'validation/tools/research_dataset_registry.py'
+      - 'validation/tools/research_optimizer.py'
+      - 'validation/tools/failure_mining.py'
+      - 'validation/tools/tuning_iteration.py'
+      - 'validation/tools/tuning_iteration_engine.py'
+      - 'validation/tuning/**'
+      - '.github/workflows/research-optimization.yml'
+      - '.github/program/maintenance_workflow_contract.py'
+  workflow_dispatch:
+    inputs:
+      execute_bounded_search:
+        description: 'Run the bounded multi-seed research search after contract checks'
+        required: true
+        type: boolean
+        default: false
+      search_space:
+        description: 'Runtime-safe bounded parameter search space'
+        required: true
+        type: choice
+        default: 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
+        options:
+          - 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
+          - 'validation/tuning/search-spaces/call-v1.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-optimization-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate research optimization authority and tooling
+        run: |
+          set -euo pipefail
+          python3 -m py_compile validation/tools/*.py
+          python3 -m json.tool validation/research/dataset-registry.json >/dev/null
+          python3 -m json.tool validation/research/dataset-registry.schema.json >/dev/null
+          python3 validation/tools/authority.py --self-test
+          python3 validation/tools/tuning_iteration.py --self-test
+          python3 validation/tools/research_dataset_registry.py --self-test --check
+          python3 validation/tools/failure_mining.py --self-test
+          python3 validation/tools/research_optimizer.py --self-test
+      - name: Enforce immutable shipping and no-promotion boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          registry = json.loads(Path('validation/research/dataset-registry.json').read_text())
+          assert registry['shipping_baseline'] == {
+              'tag': 'v2.3.16',
+              'source_sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
+              'frozen': True,
+          }
+          assert registry['output_authority'] == {
+              'candidate_status': 'FROZEN_RESEARCH_CANDIDATE',
+              'next_gate': 'validation-grade-blind',
+              'shipping_authority': False,
+              'hil_authority': False,
+              'product_certification_authority': False,
+              'automatic_main_mutation': False,
+          }
+          rejected = {(item['candidate_id'], item['source_sha']) for item in registry['terminal_candidates']}
+          assert ('4a6a408bf0e3', '73ae803047d5e7a6b54cdf58b4a28331ab0c2163') in rejected
+          product = next(item for item in registry['datasets'] if item['id'] == 'pcr02-product-external')
+          assert product['selection_roles'] == [] and product['evaluation_roles'] == []
+          print('research optimization authority boundary: PASS')
+          PY
+
+  bounded-search:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch' && inputs.execute_bounded_search
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SEARCH_SPACE: ${{ inputs.search_space }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: research-optimization
+      - name: Build exact offline tuning processor
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cmake -S . -B build-research-opt -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-research-opt --target ap_process_pcm --parallel
+      - name: Build independent multi-seed partitions
+        run: |
+          set -euo pipefail
+          for seed in 1307 1407 2307 2407 3307 3407; do
+            python3 validation/tools/build_validation_corpus.py --output "/tmp/ap-research-$seed" --seed "$seed"
+          done
+      - name: Materialize exact run specification
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          evaluations = []
+          for role, seeds in [('development', [1307, 1407]), ('validation', [2307, 2407]), ('shadow', [3307, 3407])]:
+              for seed in seeds:
+                  evaluations.append({
+                      'evaluation_id': f'synthetic-{role}-{seed}',
+                      'dataset_id': 'synthetic-regression',
+                      'role': role,
+                      'seed': seed,
+                      'corpus': f'/tmp/ap-research-{seed}/corpus.json',
+                      'dataset_lock': 'validation/datasets.lock.json',
+                      'policy': 'validation/policies/validation-smoke.json',
+                  })
+          spec = {
+              'schema_version': 1,
+              'experiment_id': f"github-{os.environ['GITHUB_RUN_ID']}",
+              'hypothesis_id': 'joint-runtime-safe-tuning-v1',
+              'source_sha': os.environ['GITHUB_SHA'],
+              'search_space': os.environ['SEARCH_SPACE'],
+              'policy': {
+                  'minimum_development_score': 0.05,
+                  'minimum_development_unit_score': 0.0,
+                  'minimum_distinct_development_seeds': 2,
+                  'maximum_pareto_candidates': 16,
+              },
+              'evaluations': evaluations,
+          }
+          Path('/tmp/research-run.json').write_text(json.dumps(spec, indent=2, sort_keys=True) + '\n')
+          PY
+      - name: Run multi-seed Pareto optimization and generalization gates
+        run: |
+          set -euo pipefail
+          python3 validation/tools/research_optimizer.py \
+            --processor build-research-opt/ap_process_pcm \
+            --run-spec /tmp/research-run.json \
+            --registry validation/research/dataset-registry.json \
+            --output-dir research-optimization-out
+      - name: Mine failures into advisory curriculum
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -d research-optimization-out/reports ]; then
+            mapfile -d '' reports < <(find research-optimization-out/reports -type f -name '*.json' -print0 | sort -z)
+            if [ "${#reports[@]}" -gt 0 ]; then
+              python3 validation/tools/failure_mining.py "${reports[@]}" --output research-optimization-out/failure-curriculum.json
+            fi
+          fi
+      - name: Enforce frozen research-only output
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('research-optimization-out/optimization-result.json').read_text())
+          assert result['authority'] == 'research-only-data-driven-optimization'
+          assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'FREEZE_RESEARCH_CANDIDATE'}
+          assert result['status'] in {'NO_RESEARCH_CANDIDATE', 'RESEARCH_CANDIDATE_REJECTED', 'FROZEN_RESEARCH_CANDIDATE'}
+          assert result['automatic_shipping_promotion'] is False
+          assert result['automatic_main_mutation'] is False
+          assert result['output_authority']['shipping_authority'] is False
+          assert result['output_authority']['hil_authority'] is False
+          assert result['output_authority']['product_certification_authority'] is False
+          if result['status'] == 'FROZEN_RESEARCH_CANDIDATE':
+              assert result['next_gate'] == 'validation-grade-blind'
+          print(json.dumps({
+              'decision': result['decision'],
+              'status': result['status'],
+              'selected': result['selected']['research_candidate_id'],
+              'next_gate': result['next_gate'],
+          }, sort_keys=True))
+          PY
+      - name: Publish research optimization summary
+        if: always()
+        run: |
+          if [ -f research-optimization-out/optimization-result.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r = json.loads(Path('research-optimization-out/optimization-result.json').read_text())
+          print('## Data-driven research optimization')
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Status: `{r['status']}`")
+          print(f"- Selected research candidate: `{r['selected']['research_candidate_id']}`")
+          print(f"- Tuning ID: `{r['selected']['candidate_id']}`")
+          print(f"- Development score: `{r['selected']['development_score']:.6f}`")
+          print(f"- Worst development unit: `{r['selected']['worst_development_unit_score']:.6f}`")
+          print(f"- Generalization gates: `{len(r['generalization_gates'])}`")
+          print(f"- Gate violations: `{len(r['gate_violations'])}`")
+          print('- Authority: research only. No shipping/HIL/Product Certification/main-mutation authority.')
+          PY
+          fi
+      - name: Upload hash-bound research evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: research-optimization-${{ github.run_id }}
+          path: |
+            /tmp/research-run.json
+            research-optimization-out/
+          if-no-files-found: error
+          retention-days: 30

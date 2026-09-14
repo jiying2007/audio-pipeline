@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "registry_id": "audio-pipeline-research-datasets-v1",
+  "shipping_baseline": {
+    "tag": "v2.3.16",
+    "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "aec_mu": 0.22,
+    "mutable": false
+  },
+  "terminal_rejections": [
+    {
+      "candidate_id": "4a6a408bf0e3",
+      "source_sha": "73ae803047d5e7a6b54cdf58b4a28331ab0c2163",
+      "reason": "HOSTED_BLIND_REJECTED_NON_SHIPPING",
+      "reusable_identity": false
+    }
+  ],
+  "optimizer_roles": {
+    "selection": "development-only",
+    "validation": "reject-only",
+    "shadow": "reject-only",
+    "blind": "prohibited",
+    "product": "prohibited"
+  },
+  "catalogs": [
+    {
+      "id": "public-validation",
+      "lock": "validation/datasets.lock.json",
+      "roles": ["development", "validation", "shadow"],
+      "candidate_selection": true,
+      "product_external": false,
+      "notes": "Pinned public AEC/DNS/RIR sources. Development partitions may rank candidates; validation/shadow may only reject the selected development winner."
+    },
+    {
+      "id": "extended-research",
+      "lock": "validation/extended.datasets.lock.json",
+      "roles": ["development", "validation", "shadow"],
+      "candidate_selection": true,
+      "product_external": false,
+      "notes": "Only entries admitted by the research profile and their exact license/usage restrictions may be materialized."
+    },
+    {
+      "id": "hosted-real-p808",
+      "lock": "validation/hosted_real.datasets.lock.json",
+      "roles": ["validation", "shadow"],
+      "candidate_selection": false,
+      "product_external": false,
+      "notes": "Hosted real speech is cross-dataset generalization evidence, never development ranking input."
+    },
+    {
+      "id": "hosted-real-aec",
+      "lock": "validation/hosted_aec.datasets.lock.json",
+      "roles": ["validation", "shadow"],
+      "candidate_selection": false,
+      "product_external": false,
+      "notes": "Pinned Microsoft AEC cases are cross-dataset AEC generalization evidence, never development ranking input."
+    },
+    {
+      "id": "deterministic-generated-regression",
+      "generator": "validation/tools/build_validation_corpus.py",
+      "roles": ["development", "validation", "shadow"],
+      "candidate_selection": true,
+      "product_external": false,
+      "seed_policy": {
+        "development": [1307, 1407, 1507],
+        "validation": [2307, 2407],
+        "shadow": [3307, 3407]
+      },
+      "notes": "Distinct seeds are mandatory across optimizer roles."
+    },
+    {
+      "id": "pcr02-product-capture",
+      "plan": "tests/validation/pcr02_capture_plan.json",
+      "roles": [],
+      "candidate_selection": false,
+      "product_external": true,
+      "notes": "Real PCR02 captures belong to #58 / physical qualification. They never enter hosted optimizer feedback."
+    }
+  ],
+  "required_failure_slices": [
+    "far-field",
+    "low-snr",
+    "moving-robot",
+    "non-stationary-noise",
+    "double-talk",
+    "mic-mismatch",
+    "clipping",
+    "reverberation",
+    "speaker-mic-coupling"
+  ],
+  "candidate_contract": {
+    "new_hypothesis_requires_new_identity": true,
+    "identity_fields": ["source_sha", "hypothesis_id", "tuning"],
+    "development_may_rank": true,
+    "validation_may_rank": false,
+    "shadow_may_rank": false,
+    "fallback_after_validation_rejection": false,
+    "blind_feedback": false,
+    "automatic_shipping_mutation": false,
+    "automatic_hil_or_pq": false,
+    "terminal_output": "FROZEN_RESEARCH_CANDIDATE"
+  }
+}

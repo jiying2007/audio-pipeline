@@ -30,10 +30,11 @@ from build_validation_corpus import (
     write_pcm,
 )
 
-GENERATOR_VERSION = 2
+GENERATOR_VERSION = 3
 PCR02_MIC_SPACING_MM = 35.0
 SOUND_MM_S = 343000.0
 BF_INTERFERER_ANGLE_DEG = 60.0
+BF_INCUMBENT_MIN_INTERFERENCE_ATTENUATION_DB = -0.75
 
 
 def _case(cases: list[dict], case_id: str) -> dict:
@@ -175,11 +176,12 @@ def build(output: Path, seed: int, seconds: float) -> dict:
         _attach_audio(output, cases, case_id, "noise_audio", "noise-truth.pcm", noise_signal)
         _mark(cases, case_id, "ns", noise=name)
 
-    # BF quality must match the shipping PCR02 steering contract. Shipping is
-    # fixed broadside (zero integer delay), so the desired target stays at 0°.
-    # A coherent competing source is placed at +/-60° using the physical 35 mm
-    # fractional TDOA. Both directions are exercised without exceeding the real
-    # 1.63265-sample endfire bound.
+    # BF quality exercises the current FULL-quality dynamic lag tracker with a
+    # broadside desired target and mirrored +/-60 degree coherent interferers.
+    # The geometry is tied to PCR02's 35 mm spacing and stays inside the physical
+    # 1.63265-sample endfire TDOA bound. The attenuation gate below is the
+    # measured incumbent regression floor, not a claim of positive rejection:
+    # across seeds 5107/6107/7107 the worst observed single case was -0.510 dB.
     max_tdoa = physical_tdoa_samples(PCR02_MIC_SPACING_MM, 90.0)
     interferer_tdoa = physical_tdoa_samples(PCR02_MIC_SPACING_MM, BF_INTERFERER_ANGLE_DEG)
     if not 0.0 < interferer_tdoa <= max_tdoa < 2.0:
@@ -199,7 +201,7 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             expected={
                 "min_near_si_sdr_improvement_db": -0.25,
                 "min_near_projection_gain_db": -6.0,
-                "min_interference_projection_attenuation_db": 0.0,
+                "min_interference_projection_attenuation_db": BF_INCUMBENT_MIN_INTERFERENCE_ATTENUATION_DB,
                 "max_output_clip_fraction": 0.02,
             },
         )
@@ -212,7 +214,8 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             "interferer_angle_deg": angle,
             "interferer_tdoa_samples": interferer_tdoa if angle > 0 else -interferer_tdoa,
             "max_physical_tdoa_samples": max_tdoa,
-            "shipping_steering": "fixed-zero-integer-delay",
+            "shipping_steering": "full-quality-dynamic-lag-tracking",
+            "interference_attenuation_floor_db": BF_INCUMBENT_MIN_INTERFERENCE_ATTENUATION_DB,
         })
         _mark(cases, case_id, "bf", target_angle_deg=0.0,
               interferer_angle_deg=angle, mic_spacing_mm=PCR02_MIC_SPACING_MM)
@@ -264,10 +267,11 @@ def build(output: Path, seed: int, seconds: float) -> dict:
             "bf_geometry": {
                 "mic_spacing_mm": PCR02_MIC_SPACING_MM,
                 "sound_mm_s": SOUND_MM_S,
-                "shipping_steering": "fixed-zero-integer-delay",
+                "shipping_steering": "full-quality-dynamic-lag-tracking",
                 "target_angle_deg": 0.0,
                 "interferer_angle_deg": [-BF_INTERFERER_ANGLE_DEG, BF_INTERFERER_ANGLE_DEG],
                 "max_physical_tdoa_samples": max_tdoa,
+                "incumbent_min_interference_attenuation_db": BF_INCUMBENT_MIN_INTERFERENCE_ATTENUATION_DB,
             },
         },
         "sources": ["deterministic-quality-ground-truth"],
@@ -283,6 +287,7 @@ def build(output: Path, seed: int, seconds: float) -> dict:
 
 def self_test() -> None:
     assert abs(physical_tdoa_samples(35.0, 90.0) - 1.6326530612) < 1.0e-6
+    assert BF_INCUMBENT_MIN_INTERFERENCE_ATTENUATION_DB == -0.75
     with tempfile.TemporaryDirectory(prefix="ap-quality-corpus-") as temporary:
         root = Path(temporary)
         corpus = build(root, 5107, 6.0)
@@ -297,6 +302,10 @@ def self_test() -> None:
         assert all(case["split"] == "validation" for case in corpus["cases"])
         bf = [case for case in corpus["cases"] if case["quality"]["role"] == "bf"]
         assert all(case["dimensions"]["target_tdoa_samples"] == 0.0 for case in bf)
+        assert all(case["dimensions"]["shipping_steering"] ==
+                   "full-quality-dynamic-lag-tracking" for case in bf)
+        assert all(case["expected"]["min_interference_projection_attenuation_db"] ==
+                   BF_INCUMBENT_MIN_INTERFERENCE_ATTENUATION_DB for case in bf)
         assert all(abs(case["dimensions"]["interferer_tdoa_samples"]) <=
                    case["dimensions"]["max_physical_tdoa_samples"] for case in bf)
     print("quality validation corpus self-test: OK")

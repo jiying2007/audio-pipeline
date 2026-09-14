@@ -5,11 +5,10 @@ on:
     paths:
       - '.github/workflows/acoustic-candidate-qualification.yml'
       - '.github/program/acoustic_candidate.py'
-      - 'validation/tools/tuning_iteration_engine.py'
   workflow_dispatch:
     inputs:
       source_sha:
-        description: Exact 40-character source commit SHA that produced the fixed candidate
+        description: Exact fresh-main source commit SHA that reproduced the fixed candidate
         required: true
         type: string
       candidate_id:
@@ -18,7 +17,7 @@ on:
         default: '4a6a408bf0e3'
         type: string
       provenance_sha256:
-        description: SHA-256 of the authoritative tuning artifact that selected this candidate
+        description: SHA-256 of the authoritative fresh-main tuning artifact that selected this candidate
         required: true
         type: string
       aec_mu:
@@ -89,7 +88,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Candidate identity contract self-test
         run: python3 .github/program/acoustic_candidate.py --self-test
-      - name: Enforce non-shipping workflow boundary
+      - name: Enforce canonical non-shipping boundary
         shell: bash
         run: |
           set -euo pipefail
@@ -100,6 +99,7 @@ jobs:
               'non-shipping-acoustic-candidate-qualification',
               'AP_VALIDATION_HOLDOUT_KEY',
               '--blind-summary-only',
+              'source/validation/tools/run_validation.py',
               'candidate_id',
               'provenance_sha256',
           )
@@ -132,7 +132,7 @@ jobs:
           sha=$(git rev-parse HEAD)
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
-      - name: Resolve exact candidate source revision
+      - name: Resolve exact fresh-main candidate source revision
         id: source
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
@@ -142,6 +142,10 @@ jobs:
           [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'source_sha must be a 40-character commit SHA' >&2; exit 1; }
           git fetch --no-tags origin "$SOURCE_SHA"
           git cat-file -e "$SOURCE_SHA^{commit}"
+          git cat-file -e "$SOURCE_SHA:.github/program/acoustic_candidate.py" || {
+            echo 'source revision lacks acoustic candidate identity adapter' >&2
+            exit 1
+          }
           echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
 
   qualify-blind:

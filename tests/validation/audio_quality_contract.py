@@ -16,6 +16,9 @@ from pathlib import Path
 REQUIRED_ROLES = {"aec-farend", "aec-res-doubletalk", "ns", "bf", "vad"}
 PCR02_MIC_SPACING_MM = 35.0
 PCR02_MAX_TDOA_SAMPLES_16K = 35.0 * 16000.0 / 343000.0
+BF_STEERING_ID = "full-quality-dynamic-lag-tracking"
+BF_CASE_FLOOR_DB = -0.75
+BF_P10_FLOOR_DB = -0.35
 
 
 def require(condition: bool, message: str) -> None:
@@ -77,11 +80,15 @@ def validate_corpus(corpus: dict) -> dict:
                     "min_near_projection_gain_db" in expected and
                     "min_interference_projection_attenuation_db" in expected,
                     f"BF quality gates missing: {case_id}")
+            require(float(expected["min_interference_projection_attenuation_db"]) == BF_CASE_FLOOR_DB,
+                    f"BF measured incumbent case floor drift: {case_id}")
             dimensions = case.get("dimensions", {})
             require(float(dimensions.get("mic_spacing_mm", -1.0)) == PCR02_MIC_SPACING_MM,
                     f"BF PCR02 spacing drift: {case_id}")
-            require(dimensions.get("shipping_steering") == "fixed-zero-integer-delay",
+            require(dimensions.get("shipping_steering") == BF_STEERING_ID,
                     f"BF shipping steering drift: {case_id}")
+            require(float(dimensions.get("interference_attenuation_floor_db", 999.0)) == BF_CASE_FLOOR_DB,
+                    f"BF geometry/floor binding drift: {case_id}")
             require(float(dimensions.get("target_angle_deg", 999.0)) == 0.0 and
                     float(dimensions.get("target_tdoa_samples", 999.0)) == 0.0,
                     f"BF desired target must remain broadside: {case_id}")
@@ -173,6 +180,8 @@ def validate_policy(policy: dict) -> None:
         "max_p90_vad_release_delay_ms",
     ):
         require(gate in aggregate, f"quality aggregate gate missing: {gate}")
+    require(float(aggregate["min_p10_interference_projection_attenuation_db"]) == BF_P10_FLOOR_DB,
+            "BF measured incumbent aggregate floor drift")
 
 
 def self_test() -> None:
@@ -186,7 +195,7 @@ def self_test() -> None:
         "aec-farend": {"render_audio": "r", "echo_audio": "e", "expected": {"min_erle_db": -6, "max_erle_convergence_ms": 1}},
         "aec-res-doubletalk": {"render_audio": "r", "clean_near_audio": "c", "interference_audio": "i", "expected": {"min_near_si_sdr_db": -20, "min_near_projection_gain_db": -12, "min_interference_projection_attenuation_db": 0.0}},
         "ns": {"processor_profile": "ns-isolated", "clean_near_audio": "c", "noise_audio": "n", "vad_labels": "v", "expected": {"min_near_si_sdr_improvement_db": -6, "min_near_projection_gain_db": -9, "min_noise_only_attenuation_db": 0.1}},
-        "bf": {"processor_profile": "bf-isolated", "mic_channels": 2, "clean_near_audio": "c", "interference_audio": "i", "dimensions": {"mic_spacing_mm": 35.0, "shipping_steering": "fixed-zero-integer-delay", "target_angle_deg": 0.0, "target_tdoa_samples": 0.0, "interferer_tdoa_samples": 1.4, "max_physical_tdoa_samples": PCR02_MAX_TDOA_SAMPLES_16K}, "expected": {"min_near_si_sdr_improvement_db": -1, "min_near_projection_gain_db": -6, "min_interference_projection_attenuation_db": 0.0}},
+        "bf": {"processor_profile": "bf-isolated", "mic_channels": 2, "clean_near_audio": "c", "interference_audio": "i", "dimensions": {"mic_spacing_mm": 35.0, "shipping_steering": BF_STEERING_ID, "interference_attenuation_floor_db": BF_CASE_FLOOR_DB, "target_angle_deg": 0.0, "target_tdoa_samples": 0.0, "interferer_tdoa_samples": 1.4, "max_physical_tdoa_samples": PCR02_MAX_TDOA_SAMPLES_16K}, "expected": {"min_near_si_sdr_improvement_db": -1, "min_near_projection_gain_db": -6, "min_interference_projection_attenuation_db": BF_CASE_FLOOR_DB}},
         "vad": {"processor_profile": "vad-isolated", "vad_labels": "v", "expected": {"min_vad_f1": 0.1, "max_vad_onset_delay_ms": 500, "max_vad_release_delay_ms": 700}},
     }
     for index in range(2):
@@ -197,6 +206,18 @@ def self_test() -> None:
                 case["expected"] = {"max_vad_false_positive_rate": 0.2}
             good["cases"].append(case)
     validate_corpus(good)
+    validate_policy({
+        "allowed_tiers": ["regression"],
+        "aggregate": {
+            "min_pass_rate": 1.0,
+            "min_p10_near_projection_gain_db": -12.0,
+            "min_p10_interference_projection_attenuation_db": BF_P10_FLOOR_DB,
+            "max_p90_erle_convergence_ms": 4000.0,
+            "max_p90_erle_recovery_ms": 3000.0,
+            "max_p90_vad_onset_delay_ms": 700.0,
+            "max_p90_vad_release_delay_ms": 900.0,
+        },
+    })
     broken = json.loads(json.dumps(good))
     del broken["cases"][2]["clean_near_audio"]
     try:
@@ -214,6 +235,15 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("physically impossible PCR02 BF geometry was accepted")
+    moved_floor = json.loads(json.dumps(good))
+    bf = next(case for case in moved_floor["cases"] if case["quality"]["role"] == "bf")
+    bf["expected"]["min_interference_projection_attenuation_db"] = -1.0
+    try:
+        validate_corpus(moved_floor)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("silent BF incumbent floor rewrite was accepted")
     print("audio quality contract self-test: OK")
 
 

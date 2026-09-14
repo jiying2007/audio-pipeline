@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "authority": "non-shipping-acoustic-candidate-qualification-request",
+  "candidate_source_revision": "73ae803047d5e7a6b54cdf58b4a28331ab0c2163",
+  "candidate_id": "4a6a408bf0e3",
+  "tuning": {
+    "aec_mu": 0.24,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20.0,
+    "limiter_dbfs": -2.0
+  },
+  "provenance": {
+    "audio_quality_run_id": 34796251702,
+    "artifact_id": 10329589387,
+    "artifact_archive_sha256": "7d1d4e221fc07b45cb7e92cfb2a6dcae1b88503a6c09b34ee167f9e570479eb0",
+    "iteration_result_sha256": "1f00ec48b1467fd39b13044ced41f1016818c5a24a2894799d83eb5e7082b6f2"
+  },
+  "bindings": {
+    "dataset_lock_sha256": "46b854fc54be3a4c454c4fd17a1f0b582f37f62ca1cd7ae9bc2128d4c96e40dc",
+    "policy_sha256": "d2b56fb7fa826ac0b88859e58a93baeaa09c88d65f7f0661c2246901b83eba15",
+    "search_space_sha256": "0b3006ec7d2fec1bb703f6f756e204a6f6fcf241f7a646557cb1a85c4d876d92"
+  },
+  "release_boundary": {
+    "shipping_release": "v2.3.16",
+    "shipping_release_source": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "shipping_mutation_allowed": false
+  },
+  "rule": "This request freezes one non-shipping candidate source and its fresh-main quality provenance for downstream blind and target/HIL evidence. Qualification infrastructure may advance independently, but must not rewrite this identity, mutate shipping defaults, or substitute for PCR02, long-soak, Product Certification, or release evidence."
+}

@@ -5,41 +5,10 @@ on:
     paths:
       - '.github/workflows/acoustic-candidate-qualification.yml'
       - '.github/program/acoustic_candidate.py'
+      - '.github/program/acoustic_candidate_request.py'
+      - '.github/program/acoustic_candidate_request.json'
   workflow_dispatch:
     inputs:
-      source_sha:
-        description: Exact fresh-main source commit SHA that reproduced the fixed candidate
-        required: true
-        type: string
-      candidate_id:
-        description: Canonical 12-hex tuning candidate ID
-        required: true
-        default: '4a6a408bf0e3'
-        type: string
-      provenance_sha256:
-        description: SHA-256 of the authoritative fresh-main tuning artifact that selected this candidate
-        required: true
-        type: string
-      aec_mu:
-        description: Fixed candidate AEC mu
-        required: true
-        default: '0.24'
-        type: string
-      ns_floor:
-        description: Fixed candidate NS floor
-        required: true
-        default: '0.12'
-        type: string
-      agc_target_dbfs:
-        description: Fixed candidate AGC target dBFS
-        required: true
-        default: '-20.0'
-        type: string
-      limiter_dbfs:
-        description: Fixed candidate limiter dBFS
-        required: true
-        default: '-2.0'
-        type: string
       data_root:
         description: Public dataset cache root on isolated audio-validation runner
         required: true
@@ -78,7 +47,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: acoustic-candidate-qualification-${{ github.event_name }}-${{ inputs.candidate_id || github.ref }}
+  group: acoustic-candidate-qualification-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -86,8 +55,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Candidate identity contract self-test
-        run: python3 .github/program/acoustic_candidate.py --self-test
+      - name: Candidate identity and request contract self-test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/acoustic_candidate.py --self-test
+          python3 .github/program/acoustic_candidate_request.py --self-test
+          python3 .github/program/acoustic_candidate_request.py \
+            --request .github/program/acoustic_candidate_request.json \
+            --output /tmp/acoustic-candidate-request.json
       - name: Enforce canonical non-shipping boundary
         shell: bash
         run: |
@@ -97,15 +73,21 @@ jobs:
           text = Path('.github/workflows/acoustic-candidate-qualification.yml').read_text(encoding='utf-8')
           required = (
               'non-shipping-acoustic-candidate-qualification',
+              'acoustic_candidate_request.json',
               'AP_VALIDATION_HOLDOUT_KEY',
               '--blind-summary-only',
               'source/validation/tools/run_validation.py',
-              'candidate_id',
-              'provenance_sha256',
           )
           missing = [item for item in required if item not in text]
           if missing:
               raise SystemExit(f'candidate qualification contract missing: {missing}')
+          forbidden_inputs = (
+              'inputs.source_sha', 'inputs.candidate_id', 'inputs.provenance_sha256',
+              'inputs.aec_mu', 'inputs.ns_floor', 'inputs.agc_target_dbfs', 'inputs.limiter_dbfs',
+          )
+          present_inputs = [item for item in forbidden_inputs if item in text]
+          if present_inputs:
+              raise SystemExit(f'candidate identity must come only from qualification request: {present_inputs}')
           forbidden = ('git ' + 'push', 'gh ' + 'release', 'git ' + 'tag', 'sed ' + '-i')
           present = [item for item in forbidden if item in text]
           if present:
@@ -118,35 +100,47 @@ jobs:
     needs: contract
     runs-on: ubuntu-latest
     outputs:
-      source_sha: ${{ steps.source.outputs.sha }}
+      source_sha: ${{ steps.request.outputs.source_sha }}
       infra_sha: ${{ steps.infra.outputs.sha }}
+      candidate_id: ${{ steps.request.outputs.candidate_id }}
+      provenance_sha256: ${{ steps.request.outputs.provenance_sha256 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Bind qualification infrastructure revision
+      - name: Bind current-main qualification infrastructure revision
         id: infra
         shell: bash
         run: |
           set -euo pipefail
+          git fetch --no-tags origin main
           sha=$(git rev-parse HEAD)
+          main_sha=$(git rev-parse origin/main)
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          test "$sha" = "$main_sha" || {
+            echo "candidate qualification must dispatch from current main: head=$sha main=$main_sha" >&2
+            exit 1
+          }
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
-      - name: Resolve exact fresh-main candidate source revision
-        id: source
-        env:
-          SOURCE_SHA: ${{ inputs.source_sha }}
+      - name: Resolve frozen qualification request
+        id: request
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'source_sha must be a 40-character commit SHA' >&2; exit 1; }
-          git fetch --no-tags origin "$SOURCE_SHA"
-          git cat-file -e "$SOURCE_SHA^{commit}"
-          git cat-file -e "$SOURCE_SHA:.github/program/acoustic_candidate.py" || {
-            echo 'source revision lacks acoustic candidate identity adapter' >&2
-            exit 1
-          }
-          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
+          python3 .github/program/acoustic_candidate_request.py \
+            --request .github/program/acoustic_candidate_request.json \
+            --env-output /tmp/acoustic-candidate-request.env \
+            --output /tmp/acoustic-candidate-request.json
+          set -a
+          . /tmp/acoustic-candidate-request.env
+          set +a
+          git fetch --no-tags origin "$AP_CANDIDATE_SOURCE_SHA"
+          git cat-file -e "$AP_CANDIDATE_SOURCE_SHA^{commit}"
+          git cat-file -e "$AP_CANDIDATE_SOURCE_SHA:validation/tools/run_validation.py"
+          git cat-file -e "$AP_CANDIDATE_SOURCE_SHA:validation/datasets.lock.json"
+          echo "source_sha=$AP_CANDIDATE_SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "candidate_id=$AP_ACOUSTIC_CANDIDATE_ID" >> "$GITHUB_OUTPUT"
+          echo "provenance_sha256=$AP_CANDIDATE_PROVENANCE_SHA256" >> "$GITHUB_OUTPUT"
 
   qualify-blind:
     if: github.event_name == 'workflow_dispatch'
@@ -178,6 +172,10 @@ jobs:
           mkdir -p candidate-out
           printf '%s\n' '${{ needs.resolve.outputs.source_sha }}' > candidate-out/source-revision.txt
           printf '%s\n' '${{ needs.resolve.outputs.infra_sha }}' > candidate-out/qualification-infra-revision.txt
+          cp infra/.github/program/acoustic_candidate_request.json candidate-out/qualification-request.json
+          python3 infra/.github/program/acoustic_candidate_request.py \
+            --request infra/.github/program/acoustic_candidate_request.json \
+            --output candidate-out/qualification-request-normalized.json
           args=(
             --role audio-validation
             --source-revision '${{ needs.resolve.outputs.source_sha }}'
@@ -215,12 +213,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 infra/.github/program/acoustic_candidate_request.py \
+            --request infra/.github/program/acoustic_candidate_request.json \
+            --env-output /tmp/acoustic-candidate-request.env
+          set -a
+          . /tmp/acoustic-candidate-request.env
+          set +a
+          test "$AP_CANDIDATE_SOURCE_SHA" = '${{ needs.resolve.outputs.source_sha }}'
+          test "$AP_ACOUSTIC_CANDIDATE_ID" = '${{ needs.resolve.outputs.candidate_id }}'
+          test "$AP_CANDIDATE_PROVENANCE_SHA256" = '${{ needs.resolve.outputs.provenance_sha256 }}'
           python3 infra/.github/program/acoustic_candidate.py \
-            --source-revision '${{ needs.resolve.outputs.source_sha }}' \
-            --provenance-sha256 '${{ inputs.provenance_sha256 }}' \
-            --candidate-id '${{ inputs.candidate_id }}' \
-            --aec-mu '${{ inputs.aec_mu }}' --ns-floor '${{ inputs.ns_floor }}' \
-            --agc-target-dbfs '${{ inputs.agc_target_dbfs }}' --limiter-dbfs '${{ inputs.limiter_dbfs }}' \
+            --source-revision "$AP_CANDIDATE_SOURCE_SHA" \
+            --provenance-sha256 "$AP_CANDIDATE_PROVENANCE_SHA256" \
+            --candidate-id "$AP_ACOUSTIC_CANDIDATE_ID" \
+            --aec-mu "$AP_TUNING_AEC_MU" --ns-floor "$AP_TUNING_NS_FLOOR" \
+            --agc-target-dbfs "$AP_TUNING_AGC_TARGET_DBFS" --limiter-dbfs "$AP_TUNING_LIMITER_DBFS" \
             --processor source/build-candidate/ap_process_pcm \
             --wrapper candidate-out/candidate-processor \
             --output candidate-out/candidate-identity.json
@@ -288,11 +295,16 @@ jobs:
           from pathlib import Path
           root = Path('candidate-out')
           identity = json.loads((root/'candidate-identity.json').read_text(encoding='utf-8'))
+          request = json.loads((root/'qualification-request-normalized.json').read_text(encoding='utf-8'))
           visible = json.loads((root/'validation-report.json').read_text(encoding='utf-8'))
           blind = json.loads((root/'blind-report.json').read_text(encoding='utf-8'))
           def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
           if identity['authority'] != 'non-shipping-acoustic-candidate-qualification':
               raise SystemExit('invalid candidate authority')
+          if identity['source_revision'] != request['candidate_source_revision']:
+              raise SystemExit('candidate source/request mismatch')
+          if identity['provenance_sha256'] != request['provenance']['iteration_result_sha256']:
+              raise SystemExit('candidate provenance/request mismatch')
           if visible.get('validation_result') != 'PASS' or blind.get('validation_result') != 'PASS':
               raise SystemExit('fixed candidate did not pass visible+blind validation policies')
           summary = {
@@ -302,6 +314,7 @@ jobs:
               'candidate_id': identity['candidate_id'],
               'source_revision': identity['source_revision'],
               'qualification_infra_revision': (root/'qualification-infra-revision.txt').read_text().strip(),
+              'qualification_request_sha256': sha(root/'qualification-request.json'),
               'processor_sha256': identity['processor_sha256'],
               'provenance_sha256': identity['provenance_sha256'],
               'tuning': identity['tuning'],
@@ -331,7 +344,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: acoustic-candidate-${{ inputs.candidate_id }}-${{ github.run_id }}
+          name: acoustic-candidate-${{ needs.resolve.outputs.candidate_id }}-${{ github.run_id }}
           path: candidate-out/
           if-no-files-found: error
           retention-days: 90

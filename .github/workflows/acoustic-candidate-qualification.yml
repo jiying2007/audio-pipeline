@@ -57,17 +57,14 @@ on:
         default: ''
         type: string
       aec_limit:
-        description: Balanced real AEC cases across single/double-talk scenarios
         required: true
         default: '60'
         type: string
       derived_limit:
-        description: AEC+SLR28 acoustic combinations; each emits NS + BF
         required: true
         default: '20'
         type: string
       dns_limit:
-        description: Verified DNS clean+noise derived NS cases
         required: true
         default: '60'
         type: string
@@ -109,7 +106,7 @@ jobs:
           missing = [item for item in required if item not in text]
           if missing:
               raise SystemExit(f'candidate qualification contract missing: {missing}')
-          forbidden = ('git push', 'gh release', 'git tag', 'sed -i')
+          forbidden = ('git ' + 'push', 'gh ' + 'release', 'git ' + 'tag', 'sed ' + '-i')
           present = [item for item in forbidden if item in text]
           if present:
               raise SystemExit(f'candidate qualification workflow contains shipping mutation primitive: {present}')
@@ -197,8 +194,7 @@ jobs:
           set -euo pipefail
           args=(verify --profile full --root "$DATA_ROOT" --seal "$SEAL")
           if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
-          python3 source/validation/tools/prepare_public_validation.py "${args[@]}" \
-            > candidate-out/dataset-verification.json
+          python3 source/validation/tools/prepare_public_validation.py "${args[@]}" > candidate-out/dataset-verification.json
       - name: Build exact offline candidate processor
         working-directory: source
         shell: bash
@@ -219,10 +215,8 @@ jobs:
             --source-revision '${{ needs.resolve.outputs.source_sha }}' \
             --provenance-sha256 '${{ inputs.provenance_sha256 }}' \
             --candidate-id '${{ inputs.candidate_id }}' \
-            --aec-mu '${{ inputs.aec_mu }}' \
-            --ns-floor '${{ inputs.ns_floor }}' \
-            --agc-target-dbfs '${{ inputs.agc_target_dbfs }}' \
-            --limiter-dbfs '${{ inputs.limiter_dbfs }}' \
+            --aec-mu '${{ inputs.aec_mu }}' --ns-floor '${{ inputs.ns_floor }}' \
+            --agc-target-dbfs '${{ inputs.agc_target_dbfs }}' --limiter-dbfs '${{ inputs.limiter_dbfs }}' \
             --processor source/build-candidate/ap_process_pcm \
             --wrapper candidate-out/candidate-processor \
             --output candidate-out/candidate-identity.json
@@ -288,13 +282,11 @@ jobs:
           python3 - <<'PY'
           import hashlib, json
           from pathlib import Path
-
           root = Path('candidate-out')
           identity = json.loads((root/'candidate-identity.json').read_text(encoding='utf-8'))
           visible = json.loads((root/'validation-report.json').read_text(encoding='utf-8'))
           blind = json.loads((root/'blind-report.json').read_text(encoding='utf-8'))
-          def sha(path):
-              return hashlib.sha256(path.read_bytes()).hexdigest()
+          def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
           if identity['authority'] != 'non-shipping-acoustic-candidate-qualification':
               raise SystemExit('invalid candidate authority')
           if visible.get('validation_result') != 'PASS' or blind.get('validation_result') != 'PASS':
@@ -305,7 +297,7 @@ jobs:
               'decision': 'BLIND_QUALIFIED_NON_SHIPPING',
               'candidate_id': identity['candidate_id'],
               'source_revision': identity['source_revision'],
-              'qualification_infra_revision': Path(root/'qualification-infra-revision.txt').read_text().strip(),
+              'qualification_infra_revision': (root/'qualification-infra-revision.txt').read_text().strip(),
               'processor_sha256': identity['processor_sha256'],
               'provenance_sha256': identity['provenance_sha256'],
               'tuning': identity['tuning'],
@@ -329,8 +321,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p candidate-out
-          find candidate-out -type f ! -name SHA256SUMS -print0 | sort -z | \
-            xargs -0 sha256sum > /tmp/candidate-SHA256SUMS
+          find candidate-out -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > /tmp/candidate-SHA256SUMS
           mv /tmp/candidate-SHA256SUMS candidate-out/SHA256SUMS
       - name: Upload candidate qualification evidence
         if: always()

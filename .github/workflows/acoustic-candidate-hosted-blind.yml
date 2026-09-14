@@ -94,7 +94,14 @@ jobs:
           missing = [item for item in required if item not in text]
           if missing:
               raise SystemExit(f'hosted blind contract missing: {missing}')
-          forbidden = ('workflow_dispatch:', 'repository_dispatch:', 'git ' + 'push', 'gh ' + 'release', 'git ' + 'tag', 'sed ' + '-i')
+          forbidden = (
+              'workflow_' + 'dispatch:',
+              'repository_' + 'dispatch:',
+              'git ' + 'push',
+              'gh ' + 'release',
+              'git ' + 'tag',
+              'sed ' + '-i',
+          )
           present = [item for item in forbidden if item in text]
           if present:
               raise SystemExit(f'hosted blind workflow acquired forbidden control/mutation primitive: {present}')
@@ -209,7 +216,6 @@ jobs:
           print(','.join(case[role]['path'] for case in lock['cases'] for role in ('mic', 'render')))
           PY
           )
-          unset GIT_LFS_SKIP_SMUDGE || true
           git -C /tmp/audio-pipeline-aec-blind lfs pull --include="$include" --exclude=""
       - name: Build hash-bound selected real AEC corpus
         shell: bash

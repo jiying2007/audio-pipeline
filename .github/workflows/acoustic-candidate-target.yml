@@ -5,39 +5,13 @@ on:
     paths:
       - '.github/workflows/acoustic-candidate-target.yml'
       - '.github/program/acoustic_candidate.py'
+      - '.github/program/acoustic_candidate_request.py'
+      - '.github/program/acoustic_candidate_request.json'
       - '.github/program/candidate_pipeline_inject.h'
       - '.github/program/candidate_bench.c'
       - '.github/program/candidate_alsa_runtime_duplex.c'
   workflow_dispatch:
     inputs:
-      source_sha:
-        description: Exact fresh-main source revision that reproduced the candidate and contains the CI adapters
-        required: true
-        type: string
-      candidate_id:
-        required: true
-        default: '4a6a408bf0e3'
-        type: string
-      provenance_sha256:
-        description: SHA-256 of authoritative fresh-main tuning artifact
-        required: true
-        type: string
-      aec_mu:
-        required: true
-        default: '0.24'
-        type: string
-      ns_floor:
-        required: true
-        default: '0.12'
-        type: string
-      agc_target_dbfs:
-        required: true
-        default: '-20.0'
-        type: string
-      limiter_dbfs:
-        required: true
-        default: '-2.0'
-        type: string
       board_manifest:
         description: Absolute audio-target board manifest; blank uses AUDIO_PIPELINE_LAB_BOARD/XDG/HOME default
         required: false
@@ -90,7 +64,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: acoustic-candidate-target-${{ github.event_name }}-${{ inputs.candidate_id || github.ref }}
+  group: acoustic-candidate-target-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -100,6 +74,16 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
+      - name: Validate frozen candidate qualification request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/acoustic_candidate.py --self-test
+          python3 .github/program/acoustic_candidate_request.py --self-test
+          python3 .github/program/acoustic_candidate_request.py \
+            --request .github/program/acoustic_candidate_request.json \
+            --env-output /tmp/acoustic-candidate-request.env \
+            --output /tmp/acoustic-candidate-request.json
       - name: Build release-neutral candidate benchmark shim
         shell: bash
         run: |
@@ -111,60 +95,96 @@ jobs:
             -Iinclude -Ibuild/candidate-contract/generated \
             .github/program/candidate_bench.c build/candidate-contract/libaudio_pipeline.a -lm \
             -o build/candidate-contract/ap_candidate_bench
-      - name: Prove default-equivalent and fixed-candidate shim paths
+      - name: Prove default-equivalent and frozen-candidate shim paths
         shell: bash
         run: |
           set -euo pipefail
           ./build/candidate-contract/ap_candidate_bench 1 0 0 active 16000 2 > /tmp/default-bench.txt
-          AP_TUNING_AEC_MU=0.24 \
-          AP_TUNING_NS_FLOOR=0.12 \
-          AP_TUNING_AGC_TARGET_DBFS=-20.0 \
-          AP_TUNING_LIMITER_DBFS=-2.0 \
-            ./build/candidate-contract/ap_candidate_bench 1 0 0 active 16000 2 > /tmp/candidate-bench.txt
+          set -a
+          . /tmp/acoustic-candidate-request.env
+          set +a
+          ./build/candidate-contract/ap_candidate_bench 1 0 0 active 16000 2 > /tmp/candidate-bench.txt
           grep -q 'sample_rate_hz=16000' /tmp/default-bench.txt
           grep -q 'sample_rate_hz=16000' /tmp/candidate-bench.txt
           if AP_TUNING_AEC_MU=not-a-number ./build/candidate-contract/ap_candidate_bench 1 0 0 active 16000 2 >/dev/null 2>&1; then
             echo 'invalid candidate tuning unexpectedly accepted' >&2
             exit 1
           fi
-      - name: Candidate identity adapter self-test
-        run: python3 .github/program/acoustic_candidate.py --self-test
-      - name: Enforce CI-only injection boundary
+      - name: Enforce CI-only injection and request boundary
         shell: bash
         run: |
           set -euo pipefail
           git diff --exit-code origin/main -- bench/bench_pipeline.c examples/alsa_runtime_duplex.c
           grep -q '../../bench/bench_pipeline.c' .github/program/candidate_bench.c
           grep -q '../../examples/alsa_runtime_duplex.c' .github/program/candidate_alsa_runtime_duplex.c
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/acoustic-candidate-target.yml').read_text(encoding='utf-8')
+          forbidden_inputs = (
+              'inputs.source_sha', 'inputs.candidate_id', 'inputs.provenance_sha256',
+              'inputs.aec_mu', 'inputs.ns_floor', 'inputs.agc_target_dbfs', 'inputs.limiter_dbfs',
+          )
+          present = [item for item in forbidden_inputs if item in text]
+          if present:
+              raise SystemExit(f'candidate identity must come only from qualification request: {present}')
+          print('candidate target request boundary: OK')
+          PY
 
   resolve:
     if: github.event_name == 'workflow_dispatch'
     needs: contract
     runs-on: ubuntu-latest
     outputs:
-      source_sha: ${{ steps.source.outputs.sha }}
+      source_sha: ${{ steps.request.outputs.source_sha }}
+      infra_sha: ${{ steps.infra.outputs.sha }}
+      candidate_id: ${{ steps.request.outputs.candidate_id }}
+      provenance_sha256: ${{ steps.request.outputs.provenance_sha256 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Resolve exact fresh-main candidate source revision
-        id: source
-        env:
-          SOURCE_SHA: ${{ inputs.source_sha }}
+      - name: Bind current-main qualification infrastructure revision
+        id: infra
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'source_sha must be a 40-character commit SHA' >&2; exit 1; }
-          git fetch --no-tags origin "$SOURCE_SHA"
-          git cat-file -e "$SOURCE_SHA^{commit}"
+          git fetch --no-tags origin main
+          sha=$(git rev-parse HEAD)
+          main_sha=$(git rev-parse origin/main)
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          test "$sha" = "$main_sha" || {
+            echo "candidate target qualification must dispatch from current main: head=$sha main=$main_sha" >&2
+            exit 1
+          }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - name: Resolve frozen qualification request
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/acoustic_candidate_request.py \
+            --request .github/program/acoustic_candidate_request.json \
+            --env-output /tmp/acoustic-candidate-request.env \
+            --output /tmp/acoustic-candidate-request.json
+          set -a
+          . /tmp/acoustic-candidate-request.env
+          set +a
+          git fetch --no-tags origin "$AP_CANDIDATE_SOURCE_SHA"
+          git cat-file -e "$AP_CANDIDATE_SOURCE_SHA^{commit}"
           for path in \
-            .github/program/acoustic_candidate.py \
             .github/program/candidate_pipeline_inject.h \
             .github/program/candidate_bench.c \
-            .github/program/candidate_alsa_runtime_duplex.c; do
-            git cat-file -e "$SOURCE_SHA:$path" || { echo "source revision lacks candidate adapter: $path" >&2; exit 1; }
+            .github/program/candidate_alsa_runtime_duplex.c \
+            tools/target_evidence.py \
+            tools/hil_board.py; do
+            git cat-file -e "$AP_CANDIDATE_SOURCE_SHA:$path" || {
+              echo "candidate source revision lacks required target evidence path: $path" >&2
+              exit 1
+            }
           done
-          echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$AP_CANDIDATE_SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "candidate_id=$AP_ACOUSTIC_CANDIDATE_ID" >> "$GITHUB_OUTPUT"
+          echo "provenance_sha256=$AP_CANDIDATE_PROVENANCE_SHA256" >> "$GITHUB_OUTPUT"
 
   target-and-hil:
     if: github.event_name == 'workflow_dispatch'
@@ -172,10 +192,18 @@ jobs:
     runs-on: [self-hosted, linux, audio-target]
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Checkout qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.infra_sha }}
+          fetch-depth: 0
+          path: infra
+      - name: Checkout exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ needs.resolve.outputs.source_sha }}
           fetch-depth: 0
+          path: source
       - name: Resolve board route and preflight isolated target
         id: route
         shell: bash
@@ -185,12 +213,18 @@ jobs:
           INPUT_POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '${{ needs.resolve.outputs.source_sha }}'
+          test "$(git -C source rev-parse HEAD)" = '${{ needs.resolve.outputs.source_sha }}'
+          test "$(git -C infra rev-parse HEAD)" = '${{ needs.resolve.outputs.infra_sha }}'
           board=$INPUT_BOARD
           if [ -z "$board" ]; then board=${AUDIO_PIPELINE_LAB_BOARD:-${XDG_CONFIG_HOME:-$HOME/.config}/audio-pipeline/board.json}; fi
           case "$board" in /*) ;; *) echo "board manifest must be absolute: $board" >&2; exit 1 ;; esac
           mkdir -p /tmp/ap-candidate-evidence
           printf '%s\n' '${{ needs.resolve.outputs.source_sha }}' > /tmp/ap-candidate-evidence/source-revision.txt
+          printf '%s\n' '${{ needs.resolve.outputs.infra_sha }}' > /tmp/ap-candidate-evidence/qualification-infra-revision.txt
+          cp infra/.github/program/acoustic_candidate_request.json /tmp/ap-candidate-evidence/qualification-request.json
+          python3 infra/.github/program/acoustic_candidate_request.py \
+            --request infra/.github/program/acoustic_candidate_request.json \
+            --output /tmp/ap-candidate-evidence/qualification-request-normalized.json
           printf 'board=%s\n' "$board" >> "$GITHUB_OUTPUT"
           args=(
             --role audio-target --source-revision '${{ needs.resolve.outputs.source_sha }}'
@@ -199,12 +233,14 @@ jobs:
           )
           if [ -n "$INPUT_FAREND" ]; then args+=(--farend-file "$INPUT_FAREND"); fi
           if [ -n "$INPUT_POWER" ]; then args+=(--power-input "$INPUT_POWER"); fi
-          python3 tools/runner_preflight.py "${args[@]}"
-          python3 tools/hil_board.py preflight --board "$board" \
+          python3 source/tools/runner_preflight.py "${args[@]}"
+          python3 source/tools/hil_board.py preflight --board "$board" \
             --output /tmp/ap-candidate-evidence/board-preflight.json --settle-seconds 120
           cp "$board" /tmp/ap-candidate-evidence/board.json
-          test -z "$(git status --porcelain=v1)"
+          test -z "$(git -C source status --porcelain=v1)"
+          test -z "$(git -C infra status --porcelain=v1)"
       - name: Build exact candidate evidence binaries without changing SDK sources
+        working-directory: source
         shell: bash
         run: |
           set -euo pipefail
@@ -233,32 +269,39 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/program/acoustic_candidate.py \
-            --source-revision '${{ needs.resolve.outputs.source_sha }}' \
-            --provenance-sha256 '${{ inputs.provenance_sha256 }}' \
-            --candidate-id '${{ inputs.candidate_id }}' \
-            --aec-mu '${{ inputs.aec_mu }}' --ns-floor '${{ inputs.ns_floor }}' \
-            --agc-target-dbfs '${{ inputs.agc_target_dbfs }}' --limiter-dbfs '${{ inputs.limiter_dbfs }}' \
-            --processor build/candidate-target/ap_process_pcm \
+          python3 infra/.github/program/acoustic_candidate_request.py \
+            --request infra/.github/program/acoustic_candidate_request.json \
+            --env-output /tmp/ap-candidate-evidence/request.env
+          set -a
+          . /tmp/ap-candidate-evidence/request.env
+          set +a
+          test "$AP_CANDIDATE_SOURCE_SHA" = '${{ needs.resolve.outputs.source_sha }}'
+          test "$AP_ACOUSTIC_CANDIDATE_ID" = '${{ needs.resolve.outputs.candidate_id }}'
+          test "$AP_CANDIDATE_PROVENANCE_SHA256" = '${{ needs.resolve.outputs.provenance_sha256 }}'
+          python3 infra/.github/program/acoustic_candidate.py \
+            --source-revision "$AP_CANDIDATE_SOURCE_SHA" \
+            --provenance-sha256 "$AP_CANDIDATE_PROVENANCE_SHA256" \
+            --candidate-id "$AP_ACOUSTIC_CANDIDATE_ID" \
+            --aec-mu "$AP_TUNING_AEC_MU" --ns-floor "$AP_TUNING_NS_FLOOR" \
+            --agc-target-dbfs "$AP_TUNING_AGC_TARGET_DBFS" --limiter-dbfs "$AP_TUNING_LIMITER_DBFS" \
+            --processor source/build/candidate-target/ap_process_pcm \
             --wrapper /tmp/ap-candidate-evidence/candidate-processor \
             --env-output /tmp/ap-candidate-evidence/candidate.env \
             --output /tmp/ap-candidate-evidence/candidate-identity.json
           set -a
           . /tmp/ap-candidate-evidence/candidate.env
           set +a
-          test "$AP_ACOUSTIC_CANDIDATE_ID" = '${{ inputs.candidate_id }}'
+          test "$AP_ACOUSTIC_CANDIDATE_ID" = '${{ needs.resolve.outputs.candidate_id }}'
           env | grep '^AP_TUNING_' | sort > /tmp/ap-candidate-evidence/applied-tuning.env
       - name: Collect same-candidate CPU RSS latency evidence
         shell: bash
-        env:
-          AP_TUNING_AEC_MU: ${{ inputs.aec_mu }}
-          AP_TUNING_NS_FLOOR: ${{ inputs.ns_floor }}
-          AP_TUNING_AGC_TARGET_DBFS: ${{ inputs.agc_target_dbfs }}
-          AP_TUNING_LIMITER_DBFS: ${{ inputs.limiter_dbfs }}
         run: |
           set -euo pipefail
+          set -a
+          . /tmp/ap-candidate-evidence/candidate.env
+          set +a
           args=(
-            benchmark --binary build/candidate-target/ap_candidate_bench
+            benchmark --binary source/build/candidate-target/ap_candidate_bench
             --output /tmp/ap-candidate-evidence/target-benchmark.json
             --seconds 120 --idle-seconds 30 --max-rtf 0.40 --max-p99-us 9000
             --dsp-cpu '${{ inputs.dsp_cpu }}' --sample-rate '${{ inputs.sample_rate }}'
@@ -266,18 +309,16 @@ jobs:
             --power-scale '${{ inputs.power_scale }}'
           )
           if [ -n '${{ inputs.power_input }}' ]; then args+=(--power-input '${{ inputs.power_input }}'); fi
-          python3 tools/target_evidence.py "${args[@]}"
+          python3 source/tools/target_evidence.py "${args[@]}"
       - name: Execute same-candidate accelerated HIL route soak
         shell: bash
-        env:
-          AP_TUNING_AEC_MU: ${{ inputs.aec_mu }}
-          AP_TUNING_NS_FLOOR: ${{ inputs.ns_floor }}
-          AP_TUNING_AGC_TARGET_DBFS: ${{ inputs.agc_target_dbfs }}
-          AP_TUNING_LIMITER_DBFS: ${{ inputs.limiter_dbfs }}
         run: |
           set -euo pipefail
+          set -a
+          . /tmp/ap-candidate-evidence/candidate.env
+          set +a
           args=(
-            route-soak --binary build/candidate-target/ap_candidate_alsa_runtime_duplex
+            route-soak --binary source/build/candidate-target/ap_candidate_alsa_runtime_duplex
             --output /tmp/ap-candidate-evidence/hil-soak.json
             --capture-device '${{ inputs.capture_device }}' --seconds 600
             --dsp-cpu '${{ inputs.dsp_cpu }}' --sample-rate '${{ inputs.sample_rate }}'
@@ -287,7 +328,7 @@ jobs:
           if [ '${{ inputs.playback_device }}' != none ]; then args+=(--playback-device '${{ inputs.playback_device }}'); fi
           if [ -n '${{ inputs.farend_file }}' ]; then args+=(--farend '${{ inputs.farend_file }}'); fi
           if [ -n '${{ inputs.power_input }}' ]; then args+=(--power-input '${{ inputs.power_input }}'); fi
-          python3 tools/target_evidence.py "${args[@]}"
+          python3 source/tools/target_evidence.py "${args[@]}"
       - name: Classify non-shipping target qualification
         shell: bash
         run: |
@@ -297,11 +338,16 @@ jobs:
           from pathlib import Path
           root = Path('/tmp/ap-candidate-evidence')
           identity = json.loads((root/'candidate-identity.json').read_text())
+          request = json.loads((root/'qualification-request-normalized.json').read_text())
           benchmark = json.loads((root/'target-benchmark.json').read_text())
           soak = json.loads((root/'hil-soak.json').read_text())
           def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
           if identity['authority'] != 'non-shipping-acoustic-candidate-qualification':
               raise SystemExit('candidate identity authority mismatch')
+          if identity['source_revision'] != request['candidate_source_revision']:
+              raise SystemExit('candidate source/request mismatch')
+          if identity['provenance_sha256'] != request['provenance']['iteration_result_sha256']:
+              raise SystemExit('candidate provenance/request mismatch')
           if benchmark.get('kind') != 'target-benchmark' or not soak['soak']['passed']:
               raise SystemExit('candidate target/HIL evidence did not pass')
           summary = {
@@ -310,6 +356,8 @@ jobs:
               'decision': 'TARGET_HIL_QUALIFIED_NON_SHIPPING',
               'candidate_id': identity['candidate_id'],
               'source_revision': identity['source_revision'],
+              'qualification_infra_revision': (root/'qualification-infra-revision.txt').read_text().strip(),
+              'qualification_request_sha256': sha(root/'qualification-request.json'),
               'provenance_sha256': identity['provenance_sha256'],
               'tuning': identity['tuning'],
               'target_benchmark_sha256': sha(root/'target-benchmark.json'),
@@ -329,7 +377,7 @@ jobs:
         if: always()
         continue-on-error: true
         run: >-
-          python3 tools/hil_board.py cleanup
+          python3 source/tools/hil_board.py cleanup
           --board '${{ steps.route.outputs.board }}'
           --output /tmp/ap-candidate-evidence/cleanup.json
       - name: Seal target candidate evidence
@@ -344,7 +392,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: acoustic-candidate-target-${{ inputs.candidate_id }}-${{ github.run_id }}
+          name: acoustic-candidate-target-${{ needs.resolve.outputs.candidate_id }}-${{ github.run_id }}
           path: /tmp/ap-candidate-evidence
           if-no-files-found: error
           retention-days: 90

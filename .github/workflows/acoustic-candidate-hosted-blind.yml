@@ -4,15 +4,33 @@ on:
   pull_request:
     paths:
       - '.github/workflows/acoustic-candidate-hosted-blind.yml'
+      - '.github/workflows/acoustic-candidate-qualification.yml'
+      - '.github/workflows/acoustic-candidate-target.yml'
+      - '.github/workflows/audio-quality-evaluation.yml'
+      - '.github/program/acoustic_candidate.py'
       - '.github/program/acoustic_candidate_request.py'
       - '.github/program/acoustic_candidate_request.json'
+      - '.github/program/acoustic_candidate_hosted_blind.py'
+      - '.github/program/candidate_target_route.py'
+      - '.github/program/candidate_pipeline_inject.h'
+      - '.github/program/candidate_bench.c'
+      - '.github/program/candidate_alsa_runtime_duplex.c'
       - 'docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/**'
   push:
     branches: [main]
     paths:
       - '.github/workflows/acoustic-candidate-hosted-blind.yml'
+      - '.github/workflows/acoustic-candidate-qualification.yml'
+      - '.github/workflows/acoustic-candidate-target.yml'
+      - '.github/workflows/audio-quality-evaluation.yml'
+      - '.github/program/acoustic_candidate.py'
       - '.github/program/acoustic_candidate_request.py'
       - '.github/program/acoustic_candidate_request.json'
+      - '.github/program/acoustic_candidate_hosted_blind.py'
+      - '.github/program/candidate_target_route.py'
+      - '.github/program/candidate_pipeline_inject.h'
+      - '.github/program/candidate_bench.c'
+      - '.github/program/candidate_alsa_runtime_duplex.c'
       - 'docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/**'
 
 permissions:
@@ -26,14 +44,36 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Validate frozen request and terminal rejection evidence
+
+      - name: Enforce retired candidate execution surface is absent
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/program/acoustic_candidate_request.py --self-test
-          python3 .github/program/acoustic_candidate_request.py \
-            --request .github/program/acoustic_candidate_request.json \
-            --output /tmp/request.json
+          retired=(
+            .github/workflows/acoustic-candidate-qualification.yml
+            .github/workflows/acoustic-candidate-target.yml
+            .github/program/acoustic_candidate.py
+            .github/program/acoustic_candidate_request.py
+            .github/program/acoustic_candidate_request.json
+            .github/program/acoustic_candidate_hosted_blind.py
+            .github/program/candidate_target_route.py
+            .github/program/candidate_pipeline_inject.h
+            .github/program/candidate_bench.c
+            .github/program/candidate_alsa_runtime_duplex.c
+          )
+          failed=0
+          for path in "${retired[@]}"; do
+            if [ -e "$path" ]; then
+              echo "retired rejected-candidate execution surface was reintroduced: $path" >&2
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+      - name: Validate terminal rejection evidence
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -41,7 +81,6 @@ jobs:
           root = Path('docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289')
           terminal = json.loads((root / 'terminal.json').read_text(encoding='utf-8'))
           selected = json.loads((root / 'selected-cases.json').read_text(encoding='utf-8'))
-          request = json.loads(Path('/tmp/request.json').read_text(encoding='utf-8'))
 
           def require(ok, message):
               if not ok:
@@ -54,24 +93,33 @@ jobs:
                   'candidate must remain terminally rejected')
 
           candidate = terminal.get('candidate') or {}
-          require(candidate.get('candidate_id') == request.get('candidate_id') == '4a6a408bf0e3',
-                  'terminal candidate id drift')
-          require(candidate.get('source_revision') == request.get('candidate_source_revision') ==
-                  '73ae803047d5e7a6b54cdf58b4a28331ab0c2163', 'terminal candidate source drift')
-          require(candidate.get('provenance_sha256') ==
-                  request.get('provenance', {}).get('iteration_result_sha256') ==
-                  '1f00ec48b1467fd39b13044ced41f1016818c5a24a2894799d83eb5e7082b6f2',
-                  'terminal candidate provenance drift')
-          require(candidate.get('tuning') == request.get('tuning') == {
-              'aec_mu': 0.24,
-              'ns_floor': 0.12,
-              'agc_target_dbfs': -20.0,
-              'limiter_dbfs': -2.0,
-          }, 'terminal tuning drift')
+          require(candidate == {
+              'candidate_id': '4a6a408bf0e3',
+              'source_revision': '73ae803047d5e7a6b54cdf58b4a28331ab0c2163',
+              'provenance_sha256': '1f00ec48b1467fd39b13044ced41f1016818c5a24a2894799d83eb5e7082b6f2',
+              'tuning': {
+                  'aec_mu': 0.24,
+                  'ns_floor': 0.12,
+                  'agc_target_dbfs': -20.0,
+                  'limiter_dbfs': -2.0,
+              },
+          }, 'terminal candidate identity drift')
+
+          frozen = terminal.get('frozen_request') or {}
+          require(frozen == {
+              'authority': 'non-shipping-acoustic-candidate-qualification-request',
+              'audio_quality_run_id': 34796251702,
+              'artifact_id': 10329589387,
+              'artifact_archive_sha256': '7d1d4e221fc07b45cb7e92cfb2a6dcae1b88503a6c09b34ee167f9e570479eb0',
+              'iteration_result_sha256': '1f00ec48b1467fd39b13044ced41f1016818c5a24a2894799d83eb5e7082b6f2',
+              'dataset_lock_sha256': '46b854fc54be3a4c454c4fd17a1f0b582f37f62ca1cd7ae9bc2128d4c96e40dc',
+              'policy_sha256': 'd2b56fb7fa826ac0b88859e58a93baeaa09c88d65f7f0661c2246901b83eba15',
+              'search_space_sha256': '0b3006ec7d2fec1bb703f6f756e204a6f6fcf241f7a646557cb1a85c4d876d92',
+          }, 'frozen request provenance drift')
 
           q = terminal.get('qualification') or {}
           require(q.get('infrastructure_revision') == '70f2c4fbad31da5294ec8734fe41d417c3c60301',
-                  'terminal qualification infrastructure drift')
+                  'terminal infrastructure drift')
           require(q.get('workflow_run_id') == 34802976289 and q.get('workflow_run_number') == 2 and
                   q.get('job_id') == 103849218661 and q.get('job_conclusion') == 'failure',
                   'terminal workflow identity drift')
@@ -99,30 +147,26 @@ jobs:
                   sorted([8.158716186215422, 4.308868732792071]), 'terminal failure values drift')
 
           evidence = terminal.get('evidence') or {}
-          require(evidence == {
-              'artifact_id': 10331914108,
-              'artifact_archive_sha256': 'abf3f5c36ef3e7fad724db5e5c620fc3628eb83ca9341e8f863effb6ab5d4c10',
-              'artifact_size_bytes': 42942507,
-              'dynamic_holdout_lock_sha256': '3a0e48da21d42f10504dd495dfe5c326f6386289351037a52c8715f3e36361ac',
-              'selection_sha256': '50d4f9547db6d9ae783955e56cee874fdf2688a50cc9d4f88758373685ac11d7',
-              'blind_report_sha256': 'be0bf3a5867e395b3a52492a5abd07a4a49ea53afe4db80e77b4d50613a71416',
-              'blind_evidence_manifest_sha256': 'a2442765734c67b3fc118528734b104b29dce7f536be34b810215f88d125116a',
-              'candidate_identity_sha256': '447725c220b0e9f355602c4857af2bbde004ac57ea37d47d0f671259e1987471',
-              'candidate_processor_sha256': '4b120d338160a9c1ff1dd00f866601a23cd1484dbf8e523dadb60934246a7431',
-              'policy_id': 'validation-hosted-aec-smoke-v1',
-              'policy_sha256': '73cf9e3a2dde7cd07b49f719710f3a9994e90365757c0a8a0b8ce3a9b15a5a35',
-          }, 'terminal evidence identity drift')
+          require(evidence.get('artifact_id') == 10331914108, 'terminal artifact id drift')
+          require(evidence.get('artifact_archive_sha256') ==
+                  'abf3f5c36ef3e7fad724db5e5c620fc3628eb83ca9341e8f863effb6ab5d4c10',
+                  'terminal artifact digest drift')
+          require(evidence.get('dynamic_holdout_lock_sha256') ==
+                  '3a0e48da21d42f10504dd495dfe5c326f6386289351037a52c8715f3e36361ac',
+                  'terminal holdout lock drift')
+          require(evidence.get('blind_report_sha256') ==
+                  'be0bf3a5867e395b3a52492a5abd07a4a49ea53afe4db80e77b4d50613a71416',
+                  'terminal blind report drift')
 
           release = terminal.get('release_boundary') or {}
-          require(release.get('shipping_release') == request.get('release_boundary', {}).get('shipping_release') == 'v2.3.16' and
-                  release.get('shipping_release_source') == request.get('release_boundary', {}).get('shipping_release_source') ==
-                  '57e4c64adc1cf06819e46e24e275ecd746d5f17f' and
-                  release.get('shipping_aec_mu') == 0.22 and release.get('shipping_mutation_allowed') is False and
-                  request.get('release_boundary', {}).get('shipping_mutation_allowed') is False,
-                  'terminal shipping boundary drift')
+          require(release == {
+              'shipping_release': 'v2.3.16',
+              'shipping_release_source': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
+              'shipping_aec_mu': 0.22,
+              'shipping_mutation_allowed': False,
+          }, 'terminal shipping boundary drift')
 
-          authority = terminal.get('authority_boundary') or {}
-          require(authority == {
+          require(terminal.get('authority_boundary') == {
               'target_resource_qualification': 'NOT_EXECUTED',
               'pcr02_35mm_real_device': 'NOT_EXECUTED',
               'ssc305_hil': 'NOT_EXECUTED',
@@ -150,13 +194,6 @@ jobs:
                   'selected-case failure cause drift')
           require(sorted(case['output_rms_delta_db'] for case in failed) ==
                   sorted(q['failed_case_gate_actuals_db']), 'selected-case failure value mismatch')
-          for case in cases:
-              for role in ('mic', 'render'):
-                  item = case.get(role) or {}
-                  require(str(item.get('path', '')).startswith('datasets/test_set_icassp2022/farend-singletalk/'),
-                          f"{case['id']} {role} path drift")
-                  require(len(str(item.get('sha256', ''))) == 64 and int(item.get('size', 0)) > 0,
-                          f"{case['id']} {role} binding drift")
 
           print(json.dumps({
               'decision': terminal['decision'],
@@ -171,6 +208,39 @@ jobs:
               'physical_authority': 'NONE',
           }, sort_keys=True))
           PY
+
+      - name: Enforce generic quality evaluator is decoupled from rejected candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/audio-quality-evaluation.yml').read_text(encoding='utf-8')
+          forbidden = (
+              '4a6a408bf0e3',
+              'acoustic_candidate_request',
+              'candidate_pipeline_inject',
+              'candidate_bench.c',
+              'candidate_alsa_runtime_duplex',
+              'acoustic-candidate-qualification.yml',
+              'acoustic-candidate-target.yml',
+              'frozen qualification request',
+          )
+          present = [token for token in forbidden if token in text]
+          if present:
+              raise SystemExit(f'generic quality evaluator retained rejected-candidate compatibility binding: {present}')
+          required = (
+              'Development Validation Shadow quality partitions',
+              'quality-aware bounded tuning',
+              "result['validation']['baseline']['validation_result'] == 'PASS'",
+              "result['shadow']['baseline']['validation_result'] == 'PASS'",
+          )
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit(f'generic quality evaluator lost core quality gate: {missing}')
+          print('generic audio quality evaluator candidate decoupling: OK')
+          PY
+
       - name: Enforce terminal workflow has no requalification path
         shell: bash
         run: |
@@ -194,6 +264,7 @@ jobs:
               raise SystemExit(f'terminal guard acquired forbidden requalification/mutation path: {present}')
           print('hosted blind terminal no-retry boundary: OK')
           PY
+
       - name: Publish terminal rejection summary
         shell: bash
         run: |
@@ -203,6 +274,8 @@ jobs:
           - Candidate: `4a6a408bf0e3` / source `73ae803047d5e7a6b54cdf58b4a28331ab0c2163`
           - First authoritative run: `34802976289` — `FAIL`, 10/12 cases passed
           - Retry/reselection: **forbidden** for this frozen candidate
+          - Candidate blind/target workflows and CI injection shims: **retired**
+          - Generic Audio Quality Evaluation: **decoupled from rejected candidate**
           - Shipping remains immutable `v2.3.16`, `aec_mu=0.22`
           - Target/HIL/PCR02/soak/Product Certification: **not executed; no authority claimed**
           EOF

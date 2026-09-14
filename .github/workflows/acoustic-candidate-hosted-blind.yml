@@ -1,0 +1,358 @@
+name: Acoustic Candidate Hosted Blind Qualification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/acoustic-candidate-hosted-blind.yml'
+      - '.github/program/acoustic_candidate_hosted_blind.py'
+      - '.github/program/acoustic_candidate.py'
+      - '.github/program/acoustic_candidate_request.py'
+      - '.github/program/acoustic_candidate_request.json'
+      - 'validation/tools/build_hosted_aec_corpus.py'
+      - 'validation/tools/run_validation.py'
+      - 'validation/hosted_aec.datasets.lock.json'
+      - 'validation/policies/validation-hosted-aec-smoke.json'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/acoustic-candidate-hosted-blind.yml'
+      - '.github/program/acoustic_candidate_hosted_blind.py'
+      - '.github/program/acoustic_candidate.py'
+      - '.github/program/acoustic_candidate_request.py'
+      - '.github/program/acoustic_candidate_request.json'
+      - 'validation/tools/build_hosted_aec_corpus.py'
+      - 'validation/tools/run_validation.py'
+      - 'validation/hosted_aec.datasets.lock.json'
+      - 'validation/policies/validation-hosted-aec-smoke.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acoustic-candidate-hosted-blind-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Self-test fail-closed hosted blind contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/acoustic_candidate.py --self-test
+          python3 .github/program/acoustic_candidate_request.py --self-test
+          python3 .github/program/acoustic_candidate_hosted_blind.py --self-test
+          python3 validation/tools/build_hosted_aec_corpus.py self-test
+          python3 validation/tools/run_validation.py --self-test
+      - name: Prove frozen candidate search never consumed Microsoft hosted AEC data
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/acoustic_candidate_request.py \
+            --request .github/program/acoustic_candidate_request.json \
+            --env-output /tmp/candidate-request.env \
+            --output /tmp/candidate-request.json
+          set -a
+          . /tmp/candidate-request.env
+          set +a
+          git cat-file -e "$AP_CANDIDATE_SOURCE_SHA^{commit}"
+          frozen=$(git show "$AP_CANDIDATE_SOURCE_SHA:.github/workflows/acoustic-tuning-iteration.yml")
+          grep -q -- '--seed 1307' <<<"$frozen"
+          grep -q -- '--seed 2307' <<<"$frozen"
+          grep -q -- '--seed 3307' <<<"$frozen"
+          if grep -Eqi 'AEC-Challenge|hosted[_-]aec|microsoft/AEC' <<<"$frozen"; then
+            echo 'frozen candidate search unexpectedly references hosted Microsoft AEC data' >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          request = json.load(open('/tmp/candidate-request.json'))
+          assert request['candidate_source_revision'] == '73ae803047d5e7a6b54cdf58b4a28331ab0c2163'
+          assert request['candidate_id'] == '4a6a408bf0e3'
+          assert request['release_boundary']['shipping_mutation_allowed'] is False
+          PY
+      - name: Enforce one-way workflow authority boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/acoustic-candidate-hosted-blind.yml').read_text()
+          required = (
+              "github.event_name == 'push'",
+              'github.run_id',
+              '73ae803047d5e7a6b54cdf58b4a28331ab0c2163',
+              'HOSTED_BLIND_QUALIFIED_NON_SHIPPING',
+              '--blind-summary-only',
+              'validation/hosted_aec.datasets.lock.json',
+          )
+          missing = [item for item in required if item not in text]
+          if missing:
+              raise SystemExit(f'hosted blind contract missing: {missing}')
+          forbidden = ('workflow_dispatch:', 'repository_dispatch:', 'git ' + 'push', 'gh ' + 'release', 'git ' + 'tag', 'sed ' + '-i')
+          present = [item for item in forbidden if item in text]
+          if present:
+              raise SystemExit(f'hosted blind workflow acquired forbidden control/mutation primitive: {present}')
+          print('hosted blind qualification authority boundary: OK')
+          PY
+
+  qualify:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      AEC_REVISION: 6c633d0a9d2a143a0e364899b91b06f127315b18
+    steps:
+      - name: Checkout qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: acoustic-hosted-blind
+      - name: Resolve immutable candidate and prove current-main control plane
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          python3 .github/program/acoustic_candidate_request.py \
+            --request .github/program/acoustic_candidate_request.json \
+            --env-output /tmp/candidate-request.env \
+            --output hosted-blind-request.json
+          set -a
+          . /tmp/candidate-request.env
+          set +a
+          test "$AP_CANDIDATE_SOURCE_SHA" = 73ae803047d5e7a6b54cdf58b4a28331ab0c2163
+          test "$AP_ACOUSTIC_CANDIDATE_ID" = 4a6a408bf0e3
+          [[ "$GITHUB_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          printf '%s\n' "$GITHUB_SHA" > qualification-infra-revision.txt
+          printf '%s\n' "$GITHUB_RUN_ID" > selection-nonce.txt
+      - name: Checkout exact frozen candidate source and build processor
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -a
+          . /tmp/candidate-request.env
+          set +a
+          git cat-file -e "$AP_CANDIDATE_SOURCE_SHA^{commit}"
+          rm -rf candidate-source candidate-build
+          git worktree add --detach candidate-source "$AP_CANDIDATE_SOURCE_SHA"
+          test "$(git -C candidate-source rev-parse HEAD)" = "$AP_CANDIDATE_SOURCE_SHA"
+          cmake -S candidate-source -B candidate-build -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$AP_CANDIDATE_SOURCE_SHA"
+          cmake --build candidate-build --target ap_process_pcm ap_build_info_dump --parallel
+          candidate-build/ap_build_info_dump > candidate-build-info.txt
+          sha256sum candidate-build/ap_process_pcm > candidate-processor.sha256
+          test -z "$(git -C candidate-source status --porcelain=v1)"
+      - name: Seal fixed candidate wrapper before holdout selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -a
+          . /tmp/candidate-request.env
+          set +a
+          mkdir -p hosted-blind-out
+          cp hosted-blind-request.json qualification-infra-revision.txt selection-nonce.txt \
+            candidate-build-info.txt candidate-processor.sha256 hosted-blind-out/
+          python3 .github/program/acoustic_candidate.py \
+            --source-revision "$AP_CANDIDATE_SOURCE_SHA" \
+            --provenance-sha256 "$AP_CANDIDATE_PROVENANCE_SHA256" \
+            --candidate-id "$AP_ACOUSTIC_CANDIDATE_ID" \
+            --aec-mu "$AP_TUNING_AEC_MU" --ns-floor "$AP_TUNING_NS_FLOOR" \
+            --agc-target-dbfs "$AP_TUNING_AGC_TARGET_DBFS" --limiter-dbfs "$AP_TUNING_LIMITER_DBFS" \
+            --processor candidate-build/ap_process_pcm \
+            --wrapper hosted-blind-out/candidate-processor \
+            --output hosted-blind-out/candidate-identity.json
+      - name: Clone pinned Microsoft AEC metadata without materializing audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs version
+          rm -rf /tmp/audio-pipeline-aec-blind
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/AEC-Challenge.git /tmp/audio-pipeline-aec-blind
+          git -C /tmp/audio-pipeline-aec-blind -c advice.detachedHead=false checkout --detach "$AEC_REVISION"
+          test "$(git -C /tmp/audio-pipeline-aec-blind rev-parse HEAD)" = "$AEC_REVISION"
+      - name: Select post-freeze externally-nonced holdout from LFS pointers
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -a
+          . /tmp/candidate-request.env
+          set +a
+          python3 .github/program/acoustic_candidate_hosted_blind.py \
+            --source-root /tmp/audio-pipeline-aec-blind \
+            --exclude-lock validation/hosted_aec.datasets.lock.json \
+            --nonce "$GITHUB_RUN_ID" \
+            --candidate-id "$AP_ACOUSTIC_CANDIDATE_ID" \
+            --per-scenario 6 \
+            --output hosted-blind-out/dynamic-holdout-lock.json \
+            --metadata-output hosted-blind-out/selection.json
+          python3 validation/tools/build_hosted_aec_corpus.py validate \
+            --lock hosted-blind-out/dynamic-holdout-lock.json
+      - name: Materialize only the selected holdout objects after selection is sealed
+        shell: bash
+        run: |
+          set -euo pipefail
+          include=$(python3 - <<'PY'
+          import json
+          lock = json.load(open('hosted-blind-out/dynamic-holdout-lock.json'))
+          print(','.join(case[role]['path'] for case in lock['cases'] for role in ('mic', 'render')))
+          PY
+          )
+          unset GIT_LFS_SKIP_SMUDGE || true
+          git -C /tmp/audio-pipeline-aec-blind lfs pull --include="$include" --exclude=""
+      - name: Build hash-bound selected real AEC corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_hosted_aec_corpus.py build \
+            --lock hosted-blind-out/dynamic-holdout-lock.json \
+            --source-root /tmp/audio-pipeline-aec-blind \
+            --output hosted-blind-out/corpus \
+            | tee hosted-blind-out/corpus-build.json
+      - name: Run fixed candidate one-way qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -a
+          . /tmp/candidate-request.env
+          set +a
+          python3 validation/tools/run_validation.py \
+            --source-revision "$AP_CANDIDATE_SOURCE_SHA" \
+            --corpus hosted-blind-out/corpus/corpus.json \
+            --policy validation/policies/validation-hosted-aec-smoke.json \
+            --dataset-lock hosted-blind-out/dynamic-holdout-lock.json \
+            --source-manifest hosted-blind-out/corpus/source-manifest.json \
+            --processor hosted-blind-out/candidate-processor \
+            --output hosted-blind-out/blind-report.json \
+            --evidence-manifest hosted-blind-out/blind-evidence-manifest.json \
+            --blind-summary-only --enforce
+      - name: Classify non-shipping hosted blind qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path('hosted-blind-out')
+          def load(name): return json.loads((root/name).read_text(encoding='utf-8'))
+          def sha(name): return hashlib.sha256((root/name).read_bytes()).hexdigest()
+          request = load('hosted-blind-request.json')
+          identity = load('candidate-identity.json')
+          selection = load('selection.json')
+          lock = load('dynamic-holdout-lock.json')
+          report = load('blind-report.json')
+          if os.environ['GITHUB_EVENT_NAME'] != 'push' or os.environ['GITHUB_REF'] != 'refs/heads/main':
+              raise SystemExit('qualification classification requires fresh main push')
+          if request['candidate_source_revision'] != identity['source_revision']:
+              raise SystemExit('candidate source identity drift')
+          if request['candidate_id'] != identity['candidate_id'] or identity['candidate_id'] != '4a6a408bf0e3':
+              raise SystemExit('candidate id drift')
+          if request['release_boundary']['shipping_mutation_allowed'] is not False:
+              raise SystemExit('qualification request acquired shipping mutation authority')
+          if selection['nonce_source'] != 'github.run_id' or selection['nonce'] != os.environ['GITHUB_RUN_ID']:
+              raise SystemExit('external selection nonce drift')
+          if selection['selected_cases'] != 12 or selection['selected_static'] != 6 or selection['selected_movement'] != 6:
+              raise SystemExit('holdout balance drift')
+          if report.get('validation_result') != 'PASS':
+              raise SystemExit('fixed candidate failed hosted blind policy')
+          if report.get('summary', {}).get('cases') != 12 or report.get('summary', {}).get('pass_rate') != 1.0:
+              raise SystemExit('hosted blind case/pass-rate drift')
+          summary = {
+              'schema_version': 1,
+              'authority': 'non-shipping-post-freeze-public-acoustic-qualification',
+              'decision': 'HOSTED_BLIND_QUALIFIED_NON_SHIPPING',
+              'candidate_id': identity['candidate_id'],
+              'candidate_source_revision': identity['source_revision'],
+              'qualification_infra_revision': os.environ['GITHUB_SHA'],
+              'selection': {
+                  'nonce_source': 'github.run_id',
+                  'run_id': int(os.environ['GITHUB_RUN_ID']),
+                  'secret_hmac': False,
+                  'selected_cases': 12,
+                  'selected_static': 6,
+                  'selected_movement': 6,
+                  'precommitted_hosted_cases_excluded': True,
+                  'selected_after_candidate_freeze': True,
+                  'candidate_search_consumed_this_dataset': False,
+              },
+              'dataset': {
+                  'repository': lock['source_repository'],
+                  'revision': lock['source_revision'],
+                  'dynamic_lock_sha256': sha('dynamic-holdout-lock.json'),
+              },
+              'candidate_identity_sha256': sha('candidate-identity.json'),
+              'blind_report_sha256': sha('blind-report.json'),
+              'validation_result': report['validation_result'],
+              'pass_rate': report['summary']['pass_rate'],
+              'remaining_required': [
+                  'same-candidate target CPU/RSS/latency evidence',
+                  'PCR02 35 mm real-device acoustic evidence',
+                  'same-candidate SSC305 HIL evidence',
+                  'release-policy target soak/stability evidence',
+                  'Product Certification',
+                  'separate reviewed release-bearing shipping change',
+              ],
+              'rule': (
+                  'This closes software/public-data one-way acoustic qualification only. The GitHub run id is '
+                  'post-freeze external selection entropy, not a secret HMAC. No target, HIL, DUT, soak, Product '
+                  'Certification, or shipping authority is granted.'
+              ),
+          }
+          (root/'qualification-summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps({
+              'decision': summary['decision'],
+              'candidate_id': summary['candidate_id'],
+              'cases': summary['selection']['selected_cases'],
+              'dynamic_lock_sha256': summary['dataset']['dynamic_lock_sha256'],
+              'blind_report_sha256': summary['blind_report_sha256'],
+          }, sort_keys=True))
+          PY
+      - name: Seal hosted blind evidence bundle
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d hosted-blind-out ]; then
+            cp validation/policies/validation-hosted-aec-smoke.json hosted-blind-out/
+            cp validation/hosted_aec.datasets.lock.json hosted-blind-out/precommitted-exclusion-lock.json
+            find hosted-blind-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+              xargs -0 sha256sum > /tmp/hosted-blind-SHA256SUMS
+            mv /tmp/hosted-blind-SHA256SUMS hosted-blind-out/SHA256SUMS
+          fi
+      - name: Publish summary without holdout case identities
+        if: always()
+        shell: bash
+        run: |
+          if [ -f hosted-blind-out/qualification-summary.json ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          s = json.load(open('hosted-blind-out/qualification-summary.json'))
+          print('## Post-freeze hosted acoustic qualification')
+          print(f"- Decision: `{s['decision']}`")
+          print(f"- Candidate: `{s['candidate_id']}` at `{s['candidate_source_revision']}`")
+          print(f"- Cases: `{s['selection']['selected_cases']}` balanced static/movement; identities retained in sealed artifact")
+          print(f"- Dynamic holdout lock SHA-256: `{s['dataset']['dynamic_lock_sha256']}`")
+          print(f"- Blind report SHA-256: `{s['blind_report_sha256']}`")
+          print('- Selection: GitHub run-id nonce assigned after candidate freeze; not secret HMAC; no retuning path.')
+          print('- Authority: software/public-data qualification only; target/HIL/DUT/soak/Product Certification/shipping remain mandatory.')
+          PY
+          fi
+      - name: Upload hash-bound hosted blind evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: acoustic-candidate-hosted-blind-${{ github.run_id }}
+          path: hosted-blind-out/
+          retention-days: 90
+          if-no-files-found: error

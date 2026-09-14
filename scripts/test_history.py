@@ -80,11 +80,14 @@ def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samp
     findings = []
     diagnostics = []
     metrics = current["metrics"]
-    sample_counts: dict[str, int] = {}
+    sample_counts = {
+        name: sum(1 for record in history if name in record.get("metrics", {}))
+        for name in metrics
+    }
+    mature = bool(metrics) and all(sample_counts.get(name, 0) >= maturity_samples for name in metrics)
     evaluated_metrics = 0
     for name, value_raw in sorted(metrics.items()):
         samples = [float(r["metrics"][name]) for r in history if name in r.get("metrics", {})]
-        sample_counts[name] = len(samples)
         if len(samples) < min_samples:
             continue
         evaluated_metrics += 1
@@ -93,15 +96,27 @@ def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samp
         pct = 0.0 if abs(median) <= 1.0e-12 else (value - median) / abs(median) * 100.0
         z, z_state = robust_z(value, samples)
         bad_direction = (name in LOWER_IS_BETTER and pct > 0) or (name in HIGHER_IS_BETTER and pct < 0)
-        pct_trigger = bad_direction and abs(pct) > pct_limit
+        raw_pct_trigger = bad_direction and abs(pct) > pct_limit
         z_trigger = bad_direction and z is not None and abs(z) > z_limit
-        if z_state == "zero_mad":
+
+        # Before the historical baseline is mature, a finite robust-z estimate
+        # is the authoritative regression signal. A percentage-only excursion
+        # on a young hosted-runner history is retained as diagnostic evidence
+        # so ordinary runner/image variance can enter the success-only baseline
+        # instead of deadlocking Nightly. Once mature, either gate is strict.
+        # Zero-MAD histories keep the percentage gate fail-closed because there
+        # is no dispersion estimate to corroborate or dismiss the step.
+        pct_trigger = raw_pct_trigger and (
+            mature or z_state == "zero_mad" or z_trigger
+        )
+
+        if z_state == "zero_mad" or (raw_pct_trigger and not pct_trigger and not z_trigger):
             diagnostics.append({
                 "metric": name,
                 "current": value,
                 "median": median,
                 "delta_pct": pct,
-                "robust_z": None,
+                "robust_z": z,
                 "robust_z_state": z_state,
                 "samples": len(samples),
             })
@@ -121,7 +136,6 @@ def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samp
                 "triggers": triggers,
                 "samples": len(samples),
             })
-    mature = bool(metrics) and all(sample_counts.get(name, 0) >= maturity_samples for name in metrics)
     return {
         "schema_version": 3,
         "source_revision": current.get("source_revision"),
@@ -148,6 +162,25 @@ def self_test() -> None:
     assert failed["findings"][0]["triggers"] == ["pct_limit", "robust_z_limit"]
     current["metrics"]["active_p99_us"] = 103.0
     assert evaluate(current, history, 5, 30, 4.0, 15.0)["result"] == "PASS"
+
+    # A young history with real dispersion must not fail on percentage alone.
+    # Hosted-runner/image variance is kept as diagnostics until the baseline is
+    # mature; a robust-z excursion remains authoritative during warm-up.
+    broad_history = [{"metrics": {"active_p99_us": x}} for x in (80, 90, 100, 110, 120, 130)]
+    current["metrics"]["active_p99_us"] = 125.0
+    warming_pct_only = evaluate(current, broad_history, 5, 30, 4.0, 15.0)
+    assert warming_pct_only["result"] == "PASS"
+    assert warming_pct_only["maturity_status"] == "WARMING_UP"
+    assert warming_pct_only["findings"] == []
+    assert warming_pct_only["diagnostics"][0]["robust_z_state"] == "finite"
+
+    # Once mature, the existing percentage envelope becomes independently
+    # authoritative again even when robust-z stays below its limit.
+    broad_mature_history = broad_history * 5
+    mature_pct_only = evaluate(current, broad_mature_history, 5, 30, 4.0, 15.0)
+    assert mature_pct_only["result"] == "FAIL"
+    assert mature_pct_only["maturity_status"] == "MATURE"
+    assert mature_pct_only["findings"][0]["triggers"] == ["pct_limit"]
 
     # With no historical dispersion, a small deterministic step is diagnostic
     # evidence but cannot manufacture an infinite z-score regression.

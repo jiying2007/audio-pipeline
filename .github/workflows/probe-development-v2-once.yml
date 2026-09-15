@@ -22,15 +22,24 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Validate development-v2 contracts
+      - name: Compile development-v2 tools
         run: |
           set -euo pipefail
           command -v ffmpeg >/dev/null
           python3 -m py_compile \
             .github/research/continuous-optimization/development-v2/prepare.py \
             .github/research/continuous-optimization/development-v2/build_corpus.py
+      - name: Self-test development materializer
+        run: |
+          set -euo pipefail
           python3 .github/research/continuous-optimization/development-v2/prepare.py --self-test
+      - name: Self-test development corpus builder
+        run: |
+          set -euo pipefail
           python3 .github/research/continuous-optimization/development-v2/build_corpus.py --self-test
+      - name: Validate development policy and search contract
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
           import json
           from pathlib import Path

@@ -72,6 +72,28 @@ def mix_snr(target: list[int], noise: list[int], snr_db: float, offset: int) -> 
     return mixed, gain
 
 
+def reverberate(clean: list[int], rir: list[int]) -> list[int]:
+    if not clean or not rir:
+        raise ValueError("reverberation requires non-empty clean audio and RIR")
+    peak = max(abs(x) for x in rir)
+    if peak <= 0:
+        raise ValueError("RIR peak must be non-zero")
+    onset_threshold = peak * 0.05
+    onset = next((i for i, value in enumerate(rir) if abs(value) >= onset_threshold), None)
+    if onset is None:
+        raise ValueError("RIR onset not found")
+    rendered = convolve_short(clean, rir[onset:], taps=96)
+    rendered_rms = rms(rendered)
+    clean_rms = rms(clean)
+    if rendered_rms <= 1.0 or clean_rms <= 1.0:
+        raise ValueError("reverberated or clean signal is effectively silent")
+    gain = min(4.0, clean_rms / rendered_rms)
+    normalized = [clamp16(value * gain) for value in rendered]
+    if rms(normalized) <= 1.0:
+        raise ValueError("normalized reverberated signal is effectively silent")
+    return normalized
+
+
 def zeros_labels(samples: list[int]) -> list[int]:
     frame = RATE // 100
     return [0] * (len(samples) // frame)
@@ -167,7 +189,7 @@ def build(lock_path: Path, materialization_path: Path, data_root: Path, output: 
         target = clean
         if use_reverb:
             rir, rir_path = rir_cache[(index * 5 + seed) % len(rir_cache)]
-            target = convolve_short(clean, rir, taps=32)
+            target = reverberate(clean, rir)
         noise, noise_path, domain = noise_cache[(index * 7 + seed) % len(noise_cache)]
         snr_db = snrs[(index + seed) % len(snrs)]
         offset = (seed * 997 + index * 7919) % len(noise)
@@ -224,14 +246,13 @@ def build(lock_path: Path, materialization_path: Path, data_root: Path, output: 
         case_dir = output / "cases" / case_id
         case_dir.mkdir(parents=True, exist_ok=True)
         write_pcm(case_dir / "mic.pcm", clean)
-        write_pcm(case_dir / "clean.pcm", clean)
         write_labels(case_dir / "vad.labels", frame_labels(clean, RATE))
         cases.append({
             "case_id": case_id, "split": "dev", "scenario": "research-public-clean-preservation",
             "sample_rate_hz": RATE, "mic_channels": 1,
             "mic_audio": str((case_dir / "mic.pcm").relative_to(output)),
             "render_audio": None,
-            "clean_near_audio": str((case_dir / "clean.pcm").relative_to(output)),
+            "clean_near_audio": None,
             "echo_audio": None,
             "vad_labels": str((case_dir / "vad.labels").relative_to(output)),
             "control": {}, "processor_profile": "ns-isolated", "expected": {},
@@ -246,7 +267,7 @@ def build(lock_path: Path, materialization_path: Path, data_root: Path, output: 
         "schema_version": 1,
         "corpus_id": f"public-development-diverse-v2-seed-{seed}",
         "tier": "research-validation",
-        "generator": {"name": "development-v2/build_corpus.py", "version": 1, "seed": seed},
+        "generator": {"name": "development-v2/build_corpus.py", "version": 2, "seed": seed},
         "sources": SOURCES,
         "sealed_data": True,
         "dataset_lock_sha256": sha256_file(lock_path),
@@ -263,6 +284,9 @@ def self_test() -> None:
     mixed, gain = mix_snr([1000] * 320, [100] * 320, 0.0, 0)
     assert len(mixed) == 320 and gain > 0
     assert zeros_labels([0] * 320) == [0, 0]
+    delayed_rir = [0] * 40 + [10000, 5000, 2500] + [0] * 16
+    reverbed = reverberate([1000, -1000] * 320, delayed_rir)
+    assert len(reverbed) == 640 and rms(reverbed) > 100.0
     print("research development corpus self-test: OK")
 
 

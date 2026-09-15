@@ -13,6 +13,7 @@ permissions:
 jobs:
   full-cache:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout qualification infrastructure
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5

@@ -90,11 +90,12 @@ jobs:
           path = Path('.github/workflows/research-candidate-blind-qualification.yml')
           text = path.read_text(encoding='utf-8')
           required = (
-              'pull_request:', 'workflow_dispatch:', 'AP_EPHEMERAL_HOLDOUT_KEY',
+              'pull_request:', 'workflow_dispatch:', 'AP_EPHEMERAL_' + 'HOLDOUT_KEY',
               'secrets.token_hex(32)', '--blind-summary-only',
               'BLIND_QUALIFIED_NON_SHIPPING', 'artifact_digest',
               'research_candidate_id', 'target_execution_authority',
               'prepare_full_validation.py',
+              'metrics_jsonl_proxy.py', 'candidate-processor-json',
               'public-minimal.lock.json', 'RUNNER_TEMP/audio-validation-data',
               'jq -r .digest /tmp/research-artifact.json',
               'trap cleanup EXIT', 'v >= 100 and b >= 16',
@@ -107,7 +108,7 @@ jobs:
           if missing:
               raise SystemExit(f'blind qualification contract missing: {missing}')
           forbidden = (
-              '\n  push:', '\n  schedule:', 'git ' + 'push', 'git ' + 'tag', 'gh ' + 'release',
+              '\n  ' + 'push:', '\n  ' + 'schedule:', 'git ' + 'push', 'git ' + 'tag', 'gh ' + 'release',
               'runs-on: [' + 'self-hosted', '/opt/' + 'audio-validation-data',
               'secrets.' + 'AP_VALIDATION_HOLDOUT_KEY',
           )
@@ -116,6 +117,27 @@ jobs:
               raise SystemExit(f'blind qualification gained forbidden trigger/mutation: {present}')
           print('research candidate blind boundary: PASS')
           PY
+
+      - name: Enforce same-partition resume boundary
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py \
+            .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py
+          python3 .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
+          python3 .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py --self-test
+          python3 - <<'PYRESUME'
+          from pathlib import Path
+          text=Path('.github/workflows/research-candidate-blind-resume.yml').read_text()
+          required=('visible-evidence-incomplete','partition_changed','new_holdout_key_generated',
+                    'metrics_jsonl_proxy.py','resume_incomplete_blind.py','--blind-summary-only')
+          missing=[x for x in required if x not in text]
+          if missing: raise SystemExit(f'resume boundary missing: {missing}')
+          forbidden=('split_' + 'holdout.py','secrets.' + 'token_hex','AP_EPHEMERAL_' + 'HOLDOUT_KEY','\n  ' + 'push:','\n  ' + 'schedule:')
+          present=[x for x in forbidden if x in text]
+          if present: raise SystemExit(f'resume boundary violated: {present}')
+          print('same-partition blind resume boundary: PASS')
+          PYRESUME
 
   resolve:
     if: github.event_name == 'workflow_dispatch'
@@ -329,6 +351,19 @@ jobs:
             --wrapper candidate-out/candidate-processor \
             --identity-output candidate-out/candidate-identity.json \
             --seal-identity
+      - name: Create strict metrics JSON qualification proxy
+        run: |
+          set -euo pipefail
+          cat > candidate-out/candidate-processor-json <<'PYPROXY'
+          #!/usr/bin/env python3
+          import os, sys
+          helper = os.path.abspath('infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py')
+          processor = os.path.abspath('candidate-out/candidate-processor')
+          audit = os.path.abspath('candidate-out/metrics-jsonl-canonicalization.jsonl')
+          os.execv(sys.executable, [sys.executable, helper, '--processor', processor, '--audit', audit, '--', *sys.argv[1:]])
+          PYPROXY
+          chmod 700 candidate-out/candidate-processor-json
+          python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
       - name: Build full public validation corpus
         run: |
           set -euo pipefail
@@ -386,7 +421,7 @@ jobs:
             --corpus ../candidate-out/public/corpus-validation.json \
             --policy validation/policies/validation-full-partition.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor ../candidate-out/candidate-processor \
+            --processor ../candidate-out/candidate-processor-json \
             --output ../candidate-out/validation-report.json \
             --evidence-manifest ../candidate-out/validation-evidence-manifest.json --enforce
       - name: Run exact frozen candidate on blind holdout with summary-only report
@@ -398,7 +433,7 @@ jobs:
             --corpus ../candidate-out/public/corpus-blind.json \
             --policy validation/policies/validation-full-blind.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor ../candidate-out/candidate-processor \
+            --processor ../candidate-out/candidate-processor-json \
             --output ../candidate-out/blind-report.json \
             --evidence-manifest ../candidate-out/blind-evidence-manifest.json \
             --blind-summary-only --enforce

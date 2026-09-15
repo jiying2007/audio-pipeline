@@ -1,0 +1,267 @@
+name: Research Candidate Blind Resume
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/research-candidate-blind-resume.yml'
+      - '.github/workflows/research-candidate-blind-qualification.yml'
+      - '.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py'
+      - '.github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py'
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: INCOMPLETE blind qualification run id
+        required: true
+        default: '34949358011'
+        type: string
+      source_artifact_id:
+        description: Sealed INCOMPLETE blind artifact id
+        required: true
+        default: '10388907303'
+        type: string
+      source_artifact_digest:
+        description: 'Exact sha256: digest of sealed INCOMPLETE artifact'
+        required: true
+        default: 'sha256:f5a9e37d89dbc6bac7364fda9a61243fcac724f18e96e2ee229c9e2005cf15b4'
+        type: string
+      candidate_manifest:
+        description: Active frozen candidate manifest
+        required: true
+        default: '.github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json'
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-candidate-blind-resume-${{ inputs.source_run_id || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Validate resume tooling and authority boundary
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py \
+            .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py
+          python3 .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
+          python3 .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py --self-test
+          python3 .github/research/continuous-optimization/research_candidate_blind.py --self-test
+          python3 - <<'PY'
+          from pathlib import Path
+          text=Path('.github/workflows/research-candidate-blind-resume.yml').read_text()
+          required=(
+              'visible-evidence-incomplete', 'resume_incomplete_blind.py',
+              'metrics_jsonl_proxy.py', 'partition_changed',
+              'new_holdout_key_generated', 'source_artifact_digest',
+              'candidate-processor-json', '--blind-summary-only',
+          )
+          missing=[x for x in required if x not in text]
+          if missing: raise SystemExit(f'resume contract missing: {missing}')
+          forbidden=('split_' + 'holdout.py', 'secrets.' + 'token_hex', 'AP_EPHEMERAL_' + 'HOLDOUT_KEY',
+                     '\n  ' + 'push:', '\n  ' + 'schedule:', 'git ' + 'push', 'gh ' + 'release')
+          present=[x for x in forbidden if x in text]
+          if present: raise SystemExit(f'resume gained forbidden repartition/mutation: {present}')
+          print('same-partition blind resume contract: PASS')
+          PY
+
+  resume:
+    if: github.event_name == 'workflow_dispatch'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+      SOURCE_ARTIFACT_ID: ${{ inputs.source_artifact_id }}
+      SOURCE_ARTIFACT_DIGEST: ${{ inputs.source_artifact_digest }}
+      CANDIDATE_MANIFEST: ${{ inputs.candidate_manifest }}
+    steps:
+      - name: Checkout qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: main
+          fetch-depth: 0
+          path: infra
+      - name: Resolve exact frozen candidate and source
+        id: candidate
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          git -C infra fetch --no-tags origin main
+          test "$(git -C infra rev-parse HEAD)" = "$(git -C infra rev-parse origin/main)"
+          case "$CANDIDATE_MANIFEST" in
+            .github/research/continuous-optimization/candidates/*.json) ;;
+            *) echo 'candidate manifest must remain under active candidates/' >&2; exit 2 ;;
+          esac
+          python3 infra/.github/research/continuous-optimization/research_candidate_blind.py \
+            --manifest "infra/$CANDIDATE_MANIFEST" \
+            --registry infra/.github/research/continuous-optimization/dataset-registry.json --check
+          python3 - "$CANDIDATE_MANIFEST" >> "$GITHUB_OUTPUT" <<'PY'
+          import json,sys
+          m=json.load(open('infra/'+sys.argv[1]))
+          print('source_sha='+m['source_sha'])
+          print('candidate_id='+m['candidate_id'])
+          print('research_candidate_id='+m['research_candidate_id'])
+          PY
+      - name: Checkout exact frozen candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ steps.candidate.outputs.source_sha }}
+          fetch-depth: 0
+          path: source
+      - name: Download and verify exact INCOMPLETE evidence
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$SOURCE_ARTIFACT_ID" > artifact-metadata.json
+          test "$(jq -r .workflow_run.id artifact-metadata.json)" = "$SOURCE_RUN_ID"
+          test "$(jq -r .digest artifact-metadata.json)" = "$SOURCE_ARTIFACT_DIGEST"
+          test "$(jq -r .expired artifact-metadata.json)" = false
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "research-candidate-blind-${{ steps.candidate.outputs.research_candidate_id }}-$SOURCE_RUN_ID" \
+            --dir evidence
+          test -s evidence/qualification-summary.json
+          test -s evidence/public/corpus-validation.json
+          test -s evidence/public/corpus-blind.json
+          test ! -e evidence/validation-report.json
+          test ! -e evidence/blind-report.json
+      - name: Initialize and materialize exact public cache
+        run: |
+          set -euo pipefail
+          DATA_ROOT="$RUNNER_TEMP/audio-validation-data"
+          echo "DATA_ROOT=$DATA_ROOT" >> "$GITHUB_ENV"
+          echo "SEAL=$DATA_ROOT/datasets.seal.json" >> "$GITHUB_ENV"
+          echo "DNS_ROOT=$DATA_ROOT/DNS-Challenge/datasets_fullband" >> "$GITHUB_ENV"
+          python3 infra/.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py \
+            --source-root source --data-root "$DATA_ROOT" \
+            --seal "$DATA_ROOT/datasets.seal.json" \
+            --archive-lock infra/.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json \
+            --aec-limit 60 --output resume-out/github-hosted-cache.json
+      - name: Rebind saved partitions without repartitioning
+        run: |
+          set -euo pipefail
+          python3 infra/.github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py \
+            --evidence evidence --manifest "infra/$CANDIDATE_MANIFEST" --data-root "$DATA_ROOT" \
+            --visible-output evidence/public/corpus-validation-resume.json \
+            --blind-output evidence/public/corpus-blind-resume.json \
+            --receipt-output resume-out/resume-partition-receipt.json
+          test "$(jq -r .partition_changed resume-out/resume-partition-receipt.json)" = false
+          test "$(jq -r .new_holdout_key_generated resume-out/resume-partition-receipt.json)" = false
+      - name: Build and reseal exact frozen candidate processor
+        run: |
+          set -euo pipefail
+          cmake -S source -B source/build-resume -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION='${{ steps.candidate.outputs.source_sha }}'
+          cmake --build source/build-resume --target ap_process_pcm --parallel
+          test "$(sha256sum source/build-resume/ap_process_pcm | awk '{print $1}')" = \
+            "$(awk '{print $1}' evidence/processor.sha256)"
+          python3 infra/.github/research/continuous-optimization/research_candidate_blind.py \
+            --manifest "infra/$CANDIDATE_MANIFEST" \
+            --registry infra/.github/research/continuous-optimization/dataset-registry.json \
+            --optimization-result evidence/optimization-result.json \
+            --processor source/build-resume/ap_process_pcm \
+            --wrapper resume-out/candidate-processor \
+            --identity-output resume-out/candidate-identity.json --seal-identity
+          test "$(jq -r .candidate_id resume-out/candidate-identity.json)" = '${{ steps.candidate.outputs.candidate_id }}'
+      - name: Create telemetry-safe qualification proxy
+        run: |
+          set -euo pipefail
+          cat > resume-out/candidate-processor-json <<'PY'
+          #!/usr/bin/env python3
+          import os,sys
+          helper=os.path.abspath('infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py')
+          processor=os.path.abspath('resume-out/candidate-processor')
+          audit=os.path.abspath('resume-out/metrics-jsonl-canonicalization.jsonl')
+          os.execv(sys.executable,[sys.executable,helper,'--processor',processor,'--audit',audit,'--',*sys.argv[1:]])
+          PY
+          chmod 700 resume-out/candidate-processor-json
+          python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
+      - name: Run exact saved visible partition
+        id: visible
+        working-directory: source
+        run: |
+          set +e
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ steps.candidate.outputs.source_sha }}' \
+            --corpus ../evidence/public/corpus-validation-resume.json \
+            --policy validation/policies/validation-full-partition.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor ../resume-out/candidate-processor-json \
+            --output ../resume-out/validation-report.json \
+            --evidence-manifest ../resume-out/validation-evidence-manifest.json --enforce
+          rc=$?
+          set -e
+          test -s ../resume-out/validation-report.json || exit 2
+          result=$(jq -r .validation_result ../resume-out/validation-report.json)
+          case "$result" in PASS|FAIL) ;; *) exit 2 ;; esac
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          if [ "$result" = PASS ]; then test "$rc" -eq 0; else test "$rc" -eq 1; fi
+      - name: Run exact saved blind partition
+        if: steps.visible.outputs.result == 'PASS'
+        id: blind
+        working-directory: source
+        run: |
+          set +e
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ steps.candidate.outputs.source_sha }}' \
+            --corpus ../evidence/public/corpus-blind-resume.json \
+            --policy validation/policies/validation-full-blind.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor ../resume-out/candidate-processor-json \
+            --output ../resume-out/blind-report.json \
+            --evidence-manifest ../resume-out/blind-evidence-manifest.json \
+            --blind-summary-only --enforce
+          rc=$?
+          set -e
+          test -s ../resume-out/blind-report.json || exit 2
+          result=$(jq -r .validation_result ../resume-out/blind-report.json)
+          case "$result" in PASS|FAIL) ;; *) exit 2 ;; esac
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          if [ "$result" = PASS ]; then test "$rc" -eq 0; else test "$rc" -eq 1; fi
+      - name: Classify same frozen candidate
+        id: classify
+        if: always() && steps.visible.outcome == 'success'
+        run: |
+          set +e
+          args=(--classify --identity resume-out/candidate-identity.json \
+                --visible-report resume-out/validation-report.json \
+                --qualification-output resume-out/qualification-summary.json)
+          if [ -s resume-out/blind-report.json ]; then args+=(--blind-report resume-out/blind-report.json); fi
+          python3 infra/.github/research/continuous-optimization/research_candidate_blind.py "${args[@]}"
+          rc=$?
+          set -e
+          test -s resume-out/qualification-summary.json
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          cat resume-out/qualification-summary.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Seal resume evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p resume-out
+          cp artifact-metadata.json resume-out/source-artifact-metadata.json
+          printf '%s\n' "$SOURCE_RUN_ID" > resume-out/source-run-id.txt
+          printf '%s\n' "$SOURCE_ARTIFACT_DIGEST" > resume-out/source-artifact-digest.txt
+          find resume-out -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > resume-out/SHA256SUMS
+      - name: Upload hash-bound resume evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: research-candidate-blind-resume-${{ steps.candidate.outputs.research_candidate_id }}-${{ github.run_id }}
+          path: resume-out
+          if-no-files-found: error
+          retention-days: 90
+      - name: Enforce qualification result
+        if: always()
+        run: |
+          set -euo pipefail
+          test -s resume-out/qualification-summary.json || exit 2
+          rc=$(jq -r '.decision as $d | if $d == "BLIND_QUALIFIED_NON_SHIPPING" then 0 elif $d == "BLIND_REJECTED_NON_SHIPPING" then 1 else 2 end' resume-out/qualification-summary.json)
+          exit "$rc"

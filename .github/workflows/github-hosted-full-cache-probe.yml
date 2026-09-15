@@ -37,15 +37,18 @@ jobs:
             --data-root "$data_root" \
             --seal "$seal" \
             --archive-lock infra/validation/github-hosted-public-minimal.lock.json \
+            --aec-limit 60 \
             --output /tmp/github-hosted-cache.json
           python3 - <<'PY'
           import json
           data=json.load(open('/tmp/github-hosted-cache.json'))
           assert data['classification'] == 'READY'
+          assert data['aec']['requested_pairs'] == 60
           assert data['dns_clean_wavs'] >= 32
           assert data['dns_noise_wavs'] >= 32
           print(json.dumps({
               'classification': data['classification'],
+              'aec_materialized_files': data['aec']['materialized_files'],
               'dns_clean_wavs': data['dns_clean_wavs'],
               'dns_noise_wavs': data['dns_noise_wavs'],
               'dns_total_wavs': data['dns_total_wavs'],

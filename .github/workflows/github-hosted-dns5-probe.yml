@@ -1,0 +1,57 @@
+name: GitHub Hosted DNS5 Probe
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-dns5-probe
+    paths:
+      - .github/workflows/github-hosted-dns5-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Measure runner and pinned public-data archive sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import urllib.request
+
+          urls = {
+              "dns_clean_vocalset": "https://dns4public.blob.core.windows.net/dns4archive/datasets_fullband/clean_fullband/datasets_fullband.clean_fullband.VocalSet_48kHz_mono_000_NA_NA.tar.bz2",
+              "dns_noise_audioset_000": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.audioset_000.tar.bz2",
+              "dns_noise_audioset_001": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.audioset_001.tar.bz2",
+              "dns_noise_audioset_002": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.audioset_002.tar.bz2",
+              "dns_noise_audioset_003": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.audioset_003.tar.bz2",
+              "dns_noise_audioset_004": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.audioset_004.tar.bz2",
+              "dns_noise_audioset_005": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.audioset_005.tar.bz2",
+              "dns_noise_audioset_006": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.audioset_006.tar.bz2",
+              "dns_noise_freesound_000": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.freesound_000.tar.bz2",
+              "dns_noise_freesound_001": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.freesound_001.tar.bz2",
+              "dns_checksum_index": "https://dns4public.blob.core.windows.net/dns4archive/dns5-datasets-files-sha1.csv.bz2",
+              "openslr_slr28": "https://www.openslr.org/resources/28/rirs_noises.zip",
+          }
+          rows = []
+          for name, url in urls.items():
+              req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "audio-pipeline-ci-probe"})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as response:
+                      length = int(response.headers.get("Content-Length", "0") or 0)
+                      rows.append({"name": name, "bytes": length, "mib": round(length / 1024 / 1024, 2), "status": response.status})
+              except Exception as exc:
+                  rows.append({"name": name, "error": type(exc).__name__, "detail": str(exc)[:160]})
+          print(json.dumps(rows, sort_keys=True))
+          with open("/tmp/archive-sizes.md", "w", encoding="utf-8") as out:
+              out.write("## GitHub-hosted DNS5 input probe\n\n")
+              out.write("| input | MiB | status |\n|---|---:|---:|\n")
+              for row in rows:
+                  out.write(f"| {row['name']} | {row.get('mib', 'ERR')} | {row.get('status', row.get('error', 'ERR'))} |\n")
+          PY
+          cat /tmp/archive-sizes.md >> "$GITHUB_STEP_SUMMARY"
+          echo '### Runner disk' >> "$GITHUB_STEP_SUMMARY"
+          df -h / | tail -n 1 >> "$GITHUB_STEP_SUMMARY"

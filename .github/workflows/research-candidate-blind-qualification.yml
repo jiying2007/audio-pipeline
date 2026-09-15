@@ -97,6 +97,7 @@ jobs:
               'public-minimal.lock.json', 'RUNNER_TEMP/audio-validation-data',
               'jq -r .digest /tmp/research-artifact.json',
               'trap cleanup EXIT', 'v >= 100 and b >= 16',
+              'candidate-out/github-hosted-progress.json',
           )
           missing = [item for item in required if item not in text]
           if missing:
@@ -280,6 +281,7 @@ jobs:
             --seal "$SEAL" \
             --archive-lock infra/.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json \
             --aec-limit "$AEC_LIMIT" \
+            --progress-output candidate-out/github-hosted-progress.json \
             --output candidate-out/github-hosted-cache.json
       - name: Preflight GitHub-hosted audio-validation environment
         run: |

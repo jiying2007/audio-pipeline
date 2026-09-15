@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "lock_id": "audio-pipeline-github-hosted-public-minimal-v1",
+  "dns_revision": "591184a9fcb2cbdec02520fed81a32bbbf9d73ff",
+  "archives": [
+    {
+      "id": "dns5-clean-vocalset",
+      "role": "dns-clean",
+      "url": "https://dns4public.blob.core.windows.net/dns4archive/datasets_fullband/clean_fullband/datasets_fullband.clean_fullband.VocalSet_48kHz_mono_000_NA_NA.tar.bz2",
+      "bytes": 655040210,
+      "sha256": "0cea17c4eba0b44a5b84c0bbf312e640b5296cd3c5f47601becd6d160aa511d1",
+      "upstream": "microsoft/DNS-Challenge@591184a9fcb2cbdec02520fed81a32bbbf9d73ff:download-dns-challenge-5-speakerphone-training.sh"
+    },
+    {
+      "id": "dns5-noise-freesound-001",
+      "role": "dns-noise",
+      "url": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.freesound_001.tar.bz2",
+      "bytes": 992314629,
+      "sha256": "f5fddbb36864053e9dba696f2d63a85c20635d0b4a5701390e8011ad17f8667b",
+      "upstream": "microsoft/DNS-Challenge@591184a9fcb2cbdec02520fed81a32bbbf9d73ff:download-dns-challenge-5-noise-ir.sh"
+    },
+    {
+      "id": "openslr-slr28-rirs-noises",
+      "role": "slr28",
+      "url": "https://www.openslr.org/resources/28/rirs_noises.zip",
+      "bytes": 1311166223,
+      "sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+      "upstream": "OpenSLR SLR28"
+    }
+  ]
+}

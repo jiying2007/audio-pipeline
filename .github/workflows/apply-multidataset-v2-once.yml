@@ -1,0 +1,54 @@
+name: Apply Multidataset V2 Once
+
+on:
+  push:
+    branches: [codex/multidataset-development-v2]
+    paths:
+      - '.github/workflows/apply-multidataset-v2-once.yml'
+      - '.github/research/continuous-optimization/apply_multidataset_v2_once.py'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/multidataset-development-v2
+          fetch-depth: 0
+      - name: Apply and validate multidataset integration
+        env:
+          PYTHONPATH: validation/tools:.github/research/continuous-optimization
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/apply_multidataset_v2_once.py
+          rm .github/research/continuous-optimization/apply_multidataset_v2_once.py
+          rm .github/workflows/apply-multidataset-v2-once.yml
+          git diff --check
+          python3 .github/research/continuous-optimization/research_dataset_registry.py --self-test
+          python3 .github/research/continuous-optimization/research_candidate_blind.py --self-test
+          python3 .github/research/continuous-optimization/research_optimizer.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('.github/research/continuous-optimization/dataset-registry.json').read_text())
+          pv=next(x for x in r['datasets'] if x['id']=='public-validation')
+          pd=next(x for x in r['datasets'] if x['id']=='public-development-diverse')
+          assert pv['selection_roles']==[] and pv['frozen_holdout'] is True
+          assert pd['selection_roles']==['development'] and pd['evaluation_roles']==[]
+          w=Path('.github/workflows/research-optimization.yml').read_text()
+          assert 'multidataset-runtime-safe-tuning-v2' in w
+          assert "'minimum_distinct_development_seeds': 4" in w
+          assert 'public-development-1507' in w and 'public-development-1607' in w
+          print('multidataset v2 post-patch contract: PASS')
+          PY
+      - name: Commit integrated research control plane and retire one-shot
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat(research): integrate multi-dataset development v2'
+          git push origin HEAD:codex/multidataset-development-v2

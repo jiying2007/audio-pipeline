@@ -1,0 +1,38 @@
+name: Apply Hosted LFS Skip Once
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-blind
+    paths:
+      - .github/research/continuous-optimization/hosted-validation/patch_lfs_skip_once.py
+      - .github/workflows/apply-hosted-lfs-skip-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/github-hosted-blind
+          fetch-depth: 0
+      - name: Apply exact AEC LFS checkout fix
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/hosted-validation/patch_lfs_skip_once.py
+          python3 -m py_compile .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py
+          python3 .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py --self-test
+          rm .github/research/continuous-optimization/hosted-validation/patch_lfs_skip_once.py
+          git diff --check
+      - name: Commit helper fix
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py \
+                  .github/research/continuous-optimization/hosted-validation/patch_lfs_skip_once.py
+          git commit -m 'fix(validation): keep AEC checkout metadata-only before exact LFS pull'
+          git push origin HEAD:codex/github-hosted-blind

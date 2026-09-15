@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "catalog_id": "audio-pipeline-public-development-v2",
+  "archives": [
+    {
+      "id": "openslr-slr31-train-clean-5",
+      "role": "clean-speech",
+      "url": "https://www.openslr.org/resources/31/train-clean-5.tar.gz",
+      "bytes": 332954390,
+      "sha256": "47805806c8b15f7549f3c51bd6b7da72ec0128a34d32830c8014a88658c0292d",
+      "license": "CC-BY-4.0",
+      "usage_class": "research-development",
+      "upstream": "OpenSLR SLR31 Mini LibriSpeech train-clean-5"
+    },
+    {
+      "id": "openslr-slr26-sim-rir-16k",
+      "role": "sim-rir",
+      "url": "https://www.openslr.org/resources/26/sim_rir_16k.zip",
+      "bytes": 178818025,
+      "sha256": "7a2c2e78ce03302bc7dfc1bd5a8a737b21d0776e89b9015f6e2e42300212f731",
+      "license": "Apache-2.0",
+      "usage_class": "research-development",
+      "upstream": "OpenSLR SLR26 Simulated Room Impulse Response Database"
+    },
+    {
+      "id": "demand-dkitchen-16k",
+      "role": "noise-kitchen",
+      "url": "https://zenodo.org/records/1227121/files/DKITCHEN_16k.zip?download=1",
+      "bytes": 110501049,
+      "sha256": "9d68e46d2709847c59580770e2f8aa160607ebff7475788174aa1080332cc845",
+      "license": "CC-BY-SA-3.0",
+      "usage_class": "research-development-only",
+      "upstream": "DEMAND Zenodo 1227121 DKITCHEN_16k"
+    },
+    {
+      "id": "demand-straffic-16k",
+      "role": "noise-traffic",
+      "url": "https://zenodo.org/records/1227121/files/STRAFFIC_16k.zip?download=1",
+      "bytes": 118572691,
+      "sha256": "2df9b444afb3b789df92d96cb6f58a50653cdbbbe7e7e74fcd9de2af6385fbea",
+      "license": "CC-BY-SA-3.0",
+      "usage_class": "research-development-only",
+      "upstream": "DEMAND Zenodo 1227121 STRAFFIC_16k"
+    }
+  ]
+}

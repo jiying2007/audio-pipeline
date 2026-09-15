@@ -24,7 +24,7 @@ on:
       candidate_manifest:
         description: Committed frozen research-candidate manifest
         required: true
-        default: '.github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json'
+        default: '.github/research/continuous-optimization/candidates/42ec089167994bbc.json'
         type: string
       aec_limit:
         required: true
@@ -82,6 +82,44 @@ jobs:
               --manifest "$manifest" --registry "$RESEARCH_REGISTRY" --check
           done
           python3 .github/program/maintenance_workflow_contract.py --self-test --check
+      - name: Enforce active default blind candidate
+        run: |
+          set -euo pipefail
+          python3 - <<'PYDEFAULT'
+          import json
+          from pathlib import Path
+          workflow = Path('.github/workflows/research-candidate-blind-qualification.yml')
+          lines = workflow.read_text(encoding='utf-8').splitlines()
+          try:
+              start = lines.index('      candidate_manifest:')
+          except ValueError as exc:
+              raise SystemExit('candidate_manifest input missing') from exc
+          default_value = None
+          for line in lines[start + 1:]:
+              if line.startswith('      ') and not line.startswith('        '):
+                  break
+              stripped = line.strip()
+              if stripped.startswith('default: '):
+                  default_value = stripped.split(': ', 1)[1].strip("'\"")
+                  break
+          if not default_value:
+              raise SystemExit('candidate_manifest default missing')
+          default_manifest = Path(default_value)
+          active_root = Path('.github/research/continuous-optimization/candidates')
+          terminal_root = Path('.github/research/continuous-optimization/terminal-candidates')
+          if default_manifest.parent != active_root or not default_manifest.is_file():
+              raise SystemExit(f'blind default must resolve to committed active candidate: {default_manifest}')
+          manifest = json.loads(default_manifest.read_text(encoding='utf-8'))
+          terminal_ids = {
+              json.loads(path.read_text(encoding='utf-8'))['candidate_id']
+              for path in terminal_root.glob('*.json')
+          }
+          registry = json.loads(Path('.github/research/continuous-optimization/dataset-registry.json').read_text(encoding='utf-8'))
+          terminal_ids.update(item['candidate_id'] for item in registry['terminal_candidates'])
+          if manifest['candidate_id'] in terminal_ids:
+              raise SystemExit(f'blind default points at terminal candidate: {manifest["candidate_id"]}')
+          print(f'active blind default: PASS ({default_manifest})')
+          PYDEFAULT
       - name: Enforce manual blind and non-shipping boundary
         run: |
           set -euo pipefail

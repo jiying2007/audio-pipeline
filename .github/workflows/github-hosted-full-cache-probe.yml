@@ -1,0 +1,75 @@
+name: GitHub Hosted Full Cache Probe
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-blind
+    paths:
+      - .github/workflows/github-hosted-full-cache-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  full-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          path: infra
+      - name: Checkout frozen candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: 01c7e0adf3ec9bcb1d401540c5e9d209176bd9ef
+          fetch-depth: 0
+          path: source
+      - name: Self-test hosted cache materializer
+        run: python3 infra/validation/tools/prepare_github_hosted_full_validation.py --self-test
+      - name: Bootstrap exact full public cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          data_root="$RUNNER_TEMP/audio-validation-data"
+          seal="$data_root/datasets.seal.json"
+          python3 infra/validation/tools/prepare_github_hosted_full_validation.py \
+            --source-root source \
+            --data-root "$data_root" \
+            --seal "$seal" \
+            --archive-lock infra/validation/github-hosted-public-minimal.lock.json \
+            --output /tmp/github-hosted-cache.json
+          python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/github-hosted-cache.json'))
+          assert data['classification'] == 'READY'
+          assert data['dns_clean_wavs'] >= 32
+          assert data['dns_noise_wavs'] >= 32
+          print(json.dumps({
+              'classification': data['classification'],
+              'dns_clean_wavs': data['dns_clean_wavs'],
+              'dns_noise_wavs': data['dns_noise_wavs'],
+              'dns_total_wavs': data['dns_total_wavs'],
+              'slr28_sha256': data['slr28_sha256'],
+          }, sort_keys=True))
+          PY
+      - name: Build canonical full public corpus with frozen source
+        shell: bash
+        run: |
+          set -euo pipefail
+          data_root="$RUNNER_TEMP/audio-validation-data"
+          python3 source/validation/tools/build_full_public_corpus.py \
+            --data-root "$data_root" \
+            --seal "$data_root/datasets.seal.json" \
+            --dns-data-root "$data_root/DNS-Challenge/datasets_fullband" \
+            --output /tmp/full-public \
+            --aec-limit 60 --derived-limit 20 --dns-limit 60
+          python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/full-public/corpus.json'))
+          assert data['tier'] == 'validation-grade'
+          assert set(data['sources']) == {'microsoft-aec-challenge','microsoft-dns-challenge','openslr-slr28'}
+          assert len(data['cases']) == 160
+          print('full_public_cases=160')
+          PY
+          du -sh "$data_root" /tmp/full-public
+          df -h /

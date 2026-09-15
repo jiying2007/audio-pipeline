@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_RESEARCH_CANDIDATE",
+  "next_gate": "validation-grade-blind",
+  "research_candidate_id": "92c3e9fe128d4b76",
+  "candidate_id": "64814f0762bd",
+  "source_sha": "5b7e544c9df26233c7056952a21f8c870aada020",
+  "hypothesis_id": "multidataset-runtime-safe-tuning-v2",
+  "tuning": {
+    "aec_mu": 0.22,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -18.0,
+    "limiter_dbfs": -2.5
+  },
+  "research_provenance": {
+    "workflow": "Research Optimization",
+    "run_id": 34942970619,
+    "artifact_id": 10386987574,
+    "artifact_name": "research-optimization-34942970619",
+    "artifact_digest": "sha256:3b5c387450fc651b668076fea5288f24ac558d29ed37d7e8f50df2a775defea7",
+    "optimization_result_path": "research-optimization-out/optimization-result.json",
+    "search_space_path": ".github/research/continuous-optimization/development-v2/search-space.json",
+    "search_space_sha256": "1011f36b5051e773570b9e88f5401fa8f05dfeb456fbec4b505e08e6369b3ccd"
+  },
+  "selection_evidence": {
+    "development_score": 0.4984149652722121,
+    "worst_development_unit_score": 0.0,
+    "generalization_gate_count": 4,
+    "gate_violation_count": 0
+  },
+  "output_authority": {
+    "shipping_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "automatic_main_mutation": false
+  }
+}

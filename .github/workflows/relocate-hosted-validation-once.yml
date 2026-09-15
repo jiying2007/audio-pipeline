@@ -1,0 +1,59 @@
+name: Relocate Hosted Validation Once
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-blind
+    paths:
+      - .github/workflows/relocate-hosted-validation-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  relocate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/github-hosted-blind
+          fetch-depth: 0
+      - name: Relocate qualification-only hosted validation infrastructure
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .github/research/continuous-optimization/hosted-validation
+          git mv validation/tools/prepare_github_hosted_full_validation.py \
+            .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py
+          git mv validation/github-hosted-public-minimal.lock.json \
+            .github/research/continuous-optimization/hosted-validation/public-minimal.lock.json
+          python3 - <<'PY'
+          from pathlib import Path
+          replacements = {
+              'validation/tools/prepare_github_hosted_full_validation.py': '.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py',
+              'validation/github-hosted-public-minimal.lock.json': '.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json',
+              'prepare_github_hosted_full_validation.py': 'prepare_full_validation.py',
+              'github-hosted-public-minimal.lock.json': 'public-minimal.lock.json',
+          }
+          for raw in [
+              '.github/workflows/research-candidate-blind-qualification.yml',
+              '.github/workflows/github-hosted-full-cache-probe.yml',
+          ]:
+              path = Path(raw)
+              text = path.read_text(encoding='utf-8')
+              for before, after in replacements.items():
+                  text = text.replace(before, after)
+              path.write_text(text, encoding='utf-8')
+          PY
+          rm .github/workflows/relocate-hosted-validation-once.yml
+          git diff --check
+          git status --short
+      - name: Commit relocation and retire one-shot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'refactor(validation): keep hosted blind infra release-neutral'
+          git push origin HEAD:codex/github-hosted-blind

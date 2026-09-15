@@ -39,10 +39,19 @@ jobs:
       - name: Capture first malformed metrics line
         run: |
           set -euo pipefail
-          mic="$GITHUB_WORKSPACE/aec/datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_mic.wav"
-          render="$GITHUB_WORKSPACE/aec/datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_lpb.wav"
-          ffmpeg -loglevel error -y -i "$mic" -f s16le -acodec pcm_s16le mic.pcm
-          ffmpeg -loglevel error -y -i "$render" -f s16le -acodec pcm_s16le render.pcm
+          python3 - <<'PY'
+          import wave
+          from pathlib import Path
+          base = Path('aec/datasets/test_set_icassp2022/doubletalk')
+          for src, dst in (
+              (base / '07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_mic.wav', Path('mic.pcm')),
+              (base / '07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_lpb.wav', Path('render.pcm')),
+          ):
+              with wave.open(str(src), 'rb') as handle:
+                  assert handle.getsampwidth() == 2 and handle.getnchannels() == 1 and handle.getcomptype() == 'NONE'
+                  assert handle.getframerate() == 48000
+                  dst.write_bytes(handle.readframes(handle.getnframes()))
+          PY
           source/build-json-probe/ap_process_pcm \
             --aec-mu 0.22 --ns-floor 0.12 --agc-target-dbfs -18.0 --limiter-dbfs -2.5 \
             --sample-rate 48000 --mic-channels 1 --metrics-jsonl metrics.jsonl \

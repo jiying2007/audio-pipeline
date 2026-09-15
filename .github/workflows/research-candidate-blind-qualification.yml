@@ -24,7 +24,7 @@ on:
       candidate_manifest:
         description: Committed frozen research-candidate manifest
         required: true
-        default: '.github/research/continuous-optimization/candidates/f5ad7c495d7f67d6.json'
+        default: '.github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json'
         type: string
       aec_limit:
         required: true

@@ -1,0 +1,25 @@
+name: GitHub Hosted Runner Token Probe
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-dns5-probe
+    paths:
+      - .github/workflows/github-hosted-runner-token-probe.yml
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check ephemeral runner registration authority without exposing token
+        shell: bash
+        run: |
+          set -euo pipefail
+          response=$(gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runners/registration-token")
+          python3 -c 'import json,sys; data=json.load(sys.stdin); assert isinstance(data.get("token"), str) and len(data["token"]) > 20; print("runner_registration_token=AVAILABLE")' <<< "$response"

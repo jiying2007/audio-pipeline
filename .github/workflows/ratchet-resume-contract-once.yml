@@ -1,0 +1,50 @@
+name: Ratchet Resume Contract Once
+
+on:
+  push:
+    branches: [codex/blind-resume-metrics-fix]
+    paths:
+      - '.github/workflows/ratchet-resume-contract-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: codex/blind-resume-metrics-fix
+          fetch-depth: 0
+      - name: Add permanent resume boundary check
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/research-candidate-blind-qualification.yml')
+          t=p.read_text()
+          anchor='''\n  resolve:\n'''
+          step='''\n      - name: Enforce same-partition resume boundary\n        run: |\n          set -euo pipefail\n          python3 -m py_compile \\\n            .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py \\\n            .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py\n          python3 .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test\n          python3 .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py --self-test\n          python3 - <<'PYRESUME'\n          from pathlib import Path\n          text=Path('.github/workflows/research-candidate-blind-resume.yml').read_text()\n          required=('visible-evidence-incomplete','partition_changed','new_holdout_key_generated',\n                    'metrics_jsonl_proxy.py','resume_incomplete_blind.py','--blind-summary-only')\n          missing=[x for x in required if x not in text]\n          if missing: raise SystemExit(f'resume boundary missing: {missing}')\n          forbidden=('split_holdout.py','secrets.token_hex','AP_EPHEMERAL_HOLDOUT_KEY','\\n  push:','\\n  schedule:')\n          present=[x for x in forbidden if x in text]\n          if present: raise SystemExit(f'resume boundary violated: {present}')\n          print('same-partition blind resume boundary: PASS')\n          PYRESUME\n'''
+          if t.count(anchor)!=1: raise SystemExit(f'resolve anchor count={t.count(anchor)}')
+          if 'Enforce same-partition resume boundary' in t: raise SystemExit('ratchet already present')
+          p.write_text(t.replace(anchor,step+anchor))
+          PY
+          python3 - <<'PY'
+          import yaml
+          for name in ('.github/workflows/research-candidate-blind-qualification.yml',
+                       '.github/workflows/research-candidate-blind-resume.yml'):
+              yaml.safe_load(open(name))
+          print('workflow YAML parse: PASS')
+          PY
+      - name: Commit clean ratchet
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/ratchet-resume-contract-once.yml
+          git add .github/workflows/research-candidate-blind-qualification.yml
+          git diff --cached --check
+          git commit -m 'test(validation): ratchet same-partition blind resume'
+          git rev-parse HEAD
+          git push origin HEAD:codex/blind-resume-metrics-fix

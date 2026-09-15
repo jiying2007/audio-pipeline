@@ -41,7 +41,8 @@ jobs:
           w=Path('.github/workflows/research-optimization.yml').read_text()
           assert 'multidataset-runtime-safe-tuning-v2' in w
           assert "'minimum_distinct_development_seeds': 4" in w
-          assert 'public-development-1507' in w and 'public-development-1607' in w
+          assert "for seed in [1507, 1607]:" in w
+          assert "'dataset_id': 'public-development-diverse'" in w
           print('multidataset v2 post-patch contract: PASS')
           PY
       - name: Commit integrated research control plane and retire one-shot

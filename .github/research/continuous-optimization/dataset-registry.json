@@ -20,6 +20,11 @@
       "candidate_id": "542ae198199b",
       "source_sha": "01c7e0adf3ec9bcb1d401540c5e9d209176bd9ef",
       "decision": "BLIND_REJECTED_NON_SHIPPING"
+    },
+    {
+      "candidate_id": "64814f0762bd",
+      "source_sha": "5b7e544c9df26233c7056952a21f8c870aada020",
+      "decision": "VISIBLE_EXECUTION_REJECTED_NON_SHIPPING"
     }
   ],
   "datasets": [

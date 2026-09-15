@@ -11,10 +11,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
@@ -97,12 +95,13 @@ def self_test() -> None:
         payload = json.loads(fixed, parse_constant=_reject_constant)
         if expected:
             assert payload["vad_probability"] is None and payload["erle_db"] is None
-    try:
-        canonicalize_line('{"frame":0,"other":nan}')
-    except Exception:
-        pass
-    else:
-        raise AssertionError("unknown non-finite field did not fail closed")
+    for invalid in ('{"frame":0,"other":NaN}', '{"frame":0,"other":nan}'):
+        try:
+            canonicalize_line(invalid)
+        except Exception:
+            pass
+        else:
+            raise AssertionError("unknown non-finite field did not fail closed")
     print("metrics JSONL proxy self-test: OK")
 
 

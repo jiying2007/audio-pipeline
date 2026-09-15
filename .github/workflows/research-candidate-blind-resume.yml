@@ -21,7 +21,7 @@ on:
         default: '10388907303'
         type: string
       source_artifact_digest:
-        description: Exact sha256: digest of sealed INCOMPLETE artifact
+        description: 'Exact sha256: digest of sealed INCOMPLETE artifact'
         required: true
         default: 'sha256:f5a9e37d89dbc6bac7364fda9a61243fcac724f18e96e2ee229c9e2005cf15b4'
         type: string

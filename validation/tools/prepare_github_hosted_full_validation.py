@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Bootstrap validation-grade public data on an ephemeral GitHub-hosted runner.
 
-The frozen candidate source still owns the canonical dataset lock and corpus
-builder. This helper only materializes a reproducible cache for that source:
-AEC is bound by its pinned git/LFS revision, SLR28 by a committed SHA-256, and
-a minimal official DNS5 clean/noise archive pair by committed SHA-256 values.
-A derived local SHA1 index is generated from those already SHA-256-bound DNS
-archives so the frozen source can reuse its existing per-WAV verification path.
+The frozen candidate source still owns the canonical dataset lock, verifier and
+corpus builder. This helper materializes only the public inputs required by the
+requested gate: exact AEC LFS files at the pinned revision, SHA-256-bound SLR28,
+and a minimal official DNS5 clean/noise archive pair pinned by SHA-256. A local
+SHA1 index is derived only after those DNS archives pass their SHA-256 pins so
+the frozen source can reuse its existing per-WAV verification path.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SCHEMA_VERSION = 1
+AEC_SCENARIOS = ("farend-singletalk", "doubletalk", "nearend-singletalk")
 
 
 def digest_file(path: Path, algorithm: str = "sha256") -> str:
@@ -56,7 +57,8 @@ def validate_archive_lock(lock: dict) -> None:
         raise ValueError("hosted archive lock schema_version must be 1")
     if not lock.get("lock_id"):
         raise ValueError("hosted archive lock_id is required")
-    if len(lock.get("dns_revision", "")) != 40:
+    revision = str(lock.get("dns_revision", "")).lower()
+    if len(revision) != 40 or any(ch not in "0123456789abcdef" for ch in revision):
         raise ValueError("hosted archive lock must pin dns_revision")
     archives = lock.get("archives")
     if not isinstance(archives, list) or len(archives) < 3:
@@ -86,7 +88,7 @@ def download(url: str, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     partial = target.with_suffix(target.suffix + ".part")
     request = urllib.request.Request(url, headers={"User-Agent": "audio-pipeline-validation"})
-    with urllib.request.urlopen(request, timeout=120) as response, partial.open("wb") as out:
+    with urllib.request.urlopen(request, timeout=180) as response, partial.open("wb") as out:
         shutil.copyfileobj(response, out, length=1024 * 1024)
     partial.replace(target)
 
@@ -103,20 +105,20 @@ def safe_extract_tar_bz2(archive: Path, destination: Path) -> None:
 
 
 def normalize_dns_wavs(staging: Path, dns_root: Path) -> int:
-    """Move extracted WAVs into the canonical datasets_fullband layout."""
     moved = 0
     for source in sorted(staging.rglob("*.wav")):
         parts = list(source.relative_to(staging).parts)
         lowered = [part.lower() for part in parts]
         marker = None
+        marker_index = -1
         for candidate in ("clean_fullband", "noise_fullband"):
             if candidate in lowered:
                 marker = candidate
-                index = lowered.index(candidate)
+                marker_index = lowered.index(candidate)
                 break
         if marker is None:
             continue
-        tail_parts = parts[index + 1:] or [source.name]
+        tail_parts = parts[marker_index + 1:] or [source.name]
         destination = dns_root / marker / Path(*tail_parts)
         destination.parent.mkdir(parents=True, exist_ok=True)
         if destination.exists():
@@ -173,8 +175,63 @@ def source_dataset(lock: dict, dataset_id: str) -> dict:
     return matches[0]
 
 
+def check_materialized(path: Path) -> None:
+    with path.open("rb") as handle:
+        prefix = handle.read(80)
+    if prefix.startswith(b"version https://git-lfs.github.com/spec/v1"):
+        raise ValueError(f"AEC LFS object was not materialized: {path}")
+
+
+def aec_pairs(aec_repo: Path) -> list[tuple[Path, Path]]:
+    base = aec_repo / "datasets" / "test_set_icassp2022"
+    pairs: list[tuple[Path, Path]] = []
+    for scenario in AEC_SCENARIOS:
+        directory = base / scenario
+        for mic in sorted(directory.glob("*_mic.wav")):
+            lpb = mic.with_name(mic.name[:-8] + "_lpb.wav")
+            if lpb.exists():
+                pairs.append((mic, lpb))
+    return pairs
+
+
+def materialize_aec(source_root: Path, source_lock_path: Path, data_root: Path,
+                    aec: dict, aec_limit: int) -> dict:
+    fetch = source_root / "validation/tools/fetch_public_data.py"
+    run([
+        sys.executable, str(fetch), "--lock", str(source_lock_path), "--root", str(data_root),
+        "--dataset", "microsoft-aec-challenge",
+    ], cwd=source_root)
+    repo = data_root / aec["local_path"]
+    head = run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture=True).strip()
+    if head != aec["revision"]:
+        raise ValueError("materialized AEC repository revision mismatch")
+    pairs = aec_pairs(repo)
+    if len(pairs) < aec_limit:
+        raise ValueError(f"AEC checkout has only {len(pairs)} pairs for requested limit {aec_limit}")
+
+    selected: set[Path] = set()
+    for mic, lpb in pairs[:aec_limit]:
+        selected.update((mic, lpb))
+    for required in aec.get("required_paths", []):
+        directory = repo / required
+        wavs = sorted(directory.rglob("*.wav"))
+        if len(wavs) < 16:
+            raise ValueError(f"AEC required directory has fewer than 16 WAVs: {directory}")
+        selected.update(wavs[:16])
+    includes = sorted(path.relative_to(repo).as_posix() for path in selected)
+    run(["git", "-C", str(repo), "lfs", "pull", "--include", ",".join(includes), "--exclude", ""])
+    for path in selected:
+        check_materialized(path)
+    return {
+        "id": aec["id"], "revision": head, "requested_pairs": aec_limit,
+        "materialized_files": len(selected),
+    }
+
+
 def bootstrap(source_root: Path, data_root: Path, seal: Path,
-              archive_lock_path: Path, output: Path) -> dict:
+              archive_lock_path: Path, output: Path, aec_limit: int) -> dict:
+    if aec_limit <= 0:
+        raise ValueError("aec_limit must be positive")
     source_root = source_root.resolve()
     data_root = data_root.resolve()
     seal = seal.resolve()
@@ -184,6 +241,7 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
     hosted_lock = load_json(archive_lock_path)
     validate_archive_lock(hosted_lock)
 
+    aec = source_dataset(source_lock, "microsoft-aec-challenge")
     dns = source_dataset(source_lock, "microsoft-dns-challenge")
     slr = source_dataset(source_lock, "openslr-slr28")
     if dns["revision"] != hosted_lock["dns_revision"]:
@@ -191,31 +249,30 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
     if slr["source"] != archive_by_role(hosted_lock, "slr28")["url"]:
         raise ValueError("hosted SLR28 URL does not match frozen source dataset lock")
 
-    prepare = source_root / "validation/tools/prepare_public_validation.py"
-    fetch = source_root / "validation/tools/fetch_public_data.py"
-    python = sys.executable
     data_root.mkdir(parents=True, exist_ok=True)
-
-    run([
-        python, str(prepare), "prepare", "--lock", str(source_lock_path),
-        "--profile", "compact", "--root", str(data_root), "--seal", str(seal),
-        "--allow-large-downloads",
-    ], cwd=source_root)
+    aec_evidence = materialize_aec(source_root, source_lock_path, data_root, aec, aec_limit)
 
     slr_item = archive_by_role(hosted_lock, "slr28")
     slr_path = data_root / slr["local_path"]
+    download(slr_item["url"], slr_path)
     if slr_path.stat().st_size != int(slr_item["bytes"]):
         raise ValueError("SLR28 byte-size mismatch")
     if digest_file(slr_path) != slr_item["sha256"]:
         raise ValueError("SLR28 SHA-256 mismatch")
-
     run([
-        python, str(fetch), "--lock", str(source_lock_path), "--root", str(data_root),
+        sys.executable, str(source_root / "validation/tools/dataset_lock.py"), "seal",
+        "--lock", str(source_lock_path), "--seal", str(seal),
+        "--dataset-id", "openslr-slr28", "--asset", str(slr_path),
+    ], cwd=source_root)
+
+    fetch = source_root / "validation/tools/fetch_public_data.py"
+    run([
+        sys.executable, str(fetch), "--lock", str(source_lock_path), "--root", str(data_root),
         "--dataset", "microsoft-dns-challenge",
     ], cwd=source_root)
     dns_repo = data_root / dns["local_path"]
-    head = run(["git", "-C", str(dns_repo), "rev-parse", "HEAD"], capture=True).strip()
-    if head != hosted_lock["dns_revision"]:
+    dns_head = run(["git", "-C", str(dns_repo), "rev-parse", "HEAD"], capture=True).strip()
+    if dns_head != hosted_lock["dns_revision"]:
         raise ValueError("materialized DNS repository revision mismatch")
 
     archive_dir = data_root / "github-hosted-dns-archives"
@@ -256,8 +313,9 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
     })
     seal.write_text(json.dumps(seal_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
+    prepare = source_root / "validation/tools/prepare_public_validation.py"
     verify_text = run([
-        python, str(prepare), "verify", "--lock", str(source_lock_path),
+        sys.executable, str(prepare), "verify", "--lock", str(source_lock_path),
         "--profile", "full", "--root", str(data_root), "--seal", str(seal),
         "--dns-data-root", str(dns_root),
     ], cwd=source_root, capture=True)
@@ -267,7 +325,8 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
         "classification": "READY",
         "source_lock_sha256": digest_file(source_lock_path),
         "hosted_archive_lock_sha256": digest_file(archive_lock_path),
-        "dns_revision": head,
+        "aec": aec_evidence,
+        "dns_revision": dns_head,
         "dns_root": str(dns_root),
         "dns_clean_wavs": clean,
         "dns_noise_wavs": noise,
@@ -320,6 +379,7 @@ def main() -> int:
     parser.add_argument("--seal", type=Path)
     parser.add_argument("--archive-lock", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--aec-limit", type=int, default=60)
     args = parser.parse_args()
     if args.self_test:
         self_test()
@@ -327,9 +387,11 @@ def main() -> int:
     required = (args.source_root, args.data_root, args.seal, args.archive_lock, args.output)
     if any(value is None for value in required):
         parser.error("--source-root, --data-root, --seal, --archive-lock and --output are required")
-    report = bootstrap(args.source_root, args.data_root, args.seal, args.archive_lock, args.output)
+    report = bootstrap(
+        args.source_root, args.data_root, args.seal, args.archive_lock, args.output, args.aec_limit)
     print(json.dumps({
         "classification": report["classification"],
+        "aec_materialized_files": report["aec"]["materialized_files"],
         "dns_clean_wavs": report["dns_clean_wavs"],
         "dns_noise_wavs": report["dns_noise_wavs"],
         "output": str(args.output),

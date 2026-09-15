@@ -50,6 +50,8 @@ jobs:
           assert p['allowed_tiers']==['research-validation'] and p['minimum_cases']>=64
           assert s['strategy']=='cartesian' and s['max_candidates']==18
           assert s['parameters']['aec_mu']==[0.22]
+          names={item['name'] for item in s['objective']['metrics']}
+          assert 'min_vad_recall' in names and 'min_vad_f1' not in names
           print('development-v2 policy/search contract: PASS')
           PY
       - name: Materialize SHA-256 pinned public development data
@@ -88,6 +90,22 @@ jobs:
               --source-revision "$GITHUB_SHA" \
               --enforce
           done
+      - name: Enforce development measurement sanity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for seed in (1507,1607):
+              r=json.loads(Path(f'/tmp/development-v2-report-{seed}.json').read_text())
+              s=r['summary']
+              assert r['validation_result']=='PASS'
+              assert s['p10_near_si_sdr_improvement_db'] is not None
+              assert s['p10_near_si_sdr_improvement_db'] > -40.0
+              assert s['min_vad_recall'] is not None
+              assert s['max_vad_false_positive_rate'] is not None
+          print('development-v2 measurement sanity: PASS')
+          PY
       - name: Publish compact development-v2 proof
         run: |
           set -euo pipefail

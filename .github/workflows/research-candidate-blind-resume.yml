@@ -64,8 +64,8 @@ jobs:
           )
           missing=[x for x in required if x not in text]
           if missing: raise SystemExit(f'resume contract missing: {missing}')
-          forbidden=('split_holdout.py', 'secrets.token_hex', 'AP_EPHEMERAL_HOLDOUT_KEY',
-                     '\n  push:', '\n  schedule:', 'git push', 'gh release')
+          forbidden=('split_' + 'holdout.py', 'secrets.' + 'token_hex', 'AP_EPHEMERAL_' + 'HOLDOUT_KEY',
+                     '\n  ' + 'push:', '\n  ' + 'schedule:', 'git ' + 'push', 'gh ' + 'release')
           present=[x for x in forbidden if x in text]
           if present: raise SystemExit(f'resume gained forbidden repartition/mutation: {present}')
           print('same-partition blind resume contract: PASS')

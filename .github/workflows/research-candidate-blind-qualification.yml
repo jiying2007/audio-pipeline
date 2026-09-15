@@ -90,7 +90,7 @@ jobs:
           path = Path('.github/workflows/research-candidate-blind-qualification.yml')
           text = path.read_text(encoding='utf-8')
           required = (
-              'pull_request:', 'workflow_dispatch:', 'AP_EPHEMERAL_HOLDOUT_KEY',
+              'pull_request:', 'workflow_dispatch:', 'AP_EPHEMERAL_' + 'HOLDOUT_KEY',
               'secrets.token_hex(32)', '--blind-summary-only',
               'BLIND_QUALIFIED_NON_SHIPPING', 'artifact_digest',
               'research_candidate_id', 'target_execution_authority',
@@ -108,7 +108,7 @@ jobs:
           if missing:
               raise SystemExit(f'blind qualification contract missing: {missing}')
           forbidden = (
-              '\n  push:', '\n  schedule:', 'git ' + 'push', 'git ' + 'tag', 'gh ' + 'release',
+              '\n  ' + 'push:', '\n  ' + 'schedule:', 'git ' + 'push', 'git ' + 'tag', 'gh ' + 'release',
               'runs-on: [' + 'self-hosted', '/opt/' + 'audio-validation-data',
               'secrets.' + 'AP_VALIDATION_HOLDOUT_KEY',
           )
@@ -133,7 +133,7 @@ jobs:
                     'metrics_jsonl_proxy.py','resume_incomplete_blind.py','--blind-summary-only')
           missing=[x for x in required if x not in text]
           if missing: raise SystemExit(f'resume boundary missing: {missing}')
-          forbidden=('split_holdout.py','secrets.token_hex','AP_EPHEMERAL_HOLDOUT_KEY','\n  push:','\n  schedule:')
+          forbidden=('split_' + 'holdout.py','secrets.' + 'token_hex','AP_EPHEMERAL_' + 'HOLDOUT_KEY','\n  ' + 'push:','\n  ' + 'schedule:')
           present=[x for x in forbidden if x in text]
           if present: raise SystemExit(f'resume boundary violated: {present}')
           print('same-partition blind resume boundary: PASS')

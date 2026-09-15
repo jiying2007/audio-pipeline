@@ -1,0 +1,46 @@
+name: Retire 92c3 Default Once
+
+on:
+  push:
+    branches: [codex/fix-aec-materialization-resume]
+    paths:
+      - '.github/workflows/retire-92c3-default-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/fix-aec-materialization-resume
+          fetch-depth: 0
+      - name: Remove terminal blind default and validate lifecycle
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/research-candidate-blind-qualification.yml')
+          text=p.read_text(encoding='utf-8')
+          old="        default: '.github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json'\n"
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one terminal default, found {text.count(old)}')
+          p.write_text(text.replace(old,''), encoding='utf-8')
+          PY
+          test ! -e .github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json
+          python3 .github/research/continuous-optimization/research_dataset_registry.py --check
+          python3 .github/research/continuous-optimization/research_candidate_blind.py --self-test
+          ! grep -F 'candidates/92c3e9fe128d4b76.json' .github/workflows/research-candidate-blind-qualification.yml
+      - name: Commit clean terminal state
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/retire-92c3-default-once.yml
+          git add .github/workflows/research-candidate-blind-qualification.yml
+          git commit -m 'research: remove terminal candidate blind default'
+          git status --porcelain=v1
+          git rev-parse HEAD
+          git push origin HEAD:codex/fix-aec-materialization-resume

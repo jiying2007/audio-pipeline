@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - '.github/research/continuous-optimization/candidates/**'
+      - '.github/research/continuous-optimization/terminal-candidates/**'
+      - '.github/research/continuous-optimization/dataset-registry.json'
       - '.github/research/continuous-optimization/research_candidate_blind.py'
       - '.github/workflows/research-candidate-blind-qualification.yml'
       - '.github/program/maintenance_workflow_contract.py'
@@ -75,7 +77,6 @@ jobs:
           PY
           shopt -s nullglob
           manifests=(.github/research/continuous-optimization/candidates/*.json)
-          test "${#manifests[@]}" -gt 0
           for manifest in "${manifests[@]}"; do
             python3 .github/research/continuous-optimization/research_candidate_blind.py \
               --manifest "$manifest" --registry "$RESEARCH_REGISTRY" --check

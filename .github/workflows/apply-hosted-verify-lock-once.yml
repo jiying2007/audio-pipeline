@@ -1,0 +1,48 @@
+name: Apply Hosted Blind Verify Lock Once
+
+on:
+  push:
+    branches:
+      - codex/hosted-blind-verify-lock
+    paths:
+      - .github/research/continuous-optimization/hosted-validation/patch_verify_lock_once.py
+      - .github/workflows/apply-hosted-verify-lock-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/hosted-blind-verify-lock
+          fetch-depth: 0
+      - name: Bind standalone full verify to frozen dataset lock
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/hosted-validation/patch_verify_lock_once.py
+          rm .github/research/continuous-optimization/hosted-validation/patch_verify_lock_once.py
+          rm .github/workflows/apply-hosted-verify-lock-once.yml
+          git diff --check
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/research-candidate-blind-qualification.yml').read_text()
+          snippet = '''python3 source/validation/tools/prepare_public_validation.py verify \\
+            --lock source/validation/datasets.lock.json \\
+            --profile full'''
+          if snippet not in text:
+              raise SystemExit('standalone full verify is not bound to frozen dataset lock')
+          if "'prepare_public_validation.py verify'" not in text:
+              raise SystemExit('standalone verify contract marker missing')
+          print('hosted blind standalone verify lock: PASS')
+          PY
+      - name: Commit fix and retire one-shot
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(validation): bind hosted blind standalone verify lock'
+          git push origin HEAD:codex/hosted-blind-verify-lock

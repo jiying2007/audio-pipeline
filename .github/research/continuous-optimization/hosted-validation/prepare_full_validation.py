@@ -41,6 +41,16 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def write_progress(path: Path | None, stage: str, status: str = "in_progress", **details: object) -> None:
+    if path is None:
+        return
+    payload = {"schema_version": 1, "stage": stage, "status": status, **details}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
 def run(command: list[str], *, cwd: Path | None = None, capture: bool = False) -> str:
     result = subprocess.run(
         command,
@@ -244,7 +254,9 @@ def materialize_aec(source_root: Path, source_lock_path: Path, data_root: Path,
 
 
 def bootstrap(source_root: Path, data_root: Path, seal: Path,
-              archive_lock_path: Path, output: Path, aec_limit: int) -> dict:
+              archive_lock_path: Path, output: Path, aec_limit: int,
+              progress_output: Path | None = None) -> dict:
+    write_progress(progress_output, "bootstrap-init")
     if aec_limit <= 0:
         raise ValueError("aec_limit must be positive")
     source_root = source_root.resolve()
@@ -265,8 +277,12 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
         raise ValueError("hosted SLR28 URL does not match frozen source dataset lock")
 
     data_root.mkdir(parents=True, exist_ok=True)
+    write_progress(progress_output, "aec-materialization")
     aec_evidence = materialize_aec(source_root, source_lock_path, data_root, aec, aec_limit)
+    write_progress(progress_output, "aec-materialization", "success",
+                   materialized_files=aec_evidence["materialized_files"])
 
+    write_progress(progress_output, "slr28-materialization")
     slr_item = archive_by_role(hosted_lock, "slr28")
     slr_path = data_root / slr["local_path"]
     download(slr_item["url"], slr_path)
@@ -279,7 +295,10 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
         "--lock", str(source_lock_path), "--seal", str(seal),
         "--dataset-id", "openslr-slr28", "--asset", str(slr_path),
     ], cwd=source_root)
+    write_progress(progress_output, "slr28-materialization", "success",
+                   bytes=slr_path.stat().st_size, sha256=digest_file(slr_path))
 
+    write_progress(progress_output, "dns-checkout")
     fetch = source_root / "validation/tools/fetch_public_data.py"
     run([
         sys.executable, str(fetch), "--lock", str(source_lock_path), "--root", str(data_root),
@@ -289,11 +308,13 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
     dns_head = run(["git", "-C", str(dns_repo), "rev-parse", "HEAD"], capture=True).strip()
     if dns_head != hosted_lock["dns_revision"]:
         raise ValueError("materialized DNS repository revision mismatch")
+    write_progress(progress_output, "dns-checkout", "success", revision=dns_head)
 
     archive_dir = data_root / "github-hosted-dns-archives"
     dns_root = dns_repo / "datasets_fullband"
     archive_evidence = []
     for role in ("dns-clean", "dns-noise"):
+        write_progress(progress_output, f"{role}-archive")
         item = archive_by_role(hosted_lock, role)
         target = archive_dir / f"{item['id']}.tar.bz2"
         download(item["url"], target)
@@ -311,13 +332,17 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
             "id": item["id"], "role": role, "bytes": actual_size,
             "sha256": actual_sha, "url": item["url"], "wav_count": moved,
         })
+        write_progress(progress_output, f"{role}-archive", "success",
+                       bytes=actual_size, sha256=actual_sha, wav_count=moved)
 
     clean, noise, total = dns_counts(dns_root)
     if clean < 32 or noise < 32:
         raise ValueError(f"minimal hosted DNS corpus is too small: clean={clean} noise={noise}")
 
+    write_progress(progress_output, "dns-index")
     derived_index = data_root / "dns5-hosted-minimal-sha1.csv.bz2"
     index_rows = write_derived_dns_index(dns_root, derived_index)
+    write_progress(progress_output, "dns-index", "success", rows=index_rows)
     seal_data = load_json(seal)
     dns_seal = seal_data.setdefault("datasets", {}).setdefault("microsoft-dns-challenge", {})
     dns_seal.update({
@@ -328,6 +353,7 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
     })
     seal.write_text(json.dumps(seal_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
+    write_progress(progress_output, "full-cache-verification")
     prepare = source_root / "validation/tools/prepare_public_validation.py"
     verify_text = run([
         sys.executable, str(prepare), "verify", "--lock", str(source_lock_path),
@@ -335,6 +361,7 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
         "--dns-data-root", str(dns_root),
     ], cwd=source_root, capture=True)
     verification = json.loads(verify_text)
+    write_progress(progress_output, "full-cache-verification", "success")
     report = {
         "schema_version": 1,
         "classification": "READY",
@@ -354,6 +381,8 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_progress(progress_output, "ready", "success",
+                   dns_clean_wavs=clean, dns_noise_wavs=noise, dns_total_wavs=total)
     return report
 
 
@@ -394,6 +423,7 @@ def main() -> int:
     parser.add_argument("--seal", type=Path)
     parser.add_argument("--archive-lock", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--progress-output", type=Path)
     parser.add_argument("--aec-limit", type=int, default=60)
     args = parser.parse_args()
     if args.self_test:
@@ -402,8 +432,20 @@ def main() -> int:
     required = (args.source_root, args.data_root, args.seal, args.archive_lock, args.output)
     if any(value is None for value in required):
         parser.error("--source-root, --data-root, --seal, --archive-lock and --output are required")
-    report = bootstrap(
-        args.source_root, args.data_root, args.seal, args.archive_lock, args.output, args.aec_limit)
+    try:
+        report = bootstrap(
+            args.source_root, args.data_root, args.seal, args.archive_lock, args.output,
+            args.aec_limit, args.progress_output)
+    except Exception as exc:
+        stage = "bootstrap"
+        if args.progress_output is not None and args.progress_output.exists():
+            try:
+                stage = str(load_json(args.progress_output).get("stage", stage))
+            except Exception:
+                pass
+        write_progress(args.progress_output, stage, "failure",
+                       error_type=type(exc).__name__, error=str(exc))
+        raise
     print(json.dumps({
         "classification": report["classification"],
         "aec_materialized_files": report["aec"]["materialized_files"],

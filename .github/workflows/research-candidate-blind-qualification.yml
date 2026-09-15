@@ -8,10 +8,12 @@ on:
       - '.github/research/continuous-optimization/research_candidate_blind.py'
       - '.github/workflows/research-candidate-blind-qualification.yml'
       - '.github/program/maintenance_workflow_contract.py'
+      - 'validation/github-hosted-public-minimal.lock.json'
       - 'validation/research/README.md'
       - 'validation/authority.json'
       - 'validation/policies/validation-full-partition.json'
       - 'validation/policies/validation-full-blind.json'
+      - 'validation/tools/prepare_github_hosted_full_validation.py'
       - 'validation/tools/build_full_public_corpus.py'
       - 'validation/tools/split_holdout.py'
       - 'validation/tools/run_validation.py'
@@ -21,21 +23,6 @@ on:
         description: Committed frozen research-candidate manifest
         required: true
         default: '.github/research/continuous-optimization/candidates/f5ad7c495d7f67d6.json'
-        type: string
-      data_root:
-        description: Public dataset cache root on isolated audio-validation runner
-        required: true
-        default: /opt/audio-validation-data
-        type: string
-      seal_path:
-        description: Local dataset seal JSON path on runner
-        required: true
-        default: /opt/audio-validation-data/datasets.seal.json
-        type: string
-      dns_data_root:
-        description: Official DNS5 clean/noise WAV root; blank uses pinned cache default
-        required: false
-        default: ''
         type: string
       aec_limit:
         required: true
@@ -77,6 +64,15 @@ jobs:
           set -euo pipefail
           python3 -m py_compile .github/research/continuous-optimization/research_candidate_blind.py
           python3 .github/research/continuous-optimization/research_candidate_blind.py --self-test
+          python3 -m py_compile validation/tools/prepare_github_hosted_full_validation.py
+          python3 validation/tools/prepare_github_hosted_full_validation.py --self-test
+          python3 - <<'PY'
+          import json, sys
+          sys.path.insert(0, 'validation/tools')
+          import prepare_github_hosted_full_validation as hosted
+          hosted.validate_archive_lock(json.load(open('validation/github-hosted-public-minimal.lock.json')))
+          print('github-hosted public archive lock: PASS')
+          PY
           shopt -s nullglob
           manifests=(.github/research/continuous-optimization/candidates/*.json)
           test "${#manifests[@]}" -gt 0
@@ -96,11 +92,17 @@ jobs:
               'pull_request:', 'workflow_dispatch:', 'AP_VALIDATION_HOLDOUT_KEY',
               '--blind-summary-only', 'BLIND_QUALIFIED_NON_SHIPPING',
               'artifact_digest', 'research_candidate_id', 'target_execution_authority',
+              'prepare_github_hosted_full_validation.py',
+              'github-hosted-public-minimal.lock.json',
+              '${{ runner.temp }}/audio-validation-data',
           )
           missing = [item for item in required if item not in text]
           if missing:
               raise SystemExit(f'blind qualification contract missing: {missing}')
-          forbidden = ('\n  push:', '\n  schedule:', 'git ' + 'push', 'git ' + 'tag', 'gh ' + 'release')
+          forbidden = (
+              '\n  push:', '\n  schedule:', 'git ' + 'push', 'git ' + 'tag', 'gh ' + 'release',
+              'runs-on: [self-hosted', '/opt/audio-validation-data',
+          )
           present = [item for item in forbidden if item in text]
           if present:
               raise SystemExit(f'blind qualification gained forbidden trigger/mutation: {present}')
@@ -205,12 +207,12 @@ jobs:
   qualify-blind:
     if: github.event_name == 'workflow_dispatch'
     needs: resolve
-    runs-on: [self-hosted, linux, audio-validation]
+    runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      DATA_ROOT: ${{ inputs.data_root }}
-      SEAL: ${{ inputs.seal_path }}
-      DNS_ROOT: ${{ inputs.dns_data_root }}
+      DATA_ROOT: ${{ runner.temp }}/audio-validation-data
+      SEAL: ${{ runner.temp }}/audio-validation-data/datasets.seal.json
+      DNS_ROOT: ${{ runner.temp }}/audio-validation-data/DNS-Challenge/datasets_fullband
       AEC_LIMIT: ${{ inputs.aec_limit }}
       DERIVED_LIMIT: ${{ inputs.derived_limit }}
       DNS_LIMIT: ${{ inputs.dns_limit }}
@@ -228,7 +230,7 @@ jobs:
           ref: ${{ needs.resolve.outputs.source_sha }}
           fetch-depth: 0
           path: source
-      - name: Rebind exact candidate provenance on isolated runner
+      - name: Rebind exact candidate provenance on GitHub-hosted runner
         env:
           ARTIFACT_ID: ${{ needs.resolve.outputs.artifact_id }}
           ARTIFACT_DIGEST: ${{ needs.resolve.outputs.artifact_digest }}
@@ -260,24 +262,33 @@ jobs:
             --manifest candidate-out/candidate-manifest.json \
             --registry infra/.github/research/continuous-optimization/dataset-registry.json \
             --optimization-result candidate-out/optimization-result.json --check
-      - name: Preflight isolated audio-validation runner
+      - name: Bootstrap hash-bound full public cache on GitHub-hosted runner
         run: |
           set -euo pipefail
-          args=(
-            --role audio-validation --source-revision '${{ needs.resolve.outputs.source_sha }}'
-            --data-root "$DATA_ROOT" --seal "$SEAL" --writable-path "$GITHUB_WORKSPACE"
+          python3 infra/validation/tools/prepare_github_hosted_full_validation.py \
+            --source-root source \
+            --data-root "$DATA_ROOT" \
+            --seal "$SEAL" \
+            --archive-lock infra/validation/github-hosted-public-minimal.lock.json \
+            --output candidate-out/github-hosted-cache.json
+      - name: Preflight GitHub-hosted audio-validation environment
+        run: |
+          set -euo pipefail
+          python3 source/tools/runner_preflight.py \
+            --role audio-validation \
+            --source-revision '${{ needs.resolve.outputs.source_sha }}' \
+            --data-root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
+            --require-command gh --require-command jq --require-command curl \
+            --require-command sha256sum --require-command unzip \
+            --writable-path "$GITHUB_WORKSPACE" \
             --output candidate-out/runner-preflight.json
-          )
-          if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
-          python3 source/tools/runner_preflight.py "${args[@]}"
           test -z "$(git -C source status --porcelain=v1)"
           test -z "$(git -C infra status --porcelain=v1)"
       - name: Verify full sealed public cache
         run: |
           set -euo pipefail
-          args=(verify --profile full --root "$DATA_ROOT" --seal "$SEAL")
-          if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
-          python3 source/validation/tools/prepare_public_validation.py "${args[@]}" \
+          python3 source/validation/tools/prepare_public_validation.py verify \
+            --profile full --root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
             > candidate-out/dataset-verification.json
       - name: Build exact offline candidate processor
         working-directory: source
@@ -304,12 +315,10 @@ jobs:
       - name: Build full public validation corpus
         run: |
           set -euo pipefail
-          args=(
-            --data-root "$DATA_ROOT" --seal "$SEAL" --output candidate-out/public
+          python3 source/validation/tools/build_full_public_corpus.py \
+            --data-root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
+            --output candidate-out/public \
             --aec-limit "$AEC_LIMIT" --derived-limit "$DERIVED_LIMIT" --dns-limit "$DNS_LIMIT"
-          )
-          if [ -n "$DNS_ROOT" ]; then args+=(--dns-data-root "$DNS_ROOT"); fi
-          python3 source/validation/tools/build_full_public_corpus.py "${args[@]}"
       - name: Partition repository-external blind holdout
         env:
           AP_VALIDATION_HOLDOUT_KEY: ${{ secrets.AP_VALIDATION_HOLDOUT_KEY }}

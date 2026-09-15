@@ -61,13 +61,15 @@ jobs:
               'metrics_jsonl_proxy.py', 'partition_changed',
               'new_holdout_key_generated', 'source_artifact_digest',
               'candidate-processor-json', '--blind-summary-only',
+              'Path(__file__).resolve().parent', 'root=out_dir.parent',
           )
           missing=[x for x in required if x not in text]
           if missing: raise SystemExit(f'resume contract missing: {missing}')
           forbidden=('split_' + 'holdout.py', 'secrets.' + 'token_hex', 'AP_EPHEMERAL_' + 'HOLDOUT_KEY',
-                     '\n  ' + 'push:', '\n  ' + 'schedule:', 'git ' + 'push', 'gh ' + 'release')
+                     '\n  ' + 'push:', '\n  ' + 'schedule:', 'git ' + 'push', 'gh ' + 'release',
+                     'os.path.abspath(' + "'infra/", 'os.path.abspath(' + "'resume-out/")
           present=[x for x in forbidden if x in text]
-          if present: raise SystemExit(f'resume gained forbidden repartition/mutation: {present}')
+          if present: raise SystemExit(f'resume gained forbidden repartition/mutation/cwd-sensitive path: {present}')
           print('same-partition blind resume contract: PASS')
           PY
 
@@ -177,10 +179,13 @@ jobs:
           cat > resume-out/candidate-processor-json <<'PY'
           #!/usr/bin/env python3
           import os,sys
-          helper=os.path.abspath('infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py')
-          processor=os.path.abspath('resume-out/candidate-processor')
-          audit=os.path.abspath('resume-out/metrics-jsonl-canonicalization.jsonl')
-          os.execv(sys.executable,[sys.executable,helper,'--processor',processor,'--audit',audit,'--',*sys.argv[1:]])
+          from pathlib import Path
+          out_dir=Path(__file__).resolve().parent
+          root=out_dir.parent
+          helper=root/'infra'/'.github'/'research'/'continuous-optimization'/'hosted-validation'/'metrics_jsonl_proxy.py'
+          processor=out_dir/'candidate-processor'
+          audit=out_dir/'metrics-jsonl-canonicalization.jsonl'
+          os.execv(sys.executable,[sys.executable,str(helper),'--processor',str(processor),'--audit',str(audit),'--',*sys.argv[1:]])
           PY
           chmod 700 resume-out/candidate-processor-json
           python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test

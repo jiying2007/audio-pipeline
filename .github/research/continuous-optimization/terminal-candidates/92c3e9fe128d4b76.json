@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "VISIBLE_EXECUTION_REJECTED_NON_SHIPPING",
+  "terminal_candidate": true,
+  "next_gate": null,
+  "research_candidate_id": "92c3e9fe128d4b76",
+  "candidate_id": "64814f0762bd",
+  "source_sha": "5b7e544c9df26233c7056952a21f8c870aada020",
+  "hypothesis_id": "multidataset-runtime-safe-tuning-v2",
+  "tuning": {
+    "aec_mu": 0.22,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -18.0,
+    "limiter_dbfs": -2.5
+  },
+  "failed_stage": "visible-processor-telemetry",
+  "rule": "Exact visible validation produced a non-finite processor telemetry value. This exact tuning identity is terminal and may not be retried, reselected, promoted, or used to change shipping.",
+  "visible_execution_violation": {
+    "case_id": "aec-compact-582bc6f439ff5b5f",
+    "scenario": "aec-doubletalk",
+    "sample_rate_hz": 48000,
+    "frame": 906,
+    "field": "vad_probability",
+    "raw_value": "-nan",
+    "erle_db": -334.7073,
+    "raw_line": "{\"frame\":906,\"algorithmic_latency_ms\":11,\"vad_probability\":-nan,\"vad_active\":0,\"far_end_active\":1,\"double_talk_active\":0,\"erle_db\":-334.7073,\"erle_valid\":1,\"aec_converged\":1,\"estimated_delay_ms\":40,\"delay_error_samples\":-2}"
+  },
+  "qualification_provenance": {
+    "workflow": "Research Candidate Blind Qualification",
+    "run_id": 34949358011,
+    "job_id": 104316448379,
+    "artifact_id": 10388907303,
+    "artifact_name": "research-candidate-blind-92c3e9fe128d4b76-34949358011",
+    "artifact_digest": "sha256:f5a9e37d89dbc6bac7364fda9a61243fcac724f18e96e2ee229c9e2005cf15b4",
+    "classification": "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING",
+    "failed_stage": "visible-evidence-incomplete"
+  },
+  "diagnostic_provenance": {
+    "workflow": "Diagnose Metrics JSON 92c3 Once",
+    "run_id": 34955955775,
+    "artifact_id": 10391097896,
+    "artifact_name": "metrics-json-diagnostic-92c3",
+    "artifact_digest": "sha256:46d649dc73d0fa703642ac64ee11ccee3a9ce58977b5d0b341d770af514c2584"
+  },
+  "output_authority": {
+    "shipping_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "automatic_main_mutation": false
+  }
+}

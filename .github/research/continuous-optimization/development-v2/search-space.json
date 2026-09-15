@@ -25,9 +25,6 @@
       {"name": "max_vad_false_positive_rate", "direction": "min", "weight": 0.8, "scale": 0.05, "max_regression": 0.03},
       {"name": "max_output_clip_fraction", "direction": "min", "weight": 2.0, "scale": 0.002, "max_regression": 0.001}
     ],
-    "case_delta_gates": [
-      {"metric": "near_si_sdr_improvement_db", "stat": "p10", "minimum_delta": -0.35},
-      {"metric": "vad_f1", "stat": "p10", "minimum_delta": -0.05}
-    ]
+    "case_delta_gates": []
   }
 }

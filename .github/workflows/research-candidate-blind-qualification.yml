@@ -68,8 +68,8 @@ jobs:
           python3 .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py --self-test
           python3 - <<'PY'
           import json, sys
-          sys.path.insert(0, 'validation/tools')
-          import prepare_github_hosted_full_validation as hosted
+          sys.path.insert(0, '.github/research/continuous-optimization/hosted-validation')
+          import prepare_full_validation as hosted
           hosted.validate_archive_lock(json.load(open('.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json')))
           print('github-hosted public archive lock: PASS')
           PY

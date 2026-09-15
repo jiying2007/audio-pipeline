@@ -16,7 +16,6 @@ import bz2
 import csv
 import hashlib
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -101,6 +100,35 @@ def safe_extract_tar_bz2(archive: Path, destination: Path) -> None:
             if path.is_absolute() or ".." in path.parts or member.issym() or member.islnk():
                 raise ValueError(f"unsafe DNS archive member: {member.name}")
         handle.extractall(destination, members=members)
+
+
+def normalize_dns_wavs(staging: Path, dns_root: Path) -> int:
+    """Move extracted WAVs into the canonical datasets_fullband layout."""
+    moved = 0
+    for source in sorted(staging.rglob("*.wav")):
+        parts = list(source.relative_to(staging).parts)
+        lowered = [part.lower() for part in parts]
+        marker = None
+        for candidate in ("clean_fullband", "noise_fullband"):
+            if candidate in lowered:
+                marker = candidate
+                index = lowered.index(candidate)
+                break
+        if marker is None:
+            continue
+        tail_parts = parts[index + 1:] or [source.name]
+        destination = dns_root / marker / Path(*tail_parts)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists():
+            if digest_file(destination) != digest_file(source):
+                raise ValueError(f"conflicting DNS archive member: {destination}")
+            source.unlink()
+        else:
+            shutil.move(str(source), str(destination))
+        moved += 1
+    if moved == 0:
+        raise ValueError("DNS archive did not contain clean_fullband/noise_fullband WAV members")
+    return moved
 
 
 def dns_counts(root: Path) -> tuple[int, int, int]:
@@ -203,10 +231,13 @@ def bootstrap(source_root: Path, data_root: Path, seal: Path,
             raise ValueError(f"hosted archive byte-size mismatch: {item['id']}")
         if actual_sha != item["sha256"]:
             raise ValueError(f"hosted archive SHA-256 mismatch: {item['id']}")
-        safe_extract_tar_bz2(target, dns_repo)
+        with tempfile.TemporaryDirectory(prefix="dns-extract-", dir=data_root) as tmp:
+            staging = Path(tmp)
+            safe_extract_tar_bz2(target, staging)
+            moved = normalize_dns_wavs(staging, dns_root)
         archive_evidence.append({
             "id": item["id"], "role": role, "bytes": actual_size,
-            "sha256": actual_sha, "url": item["url"],
+            "sha256": actual_sha, "url": item["url"], "wav_count": moved,
         })
 
     clean, noise, total = dns_counts(dns_root)
@@ -266,15 +297,18 @@ def self_test() -> None:
     validate_archive_lock(sample)
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        dns = root / "datasets_fullband/clean_fullband"
-        dns.mkdir(parents=True)
-        wav = dns / "x.wav"
+        staging = root / "staging/a/clean_fullband/set"
+        staging.mkdir(parents=True)
+        wav = staging / "x.wav"
         wav.write_bytes(b"abc")
+        dns_root = root / "datasets_fullband"
+        assert normalize_dns_wavs(root / "staging", dns_root) == 1
+        assert (dns_root / "clean_fullband/set/x.wav").read_bytes() == b"abc"
         index = root / "index.csv.bz2"
-        assert write_derived_dns_index(root / "datasets_fullband", index) == 1
+        assert write_derived_dns_index(dns_root, index) == 1
         with bz2.open(index, "rt", encoding="utf-8") as handle:
             text = handle.read()
-        assert "datasets_fullband/clean_fullband/x.wav" in text
+        assert "datasets_fullband/clean_fullband/set/x.wav" in text
     print("github-hosted full validation self-test: OK")
 
 

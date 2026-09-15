@@ -1,0 +1,86 @@
+name: Diagnose Metrics JSON 92c3 Once
+
+on:
+  push:
+    branches: [codex/diagnose-visible-92c3-once]
+    paths:
+      - '.github/workflows/diagnose-metrics-json-92c3-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: 5b7e544c9df26233c7056952a21f8c870aada020
+          fetch-depth: 0
+          path: source
+      - name: Materialize exact failing AEC pair
+        run: |
+          set -euo pipefail
+          git lfs install --local
+          GIT_LFS_SKIP_SMUDGE=1 git clone --no-checkout https://github.com/microsoft/AEC-Challenge.git aec
+          git -C aec checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          include='datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_mic.wav,datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_lpb.wav'
+          git -C aec lfs pull --include "$include" --exclude ''
+          test "$(sha256sum aec/datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_mic.wav | awk '{print $1}')" = 582bc6f439ff5b5f14edb571f9e1a6faf0d48c9be19a6fe20d2c1c039557093d
+          test "$(sha256sum aec/datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_lpb.wav | awk '{print $1}')" = 76402cac8a1dfc66cc457ec09503910f94a10506e8a09d7f6305624833410536
+      - name: Build exact processor
+        working-directory: source
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-json-probe -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON -DAP_BUILD_SOURCE_REVISION=5b7e544c9df26233c7056952a21f8c870aada020
+          cmake --build build-json-probe --target ap_process_pcm --parallel
+      - name: Capture first malformed metrics line
+        run: |
+          set -euo pipefail
+          mic="$GITHUB_WORKSPACE/aec/datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_mic.wav"
+          render="$GITHUB_WORKSPACE/aec/datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_lpb.wav"
+          ffmpeg -loglevel error -y -i "$mic" -f s16le -acodec pcm_s16le mic.pcm
+          ffmpeg -loglevel error -y -i "$render" -f s16le -acodec pcm_s16le render.pcm
+          source/build-json-probe/ap_process_pcm \
+            --aec-mu 0.22 --ns-floor 0.12 --agc-target-dbfs -18.0 --limiter-dbfs -2.5 \
+            --sample-rate 48000 --mic-channels 1 --metrics-jsonl metrics.jsonl \
+            mic.pcm render.pcm out.pcm
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = {
+              'schema_version': 1,
+              'case_id': 'aec-compact-582bc6f439ff5b5f',
+              'source_revision': '5b7e544c9df26233c7056952a21f8c870aada020',
+              'candidate_id': '64814f0762bd',
+              'invalid_line': None,
+          }
+          lines = Path('metrics.jsonl').read_text(encoding='utf-8').splitlines()
+          result['line_count'] = len(lines)
+          for idx, line in enumerate(lines, start=1):
+              try:
+                  json.loads(line)
+              except Exception as exc:
+                  result['invalid_line'] = {
+                      'line_number': idx,
+                      'exception_type': type(exc).__name__,
+                      'message': str(exc),
+                      'raw_line': line,
+                      'contains_nan': 'nan' in line.lower(),
+                      'contains_inf': 'inf' in line.lower(),
+                  }
+                  break
+          Path('metrics-json-diagnostic.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(result, sort_keys=True))
+          if result['invalid_line'] is None:
+              raise SystemExit('exact case produced no malformed JSON line')
+          PY
+      - name: Upload compact diagnostic
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: metrics-json-diagnostic-92c3
+          path: metrics-json-diagnostic.json
+          if-no-files-found: error
+          retention-days: 30

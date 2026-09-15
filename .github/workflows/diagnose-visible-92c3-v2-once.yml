@@ -1,0 +1,201 @@
+name: Diagnose Visible 92c3 V2 Once
+
+on:
+  push:
+    branches: [codex/diagnose-visible-92c3-once]
+    paths:
+      - '.github/workflows/diagnose-visible-92c3-v2-once.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ba9b80316b35b258d31fe882d1e8214146a5391c
+          fetch-depth: 0
+          path: infra
+      - name: Checkout exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: 5b7e544c9df26233c7056952a21f8c870aada020
+          fetch-depth: 0
+          path: source
+      - name: Initialize replay paths
+        run: |
+          set -euo pipefail
+          echo "DATA_ROOT=$RUNNER_TEMP/audio-validation-data" >> "$GITHUB_ENV"
+          echo "SEAL=$RUNNER_TEMP/audio-validation-data/datasets.seal.json" >> "$GITHUB_ENV"
+          echo "DNS_ROOT=$RUNNER_TEMP/audio-validation-data/DNS-Challenge/datasets_fullband" >> "$GITHUB_ENV"
+      - name: Download exact sealed incomplete evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir evidence
+          gh run download 34949358011 --repo "$GITHUB_REPOSITORY" \
+            --name research-candidate-blind-92c3e9fe128d4b76-34949358011 \
+            --dir evidence
+          test -s evidence/public/corpus-validation.json
+          test -s evidence/public/corpus-blind.json
+          test "$(jq -r .decision evidence/qualification-summary.json)" = BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING
+          test "$(jq -r .terminal_candidate evidence/qualification-summary.json)" = false
+      - name: Re-materialize exact public cache
+        run: |
+          set -euo pipefail
+          python3 infra/.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py \
+            --source-root source \
+            --data-root "$DATA_ROOT" \
+            --seal "$SEAL" \
+            --archive-lock infra/.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json \
+            --aec-limit 60 \
+            --output replay-cache.json
+          python3 source/validation/tools/prepare_public_validation.py verify \
+            --lock source/validation/datasets.lock.json \
+            --profile full --root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
+            > replay-dataset-verification.json
+      - name: Rebind only ephemeral AEC absolute paths
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          src = Path('evidence/public/corpus-validation.json')
+          dst = Path('evidence/public/corpus-validation-rebound.json')
+          corpus = json.loads(src.read_text(encoding='utf-8'))
+          ids = [case['case_id'] for case in corpus['cases']]
+          new_root = Path(os.environ['DATA_ROOT']).resolve()
+          changed = 0
+          old_roots = set()
+          for case in corpus['cases']:
+              for field in ('mic_audio', 'render_audio', 'clean_near_audio', 'echo_audio'):
+                  value = case.get(field)
+                  if not value:
+                      continue
+                  p = Path(value)
+                  if not p.is_absolute():
+                      continue
+                  parts = list(p.parts)
+                  if 'AEC-Challenge' not in parts:
+                      raise SystemExit(f'absolute non-AEC path forbidden: {field}={value}')
+                  idx = parts.index('AEC-Challenge')
+                  old_roots.add(str(Path(*parts[:idx])))
+                  case[field] = str(new_root / Path(*parts[idx:]))
+                  changed += 1
+          if changed == 0:
+              raise SystemExit('no absolute AEC path was rebound')
+          if [case['case_id'] for case in corpus['cases']] != ids:
+              raise SystemExit('case membership/order changed')
+          dst.write_text(json.dumps(corpus, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          receipt = {
+              'schema_version': 1,
+              'source_run_id': 34949358011,
+              'source_artifact_id': 10388907303,
+              'research_candidate_id': '92c3e9fe128d4b76',
+              'candidate_id': '64814f0762bd',
+              'case_count': len(ids),
+              'case_membership_order_sha256': hashlib.sha256('\n'.join(ids).encode()).hexdigest(),
+              'original_corpus_sha256': hashlib.sha256(src.read_bytes()).hexdigest(),
+              'rebound_corpus_sha256': hashlib.sha256(dst.read_bytes()).hexdigest(),
+              'old_roots': sorted(old_roots),
+              'new_data_root': str(new_root),
+              'rebound_path_count': changed,
+              'partition_changed': False,
+          }
+          Path('visible-rebind-receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+      - name: Build exact candidate processor
+        working-directory: source
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-visible-replay -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION=5b7e544c9df26233c7056952a21f8c870aada020
+          cmake --build build-visible-replay --target ap_process_pcm --parallel
+          test "$(sha256sum build-visible-replay/ap_process_pcm | awk '{print $1}')" = "$(awk '{print $1}' ../evidence/processor.sha256)"
+      - name: Replay exact visible partition
+        run: |
+          set -euo pipefail
+          cat > candidate-processor-replay <<'PY'
+          #!/usr/bin/env python3
+          import os, sys
+          processor = os.path.abspath('source/build-visible-replay/ap_process_pcm')
+          prefix = ['--aec-mu', '0.22', '--ns-floor', '0.12', '--agc-target-dbfs', '-18.0', '--limiter-dbfs', '-2.5']
+          os.execv(processor, [processor] + prefix + sys.argv[1:])
+          PY
+          chmod +x candidate-processor-replay
+          PYTHONPATH=source/validation/tools python3 - <<'PY'
+          import json, traceback
+          from pathlib import Path
+          import render_corr_exact
+          import run_validation_engine as engine
+          import stage_profile_support
+
+          render_corr_exact.install(engine)
+          stage_profile_support.install(engine)
+          corpus_path = Path('evidence/public/corpus-validation-rebound.json').resolve()
+          processor = Path('candidate-processor-replay').resolve()
+          corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
+          diagnostic = {
+              'schema_version': 2,
+              'source_run_id': 34949358011,
+              'research_candidate_id': '92c3e9fe128d4b76',
+              'candidate_id': '64814f0762bd',
+              'visible_case_count': len(corpus['cases']),
+              'completed_cases_before_exception': 0,
+              'first_exception': None,
+          }
+          for index, case in enumerate(corpus['cases']):
+              try:
+                  engine.evaluate_case(processor, corpus_path, case)
+                  diagnostic['completed_cases_before_exception'] = index + 1
+              except Exception as exc:
+                  diagnostic['first_exception'] = {
+                      'index': index,
+                      'case_id': case.get('case_id'),
+                      'scenario': case.get('scenario'),
+                      'processor_profile': case.get('processor_profile', 'default'),
+                      'exception_type': type(exc).__name__,
+                      'message': str(exc),
+                      'traceback_tail': traceback.format_exc().splitlines()[-16:],
+                  }
+                  break
+          Path('visible-replay-diagnostic.json').write_text(json.dumps(diagnostic, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(diagnostic, sort_keys=True))
+          PY
+      - name: Produce canonical visible report if replay executed all cases
+        run: |
+          set -euo pipefail
+          if jq -e '.first_exception == null and .completed_cases_before_exception == .visible_case_count' visible-replay-diagnostic.json >/dev/null; then
+            cd source
+            python3 validation/tools/run_validation.py \
+              --source-revision 5b7e544c9df26233c7056952a21f8c870aada020 \
+              --corpus ../evidence/public/corpus-validation-rebound.json \
+              --policy validation/policies/validation-full-partition.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor ../candidate-processor-replay \
+              --output ../visible-replay-report.json \
+              --evidence-manifest ../visible-replay-evidence.json
+          fi
+      - name: Upload compact replay evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: visible-replay-diagnostic-92c3-v2
+          path: |
+            visible-replay-diagnostic.json
+            visible-rebind-receipt.json
+            visible-replay-report.json
+            visible-replay-evidence.json
+            replay-cache.json
+            replay-dataset-verification.json
+          if-no-files-found: error
+          retention-days: 30

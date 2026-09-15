@@ -1,0 +1,103 @@
+name: Probe Development V2 Once
+
+on:
+  push:
+    branches: [codex/multidataset-development-v2]
+    paths:
+      - '.github/workflows/probe-development-v2-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PYTHONPATH: validation/tools:.github/research/continuous-optimization:.github/research/continuous-optimization/development-v2
+      DEV_ROOT: /tmp/audio-pipeline-development-v2
+      DEV_LOCK: .github/research/continuous-optimization/development-v2/development.lock.json
+      DEV_POLICY: .github/research/continuous-optimization/development-v2/policy.json
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Validate development-v2 contracts
+        run: |
+          set -euo pipefail
+          command -v ffmpeg >/dev/null
+          python3 -m py_compile \
+            .github/research/continuous-optimization/development-v2/prepare.py \
+            .github/research/continuous-optimization/development-v2/build_corpus.py
+          python3 .github/research/continuous-optimization/development-v2/prepare.py --self-test
+          python3 .github/research/continuous-optimization/development-v2/build_corpus.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('.github/research/continuous-optimization/development-v2/policy.json').read_text())
+          s=json.loads(Path('.github/research/continuous-optimization/development-v2/search-space.json').read_text())
+          assert p['allowed_tiers']==['research-validation'] and p['minimum_cases']>=64
+          assert s['strategy']=='cartesian' and s['max_candidates']==18
+          assert s['parameters']['aec_mu']==[0.22]
+          print('development-v2 policy/search contract: PASS')
+          PY
+      - name: Materialize SHA-256 pinned public development data
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/development-v2/prepare.py \
+            --lock "$DEV_LOCK" \
+            --root "$DEV_ROOT" \
+            --output /tmp/development-v2-materialization.json
+      - name: Build two independent public development corpora
+        run: |
+          set -euo pipefail
+          for seed in 1507 1607; do
+            python3 .github/research/continuous-optimization/development-v2/build_corpus.py \
+              --lock "$DEV_LOCK" \
+              --materialization /tmp/development-v2-materialization.json \
+              --data-root "$DEV_ROOT" \
+              --output "/tmp/development-v2-$seed" \
+              --seed "$seed"
+          done
+      - name: Build exact offline processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-development-v2 -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-development-v2 --target ap_process_pcm --parallel
+      - name: Prove baseline on both public development seeds
+        run: |
+          set -euo pipefail
+          for seed in 1507 1607; do
+            python3 validation/tools/run_validation.py \
+              --corpus "/tmp/development-v2-$seed/corpus.json" \
+              --policy "$DEV_POLICY" \
+              --dataset-lock "$DEV_LOCK" \
+              --processor build-development-v2/ap_process_pcm \
+              --output "/tmp/development-v2-report-$seed.json" \
+              --source-revision "$GITHUB_SHA" \
+              --enforce
+          done
+      - name: Publish compact development-v2 proof
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          out={'schema_version':1,'head_sha':'${{ github.sha }}','materialization':json.loads(Path('/tmp/development-v2-materialization.json').read_text()),'reports':{}}
+          for seed in (1507,1607):
+              r=json.loads(Path(f'/tmp/development-v2-report-{seed}.json').read_text())
+              out['reports'][str(seed)]={'validation_result':r['validation_result'],'summary':r['summary'],'corpus_id':r['corpus_id']}
+          Path('/tmp/development-v2-proof.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          print(Path('/tmp/development-v2-proof.json').read_text())
+          PY
+      - name: Upload compact development-v2 evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: development-v2-proof-${{ github.run_id }}
+          path: |
+            /tmp/development-v2-materialization.json
+            /tmp/development-v2-report-1507.json
+            /tmp/development-v2-report-1607.json
+            /tmp/development-v2-proof.json
+          if-no-files-found: error
+          retention-days: 14

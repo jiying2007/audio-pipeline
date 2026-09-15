@@ -98,6 +98,8 @@ jobs:
               'jq -r .digest /tmp/research-artifact.json',
               'trap cleanup EXIT', 'v >= 100 and b >= 16',
               'candidate-out/github-hosted-progress.json',
+              'prepare_public_validation.py verify',
+              '--lock source/validation/datasets.lock.json',
               '--lock source/validation/datasets.lock.json',
           )
           missing = [item for item in required if item not in text]
@@ -301,6 +303,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 source/validation/tools/prepare_public_validation.py verify \
+            --lock source/validation/datasets.lock.json \
             --profile full --root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
             > candidate-out/dataset-verification.json
       - name: Build exact offline candidate processor

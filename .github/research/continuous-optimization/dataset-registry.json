@@ -38,6 +38,20 @@
       "notes": "Deterministic generated regression corpus. Development partitions may rank candidates; independent validation/shadow seeds only gate the selected development winner."
     },
     {
+      "id": "public-development-diverse",
+      "source_kind": "public",
+      "stages": ["ns", "vad", "agc", "pipeline"],
+      "lock_path": ".github/research/continuous-optimization/development-v2/development.lock.json",
+      "builder_path": null,
+      "identity_key": "catalog_id",
+      "identity_value": "audio-pipeline-public-development-v2",
+      "selection_roles": ["development"],
+      "evaluation_roles": [],
+      "frozen_holdout": false,
+      "may_promote_shipping": false,
+      "notes": "SHA-256-pinned Mini LibriSpeech + SLR26 RIR + DEMAND development corpus. Selection-only and archive-disjoint from validation-grade blind inputs; no shipping authority."
+    },
+    {
       "id": "public-validation",
       "source_kind": "public",
       "stages": ["aec", "ns", "vad", "bf", "agc", "pipeline"],
@@ -45,11 +59,11 @@
       "builder_path": null,
       "identity_key": "lock_id",
       "identity_value": "audio-pipeline-public-validation-v1",
-      "selection_roles": ["development"],
+      "selection_roles": [],
       "evaluation_roles": ["validation", "shadow"],
-      "frozen_holdout": false,
+      "frozen_holdout": true,
       "may_promote_shipping": false,
-      "notes": "Pinned public AEC/DNS/RIR sources. Only explicitly materialized development splits may influence candidate ranking; independent splits are evaluation-only."
+      "notes": "Pinned public AEC/DNS/RIR sources are evaluation/holdout data only. They may reject but never select or rescue research candidates."
     },
     {
       "id": "extended-real-research",

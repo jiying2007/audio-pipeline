@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "policy_id": "research-development-diverse-v2",
+  "allowed_tiers": ["research-validation"],
+  "minimum_cases": 64,
+  "required_public_sources": [
+    "openslr-slr31",
+    "openslr-slr26",
+    "demand"
+  ],
+  "aggregate": {
+    "min_pass_rate": 1.0
+  }
+}

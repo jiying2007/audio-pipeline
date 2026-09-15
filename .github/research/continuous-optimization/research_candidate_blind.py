@@ -132,7 +132,12 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any]) -> dic
         raise ValueError("research artifact digest invalid")
     if provenance["optimization_result_path"] != "research-optimization-out/optimization-result.json":
         raise ValueError("optimization result path drift")
-    if not str(provenance["search_space_path"]).startswith("validation/tuning/search-spaces/"):
+    search_space_path = str(provenance["search_space_path"])
+    allowed_search_spaces = (
+        search_space_path.startswith("validation/tuning/search-spaces/"),
+        search_space_path == ".github/research/continuous-optimization/development-v2/search-space.json",
+    )
+    if not any(allowed_search_spaces):
         raise ValueError("search space path invalid")
     if not re.fullmatch(r"[0-9a-f]{64}", str(provenance["search_space_sha256"])):
         raise ValueError("search space digest invalid")

@@ -1,0 +1,90 @@
+name: Harden Hosted Holdout Once
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-blind
+    paths:
+      - .github/workflows/harden-hosted-holdout-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/github-hosted-blind
+          fetch-depth: 0
+      - name: Harden ephemeral holdout cleanup and partition admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/research-candidate-blind-qualification.yml')
+          text = path.read_text(encoding='utf-8')
+          old = '''      - name: Partition run-ephemeral blind holdout
+        run: |
+          set -euo pipefail
+          test -n "$AP_EPHEMERAL_HOLDOUT_KEY"
+          python3 source/validation/tools/split_holdout.py \\
+            --corpus candidate-out/public/corpus.json \\
+            --validation-output candidate-out/public/corpus-validation.json \\
+            --blind-output candidate-out/public/corpus-blind.json \\
+            --holdout-percent "$HOLDOUT" \\
+            --key-env AP_EPHEMERAL_HOLDOUT_KEY
+          unset AP_EPHEMERAL_HOLDOUT_KEY
+          printf 'AP_EPHEMERAL_HOLDOUT_KEY=\\n' >> "$GITHUB_ENV"
+'''
+          new = '''      - name: Partition run-ephemeral blind holdout
+        run: |
+          set -euo pipefail
+          cleanup() {
+            unset AP_EPHEMERAL_HOLDOUT_KEY || true
+            printf 'AP_EPHEMERAL_HOLDOUT_KEY=\\n' >> "$GITHUB_ENV"
+          }
+          trap cleanup EXIT
+          test -n "$AP_EPHEMERAL_HOLDOUT_KEY"
+          python3 source/validation/tools/split_holdout.py \\
+            --corpus candidate-out/public/corpus.json \\
+            --validation-output candidate-out/public/corpus-validation.json \\
+            --blind-output candidate-out/public/corpus-blind.json \\
+            --holdout-percent "$HOLDOUT" \\
+            --key-env AP_EPHEMERAL_HOLDOUT_KEY
+          python3 - <<'PY2'
+          import json
+          validation = json.load(open('candidate-out/public/corpus-validation.json'))
+          blind = json.load(open('candidate-out/public/corpus-blind.json'))
+          visible_cases = len(validation['cases'])
+          blind_cases = len(blind['cases'])
+          if visible_cases < 100 or blind_cases < 16:
+              raise SystemExit(
+                  f'run-ephemeral holdout partition below policy minima: '
+                  f'visible={visible_cases} blind={blind_cases}')
+          print(f'holdout partition admission: visible={visible_cases} blind={blind_cases}')
+          PY2
+'''
+          if old not in text:
+              raise SystemExit('expected holdout partition block not found')
+          text = text.replace(old, new, 1)
+          marker = "              'jq -r .digest /tmp/research-artifact.json',\n"
+          addition = marker + "              'trap cleanup EXIT', 'visible_cases < 100 or blind_cases < 16',\n"
+          if marker not in text:
+              raise SystemExit('contract marker insertion point not found')
+          text = text.replace(marker, addition, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          rm .github/workflows/harden-hosted-holdout-once.yml
+          git diff --check
+      - name: Commit hardening and retire one-shot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(ci): harden ephemeral blind holdout lifecycle'
+          git push origin HEAD:codex/github-hosted-blind

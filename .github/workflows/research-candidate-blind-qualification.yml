@@ -118,6 +118,27 @@ jobs:
           print('research candidate blind boundary: PASS')
           PY
 
+      - name: Enforce same-partition resume boundary
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py \
+            .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py
+          python3 .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
+          python3 .github/research/continuous-optimization/hosted-validation/resume_incomplete_blind.py --self-test
+          python3 - <<'PYRESUME'
+          from pathlib import Path
+          text=Path('.github/workflows/research-candidate-blind-resume.yml').read_text()
+          required=('visible-evidence-incomplete','partition_changed','new_holdout_key_generated',
+                    'metrics_jsonl_proxy.py','resume_incomplete_blind.py','--blind-summary-only')
+          missing=[x for x in required if x not in text]
+          if missing: raise SystemExit(f'resume boundary missing: {missing}')
+          forbidden=('split_holdout.py','secrets.token_hex','AP_EPHEMERAL_HOLDOUT_KEY','\n  push:','\n  schedule:')
+          present=[x for x in forbidden if x in text]
+          if present: raise SystemExit(f'resume boundary violated: {present}')
+          print('same-partition blind resume boundary: PASS')
+          PYRESUME
+
   resolve:
     if: github.event_name == 'workflow_dispatch'
     needs: contract

@@ -22,9 +22,11 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Compile development-v2 tools
+      - name: Install and compile development-v2 tools
         run: |
           set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
           command -v ffmpeg >/dev/null
           python3 -m py_compile \
             .github/research/continuous-optimization/development-v2/prepare.py \

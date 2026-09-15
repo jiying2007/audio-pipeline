@@ -21,7 +21,7 @@
       {"name": "pass_rate", "direction": "max", "weight": 8.0, "scale": 0.02, "max_regression": 0.0},
       {"name": "p10_near_si_sdr_improvement_db", "direction": "max", "weight": 1.5, "scale": 1.0, "max_regression": 0.50},
       {"name": "p10_noise_only_attenuation_db", "direction": "max", "weight": 1.0, "scale": 1.0, "max_regression": 0.50},
-      {"name": "min_vad_f1", "direction": "max", "weight": 1.4, "scale": 0.05, "max_regression": 0.03},
+      {"name": "min_vad_recall", "direction": "max", "weight": 1.4, "scale": 0.05, "max_regression": 0.03},
       {"name": "max_vad_false_positive_rate", "direction": "min", "weight": 0.8, "scale": 0.05, "max_regression": 0.03},
       {"name": "max_output_clip_fraction", "direction": "min", "weight": 2.0, "scale": 0.002, "max_regression": 0.001}
     ],

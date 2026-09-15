@@ -8,12 +8,12 @@ on:
       - '.github/research/continuous-optimization/research_candidate_blind.py'
       - '.github/workflows/research-candidate-blind-qualification.yml'
       - '.github/program/maintenance_workflow_contract.py'
-      - 'validation/github-hosted-public-minimal.lock.json'
+      - '.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json'
       - 'validation/research/README.md'
       - 'validation/authority.json'
       - 'validation/policies/validation-full-partition.json'
       - 'validation/policies/validation-full-blind.json'
-      - 'validation/tools/prepare_github_hosted_full_validation.py'
+      - '.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py'
       - 'validation/tools/build_full_public_corpus.py'
       - 'validation/tools/split_holdout.py'
       - 'validation/tools/run_validation.py'
@@ -64,13 +64,13 @@ jobs:
           set -euo pipefail
           python3 -m py_compile .github/research/continuous-optimization/research_candidate_blind.py
           python3 .github/research/continuous-optimization/research_candidate_blind.py --self-test
-          python3 -m py_compile validation/tools/prepare_github_hosted_full_validation.py
-          python3 validation/tools/prepare_github_hosted_full_validation.py --self-test
+          python3 -m py_compile .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py
+          python3 .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py --self-test
           python3 - <<'PY'
           import json, sys
           sys.path.insert(0, 'validation/tools')
           import prepare_github_hosted_full_validation as hosted
-          hosted.validate_archive_lock(json.load(open('validation/github-hosted-public-minimal.lock.json')))
+          hosted.validate_archive_lock(json.load(open('.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json')))
           print('github-hosted public archive lock: PASS')
           PY
           shopt -s nullglob
@@ -93,8 +93,8 @@ jobs:
               'secrets.token_hex(32)', '--blind-summary-only',
               'BLIND_QUALIFIED_NON_SHIPPING', 'artifact_digest',
               'research_candidate_id', 'target_execution_authority',
-              'prepare_github_hosted_full_validation.py',
-              'github-hosted-public-minimal.lock.json', 'RUNNER_TEMP/audio-validation-data',
+              'prepare_full_validation.py',
+              'public-minimal.lock.json', 'RUNNER_TEMP/audio-validation-data',
           )
           missing = [item for item in required if item not in text]
           if missing:
@@ -272,11 +272,11 @@ jobs:
       - name: Bootstrap hash-bound full public cache on GitHub-hosted runner
         run: |
           set -euo pipefail
-          python3 infra/validation/tools/prepare_github_hosted_full_validation.py \
+          python3 infra/.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py \
             --source-root source \
             --data-root "$DATA_ROOT" \
             --seal "$SEAL" \
-            --archive-lock infra/validation/github-hosted-public-minimal.lock.json \
+            --archive-lock infra/.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json \
             --aec-limit "$AEC_LIMIT" \
             --output candidate-out/github-hosted-cache.json
       - name: Preflight GitHub-hosted audio-validation environment

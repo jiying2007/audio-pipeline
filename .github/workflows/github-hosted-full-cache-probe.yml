@@ -25,18 +25,18 @@ jobs:
           fetch-depth: 0
           path: source
       - name: Self-test hosted cache materializer
-        run: python3 infra/validation/tools/prepare_github_hosted_full_validation.py --self-test
+        run: python3 infra/.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py --self-test
       - name: Bootstrap exact full public cache
         shell: bash
         run: |
           set -euo pipefail
           data_root="$RUNNER_TEMP/audio-validation-data"
           seal="$data_root/datasets.seal.json"
-          python3 infra/validation/tools/prepare_github_hosted_full_validation.py \
+          python3 infra/.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py \
             --source-root source \
             --data-root "$data_root" \
             --seal "$seal" \
-            --archive-lock infra/validation/github-hosted-public-minimal.lock.json \
+            --archive-lock infra/.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json \
             --aec-limit 60 \
             --output /tmp/github-hosted-cache.json
           python3 - <<'PY'

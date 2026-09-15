@@ -1,0 +1,56 @@
+{
+  "blind_result": null,
+  "candidate_id": "64814f0762bd",
+  "failed_stage": "visible-validation",
+  "hypothesis_id": "multidataset-runtime-safe-tuning-v2",
+  "next_gate": null,
+  "output_authority": {
+    "automatic_main_mutation": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "shipping_authority": false,
+    "target_execution_authority": false
+  },
+  "qualification_provenance": {
+    "artifact_digest": "sha256:b857b6ad776c518177246761e29c60f944e94a06b2c56508234692234d433a8e",
+    "artifact_id": 10400538828,
+    "artifact_name": "research-candidate-blind-resume-92c3e9fe128d4b76-34977982931",
+    "head_sha": "9dad864437af1b4738e1a6fbf4b4fcdcf1eccb63",
+    "job_id": 104410610344,
+    "run_id": 34977982931,
+    "workflow": "Research Candidate Blind Resume"
+  },
+  "research_candidate_id": "92c3e9fe128d4b76",
+  "rule": "Explicit visible validation FAIL is terminal for this exact tuning identity. The candidate may not be retried, reselected, promoted, or used to change shipping.",
+  "schema_version": 1,
+  "source_sha": "5b7e544c9df26233c7056952a21f8c870aada020",
+  "status": "BLIND_REJECTED_NON_SHIPPING",
+  "terminal_candidate": true,
+  "tuning": {
+    "aec_mu": 0.22,
+    "agc_target_dbfs": -18.0,
+    "limiter_dbfs": -2.5,
+    "ns_floor": 0.12
+  },
+  "visible_gate_violations": [
+    {
+      "actual": -0.3981448021907754,
+      "expected_min": 0.0,
+      "gate": "min_median_near_si_sdr_improvement_db",
+      "metric": "median_near_si_sdr_improvement_db"
+    },
+    {
+      "actual": 0.00141476372763839,
+      "expected_min": 0.05,
+      "gate": "min_median_output_render_corr_reduction",
+      "metric": "median_output_render_corr_reduction"
+    },
+    {
+      "actual": 0.26540284360189575,
+      "expected_min": 0.8,
+      "gate": "min_vad_f1",
+      "metric": "min_vad_f1"
+    }
+  ],
+  "visible_result": "FAIL"
+}

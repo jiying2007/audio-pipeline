@@ -206,11 +206,26 @@ def materialize_aec(source_root: Path, source_lock_path: Path, data_root: Path,
     if head != aec["revision"]:
         raise ValueError("materialized AEC repository revision mismatch")
     pairs = aec_pairs(repo)
-    if len(pairs) < aec_limit:
-        raise ValueError(f"AEC checkout has only {len(pairs)} pairs for requested limit {aec_limit}")
+    buckets = {
+        scenario: [(mic, lpb) for mic, lpb in pairs if mic.parent.name == scenario]
+        for scenario in AEC_SCENARIOS
+    }
+    balanced: list[tuple[Path, Path]] = []
+    index = 0
+    while len(balanced) < aec_limit:
+        progressed = False
+        for scenario in AEC_SCENARIOS:
+            if index < len(buckets[scenario]) and len(balanced) < aec_limit:
+                balanced.append(buckets[scenario][index])
+                progressed = True
+        if not progressed:
+            break
+        index += 1
+    if len(balanced) < aec_limit:
+        raise ValueError(f"AEC checkout has only {len(balanced)} balanced pairs for requested limit {aec_limit}")
 
     selected: set[Path] = set()
-    for mic, lpb in pairs[:aec_limit]:
+    for mic, lpb in balanced:
         selected.update((mic, lpb))
     for required in aec.get("required_paths", []):
         directory = repo / required

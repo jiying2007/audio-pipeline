@@ -1,0 +1,24 @@
+name: GitHub Hosted SLR28 Hash
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-dns5-probe
+    paths:
+      - .github/workflows/github-hosted-slr28-hash.yml
+
+permissions:
+  contents: read
+
+jobs:
+  hash:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download and hash official SLR28 archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://www.openslr.org/resources/28/rirs_noises.zip'
+          curl --fail --silent --show-error --location --retry 3 "$url" -o /tmp/rirs_noises.zip
+          printf 'slr28_bytes=%s\n' "$(stat -c %s /tmp/rirs_noises.zip)"
+          printf 'slr28_sha256=%s\n' "$(sha256sum /tmp/rirs_noises.zip | awk '{print $1}')"

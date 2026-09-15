@@ -32,9 +32,18 @@ linux
 audio-validation
 ```
 
-## 2. Verify the complete command surface
+## 2. Install and verify the complete command surface
 
-Run as the exact OS user that will execute the GitHub runner:
+Install `gh` before the runner is brought online. On the supported Ubuntu/Debian reference hosts, an administrator may use the distribution package while the runner service remains stopped:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y gh
+```
+
+In ordinary-user mode, do not add sudo privileges to the runner account merely to satisfy this prerequisite. If that account cannot install OS packages, have an administrator install `gh` first, then verify it from the exact runner user's PATH.
+
+Run the full command check as the exact OS user that will execute the GitHub runner:
 
 ```bash
 set -euo pipefail

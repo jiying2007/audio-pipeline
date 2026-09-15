@@ -1,0 +1,40 @@
+name: Probe Development V2 Compile Once
+
+on:
+  push:
+    branches: [codex/multidataset-development-v2]
+    paths:
+      - '.github/workflows/probe-development-v2-compile-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Compile materializer with explicit diagnostics
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('.github/research/continuous-optimization/development-v2/prepare.py')
+          try:
+              compile(path.read_text(encoding='utf-8'), str(path), 'exec')
+          except Exception as exc:
+              print(type(exc).__name__, repr(exc))
+              raise
+          print('prepare.py compile: PASS')
+          PY
+      - name: Compile corpus builder with explicit diagnostics
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('.github/research/continuous-optimization/development-v2/build_corpus.py')
+          try:
+              compile(path.read_text(encoding='utf-8'), str(path), 'exec')
+          except Exception as exc:
+              print(type(exc).__name__, repr(exc))
+              raise
+          print('build_corpus.py compile: PASS')
+          PY

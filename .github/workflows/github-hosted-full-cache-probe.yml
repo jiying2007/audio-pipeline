@@ -1,4 +1,5 @@
 name: GitHub Hosted Full Cache Probe
+# probe-generation: aec-lfs-skip-v1
 
 on:
   push:

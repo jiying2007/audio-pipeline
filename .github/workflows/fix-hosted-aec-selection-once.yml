@@ -1,0 +1,46 @@
+name: Fix Hosted AEC Selection Once
+
+on:
+  push:
+    branches:
+      - codex/github-hosted-blind
+    paths:
+      - .github/workflows/fix-hosted-aec-selection-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/github-hosted-blind
+          fetch-depth: 0
+      - name: Match frozen balanced AEC selection semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    pairs = aec_pairs(repo)\n    if len(pairs) < aec_limit:\n        raise ValueError(f"AEC checkout has only {len(pairs)} pairs for requested limit {aec_limit}")\n\n    selected: set[Path] = set()\n    for mic, lpb in pairs[:aec_limit]:\n        selected.update((mic, lpb))\n'''
+          new = '''    pairs = aec_pairs(repo)\n    buckets = {\n        scenario: [(mic, lpb) for mic, lpb in pairs if mic.parent.name == scenario]\n        for scenario in AEC_SCENARIOS\n    }\n    balanced: list[tuple[Path, Path]] = []\n    index = 0\n    while len(balanced) < aec_limit:\n        progressed = False\n        for scenario in AEC_SCENARIOS:\n            if index < len(buckets[scenario]) and len(balanced) < aec_limit:\n                balanced.append(buckets[scenario][index])\n                progressed = True\n        if not progressed:\n            break\n        index += 1\n    if len(balanced) < aec_limit:\n        raise ValueError(f"AEC checkout has only {len(balanced)} balanced pairs for requested limit {aec_limit}")\n\n    selected: set[Path] = set()\n    for mic, lpb in balanced:\n        selected.update((mic, lpb))\n'''
+          if old not in text:
+              raise SystemExit('expected AEC selection block not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          rm .github/workflows/fix-hosted-aec-selection-once.yml
+          python3 .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py --self-test
+          git diff --check
+      - name: Commit fix and retire one-shot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(validation): mirror balanced AEC materialization'
+          git push origin HEAD:codex/github-hosted-blind

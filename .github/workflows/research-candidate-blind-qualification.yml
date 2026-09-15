@@ -98,6 +98,7 @@ jobs:
               'jq -r .digest /tmp/research-artifact.json',
               'trap cleanup EXIT', 'v >= 100 and b >= 16',
               'candidate-out/github-hosted-progress.json',
+              '--lock source/validation/datasets.lock.json',
           )
           missing = [item for item in required if item not in text]
           if missing:
@@ -328,6 +329,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 source/validation/tools/build_full_public_corpus.py \
+            --lock source/validation/datasets.lock.json \
             --data-root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
             --output candidate-out/public \
             --aec-limit "$AEC_LIMIT" --derived-limit "$DERIVED_LIMIT" --dns-limit "$DNS_LIMIT"

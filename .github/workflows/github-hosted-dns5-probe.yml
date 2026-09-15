@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  probe:
+  dns-archives:
     runs-on: ubuntu-latest
     steps:
       - name: Measure runner and pinned public-data archive sizes
@@ -21,7 +21,6 @@ jobs:
           python3 - <<'PY'
           import json
           import urllib.request
-
           urls = {
               "dns_clean_vocalset": "https://dns4public.blob.core.windows.net/dns4archive/datasets_fullband/clean_fullband/datasets_fullband.clean_fullband.VocalSet_48kHz_mono_000_NA_NA.tar.bz2",
               "dns_noise_freesound_001": "https://dnschallengepublic.blob.core.windows.net/dns5archive/V5_training_dataset/noise_fullband/datasets_fullband.noise_fullband.freesound_001.tar.bz2",
@@ -36,7 +35,6 @@ jobs:
           print(json.dumps(rows, sort_keys=True))
           PY
           df -h /
-
       - name: Download, hash and inspect minimal official DNS5 archives
         shell: bash
         run: |
@@ -56,14 +54,33 @@ jobs:
           test "$noise_count" -ge 32
           printf 'clean_sha256=%s\nnoise_sha256=%s\nclean_wavs=%s\nnoise_wavs=%s\n' \
             "$clean_sha" "$noise_sha" "$clean_count" "$noise_count"
-          {
-            echo '## Minimal DNS5 archive identity'
-            echo
-            echo "- clean_sha256: \`$clean_sha\`"
-            echo "- noise_sha256: \`$noise_sha\`"
-            echo "- clean_wavs: \`$clean_count\`"
-            echo "- noise_wavs: \`$noise_count\`"
-            echo
-            echo '### Runner disk after extract'
-            df -h / | tail -n 1
-          } >> "$GITHUB_STEP_SUMMARY"
+          df -h /
+
+  compact-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Bootstrap and verify pinned AEC plus SLR28 cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=/tmp/audio-validation-data
+          seal=$root/datasets.seal.json
+          python3 validation/tools/prepare_public_validation.py prepare \
+            --profile compact --root "$root" --seal "$seal" --allow-large-downloads \
+            > /tmp/compact-prepare.json
+          python3 validation/tools/prepare_public_validation.py verify \
+            --profile compact --root "$root" --seal "$seal" \
+            > /tmp/compact-verify.json
+          python3 - <<'PY'
+          import json
+          for path in ('/tmp/compact-prepare.json','/tmp/compact-verify.json'):
+              data=json.load(open(path))
+              print(json.dumps({
+                  'profile': data['profile'],
+                  'lock_sha256': data['lock_sha256'],
+                  'datasets': data['datasets'],
+              }, sort_keys=True))
+          PY
+          du -sh "$root"
+          df -h /

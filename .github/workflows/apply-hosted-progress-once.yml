@@ -6,6 +6,7 @@ on:
       - codex/github-hosted-blind
     paths:
       - .github/research/continuous-optimization/hosted-validation/patch_progress_once.py
+      - .github/workflows/apply-hosted-progress-once.yml
 
 permissions:
   contents: write

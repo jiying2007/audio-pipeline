@@ -39,6 +39,7 @@ jobs:
             --seal "$seal" \
             --archive-lock infra/.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json \
             --aec-limit 60 \
+            --progress-output /tmp/github-hosted-progress.json \
             --output /tmp/github-hosted-cache.json
           python3 - <<'PY'
           import json
@@ -77,3 +78,22 @@ jobs:
           PY
           du -sh "$data_root" /tmp/full-public
           df -h /
+      - name: Report compact bootstrap progress
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f /tmp/github-hosted-progress.json ]; then
+            cat /tmp/github-hosted-progress.json
+            cat /tmp/github-hosted-progress.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '{"schema_version":1,"stage":"no-progress-file","status":"failure"}' | tee /tmp/github-hosted-progress.json
+          fi
+      - name: Upload compact bootstrap progress
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-hosted-full-cache-progress-${{ github.run_id }}
+          path: /tmp/github-hosted-progress.json
+          if-no-files-found: error
+          retention-days: 7

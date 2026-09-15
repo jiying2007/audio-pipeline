@@ -23,7 +23,7 @@ jobs:
       - name: Materialize exact failing AEC pair
         run: |
           set -euo pipefail
-          git lfs install --local
+          git lfs install --skip-repo
           GIT_LFS_SKIP_SMUDGE=1 git clone --no-checkout https://github.com/microsoft/AEC-Challenge.git aec
           git -C aec checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
           include='datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_mic.wav,datasets/test_set_icassp2022/doubletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_doubletalk_lpb.wav'

@@ -95,6 +95,7 @@ jobs:
               'BLIND_QUALIFIED_NON_SHIPPING', 'artifact_digest',
               'research_candidate_id', 'target_execution_authority',
               'prepare_full_validation.py',
+              'metrics_jsonl_proxy.py', 'candidate-processor-json',
               'public-minimal.lock.json', 'RUNNER_TEMP/audio-validation-data',
               'jq -r .digest /tmp/research-artifact.json',
               'trap cleanup EXIT', 'v >= 100 and b >= 16',
@@ -329,6 +330,19 @@ jobs:
             --wrapper candidate-out/candidate-processor \
             --identity-output candidate-out/candidate-identity.json \
             --seal-identity
+      - name: Create strict metrics JSON qualification proxy
+        run: |
+          set -euo pipefail
+          cat > candidate-out/candidate-processor-json <<'PYPROXY'
+          #!/usr/bin/env python3
+          import os, sys
+          helper = os.path.abspath('infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py')
+          processor = os.path.abspath('candidate-out/candidate-processor')
+          audit = os.path.abspath('candidate-out/metrics-jsonl-canonicalization.jsonl')
+          os.execv(sys.executable, [sys.executable, helper, '--processor', processor, '--audit', audit, '--', *sys.argv[1:]])
+          PYPROXY
+          chmod 700 candidate-out/candidate-processor-json
+          python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
       - name: Build full public validation corpus
         run: |
           set -euo pipefail
@@ -386,7 +400,7 @@ jobs:
             --corpus ../candidate-out/public/corpus-validation.json \
             --policy validation/policies/validation-full-partition.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor ../candidate-out/candidate-processor \
+            --processor ../candidate-out/candidate-processor-json \
             --output ../candidate-out/validation-report.json \
             --evidence-manifest ../candidate-out/validation-evidence-manifest.json --enforce
       - name: Run exact frozen candidate on blind holdout with summary-only report
@@ -398,7 +412,7 @@ jobs:
             --corpus ../candidate-out/public/corpus-blind.json \
             --policy validation/policies/validation-full-blind.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor ../candidate-out/candidate-processor \
+            --processor ../candidate-out/candidate-processor-json \
             --output ../candidate-out/blind-report.json \
             --evidence-manifest ../candidate-out/blind-evidence-manifest.json \
             --blind-summary-only --enforce

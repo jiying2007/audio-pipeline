@@ -1,0 +1,49 @@
+name: Freeze Multidataset V2 Candidate Once
+
+on:
+  push:
+    branches: [codex/freeze-multidataset-v2-candidate]
+    paths:
+      - '.github/workflows/freeze-multidataset-v2-candidate-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: codex/freeze-multidataset-v2-candidate
+          fetch-depth: 0
+      - name: Bind blind default to the active frozen candidate
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/research-candidate-blind-qualification.yml')
+          text = path.read_text(encoding='utf-8')
+          old = "default: '.github/research/continuous-optimization/candidates/f5ad7c495d7f67d6.json'"
+          new = "default: '.github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json'"
+          if text.count(old) != 1:
+              raise SystemExit(f'expected exactly one stale default, found {text.count(old)}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+          python3 .github/research/continuous-optimization/research_candidate_blind.py \
+            --manifest .github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json \
+            --registry .github/research/continuous-optimization/dataset-registry.json --check
+          grep -F "candidates/92c3e9fe128d4b76.json" .github/workflows/research-candidate-blind-qualification.yml >/dev/null
+          ! grep -F "candidates/f5ad7c495d7f67d6.json" .github/workflows/research-candidate-blind-qualification.yml >/dev/null
+      - name: Commit clean lifecycle state
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/freeze-multidataset-v2-candidate-once.yml
+          git add .github/workflows/research-candidate-blind-qualification.yml \
+            .github/research/continuous-optimization/candidates/92c3e9fe128d4b76.json
+          git commit -m 'research: bind blind qualification to multidataset v2 candidate'
+          git status --porcelain=v1
+          git rev-parse HEAD
+          git push origin HEAD:codex/freeze-multidataset-v2-candidate

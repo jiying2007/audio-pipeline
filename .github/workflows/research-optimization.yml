@@ -116,11 +116,14 @@ jobs:
       RESEARCH_REGISTRY: .github/research/continuous-optimization/dataset-registry.json
       DEV_LOCK: .github/research/continuous-optimization/development-v2/development.lock.json
       DEV_POLICY: .github/research/continuous-optimization/development-v2/policy.json
-      DEV_ROOT: ${{ runner.temp }}/audio-pipeline-development-v2
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
+      - name: Initialize development workspace
+        run: |
+          set -euo pipefail
+          echo "DEV_ROOT=$RUNNER_TEMP/audio-pipeline-development-v2" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: research-optimization

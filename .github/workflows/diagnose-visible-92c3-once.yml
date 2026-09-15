@@ -1,0 +1,118 @@
+name: Diagnose Visible 92c3 Once
+
+on:
+  push:
+    branches: [codex/diagnose-visible-92c3-once]
+    paths:
+      - '.github/workflows/diagnose-visible-92c3-once.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: 5b7e544c9df26233c7056952a21f8c870aada020
+          fetch-depth: 0
+          path: source
+      - name: Download exact sealed blind artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/10388907303/zip" \
+            --output /tmp/blind.zip
+          test "sha256:$(sha256sum /tmp/blind.zip | awk '{print $1}')" = \
+            'sha256:f5a9e37d89dbc6bac7364fda9a61243fcac724f18e96e2ee229c9e2005cf15b4'
+          mkdir evidence
+          unzip -q /tmp/blind.zip -d evidence
+          test -s evidence/public/corpus-validation.json
+          test -s evidence/candidate-manifest.json
+          test ! -e evidence/validation-report.json
+      - name: Build exact candidate processor
+        working-directory: source
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-visible-replay -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION=5b7e544c9df26233c7056952a21f8c870aada020
+          cmake --build build-visible-replay --target ap_process_pcm --parallel
+          test "$(sha256sum build-visible-replay/ap_process_pcm | awk '{print $1}')" = \
+            "$(awk '{print $1}' ../evidence/processor.sha256)"
+      - name: Replay exact visible partition until first execution exception
+        run: |
+          set -euo pipefail
+          cat > candidate-processor-replay <<'PY'
+          #!/usr/bin/env python3
+          import os, sys
+          processor = os.path.abspath('source/build-visible-replay/ap_process_pcm')
+          prefix = ['--aec-mu', '0.22', '--ns-floor', '0.12', '--agc-target-dbfs', '-18.0', '--limiter-dbfs', '-2.5']
+          os.execv(processor, [processor] + prefix + sys.argv[1:])
+          PY
+          chmod +x candidate-processor-replay
+          PYTHONPATH=source/validation/tools python3 - <<'PY'
+          import json
+          import traceback
+          from pathlib import Path
+          import render_corr_exact
+          import run_validation_engine as engine
+          import stage_profile_support
+
+          render_corr_exact.install(engine)
+          stage_profile_support.install(engine)
+
+          corpus_path = Path('evidence/public/corpus-validation.json').resolve()
+          processor = Path('candidate-processor-replay').resolve()
+          corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
+          diagnostic = {
+              'schema_version': 1,
+              'source_run_id': 34949358011,
+              'source_artifact_id': 10388907303,
+              'source_artifact_digest': 'sha256:f5a9e37d89dbc6bac7364fda9a61243fcac724f18e96e2ee229c9e2005cf15b4',
+              'research_candidate_id': '92c3e9fe128d4b76',
+              'candidate_id': '64814f0762bd',
+              'visible_case_count': len(corpus['cases']),
+              'completed_cases_before_exception': 0,
+              'first_exception': None,
+          }
+          for index, case in enumerate(corpus['cases']):
+              try:
+                  engine.evaluate_case(processor, corpus_path, case)
+                  diagnostic['completed_cases_before_exception'] = index + 1
+              except Exception as exc:
+                  diagnostic['first_exception'] = {
+                      'index': index,
+                      'case_id': case.get('case_id'),
+                      'scenario': case.get('scenario'),
+                      'processor_profile': case.get('processor_profile', 'default'),
+                      'sample_rate_hz': case.get('sample_rate_hz'),
+                      'mic_channels': case.get('mic_channels'),
+                      'exception_type': type(exc).__name__,
+                      'message': str(exc),
+                      'traceback_tail': traceback.format_exc().splitlines()[-12:],
+                  }
+                  break
+          Path('visible-replay-diagnostic.json').write_text(
+              json.dumps(diagnostic, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(diagnostic, sort_keys=True))
+          if diagnostic['first_exception'] is None:
+              raise SystemExit('visible replay did not reproduce an execution exception')
+          PY
+      - name: Upload compact diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: visible-replay-diagnostic-92c3
+          path: visible-replay-diagnostic.json
+          if-no-files-found: error
+          retention-days: 30

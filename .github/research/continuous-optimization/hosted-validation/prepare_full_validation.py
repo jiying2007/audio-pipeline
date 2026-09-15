@@ -16,6 +16,7 @@ import bz2
 import csv
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -51,13 +52,15 @@ def write_progress(path: Path | None, stage: str, status: str = "in_progress", *
     temporary.replace(path)
 
 
-def run(command: list[str], *, cwd: Path | None = None, capture: bool = False) -> str:
+def run(command: list[str], *, cwd: Path | None = None, capture: bool = False,
+        env: dict[str, str] | None = None) -> str:
     result = subprocess.run(
         command,
         cwd=str(cwd) if cwd else None,
         check=True,
         text=True,
         stdout=subprocess.PIPE if capture else None,
+        env=env,
     )
     return result.stdout if capture else ""
 
@@ -207,10 +210,12 @@ def aec_pairs(aec_repo: Path) -> list[tuple[Path, Path]]:
 def materialize_aec(source_root: Path, source_lock_path: Path, data_root: Path,
                     aec: dict, aec_limit: int) -> dict:
     fetch = source_root / "validation/tools/fetch_public_data.py"
+    metadata_env = dict(os.environ)
+    metadata_env["GIT_LFS_SKIP_SMUDGE"] = "1"
     run([
         sys.executable, str(fetch), "--lock", str(source_lock_path), "--root", str(data_root),
         "--dataset", "microsoft-aec-challenge",
-    ], cwd=source_root)
+    ], cwd=source_root, env=metadata_env)
     repo = data_root / aec["local_path"]
     head = run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture=True).strip()
     if head != aec["revision"]:

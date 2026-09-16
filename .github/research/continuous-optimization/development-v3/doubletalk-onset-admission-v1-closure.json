@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "hypothesis_id": "doubletalk-onset-admission-v1",
+  "status": "CLOSED_KEEP_BASELINE",
+  "decision": "KEEP_BASELINE",
+  "governance_base_sha": "0bf71a35e049fc78c3f9d87dca5251d387dfdd7f",
+  "candidate": {
+    "budget_authorized": 1,
+    "budget_consumed": 1,
+    "budget_remaining": 0,
+    "head_sha": "008c923474132dcc33d6da4756b486a78c2dee6b",
+    "pr": 228,
+    "pr_merge_commit_sha": "9d17b75f420917510c2df102e2ceb212dbc709ec",
+    "pr_state": "closed",
+    "merged": false,
+    "changed_files": 5,
+    "additions": 63,
+    "deletions": 4
+  },
+  "candidate_design": {
+    "public_double_talk_semantics_changed": false,
+    "activity_or_vad_threshold_changed": false,
+    "new_fixed_timer_added": false,
+    "i009_rescue_revived": false,
+    "description": "Reuse existing Activity dt_hold as current-frame internal onset admission evidence and carry existing VAD-active evidence for one frame into the next frame; feed the resulting internal effective double-talk semantic to AEC adaptation and far-only enhancement controls while leaving public DTD and ERLE accounting unchanged."
+  },
+  "hard_negative_failures": [
+    {
+      "gate": "Hosted Real AEC movement",
+      "workflow": "Hosted Real AEC Validation",
+      "run_id": 35086282686,
+      "run_number": 756,
+      "artifact": {
+        "id": 10442725717,
+        "name": "hosted-real-aec-35086282686",
+        "digest": "sha256:d77a5c269f73e78eb75bd7a8e4c1d39f39bd3b226f4a832e72bfb63564b5c77f"
+      },
+      "result": "FAIL",
+      "cases": 4,
+      "passed_cases": 2,
+      "pass_rate": 0.5,
+      "static_farend_singletalk_passed": 2,
+      "static_farend_singletalk_cases": 2,
+      "movement_farend_singletalk_passed": 0,
+      "movement_farend_singletalk_cases": 2,
+      "median_output_render_corr_reduction": 0.018288695114194526,
+      "movement_median_output_render_corr_reduction": -0.012785633598805763
+    },
+    {
+      "gate": "echo-path change",
+      "workflow": "Audio Quality Evaluation",
+      "run_id": 35086282725,
+      "run_number": 31,
+      "artifact": {
+        "id": 10442596606,
+        "name": "audio-quality-evaluation-35086282725",
+        "digest": "sha256:ae6abbf63309d8a268e9300d475aa9505ddbd9b5fe3903c351a1ea18c802a036"
+      },
+      "result": "FAIL",
+      "seed": 5107,
+      "case_id": "quality-aec-path-change",
+      "erle_convergence_ms": 4010.0,
+      "erle_convergence_max_ms": 3500.0,
+      "erle_recovery_ms": 990.0,
+      "other_fixed_seeds_passing_all_cases": [6107, 7107]
+    }
+  ],
+  "baseline_recovery_evidence": {
+    "workflow": "Hosted Real AEC Validation",
+    "run_id": 35086910464,
+    "run_number": 757,
+    "closure_head_sha": "850aa722bc8589c3144e7c7802beb7c1cc0ad21b",
+    "pr_merge_source_sha": "c93843f753b98a72e83bd3811215f75fa2c577e7",
+    "dsp_content": "governance baseline plus closure JSON; failed candidate DSP is absent",
+    "artifact": {
+      "id": 10442876547,
+      "name": "hosted-real-aec-35086910464",
+      "digest": "sha256:d7e7a1aaf48e2ef3fb79ede4162e1a14b03bf0e8cd8f7ef9576e1d1d211cd297"
+    },
+    "result": "PASS",
+    "cases": 4,
+    "passed_cases": 4,
+    "pass_rate": 1.0,
+    "static_farend_singletalk_passed": 2,
+    "static_farend_singletalk_cases": 2,
+    "movement_farend_singletalk_passed": 2,
+    "movement_farend_singletalk_cases": 2,
+    "median_output_render_corr_reduction": 0.014063662667163784,
+    "static_median_output_render_corr_reduction": 0.03620233995389352,
+    "movement_median_output_render_corr_reduction": -0.02096521123299384,
+    "candidate_movement_passed_cases": 0,
+    "baseline_movement_passed_cases": 2,
+    "same_real_aec_policy_restored_after_candidate_removed": true
+  },
+  "passing_exact_candidate_gates": [
+    {
+      "workflow": "Activity RES Stage Validation",
+      "run_id": 35086282755,
+      "run_number": 24,
+      "conclusion": "success",
+      "artifact_id": 10441909070,
+      "artifact_digest": "sha256:45a3cffdd05792f86f291cd6526a45864288087df28e276d96c990b8b347be9f"
+    },
+    {
+      "workflow": "DSP Stage Validation",
+      "run_id": 35086282848,
+      "run_number": 184,
+      "conclusion": "success",
+      "artifact_id": 10441993728,
+      "artifact_digest": "sha256:b310dc545a0321e991f6d77d9a30f51ba0f207df4d5b23c54bd7f51e79c44545"
+    },
+    {
+      "workflow": "AGC Stage Tuning",
+      "run_id": 35086282775,
+      "run_number": 18,
+      "conclusion": "success",
+      "artifact_id": 10442402512,
+      "artifact_digest": "sha256:83eb98011926d8fea15146cb6cbe8f4c5e5d520896e30e37a5b376733958cdf3"
+    },
+    {
+      "workflow": "Hosted Real Audio Validation",
+      "run_id": 35086282702,
+      "run_number": 761,
+      "conclusion": "success",
+      "artifact_id": 10442003721,
+      "artifact_digest": "sha256:b21558bd5f0f78b04c606f540de446f2306161503c61bdd5bbf723d83b3ebf63"
+    }
+  ],
+  "verify_classification": {
+    "workflow": "Verify",
+    "run_id": 35086282988,
+    "run_number": 962,
+    "conclusion": "failure",
+    "artifact": {
+      "id": 10442092180,
+      "name": "verification-failure-35086282988",
+      "digest": "sha256:ffdf6448c961d378b86be27304c4783df1ee69f59a6cdd633bf7c18843a40aaa"
+    },
+    "failure_class": "PACKAGING_GOVERNANCE_NOT_DSP_VALIDATION",
+    "reason": "The conservative impact gate requires release-bearing src changes to advance SemVer; candidate and base both remained 2.3.16.",
+    "semver_not_advanced_because": "The candidate was independently disqualified by frozen acoustic hard-negative gates, so version packaging was intentionally not repaired."
+  },
+  "evidence_summary": {
+    "hard_negative_gate_failed": true,
+    "hosted_real_aec_movement_failed": true,
+    "echo_path_change_failed": true,
+    "hosted_real_aec_baseline_recovered_after_candidate_removed": true,
+    "second_source_candidate_authorized": false,
+    "threshold_or_timer_refinement_authorized": false,
+    "candidate_pr_closed_without_merge": true,
+    "main_dsp_mutated": false
+  },
+  "shipping": {
+    "version": "v2.3.16",
+    "commit_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "changed_by_candidate": false
+  },
+  "authority": {
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "closure_rule": "Do not amend, retune, version-bump, rerun-as-rescue, or replace the failed source candidate under doubletalk-onset-admission-v1. Its one-candidate budget is exhausted. Any future source candidate requires a materially new root-cause hypothesis and a new explicit governance budget after diagnostic-only evidence; do not relax movement, echo-path-change, pure-far, or Hosted Real AEC gates to rescue this approach.",
+  "next_action": "Keep baseline. If work continues, return to candidate_budget=0 diagnostic/root-cause investigation focused on distinguishing genuine near-end onset from echo-path mismatch or movement before proposing any materially new hypothesis."
+}

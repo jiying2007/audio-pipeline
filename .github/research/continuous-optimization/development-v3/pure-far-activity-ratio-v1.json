@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-activity-ratio-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "5b86b180db6993a3bc501d939c78c5d29f2e8593",
+  "predecessor": {
+    "investigation_id": "same-guid-farend-doubletalk-paired-v1",
+    "pr": 233,
+    "fresh_main_sha": "5b86b180db6993a3bc501d939c78c5d29f2e8593",
+    "diagnostic_run_id": 35104265996,
+    "diagnostic_run_number": 2,
+    "diagnostic_artifact_id": 10449498176,
+    "diagnostic_artifact_digest": "sha256:253450eaa914ebec82e681f20feaab897fe30edc144fbd7d6bb8b0e7694f7588",
+    "hosted_real_aec_run_id": 35104265788,
+    "hosted_real_aec_run_number": 769,
+    "hosted_real_audio_run_id": 35104265907,
+    "hosted_real_audio_run_number": 774,
+    "verify_run_id": 35104266262,
+    "verify_run_number": 975,
+    "release_run_id": 35104752163,
+    "release_run_number": 960,
+    "fresh_main_closed": true
+  },
+  "question": "Why does the unchanged baseline public double-talk detector assert heavily on the 7GT upstream farend_singletalk recording while asserting much less on 49II, and do the exact Activity mic/reference energy ratios observed inside the unchanged pipeline explain that pure-far false-positive tendency?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/blind_test_set_interspeech2021/farend-singletalk",
+    "rating_logic_source": "AECMOS/aecmos.py",
+    "rating_logic_blob_sha": "7423983e6da8515ec81b58a4e905c4b7bcd6fdff",
+    "rating_formula": "last half of the common-length farend_singletalk clip"
+  },
+  "baseline_code_lock": {
+    "activity_source": {
+      "path": "src/activity/ap_activity.c",
+      "blob_sha": "73956d6c69d0ee07e6fb922f8def1db29d071972"
+    },
+    "pipeline_source": {
+      "path": "src/core/ap_pipeline.c",
+      "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"
+    },
+    "processor_source": {
+      "path": "examples/process_pcm.c",
+      "blob_sha": "d42761f0c0896d1c2339ab5666e459935f27c366"
+    },
+    "activity_constants_observed_not_tuned": {
+      "far_end_threshold": 1e-7,
+      "double_talk_ratio": 1.5,
+      "dt_on_instant_multiplier": 0.9,
+      "dt_hold_instant_multiplier": 0.72,
+      "hangover_frames": 3,
+      "far_hold_frames": 2,
+      "ema_rise_alpha": 0.35,
+      "ema_fall_alpha": 0.08
+    }
+  },
+  "selection": {
+    "rule": "inherit only the two no-movement farend_singletalk cases from same-guid-farend-doubletalk-paired-v1; no case search or optimization",
+    "optimized": false,
+    "cases": [
+      {
+        "case_id": "49II-farend",
+        "guid": "49IIo03GZ0CYQOmeA3A0BA",
+        "scenario": "farend_singletalk",
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/49IIo03GZ0CYQOmeA3A0BA_farend_singletalk_lpb.wav",
+          "sha256": "8065662a0a087fc162e3cbae9c34a83d5c7229bbc1eb7334b40397a0ab043364",
+          "size": 696364
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/49IIo03GZ0CYQOmeA3A0BA_farend_singletalk_mic.wav",
+          "sha256": "27f34087182066673f658a66cfde4e53bf0a71a9a1d10d0ee7d321a0366b4b99",
+          "size": 696684
+        }
+      },
+      {
+        "case_id": "7GT-farend",
+        "guid": "7GTxyTksSUqCnP5y0ILG4A",
+        "scenario": "farend_singletalk",
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/7GTxyTksSUqCnP5y0ILG4A_farend_singletalk_lpb.wav",
+          "sha256": "48a68cf794591e05c8edd84b9016e677098af047b49ac7bde3a90f8a206ec5bb",
+          "size": 693484
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/7GTxyTksSUqCnP5y0ILG4A_farend_singletalk_mic.wav",
+          "sha256": "e0273fdba47c910d2e234e0771b0bce183169a0c54db8f3b7f10b256ede56c2b",
+          "size": 705004
+        }
+      }
+    ]
+  },
+  "observation_method": {
+    "processor_profile": "ap_config_default(AP_PROFILE_CALL), io_sample_rate_hz=16000, mic_channels=1, BF disabled exactly as examples/process_pcm.c",
+    "processor_frame_ms": 10,
+    "internal_state_read_only": true,
+    "public_api_change": false,
+    "energy_recovery": "invert the existing smooth_energy update from consecutive internal smoothed energies; first frame uses the observed smoothed value directly",
+    "numeric_cross_checks": [
+      "recovered mic energy versus unchanged pipeline input_rms_dbfs",
+      "recovered reference energy versus unchanged synced pipeline reference buffer energy",
+      "public double_talk_active versus far_end_active and internal double_talk_hangover state"
+    ],
+    "existing_thresholds_are_observation_labels_only": true,
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "published_metrics": [
+    "official far-end rating interval bounds",
+    "public far_end_active and double_talk_active fractions",
+    "public DTD fraction conditional on far_end_active",
+    "exact reconstructed instant mic/reference energy ratio",
+    "exact internal smoothed mic/reference energy ratio",
+    "current-code dt_on evidence fraction",
+    "current-code dt_hold evidence fraction",
+    "double-talk and far-end hangover state",
+    "ratio distributions split by public DTD state",
+    "numeric reconstruction cross-check error"
+  ],
+  "prohibited_actions": [
+    "change Activity or pipeline source",
+    "change public DTD semantics or metrics ABI",
+    "change 1.5, 0.90, 0.72, 1e-7, EMA alpha, or hangover values",
+    "derive a replacement DTD threshold from these two recordings",
+    "search or optimize a ratio boundary",
+    "search or optimize case selection",
+    "treat upstream farend_singletalk as proof of perfectly isolated physical echo-only conditions beyond its dataset label",
+    "parameter search",
+    "candidate selection",
+    "revive I009 echo-normalized or residual-echo rescue",
+    "relax pure-far, movement, echo-path-change, Hosted Real AEC, HIL, or Product Certification gates",
+    "promote to release or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "This diagnostic may establish whether the unchanged Activity detector's own mic/reference energy-ratio evidence coincides with the observed pure-far public DTD assertions. It cannot by itself prove the physical cause of the upstream recording gain relationship, define a corrected threshold, or authorize a source candidate.",
+  "next_decision": "diagnostic evidence review only"
+}

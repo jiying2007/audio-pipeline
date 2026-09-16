@@ -6,12 +6,14 @@ on:
     paths:
       - '.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json'
       - '.github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py'
+      - '.github/research/continuous-optimization/pure_far_activity_ratio_multirate_probe.c'
       - '.github/workflows/research-pure-far-icassp2022-replication-v1.yml'
   push:
     branches: [main]
     paths:
       - '.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json'
       - '.github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py'
+      - '.github/research/continuous-optimization/pure_far_activity_ratio_multirate_probe.c'
       - '.github/workflows/research-pure-far-icassp2022-replication-v1.yml'
 
 permissions:
@@ -48,6 +50,7 @@ jobs:
           allowed = {
               '.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json',
               '.github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py',
+              '.github/research/continuous-optimization/pure_far_activity_ratio_multirate_probe.c',
               '.github/workflows/research-pure-far-icassp2022-replication-v1.yml',
           }
           assert changed and set(changed) <= allowed, changed
@@ -113,7 +116,7 @@ jobs:
           cd /tmp/audio-pipeline-aec-challenge-icassp2022-replication
           git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
           test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
-          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcd6fdff"
+          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcdff"
           test "$(git rev-parse HEAD:datasets/test_set_icassp2022/farend-singletalk)" = "a5b01b800e56e53ac027126ed2292ee573ea735a"
           mkdir -p "$GITHUB_WORKSPACE/pure-far-icassp2022-replication-v1-out"
           python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json" \
@@ -225,7 +228,7 @@ jobs:
           unset GIT_LFS_SKIP_SMUDGE
           git lfs pull --include="$(cat /tmp/pure-far-icassp2022-lfs-include.txt)" --exclude=""
 
-      - name: Build unchanged baseline and frozen read-only Activity probe
+      - name: Build unchanged baseline and multirate read-only Activity probe
         run: |
           set -euo pipefail
           cmake -S . -B build-pure-far-icassp2022 \
@@ -242,12 +245,12 @@ jobs:
           if [ -z "$compiler" ]; then compiler=cc; fi
           "$compiler" $defs $incs \
             -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
-            .github/research/continuous-optimization/pure_far_activity_ratio_probe.c \
+            .github/research/continuous-optimization/pure_far_activity_ratio_multirate_probe.c \
             build-pure-far-icassp2022/libaudio_pipeline.a -lm \
-            -o build-pure-far-icassp2022/pure_far_activity_ratio_probe
+            -o build-pure-far-icassp2022/pure_far_activity_ratio_multirate_probe
           build-pure-far-icassp2022/ap_build_info_dump > pure-far-icassp2022-replication-v1-out/build-info.txt
           sha256sum build-pure-far-icassp2022/libaudio_pipeline.a \
-                    build-pure-far-icassp2022/pure_far_activity_ratio_probe \
+                    build-pure-far-icassp2022/pure_far_activity_ratio_multirate_probe \
             > pure-far-icassp2022-replication-v1-out/binaries.sha256
 
       - name: Run full-clip ICASSP2022 pure-far replication
@@ -257,7 +260,7 @@ jobs:
             --manifest .github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json \
             --inventory pure-far-icassp2022-replication-v1-out/inventory.json \
             --source-root /tmp/audio-pipeline-aec-challenge-icassp2022-replication \
-            --probe build-pure-far-icassp2022/pure_far_activity_ratio_probe \
+            --probe build-pure-far-icassp2022/pure_far_activity_ratio_multirate_probe \
             --helper .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
             --output pure-far-icassp2022-replication-v1-out/evidence
 
@@ -275,6 +278,7 @@ jobs:
           assert result['all_complete_pairs_executed'] is True
           assert result['subsampling_performed'] is False
           assert result['full_common_clip_observation'] is True
+          assert result['resampling_performed'] is False
           assert result['threshold_search_performed'] is False
           assert result['numeric_tolerance_added'] is False
           assert result['tuning_performed'] is False
@@ -283,6 +287,8 @@ jobs:
           assert result['inventory']['complete_pair_count'] == inventory['complete_pair_count'] == len(result['cases'])
           assert result['inventory']['selection_fingerprint_sha256'] == inventory['selection_fingerprint_sha256']
           for case in result['cases']:
+              assert case['source_sample_rate_hz'] in {8000, 16000, 24000, 32000, 48000}
+              assert case['resampling_performed'] is False
               assert case['analysis_interval_is_full_common_clip'] is True
               assert case['analysis_interval_is_exact_onset_label'] is False
               m = case['metrics']

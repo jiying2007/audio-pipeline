@@ -1,0 +1,61 @@
+{
+  "candidate_budget": 0,
+  "case_ids": [
+    "aec-doubletalk",
+    "stress-doubletalk-quiet",
+    "stress-doubletalk-nominal",
+    "stress-doubletalk-strong"
+  ],
+  "development_seeds": [
+    1307,
+    1407
+  ],
+  "investigation_id": "doubletalk-onset-control-chain-v1",
+  "output_authority": {
+    "candidate_selection": false,
+    "hil": false,
+    "product_certification": false,
+    "research_diagnostic_only": true,
+    "shipping": false
+  },
+  "profiles": {
+    "baseline": {
+      "aec_mu": 0.22,
+      "agc_target_dbfs": -20.0,
+      "limiter_dbfs": -2.0,
+      "ns_floor": 0.12
+    },
+    "high_mu_probe": {
+      "aec_mu": 0.3,
+      "agc_target_dbfs": -20.0,
+      "limiter_dbfs": -2.0,
+      "ns_floor": 0.12
+    }
+  },
+  "prohibited": [
+    "shipping mutation",
+    "blind or shadow data for parameter selection",
+    "VAD/activity threshold tuning",
+    "reviving I009 residual/echo rescue",
+    "candidate promotion",
+    "new DSP candidate before a new budget decision"
+  ],
+  "question": "Does increasing AEC adaptation step size create a repeatable near-speech-onset window where double-talk protection is absent or late, correlating with VAD/near-end preservation loss?",
+  "schema_version": 1,
+  "source_evidence": [
+    {
+      "artifact_id": 10432580070,
+      "digest": "sha256:524ac72996f9cf4ae978c3e861b7fe6f4f7f1fc18271db409ab3863b19bf9c3e",
+      "finding": "v4 development winner generalized poorly on shadow double-talk VAD recall/F1",
+      "run_id": 35058600686
+    },
+    {
+      "artifact_id": 10436805396,
+      "digest": "sha256:0237bc87f2ac096060c3e1dbcccb1451f03187142864ff1e6d009175e4fc12a2",
+      "finding": "v5 proved all aec_mu > 0.22 candidates violate development double-talk preservation gates",
+      "run_id": 35069696052
+    }
+  ],
+  "source_sha": "aeedc6c95a78c74454f79eaa6e166b21ccb27571",
+  "status": "DIAGNOSTIC_ONLY"
+}

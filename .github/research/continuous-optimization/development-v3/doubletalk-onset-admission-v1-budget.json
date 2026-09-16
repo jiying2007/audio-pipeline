@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "hypothesis_id": "doubletalk-onset-admission-v1",
+  "status": "GOVERNANCE_ONLY_BUDGET_AUTHORIZED",
+  "source_sha": "574cf24839d5321eddc8ec24219a406cb7ce312d",
+  "candidate_budget": {
+    "source_candidates": 1,
+    "additional_source_candidates": 0,
+    "parameter_search_candidates": 0,
+    "confirmation_candidates": 0
+  },
+  "entry_gate": {
+    "verify": {
+      "run_id": 35075482101,
+      "run_number": 959,
+      "head_sha": "574cf24839d5321eddc8ec24219a406cb7ce312d",
+      "conclusion": "success"
+    },
+    "release": {
+      "run_id": 35075933128,
+      "run_number": 944,
+      "head_sha": "574cf24839d5321eddc8ec24219a406cb7ce312d",
+      "conclusion": "success"
+    },
+    "same_sha_closed": true
+  },
+  "source_evidence": [
+    {
+      "workflow": "Research Double-Talk Onset Diagnostic",
+      "run_id": 35075481741,
+      "run_number": 3,
+      "source_sha": "574cf24839d5321eddc8ec24219a406cb7ce312d",
+      "artifact_id": 10438236655,
+      "artifact_name": "doubletalk-onset-diagnostic-35075481741",
+      "artifact_digest": "sha256:f16055c15aa39c67bf149515530db164276a188d4c0d55a46af96163765094c9",
+      "near_segments": 16,
+      "segments_with_positive_double_talk_delay": 5,
+      "segments_without_double_talk_detection": 11
+    }
+  ],
+  "root_cause": {
+    "activity_detection_precedes_aec": true,
+    "aec_adaptation_admission": "far_end_active && !double_talk_active",
+    "failure_window": "near-end speech has started while public double_talk_active has not yet asserted, so far-only admission remains temporarily open",
+    "aec_mu_role": "amplifies the consequence of the shared unprotected onset window; it is not the DTD timing mechanism",
+    "shared_far_only_control_surfaces": [
+      "aec_adaptation",
+      "ns_control",
+      "res_control",
+      "agc_control"
+    ]
+  },
+  "candidate_boundary": {
+    "allowed": [
+      "one source-level implementation of bounded internal double-talk onset-admission protection",
+      "apply the same bounded protection semantics to AEC adaptation admission and enhancement controls that consume far-only semantics",
+      "internal guard state needed only to bridge the onset window"
+    ],
+    "required": [
+      "leave the public double_talk_active definition unchanged",
+      "leave Activity/VAD thresholds unchanged",
+      "clear onset-admission guard state on pipeline/AEC reset and echo-path reset/change",
+      "preserve the existing shipping baseline until a separate promotion authority exists"
+    ],
+    "forbidden": [
+      "a second source candidate",
+      "parameter or threshold grid search",
+      "Activity/VAD threshold tuning",
+      "echo-normalized rescue",
+      "I009 residual/echo rescue revival",
+      "changing public double_talk_active semantics",
+      "shipping, HIL, Product Certification, or release mutation from this record"
+    ]
+  },
+  "hard_negative_gates": [
+    "pure-far",
+    "echo-path-change",
+    "movement",
+    "Hosted Real AEC"
+  ],
+  "authority": {
+    "this_change_governance_only": true,
+    "dsp_change_in_this_record": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "consumption_gate": {
+    "require_this_record_merged_to_main": true,
+    "require_exact_head_checks_for_this_record": true,
+    "require_fresh_main_checks_on_the_merged_governance_sha_before_candidate_implementation": true,
+    "budget_consumed_by_governance_record": false
+  },
+  "next_action": "After this governance-only record is merged and its merged main SHA passes the required fresh-main gates, spend the single source-candidate budget on one bounded doubletalk-onset-admission-v1 DSP candidate; do not open a second candidate if it fails."
+}

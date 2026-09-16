@@ -1,0 +1,347 @@
+name: Research Pure-Far Scale Route Decomposition V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json'
+      - '.github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py'
+      - '.github/workflows/research-pure-far-scale-route-decomposition-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json'
+      - '.github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py'
+      - '.github/workflows/research-pure-far-scale-route-decomposition-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-pure-far-scale-route-decomposition-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json').read_text())
+          base = manifest['governance_base_sha']
+          assert base == '3677a0cfcc70fe832b2d54cbeb4c0c7e5f5dc16e'
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], check=True)
+          changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
+          allowed = {
+              '.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json',
+              '.github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py',
+              '.github/workflows/research-pure-far-scale-route-decomposition-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base': base, 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'changed': changed})
+          PY
+
+      - name: Validate candidate-zero authority, predecessor closure and code locks
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py
+          python3 .github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py --self-test
+          python3 validation/tools/aec_route_ambiguity_probe.py --self-test
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json').read_text())
+          predecessor = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json').read_text())
+          closure = json.loads(Path('.github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json').read_text())
+          assert manifest['status'] == 'DIAGNOSTIC_ONLY' and manifest['candidate_budget'] == 0
+          pred = manifest['predecessor']
+          assert pred == {
+              'investigation_id': 'pure-far-activity-ratio-coverage-v1',
+              'pr': 235,
+              'fresh_main_sha': '3677a0cfcc70fe832b2d54cbeb4c0c7e5f5dc16e',
+              'diagnostic_run_id': 35114323160,
+              'diagnostic_run_number': 5,
+              'diagnostic_artifact_id': 10453089705,
+              'diagnostic_artifact_digest': 'sha256:a39350976b67be52259f67828c0df657712a8340979ea93ef286209a6640d68f',
+              'hosted_real_aec_run_id': 35114323026,
+              'hosted_real_aec_run_number': 777,
+              'hosted_real_audio_run_id': 35114323055,
+              'hosted_real_audio_run_number': 782,
+              'verify_run_id': 35114323295,
+              'verify_run_number': 983,
+              'release_run_id': 35114892193,
+              'release_run_number': 968,
+              'fresh_main_closed': True,
+          }
+          assert predecessor['status'] == 'DIAGNOSTIC_ONLY' and predecessor['candidate_budget'] == 0
+          assert closure['status'] == 'CLOSED_KEEP_BASELINE' and closure['candidate']['budget_remaining'] == 0
+          assert closure['shipping'] == {
+              'version': 'v2.3.16',
+              'commit_sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
+              'changed_by_candidate': False,
+          }
+          selection = manifest['selection']
+          assert selection['all_complete_pairs'] is True
+          assert selection['expected_complete_pair_count'] == 169
+          assert selection['expected_total_lfs_bytes'] == 248608012
+          assert selection['expected_selection_fingerprint_sha256'] == '8f728eb2f61ade46afc3431bcc00c1e678cfce8573cbc34d187439f6f351f011'
+          assert selection['optimized'] is False and selection['result_dependent_selection'] is False
+          assert selection['subsampling_allowed'] is False
+          provenance = manifest['provenance_limitations']
+          assert provenance['blind_test_guid_sidecar_metadata_present'] is False
+          assert provenance['per_guid_device_identity_available'] is False
+          assert provenance['per_guid_hardware_gain_available'] is False
+          assert provenance['per_guid_agc_or_capture_dsp_metadata_available'] is False
+          assert provenance['physical_device_gain_attribution_authorized'] is False
+          for key, item in manifest['code_lock'].items():
+              actual = subprocess.check_output(['git', 'rev-parse', f"HEAD:{item['path']}"], text=True).strip()
+              assert actual == item['blob_sha'], (key, actual, item['blob_sha'])
+          method = manifest['observation_method']
+          assert method['route_probe_decision_booleans_used'] is False
+          assert method['gain_correction_applied'] is False
+          assert method['signal_normalization_applied'] is False
+          assert method['threshold_search_performed'] is False
+          assert method['selection_threshold'] is None
+          assert method['candidate_selection'] is False and method['tuning_authority'] is False
+          assert manifest['output_authority'] == {
+              'research_diagnostic_only': True,
+              'candidate_selection': False,
+              'tuning': False,
+              'automatic_main_mutation': False,
+              'shipping': False,
+              'hil': False,
+              'product_certification': False,
+          }
+          print('pure-far scale/route candidate-zero authority and code locks: PASS')
+          PY
+
+      - name: Build unchanged baseline and frozen read-only Activity probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-pure-far-scale-route \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-pure-far-scale-route --target audio_pipeline ap_build_info_dump --parallel
+          flags=build-pure-far-scale-route/CMakeFiles/audio_pipeline.dir/flags.make
+          test -f "$flags"
+          defs=$(sed -n 's/^C_DEFINES = //p' "$flags")
+          incs=$(sed -n 's/^C_INCLUDES = //p' "$flags")
+          echo "$defs" | grep -q -- '-DAP_BUILD_ACTIVITY=1'
+          echo "$defs" | grep -q -- '-DAP_BUILD_STAGE_SYNC=1'
+          echo "$defs" | grep -q -- '-DAP_BUILD_STAGE_AEC=1'
+          compiler=$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' build-pure-far-scale-route/CMakeCache.txt)
+          if [ -z "$compiler" ]; then compiler=cc; fi
+          "$compiler" $defs $incs \
+            -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            .github/research/continuous-optimization/pure_far_activity_ratio_probe.c \
+            build-pure-far-scale-route/libaudio_pipeline.a -lm \
+            -o build-pure-far-scale-route/pure_far_activity_ratio_probe
+          mkdir -p pure-far-scale-route-decomposition-v1-out
+          build-pure-far-scale-route/ap_build_info_dump > pure-far-scale-route-decomposition-v1-out/build-info.txt
+          sha256sum build-pure-far-scale-route/libaudio_pipeline.a \
+                    build-pure-far-scale-route/pure_far_activity_ratio_probe \
+            > pure-far-scale-route-decomposition-v1-out/binaries.sha256
+
+      - name: Inventory and materialize the exact predecessor all-pair corpus
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-challenge-pure-far-scale-route
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout \
+            https://github.com/microsoft/AEC-Challenge.git \
+            /tmp/audio-pipeline-aec-challenge-pure-far-scale-route
+          cd /tmp/audio-pipeline-aec-challenge-pure-far-scale-route
+          git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
+          python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json" \
+                    "$GITHUB_WORKSPACE/pure-far-scale-route-decomposition-v1-out/inventory.json" \
+                    /tmp/pure-far-scale-route-lfs-include.txt <<'PY'
+          import hashlib, json, subprocess, sys
+          from pathlib import Path
+          manifest = json.load(open(sys.argv[1]))
+          out = Path(sys.argv[2])
+          include_out = Path(sys.argv[3])
+          directory = manifest['source']['dataset_directory']
+          names = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', 'HEAD', directory], text=True).splitlines()
+          suffixes = {
+              '_farend_singletalk_lpb.wav': 'lpb',
+              '_farend_singletalk_mic.wav': 'mic',
+          }
+          found = {}
+          for path in names:
+              name = Path(path).name
+              for suffix, role in suffixes.items():
+                  if name.endswith(suffix):
+                      guid = name[:-len(suffix)]
+                      found.setdefault(guid, {})[role] = path
+                      break
+          complete_guids = sorted(guid for guid, roles in found.items() if set(roles) == {'lpb', 'mic'})
+          cases = []
+          total = 0
+          include = []
+          for guid in complete_guids:
+              case = {'guid': guid, 'scenario': 'farend_singletalk'}
+              for role in ('lpb', 'mic'):
+                  path = found[guid][role]
+                  assert 'with_movement' not in path
+                  pointer = subprocess.check_output(['git', 'show', f'HEAD:{path}'], text=True)
+                  lines = dict(line.split(' ', 1) for line in pointer.splitlines() if ' ' in line)
+                  assert lines.get('version') == 'https://git-lfs.github.com/spec/v1', (path, lines)
+                  oid = lines['oid']
+                  assert oid.startswith('sha256:') and len(oid) == 71, (path, oid)
+                  size = int(lines['size'])
+                  assert size > 0
+                  case[role] = {'path': path, 'sha256': oid.split(':', 1)[1], 'size': size}
+                  total += size
+                  include.append(path)
+              cases.append(case)
+          canonical = json.dumps(cases, sort_keys=True, separators=(',', ':')).encode()
+          fingerprint = hashlib.sha256(canonical).hexdigest()
+          selection = manifest['selection']
+          assert len(cases) == selection['expected_complete_pair_count'], (len(cases), selection)
+          assert total == selection['expected_total_lfs_bytes'], (total, selection)
+          assert fingerprint == selection['expected_selection_fingerprint_sha256'], (fingerprint, selection)
+          inventory = {
+              'schema_version': 1,
+              'source_revision': manifest['source']['revision'],
+              'selection_rule': selection['rule'],
+              'complete_pair_count': len(cases),
+              'total_lfs_bytes': total,
+              'selection_fingerprint_sha256': fingerprint,
+              'cases': cases,
+          }
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(inventory, indent=2, sort_keys=True) + '\n')
+          include_out.write_text(','.join(include))
+          print({'complete_pair_count': len(cases), 'total_lfs_bytes': total, 'selection_fingerprint_sha256': fingerprint, 'subsampling': False})
+          PY
+          unset GIT_LFS_SKIP_SMUDGE
+          git lfs pull --include="$(cat /tmp/pure-far-scale-route-lfs-include.txt)" --exclude=""
+
+      - name: Regenerate frozen predecessor Activity coverage evidence
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
+            --probe build-pure-far-scale-route/pure_far_activity_ratio_probe \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json \
+            --inventory pure-far-scale-route-decomposition-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-pure-far-scale-route \
+            --output pure-far-scale-route-decomposition-v1-out/predecessor-evidence
+
+      - name: Run all-pair scale versus route decomposition
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json \
+            --inventory pure-far-scale-route-decomposition-v1-out/inventory.json \
+            --predecessor-result pure-far-scale-route-decomposition-v1-out/predecessor-evidence/pure-far-activity-ratio-coverage-result.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-pure-far-scale-route \
+            --route-probe validation/tools/aec_route_ambiguity_probe.py \
+            --output pure-far-scale-route-decomposition-v1-out/evidence
+
+      - name: Enforce decomposition evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, math
+          from pathlib import Path
+          result = json.loads(Path('pure-far-scale-route-decomposition-v1-out/evidence/pure-far-scale-route-decomposition-result.json').read_text())
+          inventory = json.loads(Path('pure-far-scale-route-decomposition-v1-out/inventory.json').read_text())
+          assert result['status'] == 'DIAGNOSTIC_ONLY'
+          assert result['authority'] == 'research-diagnostic-only'
+          assert result['candidate_budget'] == 0
+          assert result['all_complete_pairs_executed'] is True
+          assert result['subsampling_performed'] is False
+          assert result['route_probe_decision_booleans_used'] is False
+          assert result['gain_correction_applied'] is False
+          assert result['signal_normalization_applied'] is False
+          assert result['threshold_search_performed'] is False
+          assert result['candidate_selection_performed'] is False
+          assert result['tuning_performed'] is False
+          assert result['physical_device_gain_attribution_performed'] is False
+          assert result['inventory']['complete_pair_count'] == inventory['complete_pair_count'] == 169
+          assert result['inventory']['total_lfs_bytes'] == inventory['total_lfs_bytes'] == 248608012
+          assert result['inventory']['selection_fingerprint_sha256'] == inventory['selection_fingerprint_sha256'] == '8f728eb2f61ade46afc3431bcc00c1e678cfce8573cbc34d187439f6f351f011'
+          assert len(result['cases']) == 169
+          provenance = result['provenance_limitations']
+          assert provenance['blind_test_guid_sidecar_metadata_present'] is False
+          assert provenance['per_guid_hardware_gain_available'] is False
+          assert provenance['physical_device_gain_attribution_authorized'] is False
+          for case in result['cases']:
+              assert 0.0 <= case['predecessor']['double_talk_fraction'] <= 1.0
+              route = case['route']
+              assert 0 <= route['best_delay_samples'] <= 1600
+              assert 0.0 <= route['best_delay_ms'] <= 100.0
+              assert 0.0 <= route['best_score_squared'] <= 1.0
+              projection = case['official_rating_projection']
+              assert projection['sample_count'] > 0
+              assert 0.0 <= projection['aligned_score_squared'] <= 1.0
+              assert 0.0 <= projection['scalar_projection_residual_energy_fraction'] <= 1.0
+              assert abs(projection['aligned_score_squared'] + projection['scalar_projection_residual_energy_fraction'] - 1.0) < 1e-9
+              delta = case['scale_stability']['absolute_half_delta_db']
+              assert delta is None or delta >= 0.0
+          associations = result['aggregate']['spearman_associations']
+          required = {
+              'dtd_vs_aligned_scalar_magnitude_db',
+              'dtd_vs_mic_render_rms_ratio_db',
+              'dtd_vs_aligned_score_squared',
+              'dtd_vs_scalar_projection_residual_energy_fraction',
+              'dtd_vs_route_best_delay_ms',
+              'dtd_vs_route_best_score_squared',
+              'dtd_vs_scale_half_delta_db',
+              'smoothed_ratio_vs_aligned_scalar_magnitude_db',
+          }
+          assert required <= set(associations)
+          for item in associations.values():
+              assert 0 <= item['count'] <= 169
+              rho = item['rho']
+              assert rho is None or (-1.0 <= rho <= 1.0 and math.isfinite(rho))
+          print(json.dumps(result['aggregate'], indent=2, sort_keys=True))
+          PY
+          cat pure-far-scale-route-decomposition-v1-out/evidence/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research decomposition evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json \
+            pure-far-scale-route-decomposition-v1-out/manifest.json
+          git rev-parse HEAD > pure-far-scale-route-decomposition-v1-out/source-sha.txt
+          {
+            git rev-parse HEAD:.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json
+            git rev-parse HEAD:.github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py
+            git rev-parse HEAD:.github/research/continuous-optimization/pure_far_activity_ratio_probe.c
+            git rev-parse HEAD:validation/tools/aec_route_ambiguity_probe.py
+            git rev-parse HEAD:src/activity/ap_activity.c
+            git rev-parse HEAD:src/core/ap_pipeline.c
+            git rev-parse HEAD:examples/process_pcm.c
+          } > pure-far-scale-route-decomposition-v1-out/locked-code-blobs.txt
+          (
+            cd /tmp/audio-pipeline-aec-challenge-pure-far-scale-route
+            git rev-parse HEAD
+          ) > pure-far-scale-route-decomposition-v1-out/upstream-source.txt
+          find pure-far-scale-route-decomposition-v1-out -type f ! -name SHA256SUMS -print0 | \
+            sort -z | xargs -0 sha256sum > pure-far-scale-route-decomposition-v1-out/SHA256SUMS
+
+      - name: Upload research decomposition evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pure-far-scale-route-decomposition-v1-${{ github.run_id }}
+          path: pure-far-scale-route-decomposition-v1-out/
+          if-no-files-found: error
+          retention-days: 30

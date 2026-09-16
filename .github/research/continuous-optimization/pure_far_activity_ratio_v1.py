@@ -146,6 +146,11 @@ def summarize(rows: list[dict], start_frame: int, end_frame: int, constants: dic
     expected_far_threshold = float(constants["far_end_threshold"])
     expected_dt_ratio = float(constants["double_talk_ratio"])
     expected_hangover = int(constants["hangover_frames"])
+    dt_on_multiplier = float(constants["dt_on_instant_multiplier"])
+    dt_hold_multiplier = float(constants["dt_hold_instant_multiplier"])
+
+    dt_on_alt_mismatches = 0
+    dt_hold_alt_mismatches = 0
     for row in part:
         require(math.isclose(float(row["far_end_threshold"]), expected_far_threshold,
                              rel_tol=1e-6, abs_tol=1e-12), "far threshold drift")
@@ -156,6 +161,30 @@ def summarize(rows: list[dict], start_frame: int, end_frame: int, constants: dic
                 "dt_on evidence must imply public DTD")
         require(not bool(row["double_talk_active"]) or bool(row["far_end_active"]),
                 "public DTD must remain far-gated")
+
+        independent_instant_ratio = float(row["metric_mic_energy"]) / (
+            float(row["direct_reference_energy"]) + 1.0e-12
+        )
+        row["independent_instant_ratio"] = independent_instant_ratio
+        independent_dt_on = (
+            bool(row["far_end_active"])
+            and float(row["smoothed_ratio"]) > expected_dt_ratio
+            and independent_instant_ratio > dt_on_multiplier * expected_dt_ratio
+        )
+        independent_dt_hold = (
+            bool(row["far_end_active"])
+            and independent_instant_ratio > dt_hold_multiplier * expected_dt_ratio
+        )
+        row["independent_dt_on_evidence"] = independent_dt_on
+        row["independent_dt_hold_evidence"] = independent_dt_hold
+        dt_on_alt_mismatches += independent_dt_on != bool(row["dt_on_evidence"])
+        dt_hold_alt_mismatches += independent_dt_hold != bool(row["dt_hold_evidence"])
+
+    # This is an independent robustness check, not a second detector. The same
+    # current-code thresholds are evaluated with mic/reference energies obtained
+    # from independent unchanged-pipeline observables rather than EMA inversion.
+    require(dt_on_alt_mismatches == 0, f"independent dt_on mismatch count: {dt_on_alt_mismatches}")
+    require(dt_hold_alt_mismatches == 0, f"independent dt_hold mismatch count: {dt_hold_alt_mismatches}")
 
     far = [bool(row["far_end_active"]) for row in part]
     dtd = [bool(row["double_talk_active"]) for row in part]
@@ -190,7 +219,23 @@ def summarize(rows: list[dict], start_frame: int, end_frame: int, constants: dic
             "smoothed_ratio_p95": percentile([row["smoothed_ratio"] for row in group], 0.95),
             "instant_ratio_median": median([row["instant_ratio"] for row in group]),
             "instant_ratio_p95": percentile([row["instant_ratio"] for row in group], 0.95),
+            "independent_instant_ratio_median": median([
+                row["independent_instant_ratio"] for row in group
+            ]),
+            "independent_instant_ratio_p95": percentile([
+                row["independent_instant_ratio"] for row in group
+            ], 0.95),
+            "direct_reference_energy_median": median([
+                row["direct_reference_energy"] for row in group
+            ]),
+            "metric_mic_energy_median": median([row["metric_mic_energy"] for row in group]),
         }
+
+    def below_reference_threshold(group: list[dict], multiplier: float = 1.0) -> float | None:
+        return fraction([
+            float(row["direct_reference_energy"]) < multiplier * expected_far_threshold
+            for row in group
+        ])
 
     return {
         "frames": len(part),
@@ -210,6 +255,12 @@ def summarize(rows: list[dict], start_frame: int, end_frame: int, constants: dic
         "far_frames_ratio": ratios(far_rows),
         "double_talk_frames_ratio": ratios(dtd_rows),
         "far_non_double_talk_frames_ratio": ratios(far_non_dtd_rows),
+        "far_frames_direct_reference_below_far_threshold_fraction": below_reference_threshold(far_rows),
+        "far_frames_direct_reference_below_far_release_threshold_fraction": below_reference_threshold(far_rows, 0.55),
+        "double_talk_frames_direct_reference_below_far_threshold_fraction": below_reference_threshold(dtd_rows),
+        "double_talk_frames_direct_reference_below_far_release_threshold_fraction": below_reference_threshold(dtd_rows, 0.55),
+        "independent_dt_on_mismatch_count": dt_on_alt_mismatches,
+        "independent_dt_hold_mismatch_count": dt_hold_alt_mismatches,
         "mic_recovery_relative_error_max": max(float(row["mic_recovery_relative_error"]) for row in part),
         "reference_recovery_relative_error_max": max(
             float(row["reference_recovery_relative_error"]) for row in part
@@ -281,7 +332,7 @@ def case_delta(left: dict, right: dict) -> dict:
     ]
     result = {f"7GT_minus_49II_{key}": right_metrics[key] - left_metrics[key] for key in keys}
     for ratio_group in ("far_frames_ratio", "double_talk_frames_ratio", "far_non_double_talk_frames_ratio"):
-        for key in ("smoothed_ratio_median", "instant_ratio_median"):
+        for key in ("smoothed_ratio_median", "instant_ratio_median", "independent_instant_ratio_median"):
             a = left_metrics[ratio_group][key]
             b = right_metrics[ratio_group][key]
             result[f"7GT_minus_49II_{ratio_group}_{key}"] = None if a is None or b is None else b - a
@@ -330,16 +381,27 @@ def main() -> int:
         "tuning_performed": False,
         "source_revision": manifest["source"]["revision"],
         "existing_thresholds_are_observation_labels_only": True,
+        "independent_energy_cross_check": {
+            "method": "metric_mic_energy divided by synced direct_reference_energy with unchanged smoothed_ratio and unchanged thresholds",
+            "dt_on_mismatch_count_total": sum(case["metrics"]["independent_dt_on_mismatch_count"] for case in cases),
+            "dt_hold_mismatch_count_total": sum(case["metrics"]["independent_dt_hold_mismatch_count"] for case in cases),
+        },
         "cases": cases,
         "descriptive_delta": case_delta(cases[0], cases[1]),
         "interpretation_rule": manifest["interpretation_rule"],
     }
+    require(payload["independent_energy_cross_check"]["dt_on_mismatch_count_total"] == 0,
+            "independent dt_on cross-check must match every frame")
+    require(payload["independent_energy_cross_check"]["dt_hold_mismatch_count_total"] == 0,
+            "independent dt_hold cross-check must match every frame")
     write_json(args.output / "pure-far-activity-ratio-result.json", payload)
     print(json.dumps({
         "output": str(args.output / "pure-far-activity-ratio-result.json"),
         "candidate_budget": 0,
         "cases": len(cases),
         "threshold_search_performed": False,
+        "independent_dt_on_mismatch_count_total": 0,
+        "independent_dt_hold_mismatch_count_total": 0,
     }, sort_keys=True))
     return 0
 

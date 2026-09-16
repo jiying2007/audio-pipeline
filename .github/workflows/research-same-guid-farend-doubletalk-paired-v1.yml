@@ -1,0 +1,222 @@
+name: Research Same-GUID Farend Double-Talk Paired V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json'
+      - '.github/research/continuous-optimization/same_guid_farend_doubletalk_paired_v1.py'
+      - '.github/workflows/research-same-guid-farend-doubletalk-paired-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json'
+      - '.github/research/continuous-optimization/same_guid_farend_doubletalk_paired_v1.py'
+      - '.github/workflows/research-same-guid-farend-doubletalk-paired-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-same-guid-farend-doubletalk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          manifest_path = Path('.github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json')
+          manifest = json.loads(manifest_path.read_text())
+          base = manifest['governance_base_sha']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], check=True)
+          changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
+          allowed = {
+              str(manifest_path),
+              '.github/research/continuous-optimization/same_guid_farend_doubletalk_paired_v1.py',
+              '.github/workflows/research-same-guid-farend-doubletalk-paired-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base': base, 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'changed': changed})
+          PY
+
+      - name: Validate candidate-zero authority and fresh-main predecessor
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            .github/research/continuous-optimization/same_guid_farend_doubletalk_paired_v1.py \
+            .github/research/continuous-optimization/real_doubletalk_rating_v1.py \
+            .github/research/continuous-optimization/doubletalk_temporal_route_v2.py
+          python3 .github/research/continuous-optimization/same_guid_farend_doubletalk_paired_v1.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json').read_text())
+          predecessor = json.loads(Path('.github/research/continuous-optimization/development-v3/real-doubletalk-rating-v1.json').read_text())
+          assert manifest['status'] == 'DIAGNOSTIC_ONLY'
+          assert manifest['candidate_budget'] == 0
+          assert manifest['governance_base_sha'] == 'fda5d0cb056965da02006c2d6d4429c76a0da26f'
+          assert manifest['predecessor']['fresh_main_closed'] is True
+          assert manifest['predecessor']['fresh_main_sha'] == manifest['governance_base_sha']
+          assert manifest['predecessor']['verify_run_number'] == 973
+          assert manifest['predecessor']['release_run_number'] == 958
+          assert predecessor['investigation_id'] == 'real-doubletalk-rating-interval-v1'
+          assert predecessor['candidate_budget'] == 0
+          assert manifest['selection']['optimized'] is False
+          assert manifest['selection']['selected_guids'] == predecessor['selection']['selected_guids']
+          assert manifest['observation_geometry']['selection_threshold'] is None
+          assert manifest['output_authority'] == {
+              'research_diagnostic_only': True,
+              'candidate_selection': False,
+              'tuning': False,
+              'automatic_main_mutation': False,
+              'shipping': False,
+              'hil': False,
+              'product_certification': False,
+          }
+          print('same-GUID paired diagnostic authority: PASS')
+          PY
+
+      - name: Build unchanged baseline processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-same-guid-paired \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-same-guid-paired --target ap_process_pcm ap_build_info_dump --parallel
+          mkdir -p same-guid-paired-out/evidence
+          build-same-guid-paired/ap_build_info_dump > same-guid-paired-out/build-info.txt
+          sha256sum build-same-guid-paired/ap_process_pcm > same-guid-paired-out/processor.sha256
+
+      - name: Materialize exact hash-bound same-GUID microset
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-challenge
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout \
+            https://github.com/microsoft/AEC-Challenge.git \
+            /tmp/audio-pipeline-aec-challenge
+          cd /tmp/audio-pipeline-aec-challenge
+          git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
+          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcd6fdff"
+          python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json" <<'PY'
+          import json, subprocess, sys
+          from pathlib import Path
+          manifest = json.load(open(sys.argv[1]))
+          expected = manifest['selection']['selected_guids']
+          assert expected == ['49IIo03GZ0CYQOmeA3A0BA', '7GTxyTksSUqCnP5y0ILG4A']
+          for case in manifest['selection']['cases']:
+              for role in ('mic', 'lpb'):
+                  pointer = subprocess.check_output(['git', 'show', 'HEAD:' + case[role]['path']], text=True)
+                  assert f"oid sha256:{case[role]['sha256']}" in pointer
+                  assert f"size {case[role]['size']}" in pointer
+          text = Path('AECMOS/aecmos.py').read_text()
+          assert "rating_dt_length = int((len(enh_sig) - silence_duration) / 2)" in text
+          assert "rating_fest_length = int(len(enh_sig) / 2)" in text
+          print('upstream pointers and official rating formulas: PASS')
+          PY
+          include=$(python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json" <<'PY'
+          import json, sys
+          manifest = json.load(open(sys.argv[1]))
+          print(','.join(case[role]['path'] for case in manifest['selection']['cases'] for role in ('mic', 'lpb')))
+          PY
+          )
+          unset GIT_LFS_SKIP_SMUDGE
+          git lfs pull --include="$include" --exclude=""
+
+      - name: Run same-GUID paired diagnostic
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/same_guid_farend_doubletalk_paired_v1.py \
+            --processor build-same-guid-paired/ap_process_pcm \
+            --manifest .github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json \
+            --source-root /tmp/audio-pipeline-aec-challenge \
+            --output same-guid-paired-out/evidence
+
+      - name: Enforce descriptive evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path('same-guid-paired-out/evidence/same-guid-paired-result.json').read_text())
+          assert result['status'] == 'DIAGNOSTIC_ONLY'
+          assert result['authority'] == 'research-diagnostic-only'
+          assert result['candidate_budget'] == 0
+          assert result['selection_performed'] is False
+          assert result['tuning_performed'] is False
+          assert result['same_guid_is_physical_control_guarantee'] is False
+          assert result['time_aligned_pairs'] is False
+          assert len(result['cases']) == 4
+          assert len(result['pairs']) == 2
+          assert {case['scenario'] for case in result['cases']} == {'farend_singletalk', 'doubletalk'}
+          assert {pair['guid'] for pair in result['pairs']} == {'49IIo03GZ0CYQOmeA3A0BA', '7GTxyTksSUqCnP5y0ILG4A'}
+          assert all(pair['time_aligned_pair'] is False for pair in result['pairs'])
+          assert all('physical-control guarantee' in pair['pairing_semantics'] for pair in result['pairs'])
+
+          forbidden = {'threshold', 'selected_candidate', 'winner', 'classification', 'prediction'}
+          def walk(value):
+              if isinstance(value, dict):
+                  for key, child in value.items():
+                      assert key not in forbidden, key
+                      walk(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      walk(child)
+          walk(result)
+
+          summary = Path('same-guid-paired-out/summary.md')
+          with summary.open('w', encoding='utf-8') as fh:
+              fh.write('## Same-GUID far-end vs double-talk paired diagnostic\n\n')
+              fh.write('- Authority: `research-diagnostic-only`\n')
+              fh.write('- Candidate budget: `0`\n')
+              fh.write('- Same GUID is physical-control guarantee: `false`\n')
+              fh.write('- Time-aligned pairs: `false`\n')
+              for pair in result['pairs']:
+                  fh.write(f"\n### {pair['guid']}\n")
+                  for section in ('doubletalk_minus_farend_metrics', 'doubletalk_minus_farend_route_shape'):
+                      fh.write(f"- {section}: `{json.dumps(pair[section], sort_keys=True)}`\n")
+              fh.write('\n### paired_summary\n')
+              for key, value in result['paired_summary'].items():
+                  fh.write(f'- {key}: `{json.dumps(value, sort_keys=True)}`\n')
+          print(json.dumps(result['paired_summary'], indent=2, sort_keys=True))
+          PY
+          cat same-guid-paired-out/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research diagnostic evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json \
+            same-guid-paired-out/manifest.json
+          git rev-parse HEAD > same-guid-paired-out/source-sha.txt
+          find same-guid-paired-out -type f ! -name SHA256SUMS -print0 | \
+            sort -z | xargs -0 sha256sum > same-guid-paired-out/SHA256SUMS
+
+      - name: Upload research diagnostic evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: same-guid-farend-doubletalk-paired-v1-${{ github.run_id }}
+          path: same-guid-paired-out/
+          if-no-files-found: error
+          retention-days: 30

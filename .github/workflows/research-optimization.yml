@@ -23,8 +23,9 @@ on:
         description: 'Runtime-safe bounded parameter search space'
         required: true
         type: choice
-        default: '.github/research/continuous-optimization/development-v3/search-space.json'
+        default: '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
         options:
+          - '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
           - '.github/research/continuous-optimization/development-v3/search-space.json'
           - '.github/research/continuous-optimization/development-v2/search-space.json'
           - 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
@@ -57,6 +58,7 @@ jobs:
           python3 -m json.tool .github/research/continuous-optimization/development-v2/policy.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v2/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/search-space.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-v3/fine-aec-v4.json >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/dataset-registry.schema.json >/dev/null
           python3 validation/tools/authority.py --self-test
@@ -104,6 +106,31 @@ jobs:
               for item in space['objective']['metrics']
           )
           print('blocker-aware v3 search contract: PASS')
+          PY
+      - name: Enforce fine-AEC v4 contract
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v3 = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/search-space.json'
+          ).read_text())
+          v4 = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
+          ).read_text())
+          assert v4['search_space_id'] == 'call-multidataset-fine-aec-v4'
+          assert v4['strategy'] == 'cartesian'
+          assert v4['max_candidates'] == 8
+          assert v4['baseline'] == v3['baseline']
+          assert v4['parameters'] == {
+              'aec_mu': [0.22, 0.26, 0.28, 0.30],
+              'ns_floor': [0.12],
+              'agc_target_dbfs': [-20.0, -18.0],
+              'limiter_dbfs': [-2.0],
+          }
+          assert v4['objective'] == v3['objective']
+          print('fine-AEC v4 search contract: PASS')
           PY
       - name: Enforce immutable shipping and no-promotion boundary
         run: |
@@ -217,6 +244,7 @@ jobs:
           from pathlib import Path
           search_space = os.environ['SEARCH_SPACE']
           is_v3 = '/development-v3/' in search_space
+          is_v4 = search_space.endswith('/development-v3/fine-aec-v4.json')
           evaluations = []
           for role, seeds in [('development', [1307, 1407]), ('validation', [2307, 2407]), ('shadow', [3307, 3407])]:
               for seed in seeds:
@@ -250,7 +278,11 @@ jobs:
                       'dataset_lock': 'validation/datasets.lock.json',
                       'policy': 'validation/policies/validation-aec-motion-development.json',
                   })
-          if is_v3:
+          if is_v4:
+              hypothesis_id = 'multidataset-fine-aec-tuning-v4'
+              minimum_seeds = 6
+              maximum_pareto = 8
+          elif is_v3:
               hypothesis_id = 'multidataset-blocker-aware-tuning-v3'
               minimum_seeds = 6
               maximum_pareto = 18
@@ -317,8 +349,12 @@ jobs:
           assert result['output_authority']['product_certification_authority'] is False
           if result['status'] == 'FROZEN_RESEARCH_CANDIDATE':
               assert result['next_gate'] == 'validation-grade-blind'
-          if '/development-v3/' in result['search_space']['path']:
+          path = result['search_space']['path']
+          if path.endswith('development-v3/fine-aec-v4.json'):
+              assert result['search_space']['candidate_count'] == 8
+          elif '/development-v3/' in path:
               assert result['search_space']['candidate_count'] == 18
+          if '/development-v3/' in path:
               datasets = {item['dataset_id'] for item in result['development']['units']}
               assert {'synthetic-regression', 'public-development-diverse', 'aec-motion-regression'} <= datasets
               assert all(

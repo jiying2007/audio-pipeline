@@ -1,0 +1,46 @@
+{
+  "artifact": {
+    "digest": "sha256:0237bc87f2ac096060c3e1dbcccb1451f03187142864ff1e6d009175e4fc12a2",
+    "id": 10436805396,
+    "name": "research-optimization-35069696052"
+  },
+  "authority": {
+    "automatic_main_mutation": false,
+    "hil": false,
+    "product_certification": false,
+    "shipping": false
+  },
+  "closure_rule": "Do not rerun or refine this v5 four-knob search. Reopening requires a new root-cause hypothesis and an explicit new candidate-budget decision; do not relax the frozen double-talk case gates to rescue a tuning.",
+  "decision": "KEEP_BASELINE",
+  "evidence_summary": {
+    "all_aec_mu_above_0_22_rejected_by_development_doubletalk_case_guards": true,
+    "candidate_count": 8,
+    "eligible_nonbaseline_candidates": 0,
+    "generalization_used_for_selection": false,
+    "pareto_frontier_candidate_ids": [
+      "f0da3326d741"
+    ],
+    "terminal_tuning_070c825e2ed7_remained_ineligible": true
+  },
+  "hypothesis_id": "multidataset-doubletalk-case-guard-v5",
+  "next_action": "development-only double-talk onset/control-chain diagnostic before any new DSP candidate budget",
+  "schema_version": 1,
+  "search_space": ".github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json",
+  "search_space_sha256": "834b54a92392ad019b89b95c77a72a509acddea6064e72b0dd828ef66d2bfa7b",
+  "selected": {
+    "candidate_id": "f0da3326d741",
+    "development_score": 0.0,
+    "label": "baseline",
+    "research_candidate_id": "8876eadb281f8ab4",
+    "tuning": {
+      "aec_mu": 0.22,
+      "agc_target_dbfs": -20.0,
+      "limiter_dbfs": -2.0,
+      "ns_floor": 0.12
+    },
+    "worst_development_unit_score": 0.0
+  },
+  "source_sha": "aeedc6c95a78c74454f79eaa6e166b21ccb27571",
+  "status": "CLOSED_KEEP_BASELINE",
+  "run_id": 35069696052
+}

@@ -23,8 +23,9 @@ on:
         description: 'Runtime-safe bounded parameter search space'
         required: true
         type: choice
-        default: '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
+        default: '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
         options:
+          - '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
           - '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
           - '.github/research/continuous-optimization/development-v3/search-space.json'
           - '.github/research/continuous-optimization/development-v2/search-space.json'
@@ -59,6 +60,7 @@ jobs:
           python3 -m json.tool .github/research/continuous-optimization/development-v2/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/fine-aec-v4.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/dataset-registry.schema.json >/dev/null
           python3 validation/tools/authority.py --self-test
@@ -77,6 +79,7 @@ jobs:
           python3 .github/research/continuous-optimization/failure_mining.py --self-test
           python3 .github/research/continuous-optimization/research_optimizer.py --self-test
           python3 .github/research/continuous-optimization/research_optimizer_v3.py --self-test
+          python3 .github/research/continuous-optimization/research_optimizer_v5.py --self-test
       - name: Enforce blocker-aware v3 contract
         run: |
           set -euo pipefail
@@ -131,6 +134,53 @@ jobs:
           }
           assert v4['objective'] == v3['objective']
           print('fine-AEC v4 search contract: PASS')
+          PY
+      - name: Enforce double-talk case guard v5 contract
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v4 = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
+          ).read_text())
+          v5 = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
+          ).read_text())
+          assert v5['search_space_id'] == 'call-multidataset-doubletalk-case-guard-v5'
+          assert v5['strategy'] == 'cartesian'
+          assert v5['max_candidates'] == 8
+          assert v5['baseline'] == v4['baseline']
+          assert v5['parameters'] == v4['parameters']
+          assert v5['objective']['minimum_improvement_score'] == v4['objective']['minimum_improvement_score']
+          assert v5['objective']['metrics'] == v4['objective']['metrics']
+          case_ids = [
+              'aec-doubletalk',
+              'stress-doubletalk-quiet',
+              'stress-doubletalk-nominal',
+              'stress-doubletalk-strong',
+          ]
+          assert v5['objective']['case_delta_gates'] == [
+              {
+                  'metric': 'vad_f1',
+                  'stat': 'min',
+                  'minimum_delta': -0.03,
+                  'case_ids': case_ids,
+              },
+              {
+                  'metric': 'vad_recall',
+                  'stat': 'min',
+                  'minimum_delta': -0.03,
+                  'case_ids': case_ids,
+              },
+              {
+                  'metric': 'near_si_sdr_improvement_db',
+                  'stat': 'p10',
+                  'minimum_delta': -0.50,
+                  'case_ids': case_ids,
+              },
+          ]
+          print('double-talk case guard v5 search contract: PASS')
           PY
       - name: Enforce immutable shipping and no-promotion boundary
         run: |
@@ -245,6 +295,7 @@ jobs:
           search_space = os.environ['SEARCH_SPACE']
           is_v3 = '/development-v3/' in search_space
           is_v4 = search_space.endswith('/development-v3/fine-aec-v4.json')
+          is_v5 = search_space.endswith('/development-v3/doubletalk-case-guard-v5.json')
           evaluations = []
           for role, seeds in [('development', [1307, 1407]), ('validation', [2307, 2407]), ('shadow', [3307, 3407])]:
               for seed in seeds:
@@ -278,7 +329,11 @@ jobs:
                       'dataset_lock': 'validation/datasets.lock.json',
                       'policy': 'validation/policies/validation-aec-motion-development.json',
                   })
-          if is_v4:
+          if is_v5:
+              hypothesis_id = 'multidataset-doubletalk-case-guard-v5'
+              minimum_seeds = 6
+              maximum_pareto = 8
+          elif is_v4:
               hypothesis_id = 'multidataset-fine-aec-tuning-v4'
               minimum_seeds = 6
               maximum_pareto = 8
@@ -313,7 +368,11 @@ jobs:
       - name: Run multi-seed Pareto optimization and generalization gates
         run: |
           set -euo pipefail
-          python3 .github/research/continuous-optimization/research_optimizer_v3.py \
+          optimizer=.github/research/continuous-optimization/research_optimizer_v3.py
+          if [[ "$SEARCH_SPACE" == *"/development-v3/doubletalk-case-guard-v5.json" ]]; then
+            optimizer=.github/research/continuous-optimization/research_optimizer_v5.py
+          fi
+          python3 "$optimizer" \
             --processor build-research-opt/ap_process_pcm \
             --run-spec /tmp/research-run.json \
             --registry "$RESEARCH_REGISTRY" \
@@ -350,7 +409,9 @@ jobs:
           if result['status'] == 'FROZEN_RESEARCH_CANDIDATE':
               assert result['next_gate'] == 'validation-grade-blind'
           path = result['search_space']['path']
-          if path.endswith('development-v3/fine-aec-v4.json'):
+          if path.endswith('development-v3/doubletalk-case-guard-v5.json'):
+              assert result['search_space']['candidate_count'] == 8
+          elif path.endswith('development-v3/fine-aec-v4.json'):
               assert result['search_space']['candidate_count'] == 8
           elif '/development-v3/' in path:
               assert result['search_space']['candidate_count'] == 18

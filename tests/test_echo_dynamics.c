@@ -1,4 +1,5 @@
 #include "aec/ap_aec.h"
+#include "activity/ap_activity.h"
 #include "enhance/ap_enhance.h"
 #include <assert.h>
 #include <math.h>
@@ -50,6 +51,35 @@ static void test_far_end_agc_does_not_gain_up(void) {
     assert(state.gain <= 1.000001f);
 }
 
+static void test_activity_onset_admission_is_internal_and_bounded(void) {
+    ap_activity_state_t state;
+    ap_activity_result_t result;
+    uint32_t frame;
+
+    ap_activity_init(&state, 1.0e-7f, 1.5f, 3u);
+    for (frame = 0u; frame < 4u; ++frame) {
+        ap_activity_process(&state, 5.0e-5f, 1.0e-4f, &result);
+        assert(result.far_end_active == 1u);
+        assert(result.double_talk_active == 0u);
+        assert(result.onset_admission_protect == 0u);
+    }
+
+    /* Existing dt_hold evidence is present while the smoothed public DTD
+     * decision is still below its unchanged threshold. */
+    ap_activity_process(&state, 1.2e-4f, 1.0e-4f, &result);
+    assert(result.far_end_active == 1u);
+    assert(result.double_talk_active == 0u);
+    assert(result.onset_admission_protect == 1u);
+
+    /* The internal admission bit has no independent state and reset leaves no
+     * stale protection behind on a pure-far frame. */
+    ap_activity_reset(&state);
+    ap_activity_process(&state, 5.0e-5f, 1.0e-4f, &result);
+    assert(result.far_end_active == 1u);
+    assert(result.double_talk_active == 0u);
+    assert(result.onset_admission_protect == 0u);
+}
+
 static void fill_echo_frame(uint32_t frame) {
     uint32_t i;
     for (i = 0u; i < 160u; ++i) {
@@ -82,6 +112,7 @@ static void test_aec_steady_stride_preserves_movement_tracking(void) {
 
 int main(void) {
     test_far_end_agc_does_not_gain_up();
+    test_activity_onset_admission_is_internal_and_bounded();
     test_aec_steady_stride_preserves_movement_tracking();
     return 0;
 }

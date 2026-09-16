@@ -14,7 +14,9 @@
   "question": "Can observed pre-DTD near-end onset behavior be distinguished from pure-far echo-path change or continuous room-image movement using existing baseline telemetry plus input-domain route-correlation evidence, without changing DSP or detector thresholds?",
   "development_inputs": {
     "deterministic_validation_seeds": [1307, 1407],
+    "deterministic_validation_seconds": 4.0,
     "motion_geometry_v2_seeds": [4107, 4207],
+    "motion_geometry_v2_seconds": 4.0,
     "cohorts": {
       "near_end_onset": {
         "source": "validation/tools/build_validation_corpus.py",

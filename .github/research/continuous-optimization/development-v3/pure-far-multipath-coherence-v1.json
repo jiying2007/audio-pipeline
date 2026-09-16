@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-multipath-coherence-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "625f2bdb9e69238b9d282d15f96d6942158047c8",
+  "predecessor": {
+    "investigation_id": "pure-far-scale-route-decomposition-v1",
+    "pr": 236,
+    "fresh_main_sha": "625f2bdb9e69238b9d282d15f96d6942158047c8",
+    "diagnostic_run_id": 35117346301,
+    "diagnostic_run_number": 2,
+    "diagnostic_artifact_id": 10455279737,
+    "diagnostic_artifact_digest": "sha256:980c0b69d0e2f30fff60271cf3d462ea32619175274c83c353c2f82713f8050d",
+    "hosted_real_aec_run_id": 35117346390,
+    "hosted_real_aec_run_number": 779,
+    "hosted_real_audio_run_id": 35117346120,
+    "hosted_real_audio_run_number": 784,
+    "verify_run_id": 35117346770,
+    "verify_run_number": 985,
+    "release_run_id": 35117869189,
+    "release_run_number": 970,
+    "fresh_main_closed": true
+  },
+  "question": "Across the exact same 169 complete no-movement pure-far recordings, does magnitude-squared mic/render coherence measured with a segment geometry derived only from the unchanged baseline 96 ms AEC span remain high when single-delay correlation is weak, and how does that coherence co-vary descriptively with public DTD occupancy without deriving any detector boundary, filter, gain correction, or source candidate?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/blind_test_set_interspeech2021/farend-singletalk",
+    "scenario": "farend_singletalk",
+    "rating_formula": "last half of each common-length mic+lpb clip"
+  },
+  "selection": {
+    "rule": "all GUIDs at the exact source revision that have both GUID_farend_singletalk_lpb.wav and GUID_farend_singletalk_mic.wav; exclude every with_movement file; no result-dependent filtering",
+    "all_complete_pairs": true,
+    "expected_complete_pair_count": 169,
+    "expected_total_lfs_bytes": 248608012,
+    "expected_selection_fingerprint_sha256": "8f728eb2f61ade46afc3431bcc00c1e678cfce8573cbc34d187439f6f351f011",
+    "optimized": false,
+    "result_dependent_selection": false,
+    "subsampling_allowed": false
+  },
+  "baseline_geometry_source": {
+    "profile": "AP_PROFILE_CALL",
+    "resource_class": "AP_RESOURCE_STANDARD",
+    "processor_config_source": "examples/process_pcm.c initializes ap_config_default(AP_PROFILE_CALL)",
+    "research_probe_config_source": ".github/research/continuous-optimization/pure_far_activity_ratio_probe.c initializes ap_config_default(AP_PROFILE_CALL), forces 16 kHz mono and disables only beamforming",
+    "pipeline_rule": "ap_pipeline_init computes taps = aec_filter_ms * internal_sample_rate_hz / 1000 before AP_AEC_CAP clamp",
+    "default_call_standard_aec_filter_ms": 96,
+    "default_internal_sample_rate_hz": 16000,
+    "derived_active_taps": 1536,
+    "result_dependent_geometry": false
+  },
+  "analysis_geometry": {
+    "baseline_aec_tail_ms": 96,
+    "sample_rate_hz": 16000,
+    "tail_samples": 1536,
+    "fft_rule": "next_power_of_two(2*tail_samples)",
+    "expected_fft_size": 4096,
+    "window": "rectangular",
+    "overlap_samples": 0,
+    "frequency_bins": "all bins with nonzero accumulated mic and render power",
+    "rating_interval": "official last-half interval after raw best-delay alignment",
+    "split_stability": "repeat identical coherence geometry on the two equal halves of the aligned official rating interval",
+    "segment_boundary_limitation": "non-overlapping rectangular segments do not model convolution across segment boundaries; this is an observation limitation, not a tunable parameter"
+  },
+  "route_alignment": {
+    "source": "validation/tools/aec_route_ambiguity_probe.py raw numeric best_delay_samples",
+    "max_delay_ms": 100,
+    "initial_delay_ms": 40.0,
+    "source_window_seconds": 3.0,
+    "historical_route_decision_booleans_used": false,
+    "result_dependent_delay_search_geometry": false
+  },
+  "code_lock": {
+    "predecessor_manifest": {
+      "path": ".github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json",
+      "blob_sha": "3ebb0367801c9694e2f7b88430df88cfc6edb245"
+    },
+    "predecessor_analyzer": {
+      "path": ".github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py",
+      "blob_sha": "b9205d75848be4c133af3f5ecb0bc76a52a77a78"
+    },
+    "coverage_manifest": {
+      "path": ".github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json",
+      "blob_sha": "1780098cd918aef6f60ee74d01aea7f65baa9d02"
+    },
+    "coverage_analyzer": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",
+      "blob_sha": "66430d614dbc81da235d2c61dd755b20fc98478e"
+    },
+    "activity_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_probe.c",
+      "blob_sha": "ba7ff8aeda55e1c9665cb5fc8194061d398b1e0d"
+    },
+    "route_probe": {
+      "path": "validation/tools/aec_route_ambiguity_probe.py",
+      "blob_sha": "c3b63bb3b4049e2834a5abf2206d5970b049e653"
+    },
+    "coherence_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_multipath_coherence_probe.c",
+      "blob_sha": "621739f669287a105417302ce3e40cb0b8947cfa"
+    },
+    "pipeline_source": {
+      "path": "src/core/ap_pipeline.c",
+      "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"
+    },
+    "processor_source": {
+      "path": "examples/process_pcm.c",
+      "blob_sha": "d42761f0c0896d1c2339ab5666e459935f27c366"
+    }
+  },
+  "observation_method": {
+    "public_dtd_evidence": "regenerate frozen pure-far Activity-ratio coverage on the exact 169-pair inventory using the unchanged read-only Activity probe",
+    "delay_alignment": "recompute frozen route-probe raw best_delay_samples for each exact case; ignore all historical route decision booleans",
+    "coherence_metric": "magnitude-squared coherence |sum X*conj(Y)|^2 / (sum |X|^2 * sum |Y|^2), accumulated across fixed non-overlapping segments independently per FFT bin",
+    "reported_aggregations": [
+      "mic-energy-weighted coherence",
+      "render-energy-weighted coherence",
+      "unweighted mean coherence",
+      "coherence p25/median/p75",
+      "first-half versus second-half absolute coherence deltas",
+      "case-level descriptive Spearman associations with public DTD and frozen smoothed mic/reference ratio"
+    ],
+    "coherence_threshold": null,
+    "threshold_search_performed": false,
+    "filter_fit_performed": false,
+    "signal_correction_applied": false,
+    "gain_normalization_applied": false,
+    "classification_performed": false,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "provenance_limitations": {
+    "per_guid_device_identity_available": false,
+    "per_guid_hardware_gain_available": false,
+    "per_guid_agc_or_capture_dsp_metadata_available": false,
+    "physical_cause_attribution_authorized": false,
+    "statement": "High or low coherence can describe linear coupling in the pinned recordings but cannot uniquely identify room multipath, hardware gain, capture DSP, nonlinear processing, noise, or another physical cause because upstream per-GUID device-chain metadata are absent."
+  },
+  "prohibited_actions": [
+    "derive or search a coherence threshold",
+    "fit, estimate, apply, or ship an FIR echo-path filter from this diagnostic",
+    "apply gain normalization or signal correction",
+    "turn coherence or any association into a classifier, ranking, pass/fail boundary, tuning rule, or source-candidate selector",
+    "optimize FFT length, window, overlap, tail span, frequency range, delay geometry, or sample selection against observed results",
+    "infer device identity, hardware gain, AGC state, microphone sensitivity, loudspeaker gain, room impulse response, or capture-DSP state not present upstream",
+    "change DSP source, public DTD semantics, Activity/VAD thresholds, timers, or parameter values",
+    "subsample cases after observing results",
+    "revive I009 echo-normalized or residual-echo rescue",
+    "relax pure-far, movement, echo-path-change, Hosted Real AEC, or other qualification gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "The diagnostic may describe whether weak single-delay correlation in the pinned pure-far corpus coexists with stronger frequency-domain linear coherence at a geometry derived only from the unchanged baseline 96 ms AEC span, and how those observables co-vary with public DTD occupancy. It cannot establish a physical cause, a detector boundary, an echo-path filter, a normalization rule, or candidate authority.",
+  "next_decision": "diagnostic evidence review only"
+}

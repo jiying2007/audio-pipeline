@@ -1,0 +1,340 @@
+name: Research Pure-Far Multipath Coherence V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json'
+      - '.github/research/continuous-optimization/pure_far_multipath_coherence_v1.py'
+      - '.github/research/continuous-optimization/pure_far_multipath_coherence_probe.c'
+      - '.github/workflows/research-pure-far-multipath-coherence-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json'
+      - '.github/research/continuous-optimization/pure_far_multipath_coherence_v1.py'
+      - '.github/research/continuous-optimization/pure_far_multipath_coherence_probe.c'
+      - '.github/workflows/research-pure-far-multipath-coherence-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-pure-far-multipath-coherence-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json').read_text())
+          base = manifest['governance_base_sha']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], check=True)
+          changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
+          allowed = {
+              '.github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json',
+              '.github/research/continuous-optimization/pure_far_multipath_coherence_v1.py',
+              '.github/research/continuous-optimization/pure_far_multipath_coherence_probe.c',
+              '.github/workflows/research-pure-far-multipath-coherence-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base': base, 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'changed': changed})
+          PY
+
+      - name: Validate candidate-zero authority, predecessor closure and code locks
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/pure_far_multipath_coherence_v1.py
+          python3 .github/research/continuous-optimization/pure_far_multipath_coherence_v1.py --self-test
+          python3 validation/tools/aec_route_ambiguity_probe.py --self-test
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json').read_text())
+          predecessor = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json').read_text())
+          coverage = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json').read_text())
+          closure = json.loads(Path('.github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json').read_text())
+          assert manifest['status'] == 'DIAGNOSTIC_ONLY'
+          assert manifest['candidate_budget'] == 0
+          assert manifest['governance_base_sha'] == '625f2bdb9e69238b9d282d15f96d6942158047c8'
+          pred = manifest['predecessor']
+          assert pred['investigation_id'] == 'pure-far-scale-route-decomposition-v1'
+          assert pred['pr'] == 236
+          assert pred['fresh_main_sha'] == '625f2bdb9e69238b9d282d15f96d6942158047c8'
+          assert pred['diagnostic_run_id'] == 35117346301 and pred['diagnostic_run_number'] == 2
+          assert pred['diagnostic_artifact_id'] == 10455279737
+          assert pred['diagnostic_artifact_digest'] == 'sha256:980c0b69d0e2f30fff60271cf3d462ea32619175274c83c353c2f82713f8050d'
+          assert pred['hosted_real_aec_run_id'] == 35117346390 and pred['hosted_real_aec_run_number'] == 779
+          assert pred['hosted_real_audio_run_id'] == 35117346120 and pred['hosted_real_audio_run_number'] == 784
+          assert pred['verify_run_id'] == 35117346770 and pred['verify_run_number'] == 985
+          assert pred['release_run_id'] == 35117869189 and pred['release_run_number'] == 970
+          assert pred['fresh_main_closed'] is True
+          assert predecessor['status'] == 'DIAGNOSTIC_ONLY' and predecessor['candidate_budget'] == 0
+          assert coverage['status'] == 'DIAGNOSTIC_ONLY' and coverage['candidate_budget'] == 0
+          assert closure['status'] == 'CLOSED_KEEP_BASELINE' and closure['candidate']['budget_remaining'] == 0
+          assert closure['shipping'] == {
+              'version': 'v2.3.16',
+              'commit_sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
+              'changed_by_candidate': False,
+          }
+          assert manifest['analysis_geometry'] == {
+              'baseline_aec_tail_ms': 96,
+              'sample_rate_hz': 16000,
+              'tail_samples': 1536,
+              'fft_rule': 'next_power_of_two(2*tail_samples)',
+              'expected_fft_size': 4096,
+              'window': 'rectangular',
+              'overlap_samples': 0,
+              'frequency_bins': 'all bins with nonzero accumulated mic and render power',
+              'rating_interval': 'official last-half interval after raw best-delay alignment',
+              'split_stability': 'repeat identical coherence geometry on the two equal halves of the aligned official rating interval',
+              'segment_boundary_limitation': 'non-overlapping rectangular segments do not model convolution across segment boundaries; this is an observation limitation, not a tunable parameter',
+          }
+          assert manifest['observation_method']['coherence_threshold'] is None
+          assert manifest['observation_method']['threshold_search_performed'] is False
+          assert manifest['observation_method']['filter_fit_performed'] is False
+          assert manifest['observation_method']['signal_correction_applied'] is False
+          assert manifest['output_authority'] == {
+              'research_diagnostic_only': True,
+              'candidate_selection': False,
+              'tuning': False,
+              'automatic_main_mutation': False,
+              'shipping': False,
+              'hil': False,
+              'product_certification': False,
+          }
+          for key, meta in manifest['code_lock'].items():
+              actual = subprocess.check_output(['git', 'rev-parse', f"HEAD:{meta['path']}"], text=True).strip()
+              assert actual == meta['blob_sha'], (key, actual, meta['blob_sha'])
+          print('pure-far multipath coherence candidate-zero authority/code locks: PASS')
+          PY
+
+      - name: Build unchanged baseline and frozen research probes
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-pure-far-multipath \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-pure-far-multipath --target audio_pipeline ap_build_info_dump --parallel
+          flags=build-pure-far-multipath/CMakeFiles/audio_pipeline.dir/flags.make
+          test -f "$flags"
+          defs=$(sed -n 's/^C_DEFINES = //p' "$flags")
+          incs=$(sed -n 's/^C_INCLUDES = //p' "$flags")
+          echo "$defs" | grep -q -- '-DAP_BUILD_ACTIVITY=1'
+          echo "$defs" | grep -q -- '-DAP_BUILD_STAGE_SYNC=1'
+          echo "$defs" | grep -q -- '-DAP_BUILD_STAGE_AEC=1'
+          compiler=$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' build-pure-far-multipath/CMakeCache.txt)
+          if [ -z "$compiler" ]; then compiler=cc; fi
+          "$compiler" $defs $incs \
+            -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            .github/research/continuous-optimization/pure_far_activity_ratio_probe.c \
+            build-pure-far-multipath/libaudio_pipeline.a -lm \
+            -o build-pure-far-multipath/pure_far_activity_ratio_probe
+          "$compiler" \
+            -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            .github/research/continuous-optimization/pure_far_multipath_coherence_probe.c \
+            -lm -o build-pure-far-multipath/pure_far_multipath_coherence_probe
+          build-pure-far-multipath/pure_far_multipath_coherence_probe --self-test
+          mkdir -p pure-far-multipath-coherence-v1-out
+          build-pure-far-multipath/ap_build_info_dump > pure-far-multipath-coherence-v1-out/build-info.txt
+          sha256sum build-pure-far-multipath/libaudio_pipeline.a \
+                    build-pure-far-multipath/pure_far_activity_ratio_probe \
+                    build-pure-far-multipath/pure_far_multipath_coherence_probe \
+            > pure-far-multipath-coherence-v1-out/binaries.sha256
+
+      - name: Inventory and materialize exact frozen all-pair corpus
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-challenge-pure-far-multipath
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout \
+            https://github.com/microsoft/AEC-Challenge.git \
+            /tmp/audio-pipeline-aec-challenge-pure-far-multipath
+          cd /tmp/audio-pipeline-aec-challenge-pure-far-multipath
+          git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
+          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcd6fdff"
+          python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json" \
+                    "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json" \
+                    "$GITHUB_WORKSPACE/pure-far-multipath-coherence-v1-out/inventory.json" \
+                    /tmp/pure-far-multipath-lfs-include.txt <<'PY'
+          import hashlib, json, subprocess, sys
+          from pathlib import Path
+          manifest = json.load(open(sys.argv[1]))
+          coverage_manifest = json.load(open(sys.argv[2]))
+          out = Path(sys.argv[3])
+          include_out = Path(sys.argv[4])
+          directory = manifest['source']['dataset_directory']
+          names = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', 'HEAD', directory], text=True).splitlines()
+          suffixes = {
+              '_farend_singletalk_lpb.wav': 'lpb',
+              '_farend_singletalk_mic.wav': 'mic',
+          }
+          found = {}
+          for path in names:
+              name = Path(path).name
+              for suffix, role in suffixes.items():
+                  if name.endswith(suffix):
+                      guid = name[:-len(suffix)]
+                      found.setdefault(guid, {})[role] = path
+                      break
+          complete_guids = sorted(guid for guid, roles in found.items() if set(roles) == {'lpb', 'mic'})
+          assert complete_guids
+          cases = []
+          total = 0
+          include = []
+          for guid in complete_guids:
+              case = {'guid': guid, 'scenario': 'farend_singletalk'}
+              for role in ('lpb', 'mic'):
+                  path = found[guid][role]
+                  assert 'with_movement' not in path
+                  pointer = subprocess.check_output(['git', 'show', f'HEAD:{path}'], text=True)
+                  lines = dict(line.split(' ', 1) for line in pointer.splitlines() if ' ' in line)
+                  assert lines.get('version') == 'https://git-lfs.github.com/spec/v1'
+                  oid = lines['oid']
+                  assert oid.startswith('sha256:') and len(oid) == 71
+                  size = int(lines['size'])
+                  assert size > 0
+                  case[role] = {'path': path, 'sha256': oid.split(':', 1)[1], 'size': size}
+                  total += size
+                  include.append(path)
+              cases.append(case)
+          canonical = json.dumps(cases, sort_keys=True, separators=(',', ':')).encode()
+          fingerprint = hashlib.sha256(canonical).hexdigest()
+          selection = manifest['selection']
+          assert len(cases) == selection['expected_complete_pair_count'] == 169
+          assert total == selection['expected_total_lfs_bytes'] == 248608012
+          assert fingerprint == selection['expected_selection_fingerprint_sha256']
+          assert selection['rule'] == coverage_manifest['selection']['rule']
+          inventory = {
+              'schema_version': 1,
+              'source_revision': manifest['source']['revision'],
+              'selection_rule': selection['rule'],
+              'complete_pair_count': len(cases),
+              'total_lfs_bytes': total,
+              'selection_fingerprint_sha256': fingerprint,
+              'cases': cases,
+          }
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(inventory, indent=2, sort_keys=True) + '\n')
+          include_out.write_text(','.join(include))
+          print({'complete_pair_count': len(cases), 'total_lfs_bytes': total,
+                 'selection_fingerprint_sha256': fingerprint, 'subsampling': False})
+          PY
+          unset GIT_LFS_SKIP_SMUDGE
+          git lfs pull --include="$(cat /tmp/pure-far-multipath-lfs-include.txt)" --exclude=""
+
+      - name: Regenerate frozen pure-far Activity coverage evidence
+        run: |
+          set -euo pipefail
+          mkdir -p pure-far-multipath-coherence-v1-out/predecessor-coverage
+          python3 .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
+            --probe build-pure-far-multipath/pure_far_activity_ratio_probe \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json \
+            --inventory pure-far-multipath-coherence-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-pure-far-multipath \
+            --output pure-far-multipath-coherence-v1-out/predecessor-coverage
+
+      - name: Run all-pair multipath coherence diagnostic
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/pure_far_multipath_coherence_v1.py \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json \
+            --inventory pure-far-multipath-coherence-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-pure-far-multipath \
+            --coverage-result pure-far-multipath-coherence-v1-out/predecessor-coverage/pure-far-activity-ratio-coverage-result.json \
+            --route-probe validation/tools/aec_route_ambiguity_probe.py \
+            --coherence-probe build-pure-far-multipath/pure_far_multipath_coherence_probe \
+            --output pure-far-multipath-coherence-v1-out/evidence
+
+      - name: Enforce coherence evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('pure-far-multipath-coherence-v1-out/evidence/pure-far-multipath-coherence-result.json').read_text())
+          inventory = json.loads(Path('pure-far-multipath-coherence-v1-out/inventory.json').read_text())
+          assert result['status'] == 'DIAGNOSTIC_ONLY'
+          assert result['authority'] == 'research-diagnostic-only'
+          assert result['candidate_budget'] == 0
+          assert result['all_complete_pairs_executed'] is True
+          assert result['subsampling_performed'] is False
+          assert result['coherence_threshold_used'] is False
+          assert result['threshold_search_performed'] is False
+          assert result['filter_fit_performed'] is False
+          assert result['signal_correction_applied'] is False
+          assert result['candidate_selection_performed'] is False
+          assert result['tuning_performed'] is False
+          assert result['segment_boundary_limitation_acknowledged'] is True
+          assert result['inventory']['complete_pair_count'] == inventory['complete_pair_count'] == 169
+          assert result['inventory']['total_lfs_bytes'] == inventory['total_lfs_bytes'] == 248608012
+          assert result['inventory']['selection_fingerprint_sha256'] == inventory['selection_fingerprint_sha256'] == '8f728eb2f61ade46afc3431bcc00c1e678cfce8573cbc34d187439f6f351f011'
+          assert len(result['cases']) == 169
+          for case in result['cases']:
+              c = case['coherence']
+              assert c['diagnostic_only'] is True
+              assert c['sample_rate_hz'] == 16000
+              assert c['tail_samples'] == 1536
+              assert c['official_rating']['fft_size'] == 4096
+              assert c['first_half']['fft_size'] == 4096
+              assert c['second_half']['fft_size'] == 4096
+              assert c['official_rating']['segment_count'] >= 2
+              for group in ('official_rating', 'first_half', 'second_half'):
+                  for key in ('mic_energy_weighted_coherence', 'render_energy_weighted_coherence',
+                              'unweighted_mean_coherence', 'coherence_p25', 'coherence_median', 'coherence_p75'):
+                      assert 0.0 <= c[group][key] <= 1.0
+          print(json.dumps(result['aggregate'], indent=2, sort_keys=True))
+          PY
+          cat pure-far-multipath-coherence-v1-out/evidence/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research coherence evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json \
+            pure-far-multipath-coherence-v1-out/manifest.json
+          git rev-parse HEAD > pure-far-multipath-coherence-v1-out/source-sha.txt
+          {
+            git rev-parse HEAD:.github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json
+            git rev-parse HEAD:.github/research/continuous-optimization/pure_far_scale_route_decomposition_v1.py
+            git rev-parse HEAD:.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json
+            git rev-parse HEAD:.github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py
+            git rev-parse HEAD:.github/research/continuous-optimization/pure_far_activity_ratio_probe.c
+            git rev-parse HEAD:validation/tools/aec_route_ambiguity_probe.py
+            git rev-parse HEAD:.github/research/continuous-optimization/pure_far_multipath_coherence_probe.c
+            git rev-parse HEAD:src/core/ap_pipeline.c
+            git rev-parse HEAD:examples/process_pcm.c
+          } > pure-far-multipath-coherence-v1-out/locked-code-blobs.txt
+          (
+            cd /tmp/audio-pipeline-aec-challenge-pure-far-multipath
+            git rev-parse HEAD
+            git rev-parse HEAD:AECMOS/aecmos.py
+          ) > pure-far-multipath-coherence-v1-out/upstream-source.txt
+          find pure-far-multipath-coherence-v1-out -type f ! -name SHA256SUMS -print0 | \
+            sort -z | xargs -0 sha256sum > pure-far-multipath-coherence-v1-out/SHA256SUMS
+
+      - name: Upload research coherence evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pure-far-multipath-coherence-v1-${{ github.run_id }}
+          path: pure-far-multipath-coherence-v1-out/
+          if-no-files-found: error
+          retention-days: 30

@@ -16,6 +16,7 @@ typedef struct ap_activity_state {
 typedef struct ap_activity_result {
     uint8_t far_end_active;
     uint8_t double_talk_active;
+    uint8_t onset_admission_protect;
 } ap_activity_result_t;
 
 void ap_activity_init(ap_activity_state_t *, float, float, uint32_t);

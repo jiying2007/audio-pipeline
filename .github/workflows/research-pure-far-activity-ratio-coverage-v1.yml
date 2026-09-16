@@ -1,0 +1,314 @@
+name: Research Pure-Far Activity Ratio Coverage V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json'
+      - '.github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py'
+      - '.github/workflows/research-pure-far-activity-ratio-coverage-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json'
+      - '.github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py'
+      - '.github/workflows/research-pure-far-activity-ratio-coverage-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-pure-far-activity-ratio-coverage-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json').read_text())
+          base = manifest['governance_base_sha']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], check=True)
+          changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
+          allowed = {
+              '.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json',
+              '.github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py',
+              '.github/workflows/research-pure-far-activity-ratio-coverage-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base': base, 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'changed': changed})
+          PY
+
+      - name: Validate candidate-zero authority and closed predecessor
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py
+          python3 .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py --self-test
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json').read_text())
+          predecessor = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-v1.json').read_text())
+          closure = json.loads(Path('.github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json').read_text())
+          assert manifest['status'] == 'DIAGNOSTIC_ONLY'
+          assert manifest['candidate_budget'] == 0
+          assert manifest['governance_base_sha'] == '0c3ef9899912beb91334efbcdd184a8ac5a4dd38'
+          pred = manifest['predecessor']
+          assert pred['investigation_id'] == 'pure-far-activity-ratio-v1'
+          assert pred['pr'] == 234
+          assert pred['fresh_main_sha'] == '0c3ef9899912beb91334efbcdd184a8ac5a4dd38'
+          assert pred['diagnostic_run_id'] == 35109968660 and pred['diagnostic_run_number'] == 3
+          assert pred['diagnostic_artifact_id'] == 10451363850
+          assert pred['diagnostic_artifact_digest'] == 'sha256:4bc2e133c8c5a892962a2cdaf8add98794335d227eb2a5ba77967ebca9569e58'
+          assert pred['hosted_real_aec_run_id'] == 35109968684 and pred['hosted_real_aec_run_number'] == 772
+          assert pred['hosted_real_audio_run_id'] == 35109968815 and pred['hosted_real_audio_run_number'] == 777
+          assert pred['verify_run_id'] == 35109969129 and pred['verify_run_number'] == 978
+          assert pred['release_run_id'] == 35110442645 and pred['release_run_number'] == 963
+          assert pred['fresh_main_closed'] is True
+          assert predecessor['status'] == 'DIAGNOSTIC_ONLY' and predecessor['candidate_budget'] == 0
+          assert closure['status'] == 'CLOSED_KEEP_BASELINE' and closure['candidate']['budget_remaining'] == 0
+          assert closure['shipping'] == {
+              'version': 'v2.3.16',
+              'commit_sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
+              'changed_by_candidate': False,
+          }
+          assert manifest['selection']['all_complete_pairs'] is True
+          assert manifest['selection']['optimized'] is False
+          assert manifest['selection']['result_dependent_selection'] is False
+          assert manifest['ci_resource_guard']['on_exceed'] == 'fail_closed_without_subsampling'
+          assert manifest['observation_method']['numeric_tolerance_added'] is False
+          lock = manifest['baseline_code_lock']
+          for key in ('activity_source', 'pipeline_source', 'processor_source', 'research_probe'):
+              actual = subprocess.check_output(['git', 'rev-parse', f"HEAD:{lock[key]['path']}"], text=True).strip()
+              assert actual == lock[key]['blob_sha'], (key, actual, lock[key]['blob_sha'])
+          assert manifest['output_authority'] == {
+              'research_diagnostic_only': True,
+              'candidate_selection': False,
+              'tuning': False,
+              'automatic_main_mutation': False,
+              'shipping': False,
+              'hil': False,
+              'product_certification': False,
+          }
+          print('pure-far coverage candidate-zero authority/code lock: PASS')
+          PY
+
+      - name: Build unchanged baseline and existing read-only probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-pure-far-coverage \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-pure-far-coverage --target audio_pipeline ap_build_info_dump --parallel
+          flags=build-pure-far-coverage/CMakeFiles/audio_pipeline.dir/flags.make
+          test -f "$flags"
+          defs=$(sed -n 's/^C_DEFINES = //p' "$flags")
+          incs=$(sed -n 's/^C_INCLUDES = //p' "$flags")
+          echo "$defs" | grep -q -- '-DAP_BUILD_ACTIVITY=1'
+          echo "$defs" | grep -q -- '-DAP_BUILD_STAGE_SYNC=1'
+          echo "$defs" | grep -q -- '-DAP_BUILD_STAGE_AEC=1'
+          compiler=$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' build-pure-far-coverage/CMakeCache.txt)
+          if [ -z "$compiler" ]; then compiler=cc; fi
+          "$compiler" $defs $incs \
+            -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            .github/research/continuous-optimization/pure_far_activity_ratio_probe.c \
+            build-pure-far-coverage/libaudio_pipeline.a -lm \
+            -o build-pure-far-coverage/pure_far_activity_ratio_probe
+          mkdir -p pure-far-activity-ratio-coverage-v1-out
+          build-pure-far-coverage/ap_build_info_dump > pure-far-activity-ratio-coverage-v1-out/build-info.txt
+          sha256sum build-pure-far-coverage/libaudio_pipeline.a \
+                    build-pure-far-coverage/pure_far_activity_ratio_probe \
+            > pure-far-activity-ratio-coverage-v1-out/binaries.sha256
+
+      - name: Inventory and materialize every complete no-movement pure-far pair
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-challenge-pure-far-coverage
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout \
+            https://github.com/microsoft/AEC-Challenge.git \
+            /tmp/audio-pipeline-aec-challenge-pure-far-coverage
+          cd /tmp/audio-pipeline-aec-challenge-pure-far-coverage
+          git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
+          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcd6fdff"
+          python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json" \
+                    "$GITHUB_WORKSPACE/pure-far-activity-ratio-coverage-v1-out/inventory.json" \
+                    /tmp/pure-far-coverage-lfs-include.txt <<'PY'
+          import hashlib, json, subprocess, sys
+          from pathlib import Path
+          manifest = json.load(open(sys.argv[1]))
+          out = Path(sys.argv[2])
+          include_out = Path(sys.argv[3])
+          directory = manifest['source']['dataset_directory']
+          names = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', 'HEAD', directory], text=True).splitlines()
+          suffixes = {
+              '_farend_singletalk_lpb.wav': 'lpb',
+              '_farend_singletalk_mic.wav': 'mic',
+          }
+          found = {}
+          for path in names:
+              name = Path(path).name
+              for suffix, role in suffixes.items():
+                  if name.endswith(suffix):
+                      guid = name[:-len(suffix)]
+                      found.setdefault(guid, {})[role] = path
+                      break
+          complete_guids = sorted(guid for guid, roles in found.items() if set(roles) == {'lpb', 'mic'})
+          assert complete_guids, 'no complete no-movement far-end pairs found'
+          cases = []
+          total = 0
+          include = []
+          for guid in complete_guids:
+              case = {'guid': guid, 'scenario': 'farend_singletalk'}
+              for role in ('lpb', 'mic'):
+                  path = found[guid][role]
+                  assert 'with_movement' not in path
+                  pointer = subprocess.check_output(['git', 'show', f'HEAD:{path}'], text=True)
+                  lines = dict(line.split(' ', 1) for line in pointer.splitlines() if ' ' in line)
+                  assert lines.get('version') == 'https://git-lfs.github.com/spec/v1', (path, lines)
+                  oid = lines['oid']
+                  assert oid.startswith('sha256:') and len(oid) == 71, (path, oid)
+                  size = int(lines['size'])
+                  assert size > 0
+                  case[role] = {'path': path, 'sha256': oid.split(':', 1)[1], 'size': size}
+                  total += size
+                  include.append(path)
+              cases.append(case)
+          guard = manifest['ci_resource_guard']
+          assert len(cases) <= int(guard['max_complete_pairs']), (len(cases), guard)
+          assert total <= int(guard['max_total_lfs_bytes']), (total, guard)
+          canonical = json.dumps(cases, sort_keys=True, separators=(',', ':')).encode()
+          inventory = {
+              'schema_version': 1,
+              'source_revision': manifest['source']['revision'],
+              'selection_rule': manifest['selection']['rule'],
+              'complete_pair_count': len(cases),
+              'total_lfs_bytes': total,
+              'selection_fingerprint_sha256': hashlib.sha256(canonical).hexdigest(),
+              'cases': cases,
+          }
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(inventory, indent=2, sort_keys=True) + '\n')
+          include_out.write_text(','.join(include))
+          print({
+              'complete_pair_count': len(cases),
+              'total_lfs_bytes': total,
+              'selection_fingerprint_sha256': inventory['selection_fingerprint_sha256'],
+              'subsampling': False,
+          })
+          PY
+          unset GIT_LFS_SKIP_SMUDGE
+          git lfs pull --include="$(cat /tmp/pure-far-coverage-lfs-include.txt)" --exclude=""
+
+      - name: Run all-complete-pair pure-far Activity ratio coverage
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
+            --probe build-pure-far-coverage/pure_far_activity_ratio_probe \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json \
+            --inventory pure-far-activity-ratio-coverage-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-pure-far-coverage \
+            --output pure-far-activity-ratio-coverage-v1-out/evidence
+
+      - name: Enforce coverage evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('pure-far-activity-ratio-coverage-v1-out/evidence/pure-far-activity-ratio-coverage-result.json').read_text())
+          inventory = json.loads(Path('pure-far-activity-ratio-coverage-v1-out/inventory.json').read_text())
+          assert result['status'] == 'DIAGNOSTIC_ONLY'
+          assert result['authority'] == 'research-diagnostic-only'
+          assert result['candidate_budget'] == 0
+          assert result['all_complete_pairs_executed'] is True
+          assert result['subsampling_performed'] is False
+          assert result['threshold_search_performed'] is False
+          assert result['numeric_tolerance_added'] is False
+          assert result['tuning_performed'] is False
+          assert result['candidate_selection_performed'] is False
+          assert result['independent_evidence_raw_mismatch_total'] >= 0
+          assert result['independent_evidence_unexplained_mismatch_total'] == 0
+          assert result['inventory']['complete_pair_count'] == inventory['complete_pair_count'] == len(result['cases'])
+          assert result['inventory']['selection_fingerprint_sha256'] == inventory['selection_fingerprint_sha256']
+          assert inventory['complete_pair_count'] > 2, inventory['complete_pair_count']
+          assert {case['guid'] for case in result['cases']} >= {
+              '49IIo03GZ0CYQOmeA3A0BA', '7GTxyTksSUqCnP5y0ILG4A'
+          }
+          for case in result['cases']:
+              m = case['metrics']
+              assert m['independent_dt_on_raw_mismatch_count'] >= 0
+              assert m['independent_dt_hold_raw_mismatch_count'] >= 0
+              assert m['independent_dt_on_unexplained_mismatch_count'] == 0
+              assert m['independent_dt_hold_unexplained_mismatch_count'] == 0
+              for key in ('far_end_fraction', 'double_talk_fraction', 'aec_converged_fraction'):
+                  assert 0.0 <= m[key] <= 1.0
+          summary = Path('pure-far-activity-ratio-coverage-v1-out/summary.md')
+          with summary.open('w', encoding='utf-8') as fh:
+              fh.write('## Pure-far Activity ratio coverage v1\n\n')
+              fh.write('- Authority: `research-diagnostic-only`\n')
+              fh.write('- Candidate budget: `0`\n')
+              fh.write('- All complete no-movement pairs: `true`\n')
+              fh.write('- Subsampling: `false`\n')
+              fh.write('- Numeric tolerance added: `false`\n')
+              fh.write(f"- Complete pair count: `{inventory['complete_pair_count']}`\n")
+              fh.write(f"- Total LFS bytes: `{inventory['total_lfs_bytes']}`\n")
+              fh.write(f"- Selection fingerprint: `{inventory['selection_fingerprint_sha256']}`\n")
+              fh.write(f"- Independent evidence raw mismatch total: `{result['independent_evidence_raw_mismatch_total']}`\n")
+              fh.write('- Independent evidence unexplained mismatch total: `0`\n')
+              fh.write('\n### Cross-case distributions\n')
+              for key, dist in sorted(result['aggregate'].items()):
+                  fh.write(f'- {key}: `{json.dumps(dist, sort_keys=True)}`\n')
+              fh.write('\n### Frozen predecessor anchors\n')
+              for guid, case in sorted(result['named_predecessor_anchors'].items()):
+                  m = case['metrics']
+                  fh.write(f'- {guid}: DTD=`{m["double_talk_fraction"]}`, DTD|far=`{m["double_talk_given_far_fraction"]}`, DTD|high-direct-ref-far=`{m["double_talk_given_high_direct_reference_far_fraction"]}`\n')
+          print(json.dumps(result['aggregate'], indent=2, sort_keys=True))
+          PY
+          cat pure-far-activity-ratio-coverage-v1-out/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research coverage evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json \
+            pure-far-activity-ratio-coverage-v1-out/manifest.json
+          git rev-parse HEAD > pure-far-activity-ratio-coverage-v1-out/source-sha.txt
+          {
+            git rev-parse HEAD:src/activity/ap_activity.c
+            git rev-parse HEAD:src/core/ap_pipeline.c
+            git rev-parse HEAD:examples/process_pcm.c
+            git rev-parse HEAD:.github/research/continuous-optimization/pure_far_activity_ratio_probe.c
+          } > pure-far-activity-ratio-coverage-v1-out/baseline-code-blobs.txt
+          (
+            cd /tmp/audio-pipeline-aec-challenge-pure-far-coverage
+            git rev-parse HEAD
+            git rev-parse HEAD:AECMOS/aecmos.py
+          ) > pure-far-activity-ratio-coverage-v1-out/upstream-source.txt
+          find pure-far-activity-ratio-coverage-v1-out -type f ! -name SHA256SUMS -print0 | \
+            sort -z | xargs -0 sha256sum > pure-far-activity-ratio-coverage-v1-out/SHA256SUMS
+
+      - name: Upload research coverage evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pure-far-activity-ratio-coverage-v1-${{ github.run_id }}
+          path: pure-far-activity-ratio-coverage-v1-out/
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-activity-ratio-coverage-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "0c3ef9899912beb91334efbcdd184a8ac5a4dd38",
+  "predecessor": {
+    "investigation_id": "pure-far-activity-ratio-v1",
+    "pr": 234,
+    "fresh_main_sha": "0c3ef9899912beb91334efbcdd184a8ac5a4dd38",
+    "diagnostic_run_id": 35109968660,
+    "diagnostic_run_number": 3,
+    "diagnostic_artifact_id": 10451363850,
+    "diagnostic_artifact_digest": "sha256:4bc2e133c8c5a892962a2cdaf8add98794335d227eb2a5ba77967ebca9569e58",
+    "hosted_real_aec_run_id": 35109968684,
+    "hosted_real_aec_run_number": 772,
+    "hosted_real_audio_run_id": 35109968815,
+    "hosted_real_audio_run_number": 777,
+    "verify_run_id": 35109969129,
+    "verify_run_number": 978,
+    "release_run_id": 35110442645,
+    "release_run_number": 963,
+    "fresh_main_closed": true
+  },
+  "question": "Across every complete no-movement farend_singletalk pair in the exact pinned Interspeech2021 blind-test tree, how broadly does the unchanged Activity implementation observe pure-far mic/reference energy evidence that activates public DTD, without changing or searching any threshold?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/blind_test_set_interspeech2021/farend-singletalk",
+    "rating_logic_source": "AECMOS/aecmos.py",
+    "rating_logic_blob_sha": "7423983e6da8515ec81b58a4e905c4b7bcd6fdff",
+    "scenario": "farend_singletalk",
+    "rating_formula": "last half of each common-length mic+lpb clip"
+  },
+  "selection": {
+    "rule": "all GUIDs at the exact source revision that have both GUID_farend_singletalk_lpb.wav and GUID_farend_singletalk_mic.wav; exclude every with_movement file; no result-dependent filtering",
+    "optimized": false,
+    "all_complete_pairs": true,
+    "movement_included": false,
+    "result_dependent_selection": false
+  },
+  "inventory_binding": {
+    "method": "enumerate the exact Git tree before LFS materialization; for every selected path bind the Git LFS pointer oid sha256 and size into a sealed runtime inventory artifact",
+    "require_lfs_pointer": true,
+    "source_revision_is_selection_authority": true
+  },
+  "ci_resource_guard": {
+    "authority": "execution-resource-only; never an acoustic, quality, DTD, or selection boundary",
+    "max_complete_pairs": 512,
+    "max_total_lfs_bytes": 805306368,
+    "on_exceed": "fail_closed_without_subsampling"
+  },
+  "baseline_code_lock": {
+    "activity_source": {
+      "path": "src/activity/ap_activity.c",
+      "blob_sha": "73956d6c69d0ee07e6fb922f8def1db29d071972"
+    },
+    "pipeline_source": {
+      "path": "src/core/ap_pipeline.c",
+      "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"
+    },
+    "processor_source": {
+      "path": "examples/process_pcm.c",
+      "blob_sha": "d42761f0c0896d1c2339ab5666e459935f27c366"
+    },
+    "research_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_probe.c",
+      "blob_sha": "ba7ff8aeda55e1c9665cb5fc8194061d398b1e0d"
+    },
+    "activity_constants_observed_not_tuned": {
+      "far_end_threshold": 1e-7,
+      "double_talk_ratio": 1.5,
+      "instant_on_multiplier": 0.9,
+      "instant_hold_multiplier": 0.72,
+      "hangover_frames": 3,
+      "ema_attack": 0.35,
+      "ema_release": 0.08
+    }
+  },
+  "observation_method": {
+    "internal_state_read_only": true,
+    "public_api_change": false,
+    "dsp_source_change": false,
+    "existing_thresholds_are_observation_labels_only": true,
+    "independent_energy_cross_check": "compare authoritative EMA-recovered instant-ratio evidence against input_rms_dbfs plus synced internal reference energy on every official-rating frame; retain raw boolean mismatches, and require every mismatch to be exactly attributable to the two numeric estimates straddling the same existing threshold with zero unexplained mismatches",
+    "numeric_tolerance_added": false,
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "outputs": [
+    "sealed all-complete-pair LFS inventory and fingerprint",
+    "per-case official-rating public DTD/far-end/AEC fractions",
+    "per-case current dt_on/dt_hold evidence fractions",
+    "per-case public DTD fraction when the current synced reference itself exceeds the existing far threshold",
+    "per-case smoothed and instant mic/reference ratio summaries",
+    "cross-case descriptive min/median/p95/max distributions",
+    "the predecessor 49II and 7GT cases as named anchors only if naturally present in the all-pair inventory",
+    "raw independent-energy boolean mismatch counts",
+    "zero unexplained independent-energy mismatch count after exact existing-threshold straddle attribution"
+  ],
+  "prohibited_actions": [
+    "subsample cases after observing audio or diagnostic results",
+    "replace the all-complete-pair rule with a hand-picked subset",
+    "add a numeric tolerance to make the independent cross-check pass",
+    "derive or search a DTD threshold",
+    "derive or search a gain-normalization constant",
+    "change the current 1.5, 0.90, 0.72, 1e-7, or 3-frame Activity constants",
+    "change DSP source",
+    "change public DTD semantics",
+    "change Activity or VAD thresholds",
+    "parameter search",
+    "candidate selection",
+    "revive I009 echo-normalized or residual-echo rescue",
+    "relax pure-far, movement, echo-path-change, Hosted Real AEC, or other qualification gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "This coverage run may establish whether the current pure-far false-DTD energy-ratio mechanism is isolated or broadly observable across the pinned real far-end corpus. Independent cross-check boolean disagreements are descriptive floating-point round-trip evidence only when exactly explained by the two numeric estimates straddling the same frozen current threshold. The run cannot identify the physical cause of mic/reference gain differences, define a detector boundary, or authorize a source candidate.",
+  "next_decision": "diagnostic evidence review only"
+}

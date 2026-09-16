@@ -14,7 +14,6 @@ import math
 import os
 import statistics
 import subprocess
-import tempfile
 from pathlib import Path
 
 
@@ -163,11 +162,12 @@ def rising_edges(labels: list[int]) -> list[int]:
             if value != 0 and (index == 0 or labels[index - 1] == 0)]
 
 
-def run_processor(processor: Path, corpus_root: Path, case: dict, output: Path) -> tuple[list[dict], list[int], list[int]]:
+def run_processor(processor: Path, corpus_root: Path, corpus_id: str, case: dict,
+                  output: Path) -> tuple[list[dict], list[int], list[int]]:
     require(case["mic_channels"] == 1, f"diagnostic requires mono case: {case['case_id']}")
     require(case.get("render_audio"), f"render required: {case['case_id']}")
-    case_dir = output / "processor" / case["case_id"]
-    case_dir.mkdir(parents=True, exist_ok=True)
+    case_dir = output / "processor" / corpus_id / case["case_id"]
+    case_dir.mkdir(parents=True, exist_ok=False)
     metrics_path = case_dir / "metrics.jsonl"
     out_path = case_dir / "out.pcm"
     mic_path = corpus_root / case["mic_audio"]
@@ -355,40 +355,42 @@ def main() -> int:
     for corpus_path in args.validation_corpus:
         corpus = load_json(corpus_path)
         root = corpus_path.parent
+        corpus_id = str(corpus["corpus_id"])
         seed = int(corpus["generator"]["seed"])
         observed_validation_seeds.append(seed)
         for case in corpus["cases"]:
             scenario = case["scenario"]
             if scenario not in {"aec-doubletalk", "aec-doubletalk-balance", "aec-echo-path-change"}:
                 continue
-            rows, mic, render = run_processor(args.processor, root, case, args.output)
+            rows, mic, render = run_processor(args.processor, root, corpus_id, case, args.output)
             if scenario in {"aec-doubletalk", "aec-doubletalk-balance"}:
                 require(case.get("vad_labels"), f"near labels required: {case['case_id']}")
                 labels = read_labels(root / case["vad_labels"])
                 for event in rising_edges(labels):
                     if event >= 12 and event + 12 < len(rows):
-                        records.append(event_record("near_end_onset", corpus["corpus_id"], case,
+                        records.append(event_record("near_end_onset", corpus_id, case,
                                                     event, rows, mic, render, manifest))
             else:
                 event = int(case["control"]["echo_path_change_frame"])
                 require(event >= 12 and event + 12 < len(rows), "path-change event support")
-                records.append(event_record("echo_path_change", corpus["corpus_id"], case,
+                records.append(event_record("echo_path_change", corpus_id, case,
                                             event, rows, mic, render, manifest))
 
     for corpus_path in args.motion_corpus:
         corpus = load_json(corpus_path)
         root = corpus_path.parent
+        corpus_id = str(corpus["corpus_id"])
         seed = int(corpus["generator"]["seed"])
         observed_motion_seeds.append(seed)
         for case in corpus["cases"]:
             if case["scenario"] != "aec-continuous-motion":
                 continue
-            rows, mic, render = run_processor(args.processor, root, case, args.output)
+            rows, mic, render = run_processor(args.processor, root, corpus_id, case, args.output)
             event = len(rows) // 2
             require(event >= 12 and event + 12 < len(rows), "motion checkpoint support")
             truth = motion_truth(root, case, event)
             cohort = "stationary_far_control" if truth.get("motion") == "stationary" else "continuous_motion"
-            records.append(event_record(cohort, corpus["corpus_id"], case, event,
+            records.append(event_record(cohort, corpus_id, case, event,
                                         rows, mic, render, manifest, truth))
 
     require(sorted(observed_validation_seeds) == manifest["development_inputs"]["deterministic_validation_seeds"],
@@ -406,7 +408,7 @@ def main() -> int:
         "status": "DIAGNOSTIC_ONLY",
         "authority": "research-diagnostic-only",
         "candidate_budget": 0,
-        "selection_performed": false if False else False,
+        "selection_performed": False,
         "cohort_counts": cohort_counts,
         "cohort_summary": summarize(records),
         "records": records,

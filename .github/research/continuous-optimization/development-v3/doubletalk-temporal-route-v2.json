@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "investigation_id": "doubletalk-temporal-route-disambiguation-v2",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "7654979fd2664954ba6780e5d69caa1029cf1d8f",
+  "predecessor": {
+    "investigation_id": "doubletalk-origin-disambiguation-v1",
+    "pr": 230,
+    "fresh_main_sha": "7654979fd2664954ba6780e5d69caa1029cf1d8f",
+    "origin_run_id": 35091183285,
+    "origin_run_number": 4,
+    "origin_artifact_id": 10444720713,
+    "origin_artifact_digest": "sha256:f41650a2663e4b40dd52188b4255fd37289a7f41959ed7c48dfb5fe2398c4f9e",
+    "verify_run_id": 35091183506,
+    "verify_run_number": 969,
+    "release_run_id": 35091576907,
+    "release_run_number": 954,
+    "fresh_main_closed": true
+  },
+  "question": "Does the time evolution of route lag and correlation structure distinguish labeled near-end onset from pure-far echo-path change and continuous motion more reliably than any absolute coherence level, while remaining descriptive on unlabeled real movement?",
+  "development_inputs": {
+    "deterministic_validation_seeds": [1307, 1407],
+    "deterministic_validation_seconds": 4.0,
+    "motion_geometry_v2_seeds": [4107, 4207],
+    "motion_geometry_v2_seconds": 4.0,
+    "synthetic_cohorts": [
+      "near_end_onset",
+      "echo_path_change",
+      "continuous_motion",
+      "stationary_far_control"
+    ]
+  },
+  "synthetic_temporal_probe": {
+    "window_frames": 8,
+    "relative_center_frames": [-12, -8, -4, 0, 4, 8, 12],
+    "max_delay_ms": 100,
+    "coarse_step_samples": 32,
+    "sample_stride": 8,
+    "runner_guard_samples": 64,
+    "published_raw_series": [
+      "best_delay_samples",
+      "best_delay_ms",
+      "best_score_squared",
+      "runner_up_score_squared",
+      "peak_ratio",
+      "double_talk_fraction",
+      "far_end_fraction",
+      "aec_converged_fraction",
+      "estimated_delay_ms_median",
+      "delay_error_abs_p95_samples"
+    ],
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "real_temporal_crosscheck": {
+    "dataset_lock": "validation/hosted_aec.datasets.lock.json",
+    "source_repository": "microsoft/AEC-Challenge",
+    "source_revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "cases": 4,
+    "static_cases": 2,
+    "movement_cases": 2,
+    "labels_available": false,
+    "window_seconds": 1.0,
+    "hop_seconds": 0.5,
+    "max_windows": 32,
+    "max_delay_ms": 100,
+    "coarse_step_samples": 96,
+    "sample_stride": 24,
+    "runner_guard_samples": 192,
+    "published_raw_series": [
+      "best_delay_samples",
+      "best_delay_ms",
+      "best_score_squared",
+      "runner_up_score_squared",
+      "peak_ratio"
+    ],
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false,
+    "classification_performed": false
+  },
+  "descriptive_shape_metrics": [
+    "lag_range_ms",
+    "lag_total_variation_ms",
+    "lag_step_abs_median_ms",
+    "lag_step_abs_p95_ms",
+    "peak_score_median",
+    "peak_score_min",
+    "peak_score_max",
+    "peak_score_total_variation",
+    "peak_ratio_median",
+    "event_lag_step_abs_ms",
+    "event_peak_score_delta"
+  ],
+  "prohibited_actions": [
+    "change DSP source",
+    "change public DTD semantics",
+    "change Activity or VAD thresholds",
+    "add an onset timer",
+    "parameter search",
+    "optimize temporal window geometry",
+    "derive or freeze a detector threshold from any synthetic or real trajectory",
+    "classify unlabeled Hosted Real AEC movement as near-end speech",
+    "candidate selection",
+    "revive I009 echo-normalized or residual-echo rescue",
+    "relax movement, echo-path-change, pure-far, or Hosted Real AEC gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "Publish fixed-geometry temporal trajectories and descriptive summaries only. Synthetic labels may be used to compare event shapes, but no numeric boundary may become a detector rule. Hosted Real AEC movement remains unlabeled validation context: its trajectory may falsify an over-generalization but may not be classified as near-end speech or used to tune a threshold. A future source candidate still requires materially new root-cause evidence and a separate explicit candidate-budget authorization.",
+  "next_decision": "diagnostic evidence review only"
+}

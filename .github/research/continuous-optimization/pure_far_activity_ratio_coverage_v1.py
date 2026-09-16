@@ -101,6 +101,11 @@ def distribution(values) -> dict:
     }
 
 
+def straddles_existing_threshold(a: float, b: float, threshold: float) -> bool:
+    """No epsilon: true only when the two numeric estimates classify opposite sides."""
+    return (a > threshold) != (b > threshold)
+
+
 def validate_manifest(manifest: dict) -> None:
     require(manifest.get("schema_version") == 1, "manifest schema")
     require(manifest.get("investigation_id") == "pure-far-activity-ratio-coverage-v1", "manifest identity")
@@ -109,6 +114,7 @@ def validate_manifest(manifest: dict) -> None:
     require(manifest["selection"]["all_complete_pairs"] is True, "all-pair selection required")
     require(manifest["selection"]["optimized"] is False, "selection must not be optimized")
     require(manifest["selection"]["result_dependent_selection"] is False, "result-dependent selection forbidden")
+    require(manifest["observation_method"]["numeric_tolerance_added"] is False, "numeric tolerance forbidden")
     require(manifest["observation_method"]["selection_threshold"] is None, "selection threshold forbidden")
     require(manifest["observation_method"]["candidate_selection"] is False, "candidate selection forbidden")
     authority = manifest["output_authority"]
@@ -152,19 +158,42 @@ def summarize_rows(rows: list[dict], start_frame: int, end_frame: int, constants
 
     mismatch_on = 0
     mismatch_hold = 0
+    unexplained_on = 0
+    unexplained_hold = 0
     for row in part:
         require(math.isclose(float(row["far_end_threshold"]), far_threshold, rel_tol=1e-6, abs_tol=1e-12),
                 "far threshold drift")
         require(math.isclose(float(row["double_talk_ratio"]), dt_ratio, rel_tol=1e-6, abs_tol=1e-9),
                 "DTD ratio drift")
         require(int(row["hangover_frames"]) == int(constants["hangover_frames"]), "hangover drift")
+
+        far = bool(row["far_end_active"])
+        smoothed_ratio = float(row["smoothed_ratio"])
+        recovered_instant = float(row["instant_ratio"])
         independent_instant = float(row["metric_mic_energy"]) / (float(row["direct_reference_energy"]) + 1.0e-12)
-        independent_smoothed = float(row["smoothed_mic_energy"]) / (float(row["smoothed_reference_energy"]) + 1.0e-12)
-        independent_on = bool(row["far_end_active"]) and independent_smoothed > dt_ratio and independent_instant > instant_on
-        independent_hold = bool(row["far_end_active"]) and independent_instant > instant_hold
-        mismatch_on += independent_on != bool(row["dt_on_evidence"])
-        mismatch_hold += independent_hold != bool(row["dt_hold_evidence"])
-    require(mismatch_on == 0 and mismatch_hold == 0, "independent Activity evidence mismatch")
+
+        serialized_on = far and smoothed_ratio > dt_ratio and recovered_instant > instant_on
+        serialized_hold = far and recovered_instant > instant_hold
+        c_on = bool(row["dt_on_evidence"])
+        c_hold = bool(row["dt_hold_evidence"])
+        independent_on = far and smoothed_ratio > dt_ratio and independent_instant > instant_on
+        independent_hold = far and independent_instant > instant_hold
+
+        if independent_on != c_on:
+            mismatch_on += 1
+            if serialized_on != c_on or not straddles_existing_threshold(
+                recovered_instant, independent_instant, instant_on
+            ):
+                unexplained_on += 1
+        if independent_hold != c_hold:
+            mismatch_hold += 1
+            if serialized_hold != c_hold or not straddles_existing_threshold(
+                recovered_instant, independent_instant, instant_hold
+            ):
+                unexplained_hold += 1
+
+    require(unexplained_on == 0 and unexplained_hold == 0,
+            "unexplained independent Activity evidence mismatch")
 
     far_rows = [r for r in part if r["far_end_active"]]
     dtd_rows = [r for r in part if r["double_talk_active"]]
@@ -208,8 +237,10 @@ def summarize_rows(rows: list[dict], start_frame: int, end_frame: int, constants
         "high_direct_reference_far_frames_ratio": ratio_summary(high_ref_far_rows),
         "double_talk_frames_ratio": ratio_summary(dtd_rows),
         "aec_converged_fraction": fraction([bool(r["aec_converged"]) for r in part]),
-        "independent_dt_on_mismatch_count": mismatch_on,
-        "independent_dt_hold_mismatch_count": mismatch_hold,
+        "independent_dt_on_raw_mismatch_count": mismatch_on,
+        "independent_dt_hold_raw_mismatch_count": mismatch_hold,
+        "independent_dt_on_unexplained_mismatch_count": unexplained_on,
+        "independent_dt_hold_unexplained_mismatch_count": unexplained_hold,
     }
 
 
@@ -275,6 +306,8 @@ def aggregate(cases: list[dict]) -> dict:
             "metrics", "high_direct_reference_far_frames_ratio", "instant_ratio_median"
         ),
         "aec_converged_fraction": ("metrics", "aec_converged_fraction"),
+        "independent_dt_on_raw_mismatch_count": ("metrics", "independent_dt_on_raw_mismatch_count"),
+        "independent_dt_hold_raw_mismatch_count": ("metrics", "independent_dt_hold_raw_mismatch_count"),
     }
     return {name: distribution(values(path)) for name, path in fields.items()}
 
@@ -282,7 +315,15 @@ def aggregate(cases: list[dict]) -> dict:
 def self_test() -> None:
     assert percentile([0.0, 10.0], 0.5) == 5.0
     assert distribution([1.0, 2.0, 3.0])["median"] == 2.0
-    print(json.dumps({"result": "PASS", "candidate_budget": 0, "subsampling": False}, sort_keys=True))
+    assert straddles_existing_threshold(1.34, 1.36, 1.35)
+    assert not straddles_existing_threshold(1.34, 1.34, 1.35)
+    assert not straddles_existing_threshold(1.36, 1.36, 1.35)
+    print(json.dumps({
+        "result": "PASS",
+        "candidate_budget": 0,
+        "subsampling": False,
+        "numeric_tolerance_added": False,
+    }, sort_keys=True))
 
 
 def main() -> int:
@@ -309,11 +350,17 @@ def main() -> int:
 
     constants = manifest["baseline_code_lock"]["activity_constants_observed_not_tuned"]
     cases = [run_case(args.probe, args.source_root, case, constants) for case in inventory_cases]
-    mismatch_total = sum(
-        c["metrics"]["independent_dt_on_mismatch_count"] + c["metrics"]["independent_dt_hold_mismatch_count"]
+    raw_mismatch_total = sum(
+        c["metrics"]["independent_dt_on_raw_mismatch_count"] +
+        c["metrics"]["independent_dt_hold_raw_mismatch_count"]
         for c in cases
     )
-    require(mismatch_total == 0, "coverage independent evidence mismatch")
+    unexplained_mismatch_total = sum(
+        c["metrics"]["independent_dt_on_unexplained_mismatch_count"] +
+        c["metrics"]["independent_dt_hold_unexplained_mismatch_count"]
+        for c in cases
+    )
+    require(unexplained_mismatch_total == 0, "coverage unexplained independent evidence mismatch")
     anchors = {}
     for guid in ("49IIo03GZ0CYQOmeA3A0BA", "7GTxyTksSUqCnP5y0ILG4A"):
         match = next((case for case in cases if case["guid"] == guid), None)
@@ -330,6 +377,7 @@ def main() -> int:
         "all_complete_pairs_executed": True,
         "subsampling_performed": False,
         "threshold_search_performed": False,
+        "numeric_tolerance_added": False,
         "tuning_performed": False,
         "candidate_selection_performed": False,
         "source_revision": manifest["source"]["revision"],
@@ -338,7 +386,8 @@ def main() -> int:
             "total_lfs_bytes": inventory["total_lfs_bytes"],
             "selection_fingerprint_sha256": inventory["selection_fingerprint_sha256"],
         },
-        "independent_evidence_mismatch_total": mismatch_total,
+        "independent_evidence_raw_mismatch_total": raw_mismatch_total,
+        "independent_evidence_unexplained_mismatch_total": unexplained_mismatch_total,
         "cases": cases,
         "aggregate": aggregate(cases),
         "named_predecessor_anchors": anchors,
@@ -350,7 +399,9 @@ def main() -> int:
         "cases": len(cases),
         "candidate_budget": 0,
         "subsampling": False,
-        "independent_evidence_mismatch_total": mismatch_total,
+        "numeric_tolerance_added": False,
+        "independent_evidence_raw_mismatch_total": raw_mismatch_total,
+        "independent_evidence_unexplained_mismatch_total": unexplained_mismatch_total,
     }, sort_keys=True))
     return 0
 

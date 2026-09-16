@@ -7,6 +7,8 @@ on:
       - '.github/research/continuous-optimization/**'
       - 'validation/research/README.md'
       - 'validation/tools/tuning_iteration.py'
+      - 'validation/tools/build_aec_motion_corpus.py'
+      - 'validation/policies/validation-aec-motion-development.json'
       - 'validation/tuning/**'
       - '.github/workflows/research-optimization.yml'
       - '.github/program/maintenance_workflow_contract.py'
@@ -21,8 +23,9 @@ on:
         description: 'Runtime-safe bounded parameter search space'
         required: true
         type: choice
-        default: '.github/research/continuous-optimization/development-v2/search-space.json'
+        default: '.github/research/continuous-optimization/development-v3/search-space.json'
         options:
+          - '.github/research/continuous-optimization/development-v3/search-space.json'
           - '.github/research/continuous-optimization/development-v2/search-space.json'
           - 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
           - 'validation/tuning/search-spaces/call-v1.json'
@@ -49,9 +52,11 @@ jobs:
           python3 -m py_compile .github/research/continuous-optimization/development-v2/*.py
           python3 .github/research/continuous-optimization/development-v2/prepare.py --self-test
           python3 .github/research/continuous-optimization/development-v2/build_corpus.py --self-test
+          python3 validation/tools/build_aec_motion_corpus.py --self-test
           python3 -m json.tool .github/research/continuous-optimization/development-v2/development.lock.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v2/policy.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v2/search-space.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-v3/search-space.json >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/dataset-registry.schema.json >/dev/null
           python3 validation/tools/authority.py --self-test
@@ -69,6 +74,37 @@ jobs:
           PY
           python3 .github/research/continuous-optimization/failure_mining.py --self-test
           python3 .github/research/continuous-optimization/research_optimizer.py --self-test
+          python3 .github/research/continuous-optimization/research_optimizer_v3.py --self-test
+      - name: Enforce blocker-aware v3 contract
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('.github/research/continuous-optimization/development-v3/search-space.json')
+          space = json.loads(path.read_text())
+          assert space['search_space_id'] == 'call-multidataset-blocker-aware-v3'
+          assert space['strategy'] == 'cartesian'
+          assert space['max_candidates'] == 18
+          assert space['parameters'] == {
+              'aec_mu': [0.22, 0.36, 0.44],
+              'ns_floor': [0.08, 0.12, 0.16],
+              'agc_target_dbfs': [-20.0, -18.0],
+              'limiter_dbfs': [-2.0],
+          }
+          metrics = {item['name']: item for item in space['objective']['metrics']}
+          assert metrics['median_output_render_corr_reduction']['datasets'] == [
+              'synthetic-regression', 'aec-motion-regression'
+          ]
+          assert metrics['p10_output_render_corr_reduction']['minimum_units'] == 4
+          assert metrics['min_vad_f1']['datasets'] == ['synthetic-regression']
+          assert metrics['min_vad_f1']['minimum_units'] == 2
+          assert all(
+              'synthetic-regression' in item.get('datasets', ['synthetic-regression'])
+              for item in space['objective']['metrics']
+          )
+          print('blocker-aware v3 search contract: PASS')
+          PY
       - name: Enforce immutable shipping and no-promotion boundary
         run: |
           set -euo pipefail
@@ -94,12 +130,20 @@ jobs:
           terminal_ids = {item['candidate_id'] for item in registry['terminal_candidates']}
           assert '4a6a408bf0e3' in terminal_ids
           assert '542ae198199b' in terminal_ids
+          assert '64814f0762bd' in terminal_ids
+          assert '070c825e2ed7' in terminal_ids
           public_validation = next(item for item in registry['datasets'] if item['id'] == 'public-validation')
           assert public_validation['selection_roles'] == [] and public_validation['frozen_holdout'] is True
           public_development = next(item for item in registry['datasets'] if item['id'] == 'public-development-diverse')
           assert public_development['selection_roles'] == ['development']
           assert public_development['evaluation_roles'] == [] and public_development['frozen_holdout'] is False
           assert public_development['identity_value'] == 'audio-pipeline-public-development-v2'
+          motion = next(item for item in registry['datasets'] if item['id'] == 'aec-motion-regression')
+          assert motion['source_kind'] == 'synthetic'
+          assert motion['selection_roles'] == ['development']
+          assert motion['evaluation_roles'] == []
+          assert motion['frozen_holdout'] is False
+          assert motion['may_promote_shipping'] is False
           product = next(item for item in registry['datasets'] if item['id'] == 'pcr02-product-external')
           assert product['selection_roles'] == [] and product['evaluation_roles'] == []
           print('research optimization authority boundary: PASS')
@@ -116,6 +160,7 @@ jobs:
       RESEARCH_REGISTRY: .github/research/continuous-optimization/dataset-registry.json
       DEV_LOCK: .github/research/continuous-optimization/development-v2/development.lock.json
       DEV_POLICY: .github/research/continuous-optimization/development-v2/policy.json
+      MOTION_POLICY: validation/policies/validation-aec-motion-development.json
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -145,6 +190,12 @@ jobs:
           for seed in 1307 1407 2307 2407 3307 3407; do
             python3 validation/tools/build_validation_corpus.py --output "/tmp/ap-research-$seed" --seed "$seed"
           done
+          if [[ "$SEARCH_SPACE" == *"/development-v3/"* ]]; then
+            for seed in 4107 4207; do
+              python3 validation/tools/build_aec_motion_corpus.py \
+                --output "/tmp/ap-motion-$seed" --seed "$seed" --seconds 8
+            done
+          fi
       - name: Materialize diverse public development partitions
         run: |
           set -euo pipefail
@@ -164,6 +215,8 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
+          search_space = os.environ['SEARCH_SPACE']
+          is_v3 = '/development-v3/' in search_space
           evaluations = []
           for role, seeds in [('development', [1307, 1407]), ('validation', [2307, 2407]), ('shadow', [3307, 3407])]:
               for seed in seeds:
@@ -186,17 +239,40 @@ jobs:
                   'dataset_lock': '.github/research/continuous-optimization/development-v2/development.lock.json',
                   'policy': '.github/research/continuous-optimization/development-v2/policy.json',
               })
+          if is_v3:
+              for seed in [4107, 4207]:
+                  evaluations.append({
+                      'evaluation_id': f'aec-motion-development-{seed}',
+                      'dataset_id': 'aec-motion-regression',
+                      'role': 'development',
+                      'seed': seed,
+                      'corpus': f'/tmp/ap-motion-{seed}/corpus.json',
+                      'dataset_lock': 'validation/datasets.lock.json',
+                      'policy': 'validation/policies/validation-aec-motion-development.json',
+                  })
+          if is_v3:
+              hypothesis_id = 'multidataset-blocker-aware-tuning-v3'
+              minimum_seeds = 6
+              maximum_pareto = 18
+          elif search_space.endswith('development-v2/search-space.json'):
+              hypothesis_id = 'multidataset-runtime-safe-tuning-v2'
+              minimum_seeds = 4
+              maximum_pareto = 16
+          else:
+              hypothesis_id = 'bounded-runtime-safe-tuning'
+              minimum_seeds = 4
+              maximum_pareto = 16
           spec = {
               'schema_version': 1,
               'experiment_id': f"github-{os.environ['GITHUB_RUN_ID']}",
-              'hypothesis_id': 'multidataset-runtime-safe-tuning-v2',
+              'hypothesis_id': hypothesis_id,
               'source_sha': os.environ['GITHUB_SHA'],
-              'search_space': os.environ['SEARCH_SPACE'],
+              'search_space': search_space,
               'policy': {
                   'minimum_development_score': 0.05,
                   'minimum_development_unit_score': 0.0,
-                  'minimum_distinct_development_seeds': 4,
-                  'maximum_pareto_candidates': 16,
+                  'minimum_distinct_development_seeds': minimum_seeds,
+                  'maximum_pareto_candidates': maximum_pareto,
               },
               'evaluations': evaluations,
           }
@@ -205,7 +281,7 @@ jobs:
       - name: Run multi-seed Pareto optimization and generalization gates
         run: |
           set -euo pipefail
-          python3 .github/research/continuous-optimization/research_optimizer.py \
+          python3 .github/research/continuous-optimization/research_optimizer_v3.py \
             --processor build-research-opt/ap_process_pcm \
             --run-spec /tmp/research-run.json \
             --registry "$RESEARCH_REGISTRY" \
@@ -241,6 +317,18 @@ jobs:
           assert result['output_authority']['product_certification_authority'] is False
           if result['status'] == 'FROZEN_RESEARCH_CANDIDATE':
               assert result['next_gate'] == 'validation-grade-blind'
+          if '/development-v3/' in result['search_space']['path']:
+              assert result['search_space']['candidate_count'] == 18
+              datasets = {item['dataset_id'] for item in result['development']['units']}
+              assert {'synthetic-regression', 'public-development-diverse', 'aec-motion-regression'} <= datasets
+              assert all(
+                  row['objective_coverage']['median_output_render_corr_reduction']['expected_units'] == 4
+                  for row in result['development']['ranking']
+              )
+              assert all(
+                  row['objective_coverage']['min_vad_f1']['expected_units'] == 2
+                  for row in result['development']['ranking']
+              )
           print(json.dumps({
               'decision': result['decision'],
               'status': result['status'],
@@ -276,6 +364,7 @@ jobs:
           path: |
             /tmp/research-run.json
             /tmp/development-v2-materialization.json
+            /tmp/ap-motion-*/source-manifest.json
             research-optimization-out/
           if-no-files-found: error
           retention-days: 30

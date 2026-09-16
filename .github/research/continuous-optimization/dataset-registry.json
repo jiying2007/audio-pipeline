@@ -48,6 +48,20 @@
       "notes": "Deterministic generated regression corpus. Development partitions may rank candidates; independent validation/shadow seeds only gate the selected development winner."
     },
     {
+      "id": "aec-motion-regression",
+      "source_kind": "synthetic",
+      "stages": ["aec", "res", "sync", "pipeline"],
+      "lock_path": null,
+      "builder_path": "validation/tools/build_aec_motion_corpus.py",
+      "identity_key": null,
+      "identity_value": null,
+      "selection_roles": ["development"],
+      "evaluation_roles": [],
+      "frozen_holdout": false,
+      "may_promote_shipping": false,
+      "notes": "Deterministic continuous-motion AEC geometry corpus. Development-only selection evidence for render-correlation/ERLE sensitivity; never blind, HIL, product, or shipping authority."
+    },
+    {
       "id": "public-development-diverse",
       "source_kind": "public",
       "stages": ["ns", "vad", "agc", "pipeline"],

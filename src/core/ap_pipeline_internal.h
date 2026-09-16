@@ -80,6 +80,9 @@ struct ap_pipeline {
 
     ap_quality_t quality;
     uint32_t aec_convergence_frames;
+#if AP_BUILD_ACTIVITY && AP_BUILD_STAGE_VAD
+    uint8_t onset_admission_vad_carry;
+#endif
 };
 
 _Static_assert((AP_PIPELINE_STATE_ALIGNMENT & (AP_PIPELINE_STATE_ALIGNMENT - 1u)) == 0u,

@@ -25,6 +25,11 @@
       "candidate_id": "64814f0762bd",
       "source_sha": "5b7e544c9df26233c7056952a21f8c870aada020",
       "decision": "BLIND_REJECTED_NON_SHIPPING"
+    },
+    {
+      "candidate_id": "070c825e2ed7",
+      "source_sha": "f392ceb406a16d1f1570da3ff5a564d8a65a75cd",
+      "decision": "BLIND_REJECTED_NON_SHIPPING"
     }
   ],
   "datasets": [

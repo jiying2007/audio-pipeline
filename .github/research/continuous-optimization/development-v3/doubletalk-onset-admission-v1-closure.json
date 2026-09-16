@@ -65,6 +65,33 @@
       "other_fixed_seeds_passing_all_cases": [6107, 7107]
     }
   ],
+  "baseline_recovery_evidence": {
+    "workflow": "Hosted Real AEC Validation",
+    "run_id": 35086910464,
+    "run_number": 757,
+    "closure_head_sha": "850aa722bc8589c3144e7c7802beb7c1cc0ad21b",
+    "pr_merge_source_sha": "c93843f753b98a72e83bd3811215f75fa2c577e7",
+    "dsp_content": "governance baseline plus closure JSON; failed candidate DSP is absent",
+    "artifact": {
+      "id": 10442876547,
+      "name": "hosted-real-aec-35086910464",
+      "digest": "sha256:d7e7a1aaf48e2ef3fb79ede4162e1a14b03bf0e8cd8f7ef9576e1d1d211cd297"
+    },
+    "result": "PASS",
+    "cases": 4,
+    "passed_cases": 4,
+    "pass_rate": 1.0,
+    "static_farend_singletalk_passed": 2,
+    "static_farend_singletalk_cases": 2,
+    "movement_farend_singletalk_passed": 2,
+    "movement_farend_singletalk_cases": 2,
+    "median_output_render_corr_reduction": 0.014063662667163784,
+    "static_median_output_render_corr_reduction": 0.03620233995389352,
+    "movement_median_output_render_corr_reduction": -0.02096521123299384,
+    "candidate_movement_passed_cases": 0,
+    "baseline_movement_passed_cases": 2,
+    "same_real_aec_policy_restored_after_candidate_removed": true
+  },
   "passing_exact_candidate_gates": [
     {
       "workflow": "Activity RES Stage Validation",
@@ -117,6 +144,7 @@
     "hard_negative_gate_failed": true,
     "hosted_real_aec_movement_failed": true,
     "echo_path_change_failed": true,
+    "hosted_real_aec_baseline_recovered_after_candidate_removed": true,
     "second_source_candidate_authorized": false,
     "threshold_or_timer_refinement_authorized": false,
     "candidate_pr_closed_without_merge": true,

@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "investigation_id": "same-guid-farend-doubletalk-paired-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "fda5d0cb056965da02006c2d6d4429c76a0da26f",
+  "predecessor": {
+    "investigation_id": "real-doubletalk-rating-interval-v1",
+    "pr": 232,
+    "fresh_main_sha": "fda5d0cb056965da02006c2d6d4429c76a0da26f",
+    "diagnostic_run_id": 35102591341,
+    "diagnostic_run_number": 2,
+    "diagnostic_artifact_id": 10448812996,
+    "diagnostic_artifact_digest": "sha256:e9354d08a1b076c3f74bd54201b21d2b06487af7ba699cea7dfdf729fc012506",
+    "hosted_real_aec_run_id": 35102591303,
+    "hosted_real_aec_run_number": 767,
+    "hosted_real_audio_run_id": 35102591348,
+    "hosted_real_audio_run_number": 772,
+    "verify_run_id": 35102592146,
+    "verify_run_number": 973,
+    "release_run_id": 35103029548,
+    "release_run_number": 958,
+    "fresh_main_closed": true
+  },
+  "question": "For the same two upstream Interspeech2021 GUID identifiers, how do unchanged-baseline public DTD and route-correlation statistics differ between far-end-only and double-talk official AECMOS rating intervals, without treating the GUID as proof of identical physical conditions or deriving a detector boundary?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "farend_directory": "datasets/blind_test_set_interspeech2021/farend-singletalk",
+    "doubletalk_directory": "datasets/blind_test_set_interspeech2021/doubletalk",
+    "rating_logic_source": "AECMOS/aecmos.py",
+    "rating_logic_blob_sha": "7423983e6da8515ec81b58a4e905c4b7bcd6fdff",
+    "farend_rating_formula": "last half of the common-length clip",
+    "doubletalk_rating_formula": "last (clip_duration_seconds - 15) / 2 seconds after truncating paired signals to common length",
+    "pairing_semantics": "same upstream GUID identifier only; does not prove identical device state, room state, timing, playback, or physical recording conditions"
+  },
+  "selection": {
+    "rule": "inherit the exact two GUIDs from real-doubletalk-rating-interval-v1 and add only the matching no-movement farend-singletalk mic+lpb pairs for those GUIDs",
+    "optimized": false,
+    "selected_guids": [
+      "49IIo03GZ0CYQOmeA3A0BA",
+      "7GTxyTksSUqCnP5y0ILG4A"
+    ],
+    "cases": [
+      {
+        "case_id": "49II-farend",
+        "guid": "49IIo03GZ0CYQOmeA3A0BA",
+        "scenario": "farend_singletalk",
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/49IIo03GZ0CYQOmeA3A0BA_farend_singletalk_lpb.wav",
+          "sha256": "8065662a0a087fc162e3cbae9c34a83d5c7229bbc1eb7334b40397a0ab043364",
+          "size": 696364
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/49IIo03GZ0CYQOmeA3A0BA_farend_singletalk_mic.wav",
+          "sha256": "27f34087182066673f658a66cfde4e53bf0a71a9a1d10d0ee7d321a0366b4b99",
+          "size": 696684
+        }
+      },
+      {
+        "case_id": "49II-doubletalk",
+        "guid": "49IIo03GZ0CYQOmeA3A0BA",
+        "scenario": "doubletalk",
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/49IIo03GZ0CYQOmeA3A0BA_doubletalk_lpb.wav",
+          "sha256": "45482f020f72682d4542b17ba6488f45f96f3ad02dc33a69b3a28db04420b4fb",
+          "size": 1217964
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/49IIo03GZ0CYQOmeA3A0BA_doubletalk_mic.wav",
+          "sha256": "3597d30c109cfd5bfa333a0adc61677817f805576d43de9c9d41637c6795ebd8",
+          "size": 1218284
+        }
+      },
+      {
+        "case_id": "7GT-farend",
+        "guid": "7GTxyTksSUqCnP5y0ILG4A",
+        "scenario": "farend_singletalk",
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/7GTxyTksSUqCnP5y0ILG4A_farend_singletalk_lpb.wav",
+          "sha256": "48a68cf794591e05c8edd84b9016e677098af047b49ac7bde3a90f8a206ec5bb",
+          "size": 693484
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/farend-singletalk/7GTxyTksSUqCnP5y0ILG4A_farend_singletalk_mic.wav",
+          "sha256": "e0273fdba47c910d2e234e0771b0bce183169a0c54db8f3b7f10b256ede56c2b",
+          "size": 705004
+        }
+      },
+      {
+        "case_id": "7GT-doubletalk",
+        "guid": "7GTxyTksSUqCnP5y0ILG4A",
+        "scenario": "doubletalk",
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/7GTxyTksSUqCnP5y0ILG4A_doubletalk_lpb.wav",
+          "sha256": "bed2e73abbf6c0c5ba18bea5fa6ecdbf9c59adfe2e7f4716b9f9bbdd39248dbf",
+          "size": 1173484
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/7GTxyTksSUqCnP5y0ILG4A_doubletalk_mic.wav",
+          "sha256": "ee4181959abfd1f132c39ff9eadd5bfaab89c8be834d8e75a67f1b221662d937",
+          "size": 1188524
+        }
+      }
+    ]
+  },
+  "observation_geometry": {
+    "processor_frame_ms": 10,
+    "route_window_seconds": 1.0,
+    "route_hop_seconds": 0.5,
+    "route_max_delay_ms": 100,
+    "route_coarse_step_samples": 96,
+    "route_sample_stride": 24,
+    "route_runner_guard_samples": 192,
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "paired_outputs": [
+    "doubletalk_minus_farend double_talk_fraction",
+    "doubletalk_minus_farend route_peak_score_median",
+    "doubletalk_minus_farend route_lag_range_ms",
+    "doubletalk_minus_farend route_lag_total_variation_ms",
+    "doubletalk_minus_farend route_peak_score_total_variation",
+    "raw official-rating-interval case telemetry"
+  ],
+  "prohibited_actions": [
+    "claim that equal GUID proves identical physical recording conditions",
+    "time-align far-end and double-talk rating intervals as if they shared an onset event",
+    "derive a movement detector from route lag or coherence",
+    "derive a DTD or coherence threshold from paired deltas",
+    "search or optimize selected GUIDs",
+    "search or optimize route-window geometry",
+    "change DSP source",
+    "change public DTD semantics",
+    "change Activity or VAD thresholds",
+    "add an onset timer",
+    "parameter search",
+    "candidate selection",
+    "revive I009 echo-normalized or residual-echo rescue",
+    "relax movement, echo-path-change, pure-far, or Hosted Real AEC gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "Paired differences are descriptive comparisons under the same upstream GUID identifier and scenario-specific official AECMOS rating intervals. They can test whether near-end-containing recordings are associated with altered route-probe behavior, but they cannot establish a causal physical-control experiment, define a detector threshold, or authorize a source candidate.",
+  "next_decision": "diagnostic evidence review only"
+}

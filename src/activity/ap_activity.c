@@ -68,4 +68,9 @@ void ap_activity_process(ap_activity_state_t *s,
     r->far_end_active = (uint8_t)(far ? 1u : 0u);
     r->double_talk_active =
         (uint8_t)(far && s->double_talk_hangover > 0u ? 1u : 0u);
+    /* Reuse the existing hold evidence as an internal current-frame admission
+     * guard. It does not change the public double-talk decision or introduce a
+     * new threshold, and it has no state of its own to outlive this frame. */
+    r->onset_admission_protect =
+        (uint8_t)(far && !r->double_talk_active && dt_hold ? 1u : 0u);
 }

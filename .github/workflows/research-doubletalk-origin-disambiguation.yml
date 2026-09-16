@@ -1,0 +1,215 @@
+name: Research Double-Talk Origin Disambiguation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/doubletalk-origin-disambiguation-v1.json'
+      - '.github/research/continuous-optimization/doubletalk_origin_disambiguation.py'
+      - '.github/workflows/research-doubletalk-origin-disambiguation.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/doubletalk-origin-disambiguation-v1.json'
+      - '.github/research/continuous-optimization/doubletalk_origin_disambiguation.py'
+      - '.github/workflows/research-doubletalk-origin-disambiguation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-doubletalk-origin-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and frozen governance base
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          manifest = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/'
+              'doubletalk-origin-disambiguation-v1.json'
+          ).read_text())
+          base = manifest['governance_base_sha']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], check=True)
+          changed = subprocess.check_output(
+              ['git', 'diff', '--name-only', f'{base}...HEAD'], text=True
+          ).splitlines()
+          allowed = {
+              '.github/research/continuous-optimization/development-v3/doubletalk-origin-disambiguation-v1.json',
+              '.github/research/continuous-optimization/doubletalk_origin_disambiguation.py',
+              '.github/workflows/research-doubletalk-origin-disambiguation.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base': base, 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+                 'changed': changed})
+          PY
+
+      - name: Validate candidate-zero authority and predecessor closure
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/doubletalk_origin_disambiguation.py
+          python3 .github/research/continuous-optimization/doubletalk_origin_disambiguation.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/'
+              'doubletalk-origin-disambiguation-v1.json'
+          ).read_text())
+          closure = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/'
+              'doubletalk-onset-admission-v1-closure.json'
+          ).read_text())
+
+          assert manifest['status'] == 'DIAGNOSTIC_ONLY'
+          assert manifest['candidate_budget'] == 0
+          assert manifest['development_inputs']['deterministic_validation_seeds'] == [1307, 1407]
+          assert manifest['development_inputs']['deterministic_validation_seconds'] == 4.0
+          assert manifest['development_inputs']['motion_geometry_v2_seeds'] == [4107, 4207]
+          assert manifest['development_inputs']['motion_geometry_v2_seconds'] == 4.0
+          assert manifest['observable_evidence']['input_domain_route_probe']['selection_threshold'] is None
+          assert manifest['output_authority'] == {
+              'research_diagnostic_only': True,
+              'candidate_selection': False,
+              'automatic_main_mutation': False,
+              'shipping': False,
+              'hil': False,
+              'product_certification': False,
+          }
+
+          assert closure['hypothesis_id'] == 'doubletalk-onset-admission-v1'
+          assert closure['status'] == 'CLOSED_KEEP_BASELINE'
+          assert closure['decision'] == 'KEEP_BASELINE'
+          assert closure['candidate']['budget_authorized'] == 1
+          assert closure['candidate']['budget_consumed'] == 1
+          assert closure['candidate']['budget_remaining'] == 0
+          assert closure['candidate']['merged'] is False
+          assert closure['evidence_summary']['hard_negative_gate_failed'] is True
+          assert closure['evidence_summary']['candidate_pr_closed_without_merge'] is True
+          assert closure['evidence_summary']['main_dsp_mutated'] is False
+          assert closure['shipping'] == {
+              'version': 'v2.3.16',
+              'commit_sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
+              'changed_by_candidate': False,
+          }
+          print('double-talk origin diagnostic authority: PASS')
+          PY
+
+      - name: Validate deterministic source generators
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            validation/tools/build_validation_corpus.py \
+            validation/tools/build_aec_motion_corpus.py
+          python3 validation/tools/build_aec_motion_corpus.py --self-test
+
+      - name: Build unchanged baseline processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-origin-diagnostic \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-origin-diagnostic --target ap_process_pcm ap_build_info_dump --parallel
+          mkdir -p doubletalk-origin-disambiguation-out
+          build-origin-diagnostic/ap_build_info_dump > doubletalk-origin-disambiguation-out/build-info.txt
+          sha256sum build-origin-diagnostic/ap_process_pcm > doubletalk-origin-disambiguation-out/processor.sha256
+
+      - name: Build exposed deterministic diagnostic corpora
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-origin-validation-1307 --seed 1307 --seconds 4
+          python3 validation/tools/build_validation_corpus.py --output /tmp/ap-origin-validation-1407 --seed 1407 --seconds 4
+          python3 validation/tools/build_aec_motion_corpus.py --output /tmp/ap-origin-motion-4107 --seed 4107 --seconds 4
+          python3 validation/tools/build_aec_motion_corpus.py --output /tmp/ap-origin-motion-4207 --seed 4207 --seconds 4
+
+      - name: Run candidate-zero origin diagnostic
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/doubletalk_origin_disambiguation.py \
+            --processor build-origin-diagnostic/ap_process_pcm \
+            --manifest .github/research/continuous-optimization/development-v3/doubletalk-origin-disambiguation-v1.json \
+            --validation-corpus /tmp/ap-origin-validation-1307/corpus.json \
+            --validation-corpus /tmp/ap-origin-validation-1407/corpus.json \
+            --motion-corpus /tmp/ap-origin-motion-4107/corpus.json \
+            --motion-corpus /tmp/ap-origin-motion-4207/corpus.json \
+            --output doubletalk-origin-disambiguation-out/evidence
+
+      - name: Enforce evidence shape without selecting a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('doubletalk-origin-disambiguation-out/evidence/result.json')
+          result = json.loads(path.read_text())
+          assert result['status'] == 'DIAGNOSTIC_ONLY'
+          assert result['authority'] == 'research-diagnostic-only'
+          assert result['candidate_budget'] == 0
+          assert result['selection_performed'] is False
+          assert result['cohort_counts'] == {
+              'near_end_onset': 16,
+              'echo_path_change': 2,
+              'continuous_motion': 16,
+              'stationary_far_control': 8,
+          }
+          assert set(result['cohort_summary']) == {
+              'near_end_onset', 'echo_path_change', 'continuous_motion', 'stationary_far_control'
+          }
+
+          moving = [row for row in result['records'] if row['cohort'] == 'continuous_motion']
+          stationary = [row for row in result['records'] if row['cohort'] == 'stationary_far_control']
+          assert all(abs(row['ground_truth']['direct_delay_delta_samples']) < 1e-9 for row in moving + stationary)
+          assert all(row['ground_truth']['reflection_delay_drift_max_samples'] > 0.0 for row in moving)
+          assert all(abs(row['ground_truth']['reflection_delay_drift_max_samples']) < 1e-9 for row in stationary)
+
+          summary = result['cohort_summary']
+          md = Path('doubletalk-origin-disambiguation-out/summary.md')
+          with md.open('w', encoding='utf-8') as fh:
+              fh.write('## Double-talk origin disambiguation\n\n')
+              fh.write('- Authority: `research-diagnostic-only`\n')
+              fh.write('- Candidate budget: `0`\n')
+              fh.write('- Selection performed: `false`\n')
+              for cohort in ('near_end_onset', 'echo_path_change', 'continuous_motion', 'stationary_far_control'):
+                  fh.write(f'\n### {cohort}\n')
+                  for key, value in summary[cohort].items():
+                      fh.write(f'- {key}: `{value}`\n')
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          PY
+          cat doubletalk-origin-disambiguation-out/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research diagnostic evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/doubletalk-origin-disambiguation-v1.json \
+            doubletalk-origin-disambiguation-out/manifest.json
+          find doubletalk-origin-disambiguation-out -type f ! -name SHA256SUMS -print0 | \
+            sort -z | xargs -0 sha256sum > doubletalk-origin-disambiguation-out/SHA256SUMS
+
+      - name: Upload research diagnostic evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: doubletalk-origin-disambiguation-${{ github.run_id }}
+          path: doubletalk-origin-disambiguation-out/
+          if-no-files-found: error
+          retention-days: 30

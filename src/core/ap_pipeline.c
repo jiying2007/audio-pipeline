@@ -126,6 +126,9 @@ static void ap_pipeline_reset_aec_epoch(ap_pipeline_t *pipeline) {
     pipeline->metrics.aec_converged = 0u;
     pipeline->metrics.erle_valid = 0u;
     pipeline->metrics.erle_db = 0.0f;
+#if AP_BUILD_ACTIVITY && AP_BUILD_STAGE_VAD
+    pipeline->onset_admission_vad_carry = 0u;
+#endif
 }
 
 #if AP_BUILD_STAGE_AEC
@@ -465,6 +468,8 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
     float residual_energy = 1.0e-12f;
     int far_end_active = 0;
     int double_talk_active = 0;
+    int onset_admission_protect = 0;
+    int effective_double_talk_active = 0;
 #if AP_BUILD_STAGE_RES
     float echo_energy = 0.0f;
 #endif
@@ -553,8 +558,15 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
         ap_activity_process(&pipeline->activity, mic_energy, ref_energy, &activity);
         far_end_active = activity.far_end_active;
         double_talk_active = activity.double_talk_active;
+        onset_admission_protect = activity.onset_admission_protect;
     }
 #endif
+#if AP_BUILD_ACTIVITY && AP_BUILD_STAGE_VAD
+    if (far_end_active && pipeline->onset_admission_vad_carry)
+        onset_admission_protect = 1;
+#endif
+    effective_double_talk_active =
+        double_talk_active || (far_end_active && onset_admission_protect);
     pipeline->metrics.far_end_active = (uint8_t)far_end_active;
     pipeline->metrics.double_talk_active = (uint8_t)double_talk_active;
 
@@ -570,7 +582,7 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
                                pipeline->aec_out,
                                pipeline->echo_estimate,
                                far_end_active,
-                               double_talk_active,
+                               effective_double_talk_active,
                                &aec_result);
 #if AP_BUILD_STAGE_RES
         echo_energy = aec_result.echo_energy;
@@ -602,7 +614,7 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
             echo_energy,
             residual_energy,
             far_end_active,
-            double_talk_active);
+            effective_double_talk_active);
     } else {
         pipeline->metrics.residual_echo_gain = 1.0f;
     }
@@ -634,7 +646,7 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
                       pipeline->internal_frame,
                       frequency_res,
                       far_end_active,
-                      double_talk_active,
+                      effective_double_talk_active,
                       &ns_result);
         pipeline->metrics.noise_rms_dbfs = ns_result.noise_rms_dbfs;
         pipeline->metrics.frequency_res_active = ns_result.frequency_res_active;
@@ -656,7 +668,7 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
         ap_agc_process_controlled(&pipeline->agc,
                                   pipeline->processed,
                                   pipeline->internal_frame,
-                                  !(far_end_active && !double_talk_active));
+                                  !(far_end_active && !effective_double_talk_active));
 #endif
 #if AP_BUILD_STAGE_VAD
     if (AP_HAS_STAGE(pipeline, AP_STAGE_VAD)) {
@@ -669,11 +681,18 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
                        &vad_result);
         pipeline->metrics.vad_probability = vad_result.probability;
         pipeline->metrics.vad_active = vad_result.active;
+#if AP_BUILD_ACTIVITY
+        pipeline->onset_admission_vad_carry =
+            (uint8_t)(far_end_active && vad_result.active ? 1u : 0u);
+#endif
     } else
 #endif
     {
         pipeline->metrics.vad_probability = 0.0f;
         pipeline->metrics.vad_active = 0u;
+#if AP_BUILD_ACTIVITY && AP_BUILD_STAGE_VAD
+        pipeline->onset_admission_vad_carry = 0u;
+#endif
     }
 
     pipeline->metrics.input_rms_dbfs = 10.0f * log10f(mic_energy + 1.0e-18f);

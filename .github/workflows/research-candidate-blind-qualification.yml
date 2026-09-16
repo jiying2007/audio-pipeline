@@ -142,13 +142,20 @@ jobs:
               '--lock source/validation/datasets.lock.json',
               '--lock source/validation/datasets.lock.json',
           )
-          missing = [item for item in required if item not in text]
+          proxy_required = (
+              'out_dir = Path(__file__)' + '.resolve().parent',
+              'root = out_dir' + '.parent',
+              "processor = out_dir / " + "'candidate-processor'",
+          )
+          missing = [item for item in (*required, *proxy_required) if item not in text]
           if missing:
               raise SystemExit(f'blind qualification contract missing: {missing}')
           forbidden = (
               '\n  ' + 'push:', '\n  ' + 'schedule:', 'git ' + 'push', 'git ' + 'tag', 'gh ' + 'release',
               'runs-on: [' + 'self-hosted', '/opt/' + 'audio-validation-data',
               'secrets.' + 'AP_VALIDATION_HOLDOUT_KEY',
+              'os.path.abspath(' + "'infra/",
+              'os.path.abspath(' + "'candidate-out/",
           )
           present = [item for item in forbidden if item in text]
           if present:
@@ -395,10 +402,13 @@ jobs:
           cat > candidate-out/candidate-processor-json <<'PYPROXY'
           #!/usr/bin/env python3
           import os, sys
-          helper = os.path.abspath('infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py')
-          processor = os.path.abspath('candidate-out/candidate-processor')
-          audit = os.path.abspath('candidate-out/metrics-jsonl-canonicalization.jsonl')
-          os.execv(sys.executable, [sys.executable, helper, '--processor', processor, '--audit', audit, '--', *sys.argv[1:]])
+          from pathlib import Path
+          out_dir = Path(__file__).resolve().parent
+          root = out_dir.parent
+          helper = root / 'infra' / '.github' / 'research' / 'continuous-optimization' / 'hosted-validation' / 'metrics_jsonl_proxy.py'
+          processor = out_dir / 'candidate-processor'
+          audit = out_dir / 'metrics-jsonl-canonicalization.jsonl'
+          os.execv(sys.executable, [sys.executable, str(helper), '--processor', str(processor), '--audit', str(audit), '--', *sys.argv[1:]])
           PYPROXY
           chmod 700 candidate-out/candidate-processor-json
           python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test

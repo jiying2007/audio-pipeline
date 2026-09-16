@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "investigation_id": "doubletalk-origin-disambiguation-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "bfdd5f6b6c5a7ecb93261278fa3a6434c64333db",
+  "predecessor": {
+    "hypothesis_id": "doubletalk-onset-admission-v1",
+    "status": "CLOSED_KEEP_BASELINE",
+    "closure_path": ".github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json",
+    "candidate_pr": 228,
+    "closure_pr": 229
+  },
+  "question": "Can observed pre-DTD near-end onset behavior be distinguished from pure-far echo-path change or movement using existing baseline telemetry plus input-domain route-correlation evidence, without changing DSP or detector thresholds?",
+  "development_inputs": {
+    "deterministic_validation_seeds": [1307, 1407],
+    "deterministic_validation_seconds": 4.0,
+    "motion_geometry_v2_seeds": [4107, 4207],
+    "motion_geometry_v2_seconds": 4.0,
+    "cohorts": {
+      "near_end_onset": {
+        "source": "validation/tools/build_validation_corpus.py",
+        "scenarios": ["aec-doubletalk", "aec-doubletalk-balance"],
+        "event_source": "vad_labels rising edge",
+        "near_end_present": true
+      },
+      "echo_path_change": {
+        "source": "validation/tools/build_validation_corpus.py",
+        "scenarios": ["aec-echo-path-change"],
+        "event_source": "control.echo_path_change_frame",
+        "near_end_present": false
+      },
+      "continuous_motion": {
+        "source": "validation/tools/build_aec_motion_corpus.py",
+        "scenarios": ["aec-continuous-motion"],
+        "motion": ["translation", "rotation"],
+        "event_source": "mid-trace diagnostic checkpoint",
+        "near_end_present": false
+      },
+      "stationary_far_control": {
+        "source": "validation/tools/build_aec_motion_corpus.py",
+        "scenarios": ["aec-continuous-motion"],
+        "motion": ["stationary"],
+        "event_source": "mid-trace diagnostic checkpoint",
+        "near_end_present": false
+      }
+    }
+  },
+  "validation_crosscheck": {
+    "purpose": "Prevent synthetic motion geometry from being generalized to real movement without an independent hash-bound observation.",
+    "dataset_lock": "validation/hosted_aec.datasets.lock.json",
+    "source_repository": "microsoft/AEC-Challenge",
+    "source_revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "cases": 4,
+    "static_cases": 2,
+    "movement_cases": 2,
+    "probe": "validation/tools/aec_route_ambiguity_probe.py",
+    "probe_window_seconds": 3.0,
+    "max_delay_ms": 100,
+    "initial_delay_ms": 40.0,
+    "use_only_raw_numeric_outputs": [
+      "best_delay_samples",
+      "best_delay_ms",
+      "best_score_squared",
+      "runner_up_score_squared",
+      "peak_ratio"
+    ],
+    "ignored_probe_decision_fields": [
+      "large_route_candidate",
+      "large_route_ambiguous"
+    ],
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "observable_evidence": {
+    "shipping_metrics_only": [
+      "double_talk_active",
+      "far_end_active",
+      "aec_converged",
+      "estimated_delay_ms",
+      "delay_error_samples"
+    ],
+    "input_domain_route_probe": {
+      "definition": "squared normalized mic/render correlation over bounded local windows",
+      "max_delay_ms": 100,
+      "coarse_step_samples": 32,
+      "sample_stride": 8,
+      "runner_guard_samples": 64,
+      "event_window_frames_before": 12,
+      "event_window_frames_after": 12,
+      "selection_threshold": null
+    },
+    "motion_ground_truth": [
+      "fixed direct-path delay",
+      "reflection-delay drift from trace start"
+    ]
+  },
+  "analysis_window": {
+    "metrics_frames_before": 10,
+    "metrics_frames_after": 10
+  },
+  "prohibited_actions": [
+    "change DSP source",
+    "change public DTD semantics",
+    "change Activity or VAD thresholds",
+    "add an onset timer",
+    "parameter search",
+    "candidate selection",
+    "derive or freeze a detector threshold from synthetic or hosted-real diagnostic measurements",
+    "use aec_route_ambiguity_probe.py large_route_candidate or large_route_ambiguous as a decision",
+    "revive I009 echo-normalized or residual-echo rescue",
+    "relax movement, echo-path-change, pure-far, or Hosted Real AEC gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "Publish cohort-level measurements, event records, and hash-bound real-data route measurements only. No numeric boundary discovered in this run may become a detector threshold or candidate-selection rule. The real-data cross-check is validation evidence against synthetic over-generalization, not tuning input. A future source candidate requires a materially new root-cause hypothesis and a separate explicit candidate-budget decision.",
+  "next_decision": "diagnostic evidence review only"
+}

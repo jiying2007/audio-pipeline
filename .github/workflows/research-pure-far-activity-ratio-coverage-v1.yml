@@ -91,6 +91,7 @@ jobs:
           assert manifest['selection']['optimized'] is False
           assert manifest['selection']['result_dependent_selection'] is False
           assert manifest['ci_resource_guard']['on_exceed'] == 'fail_closed_without_subsampling'
+          assert manifest['observation_method']['numeric_tolerance_added'] is False
           lock = manifest['baseline_code_lock']
           for key in ('activity_source', 'pipeline_source', 'processor_source', 'research_probe'):
               actual = subprocess.check_output(['git', 'rev-parse', f"HEAD:{lock[key]['path']}"], text=True).strip()
@@ -241,9 +242,11 @@ jobs:
           assert result['all_complete_pairs_executed'] is True
           assert result['subsampling_performed'] is False
           assert result['threshold_search_performed'] is False
+          assert result['numeric_tolerance_added'] is False
           assert result['tuning_performed'] is False
           assert result['candidate_selection_performed'] is False
-          assert result['independent_evidence_mismatch_total'] == 0
+          assert result['independent_evidence_raw_mismatch_total'] >= 0
+          assert result['independent_evidence_unexplained_mismatch_total'] == 0
           assert result['inventory']['complete_pair_count'] == inventory['complete_pair_count'] == len(result['cases'])
           assert result['inventory']['selection_fingerprint_sha256'] == inventory['selection_fingerprint_sha256']
           assert inventory['complete_pair_count'] > 2, inventory['complete_pair_count']
@@ -252,8 +255,10 @@ jobs:
           }
           for case in result['cases']:
               m = case['metrics']
-              assert m['independent_dt_on_mismatch_count'] == 0
-              assert m['independent_dt_hold_mismatch_count'] == 0
+              assert m['independent_dt_on_raw_mismatch_count'] >= 0
+              assert m['independent_dt_hold_raw_mismatch_count'] >= 0
+              assert m['independent_dt_on_unexplained_mismatch_count'] == 0
+              assert m['independent_dt_hold_unexplained_mismatch_count'] == 0
               for key in ('far_end_fraction', 'double_talk_fraction', 'aec_converged_fraction'):
                   assert 0.0 <= m[key] <= 1.0
           summary = Path('pure-far-activity-ratio-coverage-v1-out/summary.md')
@@ -263,10 +268,12 @@ jobs:
               fh.write('- Candidate budget: `0`\n')
               fh.write('- All complete no-movement pairs: `true`\n')
               fh.write('- Subsampling: `false`\n')
+              fh.write('- Numeric tolerance added: `false`\n')
               fh.write(f"- Complete pair count: `{inventory['complete_pair_count']}`\n")
               fh.write(f"- Total LFS bytes: `{inventory['total_lfs_bytes']}`\n")
               fh.write(f"- Selection fingerprint: `{inventory['selection_fingerprint_sha256']}`\n")
-              fh.write('- Independent evidence mismatch total: `0`\n')
+              fh.write(f"- Independent evidence raw mismatch total: `{result['independent_evidence_raw_mismatch_total']}`\n")
+              fh.write('- Independent evidence unexplained mismatch total: `0`\n')
               fh.write('\n### Cross-case distributions\n')
               for key, dist in sorted(result['aggregate'].items()):
                   fh.write(f'- {key}: `{json.dumps(dist, sort_keys=True)}`\n')

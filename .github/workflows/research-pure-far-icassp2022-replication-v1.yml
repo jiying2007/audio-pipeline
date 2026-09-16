@@ -1,0 +1,318 @@
+name: Research Pure-Far ICASSP2022 Replication V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json'
+      - '.github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py'
+      - '.github/workflows/research-pure-far-icassp2022-replication-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json'
+      - '.github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py'
+      - '.github/workflows/research-pure-far-icassp2022-replication-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-pure-far-icassp2022-replication-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json').read_text())
+          base = manifest['governance_base_sha']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], check=True)
+          changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
+          allowed = {
+              '.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json',
+              '.github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py',
+              '.github/workflows/research-pure-far-icassp2022-replication-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base': base, 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'changed': changed})
+          PY
+
+      - name: Validate candidate-zero authority, predecessor closure and frozen code
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py
+          python3 .github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py --self-test
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json').read_text())
+          predecessor = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json').read_text())
+          closure = json.loads(Path('.github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json').read_text())
+          assert manifest['status'] == 'DIAGNOSTIC_ONLY' and manifest['candidate_budget'] == 0
+          assert manifest['governance_base_sha'] == '00ad5fea21863b464dab2d538839bc22002ef4c1'
+          pred = manifest['predecessor']
+          assert pred['pr'] == 237
+          assert pred['fresh_main_sha'] == '00ad5fea21863b464dab2d538839bc22002ef4c1'
+          assert pred['diagnostic_run_id'] == 35121505921 and pred['diagnostic_run_number'] == 2
+          assert pred['diagnostic_artifact_id'] == 10457771374
+          assert pred['diagnostic_artifact_digest'] == 'sha256:6378195483f60ec63277890612c00e3ef80de3b45f88953113cf803be2ef3ae2'
+          assert pred['hosted_real_aec_run_id'] == 35121505967 and pred['hosted_real_aec_run_number'] == 781
+          assert pred['hosted_real_audio_run_id'] == 35121505929 and pred['hosted_real_audio_run_number'] == 786
+          assert pred['verify_run_id'] == 35121506304 and pred['verify_run_number'] == 987
+          assert pred['release_run_id'] == 35121991424 and pred['release_run_number'] == 972
+          assert pred['fresh_main_closed'] is True
+          assert predecessor['status'] == 'DIAGNOSTIC_ONLY' and predecessor['candidate_budget'] == 0
+          assert closure['status'] == 'CLOSED_KEEP_BASELINE' and closure['candidate']['budget_remaining'] == 0
+          assert closure['shipping'] == {
+              'version': 'v2.3.16',
+              'commit_sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f',
+              'changed_by_candidate': False,
+          }
+          for key, meta in manifest['baseline_code_lock'].items():
+              if not isinstance(meta, dict) or 'path' not in meta:
+                  continue
+              actual = subprocess.check_output(['git', 'rev-parse', f"HEAD:{meta['path']}"], text=True).strip()
+              assert actual == meta['blob_sha'], (key, actual, meta['blob_sha'])
+          assert manifest['output_authority'] == {
+              'research_diagnostic_only': True,
+              'candidate_selection': False,
+              'tuning': False,
+              'automatic_main_mutation': False,
+              'shipping': False,
+              'hil': False,
+              'product_certification': False,
+          }
+          print('ICASSP2022 replication candidate-zero authority/code locks: PASS')
+          PY
+
+      - name: Inventory exact ICASSP2022 complete no-movement pure-far pairs
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-challenge-icassp2022-replication
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout \
+            https://github.com/microsoft/AEC-Challenge.git \
+            /tmp/audio-pipeline-aec-challenge-icassp2022-replication
+          cd /tmp/audio-pipeline-aec-challenge-icassp2022-replication
+          git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
+          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcd6fdff"
+          test "$(git rev-parse HEAD:datasets/test_set_icassp2022/farend-singletalk)" = "a5b01b800e56e53ac027126ed2292ee573ea735a"
+          mkdir -p "$GITHUB_WORKSPACE/pure-far-icassp2022-replication-v1-out"
+          python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json" \
+                    "$GITHUB_WORKSPACE/pure-far-icassp2022-replication-v1-out/inventory.json" \
+                    /tmp/pure-far-icassp2022-lfs-include.txt <<'PY'
+          import hashlib, json, subprocess, sys
+          from pathlib import Path
+          manifest = json.load(open(sys.argv[1]))
+          out = Path(sys.argv[2])
+          include_out = Path(sys.argv[3])
+          directory = manifest['source']['dataset_directory']
+          names = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', 'HEAD', directory], text=True).splitlines()
+          suffixes = {
+              '_farend-singletalk_lpb.wav': 'lpb',
+              '_farend-singletalk_mic.wav': 'mic',
+          }
+          found = {}
+          for path in names:
+              name = Path(path).name
+              for suffix, role in suffixes.items():
+                  if name.endswith(suffix):
+                      guid = name[:-len(suffix)]
+                      found.setdefault(guid, {})[role] = path
+                      break
+          complete_guids = sorted(guid for guid, roles in found.items() if set(roles) == {'lpb', 'mic'})
+          assert complete_guids, 'no complete ICASSP2022 no-movement pairs found'
+          cases = []
+          include = []
+          total = 0
+          for guid in complete_guids:
+              case = {'guid': guid, 'scenario': 'farend-singletalk'}
+              for role in ('lpb', 'mic'):
+                  path = found[guid][role]
+                  assert 'with-movement' not in path
+                  pointer = subprocess.check_output(['git', 'show', f'HEAD:{path}'], text=True)
+                  lines = dict(line.split(' ', 1) for line in pointer.splitlines() if ' ' in line)
+                  assert lines.get('version') == 'https://git-lfs.github.com/spec/v1', (path, lines)
+                  oid = lines['oid']
+                  assert oid.startswith('sha256:') and len(oid) == 71
+                  size = int(lines['size'])
+                  assert size > 0
+                  case[role] = {'path': path, 'sha256': oid.split(':', 1)[1], 'size': size}
+                  total += size
+                  include.append(path)
+              cases.append(case)
+          guard = manifest['ci_resource_guard']
+          assert len(cases) <= int(guard['max_complete_pairs']), (len(cases), guard)
+          assert total <= int(guard['max_total_lfs_bytes']), (total, guard)
+          canonical = json.dumps(cases, sort_keys=True, separators=(',', ':')).encode()
+          fingerprint = hashlib.sha256(canonical).hexdigest()
+          inventory = {
+              'schema_version': 1,
+              'source_revision': manifest['source']['revision'],
+              'source_tree_sha': manifest['source']['dataset_tree_sha'],
+              'selection_rule': manifest['selection']['rule'],
+              'complete_pair_count': len(cases),
+              'total_lfs_bytes': total,
+              'selection_fingerprint_sha256': fingerprint,
+              'cases': cases,
+          }
+          out.write_text(json.dumps(inventory, indent=2, sort_keys=True) + '\n')
+          include_out.write_text(','.join(include))
+          print('INVENTORY_METADATA=' + json.dumps({
+              'complete_pair_count': len(cases),
+              'total_lfs_bytes': total,
+              'selection_fingerprint_sha256': fingerprint,
+              'subsampling': False,
+          }, sort_keys=True))
+          PY
+
+      - name: Enforce frozen inventory before acoustic execution
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json').read_text())
+          inventory = json.loads(Path('pure-far-icassp2022-replication-v1-out/inventory.json').read_text())
+          selection = manifest['selection']
+          if not selection['inventory_frozen']:
+              print('INVENTORY_FREEZE_REQUIRED=' + json.dumps({
+                  'expected_complete_pair_count': inventory['complete_pair_count'],
+                  'expected_total_lfs_bytes': inventory['total_lfs_bytes'],
+                  'expected_selection_fingerprint_sha256': inventory['selection_fingerprint_sha256'],
+              }, sort_keys=True))
+              raise SystemExit(2)
+          assert selection['expected_complete_pair_count'] == inventory['complete_pair_count']
+          assert selection['expected_total_lfs_bytes'] == inventory['total_lfs_bytes']
+          assert selection['expected_selection_fingerprint_sha256'] == inventory['selection_fingerprint_sha256']
+          print('source-derived ICASSP2022 inventory is frozen: PASS')
+          PY
+
+      - name: Verify pinned AECMOS gives ICASSP2022 no special trimming
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('/tmp/audio-pipeline-aec-challenge-icassp2022-replication/AECMOS/aecmos.py').read_text()
+          assert "if is_interspeech2021_clip(clip_path):" in text
+          assert "return 'test_set_interspeech2021' in clip_path" in text
+          assert "process_interspeech2021(" in text
+          print('pinned AECMOS ICASSP2022 full-clip behavior: PASS')
+          PY
+
+      - name: Materialize frozen ICASSP2022 pair inventory
+        run: |
+          set -euo pipefail
+          cd /tmp/audio-pipeline-aec-challenge-icassp2022-replication
+          unset GIT_LFS_SKIP_SMUDGE
+          git lfs pull --include="$(cat /tmp/pure-far-icassp2022-lfs-include.txt)" --exclude=""
+
+      - name: Build unchanged baseline and frozen read-only Activity probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-pure-far-icassp2022 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-pure-far-icassp2022 --target audio_pipeline ap_build_info_dump --parallel
+          flags=build-pure-far-icassp2022/CMakeFiles/audio_pipeline.dir/flags.make
+          test -f "$flags"
+          defs=$(sed -n 's/^C_DEFINES = //p' "$flags")
+          incs=$(sed -n 's/^C_INCLUDES = //p' "$flags")
+          compiler=$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' build-pure-far-icassp2022/CMakeCache.txt)
+          if [ -z "$compiler" ]; then compiler=cc; fi
+          "$compiler" $defs $incs \
+            -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            .github/research/continuous-optimization/pure_far_activity_ratio_probe.c \
+            build-pure-far-icassp2022/libaudio_pipeline.a -lm \
+            -o build-pure-far-icassp2022/pure_far_activity_ratio_probe
+          build-pure-far-icassp2022/ap_build_info_dump > pure-far-icassp2022-replication-v1-out/build-info.txt
+          sha256sum build-pure-far-icassp2022/libaudio_pipeline.a \
+                    build-pure-far-icassp2022/pure_far_activity_ratio_probe \
+            > pure-far-icassp2022-replication-v1-out/binaries.sha256
+
+      - name: Run full-clip ICASSP2022 pure-far replication
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/pure_far_icassp2022_replication_v1.py \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json \
+            --inventory pure-far-icassp2022-replication-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-icassp2022-replication \
+            --probe build-pure-far-icassp2022/pure_far_activity_ratio_probe \
+            --helper .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
+            --output pure-far-icassp2022-replication-v1-out/evidence
+
+      - name: Enforce replication evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('pure-far-icassp2022-replication-v1-out/evidence/pure-far-icassp2022-replication-result.json').read_text())
+          inventory = json.loads(Path('pure-far-icassp2022-replication-v1-out/inventory.json').read_text())
+          assert result['status'] == 'DIAGNOSTIC_ONLY'
+          assert result['authority'] == 'research-diagnostic-only'
+          assert result['candidate_budget'] == 0
+          assert result['all_complete_pairs_executed'] is True
+          assert result['subsampling_performed'] is False
+          assert result['full_common_clip_observation'] is True
+          assert result['threshold_search_performed'] is False
+          assert result['numeric_tolerance_added'] is False
+          assert result['tuning_performed'] is False
+          assert result['candidate_selection_performed'] is False
+          assert result['independent_evidence_unexplained_mismatch_total'] == 0
+          assert result['inventory']['complete_pair_count'] == inventory['complete_pair_count'] == len(result['cases'])
+          assert result['inventory']['selection_fingerprint_sha256'] == inventory['selection_fingerprint_sha256']
+          for case in result['cases']:
+              assert case['analysis_interval_is_full_common_clip'] is True
+              assert case['analysis_interval_is_exact_onset_label'] is False
+              m = case['metrics']
+              for key in ('far_end_fraction', 'double_talk_fraction', 'aec_converged_fraction'):
+                  assert 0.0 <= m[key] <= 1.0
+              assert m['independent_dt_on_unexplained_mismatch_count'] == 0
+              assert m['independent_dt_hold_unexplained_mismatch_count'] == 0
+          print(json.dumps(result['aggregate'], indent=2, sort_keys=True))
+          PY
+          cat pure-far-icassp2022-replication-v1-out/evidence/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research replication evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json \
+            pure-far-icassp2022-replication-v1-out/manifest.json
+          git rev-parse HEAD > pure-far-icassp2022-replication-v1-out/source-sha.txt
+          (
+            cd /tmp/audio-pipeline-aec-challenge-icassp2022-replication
+            git rev-parse HEAD
+            git rev-parse HEAD:datasets/test_set_icassp2022/farend-singletalk
+            git rev-parse HEAD:AECMOS/aecmos.py
+          ) > pure-far-icassp2022-replication-v1-out/upstream-source.txt
+          find pure-far-icassp2022-replication-v1-out -type f ! -name SHA256SUMS -print0 | \
+            sort -z | xargs -0 sha256sum > pure-far-icassp2022-replication-v1-out/SHA256SUMS
+
+      - name: Upload research replication evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pure-far-icassp2022-replication-v1-${{ github.run_id }}
+          path: pure-far-icassp2022-replication-v1-out/
+          if-no-files-found: error
+          retention-days: 30

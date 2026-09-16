@@ -116,7 +116,7 @@ jobs:
           cd /tmp/audio-pipeline-aec-challenge-icassp2022-replication
           git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
           test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
-          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcdff"
+          test "$(git rev-parse HEAD:AECMOS/aecmos.py)" = "7423983e6da8515ec81b58a4e905c4b7bcd6fdff"
           test "$(git rev-parse HEAD:datasets/test_set_icassp2022/farend-singletalk)" = "a5b01b800e56e53ac027126ed2292ee573ea735a"
           mkdir -p "$GITHUB_WORKSPACE/pure-far-icassp2022-replication-v1-out"
           python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json" \

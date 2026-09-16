@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Candidate-zero ICASSP2022 pure-far replication using the frozen Activity probe metrics."""
+"""Candidate-zero ICASSP2022 pure-far replication using frozen Activity metrics."""
 from __future__ import annotations
 
 import argparse
@@ -10,6 +10,8 @@ import statistics
 import subprocess
 import tempfile
 from pathlib import Path
+
+SUPPORTED_RATES = {8000, 16000, 24000, 32000, 48000}
 
 
 def require(ok: bool, message: str) -> None:
@@ -150,9 +152,11 @@ def run_case(case: dict, source_root: Path, probe: Path, helper, constants: dict
     render_path = helper.verify_file(source_root, case["lpb"])
     mic_rate, mic = helper.read_wav(mic_path)
     render_rate, render = helper.read_wav(render_path)
-    require(mic_rate == render_rate == 16000, f"16 kHz paired WAV required: {case['guid']}")
+    require(mic_rate == render_rate, f"paired WAV rate mismatch: {case['guid']}")
+    require(mic_rate in SUPPORTED_RATES, f"unsupported paired WAV rate: {case['guid']}/{mic_rate}")
+    frame_samples = mic_rate // 100
     common = min(len(mic), len(render))
-    require(common >= 320, f"clip too short: {case['guid']}")
+    require(common >= 2 * frame_samples, f"clip too short: {case['guid']}")
     mic = mic[:common]
     render = render[:common]
     with tempfile.TemporaryDirectory(prefix="pure-far-icassp2022-") as tmp:
@@ -162,16 +166,17 @@ def run_case(case: dict, source_root: Path, probe: Path, helper, constants: dict
         trace = root / "trace.jsonl"
         helper.write_pcm16(mic_pcm, mic)
         helper.write_pcm16(render_pcm, render)
-        subprocess.run([str(probe), str(mic_pcm), str(render_pcm), str(trace)], check=True)
+        subprocess.run([str(probe), str(mic_rate), str(mic_pcm), str(render_pcm), str(trace)], check=True)
         rows = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line.strip()]
     require(rows and all(int(row["frame"]) == i for i, row in enumerate(rows)), "contiguous probe trace required")
-    frame_samples = mic_rate // 100
     end_frame = min(len(rows), common // frame_samples)
     require(end_frame > 0, "no complete analysis frames")
     metrics = helper.summarize_rows(rows, 0, end_frame, constants)
     return {
         "guid": case["guid"],
         "scenario": case["scenario"],
+        "source_sample_rate_hz": mic_rate,
+        "resampling_performed": False,
         "clip_duration_seconds": common / mic_rate,
         "analysis_start_seconds": 0.0,
         "analysis_duration_seconds": end_frame * 0.01,
@@ -213,6 +218,11 @@ def aggregate(cases: list[dict]) -> dict:
     distributions = {name: distribution(values(path)) for name, path in fields.items()}
     dtd = values(fields["double_talk_fraction"])
     return {
+        "sample_rate_hz_counts": {
+            str(rate): sum(1 for case in cases if int(case["source_sample_rate_hz"]) == rate)
+            for rate in sorted(SUPPORTED_RATES)
+            if any(int(case["source_sample_rate_hz"]) == rate for case in cases)
+        },
         "distributions": distributions,
         "spearman_associations": {
             "dtd_vs_far_frames_smoothed_ratio_median": spearman(dtd, values(fields["far_frames_smoothed_ratio_median"])),
@@ -284,6 +294,7 @@ def main() -> int:
         "all_complete_pairs_executed": True,
         "subsampling_performed": False,
         "full_common_clip_observation": True,
+        "resampling_performed": False,
         "threshold_search_performed": False,
         "numeric_tolerance_added": False,
         "tuning_performed": False,
@@ -305,6 +316,8 @@ def main() -> int:
         fh.write(f"- Total LFS bytes: `{inventory['total_lfs_bytes']}`\n")
         fh.write(f"- Selection fingerprint: `{inventory['selection_fingerprint_sha256']}`\n")
         fh.write("- Observation interval: `full common-length clip`\n")
+        fh.write("- Resampling: `false`; exact source rate is passed to pipeline\n")
+        fh.write(f"- Source-rate counts: `{json.dumps(payload['aggregate']['sample_rate_hz_counts'], sort_keys=True)}`\n")
         fh.write("- Subsampling: `false`\n")
         fh.write(f"- Independent evidence raw mismatch total: `{raw_mismatch}`\n")
         fh.write("- Independent evidence unexplained mismatch total: `0`\n")

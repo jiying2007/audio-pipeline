@@ -40,16 +40,16 @@
     "optimized": false,
     "result_dependent_selection": false,
     "subsampling_allowed": false,
-    "inventory_frozen": false,
-    "expected_complete_pair_count": null,
-    "expected_total_lfs_bytes": null,
-    "expected_selection_fingerprint_sha256": null
+    "inventory_frozen": true,
+    "expected_complete_pair_count": 125,
+    "expected_total_lfs_bytes": 576534262,
+    "expected_selection_fingerprint_sha256": "7a06246eac58b6e8b705b0a05dfb9562fce58f43749fb8d29069843d57ba32f0"
   },
   "inventory_binding": {
     "method": "enumerate the exact Git tree before LFS materialization; for every selected path bind the Git LFS pointer oid sha256 and size into a sealed runtime inventory artifact",
     "require_lfs_pointer": true,
     "source_revision_and_tree_are_selection_authority": true,
-    "freeze_protocol": "first PR run may be used only to read source-derived inventory count/bytes/fingerprint; those metadata must then be committed and exact-head CI rerun before any acoustic result is interpreted"
+    "freeze_protocol": "first PR run was used only to read source-derived inventory count/bytes/fingerprint; those metadata are now committed and must match exactly before any acoustic execution"
   },
   "ci_resource_guard": {
     "authority": "execution-resource-only; never an acoustic, quality, DTD, or selection boundary",
@@ -113,7 +113,7 @@
     "descriptive Spearman association between case public-DTD occupancy and far-frame smoothed/instant mic-reference ratio"
   ],
   "prohibited_actions": [
-    "interpret acoustic results before source-derived inventory count/bytes/fingerprint are frozen into the manifest and rerun on the resulting exact head",
+    "interpret acoustic results from any head whose source-derived inventory count/bytes/fingerprint are not frozen into the manifest",
     "subsample cases after observing audio or diagnostic results",
     "replace the all-complete-pair rule with a hand-picked subset",
     "derive or search a DTD threshold",
@@ -136,6 +136,6 @@
     "hil": false,
     "product_certification": false
   },
-  "interpretation_rule": "After the exact ICASSP2022 inventory metadata are frozen and rerun, the diagnostic may describe whether broad pure-far false-DTD and its association with pre-AEC mic/reference energy ratio replicate in this second pinned official real test set. It cannot define a universal threshold, prove a physical device/room cause, or authorize a source candidate.",
-  "next_decision": "freeze source inventory metadata before acoustic evidence review"
+  "interpretation_rule": "With the exact ICASSP2022 inventory metadata now frozen before acoustic execution, the diagnostic may describe whether broad pure-far false-DTD and its association with pre-AEC mic/reference energy ratio replicate in this second pinned official real test set. It cannot define a universal threshold, prove a physical device/room cause, or authorize a source candidate.",
+  "next_decision": "exact-head acoustic replication evidence review only"
 }

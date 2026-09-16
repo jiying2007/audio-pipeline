@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "investigation_id": "real-doubletalk-rating-interval-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "acc8b46dc2ef59f701befd9399616ddd2167dd2f",
+  "predecessor": {
+    "investigation_id": "doubletalk-temporal-route-disambiguation-v2",
+    "pr": 231,
+    "fresh_main_sha": "acc8b46dc2ef59f701befd9399616ddd2167dd2f",
+    "diagnostic_run_id": 35098158767,
+    "diagnostic_run_number": 2,
+    "diagnostic_artifact_id": 10447162412,
+    "diagnostic_artifact_digest": "sha256:c49cd6610d7643923fe577117b7fd1882544bcfdf629cc90b7c47d03ad3431b1",
+    "hosted_real_aec_run_id": 35098158752,
+    "hosted_real_aec_run_number": 765,
+    "hosted_real_audio_run_id": 35098158742,
+    "hosted_real_audio_run_number": 770,
+    "verify_run_id": 35098159062,
+    "verify_run_number": 971,
+    "release_run_id": 35098680175,
+    "release_run_number": 956,
+    "fresh_main_closed": true
+  },
+  "question": "Within the upstream-defined Interspeech 2021 real double-talk rating interval, how much does the unchanged baseline public DTD actually assert, and how do route/correlation trajectories differ between no-movement and movement recordings?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/blind_test_set_interspeech2021/doubletalk",
+    "scenario_source": "datasets/README.md",
+    "rating_logic_source": "AECMOS/aecmos.py",
+    "rating_logic_blob_sha": "7423983e6da8515ec81b58a4e905c4b7bcd6fdff",
+    "rating_interval_semantics": "official AECMOS evaluation/rating interval for Interspeech2021 doubletalk; not an exact near-end onset label",
+    "rating_interval_formula": "last (clip_duration_seconds - 15) / 2 seconds after truncating all paired signals to their common minimum length"
+  },
+  "selection": {
+    "rule": "select the first two lexicographically sorted GUIDs in the exact upstream doubletalk directory that have complete mic+lpb pairs for both doubletalk and doubletalk_with_movement",
+    "optimized": false,
+    "selected_guids": [
+      "49IIo03GZ0CYQOmeA3A0BA",
+      "7GTxyTksSUqCnP5y0ILG4A"
+    ],
+    "cases": [
+      {
+        "case_id": "49II-no-movement",
+        "guid": "49IIo03GZ0CYQOmeA3A0BA",
+        "scenario": "doubletalk",
+        "movement": false,
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/49IIo03GZ0CYQOmeA3A0BA_doubletalk_lpb.wav",
+          "sha256": "45482f020f72682d4542b17ba6488f45f96f3ad02dc33a69b3a28db04420b4fb",
+          "size": 1217964
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/49IIo03GZ0CYQOmeA3A0BA_doubletalk_mic.wav",
+          "sha256": "3597d30c109cfd5bfa333a0adc61677817f805576d43de9c9d41637c6795ebd8",
+          "size": 1218284
+        }
+      },
+      {
+        "case_id": "49II-movement",
+        "guid": "49IIo03GZ0CYQOmeA3A0BA",
+        "scenario": "doubletalk_with_movement",
+        "movement": true,
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/49IIo03GZ0CYQOmeA3A0BA_doubletalk_with_movement_lpb.wav",
+          "sha256": "03f40b7fbbdac219f417b71a8ecf49aaaa9ca6bb98da8235951ad1ba672d3641",
+          "size": 1211564
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/49IIo03GZ0CYQOmeA3A0BA_doubletalk_with_movement_mic.wav",
+          "sha256": "df41b992469d0cc5cbadfd4c158b564d01980b4b2b8ba2fc3567f4ce6601d00b",
+          "size": 1211884
+        }
+      },
+      {
+        "case_id": "7GT-no-movement",
+        "guid": "7GTxyTksSUqCnP5y0ILG4A",
+        "scenario": "doubletalk",
+        "movement": false,
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/7GTxyTksSUqCnP5y0ILG4A_doubletalk_lpb.wav",
+          "sha256": "bed2e73abbf6c0c5ba18bea5fa6ecdbf9c59adfe2e7f4716b9f9bbdd39248dbf",
+          "size": 1173484
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/7GTxyTksSUqCnP5y0ILG4A_doubletalk_mic.wav",
+          "sha256": "ee4181959abfd1f132c39ff9eadd5bfaab89c8be834d8e75a67f1b221662d937",
+          "size": 1188524
+        }
+      },
+      {
+        "case_id": "7GT-movement",
+        "guid": "7GTxyTksSUqCnP5y0ILG4A",
+        "scenario": "doubletalk_with_movement",
+        "movement": true,
+        "lpb": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/7GTxyTksSUqCnP5y0ILG4A_doubletalk_with_movement_lpb.wav",
+          "sha256": "aa50032ac3f175d91f0e674e20efad4787b016fdd69a06c101bb527f84e6ad53",
+          "size": 1173484
+        },
+        "mic": {
+          "path": "datasets/blind_test_set_interspeech2021/doubletalk/7GTxyTksSUqCnP5y0ILG4A_doubletalk_with_movement_mic.wav",
+          "sha256": "298aa2d1c7eb9b4973164baff69fa5a628ac0ed002ff859589412b522b1c1448",
+          "size": 1189164
+        }
+      }
+    ]
+  },
+  "observation_geometry": {
+    "processor_frame_ms": 10,
+    "route_window_seconds": 1.0,
+    "route_hop_seconds": 0.5,
+    "route_max_delay_ms": 100,
+    "route_coarse_step_samples": 96,
+    "route_sample_stride": 24,
+    "route_runner_guard_samples": 192,
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "published_metrics": [
+    "official_rating_start_seconds",
+    "official_rating_duration_seconds",
+    "double_talk_fraction",
+    "double_talk_first_active_offset_ms",
+    "double_talk_active_run_count",
+    "double_talk_longest_active_run_ms",
+    "far_end_fraction",
+    "aec_converged_fraction",
+    "estimated_delay_ms_median",
+    "delay_error_abs_p95_samples",
+    "route best-delay/peak/runner/ratio window series",
+    "route lag/peak descriptive variation"
+  ],
+  "prohibited_actions": [
+    "treat the official rating interval start as exact near-end speech onset",
+    "derive a DTD or coherence threshold from these four recordings",
+    "search or optimize case selection",
+    "search or optimize route-window geometry",
+    "change DSP source",
+    "change public DTD semantics",
+    "change Activity or VAD thresholds",
+    "add an onset timer",
+    "parameter search",
+    "candidate selection",
+    "revive I009 echo-normalized or residual-echo rescue",
+    "relax movement, echo-path-change, pure-far, or Hosted Real AEC gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "The upstream AECMOS interval is trusted only as the official real double-talk rating interval. It may test whether public DTD and route/coherence behavior seen in synthetic data also appear under real double-talk conditions, but it is not frame-accurate onset ground truth and cannot authorize a threshold or source candidate by itself.",
+  "next_decision": "diagnostic evidence review only"
+}

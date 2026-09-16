@@ -82,7 +82,8 @@
     "public_api_change": false,
     "dsp_source_change": false,
     "existing_thresholds_are_observation_labels_only": true,
-    "independent_energy_cross_check": "compare EMA-recovered instant-ratio evidence against input_rms_dbfs plus synced internal reference energy on every official-rating frame",
+    "independent_energy_cross_check": "compare authoritative EMA-recovered instant-ratio evidence against input_rms_dbfs plus synced internal reference energy on every official-rating frame; retain raw boolean mismatches, and require every mismatch to be exactly attributable to the two numeric estimates straddling the same existing threshold with zero unexplained mismatches",
+    "numeric_tolerance_added": false,
     "selection_threshold": null,
     "candidate_selection": false,
     "tuning_authority": false
@@ -95,11 +96,13 @@
     "per-case smoothed and instant mic/reference ratio summaries",
     "cross-case descriptive min/median/p95/max distributions",
     "the predecessor 49II and 7GT cases as named anchors only if naturally present in the all-pair inventory",
-    "zero-mismatch independent energy cross-check count"
+    "raw independent-energy boolean mismatch counts",
+    "zero unexplained independent-energy mismatch count after exact existing-threshold straddle attribution"
   ],
   "prohibited_actions": [
     "subsample cases after observing audio or diagnostic results",
     "replace the all-complete-pair rule with a hand-picked subset",
+    "add a numeric tolerance to make the independent cross-check pass",
     "derive or search a DTD threshold",
     "derive or search a gain-normalization constant",
     "change the current 1.5, 0.90, 0.72, 1e-7, or 3-frame Activity constants",
@@ -121,6 +124,6 @@
     "hil": false,
     "product_certification": false
   },
-  "interpretation_rule": "This coverage run may establish whether the current pure-far false-DTD energy-ratio mechanism is isolated or broadly observable across the pinned real far-end corpus. It cannot identify the physical cause of mic/reference gain differences, define a detector boundary, or authorize a source candidate.",
+  "interpretation_rule": "This coverage run may establish whether the current pure-far false-DTD energy-ratio mechanism is isolated or broadly observable across the pinned real far-end corpus. Independent cross-check boolean disagreements are descriptive floating-point round-trip evidence only when exactly explained by the two numeric estimates straddling the same frozen current threshold. The run cannot identify the physical cause of mic/reference gain differences, define a detector boundary, or authorize a source candidate.",
   "next_decision": "diagnostic evidence review only"
 }

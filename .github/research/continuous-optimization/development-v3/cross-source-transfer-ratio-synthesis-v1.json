@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "investigation": "cross-source-transfer-ratio-synthesis-v1",
+  "authority": "EVIDENCE_SYNTHESIS_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "7e8f26ba6d7330624091291d9e1336e5ff9c09dc",
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  },
+  "evidence_bindings": {
+    "aec_challenge_source_gain_provenance": {
+      "main_sha": "248c3e15cbeb5df8528a4eb8548b6178eec51bcc",
+      "run_id": 35178650183,
+      "artifact_id": 10479770333,
+      "artifact_digest": "sha256:ffff9d254d7fbb1d3c61fe9c0cd940be0309632cdcacc8e7cf5a93cd56cf6110",
+      "corpus": "pinned ICASSP2022 complete no-movement pure-far set",
+      "case_count": 125,
+      "far_frame_source_current_ratio_p05": 0.12312058780000001,
+      "far_frame_source_current_ratio_p95": 85.54571533999997,
+      "far_frame_source_current_ratio_p05_to_p95_db": 28.418675820316484,
+      "public_dtd_fraction_median": 0.6379238174968606,
+      "spearman_public_dtd_vs_far_frame_source_ratio": 0.8690521543163647
+    },
+    "dechorate_ground_truth_transfer": {
+      "main_sha": "7e8f26ba6d7330624091291d9e1336e5ff9c09dc",
+      "run_id": 35227334745,
+      "artifact_id": 10499662616,
+      "artifact_digest": "sha256:464031301263e0c6286a20dcc91fbf8508ed8924875f039d83270789178d1f9a",
+      "microset": "frozen 11-room src1/arr1/mics1-5 SOFA set",
+      "room_count": 11,
+      "geometry_invariant": true,
+      "median_per_mic_total_energy_span_db": 3.4741833407229725,
+      "per_mic_total_energy_span_db_min": 2.522072292504298,
+      "per_mic_total_energy_span_db_max": 3.616612870973265,
+      "median_per_mic_peak_span_db": 0.15353382280316677,
+      "activity_or_dtd_executed": false
+    }
+  },
+  "synthesis": {
+    "established": [
+      "Measured room/wall configuration changes alone can alter integrated RIR transfer energy by several dB even when source, array and microphone geometry are fixed.",
+      "The pinned ICASSP2022 pure-far corpus exhibits a much broader approximately 28.42 dB P05-to-P95 source-domain mic/render energy-ratio dispersion across cases.",
+      "The AEC-Challenge source-domain ratio is strongly associated with public DTD false activation, while prior diagnostics rejected resampling, Sync interpolation/selection, HPF, route delay/coherence and incoherent excess as sufficient primary explanations."
+    ],
+    "not_established": [
+      "The 3.47 dB dEchorate span and the 28.42 dB AEC-Challenge span are from different datasets and measurement definitions and must not be subtracted to estimate a device-gain contribution.",
+      "dEchorate does not provide the same playback/reference-to-captured-microphone device chain as the AEC-Challenge recordings.",
+      "The physical split between room acoustics, playback/record gain, device DSP, nonlinearities and other source-domain factors remains unidentified for AEC-Challenge."
+    ],
+    "decision_boundary": "Room acoustics are now evidenced as a material contributor to transfer-magnitude variation, but the available cross-source evidence is insufficient to authorize gain normalization, a DTD threshold change, a detector semantic change, or a source candidate.",
+    "next_discriminative_requirement": "A controlled or labeled dataset that jointly observes playback/reference level, captured microphone level, room/RIR ground truth and device/gain-chain state under matched conditions."
+  },
+  "prohibited": [
+    "treating cross-dataset dB spans as directly decomposable components",
+    "gain normalization",
+    "Activity/VAD/DTD threshold changes",
+    "public double_talk_active semantic changes",
+    "source candidate creation",
+    "parameter or threshold search",
+    "HIL authority",
+    "Product Certification authority",
+    "release authority",
+    "shipping authority",
+    "mutation of shipping v2.3.16 or 57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  ]
+}

@@ -1,0 +1,84 @@
+name: Research Cross-Source Transfer Ratio Synthesis V1
+
+on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/development-v3/cross-source-transfer-ratio-synthesis-v1.json'
+      - '.github/workflows/research-cross-source-transfer-ratio-synthesis-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/cross-source-transfer-ratio-synthesis-v1.json'
+      - '.github/workflows/research-cross-source-transfer-ratio-synthesis-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  synthesis-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Enforce research-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest='.github/research/continuous-optimization/development-v3/cross-source-transfer-ratio-synthesis-v1.json'
+          base=$(python3 -c "import json; print(json.load(open('$manifest'))['base_main_sha'])")
+          if git cat-file -e "$base^{commit}" 2>/dev/null; then
+            mapfile -t changed < <(git diff --name-only "$base"...HEAD)
+          else
+            echo "bound base commit unavailable" >&2
+            exit 1
+          fi
+          printf '%s\n' "${changed[@]}"
+          allowed1='.github/research/continuous-optimization/development-v3/cross-source-transfer-ratio-synthesis-v1.json'
+          allowed2='.github/workflows/research-cross-source-transfer-ratio-synthesis-v1.yml'
+          for f in "${changed[@]}"; do
+            [[ "$f" == "$allowed1" || "$f" == "$allowed2" ]] || { echo "out-of-scope file: $f" >&2; exit 1; }
+          done
+
+      - name: Validate candidate-zero evidence boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, math
+          p='.github/research/continuous-optimization/development-v3/cross-source-transfer-ratio-synthesis-v1.json'
+          m=json.load(open(p))
+          assert m['authority']=='EVIDENCE_SYNTHESIS_ONLY'
+          assert m['candidate_budget']==0
+          assert m['base_main_sha']=='7e8f26ba6d7330624091291d9e1336e5ff9c09dc'
+          assert m['shipping_immutable']=={
+              'version':'v2.3.16',
+              'sha':'57e4c64adc1cf06819e46e24e275ecd746d5f17f'}
+          a=m['evidence_bindings']['aec_challenge_source_gain_provenance']
+          d=m['evidence_bindings']['dechorate_ground_truth_transfer']
+          assert a['artifact_id']==10479770333
+          assert a['artifact_digest']=='sha256:ffff9d254d7fbb1d3c61fe9c0cd940be0309632cdcacc8e7cf5a93cd56cf6110'
+          assert d['artifact_id']==10499662616
+          assert d['artifact_digest']=='sha256:464031301263e0c6286a20dcc91fbf8508ed8924875f039d83270789178d1f9a'
+          calc=10.0*math.log10(a['far_frame_source_current_ratio_p95']/a['far_frame_source_current_ratio_p05'])
+          assert abs(calc-a['far_frame_source_current_ratio_p05_to_p95_db']) < 1e-12
+          assert 3.0 < d['median_per_mic_total_energy_span_db'] < 4.0
+          assert a['far_frame_source_current_ratio_p05_to_p95_db'] > 20.0
+          text=' '.join(m['synthesis']['not_established']).lower()
+          assert 'must not be subtracted' in text
+          assert 'different datasets' in text
+          required={'gain normalization','source candidate creation','release authority','shipping authority'}
+          assert required.issubset(set(m['prohibited']))
+          print('candidate-zero synthesis boundary: PASS')
+          PY
+
+      - name: Bind predecessor research assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .github/research/continuous-optimization/development-v3/pure-far-source-gain-provenance-v1.json
+          test -f .github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json
+          test -f .github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json
+          echo 'predecessor assets: PASS'

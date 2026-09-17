@@ -1,0 +1,312 @@
+#!/usr/bin/env python3
+"""Candidate-zero pure-far source/boundary gain provenance diagnostic."""
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import math
+import statistics
+import subprocess
+import tempfile
+from pathlib import Path
+
+
+def require(ok: bool, message: str) -> None:
+    if not ok:
+        raise ValueError(message)
+
+
+def load_json(path: Path) -> dict:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    require(isinstance(value, dict), f"JSON object required: {path}")
+    return value
+
+
+def write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
+
+
+def import_module(path: Path):
+    spec = importlib.util.spec_from_file_location("frozen_pure_far_helper", path)
+    require(spec is not None and spec.loader is not None, f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def percentile(values: list[float], q: float) -> float | None:
+    clean = sorted(float(v) for v in values if v is not None and math.isfinite(float(v)))
+    if not clean:
+        return None
+    if len(clean) == 1:
+        return clean[0]
+    pos = (len(clean) - 1) * q
+    lo = math.floor(pos)
+    hi = math.ceil(pos)
+    if lo == hi:
+        return clean[lo]
+    return clean[lo] * (hi - pos) + clean[hi] * (pos - lo)
+
+
+def distribution(values: list[float]) -> dict:
+    clean = [float(v) for v in values if v is not None and math.isfinite(float(v))]
+    return {
+        "count": len(clean),
+        "min": min(clean) if clean else None,
+        "median": statistics.median(clean) if clean else None,
+        "p05": percentile(clean, 0.05),
+        "p95": percentile(clean, 0.95),
+        "max": max(clean) if clean else None,
+    }
+
+
+def average_ranks(values: list[float]) -> list[float]:
+    indexed = sorted((float(value), index) for index, value in enumerate(values))
+    ranks = [0.0] * len(values)
+    i = 0
+    while i < len(indexed):
+        j = i + 1
+        while j < len(indexed) and indexed[j][0] == indexed[i][0]:
+            j += 1
+        rank = ((i + 1) + j) / 2.0
+        for k in range(i, j):
+            ranks[indexed[k][1]] = rank
+        i = j
+    return ranks
+
+
+def spearman(xs: list[float], ys: list[float]) -> dict:
+    pairs = [(float(x), float(y)) for x, y in zip(xs, ys)
+             if x is not None and y is not None and math.isfinite(float(x)) and math.isfinite(float(y))]
+    if len(pairs) < 2:
+        return {"count": len(pairs), "rho": None}
+    xr = average_ranks([x for x, _ in pairs])
+    yr = average_ranks([y for _, y in pairs])
+    mx = statistics.mean(xr)
+    my = statistics.mean(yr)
+    num = sum((x - mx) * (y - my) for x, y in zip(xr, yr))
+    dx = sum((x - mx) ** 2 for x in xr)
+    dy = sum((y - my) ** 2 for y in yr)
+    return {"count": len(pairs), "rho": None if dx <= 0.0 or dy <= 0.0 else num / math.sqrt(dx * dy)}
+
+
+def mean_square_pcm16(samples) -> float:
+    require(len(samples) > 0, "non-empty PCM required")
+    return sum((float(x) / 32768.0) ** 2 for x in samples) / len(samples)
+
+
+def validate_manifest(manifest: dict) -> None:
+    require(manifest.get("schema_version") == 1, "manifest schema")
+    require(manifest.get("investigation_id") == "pure-far-source-gain-provenance-v1", "manifest identity")
+    require(manifest.get("status") == "DIAGNOSTIC_ONLY", "diagnostic status")
+    require(manifest.get("candidate_budget") == 0, "candidate budget")
+    require(manifest["selection"]["subsampling_allowed"] is False, "subsampling forbidden")
+    require(manifest["selection"]["result_dependent_selection"] is False, "result selection forbidden")
+    obs = manifest["observation_method"]
+    require(obs["current_frame_ratios_are_delay_unaligned"] is True, "unaligned caveat required")
+    require(obs["signal_correction_applied"] is False, "signal correction forbidden")
+    require(obs["threshold_search_performed"] is False, "threshold search forbidden")
+    require(obs["candidate_selection"] is False, "candidate selection forbidden")
+    authority = manifest["output_authority"]
+    require(authority["research_diagnostic_only"] is True, "research authority required")
+    require(all(authority[k] is False for k in (
+        "candidate_selection", "tuning", "automatic_main_mutation", "shipping", "hil", "product_certification"
+    )), "promotion authority forbidden")
+
+
+def validate_inventory(inventory: dict, manifest: dict) -> list[dict]:
+    selection = manifest["selection"]
+    require(inventory["source_revision"] == manifest["source"]["revision"], "source revision drift")
+    require(inventory["source_tree_sha"] == manifest["source"]["dataset_tree_sha"], "tree drift")
+    require(inventory["complete_pair_count"] == selection["expected_complete_pair_count"], "pair-count drift")
+    require(inventory["total_lfs_bytes"] == selection["expected_total_lfs_bytes"], "byte-count drift")
+    require(inventory["selection_fingerprint_sha256"] == selection["expected_selection_fingerprint_sha256"],
+            "selection fingerprint drift")
+    cases = inventory.get("cases")
+    require(isinstance(cases, list) and len(cases) == selection["expected_complete_pair_count"], "case list drift")
+    guids = [c["guid"] for c in cases]
+    require(guids == sorted(guids) and len(set(guids)) == len(guids), "sorted unique GUIDs required")
+    return cases
+
+
+def summarize_provenance(rows: list[dict], full_source_ratio: float) -> dict:
+    far = [r for r in rows if int(r["far_end_active"]) != 0]
+    require(far, "far-active frames required")
+    fields = (
+        "source_current_ratio",
+        "internal_unsynced_ratio",
+        "internal_synced_pre_hpf_ratio",
+        "mic_resample_delta_db",
+        "render_resample_delta_db",
+        "differential_resample_delta_db",
+        "sync_selection_delta_db",
+        "shadow_hpf_activity_energy_relative_error",
+        "shadow_hpf_metric_energy_relative_error",
+    )
+    result = {"far_frame_count": len(far), "full_clip_source_mic_lpb_ratio": full_source_ratio}
+    for field in fields:
+        result[field] = distribution([r[field] for r in far])
+    return result
+
+
+def run_case(case: dict, source_root: Path, probe: Path, helper, manifest: dict) -> dict:
+    mic_path = helper.verify_file(source_root, case["mic"])
+    render_path = helper.verify_file(source_root, case["lpb"])
+    mic_rate, mic = helper.read_wav(mic_path)
+    render_rate, render = helper.read_wav(render_path)
+    require(mic_rate == render_rate == int(manifest["source"]["source_rate_hz"]),
+            f"source-rate drift: {case['guid']}")
+    common = min(len(mic), len(render))
+    require(common >= mic_rate, f"clip too short: {case['guid']}")
+    mic = mic[:common]
+    render = render[:common]
+    source_mic_energy = mean_square_pcm16(mic)
+    source_render_energy = mean_square_pcm16(render)
+    full_source_ratio = source_mic_energy / (source_render_energy + 1.0e-12)
+    with tempfile.TemporaryDirectory(prefix="pure-far-source-gain-") as tmp:
+        root = Path(tmp)
+        mic_pcm = root / "mic.pcm"
+        render_pcm = root / "render.pcm"
+        trace = root / "trace.jsonl"
+        helper.write_pcm16(mic_pcm, mic)
+        helper.write_pcm16(render_pcm, render)
+        subprocess.run([str(probe), str(mic_rate), str(mic_pcm), str(render_pcm), str(trace)], check=True)
+        rows = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line.strip()]
+    require(rows and all(int(row["frame"]) == i for i, row in enumerate(rows)), "contiguous trace required")
+    require(all(int(row["source_rate_hz"]) == mic_rate for row in rows), "source-rate trace drift")
+    require(all(int(row["internal_rate_hz"]) == int(manifest["source"]["internal_rate_hz"]) for row in rows),
+            "internal-rate trace drift")
+    frame_samples = mic_rate // 100
+    end_frame = min(len(rows), common // frame_samples)
+    rows = rows[:end_frame]
+    constants = manifest["baseline_code_lock"]["activity_constants_observed_not_tuned"]
+    activity = helper.summarize_rows(rows, 0, len(rows), constants)
+    return {
+        "guid": case["guid"],
+        "source_sample_rate_hz": mic_rate,
+        "internal_sample_rate_hz": int(manifest["source"]["internal_rate_hz"]),
+        "clip_duration_seconds": common / mic_rate,
+        "analysis_interval": "full common-length clip",
+        "source_full_clip": {
+            "mic_energy": source_mic_energy,
+            "lpb_energy": source_render_energy,
+            "mic_lpb_ratio": full_source_ratio,
+        },
+        "activity": activity,
+        "provenance": summarize_provenance(rows, full_source_ratio),
+    }
+
+
+def aggregate(cases: list[dict]) -> dict:
+    dtd = [c["activity"]["double_talk_fraction"] for c in cases]
+    full_source = [c["source_full_clip"]["mic_lpb_ratio"] for c in cases]
+    source_current = [c["provenance"]["source_current_ratio"]["median"] for c in cases]
+    unsynced = [c["provenance"]["internal_unsynced_ratio"]["median"] for c in cases]
+    synced = [c["provenance"]["internal_synced_pre_hpf_ratio"]["median"] for c in cases]
+    mic_delta = [c["provenance"]["mic_resample_delta_db"]["median"] for c in cases]
+    render_delta = [c["provenance"]["render_resample_delta_db"]["median"] for c in cases]
+    diff_delta = [c["provenance"]["differential_resample_delta_db"]["median"] for c in cases]
+    sync_delta = [c["provenance"]["sync_selection_delta_db"]["median"] for c in cases]
+    activity_error = [c["provenance"]["shadow_hpf_activity_energy_relative_error"]["median"] for c in cases]
+    metric_error = [c["provenance"]["shadow_hpf_metric_energy_relative_error"]["median"] for c in cases]
+    return {
+        "case_count": len(cases),
+        "cases_with_nonzero_public_dtd": sum(float(v) > 0.0 for v in dtd),
+        "distributions": {
+            "public_dtd_fraction": distribution(dtd),
+            "full_clip_source_mic_lpb_ratio": distribution(full_source),
+            "far_frame_source_current_ratio_median": distribution(source_current),
+            "far_frame_internal_unsynced_ratio_median": distribution(unsynced),
+            "far_frame_internal_synced_pre_hpf_ratio_median": distribution(synced),
+            "mic_resample_delta_db_median": distribution(mic_delta),
+            "render_resample_delta_db_median": distribution(render_delta),
+            "differential_resample_delta_db_median": distribution(diff_delta),
+            "sync_selection_delta_db_median": distribution(sync_delta),
+            "shadow_activity_energy_relative_error_median": distribution(activity_error),
+            "shadow_metric_energy_relative_error_median": distribution(metric_error),
+        },
+        "spearman_associations": {
+            "dtd_vs_full_clip_source_ratio": spearman(dtd, full_source),
+            "dtd_vs_far_frame_source_current_ratio": spearman(dtd, source_current),
+            "dtd_vs_internal_unsynced_ratio": spearman(dtd, unsynced),
+            "dtd_vs_internal_synced_pre_hpf_ratio": spearman(dtd, synced),
+            "dtd_vs_differential_resample_delta_db": spearman(dtd, diff_delta),
+            "dtd_vs_sync_selection_delta_db": spearman(dtd, sync_delta),
+            "full_source_vs_internal_unsynced_ratio": spearman(full_source, unsynced),
+            "internal_unsynced_vs_synced_ratio": spearman(unsynced, synced),
+        },
+    }
+
+
+def self_test() -> None:
+    require(average_ranks([1.0, 1.0, 3.0]) == [1.5, 1.5, 3.0], "rank self-test")
+    assoc = spearman([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])
+    require(assoc["rho"] is not None and abs(assoc["rho"] - 1.0) < 1.0e-12, "Spearman self-test")
+    require(abs(mean_square_pcm16([32767, -32768]) - 0.9999694826547056) < 1.0e-6,
+            "PCM energy self-test")
+    print("pure-far source gain provenance analyzer self-test: OK")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--inventory", type=Path)
+    parser.add_argument("--source-root", type=Path)
+    parser.add_argument("--probe", type=Path)
+    parser.add_argument("--helper", type=Path)
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+    if args.self_test:
+        self_test()
+        return 0
+    required = [args.manifest, args.inventory, args.source_root, args.probe, args.helper, args.output]
+    if any(v is None for v in required):
+        parser.error("manifest/inventory/source-root/probe/helper/output are required")
+
+    manifest = load_json(args.manifest)
+    validate_manifest(manifest)
+    inventory = load_json(args.inventory)
+    inventory_cases = validate_inventory(inventory, manifest)
+    helper = import_module(args.helper)
+    cases = [run_case(case, args.source_root, args.probe, helper, manifest) for case in inventory_cases]
+    payload = {
+        "schema_version": 1,
+        "investigation_id": manifest["investigation_id"],
+        "status": "DIAGNOSTIC_ONLY",
+        "authority": "research-diagnostic-only",
+        "candidate_budget": 0,
+        "inventory": {
+            "complete_pair_count": inventory["complete_pair_count"],
+            "total_lfs_bytes": inventory["total_lfs_bytes"],
+            "selection_fingerprint_sha256": inventory["selection_fingerprint_sha256"],
+        },
+        "source_current_frame_ratios_are_delay_unaligned": True,
+        "signal_correction_applied": False,
+        "threshold_search_performed": False,
+        "candidate_selection_performed": False,
+        "cases": cases,
+        "aggregate": aggregate(cases),
+        "interpretation_rule": manifest["interpretation_rule"],
+    }
+    args.output.mkdir(parents=True, exist_ok=True)
+    write_json(args.output / "pure-far-source-gain-provenance-result.json", payload)
+    with (args.output / "summary.md").open("w", encoding="utf-8") as fh:
+        fh.write("## Pure-far source gain provenance v1\n\n")
+        fh.write("- Authority: `research-diagnostic-only`\n")
+        fh.write("- Candidate budget: `0`\n")
+        fh.write(f"- Frozen complete pairs: `{inventory['complete_pair_count']}`\n")
+        fh.write("- Signal correction / threshold search: `false`\n")
+        fh.write("- Current-frame source/render ratios are delay-unaligned and descriptive only.\n\n")
+        for key, value in sorted(payload["aggregate"]["distributions"].items()):
+            fh.write(f"- {key}: `{json.dumps(value, sort_keys=True)}`\n")
+        fh.write("\n### Descriptive Spearman associations\n")
+        for key, value in sorted(payload["aggregate"]["spearman_associations"].items()):
+            fh.write(f"- {key}: `{json.dumps(value, sort_keys=True)}`\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

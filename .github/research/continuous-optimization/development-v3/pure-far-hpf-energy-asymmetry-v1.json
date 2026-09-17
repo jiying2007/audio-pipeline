@@ -45,6 +45,10 @@
       "path": "src/core/ap_pipeline.c",
       "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"
     },
+    "pipeline_internal_header": {
+      "path": "src/core/ap_pipeline_internal.h",
+      "blob_sha": "4328da15a84b224b068051a9a7dc9429a7434573"
+    },
     "hpf_source": {
       "path": "src/frontend/ap_hpf.c",
       "blob_sha": "aa92ff1e5746167a6a3239289e614ff26e28682d"
@@ -67,7 +71,7 @@
     },
     "diagnostic_probe": {
       "path": ".github/research/continuous-optimization/pure_far_hpf_energy_asymmetry_probe.c",
-      "blob_sha": "d5cab0c0885acf6e056741b9ef46156178ca3af2"
+      "blob_sha": "27f64382d98c09f5357195a7f8f208e1b0a95334"
     },
     "frozen_metric_helper": {
       "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",
@@ -90,9 +94,10 @@
   "observation_method": {
     "shadow_resampler": "independent research-only ap_resampler_state_t driven by the exact mic input with unchanged stream-0 resampling",
     "shadow_hpf": "independent research-only ap_hpf_state_t initialized at unchanged internal rate and run with unchanged ap_hpf_process",
-    "post_hpf_crosscheck": "compare shadow HPF output sample-for-sample with actual pipeline->mono in the one-mic BF-disabled baseline; report per-frame max absolute error",
+    "buffer_lifetime_note": "pipeline->mono aliases pipeline->processed and is overwritten by later stages before process_capture returns; post-return sample comparison is therefore invalid and is explicitly not used",
+    "post_hpf_energy_crosscheck": "compare shadow post-HPF frame energy against the actual Activity mic-energy input recovered exactly from the unchanged EMA state transition; also compare against the independent input_rms_dbfs energy path and report both relative-error distributions",
     "pre_hpf_energy": "mean square of shadow resampler output before HPF",
-    "post_hpf_energy": "mean square of shadow HPF output, which must reproduce actual Activity mic input",
+    "post_hpf_energy": "mean square of shadow HPF output",
     "signal_correction_applied": false,
     "threshold_search_performed": false,
     "candidate_selection": false,
@@ -103,8 +108,8 @@
     "per-case far-frame pre-HPF mic energy and post-HPF mic energy",
     "per-case far-frame HPF energy ratio and delta dB distributions",
     "per-case far-frame mic/reference ratio before and after HPF",
-    "cross-case Spearman associations between public-DTD occupancy and HPF energy change, pre-HPF ratio, and post-HPF ratio",
-    "shadow-HPF to actual pipeline mono max-absolute-error distribution"
+    "cross-case descriptive Spearman associations between public-DTD occupancy and HPF energy change, pre-HPF ratio, and post-HPF ratio",
+    "shadow post-HPF energy relative-error distributions versus recovered Activity mic energy and input_rms_dbfs-derived mic energy"
   ],
   "prohibited_actions": [
     "change HPF cutoff, coefficients, state, ordering, Sync, Activity, AEC, RES, NS, AGC, or VAD source",

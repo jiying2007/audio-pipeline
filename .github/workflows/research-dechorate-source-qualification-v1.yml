@@ -50,7 +50,7 @@ jobs:
           import json
           from pathlib import Path
           m = json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json').read_text())
-          assert m['state'] == 'SOURCE_QUALIFIED_FOR_DISTRIBUTION_INVENTORY_ONLY'
+          assert m['state'] == 'SOURCE_QUALIFIED_METADATA_ONLY'
           assert m['authority'] == 'DIAGNOSTIC_ONLY'
           assert m['candidate_budget'] == 0
           assert m['base_main_sha'] == 'b9ea9e5518198f302a457531d1380472a35f3153'
@@ -66,10 +66,10 @@ jobs:
           assert d['inventory_frozen'] is False
           assert d['payload_authorized_in_this_step'] is False
           n = m['next_authorized_step']
-          assert n['scope'] == 'inventory_schema_and_license_only'
-          assert n['must_freeze_complete_inventory_before_analysis'] is True
-          assert n['must_record_sha256_per_file'] is True
-          assert n['must_verify_embedded_license_and_required_schema'] is True
+          assert n['scope'] == 'primary_license_and_distribution_metadata_only'
+          assert n['must_freeze_complete_inventory_before_any_future_materialization'] is True
+          assert n['must_record_expected_checksums_before_any_future_materialization'] is True
+          assert n['must_verify_primary_dataset_license'] is True
           assert n['may_run_audio_pipeline'] is False
           assert n['may_compute_dtd_or_quality_result'] is False
           assert n['may_derive_detector_threshold'] is False
@@ -139,3 +139,9 @@ jobs:
           assert required <= prohibited
           assert m['zenodo_provenance_only']['not_execution_source'] is True
           assert m['distribution']['license_evidence']['distribution_license_must_be_verified_per_file_before_acoustic_use'] is True
+          assert m['distribution']['license_evidence']['primary_dataset_license_verified'] is False
+          assert m['distribution']['license_evidence']['secondary_reports_are_authority'] is False
+          assert m['distribution']['license_evidence']['materialization_requires_primary_license_evidence'] is True
+          assert m['next_authorized_step']['may_download_annotation_sidecar'] is False
+          assert m['next_authorized_step']['may_download_sofa_files'] is False
+          assert m['next_authorized_step']['may_download_zenodo_payload'] is False

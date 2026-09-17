@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
 import urllib.parse
 import urllib.request
@@ -32,31 +31,40 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def jsonable_attr(value):
-    """Convert an HDF5 attribute value to bounded JSON-safe metadata."""
+def normalize_attr_atom(value):
+    """Return stable JSON metadata without dereferencing HDF5 references."""
+    if isinstance(value, h5py.RegionReference):
+        return {"hdf5_reference": bool(value), "reference_type": "RegionReference"}
+    if isinstance(value, h5py.Reference):
+        return {"hdf5_reference": bool(value), "reference_type": "Reference"}
     if isinstance(value, bytes):
         return value.decode("utf-8", errors="replace")
     if isinstance(value, str):
         return value
     if isinstance(value, np.generic):
-        return value.item()
+        return normalize_attr_atom(value.item())
+    if isinstance(value, list):
+        return [normalize_attr_atom(x) for x in value]
+    if isinstance(value, tuple):
+        return [normalize_attr_atom(x) for x in value]
+    if isinstance(value, dict):
+        return {str(k): normalize_attr_atom(v) for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
+    if isinstance(value, (int, float, bool)) or value is None:
+        return value
+    return {"metadata_type": type(value).__name__}
+
+
+def jsonable_attr(value):
+    """Convert an HDF5 attribute value to bounded JSON-safe metadata."""
     if isinstance(value, np.ndarray):
         meta = {"shape": list(value.shape), "dtype": str(value.dtype)}
         # Attributes are metadata, not dataset payloads. Preserve only small
-        # values so evidence remains bounded and readable.
+        # values so evidence remains bounded and readable. References are
+        # represented by stable type/validity markers and are never followed.
         if value.size <= 32:
-            vals = value.tolist()
-            def fix(v):
-                if isinstance(v, bytes):
-                    return v.decode("utf-8", errors="replace")
-                if isinstance(v, list):
-                    return [fix(x) for x in v]
-                return v
-            meta["value"] = fix(vals)
+            meta["value"] = normalize_attr_atom(value.tolist())
         return meta
-    if isinstance(value, (int, float, bool)) or value is None:
-        return value
-    return repr(value)
+    return normalize_attr_atom(value)
 
 
 def attrs_schema(obj) -> dict:
@@ -71,10 +79,10 @@ def dataset_schema(ds: h5py.Dataset) -> dict:
         "maxshape": None if ds.maxshape is None else [x for x in ds.maxshape],
         "chunks": None if ds.chunks is None else list(ds.chunks),
         "compression": ds.compression,
-        "compression_opts": ds.compression_opts,
+        "compression_opts": normalize_attr_atom(ds.compression_opts),
         "shuffle": bool(ds.shuffle),
         "fletcher32": bool(ds.fletcher32),
-        "scaleoffset": ds.scaleoffset,
+        "scaleoffset": normalize_attr_atom(ds.scaleoffset),
         "attrs": attrs_schema(ds),
     }
 

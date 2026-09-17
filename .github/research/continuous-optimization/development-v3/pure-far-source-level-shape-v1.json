@@ -45,7 +45,7 @@
     },
     "predecessor_analyzer": {
       "path": ".github/research/continuous-optimization/pure_far_source_gain_provenance_v1.py",
-      "blob_sha": "d594f23b8b24af60882eedbc258002211de81ccd"
+      "blob_sha": "7265b639b7473094cd5fe33cbb1a141ff1965b65"
     },
     "frozen_metric_helper": {
       "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",

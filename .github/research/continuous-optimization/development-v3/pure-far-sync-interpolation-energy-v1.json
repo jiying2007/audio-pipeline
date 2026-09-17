@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-sync-interpolation-energy-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "bc40d4470fb8ef89e38dd00dffbe3016ebaed877",
+  "predecessor": {
+    "investigation_id": "pure-far-icassp2022-replication-v1",
+    "pr": 238,
+    "fresh_main_sha": "bc40d4470fb8ef89e38dd00dffbe3016ebaed877",
+    "diagnostic_run_id": 35165296000,
+    "diagnostic_run_number": 8,
+    "diagnostic_artifact_id": 10474811848,
+    "diagnostic_artifact_digest": "sha256:883bf78fa2441d5143c46e920c3acbb91f078488b4e3f511a102be68bd392900",
+    "hosted_real_aec_run_id": 35165296009,
+    "hosted_real_aec_run_number": 790,
+    "hosted_real_audio_run_id": 35165296083,
+    "hosted_real_audio_run_number": 795,
+    "verify_run_id": 35165296188,
+    "verify_run_number": 995,
+    "release_run_id": 35165685924,
+    "release_run_number": 980,
+    "fresh_main_closed": true
+  },
+  "question": "In the frozen 125-case ICASSP2022 pure-far corpus, does Sync's fractional sample interpolation materially attenuate the exact delayed reference energy seen by Activity, and does that attenuation explain cross-case public-DTD occupancy?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/test_set_icassp2022/farend-singletalk",
+    "dataset_tree_sha": "a5b01b800e56e53ac027126ed2292ee573ea735a",
+    "rating_logic_source": "AECMOS/aecmos.py",
+    "rating_logic_blob_sha": "7423983e6da8515ec81b58a4e905c4b7bcd6fdff",
+    "rating_formula": "full common-length mic+lpb clip",
+    "source_rate_hz": 48000,
+    "internal_rate_hz": 16000
+  },
+  "selection": {
+    "rule": "reuse the exact frozen PR #238 inventory: all complete no-movement ICASSP2022 farend-singletalk mic+lpb pairs at the pinned source revision",
+    "expected_complete_pair_count": 125,
+    "expected_total_lfs_bytes": 576534262,
+    "expected_selection_fingerprint_sha256": "7a06246eac58b6e8b705b0a05dfb9562fce58f43749fb8d29069843d57ba32f0",
+    "subsampling_allowed": false,
+    "result_dependent_selection": false
+  },
+  "baseline_code_lock": {
+    "pipeline_source": {
+      "path": "src/core/ap_pipeline.c",
+      "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"
+    },
+    "sync_source": {
+      "path": "src/sync/ap_sync.c",
+      "blob_sha": "db569a0f620e0a54486255e876f344e1f5a1c5a2"
+    },
+    "sync_header": {
+      "path": "src/sync/ap_sync.h",
+      "blob_sha": "24b8b615346a053a1399f8f7d42bd909ff531837"
+    },
+    "activity_source": {
+      "path": "src/activity/ap_activity.c",
+      "blob_sha": "73956d6c69d0ee07e6fb922f8def1db29d071972"
+    },
+    "predecessor_multirate_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_multirate_probe.c",
+      "blob_sha": "907c1bcca0e2acaf60d3d4423513daa43b8021dc"
+    },
+    "diagnostic_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_sync_interpolation_energy_probe.c",
+      "blob_sha": "242fb4d1a723778152d149af3633587c315481b6"
+    },
+    "frozen_metric_helper": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",
+      "blob_sha": "66430d614dbc81da235d2c61dd755b20fc98478e"
+    },
+    "activity_constants_observed_not_tuned": {
+      "far_end_threshold": 1e-7,
+      "double_talk_ratio": 1.5,
+      "instant_on_multiplier": 0.9,
+      "instant_hold_multiplier": 0.72,
+      "hangover_frames": 3,
+      "ema_attack": 0.35,
+      "ema_release": 0.08
+    }
+  },
+  "observation_method": {
+    "same_delay_position": true,
+    "nearest_reference_definition": "for each frame, use the exact ap_sync_get_reference start index render_total - internal_frame - delay_samples, but read the ring sample at each integer index without fractional interpolation",
+    "interpolated_reference_definition": "the actual pipeline->reference produced by unchanged ap_sync_get_reference using drift_credit-clamped linear interpolation",
+    "sync_reconstruction_crosscheck": "independently reconstruct the unchanged interpolation from render_ring/delay_samples/drift_credit and report max absolute error against pipeline->reference",
+    "valid_frame_rule": "interpolation-specific summaries only use frames with reference_start_valid=true; public-DTD baseline summaries remain full common clip",
+    "signal_correction_applied": false,
+    "delay_search_performed": false,
+    "threshold_search_performed": false,
+    "selection_threshold": null,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "outputs": [
+    "per-case full-clip public-DTD and existing Activity ratio summaries",
+    "per-case valid far-frame nearest-reference energy and actual interpolated-reference energy",
+    "per-case valid far-frame interpolation energy ratio and delta dB distributions",
+    "per-case valid far-frame mic/nearest-reference ratio summaries",
+    "per-case drift-credit absolute-value summaries",
+    "cross-case descriptive Spearman associations between public-DTD occupancy and interpolation attenuation, nearest-reference ratio, and existing synced-reference ratio",
+    "sync interpolation reconstruction max-absolute-error distribution"
+  ],
+  "prohibited_actions": [
+    "change sync interpolation, delay tracking, drift compensation, Activity, AEC, RES, NS, AGC, or VAD source",
+    "apply nearest-reference audio to the production pipeline",
+    "derive or search an interpolation correction constant",
+    "derive or search a DTD threshold",
+    "derive or search a gain-normalization constant",
+    "change the current Activity constants",
+    "subsample or hand-pick cases after observing results",
+    "treat an association as a classifier, ranking, or source-candidate selector",
+    "relax pure-far, movement, echo-path-change, Hosted Real AEC, or other qualification gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "The diagnostic may determine whether unchanged Sync fractional interpolation materially attenuates the delayed reference and whether that attenuation covaries with pure-far public-DTD occupancy. It cannot authorize changing interpolation, DTD thresholds, gain normalization, or any source candidate.",
+  "next_decision": "exact-head diagnostic evidence review only"
+}

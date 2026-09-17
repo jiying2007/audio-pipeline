@@ -1,0 +1,176 @@
+name: Research dEchorate Ground-Truth Diagnostic V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json'
+      - '.github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py'
+      - '.github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json'
+      - '.github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py'
+      - '.github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-dechorate-ground-truth-diagnostic-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json,subprocess
+          from pathlib import Path
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json').read_text())
+          assert m['schema_version']==1 and m['authority']=='DIAGNOSTIC_ONLY' and m['candidate_budget']==0
+          base=m['base_main_sha']
+          assert base=='cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0'
+          subprocess.run(['git','merge-base','--is-ancestor',base,'HEAD'],check=True)
+          changed=subprocess.check_output(['git','diff','--name-only',f'{base}...HEAD'],text=True).splitlines()
+          allowed={
+            '.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json',
+            '.github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py',
+            '.github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml',
+          }
+          assert changed and set(changed)<=allowed,changed
+          p=m['predecessor_qualification']
+          assert p['main_sha']==base and p['fresh_main_closed'] is True
+          assert p['qualification_run']==35196656993
+          assert p['hosted_real_aec_run']==35196656909
+          assert p['hosted_real_audio_run']==35196657032
+          assert p['verify_run']==35196657559
+          assert p['release_run']==35197032355
+          print({'base':base,'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'changed':changed})
+          PY
+
+      - name: Validate code provenance and diagnostic authority
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py
+          python3 - <<'PY'
+          import hashlib,json,urllib.request
+          from pathlib import Path
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json').read_text())
+          q=json.loads(Path(m['source']['qualification_manifest']).read_text())
+          assert q['authority']=='SOURCE_QUALIFICATION_ONLY' and q['candidate_budget']==0
+          assert q['inventory_protocol']['inventory_frozen'] is True
+          assert q['inventory_protocol']['expected_unique_room_count']==11
+          assert q['inventory_protocol']['expected_selected_fingerprint_sha256']==m['frozen_microset']['expected_qualification_fingerprint_sha256']
+          assert m['diagnostic_contract']['run_activity_or_dtd'] is False
+          assert m['diagnostic_contract']['synthesize_audio'] is False
+          assert m['diagnostic_contract']['modify_or_normalize_rir'] is False
+          rev=m['source']['official_code_revision']
+          paths={
+            'main_build_sofa_database.py':'dechorate/main_build_sofa_database.py',
+            'main_estimate_rirs.py':'dechorate/main_estimate_rirs.py',
+            'stimulus.py':'dechorate/stimulus.py',
+            '__init__.py':'dechorate/__init__.py',
+          }
+          for key,path in paths.items():
+              url=f'https://raw.githubusercontent.com/Chutlhu/dEchorate/{rev}/{path}'
+              req=urllib.request.Request(url,headers={'User-Agent':'audio-pipeline-dechorate-diagnostic/1'})
+              with urllib.request.urlopen(req,timeout=60) as r: data=r.read()
+              blob=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              assert blob==m['source']['official_code_blobs'][key],(key,blob,m['source']['official_code_blobs'][key])
+          print('dEchorate code provenance and diagnostic authority: PASS')
+          PY
+
+      - name: Materialize exact frozen SOFA microset
+        run: |
+          set -euo pipefail
+          mkdir -p dechorate-ground-truth-v1-out/source
+          python3 - <<'PY'
+          import hashlib,json,urllib.request
+          from pathlib import Path
+          from urllib.parse import urljoin
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json').read_text())
+          q=json.loads(Path(m['source']['qualification_manifest']).read_text())
+          base=q['source']['sofa_mirror_index']
+          sofas=[o for o in q['inventory_protocol']['expected_selected_objects'] if o['name'].endswith('.sofa')]
+          assert len(sofas)==11
+          out=Path('dechorate-ground-truth-v1-out/source')
+          for obj in sofas:
+              req=urllib.request.Request(urljoin(base,obj['name']),headers={'User-Agent':'audio-pipeline-dechorate-diagnostic/1'})
+              with urllib.request.urlopen(req,timeout=120) as r: data=r.read()
+              assert len(data)==obj['size_bytes'],obj['name']
+              assert hashlib.sha256(data).hexdigest()==obj['sha256'],obj['name']
+              (out/obj['name']).write_bytes(data)
+          print({'sofa_objects':len(sofas),'bytes':sum(o['size_bytes'] for o in sofas)})
+          PY
+
+      - name: Install pinned schema reader and run self-test
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/dechorate-ground-truth-venv
+          /tmp/dechorate-ground-truth-venv/bin/python -m pip install --disable-pip-version-check 'numpy==2.2.6' 'h5py==3.14.0'
+          /tmp/dechorate-ground-truth-venv/bin/python .github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py --self-test
+
+      - name: Run fixed-geometry RIR ground-truth diagnostic
+        run: |
+          set -euo pipefail
+          /tmp/dechorate-ground-truth-venv/bin/python .github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py \
+            --input-dir dechorate-ground-truth-v1-out/source \
+            --qualification-manifest .github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json \
+            --output dechorate-ground-truth-v1-out/dechorate-ground-truth-result.json
+
+      - name: Enforce evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          /tmp/dechorate-ground-truth-venv/bin/python - <<'PY'
+          import json,math
+          from pathlib import Path
+          p=json.loads(Path('dechorate-ground-truth-v1-out/dechorate-ground-truth-result.json').read_text())
+          a=p['aggregate']
+          assert p['schema_version']==1 and p['investigation']=='dechorate-ground-truth-diagnostic-v1'
+          assert a['room_count']==11 and a['sampling_rate_hz']==48000 and a['reference_room']=='000000'
+          assert a['geometry_invariant'] is True
+          assert a['activity_or_dtd_executed'] is False and a['audio_synthesized'] is False
+          assert a['rir_normalized_or_modified'] is False and a['absolute_spl_or_device_gain_claimed'] is False
+          assert a['selection_threshold_derived'] is False and a['candidate_authority'] is False
+          assert len(p['cases'])==11
+          assert all(c['data_delay_all_zero'] for c in p['cases'])
+          numeric=[
+            a['median_per_mic_total_energy_span_db'],a['room_median_total_energy_relative_db_min'],
+            a['room_median_total_energy_relative_db_max'],a['room_median_total_energy_relative_db_span'],
+            a['median_per_mic_peak_span_db'],a['room_median_peak_relative_db_min'],
+            a['room_median_peak_relative_db_max'],a['room_median_peak_relative_db_span'],
+          ]+a['per_mic_total_energy_span_db']+a['per_mic_peak_span_db']
+          assert all(math.isfinite(float(v)) for v in numeric)
+          assert all(float(v)>=0 for v in a['per_mic_total_energy_span_db']+a['per_mic_peak_span_db'])
+          print(json.dumps(a,indent=2,sort_keys=True))
+          PY
+
+      - name: Seal research evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json dechorate-ground-truth-v1-out/manifest.json
+          git rev-parse HEAD > dechorate-ground-truth-v1-out/source-sha.txt
+          find dechorate-ground-truth-v1-out -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > dechorate-ground-truth-v1-out/SHA256SUMS
+
+      - name: Upload research evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dechorate-ground-truth-diagnostic-v1-${{ github.run_id }}
+          path: dechorate-ground-truth-v1-out/
+          if-no-files-found: error
+          retention-days: 30

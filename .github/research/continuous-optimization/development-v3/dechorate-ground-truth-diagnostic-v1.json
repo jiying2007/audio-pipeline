@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "investigation": "dechorate-ground-truth-diagnostic-v1",
+  "authority": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0",
+  "predecessor_qualification": {
+    "investigation": "dechorate-source-qualification-v1",
+    "main_sha": "cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0",
+    "qualification_run": 35196656993,
+    "hosted_real_aec_run": 35196656909,
+    "hosted_real_audio_run": 35196657032,
+    "verify_run": 35196657559,
+    "release_run": 35197032355,
+    "fresh_main_closed": true
+  },
+  "source": {
+    "name": "dEchorate",
+    "sofa_mirror_index": "https://www.sofaconventions.org/data/database/dechorate/",
+    "qualification_manifest": ".github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json",
+    "official_code_repo": "Chutlhu/dEchorate",
+    "official_code_revision": "d3e664f1e7a7d46241d7f7b3b3761448686b9537",
+    "official_code_blobs": {
+      "main_build_sofa_database.py": "cd03ca06621e64f217599a811e56ac0701b98760",
+      "main_estimate_rirs.py": "38e8be9e17556bf8359fed50ee5423aa73d1aefc",
+      "stimulus.py": "4dd661fa5ba00a23378fd72f56e9b424d674d915",
+      "__init__.py": "53623890e13fe8360463b4acc423a86e6687d286"
+    },
+    "amplitude_semantics": {
+      "ess_stimulus_amplitude": 0.7,
+      "sampling_rate_hz": 48000,
+      "rir_window_seconds": 1.0,
+      "per_recording_peak_or_rms_normalization_observed_in_official_build_path": false,
+      "sofa_export_rescaling_observed": false,
+      "allowed_interpretation": "relative measured acoustic-transfer magnitude across the frozen same-source/same-array room configurations",
+      "prohibited_interpretation": "absolute SPL calibration or device playback-to-microphone gain"
+    }
+  },
+  "frozen_microset": {
+    "inherit_exactly_from_qualification": true,
+    "expected_room_count": 11,
+    "source_token": "src1",
+    "array_token": "arr1",
+    "microphone_token": "mics1-5",
+    "selection_is_result_independent": true,
+    "expected_qualification_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953"
+  },
+  "diagnostic_contract": {
+    "run_activity_or_dtd": false,
+    "synthesize_audio": false,
+    "modify_or_normalize_rir": false,
+    "require_source_position_invariant_across_rooms": true,
+    "require_receiver_positions_invariant_across_rooms": true,
+    "require_listener_position_invariant_across_rooms": true,
+    "require_sampling_rate_hz": 48000,
+    "require_data_delay_zero": true,
+    "reference_room": "000000",
+    "observations": [
+      "per-room per-microphone sum(Data.IR^2)",
+      "per-room per-microphone max(abs(Data.IR))",
+      "same-microphone total-energy dB relative to room000000",
+      "same-microphone peak dB relative to room000000",
+      "raw SourcePosition/ReceiverPosition/ListenerPosition invariance fingerprints",
+      "room reflective-surface metadata when present"
+    ],
+    "coordinate_semantics_boundary": "do not derive source-to-receiver distance in v1 because SOFA receiver coordinates may be listener-relative",
+    "no_selection_threshold": true,
+    "no_candidate_or_tuning_authority": true
+  },
+  "prohibited": [
+    "result-driven room/source/array/microphone selection",
+    "RIR normalization or gain correction",
+    "synthetic render-to-mic generation in this diagnostic",
+    "Activity/VAD/DTD execution or threshold changes",
+    "deriving a detector boundary from RIR energy",
+    "interpreting SOFA coordinate tensors as global geometry without convention proof",
+    "public double_talk_active semantic changes",
+    "source candidate creation",
+    "parameter search",
+    "HIL authority",
+    "Product Certification authority",
+    "release authority",
+    "shipping authority",
+    "mutation of shipping v2.3.16 or 57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  ]
+}

@@ -1,0 +1,133 @@
+name: Research dEchorate Source Qualification V1
+
+on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json'
+      - '.github/workflows/research-dechorate-source-qualification-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json'
+      - '.github/workflows/research-dechorate-source-qualification-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 2
+
+      - name: Enforce research-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.sha }}"
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="HEAD^"
+          fi
+          mapfile -t files < <(git diff --name-only "$BASE" HEAD)
+          printf '%s\n' "${files[@]}"
+          [[ ${#files[@]} -eq 2 ]]
+          printf '%s\n' "${files[@]}" | sort > /tmp/actual
+          cat > /tmp/expected <<'EOF'
+          .github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json
+          .github/workflows/research-dechorate-source-qualification-v1.yml
+          EOF
+          sort -o /tmp/expected /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+
+      - name: Validate candidate-zero authority and predecessor closure
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          p = Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json')
+          m = json.loads(p.read_text())
+          assert m['state'] == 'SOURCE_QUALIFIED_FOR_CANDIDATE_ZERO_INVENTORY_ONLY'
+          assert m['authority'] == 'DIAGNOSTIC_ONLY'
+          assert m['candidate_budget'] == 0
+          assert m['base_main_sha'] == 'b9ea9e5518198f302a457531d1380472a35f3153'
+          c = m['predecessor_closure']
+          assert c['state'] == 'CLOSED_DIAGNOSTIC_PLATEAU'
+          assert c['fresh_main_sha'] == m['base_main_sha']
+          assert c['closure_run'] == 35193807050
+          assert c['verify_run'] == 35193807409
+          assert c['release_run'] == 35194095674
+          assert c['release_number'] == 999
+          assert m['next_authorized_step']['scope'] == 'inventory_and_schema_only'
+          assert m['next_authorized_step']['may_run_audio_pipeline'] is False
+          assert m['next_authorized_step']['may_derive_detector_threshold'] is False
+          assert m['next_authorized_step']['may_create_source_candidate'] is False
+          assert m['shipping_immutability'] == {
+              'version': 'v2.3.16',
+              'sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f'
+          }
+
+      - name: Verify exact dEchorate source blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          REV=d3e664f1e7a7d46241d7f7b3b3761448686b9537
+          ROOT=https://raw.githubusercontent.com/Chutlhu/dEchorate/$REV
+          curl -fsSL "$ROOT/README.md" -o /tmp/dechorate-README.md
+          curl -fsSL "$ROOT/dechorate/dataset.py" -o /tmp/dechorate-dataset.py
+          curl -fsSL "$ROOT/LICENSE" -o /tmp/dechorate-LICENSE
+          [[ "$(git hash-object /tmp/dechorate-README.md)" == "26817ec088573b5522689ec9231f882616afc21d" ]]
+          [[ "$(git hash-object /tmp/dechorate-dataset.py)" == "0d4bc88722702d136d39aea291165adc37ee6696" ]]
+          [[ "$(git hash-object /tmp/dechorate-LICENSE)" == "37bb2d403bacc8c4b0ffd1a78fe847839c988360" ]]
+          grep -Fq 'early echo timings' /tmp/dechorate-README.md
+          grep -Fq '3D positions of microphones, real sources and image sources' /tmp/dechorate-README.md
+          grep -Fq "self.mic_src_echo_note['mics']" /tmp/dechorate-dataset.py
+          grep -Fq "self.mic_src_echo_note['srcs']" /tmp/dechorate-dataset.py
+          grep -Fq "self.mic_src_echo_note['toa_pck']" /tmp/dechorate-dataset.py
+          grep -Fq 'The MIT License' /tmp/dechorate-LICENSE
+
+      - name: Verify immutable Zenodo record metadata without downloading dataset
+        shell: python
+        run: |
+          import json, urllib.request
+          url = 'https://zenodo.org/api/records/5562386'
+          with urllib.request.urlopen(url, timeout=30) as r:
+              rec = json.load(r)
+          files = {f.get('key') or f.get('filename'): f for f in rec['files']}
+          expected = {
+              'dechorate_rir_processed.hdf5': '02171edaaf2210cc4182a7e5b1f183a9',
+              'load_positions_and_plot.py': '7c24b3558507e16f806d730e8662edab',
+              'dechorate.hdf5': '12dfc2a5a584295b9b6c156f0ba0a964',
+          }
+          for name, md5 in expected.items():
+              assert name in files, (name, sorted(files))
+              checksum = files[name].get('checksum', '')
+              assert checksum in {md5, 'md5:' + md5}, (name, checksum)
+          assert rec.get('id') == 5562386
+          print('Zenodo record and checksums verified; no dataset payload downloaded.')
+
+      - name: Enforce qualification-only boundary
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          m = json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json').read_text())
+          prohibited = set(m['prohibited'])
+          required = {
+              'modify_activity_or_dtd',
+              'derive_or_tune_gain_normalization',
+              'derive_or_tune_thresholds',
+              'change_public_double_talk_semantics',
+              'create_source_candidate',
+              'grant_hil_authority',
+              'grant_product_certification_authority',
+              'grant_release_or_shipping_authority'
+          }
+          assert required <= prohibited
+          assert m['pinned_data_release']['not_latest_by_design'] is True
+          assert m['next_authorized_step']['must_verify_md5_before_use'] is True

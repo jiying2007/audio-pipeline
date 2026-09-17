@@ -1,0 +1,64 @@
+{
+  "investigation": "dechorate-schema-inspection-v1",
+  "authority": "SCHEMA_INSPECTION_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0",
+  "predecessor_source_qualification": {
+    "manifest": ".github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json",
+    "main_sha": "cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0",
+    "qualification_run": 35196656993,
+    "hosted_real_aec_run": 35196656909,
+    "hosted_real_audio_run": 35196657032,
+    "verify_run": 35196657559,
+    "release_run": 35197032355,
+    "fresh_main_closed": true
+  },
+  "source_contract": {
+    "source": "dEchorate",
+    "sofa_mirror_index": "https://www.sofaconventions.org/data/database/dechorate/",
+    "frozen_inventory_is_authoritative": true,
+    "expected_selected_objects": 12,
+    "expected_selected_total_bytes": 19403164,
+    "expected_aggregate_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953"
+  },
+  "inspection_contract": {
+    "download_only_frozen_objects": true,
+    "verify_size_and_sha256_before_open": true,
+    "allowed_hdf5_operations": [
+      "enumerate groups and datasets",
+      "read dataset shape and dtype",
+      "read chunking and compression metadata",
+      "read HDF5 attributes",
+      "enumerate dimension scales and links when exposed by h5py"
+    ],
+    "dataset_payload_reads": false,
+    "rir_sample_reads": false,
+    "annotation_array_reads": false,
+    "signal_processing": false,
+    "convolution": false,
+    "dtd_execution": false,
+    "aec_execution": false,
+    "classifier_or_threshold_derivation": false
+  },
+  "outputs": {
+    "per_object_schema_json": true,
+    "aggregate_schema_json": true,
+    "schema_fingerprint_sha256": true,
+    "selected_object_hash_recheck": true
+  },
+  "prohibited": [
+    "reading Data.IR sample payloads",
+    "reading numeric annotation dataset payloads",
+    "render-to-mic convolution or synthesis",
+    "running audio_pipeline, Activity, DTD, AEC, NS, AGC, VAD or any acoustic processor",
+    "gain normalization",
+    "parameter or threshold search",
+    "source candidate creation",
+    "HIL or Product Certification authority",
+    "version, release or shipping mutation"
+  ],
+  "shipping_immutability": {
+    "version": "v2.3.16",
+    "shipping_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  }
+}

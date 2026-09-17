@@ -21,6 +21,13 @@
     "expected_selected_total_bytes": 19403164,
     "expected_aggregate_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953"
   },
+  "schema_freeze": {
+    "schema_frozen": false,
+    "expected_schema_fingerprint_sha256": null,
+    "expected_dataset_path_count_total": null,
+    "expected_group_path_count_total": null,
+    "first_run_behavior": "produce and upload metadata-only schema evidence, then fail closed before merge until fingerprint and structural counts are frozen"
+  },
   "inspection_contract": {
     "download_only_frozen_objects": true,
     "verify_size_and_sha256_before_open": true,

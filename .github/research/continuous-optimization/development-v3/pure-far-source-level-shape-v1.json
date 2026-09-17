@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-source-level-shape-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "248c3e15cbeb5df8528a4eb8548b6178eec51bcc",
+  "predecessor": {
+    "investigation_id": "pure-far-source-gain-provenance-v1",
+    "pr": 241,
+    "fresh_main_sha": "248c3e15cbeb5df8528a4eb8548b6178eec51bcc",
+    "diagnostic_run_id": 35178650183,
+    "diagnostic_run_number": 4,
+    "diagnostic_artifact_id": 10479770333,
+    "diagnostic_artifact_digest": "sha256:ffff9d254d7fbb1d3c61fe9c0cd940be0309632cdcacc8e7cf5a93cd56cf6110",
+    "hosted_real_aec_run_id": 35178650128,
+    "hosted_real_aec_run_number": 805,
+    "hosted_real_audio_run_id": 35178650142,
+    "hosted_real_audio_run_number": 810,
+    "verify_run_id": 35178650302,
+    "verify_run_number": 1010,
+    "release_run_id": 35178913225,
+    "release_run_number": 995,
+    "fresh_main_closed": true
+  },
+  "question": "Across the frozen 125-case ICASSP2022 pure-far corpus, is public-DTD occupancy more strongly associated with source mic absolute level/shape or with source lpb absolute level/shape, using only threshold-free source PCM statistics plus exact PCM16 saturation occupancy?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/test_set_icassp2022/farend-singletalk",
+    "dataset_tree_sha": "a5b01b800e56e53ac027126ed2292ee573ea735a",
+    "source_rate_hz": 48000
+  },
+  "selection": {
+    "rule": "reuse the exact frozen all-complete-pair ICASSP2022 no-movement farend-singletalk inventory",
+    "expected_complete_pair_count": 125,
+    "expected_total_lfs_bytes": 576534262,
+    "expected_selection_fingerprint_sha256": "7a06246eac58b6e8b705b0a05dfb9562fce58f43749fb8d29069843d57ba32f0",
+    "subsampling_allowed": false,
+    "result_dependent_selection": false
+  },
+  "baseline_code_lock": {
+    "predecessor_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_source_gain_provenance_probe.c",
+      "blob_sha": "6d8e0f3148b8d310b95a715d9156fa7dfbabb54f"
+    },
+    "predecessor_analyzer": {
+      "path": ".github/research/continuous-optimization/pure_far_source_gain_provenance_v1.py",
+      "blob_sha": "d594f23b8b24af60882eedbc258002211de81ccd"
+    },
+    "frozen_metric_helper": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",
+      "blob_sha": "66430d614dbc81da235d2c61dd755b20fc98478e"
+    }
+  },
+  "observation_method": {
+    "source_rms_dbfs": "10*log10(mean(square(PCM16/32768))) over full common-length source clip",
+    "source_peak_abs": "max(abs(PCM16))/32768 over full common-length source clip",
+    "source_crest_db": "20*log10(peak_abs/rms) with only numerical floor protection",
+    "exact_saturation_fraction": "fraction of PCM16 samples with abs(sample) >= 32767; this is exact integer saturation occupancy, not a tuned near-clipping threshold",
+    "public_dtd": "reuse freshly regenerated predecessor provenance evidence on the exact same inventory and source revision",
+    "signal_correction_applied": false,
+    "threshold_search_performed": false,
+    "near_clipping_threshold_defined": false,
+    "candidate_selection": false
+  },
+  "outputs": [
+    "per-case mic/lpb RMS dBFS",
+    "per-case mic/lpb peak absolute amplitude",
+    "per-case mic/lpb crest factor dB",
+    "per-case exact PCM16 saturation fraction",
+    "per-case source mic/lpb energy ratio cross-check",
+    "cross-case Spearman associations with public-DTD occupancy"
+  ],
+  "prohibited_actions": [
+    "define or tune a near-clipping threshold",
+    "infer device AGC, microphone gain, loudspeaker gain, echo-path gain, noise, or nonlinear distortion as a proven physical cause",
+    "derive gain normalization or DTD thresholds",
+    "change any production source, DSP, API, version, release, or shipping policy",
+    "subsample or hand-pick cases after observing results",
+    "promote to source candidate, HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "The diagnostic may describe whether public-DTD occupancy covaries more with source mic-side or lpb-side recording-level statistics. It cannot identify the physical cause of those source levels and cannot authorize normalization, thresholds, or a source candidate.",
+  "next_decision": "exact-head diagnostic evidence review only"
+}

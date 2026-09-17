@@ -42,8 +42,8 @@ int main(int argc, char **argv) {
     int16_t mic[AP_MAX_IO_FRAME_SAMPLES];
     int16_t render[AP_MAX_IO_FRAME_SAMPLES];
     int16_t out[AP_MAX_IO_FRAME_SAMPLES];
-    float shadow_raw[AP_MAX_INTERNAL_FRAME_SAMPLES];
-    float shadow_hpf[AP_MAX_INTERNAL_FRAME_SAMPLES];
+    float shadow_raw[AP_INTERNAL_FRAME_MAX];
+    float shadow_hpf[AP_INTERNAL_FRAME_MAX];
     ap_config_t cfg = ap_config_default(AP_PROFILE_CALL);
     ap_pipeline_t *pipeline = NULL;
     ap_resampler_state_t shadow_resampler;

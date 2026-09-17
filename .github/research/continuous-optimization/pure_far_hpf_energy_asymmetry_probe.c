@@ -22,6 +22,11 @@ static float recover_smoothed_input(float previous, float current) {
     return previous + (current - previous) / alpha;
 }
 
+static double relative_error(double a, double b) {
+    double denom = fmax(fmax(fabs(a), fabs(b)), 1.0e-20);
+    return fabs(a - b) / denom;
+}
+
 static int fail(const char *message) {
     fprintf(stderr, "%s\n", message);
     return 2;
@@ -108,7 +113,8 @@ int main(int argc, char **argv) {
         float shadow_hpf_energy = 1.0e-12f;
         float shadow_hpf_ratio;
         float shadow_hpf_delta_db;
-        float shadow_post_max_abs_error = 0.0f;
+        double shadow_activity_energy_relative_error;
+        double shadow_metric_energy_relative_error;
         float smoothed_ratio;
         float instant_ratio;
         float dt_ratio;
@@ -128,12 +134,12 @@ int main(int argc, char **argv) {
                                   1u,
                                   0u,
                                   shadow_raw,
-                                  cfg.internal_sample_rate_hz / 100u);
+                                  pipeline->internal_frame);
         memcpy(shadow_hpf, shadow_raw,
-               (cfg.internal_sample_rate_hz / 100u) * sizeof(float));
+               pipeline->internal_frame * sizeof(float));
         ap_hpf_process(&shadow_hpf_state,
                        shadow_hpf,
-                       cfg.internal_sample_rate_hz / 100u,
+                       pipeline->internal_frame,
                        0u);
 
         if (ap_pipeline_push_render(pipeline, render, frame) != AP_OK)
@@ -151,12 +157,9 @@ int main(int argc, char **argv) {
                                                              current_smoothed_reference);
 
         for (i = 0u; i < pipeline->internal_frame; ++i) {
-            float error = fabsf(shadow_hpf[i] - pipeline->mono[i]);
             shadow_raw_energy += shadow_raw[i] * shadow_raw[i];
             shadow_hpf_energy += shadow_hpf[i] * shadow_hpf[i];
             direct_reference_energy += pipeline->reference[i] * pipeline->reference[i];
-            if (error > shadow_post_max_abs_error)
-                shadow_post_max_abs_error = error;
         }
         shadow_raw_energy /= pipeline->internal_frame;
         shadow_hpf_energy /= pipeline->internal_frame;
@@ -167,6 +170,11 @@ int main(int argc, char **argv) {
 
         metric_mic_energy = powf(10.0f, metrics.input_rms_dbfs / 10.0f) - 1.0e-18f;
         if (metric_mic_energy < 0.0f) metric_mic_energy = 0.0f;
+        shadow_activity_energy_relative_error =
+            relative_error(shadow_hpf_energy, recovered_mic_energy);
+        shadow_metric_energy_relative_error =
+            relative_error(shadow_hpf_energy, metric_mic_energy);
+
         smoothed_ratio = current_smoothed_mic /
                          (current_smoothed_reference + 1.0e-12f);
         instant_ratio = recovered_mic_energy /
@@ -200,7 +208,8 @@ int main(int argc, char **argv) {
                     "\"shadow_hpf_mic_energy\":%.9g,"
                     "\"shadow_hpf_energy_ratio\":%.9g,"
                     "\"shadow_hpf_energy_delta_db\":%.9g,"
-                    "\"shadow_hpf_post_max_abs_error\":%.9g,"
+                    "\"shadow_hpf_activity_energy_relative_error\":%.17g,"
+                    "\"shadow_hpf_metric_energy_relative_error\":%.17g,"
                     "\"smoothed_ratio\":%.9g,\"instant_ratio\":%.9g,"
                     "\"dt_on_evidence\":%d,\"dt_hold_evidence\":%d}\n",
                     frame_index,
@@ -226,7 +235,8 @@ int main(int argc, char **argv) {
                     (double)shadow_hpf_energy,
                     (double)shadow_hpf_ratio,
                     (double)shadow_hpf_delta_db,
-                    (double)shadow_post_max_abs_error,
+                    shadow_activity_energy_relative_error,
+                    shadow_metric_energy_relative_error,
                     (double)smoothed_ratio,
                     (double)instant_ratio,
                     dt_on_evidence,

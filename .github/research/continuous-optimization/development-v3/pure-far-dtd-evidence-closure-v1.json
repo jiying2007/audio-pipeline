@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-dtd-evidence-closure-v1",
+  "status": "CLOSED_DIAGNOSTIC_PLATEAU",
+  "candidate_budget": 0,
+  "governance_base_sha": "af00c6642598290006db929fddb9f809313953aa",
+  "shipping_baseline": {
+    "version": "v2.3.16",
+    "sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "unchanged": true
+  },
+  "fresh_main_closure": {
+    "pr": 242,
+    "sha": "af00c6642598290006db929fddb9f809313953aa",
+    "diagnostic_run_id": 35192472921,
+    "diagnostic_run_number": 2,
+    "diagnostic_artifact_id": 10484986069,
+    "diagnostic_artifact_digest": "sha256:34b21172c83cded29b666aec4c2f5693c9b65246229742293183b711cb5a95ee",
+    "hosted_real_aec_run_id": 35192472908,
+    "hosted_real_aec_run_number": 807,
+    "hosted_real_audio_run_id": 35192472939,
+    "hosted_real_audio_run_number": 812,
+    "verify_run_id": 35192473328,
+    "verify_run_number": 1012,
+    "release_run_id": 35192796528,
+    "release_run_number": 997,
+    "fresh_main_closed": true
+  },
+  "confirmed_software_mechanism": [
+    "Public DTD is driven by pre-AEC mic/reference energy evidence while far-end is active.",
+    "Across pinned real pure-far corpora, case-level public-DTD occupancy strongly covaries with pre-AEC mic/reference energy ratio.",
+    "The false-DTD behavior reproduces across Interspeech2021 and ICASSP2022 pinned real corpora, so it is not isolated to one recording or one corpus.",
+    "High mic/reference disparity is already present in source-domain recordings before pipeline boundary resampling, Sync fractional interpolation, or the mic-only 80-Hz HPF.",
+    "Boundary resampling, Sync selection/interpolation, HPF, single-delay route ambiguity, and multipath coherence modulate observations but do not explain the dominant cross-case false-DTD variation.",
+    "Source-domain render-coherent and complementary incoherent-excess energy both covary with the broader source mic/render level disparity; neither component alone identifies the cause."
+  ],
+  "key_evidence": [
+    {
+      "pr": 235,
+      "scope": "169-case Interspeech2021 pure-far coverage",
+      "finding": "public-DTD false positives are widespread; DTD strongly tracks mic/reference energy ratio"
+    },
+    {
+      "pr": 238,
+      "scope": "125-case ICASSP2022 pure-far cross-dataset replication",
+      "finding": "123/125 cases show nonzero public DTD; median DTD about 63.8%; ratio association reproduces strongly"
+    },
+    {
+      "pr": 239,
+      "scope": "Sync fractional-interpolation energy",
+      "finding": "interpolation energy effect is small and does not explain false-DTD variation"
+    },
+    {
+      "pr": 240,
+      "scope": "mic-only HPF energy asymmetry",
+      "finding": "high ratio exists before HPF; HPF usually slightly reduces mic energy"
+    },
+    {
+      "pr": 241,
+      "scope": "source/boundary gain provenance",
+      "finding": "source-domain relative level disparity dominates; resampler and Sync are small modulators"
+    },
+    {
+      "pr": 242,
+      "scope": "source coherent/excess decomposition",
+      "finding": "total source mic/render ratio associates with DTD more strongly than coherence itself; coherent and excess components both covary with total disparity"
+    }
+  ],
+  "remaining_unknowns": [
+    "The pinned public datasets do not expose sufficient per-GUID device/room/gain-chain metadata to identify whether source-domain disparity is caused by device playback/capture gain, acoustic echo-path gain, room/multipath behavior, upstream DSP, noise, nonlinearity, or a mixture.",
+    "No frame-accurate physical near-end ground truth exists for the pure-far recordings because the evaluated scenarios are far-end-only by construction.",
+    "The accumulated evidence does not establish a safe gain normalization, replacement DTD feature, or new threshold."
+  ],
+  "rejected_explanations_as_primary_cause": [
+    "fractional Sync interpolation attenuation",
+    "mic-only 80-Hz HPF",
+    "48-to-16-kHz boundary resampling differential",
+    "single delayed scalar echo gain",
+    "route-lag volatility alone",
+    "multipath coherence alone",
+    "incoherent excess alone"
+  ],
+  "closure_reason": "The candidate-zero diagnostic program has reached a discriminative plateau on the currently pinned public data: repeated transforms of the same anonymous recordings no longer separate the unresolved physical contributors. Additional same-corpus probes are not authorized merely to refine attribution.",
+  "next_authorized_data_need": "Obtain independently labeled or metadata-rich measurements that expose playback/capture gain, device/room identity, calibrated render/mic levels, or controlled echo-path conditions; alternatively, obtain explicit governance authorization and a new source-candidate budget before proposing algorithm changes.",
+  "prohibited_actions": [
+    "derive or apply gain normalization from these diagnostics",
+    "change Activity DTD thresholds or hangover",
+    "change public double_talk_active semantics",
+    "change HPF, Sync, resampler, AEC, RES, NS, AGC, or VAD source based on this closure",
+    "open a source candidate without explicit new candidate-budget authorization",
+    "promote this evidence to HIL, Product Certification, release, or shipping authority",
+    "continue result-dependent same-corpus probe proliferation without a new discriminative data source"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  }
+}

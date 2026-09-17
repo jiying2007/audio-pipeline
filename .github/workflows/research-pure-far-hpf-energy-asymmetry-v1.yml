@@ -209,7 +209,8 @@ jobs:
               assert h['far_frame_count'] > 0
               for name in ('hpf_energy_ratio', 'hpf_energy_delta_db',
                            'pre_hpf_mic_reference_ratio', 'post_hpf_mic_reference_ratio',
-                           'shadow_post_max_abs_error'):
+                           'shadow_activity_energy_relative_error',
+                           'shadow_metric_energy_relative_error'):
                   assert h[name]['count'] == h['far_frame_count']
                   assert all(v is None or math.isfinite(v) for k, v in h[name].items() if k != 'count')
           print(json.dumps(p['aggregate'], indent=2, sort_keys=True))

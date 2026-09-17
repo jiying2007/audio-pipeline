@@ -60,9 +60,10 @@
       "per-room per-microphone max(abs(Data.IR))",
       "same-microphone total-energy dB relative to room000000",
       "same-microphone peak dB relative to room000000",
-      "source-to-receiver geometric distance",
+      "raw SourcePosition/ReceiverPosition/ListenerPosition invariance fingerprints",
       "room reflective-surface metadata when present"
     ],
+    "coordinate_semantics_boundary": "do not derive source-to-receiver distance in v1 because SOFA receiver coordinates may be listener-relative",
     "no_selection_threshold": true,
     "no_candidate_or_tuning_authority": true
   },
@@ -72,6 +73,7 @@
     "synthetic render-to-mic generation in this diagnostic",
     "Activity/VAD/DTD execution or threshold changes",
     "deriving a detector boundary from RIR energy",
+    "interpreting SOFA coordinate tensors as global geometry without convention proof",
     "public double_talk_active semantic changes",
     "source candidate creation",
     "parameter search",

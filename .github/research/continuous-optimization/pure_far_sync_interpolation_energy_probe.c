@@ -197,12 +197,14 @@ int main(int argc, char **argv) {
                     "\"drift_credit\":%.9g,\"fractional_offset\":%.9g,"
                     "\"reference_start_valid\":%d,"
                     "\"far_end_threshold\":%.9g,\"double_talk_ratio\":%.9g,"
+                    "\"hangover_frames\":%u,\"far_end_hangover\":%u,"
                     "\"double_talk_hangover\":%u,"
                     "\"smoothed_mic_energy\":%.9g,"
                     "\"smoothed_reference_energy\":%.9g,"
                     "\"recovered_mic_energy\":%.9g,"
                     "\"recovered_reference_energy\":%.9g,"
                     "\"metric_mic_energy\":%.9g,"
+                    "\"direct_reference_energy\":%.9g,"
                     "\"nearest_reference_energy\":%.9g,"
                     "\"interpolated_reference_energy\":%.9g,"
                     "\"nearest_mic_reference_ratio\":%.9g,"
@@ -225,12 +227,15 @@ int main(int argc, char **argv) {
                     reference_start_valid,
                     (double)activity->far_end_threshold,
                     (double)activity->double_talk_ratio,
+                    activity->hangover_frames,
+                    activity->far_end_hangover,
                     activity->double_talk_hangover,
                     (double)current_smoothed_mic,
                     (double)current_smoothed_reference,
                     (double)recovered_mic_energy,
                     (double)recovered_reference_energy,
                     (double)metric_mic_energy,
+                    (double)interpolated_reference_energy,
                     (double)nearest_reference_energy,
                     (double)interpolated_reference_energy,
                     (double)nearest_mic_reference_ratio,

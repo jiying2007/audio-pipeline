@@ -138,7 +138,12 @@ def summarize_hpf(rows: list[dict]) -> dict:
         "hpf_energy_delta_db": distribution([r["shadow_hpf_energy_delta_db"] for r in far]),
         "pre_hpf_mic_reference_ratio": distribution(pre_ratio),
         "post_hpf_mic_reference_ratio": distribution(post_ratio),
-        "shadow_post_max_abs_error": distribution([r["shadow_hpf_post_max_abs_error"] for r in far]),
+        "shadow_activity_energy_relative_error": distribution(
+            [r["shadow_hpf_activity_energy_relative_error"] for r in far]
+        ),
+        "shadow_metric_energy_relative_error": distribution(
+            [r["shadow_hpf_metric_energy_relative_error"] for r in far]
+        ),
     }
 
 
@@ -188,7 +193,8 @@ def aggregate(cases: list[dict]) -> dict:
     energy_ratio = [c["hpf"]["hpf_energy_ratio"]["median"] for c in cases]
     pre_ratio = [c["hpf"]["pre_hpf_mic_reference_ratio"]["median"] for c in cases]
     post_ratio = [c["hpf"]["post_hpf_mic_reference_ratio"]["median"] for c in cases]
-    post_error = [c["hpf"]["shadow_post_max_abs_error"]["max"] for c in cases]
+    activity_error = [c["hpf"]["shadow_activity_energy_relative_error"]["median"] for c in cases]
+    metric_error = [c["hpf"]["shadow_metric_energy_relative_error"]["median"] for c in cases]
     return {
         "case_count": len(cases),
         "cases_with_nonzero_public_dtd": sum(float(v) > 0.0 for v in dtd),
@@ -198,7 +204,8 @@ def aggregate(cases: list[dict]) -> dict:
             "median_hpf_energy_ratio": distribution(energy_ratio),
             "median_pre_hpf_mic_reference_ratio": distribution(pre_ratio),
             "median_post_hpf_mic_reference_ratio": distribution(post_ratio),
-            "per_case_max_shadow_post_abs_error": distribution(post_error),
+            "median_shadow_activity_energy_relative_error": distribution(activity_error),
+            "median_shadow_metric_energy_relative_error": distribution(metric_error),
         },
         "spearman_associations": {
             "dtd_vs_hpf_energy_delta_db": spearman(dtd, delta_db),

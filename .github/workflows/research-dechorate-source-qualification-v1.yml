@@ -35,7 +35,6 @@ jobs:
             BASE="HEAD^"
           fi
           mapfile -t files < <(git diff --name-only "$BASE" HEAD)
-          printf '%s\n' "${files[@]}"
           [[ ${#files[@]} -eq 2 ]]
           printf '%s\n' "${files[@]}" | sort > /tmp/actual
           cat > /tmp/expected <<'EOF'
@@ -50,9 +49,8 @@ jobs:
         run: |
           import json
           from pathlib import Path
-          p = Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json')
-          m = json.loads(p.read_text())
-          assert m['state'] == 'SOURCE_QUALIFIED_FOR_CANDIDATE_ZERO_INVENTORY_ONLY'
+          m = json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json').read_text())
+          assert m['state'] == 'SOURCE_QUALIFIED_FOR_DISTRIBUTION_INVENTORY_ONLY'
           assert m['authority'] == 'DIAGNOSTIC_ONLY'
           assert m['candidate_budget'] == 0
           assert m['base_main_sha'] == 'b9ea9e5518198f302a457531d1380472a35f3153'
@@ -63,16 +61,25 @@ jobs:
           assert c['verify_run'] == 35193807409
           assert c['release_run'] == 35194095674
           assert c['release_number'] == 999
-          assert m['next_authorized_step']['scope'] == 'inventory_and_schema_only'
-          assert m['next_authorized_step']['may_run_audio_pipeline'] is False
-          assert m['next_authorized_step']['may_derive_detector_threshold'] is False
-          assert m['next_authorized_step']['may_create_source_candidate'] is False
+          d = m['distribution']
+          assert d['mutable_mirror'] is True
+          assert d['inventory_frozen'] is False
+          assert d['payload_authorized_in_this_step'] is False
+          n = m['next_authorized_step']
+          assert n['scope'] == 'inventory_schema_and_license_only'
+          assert n['must_freeze_complete_inventory_before_analysis'] is True
+          assert n['must_record_sha256_per_file'] is True
+          assert n['must_verify_embedded_license_and_required_schema'] is True
+          assert n['may_run_audio_pipeline'] is False
+          assert n['may_compute_dtd_or_quality_result'] is False
+          assert n['may_derive_detector_threshold'] is False
+          assert n['may_create_source_candidate'] is False
           assert m['shipping_immutability'] == {
               'version': 'v2.3.16',
               'sha': '57e4c64adc1cf06819e46e24e275ecd746d5f17f'
           }
 
-      - name: Verify exact dEchorate source blobs
+      - name: Verify exact upstream source blobs and schema contract
         shell: bash
         run: |
           set -euo pipefail
@@ -80,36 +87,36 @@ jobs:
           ROOT=https://raw.githubusercontent.com/Chutlhu/dEchorate/$REV
           curl -fsSL "$ROOT/README.md" -o /tmp/dechorate-README.md
           curl -fsSL "$ROOT/dechorate/dataset.py" -o /tmp/dechorate-dataset.py
+          curl -fsSL "$ROOT/dechorate/main_build_sofa_database.py" -o /tmp/dechorate-sofa.py
           curl -fsSL "$ROOT/LICENSE" -o /tmp/dechorate-LICENSE
           [[ "$(git hash-object /tmp/dechorate-README.md)" == "26817ec088573b5522689ec9231f882616afc21d" ]]
           [[ "$(git hash-object /tmp/dechorate-dataset.py)" == "0d4bc88722702d136d39aea291165adc37ee6696" ]]
+          [[ "$(git hash-object /tmp/dechorate-sofa.py)" == "cd03ca06621e64f217599a811e56ac0701b98760" ]]
           [[ "$(git hash-object /tmp/dechorate-LICENSE)" == "37bb2d403bacc8c4b0ffd1a78fe847839c988360" ]]
           grep -Fq 'early echo timings' /tmp/dechorate-README.md
           grep -Fq '3D positions of microphones, real sources and image sources' /tmp/dechorate-README.md
-          grep -Fq "self.mic_src_echo_note['mics']" /tmp/dechorate-dataset.py
-          grep -Fq "self.mic_src_echo_note['srcs']" /tmp/dechorate-dataset.py
-          grep -Fq "self.mic_src_echo_note['toa_pck']" /tmp/dechorate-dataset.py
+          grep -Fq "path_to_note must be the csv file" /tmp/dechorate-dataset.py
+          grep -Fq "path_to_mic_src_note must be the pkl file" /tmp/dechorate-dataset.py
+          for token in Data_IR SourcePosition ReceiverPosition RoomCornerA RoomCornerB ReflectiveSurfacesCode EchoTimings EchoWall; do
+            grep -Fq "$token" /tmp/dechorate-sofa.py
+          done
+          grep -Fq 'The MIT License (MIT)' /tmp/dechorate-sofa.py
           grep -Fq 'The MIT License' /tmp/dechorate-LICENSE
 
-      - name: Verify immutable Zenodo record metadata without downloading dataset
+      - name: Verify public SOFA distribution index without downloading payload
         shell: python
         run: |
-          import json, urllib.request
-          url = 'https://zenodo.org/api/records/5562386'
+          import json, re, urllib.request
+          from pathlib import Path
+          m = json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json').read_text())
+          url = m['distribution']['index_url']
           with urllib.request.urlopen(url, timeout=30) as r:
-              rec = json.load(r)
-          files = {f.get('key') or f.get('filename'): f for f in rec['files']}
-          expected = {
-              'dechorate_rir_processed.hdf5': '02171edaaf2210cc4182a7e5b1f183a9',
-              'load_positions_and_plot.py': '7c24b3558507e16f806d730e8662edab',
-              'dechorate.hdf5': '12dfc2a5a584295b9b6c156f0ba0a964',
-          }
-          for name, md5 in expected.items():
-              assert name in files, (name, sorted(files))
-              checksum = files[name].get('checksum', '')
-              assert checksum in {md5, 'md5:' + md5}, (name, checksum)
-          assert rec.get('id') == 5562386
-          print('Zenodo record and checksums verified; no dataset payload downloaded.')
+              html = r.read().decode('utf-8', errors='strict')
+          assert 'dEchorate_annotations.h5' in html
+          names = sorted(set(re.findall(r'dEchorate_room[^"<> ]+\.sofa', html)))
+          assert names, 'SOFA distribution has no discoverable files'
+          assert all(name.startswith('dEchorate_room') for name in names)
+          print(f'qualification index visible: {len(names)} SOFA filenames; payload not downloaded')
 
       - name: Enforce qualification-only boundary
         shell: python
@@ -126,8 +133,9 @@ jobs:
               'create_source_candidate',
               'grant_hil_authority',
               'grant_product_certification_authority',
-              'grant_release_or_shipping_authority'
+              'grant_release_or_shipping_authority',
+              'use_unfrozen_dechorate_payload_for_acoustic_conclusions'
           }
           assert required <= prohibited
-          assert m['pinned_data_release']['not_latest_by_design'] is True
-          assert m['next_authorized_step']['must_verify_md5_before_use'] is True
+          assert m['zenodo_provenance_only']['not_execution_source'] is True
+          assert m['distribution']['license_evidence']['distribution_license_must_be_verified_per_file_before_acoustic_use'] is True

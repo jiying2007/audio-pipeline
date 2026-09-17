@@ -1,0 +1,231 @@
+name: Research Pure-Far Source-Level Shape V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json'
+      - '.github/research/continuous-optimization/pure_far_source_level_shape_v1.py'
+      - '.github/workflows/research-pure-far-source-level-shape-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json'
+      - '.github/research/continuous-optimization/pure_far_source_level_shape_v1.py'
+      - '.github/workflows/research-pure-far-source-level-shape-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-pure-far-source-level-shape-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          path = Path('.github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json')
+          m = json.loads(path.read_text())
+          base = m['governance_base_sha']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], check=True)
+          changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
+          allowed = {
+              '.github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json',
+              '.github/research/continuous-optimization/pure_far_source_level_shape_v1.py',
+              '.github/workflows/research-pure-far-source-level-shape-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base': base, 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'changed': changed})
+          PY
+
+      - name: Validate candidate-zero authority, predecessor closure and code locks
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/pure_far_source_level_shape_v1.py
+          python3 .github/research/continuous-optimization/pure_far_source_level_shape_v1.py --self-test
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m = json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json').read_text())
+          closure = json.loads(Path('.github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json').read_text())
+          assert m['status'] == 'DIAGNOSTIC_ONLY' and m['candidate_budget'] == 0
+          assert m['governance_base_sha'] == '248c3e15cbeb5df8528a4eb8548b6178eec51bcc'
+          p = m['predecessor']
+          assert p['pr'] == 241 and p['fresh_main_sha'] == m['governance_base_sha']
+          assert p['diagnostic_run_id'] == 35178650183 and p['diagnostic_run_number'] == 4
+          assert p['diagnostic_artifact_id'] == 10479770333
+          assert p['diagnostic_artifact_digest'] == 'sha256:ffff9d254d7fbb1d3c61fe9c0cd940be0309632cdcacc8e7cf5a93cd56cf6110'
+          assert p['hosted_real_aec_run_id'] == 35178650128 and p['hosted_real_aec_run_number'] == 805
+          assert p['hosted_real_audio_run_id'] == 35178650142 and p['hosted_real_audio_run_number'] == 810
+          assert p['verify_run_id'] == 35178650302 and p['verify_run_number'] == 1010
+          assert p['release_run_id'] == 35178913225 and p['release_run_number'] == 995
+          assert p['fresh_main_closed'] is True
+          assert closure['status'] == 'CLOSED_KEEP_BASELINE' and closure['candidate']['budget_remaining'] == 0
+          for key, meta in m['baseline_code_lock'].items():
+              actual = subprocess.check_output(['git', 'rev-parse', f"HEAD:{meta['path']}"], text=True).strip()
+              assert actual == meta['blob_sha'], (key, actual, meta['blob_sha'])
+          assert m['output_authority'] == {
+              'research_diagnostic_only': True,
+              'candidate_selection': False,
+              'tuning': False,
+              'automatic_main_mutation': False,
+              'shipping': False,
+              'hil': False,
+              'product_certification': False,
+          }
+          print('source-level shape authority/code locks: PASS')
+          PY
+
+      - name: Materialize exact frozen ICASSP2022 inventory
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-challenge-source-shape
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/AEC-Challenge.git /tmp/audio-pipeline-aec-challenge-source-shape
+          cd /tmp/audio-pipeline-aec-challenge-source-shape
+          git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          test "$(git rev-parse HEAD)" = "6c633d0a9d2a143a0e364899b91b06f127315b18"
+          test "$(git rev-parse HEAD:datasets/test_set_icassp2022/farend-singletalk)" = "a5b01b800e56e53ac027126ed2292ee573ea735a"
+          mkdir -p "$GITHUB_WORKSPACE/pure-far-source-level-shape-v1-out"
+          python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json" \
+                    "$GITHUB_WORKSPACE/pure-far-source-level-shape-v1-out/inventory.json" \
+                    /tmp/pure-far-source-shape-lfs.txt <<'PY'
+          import hashlib, json, subprocess, sys
+          from pathlib import Path
+          m = json.load(open(sys.argv[1]))
+          out = Path(sys.argv[2]); include_out = Path(sys.argv[3])
+          directory = m['source']['dataset_directory']
+          names = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', 'HEAD', directory], text=True).splitlines()
+          suffixes = {'_farend-singletalk_lpb.wav': 'lpb', '_farend-singletalk_mic.wav': 'mic'}
+          found = {}
+          for path in names:
+              name = Path(path).name
+              for suffix, role in suffixes.items():
+                  if name.endswith(suffix):
+                      found.setdefault(name[:-len(suffix)], {})[role] = path
+                      break
+          guids = sorted(g for g, roles in found.items() if set(roles) == {'lpb', 'mic'})
+          cases = []; include = []; total = 0
+          for guid in guids:
+              case = {'guid': guid, 'scenario': 'farend-singletalk'}
+              for role in ('lpb', 'mic'):
+                  path = found[guid][role]
+                  assert 'with-movement' not in path
+                  pointer = subprocess.check_output(['git', 'show', f'HEAD:{path}'], text=True)
+                  lines = dict(line.split(' ', 1) for line in pointer.splitlines() if ' ' in line)
+                  assert lines.get('version') == 'https://git-lfs.github.com/spec/v1'
+                  oid = lines['oid']; size = int(lines['size'])
+                  assert oid.startswith('sha256:') and len(oid) == 71 and size > 0
+                  case[role] = {'path': path, 'sha256': oid.split(':', 1)[1], 'size': size}
+                  include.append(path); total += size
+              cases.append(case)
+          fingerprint = hashlib.sha256(json.dumps(cases, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+          s = m['selection']
+          assert len(cases) == s['expected_complete_pair_count'] == 125
+          assert total == s['expected_total_lfs_bytes'] == 576534262
+          assert fingerprint == s['expected_selection_fingerprint_sha256']
+          out.write_text(json.dumps({
+              'schema_version': 1,
+              'source_revision': m['source']['revision'],
+              'source_tree_sha': m['source']['dataset_tree_sha'],
+              'complete_pair_count': len(cases),
+              'total_lfs_bytes': total,
+              'selection_fingerprint_sha256': fingerprint,
+              'cases': cases,
+          }, indent=2, sort_keys=True) + '\n')
+          include_out.write_text(','.join(include))
+          print({'pairs': len(cases), 'bytes': total, 'fingerprint': fingerprint})
+          PY
+          unset GIT_LFS_SKIP_SMUDGE
+          git lfs pull --include="$(cat /tmp/pure-far-source-shape-lfs.txt)" --exclude=""
+
+      - name: Reproduce predecessor provenance on exact inventory
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-source-shape -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-source-shape --target audio_pipeline --parallel
+          flags=build-source-shape/CMakeFiles/audio_pipeline.dir/flags.make
+          defs=$(sed -n 's/^C_DEFINES = //p' "$flags")
+          incs=$(sed -n 's/^C_INCLUDES = //p' "$flags")
+          compiler=$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' build-source-shape/CMakeCache.txt)
+          if [ -z "$compiler" ]; then compiler=cc; fi
+          "$compiler" $defs $incs -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror \
+            .github/research/continuous-optimization/pure_far_source_gain_provenance_probe.c \
+            build-source-shape/libaudio_pipeline.a -lm -o build-source-shape/pure_far_source_gain_provenance_probe
+          python3 .github/research/continuous-optimization/pure_far_source_gain_provenance_v1.py \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-source-gain-provenance-v1.json \
+            --inventory pure-far-source-level-shape-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-source-shape \
+            --probe build-source-shape/pure_far_source_gain_provenance_probe \
+            --helper .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
+            --output pure-far-source-level-shape-v1-out/predecessor
+
+      - name: Run source-level shape diagnostic
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/pure_far_source_level_shape_v1.py \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json \
+            --inventory pure-far-source-level-shape-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-source-shape \
+            --predecessor-result pure-far-source-level-shape-v1-out/predecessor/pure-far-source-gain-provenance-result.json \
+            --helper .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
+            --output pure-far-source-level-shape-v1-out/evidence
+
+      - name: Enforce evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, math
+          from pathlib import Path
+          p = json.loads(Path('pure-far-source-level-shape-v1-out/evidence/pure-far-source-level-shape-result.json').read_text())
+          assert p['status'] == 'DIAGNOSTIC_ONLY' and p['authority'] == 'research-diagnostic-only'
+          assert p['candidate_budget'] == 0
+          assert p['signal_correction_applied'] is False
+          assert p['threshold_search_performed'] is False
+          assert p['near_clipping_threshold_defined'] is False
+          assert p['candidate_selection_performed'] is False
+          assert p['inventory']['complete_pair_count'] == len(p['cases']) == 125
+          for case in p['cases']:
+              assert case['source_sample_rate_hz'] == 48000
+              for side in ('mic', 'lpb'):
+                  s = case[side]
+                  assert math.isfinite(s['rms_dbfs']) and math.isfinite(s['peak_abs']) and math.isfinite(s['crest_db'])
+                  assert 0.0 <= s['exact_saturation_fraction'] <= 1.0
+          print(json.dumps(p['aggregate'], indent=2, sort_keys=True))
+          PY
+          cat pure-far-source-level-shape-v1-out/evidence/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/pure-far-source-level-shape-v1.json \
+            pure-far-source-level-shape-v1-out/manifest.json
+          git rev-parse HEAD > pure-far-source-level-shape-v1-out/source-sha.txt
+          find pure-far-source-level-shape-v1-out -type f ! -name SHA256SUMS -print0 | \
+            sort -z | xargs -0 sha256sum > pure-far-source-level-shape-v1-out/SHA256SUMS
+
+      - name: Upload research evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pure-far-source-level-shape-v1-${{ github.run_id }}
+          path: pure-far-source-level-shape-v1-out/
+          if-no-files-found: error
+          retention-days: 30

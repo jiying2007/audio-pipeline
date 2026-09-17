@@ -145,7 +145,13 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           text = Path('.github/workflows/research-dechorate-source-qualification-v1.yml').read_text()
-          prohibited = ['ap_process_pcm', 'double_talk_active', 'aec_mu', '--threshold', 'normalize_audio']
+          prohibited = [
+              'ap_' + 'process_pcm',
+              'double_' + 'talk_active',
+              'aec_' + 'mu',
+              '--thres' + 'hold',
+              'normalize_' + 'audio',
+          ]
           for token in prohibited:
               assert token not in text, token
           print('source qualification contains no acoustic execution path: PASS')

@@ -1,0 +1,184 @@
+name: Research dEchorate Schema Inspection V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-schema-inspection-v1.json'
+      - '.github/research/continuous-optimization/dechorate_schema_inspection_v1.py'
+      - '.github/workflows/research-dechorate-schema-inspection-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-schema-inspection-v1.json'
+      - '.github/research/continuous-optimization/dechorate_schema_inspection_v1.py'
+      - '.github/workflows/research-dechorate-schema-inspection-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-dechorate-schema-inspection-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  inspect-schema:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Validate schema-only authority and exact scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          p=Path('.github/research/continuous-optimization/development-v3/dechorate-schema-inspection-v1.json')
+          m=json.loads(p.read_text())
+          q=json.loads(Path(m['predecessor_source_qualification']['manifest']).read_text())
+          assert m['authority']=='SCHEMA_INSPECTION_ONLY' and m['candidate_budget']==0
+          assert m['base_main_sha']=='cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0'
+          pred=m['predecessor_source_qualification']
+          assert pred['main_sha']==m['base_main_sha'] and pred['fresh_main_closed'] is True
+          assert pred['qualification_run']==35196656993
+          assert pred['hosted_real_aec_run']==35196656909
+          assert pred['hosted_real_audio_run']==35196657032
+          assert pred['verify_run']==35196657559
+          assert pred['release_run']==35197032355
+          assert q['authority']=='SOURCE_QUALIFICATION_ONLY' and q['candidate_budget']==0
+          assert q['inventory_protocol']['inventory_frozen'] is True
+          assert q['inventory_protocol']['expected_selected_object_count']==12
+          assert q['inventory_protocol']['expected_selected_total_bytes']==19403164
+          assert q['inventory_protocol']['expected_selected_fingerprint_sha256']==m['source_contract']['expected_aggregate_fingerprint_sha256']
+          subprocess.run(['git','merge-base','--is-ancestor',m['base_main_sha'],'HEAD'],check=True)
+          changed=subprocess.check_output(['git','diff','--name-only',f"{m['base_main_sha']}...HEAD"],text=True).splitlines()
+          allowed={
+            '.github/research/continuous-optimization/development-v3/dechorate-schema-inspection-v1.json',
+            '.github/research/continuous-optimization/dechorate_schema_inspection_v1.py',
+            '.github/workflows/research-dechorate-schema-inspection-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          assert m['shipping_immutability']=={'version':'v2.3.16','shipping_sha':'57e4c64adc1cf06819e46e24e275ecd746d5f17f'}
+          print({'base':m['base_main_sha'],'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'changed':changed})
+          PY
+
+      - name: Prove inspector has no dataset-payload or acoustic execution path
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/dechorate_schema_inspection_v1.py
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          src=Path('.github/research/continuous-optimization/dechorate_schema_inspection_v1.py').read_text()
+          tree=ast.parse(src)
+          forbidden_calls={'read_direct','read_raw','write_direct'}
+          forbidden_subscript_names={'ds','dataset','obj'}
+          violations=[]
+          for node in ast.walk(tree):
+              if isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr in forbidden_calls:
+                  violations.append(('call',node.func.attr,node.lineno))
+              if isinstance(node,ast.Subscript) and isinstance(node.value,ast.Name) and node.value.id in forbidden_subscript_names:
+                  violations.append(('dataset-subscript',node.value.id,node.lineno))
+          assert not violations, violations
+          for token in ('ap_process_pcm','audio_pipeline.a','scipy.signal','soundfile','librosa','subprocess.run'):
+              assert token not in src, token
+          wf=Path('.github/workflows/research-dechorate-schema-inspection-v1.yml').read_text()
+          for token in ('ap_process_pcm','cmake --build','libaudio_pipeline','provenance_probe','coherent_excess_probe'):
+              assert token not in wf, token
+          print('metadata-only inspector static proof: PASS')
+          PY
+
+      - name: Install pinned metadata reader
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-cache-dir 'numpy==2.2.6' 'h5py==3.14.0'
+          python3 - <<'PY'
+          import h5py,numpy
+          assert h5py.__version__=='3.14.0'
+          assert numpy.__version__=='2.2.6'
+          print({'h5py':h5py.__version__,'numpy':numpy.__version__})
+          PY
+
+      - name: Inspect frozen dEchorate object schemas without payload reads
+        run: |
+          set -euo pipefail
+          rm -rf dechorate-schema-inspection-v1-out /tmp/dechorate-schema-inspection-v1
+          mkdir -p dechorate-schema-inspection-v1-out /tmp/dechorate-schema-inspection-v1
+          python3 .github/research/continuous-optimization/dechorate_schema_inspection_v1.py \
+            --qualification-manifest .github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json \
+            --download-dir /tmp/dechorate-schema-inspection-v1 \
+            --output dechorate-schema-inspection-v1-out/schema-evidence.json
+
+      - name: Validate and summarize metadata-only schema evidence
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          e=json.loads(Path('dechorate-schema-inspection-v1-out/schema-evidence.json').read_text())
+          assert e['authority']=='SCHEMA_INSPECTION_ONLY'
+          assert e['dataset_payload_reads'] is False and e['acoustic_processing'] is False
+          assert e['selected_object_count']==12 and e['selected_total_bytes']==19403164
+          assert e['source_inventory_fingerprint']=='7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953'
+          datasets=groups=0
+          per_object=[]
+          for o in e['objects']:
+              ds=sum(1 for x in o['schema']['objects'].values() if x.get('kind')=='dataset')
+              gp=sum(1 for x in o['schema']['objects'].values() if x.get('kind')=='group')
+              datasets+=ds; groups+=gp
+              per_object.append({'name':o['name'],'dataset_paths':ds,'group_paths':gp,'root_attr_count':len(o['schema']['root_attrs'])})
+          summary={
+            'schema_fingerprint_sha256':e['schema_fingerprint_sha256'],
+            'selected_object_count':e['selected_object_count'],
+            'selected_total_bytes':e['selected_total_bytes'],
+            'dataset_path_count_total':datasets,
+            'group_path_count_total':groups,
+            'per_object':per_object,
+            'dataset_payload_reads':False,
+            'acoustic_processing':False,
+          }
+          Path('dechorate-schema-inspection-v1-out/schema-summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(summary,indent=2,sort_keys=True))
+          PY
+
+      - name: Seal metadata-only schema evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/dechorate-schema-inspection-v1.json dechorate-schema-inspection-v1-out/manifest.json
+          git rev-parse HEAD > dechorate-schema-inspection-v1-out/source-sha.txt
+          find dechorate-schema-inspection-v1-out -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > dechorate-schema-inspection-v1-out/SHA256SUMS
+
+      - name: Upload metadata-only schema evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dechorate-schema-inspection-v1-${{ github.run_id }}
+          path: dechorate-schema-inspection-v1-out/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce explicit schema freeze before success
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,sys
+          from pathlib import Path
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-schema-inspection-v1.json').read_text())
+          s=json.loads(Path('dechorate-schema-inspection-v1-out/schema-summary.json').read_text())
+          freeze=m['schema_freeze']
+          if not freeze['schema_frozen']:
+              print('SCHEMA_INVENTORY_REQUIRES_EXPLICIT_FREEZE')
+              print(json.dumps(s,indent=2,sort_keys=True))
+              sys.exit(42)
+          assert s['schema_fingerprint_sha256']==freeze['expected_schema_fingerprint_sha256']
+          assert s['dataset_path_count_total']==freeze['expected_dataset_path_count_total']
+          assert s['group_path_count_total']==freeze['expected_group_path_count_total']
+          print('schema freeze: PASS')
+          PY

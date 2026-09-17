@@ -229,14 +229,14 @@ int main(int argc, char **argv) {
 
         if (fprintf(fo,
                     "{\"frame\":%u,\"source_rate_hz\":%lu,\"internal_rate_hz\":%u,"
-                    "\"far_end_active\":%u,\"double_talk_active\":%u,"
+                    "\"far_end_active\":%u,\"double_talk_active\":%u,\"aec_converged\":%u,"
                     "\"estimated_delay_ms\":%u,\"delay_error_samples\":%d,"
                     "\"far_end_threshold\":%.9g,\"double_talk_ratio\":%.9g,"
                     "\"hangover_frames\":%u,\"far_end_hangover\":%u,"
                     "\"double_talk_hangover\":%u,"
                     "\"source_mic_energy\":%.9g,\"source_render_energy\":%.9g,"
                     "\"current_render_internal_energy\":%.9g,"
-                    "\"synced_reference_energy\":%.9g,"
+                    "\"synced_reference_energy\":%.9g,\"direct_reference_energy\":%.9g,"
                     "\"shadow_raw_mic_energy\":%.9g,\"shadow_hpf_mic_energy\":%.9g,"
                     "\"recovered_mic_energy\":%.9g,\"recovered_reference_energy\":%.9g,"
                     "\"metric_mic_energy\":%.9g,"
@@ -256,6 +256,7 @@ int main(int argc, char **argv) {
                     pipeline->cfg.internal_sample_rate_hz,
                     (unsigned)metrics.far_end_active,
                     (unsigned)metrics.double_talk_active,
+                    (unsigned)metrics.aec_converged,
                     metrics.estimated_delay_ms,
                     metrics.delay_error_samples,
                     (double)activity->far_end_threshold,
@@ -266,6 +267,7 @@ int main(int argc, char **argv) {
                     (double)source_mic_energy,
                     (double)source_render_energy,
                     (double)current_render_internal_energy,
+                    (double)direct_reference_energy,
                     (double)direct_reference_energy,
                     (double)shadow_raw_energy,
                     (double)shadow_hpf_energy,

@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "investigation": "matched-gain-chain-capture-contract-v1",
+  "authority": "DATA_ACQUISITION_CONTRACT_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "a54cf5a690cce57c9eb079159d3add30602dd66f",
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  },
+  "predecessor": {
+    "investigation": "cross-source-transfer-ratio-synthesis-v1",
+    "main_sha": "a54cf5a690cce57c9eb079159d3add30602dd66f",
+    "next_discriminative_requirement": "A controlled or labeled dataset that jointly observes playback/reference level, captured microphone level, room/RIR ground truth and device/gain-chain state under matched conditions."
+  },
+  "purpose": "Define the minimum immutable evidence contract for a future controlled matched capture that can separate room/acoustic transfer from playback/capture gain-chain effects without modifying Activity/DTD or deriving a detector boundary.",
+  "required_capture_identity": [
+    "capture_id",
+    "session_id",
+    "device_id_or_fixture_id",
+    "hardware_revision",
+    "software_firmware_revision",
+    "capture_timestamp_utc",
+    "operator_or_automation_id"
+  ],
+  "required_gain_chain_state": [
+    "playback_digital_gain_db_or_exact_setting",
+    "playback_analog_gain_db_or_exact_setting",
+    "capture_digital_gain_db_or_exact_setting",
+    "capture_analog_gain_db_or_exact_setting",
+    "AGC_enabled_and_exact_config",
+    "device_DSP_enabled_modules_and_exact_config",
+    "volume_control_state",
+    "any_unknown_or_unreadable_gain_state_flag"
+  ],
+  "required_signal_evidence": [
+    "exact_render_source_hash",
+    "reference_loopback_or_pre_output_reference_audio_hash",
+    "captured_microphone_audio_hash",
+    "sample_rate_hz",
+    "channel_layout",
+    "sample_format",
+    "reference_level_rms_dbfs",
+    "reference_level_peak_dbfs",
+    "microphone_level_rms_dbfs",
+    "microphone_level_peak_dbfs",
+    "clipped_sample_count"
+  ],
+  "required_room_and_geometry_ground_truth": [
+    "room_or_fixture_id",
+    "source_position_xyz_m",
+    "microphone_position_xyz_m",
+    "source_orientation",
+    "microphone_orientation",
+    "source_microphone_distance_m",
+    "room_condition_id",
+    "measured_RIR_hash",
+    "RIR_sample_rate_hz",
+    "RIR_measurement_method",
+    "RIR_direct_path_delay_samples_or_seconds",
+    "RIR_integrated_energy_metric_definition",
+    "RIR_integrated_energy_value"
+  ],
+  "required_environment_state": [
+    "ambient_noise_floor_dbfs_or_calibrated_level",
+    "device_power_mode",
+    "speaker_and_microphone_mount_state",
+    "motion_state",
+    "temperature_if_available",
+    "notes_for_uncontrolled_changes"
+  ],
+  "capture_pairing_contract": {
+    "matched_condition_key": "device/fixture + hardware/software + room/geometry + render source + all non-target gain-chain states",
+    "rule": "Only one explicitly declared experimental factor may vary within a matched comparison set unless a higher-order factorial design is frozen before capture.",
+    "result_dependent_recapture_for_selection": false,
+    "post_hoc_case_exclusion_for_acoustic_result": false,
+    "missing_gain_or_room_ground_truth": "FAIL_CLOSED"
+  },
+  "minimum_evidence_integrity": {
+    "all_audio_objects_hash_bound": true,
+    "all_config_objects_hash_bound": true,
+    "raw_captures_immutable": true,
+    "derived_metrics_reproducible_from_raw": true,
+    "capture_order_recorded": true,
+    "failed_or_invalid_runs_retained_with_reason": true
+  },
+  "future_stage_gates": {
+    "capture_plan_freeze_required_before_hardware_execution": true,
+    "pilot_capture_requires_explicit_authorization": true,
+    "analysis_requires_sealed_inventory": true,
+    "algorithm_candidate_requires_new_candidate_budget": true
+  },
+  "prohibited": [
+    "executing hardware capture under this contract-only change",
+    "choosing gain states after inspecting DTD outcomes",
+    "gain normalization",
+    "Activity/VAD/DTD threshold changes",
+    "public double_talk_active semantic changes",
+    "source candidate creation",
+    "parameter or threshold search",
+    "HIL authority",
+    "Product Certification authority",
+    "release authority",
+    "shipping authority",
+    "mutation of shipping v2.3.16 or 57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  ],
+  "completion_condition": "Contract is complete when CI proves the schema is internally consistent, predecessor-bound, candidate-zero, research-only, and does not authorize hardware execution or algorithm changes."
+}

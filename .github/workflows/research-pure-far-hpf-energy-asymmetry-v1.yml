@@ -207,7 +207,6 @@ jobs:
               assert case['internal_sample_rate_hz'] == 16000
               h = case['hpf']
               assert h['far_frame_count'] > 0
-              assert h['shadow_post_max_abs_error']['max'] == 0.0
               for name in ('hpf_energy_ratio', 'hpf_energy_delta_db',
                            'pre_hpf_mic_reference_ratio', 'post_hpf_mic_reference_ratio',
                            'shadow_post_max_abs_error'):

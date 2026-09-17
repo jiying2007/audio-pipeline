@@ -22,10 +22,21 @@
     "expected_aggregate_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953"
   },
   "schema_freeze": {
-    "schema_frozen": false,
-    "expected_schema_fingerprint_sha256": null,
-    "expected_dataset_path_count_total": null,
-    "expected_group_path_count_total": null,
+    "schema_frozen": true,
+    "freeze_source_run": 35197781983,
+    "freeze_source_artifact_id": 10486192400,
+    "freeze_source_artifact_digest": "sha256:eae8079985cb8e8b3ae86cb6f229210630d049412538d0a1bd9dd617ec9a290e",
+    "expected_schema_fingerprint_sha256": "e4188bd29d8432502b891bc0de0aaecdaefb9ae7ae7773b34543d3c3b8b3f5d7",
+    "expected_dataset_path_count_total": 342,
+    "expected_group_path_count_total": 0,
+    "expected_per_object_structure": {
+      "sofa_object_count": 11,
+      "datasets_per_sofa_object": 30,
+      "root_attrs_per_sofa_object": 34,
+      "annotation_object_count": 1,
+      "annotation_dataset_paths": 12,
+      "annotation_root_attrs": 0
+    },
     "first_run_behavior": "produce and upload metadata-only schema evidence, then fail closed before merge until fingerprint and structural counts are frozen"
   },
   "inspection_contract": {

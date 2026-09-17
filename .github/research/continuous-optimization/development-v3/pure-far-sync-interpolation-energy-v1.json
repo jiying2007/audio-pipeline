@@ -63,6 +63,10 @@
       "path": ".github/research/continuous-optimization/pure_far_activity_ratio_multirate_probe.c",
       "blob_sha": "907c1bcca0e2acaf60d3d4423513daa43b8021dc"
     },
+    "diagnostic_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_sync_interpolation_energy_probe.c",
+      "blob_sha": "5345e9e2aecf12fa856baf6c2de742ae51790952"
+    },
     "frozen_metric_helper": {
       "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",
       "blob_sha": "66430d614dbc81da235d2c61dd755b20fc98478e"

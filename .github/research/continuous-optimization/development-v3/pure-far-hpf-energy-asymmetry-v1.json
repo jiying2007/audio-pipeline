@@ -67,7 +67,7 @@
     },
     "diagnostic_probe": {
       "path": ".github/research/continuous-optimization/pure_far_hpf_energy_asymmetry_probe.c",
-      "blob_sha": "d3fcc24197de656fef180fd941ffa7c5884245b0"
+      "blob_sha": "d5cab0c0885acf6e056741b9ef46156178ca3af2"
     },
     "frozen_metric_helper": {
       "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",

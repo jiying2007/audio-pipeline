@@ -1,0 +1,108 @@
+name: Research Matched Gain-Chain Capture Contract V1
+
+on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/development-v3/matched-gain-chain-capture-contract-v1.json'
+      - '.github/workflows/research-matched-gain-chain-capture-contract-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/research/continuous-optimization/development-v3/matched-gain-chain-capture-contract-v1.json'
+      - '.github/workflows/research-matched-gain-chain-capture-contract-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Bind to exact predecessor and research-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+
+          p = Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-capture-contract-v1.json')
+          m = json.loads(p.read_text())
+          assert m['base_main_sha'] == 'a54cf5a690cce57c9eb079159d3add30602dd66f'
+          assert m['predecessor']['investigation'] == 'cross-source-transfer-ratio-synthesis-v1'
+          assert m['predecessor']['main_sha'] == 'a54cf5a690cce57c9eb079159d3add30602dd66f'
+
+          if '${{ github.event_name }}' == 'pull_request':
+              base = '${{ github.event.pull_request.base.sha }}'
+              head = '${{ github.event.pull_request.head.sha }}'
+              out = subprocess.check_output(['git','diff','--name-only',base,head], text=True).splitlines()
+              allowed = {
+                  '.github/research/continuous-optimization/development-v3/matched-gain-chain-capture-contract-v1.json',
+                  '.github/workflows/research-matched-gain-chain-capture-contract-v1.yml',
+              }
+              assert set(out) <= allowed, out
+          PY
+
+      - name: Enforce candidate-zero and no execution authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m = json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-capture-contract-v1.json').read_text())
+          assert m['authority'] == 'DATA_ACQUISITION_CONTRACT_ONLY'
+          assert m['candidate_budget'] == 0
+          assert m['shipping_immutable']['version'] == 'v2.3.16'
+          assert m['shipping_immutable']['sha'] == '57e4c64adc1cf06819e46e24e275ecd746d5f17f'
+          assert m['future_stage_gates']['capture_plan_freeze_required_before_hardware_execution'] is True
+          assert m['future_stage_gates']['pilot_capture_requires_explicit_authorization'] is True
+          assert m['future_stage_gates']['analysis_requires_sealed_inventory'] is True
+          assert m['future_stage_gates']['algorithm_candidate_requires_new_candidate_budget'] is True
+          assert m['capture_pairing_contract']['result_dependent_recapture_for_selection'] is False
+          assert m['capture_pairing_contract']['post_hoc_case_exclusion_for_acoustic_result'] is False
+          assert m['capture_pairing_contract']['missing_gain_or_room_ground_truth'] == 'FAIL_CLOSED'
+          prohibited = '\n'.join(m['prohibited'])
+          for phrase in [
+              'executing hardware capture',
+              'gain normalization',
+              'Activity/VAD/DTD threshold changes',
+              'source candidate creation',
+              'HIL authority',
+              'shipping authority',
+          ]:
+              assert phrase in prohibited, phrase
+          PY
+
+      - name: Validate minimum matched-capture evidence schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m = json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-capture-contract-v1.json').read_text())
+          required_sections = [
+              'required_capture_identity',
+              'required_gain_chain_state',
+              'required_signal_evidence',
+              'required_room_and_geometry_ground_truth',
+              'required_environment_state',
+          ]
+          for key in required_sections:
+              assert isinstance(m[key], list) and len(m[key]) >= 5, key
+          required_literals = {
+              'required_gain_chain_state': ['playback_digital_gain_db_or_exact_setting','capture_analog_gain_db_or_exact_setting','device_DSP_enabled_modules_and_exact_config'],
+              'required_signal_evidence': ['reference_loopback_or_pre_output_reference_audio_hash','captured_microphone_audio_hash','reference_level_rms_dbfs','microphone_level_rms_dbfs'],
+              'required_room_and_geometry_ground_truth': ['measured_RIR_hash','source_position_xyz_m','microphone_position_xyz_m','room_condition_id'],
+          }
+          for section, vals in required_literals.items():
+              for v in vals:
+                  assert v in m[section], (section, v)
+          PY

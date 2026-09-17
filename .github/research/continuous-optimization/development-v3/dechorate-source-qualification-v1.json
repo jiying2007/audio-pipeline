@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "investigation": "dechorate-ground-truth-source-qualification-v1",
-  "state": "SOURCE_QUALIFIED_FOR_DISTRIBUTION_INVENTORY_ONLY",
+  "state": "SOURCE_QUALIFIED_METADATA_ONLY",
   "authority": "DIAGNOSTIC_ONLY",
   "candidate_budget": 0,
   "base_main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
@@ -48,7 +48,13 @@
       "upstream_repository_license": "MIT",
       "sofa_generator_embedded_license": "MIT",
       "distribution_license_must_be_verified_per_file_before_acoustic_use": true,
-      "zenodo_rights_not_used_as_qualification_authority": true
+      "zenodo_rights_not_used_as_qualification_authority": true,
+      "primary_dataset_license_verified": false,
+      "secondary_reports": [
+        "CC-BY-4.0"
+      ],
+      "secondary_reports_are_authority": false,
+      "materialization_requires_primary_license_evidence": true
     }
   },
   "zenodo_provenance_only": {
@@ -88,14 +94,16 @@
     "qualification_reason": "Unlike the closed AEC-Challenge pure-far corpora, dEchorate exposes measured RIRs with explicit geometry and early-echo ground truth, providing a genuinely new discriminative dimension."
   },
   "next_authorized_step": {
-    "name": "dechorate-sofa-inventory-freeze-v1",
-    "scope": "inventory_schema_and_license_only",
+    "name": "dechorate-primary-license-and-inventory-metadata-v1",
+    "scope": "primary_license_and_distribution_metadata_only",
     "may_fetch_distribution_index": true,
-    "may_download_annotation_sidecar": true,
-    "may_download_sofa_files": true,
-    "must_freeze_complete_inventory_before_analysis": true,
-    "must_record_sha256_per_file": true,
-    "must_verify_embedded_license_and_required_schema": true,
+    "may_fetch_record_metadata": true,
+    "may_download_annotation_sidecar": false,
+    "may_download_sofa_files": false,
+    "may_download_zenodo_payload": false,
+    "must_verify_primary_dataset_license": true,
+    "must_freeze_complete_inventory_before_any_future_materialization": true,
+    "must_record_expected_checksums_before_any_future_materialization": true,
     "may_run_audio_pipeline": false,
     "may_compute_dtd_or_quality_result": false,
     "may_derive_detector_threshold": false,
@@ -111,7 +119,8 @@
     "grant_product_certification_authority",
     "grant_release_or_shipping_authority",
     "use_unfrozen_dechorate_payload_for_acoustic_conclusions",
-    "resume_closed_same_corpus_probe_proliferation"
+    "resume_closed_same_corpus_probe_proliferation",
+    "materialize_dechorate_payload_before_primary_license_verification"
   ],
   "shipping_immutability": {
     "version": "v2.3.16",

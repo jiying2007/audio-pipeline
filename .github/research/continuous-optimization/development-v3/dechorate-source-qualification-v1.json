@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "investigation": "dechorate-ground-truth-source-qualification-v1",
+  "state": "SOURCE_QUALIFIED_FOR_CANDIDATE_ZERO_INVENTORY_ONLY",
+  "authority": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+  "predecessor_closure": {
+    "pr": 243,
+    "state": "CLOSED_DIAGNOSTIC_PLATEAU",
+    "fresh_main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+    "closure_run": 35193807050,
+    "hosted_real_aec_run": 35193807197,
+    "hosted_real_audio_run": 35193807108,
+    "verify_run": 35193807409,
+    "release_run": 35194095674,
+    "release_number": 999
+  },
+  "source": {
+    "name": "dEchorate",
+    "repository": "https://github.com/Chutlhu/dEchorate.git",
+    "repository_commit": "d3e664f1e7a7d46241d7f7b3b3761448686b9537",
+    "readme_blob_sha": "26817ec088573b5522689ec9231f882616afc21d",
+    "dataset_loader_blob_sha": "0d4bc88722702d136d39aea291165adc37ee6696",
+    "software_license": "MIT",
+    "license_blob_sha": "37bb2d403bacc8c4b0ffd1a78fe847839c988360",
+    "dataset_license": "CC-BY-4.0",
+    "dataset_license_evidence": "public dEchorate dataset catalog metadata; retain attribution and citation",
+    "sample_rate_hz": 48000,
+    "ground_truth": [
+      "measured_multichannel_rir",
+      "early_echo_timing_annotations",
+      "microphone_3d_positions",
+      "real_source_3d_positions",
+      "image_source_3d_positions",
+      "wall_configuration"
+    ]
+  },
+  "pinned_data_release": {
+    "provider": "Zenodo",
+    "record_id": 5562386,
+    "doi": "10.5281/zenodo.5562386",
+    "version": "1.0",
+    "not_latest_by_design": true,
+    "reason": "This immutable record exposes checksum-bound processed RIR data and the required geometry/echo annotation semantics. Newer dEchorate versions exist; no newer artifact is silently substituted.",
+    "processed_rir_file": {
+      "name": "dechorate_rir_processed.hdf5",
+      "reported_size": "357.2 MB",
+      "md5": "02171edaaf2210cc4182a7e5b1f183a9"
+    },
+    "position_helper": {
+      "name": "load_positions_and_plot.py",
+      "reported_size": "7.1 kB",
+      "md5": "7c24b3558507e16f806d730e8662edab"
+    },
+    "full_raw_file_not_authorized_for_ci": {
+      "name": "dechorate.hdf5",
+      "reported_size": "83.9 GB",
+      "md5": "12dfc2a5a584295b9b6c156f0ba0a964"
+    }
+  },
+  "schema_evidence": {
+    "loader_class": "DechorateDataset",
+    "rir_group": "<room_code>/rir/<src>/<mic>",
+    "mic_position_field": "mic_src_echo_note['mics']",
+    "source_position_field": "mic_src_echo_note['srcs']",
+    "picked_echo_toa_field": "mic_src_echo_note['toa_pck']",
+    "qualification_reason": "Unlike the closed AEC-Challenge pure-far corpora, this source exposes measured RIRs plus geometry and echo timing ground truth, providing a genuinely new discriminative dimension."
+  },
+  "next_authorized_step": {
+    "name": "dechorate-inventory-materialization-v1",
+    "scope": "inventory_and_schema_only",
+    "may_download_processed_file": true,
+    "must_verify_md5_before_use": true,
+    "may_run_audio_pipeline": false,
+    "may_derive_detector_threshold": false,
+    "may_create_source_candidate": false
+  },
+  "prohibited": [
+    "modify_activity_or_dtd",
+    "derive_or_tune_gain_normalization",
+    "derive_or_tune_thresholds",
+    "change_public_double_talk_semantics",
+    "create_source_candidate",
+    "grant_hil_authority",
+    "grant_product_certification_authority",
+    "grant_release_or_shipping_authority",
+    "resume_same_corpus_probe_proliferation_without_new_ground_truth"
+  ],
+  "shipping_immutability": {
+    "version": "v2.3.16",
+    "sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  }
+}

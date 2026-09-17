@@ -20,7 +20,7 @@
       "far_frame_source_current_ratio_p95": 85.54571533999997,
       "far_frame_source_current_ratio_p05_to_p95_db": 28.418675820316484,
       "public_dtd_fraction_median": 0.6379238174968606,
-      "spearman_public_dtd_vs_far_frame_source_ratio": 0.8629
+      "spearman_public_dtd_vs_far_frame_source_ratio": 0.8690521543163647
     },
     "dechorate_ground_truth_transfer": {
       "main_sha": "7e8f26ba6d7330624091291d9e1336e5ff9c09dc",

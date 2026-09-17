@@ -75,7 +75,7 @@
     },
     "diagnostic_probe": {
       "path": ".github/research/continuous-optimization/pure_far_source_gain_provenance_probe.c",
-      "blob_sha": "33f75a6cfce772ecd0a7c386c94d06c9835cbfbb"
+      "blob_sha": "6d8e0f3148b8d310b95a715d9156fa7dfbabb54f"
     },
     "frozen_metric_helper": {
       "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",

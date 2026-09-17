@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "investigation": "dechorate-ground-truth-source-qualification-v1",
-  "state": "SOURCE_QUALIFIED_FOR_CANDIDATE_ZERO_INVENTORY_ONLY",
+  "state": "SOURCE_QUALIFIED_FOR_DISTRIBUTION_INVENTORY_ONLY",
   "authority": "DIAGNOSTIC_ONLY",
   "candidate_budget": 0,
   "base_main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
@@ -16,63 +16,88 @@
     "release_run": 35194095674,
     "release_number": 999
   },
-  "source": {
+  "upstream_source": {
     "name": "dEchorate",
     "repository": "https://github.com/Chutlhu/dEchorate.git",
     "repository_commit": "d3e664f1e7a7d46241d7f7b3b3761448686b9537",
     "readme_blob_sha": "26817ec088573b5522689ec9231f882616afc21d",
     "dataset_loader_blob_sha": "0d4bc88722702d136d39aea291165adc37ee6696",
-    "software_license": "MIT",
+    "sofa_generator_blob_sha": "cd03ca06621e64f217599a811e56ac0701b98760",
     "license_blob_sha": "37bb2d403bacc8c4b0ffd1a78fe847839c988360",
-    "dataset_license": "CC-BY-4.0",
-    "dataset_license_evidence": "public dEchorate dataset catalog metadata; retain attribution and citation",
+    "software_license": "MIT",
     "sample_rate_hz": 48000,
-    "ground_truth": [
+    "ground_truth_semantics": [
       "measured_multichannel_rir",
       "early_echo_timing_annotations",
       "microphone_3d_positions",
       "real_source_3d_positions",
-      "image_source_3d_positions",
+      "room_geometry",
       "wall_configuration"
     ]
   },
-  "pinned_data_release": {
-    "provider": "Zenodo",
+  "distribution": {
+    "provider": "SOFA Conventions database",
+    "index_url": "https://www.sofaconventions.org/data/database/dechorate/",
+    "annotation_sidecar": "dEchorate_annotations.h5",
+    "sofa_filename_pattern": "dEchorate_room*_src*_arr*_mics*.sofa",
+    "mutable_mirror": true,
+    "inventory_frozen": false,
+    "payload_authorized_in_this_step": false,
+    "qualification_basis": "The upstream generator at the pinned commit writes RIRs plus source, receiver, room and echo annotation variables into SOFA. The public SOFA distribution exposes those compact files and a small annotation sidecar. Exact file count, sizes and SHA-256 values must be frozen before any payload is used.",
+    "license_evidence": {
+      "upstream_repository_license": "MIT",
+      "sofa_generator_embedded_license": "MIT",
+      "distribution_license_must_be_verified_per_file_before_acoustic_use": true,
+      "zenodo_rights_not_used_as_qualification_authority": true
+    }
+  },
+  "zenodo_provenance_only": {
     "record_id": 5562386,
     "doi": "10.5281/zenodo.5562386",
     "version": "1.0",
-    "not_latest_by_design": true,
-    "reason": "This immutable record exposes checksum-bound processed RIR data and the required geometry/echo annotation semantics. Newer dEchorate versions exist; no newer artifact is silently substituted.",
     "processed_rir_file": {
       "name": "dechorate_rir_processed.hdf5",
       "reported_size": "357.2 MB",
       "md5": "02171edaaf2210cc4182a7e5b1f183a9"
     },
-    "position_helper": {
-      "name": "load_positions_and_plot.py",
-      "reported_size": "7.1 kB",
-      "md5": "7c24b3558507e16f806d730e8662edab"
-    },
-    "full_raw_file_not_authorized_for_ci": {
+    "full_raw_file": {
       "name": "dechorate.hdf5",
       "reported_size": "83.9 GB",
       "md5": "12dfc2a5a584295b9b6c156f0ba0a964"
-    }
+    },
+    "not_execution_source": true,
+    "reason": "The upstream DechorateDataset loader requires separate annotation inputs in addition to the RIR HDF5; therefore the Zenodo v1 processed HDF5 alone is not treated as a complete ground-truth payload."
   },
   "schema_evidence": {
-    "loader_class": "DechorateDataset",
-    "rir_group": "<room_code>/rir/<src>/<mic>",
-    "mic_position_field": "mic_src_echo_note['mics']",
-    "source_position_field": "mic_src_echo_note['srcs']",
-    "picked_echo_toa_field": "mic_src_echo_note['toa_pck']",
-    "qualification_reason": "Unlike the closed AEC-Challenge pure-far corpora, this source exposes measured RIRs plus geometry and echo timing ground truth, providing a genuinely new discriminative dimension."
+    "loader_requires": [
+      "rir_hdf5",
+      "database_csv",
+      "mic_src_annotation_pickle",
+      "echo_annotation_input"
+    ],
+    "sofa_fields": [
+      "Data_IR",
+      "SourcePosition",
+      "ReceiverPosition",
+      "RoomCornerA",
+      "RoomCornerB",
+      "ReflectiveSurfacesCode",
+      "EchoTimings",
+      "EchoWall"
+    ],
+    "qualification_reason": "Unlike the closed AEC-Challenge pure-far corpora, dEchorate exposes measured RIRs with explicit geometry and early-echo ground truth, providing a genuinely new discriminative dimension."
   },
   "next_authorized_step": {
-    "name": "dechorate-inventory-materialization-v1",
-    "scope": "inventory_and_schema_only",
-    "may_download_processed_file": true,
-    "must_verify_md5_before_use": true,
+    "name": "dechorate-sofa-inventory-freeze-v1",
+    "scope": "inventory_schema_and_license_only",
+    "may_fetch_distribution_index": true,
+    "may_download_annotation_sidecar": true,
+    "may_download_sofa_files": true,
+    "must_freeze_complete_inventory_before_analysis": true,
+    "must_record_sha256_per_file": true,
+    "must_verify_embedded_license_and_required_schema": true,
     "may_run_audio_pipeline": false,
+    "may_compute_dtd_or_quality_result": false,
     "may_derive_detector_threshold": false,
     "may_create_source_candidate": false
   },
@@ -85,7 +110,8 @@
     "grant_hil_authority",
     "grant_product_certification_authority",
     "grant_release_or_shipping_authority",
-    "resume_same_corpus_probe_proliferation_without_new_ground_truth"
+    "use_unfrozen_dechorate_payload_for_acoustic_conclusions",
+    "resume_closed_same_corpus_probe_proliferation"
   ],
   "shipping_immutability": {
     "version": "v2.3.16",

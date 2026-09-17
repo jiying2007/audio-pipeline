@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib, json, re, sys, urllib.request
+          import hashlib, json, re, urllib.request
           from pathlib import Path
           from urllib.parse import urljoin
 
@@ -132,6 +132,7 @@ jobs:
               'selected_object_count': proto['expected_selected_object_count'],
               'selected_total_bytes': proto['expected_selected_total_bytes'],
               'selected_fingerprint_sha256': proto['expected_selected_fingerprint_sha256'],
+              'selected_objects': proto['expected_selected_objects'],
           }
           actual = {k: result[k] for k in expected}
           assert actual == expected, {'actual': actual, 'expected': expected}

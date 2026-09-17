@@ -67,7 +67,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile .github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py
-          python3 .github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py --self-test
           python3 - <<'PY'
           import hashlib,json,urllib.request
           from pathlib import Path
@@ -119,11 +118,12 @@ jobs:
           print({'sofa_objects':len(sofas),'bytes':sum(o['size_bytes'] for o in sofas)})
           PY
 
-      - name: Install pinned schema reader
+      - name: Install pinned schema reader and run self-test
         run: |
           set -euo pipefail
           python3 -m venv /tmp/dechorate-ground-truth-venv
           /tmp/dechorate-ground-truth-venv/bin/python -m pip install --disable-pip-version-check 'numpy==2.2.6' 'h5py==3.14.0'
+          /tmp/dechorate-ground-truth-venv/bin/python .github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py --self-test
 
       - name: Run fixed-geometry RIR ground-truth diagnostic
         run: |

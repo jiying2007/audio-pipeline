@@ -1,0 +1,184 @@
+name: Research Pure-Far Source Coherent Excess V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json'
+      - '.github/research/continuous-optimization/pure_far_source_coherent_excess_probe.c'
+      - '.github/research/continuous-optimization/pure_far_source_coherent_excess_v1.py'
+      - '.github/workflows/research-pure-far-source-coherent-excess-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json'
+      - '.github/research/continuous-optimization/pure_far_source_coherent_excess_probe.c'
+      - '.github/research/continuous-optimization/pure_far_source_coherent_excess_v1.py'
+      - '.github/workflows/research-pure-far-source-coherent-excess-v1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-pure-far-source-coherent-excess-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind diagnostic to exact source and research-only scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json').read_text())
+          base=m['governance_base_sha']
+          subprocess.run(['git','merge-base','--is-ancestor',base,'HEAD'],check=True)
+          changed=subprocess.check_output(['git','diff','--name-only',f'{base}...HEAD'],text=True).splitlines()
+          allowed={
+            '.github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json',
+            '.github/research/continuous-optimization/pure_far_source_coherent_excess_probe.c',
+            '.github/research/continuous-optimization/pure_far_source_coherent_excess_v1.py',
+            '.github/workflows/research-pure-far-source-coherent-excess-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          print({'base':base,'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'changed':changed})
+          PY
+
+      - name: Validate candidate-zero authority, predecessor closure and code locks
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/pure_far_source_coherent_excess_v1.py
+          python3 .github/research/continuous-optimization/pure_far_source_coherent_excess_v1.py --self-test
+          cc -std=c11 -O2 .github/research/continuous-optimization/pure_far_source_coherent_excess_probe.c -lm -o /tmp/source-coherent-excess-selftest
+          /tmp/source-coherent-excess-selftest --self-test
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json').read_text())
+          closure=json.loads(Path('.github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json').read_text())
+          assert m['status']=='DIAGNOSTIC_ONLY' and m['candidate_budget']==0
+          assert m['governance_base_sha']=='248c3e15cbeb5df8528a4eb8548b6178eec51bcc'
+          p=m['predecessor']
+          assert p['pr']==241 and p['fresh_main_sha']==m['governance_base_sha'] and p['fresh_main_closed'] is True
+          assert p['diagnostic_run_id']==35178650183 and p['diagnostic_run_number']==4
+          assert p['diagnostic_artifact_id']==10479770333
+          assert p['diagnostic_artifact_digest']=='sha256:ffff9d254d7fbb1d3c61fe9c0cd940be0309632cdcacc8e7cf5a93cd56cf6110'
+          assert p['hosted_real_aec_run_number']==805 and p['hosted_real_audio_run_number']==810
+          assert p['verify_run_number']==1010 and p['release_run_number']==995
+          assert closure['status']=='CLOSED_KEEP_BASELINE' and closure['candidate']['budget_remaining']==0
+          for key,meta in m['baseline_code_lock'].items():
+              if not isinstance(meta,dict) or 'path' not in meta: continue
+              actual=subprocess.check_output(['git','rev-parse',f"HEAD:{meta['path']}"],text=True).strip()
+              assert actual==meta['blob_sha'],(key,actual,meta['blob_sha'])
+          assert m['output_authority']=={'research_diagnostic_only':True,'candidate_selection':False,'tuning':False,'automatic_main_mutation':False,'shipping':False,'hil':False,'product_certification':False}
+          print('source coherent-excess authority/code locks: PASS')
+          PY
+
+      - name: Materialize exact frozen ICASSP2022 inventory
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/audio-pipeline-aec-challenge-source-coherent-excess
+          export GIT_LFS_SKIP_SMUDGE=1
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/AEC-Challenge.git /tmp/audio-pipeline-aec-challenge-source-coherent-excess
+          cd /tmp/audio-pipeline-aec-challenge-source-coherent-excess
+          git -c advice.detachedHead=false checkout --detach 6c633d0a9d2a143a0e364899b91b06f127315b18
+          test "$(git rev-parse HEAD:datasets/test_set_icassp2022/farend-singletalk)" = "a5b01b800e56e53ac027126ed2292ee573ea735a"
+          mkdir -p "$GITHUB_WORKSPACE/pure-far-source-coherent-excess-v1-out"
+          python3 - "$GITHUB_WORKSPACE/.github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json" "$GITHUB_WORKSPACE/pure-far-source-coherent-excess-v1-out/inventory.json" /tmp/source-coherent-excess-lfs.txt <<'PY'
+          import hashlib,json,subprocess,sys
+          from pathlib import Path
+          m=json.load(open(sys.argv[1])); out=Path(sys.argv[2]); inc=Path(sys.argv[3]); directory=m['source']['dataset_directory']
+          names=subprocess.check_output(['git','ls-tree','-r','--name-only','HEAD',directory],text=True).splitlines()
+          suffixes={'_farend-singletalk_lpb.wav':'lpb','_farend-singletalk_mic.wav':'mic'}; found={}
+          for path in names:
+              name=Path(path).name
+              for suffix,role in suffixes.items():
+                  if name.endswith(suffix): found.setdefault(name[:-len(suffix)],{})[role]=path; break
+          guids=sorted(g for g,r in found.items() if set(r)=={'lpb','mic'}); cases=[]; includes=[]; total=0
+          for guid in guids:
+              case={'guid':guid,'scenario':'farend-singletalk'}
+              for role in ('lpb','mic'):
+                  path=found[guid][role]; pointer=subprocess.check_output(['git','show',f'HEAD:{path}'],text=True)
+                  lines=dict(line.split(' ',1) for line in pointer.splitlines() if ' ' in line); oid=lines['oid']; size=int(lines['size'])
+                  assert lines.get('version')=='https://git-lfs.github.com/spec/v1' and oid.startswith('sha256:')
+                  case[role]={'path':path,'sha256':oid.split(':',1)[1],'size':size}; includes.append(path); total+=size
+              cases.append(case)
+          fp=hashlib.sha256(json.dumps(cases,sort_keys=True,separators=(',',':')).encode()).hexdigest(); s=m['selection']
+          assert len(cases)==s['expected_complete_pair_count']==125 and total==s['expected_total_lfs_bytes']==576534262 and fp==s['expected_selection_fingerprint_sha256']
+          out.write_text(json.dumps({'schema_version':1,'source_revision':m['source']['revision'],'source_tree_sha':m['source']['dataset_tree_sha'],'complete_pair_count':len(cases),'total_lfs_bytes':total,'selection_fingerprint_sha256':fp,'cases':cases},indent=2,sort_keys=True)+'\n')
+          inc.write_text(','.join(includes)); print({'pairs':len(cases),'bytes':total,'fingerprint':fp})
+          PY
+          unset GIT_LFS_SKIP_SMUDGE
+          git lfs pull --include="$(cat /tmp/source-coherent-excess-lfs.txt)" --exclude=""
+
+      - name: Build unchanged baseline and read-only probes
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-source-coherent-excess -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-source-coherent-excess --target audio_pipeline ap_build_info_dump --parallel
+          flags=build-source-coherent-excess/CMakeFiles/audio_pipeline.dir/flags.make
+          defs=$(sed -n 's/^C_DEFINES = //p' "$flags"); incs=$(sed -n 's/^C_INCLUDES = //p' "$flags")
+          compiler=$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' build-source-coherent-excess/CMakeCache.txt); if [ -z "$compiler" ]; then compiler=cc; fi
+          "$compiler" $defs $incs -std=c11 -O2 .github/research/continuous-optimization/pure_far_source_gain_provenance_probe.c build-source-coherent-excess/libaudio_pipeline.a -lm -o build-source-coherent-excess/provenance_probe
+          cc -std=c11 -O2 .github/research/continuous-optimization/pure_far_source_coherent_excess_probe.c -lm -o build-source-coherent-excess/coherent_excess_probe
+          build-source-coherent-excess/ap_build_info_dump > pure-far-source-coherent-excess-v1-out/build-info.txt
+          sha256sum build-source-coherent-excess/libaudio_pipeline.a build-source-coherent-excess/provenance_probe build-source-coherent-excess/coherent_excess_probe > pure-far-source-coherent-excess-v1-out/binaries.sha256
+
+      - name: Run full frozen source coherent-excess diagnostic
+        run: |
+          set -euo pipefail
+          python3 .github/research/continuous-optimization/pure_far_source_coherent_excess_v1.py \
+            --manifest .github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json \
+            --inventory pure-far-source-coherent-excess-v1-out/inventory.json \
+            --source-root /tmp/audio-pipeline-aec-challenge-source-coherent-excess \
+            --provenance-probe build-source-coherent-excess/provenance_probe \
+            --coherence-probe build-source-coherent-excess/coherent_excess_probe \
+            --helper .github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py \
+            --output pure-far-source-coherent-excess-v1-out/evidence
+
+      - name: Enforce diagnostic evidence shape without deriving a boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,math
+          from pathlib import Path
+          p=json.loads(Path('pure-far-source-coherent-excess-v1-out/evidence/pure-far-source-coherent-excess-result.json').read_text())
+          assert p['status']=='DIAGNOSTIC_ONLY' and p['authority']=='research-diagnostic-only' and p['candidate_budget']==0
+          assert p['signal_correction_applied'] is False and p['threshold_search_performed'] is False and p['candidate_selection_performed'] is False
+          assert p['inventory']['complete_pair_count']==len(p['cases'])==125
+          for c in p['cases']:
+              s=c['spectral']; assert s['sample_rate_hz']==48000 and s['tail_samples']==4608 and s['fft_size']==16384
+              assert s['signal_correction_applied'] is False and s['acoustic_threshold_used'] is False and s['segment_count']>=4
+              total=float(s['total_mic_render_ratio']); coh=float(s['coherent_mic_render_ratio']); exc=float(s['incoherent_excess_mic_render_ratio'])
+              assert all(math.isfinite(v) and v>=0 for v in (total,coh,exc)) and math.isclose(total,coh+exc,rel_tol=1e-9,abs_tol=1e-12)
+          print(json.dumps(p['aggregate'],indent=2,sort_keys=True))
+          PY
+          cat pure-far-source-coherent-excess-v1-out/evidence/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Seal research evidence
+        run: |
+          set -euo pipefail
+          cp .github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json pure-far-source-coherent-excess-v1-out/manifest.json
+          git rev-parse HEAD > pure-far-source-coherent-excess-v1-out/source-sha.txt
+          find pure-far-source-coherent-excess-v1-out -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > pure-far-source-coherent-excess-v1-out/SHA256SUMS
+
+      - name: Upload research evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pure-far-source-coherent-excess-v1-${{ github.run_id }}
+          path: pure-far-source-coherent-excess-v1-out/
+          if-no-files-found: error
+          retention-days: 30

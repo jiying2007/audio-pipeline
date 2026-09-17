@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-source-coherent-excess-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "248c3e15cbeb5df8528a4eb8548b6178eec51bcc",
+  "predecessor": {
+    "investigation_id": "pure-far-source-gain-provenance-v1",
+    "pr": 241,
+    "fresh_main_sha": "248c3e15cbeb5df8528a4eb8548b6178eec51bcc",
+    "diagnostic_run_id": 35178650183,
+    "diagnostic_run_number": 4,
+    "diagnostic_artifact_id": 10479770333,
+    "diagnostic_artifact_digest": "sha256:ffff9d254d7fbb1d3c61fe9c0cd940be0309632cdcacc8e7cf5a93cd56cf6110",
+    "hosted_real_aec_run_id": 35178650128,
+    "hosted_real_aec_run_number": 805,
+    "hosted_real_audio_run_id": 35178650142,
+    "hosted_real_audio_run_number": 810,
+    "verify_run_id": 35178650302,
+    "verify_run_number": 1010,
+    "release_run_id": 35178913225,
+    "release_run_number": 995,
+    "fresh_main_closed": true
+  },
+  "question": "Within the frozen ICASSP2022 pure-far corpus, does public-DTD occupancy track source-domain render-coherent mic energy or the complementary non-render-coherent mic energy more strongly?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/test_set_icassp2022/farend-singletalk",
+    "dataset_tree_sha": "a5b01b800e56e53ac027126ed2292ee573ea735a",
+    "source_rate_hz": 48000,
+    "analysis_interval": "full common-length mic+lpb clip"
+  },
+  "selection": {
+    "rule": "reuse exact frozen all-complete no-movement ICASSP2022 farend-singletalk inventory",
+    "expected_complete_pair_count": 125,
+    "expected_total_lfs_bytes": 576534262,
+    "expected_selection_fingerprint_sha256": "7a06246eac58b6e8b705b0a05dfb9562fce58f43749fb8d29069843d57ba32f0",
+    "subsampling_allowed": false,
+    "result_dependent_selection": false
+  },
+  "geometry": {
+    "baseline_aec_tail_ms": 96,
+    "source_tail_samples": 4608,
+    "fft_rule": "next_power_of_two(2*source_tail_samples)",
+    "expected_fft_size": 16384,
+    "window": "rectangular",
+    "overlap_samples": 0,
+    "all_frequency_bins_used": true,
+    "delay_source": "median production Sync estimated_delay_ms over far-active frames from unchanged predecessor provenance probe",
+    "new_delay_search_performed": false,
+    "geometry_optimization_forbidden": true
+  },
+  "baseline_code_lock": {
+    "pipeline_source": {"path": "src/core/ap_pipeline.c", "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"},
+    "activity_source": {"path": "src/activity/ap_activity.c", "blob_sha": "73956d6c69d0ee07e6fb922f8def1db29d071972"},
+    "source_gain_provenance_probe": {"path": ".github/research/continuous-optimization/pure_far_source_gain_provenance_probe.c", "blob_sha": "6d8e0f3148b8d310b95a715d9156fa7dfbabb54f"},
+    "frozen_metric_helper": {"path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py", "blob_sha": "66430d614dbc81da235d2c61dd755b20fc98478e"},
+    "diagnostic_probe": {"path": ".github/research/continuous-optimization/pure_far_source_coherent_excess_probe.c", "blob_sha": "3f297febea9493663e31fed1bd9c162baef19ad8"},
+    "activity_constants_observed_not_tuned": {
+      "far_end_threshold": 1e-7,
+      "double_talk_ratio": 1.5,
+      "instant_on_multiplier": 0.9,
+      "instant_hold_multiplier": 0.72,
+      "hangover_frames": 3,
+      "ema_attack": 0.35,
+      "ema_release": 0.08
+    }
+  },
+  "observation_method": {
+    "total_mic_render_ratio": "Parseval-consistent source-domain mic spectral energy divided by delayed render spectral energy over fixed non-overlapping FFT segments",
+    "coherent_mic_render_ratio": "coherence-weighted mic spectral energy divided by render spectral energy",
+    "incoherent_excess_mic_render_ratio": "complementary (1-coherence)-weighted mic spectral energy divided by render spectral energy",
+    "coherence_is_descriptive_not_causal": true,
+    "signal_correction_applied": false,
+    "filter_fit_or_application": false,
+    "threshold_search_performed": false,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "prohibited_actions": [
+    "interpret coherence-weighted terms as unique physical echo/noise decomposition",
+    "derive or apply source gain normalization",
+    "fit or apply an FIR or frequency-domain correction",
+    "search delay, FFT, tail, window, overlap, frequency band, threshold, or sample subset",
+    "change Sync, HPF, Activity, AEC, RES, NS, AGC, VAD, resampler, API, ABI, version, release, or shipping source",
+    "change current Activity constants",
+    "promote to source candidate, HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "The diagnostic may compare case-level associations of public-DTD occupancy with total, coherence-weighted, and complementary source-domain mic/render energy ratios. It cannot establish a unique physical decomposition or authorize normalization or detector changes.",
+  "next_decision": "exact-head descriptive evidence review only"
+}

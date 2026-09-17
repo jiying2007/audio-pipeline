@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "investigation": "dechorate-source-qualification-v1",
+  "authority": "SOURCE_QUALIFICATION_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+  "predecessor_closure": {
+    "investigation": "pure-far-dtd-evidence-closure-v1",
+    "main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+    "closure_run": 35193807050,
+    "hosted_real_aec_run": 35193807197,
+    "hosted_real_audio_run": 35193807108,
+    "verify_run": 35193807409,
+    "release_run": 35194095674,
+    "state": "CLOSED_DIAGNOSTIC_PLATEAU"
+  },
+  "source": {
+    "name": "dEchorate",
+    "paper_doi": "10.1186/s13636-021-00229-0",
+    "zenodo_version_record": "https://zenodo.org/records/5562386",
+    "sofa_mirror_index": "https://www.sofaconventions.org/data/database/dechorate/",
+    "annotations_name": "dEchorate_annotations.h5",
+    "license": "CC-BY-4.0",
+    "license_evidence": "public RIR dataset catalog plus dEchorate publication; qualification does not redistribute source files",
+    "discriminative_value": [
+      "measured room impulse responses",
+      "early echo annotations",
+      "3D microphone and real/image-source positions",
+      "multiple calibrated acoustic conditions"
+    ]
+  },
+  "inventory_protocol": {
+    "inventory_frozen": false,
+    "sofa_filename_regex": "^dEchorate_room[0-9]{6}_src[0-9]+_arr[0-9]+_mics[0-9]+-[0-9]+\\.sofa$",
+    "selection_rule": "for every unique room token in the mirror listing, select the lexicographically first SOFA filename; also select dEchorate_annotations.h5",
+    "selection_is_acoustic_result_independent": true,
+    "expected_listing_sha256": null,
+    "expected_sofa_file_count": null,
+    "expected_unique_room_count": null,
+    "expected_selected_object_count": null,
+    "expected_selected_total_bytes": null,
+    "expected_selected_fingerprint_sha256": null,
+    "selected_resource_ceiling_bytes": 67108864,
+    "first_run_behavior": "fail_closed_after_inventory_before_any_acoustic_processing"
+  },
+  "prohibited": [
+    "acoustic or DTD processing before inventory is frozen",
+    "result-driven source or room selection",
+    "gain normalization",
+    "Activity/VAD/DTD threshold changes",
+    "public double_talk_active semantic changes",
+    "source candidate creation",
+    "parameter or threshold search",
+    "HIL authority",
+    "Product Certification authority",
+    "release authority",
+    "shipping authority",
+    "mutation of shipping v2.3.16 or 57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  ]
+}

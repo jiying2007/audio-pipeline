@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-hpf-energy-asymmetry-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "e2e99c0ca130c7836c6487ae83d4bbc6eb7f2d91",
+  "predecessor": {
+    "investigation_id": "pure-far-sync-interpolation-energy-v1",
+    "pr": 239,
+    "fresh_main_sha": "e2e99c0ca130c7836c6487ae83d4bbc6eb7f2d91",
+    "diagnostic_run_id": 35169724380,
+    "diagnostic_run_number": 4,
+    "diagnostic_artifact_id": 10476442922,
+    "diagnostic_artifact_digest": "sha256:dceef8f12174914c2e9a8a1f27e7246d019db82164c0bd4858c954025eaa44de",
+    "hosted_real_aec_run_id": 35169724403,
+    "hosted_real_aec_run_number": 794,
+    "hosted_real_audio_run_id": 35169724396,
+    "hosted_real_audio_run_number": 799,
+    "verify_run_id": 35169724640,
+    "verify_run_number": 999,
+    "release_run_id": 35170002659,
+    "release_run_number": 984,
+    "fresh_main_closed": true
+  },
+  "question": "In the frozen 125-case ICASSP2022 pure-far corpus, how much does the unchanged 80 Hz mic-only HPF alter pre-Activity mic energy and mic/reference ratio, and can that asymmetry explain cross-case public-DTD occupancy?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/test_set_icassp2022/farend-singletalk",
+    "dataset_tree_sha": "a5b01b800e56e53ac027126ed2292ee573ea735a",
+    "rating_formula": "full common-length mic+lpb clip",
+    "source_rate_hz": 48000,
+    "internal_rate_hz": 16000
+  },
+  "selection": {
+    "rule": "reuse the exact frozen PR #238/#239 inventory: all complete no-movement ICASSP2022 farend-singletalk mic+lpb pairs at the pinned source revision",
+    "expected_complete_pair_count": 125,
+    "expected_total_lfs_bytes": 576534262,
+    "expected_selection_fingerprint_sha256": "7a06246eac58b6e8b705b0a05dfb9562fce58f43749fb8d29069843d57ba32f0",
+    "subsampling_allowed": false,
+    "result_dependent_selection": false
+  },
+  "baseline_code_lock": {
+    "pipeline_source": {
+      "path": "src/core/ap_pipeline.c",
+      "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"
+    },
+    "pipeline_internal_header": {
+      "path": "src/core/ap_pipeline_internal.h",
+      "blob_sha": "4328da15a84b224b068051a9a7dc9429a7434573"
+    },
+    "hpf_source": {
+      "path": "src/frontend/ap_hpf.c",
+      "blob_sha": "aa92ff1e5746167a6a3239289e614ff26e28682d"
+    },
+    "frontend_header": {
+      "path": "src/frontend/ap_frontend.h",
+      "blob_sha": "250b55e9499db797b8af5201e4fab8e4fb8b87c6"
+    },
+    "resampler_source": {
+      "path": "src/frontend/ap_resampler.c",
+      "blob_sha": "24b979221adef7d099cb73ec9b986f17a64d63d7"
+    },
+    "resampler_header": {
+      "path": "src/frontend/ap_resampler.h",
+      "blob_sha": "f502b794cdab261d2f57991b54aae44f3703121a"
+    },
+    "activity_source": {
+      "path": "src/activity/ap_activity.c",
+      "blob_sha": "73956d6c69d0ee07e6fb922f8def1db29d071972"
+    },
+    "diagnostic_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_hpf_energy_asymmetry_probe.c",
+      "blob_sha": "27f64382d98c09f5357195a7f8f208e1b0a95334"
+    },
+    "frozen_metric_helper": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",
+      "blob_sha": "66430d614dbc81da235d2c61dd755b20fc98478e"
+    },
+    "activity_constants_observed_not_tuned": {
+      "far_end_threshold": 1e-7,
+      "double_talk_ratio": 1.5,
+      "instant_on_multiplier": 0.9,
+      "instant_hold_multiplier": 0.72,
+      "hangover_frames": 3,
+      "ema_attack": 0.35,
+      "ema_release": 0.08
+    },
+    "hpf_observed_not_tuned": {
+      "cutoff_hz": 80.0,
+      "implementation": "y[n] = x[n] - x[n-1] + r*y[n-1], r = exp(-2*pi*80/internal_rate)"
+    }
+  },
+  "observation_method": {
+    "shadow_resampler": "independent research-only ap_resampler_state_t driven by the exact mic input with unchanged stream-0 resampling",
+    "shadow_hpf": "independent research-only ap_hpf_state_t initialized at unchanged internal rate and run with unchanged ap_hpf_process",
+    "buffer_lifetime_note": "pipeline->mono aliases pipeline->processed and is overwritten by later stages before process_capture returns; post-return sample comparison is therefore invalid and is explicitly not used",
+    "post_hpf_energy_crosscheck": "compare shadow post-HPF frame energy against the actual Activity mic-energy input recovered exactly from the unchanged EMA state transition; also compare against the independent input_rms_dbfs energy path and report both relative-error distributions",
+    "pre_hpf_energy": "mean square of shadow resampler output before HPF",
+    "post_hpf_energy": "mean square of shadow HPF output",
+    "signal_correction_applied": false,
+    "threshold_search_performed": false,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "outputs": [
+    "per-case full-clip public-DTD and existing Activity ratio summaries",
+    "per-case far-frame pre-HPF mic energy and post-HPF mic energy",
+    "per-case far-frame HPF energy ratio and delta dB distributions",
+    "per-case far-frame mic/reference ratio before and after HPF",
+    "cross-case descriptive Spearman associations between public-DTD occupancy and HPF energy change, pre-HPF ratio, and post-HPF ratio",
+    "shadow post-HPF energy relative-error distributions versus recovered Activity mic energy and input_rms_dbfs-derived mic energy"
+  ],
+  "prohibited_actions": [
+    "change HPF cutoff, coefficients, state, ordering, Sync, Activity, AEC, RES, NS, AGC, or VAD source",
+    "disable HPF in the production pipeline",
+    "apply pre-HPF audio to Activity or AEC",
+    "derive or search an HPF correction, DTD threshold, or gain-normalization constant",
+    "change current Activity constants",
+    "subsample or hand-pick cases after observing results",
+    "treat an association as a classifier, ranking, or source-candidate selector",
+    "relax pure-far, movement, echo-path-change, Hosted Real AEC, or other qualification gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "The diagnostic may determine the direction and magnitude of unchanged mic-only HPF energy asymmetry and its descriptive association with pure-far public-DTD occupancy. It cannot authorize changing HPF, DTD thresholds, gain normalization, or any source candidate.",
+  "next_decision": "exact-head diagnostic evidence review only"
+}

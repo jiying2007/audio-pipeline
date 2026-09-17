@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "investigation_id": "pure-far-source-gain-provenance-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "governance_base_sha": "0eaf995924706d539be3a81414ad8e0e113a786a",
+  "predecessor": {
+    "investigation_id": "pure-far-hpf-energy-asymmetry-v1",
+    "pr": 240,
+    "fresh_main_sha": "0eaf995924706d539be3a81414ad8e0e113a786a",
+    "diagnostic_run_id": 35173957906,
+    "diagnostic_run_number": 7,
+    "diagnostic_artifact_id": 10477487869,
+    "diagnostic_artifact_digest": "sha256:e0011b831ac44f01f1812eed769fb542089fea3b6041dedb64490d9127ec1339",
+    "hosted_real_aec_run_id": 35173957918,
+    "hosted_real_aec_run_number": 801,
+    "hosted_real_audio_run_id": 35173957957,
+    "hosted_real_audio_run_number": 806,
+    "verify_run_id": 35173958335,
+    "verify_run_number": 1006,
+    "release_run_id": 35174263874,
+    "release_run_number": 991,
+    "fresh_main_closed": true
+  },
+  "question": "In the frozen 125-case ICASSP2022 pure-far corpus, how much of the high pre-Activity mic/reference energy ratio is already present in source-domain relative levels, how much is changed by 48-to-16-kHz boundary resampling, and how much is associated with Sync selecting a delayed reference instead of the current render frame?",
+  "source": {
+    "repository": "microsoft/AEC-Challenge",
+    "revision": "6c633d0a9d2a143a0e364899b91b06f127315b18",
+    "dataset_directory": "datasets/test_set_icassp2022/farend-singletalk",
+    "dataset_tree_sha": "a5b01b800e56e53ac027126ed2292ee573ea735a",
+    "rating_formula": "full common-length mic+lpb clip",
+    "source_rate_hz": 48000,
+    "internal_rate_hz": 16000
+  },
+  "selection": {
+    "rule": "reuse the exact frozen PR #238/#239/#240 inventory: all complete no-movement ICASSP2022 farend-singletalk mic+lpb pairs at the pinned source revision",
+    "expected_complete_pair_count": 125,
+    "expected_total_lfs_bytes": 576534262,
+    "expected_selection_fingerprint_sha256": "7a06246eac58b6e8b705b0a05dfb9562fce58f43749fb8d29069843d57ba32f0",
+    "subsampling_allowed": false,
+    "result_dependent_selection": false
+  },
+  "baseline_code_lock": {
+    "pipeline_source": {
+      "path": "src/core/ap_pipeline.c",
+      "blob_sha": "6e9c95e60e3870e8ad13cc0a75dd97b4b4de3e2a"
+    },
+    "pipeline_internal_header": {
+      "path": "src/core/ap_pipeline_internal.h",
+      "blob_sha": "4328da15a84b224b068051a9a7dc9429a7434573"
+    },
+    "resampler_source": {
+      "path": "src/frontend/ap_resampler.c",
+      "blob_sha": "24b979221adef7d099cb73ec9b986f17a64d63d7"
+    },
+    "resampler_header": {
+      "path": "src/frontend/ap_resampler.h",
+      "blob_sha": "f502b794cdab261d2f57991b54aae44f3703121a"
+    },
+    "hpf_source": {
+      "path": "src/frontend/ap_hpf.c",
+      "blob_sha": "aa92ff1e5746167a6a3239289e614ff26e28682d"
+    },
+    "activity_source": {
+      "path": "src/activity/ap_activity.c",
+      "blob_sha": "73956d6c69d0ee07e6fb922f8def1db29d071972"
+    },
+    "sync_header": {
+      "path": "src/sync/ap_sync.h",
+      "blob_sha": "24b8b615346a053a1399f8f7d42bd909ff531837"
+    },
+    "predecessor_hpf_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_hpf_energy_asymmetry_probe.c",
+      "blob_sha": "27f64382d98c09f5357195a7f8f208e1b0a95334"
+    },
+    "diagnostic_probe": {
+      "path": ".github/research/continuous-optimization/pure_far_source_gain_provenance_probe.c",
+      "blob_sha": "33f75a6cfce772ecd0a7c386c94d06c9835cbfbb"
+    },
+    "frozen_metric_helper": {
+      "path": ".github/research/continuous-optimization/pure_far_activity_ratio_coverage_v1.py",
+      "blob_sha": "66430d614dbc81da235d2c61dd755b20fc98478e"
+    },
+    "activity_constants_observed_not_tuned": {
+      "far_end_threshold": 1e-7,
+      "double_talk_ratio": 1.5,
+      "instant_on_multiplier": 0.9,
+      "instant_hold_multiplier": 0.72,
+      "hangover_frames": 3,
+      "ema_attack": 0.35,
+      "ema_release": 0.08
+    }
+  },
+  "observation_method": {
+    "source_energy": "mean-square energy from original 48-kHz PCM16 mic and lpb samples in each 10-ms source frame",
+    "mic_internal_pre_hpf_energy": "independent research-only stream-0 boundary resampler output, with post-HPF energy cross-checked against actual Activity mic energy as in PR #240",
+    "render_internal_current_energy": "actual production stream-2 render resampler output read from pipeline->work immediately after ap_pipeline_push_render and before capture processing reuses that scratch union",
+    "synced_reference_energy": "actual production Sync reference energy after ap_pipeline_process_capture, before any signal correction",
+    "source_full_clip_ratio": "ratio of full-clip mean source mic energy to full-clip mean source lpb energy; descriptive recording-level statistic, not an echo-path gain estimate",
+    "current_frame_ratios_are_delay_unaligned": true,
+    "signal_correction_applied": false,
+    "threshold_search_performed": false,
+    "candidate_selection": false,
+    "tuning_authority": false
+  },
+  "outputs": [
+    "per-case full-clip source-domain mic/lpb energy ratio",
+    "per-case far-frame source current-frame mic/lpb ratio",
+    "per-case far-frame 16-kHz pre-HPF mic/current-render ratio before Sync selection",
+    "per-case far-frame 16-kHz pre-HPF mic/synced-reference ratio",
+    "per-case mic and render boundary-resampler energy delta dB and their differential delta",
+    "per-case Sync reference-selection delta dB relative to the current resampled render frame",
+    "cross-case Spearman associations with public-DTD occupancy",
+    "lifecycle-safe shadow-HPF energy cross-check distributions"
+  ],
+  "prohibited_actions": [
+    "treat source or current-frame ratios as physical echo-path gain estimates because propagation delay and nonstationarity remain present",
+    "derive or apply gain normalization from source-domain ratios",
+    "change resampler, Sync, HPF, Activity, AEC, RES, NS, AGC, or VAD source",
+    "change current Activity constants",
+    "search a DTD threshold, normalization constant, delay, filter, or sample subset",
+    "subsample or hand-pick cases after observing results",
+    "treat an association as a classifier, ranking, or source-candidate selector",
+    "relax pure-far, movement, echo-path-change, Hosted Real AEC, or other qualification gates",
+    "promote to HIL, Product Certification, release, or shipping"
+  ],
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "interpretation_rule": "This diagnostic may describe whether case-level high pure-far mic/reference ratios are already reflected in source recording levels, are materially changed by boundary resampling, or are associated with Sync reference selection. It cannot establish physical device gain or echo-path gain, and cannot authorize gain normalization, threshold changes, or a source candidate.",
+  "next_decision": "exact-head diagnostic evidence review only"
+}

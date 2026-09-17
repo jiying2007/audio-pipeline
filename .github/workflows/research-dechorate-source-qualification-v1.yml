@@ -1,0 +1,158 @@
+name: Research dEchorate Source Qualification V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json'
+      - '.github/workflows/research-dechorate-source-qualification-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json'
+      - '.github/workflows/research-dechorate-source-qualification-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Validate candidate-zero source-qualification scope
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          p = Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json')
+          m = json.loads(p.read_text())
+          assert m['schema_version'] == 1
+          assert m['investigation'] == 'dechorate-source-qualification-v1'
+          assert m['authority'] == 'SOURCE_QUALIFICATION_ONLY'
+          assert m['candidate_budget'] == 0
+          base = m['base_main_sha']
+          assert base == 'b9ea9e5518198f302a457531d1380472a35f3153'
+          subprocess.run(['git','merge-base','--is-ancestor',base,'HEAD'], check=True)
+          changed = subprocess.check_output(['git','diff','--name-only',f'{base}...HEAD'], text=True).splitlines()
+          allowed = {
+            '.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json',
+            '.github/workflows/research-dechorate-source-qualification-v1.yml',
+          }
+          assert changed and set(changed) <= allowed, changed
+          pred = m['predecessor_closure']
+          assert pred['main_sha'] == base
+          assert pred['state'] == 'CLOSED_DIAGNOSTIC_PLATEAU'
+          assert pred['verify_run'] == 35193807409
+          assert pred['release_run'] == 35194095674
+          assert m['inventory_protocol']['first_run_behavior'] == 'fail_closed_after_inventory_before_any_acoustic_processing'
+          print({'base': base, 'head': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(), 'changed': changed})
+          PY
+      - name: Inventory and hash deterministic dEchorate qualification objects
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, re, urllib.request
+          from pathlib import Path
+          from urllib.parse import urljoin
+
+          manifest_path = Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json')
+          m = json.loads(manifest_path.read_text())
+          src = m['source']
+          proto = m['inventory_protocol']
+          index_url = src['sofa_mirror_index']
+
+          req = urllib.request.Request(index_url, headers={'User-Agent':'audio-pipeline-source-qualification/1'})
+          with urllib.request.urlopen(req, timeout=60) as r:
+              index_bytes = r.read()
+          text = index_bytes.decode('utf-8')
+          listing_sha = hashlib.sha256(index_bytes).hexdigest()
+          filenames = sorted(set(re.findall(r'href=["\']([^"\']+\.sofa)["\']', text, flags=re.I)))
+          rx = re.compile(proto['sofa_filename_regex'])
+          sofas = [name for name in filenames if rx.fullmatch(name)]
+          if not sofas:
+              raise SystemExit('no SOFA files matched frozen filename contract')
+          by_room = {}
+          for name in sofas:
+              mm = re.search(r'_room([0-9]{6})_', name)
+              if not mm:
+                  raise SystemExit(f'missing room token: {name}')
+              by_room.setdefault(mm.group(1), []).append(name)
+          selected = [min(by_room[r]) for r in sorted(by_room)]
+          selected.append(src['annotations_name'])
+
+          objects = []
+          total = 0
+          for name in selected:
+              url = urljoin(index_url, name)
+              req = urllib.request.Request(url, headers={'User-Agent':'audio-pipeline-source-qualification/1'})
+              with urllib.request.urlopen(req, timeout=120) as r:
+                  data = r.read()
+              sha = hashlib.sha256(data).hexdigest()
+              size = len(data)
+              total += size
+              objects.append({'name': name, 'size_bytes': size, 'sha256': sha})
+          if total > int(proto['selected_resource_ceiling_bytes']):
+              raise SystemExit(f'selected source material exceeds fail-closed ceiling: {total}')
+          fp_text = ''.join(f"{o['name']}\t{o['size_bytes']}\t{o['sha256']}\n" for o in objects)
+          fingerprint = hashlib.sha256(fp_text.encode()).hexdigest()
+          result = {
+              'listing_sha256': listing_sha,
+              'sofa_file_count': len(sofas),
+              'unique_room_count': len(by_room),
+              'selected_object_count': len(objects),
+              'selected_total_bytes': total,
+              'selected_fingerprint_sha256': fingerprint,
+              'selected_objects': objects,
+              'selection_rule': proto['selection_rule'],
+              'acoustic_processing_executed': False,
+          }
+          Path('dechorate-source-inventory.json').write_text(json.dumps(result, indent=2) + '\n')
+          print('SOURCE_QUALIFICATION_INVENTORY=' + json.dumps(result, sort_keys=True))
+          summary = Path(__import__('os').environ['GITHUB_STEP_SUMMARY'])
+          with summary.open('a') as f:
+              f.write('## dEchorate source qualification inventory\n\n```json\n')
+              f.write(json.dumps(result, indent=2))
+              f.write('\n```\n')
+
+          if not proto['inventory_frozen']:
+              print('inventory_frozen=false: intentional fail-closed before any acoustic processing')
+              raise SystemExit(42)
+          expected = {
+              'listing_sha256': proto['expected_listing_sha256'],
+              'sofa_file_count': proto['expected_sofa_file_count'],
+              'unique_room_count': proto['expected_unique_room_count'],
+              'selected_object_count': proto['expected_selected_object_count'],
+              'selected_total_bytes': proto['expected_selected_total_bytes'],
+              'selected_fingerprint_sha256': proto['expected_selected_fingerprint_sha256'],
+              'selected_objects': proto['expected_selected_objects'],
+          }
+          actual = {k: result[k] for k in expected}
+          assert actual == expected, {'actual': actual, 'expected': expected}
+          print('dEchorate source qualification inventory: FROZEN/PASS')
+          PY
+      - name: Prove no acoustic execution exists in qualification workflow
+        if: success()
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/research-dechorate-source-qualification-v1.yml').read_text()
+          prohibited = [
+              'ap_' + 'process_pcm',
+              'double_' + 'talk_active',
+              'aec_' + 'mu',
+              '--thres' + 'hold',
+              'normalize_' + 'audio',
+          ]
+          for token in prohibited:
+              assert token not in text, token
+          print('source qualification contains no acoustic execution path: PASS')
+          PY

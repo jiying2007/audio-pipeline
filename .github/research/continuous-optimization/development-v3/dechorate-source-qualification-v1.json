@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "investigation": "dechorate-source-qualification-v1",
+  "authority": "SOURCE_QUALIFICATION_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+  "predecessor_closure": {
+    "investigation": "pure-far-dtd-evidence-closure-v1",
+    "main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+    "closure_run": 35193807050,
+    "hosted_real_aec_run": 35193807197,
+    "hosted_real_audio_run": 35193807108,
+    "verify_run": 35193807409,
+    "release_run": 35194095674,
+    "state": "CLOSED_DIAGNOSTIC_PLATEAU"
+  },
+  "source": {
+    "name": "dEchorate",
+    "paper_doi": "10.1186/s13636-021-00229-0",
+    "zenodo_version_record": "https://zenodo.org/records/5562386",
+    "sofa_mirror_index": "https://www.sofaconventions.org/data/database/dechorate/",
+    "annotations_name": "dEchorate_annotations.h5",
+    "license": "CC-BY-4.0",
+    "license_evidence": "public RIR dataset catalog plus dEchorate publication; qualification does not redistribute source files",
+    "discriminative_value": [
+      "measured room impulse responses",
+      "early echo annotations",
+      "3D microphone and real/image-source positions",
+      "multiple calibrated acoustic conditions"
+    ]
+  },
+  "inventory_protocol": {
+    "inventory_frozen": true,
+    "sofa_filename_regex": "^dEchorate_room[0-9]{6}_src[0-9]+_arr[0-9]+_mics[0-9]+-[0-9]+\\.sofa$",
+    "selection_rule": "for every unique room token in the mirror listing, select the lexicographically first SOFA filename; also select dEchorate_annotations.h5",
+    "selection_is_acoustic_result_independent": true,
+    "expected_listing_sha256": "17b5844d4c0048906cdb72264aafa5763f6ce2da6bad35fa3781adb022474558",
+    "expected_sofa_file_count": 594,
+    "expected_unique_room_count": 11,
+    "expected_selected_object_count": 12,
+    "expected_selected_total_bytes": 19403164,
+    "expected_selected_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953",
+    "expected_selected_objects": [
+      {"name":"dEchorate_room000000_src1_arr1_mics1-5.sofa","size_bytes":1758263,"sha256":"26a76bbafb80af0dc29a6838ae9d8fdc4846249c8a4e60a2ef87d13b87496b07"},
+      {"name":"dEchorate_room000001_src1_arr1_mics1-5.sofa","size_bytes":1761123,"sha256":"53b0807a35cce74ea589e4dd1fe55310c9b13ecd9317ecc78d176119385a3c0d"},
+      {"name":"dEchorate_room000010_src1_arr1_mics1-5.sofa","size_bytes":1761078,"sha256":"3c0448601991aaf05888523edb999c6660636d3fb50c2fb9d9b489c0339575d5"},
+      {"name":"dEchorate_room000100_src1_arr1_mics1-5.sofa","size_bytes":1764370,"sha256":"e2d4caa57f9bd2e371e813bac88b63eac2728d9877a327e6ad405669558f1512"},
+      {"name":"dEchorate_room001000_src1_arr1_mics1-5.sofa","size_bytes":1760643,"sha256":"2d91d0ffb510b74721f08daa935df820806bc4663e8b64e50a97c081403235a3"},
+      {"name":"dEchorate_room010000_src1_arr1_mics1-5.sofa","size_bytes":1756243,"sha256":"98556f7e9bf4184e2f53876b09298624f31633d9001c6ed5b938c0b4bc28aa07"},
+      {"name":"dEchorate_room011000_src1_arr1_mics1-5.sofa","size_bytes":1756148,"sha256":"950d3f138c6392100990097dcd8d02011ca7538a3262dfe4e59968fc35b1dd7f"},
+      {"name":"dEchorate_room011100_src1_arr1_mics1-5.sofa","size_bytes":1760499,"sha256":"aa7673fd2ced185966737f62955aa7cd455ae0822f4ec5f9aa694dedd653bdb7"},
+      {"name":"dEchorate_room011110_src1_arr1_mics1-5.sofa","size_bytes":1767855,"sha256":"5cde719736359768465df5eb9ee82c38b2ced02cf095ea5d71c0987ed72ce07d"},
+      {"name":"dEchorate_room011111_src1_arr1_mics1-5.sofa","size_bytes":1767577,"sha256":"ec8a4f2305b4b170e7ec9b5dab4f51695d861b462125e3119e2a33fd20813fa1"},
+      {"name":"dEchorate_room020002_src1_arr1_mics1-5.sofa","size_bytes":1759041,"sha256":"f3c6da17961e00bcc5b448ddccce3cfb3966c72b51d7894a84a7804941068726"},
+      {"name":"dEchorate_annotations.h5","size_bytes":30324,"sha256":"1c2810a2dc3870c75276a4b954c36b884e31b291483190634b2030040061317e"}
+    ],
+    "selected_resource_ceiling_bytes": 67108864,
+    "first_run_behavior": "fail_closed_after_inventory_before_any_acoustic_processing"
+  },
+  "prohibited": [
+    "acoustic or DTD processing during source qualification",
+    "result-driven source or room selection",
+    "gain normalization",
+    "Activity/VAD/DTD threshold changes",
+    "public double_talk_active semantic changes",
+    "source candidate creation",
+    "parameter or threshold search",
+    "HIL authority",
+    "Product Certification authority",
+    "release authority",
+    "shipping authority",
+    "mutation of shipping v2.3.16 or 57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  ]
+}

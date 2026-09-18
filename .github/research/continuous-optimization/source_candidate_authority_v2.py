@@ -721,6 +721,63 @@ def self_test() -> None:
         assert agc_binding["qualification_profile"] == "agc-dynamics"
         assert agc_binding["baseline_args"]["agc_target_dbfs"] == -20.0
 
+        pool_ids = [
+            {
+                "generator_seed": seed,
+                "corpus_id": f"pool-{seed}",
+                "corpus_sha256": digest * 64,
+            }
+            for seed, digest in ((101, "1"), (102, "2"), (103, "3"))
+        ]
+        lock = {
+            "schema_version": 1,
+            "authority": "baseline-only-source-candidate-authority-qualification",
+            "policy_id": policy["policy_id"],
+            "policy_sha256": sha256_file(DEFAULT_POLICY),
+            "candidate_id": vad_binding["candidate_id"],
+            "candidate_contract_sha256": vad_binding["contract_sha256"],
+            "source_base_sha": vad_binding["source_base_sha"],
+            "qualification_profile": vad_binding["qualification_profile"],
+            "baseline_executable_target": vad_binding["baseline_executable_target"],
+            "baseline_executable_sha256": "a" * 64,
+            "baseline_args": vad_binding["baseline_args"],
+            "generator_contract": vad_binding["generator"],
+            "qualification_limit": 1,
+            "expected_authority_lock_path": vad_binding["authority_lock_path"],
+            "qualification_replay_additional_authority": False,
+            "decision": "BASELINE_QUALIFIED_AUTHORITY_LOCK",
+            "required_count": vad_binding["required_count"],
+            "pool_order": pool_ids,
+            "selected_authority": pool_ids[:2],
+            "invalid_pool_entries": [{
+                "identity": pool_ids[2],
+                "status": "AUTHORITY_POOL_ENTRY_INVALID",
+                "baseline_validation_result": "FAIL",
+                "baseline_summary": {"pass_rate": 0.5},
+                "absolute_case_gate_violations": [{"case_id": "x"}],
+            }],
+            "candidate_execution_allowed": True,
+            "candidate_budget_consumed": False,
+            "candidate_feedback_used": False,
+            "retroactive_candidate_reclassification": False,
+            "shipping_authority": False,
+            "source_merge_authorized": False,
+            "automatic_main_mutation": False,
+        }
+        lock_result = validate_authority_lock(
+            lock, vad_binding, policy, DEFAULT_POLICY
+        )
+        assert lock_result["selected_seeds"] == [101, 102]
+
+        bad_lock = json.loads(json.dumps(lock))
+        bad_lock["candidate_contract_sha256"] = "0" * 64
+        try:
+            validate_authority_lock(bad_lock, vad_binding, policy, DEFAULT_POLICY)
+        except ValueError as exc:
+            assert "contract bytes drifted" in str(exc)
+        else:
+            raise AssertionError("authority lock contract drift was accepted")
+
         bad_target = json.loads(json.dumps(vad))
         bad_target["baseline_authority_qualification_v2"][
             "baseline_executable_target"

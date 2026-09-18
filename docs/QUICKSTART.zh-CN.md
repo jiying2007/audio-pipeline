@@ -18,7 +18,7 @@ ctest --test-dir build --output-on-failure
 
 ```bash
 cmake --preset ssc305-cortex-a32-low
-cmake --build --preset ssc305-cortex-a32-low --parallel
+cmake --build build/ssc305-cortex-a32-low --parallel
 ```
 
 该 preset 是当前 required CI 的直接 executable contract：仓库会实际 configure/build、验证 generated build identity、clean install SDK，并用 AArch32/QEMU 执行 build-info/core/runtime consumer。

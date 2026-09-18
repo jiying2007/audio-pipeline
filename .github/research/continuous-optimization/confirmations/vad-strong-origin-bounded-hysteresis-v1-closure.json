@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT",
+  "terminal_candidate": true,
+  "candidate_budget": 0,
+  "confirmation_limit": 0,
+  "candidate_id": "vad-strong-origin-bounded-hysteresis-v1",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "lane_run_id": 35344946937,
+    "lane_decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+    "selected_variant_id": "so-bh-m005-b2"
+  },
+  "authoritative_evaluation": {
+    "workflow": "Research VAD Bounded-Hysteresis Source Candidate",
+    "run_id": 35350206185,
+    "head_sha": "cbeed30ac6d3e25b2bfcc2b3d4bdbfafd6c77445",
+    "artifact_id": 10548672770,
+    "artifact_digest": "sha256:64c3924bcc0cd8831e6dcfe8c2df97181ba43d32b7f72b1c706f4a5ab669b64f",
+    "decision": "SOURCE_CANDIDATE_REJECT"
+  },
+  "duplicate_replay": {
+    "run_id": 35363666767,
+    "artifact_id": 10554454712,
+    "artifact_digest": "sha256:d5acef890ebab6d4258e267e0704c6187223c0c15c2a4e0c29bd139b44e8d467",
+    "authority": "DUPLICATE_REPLAY_ONLY",
+    "additional_evidence_weight": 0,
+    "internal_evidence_byte_identical": true
+  },
+  "source_conformance": {
+    "probability_generation_drift": false,
+    "policy_mismatch": false,
+    "active_contraction": false,
+    "candidate_behavior_exercised": true,
+    "state_size_growth_bytes": 4,
+    "state_size_growth_allowed_max_bytes": 4
+  },
+  "failed_gate": {
+    "seed": 18751,
+    "gate": "candidate_case_gates",
+    "actual": "FAIL",
+    "baseline_pass_rate": 0.8333333333333334,
+    "candidate_pass_rate": 0.8333333333333334,
+    "candidate_aggregate_deltas": {
+      "recall": 0.01851851851851849,
+      "f1": 0.01634026483332932,
+      "false_positive_rate": 0
+    }
+  },
+  "interpretation": {
+    "exact_c_matches_frozen_emulator": true,
+    "aggregate_regression_detected": false,
+    "rejection_reason": "The preregistered contract requires every candidate case gate to pass. Seed 18751 had candidate validation FAIL even though the baseline also failed one or more absolute case gates and candidate aggregate recall/F1 improved without FPR rise.",
+    "no_post_hoc_rescue": true,
+    "future_governance_note": "A future, separately preregistered evaluation design may distinguish baseline-invalid authority from candidate failure, but that rule cannot be retroactively applied to this consumed candidate."
+  },
+  "output_authority": {
+    "shipping_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "source_merge_authority": false,
+    "automatic_main_mutation": false
+  },
+  "rule": "This exact frozen source candidate exhausted its one source-evaluation budget. It may not be retried, retuned, promoted, source-merged, or used to change shipping. Any successor requires a new hypothesis/candidate identity and fresh authority."
+}

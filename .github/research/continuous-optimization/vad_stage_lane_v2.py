@@ -233,9 +233,9 @@ def run(
     validation = collect_with_processor(processor, validation_path)
     shadow = collect_with_processor(processor, shadow_path)
 
-    observed_dev = [int(x["seed"]) for x in dev]
-    observed_validation = int(validation["seed"])
-    observed_shadow = int(shadow["seed"])
+    observed_dev = [int(x["generator_seed"]) for x in dev]
+    observed_validation = int(validation["generator_seed"])
+    observed_shadow = int(shadow["generator_seed"])
     authority = contract["fresh_authority"]
     if observed_dev != [int(x) for x in authority["development_seeds"]]:
         raise ValueError(f"development seed drift: {observed_dev}")

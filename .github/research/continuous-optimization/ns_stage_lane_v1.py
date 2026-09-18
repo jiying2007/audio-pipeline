@@ -106,6 +106,11 @@ def run(repo:Path, ema:Path, mcra:Path, dev:list[Path], validation:Path, shadow:
         "shadow":{"score_vs_shipping_baseline":shadow_score,"regression_violations":shadow_v,
                   "baseline":shadow_base.get("summary",{}),"candidate":shadow_cand.get("summary",{})},
         "selected":{"algorithm":selected_algorithm,"tuning":final_tuning},
+        "executable_binding":{
+            "bound":True,
+            "processor_sha256":engine.sha256_file(selected_processor),
+            "build_variant":selected_algorithm,
+        },
         "automatic_main_mutation":False,"shipping_authority":False,"hil_authority":False,
         "product_certification_authority":False,
         "next_gate":"stage-composition-development" if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE" else None,

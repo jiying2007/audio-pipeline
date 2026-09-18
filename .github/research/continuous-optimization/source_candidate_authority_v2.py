@@ -577,6 +577,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--validate-policy", action="store_true")
+    parser.add_argument("--describe-contract", action="store_true")
     parser.add_argument("--baseline-executable", type=Path)
     parser.add_argument("--pool-corpus", action="append", type=Path, default=[])
     parser.add_argument("--candidate-contract", type=Path)
@@ -596,6 +597,15 @@ def main() -> int:
             "policy_sha256": sha256_file(args.policy),
             "qualification_profiles": sorted(policy["qualification_profiles"]),
         }, sort_keys=True))
+        return 0
+    if args.describe_contract:
+        if args.candidate_contract is None:
+            parser.error("--candidate-contract is required with --describe-contract")
+        contract = load_json(args.candidate_contract)
+        binding = validate_candidate_contract(
+            contract, policy, args.candidate_contract.resolve()
+        )
+        print(json.dumps(binding, sort_keys=True))
         return 0
     if args.baseline_executable is None or args.candidate_contract is None or args.output is None:
         parser.error(

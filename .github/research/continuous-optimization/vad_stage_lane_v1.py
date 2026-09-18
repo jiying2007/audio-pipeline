@@ -157,7 +157,15 @@ def run(processor:Path,dev_paths:list[Path],validation:Path,shadow:Path,output:P
         "shadow":{"baseline":sh_base["summary"],"candidate":sh_cand["summary"],
                   "regression_violations":sv},
         "probability_generation_mutated":False,"threshold_search_performed":False,
-        "executable_binding":False,
+        "effective_winner":(
+            {"algorithm":selected["algorithm"],"parameter":selected["parameter"]}
+            if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE"
+            else {"algorithm":"shipping-strong-weak","parameter":6}
+        ),
+        "executable_binding":{
+            "bound":decision!="FROZEN_STAGE_RESEARCH_CANDIDATE",
+            "kind":"shipping-baseline" if decision!="FROZEN_STAGE_RESEARCH_CANDIDATE" else "research-emulator",
+        },
         "automatic_main_mutation":False,"shipping_authority":False,"hil_authority":False,
         "product_certification_authority":False,
         "next_gate":"separate-source-candidate-review" if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE" else None,

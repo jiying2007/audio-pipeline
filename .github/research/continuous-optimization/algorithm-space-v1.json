@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "algorithm_space_id": "call-hierarchical-algorithm-parameter-v1",
+  "authority": "RESEARCH_SELECTION_ONLY",
+  "max_algorithm_variants": 4,
+  "baseline_algorithm_id": "mdf-ema",
+  "parameter_search_space": ".github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json",
+  "baseline_tuning": {
+    "aec_mu": 0.22,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20,
+    "limiter_dbfs": -2
+  },
+  "common_build_contract": {
+    "resampler_mode": "BANDLIMITED",
+    "bf_direction_tracking": true,
+    "fast_math": false,
+    "simd_backend": "SCALAR"
+  },
+  "variants": [
+    {
+      "algorithm_id": "mdf-ema",
+      "aec_backend": "MDF",
+      "ns_estimator": "EMA"
+    },
+    {
+      "algorithm_id": "mdf-mcra",
+      "aec_backend": "MDF",
+      "ns_estimator": "MCRA"
+    },
+    {
+      "algorithm_id": "nlms-ema",
+      "aec_backend": "NLMS",
+      "ns_estimator": "EMA"
+    },
+    {
+      "algorithm_id": "nlms-mcra",
+      "aec_backend": "NLMS",
+      "ns_estimator": "MCRA"
+    }
+  ],
+  "hierarchy": {
+    "algorithm_screen": "compare all algorithm variants at the exact baseline tuning using development data only",
+    "parameter_search": "search the frozen parameter space only on the development-selected algorithm family",
+    "generalization_gate": "compare only the final joint algorithm+tuning winner against the exact baseline on validation and shadow data",
+    "holdout_feedback_to_selection": false,
+    "maximum_algorithm_rounds": 1
+  },
+  "output_authority": {
+    "maximum_status": "FROZEN_RESEARCH_CANDIDATE",
+    "next_gate": "validation-grade-blind",
+    "automatic_main_mutation": false,
+    "automatic_shipping_promotion": false,
+    "hil_authority": false,
+    "product_certification_authority": false
+  }
+}

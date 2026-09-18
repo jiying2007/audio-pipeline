@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "workflow": "Research VAD Strong-Origin Bounded Hysteresis",
+  "run_id": 35344946937,
+  "event": "workflow_dispatch",
+  "head_sha": "a7d06eee4b1dd0406bd39fd75b7d65ce3e15f6ad",
+  "conclusion": "success",
+  "hypothesis_id": "vad-strong-origin-bounded-hysteresis-v1",
+  "authority": "development-selection-only",
+  "decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+  "artifact": {
+    "id": 10546488773,
+    "name": "stage-vad-v2-35344946937",
+    "digest": "sha256:7d85edee417bf648917ed77c4d65dbab96e5702fb0b7772ab63cff428c9d0317"
+  },
+  "processor_sha256": "d99471ea77e1d83ffe9bb661a53830c3f886496db5346deb01e8e878ded32a84",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "fresh_authority": {
+    "development_seeds": [14751, 15751],
+    "validation_seed": 16751,
+    "shadow_seed": 17751
+  },
+  "selected": {
+    "variant_id": "so-bh-m005-b2",
+    "release_margin": 0.05,
+    "subthreshold_budget_frames": 2,
+    "mean_development_score": 1.1932922251147893
+  },
+  "development_ranking": [
+    {
+      "variant_id": "so-bh-m005-b2",
+      "release_margin": 0.05,
+      "subthreshold_budget_frames": 2,
+      "mean_development_score": 1.1932922251147893,
+      "eligible": true,
+      "violations": []
+    },
+    {
+      "variant_id": "so-bh-m005-b3",
+      "release_margin": 0.05,
+      "subthreshold_budget_frames": 3,
+      "mean_development_score": 1.1932922251147893,
+      "eligible": true,
+      "violations": []
+    },
+    {
+      "variant_id": "so-bh-m003-b2",
+      "release_margin": 0.03,
+      "subthreshold_budget_frames": 2,
+      "mean_development_score": 0.9550909389896028,
+      "eligible": true,
+      "violations": []
+    },
+    {
+      "variant_id": "so-bh-m003-b3",
+      "release_margin": 0.03,
+      "subthreshold_budget_frames": 3,
+      "mean_development_score": 0.9550909389896028,
+      "eligible": true,
+      "violations": []
+    }
+  ],
+  "validation": {
+    "baseline": {
+      "min_vad_recall": 0.8111111111111111,
+      "min_vad_f1": 0.8111111111111111,
+      "max_vad_false_positive_rate": 0.3923076923076923,
+      "pass_rate": 1.0
+    },
+    "candidate": {
+      "min_vad_recall": 0.825925925925926,
+      "min_vad_f1": 0.8198529411764706,
+      "max_vad_false_positive_rate": 0.3923076923076923,
+      "pass_rate": 1.0
+    },
+    "regression_violations": []
+  },
+  "shadow": {
+    "baseline": {
+      "min_vad_recall": 0.8111111111111111,
+      "min_vad_f1": 0.8021978021978022,
+      "max_vad_false_positive_rate": 0.43846153846153846,
+      "pass_rate": 1.0
+    },
+    "candidate": {
+      "min_vad_recall": 0.8185185185185185,
+      "min_vad_f1": 0.8065693430656934,
+      "max_vad_false_positive_rate": 0.43846153846153846,
+      "pass_rate": 1.0
+    },
+    "regression_violations": []
+  },
+  "feedback_boundary": {
+    "consumed_public_authority_used": false,
+    "old_confirmation_seeds_used": false,
+    "development_selected": true,
+    "validation_and_shadow_reject_only": true
+  },
+  "promotion": {
+    "source_merge_authorized": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "automatic_main_mutation": false,
+    "next_gate": "separate exact-source candidate implementation and review"
+  }
+}

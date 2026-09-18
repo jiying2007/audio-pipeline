@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "candidate_id": "vad-strong-origin-bounded-hysteresis-v1",
+  "authority": "SOURCE_CANDIDATE_EVALUATION_ONLY",
+  "candidate_budget": 1,
+  "confirmation_limit": 0,
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "lane_run_id": 35344946937,
+    "lane_artifact_id": 10546488773,
+    "lane_artifact_digest": "sha256:7d85edee417bf648917ed77c4d65dbab96e5702fb0b7772ab63cff428c9d0317",
+    "lane_decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+    "hypothesis_id": "vad-strong-origin-bounded-hysteresis-v1",
+    "variant_id": "so-bh-m005-b2",
+    "mean_development_score": 1.1932922251147893
+  },
+  "hypothesis": "A strong-origin-only, bounded sub-threshold hold freeze can retain the fresh-lane recall/F1 benefit while avoiding the weak-only false-active expansion that invalidated global hysteresis and the previous confidence-tiered candidate.",
+  "fixed_policy": {
+    "local_threshold": 0.45,
+    "ns_threshold": 0.35,
+    "strong_threshold": 0.50,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6,
+    "release_margin": 0.05,
+    "subthreshold_budget_frames": 2
+  },
+  "exact_source_change": {
+    "paths": [
+      "src/enhance/ap_enhance.h",
+      "src/enhance/ap_vad.c"
+    ],
+    "state": {
+      "add_field": "uint32_t strong_origin_hysteresis_budget",
+      "max_state_size_growth_bytes": 4
+    },
+    "rule_order": [
+      "prob >= 0.50 -> hold=8 and budget=2",
+      "else prob > decision_threshold -> hold=max(current,6), budget unchanged",
+      "else if hold>0 and budget>0 and prob>decision_threshold-0.05 -> hold=max(current,2), budget--",
+      "else if hold>0 -> hold--",
+      "if hold==0 -> budget=0"
+    ],
+    "weak_only_path_must_match_shipping": true,
+    "probability_generation_mutation": false,
+    "noise_adaptation_mutation": false,
+    "ns_fusion_mutation": false
+  },
+  "fresh_candidate_evaluation": {
+    "seeds": [18751, 19751, 20751],
+    "data_role": "development-fresh-source-candidate-evaluation",
+    "selection_reuse": false,
+    "candidate_value_search": false,
+    "required_exact_policy_conformance": true,
+    "require_probability_trace_identity": true,
+    "require_no_active_contraction": true,
+    "require_candidate_behavior_exercised": true,
+    "require_all_case_gates_pass": true,
+    "max_recall_regression": 0.03,
+    "max_f1_regression": 0.03,
+    "max_fpr_regression": 0.03
+  },
+  "promotion": {
+    "automatic_main_mutation": false,
+    "source_merge_authorized": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "independent_confirmation_required_after_pass": true
+  }
+}

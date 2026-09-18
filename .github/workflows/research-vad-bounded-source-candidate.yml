@@ -1,0 +1,159 @@
+name: Research VAD Bounded-Hysteresis Source Candidate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/vad-stage-lane-v2-run-1.json'
+      - '.github/research/continuous-optimization/source-candidates/vad-strong-origin-bounded-hysteresis-v1.json'
+      - '.github/research/continuous-optimization/stage_source_vad_bounded_patch.py'
+      - '.github/research/continuous-optimization/stage_source_vad_bounded_evaluate.py'
+      - '.github/workflows/research-vad-bounded-source-candidate.yml'
+      - '.github/program/maintenance_workflow_contract.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-vad-bounded-source-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_BASE_SHA: 2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e
+  CONTRACT: .github/research/continuous-optimization/source-candidates/vad-strong-origin-bounded-hysteresis-v1.json
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Validate exact VAD source-candidate contract
+        run: |
+          set -euo pipefail
+          python3 -m py_compile             .github/research/continuous-optimization/stage_source_vad_bounded_patch.py             .github/research/continuous-optimization/stage_source_vad_bounded_evaluate.py
+          python3 .github/research/continuous-optimization/stage_source_vad_bounded_patch.py --self-test
+          python3 .github/research/continuous-optimization/stage_source_vad_bounded_evaluate.py --self-test
+          python3 .github/research/continuous-optimization/vad_stage_lane_v2.py --self-test
+          python3 .github/program/maintenance_workflow_contract.py --self-test --check
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          lane=json.loads(Path('.github/research/continuous-optimization/vad-stage-lane-v2-run-1.json').read_text())
+          assert lane['run_id']==35344946937
+          assert lane['decision']=='FROZEN_STAGE_RESEARCH_CANDIDATE'
+          assert lane['selected']['variant_id']=='so-bh-m005-b2'
+          assert lane['selected']['release_margin']==0.05
+          assert lane['selected']['subthreshold_budget_frames']==2
+          assert lane['validation']['regression_violations']==[]
+          assert lane['shadow']['regression_violations']==[]
+          assert lane['feedback_boundary']['consumed_public_authority_used'] is False
+
+          c=json.loads(Path('.github/research/continuous-optimization/source-candidates/vad-strong-origin-bounded-hysteresis-v1.json').read_text())
+          assert c['authority']=='SOURCE_CANDIDATE_EVALUATION_ONLY'
+          assert c['candidate_budget']==1
+          assert c['confirmation_limit']==0
+          assert c['source_base_sha']=='2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e'
+          assert c['predecessor']['lane_run_id']==35344946937
+          assert c['predecessor']['variant_id']=='so-bh-m005-b2'
+          assert c['fixed_policy']['release_margin']==0.05
+          assert c['fixed_policy']['subthreshold_budget_frames']==2
+          assert c['fresh_candidate_evaluation']['seeds']==[18751,19751,20751]
+          assert c['fresh_candidate_evaluation']['candidate_value_search'] is False
+          assert c['fresh_candidate_evaluation']['required_exact_policy_conformance'] is True
+          assert c['promotion']['source_merge_authorized'] is False
+          print('VAD bounded-hysteresis source candidate contract: PASS / FRESH SOURCE EVAL NOT CONSUMED')
+          PY
+
+  source-candidate:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-bounded-source-candidate
+
+      - name: Materialize exact base and fixed two-file VAD candidate
+        run: |
+          set -euo pipefail
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/vad-bounded-base "$SOURCE_BASE_SHA"
+          git worktree add --detach /tmp/vad-bounded-candidate "$SOURCE_BASE_SHA"
+          python3 .github/research/continuous-optimization/stage_source_vad_bounded_patch.py             --root /tmp/vad-bounded-candidate
+          mkdir -p stage-vad-bounded-source-out
+          git -C /tmp/vad-bounded-candidate diff --             src/enhance/ap_enhance.h src/enhance/ap_vad.c             > stage-vad-bounded-source-out/candidate.patch
+          test -s stage-vad-bounded-source-out/candidate.patch
+          sha256sum stage-vad-bounded-source-out/candidate.patch             > stage-vad-bounded-source-out/candidate.patch.sha256
+          test -z "$(git -C /tmp/vad-bounded-candidate diff --name-only |             grep -v -E '^(src/enhance/ap_enhance\.h|src/enhance/ap_vad\.c)$' || true)"
+
+      - name: Build exact base/candidate processors and state-size probes
+        run: |
+          set -euo pipefail
+          cmake -S /tmp/vad-bounded-base -B /tmp/vad-bounded-build-base             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-bounded-build-base --target ap_process_pcm --parallel
+          cmake -S /tmp/vad-bounded-candidate -B /tmp/vad-bounded-build-candidate             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-bounded-build-candidate --target ap_process_pcm --parallel
+
+          cat > /tmp/vad_state_size.c <<'C'
+          #include "enhance/ap_enhance.h"
+          #include <stdio.h>
+          int main(void) {
+              printf("%zu\n", sizeof(ap_vad_state_t));
+              return 0;
+          }
+          C
+          cc -std=c11 -Wall -Wextra -Werror -DAP_BUILD_STAGE_VAD=1             -I/tmp/vad-bounded-base/src /tmp/vad_state_size.c             -o /tmp/vad-state-size-base
+          cc -std=c11 -Wall -Wextra -Werror -DAP_BUILD_STAGE_VAD=1             -I/tmp/vad-bounded-candidate/src /tmp/vad_state_size.c             -o /tmp/vad-state-size-candidate
+          /tmp/vad-state-size-base > stage-vad-bounded-source-out/base-state-size.txt
+          /tmp/vad-state-size-candidate > stage-vad-bounded-source-out/candidate-state-size.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          b=int(Path('stage-vad-bounded-source-out/base-state-size.txt').read_text())
+          c=int(Path('stage-vad-bounded-source-out/candidate-state-size.txt').read_text())
+          assert 0 <= c-b <= 4, (b,c)
+          print(f'VAD state size: {b}->{c} bytes')
+          PY
+          sha256sum             /tmp/vad-bounded-build-base/ap_process_pcm             /tmp/vad-bounded-build-candidate/ap_process_pcm             > stage-vad-bounded-source-out/processors.sha256
+
+      - name: Materialize preregistered fresh source-evaluation corpora
+        run: |
+          set -euo pipefail
+          for seed in 18751 19751 20751; do
+            (cd /tmp/vad-bounded-base && PYTHONPATH=validation/tools               python3 validation/tools/build_stage_validation_corpus.py                 --output "/tmp/vad-bounded-$seed" --seed "$seed" --seconds 4)
+          done
+
+      - name: Evaluate exact C source candidate against frozen emulator policy
+        run: |
+          python3 .github/research/continuous-optimization/stage_source_vad_bounded_evaluate.py             --base-processor /tmp/vad-bounded-build-base/ap_process_pcm             --candidate-processor /tmp/vad-bounded-build-candidate/ap_process_pcm             --corpus /tmp/vad-bounded-18751/corpus.json             --corpus /tmp/vad-bounded-19751/corpus.json             --corpus /tmp/vad-bounded-20751/corpus.json             --contract "$CONTRACT"             --base-state-size "$(cat stage-vad-bounded-source-out/base-state-size.txt)"             --candidate-state-size "$(cat stage-vad-bounded-source-out/candidate-state-size.txt)"             --output stage-vad-bounded-source-out/result.json
+
+      - name: Enforce exact-source evaluation authority
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('stage-vad-bounded-source-out/result.json').read_text())
+          assert r['authority']=='source-candidate-evaluation-only'
+          assert r['candidate_id']=='vad-strong-origin-bounded-hysteresis-v1'
+          assert r['fresh_seeds']==[18751,19751,20751]
+          assert r['decision'] in {'SOURCE_CANDIDATE_PASS','SOURCE_CANDIDATE_REJECT'}
+          assert r['shipping_authority'] is False
+          assert r['source_merge_authorized'] is False
+          assert r['automatic_main_mutation'] is False
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: vad-bounded-source-candidate-${{ github.run_id }}
+          path: stage-vad-bounded-source-out/
+          retention-days: 30
+          if-no-files-found: warn

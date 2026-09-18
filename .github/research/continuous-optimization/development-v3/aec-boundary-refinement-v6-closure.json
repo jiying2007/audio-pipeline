@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "hypothesis_id": "multidataset-aec-boundary-refinement-v6",
+  "status": "CLOSED_TERMINAL_VISIBLE_REJECT",
+  "decision": "TERMINAL_REJECT",
+  "candidate_budget": 0,
+  "search_space": {
+    "path": ".github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json",
+    "search_space_id": "call-multidataset-aec-boundary-refinement-v6",
+    "candidate_count": 4,
+    "rerun_authorized": false
+  },
+  "research_selection": {
+    "workflow": "Research Optimization",
+    "run_id": 35306395708,
+    "run_number": 132,
+    "source_sha": "4683f049c7dca2bf1ececa6adda33d4ec10cc3d1",
+    "artifact_id": 10532315507,
+    "artifact_name": "research-optimization-35306395708",
+    "artifact_digest": "sha256:e3915091aad1f92008c401d4fd5a4c937140c6c5cdd293e8dda2c590ca48e74e",
+    "research_candidate_id": "2d13a2b08ce52a19",
+    "candidate_id": "6f5f432da36f",
+    "tuning": {
+      "aec_mu": 0.23,
+      "ns_floor": 0.12,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2
+    },
+    "status": "FROZEN_RESEARCH_CANDIDATE",
+    "next_gate": "validation-grade-blind"
+  },
+  "authoritative_qualification": {
+    "workflow": "Research Candidate Blind Qualification",
+    "run_id": 35309295432,
+    "run_number": 68,
+    "infrastructure_sha": "493e1d6ba637890110df423629440d90fba9dc9b",
+    "qualify_job_id": 105487855255,
+    "artifact_id": 10532962574,
+    "artifact_name": "research-candidate-blind-2d13a2b08ce52a19-35309295432",
+    "artifact_digest": "sha256:ab9c353d219986560688797e0ff1e3017083acb78b59d424eb5337234e2abb5b",
+    "visible_result": "FAIL",
+    "blind_result": null,
+    "failed_stage": "visible-validation",
+    "terminal_candidate": true,
+    "visible_cases": 117,
+    "visible_passed_cases": 117,
+    "visible_gate_violations": [
+      {
+        "gate": "min_median_output_render_corr_reduction",
+        "metric": "median_output_render_corr_reduction",
+        "actual": 0.0013385477679472395,
+        "expected_min": 0.05
+      },
+      {
+        "gate": "min_vad_f1",
+        "metric": "min_vad_f1",
+        "actual": 0.2568370986920333,
+        "expected_min": 0.8
+      }
+    ]
+  },
+  "terminalization": {
+    "pr": 258,
+    "main_sha": "b3c351e2efbf88a34769224d82d25ddff015c944",
+    "registry_terminal": true,
+    "active_manifest_removed": true,
+    "terminal_archive": ".github/research/continuous-optimization/terminal-candidates/2d13a2b08ce52a19.json",
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "new_holdout_authorized": false
+  },
+  "feedback_boundary": {
+    "visible_validation_is_reject_only": true,
+    "visible_metrics_may_shape_future_optimizer_search": false,
+    "blind_data_consumed": false,
+    "blind_data_may_shape_future_optimizer_search": false
+  },
+  "predecessor_diagnostic_boundary": {
+    "plateau_pr": 243,
+    "plateau_status": "CLOSED_DIAGNOSTIC_PLATEAU",
+    "synthesis_pr": 248,
+    "unresolved_requirement": "matched data that jointly observes playback/reference level, captured microphone level, room/RIR ground truth, and device/gain-chain state"
+  },
+  "next_authorized_step": {
+    "name": "matched-gain-chain-factor-plan-lab-binding-v1",
+    "resolution_manifest": ".github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json",
+    "required_state": {
+      "repository_resolution_complete": true,
+      "lab_resolution_complete": false,
+      "freeze_complete": false,
+      "hardware_execution_authorized": false
+    },
+    "scope": "supply_exact_lab_values_and_provenance_only",
+    "may_create_algorithm_candidate": false,
+    "may_run_parameter_search": false,
+    "may_execute_hardware": false,
+    "candidate_budget": 0
+  },
+  "prohibited": [
+    "rerun aec-boundary-refinement-v6 as candidate search",
+    "retry candidate 6f5f432da36f",
+    "resume candidate 6f5f432da36f",
+    "generate a new holdout for candidate 6f5f432da36f",
+    "use visible validation metrics to tune or choose a replacement candidate",
+    "relax visible or blind qualification gates",
+    "create a new Activity/VAD/DTD/AEC source candidate before a materially new root-cause hypothesis and separate explicit governance authorization",
+    "use hosted or synthetic evidence as PCR02/HIL/Product Certification evidence",
+    "change shipping authority"
+  ],
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "aec_mu": 0.22
+  }
+}

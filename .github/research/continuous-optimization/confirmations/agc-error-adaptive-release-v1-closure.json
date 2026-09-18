@@ -1,0 +1,53 @@
+{
+  "candidate_budget": 0,
+  "candidate_id": "agc-error-adaptive-release-v1",
+  "confirmation_provenance": {
+    "artifact_digest": "sha256:3cf3fe28b91cec39cb4ca4b17c81f22a57b04a671b80ddcdb55bdc26009e07da",
+    "artifact_id": 10543011094,
+    "artifact_name": "stage-source-confirmation-agc-35334960942",
+    "candidate_patch_sha256": "81affa74da2111fab2a05e75f9ecd3b3f18f2cc8b6b0e44f3b52d998116233d7",
+    "head_sha": "24cf810e32de842104b7e6bf46ea6d867b4534b8",
+    "run_id": 35334960942,
+    "workflow": "Research Stage Source Confirmation"
+  },
+  "decision": "SOURCE_CANDIDATE_REJECT",
+  "fixed_candidate": {
+    "attack_alpha": 0.25,
+    "candidate_search": false,
+    "fast_release_alpha": 0.05,
+    "fast_release_error_db": 3,
+    "limiter_dbfs": -2,
+    "max_gain_linear": 8,
+    "normal_release_alpha": 0.015,
+    "target_dbfs": -20
+  },
+  "full_pipeline": {
+    "allowed_drop_db": 0.75,
+    "baseline_and_candidate_absolute_validation": "PASS",
+    "failed_gate": "p10_noise_only_attenuation_db relative no-regression",
+    "observed_drop_db": {"7762":3.894558921521797,"8762":3.87361825746194,"9762":3.934910361217623},
+    "seeds": [7762,8762,9762]
+  },
+  "isolated_dynamics": {
+    "low_to_hot_regression_frames": 0.0,
+    "median_hot_to_low_improvement_frames": 55.0,
+    "peak_regression_db": 0.0005399999999990968,
+    "seeds": [7761,8761,9761],
+    "slew_regression_db": 0.044562999999999575,
+    "steady_level_error_regression_db": 0.0,
+    "violations": []
+  },
+  "output_authority": {
+    "automatic_main_mutation": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "target_execution_authority": false
+  },
+  "rule": "This exact frozen AGC candidate exhausted its confirmation budget. It may not be retried, retuned, promoted, source-merged, or used to change shipping. Any future AGC work must be a new pre-registered hypothesis with a new identity and fresh authority.",
+  "schema_version": 1,
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "status": "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT",
+  "terminal_candidate": true
+}

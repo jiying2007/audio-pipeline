@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "program_id": "bf-ns-vad-agc-stage-lanes-v1",
+  "authority": "RESEARCH_STAGE_SELECTION_ONLY",
+  "source_baseline": {
+    "main_sha": "a21ec6892c24db30796f82bc63eb5566a0e62047",
+    "shipping_tag": "v2.3.16",
+    "shipping_source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "shipping_aec_mu": 0.22
+  },
+  "global_rules": {
+    "selection_roles": [
+      "development"
+    ],
+    "reject_only_roles": [
+      "validation",
+      "shadow"
+    ],
+    "blind_feedback_to_selection": false,
+    "product_external_feedback_to_selection": false,
+    "automatic_main_mutation": false,
+    "automatic_shipping_promotion": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "source_candidate_authority": false,
+    "maximum_lane_status": "FROZEN_STAGE_RESEARCH_CANDIDATE"
+  },
+  "lanes": [
+    {
+      "lane_id": "bf",
+      "stage": "beamformer",
+      "algorithm_mode": "research-emulator-screen",
+      "parameter_mode": "bounded-development-refinement",
+      "development_seeds": [
+        1711,
+        1811
+      ],
+      "validation_seeds": [
+        2711
+      ],
+      "shadow_seeds": [
+        3711
+      ],
+      "datasets": [
+        "bf-sensitivity-sweep",
+        "bf-hard-mic-fault"
+      ],
+      "baseline_algorithm": "shipping-bf",
+      "algorithm_variants": [
+        "shipping-bf",
+        "reliability-weighted-das",
+        "confidence-gated-tracking",
+        "health-selected-bypass"
+      ],
+      "selection_metrics": [
+        "near_si_sdr_improvement_db",
+        "reliable_channel_preservation",
+        "hard_fault_robustness",
+        "soft_degradation_nonregression"
+      ],
+      "next_gate": "stage-composition-development"
+    },
+    {
+      "lane_id": "ns",
+      "stage": "noise-suppression",
+      "algorithm_mode": "exact-build-screen",
+      "parameter_mode": "bounded-runtime-safe",
+      "development_seeds": [
+        1721,
+        1821
+      ],
+      "validation_seeds": [
+        2721
+      ],
+      "shadow_seeds": [
+        3721
+      ],
+      "datasets": [
+        "ns-stage-stationary",
+        "ns-stage-nonstationary"
+      ],
+      "baseline_algorithm": "ema",
+      "algorithm_variants": [
+        "ema",
+        "mcra"
+      ],
+      "parameter_search_space": "validation/tuning/search-spaces/ns-stage-v1.json",
+      "selection_metrics": [
+        "p10_near_si_sdr_improvement_db",
+        "p10_noise_only_attenuation_db",
+        "min_vad_f1",
+        "min_vad_recall",
+        "max_vad_false_positive_rate"
+      ],
+      "next_gate": "stage-composition-development"
+    },
+    {
+      "lane_id": "vad",
+      "stage": "voice-activity-detection",
+      "algorithm_mode": "probability-trace-policy-replay",
+      "parameter_mode": "bounded-policy-refinement",
+      "development_seeds": [
+        1731,
+        1831
+      ],
+      "validation_seeds": [
+        2731
+      ],
+      "shadow_seeds": [
+        3731
+      ],
+      "datasets": [
+        "stage-vad-local",
+        "stage-vad-ns-assisted"
+      ],
+      "baseline_algorithm": "shipping-strong-weak",
+      "algorithm_variants": [
+        "shipping-strong-weak",
+        "hysteresis-hold",
+        "confidence-tiered-hold",
+        "decaying-weak-hold"
+      ],
+      "frozen_shipping_thresholds": {
+        "local": 0.45,
+        "ns_assisted": 0.35
+      },
+      "selection_metrics": [
+        "min_vad_recall",
+        "min_vad_f1",
+        "max_vad_false_positive_rate"
+      ],
+      "next_gate": "stage-composition-development"
+    },
+    {
+      "lane_id": "agc",
+      "stage": "automatic-gain-control",
+      "algorithm_mode": "dynamics-emulator-screen",
+      "parameter_mode": "bounded-dynamics-refinement",
+      "development_seeds": [
+        1741,
+        1841
+      ],
+      "validation_seeds": [
+        2741
+      ],
+      "shadow_seeds": [
+        3741
+      ],
+      "datasets": [
+        "agc-steady-low",
+        "agc-steady-hot",
+        "agc-level-step",
+        "agc-transient"
+      ],
+      "baseline_algorithm": "shipping-asymmetric-ema",
+      "algorithm_variants": [
+        "shipping-asymmetric-ema",
+        "error-adaptive-release",
+        "slew-limited-release"
+      ],
+      "runtime_parameter_search_space": "validation/tuning/search-spaces/agc-stage-v1.json",
+      "selection_metrics": [
+        "steady_level_error_db",
+        "low_to_hot_settle_frames",
+        "hot_to_low_settle_frames",
+        "level_step_gain_slew_p95_db",
+        "max_output_peak_dbfs"
+      ],
+      "next_gate": "stage-composition-development"
+    }
+  ],
+  "composition": {
+    "status": "BLOCKED_UNTIL_ALL_LANES_HAVE_EXPLICIT_WINNERS",
+    "selection_input_role": "development-only",
+    "maximum_variants": 1,
+    "rule": "compose exactly one frozen development-selected winner from each lane; do not reopen per-lane ranking inside composition",
+    "validation_and_shadow_reject_only": true,
+    "blind_feedback_to_selection": false,
+    "product_external_feedback_to_selection": false
+  }
+}

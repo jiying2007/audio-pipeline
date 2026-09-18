@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "policy_id": "source-candidate-baseline-qualified-authority-v2",
+  "authority": "FUTURE_SOURCE_CANDIDATE_EVALUATION_POLICY_ONLY",
+  "scope": {
+    "applies_to": "new source-candidate identities preregistered after this policy is merged",
+    "retroactive_reclassification_allowed": false,
+    "retroactive_rescue_allowed": false,
+    "closed_candidates": [
+      "vad-confidence-tiered-hold-v1",
+      "agc-error-adaptive-release-v1",
+      "vad-strong-origin-bounded-hysteresis-v1"
+    ]
+  },
+  "prerequisites": {
+    "candidate_identity_frozen_before_qualification": true,
+    "candidate_values_frozen_before_qualification": true,
+    "candidate_value_search": false,
+    "authority_pool_order_preregistered": true,
+    "authority_pool_seed_and_generator_contract_preregistered": true,
+    "candidate_execution_before_authority_lock": false
+  },
+  "baseline_qualification": {
+    "actor": "exact shipping/source-base processor only",
+    "candidate_processor_forbidden": true,
+    "selection_rule": "select the first N baseline-valid partitions in the preregistered pool order",
+    "baseline_valid_definition": "all absolute per-case gates pass on the shipping/source-base processor",
+    "invalid_pool_entry_status": "AUTHORITY_POOL_ENTRY_INVALID",
+    "invalid_pool_entry_candidate_effect": "cannot reject, rank, tune, or rescue a candidate",
+    "invalid_pool_entry_diagnostic_use": true,
+    "selected_identity_binding": [
+      "generator_seed",
+      "corpus_id",
+      "corpus_sha256"
+    ],
+    "minimum_selected_partitions_defined_by_candidate_contract": true,
+    "insufficient_valid_partitions_status": "AUTHORITY_INCOMPLETE",
+    "candidate_budget_consumed_on_authority_incomplete": false
+  },
+  "candidate_evaluation": {
+    "allowed_partitions": "only the baseline-qualified locked partitions",
+    "absolute_case_gates_apply": true,
+    "relative_regression_gates_apply": true,
+    "corpus_substitution_after_lock": false,
+    "pool_reordering_after_qualification": false,
+    "candidate_feedback_to_authority_selection": false,
+    "authority_lock_may_reject_identity_drift": true
+  },
+  "one_way_boundary": {
+    "qualification_output_may_not_modify_candidate_values": true,
+    "qualification_output_may_not_expand_candidate_budget": true,
+    "qualification_output_may_not_authorize_source_merge": true,
+    "qualification_output_may_not_authorize_shipping": true,
+    "qualification_output_may_not_authorize_hil": true,
+    "qualification_output_may_not_authorize_product_certification": true
+  },
+  "outcomes": {
+    "qualified": "BASELINE_QUALIFIED_AUTHORITY_LOCK",
+    "insufficient": "AUTHORITY_INCOMPLETE"
+  }
+}

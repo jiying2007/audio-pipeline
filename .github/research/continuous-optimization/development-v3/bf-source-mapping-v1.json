@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "investigation_id": "bf-health-selected-bypass-source-mapping-v1",
+  "authority": "DIAGNOSTIC_ONLY",
+  "candidate_budget": 0,
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "stage_lane_run": 35320921792,
+    "artifact_id": 10536962086,
+    "artifact_digest": "sha256:c6a4c881d038813a38f99e7aceb97884459bab3f2d2e74678f6792ff9c8588f8",
+    "lane_decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+    "emulator_variant": "health-selected-bypass",
+    "emulator_parameter": 0.25
+  },
+  "question": "Can the emulator winner be mapped one-to-one onto the current shipping BF fallback/hard-fault state machine without changing multiple admission, persistence, channel-selection and recovery semantics at once?",
+  "current_shipping_features": [
+    "coherence+ratio soft fallback admission",
+    "75/25 soft fallback",
+    "roughness-directed hard contamination classification",
+    "0.08..0.28 hard-fault ratio envelope",
+    "two-update hard arming",
+    "opposite-channel health-selected hard bypass",
+    "separate hard recovery"
+  ],
+  "emulator_differences": [
+    "single ratio<0.25 bypass admission",
+    "no two-update hard arming",
+    "energy-strong default selection unless roughness redirects",
+    "different recovery semantics"
+  ],
+  "next_decision": "source-mapping diagnostic only; no BF source candidate until one exact implementation hypothesis is frozen",
+  "prohibited": [
+    "edit BF shipping source",
+    "select a BF source candidate",
+    "tune multiple BF admission/recovery constants jointly",
+    "treat emulator output as executable product evidence",
+    "shipping/HIL/Product Certification promotion"
+  ]
+}

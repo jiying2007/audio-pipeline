@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "candidate_id": "vad-confidence-tiered-hold-v1",
+  "authority": "SOURCE_CANDIDATE_EVALUATION_ONLY",
+  "candidate_budget": 1,
+  "confirmation_limit": 0,
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "stage_lane_run": 35320921792,
+    "artifact_id": 10536509725,
+    "artifact_digest": "sha256:204412606029f14d240cdcb404e6ff2355080927befcac68279d7e5de0a583ba",
+    "lane_decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+    "algorithm": "confidence-tiered-hold",
+    "parameter": 6
+  },
+  "hypothesis": "Very-high-confidence VAD frames can safely extend hangover beyond the current strong 8-frame hold without changing probability generation or decision thresholds.",
+  "exact_source_change": {
+    "path": "src/enhance/ap_vad.c",
+    "keep_thresholds": {
+      "local": 0.45,
+      "ns_assisted": 0.35,
+      "strong": 0.5
+    },
+    "add_very_strong_threshold": 0.7,
+    "add_very_strong_hold_frames": 10,
+    "keep_strong_hold_frames": 8,
+    "keep_weak_hold_frames": 6,
+    "rule_order": [
+      "prob >= 0.70 -> hold=10",
+      "else prob >= 0.50 -> hold=8",
+      "else prob > decision_threshold -> hold=max(current,6)",
+      "else decrement"
+    ],
+    "probability_generation_mutation": false,
+    "noise_adaptation_mutation": false,
+    "ns_fusion_mutation": false
+  },
+  "fresh_candidate_evaluation": {
+    "seeds": [
+      4751,
+      5751,
+      6751
+    ],
+    "data_role": "development-fresh-source-candidate-evaluation",
+    "selection_reuse": false,
+    "candidate_value_search": false,
+    "required_exact_policy_conformance": true,
+    "require_all_case_gates_pass": true,
+    "max_recall_regression": 0.03,
+    "max_f1_regression": 0.03,
+    "max_fpr_regression": 0.03
+  },
+  "promotion": {
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "independent_confirmation_required_after_pass": true
+  }
+}

@@ -126,6 +126,34 @@ def validate_policy(policy: dict[str, Any]) -> None:
     if evaluation.get("candidate_feedback_to_authority_selection") is not False:
         raise ValueError("candidate feedback may not affect authority selection")
 
+    lock = policy.get("authority_lock", {})
+    if lock.get("required_before_candidate_execution") is not True:
+        raise ValueError("authority-v2 lock must be required before candidate execution")
+    if lock.get("predeclared_lock_path_required") is not True:
+        raise ValueError("authority-v2 lock path must be preregistered")
+    if lock.get("lock_path_root") != (
+        ".github/research/continuous-optimization/source-authority-locks"
+    ):
+        raise ValueError("authority-v2 lock root drifted")
+    if lock.get("qualification_limit_per_candidate_identity") != 1:
+        raise ValueError("authority-v2 qualification limit must remain one")
+    if lock.get("qualification_replay_additional_authority") is not False:
+        raise ValueError("qualification replay cannot add authority")
+    required_lock_bindings = {
+        "policy_sha256",
+        "candidate_contract_sha256",
+        "source_base_sha",
+        "qualification_profile",
+        "baseline_executable_target",
+        "baseline_executable_sha256",
+        "baseline_args",
+        "generator_contract",
+        "pool_order",
+        "selected_authority",
+    }
+    if set(lock.get("lock_must_bind", [])) != required_lock_bindings:
+        raise ValueError("authority-v2 lock binding set drifted")
+
     outcomes = policy.get("outcomes", {})
     if outcomes != {
         "qualified": "BASELINE_QUALIFIED_AUTHORITY_LOCK",
@@ -147,6 +175,22 @@ def _validate_generator(generator: Any) -> dict[str, Any]:
     if not isinstance(extra_args, list) or any(not isinstance(x, str) for x in extra_args):
         raise ValueError("authority-v2 generator extra_args must be string list")
     return {"path": path, "seconds": seconds, "extra_args": extra_args}
+
+
+def _validate_lock_path(candidate_id: str, raw: Any, policy: dict[str, Any]) -> str:
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("authority-v2 authority_lock_path is required")
+    path = Path(raw)
+    root = Path(policy["authority_lock"]["lock_path_root"])
+    if path.is_absolute() or ".." in path.parts or path.suffix != ".json":
+        raise ValueError("authority-v2 lock path must be safe repo-relative JSON")
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("authority-v2 lock path must remain under canonical lock root") from exc
+    if path.name != f"{candidate_id}.json":
+        raise ValueError("authority-v2 lock filename must equal candidate_id.json")
+    return path.as_posix()
 
 
 def _validate_profile_binding(
@@ -241,6 +285,11 @@ def validate_candidate_contract(
         raise ValueError("candidate authority-v2 selection rule drifted")
     if v2.get("candidate_execution_before_lock") is not False:
         raise ValueError("candidate execution before authority lock must be false")
+    if v2.get("qualification_limit") != 1:
+        raise ValueError("authority-v2 qualification_limit must remain one")
+    authority_lock_path = _validate_lock_path(
+        candidate_id, v2.get("authority_lock_path"), policy
+    )
     generator = _validate_generator(v2.get("generator"))
 
     return {
@@ -252,6 +301,8 @@ def validate_candidate_contract(
         "baseline_executable_target": baseline_target,
         "baseline_args": baseline_args,
         "generator": generator,
+        "qualification_limit": 1,
+        "authority_lock_path": authority_lock_path,
         "contract_sha256": sha256_file(contract_path),
     }
 
@@ -421,6 +472,9 @@ def run(
         "baseline_executable_sha256": engine.sha256_file(baseline_executable),
         "baseline_args": binding["baseline_args"],
         "generator_contract": binding["generator"],
+        "qualification_limit": binding["qualification_limit"],
+        "expected_authority_lock_path": binding["authority_lock_path"],
+        "qualification_replay_additional_authority": False,
         "decision": decision,
         "required_count": binding["required_count"],
         "pool_order": [item["identity"] for item in entries],
@@ -450,6 +504,122 @@ def run(
     return result
 
 
+
+def _identity_tuple(identity: dict[str, Any]) -> tuple[int, str, str]:
+    required = {"generator_seed", "corpus_id", "corpus_sha256"}
+    if set(identity) != required:
+        raise ValueError(f"authority identity fields drifted: {sorted(identity)}")
+    seed = int(identity["generator_seed"])
+    corpus_id = identity["corpus_id"]
+    digest = identity["corpus_sha256"]
+    if not isinstance(corpus_id, str) or not corpus_id:
+        raise ValueError("authority identity corpus_id must be non-empty string")
+    if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise ValueError("authority identity corpus_sha256 must be exact lowercase SHA-256")
+    return seed, corpus_id, digest
+
+
+def validate_authority_lock(
+    lock: dict[str, Any],
+    binding: dict[str, Any],
+    policy: dict[str, Any],
+    policy_path: Path,
+) -> dict[str, Any]:
+    if lock.get("schema_version") != 1:
+        raise ValueError("authority lock schema_version must be 1")
+    if lock.get("authority") != "baseline-only-source-candidate-authority-qualification":
+        raise ValueError("unexpected authority lock authority")
+    if lock.get("policy_id") != policy["policy_id"]:
+        raise ValueError("authority lock policy_id drifted")
+    if lock.get("policy_sha256") != sha256_file(policy_path):
+        raise ValueError("authority lock policy bytes drifted")
+    if lock.get("candidate_id") != binding["candidate_id"]:
+        raise ValueError("authority lock candidate identity drifted")
+    if lock.get("candidate_contract_sha256") != binding["contract_sha256"]:
+        raise ValueError("authority lock candidate contract bytes drifted")
+    if lock.get("source_base_sha") != binding["source_base_sha"]:
+        raise ValueError("authority lock source-base drifted")
+    if lock.get("qualification_profile") != binding["qualification_profile"]:
+        raise ValueError("authority lock qualification profile drifted")
+    if lock.get("baseline_executable_target") != binding["baseline_executable_target"]:
+        raise ValueError("authority lock baseline target drifted")
+    executable_sha = lock.get("baseline_executable_sha256")
+    if not isinstance(executable_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", executable_sha):
+        raise ValueError("authority lock baseline executable SHA-256 invalid")
+    if lock.get("baseline_args") != binding["baseline_args"]:
+        raise ValueError("authority lock baseline args drifted")
+    if lock.get("generator_contract") != binding["generator"]:
+        raise ValueError("authority lock generator contract drifted")
+    if lock.get("qualification_limit") != 1:
+        raise ValueError("authority lock qualification limit drifted")
+    if lock.get("expected_authority_lock_path") != binding["authority_lock_path"]:
+        raise ValueError("authority lock expected path drifted")
+    if lock.get("qualification_replay_additional_authority") is not False:
+        raise ValueError("authority lock replay cannot add authority")
+    if lock.get("decision") != "BASELINE_QUALIFIED_AUTHORITY_LOCK":
+        raise ValueError("candidate execution requires qualified authority lock")
+    if int(lock.get("required_count", 0)) != binding["required_count"]:
+        raise ValueError("authority lock required_count drifted")
+
+    pool = lock.get("pool_order")
+    selected = lock.get("selected_authority")
+    invalid = lock.get("invalid_pool_entries")
+    if not isinstance(pool, list) or not isinstance(selected, list) or not isinstance(invalid, list):
+        raise ValueError("authority lock pool/selection evidence must be arrays")
+    pool_ids = [_identity_tuple(item) for item in pool]
+    if [item[0] for item in pool_ids] != binding["pool_seeds"]:
+        raise ValueError("authority lock pool seed order drifted")
+    if len(pool_ids) != len(set(pool_ids)):
+        raise ValueError("authority lock pool identities must be unique")
+
+    selected_ids = [_identity_tuple(item) for item in selected]
+    if len(selected_ids) != binding["required_count"]:
+        raise ValueError("authority lock selected count drifted")
+    if len(selected_ids) != len(set(selected_ids)):
+        raise ValueError("authority lock selected identities must be unique")
+    pool_position = {identity: index for index, identity in enumerate(pool_ids)}
+    try:
+        selected_positions = [pool_position[item] for item in selected_ids]
+    except KeyError as exc:
+        raise ValueError("selected authority identity missing from pool") from exc
+    if selected_positions != sorted(selected_positions):
+        raise ValueError("selected authority order must preserve preregistered pool order")
+
+    invalid_ids = []
+    for item in invalid:
+        if not isinstance(item, dict) or item.get("status") != "AUTHORITY_POOL_ENTRY_INVALID":
+            raise ValueError("invalid pool entry status drifted")
+        identity = item.get("identity")
+        if not isinstance(identity, dict):
+            raise ValueError("invalid pool entry identity missing")
+        invalid_ids.append(_identity_tuple(identity))
+    if set(selected_ids) & set(invalid_ids):
+        raise ValueError("selected authority cannot contain baseline-invalid pool entry")
+
+    required_false = (
+        "candidate_budget_consumed",
+        "candidate_feedback_used",
+        "retroactive_candidate_reclassification",
+        "shipping_authority",
+        "source_merge_authorized",
+        "automatic_main_mutation",
+    )
+    for key in required_false:
+        if lock.get(key) is not False:
+            raise ValueError(f"authority lock boundary must remain false: {key}")
+    if lock.get("candidate_execution_allowed") is not True:
+        raise ValueError("qualified authority lock must explicitly allow candidate execution")
+
+    return {
+        "result": "PASS",
+        "candidate_id": binding["candidate_id"],
+        "qualification_profile": binding["qualification_profile"],
+        "selected_seeds": [item[0] for item in selected_ids],
+        "authority_lock_path": binding["authority_lock_path"],
+    }
+
+
+
 def _future_contract(
     policy: dict[str, Any],
     profile: str,
@@ -476,6 +646,11 @@ def _future_contract(
                 "seconds": 4,
                 "extra_args": [],
             },
+            "qualification_limit": 1,
+            "authority_lock_path": (
+                ".github/research/continuous-optimization/source-authority-locks/"
+                f"future-{profile}-candidate-v2.json"
+            ),
             "selection_rule": policy["baseline_qualification"]["selection_rule"],
             "candidate_execution_before_lock": False,
         },
@@ -546,6 +721,63 @@ def self_test() -> None:
         assert agc_binding["qualification_profile"] == "agc-dynamics"
         assert agc_binding["baseline_args"]["agc_target_dbfs"] == -20.0
 
+        pool_ids = [
+            {
+                "generator_seed": seed,
+                "corpus_id": f"pool-{seed}",
+                "corpus_sha256": digest * 64,
+            }
+            for seed, digest in ((101, "1"), (102, "2"), (103, "3"))
+        ]
+        lock = {
+            "schema_version": 1,
+            "authority": "baseline-only-source-candidate-authority-qualification",
+            "policy_id": policy["policy_id"],
+            "policy_sha256": sha256_file(DEFAULT_POLICY),
+            "candidate_id": vad_binding["candidate_id"],
+            "candidate_contract_sha256": vad_binding["contract_sha256"],
+            "source_base_sha": vad_binding["source_base_sha"],
+            "qualification_profile": vad_binding["qualification_profile"],
+            "baseline_executable_target": vad_binding["baseline_executable_target"],
+            "baseline_executable_sha256": "a" * 64,
+            "baseline_args": vad_binding["baseline_args"],
+            "generator_contract": vad_binding["generator"],
+            "qualification_limit": 1,
+            "expected_authority_lock_path": vad_binding["authority_lock_path"],
+            "qualification_replay_additional_authority": False,
+            "decision": "BASELINE_QUALIFIED_AUTHORITY_LOCK",
+            "required_count": vad_binding["required_count"],
+            "pool_order": pool_ids,
+            "selected_authority": pool_ids[:2],
+            "invalid_pool_entries": [{
+                "identity": pool_ids[2],
+                "status": "AUTHORITY_POOL_ENTRY_INVALID",
+                "baseline_validation_result": "FAIL",
+                "baseline_summary": {"pass_rate": 0.5},
+                "absolute_case_gate_violations": [{"case_id": "x"}],
+            }],
+            "candidate_execution_allowed": True,
+            "candidate_budget_consumed": False,
+            "candidate_feedback_used": False,
+            "retroactive_candidate_reclassification": False,
+            "shipping_authority": False,
+            "source_merge_authorized": False,
+            "automatic_main_mutation": False,
+        }
+        lock_result = validate_authority_lock(
+            lock, vad_binding, policy, DEFAULT_POLICY
+        )
+        assert lock_result["selected_seeds"] == [101, 102]
+
+        bad_lock = json.loads(json.dumps(lock))
+        bad_lock["candidate_contract_sha256"] = "0" * 64
+        try:
+            validate_authority_lock(bad_lock, vad_binding, policy, DEFAULT_POLICY)
+        except ValueError as exc:
+            assert "contract bytes drifted" in str(exc)
+        else:
+            raise AssertionError("authority lock contract drift was accepted")
+
         bad_target = json.loads(json.dumps(vad))
         bad_target["baseline_authority_qualification_v2"][
             "baseline_executable_target"
@@ -578,9 +810,11 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--validate-policy", action="store_true")
     parser.add_argument("--describe-contract", action="store_true")
+    parser.add_argument("--validate-lock", action="store_true")
     parser.add_argument("--baseline-executable", type=Path)
     parser.add_argument("--pool-corpus", action="append", type=Path, default=[])
     parser.add_argument("--candidate-contract", type=Path)
+    parser.add_argument("--authority-lock", type=Path)
     parser.add_argument("--policy", type=Path, default=DEFAULT_POLICY)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -606,6 +840,26 @@ def main() -> int:
             contract, policy, args.candidate_contract.resolve()
         )
         print(json.dumps(binding, sort_keys=True))
+        return 0
+    if args.validate_lock:
+        if args.candidate_contract is None or args.authority_lock is None:
+            parser.error("--candidate-contract and --authority-lock are required with --validate-lock")
+        contract = load_json(args.candidate_contract)
+        binding = validate_candidate_contract(
+            contract, policy, args.candidate_contract.resolve()
+        )
+        lock = load_json(args.authority_lock)
+        try:
+            actual_lock_path = args.authority_lock.resolve().relative_to(ROOT.resolve()).as_posix()
+        except ValueError as exc:
+            raise ValueError("authority lock must reside inside repository") from exc
+        if actual_lock_path != binding["authority_lock_path"]:
+            raise ValueError(
+                f"authority lock path drift: {actual_lock_path} != {binding['authority_lock_path']}"
+            )
+        result = validate_authority_lock(lock, binding, policy, args.policy.resolve())
+        result["authority_lock_sha256"] = sha256_file(args.authority_lock)
+        print(json.dumps(result, sort_keys=True))
         return 0
     if args.baseline_executable is None or args.candidate_contract is None or args.output is None:
         parser.error(

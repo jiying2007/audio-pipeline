@@ -72,5 +72,24 @@
       ],
       "absolute_gate_semantics": "canonical AGC dynamics absolute gates from agc_dynamics_diagnostic"
     }
+  },
+  "authority_lock": {
+    "required_before_candidate_execution": true,
+    "predeclared_lock_path_required": true,
+    "lock_path_root": ".github/research/continuous-optimization/source-authority-locks",
+    "lock_must_bind": [
+      "policy_sha256",
+      "candidate_contract_sha256",
+      "source_base_sha",
+      "qualification_profile",
+      "baseline_executable_target",
+      "baseline_executable_sha256",
+      "baseline_args",
+      "generator_contract",
+      "pool_order",
+      "selected_authority"
+    ],
+    "qualification_limit_per_candidate_identity": 1,
+    "qualification_replay_additional_authority": false
   }
 }

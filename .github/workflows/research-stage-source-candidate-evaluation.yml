@@ -12,6 +12,7 @@ on:
       - '.github/research/continuous-optimization/stage_source_candidate_evaluate.py'
       - '.github/research/continuous-optimization/source-candidate-authority-v2.json'
       - '.github/research/continuous-optimization/source-candidate-contract-v2.schema.json'
+      - '.github/research/continuous-optimization/source-authority-lock-v2.schema.json'
       - '.github/research/continuous-optimization/source_candidate_authority_v2.py'
       - '.github/workflows/research-stage-source-candidate-evaluation.yml'
       - '.github/program/maintenance_workflow_contract.py'
@@ -51,6 +52,7 @@ jobs:
           python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --self-test
           python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --validate-policy
           python3 -m json.tool .github/research/continuous-optimization/source-candidate-contract-v2.schema.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/source-authority-lock-v2.schema.json >/dev/null
           python3 .github/program/maintenance_workflow_contract.py --self-test --check
           python3 - <<'PY'
           import json
@@ -72,6 +74,16 @@ jobs:
           assert policy['qualification_profiles']['vad-stage']['baseline_executable_target']=='ap_process_pcm'
           assert policy['qualification_profiles']['agc-dynamics']['baseline_executable_target']=='agc_dynamics_probe'
           assert policy['qualification_profiles']['agc-dynamics']['baseline_args_required']==['agc_target_dbfs','limiter_dbfs']
+          assert policy['authority_lock']['required_before_candidate_execution'] is True
+          assert policy['authority_lock']['predeclared_lock_path_required'] is True
+          assert policy['authority_lock']['qualification_limit_per_candidate_identity']==1
+          assert policy['authority_lock']['qualification_replay_additional_authority'] is False
+          assert set(policy['authority_lock']['lock_must_bind'])=={
+              'policy_sha256','candidate_contract_sha256','source_base_sha',
+              'qualification_profile','baseline_executable_target',
+              'baseline_executable_sha256','baseline_args','generator_contract',
+              'pool_order','selected_authority',
+          }
 
           run=json.loads(Path('.github/research/continuous-optimization/stage-lanes-v1-run-1.json').read_text())
           assert run['run_id']==35320921792

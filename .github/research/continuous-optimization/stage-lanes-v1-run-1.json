@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "program_id": "bf-ns-vad-agc-stage-lanes-v1",
+  "run_id": 35320921792,
+  "run_number": 3,
+  "source_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "workflow": "Research Stage Lane Optimization",
+  "event": "workflow_dispatch",
+  "requested_lane": "all",
+  "status": "SUCCESS",
+  "artifacts": {
+    "bf": {
+      "artifact_id": 10536962086,
+      "name": "stage-lane-bf-35320921792",
+      "digest": "sha256:c6a4c881d038813a38f99e7aceb97884459bab3f2d2e74678f6792ff9c8588f8"
+    },
+    "ns": {
+      "artifact_id": 10537635101,
+      "name": "stage-lane-ns-35320921792",
+      "digest": "sha256:f5c1d6f8347891917852f390a008387a5f0a37211e709a2e3383df48ac17296f"
+    },
+    "vad": {
+      "artifact_id": 10536509725,
+      "name": "stage-lane-vad-35320921792",
+      "digest": "sha256:204412606029f14d240cdcb404e6ff2355080927befcac68279d7e5de0a583ba"
+    },
+    "agc": {
+      "artifact_id": 10537256303,
+      "name": "stage-lane-agc-35320921792",
+      "digest": "sha256:b156565c2396a26b2d0060e864e114b7cbd0c1ff14f6f87971c16884cafec84b"
+    }
+  },
+  "decisions": {
+    "bf": {
+      "decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+      "selected": {
+        "variant": "health-selected-bypass",
+        "parameter": 0.25,
+        "development_score": 58.63806867755085
+      },
+      "executable_binding": false,
+      "next_gate": "separate-source-candidate-review"
+    },
+    "ns": {
+      "decision": "REJECT_CANDIDATE",
+      "selected": {
+        "algorithm": "ema",
+        "tuning": {
+          "aec_mu": 0.22,
+          "ns_floor": 0.06,
+          "agc_target_dbfs": -20,
+          "limiter_dbfs": -2
+        }
+      },
+      "effective_winner": {
+        "algorithm": "ema",
+        "tuning": {
+          "aec_mu": 0.22,
+          "ns_floor": 0.12,
+          "agc_target_dbfs": -20,
+          "limiter_dbfs": -2
+        }
+      },
+      "executable_binding": true,
+      "next_gate": null
+    },
+    "vad": {
+      "decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+      "selected": {
+        "algorithm": "confidence-tiered-hold",
+        "parameter": 6,
+        "development_score": 2.148450288482863
+      },
+      "executable_binding": false,
+      "next_gate": "separate-source-candidate-review"
+    },
+    "agc": {
+      "decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+      "selected": {
+        "algorithm": "error-adaptive-release",
+        "algorithm_parameter": 0.05,
+        "tuning": {
+          "aec_mu": 0.22,
+          "ns_floor": 0.12,
+          "agc_target_dbfs": -20,
+          "limiter_dbfs": -2
+        }
+      },
+      "executable_binding": false,
+      "next_gate": "separate-source-candidate-review"
+    }
+  },
+  "composition": {
+    "executable_ready": false,
+    "reason": "BF/VAD/AGC frozen winners are research emulators and require separate source-candidate implementation/review before composition."
+  },
+  "feedback_boundary": {
+    "development_selected": true,
+    "validation_and_shadow_reject_only": true,
+    "blind_used_for_selection": false,
+    "product_external_used_for_selection": false
+  },
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "aec_mu": 0.22
+  }
+}

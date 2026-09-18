@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "confirmation_id": "agc-error-adaptive-release-v1-confirmation",
+  "authority": "INDEPENDENT_SOURCE_CANDIDATE_CONFIRMATION_ONLY",
+  "candidate_id": "agc-error-adaptive-release-v1",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "source_candidate_run_id": 35325485610,
+    "artifact_id": 10538537510,
+    "artifact_digest": "sha256:6e9eafd568bac7655d8874ed40a1bba1ad6e2e6d0df640d0b29ee8315098631c",
+    "decision": "SOURCE_CANDIDATE_PASS"
+  },
+  "fixed_candidate": {
+    "attack_alpha": 0.25,
+    "normal_release_alpha": 0.015,
+    "fast_release_error_db": 3,
+    "fast_release_alpha": 0.05,
+    "max_gain_linear": 8,
+    "target_dbfs": -20,
+    "limiter_dbfs": -2,
+    "candidate_search": false
+  },
+  "dynamics_confirmation": {
+    "seeds": [
+      7761,
+      8761,
+      9761
+    ],
+    "gates": {
+      "require_baseline_pass": true,
+      "require_candidate_pass": true,
+      "min_median_hot_to_low_improvement_frames": 40,
+      "max_low_to_hot_regression_frames": 5,
+      "max_slew_regression_db": 0.15,
+      "max_peak_regression_db": 0.2,
+      "max_steady_level_error_regression_db": 0.35
+    }
+  },
+  "full_pipeline_confirmation": {
+    "seeds": [
+      7762,
+      8762,
+      9762
+    ],
+    "corpus_generator": "validation/tools/build_validation_corpus.py",
+    "policy": "validation/policies/validation-smoke.json",
+    "gates": {
+      "require_baseline_pass": true,
+      "require_candidate_pass": true,
+      "min_pass_rate_delta": 0,
+      "max_p10_near_si_sdr_drop_db": 0.75,
+      "max_p10_noise_attenuation_drop_db": 0.75,
+      "max_min_vad_f1_drop": 0.05,
+      "max_max_vad_fpr_rise": 0.05,
+      "max_clip_fraction_rise": 0.002
+    }
+  },
+  "outcome": {
+    "pass": "INDEPENDENT_CONFIRMATION_PASS",
+    "reject": "SOURCE_CANDIDATE_REJECT"
+  },
+  "promotion": {
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "source_merge_authorized": false
+  }
+}

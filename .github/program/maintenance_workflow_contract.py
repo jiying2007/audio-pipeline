@@ -43,6 +43,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-candidate-blind-qualification.yml'),
     Path('.github/workflows/research-stage-lane-optimization.yml'),
     Path('.github/workflows/research-stage-source-candidate-evaluation.yml'),
+    Path('.github/workflows/research-stage-source-confirmation.yml'),
 )
 
 # Recurring execution is an explicit maintenance capability, not a default.

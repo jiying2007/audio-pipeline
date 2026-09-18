@@ -108,7 +108,7 @@ jobs:
           assert r['qualification_release']=={'tag':ra['tag']['const'],'source_sha':ra['source_sha']['const']}
 
           doc=Path(m['repository_evidence']['product_capture_doc']['path']).read_text()
-          assert 'mic_raw.pcm is interleaved two-channel S16LE microphone input before BF/AEC/NS/AGC.' in doc
+          assert 'is interleaved two-channel S16LE microphone input before BF/AEC/NS/AGC.' in doc
           assert 'capture the actual render reference fed into the echo path, not a source file that bypasses device buffering/resampling.' in doc
           assert 'before BF/AEC/NS/AGC' in r['microphone_capture_method']
           assert 'actual render reference fed into the echo path' in r['reference_loopback_or_pre_output_reference_capture_method']

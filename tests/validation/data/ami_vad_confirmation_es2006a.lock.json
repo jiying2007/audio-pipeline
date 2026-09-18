@@ -1,0 +1,56 @@
+{
+  "annotations": [
+    {"path":"ami_public_manual_1.6.2/segments/ES2006a.A.segments.xml","segments":82,"sha256":"402c45f57883473fe1368c5244aba39644009d4d6a6248e1a6b99b2241d9d670","size_bytes":16998,"speaker":"A"},
+    {"path":"ami_public_manual_1.6.2/segments/ES2006a.B.segments.xml","segments":49,"sha256":"9c78c8a0b3e866ed9c9b2c4b06668bd6bb8eab49a2bb6311d3fd717b38a5b59b","size_bytes":10281,"speaker":"B"},
+    {"path":"ami_public_manual_1.6.2/segments/ES2006a.C.segments.xml","segments":113,"sha256":"d99b7b1d070ea5e160c90a381079c4180212d3d3850cde1f4f7b6190b1204370","size_bytes":24016,"speaker":"C"},
+    {"path":"ami_public_manual_1.6.2/segments/ES2006a.D.segments.xml","segments":44,"sha256":"7ba99f0ce89e559a924690067c28bd30757b5a1f199e472100b0f97407a6e5b2","size_bytes":9294,"speaker":"D"}
+  ],
+  "audio": {
+    "lfs_sha256": "1b1a0b273f2f589abc8788b6f9a2ba5ae343c2aa71fc425f48c8b79ce1406eef",
+    "path": "amicorpus/ES2006a/audio/ES2006a.Mix-Headset.wav",
+    "size_bytes": 41098968,
+    "tree_object_id": "b57309f3793d3fe59c2cd405904975cbdb5982cf",
+    "wav": {"audio_format":1,"bits_per_sample":16,"block_align":2,"byte_rate":32000,"channels":1,"data_offset":44,"data_size":41098924,"duration_s":1284.341375,"sample_rate_hz":16000},
+    "xet_hash": "484e19837a2535df0fb015d4d2a89384f3732db110f73729f78100e6663d377a"
+  },
+  "authority": "research-external-timing-only",
+  "confirmation_policy": {
+    "candidate_id": "vad-confidence-tiered-hold-v1",
+    "candidate_search": false,
+    "fixed_strong_hold_frames": 8,
+    "fixed_strong_threshold": 0.5,
+    "fixed_very_strong_hold_frames": 10,
+    "fixed_very_strong_threshold": 0.7,
+    "fixed_weak_hold_frames": 6,
+    "local_decision_threshold": 0.45,
+    "ns_decision_threshold": 0.35,
+    "public_confirmation_consumed": false,
+    "real_authority_meeting": "ES2006a",
+    "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+    "synthetic_confirmation_seeds": [7751,8751,9751]
+  },
+  "dataset": {
+    "annotation_semantics": "manual transcription segment timing; external human-adjusted timing, not a dedicated audited speech-activity-detection gold label",
+    "license": "CC-BY-4.0",
+    "meeting": "ES2006a",
+    "name": "AMI Meeting Corpus",
+    "official_audio_url": "https://groups.inf.ed.ac.uk/ami/AMICorpusMirror/amicorpus/ES2006a/audio/ES2006a.Mix-Headset.wav",
+    "official_corpus_url": "https://groups.inf.ed.ac.uk/ami/corpus/"
+  },
+  "discovery_provenance": {
+    "artifact_digest": "sha256:cee95c050e367a9cce85af656324a8d0921e81cd5b5d77984329256069bfb21d",
+    "artifact_id": 10543285063,
+    "candidate_feedback": false,
+    "head_sha": "24cf810e32de842104b7e6bf46ea6d867b4534b8",
+    "run_id": 35334960942,
+    "workflow": "Research Stage Source Confirmation"
+  },
+  "labeling": {"frame_ms":10,"rule":"frame center timestamp is inside the union of manual transcription segments across speakers A/B/C/D"},
+  "schema_version": 1,
+  "transport_mirror": {"repository":"ggfox00000/dia-AMICorpus-all","revision":"a249db53de253a3a0a864c93a51d613159dfec7c"},
+  "windows": [
+    {"activity_fraction":0.48710000000000375,"end_byte":12000043,"end_s":375.0,"length_bytes":640000,"sha256":"161ccb5260035c82b2ba08c48a2da587abedfeadc786bc5a34abb3751d4602cd","start_byte":11360044,"start_s":355.0,"window_id":"ES2006a-w1"},
+    {"activity_fraction":0.2616000000000042,"end_byte":26720043,"end_s":835.0,"length_bytes":640000,"sha256":"8ee2befd9f56051a360fbf5bff6050069c554919627443da65eccf652c16a18c","start_byte":26080044,"start_s":815.0,"window_id":"ES2006a-w2"},
+    {"activity_fraction":0.7484000000000037,"end_byte":33760043,"end_s":1055.0,"length_bytes":640000,"sha256":"ddefbff1a58de4b27a07069498dff9ea3afd6ac0a401f9707a8e94b281c7f4aa","start_byte":33120044,"start_s":1035.0,"window_id":"ES2006a-w3"}
+  ]
+}

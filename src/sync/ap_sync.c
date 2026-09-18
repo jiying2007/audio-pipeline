@@ -5,6 +5,12 @@
 #define AP_SYNC_MIN_CORRELATION_SQUARED 0.0324f
 #define AP_SYNC_MIN_PEAK_RATIO 1.01f
 #define AP_SYNC_ROUTE_CONFIRMATIONS 3u
+#define AP_SYNC_UNIQUENESS_PEAKS 4u
+
+typedef struct ap_sync_coarse_peak {
+    uint32_t delay;
+    float score;
+} ap_sync_coarse_peak_t;
 
 static float ap_sync_clamp(float x, float lo, float hi) {
     return x < lo ? lo : (x > hi ? hi : x);
@@ -20,24 +26,44 @@ static uint32_t ap_sync_distance(uint32_t a, uint32_t b) {
     return a > b ? a - b : b - a;
 }
 
-static int ap_sync_peak_is_unique(const ap_sync_state_t *s,
-                                  const float *mic,
-                                  uint32_t frame_samples,
-                                  uint32_t max_delay,
+static void ap_sync_record_coarse_peak(ap_sync_coarse_peak_t *peaks,
+                                       uint32_t *peak_count,
+                                       uint32_t delay,
+                                       float score) {
+    uint32_t count = *peak_count;
+    uint32_t pos = 0u, i;
+
+    while (pos < count && peaks[pos].score >= score) pos++;
+    if (pos >= AP_SYNC_UNIQUENESS_PEAKS) return;
+    if (count < AP_SYNC_UNIQUENESS_PEAKS) count++;
+    for (i = count - 1u; i > pos; --i) peaks[i] = peaks[i - 1u];
+    peaks[pos].delay = delay;
+    peaks[pos].score = score;
+    *peak_count = count;
+}
+
+static int ap_sync_peak_is_unique(const ap_sync_coarse_peak_t *peaks,
+                                  uint32_t peak_count,
                                   uint32_t best_delay,
                                   float best_score,
-                                  uint32_t coarse_step,
-                                  uint32_t sample_step) {
+                                  uint32_t coarse_step) {
     float runner_up = 0.0f;
-    uint32_t d;
+    uint32_t i;
     const uint32_t guard = coarse_step ? coarse_step : 1u;
 
     if (best_score < AP_SYNC_MIN_CORRELATION_SQUARED) return 0;
-    for (d = 0u; d <= max_delay; d += coarse_step) {
-        float score;
-        if (ap_sync_distance(d, best_delay) <= guard) continue;
-        score = ap_sync_delay_score(s, mic, frame_samples, d, sample_step);
-        if (score > runner_up) runner_up = score;
+
+    /*
+     * Coarse candidates are spaced by coarse_step. The inclusive
+     * [best_delay - guard, best_delay + guard] exclusion interval can
+     * therefore cover at most three coarse candidates. Keeping the top four
+     * coarse scores is sufficient to recover the exact best score outside
+     * that interval after one-sample local refinement, without rescoring the
+     * render ring.
+     */
+    for (i = 0u; i < peak_count; ++i) {
+        if (ap_sync_distance(peaks[i].delay, best_delay) <= guard) continue;
+        if (peaks[i].score > runner_up) runner_up = peaks[i].score;
     }
     return runner_up <= 1.0e-12f || best_score >= runner_up * AP_SYNC_MIN_PEAK_RATIO;
 }
@@ -170,6 +196,8 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
     const uint32_t coarse_step = sample_rate_hz / 500u ? sample_rate_hz / 500u : 1u;
     const uint32_t sample_step = 4u;
     float best = 0.0f;
+    ap_sync_coarse_peak_t coarse_peaks[AP_SYNC_UNIQUENESS_PEAKS];
+    uint32_t coarse_peak_count = 0u;
     uint32_t best_delay = s->delay_samples, d;
     memset(event, 0, sizeof(*event));
     if (!enable_delay_tracking ||
@@ -178,6 +206,7 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
     s->delay_update_counter = 0u;
     for (d = 0u; d <= max_delay; d += coarse_step) {
         const float score = ap_sync_delay_score(s, mic, frame_samples, d, sample_step);
+        ap_sync_record_coarse_peak(coarse_peaks, &coarse_peak_count, d, score);
         if (score > best) {
             best = score;
             best_delay = d;
@@ -216,8 +245,8 @@ void ap_sync_track_delay(ap_sync_state_t *s, const float *mic,
             s->last_best_delay = best_delay;
             s->have_last_best_delay = 1u;
             event->route_jump = 1u;
-        } else if (!ap_sync_peak_is_unique(s, mic, frame_samples, max_delay,
-                                           best_delay, best, coarse_step, sample_step)) {
+        } else if (!ap_sync_peak_is_unique(coarse_peaks, coarse_peak_count,
+                                           best_delay, best, coarse_step)) {
             s->route_candidate_confirmations = 0u;
             event->delay_observed = 0u;
         } else if (enable_clock_drift_compensation) {

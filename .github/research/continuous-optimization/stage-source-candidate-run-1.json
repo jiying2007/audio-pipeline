@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "run_id": 35325485610,
+  "run_number": 2,
+  "workflow": "Research Stage Source Candidate Evaluation",
+  "source_head_sha": "5da01e366f1673fdcbc247427f0b5c49b0e36f83",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "event": "workflow_dispatch",
+  "requested_candidate": "all",
+  "conclusion": "success",
+  "candidates": {
+    "vad": {
+      "candidate_id": "vad-confidence-tiered-hold-v1",
+      "decision": "SOURCE_CANDIDATE_PASS",
+      "artifact_id": 10538753543,
+      "artifact_name": "stage-source-candidate-vad-35325485610",
+      "artifact_digest": "sha256:95d01d97c80265dd92af7e2a727e82ea3c1ff4a3d9054f317486f763791012aa",
+      "fresh_seeds": [
+        4751,
+        5751,
+        6751
+      ],
+      "violations": 0,
+      "total_changed_active_frames_vs_base": 23,
+      "total_probability_mismatches": 0,
+      "total_policy_mismatches": 0,
+      "aggregate_observation": "fresh source-candidate corpora exercised the policy and passed all gates, but aggregate min F1/recall/max FPR were unchanged versus baseline on these three corpora",
+      "independent_confirmation_required": true
+    },
+    "agc": {
+      "candidate_id": "agc-error-adaptive-release-v1",
+      "decision": "SOURCE_CANDIDATE_PASS",
+      "artifact_id": 10538537510,
+      "artifact_name": "stage-source-candidate-agc-35325485610",
+      "artifact_digest": "sha256:6e9eafd568bac7655d8874ed40a1bba1ad6e2e6d0df640d0b29ee8315098631c",
+      "fresh_seeds": [
+        4761,
+        5761,
+        6761
+      ],
+      "violations": 0,
+      "median_hot_to_low_improvement_frames": 55,
+      "low_to_hot_regression_frames": 0,
+      "slew_regression_db": 0.044562999999999575,
+      "peak_regression_db": 0.0005399999999990968,
+      "emulator_conformance_max": {
+        "gain_db_delta": 0.000009979329664844272,
+        "output_rms_db_delta": 0.000009586283031381981,
+        "output_peak_db_delta": 0.00001012258979926628
+      },
+      "independent_confirmation_required": true
+    }
+  },
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "release_source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "aec_mu": 0.22
+  },
+  "authority": {
+    "shipping": false,
+    "automatic_main_mutation": false,
+    "hil": false,
+    "product_certification": false
+  }
+}

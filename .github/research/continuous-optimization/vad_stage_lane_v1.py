@@ -177,7 +177,7 @@ def run(processor:Path,dev_paths:list[Path],validation:Path,shadow:Path,output:P
 def self_test()->None:
     probs=[0.1,0.6,0.4]+[0.1]*10
     trace=decision_trace(probs,"vad-isolated","shipping-strong-weak",6)
-    assert trace[1]["vad_active"]==1 and trace[8]["vad_active"]==0
+    assert trace[1]["vad_active"]==1 and trace[8]["vad_active"]==1 and trace[9]["vad_active"]==0
     for c in CANDIDATES:
         t=decision_trace(probs,"ns-isolated",c["algorithm"],c["parameter"])
         assert len(t)==len(probs)

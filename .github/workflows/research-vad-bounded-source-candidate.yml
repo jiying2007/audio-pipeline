@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/research/continuous-optimization/vad-stage-lane-v2-run-1.json'
       - '.github/research/continuous-optimization/source-candidates/vad-strong-origin-bounded-hysteresis-v1.json'
+      - '.github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json'
+      - '.github/research/continuous-optimization/vad-bounded-source-candidate-run-1.json'
       - '.github/research/continuous-optimization/stage_source_vad_bounded_patch.py'
       - '.github/research/continuous-optimization/stage_source_vad_bounded_evaluate.py'
       - '.github/workflows/research-vad-bounded-source-candidate.yml'
@@ -14,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: research-vad-bounded-source-candidate-${{ github.ref }}
@@ -55,7 +58,6 @@ jobs:
 
           c=json.loads(Path('.github/research/continuous-optimization/source-candidates/vad-strong-origin-bounded-hysteresis-v1.json').read_text())
           assert c['authority']=='SOURCE_CANDIDATE_EVALUATION_ONLY'
-          assert c['candidate_budget']==1
           assert c['confirmation_limit']==0
           assert c['source_base_sha']=='2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e'
           assert c['predecessor']['lane_run_id']==35344946937
@@ -66,7 +68,24 @@ jobs:
           assert c['fresh_candidate_evaluation']['candidate_value_search'] is False
           assert c['fresh_candidate_evaluation']['required_exact_policy_conformance'] is True
           assert c['promotion']['source_merge_authorized'] is False
-          print('VAD bounded-hysteresis source candidate contract: PASS / FRESH SOURCE EVAL NOT CONSUMED')
+
+          closure_path=Path('.github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json')
+          if closure_path.exists():
+              closure=json.loads(closure_path.read_text())
+              assert c['candidate_budget']==0
+              assert c['status']=='CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT'
+              assert c['terminal_candidate'] is True
+              assert c['consumption']['authoritative_run_id']==35350206185
+              assert c['consumption']['fresh_authority_consumed'] is True
+              assert closure['status']=='CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT'
+              assert closure['candidate_budget']==0
+              assert closure['authoritative_evaluation']['run_id']==35350206185
+              assert closure['duplicate_replay']['run_id']==35363666767
+              assert closure['duplicate_replay']['additional_evidence_weight']==0
+              print('VAD bounded-hysteresis source candidate contract: PASS / TERMINAL CLOSED')
+          else:
+              assert c['candidate_budget']==1
+              print('VAD bounded-hysteresis source candidate contract: PASS / FRESH SOURCE EVAL NOT CONSUMED')
           PY
 
   source-candidate:
@@ -78,6 +97,63 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
+
+      - name: Enforce one-shot fresh-authority consumption
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          closure_path = Path('.github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json')
+          if closure_path.exists():
+              closure = json.loads(closure_path.read_text())
+              if closure.get('terminal_candidate') is True:
+                  raise SystemExit(
+                      'source candidate is terminally closed; fresh authority cannot be consumed again'
+                  )
+
+          current = int(os.environ['GITHUB_RUN_ID'])
+          repo = os.environ['GITHUB_REPOSITORY']
+          branch = os.environ['GITHUB_REF_NAME']
+          sha = os.environ['GITHUB_SHA']
+          workflow = 'research-vad-bounded-source-candidate.yml'
+          raw = subprocess.check_output([
+              'gh', 'api',
+              f'repos/{repo}/actions/workflows/{workflow}/runs?event=workflow_dispatch&branch={branch}&per_page=100',
+          ], text=True)
+          prior_runs = [
+              item for item in json.loads(raw).get('workflow_runs', [])
+              if int(item['id']) < current and item.get('head_sha') == sha
+          ]
+          consumed = []
+          for item in prior_runs:
+              run_id = int(item['id'])
+              jobs_raw = subprocess.check_output([
+                  'gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100',
+              ], text=True)
+              jobs = json.loads(jobs_raw).get('jobs', [])
+              for job in jobs:
+                  for step in job.get('steps', []):
+                      if (
+                          step.get('name') == 'Materialize preregistered fresh source-evaluation corpora'
+                          and step.get('conclusion') == 'success'
+                      ):
+                          consumed.append(run_id)
+                          break
+                  if run_id in consumed:
+                      break
+          if consumed:
+              raise SystemExit(
+                  f'fresh source-evaluation authority already consumed by prior run(s): {sorted(consumed)}'
+              )
+          print('one-shot authority guard: PASS / no prior consumed fresh source-evaluation run')
+          PY
+
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: vad-bounded-source-candidate

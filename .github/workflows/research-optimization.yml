@@ -23,9 +23,8 @@ on:
         description: 'Runtime-safe bounded parameter search space'
         required: true
         type: choice
-        default: '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json'
+        default: '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
         options:
-          - '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json'
           - '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
           - '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
           - '.github/research/continuous-optimization/development-v3/search-space.json'
@@ -64,6 +63,7 @@ jobs:
           python3 -m json.tool .github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-closure.json >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/dataset-registry.schema.json >/dev/null
           python3 validation/tools/authority.py --self-test
@@ -259,7 +259,42 @@ jobs:
           assert origin['automatic_search_space_mutation'] is False
           assert origin['automatic_main_mutation'] is False
           assert origin['shipping_authority'] is False
-          print('AEC boundary refinement v6 search contract: PASS')
+          closure = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-closure.json'
+          ).read_text())
+          assert closure['hypothesis_id'] == 'multidataset-aec-boundary-refinement-v6'
+          assert closure['status'] == 'CLOSED_TERMINAL_VISIBLE_REJECT'
+          assert closure['decision'] == 'TERMINAL_REJECT'
+          assert closure['candidate_budget'] == 0
+          assert closure['search_space']['path'] == (
+              '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json'
+          )
+          assert closure['search_space']['rerun_authorized'] is False
+          assert closure['research_selection']['candidate_id'] == '6f5f432da36f'
+          assert closure['research_selection']['research_candidate_id'] == '2d13a2b08ce52a19'
+          assert closure['authoritative_qualification']['run_id'] == 35309295432
+          assert closure['authoritative_qualification']['visible_result'] == 'FAIL'
+          assert closure['authoritative_qualification']['blind_result'] is None
+          assert closure['authoritative_qualification']['failed_stage'] == 'visible-validation'
+          assert closure['authoritative_qualification']['terminal_candidate'] is True
+          assert closure['terminalization']['pr'] == 258
+          assert closure['terminalization']['main_sha'] == 'b3c351e2efbf88a34769224d82d25ddff015c944'
+          assert closure['terminalization']['retry_authorized'] is False
+          assert closure['terminalization']['resume_authorized'] is False
+          assert closure['terminalization']['new_holdout_authorized'] is False
+          assert closure['feedback_boundary'] == {
+              'visible_validation_is_reject_only': True,
+              'visible_metrics_may_shape_future_optimizer_search': False,
+              'blind_data_consumed': False,
+              'blind_data_may_shape_future_optimizer_search': False,
+          }
+          next_step = closure['next_authorized_step']
+          assert next_step['name'] == 'matched-gain-chain-factor-plan-lab-binding-v1'
+          assert next_step['may_create_algorithm_candidate'] is False
+          assert next_step['may_run_parameter_search'] is False
+          assert next_step['may_execute_hardware'] is False
+          assert next_step['candidate_budget'] == 0
+          print('AEC boundary refinement v6 search contract: PASS / CLOSED')
           PY
       - name: Enforce immutable shipping and no-promotion boundary
         run: |
@@ -321,6 +356,22 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
+      - name: Reject closed research search spaces
+        run: |
+          set -euo pipefail
+          if [[ "$SEARCH_SPACE" == '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json' ]]; then
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          closure=json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-closure.json'
+          ).read_text())
+          assert closure['status']=='CLOSED_TERMINAL_VISIBLE_REJECT'
+          assert closure['search_space']['rerun_authorized'] is False
+          PY
+            echo 'aec-boundary-refinement-v6 is terminally closed and may not be rerun' >&2
+            exit 2
+          fi
       - name: Initialize development workspace
         run: |
           set -euo pipefail

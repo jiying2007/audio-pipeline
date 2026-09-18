@@ -57,5 +57,20 @@
   "outcomes": {
     "qualified": "BASELINE_QUALIFIED_AUTHORITY_LOCK",
     "insufficient": "AUTHORITY_INCOMPLETE"
+  },
+  "qualification_profiles": {
+    "vad-stage": {
+      "baseline_executable_target": "ap_process_pcm",
+      "baseline_args_required": [],
+      "absolute_gate_semantics": "canonical VAD absolute per-case expected thresholds over vad-isolated and ns-isolated profiles"
+    },
+    "agc-dynamics": {
+      "baseline_executable_target": "agc_dynamics_probe",
+      "baseline_args_required": [
+        "agc_target_dbfs",
+        "limiter_dbfs"
+      ],
+      "absolute_gate_semantics": "canonical AGC dynamics absolute gates from agc_dynamics_diagnostic"
+    }
   }
 }

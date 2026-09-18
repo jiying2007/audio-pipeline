@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "confirmation_id": "vad-confidence-tiered-hold-v1-es2006a-public-confirmation",
+  "authority": "INDEPENDENT_PUBLIC_SOURCE_CONFIRMATION_ONLY",
+  "candidate_id": "vad-confidence-tiered-hold-v1",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "source_confirmation_run_id": 35334960942,
+    "source_confirmation_head_sha": "24cf810e32de842104b7e6bf46ea6d867b4534b8",
+    "synthetic_artifact_id": 10542441824,
+    "synthetic_artifact_digest": "sha256:0b486507008d125e4e425c1b8be68dd718dda591b1960f1fa960b48b5757418f",
+    "synthetic_decision": "SYNTHETIC_CONFIRMATION_PASS_PENDING_PUBLIC_LOCK",
+    "synthetic_total_benefit": 0.05228118095743839
+  },
+  "fixed_candidate": {
+    "local_threshold": 0.45,
+    "ns_threshold": 0.35,
+    "very_strong_threshold": 0.70,
+    "very_strong_hold_frames": 10,
+    "strong_threshold": 0.50,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6,
+    "candidate_search": false
+  },
+  "public_authority": {
+    "meeting": "ES2006a",
+    "lock_path": "tests/validation/data/ami_vad_confirmation_es2006a.lock.json",
+    "lock_git_blob_sha": "21fd847134b5a3e71248b811a6a81c0064b4d59d",
+    "lock_merged_main_sha": "c8fedd92f82117982fbe815c0cf3b53d93a280f0",
+    "license": "CC-BY-4.0",
+    "annotation_semantics": "manual transcription segment timing; external human-adjusted timing, not a dedicated audited speech-activity-detection gold label",
+    "candidate_feedback_before_dispatch": false
+  },
+  "gates": {
+    "require_probability_trace_identity": true,
+    "require_no_active_contraction": true,
+    "require_candidate_behavior_exercised": true,
+    "min_aggregate_recall_improvement": 0.005,
+    "max_aggregate_f1_drop": 0.02,
+    "max_aggregate_fpr_rise": 0.01,
+    "max_window_recall_drop": 0.0,
+    "max_window_f1_drop": 0.03,
+    "max_window_fpr_rise": 0.01,
+    "max_event_recall_drop": 0.0,
+    "max_onset_p95_regression_ms": 0.0,
+    "max_release_tail_p95_regression_ms": 25.0
+  },
+  "outcome": {
+    "pass": "PUBLIC_CONFIRMATION_PASS",
+    "reject": "SOURCE_CANDIDATE_REJECT"
+  },
+  "promotion": {
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "source_merge_authorized": false,
+    "next_step_after_pass": "separate exact-source integration PR with full repository regression; no direct shipping mutation"
+  }
+}

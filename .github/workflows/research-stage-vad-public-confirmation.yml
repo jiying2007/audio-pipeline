@@ -1,0 +1,185 @@
+name: Research Stage VAD Public Confirmation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/stage-source-confirmation-run-1.json'
+      - '.github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1-public.json'
+      - '.github/research/continuous-optimization/stage_source_vad_public_confirmation.py'
+      - 'tests/validation/data/ami_vad_confirmation_es2006a.lock.json'
+      - '.github/workflows/research-stage-vad-public-confirmation.yml'
+      - '.github/program/maintenance_workflow_contract.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-stage-vad-public-confirmation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_BASE_SHA: 2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e
+  PUBLIC_LOCK: tests/validation/data/ami_vad_confirmation_es2006a.lock.json
+  PUBLIC_CONTRACT: .github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1-public.json
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Validate public confirmation contract without consuming authority
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/stage_source_vad_public_confirmation.py
+          python3 .github/research/continuous-optimization/stage_source_vad_public_confirmation.py --self-test
+          python3 .github/research/continuous-optimization/stage_source_candidate_patch.py --self-test
+          python3 tests/validation/discover_ami_vad_meeting.py --self-test
+          python3 .github/program/maintenance_workflow_contract.py --self-test --check
+          test "$(git hash-object "$PUBLIC_LOCK")" = "21fd847134b5a3e71248b811a6a81c0064b4d59d"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          run=json.loads(Path('.github/research/continuous-optimization/stage-source-confirmation-run-1.json').read_text())
+          assert run['run_id']==35334960942
+          assert run['vad']['decision']=='SYNTHETIC_CONFIRMATION_PASS_PENDING_PUBLIC_LOCK'
+          assert run['vad']['violations']==[]
+          assert run['vad']['public_authority_consumed'] is False
+          assert run['agc']['decision']=='SOURCE_CANDIDATE_REJECT'
+          assert run['agc']['candidate_budget']==0
+
+          lock=json.loads(Path('tests/validation/data/ami_vad_confirmation_es2006a.lock.json').read_text())
+          assert lock['authority']=='research-external-timing-only'
+          assert lock['dataset']['meeting']=='ES2006a'
+          assert lock['dataset']['license']=='CC-BY-4.0'
+          assert lock['discovery_provenance']['run_id']==35334960942
+          assert lock['discovery_provenance']['candidate_feedback'] is False
+          assert lock['confirmation_policy']['candidate_id']=='vad-confidence-tiered-hold-v1'
+          assert lock['confirmation_policy']['candidate_search'] is False
+          assert lock['confirmation_policy']['public_confirmation_consumed'] is False
+          assert [x['window_id'] for x in lock['windows']]==['ES2006a-w1','ES2006a-w2','ES2006a-w3']
+          assert [x['sha256'] for x in lock['windows']]==[
+              '161ccb5260035c82b2ba08c48a2da587abedfeadc786bc5a34abb3751d4602cd',
+              '8ee2befd9f56051a360fbf5bff6050069c554919627443da65eccf652c16a18c',
+              'ddefbff1a58de4b27a07069498dff9ea3afd6ac0a401f9707a8e94b281c7f4aa',
+          ]
+
+          c=json.loads(Path('.github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1-public.json').read_text())
+          assert c['authority']=='INDEPENDENT_PUBLIC_SOURCE_CONFIRMATION_ONLY'
+          assert c['candidate_id']=='vad-confidence-tiered-hold-v1'
+          assert c['source_base_sha']==run['source_base_sha']
+          assert c['public_authority']['meeting']=='ES2006a'
+          assert c['public_authority']['lock_git_blob_sha']=='21fd847134b5a3e71248b811a6a81c0064b4d59d'
+          assert c['public_authority']['candidate_feedback_before_dispatch'] is False
+          assert c['gates']['min_aggregate_recall_improvement']==0.005
+          assert c['gates']['max_aggregate_fpr_rise']==0.01
+          assert c['gates']['max_release_tail_p95_regression_ms']==25.0
+          assert c['promotion']['source_merge_authorized'] is False
+          print('VAD ES2006a public confirmation contract: PASS / AUTHORITY NOT CONSUMED')
+          PY
+
+  public-confirmation:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-es2006a-public-confirmation
+
+      - name: Re-discover and bind ES2006a to the committed lock before candidate evaluation
+        run: |
+          set -euo pipefail
+          mkdir -p stage-vad-public-confirmation-out
+          python3 tests/validation/discover_ami_vad_meeting.py             --meeting ES2006a             --output stage-vad-public-confirmation-out/discovery.json             | tee stage-vad-public-confirmation-out/discovery-summary.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('stage-vad-public-confirmation-out/discovery.json').read_text())
+          l=json.loads(Path('tests/validation/data/ami_vad_confirmation_es2006a.lock.json').read_text())
+          assert d['authority']=='research-discovery-only'
+          assert d['dataset']['meeting']==l['dataset']['meeting']=='ES2006a'
+          assert d['dataset']['license']==l['dataset']['license']=='CC-BY-4.0'
+          assert d['transport_mirror']==l['transport_mirror']
+          for key in ('path','size_bytes','tree_object_id','lfs_sha256','xet_hash'):
+              assert d['audio'][key]==l['audio'][key], key
+          for key in ('audio_format','channels','sample_rate_hz','bits_per_sample','byte_rate','block_align','data_offset','data_size'):
+              assert d['audio']['wav'][key]==l['audio']['wav'][key], key
+          assert abs(d['audio']['duration_s']-l['audio']['wav']['duration_s']) < 1e-9
+          anns={x['speaker']:x for x in d['annotations']['files']}
+          assert set(anns)=={'A','B','C','D'}
+          for item in l['annotations']:
+              cur=anns[item['speaker']]
+              for key in ('path','sha256','size_bytes','segments'):
+                  assert cur[key]==item[key], (item['speaker'],key)
+          wins={x['window_id']:x for x in d['window_plan']}
+          assert set(wins)=={'ES2006a-w1','ES2006a-w2','ES2006a-w3'}
+          for item in l['windows']:
+              cur=wins[item['window_id']]
+              assert cur['start_s']==item['start_s']
+              assert cur['end_s']==item['end_s']
+              assert abs(cur['activity_fraction']-item['activity_fraction']) < 1e-9
+              assert cur['audio_range']['start_byte']==item['start_byte']
+              assert cur['audio_range']['end_byte']==item['end_byte']
+              assert cur['audio_range']['length_bytes']==item['length_bytes']
+              assert cur['audio_range']['sha256']==item['sha256']
+          print('ES2006a committed lock re-bound: PASS')
+          PY
+
+      - name: Materialize exact VAD base and fixed candidate
+        run: |
+          set -euo pipefail
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/vad-public-base "$SOURCE_BASE_SHA"
+          git worktree add --detach /tmp/vad-public-candidate "$SOURCE_BASE_SHA"
+          python3 .github/research/continuous-optimization/stage_source_candidate_patch.py             --root /tmp/vad-public-candidate --candidate vad
+          git -C /tmp/vad-public-candidate diff -- src/enhance/ap_vad.c             > stage-vad-public-confirmation-out/candidate.patch
+          test -s stage-vad-public-confirmation-out/candidate.patch
+          sha256sum stage-vad-public-confirmation-out/candidate.patch             > stage-vad-public-confirmation-out/candidate.patch.sha256
+          test -z "$(git -C /tmp/vad-public-candidate diff --name-only | grep -v '^src/enhance/ap_vad.c$' || true)"
+
+      - name: Build exact VAD base and candidate
+        run: |
+          set -euo pipefail
+          cmake -S /tmp/vad-public-base -B /tmp/vad-public-build-base             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-public-build-base --target ap_process_pcm --parallel
+          cmake -S /tmp/vad-public-candidate -B /tmp/vad-public-build-candidate             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-public-build-candidate --target ap_process_pcm --parallel
+          sha256sum             /tmp/vad-public-build-base/ap_process_pcm             /tmp/vad-public-build-candidate/ap_process_pcm             > stage-vad-public-confirmation-out/processors.sha256
+
+      - name: Consume locked ES2006a exactly once for fixed-candidate confirmation
+        run: |
+          python3 .github/research/continuous-optimization/stage_source_vad_public_confirmation.py             --base-processor /tmp/vad-public-build-base/ap_process_pcm             --candidate-processor /tmp/vad-public-build-candidate/ap_process_pcm             --lock "$PUBLIC_LOCK"             --contract "$PUBLIC_CONTRACT"             --output stage-vad-public-confirmation-out/result.json
+
+      - name: Enforce public confirmation authority boundary
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('stage-vad-public-confirmation-out/result.json').read_text())
+          assert r['authority']=='independent-public-source-confirmation-only'
+          assert r['candidate_id']=='vad-confidence-tiered-hold-v1'
+          assert r['decision'] in {'PUBLIC_CONFIRMATION_PASS','SOURCE_CANDIDATE_REJECT'}
+          assert r['public_authority']['meeting']=='ES2006a'
+          assert r['public_authority_consumed'] is True
+          assert r['shipping_authority'] is False
+          assert r['source_merge_authorized'] is False
+          assert r['automatic_main_mutation'] is False
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stage-vad-public-confirmation-${{ github.run_id }}
+          path: stage-vad-public-confirmation-out/
+          retention-days: 30
+          if-no-files-found: warn

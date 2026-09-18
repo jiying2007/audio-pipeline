@@ -70,7 +70,7 @@ AEC resident geometry is derived from the compiled max tail/internal rate, so LO
 Adaptation is gated by far-end/double-talk activity. Both MDF and NLMS maintain two adaptation cadences:
 
 - **acquisition/recovery cadence** — the configured `aec_adapt_stride`;
-- **steady cadence** — after 50 consecutive far-end-active/non-double-talk frames, at least stride 4.
+- **steady cadence** — after 50 consecutive far-end-active/non-double-talk frames, at least stride 2; a larger configured `aec_adapt_stride` remains in force, so the steady cadence is `max(configured, 2)`.
 
 Double talk or loss of far-end activity clears the steady window and immediately restores the configured acquisition cadence. Quality changes and AEC reset also clear the steady state. This lowers steady-state update/constrain work without slowing path reacquisition after a real condition change.
 

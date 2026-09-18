@@ -1,0 +1,134 @@
+name: Research VAD Strong-Origin Bounded Hysteresis
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/stage-source-candidate-closure-v1.json'
+      - '.github/research/continuous-optimization/development-v4/vad-strong-origin-bounded-hysteresis-v1.json'
+      - '.github/research/continuous-optimization/vad_stage_lane_v2.py'
+      - '.github/workflows/research-vad-stage-lane-v2.yml'
+      - '.github/program/maintenance_workflow_contract.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-vad-stage-lane-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_BASE_SHA: 2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e
+  CONTRACT: .github/research/continuous-optimization/development-v4/vad-strong-origin-bounded-hysteresis-v1.json
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Validate v2 VAD lane contract without consuming fresh authority
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/vad_stage_lane_v2.py
+          python3 .github/research/continuous-optimization/vad_stage_lane_v2.py --self-test
+          python3 .github/program/maintenance_workflow_contract.py --self-test --check
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          closure=json.loads(Path('.github/research/continuous-optimization/stage-source-candidate-closure-v1.json').read_text())
+          assert closure['status']=='CLOSED_NO_SURVIVING_SOURCE_CANDIDATE'
+          assert closure['surviving_source_candidates']==[]
+          assert closure['next_research_boundary']['existing_candidate_retry_allowed'] is False
+          assert closure['next_research_boundary']['existing_gate_relaxation_allowed'] is False
+          assert closure['next_research_boundary']['new_hypothesis_required'] is True
+          assert closure['next_research_boundary']['fresh_authority_required'] is True
+
+          c=json.loads(Path('.github/research/continuous-optimization/development-v4/vad-strong-origin-bounded-hysteresis-v1.json').read_text())
+          assert c['authority']=='DEVELOPMENT_SELECTION_ONLY'
+          assert c['hypothesis_id']=='vad-strong-origin-bounded-hysteresis-v1'
+          assert c['source_base_sha']=='2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e'
+          assert c['predecessor']['old_vad_terminal'] is True
+          assert c['hypothesis']['mechanism']=='strong-origin-bounded-hysteresis'
+          assert c['hypothesis']['maximum_variants']==4
+          assert len(c['variants'])==4
+          assert c['fresh_authority']['development_seeds']==[14751,15751]
+          assert c['fresh_authority']['validation_seed']==16751
+          assert c['fresh_authority']['shadow_seed']==17751
+          assert c['fresh_authority']['selection_roles']['validation']=='reject-only'
+          assert c['fresh_authority']['selection_roles']['shadow']=='reject-only'
+          assert 'ES2006a' in c['fresh_authority']['forbidden_feedback']
+          assert c['selection']['development_only'] is True
+          assert c['selection']['holdout_feedback_to_ranking'] is False
+          assert c['promotion']['source_merge_authorized'] is False
+          print('VAD strong-origin bounded-hysteresis contract: PASS / FRESH AUTHORITY NOT CONSUMED')
+          PY
+
+  lane:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-stage-lane-v2
+
+      - name: Build exact source-base processor
+        run: |
+          set -euo pipefail
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/vad-v2-base "$SOURCE_BASE_SHA"
+          cmake -S /tmp/vad-v2-base -B /tmp/vad-v2-build             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-v2-build --target ap_process_pcm --parallel
+          mkdir -p stage-vad-v2-out
+          sha256sum /tmp/vad-v2-build/ap_process_pcm > stage-vad-v2-out/processor.sha256
+
+      - name: Materialize preregistered fresh synthetic authorities
+        run: |
+          set -euo pipefail
+          for seed in 14751 15751 16751 17751; do
+            (cd /tmp/vad-v2-base && PYTHONPATH=validation/tools               python3 validation/tools/build_stage_validation_corpus.py                 --output "/tmp/vad-v2-$seed" --seed "$seed" --seconds 4)
+          done
+
+      - name: Run development-only VAD mechanism selection
+        run: |
+          python3 .github/research/continuous-optimization/vad_stage_lane_v2.py             --processor /tmp/vad-v2-build/ap_process_pcm             --development-corpus /tmp/vad-v2-14751/corpus.json             --development-corpus /tmp/vad-v2-15751/corpus.json             --validation-corpus /tmp/vad-v2-16751/corpus.json             --shadow-corpus /tmp/vad-v2-17751/corpus.json             --contract "$CONTRACT"             --output stage-vad-v2-out/result.json
+
+      - name: Enforce VAD v2 authority boundary
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('stage-vad-v2-out/result.json').read_text())
+          assert r['authority']=='development-selection-only'
+          assert r['hypothesis_id']=='vad-strong-origin-bounded-hysteresis-v1'
+          assert r['decision'] in {'FROZEN_STAGE_RESEARCH_CANDIDATE','KEEP_BASELINE','REJECT_CANDIDATE'}
+          assert r['fresh_authority']=={
+              'development_seeds':[14751,15751],
+              'validation_seed':16751,
+              'shadow_seed':17751,
+          }
+          assert r['feedback_boundary']['development_selected'] is True
+          assert r['feedback_boundary']['validation_and_shadow_reject_only'] is True
+          assert r['feedback_boundary']['consumed_public_authority_used'] is False
+          assert r['feedback_boundary']['old_confirmation_seeds_used'] is False
+          assert r['source_merge_authorized'] is False
+          assert r['shipping_authority'] is False
+          assert r['automatic_main_mutation'] is False
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stage-vad-v2-${{ github.run_id }}
+          path: stage-vad-v2-out/
+          retention-days: 30
+          if-no-files-found: warn

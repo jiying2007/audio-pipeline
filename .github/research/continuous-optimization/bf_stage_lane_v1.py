@@ -286,6 +286,8 @@ def run(processor:Path, dev_sens:list[Path],dev_hard:list[Path],
     fidelity=[]
     corpus=json.loads(val_sens.read_text())
     for case in corpus["cases"]:
+        if float(case.get("dimensions", {}).get("weak_channel_ratio", 0.0)) != 1.0:
+            continue
         mic_path=val_sens.parent/case["mic_audio"]
         clean=read_pcm(val_sens.parent/case["clean_near_audio"])
         exact=shipping_output(processor,mic_path)

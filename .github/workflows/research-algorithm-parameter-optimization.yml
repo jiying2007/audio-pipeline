@@ -47,6 +47,7 @@ jobs:
             .github/research/continuous-optimization/research_optimizer_v3.py \
             .github/research/continuous-optimization/research_optimizer_v5.py \
             .github/research/continuous-optimization/research_dataset_registry.py \
+            .github/research/continuous-optimization/selection_curriculum.py \
             validation/tools/tuning_iteration*.py
           python3 -m json.tool "$ALGORITHM_SPACE" >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
@@ -54,6 +55,7 @@ jobs:
           python3 validation/tools/tuning_iteration.py --self-test
           python3 .github/research/continuous-optimization/research_optimizer_v5.py --self-test
           python3 .github/research/continuous-optimization/research_joint_optimizer.py --self-test
+          python3 .github/research/continuous-optimization/selection_curriculum.py --self-test
       - name: Enforce fixed v1 algorithm and parameter budget
         run: |
           set -euo pipefail
@@ -252,6 +254,15 @@ jobs:
                 "${reports[@]}" --output research-joint-optimization-out/failure-curriculum.json
             fi
           fi
+      - name: Mine development selection violations into advisory curriculum
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f research-joint-optimization-out/optimization-result.json ]; then
+            python3 .github/research/continuous-optimization/selection_curriculum.py \
+              --optimization-result research-joint-optimization-out/optimization-result.json \
+              --output research-joint-optimization-out/selection-curriculum.json
+          fi
       - name: Enforce research-only joint result
         if: always()
         run: |
@@ -296,6 +307,14 @@ jobs:
           print(f"- Tuning: `{json.dumps(r['selected']['tuning'],sort_keys=True)}`")
           print(f"- Research candidate: `{r['selected']['research_candidate_id']}`")
           print(f"- Generalization violations: `{len(r['gate_violations'])}`")
+          curriculum_path=Path('research-joint-optimization-out/selection-curriculum.json')
+          if curriculum_path.is_file():
+              c=json.loads(curriculum_path.read_text())
+              print(f"- Algorithm next-round signal: `{c['algorithm']['next_round_signal']}`")
+              print(f"- Parameter next-round signal: `{c['parameter']['next_round_signal']}`")
+              closest=c['parameter']['closest_repairable']
+              if closest:
+                  print(f"- Closest nonterminal parameter boundary: `{closest['candidate_id']}`, violations=`{closest['nonterminal_violation_count']}`")
           print('- Selection uses development data only; validation/shadow are final reject-only gates.')
           print('- Authority remains research-only; no main/shipping/HIL/Product Certification mutation.')
           PY

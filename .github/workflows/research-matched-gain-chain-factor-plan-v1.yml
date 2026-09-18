@@ -1,0 +1,99 @@
+name: Research Matched Gain-Chain Factor Plan V1
+
+on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-v1.json'
+      - '.github/workflows/research-matched-gain-chain-factor-plan-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-v1.json'
+      - '.github/workflows/research-matched-gain-chain-factor-plan-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Bind to exact predecessor and research-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          p = Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-v1.json')
+          m = json.loads(p.read_text())
+          assert m['base_main_sha'] == 'a7c33bd20eda4a752082b44a34f959acba81f308'
+          assert m['predecessor']['investigation'] == 'matched-gain-chain-capture-contract-v1'
+          assert m['predecessor']['fresh_main_sha'] == m['base_main_sha']
+          if '${{ github.event_name }}' == 'pull_request':
+              base = '${{ github.event.pull_request.base.sha }}'
+              head = '${{ github.event.pull_request.head.sha }}'
+              out = subprocess.check_output(['git','diff','--name-only',base,head], text=True).splitlines()
+              allowed = {
+                  '.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-v1.json',
+                  '.github/workflows/research-matched-gain-chain-factor-plan-v1.yml',
+              }
+              assert set(out) <= allowed, out
+          PY
+
+      - name: Enforce fixed design and fail-closed execution state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-v1.json').read_text())
+          assert p['authority'] == 'PRECAPTURE_PLAN_ONLY'
+          assert p['candidate_budget'] == 0
+          assert p['state']['freeze_complete'] is False
+          assert p['state']['hardware_execution_authorized'] is False
+          d = p['fixed_design']
+          assert d['design_type'] == '3x3_full_factorial_with_3_replicates'
+          assert d['total_captures'] == 27
+          assert d['varying_factors']['playback_digital_gain_db'] == [-12,-6,0]
+          assert d['varying_factors']['capture_digital_gain_db'] == [-12,-6,0]
+          assert d['randomization_seed'] == 20260918
+          expected = {(a,b,r) for a in (-12,-6,0) for b in (-12,-6,0) for r in (1,2,3)}
+          actual = {tuple(x) for x in d['capture_order']}
+          assert len(d['capture_order']) == 27
+          assert actual == expected
+          assert set(p['unresolved_required'].values()) == {'UNRESOLVED_REQUIRED'}
+          n = p['next_authorized_step']
+          assert n['scope'] == 'fill_exact_precapture_fields_only'
+          assert n['may_modify_factor_levels'] is False
+          assert n['may_modify_capture_order'] is False
+          assert n['may_execute_hardware'] is False
+          assert n['may_run_audio_pipeline'] is False
+          assert n['may_compute_dtd_or_quality_result'] is False
+          assert n['pilot_capture_requires_separate_explicit_authorization'] is True
+          PY
+
+      - name: Enforce integrity and shipping immutability
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-v1.json').read_text())
+          i = p['integrity']
+          assert all(i[k] is True for k in ['raw_audio_hash_required','config_hash_required','rir_hash_required','capture_order_recorded','failed_runs_retained'])
+          assert i['result_dependent_recapture'] is False
+          assert i['post_hoc_case_exclusion'] is False
+          assert p['shipping_immutable'] == {'version':'v2.3.16','sha':'57e4c64adc1cf06819e46e24e275ecd746d5f17f'}
+          prohibited = '\n'.join(p['prohibited'])
+          for phrase in ['hardware capture execution','gain normalization','Activity/VAD/DTD threshold changes','source candidate creation','HIL authority','Product Certification authority','release authority','shipping authority']:
+              assert phrase in prohibited, phrase
+          PY

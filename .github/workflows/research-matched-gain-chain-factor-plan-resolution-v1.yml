@@ -1,0 +1,168 @@
+name: Research Matched Gain-Chain Factor Plan Resolution V1
+
+on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json'
+      - '.github/workflows/research-matched-gain-chain-factor-plan-resolution-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json'
+      - '.github/workflows/research-matched-gain-chain-factor-plan-resolution-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Bind exact predecessor and research-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+
+          here = Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json')
+          m = json.loads(here.read_text())
+          assert m['authority'] == 'PRECAPTURE_RESOLUTION_ONLY'
+          assert m['candidate_budget'] == 0
+          assert m['base_main_sha'] == 'eb658104cd533e9ebba766843fa12723de219d44'
+          p = m['predecessor']
+          assert p['investigation'] == 'matched-gain-chain-factor-plan-v1'
+          assert p['pr'] == 250
+          assert p['merge_main_sha'] == m['base_main_sha']
+          pred = Path(p['manifest'])
+          assert subprocess.check_output(['git','hash-object',str(pred)], text=True).strip() == p['manifest_blob_sha']
+
+          if '${{ github.event_name }}' == 'pull_request':
+              base = '${{ github.event.pull_request.base.sha }}'
+              head = '${{ github.event.pull_request.head.sha }}'
+              changed = subprocess.check_output(['git','diff','--name-only',base,head], text=True).splitlines()
+              allowed = {
+                  '.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json',
+                  '.github/workflows/research-matched-gain-chain-factor-plan-resolution-v1.yml',
+              }
+              assert changed and set(changed) <= allowed, changed
+          PY
+
+      - name: Prove frozen factor plan is unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json').read_text())
+          p=json.loads(Path(m['predecessor']['manifest']).read_text())
+          d=p['fixed_design']
+          b=m['predecessor']['fixed_design']
+          assert d['design_type']==b['design_type']=='3x3_full_factorial_with_3_replicates'
+          assert d['total_captures']==b['total_captures']==27
+          assert d['varying_factors']['playback_digital_gain_db']==b['playback_digital_gain_db']==[-12,-6,0]
+          assert d['varying_factors']['capture_digital_gain_db']==b['capture_digital_gain_db']==[-12,-6,0]
+          assert d['randomization_seed']==b['randomization_seed']==20260918
+          assert len(d['capture_order'])==27
+          expected={(a,b,r) for a in (-12,-6,0) for b in (-12,-6,0) for r in (1,2,3)}
+          assert {tuple(x) for x in d['capture_order']}==expected
+          assert b['factor_levels_mutable'] is False
+          assert b['capture_order_mutable'] is False
+          PY
+
+      - name: Bind repository-known PCR02 capture facts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json').read_text())
+          for spec in m['repository_evidence'].values():
+              got=subprocess.check_output(['git','hash-object',spec['path']],text=True).strip()
+              assert got==spec['blob_sha'], (spec['path'],got,spec['blob_sha'])
+
+          plan=json.loads(Path(m['repository_evidence']['product_capture_plan']['path']).read_text())
+          schema=json.loads(Path(m['repository_evidence']['product_capture_schema']['path']).read_text())
+          r=m['repository_resolved']
+          assert plan['product']=='PCR02'
+          assert plan['geometry']=={'mic_channels':2,'mic_spacing_mm':35.0,'sample_rate_hz':16000}
+          assert r['product']=='PCR02' and r['soc']=='SSC305'
+          assert (r['microphone_channels'],r['microphone_spacing_mm'],r['sample_rate_hz'])==(2,35.0,16000)
+          assert (r['sample_format'],r['frame_samples'])==('s16le',160)
+          h=schema['properties']['hardware']['properties']
+          assert h['soc']['const']=='SSC305'
+          assert h['mic_channels']['const']==2 and h['mic_spacing_mm']['const']==35.0
+          assert h['sample_rate_hz']['const']==16000 and h['sample_format']['const']=='s16le' and h['frame_samples']['const']==160
+          ra=schema['properties']['release_authority']['properties']
+          assert r['qualification_release']=={'tag':ra['tag']['const'],'source_sha':ra['source_sha']['const']}
+
+          doc=Path(m['repository_evidence']['product_capture_doc']['path']).read_text()
+          assert 'is interleaved two-channel S16LE microphone input before BF/AEC/NS/AGC.' in doc
+          assert 'capture the actual render reference fed into the echo path, not a source file that bypasses device buffering/resampling.' in doc
+          assert 'before BF/AEC/NS/AGC' in r['microphone_capture_method']
+          assert 'actual render reference fed into the echo path' in r['reference_loopback_or_pre_output_reference_capture_method']
+          PY
+
+      - name: Fail closed on unresolved lab-specific state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json').read_text())
+          required={
+            'device_id_or_fixture_id','hardware_revision','software_firmware_revision',
+            'playback_analog_gain_db_or_exact_setting','capture_analog_gain_db_or_exact_setting',
+            'AGC_enabled_and_exact_config','device_DSP_enabled_modules_and_exact_config',
+            'volume_control_state','room_or_fixture_id','source_position_xyz_m',
+            'microphone_position_xyz_m','source_orientation','microphone_orientation',
+            'render_source_hash','render_source_metadata','RIR_measurement_method'
+          }
+          assert set(m['lab_resolution_required'])==required
+          assert set(m['lab_resolution_required'].values())=={'LAB_VALUE_REQUIRED'}
+
+          s=m['state']
+          assert s['repository_resolution_complete'] is True
+          assert s['lab_resolution_complete'] is False
+          assert s['freeze_complete'] is False
+          assert s['hardware_execution_authorized'] is False
+
+          n=m['next_authorized_step']
+          assert n['scope']=='supply_exact_lab_values_and_provenance_only'
+          for k in ['may_modify_factor_levels','may_modify_capture_order','may_execute_hardware',
+                    'may_run_audio_pipeline','may_compute_dtd_or_quality_result','may_create_algorithm_candidate']:
+              assert n[k] is False, k
+          assert n['completion_requires_all_lab_resolution_required_fields_exact'] is True
+          assert n['pilot_capture_requires_separate_explicit_authorization'] is True
+
+          banned='\n'.join(m['prohibited'])
+          for phrase in ['hardware capture execution','gain normalization','Activity/VAD/DTD threshold changes',
+                         'source candidate creation','HIL authority','Product Certification authority',
+                         'release authority','shipping authority']:
+              assert phrase in banned, phrase
+          PY
+
+      - name: Enforce immutable shipping authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json').read_text())
+          assert m['shipping_immutable']=={'version':'v2.3.16','sha':'57e4c64adc1cf06819e46e24e275ecd746d5f17f'}
+          assert m['repository_resolved']['qualification_release']=={'tag':'v2.3.16','source_sha':'57e4c64adc1cf06819e46e24e275ecd746d5f17f'}
+          PY

@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "investigation": "matched-gain-chain-factor-plan-resolution-v1",
+  "authority": "PRECAPTURE_RESOLUTION_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "eb658104cd533e9ebba766843fa12723de219d44",
+  "predecessor": {
+    "investigation": "matched-gain-chain-factor-plan-v1",
+    "pr": 250,
+    "merge_main_sha": "eb658104cd533e9ebba766843fa12723de219d44",
+    "manifest": ".github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-v1.json",
+    "manifest_blob_sha": "068a0736acb09c8affa31cfbb5907973283d359a",
+    "fixed_design": {
+      "design_type": "3x3_full_factorial_with_3_replicates",
+      "total_captures": 27,
+      "playback_digital_gain_db": [
+        -12,
+        -6,
+        0
+      ],
+      "capture_digital_gain_db": [
+        -12,
+        -6,
+        0
+      ],
+      "randomization_seed": 20260918,
+      "factor_levels_mutable": false,
+      "capture_order_mutable": false
+    }
+  },
+  "repository_evidence": {
+    "product_capture_doc": {
+      "path": "docs/PCR02_REAL_CAPTURE.md",
+      "blob_sha": "011ea6d55f09122354a1e34c9e4f97eae99f406b"
+    },
+    "product_capture_plan": {
+      "path": "tests/validation/pcr02_capture_plan.json",
+      "blob_sha": "8dacb12649ab2951bc73dff22052a4936da7b4b1"
+    },
+    "product_capture_schema": {
+      "path": "tests/validation/pcr02_capture_bundle.schema.json",
+      "blob_sha": "71e4b2f34dee0bf984111f825be385bc376c7bc1"
+    }
+  },
+  "repository_resolved": {
+    "product": "PCR02",
+    "soc": "SSC305",
+    "microphone_channels": 2,
+    "microphone_spacing_mm": 35,
+    "sample_rate_hz": 16000,
+    "sample_format": "s16le",
+    "frame_samples": 160,
+    "qualification_release": {
+      "tag": "v2.3.16",
+      "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+    },
+    "microphone_capture_method": "interleaved dual-channel S16LE raw microphone input before BF/AEC/NS/AGC",
+    "reference_loopback_or_pre_output_reference_capture_method": "capture the actual render reference fed into the echo path; do not substitute a source file that bypasses device buffering/resampling"
+  },
+  "lab_resolution_required": {
+    "device_id_or_fixture_id": "LAB_VALUE_REQUIRED",
+    "hardware_revision": "LAB_VALUE_REQUIRED",
+    "software_firmware_revision": "LAB_VALUE_REQUIRED",
+    "playback_analog_gain_db_or_exact_setting": "LAB_VALUE_REQUIRED",
+    "capture_analog_gain_db_or_exact_setting": "LAB_VALUE_REQUIRED",
+    "AGC_enabled_and_exact_config": "LAB_VALUE_REQUIRED",
+    "device_DSP_enabled_modules_and_exact_config": "LAB_VALUE_REQUIRED",
+    "volume_control_state": "LAB_VALUE_REQUIRED",
+    "room_or_fixture_id": "LAB_VALUE_REQUIRED",
+    "source_position_xyz_m": "LAB_VALUE_REQUIRED",
+    "microphone_position_xyz_m": "LAB_VALUE_REQUIRED",
+    "source_orientation": "LAB_VALUE_REQUIRED",
+    "microphone_orientation": "LAB_VALUE_REQUIRED",
+    "render_source_hash": "LAB_VALUE_REQUIRED",
+    "render_source_metadata": "LAB_VALUE_REQUIRED",
+    "RIR_measurement_method": "LAB_VALUE_REQUIRED"
+  },
+  "resolution_rules": {
+    "values_must_be_observed_or_predeclared_before_capture": true,
+    "result_dependent_resolution": false,
+    "placeholders_forbidden_when_marked_resolved": [
+      "",
+      "unknown",
+      "default",
+      "auto",
+      "tbd",
+      "n/a",
+      "same as current",
+      "same as device"
+    ],
+    "device_identifier_may_be_pseudonymous": true,
+    "room_identifier_must_not_be_private_street_address": true,
+    "analog_gain_requirement": "record numeric dB when directly exposed; otherwise record the exact hardware register/profile/route setting plus provenance",
+    "agc_and_dsp_requirement": "record enabled/disabled state and exact effective configuration or hash-bound exported config snapshot",
+    "geometry_requirement": "record source and microphone xyz in meters plus explicit orientation values under one declared coordinate frame",
+    "render_requirement": "hash the exact render object and record sample rate/channel/sample format/duration metadata before capture",
+    "rir_requirement": "predeclare the physical RIR measurement method before any acoustic outcome is inspected; measured RIR must be hash-bound before analysis"
+  },
+  "state": {
+    "repository_resolution_complete": true,
+    "lab_resolution_complete": false,
+    "freeze_complete": false,
+    "hardware_execution_authorized": false,
+    "reason": "Repository-known product/capture semantics are bound, but lab-specific device, gain, effective-config, geometry, render and RIR-method values are not yet supplied."
+  },
+  "next_authorized_step": {
+    "name": "matched-gain-chain-factor-plan-lab-binding-v1",
+    "scope": "supply_exact_lab_values_and_provenance_only",
+    "may_modify_factor_levels": false,
+    "may_modify_capture_order": false,
+    "may_execute_hardware": false,
+    "may_run_audio_pipeline": false,
+    "may_compute_dtd_or_quality_result": false,
+    "may_create_algorithm_candidate": false,
+    "completion_requires_all_lab_resolution_required_fields_exact": true,
+    "pilot_capture_requires_separate_explicit_authorization": true
+  },
+  "prohibited": [
+    "hardware capture execution",
+    "changing playback or capture digital gain factor levels",
+    "changing frozen capture order",
+    "resolving lab fields from outcome-dependent observations",
+    "using unknown/default/auto placeholders as exact hardware state",
+    "gain normalization",
+    "Activity/VAD/DTD threshold changes",
+    "public double_talk_active semantic changes",
+    "source candidate creation",
+    "parameter or threshold search",
+    "HIL authority",
+    "Product Certification authority",
+    "release authority",
+    "shipping authority"
+  ],
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  }
+}

@@ -11,6 +11,7 @@ on:
       - '.github/research/continuous-optimization/stage_source_candidate_patch.py'
       - '.github/research/continuous-optimization/stage_source_candidate_evaluate.py'
       - '.github/research/continuous-optimization/source-candidate-authority-v2.json'
+      - '.github/research/continuous-optimization/source-candidate-contract-v2.schema.json'
       - '.github/research/continuous-optimization/source_candidate_authority_v2.py'
       - '.github/workflows/research-stage-source-candidate-evaluation.yml'
       - '.github/program/maintenance_workflow_contract.py'
@@ -49,6 +50,7 @@ jobs:
           python3 .github/research/continuous-optimization/stage_source_candidate_evaluate.py --self-test
           python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --self-test
           python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --validate-policy
+          python3 -m json.tool .github/research/continuous-optimization/source-candidate-contract-v2.schema.json >/dev/null
           python3 .github/program/maintenance_workflow_contract.py --self-test --check
           python3 - <<'PY'
           import json
@@ -66,6 +68,10 @@ jobs:
           assert policy['baseline_qualification']['candidate_processor_forbidden'] is True
           assert policy['baseline_qualification']['candidate_budget_consumed_on_authority_incomplete'] is False
           assert policy['candidate_evaluation']['candidate_feedback_to_authority_selection'] is False
+          assert set(policy['qualification_profiles'])=={'vad-stage','agc-dynamics'}
+          assert policy['qualification_profiles']['vad-stage']['baseline_executable_target']=='ap_process_pcm'
+          assert policy['qualification_profiles']['agc-dynamics']['baseline_executable_target']=='agc_dynamics_probe'
+          assert policy['qualification_profiles']['agc-dynamics']['baseline_args_required']==['agc_target_dbfs','limiter_dbfs']
 
           run=json.loads(Path('.github/research/continuous-optimization/stage-lanes-v1-run-1.json').read_text())
           assert run['run_id']==35320921792

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "candidate_id": "vad-strong-origin-bounded-hysteresis-v1",
   "authority": "SOURCE_CANDIDATE_EVALUATION_ONLY",
-  "candidate_budget": 1,
+  "candidate_budget": 0,
   "confirmation_limit": 0,
   "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
   "predecessor": {
@@ -18,7 +18,7 @@
   "fixed_policy": {
     "local_threshold": 0.45,
     "ns_threshold": 0.35,
-    "strong_threshold": 0.50,
+    "strong_threshold": 0.5,
     "strong_hold_frames": 8,
     "weak_hold_frames": 6,
     "release_margin": 0.05,
@@ -46,7 +46,11 @@
     "ns_fusion_mutation": false
   },
   "fresh_candidate_evaluation": {
-    "seeds": [18751, 19751, 20751],
+    "seeds": [
+      18751,
+      19751,
+      20751
+    ],
     "data_role": "development-fresh-source-candidate-evaluation",
     "selection_reuse": false,
     "candidate_value_search": false,
@@ -66,5 +70,15 @@
     "hil": false,
     "product_certification": false,
     "independent_confirmation_required_after_pass": true
-  }
+  },
+  "status": "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT",
+  "terminal_candidate": true,
+  "consumption": {
+    "authoritative_run_id": 35350206185,
+    "authoritative_artifact_id": 10548672770,
+    "fresh_authority_consumed": true,
+    "duplicate_replay_run_id": 35363666767,
+    "duplicate_replay_additional_evidence_weight": 0
+  },
+  "closure_path": ".github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json"
 }

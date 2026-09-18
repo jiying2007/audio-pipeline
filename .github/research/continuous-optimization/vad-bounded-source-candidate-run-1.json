@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "workflow": "Research VAD Bounded-Hysteresis Source Candidate",
+  "candidate_id": "vad-strong-origin-bounded-hysteresis-v1",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "authoritative_run": {
+    "run_id": 35350206185,
+    "head_sha": "cbeed30ac6d3e25b2bfcc2b3d4bdbfafd6c77445",
+    "event": "workflow_dispatch",
+    "conclusion": "success",
+    "artifact": {
+      "id": 10548672770,
+      "name": "vad-bounded-source-candidate-35350206185",
+      "digest": "sha256:64c3924bcc0cd8831e6dcfe8c2df97181ba43d32b7f72b1c706f4a5ab669b64f"
+    }
+  },
+  "duplicate_replay": {
+    "run_id": 35363666767,
+    "head_sha": "cbeed30ac6d3e25b2bfcc2b3d4bdbfafd6c77445",
+    "event": "workflow_dispatch",
+    "conclusion": "success",
+    "artifact": {
+      "id": 10554454712,
+      "name": "vad-bounded-source-candidate-35363666767",
+      "digest": "sha256:d5acef890ebab6d4258e267e0704c6187223c0c15c2a4e0c29bd139b44e8d467"
+    },
+    "authority": "DUPLICATE_REPLAY_ONLY",
+    "additional_evidence_weight": 0,
+    "note": "The replay consumed the same deterministic preregistered seeds after the authoritative run had already consumed them. It cannot count as fresh or independent evidence."
+  },
+  "internal_content_identity": {
+    "identical": true,
+    "files": {
+      "base-state-size.txt": "sha256:aa67a169b0bba217aa0aa88a65346920c84c42447c36ba5f7ea65f422c1fe5d8",
+      "candidate-state-size.txt": "sha256:a1fb50e6c86fae1679ef3351296fd6713411a08cf8dd1790a4fd05fae8688164",
+      "candidate.patch": "sha256:3ddbc01f80924323f4b3237ca528cf7f5c346a9b78a5f8e77c9971978b495064",
+      "candidate.patch.sha256": "sha256:4d2765be5344e39e9dab1388026ae835b4b5adff79f79b5a5efb2b94b0ca1b66",
+      "processors.sha256": "sha256:5946dee746f4623a87f39912b20eff77459b113b698612ea6f062aec239013d3",
+      "result.json": "sha256:46d8c4ffdcbffb65379f0b92a7a07683a9e5b275346ae2f33ec7dc8af3e48a5b"
+    },
+    "explanation": "Outer ZIP artifact digests differ because archive/container metadata differs; all archived evidence files are byte-identical."
+  },
+  "exact_identity": {
+    "candidate_patch_sha256": "3ddbc01f80924323f4b3237ca528cf7f5c346a9b78a5f8e77c9971978b495064",
+    "base_processor_sha256": "d99471ea77e1d83ffe9bb661a53830c3f886496db5346deb01e8e878ded32a84",
+    "candidate_processor_sha256": "82f006686ef499b8fbb58ce6652ac6748a5998ed60f446778ea9ee9a83ff6398"
+  },
+  "state_size": {
+    "baseline_bytes": 8,
+    "candidate_bytes": 12,
+    "growth_bytes": 4,
+    "allowed_max_growth_bytes": 4
+  },
+  "decision": "SOURCE_CANDIDATE_REJECT",
+  "fresh_seeds": [
+    18751,
+    19751,
+    20751
+  ],
+  "source_conformance": {
+    "total_changed_active_frames_vs_base": 35,
+    "total_probability_mismatches": 0,
+    "total_policy_mismatches": 0,
+    "total_active_contractions_vs_base": 0
+  },
+  "partitions": [
+    {
+      "seed": 18751,
+      "baseline": {
+        "pass_rate": 0.8333333333333334,
+        "min_vad_recall": 0.4962962962962963,
+        "min_vad_f1": 0.6633663366336634,
+        "max_vad_false_positive_rate": 0.33076923076923076
+      },
+      "candidate": {
+        "pass_rate": 0.8333333333333334,
+        "min_vad_recall": 0.5148148148148148,
+        "min_vad_f1": 0.6797066014669927,
+        "max_vad_false_positive_rate": 0.33076923076923076
+      },
+      "candidate_validation_result": "FAIL",
+      "regression_violations": [],
+      "changed_active_frames": 15
+    },
+    {
+      "seed": 19751,
+      "baseline": {
+        "pass_rate": 1,
+        "min_vad_recall": 0.7814814814814814,
+        "min_vad_f1": 0.8053435114503815,
+        "max_vad_false_positive_rate": 0.4
+      },
+      "candidate": {
+        "pass_rate": 1,
+        "min_vad_recall": 0.7888888888888889,
+        "min_vad_f1": 0.8083491461100569,
+        "max_vad_false_positive_rate": 0.4
+      },
+      "candidate_validation_result": "PASS",
+      "regression_violations": [],
+      "changed_active_frames": 12
+    },
+    {
+      "seed": 20751,
+      "baseline": {
+        "pass_rate": 1,
+        "min_vad_recall": 0.7962962962962963,
+        "min_vad_f1": 0.8037383177570094,
+        "max_vad_false_positive_rate": 0.38461538461538464
+      },
+      "candidate": {
+        "pass_rate": 1,
+        "min_vad_recall": 0.8074074074074075,
+        "min_vad_f1": 0.8074074074074074,
+        "max_vad_false_positive_rate": 0.4
+      },
+      "candidate_validation_result": "PASS",
+      "regression_violations": [],
+      "changed_active_frames": 8
+    }
+  ],
+  "violations": [
+    {
+      "seed": 18751,
+      "gate": "candidate_case_gates",
+      "actual": "FAIL",
+      "contract_rule": "require_all_case_gates_pass=true",
+      "baseline_pass_rate": 0.8333333333333334,
+      "candidate_pass_rate": 0.8333333333333334,
+      "note": "The baseline also failed at least one absolute case gate on this partition. The frozen contract nevertheless requires the candidate itself to pass all absolute case gates, so the exact candidate is terminally rejected. This is not reclassified after observing the result."
+    }
+  ],
+  "authority": {
+    "shipping": false,
+    "source_merge_authorized": false,
+    "hil": false,
+    "product_certification": false,
+    "automatic_main_mutation": false
+  }
+}

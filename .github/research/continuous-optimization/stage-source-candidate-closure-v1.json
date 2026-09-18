@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "closure_id": "stage-source-candidate-round-v1",
+  "status": "CLOSED_NO_SURVIVING_SOURCE_CANDIDATE",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "candidates": {
+    "vad-confidence-tiered-hold-v1": {
+      "terminal": true,
+      "candidate_budget": 0,
+      "final_decision": "SOURCE_CANDIDATE_REJECT",
+      "final_gate": "independent-public-source-confirmation",
+      "final_run_id": 35341799549
+    },
+    "agc-error-adaptive-release-v1": {
+      "terminal": true,
+      "candidate_budget": 0,
+      "final_decision": "SOURCE_CANDIDATE_REJECT",
+      "final_gate": "independent-source-candidate-confirmation",
+      "final_run_id": 35334960942
+    }
+  },
+  "surviving_source_candidates": [],
+  "source_merge_authorized": false,
+  "shipping_source_unchanged": true,
+  "shipping_baseline": {
+    "version": "v2.3.16",
+    "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "aec_mu": 0.22
+  },
+  "next_research_boundary": {
+    "existing_candidate_retry_allowed": false,
+    "existing_gate_relaxation_allowed": false,
+    "new_hypothesis_required": true,
+    "new_candidate_identity_required": true,
+    "fresh_authority_required": true,
+    "notes": "Do not reinterpret near-miss public VAD gates or isolated AGC gains as promotion evidence. New work must start from a separately preregistered hypothesis and cannot reuse consumed confirmation authority."
+  },
+  "authority": {
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "automatic_main_mutation": false
+  }
+}

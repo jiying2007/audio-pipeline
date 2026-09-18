@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT",
+  "terminal_candidate": true,
+  "candidate_budget": 0,
+  "candidate_id": "vad-confidence-tiered-hold-v1",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "fixed_candidate": {
+    "local_threshold": 0.45,
+    "ns_threshold": 0.35,
+    "very_strong_threshold": 0.70,
+    "very_strong_hold_frames": 10,
+    "strong_threshold": 0.50,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6,
+    "candidate_search": false
+  },
+  "predecessor_evidence": {
+    "source_candidate_run_id": 35325485610,
+    "source_candidate_decision": "SOURCE_CANDIDATE_PASS",
+    "independent_synthetic_run_id": 35334960942,
+    "independent_synthetic_decision": "SYNTHETIC_CONFIRMATION_PASS_PENDING_PUBLIC_LOCK",
+    "independent_synthetic_total_benefit": 0.05228118095743839
+  },
+  "public_confirmation_provenance": {
+    "workflow": "Research Stage VAD Public Confirmation",
+    "run_id": 35341799549,
+    "head_sha": "fed0b47070ed8717d4be7ca14113a96c3e6a72ce",
+    "artifact_id": 10545457484,
+    "artifact_name": "stage-vad-public-confirmation-35341799549",
+    "artifact_digest": "sha256:a3f005badef84808ebb562478f712154bfab7f9aa5b253e9d314cb11692f056c",
+    "candidate_patch_sha256": "19b6e1c34e087ac7e452fb6cc378487e689279a48ed73376c39b672fe90e662c"
+  },
+  "decision": "SOURCE_CANDIDATE_REJECT",
+  "failed_gates": [
+    {
+      "gate": "aggregate_recall_improvement",
+      "actual": 0.004343468092215197,
+      "required": 0.005
+    },
+    {
+      "gate": "window_fpr_rise",
+      "window_id": "ES2006a-w2",
+      "actual": 0.011502029769959399,
+      "allowed": 0.01
+    }
+  ],
+  "interpretation": {
+    "candidate_behavior_exercised": true,
+    "probability_generation_drift": false,
+    "active_contraction": false,
+    "public_event_recall_regression": false,
+    "onset_regression": false,
+    "release_tail_regression_exceeded": false,
+    "observation": "The fixed global very-strong hold increases active duration and yields measurable recall gain, concentrated in the high-activity window, but the aggregate recall benefit is below the preregistered minimum and the low-activity window exceeds the preregistered false-positive-rate rise bound."
+  },
+  "output_authority": {
+    "shipping_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "source_merge_authority": false,
+    "automatic_main_mutation": false
+  },
+  "rule": "This exact frozen VAD candidate exhausted its independent synthetic and public confirmation authority. It may not be retried, retuned, promoted, source-merged, or used to change shipping. Any future VAD work must use a new pre-registered hypothesis, new candidate identity, and fresh authority."
+}

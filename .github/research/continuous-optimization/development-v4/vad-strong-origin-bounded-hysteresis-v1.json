@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "hypothesis_id": "vad-strong-origin-bounded-hysteresis-v1",
+  "authority": "DEVELOPMENT_SELECTION_ONLY",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "closure_path": ".github/research/continuous-optimization/stage-source-candidate-closure-v1.json",
+    "closure_status": "CLOSED_NO_SURVIVING_SOURCE_CANDIDATE",
+    "closure_main_sha": "a095ec41431783b6a3adfac37ec3abb4fda18923",
+    "old_vad_candidate": "vad-confidence-tiered-hold-v1",
+    "old_vad_terminal": true,
+    "old_agc_candidate": "agc-error-adaptive-release-v1",
+    "old_agc_terminal": true
+  },
+  "hypothesis": {
+    "mechanism": "strong-origin-bounded-hysteresis",
+    "statement": "Permit a bounded number of sub-threshold hold-freeze frames only after a true strong VAD observation, preserving the shipping weak path while preventing unbounded hysteresis refresh from weak-only activity.",
+    "not_a_continuation_of": [
+      "confidence-tiered-hold",
+      "global-very-strong-hold-extension"
+    ],
+    "candidate_search": true,
+    "maximum_variants": 4
+  },
+  "fixed_policy": {
+    "local_threshold": 0.45,
+    "ns_threshold": 0.35,
+    "strong_threshold": 0.50,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6
+  },
+  "variants": [
+    {"variant_id": "so-bh-m003-b2", "release_margin": 0.03, "subthreshold_budget_frames": 2},
+    {"variant_id": "so-bh-m003-b3", "release_margin": 0.03, "subthreshold_budget_frames": 3},
+    {"variant_id": "so-bh-m005-b2", "release_margin": 0.05, "subthreshold_budget_frames": 2},
+    {"variant_id": "so-bh-m005-b3", "release_margin": 0.05, "subthreshold_budget_frames": 3}
+  ],
+  "fresh_authority": {
+    "development_seeds": [14751, 15751],
+    "validation_seed": 16751,
+    "shadow_seed": 17751,
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 4,
+    "selection_roles": {
+      "development": "rank-and-select",
+      "validation": "reject-only",
+      "shadow": "reject-only"
+    },
+    "forbidden_feedback": [
+      "ES2006a",
+      "7751",
+      "8751",
+      "9751",
+      "4751",
+      "5751",
+      "6751"
+    ]
+  },
+  "gates": {
+    "min_mean_development_score": 0.50,
+    "max_development_recall_drop": 0.03,
+    "max_development_f1_drop": 0.03,
+    "max_development_fpr_rise": 0.03,
+    "max_validation_recall_drop": 0.03,
+    "max_validation_f1_drop": 0.03,
+    "max_validation_fpr_rise": 0.03,
+    "max_shadow_recall_drop": 0.03,
+    "max_shadow_f1_drop": 0.03,
+    "max_shadow_fpr_rise": 0.03
+  },
+  "selection": {
+    "development_only": true,
+    "validation_and_shadow_may_reject_only": true,
+    "holdout_feedback_to_ranking": false,
+    "tie_break": ["higher_development_score", "lower_release_margin", "lower_subthreshold_budget_frames"]
+  },
+  "outcomes": {
+    "winner": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+    "no_eligible_development_candidate": "KEEP_BASELINE",
+    "holdout_reject": "REJECT_CANDIDATE"
+  },
+  "promotion": {
+    "automatic_main_mutation": false,
+    "source_merge_authorized": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "next_gate_after_winner": "separate exact-source candidate implementation and review"
+  }
+}

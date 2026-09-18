@@ -177,6 +177,22 @@ def _validate_generator(generator: Any) -> dict[str, Any]:
     return {"path": path, "seconds": seconds, "extra_args": extra_args}
 
 
+def _validate_execution_workflow_path(candidate_id: str, raw: Any) -> str:
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("authority-v2 execution_workflow is required")
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", candidate_id):
+        raise ValueError("authority-v2 candidate_id must be workflow-path safe")
+    expected = (
+        ".github/workflows/research-source-candidate-v2-"
+        f"{candidate_id}.yml"
+    )
+    if raw != expected:
+        raise ValueError(
+            f"authority-v2 execution workflow drift: {raw!r} != {expected!r}"
+        )
+    return raw
+
+
 def _validate_lock_path(candidate_id: str, raw: Any, policy: dict[str, Any]) -> str:
     if not isinstance(raw, str) or not raw:
         raise ValueError("authority-v2 authority_lock_path is required")
@@ -255,6 +271,10 @@ def validate_candidate_contract(
     if not isinstance(source_base_sha, str) or not SOURCE_SHA_RE.fullmatch(source_base_sha):
         raise ValueError("future authority-v2 candidate requires exact 40-hex source_base_sha")
 
+    execution_workflow = _validate_execution_workflow_path(
+        candidate_id, contract.get("execution_workflow")
+    )
+
     evaluation = contract.get("fresh_candidate_evaluation", {})
     if not isinstance(evaluation, dict):
         raise ValueError("candidate contract requires fresh_candidate_evaluation")
@@ -295,6 +315,7 @@ def validate_candidate_contract(
     return {
         "candidate_id": candidate_id,
         "source_base_sha": source_base_sha,
+        "execution_workflow": execution_workflow,
         "required_count": required_count,
         "pool_seeds": pool_seeds,
         "qualification_profile": profile,
@@ -633,6 +654,10 @@ def _future_contract(
         "candidate_budget": 1,
         "confirmation_limit": 0,
         "source_base_sha": "1" * 40,
+        "execution_workflow": (
+            ".github/workflows/research-source-candidate-v2-"
+            f"future-{profile}-candidate-v2.yml"
+        ),
         "fresh_candidate_evaluation": {"candidate_value_search": False},
         "baseline_authority_qualification_v2": {
             "policy_id": policy["policy_id"],

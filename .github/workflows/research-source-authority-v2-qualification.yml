@@ -1,4 +1,5 @@
 name: Research Source Authority v2 Qualification
+run-name: source-authority-v2: ${{ inputs.candidate_contract || 'contract' }}
 
 on:
   pull_request:
@@ -6,6 +7,7 @@ on:
     paths:
       - '.github/research/continuous-optimization/source-candidate-authority-v2.json'
       - '.github/research/continuous-optimization/source-candidate-contract-v2.schema.json'
+      - '.github/research/continuous-optimization/source-authority-lock-v2.schema.json'
       - '.github/research/continuous-optimization/source_candidate_authority_v2.py'
       - '.github/workflows/research-source-authority-v2-qualification.yml'
       - '.github/program/maintenance_workflow_contract.py'
@@ -18,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: research-source-authority-v2-${{ github.ref }}-${{ inputs.candidate_contract || 'contract' }}
@@ -40,6 +43,7 @@ jobs:
       generator_seconds: ${{ steps.binding.outputs.generator_seconds }}
       generator_extra_args_json: ${{ steps.binding.outputs.generator_extra_args_json }}
       candidate_contract: ${{ steps.binding.outputs.candidate_contract }}
+      authority_lock_path: ${{ steps.binding.outputs.authority_lock_path }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -52,6 +56,7 @@ jobs:
           python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --self-test
           python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --validate-policy
           python3 -m json.tool .github/research/continuous-optimization/source-candidate-contract-v2.schema.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/source-authority-lock-v2.schema.json >/dev/null
           python3 .github/program/maintenance_workflow_contract.py --self-test --check
 
       - name: Bind manual qualification to protected-main schema-v2 candidate
@@ -104,6 +109,7 @@ jobs:
                   binding['generator']['extra_args'], separators=(',', ':')
               ),
               'candidate_contract': str(path),
+              'authority_lock_path': binding['authority_lock_path'],
           }
           with github_output.open('a', encoding='utf-8') as out:
               for key, value in values.items():
@@ -126,10 +132,66 @@ jobs:
       GENERATOR_SECONDS: ${{ needs.contract.outputs.generator_seconds }}
       GENERATOR_EXTRA_ARGS_JSON: ${{ needs.contract.outputs.generator_extra_args_json }}
       CANDIDATE_CONTRACT: ${{ needs.contract.outputs.candidate_contract }}
+      AUTHORITY_LOCK_PATH: ${{ needs.contract.outputs.authority_lock_path }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           fetch-depth: 0
+
+      - name: Enforce one-shot qualification authority
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          lock_path = Path(os.environ['AUTHORITY_LOCK_PATH'])
+          if lock_path.exists():
+              raise SystemExit(
+                  f'authority lock already committed; qualification cannot run again: {lock_path}'
+              )
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          current = int(os.environ['GITHUB_RUN_ID'])
+          expected_title = f"source-authority-v2: {os.environ['CANDIDATE_CONTRACT']}"
+          raw = subprocess.check_output([
+              'gh', 'api',
+              f'repos/{repo}/actions/workflows/research-source-authority-v2-qualification.yml/runs'
+              '?event=workflow_dispatch&branch=main&per_page=100',
+          ], text=True)
+          prior = [
+              item for item in json.loads(raw).get('workflow_runs', [])
+              if int(item['id']) < current
+              and item.get('display_title') == expected_title
+          ]
+          consumed = []
+          for item in prior:
+              run_id = int(item['id'])
+              jobs_raw = subprocess.check_output([
+                  'gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100',
+              ], text=True)
+              for job in json.loads(jobs_raw).get('jobs', []):
+                  if any(
+                      step.get('name') == (
+                          'Materialize preregistered authority pool without candidate execution'
+                      )
+                      and step.get('conclusion') == 'success'
+                      for step in job.get('steps', [])
+                  ):
+                      consumed.append(run_id)
+                      break
+          if consumed:
+              raise SystemExit(
+                  'authority qualification pool already materialized by prior run(s): '
+                  + ','.join(str(x) for x in sorted(consumed))
+              )
+          print('one-shot qualification guard: PASS')
+          PY
+
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: source-authority-v2
@@ -222,6 +284,9 @@ jobs:
           assert r['source_base_sha'] == os.environ['SOURCE_BASE_SHA']
           assert r['qualification_profile'] == os.environ['QUALIFICATION_PROFILE']
           assert r['baseline_executable_target'] == os.environ['BASELINE_TARGET']
+          assert r['qualification_limit'] == 1
+          assert r['expected_authority_lock_path'] == os.environ['AUTHORITY_LOCK_PATH']
+          assert r['qualification_replay_additional_authority'] is False
           assert r['decision'] in {
               'BASELINE_QUALIFIED_AUTHORITY_LOCK',
               'AUTHORITY_INCOMPLETE',

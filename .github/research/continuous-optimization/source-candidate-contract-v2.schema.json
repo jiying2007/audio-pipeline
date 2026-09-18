@@ -58,7 +58,9 @@
         "pool_seeds",
         "generator",
         "selection_rule",
-        "candidate_execution_before_lock"
+        "candidate_execution_before_lock",
+        "qualification_limit",
+        "authority_lock_path"
       ],
       "properties": {
         "policy_id": {
@@ -119,6 +121,13 @@
         },
         "candidate_execution_before_lock": {
           "const": false
+        },
+        "qualification_limit": {
+          "const": 1
+        },
+        "authority_lock_path": {
+          "type": "string",
+          "pattern": "^\\\\.github/research/continuous-optimization/source-authority-locks/[A-Za-z0-9._-]+\\\\.json$"
         }
       },
       "allOf": [

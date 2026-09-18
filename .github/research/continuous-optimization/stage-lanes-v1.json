@@ -58,7 +58,8 @@
         "hard_fault_robustness",
         "soft_degradation_nonregression"
       ],
-      "next_gate": "stage-composition-development"
+      "next_gate": "separate-source-candidate-review",
+      "executable_binding_required_before_composition": true
     },
     {
       "lane_id": "ns",
@@ -92,7 +93,8 @@
         "min_vad_recall",
         "max_vad_false_positive_rate"
       ],
-      "next_gate": "stage-composition-development"
+      "next_gate": "stage-composition-development",
+      "executable_binding_required_before_composition": true
     },
     {
       "lane_id": "vad",
@@ -129,7 +131,8 @@
         "min_vad_f1",
         "max_vad_false_positive_rate"
       ],
-      "next_gate": "stage-composition-development"
+      "next_gate": "separate-source-candidate-review",
+      "executable_binding_required_before_composition": true
     },
     {
       "lane_id": "agc",
@@ -166,16 +169,22 @@
         "level_step_gain_slew_p95_db",
         "max_output_peak_dbfs"
       ],
-      "next_gate": "stage-composition-development"
+      "next_gate": "separate-source-candidate-review",
+      "executable_binding_required_before_composition": true
     }
   ],
   "composition": {
-    "status": "BLOCKED_UNTIL_ALL_LANES_HAVE_EXPLICIT_WINNERS",
+    "status": "BLOCKED_UNTIL_ALL_LANES_HAVE_HASH_BOUND_EXECUTABLE_WINNERS",
     "selection_input_role": "development-only",
     "maximum_variants": 1,
-    "rule": "compose exactly one frozen development-selected winner from each lane; do not reopen per-lane ranking inside composition",
+    "rule": "compose exactly one hash-bound executable development-selected winner from each lane; research-emulator winners require a separate explicit source-candidate budget and implementation before composition",
     "validation_and_shadow_reject_only": true,
     "blind_feedback_to_selection": false,
-    "product_external_feedback_to_selection": false
+    "product_external_feedback_to_selection": false,
+    "required_lane_fields": [
+      "decision",
+      "selected",
+      "executable_binding"
+    ]
   }
 }

@@ -63,6 +63,7 @@ jobs:
           python3 -m json.tool .github/research/continuous-optimization/development-v3/fine-aec-v4.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/dataset-registry.schema.json >/dev/null
           python3 validation/tools/authority.py --self-test
@@ -208,6 +209,56 @@ jobs:
           }
           assert 0.24 not in v6['parameters']['aec_mu']
           assert v6['objective'] == v5['objective']
+          origin = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json'
+          ).read_text())
+          assert origin['authority'] == 'DEVELOPMENT_SELECTION_LINEAGE_ONLY'
+          assert origin['predecessor'] == {
+              'workflow': 'Research Algorithm Parameter Optimization',
+              'run_id': 35301640608,
+              'source_sha': '7b7b6325063c3cc503fc8a6d052199ab50eb4c24',
+              'artifact_id': 10530995129,
+              'artifact_name': 'research-algorithm-parameter-35301640608',
+              'artifact_digest': 'sha256:94d57293b2ceea738f788c1ced866a74da7a46ec627d67b2c579059135853d70',
+              'decision': 'KEEP_BASELINE',
+              'status': 'NO_RESEARCH_CANDIDATE',
+          }
+          assert origin['selected_baseline']['algorithm_id'] == 'mdf-ema'
+          assert origin['selected_baseline']['tuning'] == v6['baseline']
+          boundary = origin['closest_nonterminal_boundary']
+          assert boundary['tuning_candidate_id'] == '296836888950'
+          assert boundary['tuning'] == {
+              'aec_mu': 0.26,
+              'ns_floor': 0.12,
+              'agc_target_dbfs': -20.0,
+              'limiter_dbfs': -2.0,
+          }
+          assert boundary['nonterminal_violation_count'] == 1
+          assert boundary['violation']['gate'] == 'case_delta_regression'
+          assert boundary['violation']['metric'] == 'vad_recall'
+          assert boundary['violation']['unit'] == 'synthetic-development-1407'
+          assert abs(float(boundary['violation']['actual_delta']) - (-0.051851851851851816)) < 1e-12
+          assert float(boundary['violation']['minimum_delta']) == -0.03
+          assert origin['terminal_exclusion'] == {
+              'tuning_candidate_id': '4a6a408bf0e3',
+              'aec_mu': 0.24,
+              'reason': 'terminally rejected candidate; source-independent reuse is forbidden',
+          }
+          assert origin['next_search']['aec_mu'] == v6['parameters']['aec_mu']
+          assert origin['next_search']['ns_floor'] == v6['parameters']['ns_floor']
+          assert origin['next_search']['agc_target_dbfs'] == v6['parameters']['agc_target_dbfs']
+          assert origin['next_search']['limiter_dbfs'] == v6['parameters']['limiter_dbfs']
+          assert origin['next_search']['objective_and_gates'] == 'unchanged_from_doubletalk_case_guard_v5'
+          assert origin['feedback_boundary'] == {
+              'development_only': True,
+              'validation_used_for_selection': False,
+              'shadow_used_for_selection': False,
+              'blind_used_for_selection': False,
+              'product_external_used_for_selection': False,
+          }
+          assert origin['automatic_search_space_mutation'] is False
+          assert origin['automatic_main_mutation'] is False
+          assert origin['shipping_authority'] is False
           print('AEC boundary refinement v6 search contract: PASS')
           PY
       - name: Enforce immutable shipping and no-promotion boundary

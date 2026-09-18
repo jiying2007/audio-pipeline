@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "lane_id": "ns",
+  "status": "CLOSED_KEEP_BASELINE_AFTER_REJECT",
+  "candidate_budget": 0,
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "evidence": {
+    "stage_lane_run": 35320921792,
+    "artifact_id": 10537635101,
+    "artifact_digest": "sha256:f5c1d6f8347891917852f390a008387a5f0a37211e709a2e3383df48ac17296f",
+    "selected_algorithm": "ema",
+    "selected_ns_floor": 0.06,
+    "decision": "REJECT_CANDIDATE",
+    "effective_winner": {
+      "algorithm": "ema",
+      "ns_floor": 0.12
+    }
+  },
+  "rejection_summary": {
+    "validation_candidate_pass_rate": 0.5,
+    "validation_stationary_case_passed": false,
+    "note": "The development-selected lower floor improved some suppression/VAD metrics but failed an independent stationary validation case."
+  },
+  "next_action": "A future NS source candidate requires a materially new noise-estimation or suppression-law hypothesis; do not continue ns_floor refinement from this rejection.",
+  "prohibited": [
+    "reuse validation/shadow rejection metrics to choose a new floor",
+    "repeat EMA/MCRA plus ns_floor search unchanged",
+    "automatic shipping mutation"
+  ]
+}

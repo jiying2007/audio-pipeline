@@ -39,6 +39,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/pcr02-aec-real-tail-confirmation.yml'),
     Path('.github/workflows/pcr02-dsp-counterfactuals.yml'),
     Path('.github/workflows/research-optimization.yml'),
+    Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
     Path('.github/workflows/research-candidate-blind-qualification.yml'),
 )
 

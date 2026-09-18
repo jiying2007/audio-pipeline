@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "investigation": "matched-gain-chain-factor-plan-v1",
+  "authority": "PRECAPTURE_PLAN_ONLY",
+  "candidate_budget": 0,
+  "base_main_sha": "a7c33bd20eda4a752082b44a34f959acba81f308",
+  "predecessor": {
+    "investigation": "matched-gain-chain-capture-contract-v1",
+    "pr": 249,
+    "fresh_main_sha": "a7c33bd20eda4a752082b44a34f959acba81f308",
+    "contract_run": 35242846549,
+    "hosted_real_aec_run": 35242846616,
+    "hosted_real_audio_run": 35242846546,
+    "verify_run": 35242846928,
+    "release_run": 35243313931,
+    "release_number": 1014
+  },
+  "state": {
+    "freeze_complete": false,
+    "hardware_execution_authorized": false,
+    "reason": "Required exact device, hardware, analog gain, AGC/DSP, room/fixture and render-source identities are not yet resolved."
+  },
+  "fixed_design": {
+    "design_type": "3x3_full_factorial_with_3_replicates",
+    "total_captures": 27,
+    "varying_factors": {
+      "playback_digital_gain_db": [
+        -12,
+        -6,
+        0
+      ],
+      "capture_digital_gain_db": [
+        -12,
+        -6,
+        0
+      ]
+    },
+    "fixed_within_plan": [
+      "device_id_or_fixture_id",
+      "hardware_revision",
+      "software_firmware_revision",
+      "playback_analog_gain_db_or_exact_setting",
+      "capture_analog_gain_db_or_exact_setting",
+      "AGC_enabled_and_exact_config",
+      "device_DSP_enabled_modules_and_exact_config",
+      "volume_control_state",
+      "room_or_fixture_id",
+      "source_position_xyz_m",
+      "microphone_position_xyz_m",
+      "source_orientation",
+      "microphone_orientation",
+      "render_source_hash"
+    ],
+    "geometry_rule": "single fixed source/microphone geometry for this pilot; one measured RIR is required for the exact geometry and room condition",
+    "rir_rule": "RIR must be measured and hash-bound before capture analysis; no inferred or synthetic substitute",
+    "randomization_seed": 20260918,
+    "capture_order": [
+      [
+        -12,
+        0,
+        1
+      ],
+      [
+        0,
+        -6,
+        2
+      ],
+      [
+        0,
+        0,
+        3
+      ],
+      [
+        -12,
+        0,
+        3
+      ],
+      [
+        -6,
+        0,
+        1
+      ],
+      [
+        -12,
+        0,
+        2
+      ],
+      [
+        0,
+        -6,
+        1
+      ],
+      [
+        0,
+        0,
+        2
+      ],
+      [
+        -12,
+        -12,
+        3
+      ],
+      [
+        0,
+        -12,
+        1
+      ],
+      [
+        -12,
+        -12,
+        1
+      ],
+      [
+        -6,
+        -6,
+        1
+      ],
+      [
+        -6,
+        0,
+        2
+      ],
+      [
+        -6,
+        -6,
+        3
+      ],
+      [
+        0,
+        -6,
+        3
+      ],
+      [
+        -6,
+        0,
+        3
+      ],
+      [
+        -12,
+        -6,
+        1
+      ],
+      [
+        0,
+        -12,
+        3
+      ],
+      [
+        -12,
+        -6,
+        3
+      ],
+      [
+        -6,
+        -12,
+        2
+      ],
+      [
+        -6,
+        -12,
+        3
+      ],
+      [
+        -6,
+        -6,
+        2
+      ],
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        -12,
+        -12,
+        2
+      ],
+      [
+        0,
+        -12,
+        2
+      ],
+      [
+        -12,
+        -6,
+        2
+      ],
+      [
+        -6,
+        -12,
+        1
+      ]
+    ],
+    "capture_order_tuple_semantics": [
+      "playback_digital_gain_db",
+      "capture_digital_gain_db",
+      "replicate"
+    ]
+  },
+  "unresolved_required": {
+    "device_id_or_fixture_id": "UNRESOLVED_REQUIRED",
+    "hardware_revision": "UNRESOLVED_REQUIRED",
+    "software_firmware_revision": "UNRESOLVED_REQUIRED",
+    "playback_analog_gain_db_or_exact_setting": "UNRESOLVED_REQUIRED",
+    "capture_analog_gain_db_or_exact_setting": "UNRESOLVED_REQUIRED",
+    "AGC_enabled_and_exact_config": "UNRESOLVED_REQUIRED",
+    "device_DSP_enabled_modules_and_exact_config": "UNRESOLVED_REQUIRED",
+    "volume_control_state": "UNRESOLVED_REQUIRED",
+    "room_or_fixture_id": "UNRESOLVED_REQUIRED",
+    "source_position_xyz_m": "UNRESOLVED_REQUIRED",
+    "microphone_position_xyz_m": "UNRESOLVED_REQUIRED",
+    "source_orientation": "UNRESOLVED_REQUIRED",
+    "microphone_orientation": "UNRESOLVED_REQUIRED",
+    "render_source_hash": "UNRESOLVED_REQUIRED",
+    "render_source_metadata": "UNRESOLVED_REQUIRED",
+    "reference_loopback_or_pre_output_reference_capture_method": "UNRESOLVED_REQUIRED",
+    "microphone_capture_method": "UNRESOLVED_REQUIRED",
+    "RIR_measurement_method": "UNRESOLVED_REQUIRED"
+  },
+  "integrity": {
+    "raw_audio_hash_required": true,
+    "config_hash_required": true,
+    "rir_hash_required": true,
+    "capture_order_recorded": true,
+    "failed_runs_retained": true,
+    "result_dependent_recapture": false,
+    "post_hoc_case_exclusion": false
+  },
+  "next_authorized_step": {
+    "name": "matched-gain-chain-factor-plan-resolution-v1",
+    "scope": "fill_exact_precapture_fields_only",
+    "may_modify_factor_levels": false,
+    "may_modify_capture_order": false,
+    "may_execute_hardware": false,
+    "may_run_audio_pipeline": false,
+    "may_compute_dtd_or_quality_result": false,
+    "freeze_requires_all_unresolved_required_fields_resolved": true,
+    "pilot_capture_requires_separate_explicit_authorization": true
+  },
+  "prohibited": [
+    "hardware capture execution",
+    "changing factor levels after inspecting outcomes",
+    "changing capture order after inspecting outcomes",
+    "gain normalization",
+    "Activity/VAD/DTD threshold changes",
+    "public double_talk_active semantic changes",
+    "source candidate creation",
+    "parameter or threshold search",
+    "HIL authority",
+    "Product Certification authority",
+    "release authority",
+    "shipping authority"
+  ],
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  }
+}

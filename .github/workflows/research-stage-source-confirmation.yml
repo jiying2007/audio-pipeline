@@ -1,0 +1,263 @@
+name: Research Stage Source Confirmation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/stage-source-candidate-run-1.json'
+      - '.github/research/continuous-optimization/confirmations/**'
+      - '.github/research/continuous-optimization/stage_source_confirmation.py'
+      - '.github/workflows/research-stage-source-confirmation.yml'
+      - '.github/program/maintenance_workflow_contract.py'
+  workflow_dispatch:
+    inputs:
+      candidate:
+        description: 'Independent confirmation target'
+        required: true
+        type: choice
+        default: all
+        options: [all, vad, agc]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-stage-source-confirmation-${{ github.ref }}-${{ inputs.candidate || 'contract' }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_BASE_SHA: 2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Validate independent confirmation contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile             .github/research/continuous-optimization/stage_source_confirmation.py
+          python3 .github/research/continuous-optimization/stage_source_confirmation.py --self-test
+          python3 .github/research/continuous-optimization/stage_source_candidate_patch.py --self-test
+          python3 tests/validation/discover_ami_vad_meeting.py --self-test
+          python3 .github/program/maintenance_workflow_contract.py --self-test --check
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          run=json.loads(Path('.github/research/continuous-optimization/stage-source-candidate-run-1.json').read_text())
+          assert run['run_id']==35325485610
+          assert run['source_head_sha']=='5da01e366f1673fdcbc247427f0b5c49b0e36f83'
+          assert run['source_base_sha']=='2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e'
+          assert run['candidates']['vad']['decision']=='SOURCE_CANDIDATE_PASS'
+          assert run['candidates']['vad']['artifact_digest']=='sha256:95d01d97c80265dd92af7e2a727e82ea3c1ff4a3d9054f317486f763791012aa'
+          assert run['candidates']['agc']['decision']=='SOURCE_CANDIDATE_PASS'
+          assert run['candidates']['agc']['artifact_digest']=='sha256:6e9eafd568bac7655d8874ed40a1bba1ad6e2e6d0df640d0b29ee8315098631c'
+
+          vad=json.loads(Path('.github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1.json').read_text())
+          assert vad['authority']=='INDEPENDENT_SOURCE_CANDIDATE_CONFIRMATION_ONLY'
+          assert vad['source_base_sha']==run['source_base_sha']
+          assert vad['synthetic_confirmation']['seeds']==[7751,8751,9751]
+          assert vad['synthetic_confirmation']['gates']['require_independent_benefit'] is True
+          assert vad['synthetic_confirmation']['gates']['minimum_total_frame_or_event_benefit']==0.005
+          assert vad['public_authority_discovery']['meeting']=='ES2006a'
+          assert vad['public_authority_discovery']['role']=='discovery-and-lock-only'
+          assert vad['public_authority_discovery']['candidate_feedback'] is False
+          assert vad['promotion']['source_merge_authorized'] is False
+
+          agc=json.loads(Path('.github/research/continuous-optimization/confirmations/agc-error-adaptive-release-v1.json').read_text())
+          assert agc['authority']=='INDEPENDENT_SOURCE_CANDIDATE_CONFIRMATION_ONLY'
+          assert agc['source_base_sha']==run['source_base_sha']
+          assert agc['dynamics_confirmation']['seeds']==[7761,8761,9761]
+          assert agc['full_pipeline_confirmation']['seeds']==[7762,8762,9762]
+          assert agc['dynamics_confirmation']['gates']['min_median_hot_to_low_improvement_frames']==40.0
+          assert agc['promotion']['source_merge_authorized'] is False
+
+          aec=json.loads(Path('.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-closure.json').read_text())
+          assert aec['status']=='CLOSED_TERMINAL_VISIBLE_REJECT'
+          assert aec['candidate_budget']==0
+          matched=json.loads(Path('.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json').read_text())
+          assert matched['candidate_budget']==0 and matched['state']['hardware_execution_authorized'] is False
+          print('stage source confirmation contract: PASS')
+          PY
+
+  vad-synthetic:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch' && (inputs.candidate == 'vad' || inputs.candidate == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with: {namespace: confirm-source-vad}
+      - name: Materialize exact VAD base and candidate
+        run: |
+          set -euo pipefail
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/vad-confirm-base "$SOURCE_BASE_SHA"
+          git worktree add --detach /tmp/vad-confirm-candidate "$SOURCE_BASE_SHA"
+          python3 .github/research/continuous-optimization/stage_source_candidate_patch.py             --root /tmp/vad-confirm-candidate --candidate vad
+          mkdir -p stage-source-confirmation-out/vad
+          git -C /tmp/vad-confirm-candidate diff -- src/enhance/ap_vad.c             > stage-source-confirmation-out/vad/candidate.patch
+          test -s stage-source-confirmation-out/vad/candidate.patch
+          sha256sum stage-source-confirmation-out/vad/candidate.patch             > stage-source-confirmation-out/vad/candidate.patch.sha256
+          test -z "$(git -C /tmp/vad-confirm-candidate diff --name-only | grep -v '^src/enhance/ap_vad.c$' || true)"
+      - name: Build exact VAD baseline and fixed candidate
+        run: |
+          set -euo pipefail
+          cmake -S /tmp/vad-confirm-base -B /tmp/vad-confirm-build-base             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-confirm-build-base --target ap_process_pcm --parallel
+          cmake -S /tmp/vad-confirm-candidate -B /tmp/vad-confirm-build-candidate             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-confirm-build-candidate --target ap_process_pcm --parallel
+          sha256sum /tmp/vad-confirm-build-base/ap_process_pcm             /tmp/vad-confirm-build-candidate/ap_process_pcm             > stage-source-confirmation-out/vad/processors.sha256
+      - name: Materialize independent VAD synthetic confirmation
+        run: |
+          set -euo pipefail
+          for seed in 7751 8751 9751; do
+            (cd /tmp/vad-confirm-base && PYTHONPATH=validation/tools               python3 validation/tools/build_stage_validation_corpus.py                 --output "/tmp/vad-confirm-$seed" --seed "$seed" --seconds 4)
+          done
+      - name: Confirm fixed VAD source candidate
+        run: |
+          python3 .github/research/continuous-optimization/stage_source_confirmation.py             --candidate vad             --contract .github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1.json             --base-processor /tmp/vad-confirm-build-base/ap_process_pcm             --candidate-processor /tmp/vad-confirm-build-candidate/ap_process_pcm             --corpus /tmp/vad-confirm-7751/corpus.json             --corpus /tmp/vad-confirm-8751/corpus.json             --corpus /tmp/vad-confirm-9751/corpus.json             --output stage-source-confirmation-out/vad/result.json
+      - name: Enforce VAD confirmation authority
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('stage-source-confirmation-out/vad/result.json').read_text())
+          assert r['authority']=='independent-source-candidate-confirmation-only'
+          assert r['candidate_id']=='vad-confidence-tiered-hold-v1'
+          assert r['seeds']==[7751,8751,9751]
+          assert r['decision'] in {'SYNTHETIC_CONFIRMATION_PASS_PENDING_PUBLIC_LOCK','SOURCE_CANDIDATE_REJECT'}
+          assert r['public_authority_consumed'] is False
+          assert r['shipping_authority'] is False
+          assert r['automatic_main_mutation'] is False
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stage-source-confirmation-vad-${{ github.run_id }}
+          path: stage-source-confirmation-out/vad/
+          retention-days: 30
+          if-no-files-found: warn
+
+  vad-public-discovery:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch' && (inputs.candidate == 'vad' || inputs.candidate == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Discover predeclared AMI ES2006a identity only
+        run: |
+          set -euo pipefail
+          mkdir -p stage-source-confirmation-out/vad-public
+          python3 tests/validation/discover_ami_vad_meeting.py             --meeting ES2006a             --output stage-source-confirmation-out/vad-public/discovery.json             | tee stage-source-confirmation-out/vad-public/summary.json
+      - name: Enforce discovery-only authority
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('stage-source-confirmation-out/vad-public/discovery.json').read_text())
+          assert d['schema_version']==1
+          assert d['authority']=='research-discovery-only'
+          assert d['dataset']['meeting']=='ES2006a'
+          assert d['dataset']['license']=='CC-BY-4.0'
+          assert d['audio']['wav']['sample_rate_hz']==16000
+          assert d['audio']['wav']['channels']==1
+          assert d['audio']['wav']['bits_per_sample']==16
+          assert d['audio']['range_supported'] is True
+          assert len(d['annotations']['files'])==4
+          assert len(d['window_plan'])==3
+          assert all(x['window_id'].startswith('ES2006a-w') for x in d['window_plan'])
+          assert all(x['audio_range']['sha256'] for x in d['window_plan'])
+          print('ES2006a discovery identity: PASS / NOT CONSUMED AS CONFIRMATION')
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stage-source-confirmation-vad-public-discovery-${{ github.run_id }}
+          path: stage-source-confirmation-out/vad-public/
+          retention-days: 30
+          if-no-files-found: warn
+
+  agc:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch' && (inputs.candidate == 'agc' || inputs.candidate == 'all')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with: {namespace: confirm-source-agc}
+      - name: Materialize exact AGC base and candidate
+        run: |
+          set -euo pipefail
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/agc-confirm-base "$SOURCE_BASE_SHA"
+          git worktree add --detach /tmp/agc-confirm-candidate "$SOURCE_BASE_SHA"
+          python3 .github/research/continuous-optimization/stage_source_candidate_patch.py             --root /tmp/agc-confirm-candidate --candidate agc
+          mkdir -p stage-source-confirmation-out/agc
+          git -C /tmp/agc-confirm-candidate diff -- src/enhance/ap_agc.c             > stage-source-confirmation-out/agc/candidate.patch
+          test -s stage-source-confirmation-out/agc/candidate.patch
+          sha256sum stage-source-confirmation-out/agc/candidate.patch             > stage-source-confirmation-out/agc/candidate.patch.sha256
+          test -z "$(git -C /tmp/agc-confirm-candidate diff --name-only | grep -v '^src/enhance/ap_agc.c$' || true)"
+      - name: Build exact AGC baseline and fixed candidate
+        run: |
+          set -euo pipefail
+          cmake -S /tmp/agc-confirm-base -B /tmp/agc-confirm-build-base             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/agc-confirm-build-base --target ap_process_pcm audio_pipeline --parallel
+          cc -std=c11 -Wall -Wextra -Werror             -I/tmp/agc-confirm-base/include -I/tmp/agc-confirm-build-base/generated             /tmp/agc-confirm-base/tests/validation/agc_dynamics_probe.c             /tmp/agc-confirm-build-base/libaudio_pipeline.a -lm             -o /tmp/agc-confirm-build-base/agc_dynamics_probe
+
+          cmake -S /tmp/agc-confirm-candidate -B /tmp/agc-confirm-build-candidate             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/agc-confirm-build-candidate --target ap_process_pcm audio_pipeline --parallel
+          cc -std=c11 -Wall -Wextra -Werror             -I/tmp/agc-confirm-candidate/include -I/tmp/agc-confirm-build-candidate/generated             /tmp/agc-confirm-candidate/tests/validation/agc_dynamics_probe.c             /tmp/agc-confirm-build-candidate/libaudio_pipeline.a -lm             -o /tmp/agc-confirm-build-candidate/agc_dynamics_probe
+          sha256sum /tmp/agc-confirm-build-base/ap_process_pcm             /tmp/agc-confirm-build-candidate/ap_process_pcm             /tmp/agc-confirm-build-base/agc_dynamics_probe             /tmp/agc-confirm-build-candidate/agc_dynamics_probe             > stage-source-confirmation-out/agc/processors.sha256
+      - name: Materialize independent AGC confirmation corpora
+        run: |
+          set -euo pipefail
+          for seed in 7761 8761 9761; do
+            (cd /tmp/agc-confirm-base && PYTHONPATH=validation/tools:tests/validation               python3 tests/validation/build_agc_bf_validation_corpus.py                 --output "/tmp/agc-confirm-dyn-$seed" --seed "$seed")
+          done
+          for seed in 7762 8762 9762; do
+            (cd /tmp/agc-confirm-base && PYTHONPATH=validation/tools               python3 validation/tools/build_validation_corpus.py                 --output "/tmp/agc-confirm-full-$seed" --seed "$seed" --seconds 4)
+          done
+      - name: Run canonical full-pipeline base and candidate reports
+        run: |
+          set -euo pipefail
+          mkdir -p stage-source-confirmation-out/agc/full
+          for seed in 7762 8762 9762; do
+            python3 validation/tools/run_validation.py               --corpus "/tmp/agc-confirm-full-$seed/corpus.json"               --policy validation/policies/validation-smoke.json               --dataset-lock validation/datasets.lock.json               --processor /tmp/agc-confirm-build-base/ap_process_pcm               --output "stage-source-confirmation-out/agc/full/base-$seed.json"               --source-revision "$SOURCE_BASE_SHA"               --enforce
+            python3 validation/tools/run_validation.py               --corpus "/tmp/agc-confirm-full-$seed/corpus.json"               --policy validation/policies/validation-smoke.json               --dataset-lock validation/datasets.lock.json               --processor /tmp/agc-confirm-build-candidate/ap_process_pcm               --output "stage-source-confirmation-out/agc/full/candidate-$seed.json"               --source-revision "$SOURCE_BASE_SHA"               --enforce
+          done
+      - name: Confirm fixed AGC source candidate
+        run: |
+          python3 .github/research/continuous-optimization/stage_source_confirmation.py             --candidate agc             --contract .github/research/continuous-optimization/confirmations/agc-error-adaptive-release-v1.json             --base-probe /tmp/agc-confirm-build-base/agc_dynamics_probe             --candidate-probe /tmp/agc-confirm-build-candidate/agc_dynamics_probe             --corpus /tmp/agc-confirm-dyn-7761/corpus.json             --corpus /tmp/agc-confirm-dyn-8761/corpus.json             --corpus /tmp/agc-confirm-dyn-9761/corpus.json             --full-base-report stage-source-confirmation-out/agc/full/base-7762.json             --full-base-report stage-source-confirmation-out/agc/full/base-8762.json             --full-base-report stage-source-confirmation-out/agc/full/base-9762.json             --full-candidate-report stage-source-confirmation-out/agc/full/candidate-7762.json             --full-candidate-report stage-source-confirmation-out/agc/full/candidate-8762.json             --full-candidate-report stage-source-confirmation-out/agc/full/candidate-9762.json             --output stage-source-confirmation-out/agc/result.json
+      - name: Enforce AGC confirmation authority
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('stage-source-confirmation-out/agc/result.json').read_text())
+          assert r['authority']=='independent-source-candidate-confirmation-only'
+          assert r['candidate_id']=='agc-error-adaptive-release-v1'
+          assert r['dynamic_seeds']==[7761,8761,9761]
+          assert r['full_pipeline_seeds']==[7762,8762,9762]
+          assert r['decision'] in {'INDEPENDENT_CONFIRMATION_PASS','SOURCE_CANDIDATE_REJECT'}
+          assert r['shipping_authority'] is False
+          assert r['automatic_main_mutation'] is False
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stage-source-confirmation-agc-${{ github.run_id }}
+          path: stage-source-confirmation-out/agc/
+          retention-days: 30
+          if-no-files-found: warn

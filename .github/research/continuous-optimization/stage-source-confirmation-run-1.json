@@ -1,0 +1,75 @@
+{
+  "agc": {
+    "artifact_digest": "sha256:3cf3fe28b91cec39cb4ca4b17c81f22a57b04a671b80ddcdb55bdc26009e07da",
+    "artifact_id": 10543011094,
+    "artifact_name": "stage-source-confirmation-agc-35334960942",
+    "base_probe_sha256": "240c3f7030a581516f7fdb2aa8f938e820a5098820a0d1c49c8473d6e3e7da9b",
+    "base_processor_sha256": "d99471ea77e1d83ffe9bb661a53830c3f886496db5346deb01e8e878ded32a84",
+    "candidate_budget": 0,
+    "candidate_id": "agc-error-adaptive-release-v1",
+    "candidate_patch_sha256": "81affa74da2111fab2a05e75f9ecd3b3f18f2cc8b6b0e44f3b52d998116233d7",
+    "candidate_probe_sha256": "42c4d20841e58382b8dbff72b7e745a2307682038eadf35556d583901e715889",
+    "candidate_processor_sha256": "680ca964c1f1167d7fde5333584fb8fe63e67bee89434bac809928f676975733",
+    "decision": "SOURCE_CANDIDATE_REJECT",
+    "dynamic_seeds": [7761, 8761, 9761],
+    "dynamics": [
+      {"hot_to_low_improvement_frames":55.0,"low_to_hot_regression_frames":0.0,"peak_regression_db":0.0005399999999990968,"seed":7761,"slew_regression_db":0.044562999999999575,"steady_level_error_regression_db":0.0,"violations":[]},
+      {"hot_to_low_improvement_frames":55.0,"low_to_hot_regression_frames":0.0,"peak_regression_db":0.0005399999999990968,"seed":8761,"slew_regression_db":0.044562999999999575,"steady_level_error_regression_db":0.0,"violations":[]},
+      {"hot_to_low_improvement_frames":55.0,"low_to_hot_regression_frames":0.0,"peak_regression_db":0.0005399999999990968,"seed":9761,"slew_regression_db":0.044562999999999575,"steady_level_error_regression_db":0.0,"violations":[]}
+    ],
+    "full_pipeline_seeds": [7762, 8762, 9762],
+    "full_pipeline_violations": [
+      {"full_pipeline_violations":[{"actual":3.894558921521797,"allowed":0.75,"gate":"full_pipeline_metric_drop","metric":"p10_noise_only_attenuation_db"}],"seed":7762},
+      {"full_pipeline_violations":[{"actual":3.87361825746194,"allowed":0.75,"gate":"full_pipeline_metric_drop","metric":"p10_noise_only_attenuation_db"}],"seed":8762},
+      {"full_pipeline_violations":[{"actual":3.934910361217623,"allowed":0.75,"gate":"full_pipeline_metric_drop","metric":"p10_noise_only_attenuation_db"}],"seed":9762}
+    ],
+    "median_hot_to_low_improvement_frames": 55.0,
+    "next_gate": null,
+    "terminal_exact_candidate": true
+  },
+  "authority": {"automatic_main_mutation":false,"hil":false,"product_certification":false,"shipping":false,"source_merge_authorized":false},
+  "conclusion": "success",
+  "event": "workflow_dispatch",
+  "head_sha": "24cf810e32de842104b7e6bf46ea6d867b4534b8",
+  "predecessor": {"source_candidate_head_sha":"5da01e366f1673fdcbc247427f0b5c49b0e36f83","source_candidate_run_id":35325485610},
+  "requested_candidate": "all",
+  "run_id": 35334960942,
+  "schema_version": 1,
+  "shipping_immutable": {"aec_mu":0.22,"release_source_sha":"57e4c64adc1cf06819e46e24e275ecd746d5f17f","version":"v2.3.16"},
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "vad": {
+    "artifact_digest": "sha256:0b486507008d125e4e425c1b8be68dd718dda591b1960f1fa960b48b5757418f",
+    "artifact_id": 10542441824,
+    "artifact_name": "stage-source-confirmation-vad-35334960942",
+    "base_processor_sha256": "d99471ea77e1d83ffe9bb661a53830c3f886496db5346deb01e8e878ded32a84",
+    "candidate_id": "vad-confidence-tiered-hold-v1",
+    "candidate_patch_sha256": "19b6e1c34e087ac7e452fb6cc378487e689279a48ed73376c39b672fe90e662c",
+    "candidate_processor_sha256": "00c71df991bdff3ed06a6beb4c335483a70ef8de269681f394b3c2cdb83c7428",
+    "decision": "SYNTHETIC_CONFIRMATION_PASS_PENDING_PUBLIC_LOCK",
+    "next_gate": "hash-lock ES2006a discovery identity before any public confirmation",
+    "partition_summary": [
+      {"baseline_frame":{"max_vad_false_positive_rate":0.4307692307692308,"min_vad_f1":0.8161764705882353,"min_vad_recall":0.8222222222222222,"pass_rate":1.0},"benefit":0.0,"candidate_frame":{"max_vad_false_positive_rate":0.43846153846153846,"min_vad_f1":0.8161764705882353,"min_vad_recall":0.8222222222222222,"pass_rate":1.0},"changed_active_frames":8,"false_active_fraction_regression":0.005303030303030282,"onset_p95_regression_ms":0.0,"release_tail_p95_regression_ms":10.0,"seed":7751,"violations":[]},
+      {"baseline_frame":{"max_vad_false_positive_rate":0.3769230769230769,"min_vad_f1":0.8394160583941606,"min_vad_recall":0.8518518518518519,"pass_rate":1.0},"benefit":0.023224843377176008,"candidate_frame":{"max_vad_false_positive_rate":0.3769230769230769,"min_vad_f1":0.8478260869565217,"min_vad_recall":0.8666666666666667,"pass_rate":1.0},"changed_active_frames":12,"false_active_fraction_regression":0.006060606060606058,"onset_p95_regression_ms":0.0,"release_tail_p95_regression_ms":10.0,"seed":8751,"violations":[]},
+      {"baseline_frame":{"max_vad_false_positive_rate":0.4153846153846154,"min_vad_f1":0.8260869565217391,"min_vad_recall":0.8444444444444444,"pass_rate":1.0},"benefit":0.02905633758026238,"candidate_frame":{"max_vad_false_positive_rate":0.4153846153846154,"min_vad_f1":0.836624775583483,"min_vad_recall":0.8629629629629629,"pass_rate":1.0},"changed_active_frames":13,"false_active_fraction_regression":0.004545454545454547,"onset_p95_regression_ms":0.0,"release_tail_p95_regression_ms":10.0,"seed":9751,"violations":[]}
+    ],
+    "public_authority_consumed": false,
+    "seeds": [7751,8751,9751],
+    "total_changed_active_frames": 33,
+    "total_frame_or_event_benefit": 0.05228118095743839,
+    "violations": []
+  },
+  "vad_public_discovery": {
+    "annotation_hashes": {"A":"402c45f57883473fe1368c5244aba39644009d4d6a6248e1a6b99b2241d9d670","B":"9c78c8a0b3e866ed9c9b2c4b06668bd6bb8eab49a2bb6311d3fd717b38a5b59b","C":"d99b7b1d070ea5e160c90a381079c4180212d3d3850cde1f4f7b6190b1204370","D":"7ba99f0ce89e559a924690067c28bd30757b5a1f199e472100b0f97407a6e5b2"},
+    "artifact_digest": "sha256:cee95c050e367a9cce85af656324a8d0921e81cd5b5d77984329256069bfb21d",
+    "artifact_id": 10543285063,
+    "artifact_name": "stage-source-confirmation-vad-public-discovery-35334960942",
+    "audio": {"lfs_sha256":"1b1a0b273f2f589abc8788b6f9a2ba5ae343c2aa71fc425f48c8b79ce1406eef","path":"amicorpus/ES2006a/audio/ES2006a.Mix-Headset.wav","range_supported":true,"size_bytes":41098968,"tree_object_id":"b57309f3793d3fe59c2cd405904975cbdb5982cf","wav":{"audio_format":1,"bits_per_sample":16,"block_align":2,"byte_rate":32000,"channels":1,"data_offset":44,"data_size":41098924,"sample_rate_hz":16000},"xet_hash":"484e19837a2535df0fb015d4d2a89384f3732db110f73729f78100e6663d377a"},
+    "authority": "research-discovery-only",
+    "candidate_feedback": false,
+    "confirmation_consumed": false,
+    "meeting": "ES2006a",
+    "transport_mirror": {"repository":"ggfox00000/dia-AMICorpus-all","revision":"a249db53de253a3a0a864c93a51d613159dfec7c"},
+    "window_hashes": {"ES2006a-w1":"161ccb5260035c82b2ba08c48a2da587abedfeadc786bc5a34abb3751d4602cd","ES2006a-w2":"8ee2befd9f56051a360fbf5bff6050069c554919627443da65eccf652c16a18c","ES2006a-w3":"ddefbff1a58de4b27a07069498dff9ea3afd6ac0a401f9707a8e94b281c7f4aa"}
+  },
+  "workflow": "Research Stage Source Confirmation"
+}

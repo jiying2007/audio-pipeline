@@ -204,7 +204,16 @@ def run(dev:list[Path],validation:Path,shadow:Path,search_space:Path,output:Path
                       "regression_violations":vv},
         "shadow":{"baseline":sh_base["summary"],"candidate":sh_cand["summary"],
                   "regression_violations":sv},
-        "executable_binding":False,
+        "effective_winner":(
+            {"algorithm":selected_alg["algorithm"],"algorithm_parameter":selected_alg["parameter"],"tuning":t}
+            if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE"
+            else {"algorithm":"shipping-asymmetric-ema","algorithm_parameter":0.015,
+                  "tuning":{"agc_target_dbfs":-20.0,"limiter_dbfs":-2.0}}
+        ),
+        "executable_binding":{
+            "bound":decision!="FROZEN_STAGE_RESEARCH_CANDIDATE",
+            "kind":"shipping-baseline" if decision!="FROZEN_STAGE_RESEARCH_CANDIDATE" else "research-emulator",
+        },
         "automatic_main_mutation":False,"shipping_authority":False,"hil_authority":False,
         "product_certification_authority":False,
         "next_gate":"separate-source-candidate-review" if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE" else None,

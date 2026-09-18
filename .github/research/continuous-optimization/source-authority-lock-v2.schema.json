@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jiying2007/audio-pipeline/source-authority-lock-v2.schema.json",
+  "title": "Audio Pipeline Source Authority v2 Qualified Lock",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "authority",
+    "policy_id",
+    "policy_sha256",
+    "candidate_id",
+    "candidate_contract_sha256",
+    "source_base_sha",
+    "qualification_profile",
+    "baseline_executable_target",
+    "baseline_executable_sha256",
+    "baseline_args",
+    "generator_contract",
+    "qualification_limit",
+    "expected_authority_lock_path",
+    "qualification_replay_additional_authority",
+    "decision",
+    "required_count",
+    "pool_order",
+    "selected_authority",
+    "invalid_pool_entries",
+    "candidate_execution_allowed",
+    "candidate_budget_consumed",
+    "candidate_feedback_used",
+    "retroactive_candidate_reclassification",
+    "shipping_authority",
+    "source_merge_authorized",
+    "automatic_main_mutation"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "authority": {
+      "const": "baseline-only-source-candidate-authority-qualification"
+    },
+    "policy_id": {
+      "const": "source-candidate-baseline-qualified-authority-v2"
+    },
+    "policy_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "candidate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_contract_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_base_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "qualification_profile": {
+      "enum": [
+        "vad-stage",
+        "agc-dynamics"
+      ]
+    },
+    "baseline_executable_target": {
+      "enum": [
+        "ap_process_pcm",
+        "agc_dynamics_probe"
+      ]
+    },
+    "baseline_executable_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "baseline_args": {
+      "type": "object"
+    },
+    "generator_contract": {
+      "type": "object",
+      "required": [
+        "path",
+        "seconds",
+        "extra_args"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "extra_args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "qualification_limit": {
+      "const": 1
+    },
+    "expected_authority_lock_path": {
+      "type": "string",
+      "pattern": "^\\\\.github/research/continuous-optimization/source-authority-locks/[A-Za-z0-9._-]+\\\\.json$"
+    },
+    "qualification_replay_additional_authority": {
+      "const": false
+    },
+    "decision": {
+      "const": "BASELINE_QUALIFIED_AUTHORITY_LOCK"
+    },
+    "required_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "pool_order": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/identity"
+      }
+    },
+    "selected_authority": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/identity"
+      }
+    },
+    "invalid_pool_entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "identity",
+          "status",
+          "baseline_validation_result",
+          "absolute_case_gate_violations"
+        ],
+        "properties": {
+          "identity": {
+            "$ref": "#/$defs/identity"
+          },
+          "status": {
+            "const": "AUTHORITY_POOL_ENTRY_INVALID"
+          },
+          "baseline_validation_result": {
+            "const": "FAIL"
+          },
+          "baseline_summary": {
+            "type": "object"
+          },
+          "absolute_case_gate_violations": {
+            "type": "array",
+            "minItems": 1
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "candidate_execution_allowed": {
+      "const": true
+    },
+    "candidate_budget_consumed": {
+      "const": false
+    },
+    "candidate_feedback_used": {
+      "const": false
+    },
+    "retroactive_candidate_reclassification": {
+      "const": false
+    },
+    "shipping_authority": {
+      "const": false
+    },
+    "source_merge_authorized": {
+      "const": false
+    },
+    "automatic_main_mutation": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "required": [
+        "generator_seed",
+        "corpus_id",
+        "corpus_sha256"
+      ],
+      "properties": {
+        "generator_seed": {
+          "type": "integer"
+        },
+        "corpus_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "corpus_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

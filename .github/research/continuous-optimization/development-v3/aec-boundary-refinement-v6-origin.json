@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "iteration_id": "aec-boundary-refinement-v6",
+  "authority": "DEVELOPMENT_SELECTION_LINEAGE_ONLY",
+  "predecessor": {
+    "workflow": "Research Algorithm Parameter Optimization",
+    "run_id": 35301640608,
+    "source_sha": "7b7b6325063c3cc503fc8a6d052199ab50eb4c24",
+    "artifact_id": 10530995129,
+    "artifact_name": "research-algorithm-parameter-35301640608",
+    "artifact_digest": "sha256:94d57293b2ceea738f788c1ced866a74da7a46ec627d67b2c579059135853d70",
+    "decision": "KEEP_BASELINE",
+    "status": "NO_RESEARCH_CANDIDATE"
+  },
+  "selected_baseline": {
+    "algorithm_id": "mdf-ema",
+    "tuning": {
+      "aec_mu": 0.22,
+      "ns_floor": 0.12,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2
+    }
+  },
+  "closest_nonterminal_boundary": {
+    "tuning_candidate_id": "296836888950",
+    "tuning": {
+      "aec_mu": 0.26,
+      "ns_floor": 0.12,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2
+    },
+    "development_score": 1.019367,
+    "nonterminal_violation_count": 1,
+    "violation": {
+      "gate": "case_delta_regression",
+      "metric": "vad_recall",
+      "unit": "synthetic-development-1407",
+      "actual_delta": -0.051851851851851816,
+      "minimum_delta": -0.03,
+      "case_ids": [
+        "aec-doubletalk",
+        "stress-doubletalk-quiet",
+        "stress-doubletalk-nominal",
+        "stress-doubletalk-strong"
+      ]
+    }
+  },
+  "terminal_exclusion": {
+    "tuning_candidate_id": "4a6a408bf0e3",
+    "aec_mu": 0.24,
+    "reason": "terminally rejected candidate; source-independent reuse is forbidden"
+  },
+  "next_search": {
+    "aec_mu": [
+      0.22,
+      0.23,
+      0.25,
+      0.26
+    ],
+    "ns_floor": [
+      0.12
+    ],
+    "agc_target_dbfs": [
+      -20
+    ],
+    "limiter_dbfs": [
+      -2
+    ],
+    "objective_and_gates": "unchanged_from_doubletalk_case_guard_v5",
+    "rationale": "refine the safe boundary between the eligible 0.22 baseline and the one-violation 0.26 development boundary without reusing terminal 0.24"
+  },
+  "feedback_boundary": {
+    "development_only": true,
+    "validation_used_for_selection": false,
+    "shadow_used_for_selection": false,
+    "blind_used_for_selection": false,
+    "product_external_used_for_selection": false
+  },
+  "automatic_search_space_mutation": false,
+  "automatic_main_mutation": false,
+  "shipping_authority": false
+}

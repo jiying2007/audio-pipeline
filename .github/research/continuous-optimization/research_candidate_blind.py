@@ -133,9 +133,15 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any]) -> dic
     if provenance["optimization_result_path"] != "research-optimization-out/optimization-result.json":
         raise ValueError("optimization result path drift")
     search_space_path = str(provenance["search_space_path"])
+    search_parts = Path(search_space_path).parts
+    if ".." in search_parts or Path(search_space_path).is_absolute():
+        raise ValueError("search space path invalid")
     allowed_search_spaces = (
         search_space_path.startswith("validation/tuning/search-spaces/"),
         search_space_path == ".github/research/continuous-optimization/development-v2/search-space.json",
+        search_space_path.startswith(
+            ".github/research/continuous-optimization/development-v3/"
+        ) and search_space_path.endswith(".json"),
     )
     if not any(allowed_search_spaces):
         raise ValueError("search space path invalid")
@@ -371,6 +377,22 @@ def self_test() -> None:
         "terminal_candidates": [{"candidate_id": "deadbeef0000"}],
     }
     validate_manifest(manifest, registry)
+    v3_manifest = json.loads(json.dumps(manifest))
+    v3_manifest["research_provenance"]["search_space_path"] = (
+        ".github/research/continuous-optimization/development-v3/"
+        "aec-boundary-refinement-v6.json"
+    )
+    validate_manifest(v3_manifest, registry)
+    traversal_manifest = json.loads(json.dumps(v3_manifest))
+    traversal_manifest["research_provenance"]["search_space_path"] = (
+        ".github/research/continuous-optimization/development-v3/../escape.json"
+    )
+    try:
+        validate_manifest(traversal_manifest, registry)
+    except ValueError as exc:
+        assert "search space path invalid" in str(exc)
+    else:
+        raise AssertionError("development-v3 traversal path was accepted")
     optimization = {
         "schema_version": 1, "decision": "FREEZE_RESEARCH_CANDIDATE",
         "status": EXPECTED_STATUS, "next_gate": EXPECTED_NEXT_GATE,

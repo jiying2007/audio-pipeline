@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_RESEARCH_CANDIDATE",
+  "next_gate": "validation-grade-blind",
+  "research_candidate_id": "2d13a2b08ce52a19",
+  "candidate_id": "6f5f432da36f",
+  "source_sha": "4683f049c7dca2bf1ececa6adda33d4ec10cc3d1",
+  "hypothesis_id": "multidataset-aec-boundary-refinement-v6",
+  "tuning": {
+    "aec_mu": 0.23,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20,
+    "limiter_dbfs": -2
+  },
+  "research_provenance": {
+    "workflow": "Research Optimization",
+    "run_id": 35306395708,
+    "artifact_id": 10532315507,
+    "artifact_name": "research-optimization-35306395708",
+    "artifact_digest": "sha256:e3915091aad1f92008c401d4fd5a4c937140c6c5cdd293e8dda2c590ca48e74e",
+    "optimization_result_path": "research-optimization-out/optimization-result.json",
+    "search_space_path": ".github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json",
+    "search_space_sha256": "c57996e53db5f45b3709e89b2d1983cff503f8f514e0c8b92bbbae69014a8052"
+  },
+  "selection_evidence": {
+    "development_score": 0.29023905945279305,
+    "worst_development_unit_score": 0,
+    "generalization_gate_count": 4,
+    "gate_violation_count": 0
+  },
+  "output_authority": {
+    "shipping_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "automatic_main_mutation": false
+  }
+}

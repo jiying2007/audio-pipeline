@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "status": "BLIND_REJECTED_NON_SHIPPING",
+  "terminal_candidate": true,
+  "research_candidate_id": "2d13a2b08ce52a19",
+  "candidate_id": "6f5f432da36f",
+  "source_sha": "4683f049c7dca2bf1ececa6adda33d4ec10cc3d1",
+  "hypothesis_id": "multidataset-aec-boundary-refinement-v6",
+  "tuning": {
+    "aec_mu": 0.23,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20,
+    "limiter_dbfs": -2
+  },
+  "visible_result": "FAIL",
+  "blind_result": null,
+  "failed_stage": "visible-validation",
+  "next_gate": null,
+  "visible_gate_violations": [
+    {
+      "gate": "min_median_output_render_corr_reduction",
+      "metric": "median_output_render_corr_reduction",
+      "actual": 0.0013385477679472395,
+      "expected_min": 0.05
+    },
+    {
+      "gate": "min_vad_f1",
+      "metric": "min_vad_f1",
+      "actual": 0.2568370986920333,
+      "expected_min": 0.8
+    }
+  ],
+  "qualification_provenance": {
+    "workflow": "Research Candidate Blind Qualification",
+    "run_id": 35309295432,
+    "job_id": 105487855255,
+    "head_sha": "493e1d6ba637890110df423629440d90fba9dc9b",
+    "artifact_id": 10532962574,
+    "artifact_name": "research-candidate-blind-2d13a2b08ce52a19-35309295432",
+    "artifact_digest": "sha256:ab9c353d219986560688797e0ff1e3017083acb78b59d424eb5337234e2abb5b"
+  },
+  "output_authority": {
+    "shipping_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "automatic_main_mutation": false
+  },
+  "rule": "Explicit visible validation FAIL is terminal for this exact tuning identity. The candidate may not be retried, reselected, promoted, or used to change shipping."
+}

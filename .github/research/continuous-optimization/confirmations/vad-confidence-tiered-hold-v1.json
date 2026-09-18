@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "confirmation_id": "vad-confidence-tiered-hold-v1-confirmation",
+  "authority": "INDEPENDENT_SOURCE_CANDIDATE_CONFIRMATION_ONLY",
+  "candidate_id": "vad-confidence-tiered-hold-v1",
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "source_candidate_run_id": 35325485610,
+    "artifact_id": 10538753543,
+    "artifact_digest": "sha256:95d01d97c80265dd92af7e2a727e82ea3c1ff4a3d9054f317486f763791012aa",
+    "decision": "SOURCE_CANDIDATE_PASS"
+  },
+  "fixed_candidate": {
+    "local_threshold": 0.45,
+    "ns_threshold": 0.35,
+    "very_strong_threshold": 0.7,
+    "very_strong_hold_frames": 10,
+    "strong_threshold": 0.5,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6,
+    "candidate_search": false
+  },
+  "synthetic_confirmation": {
+    "seeds": [
+      7751,
+      8751,
+      9751
+    ],
+    "data_role": "independent-confirmation",
+    "event_bridge_frames": 0,
+    "min_event_frames": 1,
+    "gates": {
+      "require_candidate_case_gates_pass": true,
+      "max_frame_recall_drop": 0.03,
+      "max_frame_f1_drop": 0.03,
+      "max_false_positive_rate_rise": 0.03,
+      "max_event_recall_drop": 0,
+      "max_onset_p95_regression_ms": 10,
+      "max_release_tail_p95_regression_ms": 25,
+      "max_false_active_fraction_rise": 0.02,
+      "require_candidate_behavior_exercised": true,
+      "require_independent_benefit": true,
+      "minimum_total_frame_or_event_benefit": 0.005
+    }
+  },
+  "public_authority_discovery": {
+    "meeting": "ES2006a",
+    "role": "discovery-and-lock-only",
+    "candidate_feedback": false,
+    "confirmation_consumed": false,
+    "expected_license": "CC-BY-4.0",
+    "require_mix_headset": true,
+    "require_four_speaker_annotations": true,
+    "require_http_range": true,
+    "next_step_after_success": "freeze exact source/annotation/window lock before any public confirmation"
+  },
+  "outcome": {
+    "pass": "SYNTHETIC_CONFIRMATION_PASS_PENDING_PUBLIC_LOCK",
+    "reject": "SOURCE_CANDIDATE_REJECT",
+    "discovery_failure": "PUBLIC_AUTHORITY_DISCOVERY_INCOMPLETE"
+  },
+  "promotion": {
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "source_merge_authorized": false
+  }
+}

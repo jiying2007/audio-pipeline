@@ -10,6 +10,8 @@ on:
       - '.github/research/continuous-optimization/development-v3/ns-stage-lane-v1-closure.json'
       - '.github/research/continuous-optimization/stage_source_candidate_patch.py'
       - '.github/research/continuous-optimization/stage_source_candidate_evaluate.py'
+      - '.github/research/continuous-optimization/source-candidate-authority-v2.json'
+      - '.github/research/continuous-optimization/source_candidate_authority_v2.py'
       - '.github/workflows/research-stage-source-candidate-evaluation.yml'
       - '.github/program/maintenance_workflow_contract.py'
   workflow_dispatch:
@@ -42,13 +44,29 @@ jobs:
       - name: Validate source candidate contracts
         run: |
           set -euo pipefail
-          python3 -m py_compile             .github/research/continuous-optimization/stage_source_candidate_patch.py             .github/research/continuous-optimization/stage_source_candidate_evaluate.py
+          python3 -m py_compile             .github/research/continuous-optimization/stage_source_candidate_patch.py             .github/research/continuous-optimization/stage_source_candidate_evaluate.py             .github/research/continuous-optimization/source_candidate_authority_v2.py
           python3 .github/research/continuous-optimization/stage_source_candidate_patch.py --self-test
           python3 .github/research/continuous-optimization/stage_source_candidate_evaluate.py --self-test
+          python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --self-test
+          python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --validate-policy
           python3 .github/program/maintenance_workflow_contract.py --self-test --check
           python3 - <<'PY'
           import json
           from pathlib import Path
+          policy=json.loads(Path('.github/research/continuous-optimization/source-candidate-authority-v2.json').read_text())
+          assert policy['authority']=='FUTURE_SOURCE_CANDIDATE_EVALUATION_POLICY_ONLY'
+          assert policy['scope']['retroactive_reclassification_allowed'] is False
+          assert policy['scope']['retroactive_rescue_allowed'] is False
+          assert set(policy['scope']['closed_candidates']) >= {
+              'vad-confidence-tiered-hold-v1',
+              'agc-error-adaptive-release-v1',
+              'vad-strong-origin-bounded-hysteresis-v1',
+          }
+          assert policy['prerequisites']['candidate_execution_before_authority_lock'] is False
+          assert policy['baseline_qualification']['candidate_processor_forbidden'] is True
+          assert policy['baseline_qualification']['candidate_budget_consumed_on_authority_incomplete'] is False
+          assert policy['candidate_evaluation']['candidate_feedback_to_authority_selection'] is False
+
           run=json.loads(Path('.github/research/continuous-optimization/stage-lanes-v1-run-1.json').read_text())
           assert run['run_id']==35320921792
           assert run['source_sha']=='2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e'

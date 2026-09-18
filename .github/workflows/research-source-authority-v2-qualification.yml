@@ -1,5 +1,5 @@
 name: Research Source Authority v2 Qualification
-run-name: source-authority-v2: ${{ inputs.candidate_contract || 'contract' }}
+run-name: "source-authority-v2: ${{ inputs.candidate_contract || 'contract' }}"
 
 on:
   pull_request:

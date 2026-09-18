@@ -41,27 +41,13 @@
     {
       "id": "synthetic-regression",
       "source_kind": "synthetic",
-      "stages": [
-        "aec",
-        "ns",
-        "vad",
-        "bf",
-        "agc",
-        "res",
-        "sync",
-        "pipeline"
-      ],
+      "stages": ["aec", "ns", "vad", "bf", "agc", "res", "sync", "pipeline"],
       "lock_path": null,
       "builder_path": "validation/tools/build_validation_corpus.py",
       "identity_key": null,
       "identity_value": null,
-      "selection_roles": [
-        "development"
-      ],
-      "evaluation_roles": [
-        "validation",
-        "shadow"
-      ],
+      "selection_roles": ["development"],
+      "evaluation_roles": ["validation", "shadow"],
       "frozen_holdout": false,
       "may_promote_shipping": false,
       "notes": "Deterministic generated regression corpus. Development partitions may rank candidates; independent validation/shadow seeds only gate the selected development winner."
@@ -69,19 +55,12 @@
     {
       "id": "aec-motion-regression",
       "source_kind": "synthetic",
-      "stages": [
-        "aec",
-        "res",
-        "sync",
-        "pipeline"
-      ],
+      "stages": ["aec", "res", "sync", "pipeline"],
       "lock_path": null,
       "builder_path": "validation/tools/build_aec_motion_corpus.py",
       "identity_key": null,
       "identity_value": null,
-      "selection_roles": [
-        "development"
-      ],
+      "selection_roles": ["development"],
       "evaluation_roles": [],
       "frozen_holdout": false,
       "may_promote_shipping": false,
@@ -90,19 +69,12 @@
     {
       "id": "public-development-diverse",
       "source_kind": "public",
-      "stages": [
-        "ns",
-        "vad",
-        "agc",
-        "pipeline"
-      ],
+      "stages": ["ns", "vad", "agc", "pipeline"],
       "lock_path": ".github/research/continuous-optimization/development-v2/development.lock.json",
       "builder_path": null,
       "identity_key": "catalog_id",
       "identity_value": "audio-pipeline-public-development-v2",
-      "selection_roles": [
-        "development"
-      ],
+      "selection_roles": ["development"],
       "evaluation_roles": [],
       "frozen_holdout": false,
       "may_promote_shipping": false,
@@ -111,23 +83,13 @@
     {
       "id": "public-validation",
       "source_kind": "public",
-      "stages": [
-        "aec",
-        "ns",
-        "vad",
-        "bf",
-        "agc",
-        "pipeline"
-      ],
+      "stages": ["aec", "ns", "vad", "bf", "agc", "pipeline"],
       "lock_path": "validation/datasets.lock.json",
       "builder_path": null,
       "identity_key": "lock_id",
       "identity_value": "audio-pipeline-public-validation-v1",
       "selection_roles": [],
-      "evaluation_roles": [
-        "validation",
-        "shadow"
-      ],
+      "evaluation_roles": ["validation", "shadow"],
       "frozen_holdout": true,
       "may_promote_shipping": false,
       "notes": "Pinned public AEC/DNS/RIR sources are evaluation/holdout data only. They may reject but never select or rescue research candidates."
@@ -135,23 +97,13 @@
     {
       "id": "extended-real-research",
       "source_kind": "public",
-      "stages": [
-        "aec",
-        "ns",
-        "vad",
-        "bf",
-        "agc",
-        "pipeline"
-      ],
+      "stages": ["aec", "ns", "vad", "bf", "agc", "pipeline"],
       "lock_path": "validation/extended.datasets.lock.json",
       "builder_path": null,
       "identity_key": "catalog_id",
       "identity_value": "audio-pipeline-extended-real-v1",
       "selection_roles": [],
-      "evaluation_roles": [
-        "validation",
-        "shadow"
-      ],
+      "evaluation_roles": ["validation", "shadow"],
       "frozen_holdout": true,
       "may_promote_shipping": false,
       "notes": "Extended public/research corpus is a cross-dataset generalization holdout. It may reject a selected research winner but may not rank or rescue candidates."
@@ -159,21 +111,13 @@
     {
       "id": "hosted-real-p808",
       "source_kind": "hosted-real",
-      "stages": [
-        "ns",
-        "vad",
-        "agc",
-        "pipeline"
-      ],
+      "stages": ["ns", "vad", "agc", "pipeline"],
       "lock_path": "validation/hosted_real.datasets.lock.json",
       "builder_path": null,
       "identity_key": "catalog_id",
       "identity_value": "audio-pipeline-hosted-real-v1",
       "selection_roles": [],
-      "evaluation_roles": [
-        "validation",
-        "shadow"
-      ],
+      "evaluation_roles": ["validation", "shadow"],
       "frozen_holdout": true,
       "may_promote_shipping": false,
       "notes": "Pinned hosted real speech is generalization evidence only. It is not PCR02 product capture and cannot participate in candidate selection."
@@ -181,21 +125,13 @@
     {
       "id": "hosted-real-aec",
       "source_kind": "hosted-real",
-      "stages": [
-        "aec",
-        "res",
-        "sync",
-        "pipeline"
-      ],
+      "stages": ["aec", "res", "sync", "pipeline"],
       "lock_path": "validation/hosted_aec.datasets.lock.json",
       "builder_path": null,
       "identity_key": "catalog_id",
       "identity_value": "audio-pipeline-hosted-aec-real-v1",
       "selection_roles": [],
-      "evaluation_roles": [
-        "validation",
-        "shadow"
-      ],
+      "evaluation_roles": ["validation", "shadow"],
       "frozen_holdout": true,
       "may_promote_shipping": false,
       "notes": "Pinned Microsoft AEC hosted-real cases are evaluation-only and cannot be used to select or rescue a candidate."
@@ -203,16 +139,7 @@
     {
       "id": "pcr02-product-external",
       "source_kind": "product-external",
-      "stages": [
-        "aec",
-        "ns",
-        "vad",
-        "bf",
-        "agc",
-        "res",
-        "sync",
-        "pipeline"
-      ],
+      "stages": ["aec", "ns", "vad", "bf", "agc", "res", "sync", "pipeline"],
       "lock_path": null,
       "builder_path": null,
       "identity_key": null,

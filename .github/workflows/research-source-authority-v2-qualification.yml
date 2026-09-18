@@ -1,0 +1,249 @@
+name: Research Source Authority v2 Qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/source-candidate-authority-v2.json'
+      - '.github/research/continuous-optimization/source-candidate-contract-v2.schema.json'
+      - '.github/research/continuous-optimization/source_candidate_authority_v2.py'
+      - '.github/workflows/research-source-authority-v2-qualification.yml'
+      - '.github/program/maintenance_workflow_contract.py'
+  workflow_dispatch:
+    inputs:
+      candidate_contract:
+        description: 'Repo-relative schema-v2 candidate contract under .github/research/continuous-optimization/source-candidates/'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-source-authority-v2-${{ github.ref }}-${{ inputs.candidate_contract || 'contract' }}
+  cancel-in-progress: false
+
+env:
+  POLICY: .github/research/continuous-optimization/source-candidate-authority-v2.json
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    outputs:
+      candidate_id: ${{ steps.binding.outputs.candidate_id }}
+      source_base_sha: ${{ steps.binding.outputs.source_base_sha }}
+      qualification_profile: ${{ steps.binding.outputs.qualification_profile }}
+      baseline_target: ${{ steps.binding.outputs.baseline_target }}
+      pool_seeds_json: ${{ steps.binding.outputs.pool_seeds_json }}
+      generator_path: ${{ steps.binding.outputs.generator_path }}
+      generator_seconds: ${{ steps.binding.outputs.generator_seconds }}
+      generator_extra_args_json: ${{ steps.binding.outputs.generator_extra_args_json }}
+      candidate_contract: ${{ steps.binding.outputs.candidate_contract }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+
+      - name: Validate source-authority v2 offline contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/research/continuous-optimization/source_candidate_authority_v2.py
+          python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --self-test
+          python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --validate-policy
+          python3 -m json.tool .github/research/continuous-optimization/source-candidate-contract-v2.schema.json >/dev/null
+          python3 .github/program/maintenance_workflow_contract.py --self-test --check
+
+      - name: Bind manual qualification to protected-main schema-v2 candidate
+        id: binding
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          CONTRACT_INPUT: ${{ inputs.candidate_contract }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          raw = os.environ['CONTRACT_INPUT']
+          path = Path(raw)
+          root = Path('.github/research/continuous-optimization/source-candidates')
+          if path.is_absolute() or '..' in path.parts or path.suffix != '.json':
+              raise SystemExit('candidate_contract must be a safe repo-relative JSON path')
+          try:
+              path.relative_to(root)
+          except ValueError as exc:
+              raise SystemExit(
+                  'candidate_contract must remain under .github/research/continuous-optimization/source-candidates/'
+              ) from exc
+          if not path.is_file():
+              raise SystemExit(f'candidate contract not found: {path}')
+
+          completed = subprocess.run([
+              'python3',
+              '.github/research/continuous-optimization/source_candidate_authority_v2.py',
+              '--describe-contract',
+              '--candidate-contract', str(path),
+              '--policy',
+              '.github/research/continuous-optimization/source-candidate-authority-v2.json',
+          ], check=True, text=True, capture_output=True)
+          binding = json.loads(completed.stdout)
+          github_output = Path(os.environ['GITHUB_OUTPUT'])
+          values = {
+              'candidate_id': binding['candidate_id'],
+              'source_base_sha': binding['source_base_sha'],
+              'qualification_profile': binding['qualification_profile'],
+              'baseline_target': binding['baseline_executable_target'],
+              'pool_seeds_json': json.dumps(binding['pool_seeds'], separators=(',', ':')),
+              'generator_path': binding['generator']['path'],
+              'generator_seconds': str(binding['generator']['seconds']),
+              'generator_extra_args_json': json.dumps(
+                  binding['generator']['extra_args'], separators=(',', ':')
+              ),
+              'candidate_contract': str(path),
+          }
+          with github_output.open('a', encoding='utf-8') as out:
+              for key, value in values.items():
+                  print(f'{key}={value}', file=out)
+          print(json.dumps(binding, sort_keys=True))
+          PY
+
+  qualify:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CANDIDATE_ID: ${{ needs.contract.outputs.candidate_id }}
+      SOURCE_BASE_SHA: ${{ needs.contract.outputs.source_base_sha }}
+      QUALIFICATION_PROFILE: ${{ needs.contract.outputs.qualification_profile }}
+      BASELINE_TARGET: ${{ needs.contract.outputs.baseline_target }}
+      POOL_SEEDS_JSON: ${{ needs.contract.outputs.pool_seeds_json }}
+      GENERATOR_PATH: ${{ needs.contract.outputs.generator_path }}
+      GENERATOR_SECONDS: ${{ needs.contract.outputs.generator_seconds }}
+      GENERATOR_EXTRA_ARGS_JSON: ${{ needs.contract.outputs.generator_extra_args_json }}
+      CANDIDATE_CONTRACT: ${{ needs.contract.outputs.candidate_contract }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: source-authority-v2
+
+      - name: Build exact source-base qualification executable
+        run: |
+          set -euo pipefail
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/source-authority-v2-base "$SOURCE_BASE_SHA"
+          cmake -S /tmp/source-authority-v2-base -B /tmp/source-authority-v2-build             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/source-authority-v2-build --target "$BASELINE_TARGET" --parallel
+          test -x "/tmp/source-authority-v2-build/$BASELINE_TARGET"
+          mkdir -p source-authority-v2-out
+          sha256sum "/tmp/source-authority-v2-build/$BASELINE_TARGET"             > source-authority-v2-out/baseline-executable.sha256
+
+      - name: Materialize preregistered authority pool without candidate execution
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          root = Path('/tmp/source-authority-v2-base')
+          generator = root / os.environ['GENERATOR_PATH']
+          if not generator.is_file():
+              raise SystemExit(f'generator missing from exact source base: {generator}')
+          seeds = json.loads(os.environ['POOL_SEEDS_JSON'])
+          extra = json.loads(os.environ['GENERATOR_EXTRA_ARGS_JSON'])
+          seconds = int(os.environ['GENERATOR_SECONDS'])
+          manifest = []
+          for seed in seeds:
+              out = Path(f'/tmp/source-authority-v2-{seed}')
+              cmd = [
+                  'python3', str(generator),
+                  '--output', str(out),
+                  '--seed', str(seed),
+                  '--seconds', str(seconds),
+                  *extra,
+              ]
+              subprocess.run(cmd, cwd=root, check=True)
+              corpus = out / 'corpus.json'
+              if not corpus.is_file():
+                  raise SystemExit(f'generator did not produce corpus.json for seed {seed}')
+              manifest.append({'seed': seed, 'corpus': str(corpus)})
+          Path('source-authority-v2-out/pool-manifest.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Qualify pool with source-base executable only
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path('source-authority-v2-out/pool-manifest.json').read_text()
+          )
+          cmd = [
+              'python3',
+              '.github/research/continuous-optimization/source_candidate_authority_v2.py',
+              '--baseline-executable',
+              f"/tmp/source-authority-v2-build/{os.environ['BASELINE_TARGET']}",
+              '--candidate-contract', os.environ['CANDIDATE_CONTRACT'],
+              '--policy', '.github/research/continuous-optimization/source-candidate-authority-v2.json',
+              '--output', 'source-authority-v2-out/result.json',
+          ]
+          for item in manifest:
+              cmd.extend(['--pool-corpus', item['corpus']])
+          subprocess.run(cmd, check=True)
+          PY
+
+      - name: Enforce authority-v2 one-way boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          r = json.loads(Path('source-authority-v2-out/result.json').read_text())
+          assert r['authority'] == 'baseline-only-source-candidate-authority-qualification'
+          assert r['candidate_id'] == os.environ['CANDIDATE_ID']
+          assert r['source_base_sha'] == os.environ['SOURCE_BASE_SHA']
+          assert r['qualification_profile'] == os.environ['QUALIFICATION_PROFILE']
+          assert r['baseline_executable_target'] == os.environ['BASELINE_TARGET']
+          assert r['decision'] in {
+              'BASELINE_QUALIFIED_AUTHORITY_LOCK',
+              'AUTHORITY_INCOMPLETE',
+          }
+          assert r['candidate_budget_consumed'] is False
+          assert r['candidate_feedback_used'] is False
+          assert r['retroactive_candidate_reclassification'] is False
+          assert r['shipping_authority'] is False
+          assert r['source_merge_authorized'] is False
+          assert r['automatic_main_mutation'] is False
+          if r['decision'] == 'BASELINE_QUALIFIED_AUTHORITY_LOCK':
+              assert r['candidate_execution_allowed'] is True
+              assert len(r['selected_authority']) == r['required_count']
+          else:
+              assert r['candidate_execution_allowed'] is False
+              assert len(r['selected_authority']) < r['required_count']
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: source-authority-v2-${{ needs.contract.outputs.candidate_id }}-${{ github.run_id }}
+          path: source-authority-v2-out/
+          retention-days: 30
+          if-no-files-found: warn

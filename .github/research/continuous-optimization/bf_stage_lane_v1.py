@@ -318,7 +318,15 @@ def run(processor:Path, dev_sens:list[Path],dev_hard:list[Path],
         "shadow":{"baseline":shadow_base["summary"],"candidate":shadow_cand["summary"],
                   "regression_violations":shadow_v},
         "baseline_fidelity":{"max_si_sdr_delta_db":fidelity_max,"cases":fidelity},
-        "executable_binding":False,
+        "effective_winner":(
+            {"variant":selected["variant"],"parameter":selected["parameter"]}
+            if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE"
+            else {"variant":"shipping-bf","parameter":0.75}
+        ),
+        "executable_binding":{
+            "bound":decision!="FROZEN_STAGE_RESEARCH_CANDIDATE",
+            "kind":"shipping-baseline" if decision!="FROZEN_STAGE_RESEARCH_CANDIDATE" else "research-emulator",
+        },
         "automatic_main_mutation":False,"shipping_authority":False,
         "hil_authority":False,"product_certification_authority":False,
         "next_gate":"separate-source-candidate-review" if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE" else None,

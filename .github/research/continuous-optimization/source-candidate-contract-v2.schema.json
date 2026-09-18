@@ -11,7 +11,8 @@
     "confirmation_limit",
     "source_base_sha",
     "fresh_candidate_evaluation",
-    "baseline_authority_qualification_v2"
+    "baseline_authority_qualification_v2",
+    "execution_workflow"
   ],
   "properties": {
     "schema_version": {
@@ -19,7 +20,8 @@
     },
     "candidate_id": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._-]+$"
     },
     "authority": {
       "const": "SOURCE_CANDIDATE_EVALUATION_ONLY"
@@ -185,6 +187,10 @@
         }
       ],
       "additionalProperties": false
+    },
+    "execution_workflow": {
+      "type": "string",
+      "pattern": "^\\\\.github/workflows/research-source-candidate-v2-[A-Za-z0-9._-]+\\\\.yml$"
     }
   },
   "additionalProperties": true

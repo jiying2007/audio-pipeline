@@ -8,7 +8,7 @@ on:
       - '.github/workflows/research-algorithm-parameter-optimization.yml'
       - '.github/program/maintenance_workflow_contract.py'
       - 'validation/tools/tuning_iteration.py'
-      - 'validation/tools/tuning_iteration_engine.py'
+      - 'validation/tools/tuning_iteration*.py'
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/policies/validation-aec-motion-development.json'
       - 'validation/tuning/**'
@@ -47,8 +47,7 @@ jobs:
             .github/research/continuous-optimization/research_optimizer_v3.py \
             .github/research/continuous-optimization/research_optimizer_v5.py \
             .github/research/continuous-optimization/research_dataset_registry.py \
-            validation/tools/tuning_iteration.py \
-            validation/tools/tuning_iteration_engine.py
+            validation/tools/tuning_iteration*.py
           python3 -m json.tool "$ALGORITHM_SPACE" >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
           python3 .github/research/continuous-optimization/research_dataset_registry.py --self-test

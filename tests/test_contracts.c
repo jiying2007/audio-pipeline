@@ -1,5 +1,6 @@
 #include "audio_pipeline/audio_pipeline.h"
 #include "audio_pipeline/audio_pipeline_build.h"
+#include "frontend/ap_frontend.h"
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
@@ -356,12 +357,71 @@ static void test_frame_contract_rejects_wrong_sizes(void) {
     assert(ap_pipeline_process_capture(p, mic, frame - 1u, out) == AP_EINVAL);
 }
 
+static void test_bf_geometry_envelope(void) {
+    const ap_stage_mask_t compiled = ap_pipeline_compiled_stages();
+    ap_config_t c;
+    float max_spacing;
+
+    if ((compiled & AP_STAGE_BF) == 0u) return;
+
+    /* The lag search can only represent delays up to AP_BF_HISTORY samples. A
+     * larger spacing used to be clamped silently inside ap_beamformer_init(),
+     * which degraded the beamformer without telling the caller; it must be
+     * rejected at the public boundary instead. */
+    c = ap_config_default(AP_PROFILE_CALL);
+    max_spacing = ap_bf_max_mic_spacing_mm(c.internal_sample_rate_hz);
+    c.mic_spacing_mm = max_spacing;
+    assert(ap_pipeline_validate_config(&c) == AP_OK);
+    c.mic_spacing_mm = max_spacing + 0.5f;
+    assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+    c.mic_spacing_mm = AP_BF_MIC_SPACING_MIN_MM;
+    assert(ap_pipeline_validate_config(&c) == AP_OK);
+    c.mic_spacing_mm = AP_BF_MIC_SPACING_MIN_MM - 0.1f;
+    assert(ap_pipeline_validate_config(&c) == AP_EINVAL);
+
+    /* The same rejection has to hold on the init path, not just the validator. */
+    c = ap_config_default(AP_PROFILE_CALL);
+    c.mic_spacing_mm = max_spacing + 0.5f;
+    {
+        ap_pipeline_t *p = NULL;
+        assert(ap_pipeline_init(state, sizeof(state), &c, &p) == AP_EINVAL);
+        assert(p == NULL);
+    }
+
+    /* The accepted envelope must never exceed the search radius that
+     * ap_beamformer_init() keeps after clamping max_lag to AP_BF_HISTORY.
+     * Comparing the nominal bound against itself in a different order used to
+     * round one ULP above the history length at some sample rates, letting a
+     * spacing through that the beamformer then truncated. The validator now
+     * recomputes the span with the same expression the beamformer uses, so the
+     * two cannot disagree. */
+    {
+        uint32_t rate;
+        uint32_t rejected = 0u;
+
+        for (rate = 8000u; rate <= 48000u; ++rate) {
+            const float nominal = ap_bf_max_mic_spacing_mm(rate);
+
+            if (ap_bf_mic_spacing_ok(nominal, rate)) {
+                assert(ceilf(ap_bf_lag_span(nominal, rate)) <=
+                       (float)AP_BF_HISTORY);
+            } else {
+                rejected++;
+            }
+        }
+        /* Fail-closed must actually trigger for some rate, otherwise this
+         * loop proves nothing. */
+        assert(rejected > 0u);
+    }
+}
+
 int main(void) {
     test_supported_rates();
     test_resource_classes();
     test_fixed_geometry_reference_contract();
     test_composition_contract();
     test_finite_and_envelope_validation();
+    test_bf_geometry_envelope();
     test_init_contract();
     test_quality_contract();
     test_timestamp_and_route_contract();

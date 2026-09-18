@@ -494,8 +494,80 @@ static void test_recorder_attach_geometry(void) {
     ap_runtime_deinit(runtime);
 }
 
+/* The runtime command pre-validator and ap_pipeline_apply_tuning() share the
+ * range helpers in src/ap_limits.h, so the two control-plane entry points must
+ * return the same verdict for the same tuning value. Before the helpers existed
+ * the two sites carried their own copies of the literals and only aec_mu was
+ * pinned on the runtime side. The command queue holds two entries, so every
+ * case runs against a freshly opened runtime. */
+static void test_runtime_tuning_matches_pipeline(void) {
+    static const struct {
+        ap_tuning_mask_t mask;
+        float aec_mu;
+        float ns_floor;
+        float agc_target_dbfs;
+        float limiter_dbfs;
+    } cases[] = {
+        { AP_TUNING_NS_FLOOR, 0.22f, 0.01f, -20.0f, -2.0f },
+        { AP_TUNING_NS_FLOOR, 0.22f, 0.12f, -20.0f, -2.0f },
+        { AP_TUNING_AGC_TARGET, 0.22f, 0.12f, 0.0f, -2.0f },
+        { AP_TUNING_AGC_TARGET, 0.22f, 0.12f, -20.0f, -2.0f },
+        { AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER, 0.22f, 0.12f, -1.0f,
+          -1.0f },
+        { AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER, 0.22f, 0.12f, -20.0f,
+          -2.0f },
+        { AP_TUNING_LIMITER, 0.22f, 0.12f, -20.0f, 0.0f }
+    };
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    unsigned i;
+    unsigned rejected = 0u;
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg,
+                            &pipeline) == AP_OK);
+
+    for (i = 0u; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        ap_tuning_t tuning;
+        ap_runtime_command_t command;
+        ap_runtime_t *runtime;
+        ap_status_t pipeline_status;
+        ap_status_t runtime_status;
+
+        memset(&tuning, 0, sizeof(tuning));
+        tuning.struct_size = sizeof(tuning);
+        tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+        tuning.mask = cases[i].mask;
+        tuning.aec_mu = cases[i].aec_mu;
+        tuning.ns_floor = cases[i].ns_floor;
+        tuning.agc_target_dbfs = cases[i].agc_target_dbfs;
+        tuning.limiter_dbfs = cases[i].limiter_dbfs;
+
+        /* apply_tuning() mutates the pipeline only on success, so its verdict
+         * is taken first and the runtime verdict on an empty queue. */
+        pipeline_status = ap_pipeline_apply_tuning(pipeline, &tuning);
+
+        memset(&command, 0, sizeof(command));
+        command.struct_size = sizeof(command);
+        command.api_version = AP_RUNTIME_API_VERSION;
+        command.kind = AP_RUNTIME_COMMAND_SET_TUNING;
+        command.data.tuning = tuning;
+
+        runtime = open_default(pipeline, &rcfg);
+        runtime_status = ap_runtime_command(runtime, &command);
+        ap_runtime_deinit(runtime);
+
+        assert(runtime_status == pipeline_status);
+        if (runtime_status != AP_OK) rejected++;
+    }
+
+    /* Fail-closed has to trigger, otherwise the loop proves nothing. */
+    assert(rejected > 0u);
+}
+
 int main(void) {
     test_open_start_and_argument_failures();
+    test_runtime_tuning_matches_pipeline();
     test_command_validation_and_queue_pressure();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();

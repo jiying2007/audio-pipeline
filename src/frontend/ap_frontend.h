@@ -3,9 +3,50 @@
 
 #include <stdint.h>
 
+#include "ap_numeric.h"
+
 #define AP_FRONTEND_MAX_MIC_CHANNELS 2u
 #define AP_BF_HISTORY 8u
 #define AP_BF_LAG_SCORE_COUNT (2u * AP_BF_HISTORY + 1u)
+
+#define AP_BF_SOUND_SPEED_MM_PER_S 343000.0f
+#define AP_BF_MIC_SPACING_MIN_MM 5.0f
+
+/* Nominal largest microphone spacing whose acoustic TDOA still fits the lag
+ * search window (AP_BF_HISTORY samples). Beyond it ap_beamformer_init() clamps
+ * max_lag to the history length and the outer lags silently degrade to zero
+ * correlation, so the control plane rejects the geometry instead. At sample
+ * rates where the float round-trip below overshoots, the exact accepted maximum
+ * is one ULP lower; ap_bf_mic_spacing_ok() is authoritative. */
+static inline float ap_bf_max_mic_spacing_mm(uint32_t sample_rate_hz) {
+    return (float)AP_BF_HISTORY * AP_BF_SOUND_SPEED_MM_PER_S /
+           (float)sample_rate_hz;
+}
+
+/* Lag span in samples required by the geometry, evaluated with the same float
+ * expression ap_beamformer_init() uses so the validator and the clamp cannot
+ * disagree by a rounding step. */
+static inline float ap_bf_lag_span(float spacing_mm,
+                                   uint32_t sample_rate_hz) {
+    return spacing_mm * (float)sample_rate_hz /
+           AP_BF_SOUND_SPEED_MM_PER_S;
+}
+
+/* ap_beamformer_init() computes max_lag = ceilf(span) + 1 and clamps it to
+ * AP_BF_HISTORY, so the search radius still covers the required lag exactly
+ * while span <= AP_BF_HISTORY. A larger span is truncated and degrades the
+ * outer lags, so it is rejected here. */
+static inline int ap_bf_mic_spacing_ok(float spacing_mm,
+                                       uint32_t sample_rate_hz) {
+    float span;
+
+    if (!ap_float_is_finite(spacing_mm) ||
+        spacing_mm < AP_BF_MIC_SPACING_MIN_MM) {
+        return 0;
+    }
+    span = ap_bf_lag_span(spacing_mm, sample_rate_hz);
+    return ap_float_is_finite(span) && span <= (float)AP_BF_HISTORY;
+}
 
 typedef struct ap_hpf_state {
     float r;

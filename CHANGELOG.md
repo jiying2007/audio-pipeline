@@ -1,3 +1,11 @@
+# 2.3.17
+
+- Single-source the control-plane range checks in `src/ap_limits.h` (`ap_tuning_aec_mu_ok`, `ap_tuning_ns_floor_ok`, `ap_tuning_agc_target_ok`, `ap_tuning_limiter_ok`, `ap_tuning_agc_pair_ok`) so `ap_pipeline_validate_config()`, `ap_pipeline_apply_tuning()` and the Linux runtime command validator reject identical inputs instead of carrying three separate copies of the literals.
+- Reject beamformer geometry the lag search cannot represent instead of clamping it: `mic_spacing_mm` is now limited to the spacing whose acoustic TDOA still fits `AP_BF_HISTORY` samples (171.5 mm at a 16 kHz internal rate, 343 mm at 8 kHz) and returns `AP_EINVAL` beyond it. The acceptance test reuses the beamformer's own lag-span expression, so the validator and the clamp cannot disagree by a rounding step.
+- Add `ap_pipeline_get_config()` and `ap_pipeline_get_tuning()` so callers can read back the configuration and tuning the control plane actually accepted. `ap_pipeline_get_tuning()` returns a mask carrying all four `AP_TUNING_*` bits with `reserved[]` zeroed, so the result can be fed straight back into `ap_pipeline_apply_tuning()`.
+- Repair the `audio_pipeline_runtime` target's private include path so the Linux runtime resolves the internal limits header.
+- Preserve the public ABI: the new entry points are additive only and no `ap_config_t`, `ap_tuning_t` or `ap_metrics_t` layout changes. Realtime DSP behaviour, acoustic thresholds, resource baselines, HIL and Product Certification authority remain unchanged.
+
 # 2.3.16
 
 - Add research-only DSP/data coverage infrastructure for LOCATA, MIMII and MIMII-DUE plus a hash-bound PCR02 dual-microphone self-noise capture contract; commercial-core/commercial-plus, Trusted Runner readiness, HIL and Product Certification authority remain unchanged.

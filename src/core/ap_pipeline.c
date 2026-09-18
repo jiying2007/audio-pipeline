@@ -84,8 +84,9 @@ ap_status_t ap_pipeline_validate_config(const ap_config_t *config) {
     if ((config->stages & ~compiled) != 0u) return AP_ESTATE;
 
     if (config->stages & AP_STAGE_BF) {
-        if (config->mic_channels != 2u || !isfinite(config->mic_spacing_mm) ||
-            config->mic_spacing_mm < 5.0f || config->mic_spacing_mm > 200.0f)
+        if (config->mic_channels != 2u ||
+            !ap_bf_mic_spacing_ok(config->mic_spacing_mm,
+                                  config->internal_sample_rate_hz))
             return AP_EINVAL;
     }
     if ((config->stages & AP_STAGE_AEC) && !(config->stages & AP_STAGE_SYNC))
@@ -99,7 +100,7 @@ ap_status_t ap_pipeline_validate_config(const ap_config_t *config) {
     if (config->stages & AP_STAGE_AEC) {
         if (config->aec_adapt_stride == 0u || config->aec_filter_ms < 20u ||
             config->aec_filter_ms > AP_BUILD_MAX_AEC_TAIL_MS ||
-            !isfinite(config->aec_mu) || !(config->aec_mu > 0.0f && config->aec_mu <= 1.0f))
+            !ap_tuning_aec_mu_ok(config->aec_mu))
             return AP_EINVAL;
     }
     if (config->stages & AP_STAGE_SYNC) {
@@ -107,16 +108,11 @@ ap_status_t ap_pipeline_validate_config(const ap_config_t *config) {
             config->initial_delay_ms > config->max_delay_ms)
             return AP_EINVAL;
     }
-    if ((config->stages & AP_STAGE_NS) &&
-        (!isfinite(config->ns_floor) || config->ns_floor < 0.02f || config->ns_floor > 1.0f))
+    if ((config->stages & AP_STAGE_NS) && !ap_tuning_ns_floor_ok(config->ns_floor))
         return AP_EINVAL;
-    if (config->stages & AP_STAGE_AGC) {
-        if (!isfinite(config->agc_target_dbfs) || !isfinite(config->limiter_dbfs) ||
-            config->agc_target_dbfs < -60.0f || config->agc_target_dbfs > -1.0f ||
-            config->limiter_dbfs < -20.0f || config->limiter_dbfs > -0.1f ||
-            config->agc_target_dbfs >= config->limiter_dbfs)
-            return AP_EINVAL;
-    }
+    if ((config->stages & AP_STAGE_AGC) &&
+        !ap_tuning_agc_pair_ok(config->agc_target_dbfs, config->limiter_dbfs))
+        return AP_EINVAL;
     return AP_OK;
 }
 

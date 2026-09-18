@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "audio_pipeline/audio_runtime.h"
 #include "audio_pipeline/audio_pipeline_build.h"
+#include "ap_limits.h"
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
@@ -1417,23 +1418,20 @@ static ap_status_t runtime_validate_command(const ap_runtime_command_t *command)
             t->api_version != AP_PIPELINE_CONTROL_API_VERSION ||
             t->mask == 0u || (t->mask & ~tuning_all) != 0u)
             return AP_EINVAL;
-        if ((t->mask & AP_TUNING_AEC_MU) &&
-            (!isfinite(t->aec_mu) || t->aec_mu <= 0.0f || t->aec_mu > 1.0f))
+        if ((t->mask & AP_TUNING_AEC_MU) && !ap_tuning_aec_mu_ok(t->aec_mu))
             return AP_EINVAL;
         if ((t->mask & AP_TUNING_NS_FLOOR) &&
-            (!isfinite(t->ns_floor) || t->ns_floor < 0.02f || t->ns_floor > 1.0f))
+            !ap_tuning_ns_floor_ok(t->ns_floor))
             return AP_EINVAL;
         if ((t->mask & AP_TUNING_AGC_TARGET) &&
-            (!isfinite(t->agc_target_dbfs) || t->agc_target_dbfs < -60.0f ||
-             t->agc_target_dbfs > -1.0f))
+            !ap_tuning_agc_target_ok(t->agc_target_dbfs))
             return AP_EINVAL;
         if ((t->mask & AP_TUNING_LIMITER) &&
-            (!isfinite(t->limiter_dbfs) || t->limiter_dbfs < -20.0f ||
-             t->limiter_dbfs > -0.1f))
+            !ap_tuning_limiter_ok(t->limiter_dbfs))
             return AP_EINVAL;
         if ((t->mask & (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER)) ==
-            (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER) &&
-            t->agc_target_dbfs >= t->limiter_dbfs)
+                (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER) &&
+            !ap_tuning_agc_pair_ok(t->agc_target_dbfs, t->limiter_dbfs))
             return AP_EINVAL;
         return AP_OK;
     }

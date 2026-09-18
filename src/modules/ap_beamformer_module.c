@@ -21,8 +21,8 @@ ap_status_t ap_module_beamformer_init(void *memory, size_t memory_size,
     *out = NULL;
     if (memory_size < sizeof(*m)) return AP_ENOMEM;
     if ((rate != 8000u && rate != 16000u) ||
-        rate > AP_BUILD_MAX_INTERNAL_RATE_HZ || !isfinite(spacing) ||
-        spacing < 5.0f || spacing > 200.0f)
+        rate > AP_BUILD_MAX_INTERNAL_RATE_HZ ||
+        !ap_bf_mic_spacing_ok(spacing, rate))
         return AP_EINVAL;
     m = (ap_beamformer_module_impl_t *)memory;
     m->rate = rate;

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "candidate_id": "agc-error-adaptive-release-v1",
+  "authority": "SOURCE_CANDIDATE_EVALUATION_ONLY",
+  "candidate_budget": 1,
+  "confirmation_limit": 0,
+  "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
+  "predecessor": {
+    "stage_lane_run": 35320921792,
+    "artifact_id": 10537256303,
+    "artifact_digest": "sha256:b156565c2396a26b2d0060e864e114b7cbd0c1ff14f6f87971c16884cafec84b",
+    "lane_decision": "FROZEN_STAGE_RESEARCH_CANDIDATE",
+    "algorithm": "error-adaptive-release",
+    "parameter": 0.05
+  },
+  "hypothesis": "When AGC needs more than 3 dB of upward gain correction, a bounded 0.05 release coefficient can reduce low-level recovery time while preserving the existing attack, limiter, target and steady-state behavior.",
+  "exact_source_change": {
+    "path": "src/enhance/ap_agc.c",
+    "attack_alpha": 0.25,
+    "normal_release_alpha": 0.015,
+    "fast_release_error_db": 3,
+    "fast_release_alpha": 0.05,
+    "max_gain_linear": 8,
+    "target_dbfs": -20,
+    "limiter_dbfs": -2,
+    "target_search": false,
+    "limiter_search": false,
+    "max_gain_change": false
+  },
+  "fresh_candidate_evaluation": {
+    "seeds": [
+      4761,
+      5761,
+      6761
+    ],
+    "data_role": "development-fresh-source-candidate-evaluation",
+    "selection_reuse": false,
+    "candidate_value_search": false,
+    "required_emulator_conformance": true,
+    "require_all_dynamic_gates_pass": true,
+    "min_median_hot_to_low_improvement_frames": 20,
+    "max_low_to_hot_regression_frames": 5,
+    "max_slew_regression_db": 0.15,
+    "max_peak_regression_db": 0.2
+  },
+  "promotion": {
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false,
+    "independent_confirmation_required_after_pass": true
+  }
+}

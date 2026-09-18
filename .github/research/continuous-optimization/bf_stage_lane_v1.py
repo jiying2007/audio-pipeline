@@ -318,9 +318,10 @@ def run(processor:Path, dev_sens:list[Path],dev_hard:list[Path],
         "shadow":{"baseline":shadow_base["summary"],"candidate":shadow_cand["summary"],
                   "regression_violations":shadow_v},
         "baseline_fidelity":{"max_si_sdr_delta_db":fidelity_max,"cases":fidelity},
+        "executable_binding":False,
         "automatic_main_mutation":False,"shipping_authority":False,
         "hil_authority":False,"product_certification_authority":False,
-        "next_gate":"stage-composition-development" if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE" else None,
+        "next_gate":"separate-source-candidate-review" if decision=="FROZEN_STAGE_RESEARCH_CANDIDATE" else None,
     }
     output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")

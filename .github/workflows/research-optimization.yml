@@ -23,8 +23,9 @@ on:
         description: 'Runtime-safe bounded parameter search space'
         required: true
         type: choice
-        default: '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
+        default: '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json'
         options:
+          - '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json'
           - '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
           - '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
           - '.github/research/continuous-optimization/development-v3/search-space.json'
@@ -61,6 +62,7 @@ jobs:
           python3 -m json.tool .github/research/continuous-optimization/development-v3/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/fine-aec-v4.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json >/dev/null
           python3 -m json.tool "$RESEARCH_REGISTRY" >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/dataset-registry.schema.json >/dev/null
           python3 validation/tools/authority.py --self-test
@@ -182,6 +184,32 @@ jobs:
           ]
           print('double-talk case guard v5 search contract: PASS')
           PY
+      - name: Enforce AEC boundary refinement v6 contract
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v5 = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
+          ).read_text())
+          v6 = json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json'
+          ).read_text())
+          assert v6['search_space_id'] == 'call-multidataset-aec-boundary-refinement-v6'
+          assert v6['strategy'] == 'cartesian'
+          assert v6['max_candidates'] == 4
+          assert v6['baseline'] == v5['baseline']
+          assert v6['parameters'] == {
+              'aec_mu': [0.22, 0.23, 0.25, 0.26],
+              'ns_floor': [0.12],
+              'agc_target_dbfs': [-20.0],
+              'limiter_dbfs': [-2.0],
+          }
+          assert 0.24 not in v6['parameters']['aec_mu']
+          assert v6['objective'] == v5['objective']
+          print('AEC boundary refinement v6 search contract: PASS')
+          PY
       - name: Enforce immutable shipping and no-promotion boundary
         run: |
           set -euo pipefail
@@ -296,6 +324,7 @@ jobs:
           is_v3 = '/development-v3/' in search_space
           is_v4 = search_space.endswith('/development-v3/fine-aec-v4.json')
           is_v5 = search_space.endswith('/development-v3/doubletalk-case-guard-v5.json')
+          is_v6 = search_space.endswith('/development-v3/aec-boundary-refinement-v6.json')
           evaluations = []
           for role, seeds in [('development', [1307, 1407]), ('validation', [2307, 2407]), ('shadow', [3307, 3407])]:
               for seed in seeds:
@@ -329,7 +358,11 @@ jobs:
                       'dataset_lock': 'validation/datasets.lock.json',
                       'policy': 'validation/policies/validation-aec-motion-development.json',
                   })
-          if is_v5:
+          if is_v6:
+              hypothesis_id = 'multidataset-aec-boundary-refinement-v6'
+              minimum_seeds = 6
+              maximum_pareto = 4
+          elif is_v5:
               hypothesis_id = 'multidataset-doubletalk-case-guard-v5'
               minimum_seeds = 6
               maximum_pareto = 8
@@ -369,7 +402,8 @@ jobs:
         run: |
           set -euo pipefail
           optimizer=.github/research/continuous-optimization/research_optimizer_v3.py
-          if [[ "$SEARCH_SPACE" == *"/development-v3/doubletalk-case-guard-v5.json" ]]; then
+          if [[ "$SEARCH_SPACE" == *"/development-v3/doubletalk-case-guard-v5.json" ]] || \
+             [[ "$SEARCH_SPACE" == *"/development-v3/aec-boundary-refinement-v6.json" ]]; then
             optimizer=.github/research/continuous-optimization/research_optimizer_v5.py
           fi
           python3 "$optimizer" \
@@ -409,7 +443,9 @@ jobs:
           if result['status'] == 'FROZEN_RESEARCH_CANDIDATE':
               assert result['next_gate'] == 'validation-grade-blind'
           path = result['search_space']['path']
-          if path.endswith('development-v3/doubletalk-case-guard-v5.json'):
+          if path.endswith('development-v3/aec-boundary-refinement-v6.json'):
+              assert result['search_space']['candidate_count'] == 4
+          elif path.endswith('development-v3/doubletalk-case-guard-v5.json'):
               assert result['search_space']['candidate_count'] == 8
           elif path.endswith('development-v3/fine-aec-v4.json'):
               assert result['search_space']['candidate_count'] == 8

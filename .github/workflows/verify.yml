@@ -52,6 +52,7 @@ jobs:
         run: |
           python3 scripts/program.py --self-test
           python3 scripts/program.py check
+          python3 .github/research/continuous-optimization/source_candidate_execution_v2_contract.py --self-test --check
       - name: Resolve verification range
         id: refs
         shell: bash

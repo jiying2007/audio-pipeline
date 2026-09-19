@@ -212,6 +212,10 @@ struct ap_runtime {
     uint64_t last_delay_jumps;
     uint64_t last_aec_resets;
     float last_valid_erle;
+    /* Single-control-producer shadow of the tuning state after all accepted
+     * queued commands. The worker never touches these fields. */
+    float projected_agc_target_dbfs;
+    float projected_limiter_dbfs;
     uint8_t last_aec_converged;
     uint8_t uses_render;
     uint8_t memory_locked;
@@ -653,6 +657,7 @@ ap_status_t ap_runtime_open(void *memory,
                                const ap_runtime_options_t *options,
                                ap_runtime_t **out_runtime) {
     ap_runtime_t *runtime;
+    ap_tuning_t initial_tuning;
     if (!memory || !pipeline || !config || !options || !out_runtime)
         return AP_EINVAL;
     *out_runtime = NULL;
@@ -683,6 +688,11 @@ ap_status_t ap_runtime_open(void *memory,
     if (!runtime->io_frames || runtime->io_frames > AP_BUILD_IO_FRAME_MAX ||
         !runtime->mic_channels || runtime->mic_channels > AP_BUILD_MAX_MIC_CHANNELS)
         return AP_EINVAL;
+    memset(&initial_tuning, 0, sizeof(initial_tuning));
+    if (ap_pipeline_get_tuning(pipeline, &initial_tuning) != AP_OK)
+        return AP_EINVAL;
+    runtime->projected_agc_target_dbfs = initial_tuning.agc_target_dbfs;
+    runtime->projected_limiter_dbfs = initial_tuning.limiter_dbfs;
     if (sem_init(&runtime->wake, 0, 0) != 0) return AP_ESTATE;
     init_runtime_atomics(runtime);
     *out_runtime = runtime;
@@ -1387,7 +1397,8 @@ ap_status_t ap_runtime_submit_frame(ap_runtime_t *runtime,
     return AP_OK;
 }
 
-static ap_status_t runtime_validate_command(const ap_runtime_command_t *command) {
+static ap_status_t runtime_validate_command(const ap_runtime_t *runtime,
+                                            const ap_runtime_command_t *command) {
     const ap_discontinuity_flags_t discontinuity_all =
         AP_DISCONTINUITY_CAPTURE_GAP | AP_DISCONTINUITY_RENDER_GAP |
         AP_DISCONTINUITY_CLOCK_RESET | AP_DISCONTINUITY_XRUN |
@@ -1395,7 +1406,7 @@ static ap_status_t runtime_validate_command(const ap_runtime_command_t *command)
     const ap_tuning_mask_t tuning_all =
         AP_TUNING_AEC_MU | AP_TUNING_NS_FLOOR |
         AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER;
-    if (!command || command->struct_size < sizeof(*command) ||
+    if (!runtime || !command || command->struct_size < sizeof(*command) ||
         command->api_version != AP_RUNTIME_API_VERSION)
         return AP_EINVAL;
     switch ((ap_runtime_command_kind_t)command->kind) {
@@ -1429,10 +1440,16 @@ static ap_status_t runtime_validate_command(const ap_runtime_command_t *command)
         if ((t->mask & AP_TUNING_LIMITER) &&
             !ap_tuning_limiter_ok(t->limiter_dbfs))
             return AP_EINVAL;
-        if ((t->mask & (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER)) ==
-                (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER) &&
-            !ap_tuning_agc_pair_ok(t->agc_target_dbfs, t->limiter_dbfs))
-            return AP_EINVAL;
+        if (t->mask & (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER)) {
+            const float next_target =
+                (t->mask & AP_TUNING_AGC_TARGET) ?
+                t->agc_target_dbfs : runtime->projected_agc_target_dbfs;
+            const float next_limiter =
+                (t->mask & AP_TUNING_LIMITER) ?
+                t->limiter_dbfs : runtime->projected_limiter_dbfs;
+            if (!ap_tuning_agc_pair_ok(next_target, next_limiter))
+                return AP_EINVAL;
+        }
         return AP_OK;
     }
     default:
@@ -1445,7 +1462,7 @@ ap_status_t ap_runtime_command(ap_runtime_t *runtime,
     unsigned head;
     unsigned tail;
     ap_rt_command_t *dst;
-    if (!runtime || runtime_validate_command(command) != AP_OK)
+    if (!runtime || runtime_validate_command(runtime, command) != AP_OK)
         return AP_EINVAL;
     head = atomic_load_explicit(&runtime->command_head, memory_order_relaxed);
     tail = atomic_load_explicit(&runtime->command_tail, memory_order_acquire);
@@ -1474,6 +1491,14 @@ ap_status_t ap_runtime_command(ap_runtime_t *runtime,
         break;
     default:
         break;
+    }
+    if ((ap_runtime_command_kind_t)command->kind == AP_RUNTIME_COMMAND_SET_TUNING) {
+        if (command->data.tuning.mask & AP_TUNING_AGC_TARGET)
+            runtime->projected_agc_target_dbfs =
+                command->data.tuning.agc_target_dbfs;
+        if (command->data.tuning.mask & AP_TUNING_LIMITER)
+            runtime->projected_limiter_dbfs =
+                command->data.tuning.limiter_dbfs;
     }
     atomic_store_explicit(&runtime->command_head, head + 1u, memory_order_release);
     (void)sem_post(&runtime->wake);

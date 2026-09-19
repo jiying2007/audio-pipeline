@@ -27,6 +27,45 @@ REUSABLE_GOVERNANCE_WORKFLOWS = (
     Path('.github/workflows/research-source-candidate-v2-preflight.yml'),
 )
 
+HOSTED_REAL_PR_REQUIRED_PATHS = {
+    Path('.github/workflows/hosted-real-validation.yml'): {
+        'src/**',
+        'include/**',
+        'examples/process_pcm.c',
+        'CMakeLists.txt',
+        'cmake/**',
+        'validation/authority.json',
+        'validation/*.schema.json',
+        'validation/tools/authority.py',
+        'validation/tools/run_validation*.py',
+        'validation/tools/render_corr_exact.*',
+        'validation/tools/stage_profile_support.py',
+        'validation/tools/build_hosted_real_corpus.py',
+        'validation/hosted_real.datasets.lock.json',
+        'validation/policies/validation-hosted-real-smoke.json',
+        '.github/actions/setup-ccache/**',
+        '.github/workflows/hosted-real-validation.yml',
+    },
+    Path('.github/workflows/hosted-aec-real-validation.yml'): {
+        'src/**',
+        'include/**',
+        'examples/process_pcm.c',
+        'CMakeLists.txt',
+        'cmake/**',
+        'validation/authority.json',
+        'validation/*.schema.json',
+        'validation/tools/authority.py',
+        'validation/tools/run_validation*.py',
+        'validation/tools/render_corr_exact.*',
+        'validation/tools/stage_profile_support.py',
+        'validation/tools/build_hosted_aec_corpus.py',
+        'validation/hosted_aec.datasets.lock.json',
+        'validation/policies/validation-hosted-aec-smoke.json',
+        '.github/actions/setup-ccache/**',
+        '.github/workflows/hosted-aec-real-validation.yml',
+    },
+}
+
 PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/aec-motion-tuning.yml'),
     Path('.github/workflows/agc-stage-tuning.yml'),
@@ -91,6 +130,43 @@ def scheduled_crons(text: str) -> tuple[str, ...]:
     return crons
 
 
+def trigger_block(text: str, trigger: str) -> str:
+    on_block = extract_on_block(text)
+    lines = on_block.splitlines()
+    marker = f'  {trigger}:'
+    start = next((index for index, line in enumerate(lines) if line == marker), None)
+    assert start is not None, f'workflow is missing {trigger} trigger'
+    block: list[str] = []
+    for line in lines[start + 1:]:
+        if re.match(r'^  [A-Za-z_][A-Za-z0-9_-]*:', line):
+            break
+        block.append(line)
+    return '\n'.join(block)
+
+
+def validate_hosted_real_trigger_boundaries(root: Path) -> None:
+    for relative, required_paths in HOSTED_REAL_PR_REQUIRED_PATHS.items():
+        path = root / relative
+        assert path.is_file(), f'missing hosted-real workflow: {relative}'
+        text = path.read_text(encoding='utf-8')
+        pull_request = trigger_block(text, 'pull_request')
+        actual_paths = set(
+            re.findall(r"(?m)^      - ['\"]([^'\"]+)['\"]\s*$", pull_request)
+        )
+        assert actual_paths, f'{relative} pull_request must be path-scoped'
+        missing = sorted(required_paths - actual_paths)
+        assert not missing, f'{relative} lost required PR impact path(s): {missing}'
+
+        push = trigger_block(text, 'push')
+        assert re.search(r'(?m)^    branches:\s*\[main\]\s*$', push), (
+            f'{relative} must retain unconditional main push coverage'
+        )
+        trigger_block(text, 'workflow_dispatch')
+
+    aec = root / Path('.github/workflows/hosted-aec-real-validation.yml')
+    trigger_block(aec.read_text(encoding='utf-8'), 'workflow_call')
+
+
 def validate_aec_motion_maintenance_boundary(root: Path) -> None:
     """Prove the recurring motion job is regression maintenance, not reopened I002 research."""
     contract = json.loads((root / I002_CONTRACT).read_text(encoding='utf-8'))
@@ -140,6 +216,7 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
             )
 
     validate_aec_motion_maintenance_boundary(root)
+    validate_hosted_real_trigger_boundaries(root)
 
     actual: dict[Path, tuple[str, ...]] = {}
     workflow_root = root / WORKFLOW_DIR
@@ -166,6 +243,30 @@ def _write_allowed_schedule(path: Path, crons: tuple[str, ...]) -> None:
     schedule = ''.join(f"    - cron: '{cron}'\n" for cron in crons)
     path.write_text(
         'name: approved\n\non:\n  schedule:\n' + schedule + '  workflow_dispatch:\n',
+        encoding='utf-8',
+    )
+
+
+def _write_hosted_real_fixture(root: Path, relative: Path,
+                               required_paths: set[str],
+                               crons: tuple[str, ...]) -> None:
+    path = root / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pr_paths = ''.join(f"      - '{item}'\n" for item in sorted(required_paths))
+    schedule = ''.join(f"    - cron: '{cron}'\n" for cron in crons)
+    reusable = (
+        '  workflow_call:\n'
+        if relative.name == 'hosted-aec-real-validation.yml'
+        else ''
+    )
+    path.write_text(
+        'name: hosted-real\n\non:\n'
+        '  pull_request:\n'
+        '    paths:\n' + pr_paths +
+        '  push:\n'
+        '    branches: [main]\n'
+        '  schedule:\n' + schedule +
+        '  workflow_dispatch:\n' + reusable,
         encoding='utf-8',
     )
 
@@ -216,7 +317,34 @@ def self_test() -> None:
             )
         for relative, crons in ALLOWED_SCHEDULED_WORKFLOWS.items():
             _write_allowed_schedule(root / relative, crons)
+        for relative, required_paths in HOSTED_REAL_PR_REQUIRED_PATHS.items():
+            _write_hosted_real_fixture(
+                root, relative, required_paths, ALLOWED_SCHEDULED_WORKFLOWS[relative]
+            )
         validate(root)
+
+        hosted = next(iter(HOSTED_REAL_PR_REQUIRED_PATHS))
+        hosted_path = root / hosted
+        hosted_text = hosted_path.read_text(encoding='utf-8')
+        hosted_path.write_text(
+            re.sub(
+                r"(?m)^  pull_request:\n    paths:\n(?:      - .+\n)+",
+                '  pull_request:\n',
+                hosted_text,
+                count=1,
+            ),
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'path-scoped' in str(exc) or 'lost required PR impact path' in str(exc)
+        else:
+            raise AssertionError('hosted-real workflow regained an unscoped PR trigger')
+        _write_hosted_real_fixture(
+            root, hosted, HOSTED_REAL_PR_REQUIRED_PATHS[hosted],
+            ALLOWED_SCHEDULED_WORKFLOWS[hosted],
+        )
 
         rogue = root / WORKFLOW_DIR / 'new-autonomous-research.yml'
         rogue.write_text(

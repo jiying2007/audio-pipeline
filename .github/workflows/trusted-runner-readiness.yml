@@ -190,7 +190,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: runner-readiness-audio-target-${{ github.run_id }}
-          path: runner-readiness.json
+          path: |
+            runner-readiness.json
+            board-preflight.json
           if-no-files-found: error
           retention-days: 90
 
@@ -260,6 +262,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 \r'*) echo 'board manifest contains a newline' >&2; exit 2 ;; esac
+          python3 tools/hil_board.py preflight --board "$BOARD" --output board-preflight.json --settle-seconds 0
           python3 tools/hil_board.py metadata --board "$BOARD" > /tmp/audio-target-board.json
           mapfile -t BOARD_PATHS < <(python3 - <<'PY'
           import json

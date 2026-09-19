@@ -23,46 +23,6 @@ on:
         required: false
         default: ''
         type: string
-      capture_device:
-        description: Deprecated compatibility assertion; if set it must equal board.route.capture_device
-        required: false
-        default: ''
-        type: string
-      playback_device:
-        description: Deprecated compatibility assertion; if set it must equal board.route.playback_device (or none)
-        required: false
-        default: ''
-        type: string
-      farend_file:
-        description: Deprecated compatibility assertion; if set it must equal board.route.farend_file
-        required: false
-        default: ''
-        type: string
-      sample_rate:
-        description: Deprecated compatibility assertion; if set it must equal board.route.sample_rate_hz
-        required: false
-        default: ''
-        type: string
-      mic_channels:
-        description: Deprecated compatibility assertion; if set it must equal board.route.mic_channels
-        required: false
-        default: ''
-        type: string
-      dsp_cpu:
-        description: Deprecated compatibility assertion; if set it must equal board.route.dsp_cpu
-        required: false
-        default: ''
-        type: string
-      power_input:
-        description: Deprecated compatibility assertion; if set it must equal board.power_sensor
-        required: false
-        default: ''
-        type: string
-      power_scale:
-        description: Deprecated compatibility assertion; if set it must equal board.power_scale (default 1000000)
-        required: false
-        default: ''
-        type: string
 
 permissions:
   contents: read
@@ -124,14 +84,6 @@ jobs:
           EXPECTED_EVENT_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}
           INPUT_TIER: ${{ inputs.tier }}
           INPUT_BOARD: ${{ inputs.board_manifest }}
-          INPUT_CAPTURE: ${{ inputs.capture_device }}
-          INPUT_PLAYBACK: ${{ inputs.playback_device }}
-          INPUT_FAREND: ${{ inputs.farend_file }}
-          INPUT_RATE: ${{ inputs.sample_rate }}
-          INPUT_MICS: ${{ inputs.mic_channels }}
-          INPUT_CPU: ${{ inputs.dsp_cpu }}
-          INPUT_POWER: ${{ inputs.power_input }}
-          INPUT_POWER_SCALE: ${{ inputs.power_scale }}
         run: |
           set -euo pipefail
           board=$INPUT_BOARD
@@ -225,25 +177,6 @@ jobs:
               raise SystemExit(f"invalid board.route.dsp_cpu: {route['cpu']}")
           if float(route['power_scale']) <= 0:
               raise SystemExit(f"invalid board.power_scale: {route['power_scale']}")
-
-          # Compatibility inputs may still be supplied by older operator tooling, but
-          # they are assertions only. The board manifest remains the single authority.
-          manual = {
-              'capture': os.environ.get('INPUT_CAPTURE', ''),
-              'playback': os.environ.get('INPUT_PLAYBACK', ''),
-              'farend': os.environ.get('INPUT_FAREND', ''),
-              'rate': os.environ.get('INPUT_RATE', ''),
-              'mics': os.environ.get('INPUT_MICS', ''),
-              'cpu': os.environ.get('INPUT_CPU', ''),
-              'power': os.environ.get('INPUT_POWER', ''),
-              'power_scale': os.environ.get('INPUT_POWER_SCALE', ''),
-          }
-          for key, supplied in manual.items():
-              if supplied and supplied != route[key]:
-                  raise SystemExit(
-                      f'manual HIL route assertion drifted from board authority: '
-                      f'{key} supplied={supplied!r} board={route[key]!r}'
-                  )
 
           authority = {
               'schema_version': 1,

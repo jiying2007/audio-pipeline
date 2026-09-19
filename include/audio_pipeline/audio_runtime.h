@@ -148,6 +148,9 @@ ap_status_t ap_runtime_open(void *memory,
                             const ap_runtime_config_t *config,
                             const ap_runtime_options_t *options,
                             ap_runtime_t **out_runtime);
+/* Before hand-off, start rebuilds tuning projection from the caller-owned
+ * pipeline plus pending commands. AP_ESTATE means that sequence is no longer
+ * valid and the caller must repair the live tuning before retrying. */
 ap_status_t ap_runtime_start(ap_runtime_t *runtime);
 void ap_runtime_stop(ap_runtime_t *runtime);
 void ap_runtime_deinit(ap_runtime_t *runtime);
@@ -161,8 +164,10 @@ ap_status_t ap_runtime_submit_frame(ap_runtime_t *runtime,
 /* Single control producer -> DSP worker command queue. Commands are applied only
  * at frame boundaries, preserving worker ownership of the live pipeline.
  * SET_TUNING is synchronously validated against the tuning state projected
- * through earlier accepted queued commands, so AP_OK means the queued sequence
- * remains valid when the worker reaches it. */
+ * through earlier accepted queued commands. While stopped, projection starts
+ * from the caller-owned pipeline and replays pending tuning in FIFO order.
+ * AP_ESTATE means a caller-owned direct change made that pending sequence
+ * invalid; AP_OK means the queued sequence remains valid at worker hand-off. */
 ap_status_t ap_runtime_command(ap_runtime_t *runtime,
                                const ap_runtime_command_t *command);
 

@@ -765,7 +765,10 @@ def self_test() -> None:
     # Improvement applicability is exact signal semantics, not an SI-SDR
     # threshold: only an input that is literally the metric-aligned clean
     # reference is excluded. A very high-quality but non-identical input remains.
-    identical = [100, -200, 300, -400] * 80
+    # Not periodic on purpose: the +/-3 ms alignment search resolves a periodic
+    # input at any whole period, so a one-period shift would compare a modified
+    # signal against a shifted copy of itself and report it as identical.
+    identical = [(1103515245 * n + 12345) % 65536 - 32768 for n in range(640)]
     almost_identical = list(identical)
     almost_identical[37] += 1
     assert aligned_samples_identical(identical, identical, rate, 0)

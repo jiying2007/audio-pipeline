@@ -5,6 +5,13 @@
 - Apply the same eligibility to median, p10 and scenario distributions, report the applicable-case count, and keep each raw per-case improvement value plus the absolute `near_si_sdr_db` and every existing per-case gate. An aggregate with no applicable cases remains fail-closed through the existing missing-metric rule.
 - Reports before and after this release are not directly comparable on near-SI-SDR improvement aggregates when exact-clean inputs are present, and policies gating those aggregates may change verdict accordingly. Dataset locks, other metric definitions, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
 
+# 2.3.21
+
+- Fix Linux runtime tuning admission going stale when the caller changes tuning directly on a pipeline it owns before start or after stop. While stopped, the producer projection is rebuilt from the pipeline's current AGC pair and all still-pending tuning commands are replayed in FIFO order, so validation matches the state the worker can actually reach.
+- Fail closed when a caller-owned direct change makes an already accepted pending tuning sequence pair-invalid: further tuning admission and `ap_runtime_start()` return `AP_ESTATE` until the live pipeline is repaired. While running, the runtime never re-reads worker-owned pipeline state and continues from the producer projection only.
+- Add deterministic coverage for direct tuning after open, caller changes to fields not owned by pending commands, invalidated pending sequences, repair/restart, and start-time hand-off. Document the stopped/running ownership boundary in `docs/API_CONTRACT.md`.
+- Public struct layouts, Linux runtime private state size, realtime DSP behavior, acoustic thresholds, research authority and product tuning ranges are unchanged.
+
 # 2.3.20
 
 - Hard-cut real-target route configuration to one reviewed board-manifest authority across laboratory control, Trusted Runner Readiness, HIL and Product Certification. Remove the HIL/labctl compatibility route assertions and Product Certification's parallel capture/playback/far-end/sample-rate/microphone/DSP-CPU/power inputs; physical route and power settings are now derived from the board manifest.

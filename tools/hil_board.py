@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -51,6 +52,12 @@ def load_board(path: Path) -> dict:
     if missing or data.get("schema_version") != 1:
         raise ValueError(f"invalid board manifest; missing={missing}")
     validate_route(data.get("route"))
+    power_sensor = data.get("power_sensor")
+    if power_sensor is not None and (not isinstance(power_sensor, str) or not power_sensor):
+        raise ValueError("power_sensor must be null or a non-empty string")
+    power_scale = float(data.get("power_scale", 1_000_000))
+    if not math.isfinite(power_scale) or power_scale <= 0.0:
+        raise ValueError("power_scale must be finite and > 0")
     return data
 
 
@@ -134,6 +141,18 @@ def preflight(board: dict, output: Path, settle_seconds: int) -> int:
     if farend and not Path(farend).is_file():
         failures.append(f"scheduled route far-end fixture missing: {farend}")
 
+    power = board.get("power_sensor")
+    power_w = None
+    if power:
+        try:
+            raw_power = float(Path(power).read_text(encoding="utf-8").strip())
+            power_scale = float(board.get("power_scale", 1_000_000))
+            power_w = raw_power / power_scale
+            if not math.isfinite(power_w) or power_w < 0.0:
+                raise ValueError(f"invalid scaled power: {power_w}")
+        except (OSError, ValueError) as exc:
+            failures.append(f"power sensor unreadable: {exc}")
+
     report = {
         "schema_version": 1,
         "classification": "INFRA_FAILURE" if failures else "READY",
@@ -144,6 +163,7 @@ def preflight(board: dict, output: Path, settle_seconds: int) -> int:
             "machine": os.uname().machine,
             "free_mib": free_mib,
             "soc_temp_c": temp,
+            "power_w": power_w,
             "cpu_governors": cpu_governors(),
             "ntp_synchronized": ntp_state(),
             "alsa": inventory,
@@ -194,6 +214,16 @@ def self_test() -> None:
     path.write_text(json.dumps(sample), encoding="utf-8")
     loaded = load_board(path)
     assert loaded["board_id"] == "b" and loaded["route"]["sample_rate_hz"] == 16000
+    bad_power = dict(sample)
+    bad_power["power_scale"] = 0
+    path.write_text(json.dumps(bad_power), encoding="utf-8")
+    try:
+        load_board(path)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("non-positive power_scale accepted")
+    path.write_text(json.dumps(sample), encoding="utf-8")
     try:
         validate_route({"capture_device": "x", "sample_rate_hz": 11025, "mic_channels": 2, "dsp_cpu": 1})
     except ValueError:

@@ -212,6 +212,10 @@ struct ap_runtime {
     uint64_t last_delay_jumps;
     uint64_t last_aec_resets;
     float last_valid_erle;
+    /* Immutable AGC pair restored by ap_pipeline_reset(). The control producer
+     * uses this baseline when a RESET is accepted ahead of later tuning. */
+    float reset_agc_target_dbfs;
+    float reset_limiter_dbfs;
     /* Single-control-producer shadow of the tuning state after all accepted
      * queued commands. The worker never touches these fields. */
     float projected_agc_target_dbfs;
@@ -657,6 +661,7 @@ ap_status_t ap_runtime_open(void *memory,
                                const ap_runtime_options_t *options,
                                ap_runtime_t **out_runtime) {
     ap_runtime_t *runtime;
+    ap_config_t initial_config;
     ap_tuning_t initial_tuning;
     if (!memory || !pipeline || !config || !options || !out_runtime)
         return AP_EINVAL;
@@ -688,9 +693,13 @@ ap_status_t ap_runtime_open(void *memory,
     if (!runtime->io_frames || runtime->io_frames > AP_BUILD_IO_FRAME_MAX ||
         !runtime->mic_channels || runtime->mic_channels > AP_BUILD_MAX_MIC_CHANNELS)
         return AP_EINVAL;
+    memset(&initial_config, 0, sizeof(initial_config));
     memset(&initial_tuning, 0, sizeof(initial_tuning));
-    if (ap_pipeline_get_tuning(pipeline, &initial_tuning) != AP_OK)
+    if (ap_pipeline_get_config(pipeline, &initial_config) != AP_OK ||
+        ap_pipeline_get_tuning(pipeline, &initial_tuning) != AP_OK)
         return AP_EINVAL;
+    runtime->reset_agc_target_dbfs = initial_config.agc_target_dbfs;
+    runtime->reset_limiter_dbfs = initial_config.limiter_dbfs;
     runtime->projected_agc_target_dbfs = initial_tuning.agc_target_dbfs;
     runtime->projected_limiter_dbfs = initial_tuning.limiter_dbfs;
     if (sem_init(&runtime->wake, 0, 0) != 0) return AP_ESTATE;
@@ -1492,7 +1501,11 @@ ap_status_t ap_runtime_command(ap_runtime_t *runtime,
     default:
         break;
     }
-    if ((ap_runtime_command_kind_t)command->kind == AP_RUNTIME_COMMAND_SET_TUNING) {
+    if ((ap_runtime_command_kind_t)command->kind == AP_RUNTIME_COMMAND_RESET) {
+        runtime->projected_agc_target_dbfs = runtime->reset_agc_target_dbfs;
+        runtime->projected_limiter_dbfs = runtime->reset_limiter_dbfs;
+    } else if ((ap_runtime_command_kind_t)command->kind ==
+               AP_RUNTIME_COMMAND_SET_TUNING) {
         if (command->data.tuning.mask & AP_TUNING_AGC_TARGET)
             runtime->projected_agc_target_dbfs =
                 command->data.tuning.agc_target_dbfs;

@@ -23,6 +23,20 @@ REQUIRED = {
 SUPPORTED_RATES = {8000, 16000, 24000, 32000, 48000}
 
 
+def validate_text(name: str, value: object, *, required: bool = False) -> None:
+    if value is None:
+        if required:
+            raise ValueError(f"{name} is required")
+        return
+    if not isinstance(value, str) or (required && not value):
+        raise ValueError(f"{name} must be a non-empty string" if required else f"{name} must be null or a string")
+    if "\n" in value or "\r" in value:
+        raise ValueError(f"{name} contains a newline")
+    lowered = value.strip().lower()
+    if lowered and ("replace-with" in lowered or lowered.startswith("todo") or lowered.startswith("example-")):
+        raise ValueError(f"{name} contains a placeholder")
+
+
 def validate_route(route: object) -> None:
     if route is None:
         return
@@ -32,8 +46,7 @@ def validate_route(route: object) -> None:
     missing = sorted(required - set(route))
     if missing:
         raise ValueError(f"invalid route; missing={missing}")
-    if not isinstance(route["capture_device"], str) or not route["capture_device"]:
-        raise ValueError("route.capture_device must be non-empty")
+    validate_text("route.capture_device", route["capture_device"], required=True)
     if int(route["sample_rate_hz"]) not in SUPPORTED_RATES:
         raise ValueError("route.sample_rate_hz is unsupported")
     if int(route["mic_channels"]) not in (1, 2):
@@ -42,8 +55,8 @@ def validate_route(route: object) -> None:
         raise ValueError("route.dsp_cpu must be >= -1")
     for key in ("playback_device", "farend_file"):
         value = route.get(key)
-        if value is not None and (not isinstance(value, str) or not value):
-            raise ValueError(f"route.{key} must be null or non-empty string")
+        if value is not None:
+            validate_text(f"route.{key}", value, required=True)
 
 
 def load_board(path: Path) -> dict:
@@ -52,9 +65,11 @@ def load_board(path: Path) -> dict:
     if missing or data.get("schema_version") != 1:
         raise ValueError(f"invalid board manifest; missing={missing}")
     validate_route(data.get("route"))
-    power_sensor = data.get("power_sensor")
-    if power_sensor is not None and (not isinstance(power_sensor, str) or not power_sensor):
-        raise ValueError("power_sensor must be null or a non-empty string")
+    for key in ("revision", "audio_codec", "mic_board_revision", "speaker_revision"):
+        validate_text(key, data.get(key), required=True)
+    for key in ("thermal_sensor", "power_sensor", "power_cycle_hook", "cleanup_hook"):
+        if data.get(key) is not None:
+            validate_text(key, data.get(key), required=True)
     power_scale = float(data.get("power_scale", 1_000_000))
     if not math.isfinite(power_scale) or power_scale <= 0.0:
         raise ValueError("power_scale must be finite and > 0")
@@ -223,6 +238,15 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("non-positive power_scale accepted")
+    bad_placeholder = json.loads(json.dumps(sample))
+    bad_placeholder["revision"] = "replace-with-revision"
+    path.write_text(json.dumps(bad_placeholder), encoding="utf-8")
+    try:
+        load_board(path)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("placeholder board metadata accepted")
     path.write_text(json.dumps(sample), encoding="utf-8")
     try:
         validate_route({"capture_device": "x", "sample_rate_hz": 11025, "mic_channels": 2, "dsp_cpu": 1})

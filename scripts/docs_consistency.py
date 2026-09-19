@@ -379,13 +379,33 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     for token in ("$HOME/audio-validation-data", "datasets.seal.json", "AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config"):
         if token not in readiness:
             errors.append(f"trusted runner readiness missing runner-local user-mode token: {token}")
+    for forbidden in ("      farend_file:\n", "      power_input:\n"):
+        if forbidden in readiness:
+            errors.append(f"trusted runner readiness reintroduced duplicate target-route input: {forbidden.strip()}")
+    for forbidden in (
+        "      capture_device:\n", "      playback_device:\n", "      farend_file:\n",
+        "      sample_rate:\n", "      mic_channels:\n", "      dsp_cpu:\n",
+        "      power_input:\n", "      power_scale:\n",
+    ):
+        if forbidden in hil:
+            errors.append(f"HIL reintroduced duplicate board-authority input: {forbidden.strip()}")
     if "default: /etc/audio-pipeline/board.json" in certification:
         errors.append("Product Certification reintroduced a system-mode /etc board default")
+    for forbidden in (
+        "      capture_device:\n", "      playback_device:\n", "      farend_pcm:\n",
+        "      sample_rate:\n", "      mic_channels:\n", "      dsp_cpu:\n",
+        "      power_input:\n", "      power_scale:\n",
+    ):
+        if forbidden in certification:
+            errors.append(f"Product Certification reintroduced duplicate board-authority input: {forbidden.strip()}")
+    if "default: v2." in certification:
+        errors.append("Product Certification release_tag must be explicit, not a stale/default release")
     for token in (
         "AUDIO_PIPELINE_LAB_BOARD",
         "XDG_CONFIG_HOME",
         "$HOME/.config",
-        "/tmp/audio-target-board-path.txt",
+        "AP_BOARD_MANIFEST",
+        '--board-manifest "$AP_BOARD_MANIFEST"',
         "runs-on: [self-hosted, linux, audio-builder]",
         "runs-on: [self-hosted, linux, certification-archive]",
         "/usr/local/bin/audio-pipeline-cert-archive",

@@ -1,3 +1,9 @@
+# 2.3.19
+
+- Update the exact-pinned laboratory provisioning dependency from `ansible-core==2.19.12` to `ansible-core==2.19.13`; lab/provisioning changes remain release-bearing and do not bypass the repository SemVer gate.
+- Remove duplicate lab dependency version literals from the documentation consistency checker: each `lab/requirements-*.txt` file remains its version authority, while CI still requires the expected package to be one exact `name==X.Y.Z` SemVer pin.
+- Realtime DSP, public API/ABI, acoustic thresholds, shipping defaults, HIL readiness and Product Qualification authority are unchanged.
+
 # 2.3.18
 
 - Fix Linux runtime tuning admission so target-only and limiter-only AGC updates are validated against the full tuning pair that will exist when the DSP worker applies them, not just against each field's standalone numeric range.

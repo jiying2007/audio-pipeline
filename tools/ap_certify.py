@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -67,6 +68,52 @@ def project_version() -> str:
         if match:
             return match.group(1)
     raise ValueError("cannot resolve project version")
+
+
+def load_board_route(path: Path) -> tuple[dict, dict]:
+    board = json.loads(path.read_text(encoding="utf-8"))
+    if board.get("schema_version") != 1:
+        raise ValueError("board manifest schema_version must be 1")
+    route = board.get("route")
+    if not isinstance(route, dict):
+        raise ValueError("board manifest route is required")
+    required = ("capture_device", "playback_device", "farend_file",
+                "sample_rate_hz", "mic_channels", "dsp_cpu")
+    missing = [key for key in required if route.get(key) in (None, "")]
+    if missing:
+        raise ValueError("board route missing: " + ", ".join(missing))
+    sample_rate = int(route["sample_rate_hz"])
+    mic_channels = int(route["mic_channels"])
+    dsp_cpu = int(route["dsp_cpu"])
+    if sample_rate not in {8000, 16000, 24000, 32000, 48000}:
+        raise ValueError("board route sample_rate_hz is unsupported")
+    if mic_channels not in {1, 2}:
+        raise ValueError("board route mic_channels must be 1 or 2")
+    if dsp_cpu < -1:
+        raise ValueError("board route dsp_cpu must be >= -1")
+    farend = Path(str(route["farend_file"]))
+    power = Path(str(board.get("power_sensor") or ""))
+    if not farend.is_absolute():
+        raise ValueError("board route farend_file must be absolute")
+    if not str(power) or not power.is_absolute():
+        raise ValueError("board power_sensor must be an absolute path")
+    power_scale = float(board.get("power_scale", 1_000_000))
+    if not math.isfinite(power_scale) or power_scale <= 0.0:
+        raise ValueError("board power_scale must be finite and > 0")
+    normalized = {
+        "capture_device": str(route["capture_device"]),
+        "playback_device": str(route["playback_device"]),
+        "farend_file": str(farend),
+        "sample_rate_hz": sample_rate,
+        "mic_channels": mic_channels,
+        "dsp_cpu": dsp_cpu,
+        "power_sensor": str(power),
+        "power_scale": power_scale,
+    }
+    for key, value in normalized.items():
+        if isinstance(value, str) and ("\n" in value or "\r" in value):
+            raise ValueError(f"board route contains newline: {key}")
+    return board, normalized
 
 
 def cpuinfo_field(name: str) -> str | None:

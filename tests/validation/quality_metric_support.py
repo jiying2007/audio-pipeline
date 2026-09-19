@@ -12,9 +12,10 @@ candidate is actually better rather than merely different:
 * AEC convergence and post-event recovery time from known echo truth,
 * VAD onset/release delay from frame labels.
 
-Only cases that opt in through ``quality`` or an explicit truth reference are
-replayed a second time. Existing public/regression corpora keep their historical
-metric behavior. No result from this module has shipping authority.
+Only cases that opt in through ``quality`` or an explicit truth reference receive
+the extra measurements. They reuse the canonical processor invocation instead of
+replaying the same case a second time. Existing public/regression corpora keep
+their historical metric behavior. No result from this module has shipping authority.
 """
 
 from __future__ import annotations

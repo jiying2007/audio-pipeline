@@ -1,3 +1,8 @@
+# 2.3.35
+
+- Replace repeated full rescans of overlapping 100 ms quality ERLE windows with a constant-memory rolling energy accumulator. Each 10 ms step now updates only the leaving and entering samples while preserving the existing window positions and exact legacy ERLE curve values for S16 PCM.
+- Keep quality metric definitions, convergence/recovery semantics, thresholds, report schema, product DSP, public API/ABI, shipping defaults and Product Qualification authority unchanged.
+
 # 2.3.34
 
 - Reuse canonical runtime context across quality extensions so clean/echo references, VAD labels and mono input views are not reloaded or rebuilt after the single processor invocation.

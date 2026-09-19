@@ -1295,11 +1295,34 @@ static void *worker(void *arg) {
     return NULL;
 }
 
+/* The projected AGC pair only tracks tuning that entered through the command
+ * queue, so it goes stale when the caller changes tuning directly on a pipeline
+ * it owns. Re-reading it from the pipeline is only sound while the worker is
+ * stopped (otherwise the pipeline belongs to the worker and reading it would
+ * inspect worker-mutated state) and while no command is pending (otherwise the
+ * re-read would discard the not-yet-applied effect of queued commands). */
+static void runtime_resync_tuning_projection(ap_runtime_t *runtime) {
+    const unsigned tail =
+        atomic_load_explicit(&runtime->command_tail, memory_order_acquire);
+    const unsigned head =
+        atomic_load_explicit(&runtime->command_head, memory_order_relaxed);
+    ap_tuning_t tuning;
+
+    if (atomic_load_explicit(&runtime->running, memory_order_acquire)) return;
+    if (head != tail) return;
+    memset(&tuning, 0, sizeof(tuning));
+    if (ap_pipeline_get_tuning(runtime->pipeline, &tuning) != AP_OK) return;
+    runtime->projected_agc_target_dbfs = tuning.agc_target_dbfs;
+    runtime->projected_limiter_dbfs = tuning.limiter_dbfs;
+}
+
 ap_status_t ap_runtime_start(ap_runtime_t *runtime) {
     pthread_attr_t attr;
     int use_attr = 0;
     int rc;
     if (!runtime) return AP_EINVAL;
+    /* Caller-owned until start: pick up tuning applied directly since open. */
+    runtime_resync_tuning_projection(runtime);
     if (atomic_exchange_explicit(&runtime->running, 1u, memory_order_acq_rel))
         return AP_ESTATE;
     if (pthread_attr_init(&attr) == 0) {
@@ -1397,7 +1420,7 @@ ap_status_t ap_runtime_submit_frame(ap_runtime_t *runtime,
     return AP_OK;
 }
 
-static ap_status_t runtime_validate_command(const ap_runtime_t *runtime,
+static ap_status_t runtime_validate_command(ap_runtime_t *runtime,
                                             const ap_runtime_command_t *command) {
     const ap_discontinuity_flags_t discontinuity_all =
         AP_DISCONTINUITY_CAPTURE_GAP | AP_DISCONTINUITY_RENDER_GAP |
@@ -1425,6 +1448,10 @@ static ap_status_t runtime_validate_command(const ap_runtime_t *runtime,
         return AP_OK;
     case AP_RUNTIME_COMMAND_SET_TUNING: {
         const ap_tuning_t *t = &command->data.tuning;
+        /* The caller may have changed tuning directly on a pipeline it owns
+         * since the last queued command; refresh the projection first so a
+         * legitimate command is not rejected against a stale pair. */
+        runtime_resync_tuning_projection(runtime);
         if (t->struct_size < sizeof(*t) ||
             t->api_version != AP_PIPELINE_CONTROL_API_VERSION ||
             t->mask == 0u || (t->mask & ~tuning_all) != 0u)

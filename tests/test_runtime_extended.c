@@ -617,10 +617,125 @@ static void test_runtime_tuning_projects_pending_commands(void) {
     ap_runtime_deinit(runtime);
 }
 
+/* Tuning applied straight to a pipeline the caller owns (before start or after
+ * stop). The unused half of the pair is still filled so the helper cannot hide
+ * an unintended zero. */
+static ap_status_t apply_agc(ap_pipeline_t *pipeline, ap_tuning_mask_t mask,
+                             float target, float limiter) {
+    ap_tuning_t tuning;
+
+    memset(&tuning, 0, sizeof(tuning));
+    tuning.struct_size = sizeof(tuning);
+    tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    tuning.mask = mask;
+    tuning.agc_target_dbfs = target;
+    tuning.limiter_dbfs = limiter;
+    return ap_pipeline_apply_tuning(pipeline, &tuning);
+}
+
+/* One SET_TUNING command through the runtime control queue. */
+static ap_status_t queue_agc(ap_runtime_t *runtime,
+                             ap_runtime_command_t *command,
+                             ap_tuning_mask_t mask, float target,
+                             float limiter) {
+    memset(command, 0, sizeof(*command));
+    command->struct_size = sizeof(*command);
+    command->api_version = AP_RUNTIME_API_VERSION;
+    command->kind = AP_RUNTIME_COMMAND_SET_TUNING;
+    command->data.tuning.struct_size = sizeof(command->data.tuning);
+    command->data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command->data.tuning.mask = mask;
+    command->data.tuning.agc_target_dbfs = target;
+    command->data.tuning.limiter_dbfs = limiter;
+    return ap_runtime_command(runtime, command);
+}
+
+/* The projected AGC pair only tracks tuning that entered through the command
+ * queue, so it went stale when the caller changed tuning directly on a pipeline
+ * it owns (before start or after stop) and then legitimately rejected commands
+ * against a pair the pipeline no longer had. The projection is now refreshed
+ * from the pipeline whenever the worker is stopped and nothing is pending. */
+static void test_runtime_tuning_resyncs_caller_owned_pipeline(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    ap_runtime_command_t command;
+    ap_tuning_t tuning;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES] = {0};
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg,
+                            &pipeline) == AP_OK);
+
+    /* Phase 1: caller-owned tuning must not be rejected afterwards. -1.4 dBFS
+     * is valid against the directly applied -1.2 dBFS limiter but not against
+     * the -2 dBFS limiter the runtime recorded at open. */
+    runtime = open_default(pipeline, &rcfg);
+    assert(apply_agc(pipeline, AP_TUNING_LIMITER, -20.0f, -1.2f) == AP_OK);
+    assert(queue_agc(runtime, &command, AP_TUNING_AGC_TARGET, -1.4f,
+                     0.0f) == AP_OK);
+
+    /* Refreshing must not turn into accepting everything: -1.1 dBFS is still
+     * above the applied limiter and has to be refused without consuming a
+     * queue slot. */
+    assert(queue_agc(runtime, &command, AP_TUNING_AGC_TARGET, -1.1f,
+                     0.0f) == AP_EINVAL);
+
+    /* The accepted command has to survive the handover and reach the DSP. */
+    assert(ap_runtime_start(runtime) == AP_OK);
+    (void)process_one(runtime, mic, render, out);
+    ap_runtime_stop(runtime);
+    ap_runtime_deinit(runtime);
+
+    memset(&tuning, 0, sizeof(tuning));
+    assert(ap_pipeline_get_tuning(pipeline, &tuning) == AP_OK);
+    assert(tuning.agc_target_dbfs == -1.4f);
+    assert(tuning.limiter_dbfs == -1.2f);
+
+    /* Phase 2: while a command is still pending the projection keeps tracking
+     * the queue, so it must not be overwritten from the pipeline. Restore the
+     * default pair first so a wrong refresh would be observable. */
+    assert(apply_agc(pipeline, AP_TUNING_AGC_TARGET, -20.0f, -1.2f) == AP_OK);
+    assert(apply_agc(pipeline, AP_TUNING_LIMITER, -20.0f, -2.0f) == AP_OK);
+
+    runtime = open_default(pipeline, &rcfg);
+    assert(queue_agc(runtime, &command, AP_TUNING_AGC_TARGET, -3.0f,
+                     0.0f) == AP_OK);
+    /* Caller-owned change while the queue is not empty. */
+    assert(apply_agc(pipeline, AP_TUNING_LIMITER, -20.0f, -1.2f) == AP_OK);
+    /* -4 dBFS is valid against the pipeline's -20 dBFS target but invalid
+     * against the still-pending -3 dBFS target: the pending projection wins. */
+    assert(queue_agc(runtime, &command, AP_TUNING_LIMITER, 0.0f,
+                     -4.0f) == AP_EINVAL);
+    ap_runtime_deinit(runtime);
+
+    /* Phase 3: tuning changed after open but before start has to be picked up
+     * at start, because commands enqueued against a running worker can no
+     * longer re-read the pipeline. -1.1 dBFS is valid against the newly
+     * applied -1.05 dBFS limiter and invalid against the -1.2 dBFS limiter the
+     * runtime recorded at open. */
+    runtime = open_default(pipeline, &rcfg);
+    assert(apply_agc(pipeline, AP_TUNING_LIMITER, -20.0f, -1.05f) == AP_OK);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    assert(queue_agc(runtime, &command, AP_TUNING_AGC_TARGET, -1.1f,
+                     0.0f) == AP_OK);
+    (void)process_one(runtime, mic, render, out);
+    ap_runtime_stop(runtime);
+    ap_runtime_deinit(runtime);
+
+    memset(&tuning, 0, sizeof(tuning));
+    assert(ap_pipeline_get_tuning(pipeline, &tuning) == AP_OK);
+    assert(tuning.agc_target_dbfs == -1.1f);
+    assert(tuning.limiter_dbfs == -1.05f);
+}
+
 int main(void) {
     test_open_start_and_argument_failures();
     test_runtime_tuning_matches_pipeline();
     test_runtime_tuning_projects_pending_commands();
+    test_runtime_tuning_resyncs_caller_owned_pipeline();
     test_command_validation_and_queue_pressure();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();

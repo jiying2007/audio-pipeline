@@ -1,3 +1,10 @@
+# 2.3.21
+
+- Fix Linux runtime tuning admission going stale when the caller changes tuning directly on a pipeline it owns. The projected AGC target/limiter pair is now re-read from the pipeline whenever the worker is stopped and no command is pending, so a command that is valid against the pipeline's current pair is no longer rejected against a pair recorded before the direct change.
+- Keep the projection authoritative while the worker runs or while queued commands are still unapplied: the runtime still does not inspect worker-owned pipeline state, and re-reading there would discard the pending effect of queued commands. Admission therefore remains FIFO-consistent with previously accepted commands.
+- Add regression coverage for direct caller-owned tuning before start, for a refresh that must still reject an invalid pair, and for pending queued commands continuing to win over a later direct change. Document the resynchronisation window in `docs/API_CONTRACT.md`.
+- Public struct layouts, Linux runtime private state size, realtime DSP behavior, acoustic thresholds, research authority and product tuning ranges are unchanged.
+
 # 2.3.20
 
 - Hard-cut real-target route configuration to one reviewed board-manifest authority across laboratory control, Trusted Runner Readiness, HIL and Product Certification. Remove the HIL/labctl compatibility route assertions and Product Certification's parallel capture/playback/far-end/sample-rate/microphone/DSP-CPU/power inputs; physical route and power settings are now derived from the board manifest.

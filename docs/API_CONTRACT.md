@@ -170,6 +170,8 @@ After `ap_runtime_start()`, the worker is the sole owner of the supplied pipelin
 
 `AP_EFULL` means the application must retry or coalesce according to product policy. The runtime never creates an unbounded control backlog.
 
+Tuning admission is checked against the full AGC pair that will exist when the DSP worker applies the command, using a producer-side projection of the target/limiter pair advanced by already accepted queued commands. The projection is re-read from the pipeline whenever the worker is stopped and no command is pending, which is exactly the window in which the caller owns the supplied pipeline and may change tuning through `ap_pipeline_apply_tuning()`. While the worker runs, or while queued commands are still unapplied, the projection continues from those queued commands: the runtime does not inspect worker-owned pipeline state, and re-reading the pipeline would discard the pending effect. Consequently, changing tuning directly while commands are still queued is not reflected in admission; after the queue drains, the next tuning command re-synchronises.
+
 ## Output backpressure contract
 
 Accepted capture frames advance DSP state even when the output consumer is late. If the output queue is full, runtime still processes the frame into bounded scratch, increments `output_drop_events`, emits a best-effort event and discards only output publication. AEC/SYNC/NS/AGC/VAD state and timeline continue to advance.

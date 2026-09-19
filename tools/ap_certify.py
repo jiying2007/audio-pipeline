@@ -493,6 +493,33 @@ def self_test() -> int:
             pass
         else:
             raise AssertionError("tampered CMake argument digest must fail")
+
+        board_path = root / "board.json"
+        board_path.write_text(json.dumps({
+            "schema_version": 1,
+            "route": {
+                "capture_device": "hw:0,0",
+                "playback_device": "hw:0,1",
+                "farend_file": "/tmp/farend.pcm",
+                "sample_rate_hz": 16000,
+                "mic_channels": 2,
+                "dsp_cpu": 1,
+            },
+            "power_sensor": "/tmp/power",
+            "power_scale": 1000000,
+        }) + "\n", encoding="utf-8")
+        _board, route = load_board_route(board_path)
+        assert route["capture_device"] == "hw:0,0"
+        assert route["sample_rate_hz"] == 16000
+        bad_board = json.loads(board_path.read_text(encoding="utf-8"))
+        bad_board["route"]["farend_file"] = "relative.pcm"
+        board_path.write_text(json.dumps(bad_board) + "\n", encoding="utf-8")
+        try:
+            load_board_route(board_path)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("relative certification far-end path accepted")
     print("audio-pipeline certification collector self-test: OK")
     return 0
 

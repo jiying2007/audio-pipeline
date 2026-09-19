@@ -617,10 +617,57 @@ static void test_runtime_tuning_projects_pending_commands(void) {
     ap_runtime_deinit(runtime);
 }
 
+
+static void test_runtime_reset_rewinds_tuning_projection(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    ap_runtime_command_t command;
+    ap_tuning_t tuning;
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg,
+                            &pipeline) == AP_OK);
+
+    /* Make the live pair stricter than the immutable config pair before
+     * opening the runtime. RESET will later restore pcfg (-20, -2), not this
+     * live (-3, -2) state. */
+    memset(&tuning, 0, sizeof(tuning));
+    tuning.struct_size = sizeof(tuning);
+    tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    tuning.mask = AP_TUNING_AGC_TARGET;
+    tuning.agc_target_dbfs = -3.0f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+
+    runtime = open_default(pipeline, &rcfg);
+
+    memset(&command, 0, sizeof(command));
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_RESET;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+
+    /* The second queue slot must be validated against the config pair that
+     * RESET will establish before this command executes. Limiter -4 is valid
+     * with reset target -20, but invalid against the stale live target -3. */
+    memset(&command, 0, sizeof(command));
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_SET_TUNING;
+    command.data.tuning.struct_size = sizeof(command.data.tuning);
+    command.data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command.data.tuning.mask = AP_TUNING_LIMITER;
+    command.data.tuning.limiter_dbfs = -4.0f;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+
+    ap_runtime_deinit(runtime);
+}
+
 int main(void) {
     test_open_start_and_argument_failures();
     test_runtime_tuning_matches_pipeline();
     test_runtime_tuning_projects_pending_commands();
+    test_runtime_reset_rewinds_tuning_projection();
     test_command_validation_and_queue_pressure();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();

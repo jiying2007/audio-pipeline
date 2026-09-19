@@ -116,6 +116,7 @@ jobs:
           revision=$(git rev-parse HEAD)
           test "$revision" = "$EXPECTED_EVENT_SHA"
           echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          python3 tools/hil_board.py metadata --board "$board" > /tmp/hil-board.json
           export BOARD="$board" TIER="$tier" SECONDS="$seconds" FAULT="$fault" MAX_XRUNS="$max_xruns" MAX_OVERRUNS="$max_overruns"
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import hashlib
@@ -125,15 +126,8 @@ jobs:
 
           board_path = Path(os.environ['BOARD'])
           board_bytes = board_path.read_bytes()
-          board = json.loads(board_bytes.decode('utf-8'))
-          configured = board.get('route')
-          if not isinstance(configured, dict):
-              raise SystemExit('HIL requires board.route in the board manifest for every trigger mode')
-
-          required_route = ('capture_device', 'sample_rate_hz', 'mic_channels', 'dsp_cpu')
-          missing = [key for key in required_route if key not in configured]
-          if missing:
-              raise SystemExit(f'HIL board.route is missing required fields: {missing}')
+          board = json.load(open('/tmp/hil-board.json', encoding='utf-8'))
+          configured = board['route']
 
           labels = board.get('runner_labels')
           required_labels = {'self-hosted', 'linux', 'audio-target'}
@@ -145,18 +139,6 @@ jobs:
                   return default
               return str(value)
 
-          def placeholder(name, value):
-              lowered = text(value).strip().lower()
-              if lowered and ('replace-with' in lowered or lowered.startswith('todo') or lowered.startswith('example-')):
-                  raise SystemExit(f'HIL board manifest contains placeholder {name}: {value!r}')
-
-          for key in ('revision', 'audio_codec', 'mic_board_revision', 'speaker_revision'):
-              placeholder(key, board.get(key))
-          for key in ('capture_device', 'playback_device', 'farend_file'):
-              placeholder(f'route.{key}', configured.get(key))
-          for key in ('thermal_sensor', 'power_sensor', 'power_cycle_hook', 'cleanup_hook'):
-              placeholder(key, board.get(key))
-
           route = {
               'capture': text(configured['capture_device']),
               'playback': text(configured.get('playback_device'), 'none') or 'none',
@@ -167,17 +149,6 @@ jobs:
               'power': text(board.get('power_sensor')),
               'power_scale': text(board.get('power_scale', 1000000)),
           }
-          if not route['capture']:
-              raise SystemExit('HIL board.route.capture_device must be non-empty')
-          if int(route['rate']) not in {8000, 16000, 24000, 32000, 48000}:
-              raise SystemExit(f"unsupported board.route.sample_rate_hz: {route['rate']}")
-          if int(route['mics']) not in {1, 2}:
-              raise SystemExit(f"unsupported board.route.mic_channels: {route['mics']}")
-          if int(route['cpu']) < -1:
-              raise SystemExit(f"invalid board.route.dsp_cpu: {route['cpu']}")
-          if float(route['power_scale']) <= 0:
-              raise SystemExit(f"invalid board.power_scale: {route['power_scale']}")
-
           authority = {
               'schema_version': 1,
               'authority': 'board-manifest-hil-route',

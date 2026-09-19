@@ -354,7 +354,7 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     if read(root, "lab/requirements-validation.txt").strip() != "huggingface_hub==1.29.0":
         errors.append("lab validation Python dependency pin drift")
     ansible_pin = read(root, "lab/requirements-ansible.txt").strip()
-    if re.fullmatch(r"ansible-core==[0-9]+\\.[0-9]+\\.[0-9]+", ansible_pin) is None:
+    if re.fullmatch(r"ansible-core==[0-9]+[.][0-9]+[.][0-9]+", ansible_pin) is None:
         errors.append("lab Ansible dependency must be one exact ansible-core SemVer pin")
     extended_auto = read(root, ".github/workflows/extended-real-automation.yml")
     extended = read(root, ".github/workflows/validation-extended-real.yml")

@@ -12,7 +12,6 @@ import hashlib
 import json
 import math
 import tempfile
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -32,14 +31,14 @@ def sha256_bytes(data: bytes) -> str:
 
 def request_exact_range(url: str, start: int, end: int) -> bytes:
     expected = end - start + 1
-    request = urllib.request.Request(
+    data, response = discovery.request_bytes(
         url,
-        headers={"User-Agent": USER_AGENT, "Range": f"bytes={start}-{end}"},
+        max_bytes=expected,
+        headers={"Range": f"bytes={start}-{end}"},
+        user_agent=USER_AGENT,
     )
-    with urllib.request.urlopen(request, timeout=45) as response:
-        status = int(getattr(response, "status", response.getcode()))
-        content_range = response.headers.get("Content-Range", "")
-        data = response.read(expected + 1)
+    status = int(getattr(response, "status", response.getcode()))
+    content_range = response.headers.get("Content-Range", "")
     if status != 206:
         raise ValueError(f"AMI range request must return 206, got {status}")
     if content_range != f"bytes {start}-{end}/{start + (0 if False else 1)}" and not content_range.startswith(
@@ -52,10 +51,10 @@ def request_exact_range(url: str, start: int, end: int) -> bytes:
 
 
 def request_small(url: str, max_bytes: int = MAX_XML_BYTES) -> bytes:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=45) as response:
-        data = response.read(max_bytes + 1)
-    if not data or len(data) > max_bytes:
+    data, _ = discovery.request_bytes(
+        url, max_bytes=max_bytes, user_agent=USER_AGENT
+    )
+    if not data:
         raise ValueError(f"unexpected bounded download size: {url}")
     return data
 

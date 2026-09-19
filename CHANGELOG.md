@@ -2,7 +2,7 @@
 
 - Fix Linux runtime tuning admission so target-only and limiter-only AGC updates are validated against the full tuning pair that will exist when the DSP worker applies them, not just against each field's standalone numeric range.
 - Track a single-control-producer projected AGC target/limiter pair through already accepted queued tuning commands. This makes a later command validate against prior pending commands in FIFO order while preserving DSP-worker ownership of the live pipeline; invalid or full-queue submissions do not advance the projection.
-- Add regression coverage for individually valid-but-pair-invalid partial updates and for a pending target update that changes the validity of the next limiter command. Public struct layouts, realtime DSP behavior, acoustic thresholds, research authority and product tuning ranges are unchanged.
+- Add regression coverage for individually valid-but-pair-invalid partial updates and for a pending target update that changes the validity of the next limiter command. The Linux runtime private state grows by 8 bytes (two projected floats); public struct layouts, realtime DSP behavior, acoustic thresholds, research authority and product tuning ranges are unchanged.
 
 # 2.3.17
 

@@ -27,8 +27,55 @@
     "release/",
     "validation/"
   ],
-  "allowed_exact_names": [],
-  "branches": [],
+  "allowed_exact_names": [
+    "codex/dispatch-blind-92c3e9fe-once",
+    "codex/dispatch-blind-ffc66ec-once",
+    "codex/dispatch-multidataset-v2-once",
+    "codex/dispatch-nightly-6ec48f3-once",
+    "codex/migrate-blind-once",
+    "codex/retry-hosted-blind-infra-once",
+    "research/matched-gain-chain-capture-contract-v1-check",
+    "research/pure-far-hpf-energy-asymmetry-v1-check",
+    "research/pure-far-same-guid-movement-source-ratio-v1"
+  ],
+  "branches": [
+    {
+      "name": "codex/dispatch-blind-92c3e9fe-once",
+      "expected_sha": "ba9b80316b35b258d31fe882d1e8214146a5391c"
+    },
+    {
+      "name": "codex/dispatch-blind-ffc66ec-once",
+      "expected_sha": "ffc66ec07b72c3525ddf27a862075f5539382674"
+    },
+    {
+      "name": "codex/dispatch-multidataset-v2-once",
+      "expected_sha": "5b7e544c9df26233c7056952a21f8c870aada020"
+    },
+    {
+      "name": "codex/dispatch-nightly-6ec48f3-once",
+      "expected_sha": "6ec48f3cd48d6fc3dfdc782dc748842966744427"
+    },
+    {
+      "name": "codex/migrate-blind-once",
+      "expected_sha": "e1d048fd5451765ff74413cc872f6b064e961901"
+    },
+    {
+      "name": "codex/retry-hosted-blind-infra-once",
+      "expected_sha": "a1a5041790acbbe54561ae06e07fa1aed9fa5acf"
+    },
+    {
+      "name": "research/matched-gain-chain-capture-contract-v1-check",
+      "expected_sha": "a54cf5a690cce57c9eb079159d3add30602dd66f"
+    },
+    {
+      "name": "research/pure-far-hpf-energy-asymmetry-v1-check",
+      "expected_sha": "e2e99c0ca130c7836c6487ae83d4bbc6eb7f2d91"
+    },
+    {
+      "name": "research/pure-far-same-guid-movement-source-ratio-v1",
+      "expected_sha": "248c3e15cbeb5df8528a4eb8548b6178eec51bcc"
+    }
+  ],
   "authority_boundary": {
     "hardware_test_executed": false,
     "hardware_collection_performed": false,

@@ -12,9 +12,10 @@ candidate is actually better rather than merely different:
 * AEC convergence and post-event recovery time from known echo truth,
 * VAD onset/release delay from frame labels.
 
-Only cases that opt in through ``quality`` or an explicit truth reference are
-replayed a second time. Existing public/regression corpora keep their historical
-metric behavior. No result from this module has shipping authority.
+Only cases that opt in through ``quality`` or an explicit truth reference receive
+the extra measurements. They reuse the canonical processor invocation instead of
+replaying the same case a second time. Existing public/regression corpora keep
+their historical metric behavior. No result from this module has shipping authority.
 """
 
 from __future__ import annotations
@@ -63,26 +64,55 @@ def _percentile(values: list[float], quantile: float) -> float | None:
     return values[lower] * (1.0 - fraction) + values[upper] * fraction
 
 
-def _align(reference: Sequence[int], estimate: Sequence[int], delay_samples: int) -> tuple[list[int], list[int]]:
+def _align_span(reference: Sequence[int], estimate: Sequence[int],
+                delay_samples: int) -> tuple[int, int, int]:
+    """Return aligned start/count metadata without materializing signal copies."""
     delay = int(delay_samples)
     if delay >= 0:
-        ref = list(reference)
-        est = list(estimate[delay:])
+        ref_start = 0
+        est_start = delay
     else:
-        ref = list(reference[-delay:])
-        est = list(estimate)
-    count = min(len(ref), len(est))
-    return ref[:count], est[:count]
+        ref_start = -delay
+        est_start = 0
+    count = max(
+        0,
+        min(
+            len(reference) - ref_start,
+            len(estimate) - est_start,
+        ),
+    )
+    return ref_start, est_start, count
 
 
-def projection_gain_db(reference: Sequence[int], estimate: Sequence[int], delay_samples: int) -> float | None:
-    ref, est = _align(reference, estimate, delay_samples)
-    if len(ref) < 160:
+def _align(reference: Sequence[int], estimate: Sequence[int],
+           delay_samples: int) -> tuple[list[int], list[int]]:
+    """Materialize the legacy aligned pair; quality metrics use _align_span."""
+    ref_start, est_start, count = _align_span(
+        reference, estimate, delay_samples
+    )
+    return (
+        list(reference[ref_start:ref_start + count]),
+        list(estimate[est_start:est_start + count]),
+    )
+
+
+def projection_gain_db(reference: Sequence[int], estimate: Sequence[int],
+                       delay_samples: int) -> float | None:
+    ref_start, est_start, count = _align_span(
+        reference, estimate, delay_samples
+    )
+    if count < 160:
         return None
-    energy = sum(float(value) * float(value) for value in ref)
+    energy = 0.0
+    cross = 0.0
+    for offset in range(count):
+        ref = float(reference[ref_start + offset])
+        est = float(estimate[est_start + offset])
+        energy += ref * ref
+        cross += ref * est
     if energy <= 1.0e-12:
         return None
-    scale = sum(float(r) * float(e) for r, e in zip(ref, est)) / energy
+    scale = cross / energy
     magnitude = abs(scale)
     if magnitude <= 1.0e-12:
         return -120.0
@@ -91,14 +121,20 @@ def projection_gain_db(reference: Sequence[int], estimate: Sequence[int], delay_
 
 def _window_erle(echo: Sequence[int], output: Sequence[int], rate: int,
                  output_delay_samples: int) -> list[tuple[int, float]]:
-    ref, est = _align(echo, output, output_delay_samples)
+    ref_start, est_start, count = _align_span(
+        echo, output, output_delay_samples
+    )
     window = max(160, rate // 10)  # 100 ms
     step = max(80, rate // 100)    # 10 ms
     curve: list[tuple[int, float]] = []
-    for start in range(0, max(0, min(len(ref), len(est)) - window + 1), step):
-        stop = start + window
-        ein = sum(float(x) * float(x) for x in ref[start:stop])
-        eout = sum(float(x) * float(x) for x in est[start:stop])
+    for start in range(0, max(0, count - window + 1), step):
+        ein = 0.0
+        eout = 0.0
+        for offset in range(window):
+            ref = float(echo[ref_start + start + offset])
+            est = float(output[est_start + start + offset])
+            ein += ref * ref
+            eout += est * est
         if ein <= 1.0e-12:
             continue
         value = 10.0 * math.log10((ein + 1.0e-12) / (eout + 1.0e-12))
@@ -193,14 +229,18 @@ def install(engine: Any) -> None:
 
     def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         base_case, quality_expected = _split_expected(case)
-        result = original_evaluate_case(processor, corpus_path, base_case)
         if not _needs_quality(case, quality_expected):
-            return result
+            return original_evaluate_case(processor, corpus_path, base_case)
 
         rate = int(case["sample_rate_hz"])
         channels = int(case["mic_channels"])
         with tempfile.TemporaryDirectory(prefix="ap-quality-") as temporary:
-            output, trace, inputs = engine.invoke(processor, base_case, corpus_path, Path(temporary))
+            output, trace, inputs = engine.invoke(
+                processor, base_case, corpus_path, Path(temporary)
+            )
+        result = engine.evaluate_case_runtime(
+            corpus_path, base_case, output, trace, inputs
+        )
         mic0 = engine.mono_view(inputs["mic"], channels)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         declared_delay = declared_latency_ms * rate // 1000
@@ -311,6 +351,17 @@ def self_test() -> None:
     est = [0] * 160 + [500, -500] * 240
     gain = projection_gain_db(ref, est, 160)
     assert gain is not None and -6.2 < gain < -5.8
+    legacy_ref, legacy_est = _align(ref, est, 160)
+    legacy_energy = sum(float(value) * float(value) for value in legacy_ref)
+    legacy_scale = (
+        sum(float(r) * float(e) for r, e in zip(legacy_ref, legacy_est))
+        / legacy_energy
+    )
+    legacy_gain = 20.0 * math.log10(abs(legacy_scale))
+    assert abs(gain - legacy_gain) < 1.0e-12
+    ref_start, est_start, aligned_count = _align_span(ref, est, 160)
+    assert legacy_ref == list(ref[ref_start:ref_start + aligned_count])
+    assert legacy_est == list(est[est_start:est_start + aligned_count])
     input_gain = projection_gain_db(ref, ref, 0)
     output_gain = projection_gain_db(ref, [value // 2 for value in ref], 0)
     assert input_gain is not None and output_gain is not None
@@ -320,9 +371,100 @@ def self_test() -> None:
     trace = [{"vad_active": 0}] * 12 + [{"vad_active": 1}] * 20 + [{"vad_active": 0}] * 18
     onset, release = vad_transition_delays_ms(labels, trace)
     assert onset == 20.0 and release == 20.0
+    legacy_echo = [((n * 7919) % 20001) - 10000 for n in range(6400)]
+    legacy_output = [int(0.41 * value) for value in legacy_echo]
+    legacy_window_ref, legacy_window_est = _align(
+        legacy_echo, legacy_output, 0
+    )
+    legacy_curve: list[tuple[int, float]] = []
+    legacy_window = 1600
+    legacy_step = 160
+    for start in range(
+        0,
+        max(0, min(len(legacy_window_ref), len(legacy_window_est))
+            - legacy_window + 1),
+        legacy_step,
+    ):
+        stop = start + legacy_window
+        ein = sum(
+            float(x) * float(x)
+            for x in legacy_window_ref[start:stop]
+        )
+        eout = sum(
+            float(x) * float(x)
+            for x in legacy_window_est[start:stop]
+        )
+        if ein > 1.0e-12:
+            legacy_curve.append((
+                start,
+                10.0 * math.log10(
+                    (ein + 1.0e-12) / (eout + 1.0e-12)
+                ),
+            ))
+    assert _window_erle(
+        legacy_echo, legacy_output, 16000, 0
+    ) == legacy_curve
+
     curve = [(index * 160, value) for index, value in enumerate([-10.0, -2.0, 1.0, 5.0, 6.0, 6.5, 6.2])]
     settled = _settling_ms(curve, 16000)
     assert settled is not None and settled >= 20.0
+
+    class FakeEngine:
+        def __init__(self) -> None:
+            self.invoke_count = 0
+
+        def evaluate_case(self, processor: Path, corpus_path: Path,
+                          case: dict) -> dict:
+            raise AssertionError("quality case must not invoke base evaluator")
+
+        def evaluate_case_runtime(self, corpus_path: Path, case: dict,
+                                  output: Sequence[int], trace: list[dict],
+                                  inputs: dict) -> dict:
+            return {
+                "case_id": case["case_id"],
+                "split": case["split"],
+                "scenario": case["scenario"],
+                "source": {},
+                "dimensions": {},
+                "metrics": {},
+                "violations": [],
+                "passed": True,
+            }
+
+        def invoke(self, processor: Path, case: dict, corpus_path: Path,
+                   work: Path) -> tuple[list[int], list[dict], dict]:
+            self.invoke_count += 1
+            return [0] * 160, [{"algorithmic_latency_ms": 0}], {
+                "mic": [0] * 160,
+                "render": None,
+            }
+
+        @staticmethod
+        def mono_view(samples: Sequence[int], channels: int) -> Sequence[int]:
+            return samples
+
+        @staticmethod
+        def resolve(corpus_path: Path, value: str | None) -> Path | None:
+            return None if not value else corpus_path.parent / value
+
+        @staticmethod
+        def policy_violations(policy: dict, corpus: dict,
+                              cases: list[dict]) -> tuple[dict, list[dict]]:
+            return {}, []
+
+    fake = FakeEngine()
+    install(fake)
+    probe_case = {
+        "case_id": "quality-single-invoke",
+        "split": "validation",
+        "scenario": "self-test",
+        "sample_rate_hz": 16000,
+        "mic_channels": 1,
+        "quality": {},
+        "expected": {"min_near_projection_gain_db": -120.0},
+    }
+    fake.evaluate_case(Path("processor"), Path("corpus.json"), probe_case)
+    assert fake.invoke_count == 1
     print("quality metric support self-test: OK")
 
 

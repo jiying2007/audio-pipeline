@@ -474,8 +474,30 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         "metrics": metrics, "violations": violations, "passed": not violations,
     }
 
+def metric_values(cases: list[dict], name: str) -> list[float]:
+    """Return aggregate-applicable values for one metric.
+
+    Near-end SI-SDR improvement is undefined as an improvement objective when
+    the metric-aligned microphone input is exactly the clean reference: there
+    is no input artifact to remove, and the huge finite input SI-SDR comes only
+    from the evaluator's numerical floor. The raw per-case metric remains in
+    evidence; only aggregate applicability changes.
+    """
+    values: list[float] = []
+    for case in cases:
+        metrics = case["metrics"]
+        value = metrics.get(name)
+        if value is None:
+            continue
+        if (name == "near_si_sdr_improvement_db" and
+                metrics.get("input_near_reference_identical") is True):
+            continue
+        values.append(float(value))
+    return values
+
+
 def median_metric(cases: list[dict], name: str) -> float | None:
-    values = [float(case["metrics"][name]) for case in cases if case["metrics"].get(name) is not None]
+    values = metric_values(cases, name)
     return statistics.median(values) if values else None
 
 
@@ -496,28 +518,7 @@ def percentile_of(values: list[float], quantile: float) -> float | None:
 
 
 def percentile_metric(cases: list[dict], name: str, quantile: float) -> float | None:
-    values = [float(case["metrics"][name]) for case in cases if case["metrics"].get(name) is not None]
-    return percentile_of(values, quantile)
-
-
-def improvement_percentile_metric(cases: list[dict], quantile: float) -> float | None:
-    """Percentile of near-end SI-SDR improvement where improvement is defined.
-
-    If the metric-aligned microphone PCM is byte-for-byte/sample-for-sample the
-    clean near-end reference, there is no input artifact to improve. SI-SDR is
-    then limited only by the evaluator's numerical floor and subtracting that
-    very large finite value turns pipeline insertion into a meaningless
-    "improvement" number. Such cases remain fully gated by their absolute
-    near-end SI-SDR and every other per-case metric; only this delta aggregate
-    marks them inapplicable.
-    """
-    values = [
-        float(case["metrics"]["near_si_sdr_improvement_db"])
-        for case in cases
-        if case["metrics"].get("near_si_sdr_improvement_db") is not None
-        and case["metrics"].get("input_near_reference_identical") is not True
-    ]
-    return percentile_of(values, quantile)
+    return percentile_of(metric_values(cases, name), quantile)
 
 
 SCENARIO_SUMMARY_METRICS = (
@@ -535,11 +536,7 @@ SCENARIO_SUMMARY_METRICS = (
 
 
 def metric_distribution(cases: list[dict], name: str) -> dict | None:
-    values = sorted(
-        float(case["metrics"][name])
-        for case in cases
-        if case.get("metrics", {}).get(name) is not None
-    )
+    values = sorted(metric_values(cases, name))
     if not values:
         return None
     if len(values) == 1:
@@ -655,8 +652,11 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict]) -> tuple[di
         "scenario_pass_rate": scenario_pass_rate,
         "scenario_metrics": scenario_metric_summary(by_scenario),
         "dimension_values": dimension_values,
+        "near_si_sdr_improvement_applicable_cases": len(
+            metric_values(cases, "near_si_sdr_improvement_db")
+        ),
         "median_near_si_sdr_improvement_db": median_metric(cases, "near_si_sdr_improvement_db"),
-        "p10_near_si_sdr_improvement_db": improvement_percentile_metric(cases, 0.10),
+        "p10_near_si_sdr_improvement_db": percentile_metric(cases, "near_si_sdr_improvement_db", 0.10),
         "p10_noise_only_attenuation_db": percentile_metric(cases, "noise_only_attenuation_db", 0.10),
         "median_erle_db": median_metric(cases, "erle_db"),
         "median_output_render_corr_reduction": median_metric(cases, "output_render_corr_reduction"),
@@ -781,11 +781,18 @@ def self_test() -> None:
                      "near_si_sdr_improvement_db": -3.0}},
         {"metrics": {"near_si_sdr_improvement_db": 2.0}},
     ]
-    unfiltered = percentile_metric(improvement_cases, "near_si_sdr_improvement_db", 0.10)
-    filtered = improvement_percentile_metric(improvement_cases, 0.10)
-    assert unfiltered is not None and abs(unfiltered - -154.54) < 1.0e-9
-    assert filtered is not None and abs(filtered - -34.0) < 1.0e-9
-    assert improvement_percentile_metric([], 0.10) is None
+    raw_values = [
+        float(case["metrics"]["near_si_sdr_improvement_db"])
+        for case in improvement_cases
+    ]
+    assert abs(percentile_of(raw_values, 0.10) - -154.54) < 1.0e-9
+    applicable = metric_values(improvement_cases, "near_si_sdr_improvement_db")
+    assert applicable == [-40.0, -20.0, -3.0, 2.0]
+    assert abs(percentile_metric(
+        improvement_cases, "near_si_sdr_improvement_db", 0.10
+    ) - -34.0) < 1.0e-9
+    assert median_metric(improvement_cases, "near_si_sdr_improvement_db") == -11.5
+    assert percentile_metric([], "near_si_sdr_improvement_db", 0.10) is None
     assert rms_dbfs([0] * 10) <= -119.0
     synthetic_cases = [
         {"scenario": "a", "passed": True, "dimensions": {"motion": "static"}, "metrics": {"output_clip_fraction": 0.0, "output_dc_offset_dbfs": -100.0}},

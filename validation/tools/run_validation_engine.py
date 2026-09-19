@@ -153,16 +153,10 @@ def max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:
     return max((normalized_corr(a, b, lag) for lag in lags), default=0.0)
 
 
-def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
-                   sample_rate: int, expected_delay_samples: int) -> tuple[float | None, int]:
-    """Calculate SI-SDR after bounded sample-exact latency refinement.
-
-    The search is anchored to the pipeline-declared algorithmic latency. Input
-    references use an expected delay of zero. A narrow +/-3 ms refinement
-    absorbs integer-ms latency reporting and filter rounding without turning
-    the evaluator into an unconstrained synchronizer that can search for a
-    favorable score.
-    """
+def aligned_pair(reference: Sequence[int], estimate: Sequence[int],
+                 sample_rate: int, expected_delay_samples: int
+                 ) -> tuple[Sequence[int], Sequence[int], int]:
+    """Return the bounded sample-exact alignment used by near-end metrics."""
     radius = max(2, sample_rate * 3 // 1000)
     center = -int(expected_delay_samples)
     best_lag = center
@@ -179,9 +173,32 @@ def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
         ref = reference
         est = estimate[-best_lag:]
     count = min(len(ref), len(est))
-    if count < 16:
-        return None, -best_lag
-    return si_sdr_db(ref[:count], est[:count]), -best_lag
+    return ref[:count], est[:count], -best_lag
+
+
+def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
+                   sample_rate: int, expected_delay_samples: int) -> tuple[float | None, int]:
+    """Calculate SI-SDR after bounded sample-exact latency refinement.
+
+    The search is anchored to the pipeline-declared algorithmic latency. Input
+    references use an expected delay of zero. A narrow +/-3 ms refinement
+    absorbs integer-ms latency reporting and filter rounding without turning
+    the evaluator into an unconstrained synchronizer that can search for a
+    favorable score.
+    """
+    ref, est, alignment = aligned_pair(
+        reference, estimate, sample_rate, expected_delay_samples
+    )
+    if len(ref) < 16:
+        return None, alignment
+    return si_sdr_db(ref, est), alignment
+
+
+def aligned_samples_identical(reference: Sequence[int], estimate: Sequence[int],
+                              sample_rate: int, expected_delay_samples: int) -> bool:
+    """True only when the metric-aligned PCM input is exactly the clean reference."""
+    ref, est, _ = aligned_pair(reference, estimate, sample_rate, expected_delay_samples)
+    return len(ref) >= 16 and list(ref) == list(est)
 
 
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
@@ -420,6 +437,9 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         output_sdr, output_alignment = aligned_si_sdr(clean, output, rate, expected_output_delay)
         metrics["input_near_si_sdr_db"] = input_sdr
         metrics["near_si_sdr_db"] = output_sdr
+        metrics["input_near_reference_identical"] = aligned_samples_identical(
+            clean, mic0, rate, 0
+        )
         metrics["declared_algorithmic_latency_ms"] = declared_latency_ms
         metrics["input_alignment_samples"] = input_alignment
         metrics["output_alignment_samples"] = output_alignment
@@ -475,39 +495,28 @@ def percentile_of(values: list[float], quantile: float) -> float | None:
     return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
 
 
-# An input already this far above the clean near-end reference has no impairment
-# left to remove, so "improvement" can only measure the pipeline's own insertion
-# and is not a physical quantity. Observed input SI-SDR on the regression corpus
-# is either about 30 dB or about 235 dB, so the constant sits in the empty gap
-# between the two populations rather than being fitted to one corpus.
-IMPROVEMENT_HEADROOM_CEILING_DB = 40.0
-
-
 def percentile_metric(cases: list[dict], name: str, quantile: float) -> float | None:
     values = [float(case["metrics"][name]) for case in cases if case["metrics"].get(name) is not None]
     return percentile_of(values, quantile)
 
 
 def improvement_percentile_metric(cases: list[dict], quantile: float) -> float | None:
-    """Percentile of near-end SI-SDR improvement over impaired inputs only.
+    """Percentile of near-end SI-SDR improvement where improvement is defined.
 
-    Cases whose input already matches the clean reference are excluded from the
-    aggregate: with no impairment to remove their improvement is bounded below
-    by the pipeline's own insertion, so including them pins a low percentile to
-    an unphysical constant that no tuning change can move. Per-case gating is
-    deliberately unaffected - those cases keep every gate they already carry,
-    including the absolute `near_si_sdr_db` gate.
+    If the metric-aligned microphone PCM is byte-for-byte/sample-for-sample the
+    clean near-end reference, there is no input artifact to improve. SI-SDR is
+    then limited only by the evaluator's numerical floor and subtracting that
+    very large finite value turns pipeline insertion into a meaningless
+    "improvement" number. Such cases remain fully gated by their absolute
+    near-end SI-SDR and every other per-case metric; only this delta aggregate
+    marks them inapplicable.
     """
-    values: list[float] = []
-    for case in cases:
-        metrics = case["metrics"]
-        improvement = metrics.get("near_si_sdr_improvement_db")
-        if improvement is None:
-            continue
-        input_sdr = metrics.get("input_near_si_sdr_db")
-        if input_sdr is not None and float(input_sdr) >= IMPROVEMENT_HEADROOM_CEILING_DB:
-            continue
-        values.append(float(improvement))
+    values = [
+        float(case["metrics"]["near_si_sdr_improvement_db"])
+        for case in cases
+        if case["metrics"].get("near_si_sdr_improvement_db") is not None
+        and case["metrics"].get("input_near_reference_identical") is not True
+    ]
     return percentile_of(values, quantile)
 
 
@@ -749,20 +758,33 @@ def self_test() -> None:
     assert used == 2 and attenuation is not None and 5.9 < attenuation < 6.2
     speech_attenuation, speech_used = speech_active_attenuation_db(noise_in, noise_out, [1, 1, 1, 1], rate, 0)
     assert speech_used == 2 and speech_attenuation is not None and 5.9 < speech_attenuation < 6.2
-    # A tail percentile of improvement must not be pinned by cases whose input
-    # already equals the clean reference: over those cases the metric measures
-    # the pipeline's own insertion, not something tuning can address.
+    # Improvement applicability is exact signal semantics, not an SI-SDR
+    # threshold: only an input that is literally the metric-aligned clean
+    # reference is excluded. A very high-quality but non-identical input remains.
+    identical = [100, -200, 300, -400] * 80
+    almost_identical = list(identical)
+    almost_identical[37] += 1
+    assert aligned_samples_identical(identical, identical, rate, 0)
+    assert not aligned_samples_identical(identical, almost_identical, rate, 0)
     improvement_cases = [
-        {"metrics": {"input_near_si_sdr_db": 235.0, "near_si_sdr_improvement_db": -230.9}},
-        {"metrics": {"input_near_si_sdr_db": 235.0, "near_si_sdr_improvement_db": -230.9}},
-        {"metrics": {"input_near_si_sdr_db": 30.0, "near_si_sdr_improvement_db": -20.0}},
-        {"metrics": {"input_near_si_sdr_db": 9.0, "near_si_sdr_improvement_db": -3.0}},
+        {"metrics": {"input_near_si_sdr_db": 235.0,
+                     "input_near_reference_identical": True,
+                     "near_si_sdr_improvement_db": -230.9}},
+        {"metrics": {"input_near_si_sdr_db": 80.0,
+                     "input_near_reference_identical": False,
+                     "near_si_sdr_improvement_db": -40.0}},
+        {"metrics": {"input_near_si_sdr_db": 30.0,
+                     "input_near_reference_identical": False,
+                     "near_si_sdr_improvement_db": -20.0}},
+        {"metrics": {"input_near_si_sdr_db": 9.0,
+                     "input_near_reference_identical": False,
+                     "near_si_sdr_improvement_db": -3.0}},
         {"metrics": {"near_si_sdr_improvement_db": 2.0}},
     ]
     unfiltered = percentile_metric(improvement_cases, "near_si_sdr_improvement_db", 0.10)
     filtered = improvement_percentile_metric(improvement_cases, 0.10)
-    assert unfiltered is not None and abs(unfiltered - -230.9) < 1.0e-9
-    assert filtered is not None and abs(filtered - -16.6) < 1.0e-9
+    assert unfiltered is not None and abs(unfiltered - -154.54) < 1.0e-9
+    assert filtered is not None and abs(filtered - -34.0) < 1.0e-9
     assert improvement_percentile_metric([], 0.10) is None
     assert rms_dbfs([0] * 10) <= -119.0
     synthetic_cases = [

@@ -153,16 +153,10 @@ def max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:
     return max((normalized_corr(a, b, lag) for lag in lags), default=0.0)
 
 
-def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
-                   sample_rate: int, expected_delay_samples: int) -> tuple[float | None, int]:
-    """Calculate SI-SDR after bounded sample-exact latency refinement.
-
-    The search is anchored to the pipeline-declared algorithmic latency. Input
-    references use an expected delay of zero. A narrow +/-3 ms refinement
-    absorbs integer-ms latency reporting and filter rounding without turning
-    the evaluator into an unconstrained synchronizer that can search for a
-    favorable score.
-    """
+def aligned_pair(reference: Sequence[int], estimate: Sequence[int],
+                 sample_rate: int, expected_delay_samples: int
+                 ) -> tuple[Sequence[int], Sequence[int], int]:
+    """Return the bounded sample-exact alignment used by near-end metrics."""
     radius = max(2, sample_rate * 3 // 1000)
     center = -int(expected_delay_samples)
     best_lag = center
@@ -179,9 +173,36 @@ def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
         ref = reference
         est = estimate[-best_lag:]
     count = min(len(ref), len(est))
-    if count < 16:
-        return None, -best_lag
-    return si_sdr_db(ref[:count], est[:count]), -best_lag
+    return ref[:count], est[:count], -best_lag
+
+
+def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
+                   sample_rate: int, expected_delay_samples: int) -> tuple[float | None, int]:
+    """Calculate SI-SDR after bounded sample-exact latency refinement.
+
+    The search is anchored to the pipeline-declared algorithmic latency. Input
+    references use an expected delay of zero. A narrow +/-3 ms refinement
+    absorbs integer-ms latency reporting and filter rounding without turning
+    the evaluator into an unconstrained synchronizer that can search for a
+    favorable score.
+    """
+    ref, est, alignment = aligned_pair(
+        reference, estimate, sample_rate, expected_delay_samples
+    )
+    if len(ref) < 16:
+        return None, alignment
+    return si_sdr_db(ref, est), alignment
+
+
+def aligned_samples_identical(reference: Sequence[int], estimate: Sequence[int],
+                              sample_rate: int, expected_delay_samples: int) -> bool:
+    """True only when the metric-aligned PCM input is exactly the clean reference."""
+    ref, est, _ = aligned_pair(reference, estimate, sample_rate, expected_delay_samples)
+    return (
+        len(ref) >= 16
+        and len(ref) == len(est)
+        and all(int(a) == int(b) for a, b in zip(ref, est))
+    )
 
 
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
@@ -389,7 +410,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
     mic0 = mono(inputs["mic"], channels)
     input_rms = rms_dbfs(mic0)
     output_rms = rms_dbfs(output)
-    metrics: dict[str, float | int | None] = {
+    metrics: dict[str, float | int | bool | None] = {
         "input_rms_dbfs": input_rms,
         "output_rms_dbfs": output_rms,
         "output_rms_delta_db": output_rms - input_rms,
@@ -420,6 +441,9 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         output_sdr, output_alignment = aligned_si_sdr(clean, output, rate, expected_output_delay)
         metrics["input_near_si_sdr_db"] = input_sdr
         metrics["near_si_sdr_db"] = output_sdr
+        metrics["input_near_reference_identical"] = aligned_samples_identical(
+            clean, mic0, rate, 0
+        )
         metrics["declared_algorithmic_latency_ms"] = declared_latency_ms
         metrics["input_alignment_samples"] = input_alignment
         metrics["output_alignment_samples"] = output_alignment
@@ -454,24 +478,51 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         "metrics": metrics, "violations": violations, "passed": not violations,
     }
 
+def metric_values(cases: list[dict], name: str) -> list[float]:
+    """Return aggregate-applicable values for one metric.
+
+    Near-end SI-SDR improvement is undefined as an improvement objective when
+    the metric-aligned microphone input is exactly the clean reference: there
+    is no input artifact to remove, and the huge finite input SI-SDR comes only
+    from the evaluator's numerical floor. The raw per-case metric remains in
+    evidence; only aggregate applicability changes.
+    """
+    values: list[float] = []
+    for case in cases:
+        metrics = case["metrics"]
+        value = metrics.get(name)
+        if value is None:
+            continue
+        if (name == "near_si_sdr_improvement_db" and
+                metrics.get("input_near_reference_identical") is True):
+            continue
+        values.append(float(value))
+    return values
+
+
 def median_metric(cases: list[dict], name: str) -> float | None:
-    values = [float(case["metrics"][name]) for case in cases if case["metrics"].get(name) is not None]
+    values = metric_values(cases, name)
     return statistics.median(values) if values else None
 
 
-def percentile_metric(cases: list[dict], name: str, quantile: float) -> float | None:
-    values = sorted(float(case["metrics"][name]) for case in cases if case["metrics"].get(name) is not None)
+def percentile_of(values: list[float], quantile: float) -> float | None:
+    """Linear-interpolation percentile over an already-filtered value list."""
     if not values:
         return None
-    if len(values) == 1:
-        return values[0]
-    position = max(0.0, min(1.0, quantile)) * (len(values) - 1)
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    position = max(0.0, min(1.0, quantile)) * (len(ordered) - 1)
     lower = int(math.floor(position))
     upper = int(math.ceil(position))
     if lower == upper:
-        return values[lower]
+        return ordered[lower]
     fraction = position - lower
-    return values[lower] * (1.0 - fraction) + values[upper] * fraction
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
+def percentile_metric(cases: list[dict], name: str, quantile: float) -> float | None:
+    return percentile_of(metric_values(cases, name), quantile)
 
 
 SCENARIO_SUMMARY_METRICS = (
@@ -489,11 +540,7 @@ SCENARIO_SUMMARY_METRICS = (
 
 
 def metric_distribution(cases: list[dict], name: str) -> dict | None:
-    values = sorted(
-        float(case["metrics"][name])
-        for case in cases
-        if case.get("metrics", {}).get(name) is not None
-    )
+    values = sorted(metric_values(cases, name))
     if not values:
         return None
     if len(values) == 1:
@@ -609,6 +656,9 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict]) -> tuple[di
         "scenario_pass_rate": scenario_pass_rate,
         "scenario_metrics": scenario_metric_summary(by_scenario),
         "dimension_values": dimension_values,
+        "near_si_sdr_improvement_applicable_cases": len(
+            metric_values(cases, "near_si_sdr_improvement_db")
+        ),
         "median_near_si_sdr_improvement_db": median_metric(cases, "near_si_sdr_improvement_db"),
         "p10_near_si_sdr_improvement_db": percentile_metric(cases, "near_si_sdr_improvement_db", 0.10),
         "p10_noise_only_attenuation_db": percentile_metric(cases, "noise_only_attenuation_db", 0.10),
@@ -712,6 +762,44 @@ def self_test() -> None:
     assert used == 2 and attenuation is not None and 5.9 < attenuation < 6.2
     speech_attenuation, speech_used = speech_active_attenuation_db(noise_in, noise_out, [1, 1, 1, 1], rate, 0)
     assert speech_used == 2 and speech_attenuation is not None and 5.9 < speech_attenuation < 6.2
+    # Improvement applicability is exact signal semantics, not an SI-SDR
+    # threshold: only an input that is literally the metric-aligned clean
+    # reference is excluded. A very high-quality but non-identical input remains.
+    # Not periodic on purpose: the +/-3 ms alignment search resolves a periodic
+    # input at any whole period, so a one-period shift would compare a modified
+    # signal against a shifted copy of itself and report it as identical.
+    identical = [(1103515245 * n + 12345) % 65536 - 32768 for n in range(640)]
+    almost_identical = list(identical)
+    almost_identical[37] += 1
+    assert aligned_samples_identical(identical, identical, rate, 0)
+    assert not aligned_samples_identical(identical, almost_identical, rate, 0)
+    improvement_cases = [
+        {"metrics": {"input_near_si_sdr_db": 235.0,
+                     "input_near_reference_identical": True,
+                     "near_si_sdr_improvement_db": -230.9}},
+        {"metrics": {"input_near_si_sdr_db": 80.0,
+                     "input_near_reference_identical": False,
+                     "near_si_sdr_improvement_db": -40.0}},
+        {"metrics": {"input_near_si_sdr_db": 30.0,
+                     "input_near_reference_identical": False,
+                     "near_si_sdr_improvement_db": -20.0}},
+        {"metrics": {"input_near_si_sdr_db": 9.0,
+                     "input_near_reference_identical": False,
+                     "near_si_sdr_improvement_db": -3.0}},
+        {"metrics": {"near_si_sdr_improvement_db": 2.0}},
+    ]
+    raw_values = [
+        float(case["metrics"]["near_si_sdr_improvement_db"])
+        for case in improvement_cases
+    ]
+    assert abs(percentile_of(raw_values, 0.10) - -154.54) < 1.0e-9
+    applicable = metric_values(improvement_cases, "near_si_sdr_improvement_db")
+    assert applicable == [-40.0, -20.0, -3.0, 2.0]
+    assert abs(percentile_metric(
+        improvement_cases, "near_si_sdr_improvement_db", 0.10
+    ) - -34.0) < 1.0e-9
+    assert median_metric(improvement_cases, "near_si_sdr_improvement_db") == -11.5
+    assert percentile_metric([], "near_si_sdr_improvement_db", 0.10) is None
     assert rms_dbfs([0] * 10) <= -119.0
     synthetic_cases = [
         {"scenario": "a", "passed": True, "dimensions": {"motion": "static"}, "metrics": {"output_clip_fraction": 0.0, "output_dc_offset_dbfs": -100.0}},

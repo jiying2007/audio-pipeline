@@ -1,3 +1,10 @@
+# 2.3.22
+
+- Fix near-end SI-SDR improvement aggregates being dominated by cases whose metric-aligned microphone PCM is exactly the clean near-end reference. Those inputs have no artifact to remove; their very large finite input SI-SDR comes only from the evaluator numerical floor, so subtracting it turns pipeline insertion into a meaningless roughly -230 dB "improvement".
+- Define applicability from signal identity instead of a dB heuristic: the evaluator reuses its bounded sample-exact alignment and excludes a case from near-SI-SDR improvement aggregates/distributions only when the aligned input and clean reference are sample-for-sample identical. High-quality but non-identical inputs remain eligible regardless of SI-SDR value.
+- Apply the same eligibility to median, p10 and scenario distributions, report the applicable-case count, and keep each raw per-case improvement value plus the absolute `near_si_sdr_db` and every existing per-case gate. An aggregate with no applicable cases remains fail-closed through the existing missing-metric rule.
+- Reports before and after this release are not directly comparable on near-SI-SDR improvement aggregates when exact-clean inputs are present, and policies gating those aggregates may change verdict accordingly. Dataset locks, other metric definitions, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.21
 
 - Fix Linux runtime tuning admission going stale when the caller changes tuning directly on a pipeline it owns before start or after stop. While stopped, the producer projection is rebuilt from the pipeline's current AGC pair and all still-pending tuning commands are replayed in FIFO order, so validation matches the state the worker can actually reach.

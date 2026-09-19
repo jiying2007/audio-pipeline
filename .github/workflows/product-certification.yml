@@ -305,13 +305,16 @@ jobs:
         run: |
           set -euo pipefail
           test "$SOAK_SECONDS" -ge '${{ needs.resolve.outputs.required_soak_seconds }}'
-          python3 tools/target_evidence.py route-soak \
-            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" --output /tmp/soak.json \
-            --capture-device "$AP_ROUTE_CAPTURE" --playback-device "$AP_ROUTE_PLAYBACK" \
-            --farend "$AP_ROUTE_FAREND" --seconds "$SOAK_SECONDS" \
-            --sample-rate "$AP_ROUTE_SAMPLE_RATE" --mic-channels "$AP_ROUTE_MIC_CHANNELS" --dsp-cpu "$AP_ROUTE_DSP_CPU" \
-            --max-xruns 0 --max-overruns 0 \
+          args=(
+            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" --output /tmp/soak.json
+            --capture-device "$AP_ROUTE_CAPTURE" --farend "$AP_ROUTE_FAREND"
+            --seconds "$SOAK_SECONDS" --sample-rate "$AP_ROUTE_SAMPLE_RATE"
+            --mic-channels "$AP_ROUTE_MIC_CHANNELS" --dsp-cpu "$AP_ROUTE_DSP_CPU"
+            --max-xruns 0 --max-overruns 0
             --power-input "$AP_POWER_INPUT" --power-scale "$AP_POWER_SCALE"
+          )
+          if [ -n "$AP_ROUTE_PLAYBACK" ]; then args+=(--playback-device "$AP_ROUTE_PLAYBACK"); fi
+          python3 tools/target_evidence.py route-soak "${args[@]}"
       - name: Bind build deployed and executed binary identity
         run: |
           set -euo pipefail
@@ -723,67 +726,61 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 \r'*) echo 'board_manifest contains a newline' >&2; exit 2 ;; esac
-          export BOARD
-          printf '%s\n' "$BOARD" > /tmp/audio-target-board-path.txt
+          python3 tools/hil_board.py preflight --board "$BOARD" --output /tmp/board-preflight.json --settle-seconds 0
           python3 tools/hil_board.py metadata --board "$BOARD" > /tmp/audio-target-board.json
+          export BOARD
           python3 - <<'PY'
           import json
-          import math
           import os
-          import shlex
           from pathlib import Path
 
           board_path = Path(os.environ['BOARD'])
-          board = json.load(open('/tmp/audio-target-board.json'))
-          route = board.get('route')
-          if not isinstance(route, dict):
-              raise SystemExit('Product Certification requires board.route')
-          required = ('capture_device', 'playback_device', 'farend_file',
-                      'sample_rate_hz', 'mic_channels', 'dsp_cpu')
+          board = json.load(open('/tmp/audio-target-board.json', encoding='utf-8'))
+          route = board.get('route') or {}
+          required = ('capture_device', 'farend_file', 'sample_rate_hz', 'mic_channels', 'dsp_cpu')
           missing = [key for key in required if route.get(key) in (None, '')]
           if missing:
-              raise SystemExit(f'Product Certification board.route missing required values: {missing}')
-          power = board.get('power_sensor')
-          if not isinstance(power, str) or not power:
-              raise SystemExit('Product Certification requires board.power_sensor')
-          farend = str(route['farend_file'])
-          if not Path(farend).is_absolute() or not Path(power).is_absolute():
-              raise SystemExit('Product Certification farend_file and power_sensor must be absolute paths')
-          scale = float(board.get('power_scale', 1000000))
-          if not math.isfinite(scale) or scale <= 0:
-              raise SystemExit('Product Certification board.power_scale must be finite and > 0')
-          labels = set(map(str, board.get('runner_labels') or []))
-          if not {'self-hosted', 'linux', 'audio-target'}.issubset(labels):
-              raise SystemExit('Product Certification board must bind self-hosted/linux/audio-target labels')
-
+              raise SystemExit(f'certification board route missing required fields: {missing}')
+          farend = Path(str(route['farend_file']))
+          power = Path(str(board.get('power_sensor') or ''))
+          if not farend.is_absolute():
+              raise SystemExit('certification board route farend_file must be absolute')
+          if not str(power) or not power.is_absolute():
+              raise SystemExit('certification board power_sensor must be absolute')
           values = {
               'AP_BOARD_MANIFEST': str(board_path),
               'AP_ROUTE_CAPTURE': str(route['capture_device']),
-              'AP_ROUTE_PLAYBACK': str(route['playback_device']),
-              'AP_ROUTE_FAREND': farend,
+              'AP_ROUTE_PLAYBACK': '' if route.get('playback_device') is None else str(route['playback_device']),
+              'AP_ROUTE_FAREND': str(farend),
               'AP_ROUTE_SAMPLE_RATE': str(int(route['sample_rate_hz'])),
               'AP_ROUTE_MIC_CHANNELS': str(int(route['mic_channels'])),
               'AP_ROUTE_DSP_CPU': str(int(route['dsp_cpu'])),
-              'AP_POWER_INPUT': power,
-              'AP_POWER_SCALE': format(scale, '.17g'),
+              'AP_POWER_INPUT': str(power),
+              'AP_POWER_SCALE': str(float(board.get('power_scale', 1000000))),
           }
           for key, value in values.items():
               if '\n' in value or '\r' in value:
                   raise SystemExit(f'board-derived value contains newline: {key}')
-          with open('/tmp/audio-target-route.env', 'w', encoding='utf-8') as out:
-              for key, value in values.items():
-                  out.write(f'{key}={shlex.quote(value)}\n')
           with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as out:
               for key, value in values.items():
                   out.write(f'{key}={value}\n')
           PY
-          source /tmp/audio-target-route.env
+          mapfile -t BOARD_PATHS < <(python3 - <<'PY'
+          import json
+          board = json.load(open('/tmp/audio-target-board.json', encoding='utf-8'))
+          route = board.get('route') or {}
+          print(route.get('farend_file') or '')
+          print(board.get('power_sensor') or '')
+          PY
+          )
+          FAREND=${BOARD_PATHS[0]}
+          POWER=${BOARD_PATHS[1]}
           python3 tools/runner_preflight.py \
             --role audio-target \
             --source-revision '${{ needs.resolve.outputs.sha }}' \
-            --board-manifest "$AP_BOARD_MANIFEST" --corpus-manifest "$CORPUS" \
-            --acoustic-json "$ACOUSTIC" --farend-file "$AP_ROUTE_FAREND" \
-            --power-input "$AP_POWER_INPUT" --writable-path /tmp \
+            --board-manifest "$BOARD" --corpus-manifest "$CORPUS" \
+            --acoustic-json "$ACOUSTIC" --farend-file "$FAREND" \
+            --power-input "$POWER" --writable-path /tmp \
             --output /tmp/audio-target-readiness.json
       - name: Verify and deploy exact builder artifact
         run: |

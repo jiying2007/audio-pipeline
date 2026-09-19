@@ -38,6 +38,7 @@ The search is intentionally tiered:
 
 - `search-spaces/call-pr-smoke-v1.json` is the bounded PR neighborhood. It probes representative AEC and NS neighbors while retaining the baseline and the full independent replay gates.
 - `search-spaces/call-v1.json` is the wider scheduled/manual search over all four runtime-safe controls.
+- `search-spaces/call-interaction-v1.json` is a bounded Cartesian research run over `ns_floor` x `agc_target_dbfs`. One-at-a-time cannot express combinations, and these two controls stack: on the regression corpus the best single-control change scores 1.5458 while the best gated combination reaches 3.0721. It is a research/discovery space, not a promotion path.
 
 Both start from the shipping CALL defaults and use the controls exposed by `ap_tuning_t`:
 

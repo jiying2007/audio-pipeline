@@ -7,8 +7,8 @@
     "tiny": 25408
   },
   "runtime_state_bytes": {
-    "full": 32760,
-    "tiny": 5176
+    "full": 32768,
+    "tiny": 5184
   },
   "schema_version": 1
 }

@@ -42,6 +42,22 @@
               "max_regression": {"type": "number", "minimum": 0}
             }
           }
+        },
+        "case_delta_gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["metric", "stat"],
+            "anyOf": [{"required": ["minimum_delta"]}, {"required": ["maximum_delta"]}],
+            "properties": {
+              "metric": {"type": "string", "minLength": 1},
+              "stat": {"enum": ["min", "max", "p10", "median"]},
+              "minimum_delta": {"type": "number"},
+              "maximum_delta": {"type": "number"},
+              "min_cases": {"type": "integer", "minimum": 1}
+            }
+          }
         }
       }
     }

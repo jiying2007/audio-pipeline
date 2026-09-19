@@ -112,11 +112,25 @@ def validate_search_space(space: dict[str, Any]) -> None:
     for gate in case_gates:
         if not isinstance(gate, dict) or not str(gate.get("metric", "")):
             raise ValueError("case delta gate metric is required")
-        if gate.get("stat") not in {"min", "p10", "median"}:
-            raise ValueError("case delta gate stat must be min, p10 or median")
-        minimum = float(gate.get("minimum_delta", float("nan")))
-        if not math.isfinite(minimum):
+        if gate.get("stat") not in {"min", "p10", "median", "max"}:
+            raise ValueError("case delta gate stat must be min, p10, median or max")
+        minimum_raw = gate.get("minimum_delta")
+        maximum_raw = gate.get("maximum_delta")
+        if minimum_raw is None and maximum_raw is None:
+            raise ValueError(
+                "case delta gate requires minimum_delta or maximum_delta")
+        if minimum_raw is not None and not math.isfinite(float(minimum_raw)):
             raise ValueError("case delta gate minimum_delta must be finite")
+        if maximum_raw is not None and not math.isfinite(float(maximum_raw)):
+            raise ValueError("case delta gate maximum_delta must be finite")
+        if (minimum_raw is not None and maximum_raw is not None and
+                float(minimum_raw) > float(maximum_raw)):
+            raise ValueError(
+                "case delta gate minimum_delta must not exceed maximum_delta")
+        min_cases = gate.get("min_cases", 1)
+        if isinstance(min_cases, bool) or not isinstance(min_cases, int) or \
+                min_cases < 1:
+            raise ValueError("case delta gate min_cases must be a positive integer")
 
 
 def tuning_id(tuning: dict[str, float]) -> str:
@@ -274,41 +288,63 @@ def case_delta_gate_violations(space: dict[str, Any], baseline: dict[str, Any],
     for gate in gates:
         metric = str(gate["metric"])
         stat = str(gate["stat"])
-        minimum = float(gate["minimum_delta"])
+        minimum_raw = gate.get("minimum_delta")
+        maximum_raw = gate.get("maximum_delta")
+        minimum = float(minimum_raw) if minimum_raw is not None else None
+        maximum = float(maximum_raw) if maximum_raw is not None else None
+        min_cases = int(gate.get("min_cases", 1))
         deltas: list[float] = []
-        missing: list[str] = []
+        asymmetric: list[str] = []
         for case_id in sorted(baseline_cases):
             base_value = baseline_cases[case_id].get("metrics", {}).get(metric)
             cand_value = candidate_cases[case_id].get("metrics", {}).get(metric)
-            if base_value is None or cand_value is None:
-                missing.append(case_id)
+            base_ok = isinstance(base_value, (int, float)) and \
+                math.isfinite(float(base_value))
+            cand_ok = isinstance(cand_value, (int, float)) and \
+                math.isfinite(float(cand_value))
+            if base_ok != cand_ok:
+                asymmetric.append(case_id)
                 continue
-            base_float = float(base_value)
-            cand_float = float(cand_value)
-            if not math.isfinite(base_float) or not math.isfinite(cand_float):
-                missing.append(case_id)
+            if not base_ok:
                 continue
-            deltas.append(cand_float - base_float)
-        if missing:
+            deltas.append(float(cand_value) - float(base_value))
+        if asymmetric:
             violations.append({
-                "gate": "case_metric_missing", "metric": metric,
-                "missing_cases": missing[:8], "missing_count": len(missing),
+                "gate": "case_metric_coverage_mismatch", "metric": metric,
+                "cases": asymmetric[:8], "count": len(asymmetric),
+            })
+            continue
+        if not deltas:
+            violations.append({
+                "gate": "case_gate_not_applicable", "metric": metric,
+                "cases": 0, "min_cases": min_cases,
+            })
+            continue
+        if len(deltas) < min_cases:
+            violations.append({
+                "gate": "case_gate_insufficient_cases", "metric": metric,
+                "cases": len(deltas), "min_cases": min_cases,
             })
             continue
         if stat == "min":
             actual = min(deltas)
+        elif stat == "max":
+            actual = max(deltas)
         elif stat == "p10":
             actual = percentile(deltas, 0.10)
         else:
             actual = percentile(deltas, 0.50)
         summary = {
             "metric": metric, "stat": stat, "actual_delta": actual,
-            "minimum_delta": minimum, "cases": len(deltas),
+            "minimum_delta": minimum, "maximum_delta": maximum,
+            "cases": len(deltas),
             "worsened_cases": sum(delta < 0.0 for delta in deltas),
         }
         summaries.append(summary)
-        if actual < minimum - 1.0e-12:
+        if minimum is not None and actual < minimum - 1.0e-12:
             violations.append({"gate": "case_delta_regression", **summary})
+        if maximum is not None and actual > maximum + 1.0e-12:
+            violations.append({"gate": "case_delta_excursion", **summary})
     return summaries, violations
 
 
@@ -609,6 +645,106 @@ def self_test() -> None:
     _, violations = case_delta_gate_violations(tail_space, tail_base, missing_case)
     mismatch = next(item for item in violations if item["gate"] == "case_set_mismatch")
     assert mismatch["missing_count"] == 1 and mismatch["extra_count"] == 0
+    # Metrics are intrinsically per-scenario, so a gate must apply to the subset
+    # of cases that define the metric instead of failing the whole candidate.
+    partial_space = json.loads(json.dumps(space))
+    partial_space["objective"]["case_delta_gates"] = [
+        {"metric": "speech", "stat": "min", "minimum_delta": -0.75, "min_cases": 1},
+    ]
+    validate_search_space(partial_space)
+    partial_base = {"cases": [
+        {"case_id": "echo", "metrics": {"speech": 4.0}},
+        {"case_id": "clean", "metrics": {"erle": 12.0}},
+    ]}
+    partial_good = {"cases": [
+        {"case_id": "echo", "metrics": {"speech": 3.8}},
+        {"case_id": "clean", "metrics": {"erle": 12.0}},
+    ]}
+    partial_summary, partial_violations = case_delta_gate_violations(
+        partial_space, partial_base, partial_good)
+    assert len(partial_summary) == 1 and not partial_violations
+    assert partial_summary[0]["cases"] == 1
+    assert abs(partial_summary[0]["actual_delta"] + 0.20) < 1.0e-9
+    partial_bad = {"cases": [
+        {"case_id": "echo", "metrics": {"speech": 3.0}},
+        {"case_id": "clean", "metrics": {"erle": 12.0}},
+    ]}
+    _, partial_violations = case_delta_gate_violations(
+        partial_space, partial_base, partial_bad)
+    assert any(item["gate"] == "case_delta_regression" for item in partial_violations)
+    asymmetric = {"cases": [
+        {"case_id": "echo", "metrics": {"speech": 3.8}},
+        {"case_id": "clean", "metrics": {"erle": 12.0, "speech": 1.0}},
+    ]}
+    _, partial_violations = case_delta_gate_violations(
+        partial_space, partial_base, asymmetric)
+    assert any(item["gate"] == "case_metric_coverage_mismatch"
+               for item in partial_violations)
+    absent_base = {"cases": [
+        {"case_id": "a", "metrics": {"erle": 10.0}},
+        {"case_id": "b", "metrics": {"erle": 11.0}},
+    ]}
+    absent_cand = {"cases": [
+        {"case_id": "a", "metrics": {"erle": 10.5}},
+        {"case_id": "b", "metrics": {"erle": 11.5}},
+    ]}
+    _, partial_violations = case_delta_gate_violations(
+        partial_space, absent_base, absent_cand)
+    assert any(item["gate"] == "case_gate_not_applicable"
+               for item in partial_violations)
+    min_cases_space = json.loads(json.dumps(space))
+    min_cases_space["objective"]["case_delta_gates"] = [
+        {"metric": "speech", "stat": "min", "minimum_delta": -0.75, "min_cases": 3},
+    ]
+    validate_search_space(min_cases_space)
+    _, partial_violations = case_delta_gate_violations(
+        min_cases_space, partial_base, partial_good)
+    assert any(item["gate"] == "case_gate_insufficient_cases"
+               for item in partial_violations)
+    upper_space = json.loads(json.dumps(space))
+    upper_space["objective"]["case_delta_gates"] = [
+        {"metric": "fpr", "stat": "max", "maximum_delta": 0.05},
+    ]
+    validate_search_space(upper_space)
+    upper_base = {"cases": [
+        {"case_id": "a", "metrics": {"fpr": 0.10}},
+        {"case_id": "b", "metrics": {"fpr": 0.20}},
+    ]}
+    upper_ok = {"cases": [
+        {"case_id": "a", "metrics": {"fpr": 0.12}},
+        {"case_id": "b", "metrics": {"fpr": 0.20}},
+    ]}
+    upper_summary, upper_violations = case_delta_gate_violations(
+        upper_space, upper_base, upper_ok)
+    assert not upper_violations
+    assert abs(upper_summary[0]["actual_delta"] - 0.02) < 1.0e-9
+    upper_bad = {"cases": [
+        {"case_id": "a", "metrics": {"fpr": 0.12}},
+        {"case_id": "b", "metrics": {"fpr": 0.28}},
+    ]}
+    _, upper_violations = case_delta_gate_violations(
+        upper_space, upper_base, upper_bad)
+    assert any(item["gate"] == "case_delta_excursion" for item in upper_violations)
+    unbounded = json.loads(json.dumps(space))
+    unbounded["objective"]["case_delta_gates"] = [
+        {"metric": "corr", "stat": "min"},
+    ]
+    try:
+        validate_search_space(unbounded)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("case delta gate without a bound must fail closed")
+    inverted = json.loads(json.dumps(space))
+    inverted["objective"]["case_delta_gates"] = [
+        {"metric": "corr", "stat": "min", "minimum_delta": 0.0, "maximum_delta": -1.0},
+    ]
+    try:
+        validate_search_space(inverted)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("inverted case delta gate bounds must fail closed")
     with tempfile.TemporaryDirectory(prefix="ap-tuning-selftest-") as temporary:
         root = Path(temporary)
         for index, seed in enumerate((1, 2, 3)):

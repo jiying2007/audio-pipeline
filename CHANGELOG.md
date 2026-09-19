@@ -1,3 +1,8 @@
+# 2.3.24
+
+- Remove full-signal slice and float-list materialization from canonical SI-SDR evaluation. The evaluator now accumulates reference energy/cross energy and target/residual energy directly over the existing aligned sequences, reducing transient memory and allocation pressure for long validation corpora.
+- Preserve SI-SDR formula and sample traversal order; add a deterministic self-test that compares the allocation-free implementation against the previous allocating implementation to sub-picodB tolerance. Alignment windows, metric applicability, thresholds, report fields, product DSP, public API/ABI and Product Qualification authority are unchanged.
+
 # 2.3.23
 
 - Reuse the canonical bounded clean-input alignment for both input near-end SI-SDR and exact-reference applicability. Clean-reference cases now perform one input alignment search instead of recomputing the same search for the identity check; output alignment remains unchanged.

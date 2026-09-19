@@ -107,18 +107,34 @@ def dc_offset_dbfs(samples: Sequence[int]) -> float:
     return 20.0 * math.log10(mean / 32768.0)
 
 def si_sdr_db(reference: Sequence[int], estimate: Sequence[int]) -> float | None:
+    """Calculate SI-SDR without materializing full float copies of the signals."""
     count = min(len(reference), len(estimate))
     if count < 16:
         return None
-    ref = [float(x) for x in reference[:count]]
-    est = [float(x) for x in estimate[:count]]
-    ref_energy = sum(x * x for x in ref)
+
+    ref_energy = 0.0
+    cross = 0.0
+    for index in range(count):
+        ref = float(reference[index])
+        est = float(estimate[index])
+        ref_energy += ref * ref
+        cross += ref * est
     if ref_energy <= 1.0e-12:
         return None
-    scale = sum(r * e for r, e in zip(ref, est)) / ref_energy
-    target_energy = sum((scale * r) ** 2 for r in ref)
-    noise_energy = sum((e - scale * r) ** 2 for r, e in zip(ref, est))
-    return 10.0 * math.log10((target_energy + 1.0e-12) / (noise_energy + 1.0e-12))
+
+    scale = cross / ref_energy
+    target_energy = 0.0
+    noise_energy = 0.0
+    for index in range(count):
+        ref = float(reference[index])
+        est = float(estimate[index])
+        target = scale * ref
+        target_energy += target * target
+        residual = est - target
+        noise_energy += residual * residual
+    return 10.0 * math.log10(
+        (target_energy + 1.0e-12) / (noise_energy + 1.0e-12)
+    )
 
 
 def normalized_corr(a: Sequence[int], b: Sequence[int], lag: int, stride: int = 4) -> float:
@@ -752,6 +768,36 @@ def self_test() -> None:
     rate = 16000
     ref = [int(10000 * math.sin(math.tau * 440.0 * n / rate)) for n in range(rate)]
     assert (si_sdr_db(ref, ref) or 0) > 100
+
+    def allocating_si_sdr(reference: Sequence[int],
+                          estimate: Sequence[int]) -> float | None:
+        count = min(len(reference), len(estimate))
+        if count < 16:
+            return None
+        reference_f = [float(x) for x in reference[:count]]
+        estimate_f = [float(x) for x in estimate[:count]]
+        ref_energy = sum(x * x for x in reference_f)
+        if ref_energy <= 1.0e-12:
+            return None
+        scale = (
+            sum(r * e for r, e in zip(reference_f, estimate_f)) / ref_energy
+        )
+        target_energy = sum((scale * r) ** 2 for r in reference_f)
+        noise_energy = sum(
+            (e - scale * r) ** 2 for r, e in zip(reference_f, estimate_f)
+        )
+        return 10.0 * math.log10(
+            (target_energy + 1.0e-12) / (noise_energy + 1.0e-12)
+        )
+
+    probe = [((1103515245 * n + 12345) % 65536) - 32768 for n in range(4096)]
+    estimate = [int(0.83 * value) + ((n * 17) % 23) - 11
+                for n, value in enumerate(probe)]
+    current = si_sdr_db(probe, estimate)
+    legacy = allocating_si_sdr(probe, estimate)
+    assert current is not None and legacy is not None
+    assert abs(current - legacy) < 1.0e-12
+    assert si_sdr_db([0] * 64, [0] * 64) is None
     assert max_abs_corr(ref, ref, rate) > 0.99
     assert -11.0 < peak_dbfs([10000, -10000]) < -10.0
     assert clip_fraction([32767, -32768, 0, 1]) == 0.5

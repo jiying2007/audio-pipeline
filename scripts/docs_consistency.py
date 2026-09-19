@@ -162,20 +162,31 @@ def validate_supply_chain(root: Path, errors: list[str]) -> None:
         "directory: /lab",
         "package-ecosystem: docker",
         "directory: /ci",
-        "lab-python-patch:",
         "dependency-name: ubuntu",
     )
     for token in required_tokens:
         if token not in dependabot:
             errors.append(f"Dependabot supply-chain coverage missing token: {token}")
-    if "lab-python-dependencies:" in dependabot:
-        errors.append("lab dependency automation must not use the unrestricted legacy group")
-    if dependabot.count("version-update:semver-major") < 3:
-        errors.append("Dependabot must reject major updates for Actions, lab Python and CI Ubuntu")
-    if dependabot.count("version-update:semver-minor") < 2:
-        errors.append("Dependabot must reject minor updates for lab Python and CI Ubuntu")
-    if dependabot.count("          - patch") < 2:
-        errors.append("Dependabot must retain patch updates for Actions and lab Python")
+
+    lab_match = re.search(
+        r"(?ms)^  - package-ecosystem: pip\n    directory: /lab\n(?P<body>.*?)(?=^  - package-ecosystem:|\\Z)",
+        dependabot,
+    )
+    if not lab_match:
+        errors.append("Dependabot lab package block missing")
+    else:
+        lab_block = lab_match.group("body")
+        if not re.search(r"(?m)^    open-pull-requests-limit: 0$", lab_block):
+            errors.append("Dependabot ordinary /lab version-update PRs must remain disabled")
+        if "groups:" in lab_block or "update-types:" in lab_block:
+            errors.append("Dependabot /lab must not reintroduce ordinary grouped version updates")
+
+    if dependabot.count("version-update:semver-major") < 2:
+        errors.append("Dependabot must reject major updates for Actions and CI Ubuntu")
+    if dependabot.count("version-update:semver-minor") < 1:
+        errors.append("Dependabot must reject minor updates for CI Ubuntu")
+    if dependabot.count("          - patch") < 1:
+        errors.append("Dependabot must retain non-major patch coverage for Actions")
 
 
 def validate_validation_framework(root: Path, errors: list[str]) -> None:

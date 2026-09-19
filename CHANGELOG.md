@@ -1,3 +1,9 @@
+# 2.3.25
+
+- Remove the remaining PCM slice materialization from canonical near-end alignment. The evaluator now carries aligned reference/estimate start offsets plus sample count through SI-SDR and exact-reference applicability, so clean-input and output near-end metrics no longer need temporary aligned signal copies.
+- Retain the existing materializing `aligned_pair()` helper as a compatibility wrapper while canonical metric execution uses the allocation-free span path. Self-tests bind span offsets/count, legacy pair contents, SI-SDR and exact-identity results to the same alignment semantics.
+- Alignment search, SI-SDR formula, aggregate applicability, thresholds, report fields, product DSP, public API/ABI and Product Qualification authority are unchanged.
+
 # 2.3.24
 
 - Remove full-signal slice and float-list materialization from canonical SI-SDR evaluation. The evaluator now accumulates reference energy/cross energy and target/residual energy directly over the existing aligned sequences, reducing transient memory and allocation pressure for long validation corpora.

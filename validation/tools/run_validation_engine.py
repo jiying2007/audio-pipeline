@@ -194,15 +194,32 @@ def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
     return si_sdr_db(ref, est), alignment
 
 
+def _samples_identical(reference: Sequence[int], estimate: Sequence[int]) -> bool:
+    return (
+        len(reference) >= 16
+        and len(reference) == len(estimate)
+        and all(int(a) == int(b) for a, b in zip(reference, estimate))
+    )
+
+
+def aligned_si_sdr_and_identity(
+    reference: Sequence[int], estimate: Sequence[int],
+    sample_rate: int, expected_delay_samples: int,
+) -> tuple[float | None, int, bool]:
+    """Calculate input SI-SDR and exact-clean applicability from one alignment."""
+    ref, est, alignment = aligned_pair(
+        reference, estimate, sample_rate, expected_delay_samples
+    )
+    if len(ref) < 16:
+        return None, alignment, False
+    return si_sdr_db(ref, est), alignment, _samples_identical(ref, est)
+
+
 def aligned_samples_identical(reference: Sequence[int], estimate: Sequence[int],
                               sample_rate: int, expected_delay_samples: int) -> bool:
     """True only when the metric-aligned PCM input is exactly the clean reference."""
     ref, est, _ = aligned_pair(reference, estimate, sample_rate, expected_delay_samples)
-    return (
-        len(ref) >= 16
-        and len(ref) == len(est)
-        and all(int(a) == int(b) for a, b in zip(ref, est))
-    )
+    return _samples_identical(ref, est)
 
 
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
@@ -437,13 +454,17 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         clean, _ = read_audio(clean_path, rate, 1)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         expected_output_delay = declared_latency_ms * rate // 1000
-        input_sdr, input_alignment = aligned_si_sdr(clean, mic0, rate, 0)
-        output_sdr, output_alignment = aligned_si_sdr(clean, output, rate, expected_output_delay)
-        metrics["input_near_si_sdr_db"] = input_sdr
-        metrics["near_si_sdr_db"] = output_sdr
-        metrics["input_near_reference_identical"] = aligned_samples_identical(
+        # Input SI-SDR and exact-clean aggregate applicability share the
+        # same bounded alignment. Do not repeat the expensive lag sweep.
+        input_sdr, input_alignment, input_identical = aligned_si_sdr_and_identity(
             clean, mic0, rate, 0
         )
+        output_sdr, output_alignment = aligned_si_sdr(
+            clean, output, rate, expected_output_delay
+        )
+        metrics["input_near_si_sdr_db"] = input_sdr
+        metrics["near_si_sdr_db"] = output_sdr
+        metrics["input_near_reference_identical"] = input_identical
         metrics["declared_algorithmic_latency_ms"] = declared_latency_ms
         metrics["input_alignment_samples"] = input_alignment
         metrics["output_alignment_samples"] = output_alignment
@@ -771,6 +792,17 @@ def self_test() -> None:
     identical = [(1103515245 * n + 12345) % 65536 - 32768 for n in range(640)]
     almost_identical = list(identical)
     almost_identical[37] += 1
+    identical_sdr, identical_alignment, identical_flag = aligned_si_sdr_and_identity(
+        identical, identical, rate, 0
+    )
+    assert identical_sdr is not None and identical_sdr > 100
+    assert identical_alignment == 0 and identical_flag
+    almost_sdr, _, almost_flag = aligned_si_sdr_and_identity(
+        identical, almost_identical, rate, 0
+    )
+    assert almost_sdr is not None and not almost_flag
+    # Keep the identity-only helper behavior covered for external validation
+    # tooling that may import this internal evaluator module directly.
     assert aligned_samples_identical(identical, identical, rate, 0)
     assert not aligned_samples_identical(identical, almost_identical, rate, 0)
     improvement_cases = [

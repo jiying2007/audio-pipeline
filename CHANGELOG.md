@@ -1,3 +1,9 @@
+# 2.3.23
+
+- Reuse the canonical bounded near-input alignment result for both input SI-SDR and exact-clean aggregate applicability instead of running the same lag-correlation search twice for every case with a clean near-end reference.
+- Preserve the existing output alignment path and exact-clean definition; this removes one full Python alignment sweep from eligible cases without changing per-case metric values, aggregate applicability, thresholds or fail-closed behavior.
+- Product DSP, public API/ABI, dataset locks, shipping defaults, real-target gates and Product Qualification authority are unchanged.
+
 # 2.3.22
 
 - Fix near-end SI-SDR improvement aggregates being dominated by cases whose metric-aligned microphone PCM is exactly the clean near-end reference. Those inputs have no artifact to remove; their very large finite input SI-SDR comes only from the evaluator numerical floor, so subtracting it turns pipeline insertion into a meaningless roughly -230 dB "improvement".

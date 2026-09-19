@@ -575,14 +575,14 @@ def threshold_violations(metrics: dict, expected: dict) -> list[dict]:
     return violations
 
 
-def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
+def evaluate_case_runtime(corpus_path: Path, case: dict,
+                          output: Sequence[int], trace: list[dict],
+                          inputs: dict) -> dict:
+    """Evaluate one already-invoked case without running the processor again."""
     rate = int(case["sample_rate_hz"])
     channels = int(case["mic_channels"])
     if rate not in SUPPORTED_RATES or channels not in (1, 2):
         raise ValueError(f"unsupported geometry in {case['case_id']}")
-    with tempfile.TemporaryDirectory(prefix="ap-validation-") as temporary:
-        work = Path(temporary)
-        output, trace, inputs = invoke(processor, case, corpus_path, work)
     mic0 = mono_view(inputs["mic"], channels)
     input_rms = rms_dbfs(mic0)
     output_rms = rms_dbfs(output)
@@ -658,6 +658,19 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         "source": case.get("source", {}), "dimensions": case.get("dimensions", {}),
         "metrics": metrics, "violations": violations, "passed": not violations,
     }
+
+
+def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
+    """Invoke the processor once, then evaluate the canonical runtime result."""
+    rate = int(case["sample_rate_hz"])
+    channels = int(case["mic_channels"])
+    if rate not in SUPPORTED_RATES or channels not in (1, 2):
+        raise ValueError(f"unsupported geometry in {case['case_id']}")
+    with tempfile.TemporaryDirectory(prefix="ap-validation-") as temporary:
+        work = Path(temporary)
+        output, trace, inputs = invoke(processor, case, corpus_path, work)
+    return evaluate_case_runtime(corpus_path, case, output, trace, inputs)
+
 
 def metric_values(cases: list[dict], name: str) -> list[float]:
     """Return aggregate-applicable values for one metric.

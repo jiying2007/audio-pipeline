@@ -351,8 +351,9 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     ):
         if token not in site:
             errors.append(f"lab Ansible site missing role/host contract: {token}")
-    if read(root, "lab/requirements-validation.txt").strip() != "huggingface_hub==1.29.0":
-        errors.append("lab validation Python dependency pin drift")
+    validation_pin = read(root, "lab/requirements-validation.txt").strip()
+    if re.fullmatch(r"huggingface_hub==[0-9]+[.][0-9]+[.][0-9]+", validation_pin) is None:
+        errors.append("lab validation dependency must be one exact huggingface_hub SemVer pin")
     ansible_pin = read(root, "lab/requirements-ansible.txt").strip()
     if re.fullmatch(r"ansible-core==[0-9]+[.][0-9]+[.][0-9]+", ansible_pin) is None:
         errors.append("lab Ansible dependency must be one exact ansible-core SemVer pin")

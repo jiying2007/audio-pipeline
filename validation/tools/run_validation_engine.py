@@ -27,25 +27,37 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def decode_raw_bytes(data: bytes, source: Path | str) -> list[int]:
-    """Decode one in-memory S16LE buffer without re-reading its source."""
+def decode_raw_array(data: bytes, source: Path | str) -> array.array:
+    """Decode one in-memory S16LE buffer into its compact array representation."""
     if len(data) % 2:
         raise ValueError(f"odd S16LE byte count: {source}")
     values = array.array("h")
     values.frombytes(data)
     if os.sys.byteorder != "little":
         values.byteswap()
-    return list(values)
+    return values
+
+
+def decode_raw_bytes(data: bytes, source: Path | str) -> list[int]:
+    """Compatibility list decoder for existing callers."""
+    return list(decode_raw_array(data, source))
+
+
+def read_raw_array(path: Path) -> array.array:
+    return decode_raw_array(path.read_bytes(), path)
 
 
 def read_raw(path: Path) -> list[int]:
-    return decode_raw_bytes(path.read_bytes(), path)
+    """Compatibility list reader; canonical validation uses read_raw_array."""
+    return list(read_raw_array(path))
 
 
-def read_audio(path: Path, expected_rate: int, expected_channels: int) -> tuple[list[int], bytes]:
+def read_audio_array(path: Path, expected_rate: int,
+                     expected_channels: int) -> tuple[array.array, bytes]:
+    """Read PCM/WAV into a compact array plus the processor-ready raw bytes."""
     if path.suffix.lower() != ".wav":
         raw = path.read_bytes()
-        return decode_raw_bytes(raw, path), raw
+        return decode_raw_array(raw, path), raw
     with wave.open(str(path), "rb") as handle:
         channels = handle.getnchannels()
         rate = handle.getframerate()
@@ -58,10 +70,13 @@ def read_audio(path: Path, expected_rate: int, expected_channels: int) -> tuple[
         if width != 2 or compression != "NONE":
             raise ValueError(f"only uncompressed PCM16 WAV is supported: {path}")
         raw = handle.readframes(handle.getnframes())
-    values = array.array("h")
-    values.frombytes(raw)
-    if os.sys.byteorder != "little":
-        values.byteswap()
+    return decode_raw_array(raw, path), raw
+
+
+def read_audio(path: Path, expected_rate: int,
+               expected_channels: int) -> tuple[list[int], bytes]:
+    """Compatibility list reader; canonical validation uses read_audio_array."""
+    values, raw = read_audio_array(path, expected_rate, expected_channels)
     return list(values), raw
 
 
@@ -444,7 +459,7 @@ def load_labels(path: Path) -> list[int]:
     return labels
 
 
-def stage_audio(path: Path, rate: int, channels: int, directory: Path, name: str) -> tuple[list[int], Path]:
+def stage_audio(path: Path, rate: int, channels: int, directory: Path, name: str) -> tuple[Sequence[int], Path]:
     """Return decoded samples and a processor-ready raw PCM path.
 
     Existing raw PCM is already processor-ready, so reuse its source path
@@ -452,14 +467,14 @@ def stage_audio(path: Path, rate: int, channels: int, directory: Path, name: str
     requires decoding and staging as raw S16LE.
     """
     if path.suffix.lower() != ".wav":
-        return read_raw(path), path
-    values, raw = read_audio(path, rate, channels)
+        return read_raw_array(path), path
+    values, raw = read_audio_array(path, rate, channels)
     staged = directory / name
     staged.write_bytes(raw)
     return values, staged
 
 
-def invoke(processor: Path, case: dict, corpus_path: Path, work: Path) -> tuple[list[int], list[dict], dict]:
+def invoke(processor: Path, case: dict, corpus_path: Path, work: Path) -> tuple[Sequence[int], list[dict], dict]:
     rate = int(case["sample_rate_hz"])
     channels = int(case["mic_channels"])
     mic_path = resolve(corpus_path, case["mic_audio"])
@@ -490,7 +505,7 @@ def invoke(processor: Path, case: dict, corpus_path: Path, work: Path) -> tuple[
     else:
         command += [str(mic_raw), str(render_raw), str(output_path)]
     subprocess.run(command, check=True)
-    output = read_raw(output_path)
+    output = read_raw_array(output_path)
     trace = []
     if metrics_path.exists():
         for line in metrics_path.read_text(encoding="utf-8").splitlines():
@@ -572,7 +587,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         })
     clean_path = resolve(corpus_path, case.get("clean_near_audio"))
     if clean_path is not None:
-        clean, _ = read_audio(clean_path, rate, 1)
+        clean, _ = read_audio_array(clean_path, rate, 1)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         expected_output_delay = declared_latency_ms * rate // 1000
         input_ref_start, input_est_start, input_count, input_alignment = aligned_span(
@@ -593,7 +608,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         metrics["near_si_sdr_improvement_db"] = None if input_sdr is None or output_sdr is None else output_sdr - input_sdr
     echo_path = resolve(corpus_path, case.get("echo_audio"))
     if echo_path is not None:
-        echo, _ = read_audio(echo_path, rate, 1)
+        echo, _ = read_audio_array(echo_path, rate, 1)
         metrics["erle_db"] = erle_db(echo, output)
     labels_path = resolve(corpus_path, case.get("vad_labels"))
     if labels_path is not None:
@@ -920,6 +935,9 @@ def self_test() -> None:
     if os.sys.byteorder != "little":
         pcm_values.byteswap()
     pcm_bytes = pcm_values.tobytes()
+    compact_pcm = decode_raw_array(pcm_bytes, "self-test")
+    assert isinstance(compact_pcm, array.array)
+    assert list(compact_pcm) == pcm_probe
     assert decode_raw_bytes(pcm_bytes, "self-test") == pcm_probe
     with tempfile.TemporaryDirectory(prefix="ap-stage-audio-self-test-") as temporary:
         root = Path(temporary)

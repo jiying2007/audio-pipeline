@@ -198,7 +198,11 @@ def aligned_samples_identical(reference: Sequence[int], estimate: Sequence[int],
                               sample_rate: int, expected_delay_samples: int) -> bool:
     """True only when the metric-aligned PCM input is exactly the clean reference."""
     ref, est, _ = aligned_pair(reference, estimate, sample_rate, expected_delay_samples)
-    return len(ref) >= 16 and list(ref) == list(est)
+    return (
+        len(ref) >= 16
+        and len(ref) == len(est)
+        and all(int(a) == int(b) for a, b in zip(ref, est))
+    )
 
 
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
@@ -406,7 +410,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
     mic0 = mono(inputs["mic"], channels)
     input_rms = rms_dbfs(mic0)
     output_rms = rms_dbfs(output)
-    metrics: dict[str, float | int | None] = {
+    metrics: dict[str, float | int | bool | None] = {
         "input_rms_dbfs": input_rms,
         "output_rms_dbfs": output_rms,
         "output_rms_delta_db": output_rms - input_rms,

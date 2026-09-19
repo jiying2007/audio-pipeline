@@ -428,6 +428,10 @@ def self_test() -> None:
     assert dispatch_validation_args.data_root is None
     dispatch_hil_args = parser().parse_args(["dispatch-hil", "--source-revision", "0" * 40])
     assert dispatch_hil_args.board is None
+    for retired in ("capture", "playback", "farend", "power"):
+        assert not hasattr(dispatch_hil_args, retired)
+    target_readiness_args = parser().parse_args(["target-readiness", "--source-revision", "0" * 40])
+    assert not hasattr(target_readiness_args, "power_input")
     site = (REPO_ROOT / "lab/ansible/site.yml").read_text(encoding="utf-8")
     inventory = (REPO_ROOT / "lab/ansible/inventory.example.yml").read_text(encoding="utf-8")
     runner_role = (REPO_ROOT / "lab/ansible/roles/github_runner/tasks/main.yml").read_text(encoding="utf-8")

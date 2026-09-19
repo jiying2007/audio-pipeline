@@ -44,7 +44,21 @@ def decode_raw_bytes(data: bytes, source: Path | str) -> list[int]:
 
 
 def read_raw_array(path: Path) -> array.array:
-    return decode_raw_array(path.read_bytes(), path)
+    """Read S16LE PCM directly into compact array storage without a bytes copy."""
+    size = path.stat().st_size
+    if size % 2:
+        raise ValueError(f"odd S16LE byte count: {path}")
+    values = array.array("h")
+    count = size // 2
+    if count:
+        with path.open("rb") as handle:
+            try:
+                values.fromfile(handle, count)
+            except EOFError as exc:
+                raise ValueError(f"short S16LE read: {path}") from exc
+    if os.sys.byteorder != "little":
+        values.byteswap()
+    return values
 
 
 def read_raw(path: Path) -> list[int]:
@@ -75,9 +89,18 @@ def read_audio_array(path: Path, expected_rate: int,
 
 def read_audio(path: Path, expected_rate: int,
                expected_channels: int) -> tuple[list[int], bytes]:
-    """Compatibility list reader; canonical validation uses read_audio_array."""
+    """Compatibility list reader; canonical validation uses compact readers."""
     values, raw = read_audio_array(path, expected_rate, expected_channels)
     return list(values), raw
+
+
+def read_audio_samples(path: Path, expected_rate: int,
+                       expected_channels: int) -> array.array:
+    """Read only decoded samples, avoiding a raw-bytes buffer for PCM inputs."""
+    if path.suffix.lower() != ".wav":
+        return read_raw_array(path)
+    values, _ = read_audio_array(path, expected_rate, expected_channels)
+    return values
 
 
 def resolve(corpus_path: Path, value: str | None) -> Path | None:
@@ -587,7 +610,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         })
     clean_path = resolve(corpus_path, case.get("clean_near_audio"))
     if clean_path is not None:
-        clean, _ = read_audio_array(clean_path, rate, 1)
+        clean = read_audio_samples(clean_path, rate, 1)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         expected_output_delay = declared_latency_ms * rate // 1000
         input_ref_start, input_est_start, input_count, input_alignment = aligned_span(
@@ -608,7 +631,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         metrics["near_si_sdr_improvement_db"] = None if input_sdr is None or output_sdr is None else output_sdr - input_sdr
     echo_path = resolve(corpus_path, case.get("echo_audio"))
     if echo_path is not None:
-        echo, _ = read_audio_array(echo_path, rate, 1)
+        echo = read_audio_samples(echo_path, rate, 1)
         metrics["erle_db"] = erle_db(echo, output)
     labels_path = resolve(corpus_path, case.get("vad_labels"))
     if labels_path is not None:
@@ -943,6 +966,8 @@ def self_test() -> None:
         root = Path(temporary)
         raw_path = root / "input.pcm"
         raw_path.write_bytes(pcm_bytes)
+        assert list(read_raw_array(raw_path)) == pcm_probe
+        assert list(read_audio_samples(raw_path, rate, 1)) == pcm_probe
         stage_root = root / "stage"
         stage_root.mkdir()
         staged_values, staged_path = stage_audio(

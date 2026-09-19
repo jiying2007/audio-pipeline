@@ -1,7 +1,7 @@
 # 2.3.20
 
 - Fix Linux runtime command admission across queued RESET: the producer-side AGC target/limiter projection now rewinds to the immutable pipeline configuration that RESET will restore before validating later partial SET_TUNING commands.
-- Add a deterministic two-slot regression where the live pipeline is pre-tuned to (-3, -2), RESET is queued, and a limiter-only -4 dBFS update must be accepted against the reset configuration (-20, -2) rather than rejected against stale live tuning.
+- Add deterministic two-slot regressions in both directions: after queued RESET, limiter-only -4 dBFS must be accepted when the reset target is -20 dBFS even if live tuning was -3 dBFS, and rejected when the reset target is -3 dBFS even if live tuning was -20 dBFS.
 - Keep the public API/ABI, DSP algorithms, acoustic thresholds, research authority and Product Qualification authority unchanged. The Linux runtime private state grows by 8 bytes to preserve both reset-baseline and queued projected AGC pairs.
 
 # 2.3.19

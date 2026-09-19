@@ -286,12 +286,18 @@ def aligned_samples_identical(reference: Sequence[int], estimate: Sequence[int],
 
 
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
+    """Calculate tail-half ERLE without materializing PCM slices."""
     count = min(len(echo), len(output))
     if count < 160:
         return None
     start = count // 2
-    ein = sum(float(x) * float(x) for x in echo[start:count])
-    eout = sum(float(x) * float(x) for x in output[start:count])
+    ein = 0.0
+    eout = 0.0
+    for index in range(start, count):
+        echo_sample = float(echo[index])
+        output_sample = float(output[index])
+        ein += echo_sample * echo_sample
+        eout += output_sample * output_sample
     if ein <= 1.0e-12:
         return None
     return 10.0 * math.log10((ein + 1.0e-12) / (eout + 1.0e-12))
@@ -868,6 +874,23 @@ def self_test() -> None:
     delayed_sdr, alignment = aligned_si_sdr(broadband, delayed, rate, 137)
     assert alignment == 137
     assert delayed_sdr is not None and delayed_sdr > 100
+
+    erle_echo = [((n * 7919) % 20001) - 10000 for n in range(4096)]
+    erle_output = [int(0.37 * value) for value in erle_echo]
+    erle_count = min(len(erle_echo), len(erle_output))
+    erle_start = erle_count // 2
+    legacy_erle_in = sum(
+        float(x) * float(x) for x in erle_echo[erle_start:erle_count]
+    )
+    legacy_erle_out = sum(
+        float(x) * float(x) for x in erle_output[erle_start:erle_count]
+    )
+    legacy_erle = 10.0 * math.log10(
+        (legacy_erle_in + 1.0e-12) / (legacy_erle_out + 1.0e-12)
+    )
+    current_erle = erle_db(erle_echo, erle_output)
+    assert current_erle is not None
+    assert abs(current_erle - legacy_erle) < 1.0e-12
     trace = [{"vad_active": 0}, {"vad_active": 1}, {"vad_active": 1}, {"vad_active": 0}]
     stats = vad_stats([0, 1, 1, 0], trace)
     assert stats["f1"] == 1.0 and stats["recall"] == 1.0 and stats["false_positive_rate"] == 0.0

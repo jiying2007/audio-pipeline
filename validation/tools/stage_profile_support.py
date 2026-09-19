@@ -49,7 +49,7 @@ def install(engine: Any) -> None:
             "--capture-only", str(mic_raw), str(output_path),
         ]
         subprocess.run(command, check=True)
-        output = engine.read_raw(output_path)
+        output = engine.read_raw_array(output_path)
         trace = []
         if metrics_path.exists():
             for line in metrics_path.read_text(encoding="utf-8").splitlines():

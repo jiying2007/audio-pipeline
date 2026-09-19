@@ -1,6 +1,7 @@
 # 2.3.19
 
 - Update the exact-pinned laboratory provisioning dependency from `ansible-core==2.19.12` to `ansible-core==2.19.13`; lab/provisioning changes remain release-bearing and do not bypass the repository SemVer gate.
+- Remove the duplicate Ansible version literal from the documentation consistency checker: `lab/requirements-ansible.txt` is now the single version authority, while CI still requires exactly one `ansible-core==X.Y.Z` SemVer pin.
 - Realtime DSP, public API/ABI, acoustic thresholds, shipping defaults, HIL readiness and Product Qualification authority are unchanged.
 
 # 2.3.18

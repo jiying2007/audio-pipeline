@@ -1,3 +1,9 @@
+# 2.3.27
+
+- Fuse clean-input exact-reference detection into the first canonical SI-SDR span pass. Near-end input cases now derive SI-SDR and exact-identity applicability in the same two PCM scans instead of running a third full identity scan.
+- Preserve SI-SDR math, alignment, exact-identity semantics (including identical silence), aggregate applicability, thresholds and report fields. Self-tests bind fused results to the existing standalone identity path for identical, non-identical and zero-energy inputs.
+- Product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.26
 
 - Remove tail-half PCM slice materialization from canonical ERLE evaluation. The evaluator now accumulates echo/output energy directly over the existing second-half span, reducing transient allocation and memory bandwidth for long AEC validation cases.

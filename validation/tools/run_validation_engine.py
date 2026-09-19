@@ -106,27 +106,33 @@ def dc_offset_dbfs(samples: Sequence[int]) -> float:
         return -120.0
     return 20.0 * math.log10(mean / 32768.0)
 
-def si_sdr_span(reference: Sequence[int], estimate: Sequence[int],
+def _si_sdr_span(reference: Sequence[int], estimate: Sequence[int],
                  reference_start: int, estimate_start: int,
-                 count: int) -> float | None:
-    """Calculate SI-SDR over an existing signal span without copying samples."""
+                 count: int, *, track_identity: bool
+                 ) -> tuple[float | None, bool]:
+    """Calculate SI-SDR and optionally exact identity over one existing span."""
     available = min(
         max(0, len(reference) - reference_start),
         max(0, len(estimate) - estimate_start),
     )
     count = min(max(0, int(count)), available)
     if count < 16:
-        return None
+        return None, False
 
     ref_energy = 0.0
     cross = 0.0
+    identical = True
     for offset in range(count):
-        ref = float(reference[reference_start + offset])
-        est = float(estimate[estimate_start + offset])
+        ref_raw = reference[reference_start + offset]
+        est_raw = estimate[estimate_start + offset]
+        if track_identity and int(ref_raw) != int(est_raw):
+            identical = False
+        ref = float(ref_raw)
+        est = float(est_raw)
         ref_energy += ref * ref
         cross += ref * est
     if ref_energy <= 1.0e-12:
-        return None
+        return None, identical if track_identity else False
 
     scale = cross / ref_energy
     target_energy = 0.0
@@ -138,8 +144,32 @@ def si_sdr_span(reference: Sequence[int], estimate: Sequence[int],
         target_energy += target * target
         residual = est - target
         noise_energy += residual * residual
-    return 10.0 * math.log10(
-        (target_energy + 1.0e-12) / (noise_energy + 1.0e-12)
+    return (
+        10.0 * math.log10(
+            (target_energy + 1.0e-12) / (noise_energy + 1.0e-12)
+        ),
+        identical if track_identity else False,
+    )
+
+
+def si_sdr_span(reference: Sequence[int], estimate: Sequence[int],
+                 reference_start: int, estimate_start: int,
+                 count: int) -> float | None:
+    """Calculate SI-SDR over an existing signal span without copying samples."""
+    value, _ = _si_sdr_span(
+        reference, estimate, reference_start, estimate_start, count,
+        track_identity=False,
+    )
+    return value
+
+
+def si_sdr_span_with_identity(reference: Sequence[int], estimate: Sequence[int],
+                              reference_start: int, estimate_start: int,
+                              count: int) -> tuple[float | None, bool]:
+    """Calculate SI-SDR and exact identity in the same two span scans."""
+    return _si_sdr_span(
+        reference, estimate, reference_start, estimate_start, count,
+        track_identity=True,
     )
 
 
@@ -526,7 +556,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         input_ref_start, input_est_start, input_count, input_alignment = aligned_span(
             clean, mic0, rate, 0
         )
-        input_sdr = si_sdr_span(
+        input_sdr, input_identical = si_sdr_span_with_identity(
             clean, mic0, input_ref_start, input_est_start, input_count
         )
         output_sdr, output_alignment = aligned_si_sdr(
@@ -534,9 +564,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         )
         metrics["input_near_si_sdr_db"] = input_sdr
         metrics["near_si_sdr_db"] = output_sdr
-        metrics["input_near_reference_identical"] = aligned_span_identical(
-            clean, mic0, input_ref_start, input_est_start, input_count
-        )
+        metrics["input_near_reference_identical"] = input_identical
         metrics["declared_algorithmic_latency_ms"] = declared_latency_ms
         metrics["input_alignment_samples"] = input_alignment
         metrics["output_alignment_samples"] = output_alignment
@@ -925,12 +953,28 @@ def self_test() -> None:
     assert si_sdr_span(
         identical, identical, ref_start, est_start, span_count
     ) == wrapped_sdr
+    fused_sdr, fused_identical = si_sdr_span_with_identity(
+        identical, identical, ref_start, est_start, span_count
+    )
+    assert fused_sdr == wrapped_sdr and fused_identical is True
     assert aligned_pair_identical(aligned_ref, aligned_est)
     assert aligned_span_identical(
         identical, identical, ref_start, est_start, span_count
     )
     assert aligned_samples_identical(identical, identical, rate, 0)
+    changed_ref_start, changed_est_start, changed_count, _ = aligned_span(
+        identical, almost_identical, rate, 0
+    )
+    changed_sdr, changed_identical = si_sdr_span_with_identity(
+        identical, almost_identical,
+        changed_ref_start, changed_est_start, changed_count,
+    )
+    assert changed_sdr is not None and changed_identical is False
     assert not aligned_samples_identical(identical, almost_identical, rate, 0)
+    silent_sdr, silent_identical = si_sdr_span_with_identity(
+        [0] * 64, [0] * 64, 0, 0, 64
+    )
+    assert silent_sdr is None and silent_identical is True
     improvement_cases = [
         {"metrics": {"input_near_si_sdr_db": 235.0,
                      "input_near_reference_identical": True,

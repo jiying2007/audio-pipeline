@@ -193,14 +193,18 @@ def install(engine: Any) -> None:
 
     def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         base_case, quality_expected = _split_expected(case)
-        result = original_evaluate_case(processor, corpus_path, base_case)
         if not _needs_quality(case, quality_expected):
-            return result
+            return original_evaluate_case(processor, corpus_path, base_case)
 
         rate = int(case["sample_rate_hz"])
         channels = int(case["mic_channels"])
         with tempfile.TemporaryDirectory(prefix="ap-quality-") as temporary:
-            output, trace, inputs = engine.invoke(processor, base_case, corpus_path, Path(temporary))
+            output, trace, inputs = engine.invoke(
+                processor, base_case, corpus_path, Path(temporary)
+            )
+        result = engine.evaluate_case_runtime(
+            corpus_path, base_case, output, trace, inputs
+        )
         mic0 = engine.mono_view(inputs["mic"], channels)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         declared_delay = declared_latency_ms * rate // 1000
@@ -323,6 +327,59 @@ def self_test() -> None:
     curve = [(index * 160, value) for index, value in enumerate([-10.0, -2.0, 1.0, 5.0, 6.0, 6.5, 6.2])]
     settled = _settling_ms(curve, 16000)
     assert settled is not None and settled >= 20.0
+
+    class FakeEngine:
+        def __init__(self) -> None:
+            self.invoke_count = 0
+
+        def evaluate_case(self, processor: Path, corpus_path: Path,
+                          case: dict) -> dict:
+            raise AssertionError("quality case must not invoke base evaluator")
+
+        def evaluate_case_runtime(self, corpus_path: Path, case: dict,
+                                  output: Sequence[int], trace: list[dict],
+                                  inputs: dict) -> dict:
+            return {
+                "case_id": case["case_id"],
+                "split": case["split"],
+                "scenario": case["scenario"],
+                "source": {},
+                "dimensions": {},
+                "metrics": {},
+                "violations": [],
+                "passed": True,
+            }
+
+        def invoke(self, processor: Path, case: dict, corpus_path: Path,
+                   work: Path) -> tuple[list[int], list[dict], dict]:
+            self.invoke_count += 1
+            return [0] * 160, [{"algorithmic_latency_ms": 0}], {
+                "mic": [0] * 160,
+                "render": None,
+            }
+
+        @staticmethod
+        def mono_view(samples: Sequence[int], channels: int) -> Sequence[int]:
+            return samples
+
+        @staticmethod
+        def policy_violations(policy: dict, corpus: dict,
+                              cases: list[dict]) -> tuple[dict, list[dict]]:
+            return {}, []
+
+    fake = FakeEngine()
+    install(fake)
+    probe_case = {
+        "case_id": "quality-single-invoke",
+        "split": "validation",
+        "scenario": "self-test",
+        "sample_rate_hz": 16000,
+        "mic_channels": 1,
+        "quality": {},
+        "expected": {"min_near_projection_gain_db": -120.0},
+    }
+    fake.evaluate_case(Path("processor"), Path("corpus.json"), probe_case)
+    assert fake.invoke_count == 1
     print("quality metric support self-test: OK")
 
 

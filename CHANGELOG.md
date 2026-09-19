@@ -1,3 +1,10 @@
+# 2.3.22
+
+- Fix the `p10_near_si_sdr_improvement_db` aggregate being pinned to an unphysical constant. Cases whose input already matches the clean near-end reference have no impairment to remove, so their improvement only measures the pipeline's own insertion; they are now excluded from the improvement aggregate. On the deterministic regression corpus the aggregate moves from `-230.9 dB` to `-19.8 dB` and becomes a quantity a tuning change can actually move.
+- Keep per-case gating, every per-case metric, the improvement metric definition, dataset locks, policy thresholds, product DSP, public API/ABI and shipping authority unchanged: the excluded cases retain all gates they already carry, including the absolute `near_si_sdr_db` gate, and no approval decision is relaxed.
+- Disclose the one behavioural consequence: reports produced before and after this change are not comparable on `p10_near_si_sdr_improvement_db`, and the two policies gating it (`validation-extended-real-core`, `validation-extended-real-plus`, both at `-1.5 dB`) can flip a verdict on data containing artifact-free inputs. That is the intent of the fix - the previous value was dominated by insertion loss rather than by acoustic behaviour.
+- Add regression coverage in the evaluator self-test locking both the unfiltered and the filtered percentile.
+
 # 2.3.20
 
 - Hard-cut real-target route configuration to one reviewed board-manifest authority across laboratory control, Trusted Runner Readiness, HIL and Product Certification. Remove the HIL/labctl compatibility route assertions and Product Certification's parallel capture/playback/far-end/sample-rate/microphone/DSP-CPU/power inputs; physical route and power settings are now derived from the board manifest.

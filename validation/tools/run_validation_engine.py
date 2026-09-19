@@ -459,19 +459,56 @@ def median_metric(cases: list[dict], name: str) -> float | None:
     return statistics.median(values) if values else None
 
 
-def percentile_metric(cases: list[dict], name: str, quantile: float) -> float | None:
-    values = sorted(float(case["metrics"][name]) for case in cases if case["metrics"].get(name) is not None)
+def percentile_of(values: list[float], quantile: float) -> float | None:
+    """Linear-interpolation percentile over an already-filtered value list."""
     if not values:
         return None
-    if len(values) == 1:
-        return values[0]
-    position = max(0.0, min(1.0, quantile)) * (len(values) - 1)
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    position = max(0.0, min(1.0, quantile)) * (len(ordered) - 1)
     lower = int(math.floor(position))
     upper = int(math.ceil(position))
     if lower == upper:
-        return values[lower]
+        return ordered[lower]
     fraction = position - lower
-    return values[lower] * (1.0 - fraction) + values[upper] * fraction
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
+# An input already this far above the clean near-end reference has no impairment
+# left to remove, so "improvement" can only measure the pipeline's own insertion
+# and is not a physical quantity. Observed input SI-SDR on the regression corpus
+# is either about 30 dB or about 235 dB, so the constant sits in the empty gap
+# between the two populations rather than being fitted to one corpus.
+IMPROVEMENT_HEADROOM_CEILING_DB = 40.0
+
+
+def percentile_metric(cases: list[dict], name: str, quantile: float) -> float | None:
+    values = [float(case["metrics"][name]) for case in cases if case["metrics"].get(name) is not None]
+    return percentile_of(values, quantile)
+
+
+def improvement_percentile_metric(cases: list[dict], quantile: float) -> float | None:
+    """Percentile of near-end SI-SDR improvement over impaired inputs only.
+
+    Cases whose input already matches the clean reference are excluded from the
+    aggregate: with no impairment to remove their improvement is bounded below
+    by the pipeline's own insertion, so including them pins a low percentile to
+    an unphysical constant that no tuning change can move. Per-case gating is
+    deliberately unaffected - those cases keep every gate they already carry,
+    including the absolute `near_si_sdr_db` gate.
+    """
+    values: list[float] = []
+    for case in cases:
+        metrics = case["metrics"]
+        improvement = metrics.get("near_si_sdr_improvement_db")
+        if improvement is None:
+            continue
+        input_sdr = metrics.get("input_near_si_sdr_db")
+        if input_sdr is not None and float(input_sdr) >= IMPROVEMENT_HEADROOM_CEILING_DB:
+            continue
+        values.append(float(improvement))
+    return percentile_of(values, quantile)
 
 
 SCENARIO_SUMMARY_METRICS = (
@@ -610,7 +647,7 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict]) -> tuple[di
         "scenario_metrics": scenario_metric_summary(by_scenario),
         "dimension_values": dimension_values,
         "median_near_si_sdr_improvement_db": median_metric(cases, "near_si_sdr_improvement_db"),
-        "p10_near_si_sdr_improvement_db": percentile_metric(cases, "near_si_sdr_improvement_db", 0.10),
+        "p10_near_si_sdr_improvement_db": improvement_percentile_metric(cases, 0.10),
         "p10_noise_only_attenuation_db": percentile_metric(cases, "noise_only_attenuation_db", 0.10),
         "median_erle_db": median_metric(cases, "erle_db"),
         "median_output_render_corr_reduction": median_metric(cases, "output_render_corr_reduction"),
@@ -712,6 +749,21 @@ def self_test() -> None:
     assert used == 2 and attenuation is not None and 5.9 < attenuation < 6.2
     speech_attenuation, speech_used = speech_active_attenuation_db(noise_in, noise_out, [1, 1, 1, 1], rate, 0)
     assert speech_used == 2 and speech_attenuation is not None and 5.9 < speech_attenuation < 6.2
+    # A tail percentile of improvement must not be pinned by cases whose input
+    # already equals the clean reference: over those cases the metric measures
+    # the pipeline's own insertion, not something tuning can address.
+    improvement_cases = [
+        {"metrics": {"input_near_si_sdr_db": 235.0, "near_si_sdr_improvement_db": -230.9}},
+        {"metrics": {"input_near_si_sdr_db": 235.0, "near_si_sdr_improvement_db": -230.9}},
+        {"metrics": {"input_near_si_sdr_db": 30.0, "near_si_sdr_improvement_db": -20.0}},
+        {"metrics": {"input_near_si_sdr_db": 9.0, "near_si_sdr_improvement_db": -3.0}},
+        {"metrics": {"near_si_sdr_improvement_db": 2.0}},
+    ]
+    unfiltered = percentile_metric(improvement_cases, "near_si_sdr_improvement_db", 0.10)
+    filtered = improvement_percentile_metric(improvement_cases, 0.10)
+    assert unfiltered is not None and abs(unfiltered - -230.9) < 1.0e-9
+    assert filtered is not None and abs(filtered - -16.6) < 1.0e-9
+    assert improvement_percentile_metric([], 0.10) is None
     assert rms_dbfs([0] * 10) <= -119.0
     synthetic_cases = [
         {"scenario": "a", "passed": True, "dimensions": {"motion": "static"}, "metrics": {"output_clip_fraction": 0.0, "output_dc_offset_dbfs": -100.0}},

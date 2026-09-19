@@ -445,6 +445,14 @@ def load_labels(path: Path) -> list[int]:
 
 
 def stage_audio(path: Path, rate: int, channels: int, directory: Path, name: str) -> tuple[list[int], Path]:
+    """Return decoded samples and a processor-ready raw PCM path.
+
+    Existing raw PCM is already processor-ready, so reuse its source path
+    instead of materializing an identical temporary copy. WAV input still
+    requires decoding and staging as raw S16LE.
+    """
+    if path.suffix.lower() != ".wav":
+        return read_raw(path), path
     values, raw = read_audio(path, rate, channels)
     staged = directory / name
     staged.write_bytes(raw)
@@ -913,6 +921,31 @@ def self_test() -> None:
         pcm_values.byteswap()
     pcm_bytes = pcm_values.tobytes()
     assert decode_raw_bytes(pcm_bytes, "self-test") == pcm_probe
+    with tempfile.TemporaryDirectory(prefix="ap-stage-audio-self-test-") as temporary:
+        root = Path(temporary)
+        raw_path = root / "input.pcm"
+        raw_path.write_bytes(pcm_bytes)
+        stage_root = root / "stage"
+        stage_root.mkdir()
+        staged_values, staged_path = stage_audio(
+            raw_path, rate, 1, stage_root, "input-staged.pcm"
+        )
+        assert staged_values == pcm_probe
+        assert staged_path == raw_path
+        assert not (stage_root / "input-staged.pcm").exists()
+
+        wav_path = root / "input.wav"
+        with wave.open(str(wav_path), "wb") as handle:
+            handle.setnchannels(1)
+            handle.setsampwidth(2)
+            handle.setframerate(rate)
+            handle.writeframes(pcm_bytes)
+        wav_values, wav_staged = stage_audio(
+            wav_path, rate, 1, stage_root, "wav-staged.pcm"
+        )
+        assert wav_values == pcm_probe
+        assert wav_staged == stage_root / "wav-staged.pcm"
+        assert wav_staged.read_bytes() == pcm_bytes
     mono_probe = [11, -22, 33, -44]
     assert mono_view(mono_probe, 1) is mono_probe
     assert mono(mono_probe, 1) == mono_probe

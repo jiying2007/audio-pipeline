@@ -1,3 +1,8 @@
+# 2.3.29
+
+- Stop materializing identical temporary copies for raw PCM inputs in canonical validation. Existing non-WAV S16LE mic/render files are now passed directly to the processor while still being decoded for metrics; WAV inputs retain decode-and-stage behavior because the processor requires raw PCM.
+- Add deterministic staging self-tests proving raw PCM reuses the original path without creating a copy while WAV input still produces byte-identical staged PCM. Metric math, thresholds, report fields, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.28
 
 - Eliminate redundant raw-PCM ingestion work in canonical validation: non-WAV inputs are now read once and decoded from the same in-memory bytes instead of reading the file a second time through `read_raw()`.

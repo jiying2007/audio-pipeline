@@ -106,17 +106,23 @@ def dc_offset_dbfs(samples: Sequence[int]) -> float:
         return -120.0
     return 20.0 * math.log10(mean / 32768.0)
 
-def si_sdr_db(reference: Sequence[int], estimate: Sequence[int]) -> float | None:
-    """Calculate SI-SDR without materializing full float copies of the signals."""
-    count = min(len(reference), len(estimate))
+def si_sdr_span(reference: Sequence[int], estimate: Sequence[int],
+                 reference_start: int, estimate_start: int,
+                 count: int) -> float | None:
+    """Calculate SI-SDR over an existing signal span without copying samples."""
+    available = min(
+        max(0, len(reference) - reference_start),
+        max(0, len(estimate) - estimate_start),
+    )
+    count = min(max(0, int(count)), available)
     if count < 16:
         return None
 
     ref_energy = 0.0
     cross = 0.0
-    for index in range(count):
-        ref = float(reference[index])
-        est = float(estimate[index])
+    for offset in range(count):
+        ref = float(reference[reference_start + offset])
+        est = float(estimate[estimate_start + offset])
         ref_energy += ref * ref
         cross += ref * est
     if ref_energy <= 1.0e-12:
@@ -125,9 +131,9 @@ def si_sdr_db(reference: Sequence[int], estimate: Sequence[int]) -> float | None
     scale = cross / ref_energy
     target_energy = 0.0
     noise_energy = 0.0
-    for index in range(count):
-        ref = float(reference[index])
-        est = float(estimate[index])
+    for offset in range(count):
+        ref = float(reference[reference_start + offset])
+        est = float(estimate[estimate_start + offset])
         target = scale * ref
         target_energy += target * target
         residual = est - target
@@ -135,6 +141,11 @@ def si_sdr_db(reference: Sequence[int], estimate: Sequence[int]) -> float | None
     return 10.0 * math.log10(
         (target_energy + 1.0e-12) / (noise_energy + 1.0e-12)
     )
+
+
+def si_sdr_db(reference: Sequence[int], estimate: Sequence[int]) -> float | None:
+    """Calculate SI-SDR without materializing full copies of the signals."""
+    return si_sdr_span(reference, estimate, 0, 0, min(len(reference), len(estimate)))
 
 
 def normalized_corr(a: Sequence[int], b: Sequence[int], lag: int, stride: int = 4) -> float:
@@ -169,10 +180,10 @@ def max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:
     return max((normalized_corr(a, b, lag) for lag in lags), default=0.0)
 
 
-def aligned_pair(reference: Sequence[int], estimate: Sequence[int],
+def aligned_span(reference: Sequence[int], estimate: Sequence[int],
                  sample_rate: int, expected_delay_samples: int
-                 ) -> tuple[Sequence[int], Sequence[int], int]:
-    """Return the bounded sample-exact alignment used by near-end metrics."""
+                 ) -> tuple[int, int, int, int]:
+    """Return start/count metadata for the bounded near-end metric alignment."""
     radius = max(2, sample_rate * 3 // 1000)
     center = -int(expected_delay_samples)
     best_lag = center
@@ -182,14 +193,35 @@ def aligned_pair(reference: Sequence[int], estimate: Sequence[int],
         if corr > best_corr:
             best_corr = corr
             best_lag = lag
+
     if best_lag >= 0:
-        ref = reference[best_lag:]
-        est = estimate
+        reference_start = best_lag
+        estimate_start = 0
     else:
-        ref = reference
-        est = estimate[-best_lag:]
-    count = min(len(ref), len(est))
-    return ref[:count], est[:count], -best_lag
+        reference_start = 0
+        estimate_start = -best_lag
+    count = max(
+        0,
+        min(
+            len(reference) - reference_start,
+            len(estimate) - estimate_start,
+        ),
+    )
+    return reference_start, estimate_start, count, -best_lag
+
+
+def aligned_pair(reference: Sequence[int], estimate: Sequence[int],
+                 sample_rate: int, expected_delay_samples: int
+                 ) -> tuple[Sequence[int], Sequence[int], int]:
+    """Materialize the legacy aligned pair; canonical metrics use aligned_span."""
+    ref_start, est_start, count, alignment = aligned_span(
+        reference, estimate, sample_rate, expected_delay_samples
+    )
+    return (
+        reference[ref_start:ref_start + count],
+        estimate[est_start:est_start + count],
+        alignment,
+    )
 
 
 def si_sdr_from_aligned_pair(reference: Sequence[int],
@@ -209,6 +241,20 @@ def aligned_pair_identical(reference: Sequence[int], estimate: Sequence[int]) ->
     )
 
 
+def aligned_span_identical(reference: Sequence[int], estimate: Sequence[int],
+                           reference_start: int, estimate_start: int,
+                           count: int) -> bool:
+    """Return whether an existing aligned span is sample-for-sample identical."""
+    return (
+        count >= 16
+        and all(
+            int(reference[reference_start + offset])
+            == int(estimate[estimate_start + offset])
+            for offset in range(count)
+        )
+    )
+
+
 def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
                    sample_rate: int, expected_delay_samples: int) -> tuple[float | None, int]:
     """Calculate SI-SDR after bounded sample-exact latency refinement.
@@ -219,17 +265,24 @@ def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
     the evaluator into an unconstrained synchronizer that can search for a
     favorable score.
     """
-    ref, est, alignment = aligned_pair(
+    ref_start, est_start, count, alignment = aligned_span(
         reference, estimate, sample_rate, expected_delay_samples
     )
-    return si_sdr_from_aligned_pair(ref, est), alignment
+    return (
+        si_sdr_span(reference, estimate, ref_start, est_start, count),
+        alignment,
+    )
 
 
 def aligned_samples_identical(reference: Sequence[int], estimate: Sequence[int],
                               sample_rate: int, expected_delay_samples: int) -> bool:
     """True only when the metric-aligned PCM input is exactly the clean reference."""
-    ref, est, _ = aligned_pair(reference, estimate, sample_rate, expected_delay_samples)
-    return aligned_pair_identical(ref, est)
+    ref_start, est_start, count, _ = aligned_span(
+        reference, estimate, sample_rate, expected_delay_samples
+    )
+    return aligned_span_identical(
+        reference, estimate, ref_start, est_start, count
+    )
 
 
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
@@ -464,15 +517,19 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         clean, _ = read_audio(clean_path, rate, 1)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         expected_output_delay = declared_latency_ms * rate // 1000
-        input_ref, input_est, input_alignment = aligned_pair(clean, mic0, rate, 0)
-        input_sdr = si_sdr_from_aligned_pair(input_ref, input_est)
+        input_ref_start, input_est_start, input_count, input_alignment = aligned_span(
+            clean, mic0, rate, 0
+        )
+        input_sdr = si_sdr_span(
+            clean, mic0, input_ref_start, input_est_start, input_count
+        )
         output_sdr, output_alignment = aligned_si_sdr(
             clean, output, rate, expected_output_delay
         )
         metrics["input_near_si_sdr_db"] = input_sdr
         metrics["near_si_sdr_db"] = output_sdr
-        metrics["input_near_reference_identical"] = aligned_pair_identical(
-            input_ref, input_est
+        metrics["input_near_reference_identical"] = aligned_span_identical(
+            clean, mic0, input_ref_start, input_est_start, input_count
         )
         metrics["declared_algorithmic_latency_ms"] = declared_latency_ms
         metrics["input_alignment_samples"] = input_alignment
@@ -834,10 +891,21 @@ def self_test() -> None:
     aligned_ref, aligned_est, aligned_offset = aligned_pair(
         identical, identical, rate, 0
     )
+    ref_start, est_start, span_count, span_offset = aligned_span(
+        identical, identical, rate, 0
+    )
     wrapped_sdr, wrapped_offset = aligned_si_sdr(identical, identical, rate, 0)
-    assert aligned_offset == wrapped_offset
+    assert aligned_offset == span_offset == wrapped_offset
+    assert list(aligned_ref) == identical[ref_start:ref_start + span_count]
+    assert list(aligned_est) == identical[est_start:est_start + span_count]
     assert si_sdr_from_aligned_pair(aligned_ref, aligned_est) == wrapped_sdr
+    assert si_sdr_span(
+        identical, identical, ref_start, est_start, span_count
+    ) == wrapped_sdr
     assert aligned_pair_identical(aligned_ref, aligned_est)
+    assert aligned_span_identical(
+        identical, identical, ref_start, est_start, span_count
+    )
     assert aligned_samples_identical(identical, identical, rate, 0)
     assert not aligned_samples_identical(identical, almost_identical, rate, 0)
     improvement_cases = [

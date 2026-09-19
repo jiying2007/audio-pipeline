@@ -1,3 +1,9 @@
+# 2.3.31
+
+- Read raw S16LE PCM directly into compact `array('h')` storage with `array.fromfile()`, avoiding the transient full-file bytes buffer previously created before every canonical raw decode.
+- Add a sample-only audio reader so clean/echo/interference/noise reference paths do not retain unused raw bytes for non-WAV inputs. WAV decode-and-stage and compatibility `read_audio()` / `read_audio_array()` behavior remain unchanged.
+- Add deterministic coverage binding direct-file and sample-only reads to the existing compatibility decoder. Metric math, thresholds, report fields, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.30
 
 - Keep canonical validation PCM on compact `array('h')` storage through decode, processor output, stage-profile replay and quality-reference reads instead of materializing a second Python list copy for every signal.

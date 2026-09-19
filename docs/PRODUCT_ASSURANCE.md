@@ -64,13 +64,14 @@ annotated semantic release tag
   -> audio-target DUT
      deployed digest == built digest
      executed digest == deployed digest
-     real route + real corpus + thermal/power + policy soak
+     reviewed board manifest == single route/power authority
+     board bytes/SHA-256 + real corpus + thermal/power + policy soak
   -> release-identity-bound, attested certification bundle
   -> certification-archive
      immutable product-lifecycle archive receipt
 ```
 
-Release identity (`repository`, `tag`, `release_id`, immutable/draft/prerelease state and exact source revision) is sealed into the certification evidence before final acceptance. A reviewed commit SHA alone is not sufficient Product Certification authority.
+Release identity (`repository`, `tag`, `release_id`, immutable/draft/prerelease state and exact source revision) is sealed into the certification evidence before final acceptance. The DUT board manifest is likewise materialized and hash-bound; capture/playback, far-end, sample rate, microphone count, DSP CPU and power configuration are derived from that one manifest rather than parallel workflow inputs. A reviewed commit SHA alone is not sufficient Product Certification authority.
 
 The builder must not resolve target libraries, headers or CMake packages from the host filesystem. Builder and DUT must be distinct runners. Missing immutable release identity, builder, DUT, sensors, real acoustic files, archive backend or lifecycle receipt is failed/incomplete certification, never a synthetic pass.
 

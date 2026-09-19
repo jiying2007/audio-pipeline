@@ -1,8 +1,8 @@
 # 2.3.21
 
-- Fix Linux runtime tuning admission going stale when the caller changes tuning directly on a pipeline it owns. The projected AGC target/limiter pair is now re-read from the pipeline whenever the worker is stopped and no command is pending, so a command that is valid against the pipeline's current pair is no longer rejected against a pair recorded before the direct change.
-- Keep the projection authoritative while the worker runs or while queued commands are still unapplied: the runtime still does not inspect worker-owned pipeline state, and re-reading there would discard the pending effect of queued commands. Admission therefore remains FIFO-consistent with previously accepted commands.
-- Add regression coverage for direct caller-owned tuning before start, for a refresh that must still reject an invalid pair, and for pending queued commands continuing to win over a later direct change. Document the resynchronisation window in `docs/API_CONTRACT.md`.
+- Fix Linux runtime tuning admission going stale when the caller changes tuning directly on a pipeline it owns before start or after stop. While stopped, the producer projection is rebuilt from the pipeline's current AGC pair and all still-pending tuning commands are replayed in FIFO order, so validation matches the state the worker can actually reach.
+- Fail closed when a caller-owned direct change makes an already accepted pending tuning sequence pair-invalid: further tuning admission and `ap_runtime_start()` return `AP_ESTATE` until the live pipeline is repaired. While running, the runtime never re-reads worker-owned pipeline state and continues from the producer projection only.
+- Add deterministic coverage for direct tuning after open, caller changes to fields not owned by pending commands, invalidated pending sequences, repair/restart, and start-time hand-off. Document the stopped/running ownership boundary in `docs/API_CONTRACT.md`.
 - Public struct layouts, Linux runtime private state size, realtime DSP behavior, acoustic thresholds, research authority and product tuning ranges are unchanged.
 
 # 2.3.20

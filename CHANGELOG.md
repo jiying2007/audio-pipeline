@@ -1,3 +1,9 @@
+# 2.3.30
+
+- Keep canonical validation PCM on compact `array('h')` storage through decode, processor output, stage-profile replay and quality-reference reads instead of materializing a second Python list copy for every signal.
+- Preserve `read_raw()` and `read_audio()` as compatibility list-returning APIs while the canonical hot path uses new array-backed readers. Existing raw/WAV validation, mono semantics, metrics, thresholds and report fields are unchanged.
+- Add deterministic coverage binding compact-array decoding to the existing list compatibility decoder. Product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.29
 
 - Stop materializing identical temporary copies for raw PCM inputs in canonical validation. Existing non-WAV S16LE mic/render files are now passed directly to the processor while still being decoded for metrics; WAV inputs retain decode-and-stage behavior because the processor requires raw PCM.

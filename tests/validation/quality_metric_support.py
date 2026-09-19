@@ -207,7 +207,7 @@ def install(engine: Any) -> None:
 
         clean_path = engine.resolve(corpus_path, case.get("clean_near_audio"))
         if clean_path is not None:
-            clean, _ = engine.read_audio(clean_path, rate, 1)
+            clean, _ = engine.read_audio_array(clean_path, rate, 1)
             _, output_alignment = engine.aligned_si_sdr(clean, output, rate, declared_delay)
             result["metrics"]["near_projection_gain_db"] = projection_gain_db(
                 clean, output, output_alignment
@@ -215,7 +215,7 @@ def install(engine: Any) -> None:
 
         interference_path = engine.resolve(corpus_path, case.get("interference_audio"))
         if interference_path is not None:
-            interference, _ = engine.read_audio(interference_path, rate, 1)
+            interference, _ = engine.read_audio_array(interference_path, rate, 1)
             input_corr = engine.max_abs_corr(mic0, interference, rate)
             output_corr = engine.max_abs_corr(output, interference, rate)
             _, input_alignment = engine.aligned_si_sdr(interference, mic0, rate, 0)
@@ -236,7 +236,7 @@ def install(engine: Any) -> None:
 
         noise_path = engine.resolve(corpus_path, case.get("noise_audio"))
         if noise_path is not None:
-            noise, _ = engine.read_audio(noise_path, rate, 1)
+            noise, _ = engine.read_audio_array(noise_path, rate, 1)
             input_corr = engine.max_abs_corr(mic0, noise, rate)
             output_corr = engine.max_abs_corr(output, noise, rate)
             result["metrics"].update({
@@ -247,7 +247,7 @@ def install(engine: Any) -> None:
 
         echo_path = engine.resolve(corpus_path, case.get("echo_audio"))
         if echo_path is not None and case.get("clean_near_audio") is None:
-            echo, _ = engine.read_audio(echo_path, rate, 1)
+            echo, _ = engine.read_audio_array(echo_path, rate, 1)
             curve = _window_erle(echo, output, rate, declared_delay)
             result["metrics"]["erle_convergence_ms"] = _settling_ms(curve, rate, 0)
             control = case.get("control", {})

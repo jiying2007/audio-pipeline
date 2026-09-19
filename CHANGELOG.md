@@ -1,3 +1,9 @@
+# 2.3.32
+
+- Eliminate the second processor execution for quality opt-in validation cases. Canonical metrics are now computed from an already-invoked runtime result, and quality extensions reuse the same output/trace/input buffers.
+- Preserve the existing `evaluate_case()` behavior for ordinary callers while adding an internal runtime-evaluation helper for reuse. A self-test fails closed if a quality case re-enters the base evaluator and asserts exactly one processor invocation.
+- Update quality-metric documentation to reflect single-invoke semantics. Metric formulas, thresholds, report fields, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.31
 
 - Read raw S16LE PCM directly into compact `array('h')` storage with `array.fromfile()`, avoiding the transient full-file bytes buffer previously created before every canonical raw decode.

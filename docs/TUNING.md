@@ -89,6 +89,8 @@ For product thresholds use labeled speech/non-speech data and report precision/r
 
 BF requires two microphones and trustworthy geometry. Tune/validate microphone spacing, polarity, channel order and sample synchronization before changing tracking thresholds.
 
+`ap_config_t.mic_spacing_mm` is accepted only up to the spacing whose acoustic TDOA still fits the lag search window (8 samples of 343 m/s propagation: 171.5 mm at a 16 kHz internal rate, 343 mm at 8 kHz). Larger geometry is rejected with `AP_EINVAL`; it used to be clamped silently inside the beamformer, which degraded the outer lags without telling the caller.
+
 TINY disables BF tracking by policy; a build with max microphone channels=1 physically removes the valid two-mic configuration.
 
 ## Resource/build envelope
@@ -115,7 +117,7 @@ Use the canonical `validation/` corpus/report contract for repeatable result exc
 
 ## Automated dataset-driven iteration
 
-The repository has one bounded automatic tuning loop under `validation/tuning/` and `validation/tools/tuning_iteration.py`. It uses the public `ap_tuning_t` control boundary rather than private source pokes, so offline replay and product runtime use the same four supported controls.
+The repository has one bounded automatic tuning loop under `validation/tuning/` and `validation/tools/tuning_iteration.py`. It uses the public `ap_tuning_t` control boundary rather than private source pokes, so offline replay and product runtime use the same four supported controls. `ap_pipeline_get_tuning()` reads those four values back from the live pipeline, so a replay run or an on-device session can confirm the tuning that was actually in force instead of assuming the request was accepted.
 
 Evidence and optimizer permissions are defined in the machine-readable `validation/authority.json`; `validation/tools/authority.py --self-test` keeps that source synchronized with `corpus.schema.json`.
 

@@ -7,9 +7,7 @@
 #include "enhance/ap_enhance.h"
 #include <stdint.h>
 
-#if AP_BUILD_STAGE_HPF || AP_BUILD_STAGE_BF
 #include "frontend/ap_frontend.h"
-#endif
 #if AP_BUILD_STAGE_SYNC
 #include "sync/ap_sync.h"
 #endif

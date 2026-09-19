@@ -42,10 +42,12 @@ static float ap_beamformer_roughness(const float *x, uint32_t n) {
 void ap_beamformer_init(ap_beamformer_state_t *s,
                         uint32_t sample_rate_hz,
                         float mic_spacing_mm) {
-    const float sound_mm_s = 343000.0f;
     int max_lag;
     memset(s, 0, sizeof(*s));
-    max_lag = (int)ceilf(mic_spacing_mm * (float)sample_rate_hz / sound_mm_s) + 1;
+    max_lag = (int)ceilf(mic_spacing_mm * (float)sample_rate_hz /
+                         AP_BF_SOUND_SPEED_MM_PER_S) + 1;
+    /* Control-plane callers reject geometry that needs more lags than the
+     * history holds; the clamp stays as defence for direct module users. */
     if (max_lag > (int)AP_BF_HISTORY) max_lag = (int)AP_BF_HISTORY;
     if (max_lag < 0) max_lag = 0;
     s->max_lag = max_lag;

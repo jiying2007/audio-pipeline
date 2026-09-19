@@ -8,6 +8,28 @@ ap_stage_mask_t ap_pipeline_stages(const ap_pipeline_t *pipeline) {
     return pipeline ? pipeline->cfg.stages : 0u;
 }
 
+ap_status_t ap_pipeline_get_config(const ap_pipeline_t *pipeline,
+                                   ap_config_t *out) {
+    if (!pipeline || !out) return AP_EINVAL;
+    *out = pipeline->cfg;
+    return AP_OK;
+}
+
+ap_status_t ap_pipeline_get_tuning(const ap_pipeline_t *pipeline,
+                                   ap_tuning_t *out) {
+    if (!pipeline || !out) return AP_EINVAL;
+    memset(out, 0, sizeof(*out));
+    out->struct_size = (uint32_t)sizeof(*out);
+    out->api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    out->mask = AP_TUNING_AEC_MU | AP_TUNING_NS_FLOOR |
+                AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER;
+    out->aec_mu = pipeline->cfg.aec_mu;
+    out->ns_floor = pipeline->cfg.ns_floor;
+    out->agc_target_dbfs = pipeline->cfg.agc_target_dbfs;
+    out->limiter_dbfs = pipeline->cfg.limiter_dbfs;
+    return AP_OK;
+}
+
 ap_status_t ap_pipeline_notify_stream_discontinuity(ap_pipeline_t *pipeline,
                                                     ap_discontinuity_flags_t flags,
                                                     uint32_t lost_frames) {
@@ -105,19 +127,14 @@ ap_status_t ap_pipeline_apply_tuning(ap_pipeline_t *pipeline,
     next_limiter = (tuning->mask & AP_TUNING_LIMITER) ?
                    tuning->limiter_dbfs : pipeline->cfg.limiter_dbfs;
 
-    if ((tuning->mask & AP_TUNING_AEC_MU) &&
-        (!isfinite(next_aec_mu) || next_aec_mu <= 0.0f || next_aec_mu > 1.0f))
+    if ((tuning->mask & AP_TUNING_AEC_MU) && !ap_tuning_aec_mu_ok(next_aec_mu))
         return AP_EINVAL;
     if ((tuning->mask & AP_TUNING_NS_FLOOR) &&
-        (!isfinite(next_ns_floor) || next_ns_floor < 0.02f || next_ns_floor > 1.0f))
+        !ap_tuning_ns_floor_ok(next_ns_floor))
         return AP_EINVAL;
-    if (tuning->mask & (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER)) {
-        if (!isfinite(next_agc_target) || !isfinite(next_limiter) ||
-            next_agc_target < -60.0f || next_agc_target > -1.0f ||
-            next_limiter < -20.0f || next_limiter > -0.1f ||
-            next_agc_target >= next_limiter)
-            return AP_EINVAL;
-    }
+    if ((tuning->mask & (AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER)) &&
+        !ap_tuning_agc_pair_ok(next_agc_target, next_limiter))
+        return AP_EINVAL;
 
     if (tuning->mask & AP_TUNING_AEC_MU) pipeline->cfg.aec_mu = next_aec_mu;
     if (tuning->mask & AP_TUNING_NS_FLOOR) pipeline->cfg.ns_floor = next_ns_floor;

@@ -18,7 +18,7 @@ ctest --test-dir build --output-on-failure
 
 ```bash
 cmake --preset ssc305-cortex-a32-low
-cmake --build --preset ssc305-cortex-a32-low --parallel
+cmake --build build/ssc305-cortex-a32-low --parallel
 ```
 
 该 preset 是当前 required CI 的直接 executable contract：仓库会实际 configure/build、验证 generated build identity、clean install SDK，并用 AArch32/QEMU 执行 build-info/core/runtime consumer。
@@ -70,7 +70,9 @@ ap_pipeline_process_capture(pipeline, mic_interleaved, frames, output_frame);
 - `ap_pipeline_observe_io_timestamps()`：同一 monotonic clock domain 的 capture/render hardware timestamp；
 - `ap_pipeline_notify_stream_discontinuity()`：gap/XRUN/clock reset/codec reopen；
 - `ap_pipeline_notify_echo_path_change()`：产品已知的 route/path 变化；
-- `ap_pipeline_apply_tuning()`：调用方串行化后的 frame-boundary tuning。
+- `ap_pipeline_apply_tuning()`：调用方串行化后的 frame-boundary tuning；
+- `ap_pipeline_get_config()`：读回 init 时生效的完整 `ap_config_t`；
+- `ap_pipeline_get_tuning()`：读回当前生效的 tuning 值（mask 恒为全部四项、`reserved[]` 清零，可直接回灌 `ap_pipeline_apply_tuning()`）。
 
 核心原则：
 

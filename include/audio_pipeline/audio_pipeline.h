@@ -137,6 +137,16 @@ ap_status_t ap_pipeline_notify_stream_discontinuity(ap_pipeline_t *pipeline,
  * processing; the Linux runtime command queue provides that ownership boundary. */
 ap_status_t ap_pipeline_apply_tuning(ap_pipeline_t *pipeline,
                                      const ap_tuning_t *tuning);
+/* Read-back of the configuration the pipeline was initialized with. `out` is
+ * fully overwritten; returns AP_EINVAL for a NULL pipeline or output. */
+ap_status_t ap_pipeline_get_config(const ap_pipeline_t *pipeline,
+                                   ap_config_t *out);
+/* Read-back of the tuning values currently in force, so an integrator can
+ * verify what the control plane actually accepted. The returned mask always
+ * carries all four AP_TUNING_* bits and reserved[] is zeroed, so the result can
+ * be fed straight back into ap_pipeline_apply_tuning(). */
+ap_status_t ap_pipeline_get_tuning(const ap_pipeline_t *pipeline,
+                                   ap_tuning_t *out);
 void ap_pipeline_get_metrics(const ap_pipeline_t *pipeline, ap_metrics_t *metrics);
 uint32_t ap_pipeline_algorithmic_latency_ms(const ap_pipeline_t *pipeline);
 

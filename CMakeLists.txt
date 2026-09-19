@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(audio_pipeline VERSION 2.3.16 LANGUAGES C)
+project(audio_pipeline VERSION 2.3.17 LANGUAGES C)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -342,6 +342,10 @@ if(AP_ENABLE_LINUX_RUNTIME)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+    # The runtime audits control-plane commands with the same shared predicates as
+    # the pipeline, so it needs the internal limits header. PRIVATE keeps it out of
+    # the exported interface.
+    target_include_directories(audio_pipeline_runtime PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_link_libraries(audio_pipeline_runtime PUBLIC audio_pipeline Threads::Threads)
     target_compile_options(audio_pipeline_runtime PRIVATE -Wall -Wextra -Wpedantic)
     if(AP_STRICT_WARNINGS)
@@ -398,6 +402,7 @@ if(AP_BUILD_TESTS)
         target_link_libraries(ap_tests PRIVATE audio_pipeline)
         add_test(NAME ap_tests COMMAND ap_tests)
         add_executable(ap_contract_tests tests/test_contracts.c)
+        target_include_directories(ap_contract_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
         target_link_libraries(ap_contract_tests PRIVATE audio_pipeline)
         add_test(NAME ap_contract_tests COMMAND ap_contract_tests)
         add_executable(ap_pipeline_control_tests tests/test_pipeline_controls.c)

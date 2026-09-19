@@ -103,6 +103,28 @@ static void test_tuning_validation(void) {
     tuning.agc_target_dbfs = NAN;
     tuning.limiter_dbfs = -2.0f;
     assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_EINVAL);
+
+    /* Exact range edges are shared with the runtime command audit, so they must
+     * be accepted here and rejected one step outside. */
+    tuning.mask = AP_TUNING_AEC_MU;
+    tuning.aec_mu = 0.001f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+    tuning.aec_mu = 1.0f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+    tuning.mask = AP_TUNING_NS_FLOOR;
+    tuning.ns_floor = 0.02f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+    tuning.ns_floor = 1.0f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+    tuning.mask = AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER;
+    tuning.agc_target_dbfs = -60.0f;
+    tuning.limiter_dbfs = -0.1f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+    /* Target and limiter must stay strictly ordered: an equal pair could never
+     * reach target without clipping. */
+    tuning.agc_target_dbfs = -3.0f;
+    tuning.limiter_dbfs = -3.0f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_EINVAL);
 }
 
 static void test_tuning_survives_processing(void) {
@@ -136,10 +158,59 @@ static void test_tuning_survives_processing(void) {
     assert(ap_pipeline_process_capture(pipeline, mic, frames, output) == AP_OK);
 }
 
+static void test_readback_round_trip(void) {
+    ap_config_t config = ap_config_default(AP_PROFILE_CALL);
+    ap_config_t readback;
+    ap_pipeline_t *pipeline = new_pipeline(&config);
+    ap_tuning_t tuning;
+    ap_tuning_t applied;
+    uint32_t i;
+
+    assert(ap_pipeline_get_config(NULL, &readback) == AP_EINVAL);
+    assert(ap_pipeline_get_config(pipeline, NULL) == AP_EINVAL);
+    assert(ap_pipeline_get_config(pipeline, &readback) == AP_OK);
+    assert(memcmp(&readback, &config, sizeof(config)) == 0);
+
+    assert(ap_pipeline_get_tuning(NULL, &applied) == AP_EINVAL);
+    assert(ap_pipeline_get_tuning(pipeline, NULL) == AP_EINVAL);
+
+    /* The values the pipeline was initialized with are readable before any
+     * tuning is applied. */
+    memset(&applied, 0, sizeof(applied));
+    assert(ap_pipeline_get_tuning(pipeline, &applied) == AP_OK);
+    assert(applied.struct_size == sizeof(applied));
+    assert(applied.api_version == AP_PIPELINE_CONTROL_API_VERSION);
+    assert(applied.mask == (AP_TUNING_AEC_MU | AP_TUNING_NS_FLOOR |
+                            AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER));
+    assert(applied.aec_mu == config.aec_mu);
+    assert(applied.ns_floor == config.ns_floor);
+    assert(applied.agc_target_dbfs == config.agc_target_dbfs);
+    assert(applied.limiter_dbfs == config.limiter_dbfs);
+    for (i = 0u; i < 8u; ++i) assert(applied.reserved[i] == 0u);
+
+    /* Write then read must round-trip, unmasked fields must keep their
+     * configured value, and the read-back must be reusable verbatim as the next
+     * tuning request. */
+    memset(&tuning, 0, sizeof(tuning));
+    tuning.struct_size = sizeof(tuning);
+    tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    tuning.mask = AP_TUNING_AEC_MU | AP_TUNING_AGC_TARGET;
+    tuning.aec_mu = 0.33f;
+    tuning.agc_target_dbfs = -17.0f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+    assert(ap_pipeline_get_tuning(pipeline, &applied) == AP_OK);
+    assert(applied.aec_mu == 0.33f);
+    assert(applied.agc_target_dbfs == -17.0f);
+    assert(applied.ns_floor == config.ns_floor);
+    assert(applied.limiter_dbfs == config.limiter_dbfs);
+    assert(ap_pipeline_apply_tuning(pipeline, &applied) == AP_OK);
+}
+
 int main(void) {
     test_query_and_discontinuity_validation();
     test_tuning_validation();
     test_tuning_survives_processing();
+    test_readback_round_trip();
     puts("audio-pipeline v2 pipeline control contracts: OK");
     return 0;
 }

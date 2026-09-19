@@ -1,3 +1,9 @@
+# 2.3.20
+
+- Fix Linux runtime command admission across queued RESET: the producer-side AGC target/limiter projection now rewinds to the immutable pipeline configuration that RESET will restore before validating later partial SET_TUNING commands.
+- Add a deterministic two-slot regression where the live pipeline is pre-tuned to (-3, -2), RESET is queued, and a limiter-only -4 dBFS update must be accepted against the reset configuration (-20, -2) rather than rejected against stale live tuning.
+- Keep the public API/ABI, DSP algorithms, acoustic thresholds, research authority and Product Qualification authority unchanged. The Linux runtime private state grows by 8 bytes to preserve both reset-baseline and queued projected AGC pairs.
+
 # 2.3.19
 
 - Update the exact-pinned laboratory provisioning dependency from `ansible-core==2.19.12` to `ansible-core==2.19.13`; lab/provisioning changes remain release-bearing and do not bypass the repository SemVer gate.

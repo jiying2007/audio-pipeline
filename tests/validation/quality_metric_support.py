@@ -364,6 +364,10 @@ def self_test() -> None:
             return samples
 
         @staticmethod
+        def resolve(corpus_path: Path, value: str | None) -> Path | None:
+            return None if not value else corpus_path.parent / value
+
+        @staticmethod
         def policy_violations(policy: dict, corpus: dict,
                               cases: list[dict]) -> tuple[dict, list[dict]]:
             return {}, []

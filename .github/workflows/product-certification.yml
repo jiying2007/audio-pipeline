@@ -9,7 +9,6 @@ on:
       release_tag:
         description: Immutable annotated GitHub Release tag bound to source_sha
         required: true
-        default: v2.3.13
       sku:
         description: Shipping SKU id; must match policy.sku
         required: true
@@ -25,36 +24,12 @@ on:
         description: Absolute path to real product acoustic result JSON on DUT
         required: true
       board_manifest:
-        description: Optional absolute DUT board manifest; blank resolves AUDIO_PIPELINE_LAB_BOARD or XDG/HOME on audio-target
+        description: Canonical DUT board/route authority; blank resolves AUDIO_PIPELINE_LAB_BOARD or XDG/HOME on audio-target
         required: false
         default: ''
-      capture_device:
-        required: true
-        default: hw:0,0
-      playback_device:
-        required: true
-        default: hw:0,0
-      farend_pcm:
-        description: Absolute path to real far-end PCM on DUT
-        required: true
-      sample_rate:
-        required: true
-        default: '16000'
-      mic_channels:
-        required: true
-        default: '2'
-      dsp_cpu:
-        required: true
-        default: '1'
       ambient_c:
         required: true
         default: '25'
-      power_input:
-        description: Live target power-sensor path
-        required: true
-      power_scale:
-        required: true
-        default: '1000000'
       benchmark_seconds:
         required: true
         default: '120'

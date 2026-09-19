@@ -948,7 +948,7 @@ def self_test() -> None:
         staged_values, staged_path = stage_audio(
             raw_path, rate, 1, stage_root, "input-staged.pcm"
         )
-        assert staged_values == pcm_probe
+        assert list(staged_values) == pcm_probe
         assert staged_path == raw_path
         assert not (stage_root / "input-staged.pcm").exists()
 
@@ -961,7 +961,7 @@ def self_test() -> None:
         wav_values, wav_staged = stage_audio(
             wav_path, rate, 1, stage_root, "wav-staged.pcm"
         )
-        assert wav_values == pcm_probe
+        assert list(wav_values) == pcm_probe
         assert wav_staged == stage_root / "wav-staged.pcm"
         assert wav_staged.read_bytes() == pcm_bytes
     mono_probe = [11, -22, 33, -44]

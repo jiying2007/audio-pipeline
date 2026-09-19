@@ -661,6 +661,42 @@ static void test_runtime_reset_rewinds_tuning_projection(void) {
     assert(ap_runtime_command(runtime, &command) == AP_OK);
 
     ap_runtime_deinit(runtime);
+
+    /* Reverse the relation: the reset configuration is now the stricter pair
+     * (-3, -2), while live tuning is loosened to (-20, -2) before runtime open.
+     * A stale live projection would falsely accept limiter -4 even though the
+     * worker reaches RESET first. */
+    pcfg = ap_config_default(AP_PROFILE_CALL);
+    pcfg.agc_target_dbfs = -3.0f;
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg,
+                            &pipeline) == AP_OK);
+
+    memset(&tuning, 0, sizeof(tuning));
+    tuning.struct_size = sizeof(tuning);
+    tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    tuning.mask = AP_TUNING_AGC_TARGET;
+    tuning.agc_target_dbfs = -20.0f;
+    assert(ap_pipeline_apply_tuning(pipeline, &tuning) == AP_OK);
+
+    runtime = open_default(pipeline, &rcfg);
+
+    memset(&command, 0, sizeof(command));
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_RESET;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+
+    memset(&command, 0, sizeof(command));
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_SET_TUNING;
+    command.data.tuning.struct_size = sizeof(command.data.tuning);
+    command.data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command.data.tuning.mask = AP_TUNING_LIMITER;
+    command.data.tuning.limiter_dbfs = -4.0f;
+    assert(ap_runtime_command(runtime, &command) == AP_EINVAL);
+
+    ap_runtime_deinit(runtime);
 }
 
 int main(void) {

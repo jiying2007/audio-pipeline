@@ -512,6 +512,11 @@ static void test_runtime_tuning_matches_pipeline(void) {
         { AP_TUNING_NS_FLOOR, 0.22f, 0.12f, -20.0f, -2.0f },
         { AP_TUNING_AGC_TARGET, 0.22f, 0.12f, 0.0f, -2.0f },
         { AP_TUNING_AGC_TARGET, 0.22f, 0.12f, -20.0f, -2.0f },
+        /* Individually valid AGC values can still violate the live pair when
+         * only one field is updated. Runtime enqueue must reject exactly as the
+         * pipeline boundary does. */
+        { AP_TUNING_AGC_TARGET, 0.22f, 0.12f, -1.0f, -2.0f },
+        { AP_TUNING_LIMITER, 0.22f, 0.12f, -20.0f, -20.0f },
         { AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER, 0.22f, 0.12f, -1.0f,
           -1.0f },
         { AP_TUNING_AGC_TARGET | AP_TUNING_LIMITER, 0.22f, 0.12f, -20.0f,
@@ -565,9 +570,57 @@ static void test_runtime_tuning_matches_pipeline(void) {
     assert(rejected > 0u);
 }
 
+static void test_runtime_tuning_projects_pending_commands(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    ap_runtime_command_t command;
+
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg,
+                            &pipeline) == AP_OK);
+    runtime = open_default(pipeline, &rcfg);
+
+    /* First command is valid against the live default pair (-20, -2). It is
+     * intentionally left queued so the second command must validate against
+     * the projected state (-3, -2), not the worker-owned pipeline's old pair. */
+    memset(&command, 0, sizeof(command));
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_SET_TUNING;
+    command.data.tuning.struct_size = sizeof(command.data.tuning);
+    command.data.tuning.api_version = AP_PIPELINE_CONTROL_API_VERSION;
+    command.data.tuning.mask = AP_TUNING_AGC_TARGET;
+    command.data.tuning.agc_target_dbfs = -3.0f;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+
+    /* -4 dBFS is a valid limiter value in isolation and would also be valid
+     * against the live pipeline's still-old -20 dBFS target. Against the
+     * accepted pending target (-3 dBFS), however, it is invalid and must not
+     * consume the second queue slot. */
+    command.data.tuning.mask = AP_TUNING_LIMITER;
+    command.data.tuning.limiter_dbfs = -4.0f;
+    assert(ap_runtime_command(runtime, &command) == AP_EINVAL);
+
+    /* A limiter that is valid against the projected target still fits in the
+     * queue, proving the rejected command did not advance either queue state or
+     * the producer-side projected pair. */
+    command.data.tuning.limiter_dbfs = -2.0f;
+    assert(ap_runtime_command(runtime, &command) == AP_OK);
+
+    memset(&command, 0, sizeof(command));
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_RESET;
+    assert(ap_runtime_command(runtime, &command) == AP_EFULL);
+
+    ap_runtime_deinit(runtime);
+}
+
 int main(void) {
     test_open_start_and_argument_failures();
     test_runtime_tuning_matches_pipeline();
+    test_runtime_tuning_projects_pending_commands();
     test_command_validation_and_queue_pressure();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();

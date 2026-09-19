@@ -126,16 +126,41 @@ def _window_erle(echo: Sequence[int], output: Sequence[int], rate: int,
     )
     window = max(160, rate // 10)  # 100 ms
     step = max(80, rate // 100)    # 10 ms
+    stop = max(0, count - window + 1)
+    if stop <= 0:
+        return []
+
+    # The ERLE windows overlap by roughly 90%. Accumulate the first window once,
+    # then remove/add only the samples crossed by each 10 ms step. Integer
+    # squares keep the energy sums exact for S16 PCM while avoiding temporary
+    # slices and repeated full-window scans.
+    ein = 0
+    eout = 0
+    for offset in range(window):
+        ref = int(echo[ref_start + offset])
+        est = int(output[est_start + offset])
+        ein += ref * ref
+        eout += est * est
+
     curve: list[tuple[int, float]] = []
-    for start in range(0, max(0, count - window + 1), step):
-        ein = 0.0
-        eout = 0.0
-        for offset in range(window):
-            ref = float(echo[ref_start + start + offset])
-            est = float(output[est_start + start + offset])
-            ein += ref * ref
-            eout += est * est
-        if ein <= 1.0e-12:
+    previous_start = 0
+    for start in range(0, stop, step):
+        if start != previous_start:
+            advance = start - previous_start
+            for offset in range(advance):
+                leaving_ref = int(echo[ref_start + previous_start + offset])
+                leaving_est = int(output[est_start + previous_start + offset])
+                entering_ref = int(
+                    echo[ref_start + previous_start + window + offset]
+                )
+                entering_est = int(
+                    output[est_start + previous_start + window + offset]
+                )
+                ein += entering_ref * entering_ref - leaving_ref * leaving_ref
+                eout += entering_est * entering_est - leaving_est * leaving_est
+            previous_start = start
+
+        if ein <= 0:
             continue
         value = 10.0 * math.log10((ein + 1.0e-12) / (eout + 1.0e-12))
         curve.append((start, value))

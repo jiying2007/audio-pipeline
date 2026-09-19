@@ -1,3 +1,8 @@
+# 2.3.26
+
+- Remove tail-half PCM slice materialization from canonical ERLE evaluation. The evaluator now accumulates echo/output energy directly over the existing second-half span, reducing transient allocation and memory bandwidth for long AEC validation cases.
+- Preserve the ERLE window, sample order, formula and thresholds; add deterministic equivalence coverage against the previous slice-based implementation. Product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.25
 
 - Remove the remaining PCM slice materialization from canonical near-end alignment. The evaluator now carries aligned reference/estimate start offsets plus sample count through SI-SDR and exact-reference applicability, so clean-input and output near-end metrics no longer need temporary aligned signal copies.

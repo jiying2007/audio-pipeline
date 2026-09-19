@@ -38,6 +38,9 @@ The search is intentionally tiered:
 
 - `search-spaces/call-pr-smoke-v1.json` is the bounded PR neighborhood. It probes representative AEC and NS neighbors while retaining the baseline and the full independent replay gates.
 - `search-spaces/call-v1.json` is the wider scheduled/manual search over all four runtime-safe controls.
+- `search-spaces/call-interaction-v1.json` is a bounded Cartesian research run over `ns_floor` x `agc_target_dbfs`. One-at-a-time cannot express combinations, and these two controls stack: on the regression corpus the best single-control change scores 1.5458 while the best gated combination reaches 3.0721. It is a research/discovery space, not a promotion path.
+
+`aec_mu` is deliberately excluded from that space. Every probed combination that raised `aec_mu` above the baseline violated the near-end SI-SDR improvement gate, with worst-case per-case costs of -0.76 to -1.10 dB. The reason is that the costs stack: `ns_floor`, `agc_target_dbfs` and `aec_mu` each cost roughly 0.27 dB on their own and all sit inside the 0.75 dB tolerance, but three of them together exceed it. One-at-a-time can never observe this because it only ever moves one control, so the interaction space is what stops a stacked regression from being reported as a 3.6-point improvement.
 
 Both start from the shipping CALL defaults and use the controls exposed by `ap_tuning_t`:
 

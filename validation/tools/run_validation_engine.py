@@ -577,13 +577,20 @@ def threshold_violations(metrics: dict, expected: dict) -> list[dict]:
 
 def evaluate_case_runtime(corpus_path: Path, case: dict,
                           output: Sequence[int], trace: list[dict],
-                          inputs: dict) -> dict:
-    """Evaluate one already-invoked case without running the processor again."""
+                          inputs: dict,
+                          runtime_context: dict | None = None) -> dict:
+    """Evaluate one already-invoked case and optionally expose reusable context."""
     rate = int(case["sample_rate_hz"])
     channels = int(case["mic_channels"])
     if rate not in SUPPORTED_RATES or channels not in (1, 2):
         raise ValueError(f"unsupported geometry in {case['case_id']}")
+    context = runtime_context if runtime_context is not None else {}
     mic0 = mono_view(inputs["mic"], channels)
+    context["mic0"] = mic0
+    declared_latency_ms = int(
+        trace[0].get("algorithmic_latency_ms", 0)
+    ) if trace else 0
+    context["declared_latency_ms"] = declared_latency_ms
     input_rms = rms_dbfs(mic0)
     output_rms = rms_dbfs(output)
     metrics: dict[str, float | int | bool | None] = {
@@ -611,7 +618,7 @@ def evaluate_case_runtime(corpus_path: Path, case: dict,
     clean_path = resolve(corpus_path, case.get("clean_near_audio"))
     if clean_path is not None:
         clean = read_audio_samples(clean_path, rate, 1)
-        declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
+        context["clean"] = clean
         expected_output_delay = declared_latency_ms * rate // 1000
         input_ref_start, input_est_start, input_count, input_alignment = aligned_span(
             clean, mic0, rate, 0
@@ -632,10 +639,12 @@ def evaluate_case_runtime(corpus_path: Path, case: dict,
     echo_path = resolve(corpus_path, case.get("echo_audio"))
     if echo_path is not None:
         echo = read_audio_samples(echo_path, rate, 1)
+        context["echo"] = echo
         metrics["erle_db"] = erle_db(echo, output)
     labels_path = resolve(corpus_path, case.get("vad_labels"))
     if labels_path is not None:
         labels = load_labels(labels_path)
+        context["labels"] = labels
         vad = vad_stats(labels, trace)
         metrics.update({
             "vad_f1": vad["f1"],
@@ -644,8 +653,12 @@ def evaluate_case_runtime(corpus_path: Path, case: dict,
             "vad_false_positive_rate": vad["false_positive_rate"],
             "vad_false_negative_rate": vad["false_negative_rate"],
         })
-        declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
-        output_delay = int(metrics.get("output_alignment_samples", declared_latency_ms * rate // 1000) or 0)
+        output_delay = int(
+            metrics.get(
+                "output_alignment_samples",
+                declared_latency_ms * rate // 1000,
+            ) or 0
+        )
         attenuation, noise_frames = noise_only_attenuation_db(mic0, output, labels, rate, output_delay)
         speech_attenuation, speech_frames = speech_active_attenuation_db(mic0, output, labels, rate, output_delay)
         metrics["noise_only_attenuation_db"] = attenuation

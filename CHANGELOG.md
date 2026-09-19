@@ -1,3 +1,9 @@
+# 2.3.34
+
+- Reuse canonical runtime context across quality extensions so clean/echo references, VAD labels and mono input views are not reloaded or rebuilt after the single processor invocation.
+- Reuse the canonical clean-to-output alignment already recorded in `output_alignment_samples` for near projection gain instead of running the bounded alignment search a second time.
+- Add fail-closed quality self-tests that reject duplicate reference reads, duplicate label reads and duplicate clean alignment while preserving one processor invocation per case. Reports, metric formulas, thresholds, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.33
 
 - Remove quality-metric alignment copies from near-end projection gain and AEC convergence/recovery evaluation. Canonical quality metrics now use start/count spans over existing PCM buffers instead of materializing aligned signal lists.

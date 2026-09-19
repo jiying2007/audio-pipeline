@@ -238,17 +238,22 @@ def install(engine: Any) -> None:
             output, trace, inputs = engine.invoke(
                 processor, base_case, corpus_path, Path(temporary)
             )
+        runtime_context: dict[str, Any] = {}
         result = engine.evaluate_case_runtime(
-            corpus_path, base_case, output, trace, inputs
+            corpus_path, base_case, output, trace, inputs, runtime_context
         )
-        mic0 = engine.mono_view(inputs["mic"], channels)
-        declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
+        mic0 = runtime_context["mic0"]
+        declared_latency_ms = int(runtime_context["declared_latency_ms"])
         declared_delay = declared_latency_ms * rate // 1000
 
         clean_path = engine.resolve(corpus_path, case.get("clean_near_audio"))
         if clean_path is not None:
-            clean = engine.read_audio_samples(clean_path, rate, 1)
-            _, output_alignment = engine.aligned_si_sdr(clean, output, rate, declared_delay)
+            clean = runtime_context["clean"]
+            output_alignment = int(
+                result["metrics"].get(
+                    "output_alignment_samples", declared_delay
+                ) or 0
+            )
             result["metrics"]["near_projection_gain_db"] = projection_gain_db(
                 clean, output, output_alignment
             )
@@ -287,7 +292,7 @@ def install(engine: Any) -> None:
 
         echo_path = engine.resolve(corpus_path, case.get("echo_audio"))
         if echo_path is not None and case.get("clean_near_audio") is None:
-            echo = engine.read_audio_samples(echo_path, rate, 1)
+            echo = runtime_context["echo"]
             curve = _window_erle(echo, output, rate, declared_delay)
             result["metrics"]["erle_convergence_ms"] = _settling_ms(curve, rate, 0)
             control = case.get("control", {})
@@ -298,7 +303,9 @@ def install(engine: Any) -> None:
 
         labels_path = engine.resolve(corpus_path, case.get("vad_labels"))
         if labels_path is not None and trace:
-            onset, release = vad_transition_delays_ms(engine.load_labels(labels_path), trace)
+            onset, release = vad_transition_delays_ms(
+                runtime_context["labels"], trace
+            )
             result["metrics"]["vad_onset_delay_ms"] = onset
             result["metrics"]["vad_release_delay_ms"] = release
 
@@ -412,6 +419,9 @@ def self_test() -> None:
     class FakeEngine:
         def __init__(self) -> None:
             self.invoke_count = 0
+            self.reference_read_count = 0
+            self.label_read_count = 0
+            self.alignment_count = 0
 
         def evaluate_case(self, processor: Path, corpus_path: Path,
                           case: dict) -> dict:
@@ -419,14 +429,24 @@ def self_test() -> None:
 
         def evaluate_case_runtime(self, corpus_path: Path, case: dict,
                                   output: Sequence[int], trace: list[dict],
-                                  inputs: dict) -> dict:
+                                  inputs: dict,
+                                  runtime_context: dict | None = None) -> dict:
+            context = runtime_context if runtime_context is not None else {}
+            context["mic0"] = inputs["mic"]
+            context["declared_latency_ms"] = 0
+            if case.get("clean_near_audio"):
+                context["clean"] = [1000, -1000] * 80
+            if case.get("echo_audio"):
+                context["echo"] = [1000, -1000] * 320
+            if case.get("vad_labels"):
+                context["labels"] = [0, 1, 1, 0]
             return {
                 "case_id": case["case_id"],
                 "split": case["split"],
                 "scenario": case["scenario"],
                 "source": {},
                 "dimensions": {},
-                "metrics": {},
+                "metrics": {"output_alignment_samples": 0},
                 "violations": [],
                 "passed": True,
             }
@@ -447,6 +467,22 @@ def self_test() -> None:
         def resolve(corpus_path: Path, value: str | None) -> Path | None:
             return None if not value else corpus_path.parent / value
 
+        def read_audio_samples(self, path: Path, rate: int,
+                               channels: int) -> Sequence[int]:
+            self.reference_read_count += 1
+            raise AssertionError("quality must reuse canonical references")
+
+        def load_labels(self, path: Path) -> list[int]:
+            self.label_read_count += 1
+            raise AssertionError("quality must reuse canonical labels")
+
+        def aligned_si_sdr(self, reference: Sequence[int],
+                           estimate: Sequence[int], rate: int,
+                           expected_delay_samples: int
+                           ) -> tuple[float | None, int]:
+            self.alignment_count += 1
+            raise AssertionError("quality must reuse canonical clean alignment")
+
         @staticmethod
         def policy_violations(policy: dict, corpus: dict,
                               cases: list[dict]) -> tuple[dict, list[dict]]:
@@ -460,11 +496,27 @@ def self_test() -> None:
         "scenario": "self-test",
         "sample_rate_hz": 16000,
         "mic_channels": 1,
-        "quality": {},
-        "expected": {"min_near_projection_gain_db": -120.0},
+        "clean_near_audio": "clean.pcm",
+        "quality": {"runtime_context_reuse": True},
+        "expected": {},
     }
     fake.evaluate_case(Path("processor"), Path("corpus.json"), probe_case)
-    assert fake.invoke_count == 1
+    echo_probe = {
+        "case_id": "quality-context-reuse",
+        "split": "validation",
+        "scenario": "self-test",
+        "sample_rate_hz": 16000,
+        "mic_channels": 1,
+        "echo_audio": "echo.pcm",
+        "vad_labels": "labels.txt",
+        "quality": {"runtime_context_reuse": True},
+        "expected": {},
+    }
+    fake.evaluate_case(Path("processor"), Path("corpus.json"), echo_probe)
+    assert fake.invoke_count == 2
+    assert fake.reference_read_count == 0
+    assert fake.label_read_count == 0
+    assert fake.alignment_count == 0
     print("quality metric support self-test: OK")
 
 

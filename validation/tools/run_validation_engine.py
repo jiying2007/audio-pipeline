@@ -27,10 +27,10 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def read_raw(path: Path) -> list[int]:
-    data = path.read_bytes()
+def decode_raw_bytes(data: bytes, source: Path | str) -> list[int]:
+    """Decode one in-memory S16LE buffer without re-reading its source."""
     if len(data) % 2:
-        raise ValueError(f"odd S16LE byte count: {path}")
+        raise ValueError(f"odd S16LE byte count: {source}")
     values = array.array("h")
     values.frombytes(data)
     if os.sys.byteorder != "little":
@@ -38,10 +38,14 @@ def read_raw(path: Path) -> list[int]:
     return list(values)
 
 
+def read_raw(path: Path) -> list[int]:
+    return decode_raw_bytes(path.read_bytes(), path)
+
+
 def read_audio(path: Path, expected_rate: int, expected_channels: int) -> tuple[list[int], bytes]:
     if path.suffix.lower() != ".wav":
         raw = path.read_bytes()
-        return read_raw(path), raw
+        return decode_raw_bytes(raw, path), raw
     with wave.open(str(path), "rb") as handle:
         channels = handle.getnchannels()
         rate = handle.getframerate()
@@ -72,6 +76,16 @@ def mono(interleaved: Sequence[int], channels: int, channel: int = 0) -> list[in
     if channels < 1 or channel >= channels or len(interleaved) % channels:
         raise ValueError("invalid interleaved geometry")
     return list(interleaved[channel::channels])
+
+
+def mono_view(interleaved: Sequence[int], channels: int,
+              channel: int = 0) -> Sequence[int]:
+    """Return mono samples without copying an already mono signal."""
+    if channels < 1 or channel >= channels or len(interleaved) % channels:
+        raise ValueError("invalid interleaved geometry")
+    if channels == 1:
+        return interleaved
+    return mono(interleaved, channels, channel)
 
 
 def rms_dbfs(samples: Sequence[int]) -> float:
@@ -523,7 +537,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
     with tempfile.TemporaryDirectory(prefix="ap-validation-") as temporary:
         work = Path(temporary)
         output, trace, inputs = invoke(processor, case, corpus_path, work)
-    mic0 = mono(inputs["mic"], channels)
+    mic0 = mono_view(inputs["mic"], channels)
     input_rms = rms_dbfs(mic0)
     output_rms = rms_dbfs(output)
     metrics: dict[str, float | int | bool | None] = {
@@ -893,6 +907,16 @@ def self_test() -> None:
     assert -11.0 < peak_dbfs([10000, -10000]) < -10.0
     assert clip_fraction([32767, -32768, 0, 1]) == 0.5
     assert dc_offset_dbfs([0, 0, 0]) <= -119.0
+    pcm_probe = [1, -2, 32767, -32768]
+    pcm_values = array.array("h", pcm_probe)
+    if os.sys.byteorder != "little":
+        pcm_values.byteswap()
+    pcm_bytes = pcm_values.tobytes()
+    assert decode_raw_bytes(pcm_bytes, "self-test") == pcm_probe
+    mono_probe = [11, -22, 33, -44]
+    assert mono_view(mono_probe, 1) is mono_probe
+    assert mono(mono_probe, 1) == mono_probe
+    assert mono_view([1, 10, 2, 20], 2, 0) == [1, 2]
     state = 1
     broadband = []
     for _ in range(rate):

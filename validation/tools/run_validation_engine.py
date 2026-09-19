@@ -176,6 +176,23 @@ def aligned_pair(reference: Sequence[int], estimate: Sequence[int],
     return ref[:count], est[:count], -best_lag
 
 
+def si_sdr_from_aligned_pair(reference: Sequence[int],
+                             estimate: Sequence[int]) -> float | None:
+    """Calculate SI-SDR from an already metric-aligned sample pair."""
+    if len(reference) < 16:
+        return None
+    return si_sdr_db(reference, estimate)
+
+
+def aligned_pair_identical(reference: Sequence[int], estimate: Sequence[int]) -> bool:
+    """Return whether an already aligned pair is sample-for-sample identical."""
+    return (
+        len(reference) >= 16
+        and len(reference) == len(estimate)
+        and all(int(a) == int(b) for a, b in zip(reference, estimate))
+    )
+
+
 def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
                    sample_rate: int, expected_delay_samples: int) -> tuple[float | None, int]:
     """Calculate SI-SDR after bounded sample-exact latency refinement.
@@ -189,20 +206,14 @@ def aligned_si_sdr(reference: Sequence[int], estimate: Sequence[int],
     ref, est, alignment = aligned_pair(
         reference, estimate, sample_rate, expected_delay_samples
     )
-    if len(ref) < 16:
-        return None, alignment
-    return si_sdr_db(ref, est), alignment
+    return si_sdr_from_aligned_pair(ref, est), alignment
 
 
 def aligned_samples_identical(reference: Sequence[int], estimate: Sequence[int],
                               sample_rate: int, expected_delay_samples: int) -> bool:
     """True only when the metric-aligned PCM input is exactly the clean reference."""
     ref, est, _ = aligned_pair(reference, estimate, sample_rate, expected_delay_samples)
-    return (
-        len(ref) >= 16
-        and len(ref) == len(est)
-        and all(int(a) == int(b) for a, b in zip(ref, est))
-    )
+    return aligned_pair_identical(ref, est)
 
 
 def erle_db(echo: Sequence[int], output: Sequence[int]) -> float | None:
@@ -437,12 +448,15 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
         clean, _ = read_audio(clean_path, rate, 1)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         expected_output_delay = declared_latency_ms * rate // 1000
-        input_sdr, input_alignment = aligned_si_sdr(clean, mic0, rate, 0)
-        output_sdr, output_alignment = aligned_si_sdr(clean, output, rate, expected_output_delay)
+        input_ref, input_est, input_alignment = aligned_pair(clean, mic0, rate, 0)
+        input_sdr = si_sdr_from_aligned_pair(input_ref, input_est)
+        output_sdr, output_alignment = aligned_si_sdr(
+            clean, output, rate, expected_output_delay
+        )
         metrics["input_near_si_sdr_db"] = input_sdr
         metrics["near_si_sdr_db"] = output_sdr
-        metrics["input_near_reference_identical"] = aligned_samples_identical(
-            clean, mic0, rate, 0
+        metrics["input_near_reference_identical"] = aligned_pair_identical(
+            input_ref, input_est
         )
         metrics["declared_algorithmic_latency_ms"] = declared_latency_ms
         metrics["input_alignment_samples"] = input_alignment
@@ -771,6 +785,13 @@ def self_test() -> None:
     identical = [(1103515245 * n + 12345) % 65536 - 32768 for n in range(640)]
     almost_identical = list(identical)
     almost_identical[37] += 1
+    aligned_ref, aligned_est, aligned_offset = aligned_pair(
+        identical, identical, rate, 0
+    )
+    wrapped_sdr, wrapped_offset = aligned_si_sdr(identical, identical, rate, 0)
+    assert aligned_offset == wrapped_offset
+    assert si_sdr_from_aligned_pair(aligned_ref, aligned_est) == wrapped_sdr
+    assert aligned_pair_identical(aligned_ref, aligned_est)
     assert aligned_samples_identical(identical, identical, rate, 0)
     assert not aligned_samples_identical(identical, almost_identical, rate, 0)
     improvement_cases = [

@@ -1,3 +1,8 @@
+# 2.3.23
+
+- Reuse the canonical bounded clean-input alignment for both input near-end SI-SDR and exact-reference applicability. Clean-reference cases now perform one input alignment search instead of recomputing the same search for the identity check; output alignment remains unchanged.
+- Keep metric math, lag search bounds, report fields, aggregate applicability, acoustic thresholds, product DSP, public API/ABI and Product Qualification authority unchanged. Add self-test coverage that the reusable aligned-pair helpers produce the same SI-SDR/alignment result as the existing wrapper.
+
 # 2.3.22
 
 - Fix near-end SI-SDR improvement aggregates being dominated by cases whose metric-aligned microphone PCM is exactly the clean near-end reference. Those inputs have no artifact to remove; their very large finite input SI-SDR comes only from the evaluator numerical floor, so subtracting it turns pipeline insertion into a meaningless roughly -230 dB "improvement".

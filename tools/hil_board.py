@@ -64,7 +64,9 @@ def load_board(path: Path) -> dict:
     missing = sorted(REQUIRED - set(data))
     if missing or data.get("schema_version") != 1:
         raise ValueError(f"invalid board manifest; missing={missing}")
-    validate_route(data.get("route"))
+    if "route" not in data:
+        raise ValueError("board manifest route is required")
+    validate_route(data["route"])
     for key in ("revision", "audio_codec", "mic_board_revision", "speaker_revision"):
         validate_text(key, data.get(key), required=True)
     for key in ("thermal_sensor", "power_sensor", "power_cycle_hook", "cleanup_hook"):
@@ -238,6 +240,15 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("non-positive power_scale accepted")
+    missing_route = json.loads(json.dumps(sample))
+    del missing_route["route"]
+    path.write_text(json.dumps(missing_route), encoding="utf-8")
+    try:
+        load_board(path)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("board manifest without route accepted")
     bad_placeholder = json.loads(json.dumps(sample))
     bad_placeholder["revision"] = "replace-with-revision"
     path.write_text(json.dumps(bad_placeholder), encoding="utf-8")

@@ -28,7 +28,7 @@ def validate_text(name: str, value: object, *, required: bool = False) -> None:
         if required:
             raise ValueError(f"{name} is required")
         return
-    if not isinstance(value, str) or (required && not value):
+    if not isinstance(value, str) or (required and not value):
         raise ValueError(f"{name} must be a non-empty string" if required else f"{name} must be null or a string")
     if "\n" in value or "\r" in value:
         raise ValueError(f"{name} contains a newline")

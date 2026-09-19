@@ -1,3 +1,9 @@
+# 2.3.33
+
+- Remove quality-metric alignment copies from near-end projection gain and AEC convergence/recovery evaluation. Canonical quality metrics now use start/count spans over existing PCM buffers instead of materializing aligned signal lists.
+- Remove per-window PCM slice allocations from quality ERLE curves while preserving the same 100 ms window, 10 ms step, sample traversal order and formula. The legacy `_align()` materializing helper remains as a compatibility wrapper.
+- Add deterministic equivalence coverage against the previous allocating projection and window-ERLE computations. Product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.32
 
 - Eliminate the second processor execution for quality opt-in validation cases. Canonical metrics are now computed from an already-invoked runtime result, and quality extensions reuse the same output/trace/input buffers.

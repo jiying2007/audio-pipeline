@@ -258,13 +258,11 @@ jobs:
         with:
           name: shipping-build-${{ needs.resolve.outputs.sha }}
           path: shipping-build
-      - name: Preflight exact audio-target runner and product inputs
+      - name: Resolve canonical target route and preflight exact audio-target runner
         env:
           INPUT_BOARD: ${{ inputs.board_manifest }}
           CORPUS: ${{ inputs.corpus_manifest }}
           ACOUSTIC: ${{ inputs.acoustic_json }}
-          FAREND: ${{ inputs.farend_pcm }}
-          POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
           BOARD=$INPUT_BOARD
@@ -272,14 +270,520 @@ jobs:
             BOARD=${AUDIO_PIPELINE_LAB_BOARD:-${XDG_CONFIG_HOME:-$HOME/.config}/audio-pipeline/board.json}
           fi
           case "$BOARD" in /*) ;; *) echo "board_manifest must resolve absolute: $BOARD" >&2; exit 2 ;; esac
-          case "$BOARD" in *$'\n'*|*$'\r'*) echo 'board_manifest contains a newline' >&2; exit 2 ;; esac
+          case "$BOARD" in *      - name: Verify and deploy exact builder artifact
+        run: |
+          set -euo pipefail
+          (cd shipping-build && sha256sum -c SHA256SUMS)
+          deploy="/tmp/audio-pipeline-cert-${{ needs.resolve.outputs.sha }}-${{ github.run_id }}"
+          rm -rf "$deploy"
+          mkdir -p "$deploy"
+          cp shipping-build/bin/* "$deploy/"
+          chmod 0755 "$deploy"/*
+          echo "DEPLOY_DIR=$deploy" >> "$GITHUB_ENV"
+          python3 tools/certification_provenance.py snapshot \
+            --stage deployed --revision '${{ needs.resolve.outputs.sha }}' \
+            --runner-name "$RUNNER_NAME" --runner-arch "$RUNNER_ARCH" \
+            --binary "$deploy/ap_bench" --binary "$deploy/ap_build_info_dump" \
+            --binary "$deploy/ap_alsa_runtime_duplex" \
+            --output /tmp/deployed-provenance.json
+          "$deploy/ap_build_info_dump" | tee /tmp/deployed-build-info.txt
+      - name: Collect real target benchmark evidence
+        env:
+          AMBIENT_C: ${{ inputs.ambient_c }}
+          BENCHMARK_SECONDS: ${{ inputs.benchmark_seconds }}
+        run: |
+          set -euo pipefail
+          python3 tools/target_evidence.py benchmark \
+            --binary "$DEPLOY_DIR/ap_bench" --output /tmp/benchmark.json \
+            --seconds "$BENCHMARK_SECONDS" --idle-seconds 30 --dsp-cpu "$AP_ROUTE_DSP_CPU" \
+            --sample-rate "$AP_ROUTE_SAMPLE_RATE" --mic-channels "$AP_ROUTE_MIC_CHANNELS" \
+            --ambient-c "$AMBIENT_C" --power-input "$AP_POWER_INPUT" \
+            --power-scale "$AP_POWER_SCALE" --require-sensors
+      - name: Run real product route certification soak
+        env:
+          SOAK_SECONDS: ${{ inputs.soak_seconds }}
+        run: |
+          set -euo pipefail
+          test "$SOAK_SECONDS" -ge '${{ needs.resolve.outputs.required_soak_seconds }}'
+          python3 tools/target_evidence.py route-soak \
+            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" --output /tmp/soak.json \
+            --capture-device "$AP_ROUTE_CAPTURE" --playback-device "$AP_ROUTE_PLAYBACK" \
+            --farend "$AP_ROUTE_FAREND" --seconds "$SOAK_SECONDS" \
+            --sample-rate "$AP_ROUTE_SAMPLE_RATE" --mic-channels "$AP_ROUTE_MIC_CHANNELS" --dsp-cpu "$AP_ROUTE_DSP_CPU" \
+            --max-xruns 0 --max-overruns 0 \
+            --power-input "$AP_POWER_INPUT" --power-scale "$AP_POWER_SCALE"
+      - name: Bind build deployed and executed binary identity
+        run: |
+          set -euo pipefail
+          python3 tools/certification_provenance.py snapshot \
+            --stage executed --revision '${{ needs.resolve.outputs.sha }}' \
+            --runner-name "$RUNNER_NAME" --runner-arch "$RUNNER_ARCH" \
+            --binary "$DEPLOY_DIR/ap_bench" --binary "$DEPLOY_DIR/ap_build_info_dump" \
+            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" \
+            --output /tmp/executed-provenance.json
+          python3 tools/certification_provenance.py verify \
+            --build shipping-build/build-provenance.json \
+            --deployed /tmp/deployed-provenance.json \
+            --executed /tmp/executed-provenance.json \
+            --output /tmp/deployment-provenance.json
+      - name: Assemble and validate v4 product certification
+        env:
+          SKU: ${{ inputs.sku }}
+          POLICY: ${{ inputs.policy_path }}
+          CORPUS: ${{ inputs.corpus_manifest }}
+          ACOUSTIC: ${{ inputs.acoustic_json }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+          RELEASE_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          test -f "$CORPUS"
+          test -f "$ACOUSTIC"
+          rm -rf certification-out
+          python3 tools/ap_certify.py \
+            --sku "$SKU" --policy "$POLICY" --corpus-manifest "$CORPUS" \
+            --benchmark-json /tmp/benchmark.json --acoustic-json "$ACOUSTIC" \
+            --soak-json /tmp/soak.json --deployment-provenance /tmp/deployment-provenance.json \
+            --builder-readiness shipping-build/audio-builder-readiness.json \
+            --target-readiness /tmp/audio-target-readiness.json \
+            --board-manifest "$AP_BOARD_MANIFEST" --output-dir certification-out \
+            --build-info-bin "$DEPLOY_DIR/ap_build_info_dump" \
+            --binary "$DEPLOY_DIR/ap_bench" --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" \
+            --cmake-cache shipping-build/CMakeCache.txt
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          out = Path('certification-out')
+          record_path = out / 'record.json'
+          manifest_path = out / 'evidence-manifest.json'
+          evidence_path = out / 'evidence' / 'release-identity.json'
+          record = json.loads(record_path.read_text(encoding='utf-8'))
+          source = os.environ['RELEASE_SOURCE_SHA'].lower()
+          tag = os.environ['RELEASE_TAG']
+          release_id = os.environ['RELEASE_ID']
+          if not re.fullmatch(r'[0-9a-f]{40}', source):
+              raise SystemExit('release source must be exact 40-hex')
+          if not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', tag):
+              raise SystemExit('release tag must be semantic vX.Y.Z')
+          if not release_id.isdigit():
+              raise SystemExit('release id must be numeric')
+          build = record.get('build') or {}
+          if build.get('source_revision') != source or build.get('commit') != source:
+              raise SystemExit('certification record build is not the immutable release source')
+          if tag != 'v' + str(build.get('version', '')):
+              raise SystemExit('release tag does not match certified build version')
+          release = {
+              'schema_version': 1,
+              'repository': os.environ['GITHUB_REPOSITORY'],
+              'tag': tag,
+              'release_id': int(release_id),
+              'immutable': True,
+              'draft': False,
+              'prerelease': False,
+              'source_revision': source,
+          }
+          evidence_path.write_text(json.dumps(release, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          rel = evidence_path.relative_to(out).as_posix()
+          if any(item.get('path') == rel or item.get('type') == 'release-identity' for item in manifest.get('artifacts', [])):
+              raise SystemExit('duplicate release identity evidence')
+          payload = evidence_path.read_bytes()
+          manifest['artifacts'].append({
+              'path': rel,
+              'type': 'release-identity',
+              'size': len(payload),
+              'sha256': hashlib.sha256(payload).hexdigest(),
+          })
+          manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+          record['release'] = release
+          record['evidence_manifest_sha256'] = manifest_sha
+          record['artifacts']['sha256'] = manifest_sha
+          record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(f"sealed immutable release identity {tag} id={release_id} source={source}")
+          PY
+          python3 certification/validate_record.py certification-out/record.json \
+            --policy "$POLICY" --corpus-manifest "$CORPUS" \
+            --evidence-manifest certification-out/evidence-manifest.json
+          python3 - <<'PY'
+          import json
+          record = json.load(open('certification-out/record.json'))
+          release = record.get('release') or {}
+          assert release.get('immutable') is True
+          assert release.get('draft') is False
+          assert release.get('prerelease') is False
+          assert release.get('source_revision') == record['build']['source_revision']
+          assert release.get('tag') == 'v' + record['build']['version']
+          PY
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
+            -czf certification-out.tar.gz certification-out
+          sha256sum certification-out.tar.gz | tee certification-out.tar.gz.sha256
+      - name: Attest certification evidence bundle
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: certification-out.tar.gz
+      - name: Upload certification transport artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: product-certification-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
+          path: |
+            certification-out.tar.gz
+            certification-out.tar.gz.sha256
+          retention-days: 90
+          if-no-files-found: error
+      - name: Clean deployment directory
+        if: always()
+        run: rm -rf "${DEPLOY_DIR:-/tmp/audio-pipeline-cert-missing}"
+
+  archive:
+    needs: [resolve, certify-dut]
+    runs-on: [self-hosted, linux, certification-archive]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: product-certification-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
+          path: certification-transport
+      - name: Preflight exact certification-archive runner
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role certification-archive \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --archive-command /usr/local/bin/audio-pipeline-cert-archive \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output archive-readiness.json
+      - name: Require immutable product-lifecycle archive backend
+        run: |
+          set -euo pipefail
+          (cd certification-transport && sha256sum -c certification-out.tar.gz.sha256)
+          test -x /usr/local/bin/audio-pipeline-cert-archive
+          /usr/local/bin/audio-pipeline-cert-archive \
+            --input certification-transport/certification-out.tar.gz \
+            --sha256 "$(sha256sum certification-transport/certification-out.tar.gz | awk '{print $1}')" \
+            --retention-class product-lifecycle \
+            --output archive-receipt.json
+          python3 certification/validate_archive_receipt.py \
+            --receipt archive-receipt.json \
+            --bundle certification-transport/certification-out.tar.gz
+      - name: Attest lifecycle archive receipt
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            archive-receipt.json
+            archive-readiness.json
+      - name: Upload archive receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: certification-archive-receipt-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
+          path: |
+            archive-receipt.json
+            archive-readiness.json
+          retention-days: 90
+          if-no-files-found: error
+\n'*|*      - name: Verify and deploy exact builder artifact
+        run: |
+          set -euo pipefail
+          (cd shipping-build && sha256sum -c SHA256SUMS)
+          deploy="/tmp/audio-pipeline-cert-${{ needs.resolve.outputs.sha }}-${{ github.run_id }}"
+          rm -rf "$deploy"
+          mkdir -p "$deploy"
+          cp shipping-build/bin/* "$deploy/"
+          chmod 0755 "$deploy"/*
+          echo "DEPLOY_DIR=$deploy" >> "$GITHUB_ENV"
+          python3 tools/certification_provenance.py snapshot \
+            --stage deployed --revision '${{ needs.resolve.outputs.sha }}' \
+            --runner-name "$RUNNER_NAME" --runner-arch "$RUNNER_ARCH" \
+            --binary "$deploy/ap_bench" --binary "$deploy/ap_build_info_dump" \
+            --binary "$deploy/ap_alsa_runtime_duplex" \
+            --output /tmp/deployed-provenance.json
+          "$deploy/ap_build_info_dump" | tee /tmp/deployed-build-info.txt
+      - name: Collect real target benchmark evidence
+        env:
+          AMBIENT_C: ${{ inputs.ambient_c }}
+          POWER_INPUT: ${{ inputs.power_input }}
+          POWER_SCALE: ${{ inputs.power_scale }}
+          SAMPLE_RATE: ${{ inputs.sample_rate }}
+          MIC_CHANNELS: ${{ inputs.mic_channels }}
+          DSP_CPU: ${{ inputs.dsp_cpu }}
+          BENCHMARK_SECONDS: ${{ inputs.benchmark_seconds }}
+        run: |
+          set -euo pipefail
+          python3 tools/target_evidence.py benchmark \
+            --binary "$DEPLOY_DIR/ap_bench" --output /tmp/benchmark.json \
+            --seconds "$BENCHMARK_SECONDS" --idle-seconds 30 --dsp-cpu "$DSP_CPU" \
+            --sample-rate "$SAMPLE_RATE" --mic-channels "$MIC_CHANNELS" \
+            --ambient-c "$AMBIENT_C" --power-input "$POWER_INPUT" \
+            --power-scale "$POWER_SCALE" --require-sensors
+      - name: Run real product route certification soak
+        env:
+          CAPTURE: ${{ inputs.capture_device }}
+          PLAYBACK: ${{ inputs.playback_device }}
+          FAREND: ${{ inputs.farend_pcm }}
+          SAMPLE_RATE: ${{ inputs.sample_rate }}
+          MIC_CHANNELS: ${{ inputs.mic_channels }}
+          DSP_CPU: ${{ inputs.dsp_cpu }}
+          SOAK_SECONDS: ${{ inputs.soak_seconds }}
+          POWER_INPUT: ${{ inputs.power_input }}
+          POWER_SCALE: ${{ inputs.power_scale }}
+        run: |
+          set -euo pipefail
+          test "$SOAK_SECONDS" -ge '${{ needs.resolve.outputs.required_soak_seconds }}'
+          python3 tools/target_evidence.py route-soak \
+            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" --output /tmp/soak.json \
+            --capture-device "$CAPTURE" --playback-device "$PLAYBACK" \
+            --farend "$FAREND" --seconds "$SOAK_SECONDS" \
+            --sample-rate "$SAMPLE_RATE" --mic-channels "$MIC_CHANNELS" --dsp-cpu "$DSP_CPU" \
+            --max-xruns 0 --max-overruns 0 \
+            --power-input "$POWER_INPUT" --power-scale "$POWER_SCALE"
+      - name: Bind build deployed and executed binary identity
+        run: |
+          set -euo pipefail
+          python3 tools/certification_provenance.py snapshot \
+            --stage executed --revision '${{ needs.resolve.outputs.sha }}' \
+            --runner-name "$RUNNER_NAME" --runner-arch "$RUNNER_ARCH" \
+            --binary "$DEPLOY_DIR/ap_bench" --binary "$DEPLOY_DIR/ap_build_info_dump" \
+            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" \
+            --output /tmp/executed-provenance.json
+          python3 tools/certification_provenance.py verify \
+            --build shipping-build/build-provenance.json \
+            --deployed /tmp/deployed-provenance.json \
+            --executed /tmp/executed-provenance.json \
+            --output /tmp/deployment-provenance.json
+      - name: Assemble and validate v4 product certification
+        env:
+          SKU: ${{ inputs.sku }}
+          POLICY: ${{ inputs.policy_path }}
+          CORPUS: ${{ inputs.corpus_manifest }}
+          ACOUSTIC: ${{ inputs.acoustic_json }}
+          CAPTURE: ${{ inputs.capture_device }}
+          PLAYBACK: ${{ inputs.playback_device }}
+          SAMPLE_RATE: ${{ inputs.sample_rate }}
+          MIC_CHANNELS: ${{ inputs.mic_channels }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+          RELEASE_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          test -f "$CORPUS"
+          test -f "$ACOUSTIC"
+          rm -rf certification-out
+          python3 tools/ap_certify.py \
+            --sku "$SKU" --policy "$POLICY" --corpus-manifest "$CORPUS" \
+            --benchmark-json /tmp/benchmark.json --acoustic-json "$ACOUSTIC" \
+            --soak-json /tmp/soak.json --deployment-provenance /tmp/deployment-provenance.json \
+            --builder-readiness shipping-build/audio-builder-readiness.json \
+            --target-readiness /tmp/audio-target-readiness.json \
+            --output-dir certification-out --capture-device "$CAPTURE" --playback-device "$PLAYBACK" \
+            --sample-rate "$SAMPLE_RATE" --mic-channels "$MIC_CHANNELS" \
+            --build-info-bin "$DEPLOY_DIR/ap_build_info_dump" \
+            --binary "$DEPLOY_DIR/ap_bench" --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" \
+            --cmake-cache shipping-build/CMakeCache.txt
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          out = Path('certification-out')
+          record_path = out / 'record.json'
+          manifest_path = out / 'evidence-manifest.json'
+          evidence_path = out / 'evidence' / 'release-identity.json'
+          record = json.loads(record_path.read_text(encoding='utf-8'))
+          source = os.environ['RELEASE_SOURCE_SHA'].lower()
+          tag = os.environ['RELEASE_TAG']
+          release_id = os.environ['RELEASE_ID']
+          if not re.fullmatch(r'[0-9a-f]{40}', source):
+              raise SystemExit('release source must be exact 40-hex')
+          if not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', tag):
+              raise SystemExit('release tag must be semantic vX.Y.Z')
+          if not release_id.isdigit():
+              raise SystemExit('release id must be numeric')
+          build = record.get('build') or {}
+          if build.get('source_revision') != source or build.get('commit') != source:
+              raise SystemExit('certification record build is not the immutable release source')
+          if tag != 'v' + str(build.get('version', '')):
+              raise SystemExit('release tag does not match certified build version')
+          release = {
+              'schema_version': 1,
+              'repository': os.environ['GITHUB_REPOSITORY'],
+              'tag': tag,
+              'release_id': int(release_id),
+              'immutable': True,
+              'draft': False,
+              'prerelease': False,
+              'source_revision': source,
+          }
+          evidence_path.write_text(json.dumps(release, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          rel = evidence_path.relative_to(out).as_posix()
+          if any(item.get('path') == rel or item.get('type') == 'release-identity' for item in manifest.get('artifacts', [])):
+              raise SystemExit('duplicate release identity evidence')
+          payload = evidence_path.read_bytes()
+          manifest['artifacts'].append({
+              'path': rel,
+              'type': 'release-identity',
+              'size': len(payload),
+              'sha256': hashlib.sha256(payload).hexdigest(),
+          })
+          manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+          record['release'] = release
+          record['evidence_manifest_sha256'] = manifest_sha
+          record['artifacts']['sha256'] = manifest_sha
+          record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(f"sealed immutable release identity {tag} id={release_id} source={source}")
+          PY
+          python3 certification/validate_record.py certification-out/record.json \
+            --policy "$POLICY" --corpus-manifest "$CORPUS" \
+            --evidence-manifest certification-out/evidence-manifest.json
+          python3 - <<'PY'
+          import json
+          record = json.load(open('certification-out/record.json'))
+          release = record.get('release') or {}
+          assert release.get('immutable') is True
+          assert release.get('draft') is False
+          assert release.get('prerelease') is False
+          assert release.get('source_revision') == record['build']['source_revision']
+          assert release.get('tag') == 'v' + record['build']['version']
+          PY
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
+            -czf certification-out.tar.gz certification-out
+          sha256sum certification-out.tar.gz | tee certification-out.tar.gz.sha256
+      - name: Attest certification evidence bundle
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: certification-out.tar.gz
+      - name: Upload certification transport artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: product-certification-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
+          path: |
+            certification-out.tar.gz
+            certification-out.tar.gz.sha256
+          retention-days: 90
+          if-no-files-found: error
+      - name: Clean deployment directory
+        if: always()
+        run: rm -rf "${DEPLOY_DIR:-/tmp/audio-pipeline-cert-missing}"
+
+  archive:
+    needs: [resolve, certify-dut]
+    runs-on: [self-hosted, linux, certification-archive]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: product-certification-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
+          path: certification-transport
+      - name: Preflight exact certification-archive runner
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role certification-archive \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --archive-command /usr/local/bin/audio-pipeline-cert-archive \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output archive-readiness.json
+      - name: Require immutable product-lifecycle archive backend
+        run: |
+          set -euo pipefail
+          (cd certification-transport && sha256sum -c certification-out.tar.gz.sha256)
+          test -x /usr/local/bin/audio-pipeline-cert-archive
+          /usr/local/bin/audio-pipeline-cert-archive \
+            --input certification-transport/certification-out.tar.gz \
+            --sha256 "$(sha256sum certification-transport/certification-out.tar.gz | awk '{print $1}')" \
+            --retention-class product-lifecycle \
+            --output archive-receipt.json
+          python3 certification/validate_archive_receipt.py \
+            --receipt archive-receipt.json \
+            --bundle certification-transport/certification-out.tar.gz
+      - name: Attest lifecycle archive receipt
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            archive-receipt.json
+            archive-readiness.json
+      - name: Upload archive receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: certification-archive-receipt-${{ inputs.sku }}-${{ needs.resolve.outputs.sha }}
+          path: |
+            archive-receipt.json
+            archive-readiness.json
+          retention-days: 90
+          if-no-files-found: error
+\r'*) echo 'board_manifest contains a newline' >&2; exit 2 ;; esac
+          export BOARD
           printf '%s\n' "$BOARD" > /tmp/audio-target-board-path.txt
+          python3 tools/hil_board.py metadata --board "$BOARD" > /tmp/audio-target-board.json
+          python3 - <<'PY'
+          import json
+          import math
+          import os
+          import shlex
+          from pathlib import Path
+
+          board_path = Path(os.environ['BOARD'])
+          board = json.load(open('/tmp/audio-target-board.json'))
+          route = board.get('route')
+          if not isinstance(route, dict):
+              raise SystemExit('Product Certification requires board.route')
+          required = ('capture_device', 'playback_device', 'farend_file',
+                      'sample_rate_hz', 'mic_channels', 'dsp_cpu')
+          missing = [key for key in required if route.get(key) in (None, '')]
+          if missing:
+              raise SystemExit(f'Product Certification board.route missing required values: {missing}')
+          power = board.get('power_sensor')
+          if not isinstance(power, str) or not power:
+              raise SystemExit('Product Certification requires board.power_sensor')
+          farend = str(route['farend_file'])
+          if not Path(farend).is_absolute() or not Path(power).is_absolute():
+              raise SystemExit('Product Certification farend_file and power_sensor must be absolute paths')
+          scale = float(board.get('power_scale', 1000000))
+          if not math.isfinite(scale) or scale <= 0:
+              raise SystemExit('Product Certification board.power_scale must be finite and > 0')
+          labels = set(map(str, board.get('runner_labels') or []))
+          if not {'self-hosted', 'linux', 'audio-target'}.issubset(labels):
+              raise SystemExit('Product Certification board must bind self-hosted/linux/audio-target labels')
+
+          values = {
+              'AP_BOARD_MANIFEST': str(board_path),
+              'AP_ROUTE_CAPTURE': str(route['capture_device']),
+              'AP_ROUTE_PLAYBACK': str(route['playback_device']),
+              'AP_ROUTE_FAREND': farend,
+              'AP_ROUTE_SAMPLE_RATE': str(int(route['sample_rate_hz'])),
+              'AP_ROUTE_MIC_CHANNELS': str(int(route['mic_channels'])),
+              'AP_ROUTE_DSP_CPU': str(int(route['dsp_cpu'])),
+              'AP_POWER_INPUT': power,
+              'AP_POWER_SCALE': format(scale, '.17g'),
+          }
+          for key, value in values.items():
+              if '\n' in value or '\r' in value:
+                  raise SystemExit(f'board-derived value contains newline: {key}')
+          with open('/tmp/audio-target-route.env', 'w', encoding='utf-8') as out:
+              for key, value in values.items():
+                  out.write(f'{key}={shlex.quote(value)}\n')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as out:
+              for key, value in values.items():
+                  out.write(f'{key}={value}\n')
+          PY
+          source /tmp/audio-target-route.env
           python3 tools/runner_preflight.py \
             --role audio-target \
             --source-revision '${{ needs.resolve.outputs.sha }}' \
-            --board-manifest "$BOARD" --corpus-manifest "$CORPUS" \
-            --acoustic-json "$ACOUSTIC" --farend-file "$FAREND" \
-            --power-input "$POWER" --writable-path /tmp \
+            --board-manifest "$AP_BOARD_MANIFEST" --corpus-manifest "$CORPUS" \
+            --acoustic-json "$ACOUSTIC" --farend-file "$AP_ROUTE_FAREND" \
+            --power-input "$AP_POWER_INPUT" --writable-path /tmp \
             --output /tmp/audio-target-readiness.json
       - name: Verify and deploy exact builder artifact
         run: |

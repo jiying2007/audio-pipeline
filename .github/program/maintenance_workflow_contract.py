@@ -23,6 +23,10 @@ AEC_MOTION_MAINTENANCE_WORKFLOW = Path('.github/workflows/aec-motion-development
 MANUAL_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/acoustic-tuning-iteration.yml'),
 )
+REUSABLE_GOVERNANCE_WORKFLOWS = (
+    Path('.github/workflows/research-source-candidate-v2-preflight.yml'),
+)
+
 PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/aec-motion-tuning.yml'),
     Path('.github/workflows/agc-stage-tuning.yml'),
@@ -122,6 +126,19 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
         assert '\n  schedule:' not in text, f'{relative} must not run autonomous scheduled non-shipping work in maintenance state'
         assert '\n  push:' not in text, f'{relative} must not run autonomous push non-shipping work in maintenance state'
 
+    for relative in REUSABLE_GOVERNANCE_WORKFLOWS:
+        path = root / relative
+        assert path.is_file(), f'missing reusable governance workflow: {relative}'
+        text = path.read_text(encoding='utf-8')
+        on = extract_on_block(text)
+        assert re.search(r'(?m)^  workflow_call:\s*$', on), (
+            f'{relative} must remain workflow_call-only'
+        )
+        for forbidden in ('workflow_dispatch', 'pull_request', 'push', 'schedule'):
+            assert not re.search(rf'(?m)^  {forbidden}:', on), (
+                f'{relative} cannot expose direct trigger: {forbidden}'
+            )
+
     validate_aec_motion_maintenance_boundary(root)
 
     actual: dict[Path, tuple[str, ...]] = {}
@@ -190,6 +207,13 @@ def self_test() -> None:
                 'name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n',
                 encoding='utf-8',
             )
+        for relative in REUSABLE_GOVERNANCE_WORKFLOWS:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                'name: reusable\n\non:\n  workflow_call:\n',
+                encoding='utf-8',
+            )
         for relative, crons in ALLOWED_SCHEDULED_WORKFLOWS.items():
             _write_allowed_schedule(root / relative, crons)
         validate(root)
@@ -237,6 +261,22 @@ def self_test() -> None:
         else:
             raise AssertionError('PR/manual non-shipping workflow without PR coverage was not rejected')
         nonshipping.write_text('name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n', encoding='utf-8')
+
+        reusable = root / REUSABLE_GOVERNANCE_WORKFLOWS[0]
+        reusable.write_text(
+            'name: reusable\n\non:\n  workflow_call:\n  workflow_dispatch:\n',
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'cannot expose direct trigger' in str(exc)
+        else:
+            raise AssertionError('reusable governance workflow gained a direct trigger')
+        reusable.write_text(
+            'name: reusable\n\non:\n  workflow_call:\n',
+            encoding='utf-8',
+        )
 
         i002 = root / I002_CONTRACT
         payload = json.loads(i002.read_text(encoding='utf-8'))

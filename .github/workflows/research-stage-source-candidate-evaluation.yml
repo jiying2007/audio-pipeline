@@ -14,6 +14,8 @@ on:
       - '.github/research/continuous-optimization/source-candidate-contract-v2.schema.json'
       - '.github/research/continuous-optimization/source-authority-lock-v2.schema.json'
       - '.github/research/continuous-optimization/source_candidate_authority_v2.py'
+      - '.github/research/continuous-optimization/source_candidate_execution_v2_contract.py'
+      - '.github/workflows/research-source-candidate-v2-preflight.yml'
       - '.github/workflows/research-stage-source-candidate-evaluation.yml'
       - '.github/program/maintenance_workflow_contract.py'
   workflow_dispatch:

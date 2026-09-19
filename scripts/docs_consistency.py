@@ -169,7 +169,7 @@ def validate_supply_chain(root: Path, errors: list[str]) -> None:
             errors.append(f"Dependabot supply-chain coverage missing token: {token}")
 
     lab_match = re.search(
-        r"(?ms)^  - package-ecosystem: pip\n    directory: /lab\n(?P<body>.*?)(?=^  - package-ecosystem:|\\Z)",
+        r"(?ms)^  - package-ecosystem: pip\n    directory: /lab\n(?P<body>.*?)(?=^  - package-ecosystem:|\Z)",
         dependabot,
     )
     if not lab_match:

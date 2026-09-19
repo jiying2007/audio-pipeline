@@ -17,7 +17,7 @@ These values are hosted build-contract measurements. They are **not ABI constant
 
 | Build envelope | Bytes |
 | --- | ---: |
-| FULL 48 kHz / 2 mic / queue depth 8 | 32,760 |
-| TINY 16 kHz / 1 mic / queue depth 4 | 5,176 |
+| FULL 48 kHz / 2 mic / queue depth 8 | 32,768 |
+| TINY 16 kHz / 1 mic / queue depth 4 | 5,184 |
 
 Machine-readable source: [`ci/resource-baseline.json`](../../ci/resource-baseline.json).

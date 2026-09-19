@@ -302,6 +302,8 @@ def assemble(args: argparse.Namespace) -> Path:
     if str(policy_id).startswith("example-") or "not-for-shipping" in str(policy_id):
         raise ValueError("example/not-for-shipping policy cannot create product certification")
 
+    _board, board_route = load_board_route(args.board_manifest)
+
     revision = git_revision()
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("certification must run from an exact Git commit")
@@ -371,6 +373,7 @@ def assemble(args: argparse.Namespace) -> Path:
     staged.append(("acoustic", copy_evidence(args.acoustic_json, evidence_dir, "acoustic.json")))
     staged.append(("soak", copy_evidence(args.soak_json, evidence_dir, "soak.json")))
     staged.append(("policy", copy_evidence(args.policy, evidence_dir, "policy.json")))
+    staged.append(("board-manifest", copy_evidence(args.board_manifest, evidence_dir, "board-manifest.json")))
     staged.append(("corpus-manifest", copy_evidence(args.corpus_manifest, evidence_dir, "corpus-manifest.json")))
     staged.append((
         "deployment-provenance",
@@ -401,6 +404,7 @@ def assemble(args: argparse.Namespace) -> Path:
         "status": "product-certified",
         "policy": policy_id,
         "policy_sha256": digest(args.policy),
+        "board_manifest_sha256": digest(args.board_manifest),
         "corpus_manifest_sha256": digest(args.corpus_manifest),
         "evidence_manifest_sha256": digest(evidence_path),
         "collector_version": VERSION,
@@ -416,10 +420,10 @@ def assemble(args: argparse.Namespace) -> Path:
         "deployment": deployment,
         "platform": collect_platform(),
         "audio_route": {
-            "capture_device": args.capture_device,
-            "playback_device": args.playback_device,
-            "sample_rate_hz": args.sample_rate,
-            "mic_channels": args.mic_channels,
+            "capture_device": board_route["capture_device"],
+            "playback_device": board_route["playback_device"],
+            "sample_rate_hz": board_route["sample_rate_hz"],
+            "mic_channels": board_route["mic_channels"],
         },
         "performance": benchmark_perf,
         "acoustic": acoustic["acoustic"],
@@ -505,11 +509,8 @@ def main() -> int:
     parser.add_argument("--deployment-provenance", type=Path)
     parser.add_argument("--builder-readiness", type=Path)
     parser.add_argument("--target-readiness", type=Path)
+    parser.add_argument("--board-manifest", type=Path)
     parser.add_argument("--output-dir", type=Path)
-    parser.add_argument("--capture-device")
-    parser.add_argument("--playback-device")
-    parser.add_argument("--sample-rate", type=int, default=16000)
-    parser.add_argument("--mic-channels", type=int, default=2)
     parser.add_argument("--build-info-bin", type=Path)
     parser.add_argument("--binary", action="append", type=Path, default=[])
     parser.add_argument("--cmake-cache", type=Path)
@@ -519,15 +520,11 @@ def main() -> int:
     required = (
         "sku", "policy", "corpus_manifest", "benchmark_json", "acoustic_json",
         "soak_json", "deployment_provenance", "builder_readiness", "target_readiness",
-        "output_dir", "capture_device", "build_info_bin",
+        "board_manifest", "output_dir", "build_info_bin",
     )
     missing = [name for name in required if getattr(args, name) is None]
     if missing:
         parser.error("missing required arguments: " + ", ".join(missing))
-    if args.sample_rate not in {8000, 16000, 24000, 32000, 48000}:
-        parser.error("unsupported --sample-rate")
-    if args.mic_channels not in {1, 2}:
-        parser.error("--mic-channels must be 1 or 2")
     assemble(args)
     return 0
 

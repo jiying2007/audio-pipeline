@@ -57,16 +57,6 @@ on:
         required: false
         default: ''
         type: string
-      farend_file:
-        description: Optional real far-end PCM on audio-target
-        required: false
-        default: ''
-        type: string
-      power_input:
-        description: Optional live power-sensor path on audio-target
-        required: false
-        default: ''
-        type: string
       archive_command:
         description: certification-archive immutable backend command
         required: false
@@ -188,8 +178,6 @@ jobs:
           INPUT_BOARD: ${{ inputs.board_manifest }}
           CORPUS: ${{ inputs.corpus_manifest }}
           ACOUSTIC: ${{ inputs.acoustic_json }}
-          FAREND: ${{ inputs.farend_file }}
-          POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
           BOARD=$INPUT_BOARD
@@ -197,7 +185,92 @@ jobs:
             BOARD=${AUDIO_PIPELINE_LAB_BOARD:-${XDG_CONFIG_HOME:-$HOME/.config}/audio-pipeline/board.json}
           fi
           case "$BOARD" in /*) ;; *) echo "board manifest must resolve absolute: $BOARD" >&2; exit 2 ;; esac
-          case "$BOARD" in *$'\n'*|*$'\r'*) echo 'board manifest contains a newline' >&2; exit 2 ;; esac
+          case "$BOARD" in *      - name: Upload readiness report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: runner-readiness-audio-target-${{ github.run_id }}
+          path: runner-readiness.json
+          if-no-files-found: error
+          retention-days: 90
+
+  archive:
+    needs: resolve
+    if: inputs.role == 'certification-archive'
+    runs-on: [self-hosted, linux, certification-archive]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
+      - name: Check certification-archive readiness
+        env:
+          ARCHIVE_COMMAND: ${{ inputs.archive_command }}
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role certification-archive \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --archive-command "$ARCHIVE_COMMAND" \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output runner-readiness.json
+      - name: Upload readiness report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: runner-readiness-certification-archive-${{ github.run_id }}
+          path: runner-readiness.json
+          if-no-files-found: error
+          retention-days: 90
+\n'*|*      - name: Upload readiness report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: runner-readiness-audio-target-${{ github.run_id }}
+          path: runner-readiness.json
+          if-no-files-found: error
+          retention-days: 90
+
+  archive:
+    needs: resolve
+    if: inputs.role == 'certification-archive'
+    runs-on: [self-hosted, linux, certification-archive]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
+      - name: Check certification-archive readiness
+        env:
+          ARCHIVE_COMMAND: ${{ inputs.archive_command }}
+        run: |
+          set -euo pipefail
+          python3 tools/runner_preflight.py \
+            --role certification-archive \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --archive-command "$ARCHIVE_COMMAND" \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output runner-readiness.json
+      - name: Upload readiness report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: runner-readiness-certification-archive-${{ github.run_id }}
+          path: runner-readiness.json
+          if-no-files-found: error
+          retention-days: 90
+\r'*) echo 'board manifest contains a newline' >&2; exit 2 ;; esac
+          python3 tools/hil_board.py metadata --board "$BOARD" > /tmp/audio-target-board.json
+          mapfile -t BOARD_PATHS < <(python3 - <<'PY'
+          import json
+          board = json.load(open('/tmp/audio-target-board.json'))
+          route = board.get('route') or {}
+          print(route.get('farend_file') or '')
+          print(board.get('power_sensor') or '')
+          PY
+          )
+          FAREND=${BOARD_PATHS[0]}
+          POWER=${BOARD_PATHS[1]}
           args=(--role audio-target --source-revision '${{ needs.resolve.outputs.sha }}' --writable-path /tmp --output runner-readiness.json)
           args+=(--board-manifest "$BOARD")
           if [ -n "$CORPUS" ]; then args+=(--corpus-manifest "$CORPUS"); fi

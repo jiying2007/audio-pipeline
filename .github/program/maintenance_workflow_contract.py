@@ -279,7 +279,12 @@ def self_test() -> None:
         hosted_path = root / hosted
         hosted_text = hosted_path.read_text(encoding='utf-8')
         hosted_path.write_text(
-            hosted_text.replace('  pull_request:\n    paths:\n', '  pull_request:\n', 1),
+            re.sub(
+                r"(?m)^  pull_request:\n    paths:\n(?:      - .+\n)+",
+                '  pull_request:\n',
+                hosted_text,
+                count=1,
+            ),
             encoding='utf-8',
         )
         try:

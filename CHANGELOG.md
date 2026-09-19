@@ -1,3 +1,9 @@
+# 2.3.28
+
+- Eliminate redundant raw-PCM ingestion work in canonical validation: non-WAV inputs are now read once and decoded from the same in-memory bytes instead of reading the file a second time through `read_raw()`.
+- Avoid copying already-mono microphone PCM in canonical validation and quality-metric replay. Multi-channel extraction retains the existing materialized channel behavior; the legacy `mono()` helper remains unchanged.
+- Add deterministic self-tests for in-memory S16LE decoding and mono zero-copy semantics. Metric math, thresholds, report fields, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.27
 
 - Fuse clean-input exact-reference detection into the first canonical SI-SDR span pass. Near-end input cases now derive SI-SDR and exact-identity applicability in the same two PCM scans instead of running a third full identity scan.

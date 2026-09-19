@@ -201,7 +201,7 @@ def install(engine: Any) -> None:
         channels = int(case["mic_channels"])
         with tempfile.TemporaryDirectory(prefix="ap-quality-") as temporary:
             output, trace, inputs = engine.invoke(processor, base_case, corpus_path, Path(temporary))
-        mic0 = engine.mono(inputs["mic"], channels)
+        mic0 = engine.mono_view(inputs["mic"], channels)
         declared_latency_ms = int(trace[0].get("algorithmic_latency_ms", 0)) if trace else 0
         declared_delay = declared_latency_ms * rate // 1000
 

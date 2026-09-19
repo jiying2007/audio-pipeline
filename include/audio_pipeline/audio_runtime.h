@@ -159,7 +159,10 @@ ap_status_t ap_runtime_submit_frame(ap_runtime_t *runtime,
                                     const ap_frame_metadata_t *metadata_or_null);
 
 /* Single control producer -> DSP worker command queue. Commands are applied only
- * at frame boundaries, preserving worker ownership of the live pipeline. */
+ * at frame boundaries, preserving worker ownership of the live pipeline.
+ * SET_TUNING is synchronously validated against the tuning state projected
+ * through earlier accepted queued commands, so AP_OK means the queued sequence
+ * remains valid when the worker reaches it. */
 ap_status_t ap_runtime_command(ap_runtime_t *runtime,
                                const ap_runtime_command_t *command);
 

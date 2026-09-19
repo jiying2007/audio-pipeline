@@ -203,6 +203,11 @@ static void test_readback_round_trip(void) {
     assert(applied.agc_target_dbfs == -17.0f);
     assert(applied.ns_floor == config.ns_floor);
     assert(applied.limiter_dbfs == config.limiter_dbfs);
+    assert(ap_pipeline_get_config(pipeline, &readback) == AP_OK);
+    assert(readback.aec_mu == applied.aec_mu);
+    assert(readback.agc_target_dbfs == applied.agc_target_dbfs);
+    assert(readback.ns_floor == applied.ns_floor);
+    assert(readback.limiter_dbfs == applied.limiter_dbfs);
     assert(ap_pipeline_apply_tuning(pipeline, &applied) == AP_OK);
 }
 

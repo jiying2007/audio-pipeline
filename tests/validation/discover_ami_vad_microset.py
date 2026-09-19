@@ -15,6 +15,8 @@ import json
 import math
 import re
 import struct
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -39,10 +41,58 @@ HEADER_RANGE_BYTES = 256 * 1024
 MAX_XML_BYTES = 2 * 1024 * 1024
 MAX_WINDOW_BYTES = 4 * 1024 * 1024
 USER_AGENT = "audio-pipeline-ami-vad-discovery/1"
+RETRYABLE_HTTP_STATUS = {429, 500, 502, 503, 504}
+MAX_ATTEMPTS = 4
 
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def retry_delay_seconds(error: Exception, attempt: int) -> float:
+    """Bounded transport backoff; integrity failures are never retried."""
+    if isinstance(error, urllib.error.HTTPError) and error.headers is not None:
+        raw = error.headers.get("Retry-After")
+        if raw:
+            try:
+                value = float(raw)
+                if value >= 0.0:
+                    return min(max(value, 0.25), 8.0)
+            except ValueError:
+                pass
+    return min(float(1 << attempt), 8.0)
+
+
+def _open_bounded_with_retry(
+    request: urllib.request.Request,
+    max_bytes: int,
+    *,
+    opener=urllib.request.urlopen,
+    sleeper=time.sleep,
+) -> tuple[bytes, Any]:
+    if max_bytes <= 0:
+        raise ValueError("max_bytes must be positive")
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            with opener(request, timeout=45) as response:
+                data = response.read(max_bytes + 1)
+                if len(data) > max_bytes:
+                    raise ValueError(
+                        f"response exceeded max_bytes={max_bytes}: {request.full_url}"
+                    )
+                return data, response
+        except urllib.error.HTTPError as error:
+            if (
+                error.code not in RETRYABLE_HTTP_STATUS
+                or attempt + 1 >= MAX_ATTEMPTS
+            ):
+                raise
+            sleeper(retry_delay_seconds(error, attempt))
+        except (urllib.error.URLError, TimeoutError, ConnectionResetError) as error:
+            if attempt + 1 >= MAX_ATTEMPTS:
+                raise
+            sleeper(retry_delay_seconds(error, attempt))
+    raise AssertionError("bounded HTTP retry loop exhausted without terminal result")
 
 
 def request_bytes(
@@ -50,16 +100,13 @@ def request_bytes(
     *,
     max_bytes: int,
     headers: dict[str, str] | None = None,
+    user_agent: str = USER_AGENT,
 ) -> tuple[bytes, Any]:
     request = urllib.request.Request(
         url,
-        headers={"User-Agent": USER_AGENT, **(headers or {})},
+        headers={"User-Agent": user_agent, **(headers or {})},
     )
-    with urllib.request.urlopen(request, timeout=45) as response:
-        data = response.read(max_bytes + 1)
-        if len(data) > max_bytes:
-            raise ValueError(f"response exceeded max_bytes={max_bytes}: {url}")
-        return data, response
+    return _open_bounded_with_retry(request, max_bytes)
 
 
 def hf_tree_url() -> str:
@@ -385,6 +432,48 @@ def self_test() -> None:
     windows = select_windows([(30.0, 40.0), (100.0, 118.0), (180.0, 200.0)], 260.0)
     assert len(windows) == 3
     assert all(0.0 <= item["activity_fraction"] <= 1.0 for item in windows)
+
+    class FakeResponse:
+        status = 206
+        headers = {"Content-Range": "bytes 0-2/3"}
+
+        def read(self, limit: int) -> bytes:
+            assert limit == 4
+            return b"abc"
+
+        def getcode(self) -> int:
+            return self.status
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+    attempts = 0
+    delays: list[float] = []
+
+    def flaky_opener(request, timeout=45):
+        nonlocal attempts
+        assert timeout == 45
+        attempts += 1
+        if attempts == 1:
+            raise urllib.error.URLError(ConnectionResetError(104, "reset"))
+        return FakeResponse()
+
+    data, response = _open_bounded_with_retry(
+        urllib.request.Request("https://example.invalid"),
+        3,
+        opener=flaky_opener,
+        sleeper=delays.append,
+    )
+    assert data == b"abc" and response.status == 206
+    assert attempts == 2 and delays == [1.0]
+    rate_limited = urllib.error.HTTPError(
+        "https://example.invalid", 429, "rate limited", {"Retry-After": "0.5"}, None
+    )
+    assert retry_delay_seconds(rate_limited, 0) == 0.5
+    assert retry_delay_seconds(urllib.error.URLError("reset"), 2) == 4.0
     print("AMI VAD microset discovery self-test: OK")
 
 

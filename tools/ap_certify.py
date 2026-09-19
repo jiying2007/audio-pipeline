@@ -14,7 +14,9 @@ import tempfile
 import time
 from pathlib import Path
 
-VERSION = "3.1"
+from hil_board import load_board
+
+VERSION = "3.2"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -71,48 +73,34 @@ def project_version() -> str:
 
 
 def load_board_route(path: Path) -> tuple[dict, dict]:
-    board = json.loads(path.read_text(encoding="utf-8"))
-    if board.get("schema_version") != 1:
-        raise ValueError("board manifest schema_version must be 1")
+    board = load_board(path)
     route = board.get("route")
     if not isinstance(route, dict):
         raise ValueError("board manifest route is required")
-    required = ("capture_device", "playback_device", "farend_file",
-                "sample_rate_hz", "mic_channels", "dsp_cpu")
+    required = ("capture_device", "farend_file", "sample_rate_hz", "mic_channels", "dsp_cpu")
     missing = [key for key in required if route.get(key) in (None, "")]
     if missing:
-        raise ValueError("board route missing: " + ", ".join(missing))
-    sample_rate = int(route["sample_rate_hz"])
-    mic_channels = int(route["mic_channels"])
-    dsp_cpu = int(route["dsp_cpu"])
-    if sample_rate not in {8000, 16000, 24000, 32000, 48000}:
-        raise ValueError("board route sample_rate_hz is unsupported")
-    if mic_channels not in {1, 2}:
-        raise ValueError("board route mic_channels must be 1 or 2")
-    if dsp_cpu < -1:
-        raise ValueError("board route dsp_cpu must be >= -1")
+        raise ValueError("certification board route missing: " + ", ".join(missing))
+
     farend = Path(str(route["farend_file"]))
-    power = Path(str(board.get("power_sensor") or ""))
+    power_raw = board.get("power_sensor")
+    power = Path(str(power_raw or ""))
     if not farend.is_absolute():
-        raise ValueError("board route farend_file must be absolute")
-    if not str(power) or not power.is_absolute():
-        raise ValueError("board power_sensor must be an absolute path")
-    power_scale = float(board.get("power_scale", 1_000_000))
-    if not math.isfinite(power_scale) or power_scale <= 0.0:
-        raise ValueError("board power_scale must be finite and > 0")
+        raise ValueError("certification board route farend_file must be absolute")
+    if not power_raw or not power.is_absolute():
+        raise ValueError("certification board power_sensor must be an absolute path")
+
+    playback = route.get("playback_device")
     normalized = {
         "capture_device": str(route["capture_device"]),
-        "playback_device": str(route["playback_device"]),
+        "playback_device": None if playback is None else str(playback),
         "farend_file": str(farend),
-        "sample_rate_hz": sample_rate,
-        "mic_channels": mic_channels,
-        "dsp_cpu": dsp_cpu,
+        "sample_rate_hz": int(route["sample_rate_hz"]),
+        "mic_channels": int(route["mic_channels"]),
+        "dsp_cpu": int(route["dsp_cpu"]),
         "power_sensor": str(power),
-        "power_scale": power_scale,
+        "power_scale": float(board.get("power_scale", 1_000_000)),
     }
-    for key, value in normalized.items():
-        if isinstance(value, str) and ("\n" in value or "\r" in value):
-            raise ValueError(f"board route contains newline: {key}")
     return board, normalized
 
 
@@ -434,6 +422,7 @@ def assemble(args: argparse.Namespace) -> Path:
             "benchmark_json": "evidence/benchmark.json",
             "evidence_manifest": "evidence-manifest.json",
             "deployment_provenance": "evidence/deployment-provenance.json",
+            "board_manifest": "evidence/board-manifest.json",
             "sha256": digest(evidence_path),
             "binary_sha256": binary_hashes,
         },
@@ -497,6 +486,14 @@ def self_test() -> int:
         board_path = root / "board.json"
         board_path.write_text(json.dumps({
             "schema_version": 1,
+            "board_id": "cert-selftest",
+            "revision": "rev-a",
+            "soc": "test-soc",
+            "ram_mib": 64,
+            "kernel_family": "linux",
+            "audio_codec": "codec-a",
+            "mic_board_revision": "mic-a",
+            "speaker_revision": "spk-a",
             "route": {
                 "capture_device": "hw:0,0",
                 "playback_device": "hw:0,1",

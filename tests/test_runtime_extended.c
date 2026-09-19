@@ -758,6 +758,29 @@ static void test_runtime_tuning_resyncs_caller_owned_pipeline(void) {
     assert(ap_pipeline_get_tuning(pipeline, &tuning) == AP_OK);
     assert(tuning.agc_target_dbfs == -1.1f);
     assert(tuning.limiter_dbfs == -1.05f);
+
+    /* Phase 5: the same runtime can hand ownership back on stop. A direct
+     * caller change after stop must be captured by the next start before a
+     * running-state command is validated only against the producer shadow. */
+    pcfg = ap_config_default(AP_PROFILE_CALL);
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg,
+                            &pipeline) == AP_OK);
+    runtime = open_default(pipeline, &rcfg);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    (void)process_one(runtime, mic, render, out);
+    ap_runtime_stop(runtime);
+    assert(apply_agc(pipeline, AP_TUNING_LIMITER, -20.0f, -1.05f) == AP_OK);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    assert(queue_agc(runtime, &command, AP_TUNING_AGC_TARGET, -1.1f,
+                     0.0f) == AP_OK);
+    (void)process_one(runtime, mic, render, out);
+    ap_runtime_stop(runtime);
+    ap_runtime_deinit(runtime);
+
+    memset(&tuning, 0, sizeof(tuning));
+    assert(ap_pipeline_get_tuning(pipeline, &tuning) == AP_OK);
+    assert(tuning.agc_target_dbfs == -1.1f);
+    assert(tuning.limiter_dbfs == -1.05f);
 }
 
 int main(void) {

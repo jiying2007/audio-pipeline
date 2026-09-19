@@ -162,20 +162,31 @@ def validate_supply_chain(root: Path, errors: list[str]) -> None:
         "directory: /lab",
         "package-ecosystem: docker",
         "directory: /ci",
-        "lab-python-patch:",
         "dependency-name: ubuntu",
     )
     for token in required_tokens:
         if token not in dependabot:
             errors.append(f"Dependabot supply-chain coverage missing token: {token}")
-    if "lab-python-dependencies:" in dependabot:
-        errors.append("lab dependency automation must not use the unrestricted legacy group")
-    if dependabot.count("version-update:semver-major") < 3:
-        errors.append("Dependabot must reject major updates for Actions, lab Python and CI Ubuntu")
-    if dependabot.count("version-update:semver-minor") < 2:
-        errors.append("Dependabot must reject minor updates for lab Python and CI Ubuntu")
-    if dependabot.count("          - patch") < 2:
-        errors.append("Dependabot must retain patch updates for Actions and lab Python")
+
+    lab_match = re.search(
+        r"(?ms)^  - package-ecosystem: pip\n    directory: /lab\n(?P<body>.*?)(?=^  - package-ecosystem:|\Z)",
+        dependabot,
+    )
+    if not lab_match:
+        errors.append("Dependabot lab package block missing")
+    else:
+        lab_block = lab_match.group("body")
+        if not re.search(r"(?m)^    open-pull-requests-limit: 0$", lab_block):
+            errors.append("Dependabot ordinary /lab version-update PRs must remain disabled")
+        if "groups:" in lab_block or "update-types:" in lab_block:
+            errors.append("Dependabot /lab must not reintroduce ordinary grouped version updates")
+
+    if dependabot.count("version-update:semver-major") < 2:
+        errors.append("Dependabot must reject major updates for Actions and CI Ubuntu")
+    if dependabot.count("version-update:semver-minor") < 1:
+        errors.append("Dependabot must reject minor updates for CI Ubuntu")
+    if dependabot.count("          - patch") < 1:
+        errors.append("Dependabot must retain non-major patch coverage for Actions")
 
 
 def validate_validation_framework(root: Path, errors: list[str]) -> None:
@@ -379,13 +390,33 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     for token in ("$HOME/audio-validation-data", "datasets.seal.json", "AUDIO_PIPELINE_LAB_BOARD", "XDG_CONFIG_HOME", "$HOME/.config"):
         if token not in readiness:
             errors.append(f"trusted runner readiness missing runner-local user-mode token: {token}")
+    for forbidden in ("      farend_file:\n", "      power_input:\n"):
+        if forbidden in readiness:
+            errors.append(f"trusted runner readiness reintroduced duplicate target-route input: {forbidden.strip()}")
+    for forbidden in (
+        "      capture_device:\n", "      playback_device:\n", "      farend_file:\n",
+        "      sample_rate:\n", "      mic_channels:\n", "      dsp_cpu:\n",
+        "      power_input:\n", "      power_scale:\n",
+    ):
+        if forbidden in hil:
+            errors.append(f"HIL reintroduced duplicate board-authority input: {forbidden.strip()}")
     if "default: /etc/audio-pipeline/board.json" in certification:
         errors.append("Product Certification reintroduced a system-mode /etc board default")
+    for forbidden in (
+        "      capture_device:\n", "      playback_device:\n", "      farend_pcm:\n",
+        "      sample_rate:\n", "      mic_channels:\n", "      dsp_cpu:\n",
+        "      power_input:\n", "      power_scale:\n",
+    ):
+        if forbidden in certification:
+            errors.append(f"Product Certification reintroduced duplicate board-authority input: {forbidden.strip()}")
+    if "default: v2." in certification:
+        errors.append("Product Certification release_tag must be explicit, not a stale/default release")
     for token in (
         "AUDIO_PIPELINE_LAB_BOARD",
         "XDG_CONFIG_HOME",
         "$HOME/.config",
-        "/tmp/audio-target-board-path.txt",
+        "AP_BOARD_MANIFEST",
+        '--board-manifest "$AP_BOARD_MANIFEST"',
         "runs-on: [self-hosted, linux, audio-builder]",
         "runs-on: [self-hosted, linux, certification-archive]",
         "/usr/local/bin/audio-pipeline-cert-archive",

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -13,7 +14,9 @@ import tempfile
 import time
 from pathlib import Path
 
-VERSION = "3.1"
+from hil_board import load_board
+
+VERSION = "3.2"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -67,6 +70,38 @@ def project_version() -> str:
         if match:
             return match.group(1)
     raise ValueError("cannot resolve project version")
+
+
+def load_board_route(path: Path) -> tuple[dict, dict]:
+    board = load_board(path)
+    route = board.get("route")
+    if not isinstance(route, dict):
+        raise ValueError("board manifest route is required")
+    required = ("capture_device", "farend_file", "sample_rate_hz", "mic_channels", "dsp_cpu")
+    missing = [key for key in required if route.get(key) in (None, "")]
+    if missing:
+        raise ValueError("certification board route missing: " + ", ".join(missing))
+
+    farend = Path(str(route["farend_file"]))
+    power_raw = board.get("power_sensor")
+    power = Path(str(power_raw or ""))
+    if not farend.is_absolute():
+        raise ValueError("certification board route farend_file must be absolute")
+    if not power_raw or not power.is_absolute():
+        raise ValueError("certification board power_sensor must be an absolute path")
+
+    playback = route.get("playback_device")
+    normalized = {
+        "capture_device": str(route["capture_device"]),
+        "playback_device": None if playback is None else str(playback),
+        "farend_file": str(farend),
+        "sample_rate_hz": int(route["sample_rate_hz"]),
+        "mic_channels": int(route["mic_channels"]),
+        "dsp_cpu": int(route["dsp_cpu"]),
+        "power_sensor": str(power),
+        "power_scale": float(board.get("power_scale", 1_000_000)),
+    }
+    return board, normalized
 
 
 def cpuinfo_field(name: str) -> str | None:
@@ -255,6 +290,8 @@ def assemble(args: argparse.Namespace) -> Path:
     if str(policy_id).startswith("example-") or "not-for-shipping" in str(policy_id):
         raise ValueError("example/not-for-shipping policy cannot create product certification")
 
+    _board, board_route = load_board_route(args.board_manifest)
+
     revision = git_revision()
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("certification must run from an exact Git commit")
@@ -324,6 +361,7 @@ def assemble(args: argparse.Namespace) -> Path:
     staged.append(("acoustic", copy_evidence(args.acoustic_json, evidence_dir, "acoustic.json")))
     staged.append(("soak", copy_evidence(args.soak_json, evidence_dir, "soak.json")))
     staged.append(("policy", copy_evidence(args.policy, evidence_dir, "policy.json")))
+    staged.append(("board-manifest", copy_evidence(args.board_manifest, evidence_dir, "board-manifest.json")))
     staged.append(("corpus-manifest", copy_evidence(args.corpus_manifest, evidence_dir, "corpus-manifest.json")))
     staged.append((
         "deployment-provenance",
@@ -354,6 +392,7 @@ def assemble(args: argparse.Namespace) -> Path:
         "status": "product-certified",
         "policy": policy_id,
         "policy_sha256": digest(args.policy),
+        "board_manifest_sha256": digest(args.board_manifest),
         "corpus_manifest_sha256": digest(args.corpus_manifest),
         "evidence_manifest_sha256": digest(evidence_path),
         "collector_version": VERSION,
@@ -369,10 +408,10 @@ def assemble(args: argparse.Namespace) -> Path:
         "deployment": deployment,
         "platform": collect_platform(),
         "audio_route": {
-            "capture_device": args.capture_device,
-            "playback_device": args.playback_device,
-            "sample_rate_hz": args.sample_rate,
-            "mic_channels": args.mic_channels,
+            "capture_device": board_route["capture_device"],
+            "playback_device": board_route["playback_device"],
+            "sample_rate_hz": board_route["sample_rate_hz"],
+            "mic_channels": board_route["mic_channels"],
         },
         "performance": benchmark_perf,
         "acoustic": acoustic["acoustic"],
@@ -383,6 +422,7 @@ def assemble(args: argparse.Namespace) -> Path:
             "benchmark_json": "evidence/benchmark.json",
             "evidence_manifest": "evidence-manifest.json",
             "deployment_provenance": "evidence/deployment-provenance.json",
+            "board_manifest": "evidence/board-manifest.json",
             "sha256": digest(evidence_path),
             "binary_sha256": binary_hashes,
         },
@@ -442,6 +482,41 @@ def self_test() -> int:
             pass
         else:
             raise AssertionError("tampered CMake argument digest must fail")
+
+        board_path = root / "board.json"
+        board_path.write_text(json.dumps({
+            "schema_version": 1,
+            "board_id": "cert-selftest",
+            "revision": "rev-a",
+            "soc": "test-soc",
+            "ram_mib": 64,
+            "kernel_family": "linux",
+            "audio_codec": "codec-a",
+            "mic_board_revision": "mic-a",
+            "speaker_revision": "spk-a",
+            "route": {
+                "capture_device": "hw:0,0",
+                "playback_device": "hw:0,1",
+                "farend_file": "/tmp/farend.pcm",
+                "sample_rate_hz": 16000,
+                "mic_channels": 2,
+                "dsp_cpu": 1,
+            },
+            "power_sensor": "/tmp/power",
+            "power_scale": 1000000,
+        }) + "\n", encoding="utf-8")
+        _board, route = load_board_route(board_path)
+        assert route["capture_device"] == "hw:0,0"
+        assert route["sample_rate_hz"] == 16000
+        bad_board = json.loads(board_path.read_text(encoding="utf-8"))
+        bad_board["route"]["farend_file"] = "relative.pcm"
+        board_path.write_text(json.dumps(bad_board) + "\n", encoding="utf-8")
+        try:
+            load_board_route(board_path)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("relative certification far-end path accepted")
     print("audio-pipeline certification collector self-test: OK")
     return 0
 
@@ -458,11 +533,8 @@ def main() -> int:
     parser.add_argument("--deployment-provenance", type=Path)
     parser.add_argument("--builder-readiness", type=Path)
     parser.add_argument("--target-readiness", type=Path)
+    parser.add_argument("--board-manifest", type=Path)
     parser.add_argument("--output-dir", type=Path)
-    parser.add_argument("--capture-device")
-    parser.add_argument("--playback-device")
-    parser.add_argument("--sample-rate", type=int, default=16000)
-    parser.add_argument("--mic-channels", type=int, default=2)
     parser.add_argument("--build-info-bin", type=Path)
     parser.add_argument("--binary", action="append", type=Path, default=[])
     parser.add_argument("--cmake-cache", type=Path)
@@ -472,15 +544,11 @@ def main() -> int:
     required = (
         "sku", "policy", "corpus_manifest", "benchmark_json", "acoustic_json",
         "soak_json", "deployment_provenance", "builder_readiness", "target_readiness",
-        "output_dir", "capture_device", "build_info_bin",
+        "board_manifest", "output_dir", "build_info_bin",
     )
     missing = [name for name in required if getattr(args, name) is None]
     if missing:
         parser.error("missing required arguments: " + ", ".join(missing))
-    if args.sample_rate not in {8000, 16000, 24000, 32000, 48000}:
-        parser.error("unsupported --sample-rate")
-    if args.mic_channels not in {1, 2}:
-        parser.error("--mic-channels must be 1 or 2")
     assemble(args)
     return 0
 

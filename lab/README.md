@@ -148,8 +148,7 @@ gh workflow run trusted-runner-readiness.yml --repo jiying2007/audio-pipeline --
 
 gh workflow run trusted-runner-readiness.yml --repo jiying2007/audio-pipeline --ref main \
   -f source_sha="$SHA" -f role=audio-target \
-  -f board_manifest="$HOME/.config/audio-pipeline/board.json" \
-  -f power_input=<live-power-path>
+  -f board_manifest="$HOME/.config/audio-pipeline/board.json"
 
 gh workflow run trusted-runner-readiness.yml --repo jiying2007/audio-pipeline --ref main \
   -f source_sha="$SHA" -f role=certification-archive \
@@ -225,8 +224,7 @@ Continue using the same immutable `$SHA` from section 3:
 ```bash
 python3 lab/scripts/labctl.py target-readiness \
   --source-revision "$SHA" \
-  --board $HOME/.config/audio-pipeline/board.json \
-  --power-input <live-power-path>
+  --board $HOME/.config/audio-pipeline/board.json
 ```
 
 This executes both the board preflight and the shared `audio-target` runner contract.
@@ -236,14 +234,10 @@ From a trusted authenticated operator machine, start the 10-minute accelerated H
 ```bash
 python3 lab/scripts/labctl.py dispatch-hil \
   --source-revision "$SHA" \
-  --tier accelerated-pr \
-  --capture '<controller-visible-capture-device>' \
-  --playback '<controller-visible-playback-device>' \
-  --farend $HOME/.local/share/audio-pipeline-lab/fixtures/farend-s16le.pcm \
-  --power '<live-power-path>'
+  --tier accelerated-pr
 ```
 
-When `--board` is omitted, the HIL workflow resolves `AUDIO_PIPELINE_LAB_BOARD`, then XDG config, then `$HOME/.config/audio-pipeline/board.json` on the `audio-target` runner. Use `--board` only for an explicit runner-local override.
+When `--board` is omitted, the HIL workflow resolves `AUDIO_PIPELINE_LAB_BOARD`, then XDG config, then `$HOME/.config/audio-pipeline/board.json` on the `audio-target` runner. Use `--board` only for an explicit runner-local override. The board manifest is the single physical-route authority for capture/playback, far-end fixture, sample rate, microphone count, DSP CPU, power sensor and power scale; operator CLI/workflow overrides for those fields are intentionally not supported.
 
 Do not set `HIL_ENABLED=true` until repeated manual accelerated runs demonstrate that the controller, DUT route, power-cycle/cleanup hooks and sensors are actually healthy.
 

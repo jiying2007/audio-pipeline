@@ -1,3 +1,11 @@
+# 2.3.20
+
+- Hard-cut real-target route configuration to one reviewed board-manifest authority across laboratory control, Trusted Runner Readiness, HIL and Product Certification. Remove the HIL/labctl compatibility route assertions and Product Certification's parallel capture/playback/far-end/sample-rate/microphone/DSP-CPU/power inputs; physical route and power settings are now derived from the board manifest.
+- Centralize board validation in `tools/hil_board.py`, including placeholder/newline rejection, route bounds, finite positive power scale, far-end fixture readiness and live power-sensor readability. Readiness/HIL/Certification reuse this contract instead of carrying separate board validation rules.
+- Bind Product Certification evidence to the exact board bytes: collector v3.2 derives `audio_route` from the canonical board parser, materializes `evidence/board-manifest.json`, records `board_manifest_sha256`, and the v4 validator verifies that hash when present without invalidating historical v4 records. `release_tag` is now explicit rather than carrying a stale default.
+- Disable ordinary Dependabot version-update PRs for `/lab` because laboratory dependency changes are release-bearing and must land with SemVer + CHANGELOG + full verification; security updates remain a separate reviewed/versioned path.
+- Correct the `ap_pipeline_get_config()` contract to state that it returns the current effective configuration, including accepted runtime tuning fields, and add read-back coverage. Realtime DSP algorithms, acoustic thresholds, public struct layouts and Product Qualification results are otherwise unchanged.
+
 # 2.3.19
 
 - Update the exact-pinned laboratory provisioning dependency from `ansible-core==2.19.12` to `ansible-core==2.19.13`; lab/provisioning changes remain release-bearing and do not bypass the repository SemVer gate.

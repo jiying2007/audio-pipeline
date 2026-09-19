@@ -39,7 +39,7 @@ The policy is an acceptance contract, **not measured evidence and not a PASS res
 
 ## Trusted runner readiness
 
-Before allocating a formal certification run, dispatch **Trusted Runner Readiness** against the exact immutable release source for `audio-builder`, `audio-target`, and `certification-archive`. Require `READY` for the exact shipping compiler/sysroot/toolchain paths, DUT product-input paths and immutable archive command that will be used. See [`docs/TRUSTED_RUNNERS.md`](../docs/TRUSTED_RUNNERS.md).
+Before allocating a formal certification run, dispatch **Trusted Runner Readiness** against the exact immutable release source for `audio-builder`, `audio-target`, and `certification-archive`. Require `READY` for the exact shipping compiler/sysroot/toolchain paths, the reviewed DUT board manifest and product evidence paths, and the immutable archive command that will be used. See [`docs/TRUSTED_RUNNERS.md`](../docs/TRUSTED_RUNNERS.md).
 
 Readiness is an infrastructure prerequisite only. It is not acoustic/HIL/product evidence.
 
@@ -66,7 +66,8 @@ trusted exact release source SHA
   collect deployed hash -> execute build-info/benchmark/real ALSA route
   collect executed hash
   require build == deployed == executed
-  combine immutable release identity + real corpus + target performance/thermal/power + route soak
+  derive route/power only from the reviewed board manifest
+  seal the board bytes/SHA-256 with immutable release identity + real corpus + target performance/thermal/power + route soak
   validate v4 record/evidence -> deterministic bundle -> artifact attestation
         |
         | Actions artifact is transport/cache only
@@ -88,11 +89,10 @@ A formal run requires:
 
 - an annotated semantic Git tag with a non-draft, non-prerelease, immutable GitHub Release;
 - the exact source SHA to which that tag resolves; `release_tag` must equal `v<project-version>` and both identities must match before any self-hosted hardware allocation;
-- a reviewed DUT board manifest; when the workflow input is blank, the `audio-target` runner resolves `AUDIO_PIPELINE_LAB_BOARD`, XDG config, then `$HOME/.config/audio-pipeline/board.json`; explicit absolute system-mode paths remain supported;
+- a reviewed DUT board manifest; when the workflow input is blank, the `audio-target` runner resolves `AUDIO_PIPELINE_LAB_BOARD`, XDG config, then `$HOME/.config/audio-pipeline/board.json`; that manifest is the single authority for capture/playback, far-end PCM, sample rate, microphone count, DSP CPU, live power sensor and power scale, and its bytes are sealed into the certification evidence bundle;
 - shipping SKU and approved checked-in policy;
 - real corpus manifest and acoustic result JSON already present on the DUT/lab environment;
-- capture/playback route and real far-end PCM;
-- live target power sensor and ambient condition;
+- ambient condition; route/power fields are deliberately not separate Product Certification workflow inputs;
 - exact shipping compiler absolute path, sysroot and toolchain root;
 - exact shipping C flags;
 - reviewed non-empty shipping SKU CMake argument JSON array;
@@ -122,11 +122,11 @@ python3 tools/target_evidence.py route-soak \
   --power-input /path/to/live_power --power-scale 1000000
 ```
 
-`benchmark` measures deterministic DSP workload. `route-soak` exercises the actual ALSA route. A synthetic runtime benchmark is never labeled product-route soak evidence.
+`benchmark` measures deterministic DSP workload. `route-soak` exercises the actual ALSA route. The commands above are low-level collector examples only; the formal Product Certification workflow derives their route, far-end, CPU and power arguments exclusively from the reviewed board manifest and does not expose parallel workflow overrides. A synthetic runtime benchmark is never labeled product-route soak evidence.
 
 ## Provenance helpers
 
-`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` assembles the release-source v4 record and materialized evidence. The Product Certification control plane then seals the immutable Release identity into the evidence set and record before validation. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
+`tools/certification_provenance.py` produces/validates build, deployed and executed snapshots. `tools/ap_certify.py` reuses the canonical `hil_board` parser, derives the v4 `audio_route` from the reviewed board manifest, copies that manifest into the materialized evidence set and records its SHA-256. The Product Certification control plane then seals the immutable Release identity into the evidence set and record before validation. `certification/validate_record.py` revalidates policy, corpus/evidence hashes, exact binaries, target metrics and deployment provenance. `certification/validate_archive_receipt.py` validates the immutable lifecycle receipt.
 
 For diagnostic inspection of an unpacked bundle, the record/evidence validator can be run as follows:
 

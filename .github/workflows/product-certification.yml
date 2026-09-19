@@ -9,7 +9,6 @@ on:
       release_tag:
         description: Immutable annotated GitHub Release tag bound to source_sha
         required: true
-        default: v2.3.13
       sku:
         description: Shipping SKU id; must match policy.sku
         required: true
@@ -25,36 +24,12 @@ on:
         description: Absolute path to real product acoustic result JSON on DUT
         required: true
       board_manifest:
-        description: Optional absolute DUT board manifest; blank resolves AUDIO_PIPELINE_LAB_BOARD or XDG/HOME on audio-target
+        description: Canonical DUT board/route authority; blank resolves AUDIO_PIPELINE_LAB_BOARD or XDG/HOME on audio-target
         required: false
         default: ''
-      capture_device:
-        required: true
-        default: hw:0,0
-      playback_device:
-        required: true
-        default: hw:0,0
-      farend_pcm:
-        description: Absolute path to real far-end PCM on DUT
-        required: true
-      sample_rate:
-        required: true
-        default: '16000'
-      mic_channels:
-        required: true
-        default: '2'
-      dsp_cpu:
-        required: true
-        default: '1'
       ambient_c:
         required: true
         default: '25'
-      power_input:
-        description: Live target power-sensor path
-        required: true
-      power_scale:
-        required: true
-        default: '1000000'
       benchmark_seconds:
         required: true
         default: '120'
@@ -283,13 +258,11 @@ jobs:
         with:
           name: shipping-build-${{ needs.resolve.outputs.sha }}
           path: shipping-build
-      - name: Preflight exact audio-target runner and product inputs
+      - name: Resolve canonical target route and preflight exact audio-target runner
         env:
           INPUT_BOARD: ${{ inputs.board_manifest }}
           CORPUS: ${{ inputs.corpus_manifest }}
           ACOUSTIC: ${{ inputs.acoustic_json }}
-          FAREND: ${{ inputs.farend_pcm }}
-          POWER: ${{ inputs.power_input }}
         run: |
           set -euo pipefail
           BOARD=$INPUT_BOARD
@@ -298,7 +271,56 @@ jobs:
           fi
           case "$BOARD" in /*) ;; *) echo "board_manifest must resolve absolute: $BOARD" >&2; exit 2 ;; esac
           case "$BOARD" in *$'\n'*|*$'\r'*) echo 'board_manifest contains a newline' >&2; exit 2 ;; esac
-          printf '%s\n' "$BOARD" > /tmp/audio-target-board-path.txt
+          python3 tools/hil_board.py preflight --board "$BOARD" --output /tmp/board-preflight.json --settle-seconds 0
+          python3 tools/hil_board.py metadata --board "$BOARD" > /tmp/audio-target-board.json
+          export BOARD
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          board_path = Path(os.environ['BOARD'])
+          board = json.load(open('/tmp/audio-target-board.json', encoding='utf-8'))
+          route = board.get('route') or {}
+          required = ('capture_device', 'farend_file', 'sample_rate_hz', 'mic_channels', 'dsp_cpu')
+          missing = [key for key in required if route.get(key) in (None, '')]
+          if missing:
+              raise SystemExit(f'certification board route missing required fields: {missing}')
+          farend = Path(str(route['farend_file']))
+          power_raw = board.get('power_sensor')
+          power = Path(str(power_raw or ''))
+          if not farend.is_absolute():
+              raise SystemExit('certification board route farend_file must be absolute')
+          if not power_raw or not power.is_absolute():
+              raise SystemExit('certification board power_sensor must be absolute')
+          values = {
+              'AP_BOARD_MANIFEST': str(board_path),
+              'AP_ROUTE_CAPTURE': str(route['capture_device']),
+              'AP_ROUTE_PLAYBACK': '' if route.get('playback_device') is None else str(route['playback_device']),
+              'AP_ROUTE_FAREND': str(farend),
+              'AP_ROUTE_SAMPLE_RATE': str(int(route['sample_rate_hz'])),
+              'AP_ROUTE_MIC_CHANNELS': str(int(route['mic_channels'])),
+              'AP_ROUTE_DSP_CPU': str(int(route['dsp_cpu'])),
+              'AP_POWER_INPUT': str(power),
+              'AP_POWER_SCALE': str(float(board.get('power_scale', 1000000))),
+          }
+          for key, value in values.items():
+              if '\n' in value or '\r' in value:
+                  raise SystemExit(f'board-derived value contains newline: {key}')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as out:
+              for key, value in values.items():
+                  out.write(f'{key}={value}\n')
+          PY
+          mapfile -t BOARD_PATHS < <(python3 - <<'PY'
+          import json
+          board = json.load(open('/tmp/audio-target-board.json', encoding='utf-8'))
+          route = board.get('route') or {}
+          print(route.get('farend_file') or '')
+          print(board.get('power_sensor') or '')
+          PY
+          )
+          FAREND=${BOARD_PATHS[0]}
+          POWER=${BOARD_PATHS[1]}
           python3 tools/runner_preflight.py \
             --role audio-target \
             --source-revision '${{ needs.resolve.outputs.sha }}' \
@@ -326,41 +348,31 @@ jobs:
       - name: Collect real target benchmark evidence
         env:
           AMBIENT_C: ${{ inputs.ambient_c }}
-          POWER_INPUT: ${{ inputs.power_input }}
-          POWER_SCALE: ${{ inputs.power_scale }}
-          SAMPLE_RATE: ${{ inputs.sample_rate }}
-          MIC_CHANNELS: ${{ inputs.mic_channels }}
-          DSP_CPU: ${{ inputs.dsp_cpu }}
           BENCHMARK_SECONDS: ${{ inputs.benchmark_seconds }}
         run: |
           set -euo pipefail
           python3 tools/target_evidence.py benchmark \
             --binary "$DEPLOY_DIR/ap_bench" --output /tmp/benchmark.json \
-            --seconds "$BENCHMARK_SECONDS" --idle-seconds 30 --dsp-cpu "$DSP_CPU" \
-            --sample-rate "$SAMPLE_RATE" --mic-channels "$MIC_CHANNELS" \
-            --ambient-c "$AMBIENT_C" --power-input "$POWER_INPUT" \
-            --power-scale "$POWER_SCALE" --require-sensors
+            --seconds "$BENCHMARK_SECONDS" --idle-seconds 30 --dsp-cpu "$AP_ROUTE_DSP_CPU" \
+            --sample-rate "$AP_ROUTE_SAMPLE_RATE" --mic-channels "$AP_ROUTE_MIC_CHANNELS" \
+            --ambient-c "$AMBIENT_C" --power-input "$AP_POWER_INPUT" \
+            --power-scale "$AP_POWER_SCALE" --require-sensors
       - name: Run real product route certification soak
         env:
-          CAPTURE: ${{ inputs.capture_device }}
-          PLAYBACK: ${{ inputs.playback_device }}
-          FAREND: ${{ inputs.farend_pcm }}
-          SAMPLE_RATE: ${{ inputs.sample_rate }}
-          MIC_CHANNELS: ${{ inputs.mic_channels }}
-          DSP_CPU: ${{ inputs.dsp_cpu }}
           SOAK_SECONDS: ${{ inputs.soak_seconds }}
-          POWER_INPUT: ${{ inputs.power_input }}
-          POWER_SCALE: ${{ inputs.power_scale }}
         run: |
           set -euo pipefail
           test "$SOAK_SECONDS" -ge '${{ needs.resolve.outputs.required_soak_seconds }}'
-          python3 tools/target_evidence.py route-soak \
-            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" --output /tmp/soak.json \
-            --capture-device "$CAPTURE" --playback-device "$PLAYBACK" \
-            --farend "$FAREND" --seconds "$SOAK_SECONDS" \
-            --sample-rate "$SAMPLE_RATE" --mic-channels "$MIC_CHANNELS" --dsp-cpu "$DSP_CPU" \
-            --max-xruns 0 --max-overruns 0 \
-            --power-input "$POWER_INPUT" --power-scale "$POWER_SCALE"
+          args=(
+            --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" --output /tmp/soak.json
+            --capture-device "$AP_ROUTE_CAPTURE" --farend "$AP_ROUTE_FAREND"
+            --seconds "$SOAK_SECONDS" --sample-rate "$AP_ROUTE_SAMPLE_RATE"
+            --mic-channels "$AP_ROUTE_MIC_CHANNELS" --dsp-cpu "$AP_ROUTE_DSP_CPU"
+            --max-xruns 0 --max-overruns 0
+            --power-input "$AP_POWER_INPUT" --power-scale "$AP_POWER_SCALE"
+          )
+          if [ -n "$AP_ROUTE_PLAYBACK" ]; then args+=(--playback-device "$AP_ROUTE_PLAYBACK"); fi
+          python3 tools/target_evidence.py route-soak "${args[@]}"
       - name: Bind build deployed and executed binary identity
         run: |
           set -euo pipefail
@@ -381,10 +393,6 @@ jobs:
           POLICY: ${{ inputs.policy_path }}
           CORPUS: ${{ inputs.corpus_manifest }}
           ACOUSTIC: ${{ inputs.acoustic_json }}
-          CAPTURE: ${{ inputs.capture_device }}
-          PLAYBACK: ${{ inputs.playback_device }}
-          SAMPLE_RATE: ${{ inputs.sample_rate }}
-          MIC_CHANNELS: ${{ inputs.mic_channels }}
           RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
           RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
           RELEASE_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
@@ -399,8 +407,7 @@ jobs:
             --soak-json /tmp/soak.json --deployment-provenance /tmp/deployment-provenance.json \
             --builder-readiness shipping-build/audio-builder-readiness.json \
             --target-readiness /tmp/audio-target-readiness.json \
-            --output-dir certification-out --capture-device "$CAPTURE" --playback-device "$PLAYBACK" \
-            --sample-rate "$SAMPLE_RATE" --mic-channels "$MIC_CHANNELS" \
+            --board-manifest "$AP_BOARD_MANIFEST" --output-dir certification-out \
             --build-info-bin "$DEPLOY_DIR/ap_build_info_dump" \
             --binary "$DEPLOY_DIR/ap_bench" --binary "$DEPLOY_DIR/ap_alsa_runtime_duplex" \
             --cmake-cache shipping-build/CMakeCache.txt

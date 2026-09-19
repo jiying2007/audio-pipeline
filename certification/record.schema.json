@@ -12,6 +12,7 @@
     "status": {"enum": ["pending", "board-validated", "product-certified", "failed"]},
     "policy": {"type": "string", "minLength": 1},
     "policy_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "board_manifest_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
     "corpus_manifest_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
     "evidence_manifest_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
     "collector_version": {"type": "string", "minLength": 1},

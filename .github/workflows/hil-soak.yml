@@ -23,46 +23,6 @@ on:
         required: false
         default: ''
         type: string
-      capture_device:
-        description: Deprecated compatibility assertion; if set it must equal board.route.capture_device
-        required: false
-        default: ''
-        type: string
-      playback_device:
-        description: Deprecated compatibility assertion; if set it must equal board.route.playback_device (or none)
-        required: false
-        default: ''
-        type: string
-      farend_file:
-        description: Deprecated compatibility assertion; if set it must equal board.route.farend_file
-        required: false
-        default: ''
-        type: string
-      sample_rate:
-        description: Deprecated compatibility assertion; if set it must equal board.route.sample_rate_hz
-        required: false
-        default: ''
-        type: string
-      mic_channels:
-        description: Deprecated compatibility assertion; if set it must equal board.route.mic_channels
-        required: false
-        default: ''
-        type: string
-      dsp_cpu:
-        description: Deprecated compatibility assertion; if set it must equal board.route.dsp_cpu
-        required: false
-        default: ''
-        type: string
-      power_input:
-        description: Deprecated compatibility assertion; if set it must equal board.power_sensor
-        required: false
-        default: ''
-        type: string
-      power_scale:
-        description: Deprecated compatibility assertion; if set it must equal board.power_scale (default 1000000)
-        required: false
-        default: ''
-        type: string
 
 permissions:
   contents: read
@@ -124,14 +84,6 @@ jobs:
           EXPECTED_EVENT_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event_name == 'repository_dispatch' && github.event.client_payload.release_ref || github.sha }}
           INPUT_TIER: ${{ inputs.tier }}
           INPUT_BOARD: ${{ inputs.board_manifest }}
-          INPUT_CAPTURE: ${{ inputs.capture_device }}
-          INPUT_PLAYBACK: ${{ inputs.playback_device }}
-          INPUT_FAREND: ${{ inputs.farend_file }}
-          INPUT_RATE: ${{ inputs.sample_rate }}
-          INPUT_MICS: ${{ inputs.mic_channels }}
-          INPUT_CPU: ${{ inputs.dsp_cpu }}
-          INPUT_POWER: ${{ inputs.power_input }}
-          INPUT_POWER_SCALE: ${{ inputs.power_scale }}
         run: |
           set -euo pipefail
           board=$INPUT_BOARD
@@ -164,6 +116,7 @@ jobs:
           revision=$(git rev-parse HEAD)
           test "$revision" = "$EXPECTED_EVENT_SHA"
           echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          python3 tools/hil_board.py metadata --board "$board" > /tmp/hil-board.json
           export BOARD="$board" TIER="$tier" SECONDS="$seconds" FAULT="$fault" MAX_XRUNS="$max_xruns" MAX_OVERRUNS="$max_overruns"
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import hashlib
@@ -173,15 +126,8 @@ jobs:
 
           board_path = Path(os.environ['BOARD'])
           board_bytes = board_path.read_bytes()
-          board = json.loads(board_bytes.decode('utf-8'))
-          configured = board.get('route')
-          if not isinstance(configured, dict):
-              raise SystemExit('HIL requires board.route in the board manifest for every trigger mode')
-
-          required_route = ('capture_device', 'sample_rate_hz', 'mic_channels', 'dsp_cpu')
-          missing = [key for key in required_route if key not in configured]
-          if missing:
-              raise SystemExit(f'HIL board.route is missing required fields: {missing}')
+          board = json.load(open('/tmp/hil-board.json', encoding='utf-8'))
+          configured = board['route']
 
           labels = board.get('runner_labels')
           required_labels = {'self-hosted', 'linux', 'audio-target'}
@@ -193,18 +139,6 @@ jobs:
                   return default
               return str(value)
 
-          def placeholder(name, value):
-              lowered = text(value).strip().lower()
-              if lowered and ('replace-with' in lowered or lowered.startswith('todo') or lowered.startswith('example-')):
-                  raise SystemExit(f'HIL board manifest contains placeholder {name}: {value!r}')
-
-          for key in ('revision', 'audio_codec', 'mic_board_revision', 'speaker_revision'):
-              placeholder(key, board.get(key))
-          for key in ('capture_device', 'playback_device', 'farend_file'):
-              placeholder(f'route.{key}', configured.get(key))
-          for key in ('thermal_sensor', 'power_sensor', 'power_cycle_hook', 'cleanup_hook'):
-              placeholder(key, board.get(key))
-
           route = {
               'capture': text(configured['capture_device']),
               'playback': text(configured.get('playback_device'), 'none') or 'none',
@@ -215,36 +149,6 @@ jobs:
               'power': text(board.get('power_sensor')),
               'power_scale': text(board.get('power_scale', 1000000)),
           }
-          if not route['capture']:
-              raise SystemExit('HIL board.route.capture_device must be non-empty')
-          if int(route['rate']) not in {8000, 16000, 24000, 32000, 48000}:
-              raise SystemExit(f"unsupported board.route.sample_rate_hz: {route['rate']}")
-          if int(route['mics']) not in {1, 2}:
-              raise SystemExit(f"unsupported board.route.mic_channels: {route['mics']}")
-          if int(route['cpu']) < -1:
-              raise SystemExit(f"invalid board.route.dsp_cpu: {route['cpu']}")
-          if float(route['power_scale']) <= 0:
-              raise SystemExit(f"invalid board.power_scale: {route['power_scale']}")
-
-          # Compatibility inputs may still be supplied by older operator tooling, but
-          # they are assertions only. The board manifest remains the single authority.
-          manual = {
-              'capture': os.environ.get('INPUT_CAPTURE', ''),
-              'playback': os.environ.get('INPUT_PLAYBACK', ''),
-              'farend': os.environ.get('INPUT_FAREND', ''),
-              'rate': os.environ.get('INPUT_RATE', ''),
-              'mics': os.environ.get('INPUT_MICS', ''),
-              'cpu': os.environ.get('INPUT_CPU', ''),
-              'power': os.environ.get('INPUT_POWER', ''),
-              'power_scale': os.environ.get('INPUT_POWER_SCALE', ''),
-          }
-          for key, supplied in manual.items():
-              if supplied and supplied != route[key]:
-                  raise SystemExit(
-                      f'manual HIL route assertion drifted from board authority: '
-                      f'{key} supplied={supplied!r} board={route[key]!r}'
-                  )
-
           authority = {
               'schema_version': 1,
               'authority': 'board-manifest-hil-route',

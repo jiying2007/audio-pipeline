@@ -137,8 +137,9 @@ ap_status_t ap_pipeline_notify_stream_discontinuity(ap_pipeline_t *pipeline,
  * processing; the Linux runtime command queue provides that ownership boundary. */
 ap_status_t ap_pipeline_apply_tuning(ap_pipeline_t *pipeline,
                                      const ap_tuning_t *tuning);
-/* Read-back of the configuration the pipeline was initialized with. `out` is
- * fully overwritten; returns AP_EINVAL for a NULL pipeline or output. */
+/* Read-back of the current effective configuration. Runtime tuning updates
+ * are reflected in the corresponding config fields; `out` is fully overwritten.
+ * Returns AP_EINVAL for a NULL pipeline or output. */
 ap_status_t ap_pipeline_get_config(const ap_pipeline_t *pipeline,
                                    ap_config_t *out);
 /* Read-back of the tuning values currently in force, so an integrator can

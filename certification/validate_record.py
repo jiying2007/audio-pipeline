@@ -223,6 +223,9 @@ def validate(
     for key in ("policy_sha256", "corpus_manifest_sha256", "evidence_manifest_sha256", "toolchain_digest"):
         if not HEX64.fullmatch(str(record.get(key, ""))):
             errors.append(f"{key}: must be 64 hexadecimal characters")
+    board_hash = record.get("board_manifest_sha256")
+    if board_hash is not None and not HEX64.fullmatch(str(board_hash)):
+        errors.append("board_manifest_sha256: must be 64 hexadecimal characters when present")
     if policy is None:
         errors.append("policy: product-certified requires --policy")
         return errors
@@ -248,6 +251,15 @@ def validate(
             errors.append("evidence_manifest: v4 requires materialized evidence root")
         else:
             validate_materialized_manifest(evidence, evidence_root, errors)
+            if board_hash is not None:
+                board_items = [
+                    item for item in evidence.get("artifacts", [])
+                    if isinstance(item, dict) and item.get("type") == "board-manifest"
+                ]
+                if len(board_items) != 1:
+                    errors.append("board_manifest_sha256: evidence must contain exactly one board-manifest artifact")
+                elif str(board_items[0].get("sha256", "")).lower() != str(board_hash).lower():
+                    errors.append("board_manifest_sha256: does not match board-manifest evidence")
         validate_build(record, evidence, errors)
         validate_deployment(record, evidence, errors)
     if errors:
@@ -322,6 +334,9 @@ def self_test() -> None:
         binary_hash = sha256(binary)
         provenance = root / "deployment-provenance.json"
         provenance.write_text("{}\n", encoding="utf-8")
+        board_manifest = root / "board-manifest.json"
+        board_manifest.write_text('{"schema_version":1}\n', encoding="utf-8")
+        board_hash = sha256(board_manifest)
         cmake_args = ["-DCMAKE_TOOLCHAIN_FILE=/opt/tc/toolchain.cmake", "-DAP_BUILD_PIPELINE=ON"]
         cmake_args_hash = hashlib.sha256(json.dumps(
             cmake_args, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
@@ -332,11 +347,14 @@ def self_test() -> None:
                 {"path": "ap_bench", "type": "binary:ap_bench", "size": 1, "sha256": binary_hash},
                 {"path": "deployment-provenance.json", "type": "deployment-provenance",
                  "size": provenance.stat().st_size, "sha256": sha256(provenance)},
+                {"path": "board-manifest.json", "type": "board-manifest",
+                 "size": board_manifest.stat().st_size, "sha256": board_hash},
             ],
         }
         record = {
             "schema_version": 4, "sku": "test", "status": "product-certified",
             "policy": "test-policy", "policy_sha256": ph,
+            "board_manifest_sha256": board_hash,
             "corpus_manifest_sha256": ch, "evidence_manifest_sha256": eh,
             "collector_version": "4", "toolchain_digest": "5" * 64,
             "build": {
@@ -373,6 +391,10 @@ def self_test() -> None:
         tampered = json.loads(json.dumps(record))
         tampered["deployment"]["toolchain"]["cmake_args_sha256"] = "0" * 64
         assert validate(tampered, policy, ph, evidence, eh, ch, root)
+        bad_board = json.loads(json.dumps(record))
+        bad_board["board_manifest_sha256"] = "0" * 64
+        assert any("board_manifest_sha256" in error
+                   for error in validate(bad_board, policy, ph, evidence, eh, ch, root))
         binary.write_bytes(b"tampered")
         assert validate(record, policy, ph, evidence, eh, ch, root)
     print("audio-pipeline v4-only certification validator self-test: OK")

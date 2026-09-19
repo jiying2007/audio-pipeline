@@ -34,6 +34,7 @@
     "codex/dispatch-nightly-6ec48f3-once",
     "codex/migrate-blind-once",
     "codex/retry-hosted-blind-infra-once",
+    "research/doubletalk-onset-admission-v1",
     "research/matched-gain-chain-capture-contract-v1-check",
     "research/pure-far-hpf-energy-asymmetry-v1-check",
     "research/pure-far-same-guid-movement-source-ratio-v1"
@@ -74,6 +75,14 @@
     {
       "name": "research/pure-far-same-guid-movement-source-ratio-v1",
       "expected_sha": "248c3e15cbeb5df8528a4eb8548b6178eec51bcc"
+    },
+    {
+      "name": "fix/runtime-reset-tuning-projection",
+      "expected_sha": "3af28d8cc42ddcda0a6498ba1b453842b91b09e3"
+    },
+    {
+      "name": "research/doubletalk-onset-admission-v1",
+      "expected_sha": "008c923474132dcc33d6da4756b486a78c2dee6b"
     }
   ],
   "authority_boundary": {

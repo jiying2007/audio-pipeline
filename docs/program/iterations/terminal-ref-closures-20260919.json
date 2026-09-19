@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "closure_id": "terminal-ref-closures-20260919",
+  "state": "CLOSED_NON_SHIPPING",
+  "source_main_sha": "dabd7abf9eacfee96b6f37a1cea3a62d74c0ce25",
+  "closures": [
+    {
+      "branch": "fix/runtime-reset-tuning-projection",
+      "head_sha": "3af28d8cc42ddcda0a6498ba1b453842b91b09e3",
+      "pull_request": 278,
+      "state": "CLOSED_INVALID_HYPOTHESIS",
+      "merged": false,
+      "decision": "KEEP_MAIN_BASELINE",
+      "reason": "The candidate assumes ap_pipeline_reset() restores an immutable pre-tuning configuration. In the supported control contract, ap_pipeline_apply_tuning() updates pipeline->cfg, ap_pipeline_get_config() returns that current effective configuration, and ap_pipeline_reset() reinitializes from the current pipeline->cfg. Rewinding runtime tuning projection on RESET would therefore diverge from worker state.",
+      "main_evidence": {
+        "release": "v2.3.20",
+        "config_readback_contract": "tests/test_pipeline_controls.c",
+        "implementation": "src/core/ap_pipeline.c + src/core/ap_pipeline_query.c"
+      }
+    },
+    {
+      "branch": "research/doubletalk-onset-admission-v1",
+      "head_sha": "008c923474132dcc33d6da4756b486a78c2dee6b",
+      "pull_request": 228,
+      "state": "CLOSED_KEEP_BASELINE",
+      "merged": false,
+      "decision": "KEEP_MAIN_BASELINE",
+      "committed_research_closure": ".github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json",
+      "reason": "The single authorized candidate failed frozen Hosted Real AEC movement and echo-path-change hard-negative gates; the committed closure exhausts the candidate budget and keeps the shipping baseline."
+    }
+  ],
+  "gc_authority": {
+    "exact_sha_only": true,
+    "no_open_pull_request_required": true,
+    "main_push_only": true,
+    "shipping_source_changed": false,
+    "release_changed": false,
+    "hardware_test_executed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

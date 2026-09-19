@@ -21,18 +21,11 @@ updates:
     directory: /lab
     schedule:
       interval: weekly
-    open-pull-requests-limit: 2
-    groups:
-      lab-python-patch:
-        patterns:
-          - '*'
-        update-types:
-          - patch
-    ignore:
-      - dependency-name: '*'
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
+    # Lab dependency changes are release-bearing and must land with SemVer +
+    # CHANGELOG. Disable ordinary version-update PRs; Dependabot security
+    # updates remain independently available when repository security updates
+    # are enabled and must be converted into a versioned release PR.
+    open-pull-requests-limit: 0
 
   - package-ecosystem: docker
     directory: /ci

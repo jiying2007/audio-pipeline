@@ -5,26 +5,31 @@ on:
     paths:
       - 'tests/validation/pcr02_aec_real_tail_confirmation.py'
       - '.github/workflows/pcr02-aec-real-tail-confirmation.yml'
+  workflow_run:
+    workflows: ['PCR02 DSP Counterfactuals']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pcr02-real-aec-tail-${{ github.ref }}
+  group: pcr02-real-aec-tail-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
   confirm:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
       AEC_REVISION: 6c633d0a9d2a143a0e364899b91b06f127315b18
-      SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+      SOURCE_REVISION: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Enforce confirmation-only boundary

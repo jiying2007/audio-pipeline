@@ -44,6 +44,22 @@
         "current_release": "v2.3.36",
         "current_main_sha": "3ec1aabde471e774253201492cb9f4d78929cf3b"
       }
+    },
+    {
+      "branch": "codex/github-hosted-dns5-probe",
+      "head_sha": "0a7951eff4e259f1d2e1e5c536320db922b12ae7",
+      "state": "CLOSED_DIAGNOSTIC_COMPLETE",
+      "merged": false,
+      "decision": "RETIRE_ONE_SHOT_ENVIRONMENT_PROBE",
+      "reason": "The exact-head GitHub-hosted holdout-secret probe completed its intended environment diagnosis: AP_VALIDATION_HOLDOUT_KEY was absent. Current main no longer references that secret, and current Hosted Real Audio/AEC validation is green without this branch. The branch contains probe-only workflows and has no product or shipping authority.",
+      "evidence": {
+        "probe_run": 34921689119,
+        "probe_job": 104230991438,
+        "observed": "AP_VALIDATION_HOLDOUT_KEY=ABSENT",
+        "current_main": "156faf8aa003a3be133362c28e911b24d8d7ec5a",
+        "hosted_real_audio_run": 967,
+        "hosted_real_aec_run": 962
+      }
     }
   ],
   "gc_authority": {

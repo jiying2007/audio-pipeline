@@ -32,6 +32,7 @@
     "codex/dispatch-blind-ffc66ec-once",
     "codex/dispatch-multidataset-v2-once",
     "codex/dispatch-nightly-6ec48f3-once",
+    "codex/github-hosted-dns5-probe",
     "codex/migrate-blind-once",
     "codex/retry-hosted-blind-infra-once",
     "perf/reuse-near-input-alignment",
@@ -88,6 +89,10 @@
     {
       "name": "perf/reuse-near-input-alignment",
       "expected_sha": "f729c7246f58730dd316b12aecd5dfaea799aba3"
+    },
+    {
+      "name": "codex/github-hosted-dns5-probe",
+      "expected_sha": "0a7951eff4e259f1d2e1e5c536320db922b12ae7"
     }
   ],
   "authority_boundary": {

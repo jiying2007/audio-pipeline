@@ -12,6 +12,17 @@ on:
       - 'tests/validation/validate_pcr02_capture_plan.py'
       - 'docs/program/terminal-branch-gc.json'
       - '.github/workflows/pcr02-dsp-counterfactuals.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/validation/research_process_pcm.c'
+      - 'tests/validation/pcr02_bf_geometry_counterfactual.py'
+      - 'tests/validation/pcr02_mechanical_corpus.py'
+      - 'tests/validation/pcr02_ns_vad_summary.py'
+      - 'tests/validation/pcr02_aec_tail_summary.py'
+      - 'tests/validation/pcr02_capture_plan.json'
+      - 'tests/validation/validate_pcr02_capture_plan.py'
+      - '.github/workflows/pcr02-dsp-counterfactuals.yml'
   workflow_dispatch:
 
 permissions:

@@ -25,6 +25,13 @@
       {"name": "min_vad_f1", "direction": "max", "weight": 1.0, "scale": 0.05, "max_regression": 0.05},
       {"name": "max_vad_false_positive_rate", "direction": "min", "weight": 0.6, "scale": 0.05, "max_regression": 0.05},
       {"name": "max_output_clip_fraction", "direction": "min", "weight": 2.0, "scale": 0.002, "max_regression": 0.002}
+    ],
+    "case_delta_gates": [
+      {"metric": "near_si_sdr_improvement_db", "stat": "min", "minimum_delta": -0.75, "min_cases": 4},
+      {"metric": "noise_only_attenuation_db", "stat": "min", "minimum_delta": -0.75, "min_cases": 4},
+      {"metric": "vad_f1", "stat": "min", "minimum_delta": -0.05, "min_cases": 4},
+      {"metric": "vad_false_positive_rate", "stat": "max", "maximum_delta": 0.05, "min_cases": 4},
+      {"metric": "output_clip_fraction", "stat": "max", "maximum_delta": 0.002, "min_cases": 4}
     ]
   }
 }

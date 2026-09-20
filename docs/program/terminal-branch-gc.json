@@ -120,6 +120,10 @@
     {
       "name": "codex/fix-aec-materialization-resume",
       "expected_sha": "b8b7fac29a2754f4d02c91880821951b3b71a06d"
+    },
+    {
+      "name": "fix/tuning-objective-metric-fail-closed",
+      "expected_sha": "8c4d9de83b0c18acebb63100a469fc88e57a52a4"
     }
   ],
   "authority_boundary": {

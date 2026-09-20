@@ -1,3 +1,9 @@
+# 2.3.40
+
+- Make per-case tuning robustness explicit in iteration evidence without changing candidate-selection behavior. Every case-delta gate summary now records margin to its configured lower and/or upper bound plus the binding bound and binding margin; positive margin is remaining headroom and negative margin is a violated bound.
+- Repeat the selected candidate's development case-delta summary directly in the result and declare the active policy as highest development score among case-gate-compliant candidates. Margin remains evidence only and does not silently become a ranking objective.
+- Extend tuning self-tests across lower-bound headroom, upper-bound headroom and negative violation margins. Search spaces, DSP runtime defaults, shipping baseline, HIL/Product Certification authority and product behavior are unchanged.
+
 # 2.3.39
 
 - Fail closed when an objective metric declared by a tuning search space is absent from the baseline summary. Such a term was previously skipped silently, which removed its weight from the score and disabled its regression gate at the same time, with no report entry and no error. A corpus that does not produce a declared metric is now a hard configuration error instead of a silent scoring change.

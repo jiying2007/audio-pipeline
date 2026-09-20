@@ -340,9 +340,23 @@ def case_delta_gate_violations(space: dict[str, Any], baseline: dict[str, Any],
             actual = percentile(deltas, 0.10)
         else:
             actual = percentile(deltas, 0.50)
+        minimum_margin = actual - minimum if minimum is not None else None
+        maximum_margin = maximum - actual if maximum is not None else None
+        margins = [
+            ("minimum_delta", minimum_margin),
+            ("maximum_delta", maximum_margin),
+        ]
+        finite_margins = [
+            (bound, margin) for bound, margin in margins if margin is not None
+        ]
+        binding_bound, binding_margin = min(
+            finite_margins, key=lambda item: item[1]
+        )
         summary = {
             "metric": metric, "stat": stat, "actual_delta": actual,
             "minimum_delta": minimum, "maximum_delta": maximum,
+            "minimum_margin": minimum_margin, "maximum_margin": maximum_margin,
+            "binding_bound": binding_bound, "binding_margin": binding_margin,
             "cases": len(deltas),
             "worsened_cases": sum(delta < 0.0 for delta in deltas),
         }
@@ -536,6 +550,7 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "id": space["search_space_id"],
             "sha256": sha256_file(search_space_path),
             "strategy": space.get("strategy", "one-at-a-time"),
+            "selection_policy": "highest-score-among-case-gate-compliant-development-candidates",
             "candidate_count": len(candidates),
             "candidate_jobs": candidate_jobs,
         },
@@ -551,6 +566,8 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "label": selected["label"],
             "tuning": selected["tuning"],
             "development_score": selected["score"],
+            "development_case_delta_summary": selected["case_delta_summary"],
+            "development_case_delta_violations": selected["case_delta_violations"],
         },
         "development_ranking": [
             {
@@ -636,6 +653,14 @@ def self_test() -> None:
     ]}
     summaries, violations = case_delta_gate_violations(tail_space, tail_base, tail_good)
     assert len(summaries) == 3 and not violations
+    tail_min = next(
+        item for item in summaries
+        if item["metric"] == "corr" and item["stat"] == "min"
+    )
+    assert abs(tail_min["minimum_margin"] - 0.011) < 1.0e-9
+    assert tail_min["maximum_margin"] is None
+    assert tail_min["binding_bound"] == "minimum_delta"
+    assert abs(tail_min["binding_margin"] - 0.011) < 1.0e-9
     tail_bad = {"cases": [
         {"case_id": "a", "metrics": {"corr": 0.07, "erle": 11.0}},
         {"case_id": "b", "metrics": {"corr": 0.22, "erle": 12.0}},
@@ -724,13 +749,22 @@ def self_test() -> None:
         upper_space, upper_base, upper_ok)
     assert not upper_violations
     assert abs(upper_summary[0]["actual_delta"] - 0.02) < 1.0e-9
+    assert upper_summary[0]["minimum_margin"] is None
+    assert abs(upper_summary[0]["maximum_margin"] - 0.03) < 1.0e-9
+    assert upper_summary[0]["binding_bound"] == "maximum_delta"
+    assert abs(upper_summary[0]["binding_margin"] - 0.03) < 1.0e-9
     upper_bad = {"cases": [
         {"case_id": "a", "metrics": {"fpr": 0.12}},
         {"case_id": "b", "metrics": {"fpr": 0.28}},
     ]}
     _, upper_violations = case_delta_gate_violations(
         upper_space, upper_base, upper_bad)
-    assert any(item["gate"] == "case_delta_excursion" for item in upper_violations)
+    upper_violation = next(
+        item for item in upper_violations
+        if item["gate"] == "case_delta_excursion"
+    )
+    assert abs(upper_violation["maximum_margin"] + 0.03) < 1.0e-9
+    assert abs(upper_violation["binding_margin"] + 0.03) < 1.0e-9
     unbounded = json.loads(json.dumps(space))
     unbounded["objective"]["case_delta_gates"] = [
         {"metric": "corr", "stat": "min"},

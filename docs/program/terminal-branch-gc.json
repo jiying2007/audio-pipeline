@@ -36,6 +36,7 @@
     "codex/migrate-blind-once",
     "codex/retry-hosted-blind-infra-once",
     "perf/reuse-near-input-alignment",
+    "perf/sync-uniqueness-top4-cache",
     "research/doubletalk-onset-admission-v1",
     "research/matched-gain-chain-capture-contract-v1-check",
     "research/pure-far-hpf-energy-asymmetry-v1-check",
@@ -93,6 +94,22 @@
     {
       "name": "codex/github-hosted-dns5-probe",
       "expected_sha": "0a7951eff4e259f1d2e1e5c536320db922b12ae7"
+    },
+    {
+      "name": "perf/sync-uniqueness-top4-cache",
+      "expected_sha": "9de645e5c86fe7e38fe17ed450bf03f14c060002"
+    },
+    {
+      "name": "feat/tuning-paired-case-gates",
+      "expected_sha": "974c71f0a22c380f411c86f6a60837b3a1b38977"
+    },
+    {
+      "name": "feat/call-tuning-paired-case-gates",
+      "expected_sha": "3bd68c47735e095d55dbe0f931ad11ddee617f74"
+    },
+    {
+      "name": "feat/call-tuning-gates-and-search",
+      "expected_sha": "f0f90c2cf8f1c3228e85c4cdc8b0b3225e0179f4"
     }
   ],
   "authority_boundary": {

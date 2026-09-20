@@ -25,6 +25,8 @@ jobs:
   contracts:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      run_real_aec: ${{ steps.real-aec-impact.outputs.run_real_aec }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -43,6 +45,21 @@ jobs:
             echo "shipping/product build surface entered PCR02 counterfactual PR" >&2
             exit 1
           fi
+
+      - name: Select real-AEC confirmation scope
+        id: real-aec-impact
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_real_aec=true
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            git fetch --no-tags origin "${{ github.base_ref }}"
+            changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+            if ! grep -Eq '^(tests/validation/pcr02_aec_tail_summary\.py|\.github/workflows/pcr02-dsp-counterfactuals\.yml)$' <<<"$changed"; then
+              run_real_aec=false
+            fi
+          fi
+          echo "run_real_aec=$run_real_aec" >> "$GITHUB_OUTPUT"
 
       - name: Validate counterfactual contracts
         env:
@@ -284,3 +301,8 @@ jobs:
           name: pcr02-ns-vad-counterfactual-${{ github.run_id }}
           path: pcr02-counterfactual/ns-vad/
           retention-days: 30
+
+  real-aec-tail-confirmation:
+    needs: [contracts, bf-geometry, aec-tail, ns-vad]
+    if: ${{ success() && needs.contracts.outputs.run_real_aec == 'true' }}
+    uses: ./.github/workflows/pcr02-aec-real-tail-confirmation.yml

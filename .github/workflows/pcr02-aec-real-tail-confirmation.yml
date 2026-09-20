@@ -5,6 +5,7 @@ on:
     paths:
       - 'tests/validation/pcr02_aec_real_tail_confirmation.py'
       - '.github/workflows/pcr02-aec-real-tail-confirmation.yml'
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,7 @@ jobs:
           fetch-depth: 0
 
       - name: Enforce confirmation-only boundary
+        id: boundary
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
@@ -35,7 +37,7 @@ jobs:
           git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
           printf '%s\n' "$changed"
-          if grep -Ev '^(tests/validation/pcr02_aec_real_tail_confirmation\.py|\.github/workflows/pcr02-aec-real-tail-confirmation\.yml)$' <<<"$changed" | grep -q .; then
+          if grep -Ev '^(tests/validation/(research_process_pcm\.c|pcr02_bf_geometry_counterfactual\.py|pcr02_mechanical_corpus\.py|pcr02_ns_vad_summary\.py|pcr02_aec_tail_summary\.py|pcr02_capture_plan\.json|validate_pcr02_capture_plan\.py|pcr02_aec_real_tail_confirmation\.py)|\.github/workflows/(pcr02-dsp-counterfactuals\.yml|pcr02-aec-real-tail-confirmation\.yml))$' <<<"$changed" | grep -q .; then
             echo 'real-AEC tail confirmation PR contains non-measurement paths' >&2
             exit 1
           fi
@@ -178,7 +180,7 @@ jobs:
           fi
 
       - name: Upload hash-bound real-AEC confirmation evidence
-        if: always()
+        if: always() && (github.event_name != 'pull_request' || steps.boundary.outcome == 'success')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pcr02-real-aec-tail-confirmation-${{ github.run_id }}

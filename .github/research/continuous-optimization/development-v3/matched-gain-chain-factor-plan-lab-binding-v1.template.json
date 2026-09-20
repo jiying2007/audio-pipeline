@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "investigation": "matched-gain-chain-factor-plan-lab-binding-v1",
+  "authority": "LAB_METADATA_BINDING_ONLY",
+  "predecessor": {
+    "manifest": ".github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json",
+    "blob_sha": "4ed9b2c84e3e0e83b29245cefdeb73b082dd837d"
+  },
+  "coordinate_frame": "LAB_VALUE_REQUIRED",
+  "lab_values": {
+    "device_id_or_fixture_id": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "hardware_revision": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "software_firmware_revision": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "playback_analog_gain_db_or_exact_setting": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "capture_analog_gain_db_or_exact_setting": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "AGC_enabled_and_exact_config": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "device_DSP_enabled_modules_and_exact_config": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "volume_control_state": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "room_or_fixture_id": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "source_position_xyz_m": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "microphone_position_xyz_m": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "source_orientation": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "microphone_orientation": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "render_source_hash": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "render_source_metadata": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"},
+    "RIR_measurement_method": {"value": "LAB_VALUE_REQUIRED", "provenance": "LAB_VALUE_REQUIRED"}
+  },
+  "state": {
+    "lab_resolution_complete": true,
+    "freeze_complete": true,
+    "hardware_execution_authorized": false,
+    "candidate_budget": 0
+  },
+  "shipping_immutable": {
+    "version": "v2.3.16",
+    "sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+  }
+}

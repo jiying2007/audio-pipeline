@@ -34,6 +34,7 @@
     "codex/dispatch-nightly-6ec48f3-once",
     "codex/migrate-blind-once",
     "codex/retry-hosted-blind-infra-once",
+    "perf/reuse-near-input-alignment",
     "research/doubletalk-onset-admission-v1",
     "research/matched-gain-chain-capture-contract-v1-check",
     "research/pure-far-hpf-energy-asymmetry-v1-check",
@@ -83,6 +84,10 @@
     {
       "name": "research/doubletalk-onset-admission-v1",
       "expected_sha": "008c923474132dcc33d6da4756b486a78c2dee6b"
+    },
+    {
+      "name": "perf/reuse-near-input-alignment",
+      "expected_sha": "f729c7246f58730dd316b12aecd5dfaea799aba3"
     }
   ],
   "authority_boundary": {

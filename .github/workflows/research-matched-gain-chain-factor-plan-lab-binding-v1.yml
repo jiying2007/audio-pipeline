@@ -100,6 +100,10 @@ jobs:
               raise SystemExit(0)
 
           m = json.loads(binding.read_text())
+          assert set(m) == {
+              'schema_version','investigation','authority','predecessor',
+              'coordinate_frame','lab_values','state','shipping_immutable',
+          }
           assert m['schema_version'] == 1
           assert m['investigation'] == 'matched-gain-chain-factor-plan-lab-binding-v1'
           assert m['authority'] == 'LAB_METADATA_BINDING_ONLY'
@@ -136,11 +140,21 @@ jobs:
                       reject_placeholders(item, f'{path}.{k}')
 
           for key, item in m['lab_values'].items():
-              assert set(item) == {'value','provenance'}, key
+              assert isinstance(item, dict) and set(item) == {'value','provenance'}, key
+              assert isinstance(item['provenance'], str), key
               reject_placeholders(item['value'], f'lab_values.{key}.value')
               reject_placeholders(item['provenance'], f'lab_values.{key}.provenance')
 
+          assert isinstance(m['coordinate_frame'], str)
           reject_placeholders(m['coordinate_frame'], 'coordinate_frame')
+
+          for key in (
+              'device_id_or_fixture_id','hardware_revision','software_firmware_revision',
+              'volume_control_state','room_or_fixture_id','RIR_measurement_method',
+          ):
+              assert isinstance(m['lab_values'][key]['value'], str), key
+
+          assert isinstance(m['lab_values']['render_source_metadata']['value'], dict)
 
           for key in ('source_position_xyz_m','microphone_position_xyz_m'):
               value = m['lab_values'][key]['value']

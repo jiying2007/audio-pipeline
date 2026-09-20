@@ -1,3 +1,9 @@
+# 2.3.37
+
+- Reuse the four highest coarse SYNC correlation peaks when applying the uniqueness gate instead of rescoring the full delay range after local refinement. The coarse grid spacing and uniqueness guard mean at most three coarse candidates can be excluded around the refined peak, so the fourth retained peak is sufficient to recover the exact runner-up outside the guard.
+- Preserve the existing delay score, correlation threshold, peak-ratio threshold, route-jump confirmation, drift compensation and public API/ABI semantics; this is a bounded CPU optimization only.
+- The original exact-head experiment passed Hosted Real Audio Validation, Hosted Real AEC Validation, DSP Stage Validation and Audio Quality Evaluation; its Verify failure was solely the missing SemVer increment. This version reapplies the same optimization on current main for fresh full validation.
+
 # 2.3.36
 
 - Reuse the canonical bounded alignment search directly for quality interference projection metrics instead of calling aligned SI-SDR only to discard its score. Each interference case now avoids two unnecessary full SI-SDR span evaluations while preserving the exact canonical alignment result.

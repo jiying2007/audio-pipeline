@@ -1,3 +1,9 @@
+# 2.3.39
+
+- Fail closed when an objective metric declared by a tuning search space is absent from the baseline summary. Such a term was previously skipped silently, which removed its weight from the score and disabled its regression gate at the same time, with no report entry and no error. A corpus that does not produce a declared metric is now a hard configuration error instead of a silent scoring change.
+- Keep the candidate-side behaviour unchanged: a metric that the baseline produces but the candidate does not is still reported as an explicit `objective_metric_missing` penalty by `tuning_iteration.py`, so the strict guard layer keeps working as designed.
+- Extend the tuning self-test with a baseline summary that omits a declared objective metric and assert that both scoring and regression evaluation fail closed on it. Metric names, thresholds, search spaces, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.38
 
 - Add paired per-case regression gates to the two CALL tuning search spaces (`call-v1`, `call-pr-smoke-v1`), which previously carried none. Aggregate objectives rank candidates by population statistics whose tail index is chosen by absolute metric value, so a control that only moves a subset of scenarios can leave every aggregate term unchanged while individual cases regress. On the PR-smoke corpus the selected `aec_mu=0.24` development candidate carries a -0.2895 dB worst-case near-end SI-SDR improvement delta and a -0.4175 dB worst-case noise attenuation delta that no aggregate term observes; six of its seven weighted objective terms are exactly zero.

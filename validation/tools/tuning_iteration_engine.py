@@ -174,6 +174,61 @@ def generate_candidates(space: dict[str, Any]) -> list[dict[str, Any]]:
     return candidates
 
 
+def adjacent_development_sensitivity(space: dict[str, Any], selected: dict[str, Any],
+                                     dev_results: list[dict[str, Any]]) -> dict[str, Any]:
+    selected_tuning = canonical_tuning(selected["tuning"])
+    by_id = {str(item["candidate_id"]): item for item in dev_results}
+    neighbors: list[dict[str, Any]] = []
+    for key in TUNING_KEYS:
+        if key not in space.get("parameters", {}):
+            continue
+        values = sorted({
+            float(space["baseline"][key]),
+            *(float(value) for value in space["parameters"][key]),
+        })
+        current = selected_tuning[key]
+        current_index = next(
+            (index for index, value in enumerate(values)
+             if abs(value - current) <= 1.0e-12),
+            None,
+        )
+        if current_index is None:
+            raise ValueError(f"selected {key}={current} is outside the search axis")
+        for neighbor_index in (current_index - 1, current_index + 1):
+            if neighbor_index < 0 or neighbor_index >= len(values):
+                continue
+            neighbor_tuning = dict(selected_tuning)
+            neighbor_tuning[key] = values[neighbor_index]
+            item = by_id.get(tuning_id(neighbor_tuning))
+            if item is None:
+                continue
+            compliant = (
+                item.get("validation_result") == "PASS"
+                and not item.get("case_delta_violations", [])
+            )
+            neighbors.append({
+                "candidate_id": item["candidate_id"],
+                "label": item["label"],
+                "parameter": key,
+                "value": values[neighbor_index],
+                "direction": "lower" if values[neighbor_index] < current else "higher",
+                "score": item["score"],
+                "validation_result": item["validation_result"],
+                "compliant": compliant,
+                "case_delta_summary": item["case_delta_summary"],
+                "case_delta_violations": item["case_delta_violations"],
+            })
+    neighbors.sort(
+        key=lambda item: (TUNING_KEYS.index(str(item["parameter"])), float(item["value"]))
+    )
+    return {
+        "neighbor_count": len(neighbors),
+        "compliant_neighbor_count": sum(bool(item["compliant"]) for item in neighbors),
+        "violating_neighbor_count": sum(not bool(item["compliant"]) for item in neighbors),
+        "neighbors": neighbors,
+    }
+
+
 def summary_value(report: dict[str, Any], name: str) -> float | None:
     value = report.get("summary", {}).get(name)
     return None if value is None else float(value)
@@ -509,6 +564,9 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
     min_score = float(space.get("objective", {}).get("minimum_improvement_score", 0.05))
     if selected["candidate_id"] == baseline_candidate["candidate_id"] or selected["score"] < min_score:
         selected = dev_results[0]
+    development_sensitivity = adjacent_development_sensitivity(
+        space, selected, dev_results
+    )
 
     validation_reports = {}
     shadow_reports = {}
@@ -568,6 +626,7 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "development_score": selected["score"],
             "development_case_delta_summary": selected["case_delta_summary"],
             "development_case_delta_violations": selected["case_delta_violations"],
+            "development_adjacent_sensitivity": development_sensitivity,
         },
         "development_ranking": [
             {
@@ -629,6 +688,42 @@ def self_test() -> None:
     candidates = generate_candidates(space)
     assert candidates[0]["label"] == "baseline"
     assert len(candidates) == 4
+    grid_space = json.loads(json.dumps(space))
+    grid_space["strategy"] = "cartesian"
+    grid_space["parameters"] = {"aec_mu": [0.22, 0.24], "ns_floor": [0.06, 0.07]}
+    grid_candidates = generate_candidates(grid_space)
+    grid_results = []
+    for candidate in grid_candidates:
+        item = {
+            **candidate,
+            "score": 1.0,
+            "validation_result": "PASS",
+            "case_delta_summary": [],
+            "case_delta_violations": [],
+        }
+        if (abs(candidate["tuning"]["aec_mu"] - 0.24) < 1.0e-12 and
+                abs(candidate["tuning"]["ns_floor"] - 0.06) < 1.0e-12):
+            item["case_delta_violations"] = [{"gate": "case_delta_regression"}]
+        grid_results.append(item)
+    grid_selected = next(
+        item for item in grid_results
+        if abs(item["tuning"]["aec_mu"] - 0.24) < 1.0e-12
+        and abs(item["tuning"]["ns_floor"] - 0.07) < 1.0e-12
+    )
+    grid_sensitivity = adjacent_development_sensitivity(
+        grid_space, grid_selected, grid_results
+    )
+    assert grid_sensitivity["neighbor_count"] == 2
+    assert grid_sensitivity["compliant_neighbor_count"] == 1
+    assert grid_sensitivity["violating_neighbor_count"] == 1
+    ns_neighbor = next(
+        item for item in grid_sensitivity["neighbors"]
+        if item["parameter"] == "ns_floor"
+    )
+    assert abs(ns_neighbor["value"] - 0.06) < 1.0e-12
+    assert ns_neighbor["direction"] == "lower"
+    assert ns_neighbor["compliant"] is False
+    assert ns_neighbor["case_delta_violations"][0]["gate"] == "case_delta_regression"
     baseline = {"validation_result": "PASS", "summary": {"pass_rate": 1.0, "median_erle_db": 10.0}}
     better = {"validation_result": "PASS", "summary": {"pass_rate": 1.0, "median_erle_db": 11.5}}
     score, _ = score_against_baseline(space, baseline, better)

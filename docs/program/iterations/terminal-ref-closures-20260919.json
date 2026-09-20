@@ -126,6 +126,41 @@
         "byte_identical_asset_count": 6,
         "current_main_sha": "57a63d252e9f95ec076ffd706c9b101c4fd90823"
       }
+    },
+    {
+      "branch": "codex/diagnose-visible-92c3-once",
+      "head_sha": "9a975fa6ee85fe6d3dd56abccb383fc784f38bd1",
+      "state": "CLOSED_DIAGNOSTIC_COMPLETE",
+      "merged": false,
+      "decision": "RETIRE_ONE_SHOT_DIAGNOSTIC",
+      "reason": "The exact-head one-shot metrics JSON diagnostic completed successfully in GitHub Actions run 34955955775. Subsequent 92c3 lifecycle work terminalized the candidate, and current main records it as BLIND_REJECTED_NON_SHIPPING with visible validation FAIL and an explicit rule forbidding retry, reselection, promotion or shipping mutation. The diagnostic-only workflows on this branch no longer hold product or research selection authority.",
+      "evidence": {
+        "diagnostic_run": 34955955775,
+        "diagnostic_workflow": "Diagnose Metrics JSON 92c3 Once",
+        "terminal_manifest": ".github/research/continuous-optimization/terminal-candidates/92c3e9fe128d4b76.json",
+        "terminal_status": "BLIND_REJECTED_NON_SHIPPING",
+        "visible_result": "FAIL",
+        "current_main_sha": "b9a502210ac0de1fdd01a7f6361703e05e427725"
+      }
+    },
+    {
+      "branch": "codex/fix-aec-materialization-resume",
+      "head_sha": "b8b7fac29a2754f4d02c91880821951b3b71a06d",
+      "state": "CLOSED_SUPERSEDED_TERMINAL_STATE",
+      "merged": false,
+      "decision": "USE_MAIN_TERMINAL_STATE",
+      "reason": "This branch contains the 92c3 rejection archive/terminalization sequence plus metrics JSON proxy hardening. Its Retire 92c3 Default Once run 34956418241 successfully removed the terminal blind default and passed lifecycle validation; the only failure was the final GitHub App push being rejected for missing workflows permission. Current main already contains the intended terminal state: the 92c3 active candidate is absent, the terminal archive is authoritative, blind qualification has no candidate default and does not reference 92c3, and the metrics JSON proxy exists in a later canonical main form. The stale live branch therefore has no remaining integration or selection authority.",
+      "evidence": {
+        "retirement_run": 34956418241,
+        "retirement_job": 104339442513,
+        "lifecycle_step": "Remove terminal blind default and validate lifecycle",
+        "lifecycle_step_result": "success",
+        "push_failure": "GitHub App lacked workflows permission",
+        "terminal_manifest": ".github/research/continuous-optimization/terminal-candidates/92c3e9fe128d4b76.json",
+        "blind_workflow_92c3_reference": false,
+        "current_proxy": ".github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py",
+        "current_main_sha": "b9a502210ac0de1fdd01a7f6361703e05e427725"
+      }
     }
   ],
   "gc_authority": {

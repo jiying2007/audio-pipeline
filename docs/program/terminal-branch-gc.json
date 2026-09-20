@@ -28,10 +28,12 @@
     "validation/"
   ],
   "allowed_exact_names": [
+    "codex/diagnose-visible-92c3-once",
     "codex/dispatch-blind-92c3e9fe-once",
     "codex/dispatch-blind-ffc66ec-once",
     "codex/dispatch-multidataset-v2-once",
     "codex/dispatch-nightly-6ec48f3-once",
+    "codex/fix-aec-materialization-resume",
     "codex/github-hosted-dns5-probe",
     "codex/migrate-blind-once",
     "codex/retry-hosted-blind-infra-once",
@@ -110,6 +112,14 @@
     {
       "name": "feat/call-tuning-gates-and-search",
       "expected_sha": "f0f90c2cf8f1c3228e85c4cdc8b0b3225e0179f4"
+    },
+    {
+      "name": "codex/diagnose-visible-92c3-once",
+      "expected_sha": "9a975fa6ee85fe6d3dd56abccb383fc784f38bd1"
+    },
+    {
+      "name": "codex/fix-aec-materialization-resume",
+      "expected_sha": "b8b7fac29a2754f4d02c91880821951b3b71a06d"
     }
   ],
   "authority_boundary": {

@@ -1,3 +1,9 @@
+# 2.3.36
+
+- Reuse the canonical bounded alignment search directly for quality interference projection metrics instead of calling aligned SI-SDR only to discard its score. Each interference case now avoids two unnecessary full SI-SDR span evaluations while preserving the exact canonical alignment result.
+- Add fail-closed self-test coverage that the interference path uses alignment-only evaluation and does not regress to computing discarded SI-SDR values.
+- Quality metric definitions, thresholds, report schema, product DSP, public API/ABI, shipping defaults and Product Qualification authority are unchanged.
+
 # 2.3.35
 
 - Replace repeated full rescans of overlapping 100 ms quality ERLE windows with a constant-memory rolling energy accumulator. Each 10 ms step now updates only the leaving and entering samples while preserving the existing window positions and exact legacy ERLE curve values for S16 PCM.

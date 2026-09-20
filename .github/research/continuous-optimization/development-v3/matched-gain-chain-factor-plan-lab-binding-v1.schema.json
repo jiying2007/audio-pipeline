@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jiying2007/audio-pipeline/.github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-lab-binding-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "investigation",
+    "authority",
+    "predecessor",
+    "coordinate_frame",
+    "lab_values",
+    "state",
+    "shipping_immutable"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "investigation": {"const": "matched-gain-chain-factor-plan-lab-binding-v1"},
+    "authority": {"const": "LAB_METADATA_BINDING_ONLY"},
+    "predecessor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "blob_sha"],
+      "properties": {
+        "manifest": {"const": ".github/research/continuous-optimization/development-v3/matched-gain-chain-factor-plan-resolution-v1.json"},
+        "blob_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "coordinate_frame": {"type": "string", "minLength": 1},
+    "lab_values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id_or_fixture_id",
+        "hardware_revision",
+        "software_firmware_revision",
+        "playback_analog_gain_db_or_exact_setting",
+        "capture_analog_gain_db_or_exact_setting",
+        "AGC_enabled_and_exact_config",
+        "device_DSP_enabled_modules_and_exact_config",
+        "volume_control_state",
+        "room_or_fixture_id",
+        "source_position_xyz_m",
+        "microphone_position_xyz_m",
+        "source_orientation",
+        "microphone_orientation",
+        "render_source_hash",
+        "render_source_metadata",
+        "RIR_measurement_method"
+      ],
+      "properties": {
+        "device_id_or_fixture_id": {"$ref": "#/$defs/observed"},
+        "hardware_revision": {"$ref": "#/$defs/observed"},
+        "software_firmware_revision": {"$ref": "#/$defs/observed"},
+        "playback_analog_gain_db_or_exact_setting": {"$ref": "#/$defs/observed"},
+        "capture_analog_gain_db_or_exact_setting": {"$ref": "#/$defs/observed"},
+        "AGC_enabled_and_exact_config": {"$ref": "#/$defs/observed"},
+        "device_DSP_enabled_modules_and_exact_config": {"$ref": "#/$defs/observed"},
+        "volume_control_state": {"$ref": "#/$defs/observed"},
+        "room_or_fixture_id": {"$ref": "#/$defs/observed"},
+        "source_position_xyz_m": {"$ref": "#/$defs/observed"},
+        "microphone_position_xyz_m": {"$ref": "#/$defs/observed"},
+        "source_orientation": {"$ref": "#/$defs/observed"},
+        "microphone_orientation": {"$ref": "#/$defs/observed"},
+        "render_source_hash": {"$ref": "#/$defs/observed"},
+        "render_source_metadata": {"$ref": "#/$defs/observed"},
+        "RIR_measurement_method": {"$ref": "#/$defs/observed"}
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lab_resolution_complete","freeze_complete","hardware_execution_authorized","candidate_budget"],
+      "properties": {
+        "lab_resolution_complete": {"const": true},
+        "freeze_complete": {"const": true},
+        "hardware_execution_authorized": {"const": false},
+        "candidate_budget": {"const": 0}
+      }
+    },
+    "shipping_immutable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version","sha"],
+      "properties": {
+        "version": {"const": "v2.3.16"},
+        "sha": {"const": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"}
+      }
+    }
+  },
+  "$defs": {
+    "observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value","provenance"],
+      "properties": {
+        "value": {},
+        "provenance": {"type": "string","minLength": 1}
+      }
+    }
+  }
+}

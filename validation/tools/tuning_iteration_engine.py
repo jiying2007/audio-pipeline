@@ -191,7 +191,10 @@ def score_against_baseline(space: dict[str, Any], baseline: dict[str, Any],
         name = str(metric["name"])
         base = summary_value(baseline, name)
         cand = summary_value(candidate, name)
-        if base is None or cand is None:
+        if base is None:
+            raise ValueError(
+                f"objective metric {name} is absent from the baseline summary")
+        if cand is None:
             continue
         direction = str(metric["direction"])
         directed = (cand - base) if direction == "max" else (base - cand)
@@ -214,7 +217,10 @@ def regression_violations(space: dict[str, Any], baseline: dict[str, Any],
         name = str(metric["name"])
         base = summary_value(baseline, name)
         cand = summary_value(candidate, name)
-        if base is None or cand is None:
+        if base is None:
+            raise ValueError(
+                f"objective metric {name} is absent from the baseline summary")
+        if cand is None:
             continue
         direction = str(metric["direction"])
         regression = (base - cand) if direction == "max" else (cand - base)
@@ -745,6 +751,32 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("inverted case delta gate bounds must fail closed")
+    # A declared objective metric that the baseline summary does not produce used
+    # to be skipped silently, which dropped its weight with no report entry and no
+    # error. The baseline side must fail closed. The candidate side stays a skip
+    # because tuning_iteration.py turns it into an explicit reported penalty, so it
+    # is deliberately not asserted here: the strict wrapper changes that result.
+    absent_metric = json.loads(json.dumps(space))
+    absent_metric["objective"]["metrics"] = [
+        {"name": "min_vad_recall", "direction": "max", "weight": 1.0,
+         "scale": 1.0, "max_regression": 0.0},
+    ]
+    validate_search_space(absent_metric)
+    produced = {"summary": {"erle": 1.0}}
+    try:
+        score_against_baseline(absent_metric, produced, produced)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(
+            "a baseline summary missing a declared metric must fail closed")
+    try:
+        regression_violations(absent_metric, produced, produced)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(
+            "a baseline summary missing a gated metric must fail closed")
     with tempfile.TemporaryDirectory(prefix="ap-tuning-selftest-") as temporary:
         root = Path(temporary)
         for index, seed in enumerate((1, 2, 3)):

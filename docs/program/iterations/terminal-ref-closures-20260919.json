@@ -27,6 +27,23 @@
       "decision": "KEEP_MAIN_BASELINE",
       "committed_research_closure": ".github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json",
       "reason": "The single authorized candidate failed frozen Hosted Real AEC movement and echo-path-change hard-negative gates; the committed closure exhausts the candidate budget and keeps the shipping baseline."
+    },
+    {
+      "branch": "perf/reuse-near-input-alignment",
+      "head_sha": "f729c7246f58730dd316b12aecd5dfaea799aba3",
+      "pull_request": 286,
+      "state": "CLOSED_SUPERSEDED",
+      "merged": false,
+      "decision": "USE_MERGED_SUCCESSOR",
+      "superseded_by_pull_request": 287,
+      "superseded_by_main_sha": "c13e70024fd3a08a17c085ddf4aca0462ef3bd00",
+      "reason": "The branch is an unmerged alternative implementation of the v2.3.23 near-input alignment reuse. PR #287 implemented the same optimization on the canonical validation path and merged to main; subsequent validation releases through v2.3.36 build on that merged implementation. Retain this exact SHA as closure evidence and garbage-collect the live ref rather than rebasing or merging the duplicate candidate.",
+      "main_evidence": {
+        "successor_release": "v2.3.23",
+        "successor_pull_request": 287,
+        "current_release": "v2.3.36",
+        "current_main_sha": "3ec1aabde471e774253201492cb9f4d78929cf3b"
+      }
     }
   ],
   "gc_authority": {

@@ -288,8 +288,12 @@ def install(engine: Any) -> None:
             interference = engine.read_audio_samples(interference_path, rate, 1)
             input_corr = engine.max_abs_corr(mic0, interference, rate)
             output_corr = engine.max_abs_corr(output, interference, rate)
-            _, input_alignment = engine.aligned_si_sdr(interference, mic0, rate, 0)
-            _, output_alignment = engine.aligned_si_sdr(interference, output, rate, declared_delay)
+            _, _, _, input_alignment = engine.aligned_span(
+                interference, mic0, rate, 0
+            )
+            _, _, _, output_alignment = engine.aligned_span(
+                interference, output, rate, declared_delay
+            )
             input_projection = projection_gain_db(interference, mic0, input_alignment)
             output_projection = projection_gain_db(interference, output, output_alignment)
             attenuation = None
@@ -445,6 +449,7 @@ def self_test() -> None:
         def __init__(self) -> None:
             self.invoke_count = 0
             self.reference_read_count = 0
+            self.external_reference_read_count = 0
             self.label_read_count = 0
             self.alignment_count = 0
 
@@ -494,6 +499,9 @@ def self_test() -> None:
 
         def read_audio_samples(self, path: Path, rate: int,
                                channels: int) -> Sequence[int]:
+            if path.name == "interference.pcm":
+                self.external_reference_read_count += 1
+                return [1000, -1000] * 80
             self.reference_read_count += 1
             raise AssertionError("quality must reuse canonical references")
 
@@ -501,12 +509,25 @@ def self_test() -> None:
             self.label_read_count += 1
             raise AssertionError("quality must reuse canonical labels")
 
+        def aligned_span(self, reference: Sequence[int],
+                         estimate: Sequence[int], rate: int,
+                         expected_delay_samples: int
+                         ) -> tuple[int, int, int, int]:
+            self.alignment_count += 1
+            return 0, 0, min(len(reference), len(estimate)), 0
+
         def aligned_si_sdr(self, reference: Sequence[int],
                            estimate: Sequence[int], rate: int,
                            expected_delay_samples: int
                            ) -> tuple[float | None, int]:
-            self.alignment_count += 1
-            raise AssertionError("quality must reuse canonical clean alignment")
+            raise AssertionError(
+                "quality interference alignment must not compute SI-SDR"
+            )
+
+        @staticmethod
+        def max_abs_corr(a: Sequence[int], b: Sequence[int],
+                         sample_rate: int) -> float:
+            return 0.0
 
         @staticmethod
         def policy_violations(policy: dict, corpus: dict,
@@ -538,10 +559,24 @@ def self_test() -> None:
         "expected": {},
     }
     fake.evaluate_case(Path("processor"), Path("corpus.json"), echo_probe)
-    assert fake.invoke_count == 2
+    interference_probe = {
+        "case_id": "quality-interference-alignment-only",
+        "split": "validation",
+        "scenario": "self-test",
+        "sample_rate_hz": 16000,
+        "mic_channels": 1,
+        "interference_audio": "interference.pcm",
+        "quality": {"alignment_only": True},
+        "expected": {},
+    }
+    fake.evaluate_case(
+        Path("processor"), Path("corpus.json"), interference_probe
+    )
+    assert fake.invoke_count == 3
     assert fake.reference_read_count == 0
+    assert fake.external_reference_read_count == 1
     assert fake.label_read_count == 0
-    assert fake.alignment_count == 0
+    assert fake.alignment_count == 2
     print("quality metric support self-test: OK")
 
 

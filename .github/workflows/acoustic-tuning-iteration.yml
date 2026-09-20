@@ -2,6 +2,15 @@ name: Acoustic Tuning Search
 
 on:
   workflow_dispatch:
+    inputs:
+      search_space:
+        description: CALL tuning search space
+        required: true
+        default: call-v1.json
+        type: choice
+        options:
+          - call-v1.json
+          - call-interaction-v1.json
 
 permissions:
   contents: read
@@ -15,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      SEARCH_SPACE: validation/tuning/search-spaces/call-v1.json
-      EXPECTED_MAX_CANDIDATES: '20'
+      SEARCH_SPACE: validation/tuning/search-spaces/${{ inputs.search_space }}
+      EXPECTED_MAX_CANDIDATES: '32'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
@@ -31,13 +40,14 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          for path in [
-              Path('validation/tuning/search-spaces/call-pr-smoke-v1.json'),
-              Path('validation/tuning/search-spaces/call-v1.json'),
+          for path, strategy in [
+              (Path('validation/tuning/search-spaces/call-pr-smoke-v1.json'), 'one-at-a-time'),
+              (Path('validation/tuning/search-spaces/call-v1.json'), 'one-at-a-time'),
+              (Path('validation/tuning/search-spaces/call-interaction-v1.json'), 'cartesian'),
           ]:
               space = json.loads(path.read_text())
               assert space['schema_version'] == 1
-              assert space['strategy'] == 'one-at-a-time'
+              assert space['strategy'] == strategy
               assert set(space['baseline']) == {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
           selected = json.loads(Path(os.environ['SEARCH_SPACE']).read_text())
           assert selected['max_candidates'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])

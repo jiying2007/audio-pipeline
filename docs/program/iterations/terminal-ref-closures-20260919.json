@@ -60,6 +60,72 @@
         "hosted_real_audio_run": 967,
         "hosted_real_aec_run": 962
       }
+    },
+    {
+      "branch": "perf/sync-uniqueness-top4-cache",
+      "head_sha": "9de645e5c86fe7e38fe17ed450bf03f14c060002",
+      "pull_request": 253,
+      "state": "CLOSED_SUPERSEDED",
+      "merged": false,
+      "decision": "USE_MERGED_SUCCESSOR",
+      "superseded_by_pull_request": 309,
+      "superseded_by_main_sha": "fe5e0c6dee17963748943ff4f4a2fabac09ac3cb",
+      "reason": "The branch is the original SYNC coarse-peak reuse experiment. Its exact head passed Hosted Real Audio, Hosted Real AEC, DSP Stage and Audio Quality validation; Verify rejected it only because the release-bearing source change did not advance SemVer. PR #309 reapplied the same SYNC optimization on current main with v2.3.37, passed all PR gates and fresh-main validation, and is now canonical. Retain this exact SHA as historical experiment evidence and garbage-collect the obsolete live ref.",
+      "main_evidence": {
+        "successor_release": "v2.3.37",
+        "successor_pull_request": 309,
+        "successor_main_sha": "fe5e0c6dee17963748943ff4f4a2fabac09ac3cb",
+        "current_main_sha": "57a63d252e9f95ec076ffd706c9b101c4fd90823"
+      }
+    },
+    {
+      "branch": "feat/tuning-paired-case-gates",
+      "head_sha": "974c71f0a22c380f411c86f6a60837b3a1b38977",
+      "state": "CLOSED_SUPERSEDED",
+      "merged": false,
+      "decision": "USE_MERGED_SUCCESSOR",
+      "superseded_by_pull_request": 310,
+      "superseded_by_main_sha": "9c9920f3aafc3fcf06e263c3f56496886a4f83f1",
+      "reason": "This research ref introduced paired CALL per-case gates. PR #310 rebuilt the completed CALL tuning research on current main, preserving the tuning assets byte-for-byte where applicable, advanced the release to v2.3.38, and passed the full tuning, quality, hosted-real and fresh-main validation surface. The live ref is historical research state, not a remaining integration path.",
+      "main_evidence": {
+        "successor_release": "v2.3.38",
+        "successor_pull_request": 310,
+        "successor_main_sha": "9c9920f3aafc3fcf06e263c3f56496886a4f83f1",
+        "current_main_sha": "57a63d252e9f95ec076ffd706c9b101c4fd90823"
+      }
+    },
+    {
+      "branch": "feat/call-tuning-paired-case-gates",
+      "head_sha": "3bd68c47735e095d55dbe0f931ad11ddee617f74",
+      "state": "CLOSED_SUPERSEDED",
+      "merged": false,
+      "decision": "USE_MERGED_SUCCESSOR",
+      "superseded_by_pull_request": 310,
+      "superseded_by_main_sha": "9c9920f3aafc3fcf06e263c3f56496886a4f83f1",
+      "reason": "This research ref extended the paired-gate work with the bounded CALL Cartesian interaction search. PR #310 ported the completed search-space and engine assets onto current main and validated them through the repository's tuning and quality gates. The old ref is fully superseded and should remain only as exact-SHA evidence.",
+      "main_evidence": {
+        "successor_release": "v2.3.38",
+        "successor_pull_request": 310,
+        "successor_main_sha": "9c9920f3aafc3fcf06e263c3f56496886a4f83f1",
+        "current_main_sha": "57a63d252e9f95ec076ffd706c9b101c4fd90823"
+      }
+    },
+    {
+      "branch": "feat/call-tuning-gates-and-search",
+      "head_sha": "f0f90c2cf8f1c3228e85c4cdc8b0b3225e0179f4",
+      "state": "CLOSED_SUPERSEDED",
+      "merged": false,
+      "decision": "USE_MERGED_SUCCESSOR",
+      "superseded_by_pull_request": 310,
+      "superseded_by_main_sha": "9c9920f3aafc3fcf06e263c3f56496886a4f83f1",
+      "reason": "This was the final stale research integration ref for paired CALL gates and bounded interaction search. Before PR #310, all six tuning assets were copied to a clean current-main branch and their blob SHAs were verified identical to this ref. PR #310 then merged those canonical assets as v2.3.38 with all affected tuning, DSP, hosted-real, quality and fresh-main checks green. Keeping the live stale branch now creates duplicate authority and merge risk.",
+      "main_evidence": {
+        "successor_release": "v2.3.38",
+        "successor_pull_request": 310,
+        "successor_main_sha": "9c9920f3aafc3fcf06e263c3f56496886a4f83f1",
+        "byte_identical_asset_count": 6,
+        "current_main_sha": "57a63d252e9f95ec076ffd706c9b101c4fd90823"
+      }
     }
   ],
   "gc_authority": {

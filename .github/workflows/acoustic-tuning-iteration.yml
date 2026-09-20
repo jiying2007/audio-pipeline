@@ -11,6 +11,8 @@ on:
         options:
           - call-v1.json
           - call-interaction-v1.json
+          - call-interaction-3d-v1.json
+          - call-aec-limiter-v1.json
 
 permissions:
   contents: read
@@ -38,17 +40,38 @@ jobs:
           python3 validation/tools/authority.py --self-test
           python3 validation/tools/tuning_iteration.py --self-test
           python3 - <<'PY'
-          import json, os
+          import json, os, sys
           from pathlib import Path
-          for path, strategy in [
-              (Path('validation/tuning/search-spaces/call-pr-smoke-v1.json'), 'one-at-a-time'),
-              (Path('validation/tuning/search-spaces/call-v1.json'), 'one-at-a-time'),
-              (Path('validation/tuning/search-spaces/call-interaction-v1.json'), 'cartesian'),
-          ]:
+          sys.path.insert(0, 'validation/tools')
+          import tuning_iteration_engine as engine
+          spaces_dir = Path('validation/tuning/search-spaces')
+          # Every space on disk is validated with the engine's own validator. A space
+          # nobody remembered to list below is therefore still validated instead of
+          # silently skipped, which is what a hand-written enumeration used to do.
+          # Every call-* space is pinned to its strategy (including call-pr-smoke-v1,
+          # which the PR smoke workflow exercises rather than this one), and a new
+          # call-* space fails closed until it is listed here. The space actually
+          # dispatched must itself be a pinned name, so adding a dropdown option
+          # without pinning it fails closed too.
+          expected_strategy = {
+              'call-pr-smoke-v1.json': 'one-at-a-time',
+              'call-v1.json': 'one-at-a-time',
+              'call-interaction-v1.json': 'cartesian',
+              'call-interaction-3d-v1.json': 'cartesian',
+              'call-aec-limiter-v1.json': 'cartesian',
+          }
+          call_spaces = {p.name for p in spaces_dir.glob('call-*.json')}
+          assert call_spaces == set(expected_strategy), (call_spaces, set(expected_strategy))
+          for path in sorted(spaces_dir.glob('*.json')):
               space = json.loads(path.read_text())
               assert space['schema_version'] == 1
-              assert space['strategy'] == strategy
               assert set(space['baseline']) == {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
+              engine.validate_search_space(space)
+          for name, strategy in expected_strategy.items():
+              space = json.loads((spaces_dir / name).read_text())
+              assert space['strategy'] == strategy, (name, space['strategy'], strategy)
+          selected_name = Path(os.environ['SEARCH_SPACE']).name
+          assert selected_name in expected_strategy, (selected_name, sorted(expected_strategy))
           selected = json.loads(Path(os.environ['SEARCH_SPACE']).read_text())
           assert selected['max_candidates'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
           PY

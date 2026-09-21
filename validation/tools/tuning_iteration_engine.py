@@ -29,6 +29,8 @@ TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
 # validate_search_space.
 SEARCH_SPACE_KEYS = ("schema_version", "search_space_id", "strategy",
                      "max_candidates", "baseline", "parameters", "objective")
+OBJECTIVE_KEYS = {"minimum_improvement_score", "metrics", "case_delta_gates"}
+OBJECTIVE_METRIC_REQUIRED_KEYS = {"name", "direction", "weight", "scale", "max_regression"}
 OBJECTIVE_METRIC_KEYS = {
     "name", "direction", "weight", "scale", "max_regression",
     "datasets", "minimum_units",
@@ -173,6 +175,13 @@ def validate_search_space(space: dict[str, Any]) -> None:
     objective = space["objective"]
     if not isinstance(objective, dict):
         raise ValueError("objective must be an object")
+    unknown_objective = sorted(set(objective) - OBJECTIVE_KEYS)
+    if unknown_objective:
+        raise ValueError(f"unknown objective keys: {unknown_objective}")
+    if "minimum_improvement_score" in objective:
+        minimum_score = float(objective["minimum_improvement_score"])
+        if not math.isfinite(minimum_score) or minimum_score < 0.0:
+            raise ValueError("minimum_improvement_score must be finite and >= 0")
     metrics = objective.get("metrics", DEFAULT_METRICS)
     if not isinstance(metrics, list) or not metrics:
         raise ValueError("objective.metrics must be non-empty")
@@ -182,6 +191,11 @@ def validate_search_space(space: dict[str, Any]) -> None:
         unknown_metric = sorted(set(metric) - OBJECTIVE_METRIC_KEYS)
         if unknown_metric:
             raise ValueError(f"unknown objective metric keys: {unknown_metric}")
+        missing_metric = sorted(OBJECTIVE_METRIC_REQUIRED_KEYS - set(metric))
+        if missing_metric:
+            raise ValueError(f"objective metric is missing required keys: {missing_metric}")
+        if not isinstance(metric["name"], str) or not metric["name"]:
+            raise ValueError("objective metric name must be a non-empty string")
         if metric.get("direction") not in {"min", "max"}:
             raise ValueError("metric direction must be min or max")
         if float(metric.get("weight", 0.0)) < 0.0 or float(metric.get("scale", 0.0)) <= 0.0:
@@ -872,6 +886,22 @@ def self_test() -> None:
         },
     }
     validate_search_space(space)
+    bad_objective_key = json.loads(json.dumps(space))
+    bad_objective_key["objective"]["minimum_improvements_score"] = 0.1
+    try:
+        validate_search_space(bad_objective_key)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unknown objective key must fail closed")
+    missing_metric_key = json.loads(json.dumps(space))
+    del missing_metric_key["objective"]["metrics"][0]["weight"]
+    try:
+        validate_search_space(missing_metric_key)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("missing required objective metric key must fail closed")
     bad_metric_key = json.loads(json.dumps(space))
     bad_metric_key["objective"]["metrics"][0]["dataset"] = ["synthetic-regression"]
     try:

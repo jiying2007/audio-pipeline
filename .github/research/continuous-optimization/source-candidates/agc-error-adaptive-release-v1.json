@@ -2,7 +2,7 @@
   "schema_version": 1,
   "candidate_id": "agc-error-adaptive-release-v1",
   "authority": "SOURCE_CANDIDATE_EVALUATION_ONLY",
-  "candidate_budget": 1,
+  "candidate_budget": 0,
   "confirmation_limit": 0,
   "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
   "predecessor": {
@@ -49,5 +49,18 @@
     "hil": false,
     "product_certification": false,
     "independent_confirmation_required_after_pass": true
-  }
+  },
+  "status": "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT",
+  "terminal_candidate": true,
+  "consumption": {
+    "source_evaluation_run_id": 35325485610,
+    "source_evaluation_artifact_id": 10538537510,
+    "source_evaluation_artifact_digest": "sha256:6e9eafd568bac7655d8874ed40a1bba1ad6e2e6d0df640d0b29ee8315098631c",
+    "independent_confirmation_run_id": 35334960942,
+    "independent_confirmation_artifact_id": 10543011094,
+    "independent_confirmation_artifact_digest": "sha256:3cf3fe28b91cec39cb4ca4b17c81f22a57b04a671b80ddcdb55bdc26009e07da",
+    "fresh_source_evaluation_consumed": true,
+    "independent_confirmation_consumed": true
+  },
+  "closure_path": ".github/research/continuous-optimization/confirmations/agc-error-adaptive-release-v1-closure.json"
 }

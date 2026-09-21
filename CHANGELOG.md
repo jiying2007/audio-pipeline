@@ -1,7 +1,7 @@
 # 2.3.46
 
 - Replace tuning/research optimizer monkey-patching with an explicit immutable `IterationSemantics` profile. Canonical tuning, dataset-aware research, case-scoped research and hierarchical algorithm+tuning paths now pass validator/scoring/regression/case-gate semantics directly instead of mutating imported module functions.
-- Remove import-order/global-state coupling from `tuning_iteration.py`, `research_optimizer_v3.py`, `research_optimizer_v5.py` and `research_joint_optimizer.py`. Dataset/case research extensions remain explicit opt-ins, while canonical tuning continues to reject research-only scope fields.
+- Remove import-order/global-state coupling from `tuning_iteration.py`, the AEC-motion tuning wrapper, `research_optimizer_v3.py`, `research_optimizer_v5.py` and `research_joint_optimizer.py`. AEC-motion correlation metrics and dataset/case research extensions are explicit profile inputs; canonical tuning continues to reject research-only scope fields.
 - Add deterministic assertions that constructing/running v3/v5 profiles leaves engine validators, case gates and core rankers unchanged. Candidate generation, ranking math, regression thresholds, DSP defaults and promotion authority are unchanged.
 
 # 2.3.45

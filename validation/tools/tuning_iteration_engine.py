@@ -29,6 +29,13 @@ TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
 # validate_search_space.
 SEARCH_SPACE_KEYS = ("schema_version", "search_space_id", "strategy",
                      "max_candidates", "baseline", "parameters", "objective")
+OBJECTIVE_METRIC_KEYS = {
+    "name", "direction", "weight", "scale", "max_regression",
+    "datasets", "minimum_units",
+}
+CASE_DELTA_GATE_KEYS = {
+    "metric", "stat", "minimum_delta", "maximum_delta", "min_cases", "case_ids",
+}
 TUNING_FLAGS = {
     "aec_mu": "--aec-mu",
     "ns_floor": "--ns-floor",
@@ -75,6 +82,39 @@ def canonical_tuning(raw: dict[str, Any]) -> dict[str, float]:
             tuning["agc_target_dbfs"] >= tuning["limiter_dbfs"]):
         raise ValueError("agc_target_dbfs must be below limiter_dbfs")
     return tuning
+
+
+def metric_datasets(metric: dict[str, Any]) -> list[str] | None:
+    raw = metric.get("datasets")
+    if raw is None:
+        return None
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("objective metric datasets must be a non-empty list")
+    if any(not isinstance(item, str) or not item for item in raw):
+        raise ValueError("objective metric datasets must contain non-empty string ids")
+    if len(raw) != len(set(raw)):
+        raise ValueError("objective metric datasets must contain unique ids")
+    return list(raw)
+
+
+def metric_minimum_units(metric: dict[str, Any]) -> int:
+    raw = metric.get("minimum_units", 1)
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 1 or raw > 32:
+        raise ValueError("objective metric minimum_units must be an integer in 1..32")
+    return raw
+
+
+def gate_case_ids(gate: dict[str, Any]) -> list[str] | None:
+    raw = gate.get("case_ids")
+    if raw is None:
+        return None
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("case delta gate case_ids must be a non-empty list")
+    if any(not isinstance(item, str) or not item for item in raw):
+        raise ValueError("case delta gate case_ids must contain non-empty string ids")
+    if len(raw) != len(set(raw)):
+        raise ValueError("case delta gate case_ids must contain unique ids")
+    return list(raw)
 
 
 def validate_search_space(space: dict[str, Any]) -> None:
@@ -137,18 +177,28 @@ def validate_search_space(space: dict[str, Any]) -> None:
     if not isinstance(metrics, list) or not metrics:
         raise ValueError("objective.metrics must be non-empty")
     for metric in metrics:
+        if not isinstance(metric, dict):
+            raise ValueError("objective metric must be an object")
+        unknown_metric = sorted(set(metric) - OBJECTIVE_METRIC_KEYS)
+        if unknown_metric:
+            raise ValueError(f"unknown objective metric keys: {unknown_metric}")
         if metric.get("direction") not in {"min", "max"}:
             raise ValueError("metric direction must be min or max")
         if float(metric.get("weight", 0.0)) < 0.0 or float(metric.get("scale", 0.0)) <= 0.0:
             raise ValueError("metric weight/scale invalid")
         if float(metric.get("max_regression", 0.0)) < 0.0:
             raise ValueError("max_regression must be >= 0")
+        metric_datasets(metric)
+        metric_minimum_units(metric)
     case_gates = objective.get("case_delta_gates", [])
     if not isinstance(case_gates, list):
         raise ValueError("objective.case_delta_gates must be a list")
     for gate in case_gates:
         if not isinstance(gate, dict) or not str(gate.get("metric", "")):
             raise ValueError("case delta gate metric is required")
+        unknown_gate = sorted(set(gate) - CASE_DELTA_GATE_KEYS)
+        if unknown_gate:
+            raise ValueError(f"unknown case delta gate keys: {unknown_gate}")
         if gate.get("stat") not in {"min", "p10", "median", "max"}:
             raise ValueError("case delta gate stat must be min, p10, median or max")
         minimum_raw = gate.get("minimum_delta")
@@ -168,6 +218,7 @@ def validate_search_space(space: dict[str, Any]) -> None:
         if isinstance(min_cases, bool) or not isinstance(min_cases, int) or \
                 min_cases < 1:
             raise ValueError("case delta gate min_cases must be a positive integer")
+        gate_case_ids(gate)
 
 
 def tuning_id(tuning: dict[str, float]) -> str:
@@ -821,6 +872,38 @@ def self_test() -> None:
         },
     }
     validate_search_space(space)
+    scoped_space = json.loads(json.dumps(space))
+    scoped_space["objective"]["metrics"][0]["datasets"] = ["synthetic-regression"]
+    scoped_space["objective"]["metrics"][0]["minimum_units"] = 1
+    scoped_space["objective"]["case_delta_gates"] = [{
+        "metric": "corr", "stat": "min", "minimum_delta": -0.1,
+        "case_ids": ["case-a"],
+    }]
+    validate_search_space(scoped_space)
+    bad_metric_key = json.loads(json.dumps(scoped_space))
+    bad_metric_key["objective"]["metrics"][0]["dataset"] = ["synthetic-regression"]
+    try:
+        validate_search_space(bad_metric_key)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unknown nested objective metric key must fail closed")
+    bad_gate_key = json.loads(json.dumps(scoped_space))
+    bad_gate_key["objective"]["case_delta_gates"][0]["case_id"] = ["case-a"]
+    try:
+        validate_search_space(bad_gate_key)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unknown nested case gate key must fail closed")
+    bad_dataset_type = json.loads(json.dumps(scoped_space))
+    bad_dataset_type["objective"]["metrics"][0]["datasets"] = [1]
+    try:
+        validate_search_space(bad_dataset_type)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("non-string dataset id must fail closed")
     candidates = generate_candidates(space)
     assert candidates[0]["label"] == "baseline"
     assert len(candidates) == 4

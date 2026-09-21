@@ -13,6 +13,7 @@ on:
           - call-interaction-v1.json
           - call-interaction-3d-v1.json
           - call-aec-limiter-v1.json
+          - call-agc-limiter-frontier-v1.json
 
 permissions:
   contents: read
@@ -59,6 +60,7 @@ jobs:
               'call-interaction-v1.json': 'cartesian',
               'call-interaction-3d-v1.json': 'cartesian',
               'call-aec-limiter-v1.json': 'cartesian',
+              'call-agc-limiter-frontier-v1.json': 'paired',
           }
           call_spaces = {p.name for p in spaces_dir.glob('call-*.json')}
           assert call_spaces == set(expected_strategy), (call_spaces, set(expected_strategy))
@@ -67,9 +69,10 @@ jobs:
               assert space['schema_version'] == 1
               assert set(space['baseline']) == {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
               engine.validate_search_space(space)
-              # Validation probes axis values against the baseline one at a time.
-              # Materialise every committed space here too so cross-product tuning
-              # constraints and each space's max_candidates fail at the gate.
+              # Validation probes ordinary axes against the baseline and validates
+              # complete paired tuples for paired strategy. Materialise every
+              # committed space here too so cross-product/paired tuning constraints
+              # and each space's max_candidates fail at the gate.
               engine.generate_candidates(space)
           for name, strategy in expected_strategy.items():
               space = json.loads((spaces_dir / name).read_text())

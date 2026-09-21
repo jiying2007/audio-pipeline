@@ -221,8 +221,17 @@ def rank_development(
 
 
 def self_test() -> None:
+    engine_validate = engine.validate_search_space
+    engine_case_gate = engine.case_delta_gate_violations
+    core_rank = core.rank_development
     semantics = dataset_aware_semantics()
+    assert engine.validate_search_space is engine_validate
+    assert engine.case_delta_gate_violations is engine_case_gate
+    assert core.rank_development is core_rank
     core.self_test()
+    assert engine.validate_search_space is engine_validate
+    assert engine.case_delta_gate_violations is engine_case_gate
+    assert core.rank_development is core_rank
     space = {
         "schema_version": 1,
         "search_space_id": "dataset-aware-self-test",

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 import hashlib
 import itertools
 import json
@@ -21,7 +22,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
 # The top-level contract of a search space, matching
@@ -711,12 +712,42 @@ def bind_report(path: Path, report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+@dataclass(frozen=True)
+class IterationSemantics:
+    validate_search_space: Callable[[dict[str, Any]], None]
+    enforce_partition_independence: Callable[[Path, Path, Path], dict[str, Any]]
+    score_against_baseline: Callable[
+        [dict[str, Any], dict[str, Any], dict[str, Any]],
+        tuple[float, list[dict[str, Any]]],
+    ]
+    regression_violations: Callable[
+        [dict[str, Any], dict[str, Any], dict[str, Any]],
+        list[dict[str, Any]],
+    ]
+    case_delta_gate_violations: Callable[
+        [dict[str, Any], dict[str, Any], dict[str, Any]],
+        tuple[list[dict[str, Any]], list[dict[str, Any]]],
+    ]
+
+
+def default_iteration_semantics() -> IterationSemantics:
+    return IterationSemantics(
+        validate_search_space=validate_search_space,
+        enforce_partition_independence=enforce_partition_independence,
+        score_against_baseline=score_against_baseline,
+        regression_violations=regression_violations,
+        case_delta_gate_violations=case_delta_gate_violations,
+    )
+
+
 def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shadow: Path,
             policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path,
-            candidate_jobs: int = 1) -> dict[str, Any]:
+            candidate_jobs: int = 1,
+            semantics: IterationSemantics | None = None) -> dict[str, Any]:
+    semantics = semantics or default_iteration_semantics()
     space = json.loads(search_space_path.read_text(encoding="utf-8"))
-    validate_search_space(space)
-    identities = enforce_partition_independence(dev, validation, shadow)
+    semantics.validate_search_space(space)
+    identities = semantics.enforce_partition_independence(dev, validation, shadow)
     candidates = generate_candidates(space)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -747,8 +778,10 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
     )
 
     for result in dev_results:
-        score, deltas = score_against_baseline(space, baseline_dev_report, result["report"])
-        case_summary, case_violations = case_delta_gate_violations(
+        score, deltas = semantics.score_against_baseline(
+            space, baseline_dev_report, result["report"]
+        )
+        case_summary, case_violations = semantics.case_delta_gate_violations(
             space, baseline_dev_report, result["report"]
         )
         result["score"] = score
@@ -783,16 +816,18 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
         )
         shadow_reports[role] = (shadow_path, shadow_report, shadow_elapsed)
 
-    validation_case_summary, validation_case_violations = case_delta_gate_violations(
-        space, validation_reports["baseline"][1], validation_reports["candidate"][1]
+    validation_case_summary, validation_case_violations = (
+        semantics.case_delta_gate_violations(
+            space, validation_reports["baseline"][1], validation_reports["candidate"][1]
+        )
     )
-    shadow_case_summary, shadow_case_violations = case_delta_gate_violations(
+    shadow_case_summary, shadow_case_violations = semantics.case_delta_gate_violations(
         space, shadow_reports["baseline"][1], shadow_reports["candidate"][1]
     )
-    validation_violations = regression_violations(
+    validation_violations = semantics.regression_violations(
         space, validation_reports["baseline"][1], validation_reports["candidate"][1]
     ) + validation_case_violations
-    shadow_violations = regression_violations(
+    shadow_violations = semantics.regression_violations(
         space, shadow_reports["baseline"][1], shadow_reports["candidate"][1]
     ) + shadow_case_violations
     same_as_baseline = selected["candidate_id"] == baseline_candidate["candidate_id"]
@@ -1279,7 +1314,7 @@ def self_test() -> None:
     print("tuning iteration self-test: OK")
 
 
-def main() -> int:
+def main(semantics: IterationSemantics | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--repo-root", type=Path, default=Path("."))
@@ -1309,6 +1344,7 @@ def main() -> int:
         args.development_corpus.resolve(), args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),
         args.search_space.resolve(), args.output_dir.resolve(), args.candidate_jobs,
+        semantics=semantics,
     )
     print(json.dumps({
         "decision": result["decision"], "iteration_id": result["iteration_id"],

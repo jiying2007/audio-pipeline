@@ -106,6 +106,7 @@ ALLOWED_SCHEDULED_WORKFLOWS = {
     Path('.github/workflows/post-release-qualification-summary.yml'): ('23 * * * *',),
 }
 CRON_RE = re.compile(r"^    - cron:\s*['\"]([^'\"]+)['\"]\s*$", re.MULTILINE)
+MAINTENANCE_CONTRACT_TRIGGER_PATH = ".github/program/maintenance_workflow_contract.py"
 LEGACY_SEMANTICS_TOKENS = (
     "stage_profile_support.install(",
     "render_corr_exact.install(",
@@ -222,6 +223,10 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
         assert '\n  workflow_dispatch:' in text, f'{relative} must retain an explicit manual replay entry point'
         assert '\n  schedule:' not in text, f'{relative} must not run autonomous scheduled non-shipping work in maintenance state'
         assert '\n  push:' not in text, f'{relative} must not run autonomous push non-shipping work in maintenance state'
+        pull_request = trigger_block(text, 'pull_request')
+        assert MAINTENANCE_CONTRACT_TRIGGER_PATH not in pull_request, (
+            f'{relative} must not fan out on maintenance contract edits; Program Archive owns that validation'
+        )
 
     for relative in REUSABLE_GOVERNANCE_WORKFLOWS:
         path = root / relative
@@ -409,6 +414,19 @@ def self_test() -> None:
             assert 'PR regression or measurement coverage' in str(exc)
         else:
             raise AssertionError('PR/manual non-shipping workflow without PR coverage was not rejected')
+        nonshipping.write_text('name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n', encoding='utf-8')
+        nonshipping.write_text(
+            'name: non-shipping\n\non:\n  pull_request:\n    paths:\n'
+            f"      - '{MAINTENANCE_CONTRACT_TRIGGER_PATH}'\n"
+            '  workflow_dispatch:\n',
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'must not fan out on maintenance contract edits' in str(exc)
+        else:
+            raise AssertionError('maintenance contract trigger fan-out was accepted')
         nonshipping.write_text('name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n', encoding='utf-8')
 
         reusable = root / REUSABLE_GOVERNANCE_WORKFLOWS[0]

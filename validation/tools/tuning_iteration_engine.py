@@ -710,7 +710,7 @@ def self_test() -> None:
     assert len(candidates) == 4
     grid_space = json.loads(json.dumps(space))
     grid_space["strategy"] = "cartesian"
-    grid_space["parameters"] = {"aec_mu": [0.22, 0.24], "ns_floor": [0.06, 0.07]}
+    grid_space["parameters"] = {"aec_mu": [0.22, 0.24], "ns_floor": [0.06, 0.07, 0.12]}
     grid_candidates = generate_candidates(grid_space)
     grid_results = []
     for candidate in grid_candidates:
@@ -733,13 +733,13 @@ def self_test() -> None:
     grid_sensitivity = adjacent_development_sensitivity(
         grid_space, grid_selected, grid_results
     )
-    assert grid_sensitivity["neighbor_count"] == 2
-    assert grid_sensitivity["neighbor_slot_count"] == 2
-    assert grid_sensitivity["evaluated_neighbor_count"] == 2
+    assert grid_sensitivity["neighbor_count"] == 3
+    assert grid_sensitivity["neighbor_slot_count"] == 3
+    assert grid_sensitivity["evaluated_neighbor_count"] == 3
     assert grid_sensitivity["unobserved_neighbor_count"] == 0
     assert grid_sensitivity["complete_neighbor_coverage"] is True
     assert grid_sensitivity["unobserved_neighbors"] == []
-    assert grid_sensitivity["compliant_neighbor_count"] == 1
+    assert grid_sensitivity["compliant_neighbor_count"] == 2
     assert grid_sensitivity["violating_neighbor_count"] == 1
     ns_neighbor = next(
         item for item in grid_sensitivity["neighbors"]

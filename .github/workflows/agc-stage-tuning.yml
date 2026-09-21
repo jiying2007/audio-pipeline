@@ -187,6 +187,21 @@ jobs:
           print(f"- Iteration: `{r['iteration_id']}`")
           print(f"- Selected: `{r['selected']['label']}`")
           print(f"- Development score: `{r['selected']['development_score']:.4f}`")
+          sensitivity = r['selected']['development_adjacent_sensitivity']
+          print(
+              f"- Adjacent coverage: `{sensitivity['evaluated_neighbor_count']}/{sensitivity['neighbor_slot_count']}` evaluated; "
+              f"compliant `{sensitivity['compliant_neighbor_count']}`, "
+              f"violating `{sensitivity['violating_neighbor_count']}`, "
+              f"unobserved `{sensitivity['unobserved_neighbor_count']}`, "
+              f"complete `{str(sensitivity['complete_neighbor_coverage']).lower()}`"
+          )
+          margins = [
+              f"{item['metric']}/{item['stat']}={item['binding_margin']:.6g}"
+              for item in r['selected']['development_case_delta_summary']
+              if item.get('binding_margin') is not None
+          ]
+          if margins:
+              print(f"- Development gate margins: `{' ; '.join(margins)}`")
           if q:
               for partition in ('validation', 'shadow'):
                   c = q['partitions'][partition]['candidate']

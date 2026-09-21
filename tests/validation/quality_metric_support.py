@@ -246,26 +246,30 @@ def _needs_quality(case: dict, quality_expected: dict) -> bool:
     )
 
 
-def install(engine: Any) -> None:
-    if getattr(engine, "_quality_metric_support_installed", False):
-        return
-    original_evaluate_case = engine.evaluate_case
-    original_policy_violations = engine.policy_violations
-
-    def evaluate_case(processor: Path, corpus_path: Path, case: dict) -> dict:
+def build_evaluate_case(engine: Any, original_evaluate_case: Any):
+    def evaluate_case(processor: Path, corpus_path: Path, case: dict,
+                      semantics: Any) -> dict:
         base_case, quality_expected = _split_expected(case)
         if not _needs_quality(case, quality_expected):
-            return original_evaluate_case(processor, corpus_path, base_case)
+            return original_evaluate_case(
+                processor, corpus_path, base_case, semantics=semantics
+            )
 
         rate = int(case["sample_rate_hz"])
         channels = int(case["mic_channels"])
         with tempfile.TemporaryDirectory(prefix="ap-quality-") as temporary:
-            output, trace, inputs = engine.invoke(
+            output, trace, inputs = semantics.invoke(
                 processor, base_case, corpus_path, Path(temporary)
             )
         runtime_context: dict[str, Any] = {}
         result = engine.evaluate_case_runtime(
-            corpus_path, base_case, output, trace, inputs, runtime_context
+            corpus_path,
+            base_case,
+            output,
+            trace,
+            inputs,
+            runtime_context,
+            semantics=semantics,
         )
         mic0 = runtime_context["mic0"]
         declared_latency_ms = int(runtime_context["declared_latency_ms"])
@@ -286,8 +290,8 @@ def install(engine: Any) -> None:
         interference_path = engine.resolve(corpus_path, case.get("interference_audio"))
         if interference_path is not None:
             interference = engine.read_audio_samples(interference_path, rate, 1)
-            input_corr = engine.max_abs_corr(mic0, interference, rate)
-            output_corr = engine.max_abs_corr(output, interference, rate)
+            input_corr = semantics.max_abs_corr(mic0, interference, rate)
+            output_corr = semantics.max_abs_corr(output, interference, rate)
             _, _, _, input_alignment = engine.aligned_span(
                 interference, mic0, rate, 0
             )
@@ -311,8 +315,8 @@ def install(engine: Any) -> None:
         noise_path = engine.resolve(corpus_path, case.get("noise_audio"))
         if noise_path is not None:
             noise = engine.read_audio_samples(noise_path, rate, 1)
-            input_corr = engine.max_abs_corr(mic0, noise, rate)
-            output_corr = engine.max_abs_corr(output, noise, rate)
+            input_corr = semantics.max_abs_corr(mic0, noise, rate)
+            output_corr = semantics.max_abs_corr(output, noise, rate)
             result["metrics"].update({
                 "input_noise_ref_max_abs_corr": input_corr,
                 "output_noise_ref_max_abs_corr": output_corr,
@@ -343,6 +347,10 @@ def install(engine: Any) -> None:
         result["passed"] = not result["violations"]
         return result
 
+    return evaluate_case
+
+
+def build_policy_violations(original_policy_violations: Any):
     def policy_violations(policy: dict, corpus: dict, cases: list[dict]) -> tuple[dict, list[dict]]:
         base_policy = copy.deepcopy(policy)
         aggregate = dict(base_policy.get("aggregate", {}))
@@ -377,9 +385,20 @@ def install(engine: Any) -> None:
                 })
         return summary, violations
 
-    engine.evaluate_case = evaluate_case
-    engine.policy_violations = policy_violations
-    engine._quality_metric_support_installed = True
+    return policy_violations
+
+
+def build_validation_semantics(run_validation: Any):
+    base = run_validation.canonical_validation_semantics()
+    return run_validation.ValidationSemantics(
+        evaluation=base.evaluation,
+        evaluate_case=build_evaluate_case(
+            run_validation.engine, base.evaluate_case
+        ),
+        engine_policy_violations=build_policy_violations(
+            base.engine_policy_violations
+        ),
+    )
 
 
 def self_test() -> None:
@@ -454,13 +473,14 @@ def self_test() -> None:
             self.alignment_count = 0
 
         def evaluate_case(self, processor: Path, corpus_path: Path,
-                          case: dict) -> dict:
+                          case: dict, semantics: Any = None) -> dict:
             raise AssertionError("quality case must not invoke base evaluator")
 
         def evaluate_case_runtime(self, corpus_path: Path, case: dict,
                                   output: Sequence[int], trace: list[dict],
                                   inputs: dict,
-                                  runtime_context: dict | None = None) -> dict:
+                                  runtime_context: dict | None = None,
+                                  semantics: Any = None) -> dict:
             context = runtime_context if runtime_context is not None else {}
             context["mic0"] = inputs["mic"]
             context["declared_latency_ms"] = 0
@@ -535,7 +555,15 @@ def self_test() -> None:
             return {}, []
 
     fake = FakeEngine()
-    install(fake)
+
+    class FakeSemantics:
+        invoke = fake.invoke
+        max_abs_corr = fake.max_abs_corr
+
+    semantics = FakeSemantics()
+    evaluate_quality = build_evaluate_case(fake, fake.evaluate_case)
+    quality_policy = build_policy_violations(fake.policy_violations)
+    assert quality_policy({}, {}, []) == ({}, [])
     probe_case = {
         "case_id": "quality-single-invoke",
         "split": "validation",
@@ -546,7 +574,9 @@ def self_test() -> None:
         "quality": {"runtime_context_reuse": True},
         "expected": {},
     }
-    fake.evaluate_case(Path("processor"), Path("corpus.json"), probe_case)
+    evaluate_quality(
+        Path("processor"), Path("corpus.json"), probe_case, semantics
+    )
     echo_probe = {
         "case_id": "quality-context-reuse",
         "split": "validation",
@@ -558,7 +588,9 @@ def self_test() -> None:
         "quality": {"runtime_context_reuse": True},
         "expected": {},
     }
-    fake.evaluate_case(Path("processor"), Path("corpus.json"), echo_probe)
+    evaluate_quality(
+        Path("processor"), Path("corpus.json"), echo_probe, semantics
+    )
     interference_probe = {
         "case_id": "quality-interference-alignment-only",
         "split": "validation",
@@ -569,8 +601,8 @@ def self_test() -> None:
         "quality": {"alignment_only": True},
         "expected": {},
     }
-    fake.evaluate_case(
-        Path("processor"), Path("corpus.json"), interference_probe
+    evaluate_quality(
+        Path("processor"), Path("corpus.json"), interference_probe, semantics
     )
     assert fake.invoke_count == 3
     assert fake.reference_read_count == 0

@@ -260,5 +260,36 @@
       "terminal_evidence": ".github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json",
       "reason": "fresh development-selection authority was consumed by run 35344946937, frozen into the exact downstream source candidate, and that successor is terminally rejected with zero candidate/confirmation budget"
     }
+  ],
+  "source_candidate_rounds": [
+    {
+      "round_id": "stage-source-candidate-round-v1",
+      "workflows": [
+        {
+          "path": ".github/workflows/research-stage-source-candidate-evaluation.yml",
+          "blob_sha": "2d801e7f61649e937e90b6f2639e61f1f6f6b4e2",
+          "stage": "source-candidate-evaluation",
+          "evidence": ".github/research/continuous-optimization/stage-source-candidate-run-1.json"
+        },
+        {
+          "path": ".github/workflows/research-stage-source-confirmation.yml",
+          "blob_sha": "b21353acf851e746de646b49a6a841d8feface23",
+          "stage": "independent-source-confirmation",
+          "evidence": ".github/research/continuous-optimization/stage-source-confirmation-run-1.json"
+        },
+        {
+          "path": ".github/workflows/research-stage-vad-public-confirmation.yml",
+          "blob_sha": "2b09ffdf387e501b4c2abbde5025d6bc5b81352b",
+          "stage": "vad-public-confirmation",
+          "evidence": ".github/research/continuous-optimization/stage-vad-public-confirmation-run-1.json"
+        }
+      ],
+      "round_closure": ".github/research/continuous-optimization/stage-source-candidate-closure-v1.json",
+      "candidate_closures": {
+        "vad-confidence-tiered-hold-v1": ".github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1-closure.json",
+        "agc-error-adaptive-release-v1": ".github/research/continuous-optimization/confirmations/agc-error-adaptive-release-v1-closure.json"
+      },
+      "reason": "the VAD/AGC source-candidate round consumed its fresh evaluation and independent confirmation authorities; AGC was terminally rejected at independent confirmation, VAD was terminally rejected at ES2006a public confirmation, and the round closure records no surviving source candidate"
+    }
   ]
 }

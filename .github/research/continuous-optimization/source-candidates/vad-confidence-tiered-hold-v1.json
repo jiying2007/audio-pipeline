@@ -2,7 +2,7 @@
   "schema_version": 1,
   "candidate_id": "vad-confidence-tiered-hold-v1",
   "authority": "SOURCE_CANDIDATE_EVALUATION_ONLY",
-  "candidate_budget": 1,
+  "candidate_budget": 0,
   "confirmation_limit": 0,
   "source_base_sha": "2d0010fb284ac2dd89aa53e6cabd3efb0ca6db4e",
   "predecessor": {
@@ -56,5 +56,22 @@
     "hil": false,
     "product_certification": false,
     "independent_confirmation_required_after_pass": true
-  }
+  },
+  "status": "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT",
+  "terminal_candidate": true,
+  "consumption": {
+    "source_evaluation_run_id": 35325485610,
+    "source_evaluation_artifact_id": 10538753543,
+    "source_evaluation_artifact_digest": "sha256:95d01d97c80265dd92af7e2a727e82ea3c1ff4a3d9054f317486f763791012aa",
+    "independent_synthetic_confirmation_run_id": 35334960942,
+    "independent_synthetic_artifact_id": 10542441824,
+    "independent_synthetic_artifact_digest": "sha256:0b486507008d125e4e425c1b8be68dd718dda591b1960f1fa960b48b5757418f",
+    "public_confirmation_run_id": 35341799549,
+    "public_confirmation_artifact_id": 10545457484,
+    "public_confirmation_artifact_digest": "sha256:a3f005badef84808ebb562478f712154bfab7f9aa5b253e9d314cb11692f056c",
+    "fresh_source_evaluation_consumed": true,
+    "independent_confirmation_consumed": true,
+    "public_authority_consumed": true
+  },
+  "closure_path": ".github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1-closure.json"
 }

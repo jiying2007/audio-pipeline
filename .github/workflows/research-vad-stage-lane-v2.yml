@@ -8,7 +8,6 @@ on:
       - '.github/research/continuous-optimization/development-v4/vad-strong-origin-bounded-hysteresis-v1.json'
       - '.github/research/continuous-optimization/vad_stage_lane_v2.py'
       - '.github/workflows/research-vad-stage-lane-v2.yml'
-      - '.github/program/maintenance_workflow_contract.py'
   workflow_dispatch:
 
 permissions:

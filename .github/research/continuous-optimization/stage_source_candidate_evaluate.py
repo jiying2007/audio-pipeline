@@ -21,7 +21,7 @@ import stage_profile_support
 import agc_dynamics_diagnostic as agc_diag
 import agc_stage_lane_v1 as agc_lane
 
-stage_profile_support.install(engine)
+STAGE_INVOKE = stage_profile_support.build_invoke(engine)
 
 VAD_LOCAL_THRESHOLD = 0.45
 VAD_NS_THRESHOLD = 0.35
@@ -71,7 +71,7 @@ def collect_vad_case(processor: Path, corpus_path: Path, case: dict[str, Any]) -
         raise ValueError("VAD labels required")
     labels = engine.load_labels(labels_path)
     with tempfile.TemporaryDirectory(prefix="ap-vad-source-candidate-") as temporary:
-        _, trace, _ = engine.invoke(processor, case, corpus_path, Path(temporary))
+        _, trace, _ = STAGE_INVOKE(processor, case, corpus_path, Path(temporary))
     count = min(len(labels), len(trace))
     if count <= 0:
         raise ValueError(f"empty VAD trace: {case['case_id']}")

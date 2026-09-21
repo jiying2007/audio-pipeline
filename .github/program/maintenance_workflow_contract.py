@@ -106,6 +106,16 @@ ALLOWED_SCHEDULED_WORKFLOWS = {
     Path('.github/workflows/post-release-qualification-summary.yml'): ('23 * * * *',),
 }
 CRON_RE = re.compile(r"^    - cron:\s*['\"]([^'\"]+)['\"]\s*$", re.MULTILINE)
+LEGACY_SEMANTICS_TOKENS = (
+    "stage_profile_support.install(",
+    "render_corr_exact.install(",
+    "install_fail_closed_guards(",
+)
+LEGACY_SEMANTICS_GLOBS = (
+    ".github/research/continuous-optimization/*.py",
+    "validation/tools/*.py",
+    "tests/validation/*.py",
+)
 
 
 def extract_on_block(text: str) -> str:
@@ -182,7 +192,19 @@ def validate_aec_motion_maintenance_boundary(root: Path) -> None:
     assert task.get('handler') is None, 'scheduled AEC motion validation cannot restore an I002 handler'
 
 
+def validate_no_legacy_semantics_consumers(root: Path) -> None:
+    for pattern in LEGACY_SEMANTICS_GLOBS:
+        for path in sorted(root.glob(pattern)):
+            text = path.read_text(encoding="utf-8")
+            for token in LEGACY_SEMANTICS_TOKENS:
+                assert token not in text, (
+                    f"legacy global semantics consumer remains: "
+                    f"{path.relative_to(root)}: {token}"
+                )
+
+
 def validate(root: Path = REPOSITORY_ROOT) -> None:
+    validate_no_legacy_semantics_consumers(root)
     for relative in MANUAL_ONLY_RESEARCH_WORKFLOWS:
         path = root / relative
         assert path.is_file(), f'missing maintenance research workflow: {relative}'
@@ -404,6 +426,20 @@ def self_test() -> None:
             'name: reusable\n\non:\n  workflow_call:\n',
             encoding='utf-8',
         )
+
+        legacy = root / '.github/research/continuous-optimization/legacy_semantics_probe.py'
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text(
+            'import stage_profile_support\nstage_profile_support.install(engine)\n',
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'legacy global semantics consumer remains' in str(exc)
+        else:
+            raise AssertionError('legacy global semantics mutation consumer was accepted')
+        legacy.unlink()
 
         i002 = root / I002_CONTRACT
         payload = json.loads(i002.read_text(encoding='utf-8'))

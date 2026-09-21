@@ -240,5 +240,14 @@
       "evidence": ".github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json",
       "reason": "fresh-main-closed diagnostic-only run with zero candidate budget; reproducer and sealed evidence remain committed"
     }
+  ],
+  "source_candidate_workflows": [
+    {
+      "path": ".github/workflows/research-vad-bounded-source-candidate.yml",
+      "blob_sha": "76b2028361bb6c52f4eebc9e1de4c2faaddf302a",
+      "candidate_id": "vad-strong-origin-bounded-hysteresis-v1",
+      "evidence": ".github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json",
+      "reason": "terminally rejected one-shot VAD source candidate with exhausted candidate/confirmation budgets; exact patch/evaluator and sealed closure evidence remain committed"
+    }
   ]
 }

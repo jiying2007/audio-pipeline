@@ -15,6 +15,7 @@ on:
       - 'tests/validation/audio_quality_tuning.py'
       - 'tests/validation/validation-audio-quality-development.json'
       - 'tests/validation/audio-quality-pr-v1.json'
+      - 'tests/validation/audio-quality-agc-limiter-frontier-v1.json'
       - 'validation/authority.json'
       - 'validation/datasets.lock.json'
       - 'validation/*.schema.json'
@@ -42,6 +43,7 @@ on:
       - 'tests/validation/audio_quality_tuning.py'
       - 'tests/validation/validation-audio-quality-development.json'
       - 'tests/validation/audio-quality-pr-v1.json'
+      - 'tests/validation/audio-quality-agc-limiter-frontier-v1.json'
       - 'validation/authority.json'
       - 'validation/datasets.lock.json'
       - 'validation/*.schema.json'
@@ -55,6 +57,15 @@ on:
       - 'docs/AUDIO_QUALITY_EVALUATION.md'
       - '.github/workflows/audio-quality-evaluation.yml'
   workflow_dispatch:
+    inputs:
+      search_space:
+        description: Quality tuning search space
+        required: true
+        default: audio-quality-pr-v1.json
+        type: choice
+        options:
+          - audio-quality-pr-v1.json
+          - audio-quality-agc-limiter-frontier-v1.json
 
 permissions:
   contents: read
@@ -69,6 +80,7 @@ jobs:
     timeout-minutes: 35
     env:
       PYTHONPATH: validation/tools:tests/validation
+      QUALITY_SEARCH_SPACE: tests/validation/${{ inputs.search_space || 'audio-quality-pr-v1.json' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
@@ -85,7 +97,27 @@ jobs:
           python3 tests/validation/audio_quality_evaluate.py --self-test
           python3 tests/validation/audio_quality_tuning.py --self-test
           python3 -m json.tool tests/validation/validation-audio-quality-development.json >/dev/null
-          python3 -m json.tool tests/validation/audio-quality-pr-v1.json >/dev/null
+          python3 - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          sys.path.insert(0, 'validation/tools')
+          import tuning_iteration_engine as engine
+          expected_strategy = {
+              'audio-quality-pr-v1.json': 'one-at-a-time',
+              'audio-quality-agc-limiter-frontier-v1.json': 'paired',
+          }
+          spaces = {p.name for p in Path('tests/validation').glob('audio-quality-*.json')}
+          assert spaces == set(expected_strategy), (spaces, set(expected_strategy))
+          for name, strategy in expected_strategy.items():
+              path = Path('tests/validation') / name
+              space = json.loads(path.read_text())
+              engine.validate_search_space(space)
+              engine.generate_candidates(space)
+              assert space['strategy'] == strategy, (name, space['strategy'], strategy)
+              assert space['max_candidates'] <= 8
+          selected = Path(os.environ['QUALITY_SEARCH_SPACE']).name
+          assert selected in expected_strategy, (selected, sorted(expected_strategy))
+          PY
 
       - name: Build exact offline processor
         run: |
@@ -161,7 +193,7 @@ jobs:
             --shadow-corpus /tmp/ap-quality-7107/corpus.json \
             --policy tests/validation/validation-audio-quality-development.json \
             --dataset-lock validation/datasets.lock.json \
-            --search-space tests/validation/audio-quality-pr-v1.json \
+            --search-space "$QUALITY_SEARCH_SPACE" \
             --output-dir /tmp/audio-quality-tuning
           python3 - <<'PY'
           import json
@@ -190,7 +222,7 @@ jobs:
         run: |
           set -euo pipefail
           cp tests/validation/validation-audio-quality-development.json /tmp/audio-quality-evidence/
-          cp tests/validation/audio-quality-pr-v1.json /tmp/audio-quality-evidence/
+          cp "$QUALITY_SEARCH_SPACE" /tmp/audio-quality-evidence/search-space.json
           find /tmp/audio-quality-evidence -type f ! -name SHA256SUMS -print0 | sort -z | \
             xargs -0 sha256sum > /tmp/audio-quality-evidence/SHA256SUMS
 

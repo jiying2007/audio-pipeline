@@ -19,7 +19,9 @@ import run_validation_engine as engine
 import stage_profile_support
 import discover_ami_vad_microset as discovery
 
-stage_profile_support.install(engine)
+_BASE_INVOKE = engine.invoke
+STAGE_INVOKE = stage_profile_support.build_invoke(engine)
+assert engine.invoke is _BASE_INVOKE
 
 USER_AGENT = "audio-pipeline-ami-vad-eval/1"
 MAX_XML_BYTES = 2 * 1024 * 1024
@@ -215,7 +217,9 @@ def evaluate(processor: Path, lock_path: Path, output_path: Path) -> dict[str, A
                 "control": {},
             }
             with tempfile.TemporaryDirectory(prefix="ap-ami-vad-run-") as work:
-                _, trace, _ = engine.invoke(processor, case, corpus_path, Path(work))
+                _, trace, _ = STAGE_INVOKE(
+                    processor, case, corpus_path, Path(work)
+                )
             probabilities = [float(row.get("vad_probability", 0.0)) for row in trace]
             count = min(len(labels), len(probabilities))
             if count < 1900:

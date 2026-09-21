@@ -13,7 +13,6 @@ on:
           - call-interaction-v1.json
           - call-interaction-3d-v1.json
           - call-aec-limiter-v1.json
-          - call-agc-limiter-frontier-v1.json
 
 permissions:
   contents: read
@@ -53,14 +52,15 @@ jobs:
           # which the PR smoke workflow exercises rather than this one), and a new
           # call-* space fails closed until it is listed here. The space actually
           # dispatched must itself be a pinned name, so adding a dropdown option
-          # without pinning it fails closed too.
+          # without pinning it fails closed too. AGC/limiter level-changing
+          # paired frontier work belongs in Audio Quality Evaluation, where
+          # near_projection_gain_db makes target-level preservation explicit.
           expected_strategy = {
               'call-pr-smoke-v1.json': 'one-at-a-time',
               'call-v1.json': 'one-at-a-time',
               'call-interaction-v1.json': 'cartesian',
               'call-interaction-3d-v1.json': 'cartesian',
               'call-aec-limiter-v1.json': 'cartesian',
-              'call-agc-limiter-frontier-v1.json': 'paired',
           }
           call_spaces = {p.name for p in spaces_dir.glob('call-*.json')}
           assert call_spaces == set(expected_strategy), (call_spaces, set(expected_strategy))

@@ -24,6 +24,11 @@ from pathlib import Path
 from typing import Any
 
 TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
+# The top-level contract of a search space, matching
+# validation/tuning/search-space.schema.json. Enforced rather than defaulted: see
+# validate_search_space.
+SEARCH_SPACE_KEYS = ("schema_version", "search_space_id", "strategy",
+                     "max_candidates", "baseline", "parameters", "objective")
 TUNING_FLAGS = {
     "aec_mu": "--aec-mu",
     "ns_floor": "--ns-floor",
@@ -73,11 +78,24 @@ def canonical_tuning(raw: dict[str, Any]) -> dict[str, float]:
 
 
 def validate_search_space(space: dict[str, Any]) -> None:
-    if space.get("schema_version") != 1:
+    # Every optional key used to be read with a default and no unknown key was
+    # rejected, so `strategies` in place of `strategy` silently ran the space as
+    # one-at-a-time instead of cartesian, and a misspelled `max_candidates` was
+    # silently replaced by the cap default. Both change the search that is
+    # reported without changing anything the report says, so both fail closed.
+    if not isinstance(space, dict):
+        raise ValueError("search space must be an object")
+    unknown = sorted(set(space) - set(SEARCH_SPACE_KEYS))
+    if unknown:
+        raise ValueError(f"unknown search space keys: {unknown}")
+    missing = [key for key in SEARCH_SPACE_KEYS if key not in space]
+    if missing:
+        raise ValueError(f"search space is missing required keys: {missing}")
+    if space["schema_version"] != 1:
         raise ValueError("search space schema_version must be 1")
-    if not str(space.get("search_space_id", "")):
+    if not str(space["search_space_id"]):
         raise ValueError("search_space_id is required")
-    baseline = canonical_tuning(space.get("baseline", {}))
+    baseline = canonical_tuning(space["baseline"])
     if set(baseline) != set(TUNING_KEYS):
         raise ValueError("baseline must define all supported tuning keys")
     params = space.get("parameters")
@@ -90,12 +108,14 @@ def validate_search_space(space: dict[str, Any]) -> None:
             probe = dict(baseline)
             probe[key] = value
             canonical_tuning(probe)
-    if space.get("strategy", "one-at-a-time") not in {"one-at-a-time", "cartesian"}:
+    if space["strategy"] not in {"one-at-a-time", "cartesian"}:
         raise ValueError("strategy must be one-at-a-time or cartesian")
-    maximum = int(space.get("max_candidates", 32))
+    maximum = int(space["max_candidates"])
     if maximum < 1 or maximum > 256:
         raise ValueError("max_candidates must be 1..256")
-    objective = space.get("objective", {})
+    objective = space["objective"]
+    if not isinstance(objective, dict):
+        raise ValueError("objective must be an object")
     metrics = objective.get("metrics", DEFAULT_METRICS)
     if not isinstance(metrics, list) or not metrics:
         raise ValueError("objective.metrics must be non-empty")
@@ -141,7 +161,7 @@ def tuning_id(tuning: dict[str, float]) -> str:
 def generate_candidates(space: dict[str, Any]) -> list[dict[str, Any]]:
     validate_search_space(space)
     baseline = canonical_tuning(space["baseline"])
-    strategy = space.get("strategy", "one-at-a-time")
+    strategy = space["strategy"]
     candidates: list[dict[str, Any]] = []
     seen: set[str] = set()
 
@@ -168,7 +188,7 @@ def generate_candidates(space: dict[str, Any]) -> list[dict[str, Any]]:
             candidate.update(dict(zip(keys, values)))
             add(candidate, "cartesian")
 
-    maximum = int(space.get("max_candidates", 32))
+    maximum = int(space["max_candidates"])
     if len(candidates) > maximum:
         raise ValueError(f"generated {len(candidates)} candidates > max_candidates={maximum}")
     return candidates
@@ -930,6 +950,26 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("inverted case delta gate bounds must fail closed")
+    # An unknown or misspelled top-level key used to be ignored and every optional
+    # key had a silent default, so `strategies` in place of `strategy` ran the space
+    # as one-at-a-time while the report still said cartesian. Both fail closed now.
+    misspelled = json.loads(json.dumps(space))
+    misspelled["strategies"] = misspelled.pop("strategy")
+    misspelled["maxcandidates"] = misspelled.pop("max_candidates")
+    try:
+        validate_search_space(misspelled)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unknown search space keys must fail closed")
+    undeclared = json.loads(json.dumps(space))
+    undeclared.pop("strategy")
+    try:
+        validate_search_space(undeclared)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("a search space without strategy must fail closed")
     # A declared objective metric that the baseline summary does not produce used
     # to be skipped silently, which dropped its weight with no report entry and no
     # error. The baseline side must fail closed. The candidate side stays a skip

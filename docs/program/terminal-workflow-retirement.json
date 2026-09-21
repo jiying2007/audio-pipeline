@@ -157,11 +157,32 @@
       "reason": "the pure-far diagnostic program is fresh-main CLOSED_DIAGNOSTIC_PLATEAU with candidate budget zero; the closure workflow is consumed while exact reproducer scripts, terminal JSON evidence and historical workflow blob remain preserved"
     },
     {
+      "path": ".github/workflows/research-pure-far-hpf-energy-asymmetry-v1.yml",
+      "blob_sha": "60277fdbbe3288b9beba0740e9c0125b3b118d52",
+      "investigation_id": "pure-far-hpf-energy-asymmetry-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-hpf-energy-asymmetry-v1.json",
+      "reason": "fresh-main-closed diagnostic-only HPF asymmetry investigation with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
       "path": ".github/workflows/research-pure-far-icassp2022-replication-v1.yml",
       "blob_sha": "a9229dbb2cb8632bc4eaa6103d3a68dbefd22c1a",
       "investigation_id": "pure-far-icassp2022-replication-v1",
       "evidence": ".github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json",
       "reason": "fresh-main-closed diagnostic-only cross-dataset replication with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
+      "path": ".github/workflows/research-pure-far-source-coherent-excess-v1.yml",
+      "blob_sha": "04eb6765876023037c910986d43af81e4f69fe1c",
+      "investigation_id": "pure-far-source-coherent-excess-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json",
+      "reason": "fresh-main-closed diagnostic-only coherent/excess decomposition with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
+      "path": ".github/workflows/research-pure-far-source-gain-provenance-v1.yml",
+      "blob_sha": "1a19a72a0f5bd9bb887d2cd79bb74be7d09fbe9f",
+      "investigation_id": "pure-far-source-gain-provenance-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-source-gain-provenance-v1.json",
+      "reason": "fresh-main-closed diagnostic-only source-gain provenance investigation with zero candidate budget; reproducer and sealed evidence remain committed"
     },
     {
       "path": ".github/workflows/research-pure-far-sync-interpolation-energy-v1.yml",

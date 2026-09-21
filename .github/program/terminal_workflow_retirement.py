@@ -134,6 +134,34 @@ def validate_manifest(data: dict) -> None:
         seen_paths.add(path)
         seen_blobs.add(blob)
 
+    selection_records = data.get("selection_workflows", [])
+    require(isinstance(selection_records, list),
+            "selection_workflows must be a list")
+    for r in selection_records:
+        require(set(r) == {
+            "path", "blob_sha", "selection_id", "evidence",
+            "successor", "terminal_evidence", "reason"
+        }, f"selection retirement record fields drift: {r.get('path')}")
+        path = str(r["path"])
+        blob = str(r["blob_sha"])
+        selection_id = r["selection_id"]
+        require(path.startswith(".github/workflows/"),
+                f"invalid selection workflow path: {path}")
+        require(path not in seen_paths, f"duplicate retired workflow path: {path}")
+        require(SHA_RE.fullmatch(blob) is not None,
+                f"invalid selection workflow blob SHA: {path}")
+        require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
+        require(isinstance(selection_id, str) and selection_id,
+                f"selection id missing: {path}")
+        for key in ("evidence", "successor", "terminal_evidence"):
+            value = r[key]
+            require(isinstance(value, str) and value.startswith(".github/research/"),
+                    f"selection {key} path invalid: {path}")
+        require(isinstance(r["reason"], str) and r["reason"],
+                f"missing selection reason: {path}")
+        seen_paths.add(path)
+        seen_blobs.add(blob)
+
     require(data.get("authority_boundary") == {
         "shipping_source_changed": False,
         "release_changed": False,
@@ -272,6 +300,100 @@ def check(root: Path) -> dict:
             "evidence": r["evidence"],
         })
 
+    selection_checked = []
+    for r in data.get("selection_workflows", []):
+        path = root / r["path"]
+        require(not path.exists(),
+                f"retired selection workflow was reintroduced: {r['path']}")
+        evidence_path = root / r["evidence"]
+        successor_path = root / r["successor"]
+        terminal_path = root / r["terminal_evidence"]
+        for label, item in (
+            ("selection evidence", evidence_path),
+            ("selection successor", successor_path),
+            ("selection terminal evidence", terminal_path),
+        ):
+            require(item.is_file(), f"{label} missing: {item.relative_to(root)}")
+
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        successor = json.loads(successor_path.read_text(encoding="utf-8"))
+        terminal = json.loads(terminal_path.read_text(encoding="utf-8"))
+        selection_id = r["selection_id"]
+
+        require(evidence.get("hypothesis_id") == selection_id,
+                f"selection identity drift: {r['path']}")
+        require(evidence.get("authority") == "development-selection-only",
+                f"selection authority drift: {r['path']}")
+        require(evidence.get("event") == "workflow_dispatch"
+                and evidence.get("conclusion") == "success",
+                f"selection evidence is not a completed manual run: {r['path']}")
+        require(evidence.get("decision") == "FROZEN_STAGE_RESEARCH_CANDIDATE",
+                f"selection did not freeze a downstream candidate: {r['path']}")
+        feedback = evidence.get("feedback_boundary") or {}
+        require(feedback.get("development_selected") is True
+                and feedback.get("validation_and_shadow_reject_only") is True
+                and feedback.get("consumed_public_authority_used") is False
+                and feedback.get("old_confirmation_seeds_used") is False,
+                f"selection feedback boundary drift: {r['path']}")
+        promotion = evidence.get("promotion") or {}
+        for key in (
+            "source_merge_authorized", "shipping", "hil",
+            "product_certification", "automatic_main_mutation"
+        ):
+            require(promotion.get(key) is False,
+                    f"selection regained {key}: {r['path']}")
+
+        predecessor = successor.get("predecessor") or {}
+        artifact = evidence.get("artifact") or {}
+        selected = evidence.get("selected") or {}
+        require(successor.get("candidate_id") == selection_id,
+                f"selection successor identity drift: {r['path']}")
+        require(predecessor.get("lane_run_id") == evidence.get("run_id"),
+                f"selection run was not consumed by successor: {r['path']}")
+        require(predecessor.get("lane_artifact_id") == artifact.get("id")
+                and predecessor.get("lane_artifact_digest") == artifact.get("digest"),
+                f"selection artifact was not consumed exactly: {r['path']}")
+        require(predecessor.get("variant_id") == selected.get("variant_id"),
+                f"selected variant drifted in successor: {r['path']}")
+        require(successor.get("status") == "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT"
+                and successor.get("terminal_candidate") is True
+                and successor.get("candidate_budget") == 0
+                and successor.get("confirmation_limit") == 0,
+                f"selection successor is not terminal: {r['path']}")
+        require(successor.get("closure_path") == r["terminal_evidence"],
+                f"selection successor closure path drift: {r['path']}")
+
+        terminal_predecessor = terminal.get("predecessor") or {}
+        require(terminal.get("candidate_id") == selection_id,
+                f"selection terminal identity drift: {r['path']}")
+        require(terminal.get("status") == "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT"
+                and terminal.get("terminal_candidate") is True
+                and terminal.get("candidate_budget") == 0
+                and terminal.get("confirmation_limit") == 0,
+                f"selection terminal evidence is not closed: {r['path']}")
+        require(terminal_predecessor.get("lane_run_id") == evidence.get("run_id")
+                and terminal_predecessor.get("lane_decision") == evidence.get("decision")
+                and terminal_predecessor.get("selected_variant_id") == selected.get("variant_id"),
+                f"selection terminal lineage drift: {r['path']}")
+
+        require(git("cat-file", "-t", r["blob_sha"]) == "blob",
+                f"historical selection workflow blob missing: {r['path']}")
+        text = git("cat-file", "blob", r["blob_sha"])
+        on_block = extract_on_block(text)
+        require("pull_request:" in on_block and "workflow_dispatch:" in on_block,
+                f"retired selection workflow must preserve PR + manual lineage: {r['path']}")
+        for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:"):
+            require(forbidden not in on_block,
+                    f"retired selection workflow had forbidden trigger {forbidden}: {r['path']}")
+        selection_checked.append({
+            "path": r["path"],
+            "blob_sha": r["blob_sha"],
+            "selection_id": selection_id,
+            "evidence": r["evidence"],
+            "successor": r["successor"],
+            "terminal_evidence": r["terminal_evidence"],
+        })
+
     # A terminal research task must not regain a standalone Actions entry under its task prefix.
     # Reproducers/contracts/results stay in the repository; only the consumed orchestration entry is retired.
     for pattern in ("*.yml", "*.yaml"):
@@ -290,9 +412,11 @@ def check(root: Path) -> dict:
         "retired_workflows": len(checked),
         "retired_research_workflows": len(research_checked),
         "retired_source_candidate_workflows": len(source_candidate_checked),
+        "retired_selection_workflows": len(selection_checked),
         "tasks": sorted(EXPECTED_TASKS),
         "research_investigations": sorted(item["investigation_id"] for item in research_checked),
         "source_candidates": sorted(item["candidate_id"] for item in source_candidate_checked),
+        "selection_ids": sorted(item["selection_id"] for item in selection_checked),
         "software_release": data["software_release"],
         "release_source_sha": data["release_source_sha"],
         "product_qualification": "DEFERRED_BY_SCOPE",
@@ -362,6 +486,17 @@ def self_test() -> None:
         "reason": "terminal source candidate",
     }]
     validate_manifest(source_sample)
+    selection_sample = json.loads(json.dumps(sample))
+    selection_sample["selection_workflows"] = [{
+        "path": ".github/workflows/research-selection-example.yml",
+        "blob_sha": "d" * 40,
+        "selection_id": "selection-example-v1",
+        "evidence": ".github/research/selection-example-run.json",
+        "successor": ".github/research/source-candidates/selection-example-v1.json",
+        "terminal_evidence": ".github/research/confirmations/selection-example-v1-closure.json",
+        "reason": "consumed selection with terminal downstream candidate",
+    }]
+    validate_manifest(selection_sample)
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
     assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
     assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")

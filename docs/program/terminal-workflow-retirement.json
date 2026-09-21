@@ -249,5 +249,16 @@
       "evidence": ".github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json",
       "reason": "terminally rejected one-shot VAD source candidate with exhausted candidate/confirmation budgets; exact patch/evaluator and sealed closure evidence remain committed"
     }
+  ],
+  "selection_workflows": [
+    {
+      "path": ".github/workflows/research-vad-stage-lane-v2.yml",
+      "blob_sha": "29f58e5544104a0304f1d362ae5b4d3bda39e248",
+      "selection_id": "vad-strong-origin-bounded-hysteresis-v1",
+      "evidence": ".github/research/continuous-optimization/vad-stage-lane-v2-run-1.json",
+      "successor": ".github/research/continuous-optimization/source-candidates/vad-strong-origin-bounded-hysteresis-v1.json",
+      "terminal_evidence": ".github/research/continuous-optimization/confirmations/vad-strong-origin-bounded-hysteresis-v1-closure.json",
+      "reason": "fresh development-selection authority was consumed by run 35344946937, frozen into the exact downstream source candidate, and that successor is terminally rejected with zero candidate/confirmation budget"
+    }
   ]
 }

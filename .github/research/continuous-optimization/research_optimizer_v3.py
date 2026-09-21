@@ -20,26 +20,21 @@ _ORIGINAL_STRICT_VALIDATE = tuning_iteration.strict_validate_search_space
 
 
 def _metric_datasets(metric: dict[str, Any]) -> list[str] | None:
-    raw = metric.get("datasets")
-    if raw is None:
-        return None
-    if not isinstance(raw, list) or not raw:
-        raise ValueError("objective metric datasets must be a non-empty list")
-    datasets = [str(item) for item in raw]
-    if any(not item for item in datasets) or len(datasets) != len(set(datasets)):
-        raise ValueError("objective metric datasets must contain unique non-empty ids")
-    return datasets
+    return engine.metric_datasets(metric)
 
 
 def _minimum_units(metric: dict[str, Any]) -> int:
-    value = int(metric.get("minimum_units", 1))
-    if value < 1 or value > 32:
-        raise ValueError("objective metric minimum_units must be 1..32")
-    return value
+    return engine.metric_minimum_units(metric)
 
 
-def dataset_aware_validate_search_space(space: dict[str, Any]) -> None:
-    _ORIGINAL_STRICT_VALIDATE(space)
+def dataset_aware_validate_search_space(
+    space: dict[str, Any], *, allow_case_scope: bool = False
+) -> None:
+    _ORIGINAL_STRICT_VALIDATE(
+        space,
+        allow_dataset_scope=True,
+        allow_case_scope=allow_case_scope,
+    )
     for metric in engine.objective_metrics(space):
         datasets = _metric_datasets(metric)
         _minimum_units(metric)
@@ -238,6 +233,14 @@ def self_test() -> None:
     tuning_iteration.install_fail_closed_guards()
     engine.validate_search_space(space)
     candidates = engine.generate_candidates(space)
+    bad_dataset = json.loads(json.dumps(space))
+    bad_dataset["objective"]["metrics"][1]["datasets"] = [1]
+    try:
+        engine.validate_search_space(bad_dataset)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("dataset-aware validator must reject non-string dataset ids")
     baseline_id = candidates[0]["candidate_id"]
     better = next(item for item in candidates if item["candidate_id"] != baseline_id)
     units = [

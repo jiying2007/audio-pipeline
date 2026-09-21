@@ -39,7 +39,12 @@
               "direction": {"enum": ["min", "max"]},
               "weight": {"type": "number", "minimum": 0},
               "scale": {"type": "number", "exclusiveMinimum": 0},
-              "max_regression": {"type": "number", "minimum": 0}
+              "max_regression": {"type": "number", "minimum": 0},
+              "datasets": {
+                "type": "array", "minItems": 1, "uniqueItems": true,
+                "items": {"type": "string", "minLength": 1}
+              },
+              "minimum_units": {"type": "integer", "minimum": 1, "maximum": 32}
             }
           }
         },
@@ -55,7 +60,11 @@
               "stat": {"enum": ["min", "max", "p10", "median"]},
               "minimum_delta": {"type": "number"},
               "maximum_delta": {"type": "number"},
-              "min_cases": {"type": "integer", "minimum": 1}
+              "min_cases": {"type": "integer", "minimum": 1},
+              "case_ids": {
+                "type": "array", "minItems": 1, "uniqueItems": true,
+                "items": {"type": "string", "minLength": 1}
+              }
             }
           }
         }

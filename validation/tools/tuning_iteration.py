@@ -75,7 +75,12 @@ def strict_partition_independence(development: Path, validation: Path,
     return identities
 
 
-def strict_validate_search_space(space: dict[str, Any]) -> None:
+def strict_validate_search_space(
+    space: dict[str, Any],
+    *,
+    allow_dataset_scope: bool = False,
+    allow_case_scope: bool = False,
+) -> None:
     _original_validate_search_space(space)
     metrics = engine.objective_metrics(space)
     names = [str(metric.get("name", "")) for metric in metrics]
@@ -84,6 +89,26 @@ def strict_validate_search_space(space: dict[str, Any]) -> None:
     unknown = set(names) - KNOWN_OBJECTIVE_METRICS
     if unknown:
         raise ValueError(f"unknown objective metrics: {sorted(unknown)}")
+    if not allow_dataset_scope:
+        scoped = [
+            str(metric.get("name", ""))
+            for metric in metrics
+            if "datasets" in metric or "minimum_units" in metric
+        ]
+        if scoped:
+            raise ValueError(
+                f"dataset-scoped objective fields require research validator: {scoped}"
+            )
+    if not allow_case_scope:
+        scoped_gates = [
+            str(gate.get("metric", ""))
+            for gate in space.get("objective", {}).get("case_delta_gates", [])
+            if "case_ids" in gate
+        ]
+        if scoped_gates:
+            raise ValueError(
+                f"case-scoped delta gates require research validator: {scoped_gates}"
+            )
 
 
 def strict_score(space: dict[str, Any], baseline: dict[str, Any],
@@ -164,6 +189,26 @@ def self_test() -> None:
     assert score == _MISSING_METRIC_PENALTY
     assert any(item["gate"] == "objective_metric_missing"
                for item in strict_regression(space, baseline, missing))
+    scoped_metric = json.loads(json.dumps(space))
+    scoped_metric["objective"]["metrics"][0]["datasets"] = ["synthetic-regression"]
+    scoped_metric["objective"]["metrics"][0]["minimum_units"] = 1
+    try:
+        strict_validate_search_space(scoped_metric)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("canonical tuner must reject dataset-scoped research semantics")
+    scoped_gate = json.loads(json.dumps(space))
+    scoped_gate["objective"]["case_delta_gates"] = [{
+        "metric": "vad_recall", "stat": "min", "minimum_delta": -0.03,
+        "case_ids": ["dt-a"],
+    }]
+    try:
+        strict_validate_search_space(scoped_gate)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("canonical tuner must reject case-scoped research semantics")
     bad = json.loads(json.dumps(space))
     bad["objective"]["metrics"][0]["name"] = "not-a-real-metric"
     try:

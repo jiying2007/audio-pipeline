@@ -136,6 +136,13 @@
   },
   "research_workflows": [
     {
+      "path": ".github/workflows/research-pure-far-activity-ratio-coverage-v1.yml",
+      "blob_sha": "95842844c9b22920252cd7c70823ab1db3b0d010",
+      "investigation_id": "pure-far-activity-ratio-coverage-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-activity-ratio-coverage-v1.json",
+      "reason": "fresh-main-closed diagnostic-only coverage run with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
       "path": ".github/workflows/research-pure-far-activity-ratio-v1.yml",
       "blob_sha": "95b64d7897cba036e21b0f634449a3299d9c3b4c",
       "investigation_id": "pure-far-activity-ratio-v1",
@@ -148,6 +155,20 @@
       "investigation_id": "pure-far-dtd-evidence-closure-v1",
       "evidence": ".github/research/continuous-optimization/development-v3/pure-far-dtd-evidence-closure-v1.json",
       "reason": "the pure-far diagnostic program is fresh-main CLOSED_DIAGNOSTIC_PLATEAU with candidate budget zero; the closure workflow is consumed while exact reproducer scripts, terminal JSON evidence and historical workflow blob remain preserved"
+    },
+    {
+      "path": ".github/workflows/research-pure-far-icassp2022-replication-v1.yml",
+      "blob_sha": "a9229dbb2cb8632bc4eaa6103d3a68dbefd22c1a",
+      "investigation_id": "pure-far-icassp2022-replication-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-icassp2022-replication-v1.json",
+      "reason": "fresh-main-closed diagnostic-only cross-dataset replication with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
+      "path": ".github/workflows/research-pure-far-sync-interpolation-energy-v1.yml",
+      "blob_sha": "da32fab7431a86598eeaa81f651c6933a59116df",
+      "investigation_id": "pure-far-sync-interpolation-energy-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-sync-interpolation-energy-v1.json",
+      "reason": "fresh-main-closed diagnostic-only interpolation-energy investigation with zero candidate budget; reproducer and sealed evidence remain committed"
     },
     {
       "path": ".github/workflows/research-real-doubletalk-rating-v1.yml",

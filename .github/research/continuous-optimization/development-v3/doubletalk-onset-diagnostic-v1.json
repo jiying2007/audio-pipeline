@@ -12,23 +12,25 @@
   ],
   "investigation_id": "doubletalk-onset-control-chain-v1",
   "output_authority": {
-    "candidate_selection": false,
-    "hil": false,
-    "product_certification": false,
     "research_diagnostic_only": true,
-    "shipping": false
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
   },
   "profiles": {
     "baseline": {
       "aec_mu": 0.22,
-      "agc_target_dbfs": -20.0,
-      "limiter_dbfs": -2.0,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2,
       "ns_floor": 0.12
     },
     "high_mu_probe": {
       "aec_mu": 0.3,
-      "agc_target_dbfs": -20.0,
-      "limiter_dbfs": -2.0,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2,
       "ns_floor": 0.12
     }
   },
@@ -57,5 +59,20 @@
     }
   ],
   "source_sha": "aeedc6c95a78c74454f79eaa6e166b21ccb27571",
-  "status": "DIAGNOSTIC_ONLY"
+  "status": "DIAGNOSTIC_ONLY",
+  "predecessor": {
+    "investigation_id": "doubletalk-case-guard-v5",
+    "closure_path": ".github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json",
+    "closure_run_id": 35069696052,
+    "fresh_main_sha": "574cf24839d5321eddc8ec24219a406cb7ce312d",
+    "diagnostic_run_id": 35075481741,
+    "diagnostic_run_number": 3,
+    "diagnostic_artifact_id": 10438236655,
+    "diagnostic_artifact_digest": "sha256:f16055c15aa39c67bf149515530db164276a188d4c0d55a46af96163765094c9",
+    "verify_run_id": 35075482101,
+    "verify_run_number": 959,
+    "release_run_id": 35075933128,
+    "release_run_number": 944,
+    "fresh_main_closed": true
+  }
 }

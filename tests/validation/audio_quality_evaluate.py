@@ -14,12 +14,18 @@ for path in (ROOT / "validation/tools", ROOT / "tests/validation"):
 import quality_metric_support
 import run_validation
 
-quality_metric_support.install(run_validation.engine)
+QUALITY_SEMANTICS = quality_metric_support.build_validation_semantics(
+    run_validation
+)
 
 
 def self_test() -> None:
+    base_evaluate = run_validation.engine.evaluate_case
+    base_policy = run_validation.engine.policy_violations
     quality_metric_support.self_test()
     run_validation.self_test()
+    assert run_validation.engine.evaluate_case is base_evaluate
+    assert run_validation.engine.policy_violations is base_policy
     print("release-neutral audio quality evaluator self-test: OK")
 
 
@@ -27,7 +33,7 @@ def main() -> int:
     if "--self-test" in sys.argv[1:]:
         self_test()
         return 0
-    return run_validation.main()
+    return run_validation.main(semantics=QUALITY_SEMANTICS)
 
 
 if __name__ == "__main__":

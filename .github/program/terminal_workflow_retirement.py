@@ -162,6 +162,57 @@ def validate_manifest(data: dict) -> None:
         seen_paths.add(path)
         seen_blobs.add(blob)
 
+    round_records = data.get("source_candidate_rounds", [])
+    require(isinstance(round_records, list), "source_candidate_rounds must be a list")
+    for r in round_records:
+        require(set(r) == {
+            "round_id", "workflows", "round_closure", "candidate_closures", "reason"
+        }, f"source-candidate round fields drift: {r.get('round_id')}")
+        require(isinstance(r["round_id"], str) and r["round_id"],
+                "source-candidate round id missing")
+        workflows = r["workflows"]
+        require(isinstance(workflows, list) and workflows,
+                f"source-candidate round workflows missing: {r['round_id']}")
+        stages = set()
+        for item in workflows:
+            require(set(item) == {"path", "blob_sha", "stage", "evidence"},
+                    f"source-candidate round workflow fields drift: {r['round_id']}")
+            path = str(item["path"])
+            blob = str(item["blob_sha"])
+            stage = item["stage"]
+            evidence = item["evidence"]
+            require(path.startswith(".github/workflows/"),
+                    f"invalid source-candidate round workflow path: {path}")
+            require(path not in seen_paths, f"duplicate retired workflow path: {path}")
+            require(SHA_RE.fullmatch(blob) is not None,
+                    f"invalid source-candidate round workflow blob SHA: {path}")
+            require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
+            require(isinstance(stage, str) and stage and stage not in stages,
+                    f"invalid/duplicate source-candidate round stage: {stage}")
+            require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                    f"source-candidate round evidence path invalid: {path}")
+            stages.add(stage)
+            seen_paths.add(path)
+            seen_blobs.add(blob)
+        require(stages == {
+            "source-candidate-evaluation",
+            "independent-source-confirmation",
+            "vad-public-confirmation",
+        }, f"unexpected source-candidate round stages: {r['round_id']}={sorted(stages)}")
+        require(isinstance(r["round_closure"], str)
+                and r["round_closure"].startswith(".github/research/"),
+                f"invalid source-candidate round closure: {r['round_id']}")
+        closures = r["candidate_closures"]
+        require(isinstance(closures, dict) and set(closures) == {
+            "vad-confidence-tiered-hold-v1",
+            "agc-error-adaptive-release-v1",
+        }, f"unexpected source-candidate closure set: {r['round_id']}")
+        for candidate_id, evidence in closures.items():
+            require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                    f"invalid candidate closure path: {candidate_id}")
+        require(isinstance(r["reason"], str) and r["reason"],
+                f"missing source-candidate round reason: {r['round_id']}")
+
     require(data.get("authority_boundary") == {
         "shipping_source_changed": False,
         "release_changed": False,
@@ -394,6 +445,163 @@ def check(root: Path) -> dict:
             "terminal_evidence": r["terminal_evidence"],
         })
 
+    source_candidate_round_checked = []
+    for r in data.get("source_candidate_rounds", []):
+        round_id = r["round_id"]
+        evidence_by_stage = {}
+        for item in r["workflows"]:
+            path = root / item["path"]
+            require(not path.exists(),
+                    f"retired source-candidate round workflow was reintroduced: {item['path']}")
+            evidence_path = root / item["evidence"]
+            require(evidence_path.is_file(),
+                    f"source-candidate round evidence missing: {item['evidence']}")
+            evidence_by_stage[item["stage"]] = json.loads(
+                evidence_path.read_text(encoding="utf-8")
+            )
+            require(git("cat-file", "-t", item["blob_sha"]) == "blob",
+                    f"historical source-candidate round blob missing: {item['path']}")
+            historical = git("cat-file", "blob", item["blob_sha"])
+            on_block = extract_on_block(historical)
+            require("pull_request:" in on_block and "workflow_dispatch:" in on_block,
+                    f"retired source-candidate round workflow must preserve PR + manual lineage: {item['path']}")
+            for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:"):
+                require(forbidden not in on_block,
+                        f"retired source-candidate round workflow had forbidden trigger {forbidden}: {item['path']}")
+
+        source_eval = evidence_by_stage["source-candidate-evaluation"]
+        confirmation = evidence_by_stage["independent-source-confirmation"]
+        public = evidence_by_stage["vad-public-confirmation"]
+
+        require(source_eval.get("workflow") == "Research Stage Source Candidate Evaluation"
+                and source_eval.get("event") == "workflow_dispatch"
+                and source_eval.get("conclusion") == "success"
+                and source_eval.get("requested_candidate") == "all",
+                f"source-candidate evaluation evidence drift: {round_id}")
+        source_candidates = source_eval.get("candidates") or {}
+        vad_eval = source_candidates.get("vad") or {}
+        agc_eval = source_candidates.get("agc") or {}
+        require(vad_eval.get("candidate_id") == "vad-confidence-tiered-hold-v1"
+                and vad_eval.get("decision") == "SOURCE_CANDIDATE_PASS"
+                and vad_eval.get("independent_confirmation_required") is True,
+                f"VAD source-candidate evaluation drift: {round_id}")
+        require(agc_eval.get("candidate_id") == "agc-error-adaptive-release-v1"
+                and agc_eval.get("decision") == "SOURCE_CANDIDATE_PASS"
+                and agc_eval.get("independent_confirmation_required") is True,
+                f"AGC source-candidate evaluation drift: {round_id}")
+        for key in ("shipping", "automatic_main_mutation", "hil", "product_certification"):
+            require((source_eval.get("authority") or {}).get(key) is False,
+                    f"source-candidate evaluation regained {key}: {round_id}")
+
+        require(confirmation.get("workflow") == "Research Stage Source Confirmation"
+                and confirmation.get("event") == "workflow_dispatch"
+                and confirmation.get("conclusion") == "success"
+                and confirmation.get("requested_candidate") == "all",
+                f"source confirmation evidence drift: {round_id}")
+        require((confirmation.get("predecessor") or {}).get("source_candidate_run_id")
+                == source_eval.get("run_id"),
+                f"source confirmation predecessor drift: {round_id}")
+        agc_confirm = confirmation.get("agc") or {}
+        vad_confirm = confirmation.get("vad") or {}
+        require(agc_confirm.get("candidate_id") == "agc-error-adaptive-release-v1"
+                and agc_confirm.get("decision") == "SOURCE_CANDIDATE_REJECT"
+                and agc_confirm.get("candidate_budget") == 0
+                and agc_confirm.get("terminal_exact_candidate") is True
+                and agc_confirm.get("next_gate") is None,
+                f"AGC confirmation is not terminal: {round_id}")
+        require(vad_confirm.get("candidate_id") == "vad-confidence-tiered-hold-v1"
+                and vad_confirm.get("decision") == "SYNTHETIC_CONFIRMATION_PASS_PENDING_PUBLIC_LOCK"
+                and vad_confirm.get("public_authority_consumed") is False
+                and not vad_confirm.get("violations"),
+                f"VAD synthetic confirmation drift: {round_id}")
+        for key in ("shipping", "automatic_main_mutation", "hil",
+                    "product_certification", "source_merge_authorized"):
+            require((confirmation.get("authority") or {}).get(key) is False,
+                    f"source confirmation regained {key}: {round_id}")
+
+        require(public.get("workflow") == "Research Stage VAD Public Confirmation"
+                and public.get("conclusion") == "success"
+                and public.get("candidate_id") == "vad-confidence-tiered-hold-v1"
+                and public.get("decision") == "SOURCE_CANDIDATE_REJECT",
+                f"VAD public confirmation evidence drift: {round_id}")
+        require((public.get("public_authority") or {}).get("consumed") is True
+                and (public.get("public_authority") or {}).get("lock_rebind_passed") is True,
+                f"VAD public authority was not consumed exactly: {round_id}")
+        require(public.get("violations"),
+                f"VAD public rejection lost gate evidence: {round_id}")
+        for key in ("shipping", "hil", "product_certification",
+                    "source_merge_authorized", "automatic_main_mutation"):
+            require((public.get("authority") or {}).get(key) is False,
+                    f"VAD public confirmation regained {key}: {round_id}")
+
+        closure_path = root / r["round_closure"]
+        require(closure_path.is_file(),
+                f"source-candidate round closure missing: {r['round_closure']}")
+        round_closure = json.loads(closure_path.read_text(encoding="utf-8"))
+        require(round_closure.get("closure_id") == round_id
+                and round_closure.get("status") == "CLOSED_NO_SURVIVING_SOURCE_CANDIDATE"
+                and round_closure.get("surviving_source_candidates") == []
+                and round_closure.get("source_merge_authorized") is False
+                and round_closure.get("shipping_source_unchanged") is True,
+                f"source-candidate round is not terminal: {round_id}")
+        closed_candidates = round_closure.get("candidates") or {}
+        vad_round = closed_candidates.get("vad-confidence-tiered-hold-v1") or {}
+        agc_round = closed_candidates.get("agc-error-adaptive-release-v1") or {}
+        require(vad_round.get("terminal") is True
+                and vad_round.get("candidate_budget") == 0
+                and vad_round.get("final_decision") == "SOURCE_CANDIDATE_REJECT"
+                and vad_round.get("final_run_id") == public.get("run_id"),
+                f"VAD round closure drift: {round_id}")
+        require(agc_round.get("terminal") is True
+                and agc_round.get("candidate_budget") == 0
+                and agc_round.get("final_decision") == "SOURCE_CANDIDATE_REJECT"
+                and agc_round.get("final_run_id") == confirmation.get("run_id"),
+                f"AGC round closure drift: {round_id}")
+        for key in ("shipping", "hil", "product_certification", "automatic_main_mutation"):
+            require((round_closure.get("authority") or {}).get(key) is False,
+                    f"source-candidate round regained {key}: {round_id}")
+
+        closures = {}
+        for candidate_id, relative in r["candidate_closures"].items():
+            candidate_path = root / relative
+            require(candidate_path.is_file(),
+                    f"candidate terminal closure missing: {relative}")
+            closures[candidate_id] = json.loads(candidate_path.read_text(encoding="utf-8"))
+        agc_closure = closures["agc-error-adaptive-release-v1"]
+        vad_closure = closures["vad-confidence-tiered-hold-v1"]
+        for candidate_id, candidate_closure in closures.items():
+            require(candidate_closure.get("candidate_id") == candidate_id
+                    and candidate_closure.get("status") == "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT"
+                    and candidate_closure.get("terminal_candidate") is True
+                    and candidate_closure.get("candidate_budget") == 0
+                    and candidate_closure.get("decision") == "SOURCE_CANDIDATE_REJECT",
+                    f"candidate closure is not terminal: {candidate_id}")
+            for key in SOURCE_CANDIDATE_AUTHORITY_FALSE_KEYS:
+                require((candidate_closure.get("output_authority") or {}).get(key) is False,
+                        f"candidate closure regained {key}: {candidate_id}")
+
+        agc_provenance = agc_closure.get("confirmation_provenance") or {}
+        require(agc_provenance.get("run_id") == confirmation.get("run_id")
+                and agc_provenance.get("artifact_id") == agc_confirm.get("artifact_id")
+                and agc_provenance.get("artifact_digest") == agc_confirm.get("artifact_digest"),
+                f"AGC terminal provenance drift: {round_id}")
+        vad_predecessor = vad_closure.get("predecessor_evidence") or {}
+        vad_public_provenance = vad_closure.get("public_confirmation_provenance") or {}
+        require(vad_predecessor.get("source_candidate_run_id") == source_eval.get("run_id")
+                and vad_predecessor.get("independent_synthetic_run_id") == confirmation.get("run_id"),
+                f"VAD predecessor provenance drift: {round_id}")
+        public_artifact = public.get("artifact") or {}
+        require(vad_public_provenance.get("run_id") == public.get("run_id")
+                and vad_public_provenance.get("artifact_id") == public_artifact.get("id")
+                and vad_public_provenance.get("artifact_digest") == public_artifact.get("digest"),
+                f"VAD public terminal provenance drift: {round_id}")
+
+        source_candidate_round_checked.append({
+            "round_id": round_id,
+            "workflows": [item["path"] for item in r["workflows"]],
+            "round_closure": r["round_closure"],
+        })
+
     # A terminal research task must not regain a standalone Actions entry under its task prefix.
     # Reproducers/contracts/results stay in the repository; only the consumed orchestration entry is retired.
     for pattern in ("*.yml", "*.yaml"):
@@ -413,10 +621,12 @@ def check(root: Path) -> dict:
         "retired_research_workflows": len(research_checked),
         "retired_source_candidate_workflows": len(source_candidate_checked),
         "retired_selection_workflows": len(selection_checked),
+        "retired_source_candidate_rounds": len(source_candidate_round_checked),
         "tasks": sorted(EXPECTED_TASKS),
         "research_investigations": sorted(item["investigation_id"] for item in research_checked),
         "source_candidates": sorted(item["candidate_id"] for item in source_candidate_checked),
         "selection_ids": sorted(item["selection_id"] for item in selection_checked),
+        "source_candidate_rounds": sorted(item["round_id"] for item in source_candidate_round_checked),
         "software_release": data["software_release"],
         "release_source_sha": data["release_source_sha"],
         "product_qualification": "DEFERRED_BY_SCOPE",
@@ -497,6 +707,37 @@ def self_test() -> None:
         "reason": "consumed selection with terminal downstream candidate",
     }]
     validate_manifest(selection_sample)
+    round_sample = json.loads(json.dumps(sample))
+    round_sample["source_candidate_rounds"] = [{
+        "round_id": "stage-source-candidate-round-v1",
+        "workflows": [
+            {
+                "path": ".github/workflows/research-source-eval.yml",
+                "blob_sha": "a" * 40,
+                "stage": "source-candidate-evaluation",
+                "evidence": ".github/research/source-eval-run.json",
+            },
+            {
+                "path": ".github/workflows/research-source-confirm.yml",
+                "blob_sha": "b" * 40,
+                "stage": "independent-source-confirmation",
+                "evidence": ".github/research/source-confirm-run.json",
+            },
+            {
+                "path": ".github/workflows/research-public-confirm.yml",
+                "blob_sha": "c" * 40,
+                "stage": "vad-public-confirmation",
+                "evidence": ".github/research/public-confirm-run.json",
+            },
+        ],
+        "round_closure": ".github/research/source-round-closure.json",
+        "candidate_closures": {
+            "vad-confidence-tiered-hold-v1": ".github/research/vad-closure.json",
+            "agc-error-adaptive-release-v1": ".github/research/agc-closure.json",
+        },
+        "reason": "terminal source candidate round",
+    }]
+    validate_manifest(round_sample)
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
     assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
     assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")

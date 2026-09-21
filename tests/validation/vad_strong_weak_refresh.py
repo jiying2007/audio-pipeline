@@ -16,11 +16,8 @@ from pathlib import Path
 from typing import Any
 
 import run_validation_engine as engine
-import stage_profile_support
 import vad_operating_point_selector as selector
 import vad_hangover_counterfactual as fixed
-
-stage_profile_support.install(engine)
 
 LOCAL_THRESHOLD = 0.45
 NS_THRESHOLD = 0.35

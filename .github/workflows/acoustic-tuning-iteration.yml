@@ -67,6 +67,10 @@ jobs:
               assert space['schema_version'] == 1
               assert set(space['baseline']) == {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
               engine.validate_search_space(space)
+              # Validation probes axis values against the baseline one at a time.
+              # Materialise every committed space here too so cross-product tuning
+              # constraints and each space's max_candidates fail at the gate.
+              engine.generate_candidates(space)
           for name, strategy in expected_strategy.items():
               space = json.loads((spaces_dir / name).read_text())
               assert space['strategy'] == strategy, (name, space['strategy'], strategy)

@@ -18,13 +18,14 @@ AEC_MOTION_P10_METRIC = "p10_output_render_corr_reduction"
 AEC_MOTION_METRICS = {AEC_MOTION_MEDIAN_METRIC, AEC_MOTION_P10_METRIC}
 
 
-def install_motion_metrics() -> None:
-    guarded.KNOWN_OBJECTIVE_METRICS.update(AEC_MOTION_METRICS)
+def motion_semantics():
+    return guarded.canonical_semantics(
+        extra_objective_metrics=AEC_MOTION_METRICS
+    )
 
 
 def self_test() -> None:
-    install_motion_metrics()
-    guarded.install_fail_closed_guards()
+    semantics = motion_semantics()
     space = {
         "schema_version": 1,
         "search_space_id": "aec-motion-self-test",
@@ -57,7 +58,7 @@ def self_test() -> None:
             ],
         },
     }
-    guarded.strict_validate_search_space(space)
+    semantics.validate_search_space(space)
     baseline = {
         "validation_result": "PASS",
         "summary": {
@@ -72,10 +73,10 @@ def self_test() -> None:
             AEC_MOTION_P10_METRIC: 0.04,
         },
     }
-    score, deltas = guarded.strict_score(space, baseline, better)
+    score, deltas = semantics.score_against_baseline(space, baseline, better)
     assert score > 0.0
     assert {item["metric"] for item in deltas} == AEC_MOTION_METRICS
-    assert not guarded.strict_regression(space, baseline, better)
+    assert not semantics.regression_violations(space, baseline, better)
     missing = {
         "validation_result": "PASS",
         "summary": {
@@ -83,16 +84,15 @@ def self_test() -> None:
             AEC_MOTION_P10_METRIC: None,
         },
     }
-    assert guarded.strict_regression(space, baseline, missing)
+    assert semantics.regression_violations(space, baseline, missing)
     print(json.dumps({"result": "PASS", "metrics": sorted(AEC_MOTION_METRICS)}, sort_keys=True))
 
 
 def main() -> int:
-    install_motion_metrics()
     if "--self-test" in __import__("sys").argv:
         self_test()
         return 0
-    return guarded.main()
+    return guarded.main(semantics=motion_semantics())
 
 
 if __name__ == "__main__":

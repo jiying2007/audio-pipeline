@@ -1,6 +1,6 @@
 # 2.3.45
 
-- Fail closed on unknown nested search-space keys in `objective.metrics[]` and `objective.case_delta_gates[]`. Misspellings such as `dataset` for `datasets` or `case_id` for `case_ids` can no longer be silently ignored while the search runs with broader semantics than declared.
+- Fail closed on unknown `objective` keys and unknown nested keys in `objective.metrics[]` / `objective.case_delta_gates[]`, and require each metric's schema-required base fields. Misspellings such as `minimum_improvements_score`, `dataset` for `datasets`, or `case_id` for `case_ids` can no longer be silently ignored or replaced by execution defaults while the report still describes the intended search.
 - Make the published search-space schema match the real research contract by defining `datasets`, `minimum_units` and `case_ids`, with non-empty unique string IDs and bounded integer coverage. The canonical CALL tuner explicitly rejects those research-only scoping fields instead of pretending to honor them.
 - Centralize dataset/minimum-unit/case-id structural parsing in the canonical tuning engine; research v3/v5 validators now opt into their supported scopes explicitly and reuse the shared parser. Deterministic negative tests cover unknown nested keys and invalid scoped-ID types. Candidate ranking, DSP defaults and promotion authority are unchanged.
 

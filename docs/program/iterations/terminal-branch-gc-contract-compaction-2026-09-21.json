@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "terminal-branch-gc-contract-compaction",
+  "state": "CLOSED",
+  "base_main_sha": "32d38c8c02149ab294b3dd349e40330ac198e66c",
+  "previous_contract_blob_sha": "2964ea0e479b37f694c62b06cbd51a242ab432a6",
+  "prior_record_count": 24,
+  "prior_exact_exception_count": 16,
+  "live_branch_inventory": [
+    "main"
+  ],
+  "disposition": "REMOVE_ALREADY_DELETED_RECORDS_FROM_OPERATIONAL_CONTRACT",
+  "interpretation": "All previously pinned non-main refs are absent after fail-closed GC. Their historical evidence remains in committed iteration/archive records and Git history; the operational GC contract now contains only live targets and therefore has an empty target set.",
+  "deletion_policy_unchanged": {
+    "require_exact_live_sha": true,
+    "require_no_open_pull_request": true,
+    "require_preserved_terminal_evidence": true,
+    "require_software_program_terminal": true,
+    "unlisted_branch_deletion_allowed": false,
+    "mutation_on_pull_request": false,
+    "mutation_on_workflow_dispatch": false,
+    "mutation_on_main_push": true
+  },
+  "authority_boundary": {
+    "hardware_test_executed": false,
+    "hardware_collection_performed": false,
+    "shipping_source_changed": false,
+    "release_changed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

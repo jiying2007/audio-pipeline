@@ -161,7 +161,7 @@
       "blob_sha": "60277fdbbe3288b9beba0740e9c0125b3b118d52",
       "investigation_id": "pure-far-hpf-energy-asymmetry-v1",
       "evidence": ".github/research/continuous-optimization/development-v3/pure-far-hpf-energy-asymmetry-v1.json",
-      "reason": "fresh-main-closed diagnostic-only HPF asymmetry investigation with zero candidate budget; reproducer and sealed evidence remain committed"
+      "reason": "fresh-main-closed diagnostic-only HPF energy asymmetry investigation with zero candidate budget; reproducer and sealed evidence remain committed"
     },
     {
       "path": ".github/workflows/research-pure-far-icassp2022-replication-v1.yml",
@@ -175,7 +175,7 @@
       "blob_sha": "04eb6765876023037c910986d43af81e4f69fe1c",
       "investigation_id": "pure-far-source-coherent-excess-v1",
       "evidence": ".github/research/continuous-optimization/development-v3/pure-far-source-coherent-excess-v1.json",
-      "reason": "fresh-main-closed diagnostic-only coherent/excess decomposition with zero candidate budget; reproducer and sealed evidence remain committed"
+      "reason": "fresh-main-closed diagnostic-only source-coherent excess investigation with zero candidate budget; reproducer and sealed evidence remain committed"
     },
     {
       "path": ".github/workflows/research-pure-far-source-gain-provenance-v1.yml",

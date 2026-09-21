@@ -11,7 +11,6 @@ on:
       - 'validation/policies/validation-aec-motion-development.json'
       - 'validation/tuning/**'
       - '.github/workflows/research-optimization.yml'
-      - '.github/program/maintenance_workflow_contract.py'
   workflow_dispatch:
     inputs:
       execute_bounded_search:

@@ -1,3 +1,9 @@
+# 2.3.47
+
+- Replace canonical validation engine monkey-patching with an explicit immutable `EvaluationSemantics` profile. Processor invocation and render-correlation search are passed to case evaluation directly instead of mutating `run_validation_engine.invoke` / `max_abs_corr` at import time.
+- Convert `render_corr_exact` and `stage_profile_support` from installers into pure builders. Canonical validation still uses the exact all-integer-lag correlation helper and the same stage-isolated capture behavior, but module meaning no longer depends on import/install order.
+- Add deterministic assertions that building/running the canonical evaluator profile leaves engine function identities unchanged. Metric formulas, thresholds, corpus authority, DSP behavior and promotion authority are unchanged.
+
 # 2.3.46
 
 - Replace tuning/research optimizer monkey-patching with an explicit immutable `IterationSemantics` profile. Canonical tuning, dataset-aware research, case-scoped research and hierarchical algorithm+tuning paths now pass validator/scoring/regression/case-gate semantics directly instead of mutating imported module functions.

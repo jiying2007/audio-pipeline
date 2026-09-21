@@ -700,7 +700,7 @@ def self_test() -> None:
     algorithm_space = load_algorithm_space(algorithm_path)
     parameter_path = repo_root / algorithm_space["parameter_search_space"]
     parameter_space = json.loads(parameter_path.read_text(encoding="utf-8"))
-    engine.validate_search_space(parameter_space)
+    semantics.validate_search_space(parameter_space)
     candidates = engine.generate_candidates(parameter_space)
     assert len(algorithm_space["variants"]) == 4
     assert len(candidates) == 8
@@ -736,7 +736,7 @@ def self_test() -> None:
             "case_delta_gates": [],
         },
     }
-    engine.validate_search_space(fixture_space)
+    semantics.validate_search_space(fixture_space)
     algorithms = algorithm_space["variants"][:2]
     units = [
         {

@@ -12,7 +12,6 @@ on:
       - '.github/research/continuous-optimization/source_candidate_execution_v2_contract.py'
       - '.github/workflows/research-source-candidate-v2-preflight.yml'
       - '.github/workflows/research-source-authority-v2-qualification.yml'
-      - '.github/program/maintenance_workflow_contract.py'
   workflow_dispatch:
     inputs:
       candidate_contract:

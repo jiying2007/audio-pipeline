@@ -9,7 +9,6 @@ on:
       - '.github/research/continuous-optimization/dataset-registry.json'
       - '.github/research/continuous-optimization/research_candidate_blind.py'
       - '.github/workflows/research-candidate-blind-qualification.yml'
-      - '.github/program/maintenance_workflow_contract.py'
       - '.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json'
       - 'validation/research/README.md'
       - 'validation/authority.json'

@@ -6,7 +6,6 @@ on:
     paths:
       - '.github/research/continuous-optimization/**'
       - '.github/workflows/research-algorithm-parameter-optimization.yml'
-      - '.github/program/maintenance_workflow_contract.py'
       - 'validation/tools/tuning_iteration.py'
       - 'validation/tools/tuning_iteration*.py'
       - 'validation/tools/build_aec_motion_corpus.py'

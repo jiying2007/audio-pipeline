@@ -147,9 +147,17 @@ def strict_regression(space: dict[str, Any], baseline: dict[str, Any],
     return violations
 
 
-def canonical_semantics() -> engine.IterationSemantics:
+def canonical_semantics(
+    *, extra_objective_metrics: set[str] | None = None
+) -> engine.IterationSemantics:
+    def validate(space: dict[str, Any]) -> None:
+        strict_validate_search_space(
+            space,
+            extra_objective_metrics=extra_objective_metrics,
+        )
+
     return engine.IterationSemantics(
-        validate_search_space=strict_validate_search_space,
+        validate_search_space=validate,
         enforce_partition_independence=strict_partition_independence,
         score_against_baseline=strict_score,
         regression_violations=strict_regression,
@@ -221,7 +229,7 @@ def self_test() -> None:
     print("authority-guarded tuning self-test: OK")
 
 
-def main() -> int:
+def main(semantics: engine.IterationSemantics | None = None) -> int:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--development-corpus", type=Path)
@@ -239,7 +247,7 @@ def main() -> int:
         args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(),
     )
-    return engine.main(semantics=canonical_semantics())
+    return engine.main(semantics=semantics or canonical_semantics())
 
 
 if __name__ == "__main__":

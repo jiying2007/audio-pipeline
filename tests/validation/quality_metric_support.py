@@ -555,12 +555,9 @@ def self_test() -> None:
             return {}, []
 
     fake = FakeEngine()
-
-    class FakeSemantics:
-        invoke = fake.invoke
-        max_abs_corr = fake.max_abs_corr
-
-    semantics = FakeSemantics()
+    semantics = type("FakeSemantics", (), {})()
+    semantics.invoke = fake.invoke
+    semantics.max_abs_corr = fake.max_abs_corr
     evaluate_quality = build_evaluate_case(fake, fake.evaluate_case)
     quality_policy = build_policy_violations(fake.policy_violations)
     assert quality_policy({}, {}, []) == ({}, [])

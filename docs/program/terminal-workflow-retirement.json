@@ -136,6 +136,20 @@
   },
   "research_workflows": [
     {
+      "path": ".github/workflows/research-doubletalk-onset-diagnostic.yml",
+      "blob_sha": "a3d7a42df33a1f2129185703b1ecc5c8981ee51a",
+      "investigation_id": "doubletalk-onset-control-chain-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/doubletalk-onset-diagnostic-v1.json",
+      "reason": "fresh-main-closed diagnostic-only onset investigation with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
+      "path": ".github/workflows/research-doubletalk-origin-disambiguation.yml",
+      "blob_sha": "295ef81767f4d4d264e95ede03c6cbd333bd6f44",
+      "investigation_id": "doubletalk-origin-disambiguation-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/doubletalk-origin-disambiguation-v1.json",
+      "reason": "fresh-main-closed diagnostic-only origin disambiguation with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
       "path": ".github/workflows/research-doubletalk-temporal-route-v2.yml",
       "blob_sha": "88bce31b1e001e433b017aa00bd871337a1f19c8",
       "investigation_id": "doubletalk-temporal-route-disambiguation-v2",

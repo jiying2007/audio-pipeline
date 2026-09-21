@@ -9,38 +9,68 @@
     "status": "CLOSED_KEEP_BASELINE",
     "closure_path": ".github/research/continuous-optimization/development-v3/doubletalk-onset-admission-v1-closure.json",
     "candidate_pr": 228,
-    "closure_pr": 229
+    "closure_pr": 229,
+    "fresh_main_sha": "7654979fd2664954ba6780e5d69caa1029cf1d8f",
+    "origin_run_id": 35091183285,
+    "origin_run_number": 4,
+    "origin_artifact_id": 10444720713,
+    "origin_artifact_digest": "sha256:f41650a2663e4b40dd52188b4255fd37289a7f41959ed7c48dfb5fe2398c4f9e",
+    "verify_run_id": 35091183506,
+    "verify_run_number": 969,
+    "release_run_id": 35091576907,
+    "release_run_number": 954,
+    "fresh_main_closed": true
   },
   "question": "Can observed pre-DTD near-end onset behavior be distinguished from pure-far echo-path change or movement using existing baseline telemetry plus input-domain route-correlation evidence, without changing DSP or detector thresholds?",
   "development_inputs": {
-    "deterministic_validation_seeds": [1307, 1407],
-    "deterministic_validation_seconds": 4.0,
-    "motion_geometry_v2_seeds": [4107, 4207],
-    "motion_geometry_v2_seconds": 4.0,
+    "deterministic_validation_seeds": [
+      1307,
+      1407
+    ],
+    "deterministic_validation_seconds": 4,
+    "motion_geometry_v2_seeds": [
+      4107,
+      4207
+    ],
+    "motion_geometry_v2_seconds": 4,
     "cohorts": {
       "near_end_onset": {
         "source": "validation/tools/build_validation_corpus.py",
-        "scenarios": ["aec-doubletalk", "aec-doubletalk-balance"],
+        "scenarios": [
+          "aec-doubletalk",
+          "aec-doubletalk-balance"
+        ],
         "event_source": "vad_labels rising edge",
         "near_end_present": true
       },
       "echo_path_change": {
         "source": "validation/tools/build_validation_corpus.py",
-        "scenarios": ["aec-echo-path-change"],
+        "scenarios": [
+          "aec-echo-path-change"
+        ],
         "event_source": "control.echo_path_change_frame",
         "near_end_present": false
       },
       "continuous_motion": {
         "source": "validation/tools/build_aec_motion_corpus.py",
-        "scenarios": ["aec-continuous-motion"],
-        "motion": ["translation", "rotation"],
+        "scenarios": [
+          "aec-continuous-motion"
+        ],
+        "motion": [
+          "translation",
+          "rotation"
+        ],
         "event_source": "mid-trace diagnostic checkpoint",
         "near_end_present": false
       },
       "stationary_far_control": {
         "source": "validation/tools/build_aec_motion_corpus.py",
-        "scenarios": ["aec-continuous-motion"],
-        "motion": ["stationary"],
+        "scenarios": [
+          "aec-continuous-motion"
+        ],
+        "motion": [
+          "stationary"
+        ],
         "event_source": "mid-trace diagnostic checkpoint",
         "near_end_present": false
       }
@@ -55,9 +85,9 @@
     "static_cases": 2,
     "movement_cases": 2,
     "probe": "validation/tools/aec_route_ambiguity_probe.py",
-    "probe_window_seconds": 3.0,
+    "probe_window_seconds": 3,
     "max_delay_ms": 100,
-    "initial_delay_ms": 40.0,
+    "initial_delay_ms": 40,
     "use_only_raw_numeric_outputs": [
       "best_delay_samples",
       "best_delay_ms",
@@ -116,6 +146,7 @@
   "output_authority": {
     "research_diagnostic_only": true,
     "candidate_selection": false,
+    "tuning": false,
     "automatic_main_mutation": false,
     "shipping": false,
     "hil": false,

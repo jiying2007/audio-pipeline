@@ -218,7 +218,10 @@ def _rank_algorithms(
     minimum_score: float,
     minimum_unit_score: float,
     maximum_pareto: int,
+    *,
+    semantics: engine.IterationSemantics | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    semantics = semantics or v5.case_scoped_semantics()
     metric_specs = engine.objective_metrics(space)
     metric_names = [str(metric["name"]) for metric in metric_specs]
     expected_units: dict[str, list[str]] = {}
@@ -252,13 +255,13 @@ def _rank_algorithms(
             unit_space = v3.space_for_unit(space, unit)
             baseline_report = matrix[baseline_id][unit_id]
             candidate_report = matrix[algorithm_id][unit_id]
-            score, deltas = engine.score_against_baseline(
+            score, deltas = semantics.score_against_baseline(
                 unit_space, baseline_report, candidate_report
             )
-            _case_summary, case_violations = engine.case_delta_gate_violations(
+            _case_summary, case_violations = semantics.case_delta_gate_violations(
                 unit_space, baseline_report, candidate_report
             )
-            regression = engine.regression_violations(
+            regression = semantics.regression_violations(
                 unit_space, baseline_report, candidate_report
             )
             unit_scores.append(float(score))
@@ -358,7 +361,7 @@ def execute(
     registry_path: Path,
     output_dir: Path,
 ) -> dict[str, Any]:
-    v5.install()
+    semantics = v5.case_scoped_semantics()
     algorithm_space = load_algorithm_space(algorithm_space_path)
     processors = load_processors(processors_path, algorithm_space, repo_root)
     registry = dataset_registry.load_registry(registry_path, repo_root)
@@ -375,7 +378,7 @@ def execute(
     parameter_space = json.loads(
         parameter_space_path.read_text(encoding="utf-8")
     )
-    engine.validate_search_space(parameter_space)
+    semantics.validate_search_space(parameter_space)
     parameter_candidates = engine.generate_candidates(parameter_space)
     baseline_parameter = parameter_candidates[0]
     if baseline_parameter["tuning"] != algorithm_space["baseline_tuning"]:
@@ -423,6 +426,7 @@ def execute(
         float(policy["minimum_development_score"]),
         float(policy["minimum_development_unit_score"]),
         min(int(policy["maximum_pareto_candidates"]), len(algorithms)),
+        semantics=semantics,
     )
     selected_algorithm_id = str(selected_algorithm["algorithm_id"])
     selected_algorithm_payload = next(
@@ -471,6 +475,7 @@ def execute(
         float(policy["minimum_development_score"]),
         float(policy["minimum_development_unit_score"]),
         int(policy["maximum_pareto_candidates"]),
+        semantics=semantics,
     )
     selected_parameter_candidate = next(
         candidate for candidate in parameter_candidates
@@ -523,10 +528,10 @@ def execute(
                 candidate_path,
             )
         unit_space = v3.space_for_unit(parameter_space, unit)
-        case_summary, case_violations = engine.case_delta_gate_violations(
+        case_summary, case_violations = semantics.case_delta_gate_violations(
             unit_space, baseline_report, candidate_report
         )
-        violations = engine.regression_violations(
+        violations = semantics.regression_violations(
             unit_space, baseline_report, candidate_report
         ) + case_violations
         if baseline_report.get("validation_result") != "PASS":
@@ -689,13 +694,13 @@ def execute(
 
 
 def self_test() -> None:
-    v5.install()
+    semantics = v5.case_scoped_semantics()
     repo_root = Path(__file__).resolve().parents[3]
     algorithm_path = repo_root / DEFAULT_ALGORITHM_SPACE
     algorithm_space = load_algorithm_space(algorithm_path)
     parameter_path = repo_root / algorithm_space["parameter_search_space"]
     parameter_space = json.loads(parameter_path.read_text(encoding="utf-8"))
-    engine.validate_search_space(parameter_space)
+    semantics.validate_search_space(parameter_space)
     candidates = engine.generate_candidates(parameter_space)
     assert len(algorithm_space["variants"]) == 4
     assert len(candidates) == 8
@@ -731,7 +736,7 @@ def self_test() -> None:
             "case_delta_gates": [],
         },
     }
-    engine.validate_search_space(fixture_space)
+    semantics.validate_search_space(fixture_space)
     algorithms = algorithm_space["variants"][:2]
     units = [
         {
@@ -765,6 +770,7 @@ def self_test() -> None:
         0.5,
         0.0,
         2,
+        semantics=semantics,
     )
     assert selected["algorithm_id"] == algorithms[1]["algorithm_id"]
     assert len(ranking) == 2 and frontier

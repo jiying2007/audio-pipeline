@@ -16,9 +16,6 @@ EXTRA_OBJECTIVE_METRICS = {
     "median_output_render_corr_reduction",
     "p10_output_render_corr_reduction",
 }
-_ORIGINAL_STRICT_VALIDATE = tuning_iteration.strict_validate_search_space
-
-
 def _metric_datasets(metric: dict[str, Any]) -> list[str] | None:
     return engine.metric_datasets(metric)
 
@@ -30,10 +27,11 @@ def _minimum_units(metric: dict[str, Any]) -> int:
 def dataset_aware_validate_search_space(
     space: dict[str, Any], *, allow_case_scope: bool = False
 ) -> None:
-    _ORIGINAL_STRICT_VALIDATE(
+    tuning_iteration.strict_validate_search_space(
         space,
         allow_dataset_scope=True,
         allow_case_scope=allow_case_scope,
+        extra_objective_metrics=EXTRA_OBJECTIVE_METRICS,
     )
     for metric in engine.objective_metrics(space):
         datasets = _metric_datasets(metric)
@@ -43,6 +41,27 @@ def dataset_aware_validate_search_space(
                 f"dataset-scoped metric {metric['name']} must include synthetic-regression "
                 "for independent validation/shadow gating"
             )
+
+
+def dataset_aware_semantics(
+    *,
+    allow_case_scope: bool = False,
+    case_delta_gate_violations: Any = None,
+) -> engine.IterationSemantics:
+    def validate(space: dict[str, Any]) -> None:
+        dataset_aware_validate_search_space(
+            space, allow_case_scope=allow_case_scope
+        )
+
+    return engine.IterationSemantics(
+        validate_search_space=validate,
+        enforce_partition_independence=tuning_iteration.strict_partition_independence,
+        score_against_baseline=tuning_iteration.strict_score,
+        regression_violations=tuning_iteration.strict_regression,
+        case_delta_gate_violations=(
+            case_delta_gate_violations or engine.case_delta_gate_violations
+        ),
+    )
 
 
 def metric_applies(metric: dict[str, Any], unit: dict[str, Any]) -> bool:
@@ -71,7 +90,10 @@ def rank_development(
     minimum_score: float,
     minimum_unit_score: float,
     maximum_pareto: int,
+    *,
+    semantics: engine.IterationSemantics | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    semantics = semantics or dataset_aware_semantics()
     dev_units = [unit for unit in units if unit["role"] == "development"]
     if not dev_units:
         raise ValueError("development units required")
@@ -100,11 +122,13 @@ def rank_development(
             base_report = matrix[baseline["candidate_id"]][unit_id]
             candidate_report = matrix[candidate["candidate_id"]][unit_id]
             unit_space = space_for_unit(space, unit)
-            score, deltas = engine.score_against_baseline(unit_space, base_report, candidate_report)
-            _case_summary, case_violations = engine.case_delta_gate_violations(
+            score, deltas = semantics.score_against_baseline(
                 unit_space, base_report, candidate_report
             )
-            metric_violations = engine.regression_violations(
+            _case_summary, case_violations = semantics.case_delta_gate_violations(
+                unit_space, base_report, candidate_report
+            )
+            metric_violations = semantics.regression_violations(
                 unit_space, base_report, candidate_report
             )
             unit_scores.append(float(score))
@@ -196,15 +220,18 @@ def rank_development(
     return selected, ranking, frontier
 
 
-def install() -> None:
-    tuning_iteration.KNOWN_OBJECTIVE_METRICS.update(EXTRA_OBJECTIVE_METRICS)
-    tuning_iteration.strict_validate_search_space = dataset_aware_validate_search_space
-    core.rank_development = rank_development
-
-
 def self_test() -> None:
-    install()
+    engine_validate = engine.validate_search_space
+    engine_case_gate = engine.case_delta_gate_violations
+    core_rank = core.rank_development
+    semantics = dataset_aware_semantics()
+    assert engine.validate_search_space is engine_validate
+    assert engine.case_delta_gate_violations is engine_case_gate
+    assert core.rank_development is core_rank
     core.self_test()
+    assert engine.validate_search_space is engine_validate
+    assert engine.case_delta_gate_violations is engine_case_gate
+    assert core.rank_development is core_rank
     space = {
         "schema_version": 1,
         "search_space_id": "dataset-aware-self-test",
@@ -230,13 +257,12 @@ def self_test() -> None:
             },
         ]},
     }
-    tuning_iteration.install_fail_closed_guards()
-    engine.validate_search_space(space)
+    semantics.validate_search_space(space)
     candidates = engine.generate_candidates(space)
     bad_dataset = json.loads(json.dumps(space))
     bad_dataset["objective"]["metrics"][1]["datasets"] = [1]
     try:
-        engine.validate_search_space(bad_dataset)
+        semantics.validate_search_space(bad_dataset)
     except ValueError:
         pass
     else:
@@ -265,6 +291,7 @@ def self_test() -> None:
     selected, ranking, _ = rank_development(
         space, candidates, units, matrix, "c" * 40, "dataset-aware-hypothesis",
         {"terminal_candidates": []}, 0.1, 0.0, 8,
+        semantics=semantics,
     )
     assert selected["candidate_id"] == better["candidate_id"]
     chosen = next(row for row in ranking if row["candidate_id"] == better["candidate_id"])
@@ -276,11 +303,13 @@ def self_test() -> None:
 
 
 def main() -> int:
-    install()
     if "--self-test" in sys.argv:
         self_test()
         return 0
-    return core.main()
+    return core.main(
+        semantics=dataset_aware_semantics(),
+        ranker=rank_development,
+    )
 
 
 if __name__ == "__main__":

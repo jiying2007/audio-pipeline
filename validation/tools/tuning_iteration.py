@@ -28,9 +28,6 @@ KNOWN_OBJECTIVE_METRICS = {
     "max_output_clip_fraction",
 }
 _MISSING_METRIC_PENALTY = -1.0e12
-_original_validate_search_space = engine.validate_search_space
-_original_score = engine.score_against_baseline
-_original_regression = engine.regression_violations
 
 
 def corpus_tier(path: Path) -> str:
@@ -80,13 +77,15 @@ def strict_validate_search_space(
     *,
     allow_dataset_scope: bool = False,
     allow_case_scope: bool = False,
+    extra_objective_metrics: set[str] | None = None,
 ) -> None:
-    _original_validate_search_space(space)
+    engine.validate_search_space(space)
     metrics = engine.objective_metrics(space)
     names = [str(metric.get("name", "")) for metric in metrics]
     if len(names) != len(set(names)):
         raise ValueError("objective metric names must be unique")
-    unknown = set(names) - KNOWN_OBJECTIVE_METRICS
+    allowed_metrics = KNOWN_OBJECTIVE_METRICS | set(extra_objective_metrics or ())
+    unknown = set(names) - allowed_metrics
     if unknown:
         raise ValueError(f"unknown objective metrics: {sorted(unknown)}")
     if not allow_dataset_scope:
@@ -113,7 +112,7 @@ def strict_validate_search_space(
 
 def strict_score(space: dict[str, Any], baseline: dict[str, Any],
                  candidate: dict[str, Any]) -> tuple[float, list[dict[str, Any]]]:
-    score, deltas = _original_score(space, baseline, candidate)
+    score, deltas = engine.score_against_baseline(space, baseline, candidate)
     for metric in engine.objective_metrics(space):
         name = str(metric["name"])
         base = engine.summary_value(baseline, name)
@@ -133,7 +132,7 @@ def strict_score(space: dict[str, Any], baseline: dict[str, Any],
 
 def strict_regression(space: dict[str, Any], baseline: dict[str, Any],
                       candidate: dict[str, Any]) -> list[dict[str, Any]]:
-    violations = _original_regression(space, baseline, candidate)
+    violations = engine.regression_violations(space, baseline, candidate)
     for metric in engine.objective_metrics(space):
         name = str(metric["name"])
         base = engine.summary_value(baseline, name)
@@ -148,11 +147,22 @@ def strict_regression(space: dict[str, Any], baseline: dict[str, Any],
     return violations
 
 
-def install_fail_closed_guards() -> None:
-    engine.enforce_partition_independence = strict_partition_independence
-    engine.validate_search_space = strict_validate_search_space
-    engine.score_against_baseline = strict_score
-    engine.regression_violations = strict_regression
+def canonical_semantics(
+    *, extra_objective_metrics: set[str] | None = None
+) -> engine.IterationSemantics:
+    def validate(space: dict[str, Any]) -> None:
+        strict_validate_search_space(
+            space,
+            extra_objective_metrics=extra_objective_metrics,
+        )
+
+    return engine.IterationSemantics(
+        validate_search_space=validate,
+        enforce_partition_independence=strict_partition_independence,
+        score_against_baseline=strict_score,
+        regression_violations=strict_regression,
+        case_delta_gate_violations=engine.case_delta_gate_violations,
+    )
 
 
 def self_test() -> None:
@@ -163,7 +173,6 @@ def self_test() -> None:
     assert optimizer_role_allowed(authority, "validation-grade", "validation")
     assert not optimizer_role_allowed(authority, "validation-grade-blind", "validation")
     assert not optimizer_role_allowed(authority, "validation-grade-blind", "shadow")
-    install_fail_closed_guards()
     engine.self_test()
     space = {
         "schema_version": 1,
@@ -220,14 +229,13 @@ def self_test() -> None:
     print("authority-guarded tuning self-test: OK")
 
 
-def main() -> int:
+def main(semantics: engine.IterationSemantics | None = None) -> int:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--development-corpus", type=Path)
     parser.add_argument("--validation-corpus", type=Path)
     parser.add_argument("--shadow-corpus", type=Path)
     args, _ = parser.parse_known_args()
-    install_fail_closed_guards()
     if args.self_test:
         self_test()
         return 0
@@ -239,7 +247,7 @@ def main() -> int:
         args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(),
     )
-    return engine.main()
+    return engine.main(semantics=semantics or canonical_semantics())
 
 
 if __name__ == "__main__":

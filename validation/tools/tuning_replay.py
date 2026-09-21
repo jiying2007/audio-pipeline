@@ -42,9 +42,9 @@ def enforce_role(corpus: Path, role: str) -> str:
 def replay(repo_root: Path, processor: Path, corpus: Path, policy: Path,
            dataset_lock: Path, search_space: Path, baseline_path: Path,
            candidate_path: Path, role: str, output_dir: Path) -> dict:
-    guarded.install_fail_closed_guards()
+    semantics = guarded.canonical_semantics()
     space = json.loads(search_space.read_text(encoding="utf-8"))
-    guarded.strict_validate_search_space(space)
+    semantics.validate_search_space(space)
     tier = enforce_role(corpus, role)
     baseline = load_tuning(baseline_path)
     candidate = load_tuning(candidate_path)
@@ -58,8 +58,12 @@ def replay(repo_root: Path, processor: Path, corpus: Path, policy: Path,
     candidate_report, candidate_elapsed = engine.run_validation(
         repo_root, processor, corpus, policy, dataset_lock, candidate, candidate_report_path
     )
-    score, deltas = guarded.strict_score(space, baseline_report, candidate_report)
-    violations = guarded.strict_regression(space, baseline_report, candidate_report)
+    score, deltas = semantics.score_against_baseline(
+        space, baseline_report, candidate_report
+    )
+    violations = semantics.regression_violations(
+        space, baseline_report, candidate_report
+    )
     result = {
         "schema_version": 1,
         "authority": "non-shipping-independent-replay",
@@ -96,7 +100,8 @@ def replay(repo_root: Path, processor: Path, corpus: Path, policy: Path,
 
 
 def self_test() -> None:
-    guarded.install_fail_closed_guards()
+    semantics = guarded.canonical_semantics()
+    assert semantics.validate_search_space is not engine.validate_search_space
     authority = load_authority()
     assert optimizer_role_allowed(authority, "regression", "validation")
     assert optimizer_role_allowed(authority, "regression", "shadow")

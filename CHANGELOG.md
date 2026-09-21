@@ -1,3 +1,9 @@
+# 2.3.46
+
+- Replace tuning/research optimizer monkey-patching with an explicit immutable `IterationSemantics` profile. Canonical tuning, dataset-aware research, case-scoped research and hierarchical algorithm+tuning paths now pass validator/scoring/regression/case-gate semantics directly instead of mutating imported module functions.
+- Remove import-order/global-state coupling from `tuning_iteration.py`, the AEC-motion tuning and independent-replay wrappers, `research_optimizer_v3.py`, `research_optimizer_v5.py` and `research_joint_optimizer.py`. AEC-motion correlation metrics and dataset/case research extensions are explicit profile inputs; canonical tuning/replay continue to reject research-only scope fields.
+- Add deterministic assertions that constructing/running v3/v5 profiles leaves engine validators, case gates and core rankers unchanged. Candidate generation, ranking math, regression thresholds, DSP defaults and promotion authority are unchanged.
+
 # 2.3.45
 
 - Fail closed on unknown `objective` keys and unknown nested keys in `objective.metrics[]` / `objective.case_delta_gates[]`, and require each metric's schema-required base fields. Misspellings such as `minimum_improvements_score`, `dataset` for `datasets`, or `case_id` for `case_ids` can no longer be silently ignored or replaced by execution defaults while the report still describes the intended search.

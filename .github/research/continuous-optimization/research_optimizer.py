@@ -159,7 +159,10 @@ def rank_development(space: dict[str, Any], candidates: list[dict[str, Any]],
                      units: list[dict[str, Any]], matrix: dict[str, dict[str, dict[str, Any]]],
                      source_sha: str, hypothesis_id: str, registry: dict[str, Any],
                      minimum_score: float, minimum_unit_score: float,
-                     maximum_pareto: int) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+                     maximum_pareto: int, *,
+                     semantics: engine.IterationSemantics | None = None,
+                     ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    semantics = semantics or tuning_iteration.canonical_semantics()
     dev_units = [unit for unit in units if unit["role"] == "development"]
     if not dev_units:
         raise ValueError("development units required")
@@ -175,9 +178,15 @@ def rank_development(space: dict[str, Any], candidates: list[dict[str, Any]],
             unit_id = unit["evaluation_id"]
             base_report = matrix[baseline["candidate_id"]][unit_id]
             candidate_report = matrix[candidate["candidate_id"]][unit_id]
-            score, deltas = engine.score_against_baseline(space, base_report, candidate_report)
-            _case_summary, case_violations = engine.case_delta_gate_violations(space, base_report, candidate_report)
-            metric_violations = engine.regression_violations(space, base_report, candidate_report)
+            score, deltas = semantics.score_against_baseline(
+                space, base_report, candidate_report
+            )
+            _case_summary, case_violations = semantics.case_delta_gate_violations(
+                space, base_report, candidate_report
+            )
+            metric_violations = semantics.regression_violations(
+                space, base_report, candidate_report
+            )
             unit_scores.append(float(score))
             for delta in deltas:
                 value = delta.get("directed_delta")
@@ -252,14 +261,17 @@ def _report_binding(path: Path, report: dict[str, Any]) -> dict[str, Any]:
 
 
 def execute(spec: dict[str, Any], *, repo_root: Path, processor: Path,
-            registry_path: Path, output_dir: Path) -> dict[str, Any]:
-    tuning_iteration.install_fail_closed_guards()
+            registry_path: Path, output_dir: Path,
+            semantics: engine.IterationSemantics | None = None,
+            ranker: Any = None) -> dict[str, Any]:
+    semantics = semantics or tuning_iteration.canonical_semantics()
+    ranker = ranker or rank_development
     registry = dataset_registry.load_registry(registry_path, repo_root)
     units = validate_run_spec(spec, registry, repo_root)
     source_sha = str(spec["source_sha"])
     search_space_path = _safe_path(repo_root, str(spec["search_space"]))
     space = json.loads(search_space_path.read_text(encoding="utf-8"))
-    engine.validate_search_space(space)
+    semantics.validate_search_space(space)
     candidates = engine.generate_candidates(space)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -275,11 +287,12 @@ def execute(spec: dict[str, Any], *, repo_root: Path, processor: Path,
             report_paths[(candidate["candidate_id"], unit["evaluation_id"])] = path
 
     policy = spec["policy"]
-    selected, ranking, frontier = rank_development(
+    selected, ranking, frontier = ranker(
         space, candidates, units, matrix, source_sha, str(spec["hypothesis_id"]), registry,
         float(policy["minimum_development_score"]),
         float(policy["minimum_development_unit_score"]),
         int(policy["maximum_pareto_candidates"]),
+        semantics=semantics,
     )
     baseline = candidates[0]
     selected_candidate = next(item for item in candidates if item["candidate_id"] == selected["candidate_id"])
@@ -297,8 +310,12 @@ def execute(spec: dict[str, Any], *, repo_root: Path, processor: Path,
         else:
             candidate_path = role_dir / "candidate.json"
             candidate_report = _evaluate(repo_root, processor, unit, selected_candidate["tuning"], candidate_path)
-        case_summary, case_violations = engine.case_delta_gate_violations(space, baseline_report, candidate_report)
-        violations = engine.regression_violations(space, baseline_report, candidate_report) + case_violations
+        case_summary, case_violations = semantics.case_delta_gate_violations(
+            space, baseline_report, candidate_report
+        )
+        violations = semantics.regression_violations(
+            space, baseline_report, candidate_report
+        ) + case_violations
         if baseline_report.get("validation_result") != "PASS":
             violations.append({"gate": "baseline_health", "actual": baseline_report.get("validation_result")})
         if not same_as_baseline and candidate_report.get("validation_result") != "PASS":
@@ -378,7 +395,6 @@ def execute(spec: dict[str, Any], *, repo_root: Path, processor: Path,
 
 
 def self_test() -> None:
-    tuning_iteration.install_fail_closed_guards()
     repo_root = Path(__file__).resolve().parents[3]
     default_registry = _safe_path(repo_root, str(DEFAULT_REGISTRY))
     dataset_registry.load_registry(default_registry, repo_root)
@@ -432,7 +448,10 @@ def self_test() -> None:
     print("research optimizer self-test: OK")
 
 
-def main() -> int:
+def main(
+    semantics: engine.IterationSemantics | None = None,
+    ranker: Any = None,
+) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--repo-root", type=Path, default=Path("."))
@@ -456,8 +475,15 @@ def main() -> int:
     spec = json.loads(run_spec.read_text(encoding="utf-8"))
     if os.environ.get("GITHUB_SHA") and spec.get("source_sha") != os.environ["GITHUB_SHA"]:
         raise SystemExit("run spec source_sha must equal GITHUB_SHA in hosted execution")
-    result = execute(spec, repo_root=root, processor=processor, registry_path=registry_path,
-                     output_dir=args.output_dir)
+    result = execute(
+        spec,
+        repo_root=root,
+        processor=processor,
+        registry_path=registry_path,
+        output_dir=args.output_dir,
+        semantics=semantics,
+        ranker=ranker,
+    )
     print(json.dumps({
         "decision": result["decision"], "status": result["status"],
         "selected": result["selected"]["research_candidate_id"],

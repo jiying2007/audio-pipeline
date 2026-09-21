@@ -34,6 +34,15 @@ EXPECTED_PATHS = {
 }
 EXPECTED_TASKS = {"I004", "I005", "I006", "I007", "I008", "I009", "P002"}
 FORBIDDEN_CONTINUOUS_TRIGGERS = ("workflow_call:", "workflow_run:", "schedule:", "push:")
+RESEARCH_FORBIDDEN_TRIGGERS = ("workflow_call:", "workflow_run:", "schedule:", "workflow_dispatch:")
+RESEARCH_AUTHORITY_FALSE_KEYS = (
+    "candidate_selection",
+    "tuning",
+    "automatic_main_mutation",
+    "shipping",
+    "hil",
+    "product_certification",
+)
 
 
 def require(ok: bool, message: str) -> None:
@@ -68,6 +77,30 @@ def validate_manifest(data: dict) -> None:
         require(str(r["path"]).startswith(".github/workflows/"), f"invalid workflow path: {r['path']}")
         require(SHA_RE.fullmatch(str(r["blob_sha"])) is not None, f"invalid blob SHA: {r['path']}")
         require(isinstance(r["reason"], str) and r["reason"], f"missing reason: {r['path']}")
+
+    research_records = data.get("research_workflows", [])
+    require(isinstance(research_records, list), "research_workflows must be a list")
+    seen_paths = {r["path"] for r in records}
+    seen_blobs = {r["blob_sha"] for r in records}
+    for r in research_records:
+        require(set(r) == {"path", "blob_sha", "investigation_id", "evidence", "reason"},
+                f"research retirement record fields drift: {r.get('path')}")
+        path = str(r["path"])
+        blob = str(r["blob_sha"])
+        investigation = r["investigation_id"]
+        evidence = r["evidence"]
+        require(path.startswith(".github/workflows/"), f"invalid research workflow path: {path}")
+        require(path not in seen_paths, f"duplicate retired workflow path: {path}")
+        require(SHA_RE.fullmatch(blob) is not None, f"invalid research workflow blob SHA: {path}")
+        require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
+        require(isinstance(investigation, str) and investigation,
+                f"research investigation id missing: {path}")
+        require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                f"research evidence path invalid: {path}")
+        require(isinstance(r["reason"], str) and r["reason"], f"missing research reason: {path}")
+        seen_paths.add(path)
+        seen_blobs.add(blob)
+
     require(data.get("authority_boundary") == {
         "shipping_source_changed": False,
         "release_changed": False,
@@ -121,6 +154,51 @@ def check(root: Path) -> dict:
                 f"retired workflow had a continuous/reusable trigger: {r['path']}")
         checked.append({"path": r["path"], "blob_sha": r["blob_sha"], "task_id": r["task_id"]})
 
+    research_checked = []
+    for r in data.get("research_workflows", []):
+        path = root / r["path"]
+        require(not path.exists(), f"retired research workflow was reintroduced: {r['path']}")
+        evidence_path = root / r["evidence"]
+        require(evidence_path.is_file(), f"research terminal evidence missing: {r['evidence']}")
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        require(evidence.get("investigation_id") == r["investigation_id"],
+                f"research investigation identity drift: {r['path']}")
+        require(evidence.get("candidate_budget") == 0,
+                f"retired research investigation regained candidate budget: {r['path']}")
+        status = evidence.get("status")
+        if status == "DIAGNOSTIC_ONLY":
+            predecessor = evidence.get("predecessor") or {}
+            require(predecessor.get("fresh_main_closed") is True,
+                    f"research diagnostic is not fresh-main closed: {r['path']}")
+        elif status == "CLOSED_DIAGNOSTIC_PLATEAU":
+            closure = evidence.get("fresh_main_closure") or {}
+            require(closure.get("fresh_main_closed") is True,
+                    f"research plateau is not fresh-main closed: {r['path']}")
+        else:
+            raise ValueError(f"research workflow is not terminal diagnostic evidence: {r['path']}={status}")
+
+        authority = evidence.get("output_authority") or {}
+        require(authority.get("research_diagnostic_only") is True,
+                f"retired research investigation lost diagnostic-only authority: {r['path']}")
+        for key in RESEARCH_AUTHORITY_FALSE_KEYS:
+            require(authority.get(key) is False,
+                    f"retired research investigation regained {key} authority: {r['path']}")
+
+        require(git("cat-file", "-t", r["blob_sha"]) == "blob",
+                f"historical research workflow blob missing: {r['path']}")
+        text = git("cat-file", "blob", r["blob_sha"])
+        on_block = extract_on_block(text)
+        require("pull_request:" in on_block and "push:" in on_block,
+                f"retired research workflow must preserve PR + fresh-main push lineage: {r['path']}")
+        require(not any(trigger in on_block for trigger in RESEARCH_FORBIDDEN_TRIGGERS),
+                f"retired research workflow had reusable/scheduled/manual trigger: {r['path']}")
+        research_checked.append({
+            "path": r["path"],
+            "blob_sha": r["blob_sha"],
+            "investigation_id": r["investigation_id"],
+            "evidence": r["evidence"],
+        })
+
     # A terminal research task must not regain a standalone Actions entry under its task prefix.
     # Reproducers/contracts/results stay in the repository; only the consumed orchestration entry is retired.
     for pattern in ("*.yml", "*.yaml"):
@@ -137,7 +215,9 @@ def check(root: Path) -> dict:
         "schema_version": 1,
         "result": "TERMINAL_WORKFLOW_RETIREMENT_PASS",
         "retired_workflows": len(checked),
+        "retired_research_workflows": len(research_checked),
         "tasks": sorted(EXPECTED_TASKS),
+        "research_investigations": sorted(item["investigation_id"] for item in research_checked),
         "software_release": data["software_release"],
         "release_source_sha": data["release_source_sha"],
         "product_qualification": "DEFERRED_BY_SCOPE",
@@ -177,6 +257,7 @@ def self_test() -> None:
              "terminal_evidence": "x.json", "reason": "terminal"}
             for index, (p, t) in enumerate(pairs)
         ],
+        "research_workflows": [],
         "authority_boundary": {
             "shipping_source_changed": False,
             "release_changed": False,
@@ -187,6 +268,15 @@ def self_test() -> None:
         },
     }
     validate_manifest(sample)
+    research_sample = json.loads(json.dumps(sample))
+    research_sample["research_workflows"] = [{
+        "path": ".github/workflows/research-example.yml",
+        "blob_sha": "f" * 40,
+        "investigation_id": "research-example-v1",
+        "evidence": ".github/research/example.json",
+        "reason": "terminal research diagnostic",
+    }]
+    validate_manifest(research_sample)
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
     assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
     assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")

@@ -9,7 +9,6 @@ on:
       - '.github/research/continuous-optimization/stage_source_vad_public_confirmation.py'
       - 'tests/validation/data/ami_vad_confirmation_es2006a.lock.json'
       - '.github/workflows/research-stage-vad-public-confirmation.yml'
-      - '.github/program/maintenance_workflow_contract.py'
   workflow_dispatch:
 
 permissions:

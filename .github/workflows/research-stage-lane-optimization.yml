@@ -7,7 +7,6 @@ on:
       - '.github/research/continuous-optimization/stage-lanes-v1.json'
       - '.github/research/continuous-optimization/*_stage_lane_v1.py'
       - '.github/workflows/research-stage-lane-optimization.yml'
-      - '.github/program/maintenance_workflow_contract.py'
       - 'validation/tuning/search-spaces/ns-stage-v1.json'
       - 'validation/tuning/search-spaces/agc-stage-v1.json'
       - 'validation/tools/build_ns_tuning_corpus.py'

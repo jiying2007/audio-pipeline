@@ -17,11 +17,12 @@ import run_validation_engine as engine
 import stage_profile_support
 from authority import corpus_tiers, load_authority, tier_spec
 
-# Canonical render-correlation search is installed once at the authority-guarded
-# entrypoint. The native helper selects the global lag only; final metric scores
-# remain run_validation_engine.normalized_corr(..., stride=4).
-render_corr_exact.install(engine)
-stage_profile_support.install(engine)
+def canonical_evaluation_semantics() -> engine.EvaluationSemantics:
+    """Build canonical evaluator extensions without mutating engine globals."""
+    return engine.EvaluationSemantics(
+        invoke=stage_profile_support.build_invoke(engine),
+        max_abs_corr=render_corr_exact.build_max_abs_corr(engine.normalized_corr),
+    )
 
 
 def validate_corpus_shape(corpus: dict, authority: dict) -> None:
@@ -85,8 +86,16 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict],
 
 def self_test() -> None:
     authority = load_authority()
+    base_invoke = engine.invoke
+    base_corr = engine.max_abs_corr
+    semantics = canonical_evaluation_semantics()
+    assert engine.invoke is base_invoke
+    assert engine.max_abs_corr is base_corr
     render_corr_exact.self_test(engine.normalized_corr)
+    assert semantics.max_abs_corr([1, -2, 3, -4] * 64, [1, -2, 3, -4] * 64, 16000) > 0.99
     engine.self_test()
+    assert engine.invoke is base_invoke
+    assert engine.max_abs_corr is base_corr
     research = {
         "schema_version": 1,
         "corpus_id": "research-dev",
@@ -147,7 +156,13 @@ def main() -> int:
     corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     validate_corpus_shape(corpus, authority)
-    cases = [engine.evaluate_case(args.processor, args.corpus, case) for case in corpus["cases"]]
+    semantics = canonical_evaluation_semantics()
+    cases = [
+        engine.evaluate_case(
+            args.processor, args.corpus, case, semantics=semantics
+        )
+        for case in corpus["cases"]
+    ]
     summary, aggregate_violations = policy_violations(policy, corpus, cases, authority)
     case_violations = [
         {"case_id": case["case_id"], "violations": case["violations"]}

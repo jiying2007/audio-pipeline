@@ -43,6 +43,14 @@ RESEARCH_AUTHORITY_FALSE_KEYS = (
     "hil",
     "product_certification",
 )
+SOURCE_CANDIDATE_AUTHORITY_FALSE_KEYS = (
+    "shipping_authority",
+    "target_execution_authority",
+    "hil_authority",
+    "product_certification_authority",
+    "source_merge_authority",
+    "automatic_main_mutation",
+)
 
 
 def require(ok: bool, message: str) -> None:
@@ -98,6 +106,31 @@ def validate_manifest(data: dict) -> None:
         require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
                 f"research evidence path invalid: {path}")
         require(isinstance(r["reason"], str) and r["reason"], f"missing research reason: {path}")
+        seen_paths.add(path)
+        seen_blobs.add(blob)
+
+    source_candidate_records = data.get("source_candidate_workflows", [])
+    require(isinstance(source_candidate_records, list),
+            "source_candidate_workflows must be a list")
+    for r in source_candidate_records:
+        require(set(r) == {"path", "blob_sha", "candidate_id", "evidence", "reason"},
+                f"source-candidate retirement record fields drift: {r.get('path')}")
+        path = str(r["path"])
+        blob = str(r["blob_sha"])
+        candidate_id = r["candidate_id"]
+        evidence = r["evidence"]
+        require(path.startswith(".github/workflows/"),
+                f"invalid source-candidate workflow path: {path}")
+        require(path not in seen_paths, f"duplicate retired workflow path: {path}")
+        require(SHA_RE.fullmatch(blob) is not None,
+                f"invalid source-candidate workflow blob SHA: {path}")
+        require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
+        require(isinstance(candidate_id, str) and candidate_id,
+                f"source-candidate id missing: {path}")
+        require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                f"source-candidate evidence path invalid: {path}")
+        require(isinstance(r["reason"], str) and r["reason"],
+                f"missing source-candidate reason: {path}")
         seen_paths.add(path)
         seen_blobs.add(blob)
 
@@ -199,6 +232,46 @@ def check(root: Path) -> dict:
             "evidence": r["evidence"],
         })
 
+    source_candidate_checked = []
+    for r in data.get("source_candidate_workflows", []):
+        path = root / r["path"]
+        require(not path.exists(),
+                f"retired source-candidate workflow was reintroduced: {r['path']}")
+        evidence_path = root / r["evidence"]
+        require(evidence_path.is_file(),
+                f"source-candidate terminal evidence missing: {r['evidence']}")
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        require(evidence.get("candidate_id") == r["candidate_id"],
+                f"source-candidate identity drift: {r['path']}")
+        require(evidence.get("status") == "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT",
+                f"source-candidate is not terminally rejected: {r['path']}")
+        require(evidence.get("terminal_candidate") is True,
+                f"source-candidate lost terminal flag: {r['path']}")
+        require(evidence.get("candidate_budget") == 0,
+                f"source-candidate regained candidate budget: {r['path']}")
+        require(evidence.get("confirmation_limit") == 0,
+                f"source-candidate regained confirmation budget: {r['path']}")
+        authority = evidence.get("output_authority") or {}
+        for key in SOURCE_CANDIDATE_AUTHORITY_FALSE_KEYS:
+            require(authority.get(key) is False,
+                    f"source-candidate regained {key}: {r['path']}")
+
+        require(git("cat-file", "-t", r["blob_sha"]) == "blob",
+                f"historical source-candidate workflow blob missing: {r['path']}")
+        text = git("cat-file", "blob", r["blob_sha"])
+        on_block = extract_on_block(text)
+        require("pull_request:" in on_block and "workflow_dispatch:" in on_block,
+                f"retired source-candidate workflow must preserve PR + manual lineage: {r['path']}")
+        for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:"):
+            require(forbidden not in on_block,
+                    f"retired source-candidate workflow had forbidden trigger {forbidden}: {r['path']}")
+        source_candidate_checked.append({
+            "path": r["path"],
+            "blob_sha": r["blob_sha"],
+            "candidate_id": r["candidate_id"],
+            "evidence": r["evidence"],
+        })
+
     # A terminal research task must not regain a standalone Actions entry under its task prefix.
     # Reproducers/contracts/results stay in the repository; only the consumed orchestration entry is retired.
     for pattern in ("*.yml", "*.yaml"):
@@ -216,8 +289,10 @@ def check(root: Path) -> dict:
         "result": "TERMINAL_WORKFLOW_RETIREMENT_PASS",
         "retired_workflows": len(checked),
         "retired_research_workflows": len(research_checked),
+        "retired_source_candidate_workflows": len(source_candidate_checked),
         "tasks": sorted(EXPECTED_TASKS),
         "research_investigations": sorted(item["investigation_id"] for item in research_checked),
+        "source_candidates": sorted(item["candidate_id"] for item in source_candidate_checked),
         "software_release": data["software_release"],
         "release_source_sha": data["release_source_sha"],
         "product_qualification": "DEFERRED_BY_SCOPE",
@@ -258,6 +333,7 @@ def self_test() -> None:
             for index, (p, t) in enumerate(pairs)
         ],
         "research_workflows": [],
+        "source_candidate_workflows": [],
         "authority_boundary": {
             "shipping_source_changed": False,
             "release_changed": False,
@@ -277,6 +353,15 @@ def self_test() -> None:
         "reason": "terminal research diagnostic",
     }]
     validate_manifest(research_sample)
+    source_sample = json.loads(json.dumps(sample))
+    source_sample["source_candidate_workflows"] = [{
+        "path": ".github/workflows/research-source-candidate-example.yml",
+        "blob_sha": "e" * 40,
+        "candidate_id": "source-candidate-example-v1",
+        "evidence": ".github/research/source-candidate-example-closure.json",
+        "reason": "terminal source candidate",
+    }]
+    validate_manifest(source_sample)
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
     assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
     assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")

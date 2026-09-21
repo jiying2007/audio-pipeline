@@ -560,7 +560,18 @@ def self_test() -> None:
     semantics.max_abs_corr = fake.max_abs_corr
     evaluate_quality = build_evaluate_case(fake, fake.evaluate_case)
     quality_policy = build_policy_violations(fake.policy_violations)
-    assert quality_policy({}, {}, []) == ({}, [])
+    quality_summary, quality_violations = quality_policy({}, {}, [])
+    assert not quality_violations
+    assert set(quality_summary) == {
+        "p10_near_projection_gain_db",
+        "p10_interference_projection_attenuation_db",
+        "p10_interference_corr_reduction",
+        "p90_erle_convergence_ms",
+        "p90_erle_recovery_ms",
+        "p90_vad_onset_delay_ms",
+        "p90_vad_release_delay_ms",
+    }
+    assert all(value is None for value in quality_summary.values())
     probe_case = {
         "case_id": "quality-single-invoke",
         "split": "validation",

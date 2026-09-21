@@ -101,15 +101,32 @@ def validate_search_space(space: dict[str, Any]) -> None:
     params = space.get("parameters")
     if not isinstance(params, dict) or not params:
         raise ValueError("parameters must be a non-empty object")
+    strategy = space["strategy"]
+    if strategy not in {"one-at-a-time", "cartesian", "paired"}:
+        raise ValueError("strategy must be one-at-a-time, cartesian or paired")
     for key, values in params.items():
         if key not in TUNING_KEYS or not isinstance(values, list) or not values:
             raise ValueError(f"invalid parameter grid for {key}")
         for value in values:
-            probe = dict(baseline)
-            probe[key] = value
-            canonical_tuning(probe)
-    if space["strategy"] not in {"one-at-a-time", "cartesian"}:
-        raise ValueError("strategy must be one-at-a-time or cartesian")
+            if strategy == "paired":
+                # Paired axes are validated as a complete tuple below. Checking
+                # one axis against the baseline would reject legal coupled points
+                # whose limiter is intentionally below the baseline AGC target.
+                canonical_tuning({key: value})
+            else:
+                probe = dict(baseline)
+                probe[key] = value
+                canonical_tuning(probe)
+    if strategy == "paired":
+        lengths = {len(values) for values in params.values()}
+        if len(lengths) != 1:
+            raise ValueError("paired strategy requires equal-length parameter grids")
+        keys = [key for key in TUNING_KEYS if key in params]
+        grids = [params[key] for key in keys]
+        for values in zip(*grids):
+            candidate = dict(baseline)
+            candidate.update(dict(zip(keys, values)))
+            canonical_tuning(candidate)
     maximum = int(space["max_candidates"])
     if maximum < 1 or maximum > 256:
         raise ValueError("max_candidates must be 1..256")
@@ -180,13 +197,23 @@ def generate_candidates(space: dict[str, Any]) -> list[dict[str, Any]]:
                 candidate = dict(baseline)
                 candidate[key] = float(value)
                 add(candidate, f"{key}={value}")
-    else:
+    elif strategy == "cartesian":
         keys = [key for key in TUNING_KEYS if key in space["parameters"]]
         grids = [space["parameters"][key] for key in keys]
         for values in itertools.product(*grids):
             candidate = dict(baseline)
             candidate.update(dict(zip(keys, values)))
             add(candidate, "cartesian")
+    else:
+        keys = [key for key in TUNING_KEYS if key in space["parameters"]]
+        grids = [space["parameters"][key] for key in keys]
+        for index, values in enumerate(zip(*grids), start=1):
+            candidate = dict(baseline)
+            candidate.update(dict(zip(keys, values)))
+            label = "paired[" + str(index) + "]:" + ",".join(
+                f"{key}={value}" for key, value in zip(keys, values)
+            )
+            add(candidate, label)
 
     maximum = int(space["max_candidates"])
     if len(candidates) > maximum:
@@ -200,6 +227,75 @@ def adjacent_development_sensitivity(space: dict[str, Any], selected: dict[str, 
     by_id = {str(item["candidate_id"]): item for item in dev_results}
     neighbors: list[dict[str, Any]] = []
     unobserved_neighbors: list[dict[str, Any]] = []
+    if space["strategy"] == "paired":
+        keys = [key for key in TUNING_KEYS if key in space["parameters"]]
+        grids = [space["parameters"][key] for key in keys]
+        path: list[dict[str, float]] = [canonical_tuning(space["baseline"])]
+        path_ids = {tuning_id(path[0])}
+        for values in zip(*grids):
+            candidate = dict(path[0])
+            candidate.update(dict(zip(keys, values)))
+            canonical = canonical_tuning(candidate)
+            ident = tuning_id(canonical)
+            if ident not in path_ids:
+                path_ids.add(ident)
+                path.append(canonical)
+        selected_id = tuning_id(selected_tuning)
+        selected_index = next(
+            (index for index, tuning in enumerate(path)
+             if tuning_id(tuning) == selected_id),
+            None,
+        )
+        if selected_index is None:
+            raise ValueError("selected tuning is outside the paired search path")
+        for neighbor_index in (selected_index - 1, selected_index + 1):
+            if neighbor_index < 0 or neighbor_index >= len(path):
+                continue
+            neighbor_tuning = path[neighbor_index]
+            neighbor_id = tuning_id(neighbor_tuning)
+            direction = "previous" if neighbor_index < selected_index else "next"
+            item = by_id.get(neighbor_id)
+            if item is None:
+                unobserved_neighbors.append({
+                    "tuning_id": neighbor_id,
+                    "parameter": "paired",
+                    "value": neighbor_index,
+                    "paired_index": neighbor_index,
+                    "direction": direction,
+                    "tuning": neighbor_tuning,
+                    "reason": "not_evaluated_in_development_search",
+                })
+                continue
+            compliant = (
+                item.get("validation_result") == "PASS"
+                and not item.get("case_delta_violations", [])
+            )
+            neighbors.append({
+                "candidate_id": item["candidate_id"],
+                "label": item["label"],
+                "parameter": "paired",
+                "value": neighbor_index,
+                "paired_index": neighbor_index,
+                "direction": direction,
+                "tuning": neighbor_tuning,
+                "score": item["score"],
+                "validation_result": item["validation_result"],
+                "compliant": compliant,
+                "case_delta_summary": item["case_delta_summary"],
+                "case_delta_violations": item["case_delta_violations"],
+            })
+        neighbor_slot_count = len(neighbors) + len(unobserved_neighbors)
+        return {
+            "neighbor_count": len(neighbors),
+            "neighbor_slot_count": neighbor_slot_count,
+            "evaluated_neighbor_count": len(neighbors),
+            "unobserved_neighbor_count": len(unobserved_neighbors),
+            "complete_neighbor_coverage": not unobserved_neighbors,
+            "compliant_neighbor_count": sum(bool(item["compliant"]) for item in neighbors),
+            "violating_neighbor_count": sum(not bool(item["compliant"]) for item in neighbors),
+            "neighbors": neighbors,
+            "unobserved_neighbors": unobserved_neighbors,
+        }
     for key in TUNING_KEYS:
         if key not in space.get("parameters", {}):
             continue
@@ -769,6 +865,63 @@ def self_test() -> None:
     assert ns_neighbor["direction"] == "lower"
     assert ns_neighbor["compliant"] is False
     assert ns_neighbor["case_delta_violations"][0]["gate"] == "case_delta_regression"
+    paired_space = json.loads(json.dumps(space))
+    paired_space["strategy"] = "paired"
+    paired_space["max_candidates"] = 4
+    paired_space["baseline"] = {
+        "aec_mu": 0.24, "ns_floor": 0.07,
+        "agc_target_dbfs": -16.0, "limiter_dbfs": -14.0,
+    }
+    paired_space["parameters"] = {
+        "agc_target_dbfs": [-17.0, -18.0, -19.0],
+        "limiter_dbfs": [-15.0, -16.0, -17.0],
+    }
+    paired_candidates = generate_candidates(paired_space)
+    assert len(paired_candidates) == 4
+    assert paired_candidates[1]["tuning"]["agc_target_dbfs"] == -17.0
+    assert paired_candidates[1]["tuning"]["limiter_dbfs"] == -15.0
+    assert paired_candidates[3]["tuning"]["agc_target_dbfs"] == -19.0
+    assert paired_candidates[3]["tuning"]["limiter_dbfs"] == -17.0
+    paired_results = [{
+        **candidate,
+        "score": 1.0,
+        "validation_result": "PASS",
+        "case_delta_summary": [],
+        "case_delta_violations": [],
+    } for candidate in paired_candidates]
+    paired_results[3]["case_delta_violations"] = [{"gate": "case_delta_regression"}]
+    paired_sensitivity = adjacent_development_sensitivity(
+        paired_space, paired_results[2], paired_results
+    )
+    assert paired_sensitivity["neighbor_slot_count"] == 2
+    assert paired_sensitivity["evaluated_neighbor_count"] == 2
+    assert paired_sensitivity["unobserved_neighbor_count"] == 0
+    assert paired_sensitivity["complete_neighbor_coverage"] is True
+    assert paired_sensitivity["compliant_neighbor_count"] == 1
+    assert paired_sensitivity["violating_neighbor_count"] == 1
+    assert {item["direction"] for item in paired_sensitivity["neighbors"]} == {
+        "previous", "next"
+    }
+    assert all(item["parameter"] == "paired" for item in paired_sensitivity["neighbors"])
+    unequal_pairs = json.loads(json.dumps(paired_space))
+    unequal_pairs["parameters"]["limiter_dbfs"].pop()
+    try:
+        validate_search_space(unequal_pairs)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("paired strategy must reject unequal parameter lengths")
+    illegal_pair = json.loads(json.dumps(paired_space))
+    illegal_pair["parameters"] = {
+        "agc_target_dbfs": [-15.0],
+        "limiter_dbfs": [-15.0],
+    }
+    try:
+        validate_search_space(illegal_pair)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("paired strategy must validate complete coupled tunings")
     ota_results = [{
         **candidate,
         "score": 1.0,

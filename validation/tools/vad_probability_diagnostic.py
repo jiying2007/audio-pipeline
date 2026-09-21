@@ -20,7 +20,7 @@ from typing import Sequence
 import run_validation_engine as engine
 import stage_profile_support
 
-stage_profile_support.install(engine)
+STAGE_INVOKE = stage_profile_support.build_invoke(engine)
 
 DECISION_THRESHOLD = 0.45
 OPERATING_THRESHOLDS = (0.35, 0.40, 0.42, 0.45, 0.50)
@@ -113,7 +113,7 @@ def diagnose(processor: Path, corpus_path: Path) -> dict:
             continue
         labels = engine.load_labels(labels_path)
         with tempfile.TemporaryDirectory(prefix="ap-vad-prob-") as temporary:
-            _, trace, _ = engine.invoke(processor, case, corpus_path, Path(temporary))
+            _, trace, _ = STAGE_INVOKE(processor, case, corpus_path, Path(temporary))
         cases.append({
             "case_id": case["case_id"],
             "scenario": case["scenario"],

@@ -115,6 +115,17 @@ through their existing stage-specific research workflows. Any change to shipping
 BF/VAD/AEC/NS behavior is release-bearing and requires its own promotion evidence;
 this release-neutral quality PR does not change those defaults.
 
+AGC/limiter searches need an additional scale-sensitive check. The generic
+regression objective can improve attenuation-oriented metrics while lowering the
+near-end signal as a whole, so an `ACOUSTIC_CANDIDATE` from that loop is not by
+itself evidence that the perceptual level trade is acceptable. The manual
+`audio-quality-agc-limiter-frontier-v1.json` search replays the same bounded
+paired AGC/limiter path through this ground-truth quality layer and reuses the
+existing `p10_near_projection_gain_db` objective/regression constraint. No new
+product loudness threshold is invented by that search: it asks the existing
+scale-sensitive quality contract whether the apparent gain survives target-level
+preservation. The result remains development/research authority only.
+
 ## Promotion ladder
 
 ```text

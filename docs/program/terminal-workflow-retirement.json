@@ -136,11 +136,32 @@
   },
   "research_workflows": [
     {
+      "path": ".github/workflows/research-pure-far-activity-ratio-v1.yml",
+      "blob_sha": "95b64d7897cba036e21b0f634449a3299d9c3b4c",
+      "investigation_id": "pure-far-activity-ratio-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-activity-ratio-v1.json",
+      "reason": "fresh-main-closed diagnostic-only run with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
       "path": ".github/workflows/research-pure-far-dtd-evidence-closure-v1.yml",
       "blob_sha": "c289d217920a3dbfd1b8a6bab9dd639674ec481e",
       "investigation_id": "pure-far-dtd-evidence-closure-v1",
       "evidence": ".github/research/continuous-optimization/development-v3/pure-far-dtd-evidence-closure-v1.json",
       "reason": "the pure-far diagnostic program is fresh-main CLOSED_DIAGNOSTIC_PLATEAU with candidate budget zero; the closure workflow is consumed while exact reproducer scripts, terminal JSON evidence and historical workflow blob remain preserved"
+    },
+    {
+      "path": ".github/workflows/research-real-doubletalk-rating-v1.yml",
+      "blob_sha": "618cf4704ae22b039bc8d23f8baa9a14cd4d133b",
+      "investigation_id": "real-doubletalk-rating-interval-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/real-doubletalk-rating-v1.json",
+      "reason": "fresh-main-closed diagnostic-only run with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
+      "path": ".github/workflows/research-same-guid-farend-doubletalk-paired-v1.yml",
+      "blob_sha": "e41f3ab44049956eb5e22347ea567000dbcdaba4",
+      "investigation_id": "same-guid-farend-doubletalk-paired-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json",
+      "reason": "fresh-main-closed diagnostic-only run with zero candidate budget; reproducer and sealed evidence remain committed"
     }
   ]
 }

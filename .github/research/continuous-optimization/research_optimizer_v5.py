@@ -14,19 +14,11 @@ _ORIGINAL_CASE_DELTA = engine.case_delta_gate_violations
 
 
 def _case_ids(gate: dict[str, Any]) -> list[str] | None:
-    raw = gate.get("case_ids")
-    if raw is None:
-        return None
-    if not isinstance(raw, list) or not raw:
-        raise ValueError("case delta gate case_ids must be a non-empty list")
-    case_ids = [str(item) for item in raw]
-    if any(not item for item in case_ids) or len(case_ids) != len(set(case_ids)):
-        raise ValueError("case delta gate case_ids must contain unique non-empty ids")
-    return case_ids
+    return engine.gate_case_ids(gate)
 
 
 def validate_case_scopes(space: dict[str, Any]) -> None:
-    v3.dataset_aware_validate_search_space(space)
+    v3.dataset_aware_validate_search_space(space, allow_case_scope=True)
     for gate in space.get("objective", {}).get("case_delta_gates", []):
         _case_ids(gate)
 
@@ -140,6 +132,14 @@ def self_test() -> None:
         },
     }
     engine.validate_search_space(space)
+    bad_case_ids = json.loads(json.dumps(space))
+    bad_case_ids["objective"]["case_delta_gates"][0]["case_ids"] = [1]
+    try:
+        engine.validate_search_space(bad_case_ids)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("case-scoped validator must reject non-string case ids")
     baseline = {
         "validation_result": "PASS",
         "summary": {"pass_rate": 1.0},

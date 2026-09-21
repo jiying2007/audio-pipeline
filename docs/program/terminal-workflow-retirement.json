@@ -171,6 +171,20 @@
       "reason": "fresh-main-closed diagnostic-only cross-dataset replication with zero candidate budget; reproducer and sealed evidence remain committed"
     },
     {
+      "path": ".github/workflows/research-pure-far-multipath-coherence-v1.yml",
+      "blob_sha": "90e72e558d1ad6c3ba88b321286d6d14722861dd",
+      "investigation_id": "pure-far-multipath-coherence-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-multipath-coherence-v1.json",
+      "reason": "fresh-main-closed diagnostic-only multipath coherence investigation with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
+      "path": ".github/workflows/research-pure-far-scale-route-decomposition-v1.yml",
+      "blob_sha": "fa2cf3d0052582d239a008dfb55978fed6a9dea8",
+      "investigation_id": "pure-far-scale-route-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-scale-route-decomposition-v1.json",
+      "reason": "fresh-main-closed diagnostic-only scale/route decomposition with zero candidate budget; reproducer and sealed evidence remain committed"
+    },
+    {
       "path": ".github/workflows/research-pure-far-source-coherent-excess-v1.yml",
       "blob_sha": "04eb6765876023037c910986d43af81e4f69fe1c",
       "investigation_id": "pure-far-source-coherent-excess-v1",

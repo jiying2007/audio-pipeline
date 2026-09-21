@@ -289,7 +289,11 @@
         "vad-confidence-tiered-hold-v1": ".github/research/continuous-optimization/confirmations/vad-confidence-tiered-hold-v1-closure.json",
         "agc-error-adaptive-release-v1": ".github/research/continuous-optimization/confirmations/agc-error-adaptive-release-v1-closure.json"
       },
-      "reason": "the VAD/AGC source-candidate round consumed its fresh evaluation and independent confirmation authorities; AGC was terminally rejected at independent confirmation, VAD was terminally rejected at ES2006a public confirmation, and the round closure records no surviving source candidate"
+      "reason": "the VAD/AGC source-candidate round consumed its fresh evaluation and independent confirmation authorities; AGC was terminally rejected at independent confirmation, VAD was terminally rejected at ES2006a public confirmation, and the round closure records no surviving source candidate",
+      "candidate_contracts": {
+        "vad-confidence-tiered-hold-v1": ".github/research/continuous-optimization/source-candidates/vad-confidence-tiered-hold-v1.json",
+        "agc-error-adaptive-release-v1": ".github/research/continuous-optimization/source-candidates/agc-error-adaptive-release-v1.json"
+      }
     }
   ]
 }

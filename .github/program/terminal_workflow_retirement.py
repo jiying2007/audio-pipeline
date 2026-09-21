@@ -166,7 +166,8 @@ def validate_manifest(data: dict) -> None:
     require(isinstance(round_records, list), "source_candidate_rounds must be a list")
     for r in round_records:
         require(set(r) == {
-            "round_id", "workflows", "round_closure", "candidate_closures", "reason"
+            "round_id", "workflows", "round_closure", "candidate_contracts",
+            "candidate_closures", "reason"
         }, f"source-candidate round fields drift: {r.get('round_id')}")
         require(isinstance(r["round_id"], str) and r["round_id"],
                 "source-candidate round id missing")
@@ -202,11 +203,17 @@ def validate_manifest(data: dict) -> None:
         require(isinstance(r["round_closure"], str)
                 and r["round_closure"].startswith(".github/research/"),
                 f"invalid source-candidate round closure: {r['round_id']}")
-        closures = r["candidate_closures"]
-        require(isinstance(closures, dict) and set(closures) == {
+        contracts = r["candidate_contracts"]
+        require(isinstance(contracts, dict) and set(contracts) == {
             "vad-confidence-tiered-hold-v1",
             "agc-error-adaptive-release-v1",
-        }, f"unexpected source-candidate closure set: {r['round_id']}")
+        }, f"unexpected source-candidate contract set: {r['round_id']}")
+        for candidate_id, evidence in contracts.items():
+            require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                    f"invalid candidate contract path: {candidate_id}")
+        closures = r["candidate_closures"]
+        require(isinstance(closures, dict) and set(closures) == set(contracts),
+                f"source-candidate contract/closure set mismatch: {r['round_id']}")
         for candidate_id, evidence in closures.items():
             require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
                     f"invalid candidate closure path: {candidate_id}")
@@ -561,21 +568,41 @@ def check(root: Path) -> dict:
             require((round_closure.get("authority") or {}).get(key) is False,
                     f"source-candidate round regained {key}: {round_id}")
 
+        contracts = {}
+        for candidate_id, relative in r["candidate_contracts"].items():
+            candidate_path = root / relative
+            require(candidate_path.is_file(),
+                    f"canonical candidate contract missing: {relative}")
+            contracts[candidate_id] = json.loads(candidate_path.read_text(encoding="utf-8"))
         closures = {}
         for candidate_id, relative in r["candidate_closures"].items():
             candidate_path = root / relative
             require(candidate_path.is_file(),
                     f"candidate terminal closure missing: {relative}")
             closures[candidate_id] = json.loads(candidate_path.read_text(encoding="utf-8"))
+        agc_contract = contracts["agc-error-adaptive-release-v1"]
+        vad_contract = contracts["vad-confidence-tiered-hold-v1"]
         agc_closure = closures["agc-error-adaptive-release-v1"]
         vad_closure = closures["vad-confidence-tiered-hold-v1"]
-        for candidate_id, candidate_closure in closures.items():
+        for candidate_id, candidate_contract in contracts.items():
+            candidate_closure = closures[candidate_id]
+            require(candidate_contract.get("candidate_id") == candidate_id
+                    and candidate_contract.get("status") == "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT"
+                    and candidate_contract.get("terminal_candidate") is True
+                    and candidate_contract.get("candidate_budget") == 0
+                    and candidate_contract.get("confirmation_limit") == 0,
+                    f"canonical candidate contract is not terminal: {candidate_id}")
+            require(candidate_contract.get("closure_path") == r["candidate_closures"][candidate_id],
+                    f"canonical candidate closure path drift: {candidate_id}")
             require(candidate_closure.get("candidate_id") == candidate_id
                     and candidate_closure.get("status") == "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT"
                     and candidate_closure.get("terminal_candidate") is True
                     and candidate_closure.get("candidate_budget") == 0
                     and candidate_closure.get("decision") == "SOURCE_CANDIDATE_REJECT",
                     f"candidate closure is not terminal: {candidate_id}")
+            for key in ("automatic_main_mutation", "shipping", "hil", "product_certification"):
+                require((candidate_contract.get("promotion") or {}).get(key) is False,
+                        f"canonical candidate regained {key}: {candidate_id}")
             for key in SOURCE_CANDIDATE_AUTHORITY_FALSE_KEYS:
                 require((candidate_closure.get("output_authority") or {}).get(key) is False,
                         f"candidate closure regained {key}: {candidate_id}")
@@ -595,6 +622,31 @@ def check(root: Path) -> dict:
                 and vad_public_provenance.get("artifact_id") == public_artifact.get("id")
                 and vad_public_provenance.get("artifact_digest") == public_artifact.get("digest"),
                 f"VAD public terminal provenance drift: {round_id}")
+
+        agc_consumption = agc_contract.get("consumption") or {}
+        vad_consumption = vad_contract.get("consumption") or {}
+        require(agc_consumption.get("source_evaluation_run_id") == source_eval.get("run_id")
+                and agc_consumption.get("source_evaluation_artifact_id") == agc_eval.get("artifact_id")
+                and agc_consumption.get("source_evaluation_artifact_digest") == agc_eval.get("artifact_digest")
+                and agc_consumption.get("independent_confirmation_run_id") == confirmation.get("run_id")
+                and agc_consumption.get("independent_confirmation_artifact_id") == agc_confirm.get("artifact_id")
+                and agc_consumption.get("independent_confirmation_artifact_digest") == agc_confirm.get("artifact_digest")
+                and agc_consumption.get("fresh_source_evaluation_consumed") is True
+                and agc_consumption.get("independent_confirmation_consumed") is True,
+                f"AGC canonical consumption provenance drift: {round_id}")
+        require(vad_consumption.get("source_evaluation_run_id") == source_eval.get("run_id")
+                and vad_consumption.get("source_evaluation_artifact_id") == vad_eval.get("artifact_id")
+                and vad_consumption.get("source_evaluation_artifact_digest") == vad_eval.get("artifact_digest")
+                and vad_consumption.get("independent_synthetic_confirmation_run_id") == confirmation.get("run_id")
+                and vad_consumption.get("independent_synthetic_artifact_id") == vad_confirm.get("artifact_id")
+                and vad_consumption.get("independent_synthetic_artifact_digest") == vad_confirm.get("artifact_digest")
+                and vad_consumption.get("public_confirmation_run_id") == public.get("run_id")
+                and vad_consumption.get("public_confirmation_artifact_id") == public_artifact.get("id")
+                and vad_consumption.get("public_confirmation_artifact_digest") == public_artifact.get("digest")
+                and vad_consumption.get("fresh_source_evaluation_consumed") is True
+                and vad_consumption.get("independent_confirmation_consumed") is True
+                and vad_consumption.get("public_authority_consumed") is True,
+                f"VAD canonical consumption provenance drift: {round_id}")
 
         source_candidate_round_checked.append({
             "round_id": round_id,
@@ -731,6 +783,10 @@ def self_test() -> None:
             },
         ],
         "round_closure": ".github/research/source-round-closure.json",
+        "candidate_contracts": {
+            "vad-confidence-tiered-hold-v1": ".github/research/source-candidates/vad.json",
+            "agc-error-adaptive-release-v1": ".github/research/source-candidates/agc.json",
+        },
         "candidate_closures": {
             "vad-confidence-tiered-hold-v1": ".github/research/vad-closure.json",
             "agc-error-adaptive-release-v1": ".github/research/agc-closure.json",

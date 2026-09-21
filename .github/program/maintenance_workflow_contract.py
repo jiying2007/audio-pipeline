@@ -14,6 +14,7 @@ WORKFLOW_DIR = Path('.github/workflows')
 PROGRAM_PLAN = Path('docs/program/plan.json')
 I002_CONTRACT = Path('docs/program/iterations/I002.json')
 AEC_MOTION_MAINTENANCE_WORKFLOW = Path('.github/workflows/aec-motion-development.yml')
+PROGRAM_ARCHIVE_WORKFLOW = Path('.github/workflows/program-iteration.yml')
 
 # The generic tuner has no PR-regression role and is therefore manual-only after
 # the terminal software program. PR/manual non-shipping workflows keep their PR
@@ -189,6 +190,27 @@ def validate_aec_motion_maintenance_boundary(root: Path) -> None:
     assert task.get('handler') is None, 'scheduled AEC motion validation cannot restore an I002 handler'
 
 
+def validate_program_archive_trigger_boundaries(root: Path) -> None:
+    path = root / PROGRAM_ARCHIVE_WORKFLOW
+    assert path.is_file(), f'missing Program Archive workflow: {PROGRAM_ARCHIVE_WORKFLOW}'
+    text = path.read_text(encoding='utf-8')
+
+    def paths_for(trigger: str) -> list[str]:
+        block = trigger_block(text, trigger)
+        paths = re.findall(r"(?m)^      - ['\"]([^'\"]+)['\"]\s*$", block)
+        assert paths, f'Program Archive {trigger} must remain path-scoped'
+        assert len(paths) == len(set(paths)), (
+            f'Program Archive {trigger} contains duplicate path entries'
+        )
+        return paths
+
+    push_paths = paths_for('push')
+    pull_paths = paths_for('pull_request')
+    assert push_paths == pull_paths, (
+        'Program Archive push/pull path sets or ordering drifted'
+    )
+
+
 def validate_no_legacy_semantics_consumers(root: Path) -> None:
     for pattern in LEGACY_SEMANTICS_GLOBS:
         for path in sorted(root.glob(pattern)):
@@ -201,6 +223,7 @@ def validate_no_legacy_semantics_consumers(root: Path) -> None:
 
 
 def validate(root: Path = REPOSITORY_ROOT) -> None:
+    validate_program_archive_trigger_boundaries(root)
     validate_no_legacy_semantics_consumers(root)
     for relative in MANUAL_ONLY_RESEARCH_WORKFLOWS:
         path = root / relative
@@ -258,6 +281,26 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
         assert actual[relative] == expected_crons, (
             f'approved schedule drift for {relative}: actual={actual[relative]} expected={expected_crons}'
         )
+
+
+def _write_program_archive_fixture(root: Path, duplicate: bool = False) -> None:
+    path = root / PROGRAM_ARCHIVE_WORKFLOW
+    path.parent.mkdir(parents=True, exist_ok=True)
+    paths = ["docs/program/**", "scripts/program.py"]
+    push_paths = paths + ([paths[0]] if duplicate else [])
+    pull_paths = paths
+    push = ''.join(f"      - '{item}'\n" for item in push_paths)
+    pull = ''.join(f"      - '{item}'\n" for item in pull_paths)
+    path.write_text(
+        'name: Program Archive Contract\n\non:\n'
+        '  push:\n'
+        '    branches: [main]\n'
+        '    paths:\n' + push +
+        '  pull_request:\n'
+        '    branches: [main]\n'
+        '    paths:\n' + pull,
+        encoding='utf-8',
+    )
 
 
 def _write_allowed_schedule(path: Path, crons: tuple[str, ...]) -> None:
@@ -320,6 +363,7 @@ def self_test() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         _write_i002_terminal_fixture(root)
+        _write_program_archive_fixture(root)
         generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
         generic.parent.mkdir(parents=True)
         generic.write_text('name: generic\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
@@ -344,6 +388,15 @@ def self_test() -> None:
                 root, relative, required_paths, ALLOWED_SCHEDULED_WORKFLOWS[relative]
             )
         validate(root)
+
+        _write_program_archive_fixture(root, duplicate=True)
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'duplicate path entries' in str(exc)
+        else:
+            raise AssertionError('duplicate Program Archive path was accepted')
+        _write_program_archive_fixture(root)
 
         hosted = next(iter(HOSTED_REAL_PR_REQUIRED_PATHS))
         hosted_path = root / hosted

@@ -9,8 +9,10 @@ uses validation/authority.json as the single source of truth.
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import json
 from pathlib import Path
+from typing import Any, Callable
 
 import render_corr_exact
 import run_validation_engine as engine
@@ -22,6 +24,27 @@ def canonical_evaluation_semantics() -> engine.EvaluationSemantics:
     return engine.EvaluationSemantics(
         invoke=stage_profile_support.build_invoke(engine),
         max_abs_corr=render_corr_exact.build_max_abs_corr(engine.normalized_corr),
+    )
+
+
+@dataclass(frozen=True)
+class ValidationSemantics:
+    evaluation: engine.EvaluationSemantics
+    evaluate_case: Callable[
+        [Path, Path, dict[str, Any], engine.EvaluationSemantics],
+        dict[str, Any],
+    ]
+    engine_policy_violations: Callable[
+        [dict[str, Any], dict[str, Any], list[dict[str, Any]]],
+        tuple[dict[str, Any], list[dict[str, Any]]],
+    ]
+
+
+def canonical_validation_semantics() -> ValidationSemantics:
+    return ValidationSemantics(
+        evaluation=canonical_evaluation_semantics(),
+        evaluate_case=engine.evaluate_case,
+        engine_policy_violations=engine.policy_violations,
     )
 
 
@@ -51,8 +74,17 @@ def validate_corpus_shape(corpus: dict, authority: dict) -> None:
                 )
 
 
-def policy_violations(policy: dict, corpus: dict, cases: list[dict],
-                      authority: dict) -> tuple[dict, list[dict]]:
+def policy_violations(
+    policy: dict,
+    corpus: dict,
+    cases: list[dict],
+    authority: dict,
+    *,
+    engine_policy_violations: Callable[
+        [dict[str, Any], dict[str, Any], list[dict[str, Any]]],
+        tuple[dict[str, Any], list[dict[str, Any]]],
+    ] | None = None,
+) -> tuple[dict, list[dict]]:
     allowed = policy.get("allowed_tiers", [])
     if not isinstance(allowed, list) or not allowed:
         raise ValueError("policy.allowed_tiers must be a non-empty list")
@@ -60,7 +92,8 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict],
     if unknown:
         raise ValueError(f"policy contains unknown authority tiers: {sorted(unknown)}")
 
-    summary, violations = engine.policy_violations(policy, corpus, cases)
+    base_policy = engine_policy_violations or engine.policy_violations
+    summary, violations = base_policy(policy, corpus, cases)
     authority_gates = {
         "allowed_tiers",
         "sealed_data",
@@ -131,7 +164,7 @@ def self_test() -> None:
     print("authority-guarded validation self-test: OK")
 
 
-def main() -> int:
+def main(semantics: ValidationSemantics | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--policy", type=Path)
@@ -156,14 +189,20 @@ def main() -> int:
     corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     validate_corpus_shape(corpus, authority)
-    semantics = canonical_evaluation_semantics()
+    semantics = semantics or canonical_validation_semantics()
     cases = [
-        engine.evaluate_case(
-            args.processor, args.corpus, case, semantics=semantics
+        semantics.evaluate_case(
+            args.processor, args.corpus, case, semantics.evaluation
         )
         for case in corpus["cases"]
     ]
-    summary, aggregate_violations = policy_violations(policy, corpus, cases, authority)
+    summary, aggregate_violations = policy_violations(
+        policy,
+        corpus,
+        cases,
+        authority,
+        engine_policy_violations=semantics.engine_policy_violations,
+    )
     case_violations = [
         {"case_id": case["case_id"], "violations": case["violations"]}
         for case in cases if case["violations"]

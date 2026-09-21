@@ -179,6 +179,7 @@ def adjacent_development_sensitivity(space: dict[str, Any], selected: dict[str, 
     selected_tuning = canonical_tuning(selected["tuning"])
     by_id = {str(item["candidate_id"]): item for item in dev_results}
     neighbors: list[dict[str, Any]] = []
+    unobserved_neighbors: list[dict[str, Any]] = []
     for key in TUNING_KEYS:
         if key not in space.get("parameters", {}):
             continue
@@ -199,8 +200,17 @@ def adjacent_development_sensitivity(space: dict[str, Any], selected: dict[str, 
                 continue
             neighbor_tuning = dict(selected_tuning)
             neighbor_tuning[key] = values[neighbor_index]
-            item = by_id.get(tuning_id(neighbor_tuning))
+            neighbor_id = tuning_id(neighbor_tuning)
+            direction = "lower" if values[neighbor_index] < current else "higher"
+            item = by_id.get(neighbor_id)
             if item is None:
+                unobserved_neighbors.append({
+                    "tuning_id": neighbor_id,
+                    "parameter": key,
+                    "value": values[neighbor_index],
+                    "direction": direction,
+                    "reason": "not_evaluated_in_development_search",
+                })
                 continue
             compliant = (
                 item.get("validation_result") == "PASS"
@@ -211,7 +221,7 @@ def adjacent_development_sensitivity(space: dict[str, Any], selected: dict[str, 
                 "label": item["label"],
                 "parameter": key,
                 "value": values[neighbor_index],
-                "direction": "lower" if values[neighbor_index] < current else "higher",
+                "direction": direction,
                 "score": item["score"],
                 "validation_result": item["validation_result"],
                 "compliant": compliant,
@@ -221,11 +231,21 @@ def adjacent_development_sensitivity(space: dict[str, Any], selected: dict[str, 
     neighbors.sort(
         key=lambda item: (TUNING_KEYS.index(str(item["parameter"])), float(item["value"]))
     )
+    unobserved_neighbors.sort(
+        key=lambda item: (TUNING_KEYS.index(str(item["parameter"])), float(item["value"]))
+    )
+    neighbor_slot_count = len(neighbors) + len(unobserved_neighbors)
     return {
+        # neighbor_count remains the evaluated-neighbor count for compatibility.
         "neighbor_count": len(neighbors),
+        "neighbor_slot_count": neighbor_slot_count,
+        "evaluated_neighbor_count": len(neighbors),
+        "unobserved_neighbor_count": len(unobserved_neighbors),
+        "complete_neighbor_coverage": not unobserved_neighbors,
         "compliant_neighbor_count": sum(bool(item["compliant"]) for item in neighbors),
         "violating_neighbor_count": sum(not bool(item["compliant"]) for item in neighbors),
         "neighbors": neighbors,
+        "unobserved_neighbors": unobserved_neighbors,
     }
 
 
@@ -714,6 +734,11 @@ def self_test() -> None:
         grid_space, grid_selected, grid_results
     )
     assert grid_sensitivity["neighbor_count"] == 2
+    assert grid_sensitivity["neighbor_slot_count"] == 2
+    assert grid_sensitivity["evaluated_neighbor_count"] == 2
+    assert grid_sensitivity["unobserved_neighbor_count"] == 0
+    assert grid_sensitivity["complete_neighbor_coverage"] is True
+    assert grid_sensitivity["unobserved_neighbors"] == []
     assert grid_sensitivity["compliant_neighbor_count"] == 1
     assert grid_sensitivity["violating_neighbor_count"] == 1
     ns_neighbor = next(
@@ -724,6 +749,31 @@ def self_test() -> None:
     assert ns_neighbor["direction"] == "lower"
     assert ns_neighbor["compliant"] is False
     assert ns_neighbor["case_delta_violations"][0]["gate"] == "case_delta_regression"
+    ota_results = [{
+        **candidate,
+        "score": 1.0,
+        "validation_result": "PASS",
+        "case_delta_summary": [],
+        "case_delta_violations": [],
+    } for candidate in candidates]
+    ota_selected = next(
+        item for item in ota_results
+        if abs(item["tuning"]["aec_mu"] - 0.18) < 1.0e-12
+    )
+    ota_sensitivity = adjacent_development_sensitivity(
+        space, ota_selected, ota_results
+    )
+    assert ota_sensitivity["neighbor_slot_count"] == 2
+    assert ota_sensitivity["evaluated_neighbor_count"] == 1
+    assert ota_sensitivity["neighbor_count"] == 1
+    assert ota_sensitivity["unobserved_neighbor_count"] == 1
+    assert ota_sensitivity["complete_neighbor_coverage"] is False
+    missing_neighbor = ota_sensitivity["unobserved_neighbors"][0]
+    assert missing_neighbor["parameter"] == "ns_floor"
+    assert abs(missing_neighbor["value"] - 0.10) < 1.0e-12
+    assert missing_neighbor["direction"] == "lower"
+    assert missing_neighbor["reason"] == "not_evaluated_in_development_search"
+    assert isinstance(missing_neighbor["tuning_id"], str) and len(missing_neighbor["tuning_id"]) == 12
     baseline = {"validation_result": "PASS", "summary": {"pass_rate": 1.0, "median_erle_db": 10.0}}
     better = {"validation_result": "PASS", "summary": {"pass_rate": 1.0, "median_erle_db": 11.5}}
     score, _ = score_against_baseline(space, baseline, better)

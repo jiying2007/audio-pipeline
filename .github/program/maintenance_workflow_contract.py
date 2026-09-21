@@ -365,7 +365,7 @@ def self_test() -> None:
         _write_i002_terminal_fixture(root)
         _write_program_archive_fixture(root)
         generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
-        generic.parent.mkdir(parents=True)
+        generic.parent.mkdir(parents=True, exist_ok=True)
         generic.write_text('name: generic\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
         for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
             path = root / relative

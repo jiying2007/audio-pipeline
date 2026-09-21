@@ -21,7 +21,9 @@ import i005_vad_baseline_measurement as event_metrics
 import run_validation_engine as engine
 import stage_profile_support
 
-stage_profile_support.install(engine)
+_BASE_INVOKE = engine.invoke
+STAGE_INVOKE = stage_profile_support.build_invoke(engine)
+assert engine.invoke is _BASE_INVOKE
 
 RETRYABLE_HTTP_STATUS = {429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 5
@@ -74,7 +76,7 @@ def invoke_window(processor: Path, pcm_path: Path, corpus_path: Path,
         "control": {},
     }
     with tempfile.TemporaryDirectory(prefix="ap-vad-es2006a-run-") as work:
-        _, trace, _ = engine.invoke(processor, case, corpus_path, Path(work))
+        _, trace, _ = STAGE_INVOKE(processor, case, corpus_path, Path(work))
     return (
         [float(row.get("vad_probability", 0.0)) for row in trace],
         [int(row.get("vad_active", 0)) for row in trace],
@@ -347,6 +349,7 @@ def confirm(base_processor: Path, candidate_processor: Path, lock_path: Path,
 
 
 def self_test() -> None:
+    assert engine.invoke is _BASE_INVOKE
     contract = {
         "gates": {
             "require_probability_trace_identity": True,
@@ -375,6 +378,7 @@ def self_test() -> None:
         item["gate"] == "aggregate_recall_improvement"
         for item in apply_gates(contract, base, bad, event_base, event_cand, windows, 0, 0, 3)
     )
+    assert engine.invoke is _BASE_INVOKE
     print("VAD ES2006a public confirmation self-test: OK")
 
 

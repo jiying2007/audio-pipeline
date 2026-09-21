@@ -1,3 +1,9 @@
+# 2.3.41
+
+- Add deterministic adjacent-search sensitivity evidence for the development-selected tuning. The engine now reports already-generated candidates one grid step away along exactly one configured search axis, including their score, case-delta gate summaries/violations and compliant/violating counts.
+- Never synthesize or execute missing Cartesian combinations for sensitivity analysis: a neighbor is reported only when that exact tuning was already part of the bounded development search. Candidate generation, score-first gate-compliant selection, validation/shadow replay and promotion authority remain unchanged.
+- Extend self-tests with a Cartesian grid where one immediate neighbor is compliant and the other violates a case gate, proving the evidence exposes a fragile local boundary without changing the selected candidate.
+
 # 2.3.40
 
 - Make per-case tuning robustness explicit in iteration evidence without changing candidate-selection behavior. Every case-delta gate summary now records margin to its configured lower and/or upper bound plus the binding bound and binding margin; positive margin is remaining headroom and negative margin is a violated bound.

@@ -22,7 +22,9 @@ import vad_operating_point_selector as selector
 import ami_vad_microset_eval as ami_eval
 import discover_ami_vad_microset as discovery
 
-stage_profile_support.install(engine)
+_BASE_INVOKE = engine.invoke
+STAGE_INVOKE = stage_profile_support.build_invoke(engine)
+assert engine.invoke is _BASE_INVOKE
 
 LOCAL_THRESHOLD = 0.45
 NS_THRESHOLD = 0.35
@@ -227,7 +229,7 @@ def collect_ami(processor: Path, lock_path: Path) -> dict[str, Any]:
                 "control": {},
             }
             with tempfile.TemporaryDirectory(prefix="ap-ami-hangover-run-") as work:
-                _, trace, _ = engine.invoke(processor, case, corpus_path, Path(work))
+                _, trace, _ = STAGE_INVOKE(processor, case, corpus_path, Path(work))
             probabilities = [float(row.get("vad_probability", 0.0)) for row in trace]
             count = min(len(labels), len(probabilities))
             if count < 1900:

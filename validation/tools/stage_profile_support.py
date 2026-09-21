@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install stage-isolated capture profiles into the canonical validation engine.
+"""Build stage-isolated capture invocation for canonical validation.
 
 The canonical evaluator intentionally remains the only metric implementation.
 This module only extends processor invocation so regression/tuning corpora can
@@ -22,7 +22,8 @@ SUPPORTED_CAPTURE_PROFILES = {
 }
 
 
-def install(engine: Any) -> None:
+def build_invoke(engine: Any):
+    """Build a stage-profile invoke adapter without mutating the engine module."""
     original = engine.invoke
 
     def invoke(processor: Path, case: dict, corpus_path: Path, work: Path):
@@ -57,4 +58,4 @@ def install(engine: Any) -> None:
                     trace.append(json.loads(line))
         return output, trace, {"mic": mic, "render": None}
 
-    engine.invoke = invoke
+    return invoke

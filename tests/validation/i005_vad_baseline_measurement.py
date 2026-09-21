@@ -23,7 +23,9 @@ import i004_ns_nonstationary_diagnostic as synth
 import run_validation_engine as engine
 import stage_profile_support
 
-stage_profile_support.install(engine)
+_BASE_INVOKE = engine.invoke
+STAGE_INVOKE = stage_profile_support.build_invoke(engine)
+assert engine.invoke is _BASE_INVOKE
 
 RATE = 16000
 FRAME = 160
@@ -268,7 +270,7 @@ def run_processor(processor: Path, pcm_path: Path, labels: list[int], profile: s
             "control": {},
         }
         with tempfile.TemporaryDirectory(prefix="ap-i005-run-") as work:
-            _, trace, _ = engine.invoke(processor, case, corpus_path, Path(work))
+            _, trace, _ = STAGE_INVOKE(processor, case, corpus_path, Path(work))
     count = min(len(labels), len(trace))
     require(count >= minimum_frames, f"insufficient VAD trace: {case_id} {count}")
     labels = labels[:count]

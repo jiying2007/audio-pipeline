@@ -10,16 +10,16 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[3]/"validation/tools"))
 import tuning_iteration as guarded
 import tuning_iteration_engine as engine
 
-guarded.install_fail_closed_guards()
+SEMANTICS = guarded.canonical_semantics()
 MIN_SCORE=0.10
 
 def avg_score(space:dict, base_reports:list[dict], cand_reports:list[dict])->tuple[float,list[dict]]:
     scores=[]; violations=[]
     for index,(base,cand) in enumerate(zip(base_reports,cand_reports)):
-        score,_=engine.score_against_baseline(space,base,cand)
+        score,_=SEMANTICS.score_against_baseline(space,base,cand)
         scores.append(score)
-        local=engine.regression_violations(space,base,cand)
-        case_summary,case_v=engine.case_delta_gate_violations(space,base,cand)
+        local=SEMANTICS.regression_violations(space,base,cand)
+        case_summary,case_v=SEMANTICS.case_delta_gate_violations(space,base,cand)
         if local or case_v:
             violations.append({"development_index":index,"metric_violations":local,
                                "case_violations":case_v,"case_summary":case_summary})
@@ -45,7 +45,7 @@ def run(repo:Path, ema:Path, mcra:Path, dev:list[Path], validation:Path, shadow:
         policy:Path, lock:Path, search_space:Path, output:Path)->dict:
     if len(dev)!=2: raise ValueError("exactly two development corpora required")
     space=json.loads(search_space.read_text())
-    engine.validate_search_space(space)
+    SEMANTICS.validate_search_space(space)
     candidates=engine.generate_candidates(space)
     baseline=candidates[0]["tuning"]
     output.mkdir(parents=True,exist_ok=True)

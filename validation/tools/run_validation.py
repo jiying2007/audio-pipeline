@@ -9,19 +9,43 @@ uses validation/authority.json as the single source of truth.
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import json
 from pathlib import Path
+from typing import Any, Callable
 
 import render_corr_exact
 import run_validation_engine as engine
 import stage_profile_support
 from authority import corpus_tiers, load_authority, tier_spec
 
-# Canonical render-correlation search is installed once at the authority-guarded
-# entrypoint. The native helper selects the global lag only; final metric scores
-# remain run_validation_engine.normalized_corr(..., stride=4).
-render_corr_exact.install(engine)
-stage_profile_support.install(engine)
+def canonical_evaluation_semantics() -> engine.EvaluationSemantics:
+    """Build canonical evaluator extensions without mutating engine globals."""
+    return engine.EvaluationSemantics(
+        invoke=stage_profile_support.build_invoke(engine),
+        max_abs_corr=render_corr_exact.build_max_abs_corr(engine.normalized_corr),
+    )
+
+
+@dataclass(frozen=True)
+class ValidationSemantics:
+    evaluation: engine.EvaluationSemantics
+    evaluate_case: Callable[
+        [Path, Path, dict[str, Any], engine.EvaluationSemantics],
+        dict[str, Any],
+    ]
+    engine_policy_violations: Callable[
+        [dict[str, Any], dict[str, Any], list[dict[str, Any]]],
+        tuple[dict[str, Any], list[dict[str, Any]]],
+    ]
+
+
+def canonical_validation_semantics() -> ValidationSemantics:
+    return ValidationSemantics(
+        evaluation=canonical_evaluation_semantics(),
+        evaluate_case=engine.evaluate_case,
+        engine_policy_violations=engine.policy_violations,
+    )
 
 
 def validate_corpus_shape(corpus: dict, authority: dict) -> None:
@@ -50,8 +74,17 @@ def validate_corpus_shape(corpus: dict, authority: dict) -> None:
                 )
 
 
-def policy_violations(policy: dict, corpus: dict, cases: list[dict],
-                      authority: dict) -> tuple[dict, list[dict]]:
+def policy_violations(
+    policy: dict,
+    corpus: dict,
+    cases: list[dict],
+    authority: dict,
+    *,
+    engine_policy_violations: Callable[
+        [dict[str, Any], dict[str, Any], list[dict[str, Any]]],
+        tuple[dict[str, Any], list[dict[str, Any]]],
+    ] | None = None,
+) -> tuple[dict, list[dict]]:
     allowed = policy.get("allowed_tiers", [])
     if not isinstance(allowed, list) or not allowed:
         raise ValueError("policy.allowed_tiers must be a non-empty list")
@@ -59,7 +92,8 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict],
     if unknown:
         raise ValueError(f"policy contains unknown authority tiers: {sorted(unknown)}")
 
-    summary, violations = engine.policy_violations(policy, corpus, cases)
+    base_policy = engine_policy_violations or engine.policy_violations
+    summary, violations = base_policy(policy, corpus, cases)
     authority_gates = {
         "allowed_tiers",
         "sealed_data",
@@ -85,8 +119,16 @@ def policy_violations(policy: dict, corpus: dict, cases: list[dict],
 
 def self_test() -> None:
     authority = load_authority()
+    base_invoke = engine.invoke
+    base_corr = engine.max_abs_corr
+    semantics = canonical_evaluation_semantics()
+    assert engine.invoke is base_invoke
+    assert engine.max_abs_corr is base_corr
     render_corr_exact.self_test(engine.normalized_corr)
+    assert semantics.max_abs_corr([1, -2, 3, -4] * 64, [1, -2, 3, -4] * 64, 16000) > 0.99
     engine.self_test()
+    assert engine.invoke is base_invoke
+    assert engine.max_abs_corr is base_corr
     research = {
         "schema_version": 1,
         "corpus_id": "research-dev",
@@ -122,7 +164,7 @@ def self_test() -> None:
     print("authority-guarded validation self-test: OK")
 
 
-def main() -> int:
+def main(semantics: ValidationSemantics | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--policy", type=Path)
@@ -147,8 +189,20 @@ def main() -> int:
     corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
     policy = json.loads(args.policy.read_text(encoding="utf-8"))
     validate_corpus_shape(corpus, authority)
-    cases = [engine.evaluate_case(args.processor, args.corpus, case) for case in corpus["cases"]]
-    summary, aggregate_violations = policy_violations(policy, corpus, cases, authority)
+    semantics = semantics or canonical_validation_semantics()
+    cases = [
+        semantics.evaluate_case(
+            args.processor, args.corpus, case, semantics.evaluation
+        )
+        for case in corpus["cases"]
+    ]
+    summary, aggregate_violations = policy_violations(
+        policy,
+        corpus,
+        cases,
+        authority,
+        engine_policy_violations=semantics.engine_policy_violations,
+    )
     case_violations = [
         {"case_id": case["case_id"], "violations": case["violations"]}
         for case in cases if case["violations"]

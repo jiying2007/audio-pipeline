@@ -20,7 +20,9 @@ import run_validation_engine as engine
 import stage_profile_support
 import vad_operating_point_selector as selector
 
-stage_profile_support.install(engine)
+_BASE_INVOKE = engine.invoke
+STAGE_INVOKE = stage_profile_support.build_invoke(engine)
+assert engine.invoke is _BASE_INVOKE
 
 LOCAL_THRESHOLD = 0.45
 NS_THRESHOLD = 0.35
@@ -78,7 +80,7 @@ def evaluate_case(processor: Path, corpus_path: Path, case: dict[str, Any]) -> d
         raise ValueError(f"missing VAD labels: {case['case_id']}")
     labels = engine.load_labels(labels_path)
     with tempfile.TemporaryDirectory(prefix="ap-vad-shipping-conformance-") as temporary:
-        _, trace, _ = engine.invoke(processor, case, corpus_path, Path(temporary))
+        _, trace, _ = STAGE_INVOKE(processor, case, corpus_path, Path(temporary))
     probabilities = [float(row.get("vad_probability", 0.0)) for row in trace]
     actual = [int(row.get("vad_active", 0)) for row in trace]
     count = min(len(labels), len(probabilities), len(actual))

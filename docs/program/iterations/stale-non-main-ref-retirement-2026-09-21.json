@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "stale-non-main-ref-retirement",
+  "state": "CLOSED",
+  "base_main_sha": "e07270906edc8a530239be8fad320029f6975287",
+  "refs": [
+    {
+      "branch": "ci/space-materialisation-gate",
+      "exact_head_sha": "8229c2dc5d16f13a0403c42e611a354c60a171fc",
+      "disposition": "DELETE_STALE_REF",
+      "preservation": [
+        "pull_request:324",
+        "main contains the validated search-space materialisation gate"
+      ],
+      "reason": "branch-only workflow delta has been superseded by the merged and subsequently extended canonical Acoustic Tuning workflow"
+    },
+    {
+      "branch": "validation/search-space-key-contract",
+      "exact_head_sha": "3f5a675896ae9b35444249ba724ddd6c299dcfaa",
+      "disposition": "DELETE_STALE_REF",
+      "preservation": [
+        "pull_request:325",
+        "main contains the fail-closed key contract plus later validator evolution"
+      ],
+      "reason": "release-bearing validator work is preserved on main; the mutable topic ref carries no independent authority"
+    },
+    {
+      "branch": "measurement/limiter-level-cost",
+      "exact_head_sha": "13c86c19181e707dff8cc3d715f3e0867ea21171",
+      "disposition": "DELETE_STALE_REF",
+      "preservation": [
+        "pull_request:326",
+        "main documentation preserves and later supersedes the limiter robustness measurement"
+      ],
+      "reason": "measurement branch is historical input only; current tuning and quality documentation carries the reviewed conclusion"
+    },
+    {
+      "branch": "governance/retire-superseded-space-contracts-prep",
+      "exact_head_sha": "15f95b8822e1b5ffc6be117e9db4a360d09e0820",
+      "disposition": "DELETE_STALE_REF",
+      "preservation": [
+        "this retirement evidence",
+        "docs/program/terminal-branch-gc.json on this cleanup PR"
+      ],
+      "reason": "abandoned preparation ref is superseded by the reviewed exact-SHA GC closure and has no independent software or release authority"
+    }
+  ],
+  "deletion_contract": {
+    "require_exact_live_sha": true,
+    "require_no_open_pull_request": true,
+    "require_preserved_terminal_evidence": true,
+    "mutation_on_pull_request": false,
+    "mutation_on_main_push": true
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "release_changed": false,
+    "hardware_test_executed": false,
+    "hardware_collection_performed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE",
+    "dut_hil": "DEFERRED_BY_SCOPE"
+  }
+}

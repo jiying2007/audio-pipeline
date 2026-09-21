@@ -178,6 +178,8 @@ def check(root: Path) -> dict:
             raise ValueError(f"research workflow is not terminal diagnostic evidence: {r['path']}={status}")
 
         authority = evidence.get("output_authority") or {}
+        require(authority.get("research_diagnostic_only") is True,
+                f"retired research investigation lost diagnostic-only authority: {r['path']}")
         for key in RESEARCH_AUTHORITY_FALSE_KEYS:
             require(authority.get(key) is False,
                     f"retired research investigation regained {key} authority: {r['path']}")

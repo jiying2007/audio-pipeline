@@ -126,6 +126,28 @@ product loudness threshold is invented by that search: it asks the existing
 scale-sensitive quality contract whether the apparent gain survives target-level
 preservation. The result remains development/research authority only.
 
+That distinction is now measured rather than hypothetical. Generic Acoustic
+Tuning run `35568818095` selected `agc_target_dbfs=-20`,
+`limiter_dbfs=-18` from the seven-point paired path with development score
+`+0.5265` and emitted `ACOUSTIC_CANDIDATE`. Replaying the exact same path in
+Audio Quality Evaluation run `35571014346` on source
+`288ad1199168eecc808b059ea02f17aee05a121c` produced `KEEP_BASELINE`.
+The scale-sensitive development scores from the `-16/-14` anchor through
+`-22/-20` were:
+
+```text
+AGC / limiter     -16/-14   -17/-15   -18/-16   -19/-17   -20/-18   -21/-19   -22/-20
+quality score      0.0000    -0.1961    -0.4724    -0.6939    -1.0230    -1.3599    -1.8161
+near projection   -4.8862    -5.0262    -5.2236    -5.3818    -5.5711    -5.8118    -6.1376 dB
+```
+
+The principal SI-SDR, interference-projection, ERLE, VAD classification and
+clipping summaries stayed effectively unchanged across that path; near-target
+projection fell monotonically. This isolates target-level loss as the reason the
+generic attenuation-oriented objective preferred a lower AGC/limiter pair. The
+lower paired direction is therefore closed for generic CALL optimization, while
+the quality search remains available as the reproducible evidence path.
+
 ## Promotion ladder
 
 ```text

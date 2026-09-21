@@ -36,7 +36,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            ansible alsa-utils build-essential cmake ffmpeg git-lfs jq \
+            alsa-utils build-essential cmake ffmpeg git-lfs jq \
             openssh-client p7zip-full python3-venv rsync unzip usbutils
 
           sudo rm -rf /tmp/ap-lab
@@ -47,9 +47,21 @@ jobs:
           sudo cp -a lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
           sudo cp -a lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
           sudo cp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
+          sudo cp lab/requirements-ansible.txt /tmp/ap-lab/requirements-ansible.txt
           sudo cp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
+          sudo python3 -m venv /tmp/ap-lab/controller-venv
+          sudo /tmp/ap-lab/controller-venv/bin/python -m pip install \
+            --disable-pip-version-check --no-input \
+            -r /tmp/ap-lab/requirements-ansible.txt
+          sudo /tmp/ap-lab/controller-venv/bin/python - <<'PY'
+          import ansible
+          assert ansible.__version__ == "2.19.13", ansible.__version__
+          PY
           sudo chmod -R a+rX /tmp/ap-lab
-          sudo chmod 0644 /tmp/ap-lab/ansible.cfg /tmp/ap-lab/requirements-validation.txt
+          sudo chmod 0644 \
+            /tmp/ap-lab/ansible.cfg \
+            /tmp/ap-lab/requirements-ansible.txt \
+            /tmp/ap-lab/requirements-validation.txt
 
           diff -qr lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
           diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
@@ -57,6 +69,7 @@ jobs:
           diff -qr lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
           diff -qr lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
           cmp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
+          cmp lab/requirements-ansible.txt /tmp/ap-lab/requirements-ansible.txt
           cmp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
 
           sudo useradd --create-home --shell /bin/bash validationuser
@@ -169,7 +182,7 @@ jobs:
               HOME=/home/validationuser \
               USER=validationuser \
               LOGNAME=validationuser \
-              PATH=/usr/local/bin:/usr/bin:/bin \
+              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
               ANSIBLE_NOCOLOR=1 \
               ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
               ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
@@ -201,7 +214,7 @@ jobs:
               HOME=/home/targetuser \
               USER=targetuser \
               LOGNAME=targetuser \
-              PATH=/usr/local/bin:/usr/bin:/bin \
+              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
               ANSIBLE_NOCOLOR=1 \
               ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
               ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
@@ -241,7 +254,7 @@ jobs:
               HOME=/home/builderuser \
               USER=builderuser \
               LOGNAME=builderuser \
-              PATH=/usr/local/bin:/usr/bin:/bin \
+              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
               ANSIBLE_NOCOLOR=1 \
               ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
               ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
@@ -271,7 +284,7 @@ jobs:
               HOME=/home/archiveuser \
               USER=archiveuser \
               LOGNAME=archiveuser \
-              PATH=/usr/local/bin:/usr/bin:/bin \
+              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
               ANSIBLE_NOCOLOR=1 \
               ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
               ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
@@ -316,6 +329,10 @@ jobs:
             fi
           done
 
+          /tmp/ap-lab/controller-venv/bin/python - <<'PY'
+          import ansible
+          assert ansible.__version__ == "2.19.13", ansible.__version__
+          PY
           python3 lab/scripts/labctl.py self-test
           python3 scripts/docs_consistency.py
 

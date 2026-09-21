@@ -34,7 +34,7 @@ EXPECTED_PATHS = {
 }
 EXPECTED_TASKS = {"I004", "I005", "I006", "I007", "I008", "I009", "P002"}
 FORBIDDEN_CONTINUOUS_TRIGGERS = ("workflow_call:", "workflow_run:", "schedule:", "push:")
-RESEARCH_FORBIDDEN_TRIGGERS = FORBIDDEN_CONTINUOUS_TRIGGERS + ("workflow_dispatch:",)
+RESEARCH_FORBIDDEN_TRIGGERS = ("workflow_call:", "workflow_run:", "schedule:", "workflow_dispatch:")
 RESEARCH_AUTHORITY_FALSE_KEYS = (
     "candidate_selection",
     "tuning",
@@ -186,10 +186,10 @@ def check(root: Path) -> dict:
                 f"historical research workflow blob missing: {r['path']}")
         text = git("cat-file", "blob", r["blob_sha"])
         on_block = extract_on_block(text)
-        require("pull_request:" in on_block,
-                f"retired research workflow was not PR-scoped: {r['path']}")
+        require("pull_request:" in on_block and "push:" in on_block,
+                f"retired research workflow must preserve PR + fresh-main push lineage: {r['path']}")
         require(not any(trigger in on_block for trigger in RESEARCH_FORBIDDEN_TRIGGERS),
-                f"retired research workflow had reusable/continuous/manual trigger: {r['path']}")
+                f"retired research workflow had reusable/scheduled/manual trigger: {r['path']}")
         research_checked.append({
             "path": r["path"],
             "blob_sha": r["blob_sha"],

@@ -7,7 +7,6 @@ import sys
 from typing import Any
 
 import research_optimizer_v3 as v3
-import tuning_iteration
 import tuning_iteration_engine as engine
 
 _ORIGINAL_CASE_DELTA = engine.case_delta_gate_violations
@@ -93,15 +92,15 @@ def case_scoped_delta_gate_violations(
     return summaries, violations
 
 
-def install() -> None:
-    v3.install()
-    tuning_iteration.strict_validate_search_space = validate_case_scopes
-    engine.validate_search_space = validate_case_scopes
-    engine.case_delta_gate_violations = case_scoped_delta_gate_violations
+def case_scoped_semantics() -> engine.IterationSemantics:
+    return v3.dataset_aware_semantics(
+        allow_case_scope=True,
+        case_delta_gate_violations=case_scoped_delta_gate_violations,
+    )
 
 
 def self_test() -> None:
-    install()
+    semantics = case_scoped_semantics()
     space = {
         "schema_version": 1,
         "search_space_id": "case-scope-self-test",
@@ -131,11 +130,11 @@ def self_test() -> None:
             }],
         },
     }
-    engine.validate_search_space(space)
+    semantics.validate_search_space(space)
     bad_case_ids = json.loads(json.dumps(space))
     bad_case_ids["objective"]["case_delta_gates"][0]["case_ids"] = [1]
     try:
-        engine.validate_search_space(bad_case_ids)
+        semantics.validate_search_space(bad_case_ids)
     except ValueError:
         pass
     else:
@@ -152,14 +151,18 @@ def self_test() -> None:
     passing = json.loads(json.dumps(baseline))
     passing["cases"][0]["metrics"]["vad_recall"] = 0.78
     passing["cases"][1]["metrics"]["vad_recall"] = 0.73
-    summary, violations = engine.case_delta_gate_violations(space, baseline, passing)
+    summary, violations = semantics.case_delta_gate_violations(
+        space, baseline, passing
+    )
     assert not violations
     assert len(summary) == 1 and summary[0]["cases"] == 2
     assert summary[0]["case_ids"] == ["dt-a", "dt-b"]
 
     failing = json.loads(json.dumps(baseline))
     failing["cases"][1]["metrics"]["vad_recall"] = 0.70
-    _summary, violations = engine.case_delta_gate_violations(space, baseline, failing)
+    _summary, violations = semantics.case_delta_gate_violations(
+        space, baseline, failing
+    )
     assert any(item["gate"] == "case_delta_regression" for item in violations)
 
     unrelated = {
@@ -167,24 +170,30 @@ def self_test() -> None:
         "summary": {"pass_rate": 1.0},
         "cases": [{"case_id": "motion", "scenario": "aec-motion", "metrics": {"erle_db": 8.0}}],
     }
-    assert engine.case_delta_gate_violations(space, unrelated, unrelated) == ([], [])
+    assert semantics.case_delta_gate_violations(
+        space, unrelated, unrelated
+    ) == ([], [])
 
     partial = {
         "validation_result": "PASS",
         "summary": {"pass_rate": 1.0},
         "cases": [{"case_id": "dt-a", "scenario": "aec-doubletalk", "metrics": {"vad_recall": 0.80}}],
     }
-    _summary, violations = engine.case_delta_gate_violations(space, partial, partial)
+    _summary, violations = semantics.case_delta_gate_violations(
+        space, partial, partial
+    )
     assert any(item["gate"] == "case_scope_incomplete" for item in violations)
     print("case-scoped research optimizer self-test: OK")
 
 
 def main() -> int:
-    install()
     if "--self-test" in sys.argv:
         self_test()
         return 0
-    return v3.core.main()
+    return v3.core.main(
+        semantics=case_scoped_semantics(),
+        ranker=v3.rank_development,
+    )
 
 
 if __name__ == "__main__":

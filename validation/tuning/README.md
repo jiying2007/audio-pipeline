@@ -107,7 +107,7 @@ That matters because the pairing constraint ties the two axes together. Legalisi
 
 A legal finer pair can be written because tuning values are arbitrary floats. Rectangular Cartesian search is still the right tool when every cross-pair is meaningful, but it cannot compactly represent a diagonal sequence of correlated AGC/limiter points without also creating unwanted cross-pairs, and `one-at-a-time` cannot express the coupling at all. The engine therefore has a fail-closed `paired` strategy: configured parameter lists are zipped by index, must have equal lengths, and every complete tuple is checked by the canonical tuning contract before it can become a candidate. Adjacent-sensitivity evidence follows the paired path as previous/next already-evaluated tuples instead of inventing independent one-axis neighbors. `call-agc-limiter-frontier-v1.json` uses that strategy to continue below the measured `-16/-14` AGC/limiter anchor down to `-22/-20` dBFS. The committed historical limiter grid is still exhausted at `-14.0`; the lower paired frontier remains **unmeasured until that paired workflow has actually produced bound evidence**, so it must not be described as rejected, optimal or unreachable merely because the search definition now exists.
 
-Both start from the shipping CALL defaults and use the controls exposed by `ap_tuning_t`:
+The default CALL searches start from the shipping CALL defaults. The paired frontier search is intentionally different: it starts from the already measured non-shipping `-16/-14` AGC/limiter research anchor so the lower coupled path is scored against the correct boundary point. All of these spaces use the controls exposed by `ap_tuning_t`:
 
 - `aec_mu`
 - `ns_floor`

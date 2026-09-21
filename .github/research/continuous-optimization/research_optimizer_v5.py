@@ -100,7 +100,13 @@ def case_scoped_semantics() -> engine.IterationSemantics:
 
 
 def self_test() -> None:
+    engine_validate = engine.validate_search_space
+    engine_case_gate = engine.case_delta_gate_violations
+    core_rank = v3.core.rank_development
     semantics = case_scoped_semantics()
+    assert engine.validate_search_space is engine_validate
+    assert engine.case_delta_gate_violations is engine_case_gate
+    assert v3.core.rank_development is core_rank
     space = {
         "schema_version": 1,
         "search_space_id": "case-scope-self-test",
@@ -183,6 +189,9 @@ def self_test() -> None:
         space, partial, partial
     )
     assert any(item["gate"] == "case_scope_incomplete" for item in violations)
+    assert engine.validate_search_space is engine_validate
+    assert engine.case_delta_gate_violations is engine_case_gate
+    assert v3.core.rank_development is core_rank
     print("case-scoped research optimizer self-test: OK")
 
 

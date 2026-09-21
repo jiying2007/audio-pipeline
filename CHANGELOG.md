@@ -1,3 +1,9 @@
+# 2.3.44
+
+- Add a fail-closed `paired` tuning strategy for correlated controls that must move together. Parameter lists are zipped by index, must have equal lengths, and each complete tuple is validated with the canonical tuning contract before candidate generation; illegal AGC/limiter pairs therefore fail before execution.
+- Make adjacent-sensitivity evidence strategy-aware: paired searches report the already-evaluated previous/next tuple on the paired path instead of inventing one-axis neighbors that the search never ran. Deterministic self-tests cover valid generation, unequal-length rejection, illegal coupled tuples, and paired-neighbor evidence.
+- Add `call-agc-limiter-frontier-v1.json`, a bounded non-shipping research search anchored at the measured `aec_mu=0.24`, `ns_floor=0.07`, `agc_target_dbfs=-16`, `limiter_dbfs=-14` frontier point and stepping legal AGC/limiter pairs down to `-22/-20` dBFS. This directly measures the lower coupled frontier that v2.3.43 documentation left explicitly unmeasured; promotion authority is unchanged.
+
 # 2.3.43
 
 - Fail closed on unknown or missing top-level search-space keys instead of defaulting them. `validate_search_space` read every optional key with a default and rejected no unknown key, so `strategies` in place of `strategy` silently ran a space as one-at-a-time while the report still described it as cartesian, and a misspelled `max_candidates` was silently replaced by the cap default. Both changed the search that was actually run without changing what the report said it was.

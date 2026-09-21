@@ -358,6 +358,21 @@ jobs:
           print(f"- Selected: `{r['selected']['label']}` / `{r['selected']['candidate_id']}`")
           print(f"- Tuning: `{json.dumps(r['selected']['tuning'], sort_keys=True)}`")
           print(f"- Development score: `{r['selected']['development_score']:.6f}`")
+          sensitivity = r['selected']['development_adjacent_sensitivity']
+          print(
+              f"- Adjacent coverage: `{sensitivity['evaluated_neighbor_count']}/{sensitivity['neighbor_slot_count']}` evaluated; "
+              f"compliant `{sensitivity['compliant_neighbor_count']}`, "
+              f"violating `{sensitivity['violating_neighbor_count']}`, "
+              f"unobserved `{sensitivity['unobserved_neighbor_count']}`, "
+              f"complete `{str(sensitivity['complete_neighbor_coverage']).lower()}`"
+          )
+          margins = [
+              f"{item['metric']}/{item['stat']}={item['binding_margin']:.6g}"
+              for item in r['selected']['development_case_delta_summary']
+              if item.get('binding_margin') is not None
+          ]
+          if margins:
+              print(f"- Development gate margins: `{' ; '.join(margins)}`")
           print(f"- Candidate jobs: `{r['search_space']['candidate_jobs']}`")
           print('- Fixed regression/replay motion development: seeds `4107/4207/4307` (36 cases)')
           print('- Fixed regression/replay motion validation: seeds `9107/9207` (24 cases)')

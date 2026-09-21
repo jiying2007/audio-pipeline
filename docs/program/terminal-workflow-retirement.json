@@ -133,5 +133,14 @@
     "hardware_collection_performed": false,
     "product_qualification": "DEFERRED_BY_SCOPE",
     "dut_hil": "DEFERRED_BY_SCOPE"
-  }
+  },
+  "research_workflows": [
+    {
+      "path": ".github/workflows/research-pure-far-dtd-evidence-closure-v1.yml",
+      "blob_sha": "c289d217920a3dbfd1b8a6bab9dd639674ec481e",
+      "investigation_id": "pure-far-dtd-evidence-closure-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/pure-far-dtd-evidence-closure-v1.json",
+      "reason": "the pure-far diagnostic program is fresh-main CLOSED_DIAGNOSTIC_PLATEAU with candidate budget zero; the closure workflow is consumed while exact reproducer scripts, terminal JSON evidence and historical workflow blob remain preserved"
+    }
+  ]
 }

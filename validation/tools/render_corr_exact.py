@@ -159,17 +159,19 @@ def exact_score(normalized_corr: Callable[..., float], a: Sequence[int], b: Sequ
     return canonical_score
 
 
-def install(engine) -> None:
-    """Install exact max-correlation search into the canonical engine module."""
+def build_max_abs_corr(
+    normalized_corr: Callable[..., float],
+) -> Callable[[Sequence[int], Sequence[int], int], float]:
+    """Build exact max-correlation search without mutating an engine module."""
     def max_abs_corr(a: Sequence[int], b: Sequence[int], sample_rate: int) -> float:
-        return exact_score(engine.normalized_corr, a, b, sample_rate)
+        return exact_score(normalized_corr, a, b, sample_rate)
 
     max_abs_corr.__name__ = "max_abs_corr"
     max_abs_corr.__doc__ = (
         "Return canonical stride-4 max absolute correlation over every integer "
         "lag in the existing +/-100 ms window."
     )
-    engine.max_abs_corr = max_abs_corr
+    return max_abs_corr
 
 
 def report_bindings(engine_path: Path) -> dict[str, str]:

@@ -872,15 +872,7 @@ def self_test() -> None:
         },
     }
     validate_search_space(space)
-    scoped_space = json.loads(json.dumps(space))
-    scoped_space["objective"]["metrics"][0]["datasets"] = ["synthetic-regression"]
-    scoped_space["objective"]["metrics"][0]["minimum_units"] = 1
-    scoped_space["objective"]["case_delta_gates"] = [{
-        "metric": "corr", "stat": "min", "minimum_delta": -0.1,
-        "case_ids": ["case-a"],
-    }]
-    validate_search_space(scoped_space)
-    bad_metric_key = json.loads(json.dumps(scoped_space))
+    bad_metric_key = json.loads(json.dumps(space))
     bad_metric_key["objective"]["metrics"][0]["dataset"] = ["synthetic-regression"]
     try:
         validate_search_space(bad_metric_key)
@@ -888,15 +880,18 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("unknown nested objective metric key must fail closed")
-    bad_gate_key = json.loads(json.dumps(scoped_space))
-    bad_gate_key["objective"]["case_delta_gates"][0]["case_id"] = ["case-a"]
+    bad_gate_key = json.loads(json.dumps(space))
+    bad_gate_key["objective"]["case_delta_gates"] = [{
+        "metric": "corr", "stat": "min", "minimum_delta": -0.1,
+        "case_id": ["case-a"],
+    }]
     try:
         validate_search_space(bad_gate_key)
     except ValueError:
         pass
     else:
         raise AssertionError("unknown nested case gate key must fail closed")
-    bad_dataset_type = json.loads(json.dumps(scoped_space))
+    bad_dataset_type = json.loads(json.dumps(space))
     bad_dataset_type["objective"]["metrics"][0]["datasets"] = [1]
     try:
         validate_search_space(bad_dataset_type)

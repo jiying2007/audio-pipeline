@@ -1,3 +1,9 @@
+# 2.3.43
+
+- Fail closed on unknown or missing top-level search-space keys instead of defaulting them. `validate_search_space` read every optional key with a default and rejected no unknown key, so `strategies` in place of `strategy` silently ran a space as one-at-a-time while the report still described it as cartesian, and a misspelled `max_candidates` was silently replaced by the cap default. Both changed the search that was actually run without changing what the report said it was.
+- Require the top-level keys that the published `search-space.schema.json` already requires (`schema_version`, `search_space_id`, `strategy`, `max_candidates`, `baseline`, `parameters`, `objective`) and remove the now-unreachable defaults in `generate_candidates`. Measured blast radius: all 14 search-space-shaped JSON files in the repository already satisfy the stricter contract, so no committed space changes behaviour.
+- Extend the deterministic self-test with a space carrying misspelled keys and a space missing `strategy`, both of which must fail closed.
+
 # 2.3.42
 
 - Make adjacent-search evidence coverage explicit without executing any extra tuning candidate. The sensitivity report now records total one-step neighbor slots, evaluated and unobserved counts, complete/incomplete coverage, and each unobserved slot with reason `not_evaluated_in_development_search`.

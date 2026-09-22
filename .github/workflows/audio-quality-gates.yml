@@ -80,7 +80,9 @@ jobs:
       - name: Enforce deterministic regression seed matrix
         run: |
           set -euo pipefail
-          for seed in 1307 2307 3307; do
+
+          validate_seed() {
+            seed=$1
             root="/tmp/ap-validation-$seed"
             if [ "$seed" != 1307 ]; then
               python3 validation/tools/build_validation_corpus.py --output "$root" --seed "$seed"
@@ -102,7 +104,23 @@ jobs:
           assert report["summary"]["cases"] >= 24
           assert report["validation_result"] == "PASS"
           PY
+          }
+
+          validate_seed 1307 > /tmp/ap-validation-1307.matrix.log 2>&1 &
+          pid_1307=$!
+          validate_seed 2307 > /tmp/ap-validation-2307.matrix.log 2>&1 &
+          pid_2307=$!
+
+          status=0
+          if ! wait "$pid_1307"; then status=1; fi
+          if ! wait "$pid_2307"; then status=1; fi
+          if ! validate_seed 3307 > /tmp/ap-validation-3307.matrix.log 2>&1; then status=1; fi
+
+          for seed in 1307 2307 3307; do
+            echo "===== validation seed $seed ====="
+            cat "/tmp/ap-validation-$seed.matrix.log"
           done
+          test "$status" -eq 0
       - name: Enforce bounded acoustic tuning iteration
         run: |
           set -euo pipefail

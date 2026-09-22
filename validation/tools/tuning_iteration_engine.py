@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
+TUNING_IDENTITY_ABS_TOLERANCE = 1.0e-6
 # The top-level contract of a search space, matching
 # validation/tuning/search-space.schema.json. Enforced rather than defaulted: see
 # validate_search_space.
@@ -741,6 +742,16 @@ def default_iteration_semantics() -> IterationSemantics:
     )
 
 
+def tuning_identity_matches(left: dict[str, float], right: dict[str, float]) -> bool:
+    return all(
+        math.isclose(
+            float(left[key]), float(right[key]),
+            rel_tol=0.0, abs_tol=TUNING_IDENTITY_ABS_TOLERANCE,
+        )
+        for key in TUNING_KEYS
+    )
+
+
 def processor_default_tuning(processor: Path) -> dict[str, float]:
     completed = subprocess.run(
         [str(processor), "--print-default-tuning"],
@@ -831,8 +842,11 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
     if baseline_reports:
         defaults = processor_default_tuning(processor)
         baseline = canonical_tuning(space["baseline"])
-        if any(abs(defaults[key] - baseline[key]) > 1.0e-9 for key in TUNING_KEYS):
-            raise ValueError("processor default tuning does not match search-space baseline")
+        if not tuning_identity_matches(defaults, baseline):
+            raise ValueError(
+                "processor default tuning does not match search-space baseline: "
+                f"processor={defaults} search_space={baseline}"
+            )
         for partition, corpus in (
             ("development", dev), ("validation", validation), ("shadow", shadow)
         ):
@@ -1076,10 +1090,17 @@ def self_test() -> None:
             encoding="utf-8",
         )
         processor.chmod(0o755)
-        assert processor_default_tuning(processor) == {
+        expected_defaults = {
             "aec_mu": 0.22, "ns_floor": 0.12,
             "agc_target_dbfs": -20.0, "limiter_dbfs": -2.0,
         }
+        assert processor_default_tuning(processor) == expected_defaults
+        float32_defaults = dict(expected_defaults)
+        float32_defaults["aec_mu"] = 0.219999999
+        assert tuning_identity_matches(float32_defaults, expected_defaults)
+        drifted_defaults = dict(expected_defaults)
+        drifted_defaults["aec_mu"] = 0.23
+        assert not tuning_identity_matches(drifted_defaults, expected_defaults)
 
         corpus = root / "corpus.json"
         policy = root / "policy.json"

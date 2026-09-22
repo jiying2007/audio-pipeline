@@ -740,6 +740,13 @@ def default_iteration_semantics() -> IterationSemantics:
     )
 
 
+def validate_parallelism(candidate_jobs: int, holdout_jobs: int) -> None:
+    if candidate_jobs < 1 or candidate_jobs > 8:
+        raise ValueError("candidate_jobs must be 1..8")
+    if holdout_jobs < 1 or holdout_jobs > 4:
+        raise ValueError("holdout_jobs must be 1..4")
+
+
 def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shadow: Path,
             policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path,
             candidate_jobs: int = 1,
@@ -752,10 +759,7 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
     candidates = generate_candidates(space)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if candidate_jobs < 1 or candidate_jobs > 8:
-        raise ValueError("candidate_jobs must be 1..8")
-    if holdout_jobs < 1 or holdout_jobs > 4:
-        raise ValueError("holdout_jobs must be 1..4")
+    validate_parallelism(candidate_jobs, holdout_jobs)
     baseline_candidate = candidates[0]
 
     def evaluate_development(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -923,9 +927,17 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
 def self_test() -> None:
     # Execution fan-out is intentionally bounded independently: candidate search
     # may use up to 8 workers, while the holdout plan has exactly four reports.
-    for bad_holdout_jobs in (0, 5):
-        if 1 <= bad_holdout_jobs <= 4:
-            raise AssertionError("invalid holdout-jobs self-test setup")
+    validate_parallelism(1, 1)
+    validate_parallelism(8, 4)
+    for candidate_jobs, holdout_jobs in ((0, 1), (9, 1), (1, 0), (1, 5)):
+        try:
+            validate_parallelism(candidate_jobs, holdout_jobs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(
+                f"invalid parallelism accepted: candidate={candidate_jobs} holdout={holdout_jobs}"
+            )
 
     space = {
         "schema_version": 1,

@@ -82,6 +82,10 @@ validation/shadow non-regression result, complete adjacent sensitivity coverage,
 the copied search-space digest before any public-data execution. It then wraps the
 exact source-built `ap_process_pcm` with the selected runtime-safe tuning and records
 both the underlying processor hash and wrapper hash in the public validation evidence.
+The candidate wrapper is then passed through the shared strict metrics JSONL proxy used
+by hosted blind qualification. That proxy changes no audio samples or tuning; it only
+canonicalizes the diagnostic `vad_probability` / `erle_db` non-finite spellings to JSON
+`null`, audits the replacements, and rejects every other malformed/non-standard token.
 
 Candidate mode is intentionally limited to visible `validation-grade` execution and
 runs on GitHub-hosted infrastructure. It bootstraps the same hash-bound Full public
@@ -99,7 +103,12 @@ artifact is `10695375199`; candidate `0d5f52491863` is
 still non-shipping and cannot mutate runtime defaults.
 ## Public validation profiles
 
-Public validation runs only on an isolated self-hosted runner labelled `audio-validation`. See `validation/RUNNER.md` for cache preparation and operating instructions.
+Baseline/manual Compact and Full validation continue to use the isolated self-hosted
+runner labelled `audio-validation`. Frozen acoustic candidate visible replay is the
+explicit exception: it runs on GitHub-hosted infrastructure with the hash-bound Full
+cache bootstrap described above, so candidate promotion does not depend on a persistent
+lab service. See `validation/RUNNER.md` for self-hosted cache preparation and operating
+instructions.
 
 ### Compact
 

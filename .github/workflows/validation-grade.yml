@@ -581,6 +581,22 @@ jobs:
           )
           PY
           sha256sum candidate-out/candidate-processor | tee candidate-out/candidate-processor.sha256
+      - name: Create strict metrics JSON qualification proxy
+        run: |
+          set -euo pipefail
+          cat > candidate-out/candidate-processor-json <<'PYPROXY'
+          #!/usr/bin/env python3
+          import os, sys
+          from pathlib import Path
+          out_dir = Path(__file__).resolve().parent
+          root = out_dir.parent
+          helper = root / 'infra' / '.github' / 'research' / 'continuous-optimization' / 'hosted-validation' / 'metrics_jsonl_proxy.py'
+          processor = out_dir / 'candidate-processor'
+          audit = out_dir / 'metrics-jsonl-canonicalization.jsonl'
+          os.execv(sys.executable, [sys.executable, str(helper), '--processor', str(processor), '--audit', str(audit), '--', *sys.argv[1:]])
+          PYPROXY
+          chmod 700 candidate-out/candidate-processor-json
+          python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
       - name: Build full public validation corpus
         run: |
           set -euo pipefail
@@ -631,7 +647,7 @@ jobs:
             --corpus ../candidate-out/public/corpus.json \
             --policy validation/policies/validation-full.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor ../candidate-out/candidate-processor \
+            --processor ../candidate-out/candidate-processor-json \
             --output ../candidate-out/validation-report.json \
             --evidence-manifest ../candidate-out/evidence-manifest.json --enforce
       - name: Seal candidate-bound visible validation evidence

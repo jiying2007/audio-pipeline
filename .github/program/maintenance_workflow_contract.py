@@ -79,7 +79,6 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/ami-vad-confirmation-discovery.yml'),
     Path('.github/workflows/bf-hard-mic-fault-discovery.yml'),
     Path('.github/workflows/bf-hard-mic-fault-confirmation.yml'),
-    Path('.github/workflows/bf-hard-mic-fault-base-replay.yml'),
     Path('.github/workflows/dsp-data-research.yml'),
     Path('.github/workflows/pcr02-aec-real-tail-confirmation.yml'),
     Path('.github/workflows/pcr02-dsp-counterfactuals.yml'),
@@ -225,6 +224,8 @@ def _terminal_retirement_required_paths(root: Path) -> set[str]:
     for round_record in data.get('stage_lane_rounds', []):
         required.update((round_record['path'], round_record['evidence']))
         required.update(round_record.get('lane_outcomes', {}).values())
+    for replay_record in data.get('historical_replay_workflows', []):
+        required.update((replay_record['path'], replay_record['evidence']))
     return required
 
 

@@ -252,6 +252,31 @@ def validate_manifest(data: dict) -> None:
         seen_paths.add(path)
         seen_blobs.add(blob)
 
+    historical_replay_records = data.get("historical_replay_workflows", [])
+    require(isinstance(historical_replay_records, list),
+            "historical_replay_workflows must be a list")
+    for r in historical_replay_records:
+        require(set(r) == {"path", "blob_sha", "replay_id", "evidence", "reason"},
+                f"historical replay retirement fields drift: {r.get('path')}")
+        path = str(r["path"])
+        blob = str(r["blob_sha"])
+        replay_id = r["replay_id"]
+        evidence = r["evidence"]
+        require(path.startswith(".github/workflows/"),
+                f"invalid historical replay workflow path: {path}")
+        require(path not in seen_paths, f"duplicate retired workflow path: {path}")
+        require(SHA_RE.fullmatch(blob) is not None,
+                f"invalid historical replay workflow blob SHA: {path}")
+        require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
+        require(isinstance(replay_id, str) and replay_id,
+                f"historical replay id missing: {path}")
+        require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                f"historical replay evidence path invalid: {path}")
+        require(isinstance(r["reason"], str) and r["reason"],
+                f"missing historical replay reason: {path}")
+        seen_paths.add(path)
+        seen_blobs.add(blob)
+
     require(data.get("authority_boundary") == {
         "shipping_source_changed": False,
         "release_changed": False,
@@ -809,6 +834,88 @@ def check(root: Path) -> dict:
             "lane_outcomes": r["lane_outcomes"],
         })
 
+    historical_replay_checked = []
+    for r in data.get("historical_replay_workflows", []):
+        path = root / r["path"]
+        require(not path.exists(),
+                f"retired historical replay workflow was reintroduced: {r['path']}")
+        evidence_path = root / r["evidence"]
+        require(evidence_path.is_file(),
+                f"historical replay evidence missing: {r['evidence']}")
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+
+        require(evidence.get("replay_id") == r["replay_id"],
+                f"historical replay identity drift: {r['path']}")
+        require(evidence.get("authority") == "DIAGNOSTIC_REGRESSION_ONLY"
+                and evidence.get("status") == "CONSUMED_HISTORICAL_BASELINE_EXPLANATION"
+                and evidence.get("candidate_budget") == 0,
+                f"historical replay is not consumed diagnostic evidence: {r['path']}")
+        require(evidence.get("historical_workflow_blob_sha") == r["blob_sha"],
+                f"historical replay blob identity drift: {r['path']}")
+
+        replay = evidence.get("replay") or {}
+        require(replay.get("conclusion") == "success"
+                and isinstance(replay.get("run_id"), int)
+                and isinstance(replay.get("artifact_id"), int)
+                and isinstance(replay.get("artifact_digest"), str)
+                and replay.get("artifact_digest", "").startswith("sha256:")
+                and replay.get("head_sha") == (evidence.get("final_product_lineage") or {}).get("exact_shipping_head_sha"),
+                f"historical replay execution provenance drift: {r['path']}")
+        require(evidence.get("exact_base_sha")
+                and evidence.get("exact_base_sha") != replay.get("head_sha"),
+                f"historical replay lost distinct fixed-base identity: {r['path']}")
+
+        finding = evidence.get("finding") or {}
+        require(finding.get("hard_fault_isolation_needed") is True
+                and finding.get("pure_energy_strong_bypass_safe") is False,
+                f"historical replay finding drift: {r['path']}")
+
+        product = evidence.get("final_product_lineage") or {}
+        require(product.get("confirmation_conclusion") == "success"
+                and product.get("shipped_release") == "v2.3.11"
+                and isinstance(product.get("differential_confirmation_run_id"), int)
+                and isinstance(product.get("differential_confirmation_artifact_id"), int)
+                and isinstance(product.get("differential_confirmation_artifact_digest"), str)
+                and product.get("differential_confirmation_artifact_digest", "").startswith("sha256:")
+                and product.get("shipping_merge_commit"),
+                f"historical replay final product lineage drift: {r['path']}")
+        semantics = product.get("confirmation_semantics") or {}
+        require(semantics.get("non_wind_byte_exact_vs_base") is True
+                and semantics.get("hard_mode_coverage") == 0.88
+                and semantics.get("healthy_channel_selection") == 1.0
+                and semantics.get("stable_recovery_frames") == 28,
+                f"historical replay final confirmation semantics drift: {r['path']}")
+
+        authority = evidence.get("output_authority") or {}
+        require(authority.get("research_diagnostic_only") is True,
+                f"historical replay lost diagnostic-only authority: {r['path']}")
+        for key in RESEARCH_AUTHORITY_FALSE_KEYS:
+            require(authority.get(key) is False,
+                    f"historical replay regained {key} authority: {r['path']}")
+
+        require(git("cat-file", "-t", r["blob_sha"]) == "blob",
+                f"historical replay workflow blob missing: {r['path']}")
+        historical = git("cat-file", "blob", r["blob_sha"])
+        base_match = re.search(
+            r"(?m)^\s*BASE_SHA:\s*([0-9a-f]{40})\s*$", historical
+        )
+        require(base_match is not None
+                and base_match.group(1) == evidence.get("exact_base_sha"),
+                f"historical replay fixed-base binding drift: {r['path']}")
+        on_block = extract_on_block(historical)
+        require("pull_request:" in on_block and "workflow_dispatch:" in on_block,
+                f"retired historical replay must preserve PR + manual lineage: {r['path']}")
+        for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:"):
+            require(forbidden not in on_block,
+                    f"retired historical replay had forbidden trigger {forbidden}: {r['path']}")
+
+        historical_replay_checked.append({
+            "path": r["path"],
+            "blob_sha": r["blob_sha"],
+            "replay_id": r["replay_id"],
+            "evidence": r["evidence"],
+        })
+
     # A terminal research task must not regain a standalone Actions entry under its task prefix.
     # Reproducers/contracts/results stay in the repository; only the consumed orchestration entry is retired.
     for pattern in ("*.yml", "*.yaml"):
@@ -830,12 +937,14 @@ def check(root: Path) -> dict:
         "retired_selection_workflows": len(selection_checked),
         "retired_source_candidate_rounds": len(source_candidate_round_checked),
         "retired_stage_lane_rounds": len(stage_lane_round_checked),
+        "retired_historical_replay_workflows": len(historical_replay_checked),
         "tasks": sorted(EXPECTED_TASKS),
         "research_investigations": sorted(item["investigation_id"] for item in research_checked),
         "source_candidates": sorted(item["candidate_id"] for item in source_candidate_checked),
         "selection_ids": sorted(item["selection_id"] for item in selection_checked),
         "source_candidate_rounds": sorted(item["round_id"] for item in source_candidate_round_checked),
         "stage_lane_rounds": sorted(item["round_id"] for item in stage_lane_round_checked),
+        "historical_replays": sorted(item["replay_id"] for item in historical_replay_checked),
         "software_release": data["software_release"],
         "release_source_sha": data["release_source_sha"],
         "product_qualification": "DEFERRED_BY_SCOPE",
@@ -966,6 +1075,15 @@ def self_test() -> None:
         "reason": "terminal four-lane research round",
     }]
     validate_manifest(stage_lane_sample)
+    replay_sample = json.loads(json.dumps(sample))
+    replay_sample["historical_replay_workflows"] = [{
+        "path": ".github/workflows/research-historical-replay.yml",
+        "blob_sha": "8" * 40,
+        "replay_id": "historical-replay-v1",
+        "evidence": ".github/research/historical-replay-v1.json",
+        "reason": "consumed exact-base diagnostic replay",
+    }]
+    validate_manifest(replay_sample)
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
     assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
     assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")

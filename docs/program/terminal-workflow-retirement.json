@@ -310,5 +310,14 @@
       },
       "reason": "run 35320921792 consumed the four-lane selection authority; BF is diagnostic-only with candidate_budget=0, NS is CLOSED_KEEP_BASELINE_AFTER_REJECT, and the exact VAD/AGC successors are terminal source-candidate rejects with zero remaining budgets"
     }
+  ],
+  "historical_replay_workflows": [
+    {
+      "path": ".github/workflows/bf-hard-mic-fault-base-replay.yml",
+      "blob_sha": "5ffc6ea8dab680ea08325dccf936cc7ae38a49b4",
+      "replay_id": "bf-hard-mic-fault-base-replay-v1",
+      "evidence": ".github/research/continuous-optimization/development-v3/bf-hard-mic-fault-base-replay-v1.json",
+      "reason": "the exact old-base replay was a consumed diagnostic attribution for the first failed BF confirmation; final v2.3.11 differential confirmation is durable and current BF discovery/confirmation workflows retain current-source regression coverage"
+    }
   ]
 }

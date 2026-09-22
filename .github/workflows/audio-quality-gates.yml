@@ -118,6 +118,7 @@ jobs:
             --policy validation/policies/validation-smoke.json \
             --dataset-lock validation/datasets.lock.json \
             --search-space validation/tuning/search-spaces/call-pr-smoke-v1.json \
+            --candidate-jobs 2 \
             --output-dir /tmp/ap-tuning-pr
           python3 - <<'PY'
           import json
@@ -125,6 +126,7 @@ jobs:
           result = json.loads(Path('/tmp/ap-tuning-pr/iteration-result.json').read_text())
           assert result['authority'] == 'non-shipping-acoustic-iteration'
           assert result['search_space']['candidate_count'] <= 8
+          assert result['search_space']['candidate_jobs'] == 2
           baseline_dev = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
           assert baseline_dev['validation_result'] == 'PASS'
           assert result['validation']['baseline']['validation_result'] == 'PASS'

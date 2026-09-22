@@ -382,6 +382,8 @@ endif()
 
 if(AP_BUILD_TESTS)
     enable_testing()
+    add_executable(ap_metrics_json_tests tests/test_metrics_json.c)
+    add_test(NAME ap_metrics_json_tests COMMAND ap_metrics_json_tests)
     add_executable(ap_module_tests tests/test_modules.c)
     target_link_libraries(ap_module_tests PRIVATE audio_pipeline)
     add_test(NAME ap_module_tests COMMAND ap_module_tests)

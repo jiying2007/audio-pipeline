@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "replay_id": "bf-hard-mic-fault-base-replay-v1",
+  "authority": "DIAGNOSTIC_REGRESSION_ONLY",
+  "status": "CONSUMED_HISTORICAL_BASELINE_EXPLANATION",
+  "candidate_budget": 0,
+  "workflow": "BF Hard Mic Fault Base Replay",
+  "historical_workflow_blob_sha": "5ffc6ea8dab680ea08325dccf936cc7ae38a49b4",
+  "exact_base_sha": "b68b862f98d8b3aa1ba77e384a5dd60d955c1f23",
+  "replay": {
+    "run_id": 33958813299,
+    "run_number": 14,
+    "head_sha": "f1553325c4a612ec69d0fee3d353b22b2461b66c",
+    "artifact_id": 9967252740,
+    "artifact_name": "bf-hard-mic-fault-base-replay-33958813299",
+    "artifact_digest": "sha256:c8276742f7073a87d314da72778cec5d2e4da87f703402a6f6f8db8681981b1b",
+    "seeds": [
+      4307,
+      5307,
+      6307
+    ],
+    "conclusion": "success"
+  },
+  "finding": {
+    "hard_fault_isolation_needed": true,
+    "pure_energy_strong_bypass_safe": false,
+    "wind_base_delta_vs_reliable_db_range": [
+      -17.80210860143335,
+      -17.620571933404264
+    ],
+    "interpretation": "The exact pre-candidate base replay explained the first failed confirmation: the old base already contained the relevant non-target behavior, while one-sided wind remained strongly harmful and energy-dominant. The replay was diagnostic attribution, not a current-source product gate."
+  },
+  "final_product_lineage": {
+    "differential_confirmation_run_id": 33958813293,
+    "differential_confirmation_artifact_id": 9967258266,
+    "differential_confirmation_artifact_name": "bf-hard-mic-fault-confirmation-33958813293",
+    "differential_confirmation_artifact_digest": "sha256:dc4de63e6c62f0bef68154fb3550ecc5b1bbbc4ad9619775df7f282d10a4aef0",
+    "confirmed_seeds": [
+      13307,
+      14307,
+      15307
+    ],
+    "exact_shipping_head_sha": "f1553325c4a612ec69d0fee3d353b22b2461b66c",
+    "shipping_merge_commit": "e07b78b7aefcc2ed24bca0dc2a5d610376fa73d0",
+    "shipped_release": "v2.3.11",
+    "confirmation_conclusion": "success",
+    "confirmation_semantics": {
+      "wind_improvement_db_range": [
+        17.79048729286616,
+        17.89397707252666
+      ],
+      "hard_mode_coverage": 0.88,
+      "healthy_channel_selection": 1,
+      "stable_recovery_frames": 28,
+      "non_wind_byte_exact_vs_base": true
+    }
+  },
+  "output_authority": {
+    "research_diagnostic_only": true,
+    "candidate_selection": false,
+    "tuning": false,
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "rule": "The fixed historical base replay is consumed evidence. Current BF source changes remain covered by the live BF discovery and differential-confirmation regressions; do not rerun this old base as if it were current product authority."
+}

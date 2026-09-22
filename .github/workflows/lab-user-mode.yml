@@ -34,10 +34,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq \
-            alsa-utils build-essential cmake ffmpeg git-lfs jq \
-            openssh-client p7zip-full python3-venv rsync unzip usbutils
 
           sudo rm -rf /tmp/ap-lab
           sudo install -d -m 0755 /tmp/ap-lab/ansible/roles
@@ -49,43 +45,26 @@ jobs:
           sudo cp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
           sudo cp lab/requirements-ansible.txt /tmp/ap-lab/requirements-ansible.txt
           sudo cp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
-          sudo python3 -m venv /tmp/ap-lab/controller-venv
-          sudo /tmp/ap-lab/controller-venv/bin/python -m pip install \
-            --disable-pip-version-check --no-input \
-            -r /tmp/ap-lab/requirements-ansible.txt
-          sudo /tmp/ap-lab/controller-venv/bin/python - <<'PY'
-          import ansible
-          assert ansible.__version__ == "2.19.13", ansible.__version__
-          PY
-          sudo chmod -R a+rX /tmp/ap-lab
-          sudo chmod 0644 \
-            /tmp/ap-lab/ansible.cfg \
-            /tmp/ap-lab/requirements-ansible.txt \
-            /tmp/ap-lab/requirements-validation.txt
-
-          diff -qr lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
-          diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
-          diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
-          diff -qr lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
-          diff -qr lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
-          cmp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
-          cmp lab/requirements-ansible.txt /tmp/ap-lab/requirements-ansible.txt
-          cmp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
 
           sudo useradd --create-home --shell /bin/bash validationuser
           sudo useradd --create-home --shell /bin/bash targetuser
           sudo useradd --create-home --shell /bin/bash builderuser
           sudo useradd --create-home --shell /bin/bash archiveuser
-          for user in validationuser targetuser builderuser archiveuser; do
-            groups=$(id -nG "$user")
-            case " $groups " in *' sudo '*|*' admin '*) echo "$user unexpectedly privileged: $groups" >&2; exit 1;; esac
-            if sudo -u "$user" -H sudo -n true 2>/dev/null; then
-              echo "$user unexpectedly has passwordless sudo" >&2
-              exit 1
-            fi
-          done
 
-          sudo tee /tmp/ap-lab/ansible/validation.yml >/dev/null <<'YAML'
+          install_controller() {
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq \
+              alsa-utils build-essential cmake ffmpeg git-lfs jq \
+              openssh-client p7zip-full python3-venv rsync unzip usbutils
+            sudo python3 -m venv /tmp/ap-lab/controller-venv
+            sudo /tmp/ap-lab/controller-venv/bin/python -m pip install \
+              --disable-pip-version-check --no-input \
+              -r /tmp/ap-lab/requirements-ansible.txt
+            sudo chmod -R a+rX /tmp/ap-lab/controller-venv
+          }
+
+          prepare_fixtures() {
+            sudo tee /tmp/ap-lab/ansible/validation.yml >/dev/null <<'YAML'
           ---
           - name: Runtime validate ordinary-user audio-validation provisioning
             hosts: localhost
@@ -97,7 +76,7 @@ jobs:
               - common
               - audio_validation
           YAML
-          sudo tee /tmp/ap-lab/ansible/target.yml >/dev/null <<'YAML'
+            sudo tee /tmp/ap-lab/ansible/target.yml >/dev/null <<'YAML'
           ---
           - name: Runtime validate ordinary-user audio-target provisioning
             hosts: localhost
@@ -109,7 +88,7 @@ jobs:
               - common
               - audio_target
           YAML
-          sudo tee /tmp/ap-lab/ansible/builder.yml >/dev/null <<'YAML'
+            sudo tee /tmp/ap-lab/ansible/builder.yml >/dev/null <<'YAML'
           ---
           - name: Runtime validate ordinary-user audio-builder provisioning
             hosts: localhost
@@ -124,7 +103,7 @@ jobs:
               - common
               - audio_builder
           YAML
-          sudo tee /tmp/ap-lab/ansible/archive.yml >/dev/null <<'YAML'
+            sudo tee /tmp/ap-lab/ansible/archive.yml >/dev/null <<'YAML'
           ---
           - name: Runtime validate ordinary-user certification-archive provisioning
             hosts: localhost
@@ -137,11 +116,11 @@ jobs:
               - common
               - certification_archive
           YAML
-          sudo tee /tmp/ap-lab/test-board.json >/dev/null <<'JSON'
+            sudo tee /tmp/ap-lab/test-board.json >/dev/null <<'JSON'
           {"schema_version":1,"board_id":"runtime-validation-fixture","evidence_class":"test-only"}
           JSON
-          sudo install -d -m 0755 /tmp/ap-lab/shipping-toolchain/bin /tmp/ap-lab/shipping-toolchain/sysroot /tmp/ap-lab/archive
-          sudo tee /tmp/ap-lab/shipping-toolchain/bin/fake-cc >/dev/null <<'SH'
+            sudo install -d -m 0755 /tmp/ap-lab/shipping-toolchain/bin /tmp/ap-lab/shipping-toolchain/sysroot /tmp/ap-lab/archive
+            sudo tee /tmp/ap-lab/shipping-toolchain/bin/fake-cc >/dev/null <<'SH'
           #!/bin/sh
           case "${1:-}" in
             --version) echo 'audio-builder runtime fixture cc 1.0'; exit 0 ;;
@@ -149,29 +128,71 @@ jobs:
             *) exit 0 ;;
           esac
           SH
-          sudo tee /tmp/ap-lab/archive/audio-pipeline-cert-archive >/dev/null <<'SH'
+            sudo tee /tmp/ap-lab/archive/audio-pipeline-cert-archive >/dev/null <<'SH'
           #!/bin/sh
           case "${1:-}" in
             --help) echo 'certification-archive runtime fixture'; exit 0 ;;
             *) exit 2 ;;
           esac
           SH
-          sudo chmod 0755 /tmp/ap-lab/shipping-toolchain/bin/fake-cc /tmp/ap-lab/archive/audio-pipeline-cert-archive
-          sudo chmod 0644 \
-            /tmp/ap-lab/ansible/validation.yml \
-            /tmp/ap-lab/ansible/target.yml \
-            /tmp/ap-lab/ansible/builder.yml \
-            /tmp/ap-lab/ansible/archive.yml \
-            /tmp/ap-lab/test-board.json
+            sudo chmod 0755 /tmp/ap-lab/shipping-toolchain/bin/fake-cc /tmp/ap-lab/archive/audio-pipeline-cert-archive
+            sudo chmod 0644 \
+              /tmp/ap-lab/ansible/validation.yml \
+              /tmp/ap-lab/ansible/target.yml \
+              /tmp/ap-lab/ansible/builder.yml \
+              /tmp/ap-lab/ansible/archive.yml \
+              /tmp/ap-lab/test-board.json
 
-          sudo rm -rf \
-            /opt/audio-lab \
-            /opt/audio-pipeline \
-            /opt/audio-validation-extended \
-            /var/cache/audio-pipeline-lab \
-            /var/lib/audio-pipeline-lab \
-            /var/log/audio-pipeline-lab \
-            /etc/audio-pipeline
+            sudo rm -rf \
+              /opt/audio-lab \
+              /opt/audio-pipeline \
+              /opt/audio-validation-extended \
+              /var/cache/audio-pipeline-lab \
+              /var/lib/audio-pipeline-lab \
+              /var/log/audio-pipeline-lab \
+              /etc/audio-pipeline
+          }
+
+          install_controller > /tmp/lab-controller-setup.log 2>&1 &
+          controller_pid=$!
+          prepare_fixtures > /tmp/lab-fixture-setup.log 2>&1 &
+          fixture_pid=$!
+
+          status=0
+          if ! wait "$controller_pid"; then status=1; fi
+          if ! wait "$fixture_pid"; then status=1; fi
+          echo '===== controller prerequisite setup ====='
+          cat /tmp/lab-controller-setup.log
+          echo '===== fixture prerequisite setup ====='
+          cat /tmp/lab-fixture-setup.log
+          test "$status" -eq 0
+
+          sudo /tmp/ap-lab/controller-venv/bin/python - <<'PY'
+          import ansible
+          assert ansible.__version__ == "2.19.13", ansible.__version__
+          PY
+          sudo chmod 0644 \
+            /tmp/ap-lab/ansible.cfg \
+            /tmp/ap-lab/requirements-ansible.txt \
+            /tmp/ap-lab/requirements-validation.txt
+
+          diff -qr lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
+          diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
+          diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
+          diff -qr lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
+          diff -qr lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
+          cmp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
+          cmp lab/requirements-ansible.txt /tmp/ap-lab/requirements-ansible.txt
+          cmp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
+
+          for user in validationuser targetuser builderuser archiveuser; do
+            groups=$(id -nG "$user")
+            case " $groups " in *' sudo '*|*' admin '*) echo "$user unexpectedly privileged: $groups" >&2; exit 1;; esac
+            if sudo -u "$user" -H sudo -n true 2>/dev/null; then
+              echo "$user unexpectedly has passwordless sudo" >&2
+              exit 1
+            fi
+          done
 
       - name: Execute ordinary-user role lanes in parallel
         shell: bash

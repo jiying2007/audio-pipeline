@@ -94,6 +94,10 @@ PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
     Path('.github/workflows/vad-strong-weak-refresh.yml'),
 )
 
+CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
+    Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
+)
+
 
 # Recurring execution is an explicit maintenance capability, not a default.
 # Every legal cron below is validation, data-integrity, HIL or qualification
@@ -350,6 +354,19 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
             f'{relative} full historical search must remain manual-dispatch-only'
         )
 
+    for relative in CONTRACT_ONLY_RESEARCH_WORKFLOWS:
+        path = root / relative
+        text = path.read_text(encoding='utf-8')
+        contract = job_block(text, 'contract')
+        jobs_text = text[text.find('\njobs:') + 1:]
+        job_names = re.findall(r'(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$', jobs_text)
+        assert job_names == ['contract'], (
+            f'{relative} is consumed historical research and must remain contract-only: {job_names}'
+        )
+        assert 'actions/checkout@' in contract and '--self-test' in contract, (
+            f'{relative} contract-only workflow must retain checkout and offline self-tests'
+        )
+
     for relative in REUSABLE_GOVERNANCE_WORKFLOWS:
         path = root / relative
         assert path.is_file(), f'missing reusable governance workflow: {relative}'
@@ -473,7 +490,19 @@ def self_test() -> None:
         for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
-            if relative in PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS:
+            if relative in CONTRACT_ONLY_RESEARCH_WORKFLOWS:
+                path.write_text(
+                    'name: contract-only-research\n\non:\n  pull_request:\n  workflow_dispatch:\n\n'
+                    'jobs:\n'
+                    '  contract:\n'
+                    '    runs-on: ubuntu-latest\n'
+                    '    steps:\n'
+                    '      - uses: actions/checkout@pinned\n'
+                    '      - name: self-test\n'
+                    '        run: python3 tool.py --self-test\n',
+                    encoding='utf-8',
+                )
+            elif relative in PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS:
                 path.write_text(
                     'name: historical-search\n\non:\n  pull_request:\n  workflow_dispatch:\n\n'
                     'jobs:\n'
@@ -631,6 +660,24 @@ def self_test() -> None:
             raise AssertionError('historical VAD search regained PR full-replay authority')
         historical_search.write_text(historical_text, encoding='utf-8')
 
+        contract_only = root / CONTRACT_ONLY_RESEARCH_WORKFLOWS[0]
+        contract_only_text = contract_only.read_text(encoding='utf-8')
+        contract_only.write_text(
+            contract_only_text +
+            '  joint-search:\n'
+            '    runs-on: ubuntu-latest\n'
+            '    steps:\n'
+            '      - run: echo forbidden\n',
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'must remain contract-only' in str(exc)
+        else:
+            raise AssertionError('consumed research workflow regained execution job')
+        contract_only.write_text(contract_only_text, encoding='utf-8')
+
         reusable = root / REUSABLE_GOVERNANCE_WORKFLOWS[0]
         reusable.write_text(
             'name: reusable\n\non:\n  workflow_call:\n  workflow_dispatch:\n',
@@ -688,7 +735,8 @@ def main() -> int:
         print(
             'maintenance workflow contract: generic research manual-only; PR/manual non-shipping workflows '
             'have PR coverage and explicit replay only; historical VAD searches are PR-contract/manual-replay; '
-            'scheduled workflows exact-allowlisted; AEC motion schedule bound to terminal zero-budget I002'
+            'consumed algorithm research is contract-only; scheduled workflows exact-allowlisted; '
+            'AEC motion schedule bound to terminal zero-budget I002'
         )
     return 0
 

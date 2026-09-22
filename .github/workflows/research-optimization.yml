@@ -7,8 +7,6 @@ on:
       - '.github/research/continuous-optimization/**'
       - 'validation/research/README.md'
       - 'validation/tools/tuning_iteration.py'
-      - 'validation/tools/build_aec_motion_corpus.py'
-      - 'validation/policies/validation-aec-motion-development.json'
       - 'validation/tuning/**'
       - '.github/workflows/research-optimization.yml'
   workflow_dispatch:
@@ -22,12 +20,8 @@ on:
         description: 'Runtime-safe bounded parameter search space'
         required: true
         type: choice
-        default: '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
+        default: 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
         options:
-          - '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
-          - '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
-          - '.github/research/continuous-optimization/development-v3/search-space.json'
-          - '.github/research/continuous-optimization/development-v2/search-space.json'
           - 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
           - 'validation/tuning/search-spaces/call-v1.json'
 
@@ -183,6 +177,17 @@ jobs:
               },
           ]
           print('double-talk case guard v5 search contract: PASS')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          closure=json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json'
+          ).read_text())
+          assert closure['status']=='CLOSED_KEEP_BASELINE'
+          assert closure['decision']=='KEEP_BASELINE'
+          assert 'Do not rerun or refine' in closure['closure_rule']
+          print('double-talk case guard v5 execution authority: CLOSED')
           PY
       - name: Enforce AEC boundary refinement v6 contract
         run: |
@@ -350,27 +355,25 @@ jobs:
       RESEARCH_REGISTRY: .github/research/continuous-optimization/dataset-registry.json
       DEV_LOCK: .github/research/continuous-optimization/development-v2/development.lock.json
       DEV_POLICY: .github/research/continuous-optimization/development-v2/policy.json
-      MOTION_POLICY: validation/policies/validation-aec-motion-development.json
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Reject closed research search spaces
+      - name: Enforce live bounded-search scope
         run: |
           set -euo pipefail
-          if [[ "$SEARCH_SPACE" == '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json' ]]; then
-            python3 - <<'PY'
-          import json
-          from pathlib import Path
-          closure=json.loads(Path(
-              '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-closure.json'
-          ).read_text())
-          assert closure['status']=='CLOSED_TERMINAL_VISIBLE_REJECT'
-          assert closure['search_space']['rerun_authorized'] is False
-          PY
-            echo 'aec-boundary-refinement-v6 is terminally closed and may not be rerun' >&2
-            exit 2
-          fi
+          case "$SEARCH_SPACE" in
+            validation/tuning/search-spaces/call-pr-smoke-v1.json|validation/tuning/search-spaces/call-v1.json)
+              ;;
+            .github/research/continuous-optimization/development-v2/*|.github/research/continuous-optimization/development-v3/*)
+              echo "historical development search space is closed/superseded and may not be rerun: $SEARCH_SPACE" >&2
+              exit 2
+              ;;
+            *)
+              echo "unregistered research search space: $SEARCH_SPACE" >&2
+              exit 2
+              ;;
+          esac
       - name: Initialize development workspace
         run: |
           set -euo pipefail
@@ -396,12 +399,6 @@ jobs:
           for seed in 1307 1407 2307 2407 3307 3407; do
             python3 validation/tools/build_validation_corpus.py --output "/tmp/ap-research-$seed" --seed "$seed"
           done
-          if [[ "$SEARCH_SPACE" == *"/development-v3/"* ]]; then
-            for seed in 4107 4207; do
-              python3 validation/tools/build_aec_motion_corpus.py \
-                --output "/tmp/ap-motion-$seed" --seed "$seed" --seconds 8
-            done
-          fi
       - name: Materialize diverse public development partitions
         run: |
           set -euo pipefail
@@ -422,10 +419,6 @@ jobs:
           import json, os
           from pathlib import Path
           search_space = os.environ['SEARCH_SPACE']
-          is_v3 = '/development-v3/' in search_space
-          is_v4 = search_space.endswith('/development-v3/fine-aec-v4.json')
-          is_v5 = search_space.endswith('/development-v3/doubletalk-case-guard-v5.json')
-          is_v6 = search_space.endswith('/development-v3/aec-boundary-refinement-v6.json')
           evaluations = []
           for role, seeds in [('development', [1307, 1407]), ('validation', [2307, 2407]), ('shadow', [3307, 3407])]:
               for seed in seeds:
@@ -448,41 +441,13 @@ jobs:
                   'dataset_lock': '.github/research/continuous-optimization/development-v2/development.lock.json',
                   'policy': '.github/research/continuous-optimization/development-v2/policy.json',
               })
-          if is_v3:
-              for seed in [4107, 4207]:
-                  evaluations.append({
-                      'evaluation_id': f'aec-motion-development-{seed}',
-                      'dataset_id': 'aec-motion-regression',
-                      'role': 'development',
-                      'seed': seed,
-                      'corpus': f'/tmp/ap-motion-{seed}/corpus.json',
-                      'dataset_lock': 'validation/datasets.lock.json',
-                      'policy': 'validation/policies/validation-aec-motion-development.json',
-                  })
-          if is_v6:
-              hypothesis_id = 'multidataset-aec-boundary-refinement-v6'
-              minimum_seeds = 6
-              maximum_pareto = 4
-          elif is_v5:
-              hypothesis_id = 'multidataset-doubletalk-case-guard-v5'
-              minimum_seeds = 6
-              maximum_pareto = 8
-          elif is_v4:
-              hypothesis_id = 'multidataset-fine-aec-tuning-v4'
-              minimum_seeds = 6
-              maximum_pareto = 8
-          elif is_v3:
-              hypothesis_id = 'multidataset-blocker-aware-tuning-v3'
-              minimum_seeds = 6
-              maximum_pareto = 18
-          elif search_space.endswith('development-v2/search-space.json'):
-              hypothesis_id = 'multidataset-runtime-safe-tuning-v2'
-              minimum_seeds = 4
-              maximum_pareto = 16
-          else:
-              hypothesis_id = 'bounded-runtime-safe-tuning'
-              minimum_seeds = 4
-              maximum_pareto = 16
+          assert search_space in {
+              'validation/tuning/search-spaces/call-pr-smoke-v1.json',
+              'validation/tuning/search-spaces/call-v1.json',
+          }
+          hypothesis_id = 'bounded-runtime-safe-tuning'
+          minimum_seeds = 4
+          maximum_pareto = 16
           spec = {
               'schema_version': 1,
               'experiment_id': f"github-{os.environ['GITHUB_RUN_ID']}",
@@ -502,12 +467,7 @@ jobs:
       - name: Run multi-seed Pareto optimization and generalization gates
         run: |
           set -euo pipefail
-          optimizer=.github/research/continuous-optimization/research_optimizer_v3.py
-          if [[ "$SEARCH_SPACE" == *"/development-v3/doubletalk-case-guard-v5.json" ]] || \
-             [[ "$SEARCH_SPACE" == *"/development-v3/aec-boundary-refinement-v6.json" ]]; then
-            optimizer=.github/research/continuous-optimization/research_optimizer_v5.py
-          fi
-          python3 "$optimizer" \
+          python3 .github/research/continuous-optimization/research_optimizer_v3.py \
             --processor build-research-opt/ap_process_pcm \
             --run-spec /tmp/research-run.json \
             --registry "$RESEARCH_REGISTRY" \
@@ -544,25 +504,13 @@ jobs:
           if result['status'] == 'FROZEN_RESEARCH_CANDIDATE':
               assert result['next_gate'] == 'validation-grade-blind'
           path = result['search_space']['path']
-          if path.endswith('development-v3/aec-boundary-refinement-v6.json'):
-              assert result['search_space']['candidate_count'] == 4
-          elif path.endswith('development-v3/doubletalk-case-guard-v5.json'):
-              assert result['search_space']['candidate_count'] == 8
-          elif path.endswith('development-v3/fine-aec-v4.json'):
-              assert result['search_space']['candidate_count'] == 8
-          elif '/development-v3/' in path:
-              assert result['search_space']['candidate_count'] == 18
-          if '/development-v3/' in path:
-              datasets = {item['dataset_id'] for item in result['development']['units']}
-              assert {'synthetic-regression', 'public-development-diverse', 'aec-motion-regression'} <= datasets
-              assert all(
-                  row['objective_coverage']['median_output_render_corr_reduction']['expected_units'] == 4
-                  for row in result['development']['ranking']
-              )
-              assert all(
-                  row['objective_coverage']['min_vad_f1']['expected_units'] == 2
-                  for row in result['development']['ranking']
-              )
+          assert path in {
+              'validation/tuning/search-spaces/call-pr-smoke-v1.json',
+              'validation/tuning/search-spaces/call-v1.json',
+          }
+          datasets = {item['dataset_id'] for item in result['development']['units']}
+          assert {'synthetic-regression', 'public-development-diverse'} <= datasets
+          assert 'aec-motion-regression' not in datasets
           print(json.dumps({
               'decision': result['decision'],
               'status': result['status'],
@@ -598,7 +546,6 @@ jobs:
           path: |
             /tmp/research-run.json
             /tmp/development-v2-materialization.json
-            /tmp/ap-motion-*/source-manifest.json
             research-optimization-out/
           if-no-files-found: error
           retention-days: 30

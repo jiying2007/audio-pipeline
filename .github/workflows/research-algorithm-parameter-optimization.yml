@@ -12,12 +12,6 @@ on:
       - 'validation/policies/validation-aec-motion-development.json'
       - 'validation/tuning/**'
   workflow_dispatch:
-    inputs:
-      execute_joint_search:
-        description: 'Run development-only algorithm screen + parameter search, then final validation/shadow gates'
-        required: true
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -85,7 +79,37 @@ jobs:
           assert a['output_authority']['maximum_status']=='FROZEN_RESEARCH_CANDIDATE'
           assert a['output_authority']['automatic_main_mutation'] is False
           assert a['output_authority']['automatic_shipping_promotion'] is False
-          print({'algorithm_variants':4,'parameter_candidates':8,'joint_space':32})
+          closure=json.loads(Path(
+              '.github/research/continuous-optimization/algorithm-space-v1-closure.json'
+          ).read_text())
+          assert closure['algorithm_space_id']==a['algorithm_space_id']
+          assert closure['status']=='CLOSED_KEEP_BASELINE'
+          assert closure['execution_authorized'] is False
+          predecessor=closure['predecessor']
+          origin=json.loads(Path(closure['successor_origin']).read_text())
+          assert predecessor==origin['predecessor']
+          assert predecessor=={
+              'workflow':'Research Algorithm Parameter Optimization',
+              'run_id':35301640608,
+              'source_sha':'7b7b6325063c3cc503fc8a6d052199ab50eb4c24',
+              'artifact_id':10530995129,
+              'artifact_name':'research-algorithm-parameter-35301640608',
+              'artifact_digest':'sha256:94d57293b2ceea738f788c1ced866a74da7a46ec627d67b2c579059135853d70',
+              'decision':'KEEP_BASELINE',
+              'status':'NO_RESEARCH_CANDIDATE',
+          }
+          v5=json.loads(Path(closure['parameter_space_closure']).read_text())
+          assert a['parameter_search_space']==closure['parameter_space_closure'].replace('-closure.json','.json')
+          assert v5['status']=='CLOSED_KEEP_BASELINE'
+          assert v5['decision']=='KEEP_BASELINE'
+          assert 'Do not rerun or refine' in v5['closure_rule']
+          assert closure['authority']=={
+              'automatic_main_mutation':False,
+              'shipping':False,
+              'hil':False,
+              'product_certification':False,
+          }
+          print({'algorithm_variants':4,'parameter_candidates':8,'joint_space':32,'execution_authorized':False})
           PY
       - name: Enforce maintenance and shipping authority boundaries
         run: |
@@ -111,223 +135,3 @@ jobs:
           product=next(x for x in r['datasets'] if x['id']=='pcr02-product-external')
           assert product['selection_roles']==[] and product['evaluation_roles']==[]
           PY
-
-  joint-search:
-    needs: contract
-    if: github.event_name == 'workflow_dispatch' && inputs.execute_joint_search
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
-    env:
-      PYTHONPATH: validation/tools:.github/research/continuous-optimization:.github/research/continuous-optimization/development-v2
-      RESEARCH_REGISTRY: .github/research/continuous-optimization/dataset-registry.json
-      ALGORITHM_SPACE: .github/research/continuous-optimization/algorithm-space-v1.json
-      PARAMETER_SPACE: .github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json
-      DEV_LOCK: .github/research/continuous-optimization/development-v2/development.lock.json
-      DEV_POLICY: .github/research/continuous-optimization/development-v2/policy.json
-      MOTION_POLICY: validation/policies/validation-aec-motion-development.json
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: research-algorithm-parameter
-      - name: Install public development decoder
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg
-          command -v ffmpeg >/dev/null
-      - name: Build four exact algorithm-family processors
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          while read -r id aec ns; do
-            build="build-algorithm-$id"
-            cmake -S . -B "$build" \
-              -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
-              -DAP_AEC_BACKEND="$aec" -DAP_NS_ESTIMATOR="$ns" \
-              -DAP_RESAMPLER_MODE=BANDLIMITED -DAP_ENABLE_BF_DIRECTION_TRACKING=ON \
-              -DAP_ENABLE_FAST_MATH=OFF -DAP_SIMD_BACKEND=SCALAR
-            cmake --build "$build" --target ap_process_pcm --parallel
-          done <<'EOF'
-          mdf-ema MDF EMA
-          mdf-mcra MDF MCRA
-          nlms-ema NLMS EMA
-          nlms-mcra NLMS MCRA
-          EOF
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          payload={
-              'mdf-ema':'build-algorithm-mdf-ema/ap_process_pcm',
-              'mdf-mcra':'build-algorithm-mdf-mcra/ap_process_pcm',
-              'nlms-ema':'build-algorithm-nlms-ema/ap_process_pcm',
-              'nlms-mcra':'build-algorithm-nlms-mcra/ap_process_pcm',
-          }
-          for path in payload.values(): assert Path(path).is_file(), path
-          Path('/tmp/algorithm-processors.json').write_text(
-              json.dumps(payload,indent=2,sort_keys=True)+'\n'
-          )
-          PY
-      - name: Build fixed independent synthetic and motion partitions
-        run: |
-          set -euo pipefail
-          for seed in 1307 1407 2307 2407 3307 3407; do
-            python3 validation/tools/build_validation_corpus.py --output "/tmp/ap-research-$seed" --seed "$seed"
-          done
-          for seed in 4107 4207; do
-            python3 validation/tools/build_aec_motion_corpus.py --output "/tmp/ap-motion-$seed" --seed "$seed" --seconds 8
-          done
-      - name: Materialize fixed diverse public development partitions
-        run: |
-          set -euo pipefail
-          DEV_ROOT="$RUNNER_TEMP/audio-pipeline-development-v2"
-          python3 .github/research/continuous-optimization/development-v2/prepare.py \
-            --lock "$DEV_LOCK" --root "$DEV_ROOT" --output /tmp/development-v2-materialization.json
-          for seed in 1507 1607; do
-            python3 .github/research/continuous-optimization/development-v2/build_corpus.py \
-              --lock "$DEV_LOCK" --materialization /tmp/development-v2-materialization.json \
-              --data-root "$DEV_ROOT" --output "/tmp/development-v2-$seed" \
-              --seed "$seed" --mix-limit 40 --noise-limit 12 --clean-limit 12
-          done
-      - name: Freeze exact hierarchical run specification
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          evaluations=[]
-          for role,seeds in [('development',[1307,1407]),('validation',[2307,2407]),('shadow',[3307,3407])]:
-              for seed in seeds:
-                  evaluations.append({
-                      'evaluation_id':f'synthetic-{role}-{seed}','dataset_id':'synthetic-regression',
-                      'role':role,'seed':seed,'corpus':f'/tmp/ap-research-{seed}/corpus.json',
-                      'dataset_lock':'validation/datasets.lock.json',
-                      'policy':'validation/policies/validation-smoke.json',
-                  })
-          for seed in [1507,1607]:
-              evaluations.append({
-                  'evaluation_id':f'public-development-{seed}','dataset_id':'public-development-diverse',
-                  'role':'development','seed':seed,'corpus':f'/tmp/development-v2-{seed}/corpus.json',
-                  'dataset_lock':'.github/research/continuous-optimization/development-v2/development.lock.json',
-                  'policy':'.github/research/continuous-optimization/development-v2/policy.json',
-              })
-          for seed in [4107,4207]:
-              evaluations.append({
-                  'evaluation_id':f'aec-motion-development-{seed}','dataset_id':'aec-motion-regression',
-                  'role':'development','seed':seed,'corpus':f'/tmp/ap-motion-{seed}/corpus.json',
-                  'dataset_lock':'validation/datasets.lock.json',
-                  'policy':'validation/policies/validation-aec-motion-development.json',
-              })
-          spec={
-              'schema_version':1,
-              'experiment_id':f'joint-algorithm-parameter-{os.environ["GITHUB_RUN_ID"]}',
-              'hypothesis_id':'hierarchical-algorithm-parameter-v1',
-              'source_sha':os.environ['GITHUB_SHA'],
-              'search_space':os.environ['PARAMETER_SPACE'],
-              'policy':{
-                  'minimum_development_score':0.05,'minimum_development_unit_score':0.0,
-                  'minimum_distinct_development_seeds':6,'maximum_pareto_candidates':8,
-              },
-              'evaluations':evaluations,
-          }
-          Path('/tmp/joint-run.json').write_text(json.dumps(spec,indent=2,sort_keys=True)+'\n')
-          PY
-      - name: Run automatic algorithm-family and parameter iteration
-        run: |
-          set -euo pipefail
-          python3 .github/research/continuous-optimization/research_joint_optimizer.py \
-            --algorithm-space "$ALGORITHM_SPACE" \
-            --processors-json /tmp/algorithm-processors.json \
-            --run-spec /tmp/joint-run.json --registry "$RESEARCH_REGISTRY" \
-            --output-dir research-joint-optimization-out
-      - name: Mine failures into advisory curriculum
-        if: always()
-        run: |
-          set -euo pipefail
-          if [ -d research-joint-optimization-out/reports ]; then
-            mapfile -d '' reports < <(find research-joint-optimization-out/reports -type f -name '*.json' ! -name '*.evidence.json' -print0 | sort -z)
-            if [ "${#reports[@]}" -gt 0 ]; then
-              python3 .github/research/continuous-optimization/failure_mining.py \
-                "${reports[@]}" --output research-joint-optimization-out/failure-curriculum.json
-            fi
-          fi
-      - name: Mine development selection violations into advisory curriculum
-        if: always()
-        run: |
-          set -euo pipefail
-          if [ -f research-joint-optimization-out/optimization-result.json ]; then
-            python3 .github/research/continuous-optimization/selection_curriculum.py \
-              --optimization-result research-joint-optimization-out/optimization-result.json \
-              --output research-joint-optimization-out/selection-curriculum.json
-          fi
-      - name: Enforce research-only joint result
-        if: always()
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          r=json.loads(Path('research-joint-optimization-out/optimization-result.json').read_text())
-          assert r['authority']=='research-only-hierarchical-algorithm-parameter-optimization'
-          assert r['decision'] in {'KEEP_BASELINE','REJECT_CANDIDATE','FREEZE_RESEARCH_CANDIDATE'}
-          assert r['status'] in {'NO_RESEARCH_CANDIDATE','RESEARCH_CANDIDATE_REJECTED','FROZEN_RESEARCH_CANDIDATE'}
-          assert r['algorithm_space']['variant_count']==4
-          assert r['parameter_search_space']['candidate_count']==8
-          assert r['selected']['algorithm_id'] in {'mdf-ema','mdf-mcra','nlms-ema','nlms-mcra'}
-          assert r['automatic_shipping_promotion'] is False
-          assert r['automatic_main_mutation'] is False
-          assert r['output_authority']['shipping_authority'] is False
-          assert r['output_authority']['hil_authority'] is False
-          assert r['output_authority']['product_certification_authority'] is False
-          datasets={x['dataset_id'] for x in r['development']['units']}
-          assert {'synthetic-regression','public-development-diverse','aec-motion-regression'} <= datasets
-          assert len(r['generalization_gates'])==4
-          if r['status']=='FROZEN_RESEARCH_CANDIDATE': assert r['next_gate']=='validation-grade-blind'
-          print(json.dumps({
-              'decision':r['decision'],'status':r['status'],'algorithm':r['selected']['algorithm_id'],
-              'tuning':r['selected']['tuning'],'candidate':r['selected']['research_candidate_id'],
-              'gate_violations':len(r['gate_violations']),
-          },sort_keys=True))
-          PY
-      - name: Publish joint optimization summary
-        if: always()
-        run: |
-          if [ -f research-joint-optimization-out/optimization-result.json ]; then
-            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          r=json.loads(Path('research-joint-optimization-out/optimization-result.json').read_text())
-          print('## Automatic algorithm + parameter iteration')
-          print(f"- Decision: `{r['decision']}`")
-          print(f"- Status: `{r['status']}`")
-          print(f"- Algorithm: `{r['selected']['algorithm_id']}`")
-          print(f"- Tuning: `{json.dumps(r['selected']['tuning'],sort_keys=True)}`")
-          print(f"- Research candidate: `{r['selected']['research_candidate_id']}`")
-          print(f"- Generalization violations: `{len(r['gate_violations'])}`")
-          curriculum_path=Path('research-joint-optimization-out/selection-curriculum.json')
-          if curriculum_path.is_file():
-              c=json.loads(curriculum_path.read_text())
-              print(f"- Algorithm next-round signal: `{c['algorithm']['next_round_signal']}`")
-              print(f"- Parameter next-round signal: `{c['parameter']['next_round_signal']}`")
-              closest=c['parameter']['closest_repairable']
-              if closest:
-                  print(f"- Closest nonterminal parameter boundary: `{closest['candidate_id']}`, violations=`{closest['nonterminal_violation_count']}`")
-          print('- Selection uses development data only; validation/shadow are final reject-only gates.')
-          print('- Authority remains research-only; no main/shipping/HIL/Product Certification mutation.')
-          PY
-          fi
-      - name: Upload hash-bound joint optimization evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: research-algorithm-parameter-${{ github.run_id }}
-          path: |
-            /tmp/algorithm-processors.json
-            /tmp/joint-run.json
-            /tmp/development-v2-materialization.json
-            /tmp/ap-motion-*/source-manifest.json
-            research-joint-optimization-out/
-          if-no-files-found: error
-          retention-days: 30

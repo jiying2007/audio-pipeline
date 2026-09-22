@@ -53,5 +53,15 @@
     "automatic_shipping_promotion": false,
     "hil_authority": false,
     "product_certification_authority": false
+  },
+  "status": "CLOSED_KEEP_BASELINE",
+  "execution_authorized": false,
+  "closure": {
+    "predecessor_run_id": 35301640608,
+    "predecessor_decision": "KEEP_BASELINE",
+    "predecessor_status": "NO_RESEARCH_CANDIDATE",
+    "successor_origin": ".github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json",
+    "parameter_space_closure": ".github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json",
+    "rule": "Algorithm-space v1 is consumed historical selection evidence. Reopening requires a new algorithm-space identity and fresh explicit research authority."
   }
 }

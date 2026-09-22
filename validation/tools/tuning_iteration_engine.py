@@ -760,7 +760,10 @@ def processor_default_tuning(processor: Path) -> dict[str, float]:
     return canonical_tuning(payload)
 
 
-def _git_head(repo_root: Path) -> str:
+def current_source_revision(repo_root: Path) -> str:
+    explicit = os.environ.get("GITHUB_SHA")
+    if explicit:
+        return explicit.strip().lower()
     return subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=repo_root, text=True
     ).strip().lower()
@@ -782,7 +785,7 @@ def load_reusable_baseline_report(
     identity = load_corpus_identity(corpus)
     if report.get("corpus_id") != identity["corpus_id"] or report.get("tier") != identity["tier"]:
         raise ValueError(f"reusable baseline corpus identity drift: {report_path}")
-    if str(report.get("source_revision", "")).lower() != _git_head(repo_root):
+    if str(report.get("source_revision", "")).lower() != current_source_revision(repo_root):
         raise ValueError(f"reusable baseline source revision drift: {report_path}")
     expected = {
         "authority_sha256": sha256_file(repo_root / "validation/authority.json"),
@@ -1094,7 +1097,7 @@ def self_test() -> None:
             "validation_result": "PASS",
             "tier": "regression",
             "corpus_id": "baseline-reuse-self-test",
-            "source_revision": _git_head(repo_root),
+            "source_revision": current_source_revision(repo_root),
             "bindings": {
                 "authority_sha256": sha256_file(repo_root / "validation/authority.json"),
                 "dataset_lock_sha256": sha256_file(dataset_lock),

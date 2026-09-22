@@ -87,6 +87,18 @@ by hosted blind qualification. That proxy changes no audio samples or tuning; it
 canonicalizes the diagnostic `vad_probability` / `erle_db` non-finite spellings to JSON
 `null`, audits the replacements, and rejects every other malformed/non-standard token.
 
+Frozen-candidate public replay is paired with the exact canonical baseline on the same
+Full corpus and fixed policy. The source-built processor default tuning must exactly match
+the baseline recorded in the frozen Audio Quality search space before either result is
+interpreted. Public qualification has three machine-readable outcomes:
+
+- `PUBLIC_QUALIFIED_NON_SHIPPING`: baseline and candidate both PASS; candidate may advance to blind.
+- `PUBLIC_REJECTED_NON_SHIPPING`: baseline PASS and candidate FAIL; the exact candidate is terminal.
+- `PUBLIC_BASELINE_UNHEALTHY_NON_SHIPPING`: baseline FAIL; qualification is incomplete and cannot terminalize the candidate.
+
+This paired baseline rule prevents an unhealthy or over-strict public policy from being
+misinterpreted as candidate-specific evidence.
+
 Candidate mode is intentionally limited to visible `validation-grade` execution and
 runs on GitHub-hosted infrastructure. It bootstraps the same hash-bound Full public
 cache contract used by hosted blind qualification, then replays the exact frozen tuning

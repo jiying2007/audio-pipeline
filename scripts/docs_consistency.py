@@ -426,12 +426,17 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     for token in (
         "audio_builder",
         "builderuser",
-        "Execute audio-builder as an ordinary user",
+        "builder_lane()",
+        "builder_lane > /tmp/lab-builder-lane.log 2>&1 & pids[builder]=$!",
         '"audio_builder":"PASS"',
         "certification_archive",
         "archiveuser",
-        "Execute certification-archive as an ordinary user",
+        "archive_lane()",
+        "archive_lane > /tmp/lab-archive-lane.log 2>&1 & pids[archive]=$!",
         '"certification_archive":"PASS"',
+        "for lane in validation target builder archive; do",
+        'wait "${pids[$lane]}"',
+        'cat "/tmp/lab-$lane-lane.log"',
     ):
         if token not in lab_user_mode:
             errors.append(f"required lab user-mode gate missing certification topology token: {token}")

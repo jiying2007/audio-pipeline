@@ -58,7 +58,7 @@ The generator is deterministic and remains `tier=regression`; it is not public-d
 
 The bounded search engine is `validation/tools/tuning_iteration.py`; search contracts live under `validation/tuning/`.
 
-Required PR verification always runs the deterministic 1307/2307/3307 regression matrix and tuner self-tests. The bounded `call-pr-smoke-v1` candidate search runs only when CI impact says the change can affect candidate discovery (DSP/build semantics, canonical validation/tuning assets, or the required audio-quality/Verify routing itself); `main` always forces the search again. Manual **Acoustic Tuning Search** runs the wider search space. The standalone search workflow has no PR trigger, so candidate discovery is never duplicated automatically.
+Required PR verification always runs the deterministic 1307/2307/3307 regression matrix and tuner self-tests. The bounded `call-pr-smoke-v1` candidate search runs only when CI impact says the change can affect candidate discovery (DSP/build semantics, canonical validation/tuning assets, or the required audio-quality/Verify routing itself); `main` always forces the search again. Manual **Acoustic Tuning Search** runs the wider search space. The standalone search workflow has no PR trigger, so candidate discovery is never duplicated automatically. When the bounded search runs, it may reuse the just-enforced 1307/2307/3307 baseline reports only after exact source/corpus/policy/dataset/processor bindings and the processor-reported default tuning are proven identical to the search-space baseline; otherwise reuse fails closed.
 
 An optimizer result may be only `KEEP_BASELINE`, `REJECT_CANDIDATE`, or `ACOUSTIC_CANDIDATE`. Candidate promotion remains:
 

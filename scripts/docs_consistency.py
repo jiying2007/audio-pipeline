@@ -264,7 +264,19 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
         errors.append("standalone acoustic tuning search must not duplicate impact-routed PR tuning")
     if re.search(r"(?m)^\s*schedule\s*:", tuning_workflow):
         errors.append("standalone acoustic tuning search must be manual-only in maintenance state")
-    for token in ("workflow_dispatch:", "call-v1.json", "validation/tools/authority.py"):
+    for token in (
+        "workflow_dispatch:",
+        "call-v1.json",
+        "validation/tools/authority.py",
+        "Enforce canonical baseline partitions",
+        "--candidate-jobs 2",
+        "--holdout-jobs 2",
+        "--baseline-development-report /tmp/ap-tuning-1307/baseline-report.json",
+        "--baseline-validation-report /tmp/ap-tuning-2307/baseline-report.json",
+        "--baseline-shadow-report /tmp/ap-tuning-3307/baseline-report.json",
+        "baseline_reports_reused",
+        "reused_baseline_reports",
+    ):
         if token not in tuning_workflow:
             errors.append(f"manual acoustic tuning workflow missing token: {token}")
     for token in (

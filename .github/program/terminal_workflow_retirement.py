@@ -220,6 +220,38 @@ def validate_manifest(data: dict) -> None:
         require(isinstance(r["reason"], str) and r["reason"],
                 f"missing source-candidate round reason: {r['round_id']}")
 
+    stage_lane_records = data.get("stage_lane_rounds", [])
+    require(isinstance(stage_lane_records, list), "stage_lane_rounds must be a list")
+    for r in stage_lane_records:
+        require(set(r) == {
+            "round_id", "path", "blob_sha", "evidence", "lane_outcomes", "reason"
+        }, f"stage-lane round fields drift: {r.get('round_id')}")
+        round_id = r["round_id"]
+        path = str(r["path"])
+        blob = str(r["blob_sha"])
+        evidence = r["evidence"]
+        require(isinstance(round_id, str) and round_id,
+                "stage-lane round id missing")
+        require(path.startswith(".github/workflows/"),
+                f"invalid stage-lane workflow path: {path}")
+        require(path not in seen_paths, f"duplicate retired workflow path: {path}")
+        require(SHA_RE.fullmatch(blob) is not None,
+                f"invalid stage-lane workflow blob SHA: {path}")
+        require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
+        require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                f"stage-lane evidence path invalid: {path}")
+        lane_outcomes = r["lane_outcomes"]
+        require(isinstance(lane_outcomes, dict) and set(lane_outcomes) == {
+            "bf", "ns", "vad", "agc"
+        }, f"unexpected stage-lane outcome set: {round_id}")
+        for lane_id, outcome in lane_outcomes.items():
+            require(isinstance(outcome, str) and outcome.startswith(".github/research/"),
+                    f"stage-lane outcome path invalid: {round_id}/{lane_id}")
+        require(isinstance(r["reason"], str) and r["reason"],
+                f"missing stage-lane retirement reason: {round_id}")
+        seen_paths.add(path)
+        seen_blobs.add(blob)
+
     require(data.get("authority_boundary") == {
         "shipping_source_changed": False,
         "release_changed": False,
@@ -654,6 +686,129 @@ def check(root: Path) -> dict:
             "round_closure": r["round_closure"],
         })
 
+    stage_lane_round_checked = []
+    for r in data.get("stage_lane_rounds", []):
+        round_id = r["round_id"]
+        workflow_path = root / r["path"]
+        require(not workflow_path.exists(),
+                f"retired stage-lane workflow was reintroduced: {r['path']}")
+
+        evidence_path = root / r["evidence"]
+        require(evidence_path.is_file(),
+                f"stage-lane run evidence missing: {r['evidence']}")
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+
+        require(git("cat-file", "-t", r["blob_sha"]) == "blob",
+                f"historical stage-lane workflow blob missing: {r['path']}")
+        historical = git("cat-file", "blob", r["blob_sha"])
+        on_block = extract_on_block(historical)
+        require("pull_request:" in on_block and "workflow_dispatch:" in on_block,
+                f"retired stage-lane workflow must preserve PR + manual lineage: {r['path']}")
+        for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:"):
+            require(forbidden not in on_block,
+                    f"retired stage-lane workflow had forbidden trigger {forbidden}: {r['path']}")
+
+        require(evidence.get("program_id") == round_id
+                and evidence.get("workflow") == "Research Stage Lane Optimization"
+                and evidence.get("event") == "workflow_dispatch"
+                and evidence.get("requested_lane") == "all"
+                and evidence.get("status") == "SUCCESS",
+                f"stage-lane run evidence drift: {round_id}")
+        feedback = evidence.get("feedback_boundary") or {}
+        require(feedback.get("development_selected") is True
+                and feedback.get("validation_and_shadow_reject_only") is True
+                and feedback.get("blind_used_for_selection") is False
+                and feedback.get("product_external_used_for_selection") is False,
+                f"stage-lane feedback boundary drift: {round_id}")
+        require((evidence.get("composition") or {}).get("executable_ready") is False,
+                f"stage-lane unexpectedly regained composition readiness: {round_id}")
+
+        artifacts = evidence.get("artifacts") or {}
+        decisions = evidence.get("decisions") or {}
+        require(set(artifacts) == {"bf", "ns", "vad", "agc"}
+                and set(decisions) == {"bf", "ns", "vad", "agc"},
+                f"stage-lane evidence set drift: {round_id}")
+
+        outcomes = {}
+        for lane_id, relative in r["lane_outcomes"].items():
+            outcome_path = root / relative
+            require(outcome_path.is_file(),
+                    f"stage-lane outcome missing: {round_id}/{lane_id} -> {relative}")
+            outcomes[lane_id] = json.loads(outcome_path.read_text(encoding="utf-8"))
+
+        bf = outcomes["bf"]
+        bf_artifact = artifacts["bf"]
+        bf_decision = decisions["bf"]
+        bf_predecessor = bf.get("predecessor") or {}
+        require(bf_decision.get("decision") == "FROZEN_STAGE_RESEARCH_CANDIDATE"
+                and bf_decision.get("executable_binding") is False
+                and bf_decision.get("next_gate") == "separate-source-candidate-review",
+                f"BF stage-lane decision drift: {round_id}")
+        require(bf.get("authority") == "DIAGNOSTIC_ONLY"
+                and bf.get("candidate_budget") == 0
+                and bf_predecessor.get("stage_lane_run") == evidence.get("run_id")
+                and bf_predecessor.get("artifact_id") == bf_artifact.get("artifact_id")
+                and bf_predecessor.get("artifact_digest") == bf_artifact.get("digest")
+                and bf_predecessor.get("lane_decision") == bf_decision.get("decision")
+                and bf_predecessor.get("emulator_variant")
+                    == (bf_decision.get("selected") or {}).get("variant")
+                and bf_predecessor.get("emulator_parameter")
+                    == (bf_decision.get("selected") or {}).get("parameter"),
+                f"BF stage-lane outcome was not consumed exactly: {round_id}")
+        prohibited = set(bf.get("prohibited") or [])
+        require("select a BF source candidate" in prohibited
+                and "shipping/HIL/Product Certification promotion" in prohibited,
+                f"BF stage-lane diagnostic boundary drift: {round_id}")
+
+        ns = outcomes["ns"]
+        ns_artifact = artifacts["ns"]
+        ns_decision = decisions["ns"]
+        ns_evidence = ns.get("evidence") or {}
+        require(ns_decision.get("decision") == "REJECT_CANDIDATE"
+                and ns_decision.get("executable_binding") is True
+                and ns_decision.get("next_gate") is None,
+                f"NS stage-lane decision drift: {round_id}")
+        require(ns.get("status") == "CLOSED_KEEP_BASELINE_AFTER_REJECT"
+                and ns.get("candidate_budget") == 0
+                and ns_evidence.get("stage_lane_run") == evidence.get("run_id")
+                and ns_evidence.get("artifact_id") == ns_artifact.get("artifact_id")
+                and ns_evidence.get("artifact_digest") == ns_artifact.get("digest")
+                and ns_evidence.get("decision") == ns_decision.get("decision")
+                and (ns_evidence.get("effective_winner") or {}).get("algorithm")
+                    == (ns_decision.get("effective_winner") or {}).get("algorithm")
+                and (ns_evidence.get("effective_winner") or {}).get("ns_floor")
+                    == ((ns_decision.get("effective_winner") or {}).get("tuning") or {}).get("ns_floor"),
+                f"NS stage-lane closure drift: {round_id}")
+
+        for lane_id in ("vad", "agc"):
+            candidate = outcomes[lane_id]
+            artifact = artifacts[lane_id]
+            decision = decisions[lane_id]
+            predecessor = candidate.get("predecessor") or {}
+            require(decision.get("decision") == "FROZEN_STAGE_RESEARCH_CANDIDATE"
+                    and decision.get("executable_binding") is False
+                    and decision.get("next_gate") == "separate-source-candidate-review",
+                    f"{lane_id.upper()} stage-lane decision drift: {round_id}")
+            require(candidate.get("status") == "CLOSED_TERMINAL_SOURCE_CANDIDATE_REJECT"
+                    and candidate.get("terminal_candidate") is True
+                    and candidate.get("candidate_budget") == 0
+                    and candidate.get("confirmation_limit") == 0
+                    and predecessor.get("stage_lane_run") == evidence.get("run_id")
+                    and predecessor.get("artifact_id") == artifact.get("artifact_id")
+                    and predecessor.get("artifact_digest") == artifact.get("digest")
+                    and predecessor.get("lane_decision") == decision.get("decision"),
+                    f"{lane_id.upper()} stage-lane successor is not terminal: {round_id}")
+            for key in ("automatic_main_mutation", "shipping", "hil", "product_certification"):
+                require((candidate.get("promotion") or {}).get(key) is False,
+                        f"{lane_id.upper()} stage-lane successor regained {key}: {round_id}")
+
+        stage_lane_round_checked.append({
+            "round_id": round_id,
+            "path": r["path"],
+            "evidence": r["evidence"],
+            "lane_outcomes": r["lane_outcomes"],
+        })
+
     # A terminal research task must not regain a standalone Actions entry under its task prefix.
     # Reproducers/contracts/results stay in the repository; only the consumed orchestration entry is retired.
     for pattern in ("*.yml", "*.yaml"):
@@ -674,11 +829,13 @@ def check(root: Path) -> dict:
         "retired_source_candidate_workflows": len(source_candidate_checked),
         "retired_selection_workflows": len(selection_checked),
         "retired_source_candidate_rounds": len(source_candidate_round_checked),
+        "retired_stage_lane_rounds": len(stage_lane_round_checked),
         "tasks": sorted(EXPECTED_TASKS),
         "research_investigations": sorted(item["investigation_id"] for item in research_checked),
         "source_candidates": sorted(item["candidate_id"] for item in source_candidate_checked),
         "selection_ids": sorted(item["selection_id"] for item in selection_checked),
         "source_candidate_rounds": sorted(item["round_id"] for item in source_candidate_round_checked),
+        "stage_lane_rounds": sorted(item["round_id"] for item in stage_lane_round_checked),
         "software_release": data["software_release"],
         "release_source_sha": data["release_source_sha"],
         "product_qualification": "DEFERRED_BY_SCOPE",
@@ -794,6 +951,21 @@ def self_test() -> None:
         "reason": "terminal source candidate round",
     }]
     validate_manifest(round_sample)
+    stage_lane_sample = json.loads(json.dumps(sample))
+    stage_lane_sample["stage_lane_rounds"] = [{
+        "round_id": "bf-ns-vad-agc-stage-lanes-v1",
+        "path": ".github/workflows/research-stage-lane-example.yml",
+        "blob_sha": "9" * 40,
+        "evidence": ".github/research/stage-lane-run.json",
+        "lane_outcomes": {
+            "bf": ".github/research/bf-outcome.json",
+            "ns": ".github/research/ns-outcome.json",
+            "vad": ".github/research/vad-outcome.json",
+            "agc": ".github/research/agc-outcome.json",
+        },
+        "reason": "terminal four-lane research round",
+    }]
+    validate_manifest(stage_lane_sample)
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
     assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
     assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")

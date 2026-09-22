@@ -475,10 +475,16 @@ def self_test() -> None:
     assert len(unknown["arm"]) == len(FULL_ARM)
     lab = analyze(["lab/ansible/site.yml"])
     assert lab["full"] and lab["run_lab"] and not lab["run_tuning"]
+    lab_workflow = analyze([".github/workflows/lab-user-mode.yml"])
+    assert lab_workflow["full"] and lab_workflow["run_lab"] and not lab_workflow["run_tuning"]
     hil = analyze(["hil/board.schema.json"])
     assert hil["full"] and hil["run_lab"] and not hil["run_tuning"]
+    certification = analyze(["certification/record.schema.json"])
+    assert certification["run_audio"] and not certification["run_tuning"]
     audio_workflow = analyze([".github/workflows/audio-quality-gates.yml"])
     assert audio_workflow["full"] and audio_workflow["run_tuning"]
+    verify_workflow = analyze([".github/workflows/verify.yml"])
+    assert verify_workflow["full"] and verify_workflow["run_tuning"]
     impact_self = analyze(["scripts/ci_impact.py"])
     assert impact_self["full"] and impact_self["run_tuning"]
     forced = analyze([], True)

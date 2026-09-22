@@ -1059,6 +1059,69 @@ def self_test() -> None:
                 f"invalid parallelism accepted: candidate={candidate_jobs} holdout={holdout_jobs}"
             )
 
+    repo_root = Path(".").resolve()
+    with tempfile.TemporaryDirectory(prefix="ap-baseline-reuse-self-test-") as temporary:
+        root = Path(temporary)
+        processor = root / "processor"
+        processor.write_text(
+            "#!/usr/bin/env python3\n"
+            "import json, sys\n"
+            "if sys.argv[1:] == ['--print-default-tuning']:\n"
+            "    print(json.dumps({'aec_mu':0.22,'ns_floor':0.12,'agc_target_dbfs':-20.0,'limiter_dbfs':-2.0}, sort_keys=True))\n"
+            "    raise SystemExit(0)\n"
+            "raise SystemExit(2)\n",
+            encoding="utf-8",
+        )
+        processor.chmod(0o755)
+        assert processor_default_tuning(processor) == {
+            "aec_mu": 0.22, "ns_floor": 0.12,
+            "agc_target_dbfs": -20.0, "limiter_dbfs": -2.0,
+        }
+
+        corpus = root / "corpus.json"
+        policy = root / "policy.json"
+        dataset_lock = root / "datasets.lock.json"
+        corpus.write_text(json.dumps({
+            "corpus_id": "baseline-reuse-self-test",
+            "tier": "regression",
+            "generator": {"seed": 1307},
+        }) + "\n", encoding="utf-8")
+        policy.write_text("{}\n", encoding="utf-8")
+        dataset_lock.write_text("{}\n", encoding="utf-8")
+        report_path = root / "report.json"
+        report = {
+            "schema_version": 1,
+            "validation_result": "PASS",
+            "tier": "regression",
+            "corpus_id": "baseline-reuse-self-test",
+            "source_revision": _git_head(repo_root),
+            "bindings": {
+                "authority_sha256": sha256_file(repo_root / "validation/authority.json"),
+                "dataset_lock_sha256": sha256_file(dataset_lock),
+                "corpus_sha256": sha256_file(corpus),
+                "policy_sha256": sha256_file(policy),
+                "processor_sha256": sha256_file(processor),
+            },
+            "summary": {},
+            "cases": [],
+            "violations": [],
+        }
+        report_path.write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
+        assert load_reusable_baseline_report(
+            repo_root, report_path, corpus, policy, dataset_lock, processor
+        )["corpus_id"] == "baseline-reuse-self-test"
+        tampered = json.loads(report_path.read_text(encoding="utf-8"))
+        tampered["bindings"]["processor_sha256"] = "0" * 64
+        report_path.write_text(json.dumps(tampered, sort_keys=True) + "\n", encoding="utf-8")
+        try:
+            load_reusable_baseline_report(
+                repo_root, report_path, corpus, policy, dataset_lock, processor
+            )
+        except ValueError as exc:
+            assert "processor_sha256" in str(exc)
+        else:
+            raise AssertionError("tampered reusable baseline processor binding was accepted")
+
     space = {
         "schema_version": 1,
         "search_space_id": "self-test",
@@ -1487,6 +1550,9 @@ def main(semantics: IterationSemantics | None = None) -> int:
                         help="parallel development candidates; deterministic output order is preserved")
     parser.add_argument("--holdout-jobs", type=int, default=1,
                         help="parallel validation/shadow reports; deterministic output order is preserved")
+    parser.add_argument("--baseline-development-report", type=Path)
+    parser.add_argument("--baseline-validation-report", type=Path)
+    parser.add_argument("--baseline-shadow-report", type=Path)
     parser.add_argument("--require-candidate", action="store_true",
                         help="return non-zero unless an independent-gate ACOUSTIC_CANDIDATE is produced")
     args = parser.parse_args()
@@ -1498,12 +1564,26 @@ def main(semantics: IterationSemantics | None = None) -> int:
     for name in required:
         if getattr(args, name) is None:
             parser.error(f"--{name.replace('_', '-')} is required")
+    baseline_paths = {
+        "development": args.baseline_development_report,
+        "validation": args.baseline_validation_report,
+        "shadow": args.baseline_shadow_report,
+    }
+    provided = [value is not None for value in baseline_paths.values()]
+    if any(provided) and not all(provided):
+        parser.error("baseline report reuse requires development, validation and shadow reports together")
+    baseline_reports = (
+        {key: value.resolve() for key, value in baseline_paths.items() if value is not None}
+        if all(provided) else None
+    )
+
     result = iterate(
         args.repo_root.resolve(), args.processor.resolve(),
         args.development_corpus.resolve(), args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),
         args.search_space.resolve(), args.output_dir.resolve(), args.candidate_jobs,
         semantics=semantics, holdout_jobs=args.holdout_jobs,
+        baseline_reports=baseline_reports,
     )
     print(json.dumps({
         "decision": result["decision"], "iteration_id": result["iteration_id"],

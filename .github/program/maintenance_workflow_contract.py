@@ -14,6 +14,8 @@ WORKFLOW_DIR = Path('.github/workflows')
 PROGRAM_PLAN = Path('docs/program/plan.json')
 I002_CONTRACT = Path('docs/program/iterations/I002.json')
 AEC_MOTION_MAINTENANCE_WORKFLOW = Path('.github/workflows/aec-motion-development.yml')
+EXTENDED_REAL_AUTOMATION_WORKFLOW = Path('.github/workflows/extended-real-automation.yml')
+HIL_SOAK_WORKFLOW = Path('.github/workflows/hil-soak.yml')
 PROGRAM_ARCHIVE_WORKFLOW = Path('.github/workflows/program-iteration.yml')
 TERMINAL_RETIREMENT_MANIFEST = Path('docs/program/terminal-workflow-retirement.json')
 
@@ -113,8 +115,8 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
 # convergence work. Candidate/research search is intentionally absent.
 ALLOWED_SCHEDULED_WORKFLOWS = {
     AEC_MOTION_MAINTENANCE_WORKFLOW: ('41 18 * * 2,5',),
-    Path('.github/workflows/extended-real-automation.yml'): ('17 3 * * 0',),
-    Path('.github/workflows/hil-soak.yml'): ('43 18 * * *', '17 17 * * 0'),
+    EXTENDED_REAL_AUTOMATION_WORKFLOW: ('17 3 * * 0',),
+    HIL_SOAK_WORKFLOW: ('43 18 * * *', '17 17 * * 0'),
     Path('.github/workflows/hosted-aec-real-validation.yml'): ('23 18 * * *',),
     Path('.github/workflows/hosted-real-validation.yml'): ('47 18 * * *',),
     Path('.github/workflows/lab-acquisition-smoke.yml'): ('23 3 * * 3',),
@@ -342,6 +344,51 @@ def validate_no_legacy_semantics_consumers(root: Path) -> None:
                 )
 
 
+def validate_deferred_external_schedule_boundaries(root: Path) -> None:
+    extended_text = (root / EXTENDED_REAL_AUTOMATION_WORKFLOW).read_text(encoding='utf-8')
+    extended_job = job_block(extended_text, 'dispatch')
+    extended_skip = 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED'
+    extended_required = 'EXTENDED_REAL_REQUIRED_BUT_DISABLED'
+    assert extended_skip in extended_job, (
+        'Extended Real disabled schedule must cleanly skip instead of failing'
+    )
+    assert extended_required in extended_job, (
+        'Extended Real required/manual events must remain fail-closed when disabled'
+    )
+    assert extended_job.index(extended_skip) < extended_job.index(extended_required), (
+        'Extended Real scheduled skip must be resolved before required-event failure'
+    )
+    assert 'if [ "$EVENT_NAME" = schedule ]; then' in extended_job, (
+        'Extended Real disabled clean skip must remain schedule-only'
+    )
+    assert "if: steps.request.outputs.run == 'true'" in extended_job, (
+        'Extended Real dispatch must remain gated by the resolved run decision'
+    )
+
+    hil_text = (root / HIL_SOAK_WORKFLOW).read_text(encoding='utf-8')
+    availability = job_block(hil_text, 'availability')
+    hil_skip = 'HIL_SCHEDULE_SKIPPED_DISABLED'
+    hil_required = 'HIL_REQUIRED_BUT_DISABLED'
+    assert hil_skip in availability, (
+        'HIL disabled schedule must cleanly skip instead of failing'
+    )
+    assert hil_required in availability, (
+        'HIL post-release required event must remain fail-closed when disabled'
+    )
+    assert availability.index(hil_skip) < availability.index(hil_required), (
+        'HIL scheduled skip must be resolved before required-event failure'
+    )
+    assert 'if [ "$EVENT_NAME" = schedule ]; then' in availability, (
+        'HIL disabled clean skip must remain schedule-only'
+    )
+    assert 'if [ "$EVENT_NAME" = repository_dispatch ]; then' in availability, (
+        'HIL post-release dispatch validation must remain explicit'
+    )
+    assert 'if [ "$EVENT_NAME" = workflow_dispatch ]; then' in availability, (
+        'HIL explicit manual execution path must remain available'
+    )
+
+
 def validate(root: Path = REPOSITORY_ROOT) -> None:
     validate_program_archive_trigger_boundaries(root)
     validate_no_legacy_semantics_consumers(root)
@@ -422,6 +469,7 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
 
     validate_aec_motion_maintenance_boundary(root)
     validate_hosted_real_trigger_boundaries(root)
+    validate_deferred_external_schedule_boundaries(root)
 
     actual: dict[Path, tuple[str, ...]] = {}
     workflow_root = root / WORKFLOW_DIR
@@ -492,6 +540,78 @@ def _write_hosted_real_fixture(root: Path, relative: Path,
         '    branches: [main]\n'
         '  schedule:\n' + schedule +
         '  workflow_dispatch:\n' + reusable,
+        encoding='utf-8',
+    )
+
+
+def _write_deferred_external_schedule_fixtures(root: Path) -> None:
+    extended = root / EXTENDED_REAL_AUTOMATION_WORKFLOW
+    extended.parent.mkdir(parents=True, exist_ok=True)
+    extended.write_text(
+        "name: Extended Real Automation\n\non:\n"
+        "  repository_dispatch:\n    types: [extended-real-post-release]\n"
+        "  schedule:\n    - cron: '17 3 * * 0'\n"
+        "  workflow_dispatch:\n\n"
+        "jobs:\n"
+        "  dispatch:\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - name: Resolve exact source and automation profile\n"
+        "        id: request\n"
+        "        run: |\n"
+        "          if [ \"$EXTENDED_REAL_ENABLED\" != true ]; then\n"
+        "            if [ \"$EVENT_NAME\" = schedule ]; then\n"
+        "              echo 'run=false' >> \"$GITHUB_OUTPUT\"\n"
+        "              echo 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED'\n"
+        "              exit 0\n"
+        "            fi\n"
+        "            echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED' >&2\n"
+        "            exit 1\n"
+        "          fi\n"
+        "          echo 'run=true' >> \"$GITHUB_OUTPUT\"\n"
+        "      - name: Dispatch canonical extended-real workflow\n"
+        "        if: steps.request.outputs.run == 'true'\n"
+        "        run: echo dispatch\n",
+        encoding='utf-8',
+    )
+
+    hil = root / HIL_SOAK_WORKFLOW
+    hil.write_text(
+        "name: HIL Tiered Soak\n\non:\n"
+        "  schedule:\n"
+        "    - cron: '43 18 * * *'\n"
+        "    - cron: '17 17 * * 0'\n"
+        "  repository_dispatch:\n    types: [hil-post-release]\n"
+        "  workflow_dispatch:\n\n"
+        "jobs:\n"
+        "  availability:\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - name: Enforce HIL availability policy\n"
+        "        run: |\n"
+        "          if [ \"$EVENT_NAME\" = workflow_dispatch ]; then\n"
+        "            echo 'run=true' >> \"$GITHUB_OUTPUT\"\n"
+        "            exit 0\n"
+        "          fi\n"
+        "          if [ \"$EVENT_NAME\" = repository_dispatch ]; then\n"
+        "            echo validate-post-release\n"
+        "          fi\n"
+        "          if [ \"$HIL_ENABLED\" != true ]; then\n"
+        "            echo 'run=false' >> \"$GITHUB_OUTPUT\"\n"
+        "            if [ \"$EVENT_NAME\" = schedule ]; then\n"
+        "              echo 'HIL_SCHEDULE_SKIPPED_DISABLED'\n"
+        "              exit 0\n"
+        "            fi\n"
+        "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n"
+        "            exit 1\n"
+        "          fi\n"
+        "          echo 'run=true' >> \"$GITHUB_OUTPUT\"\n"
+        "  soak:\n"
+        "    needs: availability\n"
+        "    if: needs.availability.outputs.run == 'true'\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo soak\n",
         encoding='utf-8',
     )
 
@@ -603,7 +723,36 @@ def self_test() -> None:
             _write_hosted_real_fixture(
                 root, relative, required_paths, ALLOWED_SCHEDULED_WORKFLOWS[relative]
             )
+        _write_deferred_external_schedule_fixtures(root)
         validate(root)
+
+        extended_path = root / EXTENDED_REAL_AUTOMATION_WORKFLOW
+        extended_text = extended_path.read_text(encoding='utf-8')
+        extended_path.write_text(
+            extended_text.replace('EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED', 'EXTENDED_REAL_DISABLED'),
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'disabled schedule must cleanly skip' in str(exc)
+        else:
+            raise AssertionError('Extended Real scheduled-disabled failure policy drift was accepted')
+        extended_path.write_text(extended_text, encoding='utf-8')
+
+        hil_path = root / HIL_SOAK_WORKFLOW
+        hil_text = hil_path.read_text(encoding='utf-8')
+        hil_path.write_text(
+            hil_text.replace('HIL_REQUIRED_BUT_DISABLED', 'HIL_DISABLED'),
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'post-release required event must remain fail-closed' in str(exc)
+        else:
+            raise AssertionError('HIL post-release disabled fail-closed policy drift was accepted')
+        hil_path.write_text(hil_text, encoding='utf-8')
 
         _write_program_archive_fixture(root, duplicate=True)
         try:

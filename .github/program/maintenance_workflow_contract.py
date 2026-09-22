@@ -97,6 +97,14 @@ PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
 CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
 )
+CONTRACT_ONLY_RESEARCH_EVIDENCE = {
+    Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
+        Path('.github/research/continuous-optimization/algorithm-space-v1.json'),
+        Path('.github/research/continuous-optimization/algorithm-space-v1-closure.json'),
+        Path('.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json'),
+        Path('.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json'),
+    ),
+}
 
 
 # Recurring execution is an explicit maintenance capability, not a default.
@@ -268,6 +276,8 @@ def program_archive_required_paths(root: Path) -> list[str]:
     required.update(str(path) for path in PR_MANUAL_RESEARCH_WORKFLOWS)
     required.update(str(path) for path in ALLOWED_SCHEDULED_WORKFLOWS)
     required.update(str(path) for path in HOSTED_REAL_PR_REQUIRED_PATHS)
+    for evidence_paths in CONTRACT_ONLY_RESEARCH_EVIDENCE.values():
+        required.update(str(path) for path in evidence_paths)
     required.update(_terminal_retirement_required_paths(root))
     return sorted(required)
 
@@ -354,9 +364,18 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
             f'{relative} full historical search must remain manual-dispatch-only'
         )
 
+    assert set(CONTRACT_ONLY_RESEARCH_EVIDENCE) == set(CONTRACT_ONLY_RESEARCH_WORKFLOWS), (
+        'contract-only research evidence mapping must exactly cover contract-only workflows'
+    )
     for relative in CONTRACT_ONLY_RESEARCH_WORKFLOWS:
         path = root / relative
         text = path.read_text(encoding='utf-8')
+        evidence_paths = CONTRACT_ONLY_RESEARCH_EVIDENCE[relative]
+        assert evidence_paths, f'{relative} must bind durable consumed-research evidence'
+        for evidence_relative in evidence_paths:
+            assert (root / evidence_relative).is_file(), (
+                f'{relative} durable evidence missing: {evidence_relative}'
+            )
         contract = job_block(text, 'contract')
         jobs_text = text[text.find('\njobs:') + 1:]
         job_names = re.findall(r'(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$', jobs_text)
@@ -491,6 +510,10 @@ def self_test() -> None:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             if relative in CONTRACT_ONLY_RESEARCH_WORKFLOWS:
+                for evidence_relative in CONTRACT_ONLY_RESEARCH_EVIDENCE[relative]:
+                    evidence_path = root / evidence_relative
+                    evidence_path.parent.mkdir(parents=True, exist_ok=True)
+                    evidence_path.write_text('{}\n', encoding='utf-8')
                 path.write_text(
                     'name: contract-only-research\n\non:\n  pull_request:\n  workflow_dispatch:\n\n'
                     'jobs:\n'

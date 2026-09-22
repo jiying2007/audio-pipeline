@@ -57,7 +57,12 @@ jobs:
           import ansible
           assert ansible.__version__ == "2.19.13", ansible.__version__
           PY
-          sudo chmod -R a+rX /tmp/ap-lab
+          sudo chmod 0755 \
+            /tmp/ap-lab \
+            /tmp/ap-lab/ansible \
+            /tmp/ap-lab/ansible/roles \
+            /tmp/ap-lab/controller-venv \
+            /tmp/ap-lab/controller-venv/bin
           sudo chmod 0644 \
             /tmp/ap-lab/ansible.cfg \
             /tmp/ap-lab/requirements-ansible.txt \
@@ -83,6 +88,8 @@ jobs:
               echo "$user unexpectedly has passwordless sudo" >&2
               exit 1
             fi
+            sudo -u "$user" -H test -x /tmp/ap-lab/controller-venv/bin/python
+            sudo -u "$user" -H test -x /tmp/ap-lab/controller-venv/bin/ansible-playbook
           done
 
           sudo tee /tmp/ap-lab/ansible/validation.yml >/dev/null <<'YAML'

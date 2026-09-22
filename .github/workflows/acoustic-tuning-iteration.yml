@@ -98,6 +98,39 @@ jobs:
             --development-corpus /tmp/ap-tuning-1307/corpus.json \
             --validation-corpus /tmp/ap-tuning-2307/corpus.json \
             --shadow-corpus /tmp/ap-tuning-3307/corpus.json
+      - name: Enforce canonical baseline partitions
+        run: |
+          set -euo pipefail
+
+          validate_partition() {
+            seed=$1
+            root="/tmp/ap-tuning-$seed"
+            python3 validation/tools/run_validation.py \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor build-tuning/ap_process_pcm \
+              --output "$root/baseline-report.json" \
+              --evidence-manifest "$root/baseline-evidence.json" \
+              --enforce
+          }
+
+          validate_partition 1307 > /tmp/ap-tuning-1307.baseline.log 2>&1 &
+          pid_1307=$!
+          validate_partition 2307 > /tmp/ap-tuning-2307.baseline.log 2>&1 &
+          pid_2307=$!
+
+          status=0
+          if ! wait "$pid_1307"; then status=1; fi
+          if ! wait "$pid_2307"; then status=1; fi
+          if ! validate_partition 3307 > /tmp/ap-tuning-3307.baseline.log 2>&1; then status=1; fi
+
+          for seed in 1307 2307 3307; do
+            echo "===== baseline partition $seed ====="
+            cat "/tmp/ap-tuning-$seed.baseline.log"
+          done
+          test "$status" -eq 0
+
       - name: Search development and replay validation plus shadow
         run: |
           set -euo pipefail
@@ -109,6 +142,11 @@ jobs:
             --policy validation/policies/validation-smoke.json \
             --dataset-lock validation/datasets.lock.json \
             --search-space "$SEARCH_SPACE" \
+            --candidate-jobs 2 \
+            --holdout-jobs 2 \
+            --baseline-development-report /tmp/ap-tuning-1307/baseline-report.json \
+            --baseline-validation-report /tmp/ap-tuning-2307/baseline-report.json \
+            --baseline-shadow-report /tmp/ap-tuning-3307/baseline-report.json \
             --output-dir tuning-out
       - name: Enforce baseline health and evidence authority
         run: |
@@ -120,10 +158,15 @@ jobs:
           assert result['authority'] == 'non-shipping-acoustic-iteration'
           assert result['decision'] in {'KEEP_BASELINE', 'REJECT_CANDIDATE', 'ACOUSTIC_CANDIDATE'}
           assert result['search_space']['candidate_count'] <= int(os.environ['EXPECTED_MAX_CANDIDATES'])
+          assert result['search_space']['candidate_jobs'] == 2
+          assert result['search_space']['holdout_jobs'] == 2
+          assert result['search_space']['baseline_reports_reused'] is True
+          assert set(result['bindings']['reused_baseline_reports']) == {'development', 'validation', 'shadow'}
+          baseline_dev = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
+          assert baseline_dev['elapsed_s'] == 0.0
           assert result['bindings']['partitions']['development']['generator_seed'] == 1307
           assert result['bindings']['partitions']['validation']['generator_seed'] == 2307
           assert result['bindings']['partitions']['shadow']['generator_seed'] == 3307
-          baseline_dev = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
           assert baseline_dev['validation_result'] == 'PASS'
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'

@@ -40,6 +40,12 @@ PROGRAM_ARCHIVE_GOVERNANCE_FILES = {
     ".github/workflows/program-iteration.yml",
     "docs/program/terminal-workflow-retirement.json",
 }
+TUNING_SEARCH_WORKFLOW_FILES = {
+    ".github/workflows/audio-quality-gates.yml",
+    ".github/workflows/verify.yml",
+    ".github/workflows/acoustic-tuning-iteration.yml",
+    "scripts/ci_impact.py",
+}
 RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
 RELEASE_NEUTRAL_FILES = {
     ".gitignore", ".gitattributes",
@@ -99,6 +105,19 @@ def is_release_neutral(path: str) -> bool:
         or path.startswith("docs/program/")
         or path.startswith(RELEASE_NEUTRAL_PREFIXES)
         or any(pattern.fullmatch(path) for pattern in RELEASE_NEUTRAL_VALIDATION_PATTERNS)
+    )
+
+
+def requires_tuning_search(paths: list[str]) -> bool:
+    return any(
+        path == "CMakeLists.txt"
+        or path.startswith("cmake/")
+        or path.startswith("src/")
+        or path.startswith("include/")
+        or path == "examples/process_pcm.c"
+        or path.startswith("validation/")
+        or path in TUNING_SEARCH_WORKFLOW_FILES
+        for path in paths
     )
 
 
@@ -235,7 +254,11 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
             flags["unknown"] = True
 
     if flags["unknown"] or flags["public"]:
-        return _full("core/public/build/unknown change", paths)
+        return _full(
+            "core/public/build/unknown change",
+            paths,
+            run_tuning=requires_tuning_search(paths),
+        )
 
     dsp = flags["aec"] or flags["ns"] or flags["resampler"] or flags["activity"]
     code = dsp or flags["runtime"] or flags["bench"] or flags["alsa"]
@@ -256,6 +279,7 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         "run_ci": code,
         "run_quality": dsp or flags["runtime"],
         "run_audio": dsp or flags["validation"] or flags["certification"],
+        "run_tuning": requires_tuning_search(paths),
         "run_resource": dsp or flags["runtime"],
         "run_codeql": code,
         "run_perf": dsp or flags["bench"],
@@ -279,6 +303,7 @@ def _governance_only(reason: str, paths: list[str]) -> dict:
         "run_ci": False,
         "run_quality": False,
         "run_audio": False,
+        "run_tuning": False,
         "run_resource": False,
         "run_codeql": False,
         "run_perf": False,
@@ -302,6 +327,7 @@ def _fast_only(reason: str, paths: list[str]) -> dict:
         "run_ci": False,
         "run_quality": False,
         "run_audio": False,
+        "run_tuning": False,
         "run_resource": False,
         "run_codeql": False,
         "run_perf": False,
@@ -318,13 +344,14 @@ def _fast_only(reason: str, paths: list[str]) -> dict:
     }
 
 
-def _full(reason: str, paths: list[str]) -> dict:
+def _full(reason: str, paths: list[str], *, run_tuning: bool = True) -> dict:
     return {
         "docs_only": False,
         "full": True,
         "run_ci": True,
         "run_quality": True,
         "run_audio": True,
+        "run_tuning": run_tuning,
         "run_resource": True,
         "run_codeql": True,
         "run_perf": True,
@@ -390,17 +417,17 @@ def self_test() -> None:
     assert not is_release_neutral("src/core/ap_pipeline.c")
     assert parse_semver("2.3.1") > parse_semver("2.3.0")
     ns = analyze(["src/modules/ap_ns_module.c"])
-    assert ns["run_ns_backend"] and not ns["full"] and "composition-ns-only" in ns["compositions"]
+    assert ns["run_ns_backend"] and ns["run_tuning"] and not ns["full"] and "composition-ns-only" in ns["compositions"]
     aec = analyze(["src/modules/ap_aec_module.c"])
-    assert aec["run_aec_backend"] and "composition-aec-only" in aec["compositions"]
+    assert aec["run_aec_backend"] and aec["run_tuning"] and "composition-aec-only" in aec["compositions"]
     val = analyze(["validation/tools/run_validation.py"])
-    assert val["run_audio"] and not val["run_ci"] and val["arm"] == [] and not val["run_lab"]
+    assert val["run_audio"] and val["run_tuning"] and not val["run_ci"] and val["arm"] == [] and not val["run_lab"]
     tuning_val = analyze([
         "validation/tools/build_agc_tuning_corpus.py",
         "validation/policies/validation-agc-stage-tuning.json",
         "validation/tuning/search-spaces/agc-stage-v1.json",
     ])
-    assert tuning_val["run_audio"] and not tuning_val["run_ci"] and not tuning_val["full"]
+    assert tuning_val["run_audio"] and tuning_val["run_tuning"] and not tuning_val["run_ci"] and not tuning_val["full"]
     versioned_val = analyze(
         ["CMakeLists.txt", "validation/tools/run_validation.py"],
         cmake_version_only_change=True,
@@ -422,7 +449,7 @@ def self_test() -> None:
     assert not governance["docs_only"] and not governance["full"]
     assert governance["reason"] == "program archive governance-only change"
     for key in (
-        "run_ci", "run_quality", "run_audio", "run_resource", "run_codeql",
+        "run_ci", "run_quality", "run_audio", "run_tuning", "run_resource", "run_codeql",
         "run_perf", "run_alsa", "run_aec_backend", "run_ns_backend",
         "run_extended", "run_abi", "run_lab",
     ):
@@ -442,13 +469,26 @@ def self_test() -> None:
     assert governance_with_deleted_workflow["full"] and governance_with_deleted_workflow["run_lab"]
     promotion_governance = analyze([".github/program/promotion_governance.py"])
     assert promotion_governance["full"] and promotion_governance["run_lab"]
+    assert not promotion_governance["run_tuning"]
     unknown = analyze(["scripts/new-thing.sh"])
-    assert unknown["full"] and unknown["run_lab"] and len(unknown["arm"]) == len(FULL_ARM)
+    assert unknown["full"] and unknown["run_lab"] and not unknown["run_tuning"]
+    assert len(unknown["arm"]) == len(FULL_ARM)
     lab = analyze(["lab/ansible/site.yml"])
-    assert lab["full"] and lab["run_lab"]
+    assert lab["full"] and lab["run_lab"] and not lab["run_tuning"]
+    lab_workflow = analyze([".github/workflows/lab-user-mode.yml"])
+    assert lab_workflow["full"] and lab_workflow["run_lab"] and not lab_workflow["run_tuning"]
     hil = analyze(["hil/board.schema.json"])
-    assert hil["full"] and hil["run_lab"]
-    assert analyze([], True)["full"] and analyze([], True)["run_lab"]
+    assert hil["full"] and hil["run_lab"] and not hil["run_tuning"]
+    certification = analyze(["certification/record.schema.json"])
+    assert certification["run_audio"] and not certification["run_tuning"]
+    audio_workflow = analyze([".github/workflows/audio-quality-gates.yml"])
+    assert audio_workflow["full"] and audio_workflow["run_tuning"]
+    verify_workflow = analyze([".github/workflows/verify.yml"])
+    assert verify_workflow["full"] and verify_workflow["run_tuning"]
+    impact_self = analyze(["scripts/ci_impact.py"])
+    assert impact_self["full"] and impact_self["run_tuning"]
+    forced = analyze([], True)
+    assert forced["full"] and forced["run_lab"] and forced["run_tuning"]
     print("ci impact analyzer self-test: OK")
 
 

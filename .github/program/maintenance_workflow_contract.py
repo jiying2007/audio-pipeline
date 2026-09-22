@@ -88,6 +88,13 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-source-authority-v2-qualification.yml'),
 )
 
+PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
+    Path('.github/workflows/vad-operating-point-selector.yml'),
+    Path('.github/workflows/vad-hangover-counterfactual.yml'),
+    Path('.github/workflows/vad-strong-weak-refresh.yml'),
+)
+
+
 # Recurring execution is an explicit maintenance capability, not a default.
 # Every legal cron below is validation, data-integrity, HIL or qualification
 # convergence work. Candidate/research search is intentionally absent.
@@ -148,6 +155,18 @@ def trigger_block(text: str, trigger: str) -> str:
             break
         block.append(line)
     return '\n'.join(block)
+
+
+def job_block(text: str, job: str) -> str:
+    jobs_index = text.find('\njobs:')
+    assert jobs_index >= 0, 'workflow has no jobs block'
+    jobs_text = text[jobs_index + 1:]
+    match = re.search(
+        rf'(?ms)^  {re.escape(job)}:\n(.*?)(?=^  [A-Za-z_][A-Za-z0-9_-]*:\n|\Z)',
+        jobs_text,
+    )
+    assert match is not None, f'workflow is missing {job} job'
+    return match.group(1)
 
 
 def validate_hosted_real_trigger_boundaries(root: Path) -> None:
@@ -313,6 +332,24 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
             f'{relative} must not fan out on maintenance contract edits; Program Archive owns that validation'
         )
 
+    for relative in PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS:
+        path = root / relative
+        text = path.read_text(encoding='utf-8')
+        contract = job_block(text, 'contract')
+        replay = job_block(text, 'select')
+        assert 'actions/checkout@' in contract and '--self-test' in contract, (
+            f'{relative} PR contract job must retain checkout and offline self-tests'
+        )
+        assert not re.search(r"(?m)^    if:\s*github\.event_name\s*==\s*['\"]workflow_dispatch['\"]\s*$", contract), (
+            f'{relative} contract job must run on PR and manual dispatch'
+        )
+        assert re.search(r"(?m)^    needs:\s*contract\s*$", replay), (
+            f'{relative} full research replay must depend on contract'
+        )
+        assert re.search(r"(?m)^    if:\s*github\.event_name\s*==\s*['\"]workflow_dispatch['\"]\s*$", replay), (
+            f'{relative} full historical search must remain manual-dispatch-only'
+        )
+
     for relative in REUSABLE_GOVERNANCE_WORKFLOWS:
         path = root / relative
         assert path.is_file(), f'missing reusable governance workflow: {relative}'
@@ -436,10 +473,29 @@ def self_test() -> None:
         for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                'name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n',
-                encoding='utf-8',
-            )
+            if relative in PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS:
+                path.write_text(
+                    'name: historical-search\n\non:\n  pull_request:\n  workflow_dispatch:\n\n'
+                    'jobs:\n'
+                    '  contract:\n'
+                    '    runs-on: ubuntu-latest\n'
+                    '    steps:\n'
+                    '      - uses: actions/checkout@pinned\n'
+                    '      - name: self-test\n'
+                    '        run: python3 tool.py --self-test\n'
+                    '  select:\n'
+                    '    needs: contract\n'
+                    "    if: github.event_name == 'workflow_dispatch'\n"
+                    '    runs-on: ubuntu-latest\n'
+                    '    steps:\n'
+                    '      - run: echo replay\n',
+                    encoding='utf-8',
+                )
+            else:
+                path.write_text(
+                    'name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n',
+                    encoding='utf-8',
+                )
         for relative in REUSABLE_GOVERNANCE_WORKFLOWS:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -559,6 +615,22 @@ def self_test() -> None:
             raise AssertionError('maintenance contract trigger fan-out was accepted')
         nonshipping.write_text('name: non-shipping\n\non:\n  pull_request:\n  workflow_dispatch:\n', encoding='utf-8')
 
+        historical_search = root / PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS[0]
+        historical_text = historical_search.read_text(encoding='utf-8')
+        historical_search.write_text(
+            historical_text.replace(
+                "    if: github.event_name == 'workflow_dispatch'\n", ''
+            ),
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'full historical search must remain manual-dispatch-only' in str(exc)
+        else:
+            raise AssertionError('historical VAD search regained PR full-replay authority')
+        historical_search.write_text(historical_text, encoding='utf-8')
+
         reusable = root / REUSABLE_GOVERNANCE_WORKFLOWS[0]
         reusable.write_text(
             'name: reusable\n\non:\n  workflow_call:\n  workflow_dispatch:\n',
@@ -615,8 +687,8 @@ def main() -> int:
         validate()
         print(
             'maintenance workflow contract: generic research manual-only; PR/manual non-shipping workflows '
-            'have PR coverage and explicit replay only; scheduled workflows exact-allowlisted; '
-            'AEC motion schedule bound to terminal zero-budget I002'
+            'have PR coverage and explicit replay only; historical VAD searches are PR-contract/manual-replay; '
+            'scheduled workflows exact-allowlisted; AEC motion schedule bound to terminal zero-budget I002'
         )
     return 0
 

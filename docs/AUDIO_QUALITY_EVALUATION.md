@@ -14,6 +14,7 @@ The release-neutral repository-side ground-truth quality gate is implemented by:
 - `tests/validation/audio_quality_tuning.py`
 - `tests/validation/validation-audio-quality-development.json`
 - `tests/validation/audio-quality-pr-v1.json`
+- `tests/validation/audio-quality-ns-floor-call-v1.json`
 - `.github/workflows/audio-quality-evaluation.yml`
 
 These wrappers reuse the canonical evaluator and tuning engines under
@@ -114,6 +115,21 @@ while BF algorithm/operating-point and VAD operating-point development continue
 through their existing stage-specific research workflows. Any change to shipping
 BF/VAD/AEC/NS behavior is release-bearing and requires its own promotion evidence;
 this release-neutral quality PR does not change those defaults.
+
+The recurring generic CALL PR-smoke and formal `call-v1` search now have a
+separate scale-sensitive confirmation path for the NS floor. Formal Acoustic
+Tuning run `35725902946` on source `9b9ff166da2798f3a93d23b099783d918d445440`
+selected `ns_floor=0.07` as candidate `0d5f52491863` and emitted
+`ACOUSTIC_CANDIDATE`; its hash-bound artifact digest is
+`sha256:99024abc064519e9e482fc9a0e75db0c73ef64bd7d71c50a8e13d628e9dcf045`.
+That evidence remains non-shipping. The manual
+`audio-quality-ns-floor-call-v1.json` search keeps the current `0.12`
+baseline and isolates only `ns_floor` across `0.06/0.07/0.08/0.10/0.12/0.14`.
+It deliberately reuses the quality objective containing
+`p10_near_projection_gain_db`, so `0.07` must survive scale-sensitive target
+preservation as well as SI-SDR, interference, AEC, VAD and clipping constraints.
+Its purpose is candidate confirmation, not mutation of runtime or shipping
+defaults.
 
 AGC/limiter searches need an additional scale-sensitive check. The generic
 regression objective can improve attenuation-oriented metrics while lowering the

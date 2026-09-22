@@ -16,6 +16,7 @@ on:
       - 'tests/validation/validation-audio-quality-development.json'
       - 'tests/validation/audio-quality-pr-v1.json'
       - 'tests/validation/audio-quality-agc-limiter-frontier-v1.json'
+      - 'tests/validation/audio-quality-ns-floor-call-v1.json'
       - 'validation/authority.json'
       - 'validation/datasets.lock.json'
       - 'validation/*.schema.json'
@@ -44,6 +45,7 @@ on:
       - 'tests/validation/validation-audio-quality-development.json'
       - 'tests/validation/audio-quality-pr-v1.json'
       - 'tests/validation/audio-quality-agc-limiter-frontier-v1.json'
+      - 'tests/validation/audio-quality-ns-floor-call-v1.json'
       - 'validation/authority.json'
       - 'validation/datasets.lock.json'
       - 'validation/*.schema.json'
@@ -65,6 +67,7 @@ on:
         type: choice
         options:
           - audio-quality-pr-v1.json
+          - audio-quality-ns-floor-call-v1.json
           - audio-quality-agc-limiter-frontier-v1.json
 
 permissions:
@@ -104,6 +107,7 @@ jobs:
           import tuning_iteration_engine as engine
           expected_strategy = {
               'audio-quality-pr-v1.json': 'one-at-a-time',
+              'audio-quality-ns-floor-call-v1.json': 'one-at-a-time',
               'audio-quality-agc-limiter-frontier-v1.json': 'paired',
           }
           spaces = {p.name for p in Path('tests/validation').glob('audio-quality-*.json')}

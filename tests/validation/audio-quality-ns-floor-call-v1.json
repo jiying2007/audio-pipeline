@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "search_space_id": "audio-quality-ns-floor-call-v1",
+  "strategy": "one-at-a-time",
+  "max_candidates": 6,
+  "baseline": {
+    "aec_mu": 0.22,
+    "ns_floor": 0.12,
+    "agc_target_dbfs": -20.0,
+    "limiter_dbfs": -2.0
+  },
+  "parameters": {
+    "ns_floor": [0.06, 0.07, 0.08, 0.10, 0.12, 0.14]
+  },
+  "objective": {
+    "minimum_improvement_score": 0.10,
+    "metrics": [
+      {"name": "pass_rate", "direction": "max", "weight": 12.0, "scale": 0.02, "max_regression": 0.0},
+      {"name": "p10_near_si_sdr_improvement_db", "direction": "max", "weight": 1.2, "scale": 1.0, "max_regression": 0.75},
+      {"name": "p10_near_projection_gain_db", "direction": "max", "weight": 1.4, "scale": 1.0, "max_regression": 1.0},
+      {"name": "p10_interference_projection_attenuation_db", "direction": "max", "weight": 1.3, "scale": 1.0, "max_regression": 1.0},
+      {"name": "p10_interference_corr_reduction", "direction": "max", "weight": 0.4, "scale": 0.05, "max_regression": 0.05},
+      {"name": "median_erle_db", "direction": "max", "weight": 1.0, "scale": 1.0, "max_regression": 1.0},
+      {"name": "p90_erle_convergence_ms", "direction": "min", "weight": 0.8, "scale": 250.0, "max_regression": 500.0},
+      {"name": "p90_erle_recovery_ms", "direction": "min", "weight": 0.8, "scale": 250.0, "max_regression": 500.0},
+      {"name": "min_vad_f1", "direction": "max", "weight": 1.0, "scale": 0.05, "max_regression": 0.05},
+      {"name": "min_vad_recall", "direction": "max", "weight": 0.8, "scale": 0.05, "max_regression": 0.05},
+      {"name": "max_vad_false_positive_rate", "direction": "min", "weight": 0.8, "scale": 0.05, "max_regression": 0.05},
+      {"name": "p90_vad_onset_delay_ms", "direction": "min", "weight": 0.5, "scale": 50.0, "max_regression": 100.0},
+      {"name": "p90_vad_release_delay_ms", "direction": "min", "weight": 0.4, "scale": 50.0, "max_regression": 100.0},
+      {"name": "max_output_clip_fraction", "direction": "min", "weight": 2.0, "scale": 0.002, "max_regression": 0.002}
+    ]
+  }
+}

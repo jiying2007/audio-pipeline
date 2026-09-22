@@ -7,6 +7,10 @@ on:
         type: boolean
         required: false
         default: true
+      run_tuning:
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -122,6 +126,7 @@ jobs:
           done
           test "$status" -eq 0
       - name: Enforce bounded acoustic tuning iteration
+        if: inputs.run_tuning
         run: |
           set -euo pipefail
           python3 validation/tools/authority.py \
@@ -161,7 +166,7 @@ jobs:
           }, sort_keys=True))
           PY
       - name: Upload tuning iteration evidence
-        if: always()
+        if: always() && inputs.run_tuning
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: required-acoustic-tuning-${{ github.run_id }}

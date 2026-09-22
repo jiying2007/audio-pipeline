@@ -295,5 +295,20 @@
         "agc-error-adaptive-release-v1": ".github/research/continuous-optimization/source-candidates/agc-error-adaptive-release-v1.json"
       }
     }
+  ],
+  "stage_lane_rounds": [
+    {
+      "round_id": "bf-ns-vad-agc-stage-lanes-v1",
+      "path": ".github/workflows/research-stage-lane-optimization.yml",
+      "blob_sha": "8308b73c991834b0c161ad2ca715739e7ce65c29",
+      "evidence": ".github/research/continuous-optimization/stage-lanes-v1-run-1.json",
+      "lane_outcomes": {
+        "bf": ".github/research/continuous-optimization/development-v3/bf-source-mapping-v1.json",
+        "ns": ".github/research/continuous-optimization/development-v3/ns-stage-lane-v1-closure.json",
+        "vad": ".github/research/continuous-optimization/source-candidates/vad-confidence-tiered-hold-v1.json",
+        "agc": ".github/research/continuous-optimization/source-candidates/agc-error-adaptive-release-v1.json"
+      },
+      "reason": "run 35320921792 consumed the four-lane selection authority; BF is diagnostic-only with candidate_budget=0, NS is CLOSED_KEEP_BASELINE_AFTER_REJECT, and the exact VAD/AGC successors are terminal source-candidate rejects with zero remaining budgets"
+    }
   ]
 }

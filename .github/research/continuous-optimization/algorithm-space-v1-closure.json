@@ -6,6 +6,10 @@
   "predecessor": {
     "workflow": "Research Algorithm Parameter Optimization",
     "run_id": 35301640608,
+    "source_sha": "7b7b6325063c3cc503fc8a6d052199ab50eb4c24",
+    "artifact_id": 10530995129,
+    "artifact_name": "research-algorithm-parameter-35301640608",
+    "artifact_digest": "sha256:94d57293b2ceea738f788c1ced866a74da7a46ec627d67b2c579059135853d70",
     "decision": "KEEP_BASELINE",
     "status": "NO_RESEARCH_CANDIDATE"
   },

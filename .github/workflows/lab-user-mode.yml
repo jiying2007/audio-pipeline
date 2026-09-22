@@ -34,10 +34,373 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq \
-            alsa-utils build-essential cmake ffmpeg git-lfs jq \
-            openssh-client p7zip-full python3-venv rsync unzip usbutils
+          missing_packages=()
+          need_command() {
+            command_name=$1
+            package_name=$2
+            command -v "$command_name" >/dev/null 2>&1 && return 0
+            for existing in "${missing_packages[@]}"; do
+              [ "$existing" = "$package_name" ] && return 0
+            done
+            missing_packages+=("$package_name")
+          }
+
+          need_command cc build-essential
+          need_command cmake cmake
+          need_command curl curl
+          need_command git git
+          need_command git-lfs git-lfs
+          need_command jq jq
+          need_command python3 python3
+          need_command rsync rsync
+          need_command tar tar
+          need_command unzip unzip
+          need_command ffmpeg ffmpeg
+          need_command 7z p7zip-full
+          need_command arecord alsa-utils
+          need_command aplay alsa-utils
+          need_command ssh openssh-client
+          need_command lsusb usbutils
+          if ! dpkg-query -W -f='${Status}' python3-venv 2>/dev/null | grep -q '^install ok installed          sudo rm -rf /tmp/ap-lab
+          sudo install -d -m 0755 /tmp/ap-lab/ansible/roles
+          sudo cp -a lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
+          sudo cp -a lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
+          sudo cp -a lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
+          sudo cp -a lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
+          sudo cp -a lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
+          sudo cp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
+          sudo cp lab/requirements-ansible.txt /tmp/ap-lab/requirements-ansible.txt
+          sudo cp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
+          sudo python3 -m venv /tmp/ap-lab/controller-venv
+          sudo /tmp/ap-lab/controller-venv/bin/python -m pip install \
+            --disable-pip-version-check --no-input \
+            -r /tmp/ap-lab/requirements-ansible.txt
+          sudo /tmp/ap-lab/controller-venv/bin/python - <<'PY'
+          import ansible
+          assert ansible.__version__ == "2.19.13", ansible.__version__
+          PY
+          sudo chmod -R a+rX /tmp/ap-lab
+          sudo chmod 0644 \
+            /tmp/ap-lab/ansible.cfg \
+            /tmp/ap-lab/requirements-ansible.txt \
+            /tmp/ap-lab/requirements-validation.txt
+
+          diff -qr lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
+          diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
+          diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
+          diff -qr lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
+          diff -qr lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
+          cmp lab/ansible/ansible.cfg /tmp/ap-lab/ansible.cfg
+          cmp lab/requirements-ansible.txt /tmp/ap-lab/requirements-ansible.txt
+          cmp lab/requirements-validation.txt /tmp/ap-lab/requirements-validation.txt
+
+          sudo useradd --create-home --shell /bin/bash validationuser
+          sudo useradd --create-home --shell /bin/bash targetuser
+          sudo useradd --create-home --shell /bin/bash builderuser
+          sudo useradd --create-home --shell /bin/bash archiveuser
+          for user in validationuser targetuser builderuser archiveuser; do
+            groups=$(id -nG "$user")
+            case " $groups " in *' sudo '*|*' admin '*) echo "$user unexpectedly privileged: $groups" >&2; exit 1;; esac
+            if sudo -u "$user" -H sudo -n true 2>/dev/null; then
+              echo "$user unexpectedly has passwordless sudo" >&2
+              exit 1
+            fi
+          done
+
+          sudo tee /tmp/ap-lab/ansible/validation.yml >/dev/null <<'YAML'
+          ---
+          - name: Runtime validate ordinary-user audio-validation provisioning
+            hosts: localhost
+            connection: local
+            gather_facts: true
+            vars:
+              lab_system_mode: false
+            roles:
+              - common
+              - audio_validation
+          YAML
+          sudo tee /tmp/ap-lab/ansible/target.yml >/dev/null <<'YAML'
+          ---
+          - name: Runtime validate ordinary-user audio-target provisioning
+            hosts: localhost
+            connection: local
+            gather_facts: true
+            vars:
+              lab_system_mode: false
+            roles:
+              - common
+              - audio_target
+          YAML
+          sudo tee /tmp/ap-lab/ansible/builder.yml >/dev/null <<'YAML'
+          ---
+          - name: Runtime validate ordinary-user audio-builder provisioning
+            hosts: localhost
+            connection: local
+            gather_facts: true
+            vars:
+              lab_system_mode: false
+              audio_builder_shipping_cc: /tmp/ap-lab/shipping-toolchain/bin/fake-cc
+              audio_builder_shipping_sysroot: /tmp/ap-lab/shipping-toolchain/sysroot
+              audio_builder_shipping_toolchain_root: /tmp/ap-lab/shipping-toolchain
+            roles:
+              - common
+              - audio_builder
+          YAML
+          sudo tee /tmp/ap-lab/ansible/archive.yml >/dev/null <<'YAML'
+          ---
+          - name: Runtime validate ordinary-user certification-archive provisioning
+            hosts: localhost
+            connection: local
+            gather_facts: true
+            vars:
+              lab_system_mode: false
+              certification_archive_command: /tmp/ap-lab/archive/audio-pipeline-cert-archive
+            roles:
+              - common
+              - certification_archive
+          YAML
+          sudo tee /tmp/ap-lab/test-board.json >/dev/null <<'JSON'
+          {"schema_version":1,"board_id":"runtime-validation-fixture","evidence_class":"test-only"}
+          JSON
+          sudo install -d -m 0755 /tmp/ap-lab/shipping-toolchain/bin /tmp/ap-lab/shipping-toolchain/sysroot /tmp/ap-lab/archive
+          sudo tee /tmp/ap-lab/shipping-toolchain/bin/fake-cc >/dev/null <<'SH'
+          #!/bin/sh
+          case "${1:-}" in
+            --version) echo 'audio-builder runtime fixture cc 1.0'; exit 0 ;;
+            -dumpmachine) echo 'arm-linux-gnueabihf'; exit 0 ;;
+            *) exit 0 ;;
+          esac
+          SH
+          sudo tee /tmp/ap-lab/archive/audio-pipeline-cert-archive >/dev/null <<'SH'
+          #!/bin/sh
+          case "${1:-}" in
+            --help) echo 'certification-archive runtime fixture'; exit 0 ;;
+            *) exit 2 ;;
+          esac
+          SH
+          sudo chmod 0755 /tmp/ap-lab/shipping-toolchain/bin/fake-cc /tmp/ap-lab/archive/audio-pipeline-cert-archive
+          sudo chmod 0644 \
+            /tmp/ap-lab/ansible/validation.yml \
+            /tmp/ap-lab/ansible/target.yml \
+            /tmp/ap-lab/ansible/builder.yml \
+            /tmp/ap-lab/ansible/archive.yml \
+            /tmp/ap-lab/test-board.json
+
+          sudo rm -rf \
+            /opt/audio-lab \
+            /opt/audio-pipeline \
+            /opt/audio-validation-extended \
+            /var/cache/audio-pipeline-lab \
+            /var/lib/audio-pipeline-lab \
+            /var/log/audio-pipeline-lab \
+            /etc/audio-pipeline
+
+      - name: Execute ordinary-user role lanes in parallel
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          validation_lane() {
+            run_validation_user() {
+              sudo -u validationuser -H env -i \
+                HOME=/home/validationuser \
+                USER=validationuser \
+                LOGNAME=validationuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/validation.yml
+            }
+            run_validation_user
+            run_validation_user | tee /tmp/audio-validation-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-validation-idempotent.log
+
+            for path in \
+              /home/validationuser/.local/share/audio-pipeline-lab \
+              /home/validationuser/.cache/audio-pipeline-lab \
+              /home/validationuser/.cache/audio-pipeline-lab/datasets \
+              /home/validationuser/.local/state/audio-pipeline-lab \
+              /home/validationuser/.local/state/audio-pipeline-lab/acquisition \
+              /home/validationuser/audio-validation-extended; do
+              sudo -u validationuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = validationuser
+            done
+            sudo -u validationuser test -x /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python
+            sudo -u validationuser /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python -c 'import huggingface_hub; assert huggingface_hub.__version__ == "1.29.0"'
+          }
+
+          target_lane() {
+            run_target_user() {
+              sudo -u targetuser -H env -i \
+                HOME=/home/targetuser \
+                USER=targetuser \
+                LOGNAME=targetuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/target.yml "$@"
+            }
+
+            run_target_user -e 'audio_target_board_manifest_src='
+            sudo -u targetuser test ! -e /home/targetuser/.config/audio-pipeline/board.json
+            run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json'
+            sudo -u targetuser cmp /tmp/ap-lab/test-board.json /home/targetuser/.config/audio-pipeline/board.json
+            run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json' | tee /tmp/audio-target-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-target-idempotent.log
+
+            for path in \
+              /home/targetuser/.local/share/audio-pipeline-lab \
+              /home/targetuser/.cache/audio-pipeline-lab \
+              /home/targetuser/.local/state/audio-pipeline-lab \
+              /home/targetuser/.local/state/audio-pipeline-lab/log \
+              /home/targetuser/.config/audio-pipeline \
+              /home/targetuser/.local/share/audio-pipeline-lab/fixtures \
+              /home/targetuser/.local/state/audio-pipeline-lab/hil \
+              /home/targetuser/.local/state/audio-pipeline-lab/log/hil; do
+              sudo -u targetuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = targetuser
+            done
+            test "$(sudo stat -c %U /home/targetuser/.config/audio-pipeline/board.json)" = targetuser
+            test "$(sudo stat -c %a /home/targetuser/.config/audio-pipeline/board.json)" = 640
+          }
+
+          builder_lane() {
+            run_builder_user() {
+              sudo -u builderuser -H env -i \
+                HOME=/home/builderuser \
+                USER=builderuser \
+                LOGNAME=builderuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/builder.yml
+            }
+            run_builder_user
+            run_builder_user | tee /tmp/audio-builder-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-builder-idempotent.log
+            sudo -u builderuser /tmp/ap-lab/shipping-toolchain/bin/fake-cc --version | grep -F 'runtime fixture cc 1.0'
+
+            for path in \
+              /home/builderuser/.local/share/audio-pipeline-lab \
+              /home/builderuser/.cache/audio-pipeline-lab \
+              /home/builderuser/.local/state/audio-pipeline-lab \
+              /home/builderuser/.local/state/audio-pipeline-lab/log; do
+              sudo -u builderuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = builderuser
+            done
+          }
+
+          archive_lane() {
+            run_archive_user() {
+              sudo -u archiveuser -H env -i \
+                HOME=/home/archiveuser \
+                USER=archiveuser \
+                LOGNAME=archiveuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/archive.yml
+            }
+            run_archive_user
+            run_archive_user | tee /tmp/certification-archive-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/certification-archive-idempotent.log
+            sudo -u archiveuser /tmp/ap-lab/archive/audio-pipeline-cert-archive --help | grep -F 'runtime fixture'
+
+            for path in \
+              /home/archiveuser/.local/share/audio-pipeline-lab \
+              /home/archiveuser/.cache/audio-pipeline-lab \
+              /home/archiveuser/.local/state/audio-pipeline-lab \
+              /home/archiveuser/.local/state/audio-pipeline-lab/log; do
+              sudo -u archiveuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = archiveuser
+            done
+          }
+
+          declare -A pids
+          validation_lane > /tmp/lab-validation-lane.log 2>&1 & pids[validation]=$!
+          target_lane > /tmp/lab-target-lane.log 2>&1 & pids[target]=$!
+          builder_lane > /tmp/lab-builder-lane.log 2>&1 & pids[builder]=$!
+          archive_lane > /tmp/lab-archive-lane.log 2>&1 & pids[archive]=$!
+
+          status=0
+          for lane in validation target builder archive; do
+            if ! wait "${pids[$lane]}"; then
+              status=1
+            fi
+          done
+          for lane in validation target builder archive; do
+            echo "===== ordinary-user $lane lane ====="
+            cat "/tmp/lab-$lane-lane.log"
+          done
+          test "$status" -eq 0
+      - name: Enforce privilege-free boundary and controller contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          diff -qr lab/ansible/roles/common /tmp/ap-lab/ansible/roles/common
+          diff -qr lab/ansible/roles/audio_validation /tmp/ap-lab/ansible/roles/audio_validation
+          diff -qr lab/ansible/roles/audio_target /tmp/ap-lab/ansible/roles/audio_target
+          diff -qr lab/ansible/roles/audio_builder /tmp/ap-lab/ansible/roles/audio_builder
+          diff -qr lab/ansible/roles/certification_archive /tmp/ap-lab/ansible/roles/certification_archive
+
+          for path in \
+            /opt/audio-lab \
+            /opt/audio-pipeline \
+            /opt/audio-validation-extended \
+            /var/cache/audio-pipeline-lab \
+            /var/lib/audio-pipeline-lab \
+            /var/log/audio-pipeline-lab \
+            /etc/audio-pipeline; do
+            if [ -e "$path" ]; then
+              echo "ordinary-user laboratory provisioning wrote forbidden system path: $path" >&2
+              exit 1
+            fi
+          done
+
+          /tmp/ap-lab/controller-venv/bin/python - <<'PY'
+          import ansible
+          assert ansible.__version__ == "2.19.13", ansible.__version__
+          PY
+          python3 lab/scripts/labctl.py self-test
+          python3 scripts/docs_consistency.py
+
+          cat >/tmp/lab-user-mode-evidence.json <<JSON
+          {"schema_version":1,"source_revision":"${{ inputs.source_sha }}","ubuntu":"24.04","audio_validation":"PASS","audio_target":"PASS","audio_builder":"PASS","certification_archive":"PASS","idempotent":true,"system_path_writes":false,"board_manifest":"test-only-fixture","shipping_toolchain":"test-only-fixture","archive_backend":"test-only-fixture"}
+          JSON
+          python3 -m json.tool /tmp/lab-user-mode-evidence.json >/dev/null
+
+      - name: Upload ordinary-user runtime evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lab-user-mode-${{ github.run_id }}
+          path: /tmp/lab-user-mode-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+; then
+            missing_packages+=(python3-venv)
+          fi
+
+          if [ "${#missing_packages[@]}" -gt 0 ]; then
+            printf 'ordinary-user missing packages: %s\n' "${missing_packages[*]}"
+            if ! sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing_packages[@]}"; then
+              echo 'cached apt index install failed; refreshing package index and retrying'
+              sudo apt-get update -qq
+              sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing_packages[@]}"
+            fi
+          else
+            echo 'ordinary-user prerequisites already present on runner'
+          fi
+
+          for command_name in cc cmake curl git git-lfs jq python3 rsync tar unzip ffmpeg 7z arecord aplay ssh lsusb; do
+            command -v "$command_name" >/dev/null || {
+              echo "ordinary-user prerequisite unresolved after install: $command_name" >&2
+              exit 1
+            }
+          done
 
           sudo rm -rf /tmp/ap-lab
           sudo install -d -m 0755 /tmp/ap-lab/ansible/roles

@@ -33,6 +33,12 @@ DSP_ARM = ["cortex-a7-neon", "cortex-a32-neon", "aarch64-neon"]
 DOC_PREFIXES = ("docs/",)
 DOC_FILES = {"README.md", "README.zh-CN.md", "CHANGELOG.md", "THIRD_PARTY.md", "LICENSE", "SECURITY.md"}
 RESEARCH_REGISTRY_METADATA_FILES = {".github/research/evidence-index.json"}
+PROGRAM_ARCHIVE_GOVERNANCE_FILES = {
+    ".github/program/maintenance_workflow_contract.py",
+    ".github/program/terminal_workflow_retirement.py",
+    ".github/workflows/program-iteration.yml",
+    "docs/program/terminal-workflow-retirement.json",
+}
 RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
 RELEASE_NEUTRAL_FILES = {
     ".gitignore", ".gitattributes",
@@ -172,6 +178,12 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         and all(p in RESEARCH_REGISTRY_METADATA_FILES for p in effective_paths)
     ):
         return _fast_only("research registry metadata-only change", paths)
+    if (
+        not force_full
+        and effective_paths
+        and all(p in PROGRAM_ARCHIVE_GOVERNANCE_FILES for p in effective_paths)
+    ):
+        return _governance_only("program archive governance-only change", paths)
     if not force_full and all(is_docs(p) for p in effective_paths):
         reason = (
             'version-only release metadata'
@@ -255,6 +267,29 @@ def analyze(paths: list[str], force_full: bool = False, cmake_version_only_chang
         "compositions": compositions,
         "arm": DSP_ARM if dsp or flags["runtime"] else [],
         "reason": "validation/certification-only" if python_only else "targeted component change",
+        "paths": paths,
+    }
+
+
+def _governance_only(reason: str, paths: list[str]) -> dict:
+    return {
+        "docs_only": False,
+        "full": False,
+        "run_ci": False,
+        "run_quality": False,
+        "run_audio": False,
+        "run_resource": False,
+        "run_codeql": False,
+        "run_perf": False,
+        "run_alsa": False,
+        "run_aec_backend": False,
+        "run_ns_backend": False,
+        "run_extended": False,
+        "run_abi": False,
+        "run_lab": False,
+        "compositions": [],
+        "arm": [],
+        "reason": reason,
         "paths": paths,
     }
 
@@ -381,6 +416,25 @@ def self_test() -> None:
     assert registry_mixed["full"] and registry_mixed["run_lab"]
     registry_main = analyze([".github/research/evidence-index.json"], True)
     assert registry_main["full"] and registry_main["run_lab"]
+    governance = analyze(sorted(PROGRAM_ARCHIVE_GOVERNANCE_FILES))
+    assert not governance["docs_only"] and not governance["full"]
+    assert governance["reason"] == "program archive governance-only change"
+    for key in (
+        "run_ci", "run_quality", "run_audio", "run_resource", "run_codeql",
+        "run_perf", "run_alsa", "run_aec_backend", "run_ns_backend",
+        "run_extended", "run_abi", "run_lab",
+    ):
+        assert governance[key] is False, (key, governance[key])
+    assert governance["compositions"] == [] and governance["arm"] == []
+    governance_main = analyze(sorted(PROGRAM_ARCHIVE_GOVERNANCE_FILES), True)
+    assert governance_main["full"] and governance_main["run_lab"]
+    governance_mixed = analyze([
+        ".github/program/terminal_workflow_retirement.py",
+        "src/core/ap_pipeline.c",
+    ])
+    assert governance_mixed["full"] and governance_mixed["run_lab"]
+    promotion_governance = analyze([".github/program/promotion_governance.py"])
+    assert promotion_governance["full"] and promotion_governance["run_lab"]
     unknown = analyze(["scripts/new-thing.sh"])
     assert unknown["full"] and unknown["run_lab"] and len(unknown["arm"]) == len(FULL_ARM)
     lab = analyze(["lab/ansible/site.yml"])

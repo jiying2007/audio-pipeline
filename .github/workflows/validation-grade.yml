@@ -581,10 +581,36 @@ jobs:
           )
           PY
           sha256sum candidate-out/candidate-processor | tee candidate-out/candidate-processor.sha256
-      - name: Create strict metrics JSON qualification proxy
+      - name: Bind canonical baseline identity
         run: |
           set -euo pipefail
-          cat > candidate-out/candidate-processor-json <<'PYPROXY'
+          source/build-validation/ap_process_pcm --print-default-tuning > candidate-out/baseline-tuning.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          baseline = json.loads(Path('candidate-out/baseline-tuning.json').read_text(encoding='utf-8'))
+          search = json.loads(Path('candidate-out/search-space.json').read_text(encoding='utf-8'))
+          expected = {key: float(value) for key, value in search['baseline'].items()}
+          actual = {key: float(value) for key, value in baseline.items()}
+          if actual != expected:
+              raise SystemExit(f'processor default tuning drift: actual={actual} expected={expected}')
+          print(json.dumps({'baseline_identity': 'PASS', 'tuning': actual}, sort_keys=True))
+          PY
+      - name: Create strict metrics JSON qualification proxies
+        run: |
+          set -euo pipefail
+          cat > candidate-out/baseline-processor-json <<'PYBASE'
+          #!/usr/bin/env python3
+          import os, sys
+          from pathlib import Path
+          out_dir = Path(__file__).resolve().parent
+          root = out_dir.parent
+          helper = root / 'infra' / '.github' / 'research' / 'continuous-optimization' / 'hosted-validation' / 'metrics_jsonl_proxy.py'
+          processor = root / 'source' / 'build-validation' / 'ap_process_pcm'
+          audit = out_dir / 'baseline-metrics-jsonl-canonicalization.jsonl'
+          os.execv(sys.executable, [sys.executable, str(helper), '--processor', str(processor), '--audit', str(audit), '--', *sys.argv[1:]])
+          PYBASE
+          cat > candidate-out/candidate-processor-json <<'PYCAND'
           #!/usr/bin/env python3
           import os, sys
           from pathlib import Path
@@ -592,10 +618,10 @@ jobs:
           root = out_dir.parent
           helper = root / 'infra' / '.github' / 'research' / 'continuous-optimization' / 'hosted-validation' / 'metrics_jsonl_proxy.py'
           processor = out_dir / 'candidate-processor'
-          audit = out_dir / 'metrics-jsonl-canonicalization.jsonl'
+          audit = out_dir / 'candidate-metrics-jsonl-canonicalization.jsonl'
           os.execv(sys.executable, [sys.executable, str(helper), '--processor', str(processor), '--audit', str(audit), '--', *sys.argv[1:]])
-          PYPROXY
-          chmod 700 candidate-out/candidate-processor-json
+          PYCAND
+          chmod 700 candidate-out/baseline-processor-json candidate-out/candidate-processor-json
           python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
       - name: Build full public validation corpus
         run: |
@@ -638,10 +664,36 @@ jobs:
               f'slr_noise={len(slr_noise)} dns_clean={len(dns_clean)} dns_noise={len(dns_noise)}'
           )
           PY
+      - name: Run canonical baseline on official full validation-grade policy
+        working-directory: source
+        run: |
+          set -euo pipefail
+          set +e
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --corpus ../candidate-out/public/corpus.json \
+            --policy validation/policies/validation-full.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor ../candidate-out/baseline-processor-json \
+            --output ../candidate-out/baseline-validation-report.json \
+            --evidence-manifest ../candidate-out/baseline-evidence-manifest.json --enforce
+          rc=$?
+          set -e
+          test -f ../candidate-out/baseline-validation-report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('../candidate-out/baseline-validation-report.json').read_text(encoding='utf-8'))
+          if report.get('validation_result') not in {'PASS', 'FAIL'}:
+              raise SystemExit('baseline validation did not produce a complete verdict')
+          print(json.dumps({'baseline_validation_result': report['validation_result'], 'violations': report.get('violations', [])}, sort_keys=True))
+          PY
+          echo "baseline_policy_rc=$rc"
       - name: Run exact frozen candidate on official full validation-grade policy
         working-directory: source
         run: |
           set -euo pipefail
+          set +e
           python3 validation/tools/run_validation.py \
             --source-revision '${{ needs.resolve.outputs.sha }}' \
             --corpus ../candidate-out/public/corpus.json \
@@ -650,6 +702,84 @@ jobs:
             --processor ../candidate-out/candidate-processor-json \
             --output ../candidate-out/validation-report.json \
             --evidence-manifest ../candidate-out/evidence-manifest.json --enforce
+          rc=$?
+          set -e
+          test -f ../candidate-out/validation-report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('../candidate-out/validation-report.json').read_text(encoding='utf-8'))
+          if report.get('validation_result') not in {'PASS', 'FAIL'}:
+              raise SystemExit('candidate validation did not produce a complete verdict')
+          print(json.dumps({'candidate_validation_result': report['validation_result'], 'violations': report.get('violations', [])}, sort_keys=True))
+          PY
+          echo "candidate_policy_rc=$rc"
+      - name: Classify paired public qualification
+        id: classify-public
+        env:
+          SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+          CANDIDATE_ID: ${{ needs.resolve.outputs.candidate_id }}
+        run: |
+          set +e
+          python3 - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+
+          baseline = json.loads(Path('candidate-out/baseline-validation-report.json').read_text(encoding='utf-8'))
+          candidate = json.loads(Path('candidate-out/validation-report.json').read_text(encoding='utf-8'))
+          resolved = json.loads(Path('candidate-out/resolved.json').read_text(encoding='utf-8'))
+          baseline_tuning = json.loads(Path('candidate-out/baseline-tuning.json').read_text(encoding='utf-8'))
+
+          baseline_result = baseline.get('validation_result')
+          candidate_result = candidate.get('validation_result')
+          if baseline_result not in {'PASS', 'FAIL'} or candidate_result not in {'PASS', 'FAIL'}:
+              raise SystemExit(2)
+
+          if baseline_result != 'PASS':
+              decision = 'PUBLIC_BASELINE_UNHEALTHY_NON_SHIPPING'
+              next_gate = 'validation-grade'
+              terminal = False
+              rc = 2
+          elif candidate_result != 'PASS':
+              decision = 'PUBLIC_REJECTED_NON_SHIPPING'
+              next_gate = None
+              terminal = True
+              rc = 1
+          else:
+              decision = 'PUBLIC_QUALIFIED_NON_SHIPPING'
+              next_gate = 'validation-grade-blind'
+              terminal = False
+              rc = 0
+
+          result = {
+              'schema_version': 1,
+              'authority': 'non-shipping-paired-public-acoustic-qualification',
+              'decision': decision,
+              'source_sha': os.environ['SOURCE_SHA'],
+              'candidate_id': os.environ['CANDIDATE_ID'],
+              'baseline_result': baseline_result,
+              'candidate_result': candidate_result,
+              'baseline_tuning': baseline_tuning,
+              'candidate_tuning': resolved['tuning'],
+              'next_gate': next_gate,
+              'terminal_candidate': terminal,
+              'baseline_violations': baseline.get('violations', []),
+              'candidate_violations': candidate.get('violations', []),
+              'rule': (
+                  'A candidate may be rejected by public validation only when the exact canonical '
+                  'baseline passes the same corpus and policy. Baseline failure makes qualification '
+                  'incomplete and cannot terminalize the candidate.'
+              ),
+          }
+          Path('candidate-out/public-qualification.json').write_text(
+              json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(result, sort_keys=True))
+          raise SystemExit(rc)
+          PY
+          rc=$?
+          cat candidate-out/public-qualification.json >> "$GITHUB_STEP_SUMMARY" || true
+          exit "$rc"
       - name: Seal candidate-bound visible validation evidence
         if: always()
         run: |

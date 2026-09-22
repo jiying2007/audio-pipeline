@@ -83,10 +83,14 @@ the copied search-space digest before any public-data execution. It then wraps t
 exact source-built `ap_process_pcm` with the selected runtime-safe tuning and records
 both the underlying processor hash and wrapper hash in the public validation evidence.
 
-Candidate mode is intentionally limited to visible `validation-grade` execution. Blind
-qualification must bind the completed visible result in a later promotion step; the
-workflow therefore rejects `validation-grade-blind` when an acoustic candidate artifact
-is supplied. Omitting `acoustic_candidate_artifact_id` preserves the existing baseline
+Candidate mode is intentionally limited to visible `validation-grade` execution and
+runs on GitHub-hosted infrastructure. It bootstraps the same hash-bound Full public
+cache contract used by hosted blind qualification, then replays the exact frozen tuning
+against the fixed `validation-full.json` policy. This avoids reintroducing a persistent
+`audio-validation` service solely for candidate promotion. Blind qualification must bind
+the completed visible result in a later promotion step; the workflow therefore rejects
+`validation-grade-blind` when an acoustic candidate artifact is supplied. Omitting
+`acoustic_candidate_artifact_id` preserves the existing self-hosted baseline/manual
 validation behavior.
 
 For the frozen NS candidate selected by Audio Quality run `35729155489`, the bound

@@ -207,6 +207,7 @@ jobs:
 
   validate:
     needs: resolve
+    if: needs.resolve.outputs.candidate_enabled != 'true'
     runs-on: [self-hosted, linux, audio-validation]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -438,5 +439,213 @@ jobs:
         with:
           name: validation-${{ inputs.tier }}-${{ github.run_id }}
           path: validation-out/
+          if-no-files-found: error
+          retention-days: 90
+  validate-candidate-hosted:
+    needs: resolve
+    if: needs.resolve.outputs.candidate_enabled == 'true'
+    runs-on: ubuntu-latest
+    env:
+      AEC_LIMIT: ${{ inputs.aec_limit }}
+      DERIVED_LIMIT: ${{ inputs.derived_limit }}
+      DNS_LIMIT: ${{ inputs.dns_limit }}
+    steps:
+      - name: Checkout qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          path: infra
+      - name: Checkout exact candidate source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          fetch-depth: 0
+          path: source
+      - name: Download resolved acoustic candidate evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: resolved-acoustic-candidate-${{ github.run_id }}
+          path: candidate-out
+      - name: Initialize GitHub-hosted validation paths
+        run: |
+          set -euo pipefail
+          {
+            echo "DATA_ROOT=$RUNNER_TEMP/audio-validation-data"
+            echo "SEAL=$RUNNER_TEMP/audio-validation-data/datasets.seal.json"
+            echo "DNS_ROOT=$RUNNER_TEMP/audio-validation-data/DNS-Challenge/datasets_fullband"
+          } >> "$GITHUB_ENV"
+      - name: Rebind exact candidate and infrastructure revisions
+        env:
+          EXPECTED_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+          EXPECTED_CANDIDATE_ID: ${{ needs.resolve.outputs.candidate_id }}
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          test "$(git -C infra rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          resolved = json.loads(Path('candidate-out/resolved.json').read_text(encoding='utf-8'))
+          if resolved.get('source_sha') != os.environ['EXPECTED_SOURCE_SHA']:
+              raise SystemExit('resolved candidate source mismatch')
+          if resolved.get('candidate_id') != os.environ['EXPECTED_CANDIDATE_ID']:
+              raise SystemExit('resolved candidate id mismatch')
+          if resolved.get('authority') != 'non-shipping-frozen-acoustic-candidate-public-validation':
+              raise SystemExit('resolved candidate authority mismatch')
+          if resolved.get('decision') != 'ACOUSTIC_CANDIDATE':
+              raise SystemExit('resolved candidate decision mismatch')
+          PY
+      - name: Bootstrap hash-bound full public cache
+        run: |
+          set -euo pipefail
+          python3 infra/.github/research/continuous-optimization/hosted-validation/prepare_full_validation.py \
+            --source-root source \
+            --data-root "$DATA_ROOT" \
+            --seal "$SEAL" \
+            --archive-lock infra/.github/research/continuous-optimization/hosted-validation/public-minimal.lock.json \
+            --aec-limit "$AEC_LIMIT" \
+            --progress-output candidate-out/github-hosted-progress.json \
+            --output candidate-out/github-hosted-cache.json
+      - name: Preflight GitHub-hosted validation environment
+        run: |
+          set -euo pipefail
+          python3 source/tools/runner_preflight.py \
+            --role audio-validation \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --data-root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
+            --require-command gh --require-command jq --require-command curl \
+            --require-command sha256sum --require-command unzip \
+            --writable-path "$GITHUB_WORKSPACE" \
+            --output candidate-out/runner-preflight.json
+          test -z "$(git -C source status --porcelain=v1)"
+          test -z "$(git -C infra status --porcelain=v1)"
+      - name: Verify full sealed public cache
+        run: |
+          set -euo pipefail
+          python3 source/validation/tools/prepare_public_validation.py verify \
+            --lock source/validation/datasets.lock.json \
+            --profile full --root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
+            > candidate-out/dataset-verification.json
+      - name: Build exact offline candidate processor
+        working-directory: source
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-validation -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION='${{ needs.resolve.outputs.sha }}'
+          cmake --build build-validation --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum build-validation/ap_process_pcm | tee ../candidate-out/processor.sha256
+          build-validation/ap_build_info_dump | tee ../candidate-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 | tee ../candidate-out/compiler.txt
+      - name: Bind exact source processor to frozen acoustic tuning
+        env:
+          EXPECTED_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+          EXPECTED_CANDIDATE_ID: ${{ needs.resolve.outputs.candidate_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          resolved = json.loads(Path('candidate-out/resolved.json').read_text(encoding='utf-8'))
+          if resolved.get('source_sha') != os.environ['EXPECTED_SOURCE_SHA']:
+              raise SystemExit('candidate source mismatch before wrapper creation')
+          if resolved.get('candidate_id') != os.environ['EXPECTED_CANDIDATE_ID']:
+              raise SystemExit('candidate identity mismatch before wrapper creation')
+          tuning = resolved['tuning']
+          flags = [
+              '--aec-mu', repr(float(tuning['aec_mu'])),
+              '--ns-floor', repr(float(tuning['ns_floor'])),
+              '--agc-target-dbfs', repr(float(tuning['agc_target_dbfs'])),
+              '--limiter-dbfs', repr(float(tuning['limiter_dbfs'])),
+          ]
+          processor_path = Path('source/build-validation/ap_process_pcm').resolve()
+          wrapper = Path('candidate-out/candidate-processor')
+          wrapper.write_text(
+              '#!/usr/bin/env python3\n'
+              'import os, sys\n'
+              f'processor = {str(processor_path)!r}\n'
+              f'prefix = {flags!r}\n'
+              'os.execv(processor, [processor, *prefix, *sys.argv[1:]])\n',
+              encoding='utf-8',
+          )
+          wrapper.chmod(0o700)
+          identity = {
+              **resolved,
+              'processor_sha256': hashlib.sha256(processor_path.read_bytes()).hexdigest(),
+              'wrapper_sha256': hashlib.sha256(wrapper.read_bytes()).hexdigest(),
+              'execution_environment': 'github-hosted-visible-validation-grade',
+          }
+          Path('candidate-out/execution-identity.json').write_text(
+              json.dumps(identity, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+          sha256sum candidate-out/candidate-processor | tee candidate-out/candidate-processor.sha256
+      - name: Build full public validation corpus
+        run: |
+          set -euo pipefail
+          python3 source/validation/tools/build_full_public_corpus.py \
+            --lock source/validation/datasets.lock.json \
+            --data-root "$DATA_ROOT" --seal "$SEAL" --dns-data-root "$DNS_ROOT" \
+            --output candidate-out/public \
+            --aec-limit "$AEC_LIMIT" --derived-limit "$DERIVED_LIMIT" --dns-limit "$DNS_LIMIT"
+      - name: Enforce full public source diversity and case budget
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          corpus = json.loads(Path('candidate-out/public/corpus.json').read_text())
+          assert corpus['generator']['name'] == 'build_full_public_corpus.py'
+          assert corpus['generator']['version'] == 1
+          expected = int(os.environ['AEC_LIMIT']) + 2 * int(os.environ['DERIVED_LIMIT']) + int(os.environ['DNS_LIMIT'])
+          if len(corpus['cases']) != expected:
+              raise SystemExit(f'full corpus case count mismatch: {len(corpus["cases"])} != {expected}')
+          required_aec = {'aec-farend-singletalk', 'aec-doubletalk', 'aec-nearend-singletalk'}
+          aec_scenarios = {c['scenario'] for c in corpus['cases'] if c['scenario'].startswith('aec-')}
+          if not required_aec.issubset(aec_scenarios):
+              raise SystemExit(f'missing AEC scenarios: {sorted(required_aec - aec_scenarios)}')
+          slr = [c for c in corpus['cases'] if c['scenario'] in {'ns-public-derived', 'bf-offaxis'}]
+          slr_clean = {c['source']['clean']['source_id'] for c in slr}
+          rirs = {c['source']['rir_member'] for c in slr}
+          slr_noise = {c['source']['noise_member'] for c in slr}
+          dns = [c for c in corpus['cases'] if c['scenario'] == 'ns-public-derived-dns']
+          dns_clean = {c['source']['clean']['path'] for c in dns}
+          dns_noise = {c['source']['noise']['path'] for c in dns}
+          if min(len(slr_clean), len(rirs), len(slr_noise), len(dns_clean), len(dns_noise)) < 2:
+              raise SystemExit(
+                  f'insufficient full public diversity: slr_clean={len(slr_clean)} rir={len(rirs)} '
+                  f'slr_noise={len(slr_noise)} dns_clean={len(dns_clean)} dns_noise={len(dns_noise)}'
+              )
+          print(
+              f'full_public_cases={len(corpus["cases"])} slr_clean={len(slr_clean)} rir={len(rirs)} '
+              f'slr_noise={len(slr_noise)} dns_clean={len(dns_clean)} dns_noise={len(dns_noise)}'
+          )
+          PY
+      - name: Run exact frozen candidate on official full validation-grade policy
+        working-directory: source
+        run: |
+          set -euo pipefail
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ needs.resolve.outputs.sha }}' \
+            --corpus ../candidate-out/public/corpus.json \
+            --policy validation/policies/validation-full.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor ../candidate-out/candidate-processor \
+            --output ../candidate-out/validation-report.json \
+            --evidence-manifest ../candidate-out/evidence-manifest.json --enforce
+      - name: Seal candidate-bound visible validation evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          printf '%s\n' '${{ needs.resolve.outputs.sha }}' > candidate-out/validation-revision.txt
+          find candidate-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > candidate-out/SHA256SUMS
+      - name: Upload candidate-bound visible validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: validation-validation-grade-${{ github.run_id }}
+          path: candidate-out/
           if-no-files-found: error
           retention-days: 90

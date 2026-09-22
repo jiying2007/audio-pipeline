@@ -162,7 +162,7 @@ def job_block(text: str, job: str) -> str:
     assert jobs_index >= 0, 'workflow has no jobs block'
     jobs_text = text[jobs_index + 1:]
     match = re.search(
-        rf'(?ms)^  {re.escape(job)}:\n(.*?)(?=^  [A-Za-z_][A-Za-z0-9_-]*:\n|\\Z)',
+        rf'(?ms)^  {re.escape(job)}:\n(.*?)(?=^  [A-Za-z_][A-Za-z0-9_-]*:\n|\Z)',
         jobs_text,
     )
     assert match is not None, f'workflow is missing {job} job'

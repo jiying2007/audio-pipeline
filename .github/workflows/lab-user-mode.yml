@@ -173,138 +173,148 @@ jobs:
             /var/log/audio-pipeline-lab \
             /etc/audio-pipeline
 
-      - name: Execute audio-validation as an ordinary user
+      - name: Execute ordinary-user role lanes in parallel
         shell: bash
         run: |
           set -euo pipefail
-          run_validation_user() {
-            sudo -u validationuser -H env -i \
-              HOME=/home/validationuser \
-              USER=validationuser \
-              LOGNAME=validationuser \
-              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
-              ANSIBLE_NOCOLOR=1 \
-              ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
-              ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
-              ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/validation.yml
-          }
-          run_validation_user
-          run_validation_user | tee /tmp/audio-validation-idempotent.log
-          grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-validation-idempotent.log
 
-          for path in \
-            /home/validationuser/.local/share/audio-pipeline-lab \
-            /home/validationuser/.cache/audio-pipeline-lab \
-            /home/validationuser/.cache/audio-pipeline-lab/datasets \
-            /home/validationuser/.local/state/audio-pipeline-lab \
-            /home/validationuser/.local/state/audio-pipeline-lab/acquisition \
-            /home/validationuser/audio-validation-extended; do
-            sudo -u validationuser test -d "$path"
-            test "$(sudo stat -c %U "$path")" = validationuser
-          done
-          sudo -u validationuser test -x /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python
-          sudo -u validationuser /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python -c 'import huggingface_hub; assert huggingface_hub.__version__ == "1.29.0"'
+          validation_lane() {
+            run_validation_user() {
+              sudo -u validationuser -H env -i \
+                HOME=/home/validationuser \
+                USER=validationuser \
+                LOGNAME=validationuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/validation.yml
+            }
+            run_validation_user
+            run_validation_user | tee /tmp/audio-validation-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-validation-idempotent.log
 
-      - name: Execute audio-target as an ordinary user
-        shell: bash
-        run: |
-          set -euo pipefail
-          run_target_user() {
-            sudo -u targetuser -H env -i \
-              HOME=/home/targetuser \
-              USER=targetuser \
-              LOGNAME=targetuser \
-              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
-              ANSIBLE_NOCOLOR=1 \
-              ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
-              ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
-              ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/target.yml "$@"
+            for path in \
+              /home/validationuser/.local/share/audio-pipeline-lab \
+              /home/validationuser/.cache/audio-pipeline-lab \
+              /home/validationuser/.cache/audio-pipeline-lab/datasets \
+              /home/validationuser/.local/state/audio-pipeline-lab \
+              /home/validationuser/.local/state/audio-pipeline-lab/acquisition \
+              /home/validationuser/audio-validation-extended; do
+              sudo -u validationuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = validationuser
+            done
+            sudo -u validationuser test -x /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python
+            sudo -u validationuser /home/validationuser/.local/share/audio-pipeline-lab/venv/bin/python -c 'import huggingface_hub; assert huggingface_hub.__version__ == "1.29.0"'
           }
 
-          run_target_user -e 'audio_target_board_manifest_src='
-          sudo -u targetuser test ! -e /home/targetuser/.config/audio-pipeline/board.json
+          target_lane() {
+            run_target_user() {
+              sudo -u targetuser -H env -i \
+                HOME=/home/targetuser \
+                USER=targetuser \
+                LOGNAME=targetuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/target.yml "$@"
+            }
 
-          run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json'
-          sudo -u targetuser cmp /tmp/ap-lab/test-board.json /home/targetuser/.config/audio-pipeline/board.json
+            run_target_user -e 'audio_target_board_manifest_src='
+            sudo -u targetuser test ! -e /home/targetuser/.config/audio-pipeline/board.json
+            run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json'
+            sudo -u targetuser cmp /tmp/ap-lab/test-board.json /home/targetuser/.config/audio-pipeline/board.json
+            run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json' | tee /tmp/audio-target-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-target-idempotent.log
 
-          run_target_user -e 'audio_target_board_manifest_src=/tmp/ap-lab/test-board.json' | tee /tmp/audio-target-idempotent.log
-          grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-target-idempotent.log
-
-          for path in \
-            /home/targetuser/.local/share/audio-pipeline-lab \
-            /home/targetuser/.cache/audio-pipeline-lab \
-            /home/targetuser/.local/state/audio-pipeline-lab \
-            /home/targetuser/.local/state/audio-pipeline-lab/log \
-            /home/targetuser/.config/audio-pipeline \
-            /home/targetuser/.local/share/audio-pipeline-lab/fixtures \
-            /home/targetuser/.local/state/audio-pipeline-lab/hil \
-            /home/targetuser/.local/state/audio-pipeline-lab/log/hil; do
-            sudo -u targetuser test -d "$path"
-            test "$(sudo stat -c %U "$path")" = targetuser
-          done
-          test "$(sudo stat -c %U /home/targetuser/.config/audio-pipeline/board.json)" = targetuser
-          test "$(sudo stat -c %a /home/targetuser/.config/audio-pipeline/board.json)" = 640
-
-      - name: Execute audio-builder as an ordinary user
-        shell: bash
-        run: |
-          set -euo pipefail
-          run_builder_user() {
-            sudo -u builderuser -H env -i \
-              HOME=/home/builderuser \
-              USER=builderuser \
-              LOGNAME=builderuser \
-              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
-              ANSIBLE_NOCOLOR=1 \
-              ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
-              ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
-              ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/builder.yml
+            for path in \
+              /home/targetuser/.local/share/audio-pipeline-lab \
+              /home/targetuser/.cache/audio-pipeline-lab \
+              /home/targetuser/.local/state/audio-pipeline-lab \
+              /home/targetuser/.local/state/audio-pipeline-lab/log \
+              /home/targetuser/.config/audio-pipeline \
+              /home/targetuser/.local/share/audio-pipeline-lab/fixtures \
+              /home/targetuser/.local/state/audio-pipeline-lab/hil \
+              /home/targetuser/.local/state/audio-pipeline-lab/log/hil; do
+              sudo -u targetuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = targetuser
+            done
+            test "$(sudo stat -c %U /home/targetuser/.config/audio-pipeline/board.json)" = targetuser
+            test "$(sudo stat -c %a /home/targetuser/.config/audio-pipeline/board.json)" = 640
           }
 
-          run_builder_user
-          run_builder_user | tee /tmp/audio-builder-idempotent.log
-          grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-builder-idempotent.log
-          sudo -u builderuser /tmp/ap-lab/shipping-toolchain/bin/fake-cc --version | grep -F 'runtime fixture cc 1.0'
+          builder_lane() {
+            run_builder_user() {
+              sudo -u builderuser -H env -i \
+                HOME=/home/builderuser \
+                USER=builderuser \
+                LOGNAME=builderuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/builder.yml
+            }
+            run_builder_user
+            run_builder_user | tee /tmp/audio-builder-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/audio-builder-idempotent.log
+            sudo -u builderuser /tmp/ap-lab/shipping-toolchain/bin/fake-cc --version | grep -F 'runtime fixture cc 1.0'
 
-          for path in \
-            /home/builderuser/.local/share/audio-pipeline-lab \
-            /home/builderuser/.cache/audio-pipeline-lab \
-            /home/builderuser/.local/state/audio-pipeline-lab \
-            /home/builderuser/.local/state/audio-pipeline-lab/log; do
-            sudo -u builderuser test -d "$path"
-            test "$(sudo stat -c %U "$path")" = builderuser
-          done
-
-      - name: Execute certification-archive as an ordinary user
-        shell: bash
-        run: |
-          set -euo pipefail
-          run_archive_user() {
-            sudo -u archiveuser -H env -i \
-              HOME=/home/archiveuser \
-              USER=archiveuser \
-              LOGNAME=archiveuser \
-              PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
-              ANSIBLE_NOCOLOR=1 \
-              ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
-              ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
-              ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/archive.yml
+            for path in \
+              /home/builderuser/.local/share/audio-pipeline-lab \
+              /home/builderuser/.cache/audio-pipeline-lab \
+              /home/builderuser/.local/state/audio-pipeline-lab \
+              /home/builderuser/.local/state/audio-pipeline-lab/log; do
+              sudo -u builderuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = builderuser
+            done
           }
 
-          run_archive_user
-          run_archive_user | tee /tmp/certification-archive-idempotent.log
-          grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/certification-archive-idempotent.log
-          sudo -u archiveuser /tmp/ap-lab/archive/audio-pipeline-cert-archive --help | grep -F 'runtime fixture'
+          archive_lane() {
+            run_archive_user() {
+              sudo -u archiveuser -H env -i \
+                HOME=/home/archiveuser \
+                USER=archiveuser \
+                LOGNAME=archiveuser \
+                PATH=/tmp/ap-lab/controller-venv/bin:/usr/local/bin:/usr/bin:/bin \
+                ANSIBLE_NOCOLOR=1 \
+                ANSIBLE_CONFIG=/tmp/ap-lab/ansible.cfg \
+                ANSIBLE_ROLES_PATH=/tmp/ap-lab/ansible/roles \
+                ansible-playbook -i 'localhost,' -c local /tmp/ap-lab/ansible/archive.yml
+            }
+            run_archive_user
+            run_archive_user | tee /tmp/certification-archive-idempotent.log
+            grep -Eq 'localhost[[:space:]]*:.*changed=0.*failed=0' /tmp/certification-archive-idempotent.log
+            sudo -u archiveuser /tmp/ap-lab/archive/audio-pipeline-cert-archive --help | grep -F 'runtime fixture'
 
-          for path in \
-            /home/archiveuser/.local/share/audio-pipeline-lab \
-            /home/archiveuser/.cache/audio-pipeline-lab \
-            /home/archiveuser/.local/state/audio-pipeline-lab \
-            /home/archiveuser/.local/state/audio-pipeline-lab/log; do
-            sudo -u archiveuser test -d "$path"
-            test "$(sudo stat -c %U "$path")" = archiveuser
+            for path in \
+              /home/archiveuser/.local/share/audio-pipeline-lab \
+              /home/archiveuser/.cache/audio-pipeline-lab \
+              /home/archiveuser/.local/state/audio-pipeline-lab \
+              /home/archiveuser/.local/state/audio-pipeline-lab/log; do
+              sudo -u archiveuser test -d "$path"
+              test "$(sudo stat -c %U "$path")" = archiveuser
+            done
+          }
+
+          declare -A pids
+          validation_lane > /tmp/lab-validation-lane.log 2>&1 & pids[validation]=$!
+          target_lane > /tmp/lab-target-lane.log 2>&1 & pids[target]=$!
+          builder_lane > /tmp/lab-builder-lane.log 2>&1 & pids[builder]=$!
+          archive_lane > /tmp/lab-archive-lane.log 2>&1 & pids[archive]=$!
+
+          status=0
+          for lane in validation target builder archive; do
+            if ! wait "${pids[$lane]}"; then
+              status=1
+            fi
           done
-
+          for lane in validation target builder archive; do
+            echo "===== ordinary-user $lane lane ====="
+            cat "/tmp/lab-$lane-lane.log"
+          done
+          test "$status" -eq 0
       - name: Enforce privilege-free boundary and controller contracts
         shell: bash
         run: |

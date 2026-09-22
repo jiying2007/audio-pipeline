@@ -1,3 +1,9 @@
+# 2.3.48
+
+- Add bounded parallel execution for independent tuning holdout reports. The canonical tuning engine keeps `holdout_jobs=1` by default; callers may opt into 1..4 workers, and `executor.map` preserves the fixed validation-baseline / validation-candidate / shadow-baseline / shadow-candidate evidence order.
+- Keep development-candidate parallelism and holdout parallelism independently bounded and fail closed on invalid worker counts. `validation-smoke` opts into two holdout workers while retaining the same processor, corpora, policy, dataset lock, search space, scoring, case-delta gates, validation/shadow regression gates and candidate decision semantics.
+- This is an execution-scheduling/performance revision only. DSP behavior, acoustic thresholds, candidate ranking, promotion authority, API/ABI, HIL and Product Qualification semantics are unchanged.
+
 # 2.3.47
 
 - Replace canonical validation engine monkey-patching with an explicit immutable `EvaluationSemantics` profile. Processor invocation and render-correlation search are passed to case evaluation directly instead of mutating `run_validation_engine.invoke` / `max_abs_corr` at import time.

@@ -740,10 +740,18 @@ def default_iteration_semantics() -> IterationSemantics:
     )
 
 
+def validate_parallelism(candidate_jobs: int, holdout_jobs: int) -> None:
+    if candidate_jobs < 1 or candidate_jobs > 8:
+        raise ValueError("candidate_jobs must be 1..8")
+    if holdout_jobs < 1 or holdout_jobs > 4:
+        raise ValueError("holdout_jobs must be 1..4")
+
+
 def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shadow: Path,
             policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path,
             candidate_jobs: int = 1,
-            semantics: IterationSemantics | None = None) -> dict[str, Any]:
+            semantics: IterationSemantics | None = None,
+            holdout_jobs: int = 1) -> dict[str, Any]:
     semantics = semantics or default_iteration_semantics()
     space = json.loads(search_space_path.read_text(encoding="utf-8"))
     semantics.validate_search_space(space)
@@ -751,8 +759,7 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
     candidates = generate_candidates(space)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if candidate_jobs < 1 or candidate_jobs > 8:
-        raise ValueError("candidate_jobs must be 1..8")
+    validate_parallelism(candidate_jobs, holdout_jobs)
     baseline_candidate = candidates[0]
 
     def evaluate_development(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -802,19 +809,34 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
         space, selected, dev_results
     )
 
+    def evaluate_holdout(task: tuple[str, str, Path, dict[str, Any]]) -> tuple[
+        str, str, Path, dict[str, Any], float
+    ]:
+        partition, role, corpus, candidate = task
+        report_path = output_dir / partition / f"{role}.json"
+        report, elapsed = run_validation(
+            repo_root, processor, corpus, policy, dataset_lock,
+            candidate["tuning"], report_path
+        )
+        return partition, role, report_path, report, elapsed
+
+    holdout_tasks = [
+        ("validation", "baseline", validation, dev_results[0]),
+        ("validation", "candidate", validation, selected),
+        ("shadow", "baseline", shadow, dev_results[0]),
+        ("shadow", "candidate", shadow, selected),
+    ]
+    if holdout_jobs == 1:
+        holdout_results = [evaluate_holdout(task) for task in holdout_tasks]
+    else:
+        with ThreadPoolExecutor(max_workers=holdout_jobs) as executor:
+            holdout_results = list(executor.map(evaluate_holdout, holdout_tasks))
+
     validation_reports = {}
     shadow_reports = {}
-    for role, candidate in (("baseline", dev_results[0]), ("candidate", selected)):
-        val_path = output_dir / "validation" / f"{role}.json"
-        val_report, val_elapsed = run_validation(
-            repo_root, processor, validation, policy, dataset_lock, candidate["tuning"], val_path
-        )
-        validation_reports[role] = (val_path, val_report, val_elapsed)
-        shadow_path = output_dir / "shadow" / f"{role}.json"
-        shadow_report, shadow_elapsed = run_validation(
-            repo_root, processor, shadow, policy, dataset_lock, candidate["tuning"], shadow_path
-        )
-        shadow_reports[role] = (shadow_path, shadow_report, shadow_elapsed)
+    for partition, role, report_path, report, elapsed in holdout_results:
+        target = validation_reports if partition == "validation" else shadow_reports
+        target[role] = (report_path, report, elapsed)
 
     validation_case_summary, validation_case_violations = (
         semantics.case_delta_gate_violations(
@@ -847,6 +869,7 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "selection_policy": "highest-score-among-case-gate-compliant-development-candidates",
             "candidate_count": len(candidates),
             "candidate_jobs": candidate_jobs,
+            "holdout_jobs": holdout_jobs,
         },
         "bindings": {
             "processor_sha256": sha256_file(processor),
@@ -902,6 +925,20 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
 
 
 def self_test() -> None:
+    # Execution fan-out is intentionally bounded independently: candidate search
+    # may use up to 8 workers, while the holdout plan has exactly four reports.
+    validate_parallelism(1, 1)
+    validate_parallelism(8, 4)
+    for candidate_jobs, holdout_jobs in ((0, 1), (9, 1), (1, 0), (1, 5)):
+        try:
+            validate_parallelism(candidate_jobs, holdout_jobs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(
+                f"invalid parallelism accepted: candidate={candidate_jobs} holdout={holdout_jobs}"
+            )
+
     space = {
         "schema_version": 1,
         "search_space_id": "self-test",
@@ -1328,6 +1365,8 @@ def main(semantics: IterationSemantics | None = None) -> int:
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--candidate-jobs", type=int, default=1,
                         help="parallel development candidates; deterministic output order is preserved")
+    parser.add_argument("--holdout-jobs", type=int, default=1,
+                        help="parallel validation/shadow reports; deterministic output order is preserved")
     parser.add_argument("--require-candidate", action="store_true",
                         help="return non-zero unless an independent-gate ACOUSTIC_CANDIDATE is produced")
     args = parser.parse_args()
@@ -1344,7 +1383,7 @@ def main(semantics: IterationSemantics | None = None) -> int:
         args.development_corpus.resolve(), args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),
         args.search_space.resolve(), args.output_dir.resolve(), args.candidate_jobs,
-        semantics=semantics,
+        semantics=semantics, holdout_jobs=args.holdout_jobs,
     )
     print(json.dumps({
         "decision": result["decision"], "iteration_id": result["iteration_id"],

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "algorithm_space_id": "call-hierarchical-algorithm-parameter-v1",
+  "status": "CLOSED_KEEP_BASELINE",
+  "execution_authorized": false,
+  "predecessor": {
+    "workflow": "Research Algorithm Parameter Optimization",
+    "run_id": 35301640608,
+    "decision": "KEEP_BASELINE",
+    "status": "NO_RESEARCH_CANDIDATE"
+  },
+  "successor_origin": ".github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json",
+  "parameter_space_closure": ".github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json",
+  "authority": {
+    "automatic_main_mutation": false,
+    "shipping": false,
+    "hil": false,
+    "product_certification": false
+  },
+  "rule": "Algorithm-space v1 is consumed historical selection evidence. It may not execute joint search again. Reopening requires a new algorithm-space identity and fresh explicit research authority."
+}

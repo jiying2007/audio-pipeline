@@ -18,6 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MAINTENANCE_WORKFLOW_CONTRACT = ROOT / ".github/program/maintenance_workflow_contract.py"
+DIFF_FILTER = "ACDMRTUXB"
 
 FULL_COMPOSITIONS = [
     "composition-low", "composition-tiny", "composition-voice-frontend",
@@ -78,7 +79,7 @@ def validate_maintenance_workflow_contract() -> None:
 
 def changed_files(base: str, head: str) -> list[str]:
     out = subprocess.check_output(
-        ["git", "diff", "--name-only", "--diff-filter=ACMRTUXB", f"{base}...{head}"],
+        ["git", "diff", "--name-only", f"--diff-filter={DIFF_FILTER}", f"{base}...{head}"],
         text=True,
     )
     return [line.strip() for line in out.splitlines() if line.strip()]
@@ -354,6 +355,7 @@ def emit(result: dict, github_output: Path | None) -> None:
 
 
 def self_test() -> None:
+    assert "D" in DIFF_FILTER, "deleted paths must participate in CI impact analysis"
     assert analyze(["README.md"])["docs_only"]
     assert is_release_neutral(".github/workflows/verify.yml")
     assert is_release_neutral("ci/Dockerfile")
@@ -433,6 +435,11 @@ def self_test() -> None:
         "src/core/ap_pipeline.c",
     ])
     assert governance_mixed["full"] and governance_mixed["run_lab"]
+    governance_with_deleted_workflow = analyze([
+        ".github/program/terminal_workflow_retirement.py",
+        ".github/workflows/research-stage-lane-optimization.yml",
+    ])
+    assert governance_with_deleted_workflow["full"] and governance_with_deleted_workflow["run_lab"]
     promotion_governance = analyze([".github/program/promotion_governance.py"])
     assert promotion_governance["full"] and promotion_governance["run_lab"]
     unknown = analyze(["scripts/new-thing.sh"])

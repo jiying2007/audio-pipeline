@@ -24,6 +24,7 @@ jobs:
       run_ci: ${{ steps.impact.outputs.run_ci }}
       run_quality: ${{ steps.impact.outputs.run_quality }}
       run_audio: ${{ steps.impact.outputs.run_audio }}
+      run_tuning: ${{ steps.impact.outputs.run_tuning }}
       run_resource: ${{ steps.impact.outputs.run_resource }}
       run_codeql: ${{ steps.impact.outputs.run_codeql }}
       run_perf: ${{ steps.impact.outputs.run_perf }}
@@ -300,6 +301,7 @@ jobs:
     uses: ./.github/workflows/audio-quality-gates.yml
     with:
       run_extended: ${{ needs.impact.outputs.run_extended == 'true' }}
+      run_tuning: ${{ needs.impact.outputs.run_tuning == 'true' }}
 
   resource-gates:
     needs: [impact, fast-gate]

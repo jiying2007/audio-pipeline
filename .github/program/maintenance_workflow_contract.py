@@ -92,6 +92,7 @@ PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
     Path('.github/workflows/vad-operating-point-selector.yml'),
     Path('.github/workflows/vad-hangover-counterfactual.yml'),
     Path('.github/workflows/vad-strong-weak-refresh.yml'),
+    Path('.github/workflows/aec-motion-tuning.yml'),
 )
 
 CONTRACT_ONLY_RESEARCH_WORKFLOWS = (

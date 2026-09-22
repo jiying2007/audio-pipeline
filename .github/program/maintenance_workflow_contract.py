@@ -86,7 +86,6 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-optimization.yml'),
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
     Path('.github/workflows/research-candidate-blind-qualification.yml'),
-    Path('.github/workflows/research-stage-lane-optimization.yml'),
     Path('.github/workflows/research-source-authority-v2-qualification.yml'),
 )
 
@@ -223,6 +222,9 @@ def _terminal_retirement_required_paths(root: Path) -> set[str]:
             required.update((workflow['path'], workflow['evidence']))
         required.update(round_record.get('candidate_contracts', {}).values())
         required.update(round_record.get('candidate_closures', {}).values())
+    for round_record in data.get('stage_lane_rounds', []):
+        required.update((round_record['path'], round_record['evidence']))
+        required.update(round_record.get('lane_outcomes', {}).values())
     return required
 
 

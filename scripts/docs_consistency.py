@@ -208,6 +208,7 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
     tuner = read(root, "validation/tools/tuning_iteration.py")
     tuner_engine = read(root, "validation/tools/tuning_iteration_engine.py")
     audio_quality = read(root, ".github/workflows/audio-quality-gates.yml")
+    verify_workflow = read(root, ".github/workflows/verify.yml")
     tuning_workflow = read(root, ".github/workflows/acoustic-tuning-iteration.yml")
 
     try:
@@ -260,7 +261,7 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
             errors.append(f"workflow bypasses canonical validation CLI via {private_entry}")
 
     if re.search(r"(?m)^\s*pull_request\s*:", tuning_workflow):
-        errors.append("standalone acoustic tuning search must not duplicate required PR tuning")
+        errors.append("standalone acoustic tuning search must not duplicate impact-routed PR tuning")
     if re.search(r"(?m)^\s*schedule\s*:", tuning_workflow):
         errors.append("standalone acoustic tuning search must be manual-only in maintenance state")
     for token in ("workflow_dispatch:", "call-v1.json", "validation/tools/authority.py"):
@@ -270,9 +271,17 @@ def validate_validation_framework(root: Path, errors: list[str]) -> None:
         "validation/tools/authority.py --self-test",
         "call-pr-smoke-v1.json",
         "Enforce bounded acoustic tuning iteration",
+        "run_tuning:",
+        "if: inputs.run_tuning",
     ):
         if token not in audio_quality:
             errors.append(f"required Audio Quality gate missing canonical tuning token: {token}")
+    for token in (
+        "run_tuning: ${{ steps.impact.outputs.run_tuning }}",
+        "run_tuning: ${{ needs.impact.outputs.run_tuning == 'true' }}",
+    ):
+        if token not in verify_workflow:
+            errors.append(f"Verify missing impact-routed tuning token: {token}")
 
     for tool in ("authority.py", "run_validation.py", "tuning_iteration.py"):
         try:

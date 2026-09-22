@@ -51,6 +51,24 @@ SOURCE_CANDIDATE_AUTHORITY_FALSE_KEYS = (
     "source_merge_authority",
     "automatic_main_mutation",
 )
+RETIREMENT_COLLECTION_KEYS = {
+    "workflows",
+    "research_workflows",
+    "source_candidate_workflows",
+    "selection_workflows",
+    "source_candidate_rounds",
+    "stage_lane_rounds",
+    "historical_replay_workflows",
+}
+MANIFEST_KEYS = RETIREMENT_COLLECTION_KEYS | {
+    "schema_version",
+    "policy",
+    "software_release",
+    "release_source_sha",
+    "reintroduction_allowed",
+    "retained_reproducers",
+    "authority_boundary",
+}
 
 
 def require(ok: bool, message: str) -> None:
@@ -66,6 +84,12 @@ def git(*args: str, check: bool = True) -> str:
 
 
 def validate_manifest(data: dict) -> None:
+    require(set(data) == MANIFEST_KEYS,
+            f"retirement manifest top-level fields drift: {sorted(set(data) ^ MANIFEST_KEYS)}")
+    require({
+        key for key, value in data.items() if isinstance(value, list)
+    } == RETIREMENT_COLLECTION_KEYS,
+            "retirement manifest collection categories drift")
     require(data.get("schema_version") == 1, "unsupported retirement schema")
     require(data.get("policy") == "retired-terminal-workflow-set", "unexpected retirement policy")
     require(data.get("software_release") == "v2.3.13", "software release drift")
@@ -986,6 +1010,10 @@ def self_test() -> None:
         ],
         "research_workflows": [],
         "source_candidate_workflows": [],
+        "selection_workflows": [],
+        "source_candidate_rounds": [],
+        "stage_lane_rounds": [],
+        "historical_replay_workflows": [],
         "authority_boundary": {
             "shipping_source_changed": False,
             "release_changed": False,
@@ -1087,6 +1115,22 @@ def self_test() -> None:
     assert "pull_request:" in extract_on_block("name: X\non:\n  pull_request:\npermissions:\n  contents: read\n")
     assert TASK_WORKFLOW_RE.fullmatch("i009-residual-echo-rescue-root-cause.yml")
     assert not TASK_WORKFLOW_RE.fullmatch("audio-quality-gates.yml")
+    unknown = json.loads(json.dumps(sample))
+    unknown["future_retirement_category"] = []
+    try:
+        validate_manifest(unknown)
+    except ValueError as exc:
+        assert "top-level fields drift" in str(exc)
+    else:
+        raise AssertionError("unknown retirement category was silently accepted")
+    missing = json.loads(json.dumps(sample))
+    missing.pop("historical_replay_workflows")
+    try:
+        validate_manifest(missing)
+    except ValueError as exc:
+        assert "top-level fields drift" in str(exc)
+    else:
+        raise AssertionError("missing retirement category was silently accepted")
     bad = json.loads(json.dumps(sample))
     bad["reintroduction_allowed"] = True
     try:

@@ -133,6 +133,15 @@ LEGACY_SEMANTICS_GLOBS = (
     "validation/tools/*.py",
     "tests/validation/*.py",
 )
+TERMINAL_RETIREMENT_COLLECTION_KEYS = {
+    "workflows",
+    "research_workflows",
+    "source_candidate_workflows",
+    "selection_workflows",
+    "source_candidate_rounds",
+    "stage_lane_rounds",
+    "historical_replay_workflows",
+}
 
 
 def extract_on_block(text: str) -> str:
@@ -229,11 +238,22 @@ def _github_path_pattern_matches(pattern: str, path: str) -> bool:
     return re.fullmatch(escaped, path) is not None
 
 
+def _validate_terminal_retirement_collection_keys(data: dict) -> None:
+    collection_keys = {
+        key for key, value in data.items() if isinstance(value, list)
+    }
+    assert collection_keys == TERMINAL_RETIREMENT_COLLECTION_KEYS, (
+        f'terminal retirement collection categories drift: '
+        f'{sorted(collection_keys ^ TERMINAL_RETIREMENT_COLLECTION_KEYS)}'
+    )
+
+
 def _terminal_retirement_required_paths(root: Path) -> set[str]:
     manifest = root / TERMINAL_RETIREMENT_MANIFEST
     if not manifest.is_file():
         return set()
     data = json.loads(manifest.read_text(encoding='utf-8'))
+    _validate_terminal_retirement_collection_keys(data)
     required: set[str] = set()
 
     for record in data.get('workflows', []):
@@ -502,6 +522,27 @@ def self_test() -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
+        retirement_collections = {
+            key: [] for key in TERMINAL_RETIREMENT_COLLECTION_KEYS
+        }
+        _validate_terminal_retirement_collection_keys(retirement_collections)
+        unknown_collections = dict(retirement_collections)
+        unknown_collections['future_retirement_category'] = []
+        try:
+            _validate_terminal_retirement_collection_keys(unknown_collections)
+        except AssertionError as exc:
+            assert 'collection categories drift' in str(exc)
+        else:
+            raise AssertionError('unknown retirement collection bypassed archive coverage')
+        missing_collections = dict(retirement_collections)
+        missing_collections.pop('historical_replay_workflows')
+        try:
+            _validate_terminal_retirement_collection_keys(missing_collections)
+        except AssertionError as exc:
+            assert 'collection categories drift' in str(exc)
+        else:
+            raise AssertionError('missing retirement collection bypassed archive coverage')
+
         _write_i002_terminal_fixture(root)
         _write_program_archive_fixture(root)
         generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]

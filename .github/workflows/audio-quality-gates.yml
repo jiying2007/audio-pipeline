@@ -143,6 +143,9 @@ jobs:
             --search-space validation/tuning/search-spaces/call-pr-smoke-v1.json \
             --candidate-jobs 2 \
             --holdout-jobs 2 \
+            --baseline-development-report /tmp/ap-validation-1307/report.json \
+            --baseline-validation-report /tmp/ap-validation-2307/report.json \
+            --baseline-shadow-report /tmp/ap-validation-3307/report.json \
             --output-dir /tmp/ap-tuning-pr
           python3 - <<'PY'
           import json
@@ -152,7 +155,10 @@ jobs:
           assert result['search_space']['candidate_count'] <= 8
           assert result['search_space']['candidate_jobs'] == 2
           assert result['search_space']['holdout_jobs'] == 2
+          assert result['search_space']['baseline_reports_reused'] is True
+          assert set(result['bindings']['reused_baseline_reports']) == {'development', 'validation', 'shadow'}
           baseline_dev = next(item for item in result['development_ranking'] if item['label'] == 'baseline')
+          assert baseline_dev['elapsed_s'] == 0.0
           assert baseline_dev['validation_result'] == 'PASS'
           assert result['validation']['baseline']['validation_result'] == 'PASS'
           assert result['shadow']['baseline']['validation_result'] == 'PASS'

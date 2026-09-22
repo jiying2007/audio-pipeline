@@ -21,7 +21,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: validation/tools
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate selector contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            validation/tools/build_stage_validation_corpus.py \
+            tests/validation/vad_operating_point_selector.py \
+            tests/validation/vad_operating_point_qualification.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/vad_operating_point_selector.py --self-test
+          python3 tests/validation/vad_operating_point_qualification.py --self-test
+          python3 validation/tools/build_stage_validation_corpus.py --output /tmp/ap-vad-selector-contract --seed 1307
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          corpus = json.loads(Path('/tmp/ap-vad-selector-contract/corpus.json').read_text())
+          assert corpus['generator']['seed'] == 1307
+          profiles = {case.get('processor_profile') for case in corpus['cases'] if case.get('vad_labels')}
+          assert {'vad-isolated', 'ns-isolated'} <= profiles
+          PY
+
   select:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

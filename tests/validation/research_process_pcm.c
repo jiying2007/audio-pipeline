@@ -1,4 +1,5 @@
 #include "audio_pipeline/audio_pipeline.h"
+#include "../../src/ap_metrics_json.h"
 #include <errno.h>
 #include <math.h>
 #include <stdint.h>
@@ -163,13 +164,17 @@ int main(int argc, char **argv) {
             ap_pipeline_get_metrics(pipeline, &metrics);
             if (fprintf(fmetrics,
                         "{\"frame\":%u,\"algorithmic_latency_ms\":%u,"
-                        "\"vad_probability\":%.7g,\"vad_active\":%u,"
-                        "\"erle_db\":%.7g,\"erle_valid\":%u,"
-                        "\"estimated_delay_ms\":%u,\"active_aec_taps\":%u,"
-                        "\"active_aec_partitions\":%u}\n",
-                        frame_index, ap_pipeline_algorithmic_latency_ms(pipeline),
-                        (double)metrics.vad_probability, (unsigned)metrics.vad_active,
-                        (double)metrics.erle_db, (unsigned)metrics.erle_valid,
+                        "\"vad_probability\":",
+                        frame_index, ap_pipeline_algorithmic_latency_ms(pipeline)) < 0 ||
+                !ap_metrics_json_write_number(fmetrics, (double)metrics.vad_probability) ||
+                fprintf(fmetrics,
+                        ",\"vad_active\":%u,\"erle_db\":",
+                        (unsigned)metrics.vad_active) < 0 ||
+                !ap_metrics_json_write_number(fmetrics, (double)metrics.erle_db) ||
+                fprintf(fmetrics,
+                        ",\"erle_valid\":%u,\"estimated_delay_ms\":%u,"
+                        "\"active_aec_taps\":%u,\"active_aec_partitions\":%u}\n",
+                        (unsigned)metrics.erle_valid,
                         metrics.estimated_delay_ms, metrics.active_aec_taps,
                         metrics.active_aec_partitions) < 0) return 5;
         }

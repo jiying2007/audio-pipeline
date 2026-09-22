@@ -34,9 +34,15 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$EXTENDED_REAL_ENABLED" != true ]; then
+            if [ "$EVENT_NAME" = schedule ]; then
+              echo 'run=false' >> "$GITHUB_OUTPUT"
+              echo 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED: scheduled maintenance is inactive until EXTENDED_REAL_ENABLED=true.'
+              exit 0
+            fi
             echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED: enable only after audio-validation runner and materialized cache are genuinely ready.' >&2
             exit 1
           fi
+          echo 'run=true' >> "$GITHUB_OUTPUT"
           data_root=${EXTENDED_REAL_DATA_ROOT:-}
           case "$EVENT_NAME" in
             repository_dispatch)
@@ -64,6 +70,7 @@ jobs:
             echo "extended-real automation: event=$EVENT_NAME profile=$profile source=$source_sha root=<runner-user-default>"
           fi
       - name: Dispatch canonical extended-real workflow
+        if: steps.request.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ steps.request.outputs.source_sha }}

@@ -25,7 +25,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: validation/tools:tests/validation
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate strong weak research contracts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            tests/validation/vad_strong_weak_refresh.py \
+            tests/validation/vad_hangover_counterfactual.py \
+            tests/validation/vad_operating_point_selector.py \
+            tests/validation/ami_vad_microset_eval.py \
+            tests/validation/discover_ami_vad_microset.py
+          python3 validation/tools/run_validation.py --self-test
+          python3 tests/validation/vad_hangover_counterfactual.py --self-test
+          python3 tests/validation/vad_strong_weak_refresh.py --self-test
+          python3 tests/validation/ami_vad_microset_eval.py --self-test
+          python3 -m json.tool tests/validation/data/ami_vad_microset.lock.json >/dev/null
+
   select:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

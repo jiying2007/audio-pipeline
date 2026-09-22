@@ -266,6 +266,7 @@ jobs:
         env:
           CANDIDATE_ENABLED: ${{ needs.resolve.outputs.candidate_enabled }}
           EXPECTED_CANDIDATE_ID: ${{ needs.resolve.outputs.candidate_id }}
+          EXPECTED_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
         run: |
           set -euo pipefail
           if [ "$CANDIDATE_ENABLED" != 'true' ]; then
@@ -278,8 +279,10 @@ jobs:
           resolved = json.loads(Path('acoustic-candidate/resolved.json').read_text(encoding='utf-8'))
           if resolved.get('candidate_id') != os.environ['EXPECTED_CANDIDATE_ID']:
               raise SystemExit('resolved candidate id changed between jobs')
-          if resolved.get('source_sha') != os.environ['GITHUB_SHA']:
-              raise SystemExit('resolved candidate source does not match checked-out source')
+          if resolved.get('source_sha') != os.environ['EXPECTED_SOURCE_SHA']:
+              raise SystemExit('resolved candidate source does not match resolved source')
+          if os.popen('git rev-parse HEAD').read().strip() != os.environ['EXPECTED_SOURCE_SHA']:
+              raise SystemExit('checked-out source does not match resolved source')
           tuning = resolved['tuning']
           flags = [
               '--aec-mu', repr(float(tuning['aec_mu'])),

@@ -17,6 +17,7 @@ import itertools
 import json
 import math
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -25,6 +26,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 TUNING_KEYS = ("aec_mu", "ns_floor", "agc_target_dbfs", "limiter_dbfs")
+TUNING_IDENTITY_ABS_TOLERANCE = 1.0e-6
 # The top-level contract of a search space, matching
 # validation/tuning/search-space.schema.json. Enforced rather than defaulted: see
 # validate_search_space.
@@ -740,6 +742,76 @@ def default_iteration_semantics() -> IterationSemantics:
     )
 
 
+def tuning_identity_matches(left: dict[str, float], right: dict[str, float]) -> bool:
+    return all(
+        math.isclose(
+            float(left[key]), float(right[key]),
+            rel_tol=0.0, abs_tol=TUNING_IDENTITY_ABS_TOLERANCE,
+        )
+        for key in TUNING_KEYS
+    )
+
+
+def processor_default_tuning(processor: Path) -> dict[str, float]:
+    completed = subprocess.run(
+        [str(processor), "--print-default-tuning"],
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+    )
+    if completed.returncode != 0:
+        raise ValueError(
+            "processor does not expose reusable baseline tuning identity: "
+            + (completed.stderr.strip() or completed.stdout.strip())
+        )
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise ValueError("processor default tuning output is not JSON") from exc
+    if set(payload) != set(TUNING_KEYS):
+        raise ValueError("processor default tuning keys drifted")
+    return canonical_tuning(payload)
+
+
+def current_source_revision(repo_root: Path) -> str:
+    explicit = os.environ.get("GITHUB_SHA")
+    if explicit:
+        return explicit.strip().lower()
+    return subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo_root, text=True
+    ).strip().lower()
+
+
+def load_reusable_baseline_report(
+    repo_root: Path,
+    report_path: Path,
+    corpus: Path,
+    policy: Path,
+    dataset_lock: Path,
+    processor: Path,
+) -> dict[str, Any]:
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if report.get("schema_version") != 1:
+        raise ValueError(f"reusable baseline report schema drift: {report_path}")
+    if report.get("validation_result") != "PASS":
+        raise ValueError(f"reusable baseline report is not PASS: {report_path}")
+    identity = load_corpus_identity(corpus)
+    if report.get("corpus_id") != identity["corpus_id"] or report.get("tier") != identity["tier"]:
+        raise ValueError(f"reusable baseline corpus identity drift: {report_path}")
+    if str(report.get("source_revision", "")).lower() != current_source_revision(repo_root):
+        raise ValueError(f"reusable baseline source revision drift: {report_path}")
+    expected = {
+        "authority_sha256": sha256_file(repo_root / "validation/authority.json"),
+        "dataset_lock_sha256": sha256_file(dataset_lock),
+        "corpus_sha256": sha256_file(corpus),
+        "policy_sha256": sha256_file(policy),
+        "processor_sha256": sha256_file(processor),
+    }
+    bindings = report.get("bindings") or {}
+    for key, value in expected.items():
+        if bindings.get(key) != value:
+            raise ValueError(f"reusable baseline binding drift: {report_path}: {key}")
+    return report
+
+
 def validate_parallelism(candidate_jobs: int, holdout_jobs: int) -> None:
     if candidate_jobs < 1 or candidate_jobs > 8:
         raise ValueError("candidate_jobs must be 1..8")
@@ -751,7 +823,8 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             policy: Path, dataset_lock: Path, search_space_path: Path, output_dir: Path,
             candidate_jobs: int = 1,
             semantics: IterationSemantics | None = None,
-            holdout_jobs: int = 1) -> dict[str, Any]:
+            holdout_jobs: int = 1,
+            baseline_reports: dict[str, Path] | None = None) -> dict[str, Any]:
     semantics = semantics or default_iteration_semantics()
     space = json.loads(search_space_path.read_text(encoding="utf-8"))
     semantics.validate_search_space(space)
@@ -761,6 +834,31 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
 
     validate_parallelism(candidate_jobs, holdout_jobs)
     baseline_candidate = candidates[0]
+    baseline_reports = baseline_reports or {}
+    if baseline_reports and set(baseline_reports) != {"development", "validation", "shadow"}:
+        raise ValueError("reusable baseline reports must provide development, validation and shadow together")
+
+    reusable: dict[str, dict[str, Any]] = {}
+    if baseline_reports:
+        defaults = processor_default_tuning(processor)
+        baseline = canonical_tuning(space["baseline"])
+        if not tuning_identity_matches(defaults, baseline):
+            raise ValueError(
+                "processor default tuning does not match search-space baseline: "
+                f"processor={defaults} search_space={baseline}"
+            )
+        for partition, corpus in (
+            ("development", dev), ("validation", validation), ("shadow", shadow)
+        ):
+            source_path = baseline_reports[partition]
+            report = load_reusable_baseline_report(
+                repo_root, source_path, corpus, policy, dataset_lock, processor
+            )
+            reusable[partition] = {
+                "source_path": source_path,
+                "source_sha256": sha256_file(source_path),
+                "report": report,
+            }
 
     def evaluate_development(candidate: dict[str, Any]) -> dict[str, Any]:
         report_path = output_dir / "development" / f"{candidate['candidate_id']}.json"
@@ -775,11 +873,28 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "report": report,
         }
 
+    development_candidates = candidates
+    dev_results: list[dict[str, Any]] = []
+    if reusable:
+        reused_path = output_dir / "development" / f"{baseline_candidate['candidate_id']}.json"
+        reused_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(reusable["development"]["source_path"], reused_path)
+        report = reusable["development"]["report"]
+        dev_results.append({
+            **baseline_candidate,
+            "report_path": str(reused_path),
+            "report_sha256": sha256_file(reused_path),
+            "validation_result": report.get("validation_result"),
+            "elapsed_s": 0.0,
+            "report": report,
+            "reused_baseline_report": True,
+        })
+        development_candidates = candidates[1:]
     if candidate_jobs == 1:
-        dev_results = [evaluate_development(candidate) for candidate in candidates]
+        dev_results.extend(evaluate_development(candidate) for candidate in development_candidates)
     else:
         with ThreadPoolExecutor(max_workers=candidate_jobs) as executor:
-            dev_results = list(executor.map(evaluate_development, candidates))
+            dev_results.extend(executor.map(evaluate_development, development_candidates))
     baseline_dev_report = next(
         item["report"] for item in dev_results if item["label"] == "baseline"
     )
@@ -820,20 +935,34 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
         )
         return partition, role, report_path, report, elapsed
 
-    holdout_tasks = [
-        ("validation", "baseline", validation, dev_results[0]),
-        ("validation", "candidate", validation, selected),
-        ("shadow", "baseline", shadow, dev_results[0]),
-        ("shadow", "candidate", shadow, selected),
-    ]
+    validation_reports = {}
+    shadow_reports = {}
+    holdout_tasks = []
+    if reusable:
+        for partition, target in (
+            ("validation", validation_reports), ("shadow", shadow_reports)
+        ):
+            reused_path = output_dir / partition / "baseline.json"
+            reused_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(reusable[partition]["source_path"], reused_path)
+            target["baseline"] = (reused_path, reusable[partition]["report"], 0.0)
+        holdout_tasks = [
+            ("validation", "candidate", validation, selected),
+            ("shadow", "candidate", shadow, selected),
+        ]
+    else:
+        holdout_tasks = [
+            ("validation", "baseline", validation, dev_results[0]),
+            ("validation", "candidate", validation, selected),
+            ("shadow", "baseline", shadow, dev_results[0]),
+            ("shadow", "candidate", shadow, selected),
+        ]
     if holdout_jobs == 1:
         holdout_results = [evaluate_holdout(task) for task in holdout_tasks]
     else:
         with ThreadPoolExecutor(max_workers=holdout_jobs) as executor:
             holdout_results = list(executor.map(evaluate_holdout, holdout_tasks))
 
-    validation_reports = {}
-    shadow_reports = {}
     for partition, role, report_path, report, elapsed in holdout_results:
         target = validation_reports if partition == "validation" else shadow_reports
         target[role] = (report_path, report, elapsed)
@@ -870,12 +999,20 @@ def iterate(repo_root: Path, processor: Path, dev: Path, validation: Path, shado
             "candidate_count": len(candidates),
             "candidate_jobs": candidate_jobs,
             "holdout_jobs": holdout_jobs,
+            "baseline_reports_reused": bool(reusable),
         },
         "bindings": {
             "processor_sha256": sha256_file(processor),
             "policy_sha256": sha256_file(policy),
             "dataset_lock_sha256": sha256_file(dataset_lock),
             "partitions": identities,
+            "reused_baseline_reports": {
+                partition: {
+                    "source_path": str(item["source_path"]),
+                    "sha256": item["source_sha256"],
+                }
+                for partition, item in sorted(reusable.items())
+            },
         },
         "baseline": dev_results[0]["tuning"],
         "selected": {
@@ -938,6 +1075,76 @@ def self_test() -> None:
             raise AssertionError(
                 f"invalid parallelism accepted: candidate={candidate_jobs} holdout={holdout_jobs}"
             )
+
+    repo_root = Path(".").resolve()
+    with tempfile.TemporaryDirectory(prefix="ap-baseline-reuse-self-test-") as temporary:
+        root = Path(temporary)
+        processor = root / "processor"
+        processor.write_text(
+            "#!/usr/bin/env python3\n"
+            "import json, sys\n"
+            "if sys.argv[1:] == ['--print-default-tuning']:\n"
+            "    print(json.dumps({'aec_mu':0.22,'ns_floor':0.12,'agc_target_dbfs':-20.0,'limiter_dbfs':-2.0}, sort_keys=True))\n"
+            "    raise SystemExit(0)\n"
+            "raise SystemExit(2)\n",
+            encoding="utf-8",
+        )
+        processor.chmod(0o755)
+        expected_defaults = {
+            "aec_mu": 0.22, "ns_floor": 0.12,
+            "agc_target_dbfs": -20.0, "limiter_dbfs": -2.0,
+        }
+        assert processor_default_tuning(processor) == expected_defaults
+        float32_defaults = dict(expected_defaults)
+        float32_defaults["aec_mu"] = 0.219999999
+        assert tuning_identity_matches(float32_defaults, expected_defaults)
+        drifted_defaults = dict(expected_defaults)
+        drifted_defaults["aec_mu"] = 0.23
+        assert not tuning_identity_matches(drifted_defaults, expected_defaults)
+
+        corpus = root / "corpus.json"
+        policy = root / "policy.json"
+        dataset_lock = root / "datasets.lock.json"
+        corpus.write_text(json.dumps({
+            "corpus_id": "baseline-reuse-self-test",
+            "tier": "regression",
+            "generator": {"seed": 1307},
+        }) + "\n", encoding="utf-8")
+        policy.write_text("{}\n", encoding="utf-8")
+        dataset_lock.write_text("{}\n", encoding="utf-8")
+        report_path = root / "report.json"
+        report = {
+            "schema_version": 1,
+            "validation_result": "PASS",
+            "tier": "regression",
+            "corpus_id": "baseline-reuse-self-test",
+            "source_revision": current_source_revision(repo_root),
+            "bindings": {
+                "authority_sha256": sha256_file(repo_root / "validation/authority.json"),
+                "dataset_lock_sha256": sha256_file(dataset_lock),
+                "corpus_sha256": sha256_file(corpus),
+                "policy_sha256": sha256_file(policy),
+                "processor_sha256": sha256_file(processor),
+            },
+            "summary": {},
+            "cases": [],
+            "violations": [],
+        }
+        report_path.write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
+        assert load_reusable_baseline_report(
+            repo_root, report_path, corpus, policy, dataset_lock, processor
+        )["corpus_id"] == "baseline-reuse-self-test"
+        tampered = json.loads(report_path.read_text(encoding="utf-8"))
+        tampered["bindings"]["processor_sha256"] = "0" * 64
+        report_path.write_text(json.dumps(tampered, sort_keys=True) + "\n", encoding="utf-8")
+        try:
+            load_reusable_baseline_report(
+                repo_root, report_path, corpus, policy, dataset_lock, processor
+            )
+        except ValueError as exc:
+            assert "processor_sha256" in str(exc)
+        else:
+            raise AssertionError("tampered reusable baseline processor binding was accepted")
 
     space = {
         "schema_version": 1,
@@ -1367,6 +1574,9 @@ def main(semantics: IterationSemantics | None = None) -> int:
                         help="parallel development candidates; deterministic output order is preserved")
     parser.add_argument("--holdout-jobs", type=int, default=1,
                         help="parallel validation/shadow reports; deterministic output order is preserved")
+    parser.add_argument("--baseline-development-report", type=Path)
+    parser.add_argument("--baseline-validation-report", type=Path)
+    parser.add_argument("--baseline-shadow-report", type=Path)
     parser.add_argument("--require-candidate", action="store_true",
                         help="return non-zero unless an independent-gate ACOUSTIC_CANDIDATE is produced")
     args = parser.parse_args()
@@ -1378,12 +1588,26 @@ def main(semantics: IterationSemantics | None = None) -> int:
     for name in required:
         if getattr(args, name) is None:
             parser.error(f"--{name.replace('_', '-')} is required")
+    baseline_paths = {
+        "development": args.baseline_development_report,
+        "validation": args.baseline_validation_report,
+        "shadow": args.baseline_shadow_report,
+    }
+    provided = [value is not None for value in baseline_paths.values()]
+    if any(provided) and not all(provided):
+        parser.error("baseline report reuse requires development, validation and shadow reports together")
+    baseline_reports = (
+        {key: value.resolve() for key, value in baseline_paths.items() if value is not None}
+        if all(provided) else None
+    )
+
     result = iterate(
         args.repo_root.resolve(), args.processor.resolve(),
         args.development_corpus.resolve(), args.validation_corpus.resolve(),
         args.shadow_corpus.resolve(), args.policy.resolve(), args.dataset_lock.resolve(),
         args.search_space.resolve(), args.output_dir.resolve(), args.candidate_jobs,
         semantics=semantics, holdout_jobs=args.holdout_jobs,
+        baseline_reports=baseline_reports,
     )
     print(json.dumps({
         "decision": result["decision"], "iteration_id": result["iteration_id"],

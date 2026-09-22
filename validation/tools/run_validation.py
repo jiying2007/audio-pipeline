@@ -223,6 +223,7 @@ def main(semantics: ValidationSemantics | None = None) -> int:
             "dataset_lock_sha256": engine.sha256_file(args.dataset_lock),
             "corpus_sha256": engine.sha256_file(args.corpus),
             "policy_sha256": engine.sha256_file(args.policy),
+            "processor_sha256": engine.sha256_file(args.processor),
             **render_corr_exact.report_bindings(Path(engine.__file__)),
         },
         "summary": summary,

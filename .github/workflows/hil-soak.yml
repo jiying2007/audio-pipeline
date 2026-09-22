@@ -60,6 +60,10 @@ jobs:
           fi
           if [ "$HIL_ENABLED" != true ]; then
             echo 'run=false' >> "$GITHUB_OUTPUT"
+            if [ "$EVENT_NAME" = schedule ]; then
+              echo 'HIL_SCHEDULE_SKIPPED_DISABLED: scheduled soak is inactive until HIL_ENABLED=true.'
+              exit 0
+            fi
             echo "HIL_REQUIRED_BUT_DISABLED: set repository variable HIL_ENABLED=true only after an isolated audio-target runner is online." >&2
             exit 1
           fi

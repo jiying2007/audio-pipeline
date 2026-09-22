@@ -896,6 +896,12 @@ def check(root: Path) -> dict:
         require(git("cat-file", "-t", r["blob_sha"]) == "blob",
                 f"historical replay workflow blob missing: {r['path']}")
         historical = git("cat-file", "blob", r["blob_sha"])
+        base_match = re.search(
+            r"(?m)^\s*BASE_SHA:\s*([0-9a-f]{40})\s*$", historical
+        )
+        require(base_match is not None
+                and base_match.group(1) == evidence.get("exact_base_sha"),
+                f"historical replay fixed-base binding drift: {r['path']}")
         on_block = extract_on_block(historical)
         require("pull_request:" in on_block and "workflow_dispatch:" in on_block,
                 f"retired historical replay must preserve PR + manual lineage: {r['path']}")

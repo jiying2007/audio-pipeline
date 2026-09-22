@@ -79,20 +79,35 @@ jobs:
           assert a['output_authority']['maximum_status']=='FROZEN_RESEARCH_CANDIDATE'
           assert a['output_authority']['automatic_main_mutation'] is False
           assert a['output_authority']['automatic_shipping_promotion'] is False
-          assert a['status']=='CLOSED_KEEP_BASELINE'
-          assert a['execution_authorized'] is False
-          closure=a['closure']
-          assert closure['predecessor_run_id']==35301640608
-          assert closure['predecessor_decision']=='KEEP_BASELINE'
-          assert closure['predecessor_status']=='NO_RESEARCH_CANDIDATE'
+          closure=json.loads(Path(
+              '.github/research/continuous-optimization/algorithm-space-v1-closure.json'
+          ).read_text())
+          assert closure['algorithm_space_id']==a['algorithm_space_id']
+          assert closure['status']=='CLOSED_KEEP_BASELINE'
+          assert closure['execution_authorized'] is False
+          predecessor=closure['predecessor']
+          assert predecessor=={
+              'workflow':'Research Algorithm Parameter Optimization',
+              'run_id':35301640608,
+              'decision':'KEEP_BASELINE',
+              'status':'NO_RESEARCH_CANDIDATE',
+          }
           origin=json.loads(Path(closure['successor_origin']).read_text())
-          assert origin['predecessor']['run_id']==closure['predecessor_run_id']
-          assert origin['predecessor']['decision']==closure['predecessor_decision']
-          assert origin['predecessor']['status']==closure['predecessor_status']
+          assert origin['predecessor']['workflow']==predecessor['workflow']
+          assert origin['predecessor']['run_id']==predecessor['run_id']
+          assert origin['predecessor']['decision']==predecessor['decision']
+          assert origin['predecessor']['status']==predecessor['status']
           v5=json.loads(Path(closure['parameter_space_closure']).read_text())
+          assert a['parameter_search_space']==closure['parameter_space_closure'].replace('-closure.json','.json')
           assert v5['status']=='CLOSED_KEEP_BASELINE'
           assert v5['decision']=='KEEP_BASELINE'
           assert 'Do not rerun or refine' in v5['closure_rule']
+          assert closure['authority']=={
+              'automatic_main_mutation':False,
+              'shipping':False,
+              'hil':False,
+              'product_certification':False,
+          }
           print({'algorithm_variants':4,'parameter_candidates':8,'joint_space':32,'execution_authorized':False})
           PY
       - name: Enforce maintenance and shipping authority boundaries

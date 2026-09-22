@@ -1,4 +1,5 @@
 #include "audio_pipeline/audio_pipeline.h"
+#include "../src/ap_metrics_json.h"
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -258,17 +259,21 @@ int main(int argc, char **argv) {
             ap_pipeline_get_metrics(pipeline, &metrics);
             if (fprintf(fmetrics,
                         "{\"frame\":%u,\"algorithmic_latency_ms\":%u,"
-                        "\"vad_probability\":%.7g,\"vad_active\":%u,"
-                        "\"far_end_active\":%u,\"double_talk_active\":%u,"
-                        "\"erle_db\":%.7g,\"erle_valid\":%u,\"aec_converged\":%u,"
-                        "\"estimated_delay_ms\":%u,\"delay_error_samples\":%d}\n",
+                        "\"vad_probability\":",
                         frame_index,
-                        algorithmic_latency_ms,
-                        (double)metrics.vad_probability,
+                        algorithmic_latency_ms) < 0 ||
+                !ap_metrics_json_write_number(fmetrics, (double)metrics.vad_probability) ||
+                fprintf(fmetrics,
+                        ",\"vad_active\":%u,"
+                        "\"far_end_active\":%u,\"double_talk_active\":%u,"
+                        "\"erle_db\":",
                         (unsigned)metrics.vad_active,
                         (unsigned)metrics.far_end_active,
-                        (unsigned)metrics.double_talk_active,
-                        (double)metrics.erle_db,
+                        (unsigned)metrics.double_talk_active) < 0 ||
+                !ap_metrics_json_write_number(fmetrics, (double)metrics.erle_db) ||
+                fprintf(fmetrics,
+                        ",\"erle_valid\":%u,\"aec_converged\":%u,"
+                        "\"estimated_delay_ms\":%u,\"delay_error_samples\":%d}\n",
                         (unsigned)metrics.erle_valid,
                         (unsigned)metrics.aec_converged,
                         metrics.estimated_delay_ms,

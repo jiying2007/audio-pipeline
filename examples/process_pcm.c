@@ -15,6 +15,7 @@ static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
             "[--capture-only] [--capture-profile default|ns-isolated|vad-isolated|agc-isolated|bf-isolated] [--metrics-jsonl FILE] "
+            "[--print-default-tuning] "
             "[--aec-mu VALUE] [--ns-floor VALUE] [--agc-target-dbfs VALUE] [--limiter-dbfs VALUE] "
             "[--echo-path-change-frame N] "
             "[--discontinuity-frame N --discontinuity-flags MASK "
@@ -72,6 +73,7 @@ int main(int argc, char **argv) {
     uint32_t frame_index = 0u;
     uint32_t algorithmic_latency_ms = 0u;
     int capture_only = 0;
+    int print_default_tuning = 0;
     const char *capture_profile = "default";
     int arg = 1;
     const char *metrics_path = NULL;
@@ -109,6 +111,8 @@ int main(int argc, char **argv) {
                 return 2;
             }
             metrics_path = argv[arg];
+        } else if (strcmp(argv[arg], "--print-default-tuning") == 0) {
+            print_default_tuning = 1;
         } else if (strcmp(argv[arg], "--aec-mu") == 0) {
             if (++arg >= argc || !parse_float(argv[arg], &tuning.aec_mu)) {
                 usage(argv[0]);
@@ -158,6 +162,18 @@ int main(int argc, char **argv) {
             return 2;
         }
         arg++;
+    }
+
+    if (print_default_tuning) {
+        if (arg != argc || tuning.mask != 0u || capture_only ||
+            strcmp(capture_profile, "default") != 0 || metrics_path != NULL) {
+            usage(argv[0]);
+            return 2;
+        }
+        printf("{\"aec_mu\":%.9g,\"ns_floor\":%.9g,\"agc_target_dbfs\":%.9g,\"limiter_dbfs\":%.9g}\n",
+               (double)cfg.aec_mu, (double)cfg.ns_floor,
+               (double)cfg.agc_target_dbfs, (double)cfg.limiter_dbfs);
+        return 0;
     }
 
     if (channels < 1u || channels > AP_MAX_MIC_CHANNELS ||

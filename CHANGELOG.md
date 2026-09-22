@@ -1,3 +1,9 @@
+# 2.3.49
+
+- Add fail-closed reuse of canonical baseline validation reports in bounded tuning. Reuse is opt-in and requires the full development/validation/shadow triplet.
+- Bind canonical validation reports to the exact processor binary SHA. Before reuse, the tuning engine also queries the offline processor's machine-readable default tuning and requires it to match the search-space baseline exactly, then revalidates source revision, corpus, policy, dataset lock and processor bindings for every reused report.
+- Validation smoke reuses the already-enforced 1307/2307/3307 baseline reports instead of rerunning the same baseline three more times. Candidate/holdout search semantics, scores, case-delta gates, promotion authority, DSP behavior, API/ABI, HIL and Product Qualification semantics are unchanged.
+
 # 2.3.48
 
 - Add bounded parallel execution for independent tuning holdout reports. The canonical tuning engine keeps `holdout_jobs=1` by default; callers may opt into 1..4 workers, and `executor.map` preserves the fixed validation-baseline / validation-candidate / shadow-baseline / shadow-candidate evidence order.

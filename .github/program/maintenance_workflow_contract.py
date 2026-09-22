@@ -15,6 +15,7 @@ PROGRAM_PLAN = Path('docs/program/plan.json')
 I002_CONTRACT = Path('docs/program/iterations/I002.json')
 AEC_MOTION_MAINTENANCE_WORKFLOW = Path('.github/workflows/aec-motion-development.yml')
 PROGRAM_ARCHIVE_WORKFLOW = Path('.github/workflows/program-iteration.yml')
+TERMINAL_RETIREMENT_MANIFEST = Path('docs/program/terminal-workflow-retirement.json')
 
 # The generic tuner has no PR-regression role and is therefore manual-only after
 # the terminal software program. PR/manual non-shipping workflows keep their PR
@@ -190,6 +191,61 @@ def validate_aec_motion_maintenance_boundary(root: Path) -> None:
     assert task.get('handler') is None, 'scheduled AEC motion validation cannot restore an I002 handler'
 
 
+def _github_path_pattern_matches(pattern: str, path: str) -> bool:
+    escaped = re.escape(pattern)
+    escaped = escaped.replace(r'\*\*', '.*')
+    escaped = escaped.replace(r'\*', '[^/]*')
+    escaped = escaped.replace(r'\?', '[^/]')
+    return re.fullmatch(escaped, path) is not None
+
+
+def _terminal_retirement_required_paths(root: Path) -> set[str]:
+    manifest = root / TERMINAL_RETIREMENT_MANIFEST
+    if not manifest.is_file():
+        return set()
+    data = json.loads(manifest.read_text(encoding='utf-8'))
+    required: set[str] = set()
+
+    for record in data.get('workflows', []):
+        required.update((record['path'], record['terminal_evidence']))
+    for record in data.get('research_workflows', []):
+        required.update((record['path'], record['evidence']))
+    for record in data.get('source_candidate_workflows', []):
+        required.update((record['path'], record['evidence']))
+    for record in data.get('selection_workflows', []):
+        required.update((
+            record['path'], record['evidence'], record['successor'],
+            record['terminal_evidence'],
+        ))
+    for round_record in data.get('source_candidate_rounds', []):
+        required.add(round_record['round_closure'])
+        for workflow in round_record.get('workflows', []):
+            required.update((workflow['path'], workflow['evidence']))
+        required.update(round_record.get('candidate_contracts', {}).values())
+        required.update(round_record.get('candidate_closures', {}).values())
+    return required
+
+
+def program_archive_required_paths(root: Path) -> list[str]:
+    required = {
+        str(PROGRAM_ARCHIVE_WORKFLOW),
+        str(PROGRAM_PLAN),
+        str(I002_CONTRACT),
+        str(TERMINAL_RETIREMENT_MANIFEST),
+        'scripts/program.py',
+        '.github/program/promotion_governance.py',
+        '.github/program/terminal_workflow_retirement.py',
+        '.github/program/maintenance_workflow_contract.py',
+    }
+    required.update(str(path) for path in MANUAL_ONLY_RESEARCH_WORKFLOWS)
+    required.update(str(path) for path in REUSABLE_GOVERNANCE_WORKFLOWS)
+    required.update(str(path) for path in PR_MANUAL_RESEARCH_WORKFLOWS)
+    required.update(str(path) for path in ALLOWED_SCHEDULED_WORKFLOWS)
+    required.update(str(path) for path in HOSTED_REAL_PR_REQUIRED_PATHS)
+    required.update(_terminal_retirement_required_paths(root))
+    return sorted(required)
+
+
 def validate_program_archive_trigger_boundaries(root: Path) -> None:
     path = root / PROGRAM_ARCHIVE_WORKFLOW
     assert path.is_file(), f'missing Program Archive workflow: {PROGRAM_ARCHIVE_WORKFLOW}'
@@ -208,6 +264,13 @@ def validate_program_archive_trigger_boundaries(root: Path) -> None:
     pull_paths = paths_for('pull_request')
     assert push_paths == pull_paths, (
         'Program Archive push/pull path sets or ordering drifted'
+    )
+    missing = [
+        required for required in program_archive_required_paths(root)
+        if not any(_github_path_pattern_matches(pattern, required) for pattern in push_paths)
+    ]
+    assert not missing, (
+        f'Program Archive trigger missing required path coverage: {missing}'
     )
 
 
@@ -286,7 +349,7 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
 def _write_program_archive_fixture(root: Path, duplicate: bool = False) -> None:
     path = root / PROGRAM_ARCHIVE_WORKFLOW
     path.parent.mkdir(parents=True, exist_ok=True)
-    paths = ["docs/program/**", "scripts/program.py"]
+    paths = program_archive_required_paths(root)
     push_paths = paths + ([paths[0]] if duplicate else [])
     pull_paths = paths
     push = ''.join(f"      - '{item}'\n" for item in push_paths)
@@ -396,6 +459,21 @@ def self_test() -> None:
             assert 'duplicate path entries' in str(exc)
         else:
             raise AssertionError('duplicate Program Archive path was accepted')
+        _write_program_archive_fixture(root)
+
+        archive = root / PROGRAM_ARCHIVE_WORKFLOW
+        required_path = str(PR_MANUAL_RESEARCH_WORKFLOWS[0])
+        required_line = f"      - '{required_path}'\n"
+        archive.write_text(
+            archive.read_text(encoding='utf-8').replace(required_line, ''),
+            encoding='utf-8',
+        )
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'missing required path coverage' in str(exc)
+        else:
+            raise AssertionError('missing Program Archive required path was accepted')
         _write_program_archive_fixture(root)
 
         hosted = next(iter(HOSTED_REAL_PR_REQUIRED_PATHS))

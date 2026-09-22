@@ -92,6 +92,7 @@ PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
     Path('.github/workflows/vad-operating-point-selector.yml'),
     Path('.github/workflows/vad-hangover-counterfactual.yml'),
     Path('.github/workflows/vad-strong-weak-refresh.yml'),
+    Path('.github/workflows/aec-motion-tuning.yml'),
 )
 
 CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
@@ -633,7 +634,12 @@ def self_test() -> None:
             raise AssertionError('approved workflow cron drift was accepted')
         _write_allowed_schedule(root / allowed, ALLOWED_SCHEDULED_WORKFLOWS[allowed])
 
-        nonshipping = root / PR_MANUAL_RESEARCH_WORKFLOWS[0]
+        generic_pr_manual = next(
+            relative for relative in PR_MANUAL_RESEARCH_WORKFLOWS
+            if relative not in PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS
+            and relative not in CONTRACT_ONLY_RESEARCH_WORKFLOWS
+        )
+        nonshipping = root / generic_pr_manual
         nonshipping.write_text(
             "name: non-shipping\n\non:\n  pull_request:\n  schedule:\n    - cron: '17 19 * * *'\n  workflow_dispatch:\n",
             encoding='utf-8',

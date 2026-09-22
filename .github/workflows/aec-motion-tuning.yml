@@ -23,21 +23,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  iterate:
+  contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
     env:
-      MOTION_SEARCH_SPACE: validation/tuning/search-spaces/aec-motion-v1.json
-      GENERIC_SEARCH_SPACE: validation/tuning/search-spaces/call-v1.json
-      MOTION_POLICY: validation/policies/validation-aec-motion-development.json
-      GENERIC_POLICY: validation/policies/validation-smoke.json
-      DATASET_LOCK: validation/datasets.lock.json
       CANDIDATE_JOBS: '2'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: aec-motion-tuning
 
       - name: Validate tuning, tail and authority contracts
         id: contracts
@@ -84,7 +76,62 @@ jobs:
               assert ' '.join(words) not in lower
           assert 'effective_replay_authority' in text
           assert 'non-shipping-regression-replay' in text
+
+          i002 = json.loads(Path('docs/program/iterations/I002.json').read_text())
+          p001 = json.loads(Path('docs/program/iterations/P001.json').read_text())
+          p001_result = json.loads(Path('docs/program/iterations/P001-result.json').read_text())
+          assert i002['candidate_limit'] == 0
+          assert i002['confirmation_limit'] == 0
+          assert i002['promotion_allowed'] is False
+          assert p001['candidate_limit'] == 0
+          assert p001['confirmation_limit'] == 0
+          assert p001['promotion_allowed'] is False
+          assert p001_result['result'] == 'CLOSED'
+          assert p001_result['decision'] == 'GOVERNANCE_CLOSED_NO_ACOUSTIC_CANDIDATE'
+          assert p001_result['candidate_limit'] == 0
+          assert p001_result['confirmation_limit'] == 0
+          assert p001_result['promotion_allowed'] is False
+          replay = p001_result['reviewed_evidence']['aec_motion_tuning']
+          assert replay == {
+              'run_id': 33971701778,
+              'conclusion': 'success',
+              'artifact_id': 9971180923,
+              'artifact_digest': 'sha256:ff4008ae63231c52d67f8508df93a8348e16369ef1a46969c61f73bfab6b282e',
+              'internal_sha256_entries_verified': 58,
+              'motion_decision': 'ACOUSTIC_CANDIDATE',
+              'selected_label': 'aec_mu=0.52',
+              'final_decision': 'REJECT_CANDIDATE',
+              'effective_replay_authority': 'non-shipping-regression-replay',
+              'call_validation': {
+                  'decision': 'REJECT_CANDIDATE',
+                  'metric': 'min_vad_f1',
+                  'baseline': 0.7599164926931107,
+                  'candidate': 0.675990675990676,
+                  'regression': 0.08392581670243471,
+                  'allowed': 0.05,
+              },
+              'call_shadow': {'decision': 'PASS'},
+          }
           PY
+
+
+  select:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MOTION_SEARCH_SPACE: validation/tuning/search-spaces/aec-motion-v1.json
+      GENERIC_SEARCH_SPACE: validation/tuning/search-spaces/call-v1.json
+      MOTION_POLICY: validation/policies/validation-aec-motion-development.json
+      GENERIC_POLICY: validation/policies/validation-smoke.json
+      DATASET_LOCK: validation/datasets.lock.json
+      CANDIDATE_JOBS: '2'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: aec-motion-tuning
 
       - name: Build exact offline tuning processor
         shell: bash

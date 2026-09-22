@@ -498,6 +498,29 @@ def stage_audio(path: Path, rate: int, channels: int, directory: Path, name: str
     return values, staged
 
 
+def load_metrics_jsonl(path: Path) -> list[dict]:
+    trace: list[dict] = []
+    if not path.exists():
+        return trace
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"invalid metrics JSONL {path}:{line_number}: {exc.msg}"
+            ) from exc
+        if not isinstance(record, dict):
+            raise ValueError(
+                f"invalid metrics JSONL {path}:{line_number}: record must be an object"
+            )
+        trace.append(record)
+    return trace
+
+
 def invoke(processor: Path, case: dict, corpus_path: Path, work: Path) -> tuple[Sequence[int], list[dict], dict]:
     rate = int(case["sample_rate_hz"])
     channels = int(case["mic_channels"])
@@ -530,11 +553,7 @@ def invoke(processor: Path, case: dict, corpus_path: Path, work: Path) -> tuple[
         command += [str(mic_raw), str(render_raw), str(output_path)]
     subprocess.run(command, check=True)
     output = read_raw_array(output_path)
-    trace = []
-    if metrics_path.exists():
-        for line in metrics_path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                trace.append(json.loads(line))
+    trace = load_metrics_jsonl(metrics_path)
     return output, trace, {"mic": mic, "render": render}
 
 
@@ -1024,6 +1043,27 @@ def self_test() -> None:
         assert list(staged_values) == pcm_probe
         assert staged_path == raw_path
         assert not (stage_root / "input-staged.pcm").exists()
+
+        metrics_path = root / "metrics.jsonl"
+        metrics_path.write_text(
+            '{"frame":0,"vad_probability":null,"vad_active":0}\n'
+            '{"frame":1,"vad_probability":0.5,"vad_active":1}\n',
+            encoding="utf-8",
+        )
+        parsed_metrics = load_metrics_jsonl(metrics_path)
+        assert parsed_metrics[0]["vad_probability"] is None
+        assert parsed_metrics[1]["vad_probability"] == 0.5
+        metrics_path.write_text(
+            '{"frame":0,"erle_db":nan,"erle_valid":0}\n',
+            encoding="utf-8",
+        )
+        try:
+            load_metrics_jsonl(metrics_path)
+        except ValueError as exc:
+            assert "invalid metrics JSONL" in str(exc)
+            assert ":1:" in str(exc)
+        else:
+            raise AssertionError("invalid non-finite JSON token was accepted")
 
         wav_path = root / "input.wav"
         with wave.open(str(wav_path), "wb") as handle:

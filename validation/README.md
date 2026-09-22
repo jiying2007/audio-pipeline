@@ -73,6 +73,26 @@ development search
 
 No hosted optimizer path writes shipping defaults or bypasses certification.
 
+## Frozen acoustic candidate replay
+
+`Validation Grade` can optionally bind a prior `Audio Quality Evaluation` artifact via
+`acoustic_candidate_artifact_id`. In candidate mode the workflow verifies the artifact
+SHA-256, exact source revision, originating workflow, `ACOUSTIC_CANDIDATE` decision,
+validation/shadow non-regression result, complete adjacent sensitivity coverage, and
+the copied search-space digest before any public-data execution. It then wraps the
+exact source-built `ap_process_pcm` with the selected runtime-safe tuning and records
+both the underlying processor hash and wrapper hash in the public validation evidence.
+
+Candidate mode is intentionally limited to visible `validation-grade` execution. Blind
+qualification must bind the completed visible result in a later promotion step; the
+workflow therefore rejects `validation-grade-blind` when an acoustic candidate artifact
+is supplied. Omitting `acoustic_candidate_artifact_id` preserves the existing baseline
+validation behavior.
+
+For the frozen NS candidate selected by Audio Quality run `35729155489`, the bound
+artifact is `10695375199`; candidate `0d5f52491863` is
+`aec_mu=0.22, ns_floor=0.07, agc_target_dbfs=-20, limiter_dbfs=-2`. This evidence is
+still non-shipping and cannot mutate runtime defaults.
 ## Public validation profiles
 
 Public validation runs only on an isolated self-hosted runner labelled `audio-validation`. See `validation/RUNNER.md` for cache preparation and operating instructions.

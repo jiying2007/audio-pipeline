@@ -7,6 +7,11 @@ on:
         description: Exact 40-character source commit SHA to validate
         required: true
         type: string
+      acoustic_candidate_artifact_id:
+        description: Optional Audio Quality Evaluation artifact ID for one frozen non-shipping candidate
+        required: false
+        default: ''
+        type: string
       tier:
         description: Validation tier
         required: true
@@ -52,6 +57,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: validation-grade-${{ inputs.tier }}
@@ -62,6 +68,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.source.outputs.sha }}
+      candidate_enabled: ${{ steps.candidate.outputs.enabled }}
+      candidate_id: ${{ steps.candidate.outputs.candidate_id }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -77,6 +85,125 @@ jobs:
           git fetch --no-tags origin "$SOURCE_SHA"
           git cat-file -e "$SOURCE_SHA^{commit}"
           echo "sha=${SOURCE_SHA,,}" >> "$GITHUB_OUTPUT"
+      - name: Resolve frozen acoustic candidate evidence
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          ARTIFACT_ID: ${{ inputs.acoustic_candidate_artifact_id }}
+          TIER: ${{ inputs.tier }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$ARTIFACT_ID" ]; then
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'candidate_id=' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          test "$TIER" = 'validation-grade' || {
+            echo 'frozen acoustic candidate mode currently admits visible validation-grade only; blind must bind the visible result first' >&2
+            exit 2
+          }
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]] || { echo 'acoustic_candidate_artifact_id must be numeric' >&2; exit 2; }
+          root=/tmp/acoustic-candidate-resolved
+          rm -rf "$root" && mkdir -p "$root/unpacked"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" > "$root/artifact-metadata.json"
+          test "$(jq -r .expired "$root/artifact-metadata.json")" = false
+          test "$(jq -r .workflow_run.head_sha "$root/artifact-metadata.json")" = "$SOURCE_SHA"
+          artifact_name=$(jq -r .name "$root/artifact-metadata.json")
+          case "$artifact_name" in audio-quality-evaluation-*) ;; *) echo "unexpected acoustic candidate artifact: $artifact_name" >&2; exit 2;; esac
+          artifact_digest=$(jq -r .digest "$root/artifact-metadata.json")
+          [[ "$artifact_digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo 'artifact digest is not SHA-256' >&2; exit 2; }
+          quality_run_id=$(jq -r .workflow_run.id "$root/artifact-metadata.json")
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$quality_run_id" > "$root/workflow-run.json"
+          test "$(jq -r .path "$root/workflow-run.json")" = '.github/workflows/audio-quality-evaluation.yml'
+          test "$(jq -r .conclusion "$root/workflow-run.json")" = success
+          test "$(jq -r .head_sha "$root/workflow-run.json")" = "$SOURCE_SHA"
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" \
+            --output "$root/artifact.zip"
+          test "sha256:$(sha256sum "$root/artifact.zip" | awk '{print $1}')" = "$artifact_digest"
+          unzip -q "$root/artifact.zip" -d "$root/unpacked"
+          result=$(find "$root/unpacked" -type f -path '*/tuning/iteration-result.json' -print -quit)
+          search=$(find "$root/unpacked" -type f -name 'search-space.json' -print -quit)
+          test -n "$result" && test -n "$search"
+          python3 - "$result" "$search" "$root/artifact-metadata.json" "$root/resolved.json" <<'PY'
+          import hashlib, json, os, re, sys
+          from pathlib import Path
+          result = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          search_path = Path(sys.argv[2])
+          meta = json.loads(Path(sys.argv[3]).read_text(encoding='utf-8'))
+          if result.get('authority') != 'non-shipping-acoustic-iteration':
+              raise SystemExit('candidate artifact has wrong authority')
+          if result.get('decision') != 'ACOUSTIC_CANDIDATE':
+              raise SystemExit('candidate artifact did not select ACOUSTIC_CANDIDATE')
+          selected = result.get('selected') or {}
+          candidate_id = str(selected.get('candidate_id', ''))
+          if not re.fullmatch(r'[0-9a-f]{12}', candidate_id):
+              raise SystemExit('candidate id shape invalid')
+          tuning = selected.get('tuning') or {}
+          required = {'aec_mu', 'ns_floor', 'agc_target_dbfs', 'limiter_dbfs'}
+          if set(tuning) != required:
+              raise SystemExit('candidate tuning surface invalid')
+          if result.get('validation', {}).get('regression_violations') or result.get('shadow', {}).get('regression_violations'):
+              raise SystemExit('candidate carries validation/shadow regression violations')
+          sensitivity = selected.get('development_adjacent_sensitivity') or {}
+          if sensitivity.get('complete_neighbor_coverage') is not True:
+              raise SystemExit('candidate adjacent sensitivity is incomplete')
+          if sensitivity.get('violating_neighbor_count') != 0:
+              raise SystemExit('candidate has violating adjacent neighbors')
+          search_bytes = search_path.read_bytes()
+          search_sha = hashlib.sha256(search_bytes).hexdigest()
+          declared = result.get('search_space') or {}
+          if search_sha != declared.get('sha256'):
+              raise SystemExit('artifact search-space SHA mismatch')
+          search = json.loads(search_bytes)
+          if search.get('search_space_id') != declared.get('id'):
+              raise SystemExit('artifact search-space identity mismatch')
+          resolved = {
+              'schema_version': 1,
+              'authority': 'non-shipping-frozen-acoustic-candidate-public-validation',
+              'source_sha': os.environ['SOURCE_SHA'],
+              'candidate_id': candidate_id,
+              'iteration_id': result.get('iteration_id'),
+              'decision': result.get('decision'),
+              'development_score': selected.get('development_score'),
+              'tuning': tuning,
+              'search_space': {'id': declared.get('id'), 'sha256': search_sha},
+              'quality_provenance': {
+                  'workflow': 'Audio Quality Evaluation',
+                  'run_id': int(meta['workflow_run']['id']),
+                  'artifact_id': int(meta['id']),
+                  'artifact_name': meta['name'],
+                  'artifact_digest': meta['digest'],
+              },
+              'output_authority': {
+                  'shipping': False, 'target': False, 'hil': False,
+                  'product_certification': False, 'automatic_main_mutation': False,
+              },
+          }
+          Path(sys.argv[4]).write_text(json.dumps(resolved, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(resolved, sort_keys=True))
+          PY
+          cp "$result" "$root/iteration-result.json"
+          cp "$search" "$root/search-space.json"
+          candidate_id=$(jq -r .candidate_id "$root/resolved.json")
+          echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          echo "candidate_id=$candidate_id" >> "$GITHUB_OUTPUT"
+      - name: Upload resolved acoustic candidate evidence
+        if: steps.candidate.outputs.enabled == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: resolved-acoustic-candidate-${{ github.run_id }}
+          path: |
+            /tmp/acoustic-candidate-resolved/resolved.json
+            /tmp/acoustic-candidate-resolved/iteration-result.json
+            /tmp/acoustic-candidate-resolved/search-space.json
+            /tmp/acoustic-candidate-resolved/artifact-metadata.json
+            /tmp/acoustic-candidate-resolved/workflow-run.json
+          retention-days: 90
+          if-no-files-found: error
 
   validate:
     needs: resolve
@@ -93,6 +220,12 @@ jobs:
           test "$revision" = '${{ needs.resolve.outputs.sha }}'
           printf '%s\n' "$revision" | tee validation-revision.txt
           test -z "$(git status --porcelain=v1)"
+      - name: Download resolved acoustic candidate evidence
+        if: needs.resolve.outputs.candidate_enabled == 'true'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: resolved-acoustic-candidate-${{ github.run_id }}
+          path: acoustic-candidate
       - name: Preflight isolated audio-validation runner
         env:
           DATA_ROOT: ${{ inputs.data_root }}
@@ -129,6 +262,57 @@ jobs:
           sha256sum build-validation/ap_process_pcm | tee validation-processor.sha256
           build-validation/ap_build_info_dump | tee validation-build-info.txt
           ${CC:-cc} --version | head -n 1 | tee validation-compiler.txt
+      - name: Bind validation processor to frozen acoustic candidate
+        env:
+          CANDIDATE_ENABLED: ${{ needs.resolve.outputs.candidate_enabled }}
+          EXPECTED_CANDIDATE_ID: ${{ needs.resolve.outputs.candidate_id }}
+          EXPECTED_SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$CANDIDATE_ENABLED" != 'true' ]; then
+            echo "VALIDATION_PROCESSOR=$GITHUB_WORKSPACE/build-validation/ap_process_pcm" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          resolved = json.loads(Path('acoustic-candidate/resolved.json').read_text(encoding='utf-8'))
+          if resolved.get('candidate_id') != os.environ['EXPECTED_CANDIDATE_ID']:
+              raise SystemExit('resolved candidate id changed between jobs')
+          if resolved.get('source_sha') != os.environ['EXPECTED_SOURCE_SHA']:
+              raise SystemExit('resolved candidate source does not match resolved source')
+          if os.popen('git rev-parse HEAD').read().strip() != os.environ['EXPECTED_SOURCE_SHA']:
+              raise SystemExit('checked-out source does not match resolved source')
+          tuning = resolved['tuning']
+          flags = [
+              '--aec-mu', repr(float(tuning['aec_mu'])),
+              '--ns-floor', repr(float(tuning['ns_floor'])),
+              '--agc-target-dbfs', repr(float(tuning['agc_target_dbfs'])),
+              '--limiter-dbfs', repr(float(tuning['limiter_dbfs'])),
+          ]
+          processor = str(Path('build-validation/ap_process_pcm').resolve())
+          wrapper = Path('validation-candidate-processor')
+          wrapper.write_text(
+              '#!/usr/bin/env python3\n'
+              'import os, sys\n'
+              f'processor = {processor!r}\n'
+              f'prefix = {flags!r}\n'
+              'os.execv(processor, [processor, *prefix, *sys.argv[1:]])\n',
+              encoding='utf-8',
+          )
+          wrapper.chmod(0o700)
+          payload = wrapper.read_bytes()
+          identity = {
+              **resolved,
+              'processor_sha256': hashlib.sha256(Path(processor).read_bytes()).hexdigest(),
+              'wrapper_sha256': hashlib.sha256(payload).hexdigest(),
+          }
+          Path('acoustic-candidate/execution-identity.json').write_text(
+              json.dumps(identity, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+          sha256sum validation-candidate-processor | tee validation-candidate-processor.sha256
+          echo "VALIDATION_PROCESSOR=$GITHUB_WORKSPACE/validation-candidate-processor" >> "$GITHUB_ENV"
       - name: Build full public validation corpus
         env:
           DATA_ROOT: ${{ inputs.data_root }}
@@ -202,7 +386,7 @@ jobs:
             --corpus validation-out/public/corpus.json \
             --policy validation/policies/validation-full.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor build-validation/ap_process_pcm \
+            --processor "$VALIDATION_PROCESSOR" \
             --output validation-out/validation-report.json \
             --evidence-manifest validation-out/evidence-manifest.json --enforce
       - name: Run validation partition under holdout policy
@@ -213,7 +397,7 @@ jobs:
             --corpus validation-out/public/corpus-validation.json \
             --policy validation/policies/validation-full-partition.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor build-validation/ap_process_pcm \
+            --processor "$VALIDATION_PROCESSOR" \
             --output validation-out/validation-report.json \
             --evidence-manifest validation-out/evidence-manifest.json --enforce
       - name: Run blind holdout with summary-only report
@@ -224,7 +408,7 @@ jobs:
             --corpus validation-out/public/corpus-blind.json \
             --policy validation/policies/validation-full-blind.json \
             --dataset-lock validation/datasets.lock.json \
-            --processor build-validation/ap_process_pcm \
+            --processor "$VALIDATION_PROCESSOR" \
             --output validation-out/blind-report.json \
             --evidence-manifest validation-out/blind-evidence-manifest.json \
             --blind-summary-only --enforce
@@ -236,6 +420,16 @@ jobs:
           cp validation-processor.sha256 validation-out/
           cp validation-build-info.txt validation-out/
           cp validation-compiler.txt validation-out/
+          if [ '${{ needs.resolve.outputs.candidate_enabled }}' = 'true' ]; then
+            mkdir -p validation-out/acoustic-candidate
+            cp acoustic-candidate/resolved.json validation-out/acoustic-candidate/
+            cp acoustic-candidate/iteration-result.json validation-out/acoustic-candidate/
+            cp acoustic-candidate/search-space.json validation-out/acoustic-candidate/
+            cp acoustic-candidate/artifact-metadata.json validation-out/acoustic-candidate/
+            cp acoustic-candidate/workflow-run.json validation-out/acoustic-candidate/
+            cp acoustic-candidate/execution-identity.json validation-out/acoustic-candidate/
+            cp validation-candidate-processor.sha256 validation-out/acoustic-candidate/
+          fi
           find validation-out -type f ! -name SHA256SUMS -print0 | sort -z | \
             xargs -0 sha256sum > /tmp/validation-SHA256SUMS
           mv /tmp/validation-SHA256SUMS validation-out/SHA256SUMS

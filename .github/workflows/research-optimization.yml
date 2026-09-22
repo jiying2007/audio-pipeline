@@ -22,12 +22,8 @@ on:
         description: 'Runtime-safe bounded parameter search space'
         required: true
         type: choice
-        default: '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
+        default: 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
         options:
-          - '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json'
-          - '.github/research/continuous-optimization/development-v3/fine-aec-v4.json'
-          - '.github/research/continuous-optimization/development-v3/search-space.json'
-          - '.github/research/continuous-optimization/development-v2/search-space.json'
           - 'validation/tuning/search-spaces/call-pr-smoke-v1.json'
           - 'validation/tuning/search-spaces/call-v1.json'
 
@@ -183,6 +179,17 @@ jobs:
               },
           ]
           print('double-talk case guard v5 search contract: PASS')
+          PY
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          closure=json.loads(Path(
+              '.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json'
+          ).read_text())
+          assert closure['status']=='CLOSED_KEEP_BASELINE'
+          assert closure['decision']=='KEEP_BASELINE'
+          assert 'Do not rerun or refine' in closure['closure_rule']
+          print('double-talk case guard v5 execution authority: CLOSED')
           PY
       - name: Enforce AEC boundary refinement v6 contract
         run: |
@@ -355,22 +362,21 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Reject closed research search spaces
+      - name: Enforce live bounded-search scope
         run: |
           set -euo pipefail
-          if [[ "$SEARCH_SPACE" == '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6.json' ]]; then
-            python3 - <<'PY'
-          import json
-          from pathlib import Path
-          closure=json.loads(Path(
-              '.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-closure.json'
-          ).read_text())
-          assert closure['status']=='CLOSED_TERMINAL_VISIBLE_REJECT'
-          assert closure['search_space']['rerun_authorized'] is False
-          PY
-            echo 'aec-boundary-refinement-v6 is terminally closed and may not be rerun' >&2
-            exit 2
-          fi
+          case "$SEARCH_SPACE" in
+            validation/tuning/search-spaces/call-pr-smoke-v1.json|validation/tuning/search-spaces/call-v1.json)
+              ;;
+            .github/research/continuous-optimization/development-v2/*|.github/research/continuous-optimization/development-v3/*)
+              echo "historical development search space is closed/superseded and may not be rerun: $SEARCH_SPACE" >&2
+              exit 2
+              ;;
+            *)
+              echo "unregistered research search space: $SEARCH_SPACE" >&2
+              exit 2
+              ;;
+          esac
       - name: Initialize development workspace
         run: |
           set -euo pipefail

@@ -2,18 +2,24 @@
   "schema_version": 1,
   "diagnostic_id": "vad-domain-state-divergence-v1",
   "authority": "DIAGNOSTIC_ONLY_VAD_STATE_DECOMPOSITION",
-  "source_base_sha": "23e1d829e690d33a7ba56575ed83d1ac09809c07",
+  "source_base_sha": "d5bd0f6d72574b6af9631dc10d7903cd43a269c3",
   "predecessor": {
     "iteration": "I010",
     "closure_path": "docs/program/iterations/I010-closure.json",
     "closure_state": "CLOSED_KEEP_BASELINE",
     "rejected_candidate": "vad-pre-ns-local-observation-v1",
     "rejected_candidate_result": "docs/program/iterations/I010-source-candidate-result.json",
-    "prior_locked_authority_role": "context-only-not-selection-or-tuning"
+    "prior_locked_authority_role": "context-only-not-selection-or-tuning",
+    "noise_reference_scale_result": ".github/research/continuous-optimization/development-v4/i011-ns-noise-reference-scale-v1-result.json",
+    "noise_reference_scale_role": "reviewed-context-only-not-selection-or-tuning"
   },
   "question": "When the VAD local observation domain changes from post-NS output to the pre-NS NS input while upstream NS speech_probability is held identical, which VAD state-machine mechanisms explain speech-recall divergence: local ratio/noise state, upstream speech guard, transient suppression, probability blend, refresh class, or hangover history?",
   "fresh_diagnostic_authority": {
-    "seeds": [101123, 111123, 121123],
+    "seeds": [
+      131123,
+      141123,
+      151123
+    ],
     "generator": "validation/tools/build_stage_validation_corpus.py",
     "seconds": 6,
     "case_profile": "ns-isolated",
@@ -23,14 +29,14 @@
   },
   "fixed_shipping_semantics": {
     "ns_floor": 0.12,
-    "vad_noise_like_crest_db": 8.0,
-    "vad_transient_crest_db": 12.0,
+    "vad_noise_like_crest_db": 8,
+    "vad_transient_crest_db": 12,
     "vad_fast_noise_alpha": 0.08,
     "vad_upstream_speech_guard": 0.55,
     "vad_local_speech_guard": 0.15,
-    "vad_upstream_blend": 0.40,
+    "vad_upstream_blend": 0.4,
     "vad_ns_decision_threshold": 0.35,
-    "vad_strong_refresh_threshold": 0.50,
+    "vad_strong_refresh_threshold": 0.5,
     "vad_strong_hold_frames": 8,
     "vad_weak_hold_frames": 6
   },
@@ -38,7 +44,7 @@
     "public_ns_module_is_authoritative": true,
     "public_vad_module_is_authoritative": true,
     "test_only_mirror_exposes_intermediate_state": true,
-    "mirror_probability_tolerance": 1e-6,
+    "mirror_probability_tolerance": 0.000001,
     "mirror_active_identity_required": true,
     "shipping_source_mutation": false,
     "public_api_mutation": false
@@ -62,10 +68,19 @@
     "diagnostic_execution_limit": 1
   },
   "forbidden_feedback": {
-    "candidate_selection_from_prior_locked_seeds": [91123, 92123, 93123],
+    "candidate_selection_from_prior_locked_seeds": [
+      91123,
+      92123,
+      93123
+    ],
     "reuse_rejected_candidate_identity": true,
     "threshold_relaxation": true,
-    "shipping_promotion": true
+    "shipping_promotion": true,
+    "prior_scale_diagnostic_seeds": [
+      101123,
+      111123,
+      121123
+    ]
   },
   "decision_contract": {
     "VAD_STATE_DIVERGENCE_CONFIRMED_REVIEW_REQUIRED": "Fresh NS-isolated speech frames exercise shipping-active/pre-NS-inactive divergence while the mirror remains identical to public VAD outputs; report mechanism counts without selecting a fix.",

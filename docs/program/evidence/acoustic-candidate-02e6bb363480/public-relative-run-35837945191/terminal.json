@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "authority": "non-shipping-public-relative-acoustic-candidate-terminal",
+  "decision": "PUBLIC_RELATIVE_REJECTED_NON_SHIPPING",
+  "terminal": true,
+  "candidate": {
+    "candidate_id": "02e6bb363480",
+    "source_revision": "025b510128c486e96f398f07700b4662767cb065",
+    "tuning": {
+      "aec_mu": 0.22,
+      "ns_floor": 0.05,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2
+    },
+    "iteration_id": "audio-quality-ns-floor-call-v3:02e6bb363480"
+  },
+  "frozen_selection": {
+    "authority": "non-shipping-acoustic-iteration",
+    "audio_quality_run_id": 35834029890,
+    "artifact_id": 10738277807,
+    "artifact_digest": "sha256:5daa093f00cc330ec45a7cd8b6eccfa35183a0c16802ebbc0e796055498e8ae7",
+    "search_space_id": "audio-quality-ns-floor-call-v3",
+    "search_space_sha256": "7ec83c45f79d313f812d15f10d1d14f8d52d739689d778cccccb38bf18c380ba",
+    "development_score": 0.7819787218248493
+  },
+  "qualification": {
+    "infrastructure_revision": "025b510128c486e96f398f07700b4662767cb065",
+    "workflow_run_id": 35837945191,
+    "job_id": 107105872282,
+    "job_conclusion": "failure",
+    "classifier_authority": "non-shipping-paired-public-relative-acoustic-qualification",
+    "classifier_decision": "PUBLIC_RELATIVE_REJECTED_NON_SHIPPING",
+    "next_gate": null,
+    "terminal_candidate": true,
+    "retry_or_reselection_allowed": false,
+    "corpus_id": "public-validation-full-v2",
+    "policy_id": "validation-full-v2",
+    "absolute_policy_is_promotion_authority": false,
+    "baseline_absolute_result": "FAIL",
+    "candidate_absolute_result": "FAIL",
+    "relative_score": 1.1600467213926442,
+    "regression_contract": {
+      "search_space_id": "call-runtime-safe-v1",
+      "search_space_sha256": "3b74017a561356d2a119d514724c7e3bcf07bb603c79b5fd9765a7c88efb5b2d"
+    },
+    "regressions": [
+      {
+        "gate": "case_delta_excursion",
+        "metric": "vad_false_positive_rate",
+        "stat": "max",
+        "actual_delta": 0.07236842105263158,
+        "maximum_delta": 0.05,
+        "binding_margin": -0.02236842105263158,
+        "cases": 100,
+        "worsened_cases": 22
+      }
+    ]
+  },
+  "evidence": {
+    "artifact_id": 10741038723,
+    "artifact_digest": "sha256:0c81cd9a42ce184c65376a612078e7a36f8631c546de04e60bd3d609884c246d",
+    "public_relative_qualification_sha256": "726e0c2a2999349f44d9ac56e90cd84f0fc1dee6e2f52deecce9d63aafcac04c",
+    "baseline_validation_report_sha256": "cd57ad74e966066eeb181258962120222a6011ce70b32f3f8d4f26c6bafc33bb",
+    "candidate_validation_report_sha256": "206df1e1e446fdbf7b8b3718b7ee00a755a16f6fe919ea3ae12778f8e14fd05b",
+    "baseline_identity_sha256": "581c5a4048720c0697484fc9b3cc4db4bc2086e92c6d8fb2e69b764f1ec1fe94",
+    "execution_identity_sha256": "06c087af2b27faf0c000ec21237c7137417a0a7b45fa79b64522600a1c7bf0b9",
+    "resolved_candidate_sha256": "a790b9cfcd4e7cbb9980a83a9d77d560c5935fde21390d24b3d14339f19074a4"
+  },
+  "authority_boundary": {
+    "blind_qualification": "NOT_EXECUTED",
+    "target_resource_qualification": "NOT_EXECUTED",
+    "pcr02_real_device": "NOT_EXECUTED",
+    "ssc305_hil": "NOT_EXECUTED",
+    "target_soak": "NOT_EXECUTED",
+    "product_certification": "NOT_EXECUTED",
+    "shipping_promotion": "NOT_ADMITTED"
+  },
+  "route_closure": {
+    "lane": "ns-floor-lowering",
+    "search_spaces": [
+      "audio-quality-ns-floor-call-v1",
+      "audio-quality-ns-floor-call-v2",
+      "audio-quality-ns-floor-call-v3"
+    ],
+    "manual_dispatch": "CLOSED",
+    "reason": "terminal public-relative rejections at ns_floor=0.07 and ns_floor=0.05 after terminal-aware D/V/S boundary completion",
+    "reopening_requires": "reviewed new algorithm/source lineage or a new independently justified search contract; public failure metrics must not be fed back into the old objective"
+  },
+  "rule": "The exact frozen candidate was rejected by candidate-specific public relative authority. The bounded NS-floor lowering lane is closed after terminal-aware D/V/S boundary completion and must not be extended or retried by changing the old search objective from public failure evidence. A future attempt requires a distinct reviewed algorithm/source lineage or independently justified search contract."
+}

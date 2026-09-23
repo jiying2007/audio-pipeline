@@ -3,16 +3,22 @@
   "authority": "non-shipping-acoustic-terminal-registry",
   "candidates": [
     {
-      "candidate_id": "4a6a408bf0e3",
-      "source_revision": "73ae803047d5e7a6b54cdf58b4a28331ab0c2163",
-      "decision": "HOSTED_BLIND_REJECTED_NON_SHIPPING",
-      "terminal_path": "docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/terminal.json"
+      "candidate_id": "02e6bb363480",
+      "source_revision": "025b510128c486e96f398f07700b4662767cb065",
+      "decision": "PUBLIC_RELATIVE_REJECTED_NON_SHIPPING",
+      "terminal_path": "docs/program/evidence/acoustic-candidate-02e6bb363480/public-relative-run-35837945191/terminal.json"
     },
     {
       "candidate_id": "0d5f52491863",
       "source_revision": "f19d7ac928aa9db6c23b122faa63e4fcfe52e1a1",
       "decision": "PUBLIC_RELATIVE_REJECTED_NON_SHIPPING",
       "terminal_path": "docs/program/evidence/acoustic-candidate-0d5f52491863/public-relative-run-35815591807/terminal.json"
+    },
+    {
+      "candidate_id": "4a6a408bf0e3",
+      "source_revision": "73ae803047d5e7a6b54cdf58b4a28331ab0c2163",
+      "decision": "HOSTED_BLIND_REJECTED_NON_SHIPPING",
+      "terminal_path": "docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/terminal.json"
     }
   ]
 }

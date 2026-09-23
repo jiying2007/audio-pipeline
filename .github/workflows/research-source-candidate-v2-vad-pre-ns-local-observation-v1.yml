@@ -1,6 +1,15 @@
 name: Research Source Candidate v2 vad-pre-ns-local-observation-v1
 
 on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json'
+      - '.github/research/continuous-optimization/source_candidate_authority_v2.py'
+      - '.github/research/continuous-optimization/source_candidate_execution_v2_contract.py'
+      - '.github/workflows/research-source-candidate-v2-preflight.yml'
+      - '.github/workflows/research-source-candidate-v2-vad-pre-ns-local-observation-v1.yml'
+      - 'tests/validation/i010_apply_vad_pre_ns_candidate.py'
+      - 'tests/validation/i010_vad_pre_ns_candidate.py'
   workflow_dispatch:
 
 permissions:
@@ -11,15 +20,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate frozen candidate contract and test-only tooling
+        run: |
+          set -euo pipefail
+          python3 tests/validation/i010_apply_vad_pre_ns_candidate.py --self-test
+          python3 tests/validation/i010_vad_pre_ns_candidate.py --self-test
+          python3 .github/research/continuous-optimization/source_candidate_authority_v2.py \
+            --describe-contract \
+            --candidate-contract .github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json \
+            --policy .github/research/continuous-optimization/source-candidate-authority-v2.json \
+            >/tmp/i010-v2-contract.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          binding = json.loads(Path('/tmp/i010-v2-contract.json').read_text())
+          assert binding['candidate_id'] == 'vad-pre-ns-local-observation-v1'
+          assert binding['qualification_profile'] == 'vad-stage'
+          assert binding['required_count'] == 3
+          assert binding['pool_seeds'] == [91123, 92123, 93123, 94123, 95123]
+          assert binding['qualification_limit'] == 1
+          PY
+
   authority:
+    if: github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/research-source-candidate-v2-preflight.yml
     with:
       candidate_contract: .github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json
     permissions:
       contents: read
 
-  evaluate:
-    needs: authority
+  candidate:
+    needs: [contract, authority]
+    if: github.event_name == 'workflow_dispatch' && needs.authority.outputs.candidate_execution_allowed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:

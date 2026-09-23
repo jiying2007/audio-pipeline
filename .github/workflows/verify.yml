@@ -107,6 +107,7 @@ jobs:
           python3 scripts/release_manifest.py --self-test
           python3 scripts/post_release_status.py --self-test
           python3 scripts/qualification_fingerprint.py --self-test
+          python3 .github/research/continuous-optimization/hosted-validation/public_candidate_pair.py --source-root . --self-test
           python3 -m json.tool .github/research/evidence-index.json >/dev/null
           python3 -m json.tool .github/research/qualification-policy.json >/dev/null
           python3 scripts/docs_consistency.py

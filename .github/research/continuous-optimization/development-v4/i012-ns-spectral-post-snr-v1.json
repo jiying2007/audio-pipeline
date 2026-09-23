@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i012-ns-spectral-post-snr-v1",
+  "phase": "candidate-zero-floor-invariant-spectral-information",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "d5bd0f6d72574b6af9631dc10d7903cd43a269c3",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "parameter_search_allowed": false,
+  "threshold_tuning_allowed": false,
+  "fresh_seeds": [131123, 141123, 151123],
+  "generator": {
+    "path": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6
+  },
+  "hypothesis": {
+    "feature": "10*log10(sum(pre-suppression speech-band power) / sum(updated per-bin NS noise estimate))",
+    "speech_band": "exact existing NS evidence band: k > nfft/64 and k < 7*nfft/16",
+    "floor_invariance": "power and noise estimates are computed before floor_gain is applied, so the aggregate post-SNR feature must be identical at ns_floor 0.12 and 0.05",
+    "information_test": "ROC AUC against existing VAD labels is threshold-free and may show whether the spectral aggregate carries more speech/noise information than the current NS speech_probability",
+    "candidate_mapping_selected": false
+  },
+  "diagnostic_gates": {
+    "max_floor_spectral_snr_delta_db": 1e-6,
+    "max_floor_speech_probability_delta": 1e-7,
+    "min_combined_spectral_snr_auc": 0.65,
+    "min_combined_auc_gain_over_upstream": 0.05,
+    "min_per_seed_spectral_snr_auc": 0.60
+  },
+  "authority_boundary": {
+    "may_modify_shipping_ns": false,
+    "may_modify_shipping_vad": false,
+    "may_select_source_candidate": false,
+    "may_choose_feature_mapping": false,
+    "may_tune_vad_thresholds": false,
+    "may_consume_candidate_budget": false,
+    "may_consume_confirmation": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Only threshold-free information gain may be reviewed. Any VAD fusion mapping or threshold requires a new preregistered hypothesis and fresh authority."
+}

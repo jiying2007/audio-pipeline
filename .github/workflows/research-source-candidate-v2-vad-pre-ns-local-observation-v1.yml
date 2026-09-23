@@ -1,0 +1,220 @@
+name: Research Source Candidate v2 vad-pre-ns-local-observation-v1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-candidate-v2-vad-pre-ns-local-observation-v1
+  cancel-in-progress: false
+
+jobs:
+  authority:
+    uses: ./.github/workflows/research-source-candidate-v2-preflight.yml
+    with:
+      candidate_contract: .github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json
+    permissions:
+      contents: read
+
+  evaluate:
+    needs: authority
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CANDIDATE_ID: vad-pre-ns-local-observation-v1
+      SOURCE_SHA: ${{ needs.authority.outputs.source_base_sha }}
+      SELECTED_AUTHORITY_JSON: ${{ needs.authority.outputs.selected_authority_json }}
+      AUTHORITY_LOCK_PATH: ${{ needs.authority.outputs.authority_lock_path }}
+      AUTHORITY_LOCK_SHA256: ${{ needs.authority.outputs.authority_lock_sha256 }}
+    steps:
+      - name: Checkout current qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          path: infra
+
+      - name: Checkout exact source base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.authority.outputs.source_base_sha }}
+          fetch-depth: 0
+          path: base
+
+      - name: Checkout exact candidate source base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.authority.outputs.source_base_sha }}
+          fetch-depth: 0
+          path: candidate
+
+      - name: Rebind committed authority and exact source
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "${{ needs.authority.outputs.candidate_execution_allowed }}" = true
+          test "$(git -C base rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(git -C candidate rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git -C base status --porcelain=v1)"
+          test -z "$(git -C candidate status --porcelain=v1)"
+          test -f "infra/$AUTHORITY_LOCK_PATH"
+          test "$(sha256sum "infra/$AUTHORITY_LOCK_PATH" | awk '{print $1}')" = "$AUTHORITY_LOCK_SHA256"
+          mkdir -p candidate-out
+          cp "infra/$AUTHORITY_LOCK_PATH" candidate-out/authority-lock.json
+          cp infra/.github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json candidate-out/candidate-contract.json
+          printf '%s\n' "$SOURCE_SHA" > candidate-out/source-base-revision.txt
+          printf '%s\n' "$GITHUB_SHA" > candidate-out/qualification-infra-revision.txt
+
+      - name: Rebuild exact locked authority corpora
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          selected = json.loads(os.environ['SELECTED_AUTHORITY_JSON'])
+          contract = json.loads(Path('candidate-out/candidate-contract.json').read_text())
+          q = contract['baseline_authority_qualification_v2']
+          generator = q['generator']
+          root = Path('/tmp/ap-i010-source-candidate-authority')
+          root.mkdir(parents=True, exist_ok=True)
+          paths = []
+          for item in selected:
+              seed = int(item['generator_seed'])
+              out = root / str(seed)
+              subprocess.run([
+                  'python3', str(Path('base') / generator['path']),
+                  '--output', str(out), '--seed', str(seed),
+                  '--seconds', str(generator['seconds']), *generator['extra_args'],
+              ], check=True)
+              corpus = out / 'corpus.json'
+              payload = json.loads(corpus.read_text())
+              digest = hashlib.sha256(corpus.read_bytes()).hexdigest()
+              if payload.get('generator', {}).get('seed') != seed:
+                  raise SystemExit(f'authority seed drift: {seed}')
+              if payload.get('corpus_id') != item['corpus_id']:
+                  raise SystemExit(f'authority corpus id drift: {seed}')
+              if digest != item['corpus_sha256']:
+                  raise SystemExit(f'authority corpus hash drift: {seed}')
+              paths.append(str(corpus))
+          Path('candidate-out/locked-corpora.txt').write_text('\n'.join(paths) + '\n')
+          Path('candidate-out/selected-authority.json').write_text(
+              json.dumps(selected, indent=2, sort_keys=True) + '\n'
+          )
+          PY
+
+      - name: Build exact base processor
+        run: |
+          set -euo pipefail
+          cmake -S base -B base/build-candidate-eval -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$SOURCE_SHA"
+          cmake --build base/build-candidate-eval --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum base/build-candidate-eval/ap_process_pcm > candidate-out/base-processor.sha256
+          base/build-candidate-eval/ap_build_info_dump > candidate-out/base-build-info.txt
+
+      - name: Apply the single frozen structural candidate patch
+        run: |
+          set -euo pipefail
+          python3 infra/tests/validation/i010_apply_vad_pre_ns_candidate.py \
+            --root candidate --manifest candidate-out/candidate-patch.json
+          mapfile -t changed < <(git -C candidate diff --name-only)
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = src/core/ap_pipeline.c
+          git -C candidate diff -- src/core/ap_pipeline.c > candidate-out/candidate.patch
+          test -s candidate-out/candidate.patch
+          sha256sum candidate-out/candidate.patch > candidate-out/candidate-patch.sha256
+
+      - name: Build exact patched candidate processor
+        run: |
+          set -euo pipefail
+          cmake -S candidate -B candidate/build-candidate-eval -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$SOURCE_SHA"
+          cmake --build candidate/build-candidate-eval --target ap_process_pcm ap_build_info_dump --parallel
+          sha256sum candidate/build-candidate-eval/ap_process_pcm > candidate-out/candidate-processor.sha256
+          candidate/build-candidate-eval/ap_build_info_dump > candidate-out/candidate-build-info.txt
+          ${CC:-cc} --version | head -n 1 > candidate-out/compiler.txt
+
+      - name: Create strict metrics JSON evaluator proxies
+        run: |
+          set -euo pipefail
+          cat > candidate-out/base-processor-json <<'PYBASE'
+          #!/usr/bin/env python3
+          import os, sys
+          from pathlib import Path
+          out = Path(__file__).resolve().parent
+          root = out.parent
+          helper = root / 'infra' / '.github' / 'research' / 'continuous-optimization' / 'hosted-validation' / 'metrics_jsonl_proxy.py'
+          processor = root / 'base' / 'build-candidate-eval' / 'ap_process_pcm'
+          audit = out / 'base-metrics-jsonl-canonicalization.jsonl'
+          os.execv(sys.executable, [sys.executable, str(helper), '--processor', str(processor), '--audit', str(audit), '--', *sys.argv[1:]])
+          PYBASE
+          cat > candidate-out/candidate-processor-json <<'PYCAND'
+          #!/usr/bin/env python3
+          import os, sys
+          from pathlib import Path
+          out = Path(__file__).resolve().parent
+          root = out.parent
+          helper = root / 'infra' / '.github' / 'research' / 'continuous-optimization' / 'hosted-validation' / 'metrics_jsonl_proxy.py'
+          processor = root / 'candidate' / 'build-candidate-eval' / 'ap_process_pcm'
+          audit = out / 'candidate-metrics-jsonl-canonicalization.jsonl'
+          os.execv(sys.executable, [sys.executable, str(helper), '--processor', str(processor), '--audit', str(audit), '--', *sys.argv[1:]])
+          PYCAND
+          chmod 700 candidate-out/base-processor-json candidate-out/candidate-processor-json
+          python3 infra/.github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py --self-test
+
+      - name: Evaluate the one-shot frozen candidate on locked authority
+        run: |
+          set +e
+          mapfile -t corpora < candidate-out/locked-corpora.txt
+          args=()
+          for corpus in "${corpora[@]}"; do args+=(--corpus "$corpus"); done
+          python3 infra/tests/validation/i010_vad_pre_ns_candidate.py \
+            --base-processor candidate-out/base-processor-json \
+            --candidate-processor candidate-out/candidate-processor-json \
+            "${args[@]}" \
+            --output candidate-out/candidate-result.json \
+            | tee candidate-out/candidate-result-summary.txt
+          rc=$?
+          printf '%s\n' "$rc" > candidate-out/candidate-evaluator-exit-code.txt
+          set -e
+          test -f candidate-out/candidate-result.json
+          exit "$rc"
+
+      - name: Seal source-candidate evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          find candidate-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > candidate-out/SHA256SUMS
+
+      - name: Publish source-candidate summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          path = Path('candidate-out/candidate-result.json')
+          print('## I010 pre-NS VAD source candidate')
+          if not path.exists():
+              print('- Result: evidence incomplete')
+              raise SystemExit(0)
+          r = json.loads(path.read_text())
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Locked seeds: `{r['locked_seeds']}`")
+          print(f"- Baseline floor-sensitivity frames: `{r['baseline_floor_sensitivity_frames']}`")
+          print(f"- Candidate floor-sensitivity frames: `{r['candidate_floor_sensitivity_frames']}`")
+          print(f"- Candidate changed frames vs base: `{r['candidate_changed_frames_vs_base']}`")
+          print(f"- Violations: `{len(r['violations'])}`")
+          print('- Authority: source-candidate evaluation only; no source merge/shipping/HIL/Product Certification authority.')
+          PY
+
+      - name: Upload hash-bound source-candidate evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: source-candidate-v2-vad-pre-ns-local-observation-v1-${{ github.run_id }}
+          path: candidate-out/
+          retention-days: 90
+          if-no-files-found: error

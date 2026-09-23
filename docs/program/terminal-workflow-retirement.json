@@ -123,13 +123,6 @@
       "task_id": "P002",
       "terminal_evidence": "docs/program/iterations/P002-closure.json",
       "reason": "one-shot terminal governance closure materializer; P002 is CLOSED"
-    },
-    {
-      "path": ".github/workflows/i010-ns-vad-observation-domain.yml",
-      "blob_sha": "a4873d9102080d2d17a9a3f11cad2c94302a3867",
-      "task_id": "I010",
-      "terminal_evidence": "docs/program/iterations/I010-closure.json",
-      "reason": "candidate-zero observation-domain root cause is consumed by terminal I010 closure; exact probe, evaluator and reviewed evidence remain committed without an Actions entry"
     }
   ],
   "retained_reproducers": true,

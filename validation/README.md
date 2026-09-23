@@ -88,19 +88,30 @@ canonicalizes the diagnostic `vad_probability` / `erle_db` non-finite spellings 
 `null`, audits the replacements, and rejects every other malformed/non-standard token.
 
 Frozen-candidate public replay is paired with the exact canonical baseline on the same
-Full corpus and fixed policy. The source-built processor default tuning must numerically
-match the baseline recorded in the frozen Audio Quality search space before either result
-is interpreted. Processor defaults are float32 runtime values, so identity compares the
-printed values to the contract with zero relative tolerance and `1e-6` absolute tolerance;
-the contract values remain canonical while the observed processor values are retained in
-evidence. Public qualification has three machine-readable outcomes:
+Full corpus and fixed absolute policy. The source-built processor default tuning must
+numerically match the baseline recorded in the frozen Audio Quality search space before
+either result is interpreted. Processor defaults are float32 runtime values, so identity
+compares the printed values to the contract with zero relative tolerance and `1e-6`
+absolute tolerance; the contract values remain canonical while the observed processor
+values are retained in evidence.
 
-- `PUBLIC_QUALIFIED_NON_SHIPPING`: baseline and candidate both PASS; candidate may advance to blind.
-- `PUBLIC_REJECTED_NON_SHIPPING`: baseline PASS and candidate FAIL; the exact candidate is terminal.
-- `PUBLIC_BASELINE_UNHEALTHY_NON_SHIPPING`: baseline FAIL; qualification is incomplete and cannot terminalize the candidate.
+The Full absolute policy is retained as diagnostic evidence, but it is not candidate
+promotion authority: the canonical baseline itself currently fails the inherited Full
+aggregate thresholds. Candidate-specific public authority therefore reuses the
+pre-existing `call-v1` baseline-relative `max_regression` limits and
+`case_delta_gates` from the exact candidate source revision. Metrics that are
+structurally unavailable on both baseline and candidate are recorded as symmetrically
+not applicable; asymmetric coverage fails closed. Report identity, corpus/policy/source
+bindings and case sets must match exactly apart from the expected processor hash.
 
-This paired baseline rule prevents an unhealthy or over-strict public policy from being
-misinterpreted as candidate-specific evidence.
+Public relative qualification has three machine-readable outcomes:
+
+- `PUBLIC_RELATIVE_QUALIFIED_NON_SHIPPING`: no frozen relative regression or case-delta violation; candidate may advance to blind.
+- `PUBLIC_RELATIVE_REJECTED_NON_SHIPPING`: one or more pre-frozen relative regression gates fail; the exact candidate is terminal.
+- `PUBLIC_RELATIVE_INCOMPLETE_NON_SHIPPING`: bindings, metric coverage or case identity are incomplete/mismatched; candidate is not terminal.
+
+This prevents stale absolute thresholds from being mistaken for candidate-specific
+evidence while still forbidding public data from tuning or selecting a new candidate.
 
 Candidate mode is intentionally limited to visible `validation-grade` execution and
 runs on GitHub-hosted infrastructure. It bootstraps the same hash-bound Full public

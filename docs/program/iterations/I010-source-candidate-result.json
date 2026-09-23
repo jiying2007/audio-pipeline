@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I010",
+  "phase": "bounded-source-candidate-reviewed",
+  "candidate_id": "vad-pre-ns-local-observation-v1",
+  "decision": "KEEP_BASELINE_SOURCE_CANDIDATE_REJECTED",
+  "source_base_sha": "e27a83dafdd0ffcb06866eba915ff30d303ca94c",
+  "qualification_infrastructure_sha": "d5e84c3ec96a1edf704328b2efe98ca6dbd47b43",
+  "authoritative_execution": {
+    "workflow_run_id": 35878046235,
+    "workflow_conclusion": "success",
+    "artifact_id": 10759751715,
+    "artifact_name": "source-candidate-v2-vad-pre-ns-local-observation-v1-35878046235",
+    "artifact_digest": "sha256:cf14a961a37ca0accfc5fd0dbf5341ef74196cc72b18d85a157b88057bcc4e71",
+    "artifact_size_bytes": 12471,
+    "internal_sha256s_verified": 21,
+    "candidate_result_sha256": "0303b631e6afa58bdb7d9a74f02b7910197f68b6690bc3459e9b03db7d56613f",
+    "authority_lock_sha256": "4020caf6e7a60cc4ae145ab378061f292fd849b5becab65da2f5b3cda4ce2a9a",
+    "selected_authority_sha256": "6078c20df83a0ef6f649bfc9033125cbb48e93e8eebe7232c49ef49c4788a8fb",
+    "candidate_contract_sha256": "e747beeada499d7f81b7d69d6ce615234ade81581ccf0dbb0e4726cf95bdda8c",
+    "candidate_patch_sha256": "623cbebac0d985499ff9d754bae7977c5bff19d476929d499b204013cd44f9b4",
+    "base_processor_sha256": "015ef7efe516e316d99d5ca76d4fd54c312383c6cd3f406af919c23a9aafd023",
+    "candidate_processor_sha256": "13767fc752e795010a2db41e638304dafbac070691f362ff6fec7994dae0edfd"
+  },
+  "locked_authority": {
+    "seeds": [91123, 92123, 93123],
+    "candidate_budget_limit": 1,
+    "candidate_budget_consumed": 1,
+    "independent_confirmation_required_after_pass": true,
+    "independent_confirmation_consumed": 0
+  },
+  "causal_finding": {
+    "baseline_floor_sensitivity_frames": 1398,
+    "candidate_floor_sensitivity_frames": 0,
+    "candidate_changed_frames_vs_base": 2074,
+    "audio_output_mismatches": 0,
+    "vad_isolated_identity_mismatches": 0,
+    "meaning": "Routing VAD local RMS/crest/noise-ratio observation to the pre-NS AEC-output domain removes the observed NS-floor gain-domain dependence while preserving audio output and VAD-isolated behavior."
+  },
+  "rejection_evidence": [
+    {
+      "seed": 91123,
+      "gate": "candidate_absolute_case_gates",
+      "case_id": "stage-ns-nonstationary",
+      "metric": "vad_recall",
+      "actual": 0.7444444444444445,
+      "expected_min": 0.75
+    },
+    {
+      "seed": 93123,
+      "gate": "candidate_regression",
+      "metric": "min_vad_recall",
+      "baseline": 0.7481481481481481,
+      "candidate": 0.7111111111111111,
+      "regression": 0.03703703703703698,
+      "allowed": 0.03
+    }
+  ],
+  "partition_outcomes": [
+    {"seed": 91123, "baseline": "PASS", "candidate": "FAIL"},
+    {"seed": 92123, "baseline": "PASS", "candidate": "PASS"},
+    {"seed": 93123, "baseline": "PASS", "candidate": "PASS_WITH_RELATIVE_REGRESSION"}
+  ],
+  "reviewed_conclusion": {
+    "root_cause_confirmation_retained": true,
+    "candidate_fix_accepted": false,
+    "keep_shipping_baseline": true,
+    "merge_source_candidate": false,
+    "consume_confirmation_to_rescue_reject": false,
+    "retry_same_candidate_identity": false,
+    "reuse_locked_authority_to_tune_candidate": false,
+    "future_candidate_requires_new_identity": true,
+    "future_candidate_requires_new_hypothesis_and_budget_decision": true
+  },
+  "authority_boundary": {
+    "source_merge_authorized": false,
+    "shipping_authority": false,
+    "automatic_main_mutation": false,
+    "target_hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

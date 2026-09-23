@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I010",
+  "phase": "source-candidate-review",
+  "review_decision": "AUTHORIZE_ONE_FRESH_SOURCE_CANDIDATE",
+  "source_base_sha": "e27a83dafdd0ffcb06866eba915ff30d303ca94c",
+  "root_cause_result": "docs/program/iterations/I010-result.json",
+  "authorized_candidate_id": "vad-pre-ns-local-observation-v1",
+  "candidate_limit": 1,
+  "candidate_limit_consumed": 0,
+  "confirmation_limit": 1,
+  "confirmation_limit_consumed": 0,
+  "authority_policy": "source-candidate-baseline-qualified-authority-v2",
+  "authority_lock_required_before_candidate_execution": true,
+  "candidate_execution_before_lock": false,
+  "parameter_grid_search_authorized": false,
+  "threshold_tuning_authorized": false,
+  "combined_candidate_authorized": false,
+  "candidate_contract": ".github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json",
+  "success_semantics": [
+    "standalone vad-isolated probability and active traces remain identical to exact source base",
+    "candidate passes all absolute VAD gates on locked fresh authority partitions",
+    "candidate relative recall/F1/FPR regressions remain within preregistered 0.03 bounds",
+    "audio PCM output remains byte-identical to exact source base",
+    "baseline floor sensitivity is exercised on locked fresh ns-isolated cases",
+    "candidate ns-isolated VAD probability and active traces are invariant between ns_floor 0.12 and diagnostic stress 0.05"
+  ],
+  "next_step": "baseline-only authority qualification; candidate execution remains forbidden until the resulting qualified lock is reviewed and committed",
+  "authority_boundary": {
+    "shipping_source_change": false,
+    "source_merge_authorized": false,
+    "confirmation_consumed": false,
+    "hil": false,
+    "product_certification": false,
+    "release": false
+  }
+}

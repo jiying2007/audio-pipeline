@@ -40,6 +40,11 @@ jobs:
             --candidate-contract "infra/$CANDIDATE_CONTRACT" \
             --policy infra/.github/research/continuous-optimization/source-candidate-authority-v2.json \
             > /tmp/authority-binding.json
+          lock_path="$(jq -r .authority_lock_path /tmp/authority-binding.json)"
+          test ! -e "infra/$lock_path" || {
+            echo "qualified authority lock already committed; qualification replay forbidden: $lock_path" >&2
+            exit 4
+          }
           test "$(jq -r .qualification_profile /tmp/authority-binding.json)" = vad-stage
           test "$(jq -r .baseline_executable_target /tmp/authority-binding.json)" = ap_process_pcm
           test "$(jq -r .qualification_limit /tmp/authority-binding.json)" = 1

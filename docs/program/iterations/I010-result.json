@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I010",
+  "phase": "ns-vad-observation-domain-root-cause-result",
+  "state": "ROOT_CAUSE_CONFIRMED_REVIEW_REQUIRED",
+  "authority": "CANDIDATE_ZERO_ROOT_CAUSE_ONLY",
+  "source_revision": "e34b45937fba59ef3b0b16b22ca312fcff149703",
+  "contract_path": "docs/program/iterations/I010-ns-vad-observation-domain.json",
+  "decision": "LOCAL_WAVEFORM_COUPLING_CONFIRMED_REVIEW_REQUIRED",
+  "evidence": {
+    "workflow_run_id": 35847517831,
+    "job_id": 107137147745,
+    "artifact_id": 10744082756,
+    "artifact_name": "i010-ns-vad-observation-domain-35847517831",
+    "artifact_digest": "sha256:4941bd27932cbfcfa29805702f2c74b4e0e3b65475c9ae5e1a6d34c01454ecc8",
+    "result_sha256": "5f186bf5724a8097af01a3245d359f71edaaf4a5b5c1dccf48ada5bbad32d00c",
+    "contract_sha256": "f56e2b28c2a3af941634299f6adade79e02417faa7d063377e5754d79566b37f",
+    "sha256sums_sha256": "f8da15c4b45b655d3c0876fddfd2060f8d388f6b933624548df9e15364bc43ff"
+  },
+  "fresh_authority": {
+    "data_role": "fresh-development-root-cause-only",
+    "seeds": [
+      48123,
+      58123,
+      68123
+    ],
+    "candidate_limit_consumed": 0,
+    "confirmation_limit_consumed": 0,
+    "may_be_candidate_evaluation": false,
+    "may_be_independent_confirmation": false,
+    "may_be_promotion_data": false
+  },
+  "findings": {
+    "max_upstream_probability_delta": 0,
+    "upstream_mismatch_frames": 0,
+    "max_post_agc_rms_delta": 0.00840641744,
+    "waveform_changed_frames": 3828,
+    "max_vad_probability_delta": 0.733508945,
+    "vad_probability_diff_frames": 1898,
+    "vad_active_diff_frames": 114,
+    "base_cross_mismatch_frames": 0,
+    "low_cross_mismatch_frames": 0,
+    "noise_active_base": 1952,
+    "noise_active_low": 1892,
+    "speech_active_base": 1135,
+    "speech_active_low": 1095
+  },
+  "interpretation": {
+    "confirmed_causal_path": "NS floor changes the post-NS/post-AGC waveform consumed by VAD local RMS/crest/noise-ratio logic while NS upstream speech_probability remains invariant.",
+    "upstream_probability_floor_dependency": false,
+    "local_waveform_domain_dependency": true,
+    "shipping_fix_selected": false,
+    "threshold_tuning_supported": false
+  },
+  "next_review": {
+    "new_source_candidate_may_be_considered": true,
+    "required_hypothesis": "decouple VAD local observation domain from NS/AGC gain-domain changes without changing existing VAD thresholds or NS upstream probability semantics",
+    "candidate_identity_must_be_new": true,
+    "fresh_source_candidate_authority_required": true,
+    "parameter_grid_search_allowed": false,
+    "reuse_i010_fresh_seeds_for_candidate_evaluation": false,
+    "reuse_public_full160_failures_for_candidate_selection": false
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "source_candidate_selected": false,
+    "confirmation_consumed": false,
+    "blind_authority": false,
+    "target_hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

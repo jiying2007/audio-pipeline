@@ -106,6 +106,7 @@ def validate_registry(root: Path, registry_path: Path) -> dict[str, Any]:
     for raw in entries:
         require(isinstance(raw, dict), "terminal registry entry must be an object")
         candidate_id = str(raw.get("candidate_id", ""))
+        source_revision = str(raw.get("source_revision", ""))
         identity = (source_revision, candidate_id)
         require(identity not in seen, f"duplicate terminal candidate identity: {source_revision}:{candidate_id}")
         seen.add(identity)

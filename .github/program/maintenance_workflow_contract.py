@@ -88,6 +88,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
     Path('.github/workflows/research-candidate-blind-qualification.yml'),
     Path('.github/workflows/research-source-authority-v2-qualification.yml'),
+    Path('.github/workflows/research-vad-noise-reference-diagnostic.yml'),
 )
 
 PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (

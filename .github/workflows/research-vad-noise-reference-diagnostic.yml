@@ -1,0 +1,137 @@
+name: Research VAD Noise Reference Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/vad-noise-reference-diagnostic-v1.json'
+      - 'tests/validation/i011_vad_noise_reference_probe.c'
+      - 'tests/validation/i011_vad_noise_reference.py'
+      - '.github/workflows/research-vad-noise-reference-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-vad-noise-reference-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/vad-noise-reference-diagnostic-v1.json
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          path: infra
+
+      - name: Validate candidate-zero diagnostic contract
+        id: contract
+        run: |
+          set -euo pipefail
+          python3 -m py_compile infra/tests/validation/i011_vad_noise_reference.py
+          python3 infra/tests/validation/i011_vad_noise_reference.py --self-test
+          python3 -m json.tool "infra/$CONTRACT" >/dev/null
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('infra') / os.environ['CONTRACT']
+          c = json.loads(p.read_text(encoding='utf-8'))
+          assert c['investigation_id'] == 'vad-noise-reference-proxy-v1'
+          assert c['authority'] == 'CANDIDATE_ZERO_DIAGNOSTIC_ONLY'
+          assert c['candidate_limit'] == 0
+          assert c['confirmation_limit'] == 0
+          assert c['promotion_allowed'] is False
+          assert c['shipping_source_change_allowed'] is False
+          assert c['fresh_seeds'] == [101123, 102123, 103123]
+          assert c['ns_floor_points'] == {'shipping': 0.12, 'diagnostic_stress': 0.05}
+          assert c['protocol']['parameter_search'] is False
+          assert c['protocol']['threshold_tuning'] is False
+          assert c['protocol']['candidate_emulation'] is False
+          assert c['next_step_boundary']['may_reuse_i010_locked_authority'] is False
+          source = c['source_base_sha']
+          assert len(source) == 40 and all(ch in '0123456789abcdef' for ch in source)
+          print(f'source_sha={source}', file=open(os.environ['GITHUB_OUTPUT'], 'a'))
+          PY
+          source_sha="$(jq -r .source_base_sha "infra/$CONTRACT")"
+          git -C infra cat-file -e "$source_sha^{commit}"
+          git -C infra merge-base --is-ancestor "$source_sha" HEAD
+
+      - name: Checkout exact frozen source base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ steps.contract.outputs.source_sha }}
+          fetch-depth: 0
+          path: source
+
+      - uses: ./infra/.github/actions/setup-ccache
+        with:
+          namespace: i011-vad-noise-reference
+
+      - name: Build exact-source public module library
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "${{ steps.contract.outputs.source_sha }}"
+          cmake -S source -B source/build-i011 -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build source/build-i011 --target audio_pipeline ap_build_info_dump --parallel
+          mkdir -p i011-out
+          source/build-i011/ap_build_info_dump > i011-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > i011-out/compiler.txt
+
+      - name: Build test-only noise-reference probe
+        run: |
+          set -euo pipefail
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -Isource/include -Isource/build-i011/generated             infra/tests/validation/i011_vad_noise_reference_probe.c             source/build-i011/libaudio_pipeline.a -lm             -o i011-out/i011_vad_noise_reference_probe
+          sha256sum i011-out/i011_vad_noise_reference_probe > i011-out/probe.sha256
+
+      - name: Run fresh candidate-zero noise-reference diagnostic
+        run: |
+          set -euo pipefail
+          python3 infra/tests/validation/i011_vad_noise_reference.py             --probe i011-out/i011_vad_noise_reference_probe             --contract "infra/$CONTRACT"             --seed 101123 --seed 102123 --seed 103123             --output i011-out/result.json
+          cp "infra/$CONTRACT" i011-out/contract.json
+          printf '%s\n' "${{ steps.contract.outputs.source_sha }}" > i011-out/source-base-revision.txt
+          printf '%s\n' "$GITHUB_SHA" > i011-out/diagnostic-infra-revision.txt
+
+      - name: Seal I011 diagnostic evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          find i011-out -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > i011-out/SHA256SUMS
+
+      - name: Publish I011 summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          p = Path('i011-out/result.json')
+          print('## I011 VAD noise-reference proxy diagnostic')
+          if not p.exists():
+              print('- Result: evidence incomplete')
+              raise SystemExit(0)
+          r = json.loads(p.read_text(encoding='utf-8'))
+          s = r['summary']
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Seeds: `{r['seeds']}`")
+          print(f"- Max NS noise-reference floor delta: `{s['max_noise_reference_delta_db']}` dB")
+          print(f"- Max proxy floor delta: `{s['max_proxy_delta_db']}` dB")
+          print(f"- Minimum proxy AUC: `{s['min_proxy_auc']}`")
+          print(f"- Minimum speech-vs-noise mean gap: `{s['min_mean_gap_db']}` dB")
+          print(f"- Minimum p10-speech minus p90-noise gap: `{s['min_tail_gap_db']}` dB")
+          print('- Authority: candidate-zero diagnostic only; no threshold tuning, source candidate, confirmation, shipping, HIL or Product Certification authority.')
+          PY
+
+      - name: Upload hash-bound I011 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i011-vad-noise-reference-proxy-${{ github.run_id }}
+          path: i011-out/
+          retention-days: 90
+          if-no-files-found: error

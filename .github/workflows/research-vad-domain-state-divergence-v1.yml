@@ -15,7 +15,6 @@ on:
       - 'src/modules/ap_ns_module.c'
       - 'src/modules/ap_resampler_module.c'
       - 'validation/tools/build_stage_validation_corpus.py'
-      - 'validation/tools/run_validation_engine.py'
   workflow_dispatch:
 
 permissions:

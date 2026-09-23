@@ -117,6 +117,9 @@ def validate_execution_workflow(
         if re.search(rf"(?m)^  {forbidden}:", triggers):
             raise ValueError(f"{workflow_path} cannot expose trigger: {forbidden}")
 
+    if not re.search(r"(?m)^  actions: read\s*$", text):
+        raise ValueError(f"{workflow_path} must grant actions: read for one-shot dispatch guard")
+
     jobs = job_blocks(text)
     if set(jobs) != {"contract", "authority", "candidate"}:
         raise ValueError(
@@ -151,6 +154,20 @@ def validate_execution_workflow(
         raise ValueError(
             f"{workflow_path} contract job cannot synthesize candidate execution authority"
         )
+    one_shot_guard_markers = (
+        "Enforce one-shot workflow-dispatch budget",
+        "if: github.event_name == 'workflow_dispatch'",
+        "GH_TOKEN: ${{ github.token }}",
+        "GITHUB_RUN_ID",
+        "/actions/workflows/",
+        "event=workflow_dispatch",
+        "select(.id != $current)",
+    )
+    for marker in one_shot_guard_markers:
+        if marker not in contract_block:
+            raise ValueError(
+                f"{workflow_path} contract job missing one-shot dispatch guard marker: {marker}"
+            )
 
 
 def validate_repository(root: Path = ROOT) -> dict[str, Any]:
@@ -208,10 +225,23 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   contract:
     runs-on: ubuntu-latest
     steps:
+      - name: Enforce one-shot workflow-dispatch budget
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{{{ github.token }}}}
+        run: |
+          echo GITHUB_RUN_ID
+          echo /actions/workflows/
+          echo event=workflow_dispatch
+          echo 'select(.id != $current)'
       - run: echo contract
 
   authority:
@@ -294,6 +324,21 @@ jobs:
             assert "must need authority" in str(exc)
         else:
             raise AssertionError("v2 candidate bypassed authority dependency")
+
+        (root / workflow_path).write_text(
+            _fixture_workflow(contract_path),
+            encoding="utf-8",
+        )
+        bad_guard = (root / workflow_path).read_text(encoding="utf-8").replace(
+            "select(.id != $current)", "guard removed"
+        )
+        (root / workflow_path).write_text(bad_guard, encoding="utf-8")
+        try:
+            validate_repository(root)
+        except ValueError as exc:
+            assert "one-shot dispatch guard" in str(exc)
+        else:
+            raise AssertionError("v2 candidate accepted without one-shot dispatch guard")
 
         (root / workflow_path).write_text(
             _fixture_workflow(contract_path),

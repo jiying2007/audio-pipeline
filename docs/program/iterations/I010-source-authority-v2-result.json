@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I010",
+  "phase": "source-candidate-authority-v2-result",
+  "authority": "BASELINE_ONLY_SOURCE_CANDIDATE_AUTHORITY",
+  "decision": "BASELINE_QUALIFIED_AUTHORITY_LOCK",
+  "candidate_id": "vad-pre-ns-local-observation-v1",
+  "source_base_sha": "e27a83dafdd0ffcb06866eba915ff30d303ca94c",
+  "qualification_infrastructure_sha": "2dca2709a4dc5742d79c7db5690683804888ddab",
+  "qualification_profile": "vad-stage",
+  "workflow_run_id": 35871064240,
+  "job_id": 107214977985,
+  "artifact_id": 10755226849,
+  "artifact_name": "source-candidate-v2-vad-authority-35871064240",
+  "artifact_digest": "sha256:81f5e1bdd83b7e1f269908aed8ea52f1e63b59b239f909e0935cf73cf3826117",
+  "authority_lock_path": ".github/research/continuous-optimization/source-authority-locks/vad-pre-ns-local-observation-v1.json",
+  "authority_lock_sha256": "4020caf6e7a60cc4ae145ab378061f292fd849b5becab65da2f5b3cda4ce2a9a",
+  "qualification_result_sha256": "4020caf6e7a60cc4ae145ab378061f292fd849b5becab65da2f5b3cda4ce2a9a",
+  "baseline_processor_sha256": "015ef7efe516e316d99d5ca76d4fd54c312383c6cd3f406af919c23a9aafd023",
+  "policy_sha256": "ccefb2fd3ed2354c990d04d92599ab2978f8afe21deaa1e148929900dbe3e4c4",
+  "candidate_contract_sha256": "e747beeada499d7f81b7d69d6ce615234ade81581ccf0dbb0e4726cf95bdda8c",
+  "pool_seeds": [
+    91123,
+    92123,
+    93123,
+    94123,
+    95123
+  ],
+  "selected_seeds": [
+    91123,
+    92123,
+    93123
+  ],
+  "invalid_pool_entries": 0,
+  "candidate_execution_allowed": true,
+  "candidate_budget_consumed": false,
+  "candidate_feedback_used": false,
+  "qualification_limit": 1,
+  "qualification_replay_additional_authority": false,
+  "evidence_verification": {
+    "downloaded_artifact_manifest_entries": 9,
+    "downloaded_artifact_manifest_entries_verified": 9,
+    "artifact_unpack_layout": "GitHub artifact flattened authority-out contents; SHA256SUMS authority-out/ prefixes were normalized to basenames for byte verification",
+    "all_internal_sha256s_verified": true
+  },
+  "next_gate": "commit qualified authority lock, then one-shot candidate execution on locked authority",
+  "authority_boundary": {
+    "shipping": false,
+    "source_merge_authorized": false,
+    "automatic_main_mutation": false,
+    "confirmation_consumed": false,
+    "hil": false,
+    "product_certification": false
+  }
+}

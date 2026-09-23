@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I010",
+  "state": "CLOSED_KEEP_BASELINE",
+  "lane": "acoustic",
+  "root_cause_id": "ns-floor-post-gain-vad-local-domain-coupling",
+  "candidate_id": "vad-pre-ns-local-observation-v1",
+  "closed_from_main_sha": "d5e84c3ec96a1edf704328b2efe98ca6dbd47b43",
+  "evidence_chain": {
+    "root_cause": {
+      "result_path": "docs/program/iterations/I010-result.json",
+      "decision": "LOCAL_WAVEFORM_COUPLING_CONFIRMED_REVIEW_REQUIRED",
+      "run_id": 35847517831,
+      "artifact_id": 10744082756
+    },
+    "baseline_authority": {
+      "qualification_run_id": 35871064240,
+      "authority_lock_path": "docs/program/evidence/i010-vad-pre-ns-local-observation-v1/authority-lock.json",
+      "selected_seeds": [91123, 92123, 93123]
+    },
+    "bounded_source_candidate": {
+      "run_id": 35878046235,
+      "artifact_id": 10759751715,
+      "artifact_digest": "sha256:cf14a961a37ca0accfc5fd0dbf5341ef74196cc72b18d85a157b88057bcc4e71",
+      "result_path": "docs/program/iterations/I010-source-candidate-result.json",
+      "decision": "KEEP_BASELINE_SOURCE_CANDIDATE_REJECTED",
+      "candidate_budget_consumed": 1,
+      "confirmation_consumed": 0
+    }
+  },
+  "closure_decision": {
+    "keep_baseline": true,
+    "merge_shipping_candidate": false,
+    "create_release": false,
+    "consume_confirmation": false,
+    "allow_candidate_replay": false,
+    "allow_authority_requalification": false,
+    "allow_same_candidate_identity": false,
+    "future_I010_candidate_requires_new_hypothesis_identity_and_budget_decision": true
+  },
+  "interpretation": {
+    "confirmed": "Pre-NS local observation removes NS-floor sensitivity from the VAD local evidence path.",
+    "rejected": "The exact pre-NS observation routing is not an acceptable fix because protected NS-isolated recall gates regress on locked authority.",
+    "next_design_constraint": "A future design must preserve the decoupling benefit without losing NS-isolated speech recall; threshold relaxation and reuse of this candidate's locked authority for tuning are not authorized."
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "source_candidate_active": false,
+    "blind_confirmation": "NOT_ADMITTED",
+    "target_hil": "NOT_EXECUTED",
+    "product_certification": "NOT_EXECUTED",
+    "release_authority": false
+  }
+}

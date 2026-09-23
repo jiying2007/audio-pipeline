@@ -29,11 +29,10 @@ EXPECTED_PATHS = {
     ".github/workflows/i009-echo-normalized-root-cause.yml",
     ".github/workflows/i009-residual-echo-rescue-root-cause.yml",
     ".github/workflows/i009-closure.yml",
-    ".github/workflows/i010-ns-vad-observation-domain.yml",
     ".github/workflows/p002-candidate-zero-audit.yml",
     ".github/workflows/p002-closure.yml",
 }
-EXPECTED_TASKS = {"I004", "I005", "I006", "I007", "I008", "I009", "I010", "P002"}
+EXPECTED_TASKS = {"I004", "I005", "I006", "I007", "I008", "I009", "P002"}
 FORBIDDEN_CONTINUOUS_TRIGGERS = ("workflow_call:", "workflow_run:", "schedule:", "push:")
 RESEARCH_FORBIDDEN_TRIGGERS = ("workflow_call:", "workflow_run:", "schedule:", "workflow_dispatch:")
 RESEARCH_AUTHORITY_FALSE_KEYS = (
@@ -994,7 +993,6 @@ def self_test() -> None:
         (".github/workflows/i009-echo-normalized-root-cause.yml", "I009"),
         (".github/workflows/i009-residual-echo-rescue-root-cause.yml", "I009"),
         (".github/workflows/i009-closure.yml", "I009"),
-        (".github/workflows/i010-ns-vad-observation-domain.yml", "I010"),
         (".github/workflows/p002-candidate-zero-audit.yml", "P002"),
         (".github/workflows/p002-closure.yml", "P002"),
     ]

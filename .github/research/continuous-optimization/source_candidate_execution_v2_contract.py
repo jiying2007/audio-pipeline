@@ -236,7 +236,7 @@ jobs:
       - name: Enforce one-shot workflow-dispatch budget
         if: github.event_name == 'workflow_dispatch'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{{{ github.token }}}}
         run: |
           echo GITHUB_RUN_ID
           echo /actions/workflows/

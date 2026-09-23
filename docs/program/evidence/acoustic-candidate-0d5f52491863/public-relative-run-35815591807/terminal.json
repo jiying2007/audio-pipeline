@@ -58,7 +58,6 @@
   },
   "terminal_case_evidence": {
     "path": "failed-case.json",
-    "sha256": "524c01b0e2a6f396caac9de1ab0d75c966cef48adcd3fee0c7952f4d09181f8d",
     "case_id": "compact-ns-008"
   },
   "evidence": {

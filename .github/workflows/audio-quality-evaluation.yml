@@ -71,9 +71,6 @@ on:
         type: choice
         options:
           - audio-quality-pr-v1.json
-          - audio-quality-ns-floor-call-v1.json
-          - audio-quality-ns-floor-call-v2.json
-          - audio-quality-ns-floor-call-v3.json
           - audio-quality-agc-limiter-frontier-v1.json
 
 permissions:
@@ -129,6 +126,15 @@ jobs:
               assert space['max_candidates'] <= 8
           selected = Path(os.environ['QUALITY_SEARCH_SPACE']).name
           assert selected in expected_strategy, (selected, sorted(expected_strategy))
+          if os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch':
+              manual_allowed = {
+                  'audio-quality-pr-v1.json',
+                  'audio-quality-agc-limiter-frontier-v1.json',
+              }
+              if selected not in manual_allowed:
+                  raise SystemExit(
+                      f'manual quality search lane is retired/closed: {selected}'
+                  )
           PY
 
       - name: Build exact offline processor

@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "authority": "non-shipping-paired-public-relative-acoustic-terminal",
+  "decision": "PUBLIC_RELATIVE_REJECTED_NON_SHIPPING",
+  "terminal": true,
+  "candidate": {
+    "candidate_id": "0d5f52491863",
+    "source_revision": "f19d7ac928aa9db6c23b122faa63e4fcfe52e1a1",
+    "iteration_id": "audio-quality-ns-floor-call-v1:0d5f52491863",
+    "tuning": {
+      "aec_mu": 0.22,
+      "ns_floor": 0.07,
+      "agc_target_dbfs": -20,
+      "limiter_dbfs": -2
+    }
+  },
+  "frozen_selection": {
+    "authority": "non-shipping-frozen-acoustic-candidate-public-validation",
+    "audio_quality_run_id": 35729155489,
+    "audio_quality_artifact_id": 10695375199,
+    "audio_quality_artifact_digest": "sha256:97405b16842b098a73ab3ce005d66bf9178f45edeb146e000955bd6bdaafe758",
+    "audio_quality_search_space_id": "audio-quality-ns-floor-call-v1",
+    "audio_quality_search_space_sha256": "a2360e1150463272fc208a42a2c2145c6891218b75b9d5b022a35dd096dbb03c",
+    "selection_decision": "ACOUSTIC_CANDIDATE"
+  },
+  "qualification": {
+    "infrastructure_revision": "c66677386be90963144f1c47bed7c3845342c25b",
+    "workflow": "Validation Grade",
+    "workflow_run_id": 35815591807,
+    "workflow_run_number": 6,
+    "run_attempt": 1,
+    "job_id": 107036355111,
+    "job_conclusion": "failure",
+    "first_authoritative_relative_run": true,
+    "retry_or_reselection_allowed": false,
+    "corpus_id": "public-validation-full-v2",
+    "policy_id": "validation-full-v2",
+    "baseline_absolute_result": "FAIL",
+    "candidate_absolute_result": "FAIL",
+    "absolute_policy_is_promotion_authority": false,
+    "relative_authority": "non-shipping-paired-public-relative-acoustic-qualification",
+    "relative_search_space_id": "call-runtime-safe-v1",
+    "relative_search_space_sha256": "3b74017a561356d2a119d514724c7e3bcf07bb603c79b5fd9765a7c88efb5b2d",
+    "relative_score": 0.8422007953864912,
+    "incomplete_evidence": [],
+    "regressions": [
+      {
+        "gate": "case_delta_excursion",
+        "metric": "vad_false_positive_rate",
+        "stat": "max",
+        "actual_delta": 0.07456140350877188,
+        "maximum_delta": 0.05,
+        "binding_margin": -0.02456140350877188,
+        "cases": 100,
+        "worsened_cases": 18
+      }
+    ]
+  },
+  "terminal_case_evidence": {
+    "path": "failed-case.json",
+    "sha256": "524c01b0e2a6f396caac9de1ab0d75c966cef48adcd3fee0c7952f4d09181f8d",
+    "case_id": "compact-ns-008"
+  },
+  "evidence": {
+    "artifact_id": 10731514845,
+    "artifact_digest": "sha256:9b64fc6b4bbd21249a35f0c8ec66a394e40d08475bc15691eb7b36b486423747",
+    "artifact_size_bytes": 27986518,
+    "public_relative_qualification_sha256": "09da79805e0322d5d9053d24db2747bb647fff313f46bf458e7c28f600467ed8",
+    "baseline_validation_report_sha256": "785de077e74f5d0a7412cd508d294d7471d8de2c2ecb5c5c1b527d6280171d5d",
+    "candidate_validation_report_sha256": "a21ef0ae2449a76842e09259af4499b841d1ebf48a709e736964bdcdd6536d77",
+    "baseline_identity_sha256": "581c5a4048720c0697484fc9b3cc4db4bc2086e92c6d8fb2e69b764f1ec1fe94",
+    "execution_identity_sha256": "a9f064f5ef52392ff04dc33cc768e03f93e2a417c5e57479d7afbd49b8d33244",
+    "resolved_candidate_sha256": "8be428d1e11f65c25632e680ee42cd01740be1bd47779e9e518d526fadf07c80"
+  },
+  "authority_boundary": {
+    "blind_qualification": "NOT_ADMITTED",
+    "target_resource_qualification": "NOT_EXECUTED",
+    "pcr02_35mm_real_device": "NOT_EXECUTED",
+    "ssc305_hil": "NOT_EXECUTED",
+    "target_soak": "NOT_EXECUTED",
+    "product_certification": "NOT_EXECUTED",
+    "shipping_promotion": "NOT_ADMITTED"
+  },
+  "rule": "The first authoritative paired public relative qualification found a pre-frozen call-v1 case-delta regression. This exact source_revision + candidate_id identity is terminal and must not be retried or reselected for blind/target/HIL/product promotion. A future candidate requires a different source revision and a new frozen qualification lineage."
+}

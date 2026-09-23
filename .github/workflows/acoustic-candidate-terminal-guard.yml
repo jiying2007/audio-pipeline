@@ -16,6 +16,10 @@ on:
       - '.github/program/candidate_bench.c'
       - '.github/program/candidate_alsa_runtime_duplex.c'
       - 'docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/**'
+      - '.github/workflows/validation-grade.yml'
+      - '.github/program/acoustic_terminal_registry.py'
+      - 'docs/program/evidence/acoustic-terminal-registry.json'
+      - 'docs/program/evidence/acoustic-candidate-0d5f52491863/public-relative-run-35815591807/**'
   push:
     branches: [main]
     paths:
@@ -32,6 +36,10 @@ on:
       - '.github/program/candidate_bench.c'
       - '.github/program/candidate_alsa_runtime_duplex.c'
       - 'docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/**'
+      - '.github/workflows/validation-grade.yml'
+      - '.github/program/acoustic_terminal_registry.py'
+      - 'docs/program/evidence/acoustic-terminal-registry.json'
+      - 'docs/program/evidence/acoustic-candidate-0d5f52491863/public-relative-run-35815591807/**'
 
 permissions:
   contents: read
@@ -206,6 +214,138 @@ jobs:
               'shipping_release': release['shipping_release'],
               'shipping_aec_mu': release['shipping_aec_mu'],
               'physical_authority': 'NONE',
+          }, sort_keys=True))
+          PY
+
+      - name: Validate acoustic terminal registry and NS floor public rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/acoustic_terminal_registry.py --self-test
+          python3 .github/program/acoustic_terminal_registry.py \
+            --repo-root . --registry docs/program/evidence/acoustic-terminal-registry.json
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('docs/program/evidence/acoustic-candidate-0d5f52491863/public-relative-run-35815591807')
+          terminal = json.loads((root / 'terminal.json').read_text(encoding='utf-8'))
+          case = json.loads((root / 'failed-case.json').read_text(encoding='utf-8'))
+
+          def require(ok, message):
+              if not ok:
+                  raise SystemExit(message)
+
+          require(terminal.get('schema_version') == 1, 'NS floor terminal schema drift')
+          require(terminal.get('authority') == 'non-shipping-paired-public-relative-acoustic-terminal',
+                  'NS floor terminal authority drift')
+          require(terminal.get('decision') == 'PUBLIC_RELATIVE_REJECTED_NON_SHIPPING' and
+                  terminal.get('terminal') is True, 'NS floor candidate must remain terminal')
+
+          candidate = terminal.get('candidate') or {}
+          require(candidate == {
+              'candidate_id': '0d5f52491863',
+              'source_revision': 'f19d7ac928aa9db6c23b122faa63e4fcfe52e1a1',
+              'iteration_id': 'audio-quality-ns-floor-call-v1:0d5f52491863',
+              'tuning': {
+                  'aec_mu': 0.22,
+                  'ns_floor': 0.07,
+                  'agc_target_dbfs': -20.0,
+                  'limiter_dbfs': -2.0,
+              },
+          }, 'NS floor terminal candidate identity drift')
+
+          frozen = terminal.get('frozen_selection') or {}
+          require(frozen.get('audio_quality_run_id') == 35729155489 and
+                  frozen.get('audio_quality_artifact_id') == 10695375199 and
+                  frozen.get('audio_quality_artifact_digest') ==
+                  'sha256:97405b16842b098a73ab3ce005d66bf9178f45edeb146e000955bd6bdaafe758' and
+                  frozen.get('audio_quality_search_space_sha256') ==
+                  'a2360e1150463272fc208a42a2c2145c6891218b75b9d5b022a35dd096dbb03c' and
+                  frozen.get('selection_decision') == 'ACOUSTIC_CANDIDATE',
+                  'NS floor frozen selection provenance drift')
+
+          q = terminal.get('qualification') or {}
+          require(q.get('infrastructure_revision') == 'c66677386be90963144f1c47bed7c3845342c25b',
+                  'NS floor qualification infrastructure drift')
+          require(q.get('workflow_run_id') == 35815591807 and
+                  q.get('job_id') == 107036355111 and q.get('job_conclusion') == 'failure',
+                  'NS floor qualification run identity drift')
+          require(q.get('first_authoritative_relative_run') is True and
+                  q.get('retry_or_reselection_allowed') is False,
+                  'NS floor terminal result must forbid retry/reselection')
+          require(q.get('relative_authority') ==
+                  'non-shipping-paired-public-relative-acoustic-qualification',
+                  'NS floor relative authority drift')
+          require(q.get('relative_search_space_sha256') ==
+                  '3b74017a561356d2a119d514724c7e3bcf07bb603c79b5fd9765a7c88efb5b2d',
+                  'NS floor relative search-space drift')
+          regressions = q.get('regressions') or []
+          require(regressions == [{
+              'gate': 'case_delta_excursion',
+              'metric': 'vad_false_positive_rate',
+              'stat': 'max',
+              'actual_delta': 0.07456140350877188,
+              'maximum_delta': 0.05,
+              'binding_margin': -0.02456140350877188,
+              'cases': 100,
+              'worsened_cases': 18,
+          }], 'NS floor terminal regression drift')
+
+          evidence = terminal.get('evidence') or {}
+          require(evidence.get('artifact_id') == 10731514845 and
+                  evidence.get('artifact_digest') ==
+                  'sha256:9b64fc6b4bbd21249a35f0c8ec66a394e40d08475bc15691eb7b36b486423747',
+                  'NS floor terminal artifact drift')
+          require(evidence.get('public_relative_qualification_sha256') ==
+                  '09da79805e0322d5d9053d24db2747bb647fff313f46bf458e7c28f600467ed8',
+                  'NS floor relative verdict digest drift')
+
+          case_bytes = (root / 'failed-case.json').read_bytes()
+          require(hashlib.sha256(case_bytes).hexdigest() ==
+                  terminal['terminal_case_evidence']['sha256'],
+                  'NS floor failed-case digest drift')
+          require(case.get('case_id') == 'compact-ns-008' and
+                  case.get('gate', {}).get('metric') == 'vad_false_positive_rate' and
+                  case.get('gate', {}).get('actual_delta') == 0.07456140350877188 and
+                  case.get('gate', {}).get('maximum_delta') == 0.05,
+                  'NS floor failed-case gate drift')
+          require(case.get('baseline', {}).get('vad_false_positive_rate') ==
+                  0.4868421052631579 and
+                  case.get('candidate', {}).get('vad_false_positive_rate') ==
+                  0.5614035087719298,
+                  'NS floor failed-case metric values drift')
+
+          require(terminal.get('authority_boundary') == {
+              'blind_qualification': 'NOT_ADMITTED',
+              'target_resource_qualification': 'NOT_EXECUTED',
+              'pcr02_35mm_real_device': 'NOT_EXECUTED',
+              'ssc305_hil': 'NOT_EXECUTED',
+              'target_soak': 'NOT_EXECUTED',
+              'product_certification': 'NOT_EXECUTED',
+              'shipping_promotion': 'NOT_ADMITTED',
+          }, 'NS floor terminal acquired forbidden downstream authority')
+
+          workflow = Path('.github/workflows/validation-grade.yml').read_text(encoding='utf-8')
+          required = (
+              'acoustic_terminal_registry.py',
+              'acoustic-terminal-registry.json',
+              '--reject-terminal',
+          )
+          missing = [token for token in required if token not in workflow]
+          require(not missing, f'Validation Grade lost terminal admission guard: {missing}')
+
+          print(json.dumps({
+              'decision': terminal['decision'],
+              'candidate_id': candidate['candidate_id'],
+              'source_revision': candidate['source_revision'],
+              'failed_case': case['case_id'],
+              'metric': case['gate']['metric'],
+              'actual_delta': case['gate']['actual_delta'],
+              'maximum_delta': case['gate']['maximum_delta'],
+              'retry_or_reselection_allowed': q['retry_or_reselection_allowed'],
+              'downstream_authority': 'NONE',
           }, sort_keys=True))
           PY
 

@@ -156,6 +156,20 @@ scale or regression limit and still excludes terminal `0.07`; its axis is
 `0.05/0.06/0.08/0.10/0.12/0.14`. This is search-geometry completion, not
 feedback from public qualification.
 
+Formal v3 run `35834029890` selected `ns_floor=0.05` as candidate
+`02e6bb363480`. Paired public-relative qualification run `35837945191`
+terminally rejected that exact source/candidate lineage. As with the earlier
+`0.07` candidate, the summary-level frozen relative bounds passed; the
+candidate-specific failure was the pre-existing per-case VAD false-positive
+delta gate (`+0.07237 > +0.05`). Because v3 completed the known runtime-safe
+lower boundary and both promoted lowered-floor candidates were independently
+rejected by public-relative authority, the current **NS-floor lowering lane is
+closed**. V1/V2/V3 remain committed as historical evidence and schema fixtures,
+but they are no longer accepted as manual workflow-dispatch search lanes.
+Reopening requires a reviewed new algorithm/source lineage or an independently
+justified new search contract; public failure metrics must not be fed back into
+the retired objective to manufacture a passing candidate.
+
 AGC/limiter searches need an additional scale-sensitive check. The generic
 regression objective can improve attenuation-oriented metrics while lowering the
 near-end signal as a whole, so an `ACOUSTIC_CANDIDATE` from that loop is not by

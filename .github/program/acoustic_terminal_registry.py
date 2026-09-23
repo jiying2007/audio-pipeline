@@ -101,13 +101,15 @@ def validate_registry(root: Path, registry_path: Path) -> dict[str, Any]:
             "terminal registry authority drift")
     entries = registry.get("candidates")
     require(isinstance(entries, list), "terminal registry candidates must be a list")
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     normalized: list[dict[str, Any]] = []
     for raw in entries:
         require(isinstance(raw, dict), "terminal registry entry must be an object")
         candidate_id = str(raw.get("candidate_id", ""))
-        require(candidate_id not in seen, f"duplicate terminal candidate: {candidate_id}")
-        seen.add(candidate_id)
+        source_revision = str(raw.get("source_revision", ""))
+        identity = (source_revision, candidate_id)
+        require(identity not in seen, f"duplicate terminal candidate identity: {source_revision}:{candidate_id}")
+        seen.add(identity)
         rel = Path(str(raw.get("terminal_path", "")))
         require(not rel.is_absolute() and ".." not in rel.parts,
                 f"unsafe terminal path: {candidate_id}")
@@ -130,6 +132,15 @@ def validate_registry(root: Path, registry_path: Path) -> dict[str, Any]:
         "authority": registry["authority"],
         "terminal_candidates": sorted(normalized, key=lambda item: item["candidate_id"]),
     }
+
+
+def find_terminal(result: dict[str, Any], candidate_id: str,
+                  source_revision: str) -> dict[str, Any] | None:
+    return next((
+        item for item in result["terminal_candidates"]
+        if item["candidate_id"] == candidate_id
+        and item["source_revision"] == source_revision
+    ), None)
 
 
 def self_test() -> None:
@@ -179,7 +190,10 @@ def self_test() -> None:
             }],
         }), encoding="utf-8")
         result = validate_registry(root, DEFAULT_REGISTRY)
-        assert result["terminal_candidates"][0]["candidate_id"] == "deadbeef0000"
+        assert find_terminal(result, "deadbeef0000", "a" * 40) is not None
+        # Candidate IDs are tuning-only hashes. A new source revision with the
+        # same tuning is a distinct candidate lineage and must remain eligible.
+        assert find_terminal(result, "deadbeef0000", "b" * 40) is None
         broken = load_object(evidence / "terminal.json")
         broken["qualification"]["next_gate"] = "validation-grade-blind"
         (evidence / "terminal.json").write_text(json.dumps(broken), encoding="utf-8")
@@ -197,6 +211,7 @@ def main() -> int:
     parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--assert-not-terminal")
+    parser.add_argument("--source-revision")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -207,8 +222,10 @@ def main() -> int:
     result = validate_registry(Path("."), args.registry)
     if args.assert_not_terminal:
         candidate_id = str(args.assert_not_terminal)
-        item = next((item for item in result["terminal_candidates"]
-                     if item["candidate_id"] == candidate_id), None)
+        source_revision = str(args.source_revision or "")
+        if SOURCE_SHA.fullmatch(source_revision) is None:
+            parser.error("--source-revision is required with --assert-not-terminal")
+        item = find_terminal(result, candidate_id, source_revision)
         if item is not None:
             print(json.dumps({
                 "decision": "TERMINAL_CANDIDATE_REJECTED",
@@ -218,6 +235,7 @@ def main() -> int:
         print(json.dumps({
             "decision": "CANDIDATE_NOT_TERMINAL",
             "candidate_id": candidate_id,
+            "source_revision": source_revision,
         }, sort_keys=True))
         return 0
 

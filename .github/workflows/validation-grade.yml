@@ -190,7 +190,9 @@ jobs:
           cp "$search" "$root/search-space.json"
           candidate_id=$(jq -r .candidate_id "$root/resolved.json")
           python3 .github/program/acoustic_terminal_registry.py --check >/dev/null
-          python3 .github/program/acoustic_terminal_registry.py --assert-not-terminal "$candidate_id"
+          python3 .github/program/acoustic_terminal_registry.py \
+            --assert-not-terminal "$candidate_id" \
+            --source-revision "$SOURCE_SHA"
           echo 'enabled=true' >> "$GITHUB_OUTPUT"
           echo "candidate_id=$candidate_id" >> "$GITHUB_OUTPUT"
       - name: Upload resolved acoustic candidate evidence

@@ -127,7 +127,29 @@ jobs:
           assert binding['required_count'] == 3
           assert binding['pool_seeds'] == [91123, 92123, 93123, 94123, 95123]
           assert binding['qualification_limit'] == 1
-          assert not Path(binding['authority_lock_path']).exists(), 'candidate lock must not be committed in contract PR'
+          lock = Path(binding['authority_lock_path'])
+          if lock.exists():
+              import subprocess
+              validated = subprocess.run([
+                  'python3',
+                  '.github/research/continuous-optimization/source_candidate_authority_v2.py',
+                  '--validate-lock',
+                  '--candidate-contract',
+                  '.github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json',
+                  '--authority-lock', str(lock),
+                  '--policy',
+                  '.github/research/continuous-optimization/source-candidate-authority-v2.json',
+              ], check=True, text=True, capture_output=True)
+              result = json.loads(validated.stdout)
+              assert result['result'] == 'PASS'
+              assert result['selected_seeds'] == [91123, 92123, 93123]
+              record = json.loads(Path(
+                  'docs/program/iterations/I010-source-authority-v2-result.json'
+              ).read_text())
+              assert record['decision'] == 'BASELINE_QUALIFIED_AUTHORITY_LOCK'
+              assert record['candidate_id'] == binding['candidate_id']
+              assert record['authority_lock_sha256'] == result['authority_lock_sha256']
+              assert record['selected_seeds'] == result['selected_seeds']
           workflow = Path(binding['execution_workflow']).read_text()
           assert 'workflow_dispatch:' in workflow
           assert '\n  pull_request:' in workflow

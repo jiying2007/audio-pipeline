@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: source-candidate-v2-vad-pre-ns-local-observation-v1
@@ -23,6 +24,25 @@ jobs:
   contract:
     runs-on: ubuntu-latest
     steps:
+      - name: Enforce one-shot workflow-dispatch budget
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_FILE: research-source-candidate-v2-vad-pre-ns-local-observation-v1.yml
+        run: |
+          set -euo pipefail
+          prior_count="$(
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/runs?event=workflow_dispatch&per_page=100" \
+            | jq --argjson current "$GITHUB_RUN_ID" \
+                '[.workflow_runs[] | select(.id != $current)] | length'
+          )"
+          test "$prior_count" -eq 0 || {
+            echo "one-shot candidate budget already has a prior workflow_dispatch run; refusing replay" >&2
+            exit 3
+          }
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Validate frozen candidate contract and test-only tooling
         run: |

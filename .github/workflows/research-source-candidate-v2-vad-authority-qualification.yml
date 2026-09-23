@@ -1,0 +1,144 @@
+name: Research Source Candidate v2 VAD Authority Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_contract:
+        description: Repo-relative schema-v2 VAD source candidate contract
+        required: true
+        type: string
+        default: .github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-candidate-v2-vad-authority-${{ inputs.candidate_contract }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout qualification infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          path: infra
+
+      - name: Validate authority-v2 tooling and contract
+        env:
+          CANDIDATE_CONTRACT: ${{ inputs.candidate_contract }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          python3 infra/.github/research/continuous-optimization/source_candidate_authority_v2.py --self-test
+          python3 infra/.github/research/continuous-optimization/source_candidate_authority_v2.py \
+            --describe-contract \
+            --candidate-contract "infra/$CANDIDATE_CONTRACT" \
+            --policy infra/.github/research/continuous-optimization/source-candidate-authority-v2.json \
+            > /tmp/authority-binding.json
+          test "$(jq -r .qualification_profile /tmp/authority-binding.json)" = vad-stage
+          test "$(jq -r .baseline_executable_target /tmp/authority-binding.json)" = ap_process_pcm
+          test "$(jq -r .qualification_limit /tmp/authority-binding.json)" = 1
+          source_sha=$(jq -r .source_base_sha /tmp/authority-binding.json)
+          git -C infra cat-file -e "$source_sha^{commit}"
+          git -C infra merge-base --is-ancestor "$source_sha" HEAD
+          echo "SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+
+      - name: Checkout exact source base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
+          path: source
+
+      - name: Build exact baseline processor
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git -C source status --porcelain=v1)"
+          cmake -S source -B source/build-authority -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$SOURCE_SHA"
+          cmake --build source/build-authority --target ap_process_pcm ap_build_info_dump --parallel
+          mkdir -p authority-out
+          sha256sum source/build-authority/ap_process_pcm | tee authority-out/baseline-processor.sha256
+          source/build-authority/ap_build_info_dump > authority-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > authority-out/compiler.txt
+
+      - name: Generate preregistered baseline authority pool
+        env:
+          CANDIDATE_CONTRACT: ${{ inputs.candidate_contract }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          contract = json.loads(Path('infra/' + __import__('os').environ['CANDIDATE_CONTRACT']).read_text())
+          q = contract['baseline_authority_qualification_v2']
+          generator = q['generator']
+          root = Path('/tmp/ap-source-authority-v2')
+          root.mkdir(parents=True, exist_ok=True)
+          paths = []
+          for seed in q['pool_seeds']:
+              out = root / str(seed)
+              cmd = [
+                  'python3', str(Path('source') / generator['path']),
+                  '--output', str(out), '--seed', str(seed),
+                  '--seconds', str(generator['seconds']), *generator['extra_args'],
+              ]
+              subprocess.run(cmd, check=True)
+              paths.append(str(out / 'corpus.json'))
+          Path('authority-out/pool-corpora.txt').write_text('\n'.join(paths) + '\n')
+          PY
+
+      - name: Qualify baseline-only authority
+        env:
+          CANDIDATE_CONTRACT: ${{ inputs.candidate_contract }}
+        run: |
+          set -euo pipefail
+          mapfile -t corpora < authority-out/pool-corpora.txt
+          args=()
+          for corpus in "${corpora[@]}"; do args+=(--pool-corpus "$corpus"); done
+          python3 infra/.github/research/continuous-optimization/source_candidate_authority_v2.py \
+            --baseline-executable source/build-authority/ap_process_pcm \
+            "${args[@]}" \
+            --candidate-contract "infra/$CANDIDATE_CONTRACT" \
+            --policy infra/.github/research/continuous-optimization/source-candidate-authority-v2.json \
+            --output authority-out/qualification-result.json \
+            | tee authority-out/qualification-summary.txt
+          decision=$(jq -r .decision authority-out/qualification-result.json)
+          if [ "$decision" = BASELINE_QUALIFIED_AUTHORITY_LOCK ]; then
+            cp authority-out/qualification-result.json authority-out/authority-lock.json
+          fi
+          printf '%s\n' "$GITHUB_SHA" > authority-out/qualification-infra-revision.txt
+          printf '%s\n' "$SOURCE_SHA" > authority-out/source-base-revision.txt
+
+      - name: Seal authority evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          find authority-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > authority-out/SHA256SUMS
+
+      - name: Upload baseline authority evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: source-candidate-v2-vad-authority-${{ github.run_id }}
+          path: authority-out/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Enforce qualified lock before candidate execution can be considered
+        run: |
+          set -euo pipefail
+          test -f authority-out/authority-lock.json || {
+            echo 'authority incomplete: candidate execution remains forbidden' >&2
+            exit 2
+          }
+          test "$(jq -r .candidate_execution_allowed authority-out/authority-lock.json)" = true
+          test "$(jq -r .candidate_budget_consumed authority-out/authority-lock.json)" = false
+          test "$(jq -r .candidate_feedback_used authority-out/authority-lock.json)" = false

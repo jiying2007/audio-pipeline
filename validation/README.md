@@ -113,6 +113,14 @@ Public relative qualification has three machine-readable outcomes:
 This prevents stale absolute thresholds from being mistaken for candidate-specific
 evidence while still forbidding public data from tuning or selecting a new candidate.
 
+Terminal acoustic candidates are recorded in `.github/program/acoustic_terminal_registry.json`.
+Every entry binds a candidate ID and source revision to an immutable terminal evidence
+record under `docs/program/evidence/`. Candidate-mode `Validation Grade` checks this
+registry immediately after resolving the frozen Audio Quality artifact and fails closed
+before any public replay when the candidate is terminal. Terminal candidates cannot be
+retried through visible/blind promotion, target/HIL, Product Certification, or shipping;
+a future attempt requires a distinct frozen candidate identity and lineage.
+
 Candidate mode is intentionally limited to visible `validation-grade` execution and
 runs on GitHub-hosted infrastructure. It bootstraps the same hash-bound Full public
 cache contract used by hosted blind qualification, then replays the exact frozen tuning

@@ -28,6 +28,7 @@ jobs:
           path: infra
 
       - name: Validate authority-v2 tooling and contract
+        id: binding
         env:
           CANDIDATE_CONTRACT: ${{ inputs.candidate_contract }}
         run: |
@@ -46,11 +47,12 @@ jobs:
           git -C infra cat-file -e "$source_sha^{commit}"
           git -C infra merge-base --is-ancestor "$source_sha" HEAD
           echo "SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
 
       - name: Checkout exact source base
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ env.SOURCE_SHA }}
+          ref: ${{ steps.binding.outputs.source_sha }}
           fetch-depth: 0
           path: source
 

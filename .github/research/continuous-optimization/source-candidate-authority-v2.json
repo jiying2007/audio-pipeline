@@ -9,7 +9,8 @@
     "closed_candidates": [
       "vad-confidence-tiered-hold-v1",
       "agc-error-adaptive-release-v1",
-      "vad-strong-origin-bounded-hysteresis-v1"
+      "vad-strong-origin-bounded-hysteresis-v1",
+      "vad-pre-ns-local-observation-v1"
     ]
   },
   "prerequisites": {

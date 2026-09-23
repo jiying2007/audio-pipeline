@@ -111,6 +111,36 @@ jobs:
           python3 .github/program/acoustic_terminal_registry.py --self-test
           python3 .github/program/acoustic_terminal_registry.py --check
           python3 tests/validation/i010_ns_vad_observation.py --self-test
+          python3 tests/validation/i010_apply_vad_pre_ns_candidate.py --self-test
+          python3 tests/validation/i010_vad_pre_ns_candidate.py --self-test
+          python3 .github/research/continuous-optimization/source_candidate_authority_v2.py --self-test
+          python3 .github/research/continuous-optimization/source_candidate_authority_v2.py \
+            --describe-contract \
+            --candidate-contract .github/research/continuous-optimization/source-candidates/vad-pre-ns-local-observation-v1.json \
+            --policy .github/research/continuous-optimization/source-candidate-authority-v2.json >/tmp/i010-v2-contract.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          binding = json.loads(Path('/tmp/i010-v2-contract.json').read_text())
+          assert binding['candidate_id'] == 'vad-pre-ns-local-observation-v1'
+          assert binding['qualification_profile'] == 'vad-stage'
+          assert binding['required_count'] == 3
+          assert binding['pool_seeds'] == [91123, 92123, 93123, 94123, 95123]
+          assert binding['qualification_limit'] == 1
+          assert not Path(binding['authority_lock_path']).exists(), 'candidate lock must not be committed in contract PR'
+          workflow = Path(binding['execution_workflow']).read_text()
+          assert 'workflow_dispatch:' in workflow
+          assert '\n  pull_request:' in workflow
+          assert '\n  push:' not in workflow
+          assert 'research-source-candidate-v2-preflight.yml' in workflow
+          assert "if: github.event_name == 'workflow_dispatch'" in workflow
+          assert "needs.authority.outputs.candidate_execution_allowed == 'true'" in workflow
+          qualifier = Path('.github/workflows/research-vad-source-authority-v2-qualification.yml').read_text()
+          assert 'workflow_dispatch:' in qualifier
+          assert '\n  pull_request:' not in qualifier
+          assert 'baseline-executable source/build-authority/ap_process_pcm' in qualifier
+          assert 'i010_apply_vad_pre_ns_candidate.py' not in qualifier
+          PY
           python3 -m json.tool .github/research/evidence-index.json >/dev/null
           python3 -m json.tool .github/research/qualification-policy.json >/dev/null
           python3 scripts/docs_consistency.py

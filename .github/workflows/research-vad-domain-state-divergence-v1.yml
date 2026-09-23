@@ -69,6 +69,58 @@ jobs:
           PY
           git cat-file -e "23e1d829e690d33a7ba56575ed83d1ac09809c07^{commit}"
 
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-domain-state-divergence-contract
+
+      - name: Compile test-only mirror probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-vad-domain-contract \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF \
+            -DAP_STRICT_WARNINGS=ON
+          cmake --build build-vad-domain-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-vad-domain-contract/generated \
+            tests/validation/vad_domain_state_divergence_probe.c \
+            build-vad-domain-contract/libaudio_pipeline.a -lm \
+            -o build-vad-domain-contract/vad_domain_state_divergence_probe
+
+      - name: Smoke public-versus-mirror identity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import random
+          import struct
+          from pathlib import Path
+          rng = random.Random(39101)
+          frames = 40
+          samples = []
+          labels = []
+          for frame in range(frames):
+              speech = 1 if 10 <= frame < 30 else 0
+              labels.append(speech)
+              for i in range(160):
+                  noise = rng.randint(-900, 900)
+                  tone = int(2200 * __import__('math').sin(
+                      2.0 * __import__('math').pi * 223.0 * (frame * 160 + i) / 16000.0
+                  )) if speech else 0
+                  samples.append(max(-32768, min(32767, noise + tone)))
+          Path('/tmp/vad-domain-smoke.pcm').write_bytes(
+              struct.pack('<' + 'h' * len(samples), *samples)
+          )
+          Path('/tmp/vad-domain-smoke.labels').write_text(
+              ''.join(f'{x}\n' for x in labels)
+          )
+          PY
+          build-vad-domain-contract/vad_domain_state_divergence_probe \
+            /tmp/vad-domain-smoke.pcm \
+            /tmp/vad-domain-smoke.labels \
+            /tmp/vad-domain-smoke.json
+          test "$(jq -r .mirror_probability_mismatch_frames /tmp/vad-domain-smoke.json)" = 0
+          test "$(jq -r .mirror_active_mismatch_frames /tmp/vad-domain-smoke.json)" = 0
+
   diagnose:
     needs: contract
     if: github.event_name == 'workflow_dispatch'

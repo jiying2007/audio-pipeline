@@ -16,6 +16,7 @@ The release-neutral repository-side ground-truth quality gate is implemented by:
 - `tests/validation/audio-quality-pr-v1.json`
 - `tests/validation/audio-quality-ns-floor-call-v1.json`
 - `tests/validation/audio-quality-ns-floor-call-v2.json`
+- `tests/validation/audio-quality-ns-floor-call-v3.json`
 - `.github/workflows/audio-quality-evaluation.yml`
 
 These wrappers reuse the canonical evaluator and tuning engines under
@@ -143,6 +144,17 @@ Development/Validation/Shadow quality partitions; no Full160 public metric,
 failed case, or blind evidence is fed back into the objective. A selected v2
 candidate starts a new frozen lineage and must traverse public-relative,
 blind, target/HIL and Product Certification gates independently.
+
+Formal v2 run `35824929544` selected the lower-boundary point
+`ns_floor=0.06` as candidate `ed27f3c59a63`. Because v2 deliberately
+preserved the v1 quality axis after removing terminal `0.07`, that selected
+point had only the higher `0.08` neighbor inside the scale-sensitive search.
+Before consuming public Full160 qualification, v3 performs one bounded
+boundary confirmation by adding the already runtime-safe `0.05` value from
+the generic `call-v1` axis. V3 changes no baseline, objective metric, weight,
+scale or regression limit and still excludes terminal `0.07`; its axis is
+`0.05/0.06/0.08/0.10/0.12/0.14`. This is search-geometry completion, not
+feedback from public qualification.
 
 AGC/limiter searches need an additional scale-sensitive check. The generic
 regression objective can improve attenuation-oriented metrics while lowering the

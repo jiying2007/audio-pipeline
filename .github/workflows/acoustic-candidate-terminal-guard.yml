@@ -15,7 +15,9 @@ on:
       - '.github/program/candidate_pipeline_inject.h'
       - '.github/program/candidate_bench.c'
       - '.github/program/candidate_alsa_runtime_duplex.c'
-      - 'docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/**'
+      - '.github/program/acoustic_terminal_registry.py'
+      - '.github/program/acoustic_terminal_registry.json'
+      - 'docs/program/evidence/acoustic-candidate-*/**'
   push:
     branches: [main]
     paths:
@@ -31,7 +33,9 @@ on:
       - '.github/program/candidate_pipeline_inject.h'
       - '.github/program/candidate_bench.c'
       - '.github/program/candidate_alsa_runtime_duplex.c'
-      - 'docs/program/evidence/acoustic-candidate-4a6a408bf0e3/hosted-blind-run-34802976289/**'
+      - '.github/program/acoustic_terminal_registry.py'
+      - '.github/program/acoustic_terminal_registry.json'
+      - 'docs/program/evidence/acoustic-candidate-*/**'
 
 permissions:
   contents: read
@@ -208,6 +212,13 @@ jobs:
               'physical_authority': 'NONE',
           }, sort_keys=True))
           PY
+
+      - name: Validate acoustic terminal registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/program/acoustic_terminal_registry.py --self-test
+          python3 .github/program/acoustic_terminal_registry.py --check
 
       - name: Enforce generic quality evaluator is decoupled from rejected candidate
         shell: bash

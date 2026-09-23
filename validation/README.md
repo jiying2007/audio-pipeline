@@ -127,6 +127,24 @@ For the frozen NS candidate selected by Audio Quality run `35729155489`, the bou
 artifact is `10695375199`; candidate `0d5f52491863` is
 `aec_mu=0.22, ns_floor=0.07, agc_target_dbfs=-20, limiter_dbfs=-2`. This evidence is
 still non-shipping and cannot mutate runtime defaults.
+## Terminal acoustic candidate identities
+
+Terminal public/blind qualification outcomes are registered in
+`docs/program/evidence/acoustic-terminal-registry.json`. The registry key is the pair
+`source_revision + candidate_id`, not tuning alone. `Validation Grade` validates the
+registry and rejects a matching terminal identity before any new public replay. A future
+source revision may produce the same tuning value only through a new frozen candidate
+lineage.
+
+Candidate `0d5f52491863` on source
+`f19d7ac928aa9db6c23b122faa63e4fcfe52e1a1` is terminal
+`PUBLIC_RELATIVE_REJECTED_NON_SHIPPING` from run `35815591807`. Its pre-frozen
+`call-v1` public relative gate found one case-delta excursion:
+`compact-ns-008` VAD false-positive rate changed from `0.4868421053` to
+`0.5614035088`, delta `+0.0745614035` against the frozen maximum `+0.05`.
+Blind, target-resource, SSC305 HIL/soak, Product Certification and shipping promotion
+are therefore not admitted for this exact identity.
+
 ## Public validation profiles
 
 Baseline/manual Compact and Full validation continue to use the isolated self-hosted

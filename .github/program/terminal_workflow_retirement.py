@@ -994,6 +994,7 @@ def self_test() -> None:
         (".github/workflows/i009-echo-normalized-root-cause.yml", "I009"),
         (".github/workflows/i009-residual-echo-rescue-root-cause.yml", "I009"),
         (".github/workflows/i009-closure.yml", "I009"),
+        (".github/workflows/i010-ns-vad-observation-domain.yml", "I010"),
         (".github/workflows/p002-candidate-zero-audit.yml", "P002"),
         (".github/workflows/p002-closure.yml", "P002"),
     ]

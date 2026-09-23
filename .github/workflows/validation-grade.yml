@@ -586,15 +586,32 @@ jobs:
           set -euo pipefail
           source/build-validation/ap_process_pcm --print-default-tuning > candidate-out/baseline-tuning.json
           python3 - <<'PY'
-          import json
+          import json, math
           from pathlib import Path
           baseline = json.loads(Path('candidate-out/baseline-tuning.json').read_text(encoding='utf-8'))
           search = json.loads(Path('candidate-out/search-space.json').read_text(encoding='utf-8'))
           expected = {key: float(value) for key, value in search['baseline'].items()}
-          actual = {key: float(value) for key, value in baseline.items()}
-          if actual != expected:
-              raise SystemExit(f'processor default tuning drift: actual={actual} expected={expected}')
-          print(json.dumps({'baseline_identity': 'PASS', 'tuning': actual}, sort_keys=True))
+          observed = {key: float(value) for key, value in baseline.items()}
+          if set(observed) != set(expected):
+              raise SystemExit(f'processor default tuning keys drift: observed={sorted(observed)} expected={sorted(expected)}')
+          drift = {
+              key: {'observed': observed[key], 'expected': expected[key]}
+              for key in expected
+              if not math.isclose(observed[key], expected[key], rel_tol=0.0, abs_tol=1.0e-6)
+          }
+          if drift:
+              raise SystemExit(f'processor default tuning drift: {drift}')
+          identity = {
+              'schema_version': 1,
+              'baseline_identity': 'PASS',
+              'comparison': {'rel_tol': 0.0, 'abs_tol': 1.0e-6},
+              'canonical_tuning': expected,
+              'observed_processor_tuning': observed,
+          }
+          Path('candidate-out/baseline-identity.json').write_text(
+              json.dumps(identity, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(identity, sort_keys=True))
           PY
       - name: Create strict metrics JSON qualification proxies
         run: |

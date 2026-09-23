@@ -61,6 +61,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
         "vad-confidence-tiered-hold-v1",
         "agc-error-adaptive-release-v1",
         "vad-strong-origin-bounded-hysteresis-v1",
+        "vad-pre-ns-local-observation-v1",
     }
     if not required_closed.issubset(set(closed)):
         raise ValueError("authority-v2 must preserve known terminal candidate closures")

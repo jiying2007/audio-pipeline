@@ -1,0 +1,19 @@
+diff --git a/src/core/ap_pipeline.c b/src/core/ap_pipeline.c
+index 7fc7907..0e43904 100644
+--- a/src/core/ap_pipeline.c
++++ b/src/core/ap_pipeline.c
+@@ -657,8 +657,13 @@ ap_status_t ap_pipeline_process_capture(ap_pipeline_t *pipeline,
+ #if AP_BUILD_STAGE_VAD
+     if (AP_HAS_STAGE(pipeline, AP_STAGE_VAD)) {
+         ap_vad_result_t vad_result;
++        const float *vad_local_samples = pipeline->processed;
++#if AP_BUILD_STAGE_NS
++        if (AP_HAS_STAGE(pipeline, AP_STAGE_NS))
++            vad_local_samples = pipeline->aec_out;
++#endif
+         ap_vad_process(&pipeline->vad,
+-                       pipeline->processed,
++                       vad_local_samples,
+                        pipeline->internal_frame,
+                        ns_speech_probability,
+                        AP_HAS_STAGE(pipeline, AP_STAGE_NS),

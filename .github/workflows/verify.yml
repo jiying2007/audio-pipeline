@@ -110,6 +110,7 @@ jobs:
           python3 .github/research/continuous-optimization/hosted-validation/public_candidate_pair.py --source-root . --self-test
           python3 .github/program/acoustic_terminal_registry.py --self-test
           python3 .github/program/acoustic_terminal_registry.py --check
+          python3 tests/validation/i010_ns_vad_observation.py --self-test
           python3 -m json.tool .github/research/evidence-index.json >/dev/null
           python3 -m json.tool .github/research/qualification-policy.json >/dev/null
           python3 scripts/docs_consistency.py

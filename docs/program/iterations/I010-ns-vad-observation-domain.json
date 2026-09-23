@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "iteration_id": "I010",
+  "phase": "ns-vad-observation-domain-root-cause",
+  "root_cause_id": "ns-floor-post-gain-vad-local-domain-coupling",
+  "base_sha": "0db5806513d0a538bab696cf2761e1839af334cc",
+  "authority": "CANDIDATE_ZERO_ROOT_CAUSE_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "fresh_seeds": [
+    48123,
+    58123,
+    68123
+  ],
+  "data_role": "fresh-development-root-cause-only",
+  "fixed_runtime_points": {
+    "shipping_ns_floor": 0.12,
+    "diagnostic_terminal_ns_floor": 0.05,
+    "agc_target_dbfs": -20,
+    "limiter_dbfs": -2
+  },
+  "source_hypothesis": {
+    "ns_upstream_probability_domain": "computed inside ap_ns_process before floor_gain is applied to spectral output",
+    "vad_local_waveform_domain": "post-NS and post-AGC waveform passed as samples to ap_vad_process",
+    "predicted_structure": "ns_floor may change VAD local RMS/crest/noise-ratio evidence without changing NS upstream speech_probability"
+  },
+  "cross_route_probe": {
+    "paths": [
+      "baseline waveform + baseline upstream probability",
+      "diagnostic waveform + diagnostic upstream probability",
+      "diagnostic waveform + baseline upstream probability",
+      "baseline waveform + diagnostic upstream probability"
+    ],
+    "no_source_patch": true,
+    "public_module_api_only": true,
+    "parameter_search": false,
+    "threshold_tuning": false
+  },
+  "scenarios": [
+    "stationary-noise-only",
+    "nonstationary-noise-only",
+    "speech-plus-noise",
+    "low-level-speech-plus-noise"
+  ],
+  "decision_contract": {
+    "LOCAL_WAVEFORM_COUPLING_CONFIRMED_REVIEW_REQUIRED": "NS upstream probabilities remain numerically identical across floors, local post-NS/AGC waveforms differ, and at least one VAD probability or active trace follows waveform identity under cross-route substitution.",
+    "NO_OBSERVED_LOCAL_COUPLING_REVIEW_REQUIRED": "Inputs are valid and NS upstream probabilities remain invariant, but no VAD trace divergence is exercised on any fresh seed.",
+    "UPSTREAM_PROBABILITY_FLOOR_DEPENDENCE_REVIEW_REQUIRED": "Changing only floor_gain changes NS upstream speech_probability, contradicting the source-level independence hypothesis.",
+    "INPUT_INVALID_REVIEW_REQUIRED": "Probe/module/source/fresh-seed preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_ns": false,
+    "may_modify_shipping_vad": false,
+    "may_modify_shipping_agc": false,
+    "may_select_candidate": false,
+    "may_tune_thresholds": false,
+    "may_consume_confirmation": false,
+    "may_promote_release": false,
+    "may_claim_hil": false,
+    "may_claim_product_certification": false
+  },
+  "reopening_rule": "Any source candidate after I010 requires a separately reviewed hypothesis, new candidate identity, preregistered fresh authority, and cannot reuse public Full160 failures as candidate-value search data."
+}

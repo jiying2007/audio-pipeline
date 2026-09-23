@@ -15,6 +15,7 @@ The release-neutral repository-side ground-truth quality gate is implemented by:
 - `tests/validation/validation-audio-quality-development.json`
 - `tests/validation/audio-quality-pr-v1.json`
 - `tests/validation/audio-quality-ns-floor-call-v1.json`
+- `tests/validation/audio-quality-ns-floor-call-v2.json`
 - `.github/workflows/audio-quality-evaluation.yml`
 
 These wrappers reuse the canonical evaluator and tuning engines under
@@ -130,6 +131,18 @@ It deliberately reuses the quality objective containing
 preservation as well as SI-SDR, interference, AEC, VAD and clipping constraints.
 Its purpose is candidate confirmation, not mutation of runtime or shipping
 defaults.
+
+After candidate `0d5f52491863` / `ns_floor=0.07` was terminally rejected by
+public-relative qualification run `35815591807`, the next repository-side
+selection lane is `audio-quality-ns-floor-call-v2.json`. V2 is deliberately
+**terminal-aware, not public-metric-tuned**: it removes only the registered
+terminal `0.07` point and keeps the v1 baseline, quality metrics, weights,
+scales and regression limits unchanged. Its NS axis is
+`0.06/0.08/0.10/0.12/0.14`. Selection still uses only the independent
+Development/Validation/Shadow quality partitions; no Full160 public metric,
+failed case, or blind evidence is fed back into the objective. A selected v2
+candidate starts a new frozen lineage and must traverse public-relative,
+blind, target/HIL and Product Certification gates independently.
 
 AGC/limiter searches need an additional scale-sensitive check. The generic
 regression objective can improve attenuation-oriented metrics while lowering the

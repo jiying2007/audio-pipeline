@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "investigation_id": "vad-noise-reference-proxy-v1",
+  "status": "CLOSED_DIAGNOSTIC_REVIEWED",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "117b71de3eaed802a6947ad633c567cece8920fb",
+  "automated_decision": "NOISE_REFERENCE_PROXY_SEPARABLE_REVIEW_REQUIRED",
+  "reviewed_decision": "FLOOR_INVARIANT_PROXY_WEAKLY_SEPARABLE_NO_CANDIDATE",
+  "authoritative_execution": {
+    "workflow_run_id": 35884139615,
+    "workflow_conclusion": "success",
+    "artifact_id": 10762012147,
+    "artifact_name": "i011-vad-noise-reference-proxy-35884139615",
+    "artifact_digest": "sha256:3202929ba25b916b4df42a259610ac19d3c87abbddb69a60d511fcfbf8375db5",
+    "artifact_size_bytes": 47866,
+    "diagnostic_infra_revision": "6c77e157bb96eac0541d0aa180ba06effbbb76e6",
+    "internal_sha256s_verified": 8,
+    "result_sha256": "90bbfe31ac935ee8cfa82e2565962386274b0ed9b1bcf4d114d9191ffb5ccb45",
+    "probe_sha256": "c2cf62983cc4f2e801c3e15342b1122561ba212f471e473da9dbc801cbd3f394",
+    "contract_sha256": "a0950d6f7921c4062f52a571de7adec76defca42fa5d322e81eb2ea84aa02fa2"
+  },
+  "fresh_seeds": [
+    101123,
+    102123,
+    103123
+  ],
+  "floor_invariance": {
+    "max_noise_reference_delta_db": 0.0,
+    "max_proxy_delta_db": 0.0,
+    "conclusion": "CONFIRMED_ON_FRESH_DIAGNOSTIC_SEEDS"
+  },
+  "separation": {
+    "proxy_auc_range": [
+      0.58046660631,
+      0.586486524131
+    ],
+    "speech_minus_noise_mean_gap_db_range": [
+      2.21831479,
+      2.26592168
+    ],
+    "speech_p10_minus_noise_p90_gap_db_range": [
+      -7.86216164,
+      -7.74259567
+    ],
+    "interpretation": "The same-domain proxy is directionally informative but only weakly above chance and has substantial speech/noise tail overlap. It is not sufficient evidence for a source candidate by itself."
+  },
+  "budget": {
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0
+  },
+  "reviewed_conclusion": {
+    "same_domain_reference_direction_supported": true,
+    "standalone_proxy_candidate_supported": false,
+    "threshold_tuning_authorized": false,
+    "parameter_search_authorized": false,
+    "source_candidate_authorized": false,
+    "reuse_i010_locked_authority_authorized": false,
+    "next_diagnostic": "Evaluate only a fixed counterfactual that reuses existing shipping VAD constants and existing NS speech_probability semantics while substituting the local level/noise ratio source; no parameter search or new thresholds."
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "source_candidate_selected": false,
+    "confirmation_consumed": false,
+    "blind_authority": false,
+    "target_hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

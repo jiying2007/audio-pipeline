@@ -130,11 +130,14 @@ jobs:
           assert not Path(binding['authority_lock_path']).exists(), 'candidate lock must not be committed in contract PR'
           workflow = Path(binding['execution_workflow']).read_text()
           assert 'workflow_dispatch:' in workflow
-          assert '\n  pull_request:' not in workflow
+          assert '\n  pull_request:' in workflow
           assert '\n  push:' not in workflow
           assert 'research-source-candidate-v2-preflight.yml' in workflow
-          qualifier = Path('.github/workflows/research-source-candidate-v2-vad-authority-qualification.yml').read_text()
+          assert "if: github.event_name == 'workflow_dispatch'" in workflow
+          assert "needs.authority.outputs.candidate_execution_allowed == 'true'" in workflow
+          qualifier = Path('.github/workflows/research-vad-source-authority-v2-qualification.yml').read_text()
           assert 'workflow_dispatch:' in qualifier
+          assert '\n  pull_request:' not in qualifier
           assert 'baseline-executable source/build-authority/ap_process_pcm' in qualifier
           assert 'i010_apply_vad_pre_ns_candidate.py' not in qualifier
           PY

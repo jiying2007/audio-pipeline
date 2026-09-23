@@ -117,7 +117,7 @@ def validate_execution_workflow(
         if re.search(rf"(?m)^  {forbidden}:", triggers):
             raise ValueError(f"{workflow_path} cannot expose trigger: {forbidden}")
 
-    if not re.search(r"(?m)^  actions: read\\s*$", text):
+    if not re.search(r"(?m)^  actions: read\s*$", text):
         raise ValueError(f"{workflow_path} must grant actions: read for one-shot dispatch guard")
 
     jobs = job_blocks(text)

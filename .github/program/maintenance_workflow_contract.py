@@ -89,6 +89,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-candidate-blind-qualification.yml'),
     Path('.github/workflows/research-source-authority-v2-qualification.yml'),
     Path('.github/workflows/research-i011-ns-noise-reference-scale.yml'),
+    Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
 )
 
 PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (

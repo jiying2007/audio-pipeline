@@ -1,0 +1,143 @@
+name: Research I012 NS Spectral Post-SNR
+
+on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v1.json'
+      - 'tests/validation/i012_ns_spectral_post_snr_probe.c'
+      - 'tests/validation/i012_ns_spectral_post_snr.py'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - '.github/workflows/research-i012-ns-spectral-post-snr.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-i012-ns-spectral-post-snr-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v1.json
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout diagnostic infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          path: infra
+
+      - name: Validate candidate-zero contract and evaluator
+        run: |
+          set -euo pipefail
+          python3 -m py_compile infra/tests/validation/i012_ns_spectral_post_snr.py
+          python3 infra/tests/validation/i012_ns_spectral_post_snr.py --self-test
+          python3 -m json.tool "infra/$CONTRACT" >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c = json.loads(Path('infra/.github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v1.json').read_text())
+          assert c['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
+          assert c['candidate_limit'] == 0
+          assert c['confirmation_limit'] == 0
+          assert c['promotion_allowed'] is False
+          assert c['parameter_search_allowed'] is False
+          assert c['threshold_tuning_allowed'] is False
+          assert c['fresh_seeds'] == [131123, 141123, 151123]
+          PY
+          echo "SOURCE_BASE_SHA=$(jq -r .source_base_sha "infra/$CONTRACT")" >> "$GITHUB_ENV"
+
+      - name: Checkout exact source base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ env.SOURCE_BASE_SHA }}
+          fetch-depth: 0
+          path: source
+
+      - name: Build exact source library
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_BASE_SHA"
+          test -z "$(git -C source status --porcelain=v1)"
+          cmake -S source -B source/build-i012 -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
+          cmake --build source/build-i012 --target audio_pipeline ap_build_info_dump --parallel
+          mkdir -p i012-out
+          source/build-i012/ap_build_info_dump > i012-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > i012-out/compiler.txt
+
+      - name: Build test-only internal spectral probe
+        run: |
+          set -euo pipefail
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror \
+            -Isource/include -Isource/src -Isource/build-i012/generated \
+            infra/tests/validation/i012_ns_spectral_post_snr_probe.c \
+            source/build-i012/libaudio_pipeline.a -lm \
+            -o source/build-i012/i012_ns_spectral_post_snr_probe
+          sha256sum source/build-i012/i012_ns_spectral_post_snr_probe > i012-out/probe.sha256
+
+      - name: Generate preregistered fresh stage corpora
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ap-i012
+          for seed in 131123 141123 151123; do
+            python3 source/validation/tools/build_stage_validation_corpus.py \
+              --output "/tmp/ap-i012/$seed" --seed "$seed" --seconds 6
+          done
+
+      - name: Run candidate-zero spectral information diagnostic
+        run: |
+          set -euo pipefail
+          python3 infra/tests/validation/i012_ns_spectral_post_snr.py \
+            --probe source/build-i012/i012_ns_spectral_post_snr_probe \
+            --contract "infra/$CONTRACT" \
+            --corpus /tmp/ap-i012/131123/corpus.json \
+            --corpus /tmp/ap-i012/141123/corpus.json \
+            --corpus /tmp/ap-i012/151123/corpus.json \
+            --output i012-out/result.json
+          cp "infra/$CONTRACT" i012-out/contract.json
+          printf '%s\n' "$SOURCE_BASE_SHA" > i012-out/source-base-revision.txt
+          printf '%s\n' "$GITHUB_SHA" > i012-out/diagnostic-infra-revision.txt
+
+      - name: Seal I012 evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          find i012-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > i012-out/SHA256SUMS
+
+      - name: Publish I012 summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          path = Path('i012-out/result.json')
+          print('## I012 NS spectral post-SNR')
+          if not path.exists():
+              print('- Result: evidence incomplete')
+              raise SystemExit(0)
+          r = json.loads(path.read_text())
+          s = r['summary']
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Spectral post-SNR AUC: `{s['combined_spectral_snr_auc']:.4f}`")
+          print(f"- Existing upstream probability AUC: `{s['combined_upstream_speech_probability_auc']:.4f}`")
+          print(f"- AUC gain: `{s['combined_auc_gain_over_upstream']:.4f}`")
+          print(f"- Median spectral SNR separation: `{s['spectral_snr_median_separation_db']:.3f} dB`")
+          print(f"- Floor feature max delta: `{s['max_floor_spectral_snr_delta_db']}`")
+          print('- Authority: threshold-free candidate-zero information diagnostic only.')
+          PY
+
+      - name: Upload I012 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i012-ns-spectral-post-snr-${{ github.run_id }}
+          path: i012-out/
+          retention-days: 90
+          if-no-files-found: error

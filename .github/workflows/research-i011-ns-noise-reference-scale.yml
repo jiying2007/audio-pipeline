@@ -1,0 +1,147 @@
+name: Research I011 NS Noise Reference Scale
+
+on:
+  pull_request:
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i011-ns-noise-reference-scale-v1.json'
+      - 'tests/validation/i011_ns_noise_reference_probe.c'
+      - 'tests/validation/i011_ns_noise_reference.py'
+      - 'validation/tools/build_stage_validation_corpus.py'
+      - '.github/workflows/research-i011-ns-noise-reference-scale.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-i011-ns-noise-reference-scale-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/i011-ns-noise-reference-scale-v1.json
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout diagnostic infrastructure
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          path: infra
+
+      - name: Validate candidate-zero contract and evaluator
+        run: |
+          set -euo pipefail
+          python3 -m py_compile infra/tests/validation/i011_ns_noise_reference.py
+          python3 infra/tests/validation/i011_ns_noise_reference.py --self-test
+          python3 -m json.tool "infra/$CONTRACT" >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c = json.loads(Path('infra/.github/research/continuous-optimization/development-v4/i011-ns-noise-reference-scale-v1.json').read_text())
+          assert c['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
+          assert c['candidate_limit'] == 0
+          assert c['confirmation_limit'] == 0
+          assert c['promotion_allowed'] is False
+          assert c['shipping_source_change_allowed'] is False
+          assert c['parameter_search_allowed'] is False
+          assert c['threshold_tuning_allowed'] is False
+          assert c['fresh_seeds'] == [101123, 111123, 121123]
+          assert c['hypothesis']['expected_frame_samples'] == 160
+          assert c['hypothesis']['expected_nfft'] == 512
+          assert c['hypothesis']['expected_bins'] == 257
+          PY
+          echo "SOURCE_BASE_SHA=$(jq -r .source_base_sha "infra/$CONTRACT")" >> "$GITHUB_ENV"
+
+      - name: Checkout exact source base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ env.SOURCE_BASE_SHA }}
+          fetch-depth: 0
+          path: source
+
+      - name: Build exact source public module library
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_BASE_SHA"
+          test -z "$(git -C source status --porcelain=v1)"
+          cmake -S source -B source/build-i011 -DCMAKE_BUILD_TYPE=Release \
+            -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON \
+            -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
+          cmake --build source/build-i011 --target audio_pipeline ap_build_info_dump --parallel
+          mkdir -p i011-out
+          source/build-i011/ap_build_info_dump > i011-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > i011-out/compiler.txt
+
+      - name: Build test-only public-module scale probe
+        run: |
+          set -euo pipefail
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror \
+            -Isource/include -Isource/build-i011/generated \
+            infra/tests/validation/i011_ns_noise_reference_probe.c \
+            source/build-i011/libaudio_pipeline.a -lm \
+            -o source/build-i011/i011_ns_noise_reference_probe
+          sha256sum source/build-i011/i011_ns_noise_reference_probe > i011-out/probe.sha256
+
+      - name: Generate preregistered fresh stage corpora
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ap-i011
+          for seed in 101123 111123 121123; do
+            python3 source/validation/tools/build_stage_validation_corpus.py \
+              --output "/tmp/ap-i011/$seed" --seed "$seed" --seconds 6
+          done
+
+      - name: Run candidate-zero NS noise-reference diagnostic
+        run: |
+          set -euo pipefail
+          python3 infra/tests/validation/i011_ns_noise_reference.py \
+            --probe source/build-i011/i011_ns_noise_reference_probe \
+            --contract "infra/$CONTRACT" \
+            --corpus /tmp/ap-i011/101123/corpus.json \
+            --corpus /tmp/ap-i011/111123/corpus.json \
+            --corpus /tmp/ap-i011/121123/corpus.json \
+            --output i011-out/result.json
+          cp "infra/$CONTRACT" i011-out/contract.json
+          printf '%s\n' "$SOURCE_BASE_SHA" > i011-out/source-base-revision.txt
+          printf '%s\n' "$GITHUB_SHA" > i011-out/diagnostic-infra-revision.txt
+
+      - name: Seal I011 diagnostic evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          find i011-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > i011-out/SHA256SUMS
+
+      - name: Publish I011 summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          path = Path('i011-out/result.json')
+          print('## I011 NS noise-reference scale')
+          if not path.exists():
+              print('- Result: evidence incomplete')
+              raise SystemExit(0)
+          r = json.loads(path.read_text())
+          s = r['summary']
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Legacy stationary median bias: `{s['stationary_legacy_median_bias_db']:.3f} dB`")
+          print(f"- Calibrated stationary median bias: `{s['stationary_calibrated_median_bias_db']:.3f} dB`")
+          print(f"- Calibrated p90 absolute error: `{s['stationary_calibrated_p90_abs_error_db']:.3f} dB`")
+          print(f"- Floor noise metric max delta: `{s['max_floor_noise_metric_delta_db']}`")
+          print(f"- Proxy SNR median separation: `{s['proxy_snr_median_separation_db']:.3f} dB`")
+          print('- Authority: candidate-zero diagnostic only; no source candidate, threshold tuning, shipping/HIL/PQ/release authority.')
+          PY
+
+      - name: Upload I011 diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i011-ns-noise-reference-scale-${{ github.run_id }}
+          path: i011-out/
+          retention-days: 90
+          if-no-files-found: error

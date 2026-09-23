@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i011-ns-noise-reference-scale-v1",
+  "phase": "candidate-zero-noise-reference-calibration",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "117b71de3eaed802a6947ad633c567cece8920fb",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "parameter_search_allowed": false,
+  "threshold_tuning_allowed": false,
+  "fresh_seeds": [101123, 111123, 121123],
+  "generator": {
+    "path": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6
+  },
+  "hypothesis": {
+    "legacy_metric": "NS noise_rms_dbfs averages half-spectrum FFT-bin noise power and divides by nfft^2, so it is not directly comparable to time-domain frame RMS.",
+    "scale_model": "For stationary input with the existing symmetric sine analysis window, reconstructing full-spectrum power and undoing window/zero-padding energy yields a deterministic multiplicative factor 2*bins*nfft/frame_samples.",
+    "expected_frame_samples": 160,
+    "expected_nfft": 512,
+    "expected_bins": 257,
+    "expected_scale_offset_db": 32.16113097315181,
+    "future_use_under_review": "A calibrated pre-suppression NS noise reference may support a same-domain local SNR cue without routing VAD wholesale to the pre-NS waveform."
+  },
+  "diagnostic_gates": {
+    "max_floor_noise_metric_delta_db": 1e-6,
+    "max_floor_speech_probability_delta": 1e-7,
+    "legacy_stationary_bias_must_be_below_db": -20.0,
+    "max_abs_calibrated_stationary_median_bias_db": 3.0,
+    "max_calibrated_stationary_p90_abs_error_db": 5.0
+  },
+  "authority_boundary": {
+    "may_modify_shipping_ns": false,
+    "may_modify_shipping_vad": false,
+    "may_select_source_candidate": false,
+    "may_tune_vad_thresholds": false,
+    "may_consume_candidate_budget": false,
+    "may_consume_confirmation": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Only a supported scale model may justify a separately preregistered candidate-zero same-domain SNR feasibility study. This investigation itself cannot select or authorize a source candidate."
+}

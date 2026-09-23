@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i011-ns-noise-reference-scale-v1",
+  "phase": "candidate-zero-noise-reference-calibration-reviewed",
+  "decision": "NS_NOISE_REFERENCE_SCALE_SUPPORTED_REVIEW_REQUIRED",
+  "source_base_sha": "117b71de3eaed802a6947ad633c567cece8920fb",
+  "authoritative_execution": {
+    "workflow_run_id": 35883487355,
+    "artifact_id": 10762031158,
+    "artifact_name": "i011-ns-noise-reference-scale-35883487355",
+    "artifact_digest": "sha256:7ea31cf85508a2d17b0748a6724d4654f6a7307f3842034f86e58e6bd74d17f7",
+    "artifact_size_bytes": 3917,
+    "result_sha256": "5aca0ec8c2da1940f6ce90eebd502145b8ed640ba40bc6a892fba5852896b45f",
+    "internal_sha256s_verified": 7,
+    "diagnostic_infrastructure_revision": "667bca0bb8a7645cdb81efa14df1bc1886beb69b"
+  },
+  "fresh_authority": {
+    "seeds": [101123, 111123, 121123],
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "parameter_search_performed": false,
+    "threshold_tuning_performed": false
+  },
+  "findings": {
+    "max_floor_noise_metric_delta_db": 0.0,
+    "max_floor_speech_probability_delta": 0.0,
+    "stationary_legacy_median_bias_db": -34.56362345,
+    "stationary_calibrated_median_bias_db": -2.4024906,
+    "stationary_calibrated_p90_abs_error_db": 4.0827255,
+    "expected_scale_offset_db": 32.16113097315181,
+    "max_scale_offset_error_db": 0.0000018268481838390471,
+    "speech_proxy_snr_median_db": 2.72089575,
+    "noise_proxy_snr_median_db": 1.12214285,
+    "proxy_snr_median_separation_db": 1.5987529,
+    "speech_upstream_probability_median": 0.502477169,
+    "noise_upstream_probability_median": 0.493888855
+  },
+  "reviewed_interpretation": {
+    "legacy_noise_rms_dbfs_direct_time_domain_use": "REJECTED_BY_SCALE",
+    "parseval_window_scale_model": "SUPPORTED_FOR_REVIEW",
+    "floor_invariant_noise_reference": true,
+    "same_domain_snr_feasibility_signal": "POSITIVE_BUT_NOT_CANDIDATE_AUTHORITY",
+    "source_candidate_selected": false,
+    "threshold_selected": false,
+    "next_step": "A separately preregistered candidate-zero study may evaluate whether a calibrated pre-suppression local SNR cue preserves NS-isolated recall. It must use new fresh data and cannot reuse I011 as candidate-selection authority."
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "source_candidate_authorized": false,
+    "vad_threshold_tuning_authorized": false,
+    "candidate_budget_consumed": false,
+    "confirmation_consumed": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

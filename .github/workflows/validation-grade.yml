@@ -731,71 +731,22 @@ jobs:
           print(json.dumps({'candidate_validation_result': report['validation_result'], 'violations': report.get('violations', [])}, sort_keys=True))
           PY
           echo "candidate_policy_rc=$rc"
-      - name: Classify paired public qualification
+      - name: Classify paired public relative qualification
         id: classify-public
-        env:
-          SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
-          CANDIDATE_ID: ${{ needs.resolve.outputs.candidate_id }}
         run: |
           set +e
-          python3 - <<'PY'
-          import json, os, sys
-          from pathlib import Path
-
-          baseline = json.loads(Path('candidate-out/baseline-validation-report.json').read_text(encoding='utf-8'))
-          candidate = json.loads(Path('candidate-out/validation-report.json').read_text(encoding='utf-8'))
-          resolved = json.loads(Path('candidate-out/resolved.json').read_text(encoding='utf-8'))
-          baseline_tuning = json.loads(Path('candidate-out/baseline-tuning.json').read_text(encoding='utf-8'))
-
-          baseline_result = baseline.get('validation_result')
-          candidate_result = candidate.get('validation_result')
-          if baseline_result not in {'PASS', 'FAIL'} or candidate_result not in {'PASS', 'FAIL'}:
-              raise SystemExit(2)
-
-          if baseline_result != 'PASS':
-              decision = 'PUBLIC_BASELINE_UNHEALTHY_NON_SHIPPING'
-              next_gate = 'validation-grade'
-              terminal = False
-              rc = 2
-          elif candidate_result != 'PASS':
-              decision = 'PUBLIC_REJECTED_NON_SHIPPING'
-              next_gate = None
-              terminal = True
-              rc = 1
-          else:
-              decision = 'PUBLIC_QUALIFIED_NON_SHIPPING'
-              next_gate = 'validation-grade-blind'
-              terminal = False
-              rc = 0
-
-          result = {
-              'schema_version': 1,
-              'authority': 'non-shipping-paired-public-acoustic-qualification',
-              'decision': decision,
-              'source_sha': os.environ['SOURCE_SHA'],
-              'candidate_id': os.environ['CANDIDATE_ID'],
-              'baseline_result': baseline_result,
-              'candidate_result': candidate_result,
-              'baseline_tuning': baseline_tuning,
-              'candidate_tuning': resolved['tuning'],
-              'next_gate': next_gate,
-              'terminal_candidate': terminal,
-              'baseline_violations': baseline.get('violations', []),
-              'candidate_violations': candidate.get('violations', []),
-              'rule': (
-                  'A candidate may be rejected by public validation only when the exact canonical '
-                  'baseline passes the same corpus and policy. Baseline failure makes qualification '
-                  'incomplete and cannot terminalize the candidate.'
-              ),
-          }
-          Path('candidate-out/public-qualification.json').write_text(
-              json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8'
-          )
-          print(json.dumps(result, sort_keys=True))
-          raise SystemExit(rc)
-          PY
+          python3 infra/.github/research/continuous-optimization/hosted-validation/public_candidate_pair.py \
+            --source-root source --self-test
+          selftest_rc=$?
+          if [ "$selftest_rc" -ne 0 ]; then exit "$selftest_rc"; fi
+          python3 infra/.github/research/continuous-optimization/hosted-validation/public_candidate_pair.py \
+            --source-root source \
+            --search-space source/validation/tuning/search-spaces/call-v1.json \
+            --baseline-report candidate-out/baseline-validation-report.json \
+            --candidate-report candidate-out/validation-report.json \
+            --output candidate-out/public-relative-qualification.json
           rc=$?
-          cat candidate-out/public-qualification.json >> "$GITHUB_STEP_SUMMARY" || true
+          cat candidate-out/public-relative-qualification.json >> "$GITHUB_STEP_SUMMARY" || true
           exit "$rc"
       - name: Seal candidate-bound visible validation evidence
         if: always()

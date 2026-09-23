@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "investigation_id": "vad-noise-reference-proxy-v1",
+  "phase": "candidate-zero-vad-noise-reference-diagnostic",
+  "source_base_sha": "117b71de3eaed802a6947ad633c567cece8920fb",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "fresh_seeds": [
+    101123,
+    102123,
+    103123
+  ],
+  "ns_floor_points": {
+    "shipping": 0.12,
+    "diagnostic_stress": 0.05
+  },
+  "hypothesis": {
+    "problem": "I010 proved that post-NS local waveform level is coupled to ns_floor, while routing all local VAD observation to pre-NS audio removes useful NS-isolated recall.",
+    "candidate_zero_question": "Can a same-domain local level proxy use pre-NS frame RMS relative to the NS pre-suppression noise estimate, preserving floor invariance without yet changing VAD thresholds or source?",
+    "proxy": "pre_ns_rms_dbfs - ns_noise_rms_dbfs",
+    "ns_probability_role": "measured only; no fusion or threshold changes in this diagnostic"
+  },
+  "protocol": {
+    "frame_samples": 160,
+    "sample_rate_hz": 16000,
+    "scenarios": [
+      "stationary-noise-only",
+      "nonstationary-noise-only",
+      "speech-plus-noise",
+      "low-level-speech-plus-noise"
+    ],
+    "frames_per_scenario": 320,
+    "parameter_search": false,
+    "threshold_tuning": false,
+    "candidate_emulation": false,
+    "shipping_vad_execution": false,
+    "replay_additional_authority": false
+  },
+  "decision_contract": {
+    "NOISE_REFERENCE_FLOOR_DEPENDENT_REVIEW_REQUIRED": "NS noise estimate or the derived pre-NS/noise proxy changes when only floor_gain changes.",
+    "NOISE_REFERENCE_PROXY_SEPARABLE_REVIEW_REQUIRED": "The proxy is floor-invariant and has the expected speech-above-noise direction with AUC above chance on every fresh seed.",
+    "NOISE_REFERENCE_PROXY_NOT_SEPARABLE_REVIEW_REQUIRED": "The proxy is floor-invariant but does not consistently separate labeled speech and noise on the fresh diagnostic seeds.",
+    "INPUT_INVALID_REVIEW_REQUIRED": "Probe identity, seed binding, frame counts or finite-value preconditions fail."
+  },
+  "next_step_boundary": {
+    "may_select_source_candidate": false,
+    "may_tune_vad_thresholds": false,
+    "may_reuse_i010_locked_authority": false,
+    "may_consume_confirmation": false,
+    "future_candidate_requires_separate_review": true
+  },
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "source_candidate_selected": false,
+    "confirmation_consumed": false,
+    "blind_authority": false,
+    "target_hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

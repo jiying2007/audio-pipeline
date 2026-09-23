@@ -133,6 +133,15 @@ def validate_registry(root: Path, registry_path: Path) -> dict[str, Any]:
     }
 
 
+def find_terminal(result: dict[str, Any], candidate_id: str,
+                  source_revision: str) -> dict[str, Any] | None:
+    return next((
+        item for item in result["terminal_candidates"]
+        if item["candidate_id"] == candidate_id
+        and item["source_revision"] == source_revision
+    ), None)
+
+
 def self_test() -> None:
     with tempfile.TemporaryDirectory(prefix="ap-acoustic-terminal-registry-") as tmp:
         root = Path(tmp)
@@ -180,15 +189,10 @@ def self_test() -> None:
             }],
         }), encoding="utf-8")
         result = validate_registry(root, DEFAULT_REGISTRY)
-        assert result["terminal_candidates"][0]["candidate_id"] == "deadbeef0000"
+        assert find_terminal(result, "deadbeef0000", "a" * 40) is not None
         # Candidate IDs are tuning-only hashes. A new source revision with the
-        # same tuning is a distinct candidate lineage and must not be rejected
-        # by registry membership for the old source.
-        same_id_new_source = (
-            result["terminal_candidates"][0]["candidate_id"] == "deadbeef0000"
-            and result["terminal_candidates"][0]["source_revision"] != "b" * 40
-        )
-        assert same_id_new_source
+        # same tuning is a distinct candidate lineage and must remain eligible.
+        assert find_terminal(result, "deadbeef0000", "b" * 40) is None
         broken = load_object(evidence / "terminal.json")
         broken["qualification"]["next_gate"] = "validation-grade-blind"
         (evidence / "terminal.json").write_text(json.dumps(broken), encoding="utf-8")
@@ -220,11 +224,7 @@ def main() -> int:
         source_revision = str(args.source_revision or "")
         if SOURCE_SHA.fullmatch(source_revision) is None:
             parser.error("--source-revision is required with --assert-not-terminal")
-        item = next((
-            item for item in result["terminal_candidates"]
-            if item["candidate_id"] == candidate_id
-            and item["source_revision"] == source_revision
-        ), None)
+        item = find_terminal(result, candidate_id, source_revision)
         if item is not None:
             print(json.dumps({
                 "decision": "TERMINAL_CANDIDATE_REJECTED",

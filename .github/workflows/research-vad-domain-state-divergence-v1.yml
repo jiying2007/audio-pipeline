@@ -51,8 +51,8 @@ jobs:
               'vad-domain-state-divergence-v1.json'
           ).read_text())
           assert c['authority'] == 'DIAGNOSTIC_ONLY_VAD_STATE_DECOMPOSITION'
-          assert c['source_base_sha'] == '23e1d829e690d33a7ba56575ed83d1ac09809c07'
-          assert c['fresh_diagnostic_authority']['seeds'] == [101123, 111123, 121123]
+          assert c['source_base_sha'] == 'd5bd0f6d72574b6af9631dc10d7903cd43a269c3'
+          assert c['fresh_diagnostic_authority']['seeds'] == [131123, 141123, 151123]
           assert c['fresh_diagnostic_authority']['case_profile'] == 'ns-isolated'
           assert c['fresh_diagnostic_authority']['candidate_value_search'] is False
           assert c['fresh_diagnostic_authority']['threshold_search'] is False
@@ -66,7 +66,7 @@ jobs:
           ]
           assert all(value is False for value in c['authority_boundary'].values())
           PY
-          git cat-file -e "23e1d829e690d33a7ba56575ed83d1ac09809c07^{commit}"
+          git cat-file -e "d5bd0f6d72574b6af9631dc10d7903cd43a269c3^{commit}"
 
       - uses: ./.github/actions/setup-ccache
         with:
@@ -175,7 +175,7 @@ jobs:
         run: |
           set -euo pipefail
           SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
-          test "$SOURCE_BASE_SHA" = 23e1d829e690d33a7ba56575ed83d1ac09809c07
+          test "$SOURCE_BASE_SHA" = d5bd0f6d72574b6af9631dc10d7903cd43a269c3
           git cat-file -e "$SOURCE_BASE_SHA^{commit}"
           git worktree add --detach /tmp/vad-domain-source "$SOURCE_BASE_SHA"
           printf '%s\n' "$SOURCE_BASE_SHA" > /tmp/vad-domain-source-sha.txt
@@ -265,7 +265,7 @@ jobs:
           from pathlib import Path
           r = json.loads(Path('vad-domain-out/result.json').read_text())
           assert r['authority'] == 'DIAGNOSTIC_ONLY_VAD_STATE_DECOMPOSITION'
-          assert r['fresh_seeds'] == [101123, 111123, 121123]
+          assert r['fresh_seeds'] == [131123, 141123, 151123]
           assert r['decision'] in {
               'VAD_STATE_DIVERGENCE_CONFIRMED_REVIEW_REQUIRED',
               'NO_RECALL_DIVERGENCE_EXERCISED_REVIEW_REQUIRED',

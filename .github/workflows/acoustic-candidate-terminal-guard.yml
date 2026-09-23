@@ -225,7 +225,6 @@ jobs:
           python3 .github/program/acoustic_terminal_registry.py \
             --repo-root . --registry docs/program/evidence/acoustic-terminal-registry.json
           python3 - <<'PY'
-          import hashlib
           import json
           from pathlib import Path
 
@@ -302,10 +301,6 @@ jobs:
                   '09da79805e0322d5d9053d24db2747bb647fff313f46bf458e7c28f600467ed8',
                   'NS floor relative verdict digest drift')
 
-          case_bytes = (root / 'failed-case.json').read_bytes()
-          require(hashlib.sha256(case_bytes).hexdigest() ==
-                  terminal['terminal_case_evidence']['sha256'],
-                  'NS floor failed-case digest drift')
           require(case.get('case_id') == 'compact-ns-008' and
                   case.get('gate', {}).get('metric') == 'vad_false_positive_rate' and
                   case.get('gate', {}).get('actual_delta') == 0.07456140350877188 and

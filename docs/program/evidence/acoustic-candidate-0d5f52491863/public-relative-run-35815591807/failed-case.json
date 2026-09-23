@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "authority": "non-shipping-paired-public-relative-acoustic-terminal-case",
+  "candidate_id": "0d5f52491863",
+  "source_revision": "f19d7ac928aa9db6c23b122faa63e4fcfe52e1a1",
+  "case_id": "compact-ns-008",
+  "scenario": "ns-public-derived",
+  "gate": {
+    "metric": "vad_false_positive_rate",
+    "stat": "max",
+    "maximum_delta": 0.05,
+    "actual_delta": 0.07456140350877188,
+    "binding_margin": -0.02456140350877188,
+    "result": "FAIL"
+  },
+  "baseline": {
+    "ns_floor": 0.12,
+    "vad_false_positive_rate": 0.4868421052631579,
+    "vad_f1": 0.7394209354120267,
+    "vad_recall": 0.9651162790697675,
+    "near_si_sdr_improvement_db": 0.502667978329918,
+    "noise_only_attenuation_db": 2.573520788877249,
+    "output_clip_fraction": 0
+  },
+  "candidate": {
+    "ns_floor": 0.07,
+    "vad_false_positive_rate": 0.5614035087719298,
+    "vad_f1": 0.7138263665594855,
+    "vad_recall": 0.9680232558139535,
+    "near_si_sdr_improvement_db": 0.4872705450509927,
+    "noise_only_attenuation_db": 2.590926270516096,
+    "output_clip_fraction": 0
+  },
+  "source": {
+    "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+    "source_id": "compact-derived-008",
+    "clean_source_id": "0f246119-b863-419a-b9f2-bb7d6eb694d6_nearend-singletalk",
+    "clean_mic_sha256": "758e2cf05e4c7bcd2b177a6b28400778deb100b0ef9a6f1336df3fb0071cb0d3",
+    "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0008.wav",
+    "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0040.wav",
+    "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7"
+  },
+  "rule": "The pre-frozen call-v1 case gate allows at most +0.05 VAD false-positive-rate delta versus the canonical baseline on the same case."
+}

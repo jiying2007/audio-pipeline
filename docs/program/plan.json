@@ -389,6 +389,31 @@
       ]
     },
     {
+      "id": "I010",
+      "priority": 95,
+      "status": "CLOSED",
+      "lane": "acoustic",
+      "title": "NS/VAD local observation-domain coupling and bounded source-candidate review",
+      "depends_on": [
+        "I005"
+      ],
+      "handler": null,
+      "contract": "docs/program/iterations/I010-closure.json",
+      "exit": "Candidate-zero root cause and one-shot source candidate are reviewed; rejected candidate is terminal; shipping baseline remains unchanged",
+      "evidence": [
+        {
+          "source_sha": "d5e84c3ec96a1edf704328b2efe98ca6dbd47b43",
+          "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/35878046235",
+          "meaning": "One-shot frozen source-candidate evaluation consumed the only candidate budget. Evidence execution succeeded, but the candidate verdict was SOURCE_CANDIDATE_REJECT because locked NS-isolated recall gates regressed."
+        },
+        {
+          "source_sha": "23e1d829e690d33a7ba56575ed83d1ac09809c07",
+          "url": "https://github.com/jiying2007/audio-pipeline/pull/390",
+          "meaning": "Reviewed I010 closure archived the exact contract, authority lock and candidate patch, marked vad-pre-ns-local-observation-v1 terminal, retired its active execution surface, and preserved keep-baseline/no-shipping authority."
+        }
+      ]
+    },
+    {
       "id": "E001",
       "priority": 100,
       "status": "DEFERRED",

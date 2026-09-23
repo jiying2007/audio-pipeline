@@ -300,7 +300,6 @@ int main(int argc, char **argv) {
         if (delta > PROB_EPS) count.raw_probability_diff_frames++;
         delta = fabsf(ship.probability - pre.probability);
         update_max(delta, &count.max_final_probability_delta);
-        if (delta > PROB_EPS) count.active_diff_frames += 0u;
         delta = fabsf(ship.noise_rms_after - pre.noise_rms_after);
         update_max(delta, &count.max_noise_rms_delta);
         delta = fabsf(ship.ratio_db - pre.ratio_db);

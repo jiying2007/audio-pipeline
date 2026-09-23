@@ -88,9 +88,12 @@ canonicalizes the diagnostic `vad_probability` / `erle_db` non-finite spellings 
 `null`, audits the replacements, and rejects every other malformed/non-standard token.
 
 Frozen-candidate public replay is paired with the exact canonical baseline on the same
-Full corpus and fixed policy. The source-built processor default tuning must exactly match
-the baseline recorded in the frozen Audio Quality search space before either result is
-interpreted. Public qualification has three machine-readable outcomes:
+Full corpus and fixed policy. The source-built processor default tuning must numerically
+match the baseline recorded in the frozen Audio Quality search space before either result
+is interpreted. Processor defaults are float32 runtime values, so identity compares the
+printed values to the contract with zero relative tolerance and `1e-6` absolute tolerance;
+the contract values remain canonical while the observed processor values are retained in
+evidence. Public qualification has three machine-readable outcomes:
 
 - `PUBLIC_QUALIFIED_NON_SHIPPING`: baseline and candidate both PASS; candidate may advance to blind.
 - `PUBLIC_REJECTED_NON_SHIPPING`: baseline PASS and candidate FAIL; the exact candidate is terminal.

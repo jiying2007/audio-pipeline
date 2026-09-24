@@ -11,6 +11,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location('ci_impact_receipt_test', ROOT / 'scripts/ci_impact.py')
@@ -58,6 +59,11 @@ class ReceiptVersionTests(unittest.TestCase):
         self.repo.__enter__()
         self.addCleanup(self.repo.__exit__, None, None, None)
         git('init', '-q')
+        # Fixture commits must finish all writes before TemporaryDirectory exits.
+        # Automatic maintenance can detach and race with .git/objects removal.
+        # Keep this local to disposable repositories; never hide cleanup errors.
+        git('config', '--local', 'maintenance.auto', 'false')
+        git('config', '--local', 'gc.auto', '0')
         git('config', 'user.name', 'offline-test')
         git('config', 'user.email', 'offline-test@example.invalid')
         put('CMakeLists.txt', b'project(audio_pipeline VERSION 2.3.49)\n')
@@ -71,6 +77,26 @@ class ReceiptVersionTests(unittest.TestCase):
             put(ARCHIVE + name, data)
         self.head = commit('receipt metadata only')
         self.paths = [ARCHIVE + name for name in MEMBERS]
+
+    def test_fixture_disables_automatic_maintenance_locally(self):
+        self.assertEqual(git('config', '--local', '--get', 'maintenance.auto'), 'false')
+        self.assertEqual(git('config', '--local', '--get', 'gc.auto'), '0')
+
+    def test_fixture_commit_does_not_spawn_maintenance(self):
+        # Exercise real Git with hostile inherited defaults, not a mocked child.
+        inherited = Path('.git/inherited-config').resolve()
+        inherited.write_text('[maintenance]\n\tauto = true\n[gc]\n\tauto = 1\n',
+                             encoding='utf-8')
+        trace = Path('.git/fixture-trace.json').resolve()
+        with patch.dict(os.environ, {'GIT_CONFIG_GLOBAL': str(inherited),
+                                     'GIT_TRACE2_EVENT': str(trace)}):
+            git('commit', '-qm', 'trace fixture lifetime', '--allow-empty')
+        events = [json.loads(line) for line in trace.read_text().splitlines()]
+        self.assertTrue(any(row.get('event') == 'exit' and row.get('code') == 0
+                            for row in events), 'Git trace did not record a successful command')
+        children = [row.get('argv', []) for row in events if row.get('event') == 'child_start']
+        self.assertFalse(any('maintenance' in argv or 'gc' in argv for argv in children),
+                         children)
 
     def check(self, base=None, head=None, paths=None):
         ci.enforce_release_version(base or self.base, head or self.head,

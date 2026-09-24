@@ -315,6 +315,7 @@ def _terminal_retirement_required_paths(root: Path) -> set[str]:
         required.update(round_record.get('candidate_closures', {}).values())
     for round_record in data.get('stage_lane_rounds', []):
         required.update((round_record['path'], round_record['evidence']))
+        required.update(round_record.get('lane_outcomes', {}).values())
     for replay_record in data.get('historical_replay_workflows', []):
         required.update((replay_record['path'], replay_record['evidence']))
     return required

@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "diagnostic_id": "vad-calibrated-local-snr-v1",
+  "phase": "candidate-zero-calibrated-local-snr-counterfactual",
+  "authority": "DIAGNOSTIC_ONLY_FIXED_COUNTERFACTUAL",
+  "source_base_sha": "1b262387af2b0af07f22917f3bcef300fbb74aac",
+  "predecessors": {
+    "i010_closure": "docs/program/iterations/I010-closure.json",
+    "noise_reference_scale": ".github/research/continuous-optimization/development-v4/i011-ns-noise-reference-scale-v1-result.json",
+    "state_divergence": ".github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json",
+    "role": "reviewed-context-only-not-selection-or-tuning"
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [161123, 171123, 181123],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "diagnosis-only",
+    "candidate_value_search": false,
+    "threshold_search": false
+  },
+  "fixed_counterfactual": {
+    "local_ratio_source": "pre_ns_input_rms_dbfs_minus_calibrated_ns_noise_rms_dbfs",
+    "calibrated_noise_reference": {
+      "legacy_metric": "ns_result.noise_rms_dbfs",
+      "scale_offset_db": 32.16113097315181,
+      "derivation": "10*log10(2*bins*nfft/frame_samples)",
+      "frame_samples": 160,
+      "nfft": 512,
+      "bins": 257
+    },
+    "use_existing_ns_speech_probability": true,
+    "local_crest_source": "pre_ns_input",
+    "vad_noise_like_crest_db": 8.0,
+    "vad_transient_crest_db": 12.0,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "vad_upstream_blend": 0.40,
+    "vad_ns_decision_threshold": 0.35,
+    "vad_strong_refresh_threshold": 0.50,
+    "vad_strong_hold_frames": 8,
+    "vad_weak_hold_frames": 6,
+    "threshold_changes": false,
+    "hold_changes": false,
+    "blend_changes": false,
+    "shipping_source_mutation": false,
+    "public_api_mutation": false
+  },
+  "diagnostic_gates": {
+    "mirror_probability_tolerance": 1e-6,
+    "floor_probability_tolerance": 1e-6,
+    "max_floor_noise_reference_delta_db": 1e-6,
+    "max_floor_upstream_probability_delta": 1e-7,
+    "max_partition_recall_drop": 0.03,
+    "max_partition_false_positive_rate_rise": 0.03,
+    "counterfactual_behavior_must_change": true
+  },
+  "budget": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "diagnostic_execution_limit": 1
+  },
+  "forbidden_feedback": {
+    "i010_locked_seeds": [91123, 92123, 93123],
+    "noise_scale_seeds": [101123, 111123, 121123],
+    "state_divergence_seeds": [131123, 141123, 151123],
+    "threshold_relaxation": true,
+    "parameter_search": true,
+    "source_candidate_selection": true,
+    "shipping_promotion": true
+  },
+  "decision_contract": {
+    "CALIBRATED_LOCAL_SNR_FEASIBLE_REVIEW_REQUIRED": "Mirror identity and floor invariance hold, the fixed counterfactual changes VAD behavior, and no fresh partition exceeds the preregistered recall/FPR relative bounds.",
+    "CALIBRATED_LOCAL_SNR_REGRESSION_REVIEW_REQUIRED": "Input/mirror/floor invariants hold and behavior changes, but at least one fresh partition exceeds a preregistered recall/FPR relative bound.",
+    "CALIBRATED_LOCAL_SNR_INPUT_INVALID_REVIEW_REQUIRED": "Mirror identity, floor invariance, exact source/seed binding, or behavior-exercised preconditions fail."
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_tune_thresholds": false,
+    "may_consume_candidate_budget": false,
+    "may_consume_confirmation": false,
+    "may_modify_shipping_source": false,
+    "may_modify_public_api": false,
+    "may_claim_hil": false,
+    "may_claim_product_certification": false,
+    "may_promote_release": false
+  }
+}

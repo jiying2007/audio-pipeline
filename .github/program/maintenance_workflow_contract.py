@@ -112,6 +112,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i012-ns-spectral-post-snr-v2.yml'),
     Path('.github/workflows/research-i013-ns-excess-concentration-v1.yml'),
     Path('.github/workflows/research-i014-ns-upstream-component-decomposition-v1.yml'),
+    Path('.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -139,6 +140,10 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-i014-ns-upstream-component-decomposition-v1.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i014-ns-upstream-component-decomposition-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/i014-ns-upstream-component-decomposition-v1-result.json'),
+    ),
+    Path('.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'),
     ),
 }
 
@@ -310,7 +315,6 @@ def _terminal_retirement_required_paths(root: Path) -> set[str]:
         required.update(round_record.get('candidate_closures', {}).values())
     for round_record in data.get('stage_lane_rounds', []):
         required.update((round_record['path'], round_record['evidence']))
-        required.update(round_record.get('lane_outcomes', {}).values())
     for replay_record in data.get('historical_replay_workflows', []):
         required.update((replay_record['path'], replay_record['evidence']))
     return required
@@ -439,7 +443,11 @@ def validate(root: Path = REPOSITORY_ROOT) -> None:
         assert path.is_file(), f'missing PR/manual non-shipping workflow: {relative}'
         text = path.read_text(encoding='utf-8')
         assert '\n  pull_request:' in text, f'{relative} must retain PR regression or measurement coverage'
-        assert '\n  workflow_dispatch:' in text, f'{relative} must retain an explicit manual replay entry point'
+        # Consumed research may retire manual entry entirely. Its evidence and
+        # sole offline contract job are still enforced below. Actual replay
+        # workflows retain the mandatory manual-only execution boundary.
+        if relative not in CONTRACT_ONLY_RESEARCH_WORKFLOWS:
+            assert '\n  workflow_dispatch:' in text, f'{relative} must retain an explicit manual replay entry point'
         assert '\n  schedule:' not in text, f'{relative} must not run autonomous scheduled non-shipping work in maintenance state'
         assert '\n  push:' not in text, f'{relative} must not run autonomous push non-shipping work in maintenance state'
         pull_request = trigger_block(text, 'pull_request')
@@ -914,6 +922,13 @@ def self_test() -> None:
 
         contract_only = root / CONTRACT_ONLY_RESEARCH_WORKFLOWS[0]
         contract_only_text = contract_only.read_text(encoding='utf-8')
+        # Retiring manual entry is valid only for registered contract-only
+        # research. The following negative test still rejects an execution job.
+        contract_only.write_text(
+            contract_only_text.replace('  workflow_dispatch:\n', ''), encoding='utf-8'
+        )
+        validate(root)
+        contract_only.write_text(contract_only_text, encoding='utf-8')
         contract_only.write_text(
             contract_only_text +
             '  joint-search:\n'

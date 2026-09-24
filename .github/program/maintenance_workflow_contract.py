@@ -108,6 +108,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
     Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'),
     Path('.github/workflows/research-i012-ns-spectral-post-snr-v2.yml'),
+    Path('.github/workflows/research-i013-ns-excess-concentration-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -127,6 +128,10 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-i012-ns-spectral-post-snr-v2.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2.json'),
         Path('.github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2-result.json'),
+    ),
+    Path('.github/workflows/research-i013-ns-excess-concentration-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i013-ns-excess-concentration-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i013-ns-excess-concentration-v1-result.json'),
     ),
 }
 

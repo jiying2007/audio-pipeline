@@ -94,6 +94,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i012-ns-spectral-post-snr-v2.yml'),
     Path('.github/workflows/research-i013-ns-excess-concentration-v1.yml'),
     Path('.github/workflows/research-i014-ns-upstream-component-decomposition-v1.yml'),
+    Path('.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'),
 
 )
 

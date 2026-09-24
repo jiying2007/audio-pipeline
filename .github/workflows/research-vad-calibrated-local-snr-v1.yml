@@ -1,0 +1,306 @@
+name: Research VAD Calibrated Local SNR v1
+run-name: "vad-calibrated-local-snr-v1 / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1.json'
+      - 'tests/validation/vad_calibrated_local_snr_probe.c'
+      - 'tests/validation/vad_calibrated_local_snr.py'
+      - '.github/workflows/research-vad-calibrated-local-snr-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-vad-calibrated-local-snr-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1.json
+  PYTHONPATH: validation/tools:tests/validation
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate fixed counterfactual contract and tooling
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/vad_calibrated_local_snr.py
+          python3 tests/validation/vad_calibrated_local_snr.py --self-test
+          python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          c = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'vad-calibrated-local-snr-v1.json'
+          ).read_text())
+          assert c['authority'] == 'DIAGNOSTIC_ONLY_FIXED_COUNTERFACTUAL'
+          assert c['source_base_sha'] == '1b262387af2b0af07f22917f3bcef300fbb74aac'
+          assert c['fresh_diagnostic_authority']['seeds'] == [161123, 171123, 181123]
+          assert c['fresh_diagnostic_authority']['candidate_value_search'] is False
+          assert c['fresh_diagnostic_authority']['threshold_search'] is False
+          assert c['budget'] == {
+              'candidate_limit': 0,
+              'confirmation_limit': 0,
+              'diagnostic_execution_limit': 1,
+          }
+          fixed = c['fixed_counterfactual']
+          assert fixed['calibrated_noise_reference'] == {
+              'legacy_metric': 'ns_result.noise_rms_dbfs',
+              'scale_offset_db': 32.16113097315181,
+              'derivation': '10*log10(2*bins*nfft/frame_samples)',
+              'frame_samples': 160,
+              'nfft': 512,
+              'bins': 257,
+          }
+          assert fixed['use_existing_ns_speech_probability'] is True
+          assert fixed['vad_noise_like_crest_db'] == 8.0
+          assert fixed['vad_transient_crest_db'] == 12.0
+          assert fixed['vad_upstream_speech_guard'] == 0.55
+          assert fixed['vad_local_speech_guard'] == 0.15
+          assert fixed['vad_upstream_blend'] == 0.40
+          assert fixed['vad_ns_decision_threshold'] == 0.35
+          assert fixed['vad_strong_refresh_threshold'] == 0.50
+          assert fixed['vad_strong_hold_frames'] == 8
+          assert fixed['vad_weak_hold_frames'] == 6
+          assert fixed['threshold_changes'] is False
+          assert fixed['hold_changes'] is False
+          assert fixed['blend_changes'] is False
+          assert fixed['shipping_source_mutation'] is False
+          assert fixed['public_api_mutation'] is False
+          assert all(value is False for value in c['authority_boundary'].values())
+
+          scale = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i011-ns-noise-reference-scale-v1-result.json'
+          ).read_text())
+          assert scale['decision'] == 'NS_NOISE_REFERENCE_SCALE_SUPPORTED_REVIEW_REQUIRED'
+          assert scale['findings']['expected_scale_offset_db'] == 32.16113097315181
+
+          divergence = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'vad-domain-state-divergence-v1-result.json'
+          ).read_text())
+          assert divergence['status'] == 'CLOSED_DIAGNOSTIC_ONLY'
+          assert divergence['reviewed_decision'] == (
+              'LOCAL_NOISE_STATE_REFRESH_HANGOVER_CHAIN_CONFIRMED_NO_CANDIDATE'
+          )
+          PY
+          git cat-file -e "1b262387af2b0af07f22917f3bcef300fbb74aac^{commit}"
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-calibrated-local-snr-contract
+
+      - name: Compile test-only fixed counterfactual probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-vad-cal-snr-contract             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON
+          cmake --build build-vad-cal-snr-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -Iinclude -Ibuild-vad-cal-snr-contract/generated             tests/validation/vad_calibrated_local_snr_probe.c             build-vad-cal-snr-contract/libaudio_pipeline.a -lm             -o build-vad-cal-snr-contract/vad_calibrated_local_snr_probe
+
+  diagnose:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Enforce one-shot diagnostic execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          current = int(os.environ['GITHUB_RUN_ID'])
+          workflow = 'research-vad-calibrated-local-snr-v1.yml'
+          runs = json.loads(subprocess.check_output([
+              'gh', 'api',
+              f'repos/{repo}/actions/workflows/{workflow}/runs'
+              '?event=workflow_dispatch&branch=main&per_page=100',
+          ], text=True)).get('workflow_runs', [])
+          consumed = []
+          for item in runs:
+              run_id = int(item['id'])
+              if run_id == current:
+                  continue
+              jobs = json.loads(subprocess.check_output([
+                  'gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100',
+              ], text=True)).get('jobs', [])
+              if any(
+                  step.get('name') == 'Run fresh calibrated local-SNR counterfactual'
+                  and step.get('conclusion') == 'success'
+                  for job in jobs
+                  for step in job.get('steps', [])
+              ):
+                  consumed.append(run_id)
+          if consumed:
+              raise SystemExit(
+                  'calibrated local-SNR diagnostic budget already consumed by run(s): '
+                  + ','.join(str(x) for x in sorted(consumed))
+              )
+          print('one-shot calibrated local-SNR guard: PASS')
+          PY
+
+      - name: Bind exact frozen source
+        run: |
+          set -euo pipefail
+          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
+          test "$SOURCE_BASE_SHA" = 1b262387af2b0af07f22917f3bcef300fbb74aac
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/vad-cal-snr-source "$SOURCE_BASE_SHA"
+          printf '%s\n' "$SOURCE_BASE_SHA" > /tmp/vad-cal-snr-source-sha.txt
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: vad-calibrated-local-snr-v1
+
+      - name: Build exact public module library and test-only counterfactual probe
+        run: |
+          set -euo pipefail
+          cmake -S /tmp/vad-cal-snr-source -B /tmp/vad-cal-snr-build             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON
+          cmake --build /tmp/vad-cal-snr-build --target audio_pipeline ap_build_info_dump --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -I/tmp/vad-cal-snr-source/include             -I/tmp/vad-cal-snr-build/generated             tests/validation/vad_calibrated_local_snr_probe.c             /tmp/vad-cal-snr-build/libaudio_pipeline.a -lm             -o /tmp/vad-calibrated-local-snr-probe
+          mkdir -p vad-cal-snr-out
+          /tmp/vad-cal-snr-build/ap_build_info_dump > vad-cal-snr-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > vad-cal-snr-out/compiler.txt
+          sha256sum /tmp/vad-calibrated-local-snr-probe > vad-cal-snr-out/probe.sha256
+          cp "$CONTRACT" vad-cal-snr-out/contract.json
+          cp /tmp/vad-cal-snr-source-sha.txt vad-cal-snr-out/source-base-revision.txt
+          printf '%s\n' "$GITHUB_SHA" > vad-cal-snr-out/diagnostic-infra-revision.txt
+
+      - name: Generate preregistered fresh diagnostic partitions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          c = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'vad-calibrated-local-snr-v1.json'
+          ).read_text())
+          fresh = c['fresh_diagnostic_authority']
+          manifest = []
+          for seed in fresh['seeds']:
+              out = Path(f'/tmp/vad-cal-snr-{seed}')
+              subprocess.run([
+                  'python3',
+                  str(Path('/tmp/vad-cal-snr-source') / fresh['generator']),
+                  '--output', str(out),
+                  '--seed', str(seed),
+                  '--seconds', str(fresh['seconds']),
+              ], check=True, cwd='/tmp/vad-cal-snr-source')
+              corpus = out / 'corpus.json'
+              payload = json.loads(corpus.read_text())
+              assert payload['generator']['seed'] == seed
+              selected = [
+                  row for row in payload['cases']
+                  if row.get('processor_profile') == 'ns-isolated'
+                  and row.get('vad_labels')
+                  and row.get('render_audio') is None
+                  and row.get('case_id') in {
+                      'stage-ns-stationary',
+                      'stage-ns-nonstationary',
+                  }
+              ]
+              assert len(selected) == 2, f'invalid fresh partition for seed {seed}'
+              manifest.append(str(corpus))
+          Path('vad-cal-snr-out/corpora.txt').write_text(
+              '\n'.join(manifest) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Run fresh calibrated local-SNR counterfactual
+        run: |
+          set -euo pipefail
+          mapfile -t corpora < vad-cal-snr-out/corpora.txt
+          args=()
+          for corpus in "${corpora[@]}"; do
+            args+=(--corpus "$corpus")
+          done
+          python3 tests/validation/vad_calibrated_local_snr.py             --probe /tmp/vad-calibrated-local-snr-probe             --contract "$CONTRACT"             "${args[@]}"             --output vad-cal-snr-out/result.json             | tee vad-cal-snr-out/summary.json
+
+      - name: Enforce diagnostic-only authority boundary
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          r = json.loads(Path('vad-cal-snr-out/result.json').read_text())
+          assert r['authority'] == 'DIAGNOSTIC_ONLY_FIXED_COUNTERFACTUAL'
+          assert r['fresh_seeds'] == [161123, 171123, 181123]
+          assert r['candidate_budget_consumed'] == 0
+          assert r['confirmation_budget_consumed'] == 0
+          assert r['candidate_selected'] is False
+          assert r['thresholds_tuned'] is False
+          assert r['shipping_source_changed'] is False
+          assert r['decision'] in {
+              'CALIBRATED_LOCAL_SNR_FEASIBLE_REVIEW_REQUIRED',
+              'CALIBRATED_LOCAL_SNR_REGRESSION_REVIEW_REQUIRED',
+              'CALIBRATED_LOCAL_SNR_INPUT_INVALID_REVIEW_REQUIRED',
+          }
+          PY
+
+      - name: Seal calibrated local-SNR evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          find vad-cal-snr-out -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > vad-cal-snr-out/SHA256SUMS
+
+      - name: Publish calibrated local-SNR summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          p = Path('vad-cal-snr-out/result.json')
+          print('## Calibrated local-SNR fixed counterfactual')
+          if not p.exists():
+              print('- Result: evidence incomplete')
+              raise SystemExit(0)
+          r = json.loads(p.read_text())
+          a = r['aggregate']
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Fresh seeds: `{r['fresh_seeds']}`")
+          print(f"- Shipping recall: `{a['shipping_recall']}`")
+          print(f"- Counterfactual recall: `{a['counterfactual_recall']}`")
+          print(f"- Shipping FPR: `{a['shipping_false_positive_rate']}`")
+          print(f"- Counterfactual FPR: `{a['counterfactual_false_positive_rate']}`")
+          print(f"- Floor probability mismatches: `{a['floor_probability_mismatch_frames']}`")
+          print(f"- Floor active mismatches: `{a['floor_active_mismatch_frames']}`")
+          print(f"- Relative regressions: `{len(r['regression_violations'])}`")
+          print('- Authority: fixed candidate-zero counterfactual only; no parameter/threshold search, source candidate, confirmation, shipping, HIL or Product Certification authority.')
+          PY
+
+      - name: Upload hash-bound calibrated local-SNR evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vad-calibrated-local-snr-v1-${{ github.run_id }}
+          path: vad-cal-snr-out/
+          retention-days: 90
+          if-no-files-found: error

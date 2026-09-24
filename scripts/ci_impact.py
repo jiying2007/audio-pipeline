@@ -11,6 +11,7 @@ shipped SDK or evidence authority may land between immutable releases.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -165,8 +166,60 @@ def cmake_version_only(base: str, head: str) -> bool:
     )
 
 
+
+def verified_archive_paths(base: str, head: str, paths: list[str]) -> set[str]:
+    """Admit only an append-only copy of receipts registered on trusted base.
+
+    A filename or PR-head manifest is not enough to waive product versioning.
+    This does not change CI selection or the independent finalization contract.
+    """
+    if not any(p.startswith("validation/research/evidence/") for p in paths):
+        return set()
+    manifest_path = ".github/program/i015-finalization.json"
+
+    def tree_entry(ref: str, path: str) -> bytes:
+        return subprocess.check_output(["git", "ls-tree", "-z", ref, "--", path])
+
+    if not tree_entry(base, manifest_path):
+        return set()  # New/head-only registrations cannot authorize themselves.
+    before = git_text(base, manifest_path)
+    if before != git_text(head, manifest_path):
+        raise ValueError("archive registration changed across verification range")
+    frozen = json.loads(before)
+    members = frozen["member_sha256"]
+    names = {
+        "SHA256SUMS", "build-info.txt", "compiler.txt", "contract.json",
+        "corpora.txt", "diagnostic-infra-revision.txt", "probe.sha256",
+        "result.json", "source-base-revision.txt", "summary.json",
+    }
+    run_id = frozen["run_id"]
+    root = frozen["archive_root"]
+    if (type(run_id) is not int or run_id <= 0
+            or root != f"validation/research/evidence/i015-{run_id}"
+            or set(members) != names
+            or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+                   for value in members.values())):
+        raise ValueError("invalid trusted-base archive registration")
+    expected = {root + "/" + name: sha for name, sha in members.items()}
+    if not set(expected).issubset(paths):
+        return set()  # Partial, modified and deleted archives are not a new receipt.
+    for path, expected_sha in expected.items():
+        if tree_entry(base, path):
+            raise ValueError("archive receipt already exists on base: " + path)
+        entry = tree_entry(head, path)
+        if not re.fullmatch(rb"100644 blob [0-9a-f]{40}\t" + re.escape(path.encode()) + rb"\x00", entry):
+            raise ValueError("archive receipt is not an added regular text file: " + path)
+        content = subprocess.check_output(["git", "show", f"{head}:{path}"])
+        if hashlib.sha256(content).hexdigest() != expected_sha:
+            raise ValueError("archive receipt digest mismatch: " + path)
+    return set(expected)
+
+
+
 def enforce_release_version(base: str, head: str, paths: list[str]) -> None:
-    release_paths = [path for path in paths if not is_release_neutral(path)]
+    verified_receipts = verified_archive_paths(base, head, paths)
+    release_paths = [path for path in paths
+                     if not is_release_neutral(path) and path not in verified_receipts]
     if not release_paths:
         return
     base_version = project_version(base)
@@ -489,6 +542,9 @@ def self_test() -> None:
     assert impact_self["full"] and impact_self["run_tuning"]
     forced = analyze([], True)
     assert forced["full"] and forced["run_lab"] and forced["run_tuning"]
+    subprocess.run(
+        ["python3", str(ROOT / "tests/validation/test_ci_archive_receipts.py")], check=True
+    )
     print("ci impact analyzer self-test: OK")
 
 

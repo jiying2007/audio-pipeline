@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/program/i015-finalization.json'
       - '.github/program/i015_finalize.py'
+      - '.github/program/i015_archive_recovery.py'
       - '.github/workflows/i015-evidence-finalization.yml'
   workflow_run:
     workflows: [Verify, Program Archive Contract, Research Optimization, Research Algorithm Parameter Optimization, I015 Evidence Finalization Contract]
@@ -54,7 +55,7 @@ jobs:
           GH_WRITE_TOKEN: ${{ secrets.RESEARCH_AUTOMATION_TOKEN }}
         run: |
           set -euo pipefail
-          python3 .github/program/i015_finalize.py --output i015-finalization-out
+          python3 .github/program/i015_archive_recovery.py --output i015-finalization-out
       - name: Publish bounded status
         if: always()
         run: |

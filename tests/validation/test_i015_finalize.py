@@ -216,6 +216,42 @@ class EvidenceTests(unittest.TestCase):
                 f.GitHub(self.frozen).api('git/trees', writer=True, payload={})
             run.assert_not_called()
 
+    def test_api_permission_error_has_safe_http_diagnostic(self):
+        error = f.subprocess.CalledProcessError(1, ['gh', 'api'],
+            output=b'{"message":"Resource not accessible by personal access token"}',
+            stderr=b'gh: denied (HTTP 403)')
+        with patch.dict(os.environ, {'GH_WRITE_TOKEN': 'private-token'}, clear=True), \
+                patch('subprocess.run', side_effect=error):
+            with self.assertRaises(ValueError) as caught:
+                f.GitHub(self.frozen).api('git/trees', payload={}, writer=True)
+        message = str(caught.exception)
+        self.assertIn('TOKEN_PERMISSION_DENIED', message)
+        self.assertIn('403', message)
+        self.assertIn('git/trees', message)
+        self.assertNotIn('private-token', message)
+
+    def test_api_error_does_not_echo_unknown_server_text(self):
+        error = f.subprocess.CalledProcessError(1, ['gh', 'api'],
+            output=b'{"message":"credential private-token https://host/?sig=secret"}',
+            stderr=b'private-token https://host/?sig=secret (HTTP 422)')
+        with patch('subprocess.run', side_effect=error):
+            with self.assertRaises(ValueError) as caught:
+                f.GitHub(self.frozen).api('git/trees', payload={})
+        message = str(caught.exception)
+        self.assertIn('422', message)
+        self.assertIn('API_REQUEST_FAILED', message)
+        self.assertNotIn('private-token', message)
+        self.assertNotIn('sig=', message)
+
+    def test_non_json_api_error_is_bounded_and_does_not_echo_stderr(self):
+        error = f.subprocess.CalledProcessError(1, ['gh', 'api'],
+            output=b'\xff', stderr=b'network failed: private-token')
+        with patch('subprocess.run', side_effect=error):
+            with self.assertRaises(ValueError) as caught:
+                f.GitHub(self.frozen).api('actions/artifacts/1/zip', binary=True)
+        self.assertIn('API_REQUEST_FAILED', str(caught.exception))
+        self.assertNotIn('private-token', str(caught.exception))
+
     def test_closed_archive_pr_is_not_recreated(self):
         api = unittest.mock.Mock(); api.repo = self.frozen['repository']
         api.collection.return_value = [{'number': 7}]; api.api.return_value = {'state': 'closed'}

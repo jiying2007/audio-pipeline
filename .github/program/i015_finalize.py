@@ -253,8 +253,34 @@ class GitHub:
         args += ['repos/' + self.repo + '/' + path]
         if payload is not None:
             args += ['--input', '-']
-        process = subprocess.run(args, input=encoded(payload) if payload is not None else None,
-                                 env=env, capture_output=True, timeout=90, check=True)
+        try:
+            process = subprocess.run(args, input=encoded(payload) if payload is not None else None,
+                                     env=env, capture_output=True, timeout=90, check=True)
+        except subprocess.CalledProcessError as exc:
+            # Never publish raw stderr/stdout: they can contain credentials or
+            # signed download URLs. Expose only bounded, allowlisted diagnostics.
+            stderr = (exc.stderr or b'').decode('utf-8', errors='replace')
+            match = re.search(r'\(HTTP ([1-5][0-9]{2})\)', stderr)
+            status = int(match.group(1)) if match else None
+            category = 'API_REQUEST_FAILED'
+            known = {
+                'Resource not accessible by personal access token': 'TOKEN_PERMISSION_DENIED',
+                'Resource not accessible by integration': 'INTEGRATION_PERMISSION_DENIED',
+                'Bad credentials': 'INVALID_CREDENTIAL',
+                'Not Found': 'RESOURCE_NOT_FOUND',
+                'Validation Failed': 'INVALID_REQUEST',
+                'API rate limit exceeded': 'RATE_LIMITED',
+            }
+            try:
+                body = parse((exc.stdout or b'')[:16384])
+                if isinstance(body, dict):
+                    category = known.get(body.get('message'), category)
+            except (ValueError, TypeError, UnicodeDecodeError):
+                pass
+            raise ValueError('GitHub API request failed: ' + json.dumps({
+                'method': method or ('POST' if payload is not None else 'GET'),
+                'path': path[:256], 'http_status': status, 'category': category,
+            }, sort_keys=True)) from None
         return process.stdout if binary else parse(process.stdout)
 
     def collection(self, path, key=None):

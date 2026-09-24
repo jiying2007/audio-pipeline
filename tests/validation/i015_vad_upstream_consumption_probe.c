@@ -1,3 +1,4 @@
+#include "audio_pipeline/audio_modules.h"
 #include "enhance/ap_enhance.h"
 
 #include <math.h>
@@ -42,7 +43,9 @@ typedef struct diagnostic_vad_result {
 } diagnostic_vad_result_t;
 
 static ap_ns_state_t ns_state;
-static ap_vad_state_t public_shipping_state;
+_Alignas(AP_MODULE_STATE_ALIGNMENT)
+static unsigned char public_shipping_mem[AP_MODULE_STATE_MAX_BYTES];
+static ap_vad_module_t *public_shipping_module;
 static diagnostic_vad_state_t shipping_state;
 static diagnostic_vad_state_t no_upstream_state;
 static diagnostic_vad_state_t blend_only_state;
@@ -192,8 +195,7 @@ int main(int argc, char **argv) {
     }
 
     ap_ns_init(&ns_state, FRAME);
-    ap_vad_init(&public_shipping_state);
-    diagnostic_vad_init(&shipping_state);
+    if (ap_module_vad_init(public_shipping_mem, sizeof(public_shipping_mem),\n                           &public_shipping_module) != AP_OK)\n        return 4;\n    diagnostic_vad_init(&shipping_state);
     diagnostic_vad_init(&no_upstream_state);
     diagnostic_vad_init(&blend_only_state);
     diagnostic_vad_init(&guard_only_state);
@@ -207,7 +209,7 @@ int main(int argc, char **argv) {
     for (;;) {
         const size_t got = fread(raw, sizeof(raw[0]), FRAME, input_file);
         ap_ns_result_t ns_result;
-        ap_vad_result_t public_shipping;
+        ap_module_vad_result_t public_shipping;
         diagnostic_vad_result_t shipping;
         diagnostic_vad_result_t no_upstream;
         diagnostic_vad_result_t blend_only;
@@ -218,7 +220,7 @@ int main(int argc, char **argv) {
         if (got != FRAME) {
             fprintf(stderr, "partial input frame: %zu\n", got);
             fclose(input_file);
-            return 4;
+            return 5;
         }
 
         for (i = 0u; i < FRAME; ++i)
@@ -227,13 +229,16 @@ int main(int argc, char **argv) {
         ap_ns_process(&ns_state, AP_ENHANCE_FULL, NS_FLOOR,
                       input, NULL, ns_output, FRAME, 0, 0, 0, &ns_result);
 
-        ap_vad_process(
-            &public_shipping_state,
-            ns_output,
-            FRAME,
-            ns_result.speech_probability,
-            1,
-            &public_shipping);
+        if (ap_module_vad_process(
+                public_shipping_module,
+                ns_output,
+                FRAME,
+                ns_result.speech_probability,
+                1,
+                &public_shipping) != AP_OK) {
+            fclose(input_file);
+            return 6;
+        }
 
         diagnostic_vad_process(
             &shipping_state, ns_output, FRAME,
@@ -267,6 +272,6 @@ int main(int argc, char **argv) {
     }
 
     fclose(input_file);
-    if (frame_index == 0u) return 5;
+    if (frame_index == 0u) return 7;
     return 0;
 }

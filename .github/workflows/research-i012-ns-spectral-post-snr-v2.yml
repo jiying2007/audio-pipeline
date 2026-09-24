@@ -95,7 +95,7 @@ jobs:
           set -euo pipefail
           cmake -S . -B build-i012-v2-contract             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON
           cmake --build build-i012-v2-contract --target audio_pipeline --parallel
-          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -Iinclude -Isrc -Ibuild-i012-v2-contract/generated             tests/validation/i012_ns_spectral_post_snr_v2_probe.c             build-i012-v2-contract/libaudio_pipeline.a -lm             -o build-i012-v2-contract/i012_ns_spectral_post_snr_v2_probe
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i012-v2-contract/generated             tests/validation/i012_ns_spectral_post_snr_v2_probe.c             build-i012-v2-contract/libaudio_pipeline.a -lm             -o build-i012-v2-contract/i012_ns_spectral_post_snr_v2_probe
 
   diagnose:
     needs: contract
@@ -167,7 +167,7 @@ jobs:
           set -euo pipefail
           cmake -S /tmp/i012-v2-source -B /tmp/i012-v2-build             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
           cmake --build /tmp/i012-v2-build --target audio_pipeline ap_build_info_dump --parallel
-          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -I/tmp/i012-v2-source/include             -I/tmp/i012-v2-source/src             -I/tmp/i012-v2-build/generated             tests/validation/i012_ns_spectral_post_snr_v2_probe.c             /tmp/i012-v2-build/libaudio_pipeline.a -lm             -o /tmp/i012-ns-spectral-post-snr-v2-probe
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -I/tmp/i012-v2-source/include             -I/tmp/i012-v2-source/src             -I/tmp/i012-v2-build/generated             tests/validation/i012_ns_spectral_post_snr_v2_probe.c             /tmp/i012-v2-build/libaudio_pipeline.a -lm             -o /tmp/i012-ns-spectral-post-snr-v2-probe
           mkdir -p i012-v2-out
           /tmp/i012-v2-build/ap_build_info_dump > i012-v2-out/build-info.txt
           ${CC:-cc} --version | head -n 1 > i012-v2-out/compiler.txt

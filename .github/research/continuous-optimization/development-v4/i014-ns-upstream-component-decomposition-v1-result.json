@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i014-ns-upstream-component-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "ce6aa15067cf2cffc272f55cfd7c7aaf2698e0cf",
+  "diagnostic_infrastructure_sha": "d2fbca7decf502fd0296d24fc14446718f459481",
+  "decision": "NS_UPSTREAM_COMPONENT_SYNERGY_SUPPORTED_REVIEW_REQUIRED",
+  "reviewed_decision": "NONSTATIONARY_UPSTREAM_COMPONENT_SYNERGY_SUPPORTED_NO_MAPPING",
+  "authoritative_execution": {
+    "workflow_run_id": 35986904552,
+    "workflow_conclusion": "success",
+    "artifact_id": 10803045008,
+    "artifact_name": "i014-ns-upstream-component-decomposition-v1-35986904552",
+    "artifact_digest": "sha256:633312d8e8f3620653aa7e8c085c858841b10350c615ec536747fc2e43c21c46",
+    "artifact_size_bytes": 5297,
+    "internal_sha256s_verified": 9,
+    "sha256sums_sha256": "6a780d056730baa2315a2af18257eef3549a87c820afe0ca12385eb8243cf7f8",
+    "result_sha256": "5332b3904dc23cea1bef0f52927e814abebbf946fcc52221dec001b14d54d5cd",
+    "summary_sha256": "f4769a7196a41f9ae28a64d6258251453de80af0f2aa3902a7ca1f204175cb59",
+    "contract_sha256": "602ae6f0eaa45a2b2876f3681107e84791c596fb8d16cd4d150b1be91e8c27eb",
+    "probe_binary_sha256": "568a495e7e9995ac7aa3de7567b8c36701d069757f1d2e391fa754e543ddc3af"
+  },
+  "build_identity": {
+    "version": "2.3.49",
+    "module_mask": 1023,
+    "aec_backend": "MDF",
+    "ns_estimator": "EMA",
+    "simd_backend": "SCALAR",
+    "resampler_mode": "BANDLIMITED",
+    "fast_math": false,
+    "compiler_id": "GNU",
+    "compiler_version": "13.3.0",
+    "target_triple": "x86_64-linux-gnu",
+    "build_type": "Release",
+    "config_digest": "e8b62833a564a98a7a82d5db0f604c2bb9f03caff2ceeaca163bcd7d07ba8d5f"
+  },
+  "fresh_authority": {
+    "seeds": [251123, 261123, 271123],
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "diagnostic_execution_limit": 1,
+    "diagnostic_execution_consumed": 1,
+    "parameter_search_performed": false,
+    "threshold_tuning_performed": false,
+    "component_reweighting_performed": false,
+    "feature_mapping_selected": false
+  },
+  "input_integrity": {
+    "input_violations": 0,
+    "shipping_mirror_mismatch_frames": 0,
+    "max_shipping_mirror_probability_delta": 0.0,
+    "max_floor_shipping_probability_delta": 0.0,
+    "mirror_identity": true,
+    "floor_invariance": true
+  },
+  "preregistered_gates": {
+    "min_combined_nonstationary_shipping_auc": 0.62,
+    "min_nonstationary_shipping_auc_gain_over_mean_suppression": 0.02,
+    "min_nonstationary_shipping_auc_gain_over_concentration": 0.02,
+    "min_per_seed_nonstationary_shipping_auc": 0.60
+  },
+  "summary": {
+    "combined_mean_suppression_auc": 0.5345454356932521,
+    "combined_concentration_auc": 0.4972869229812119,
+    "combined_shipping_gap_auc": 0.572033511675169,
+    "combined_nonstationary_mean_suppression_auc": 0.5574899423499647,
+    "combined_nonstationary_concentration_auc": 0.4940749035709842,
+    "combined_nonstationary_shipping_gap_auc": 0.6435718136949939,
+    "nonstationary_shipping_auc_gain_over_mean_suppression": 0.0860818713450292,
+    "nonstationary_shipping_auc_gain_over_concentration": 0.14949691012400973,
+    "all_synergy_gates_pass": true
+  },
+  "per_seed": [
+    {
+      "seed": 251123,
+      "shipping_gap_auc": 0.5730981709593131,
+      "nonstationary_shipping_gap_auc": 0.6411795446061963,
+      "nonstationary_mean_suppression_auc": 0.5543262411347518,
+      "nonstationary_concentration_auc": 0.49669279581933556,
+      "stationary_shipping_gap_auc": 0.44762971257932066
+    },
+    {
+      "seed": 261123,
+      "shipping_gap_auc": 0.5765752146323255,
+      "nonstationary_shipping_gap_auc": 0.6464427025009332,
+      "nonstationary_mean_suppression_auc": 0.5606644270250093,
+      "nonstationary_concentration_auc": 0.49434117207913403,
+      "stationary_shipping_gap_auc": 0.43992534527808885
+    },
+    {
+      "seed": 271123,
+      "shipping_gap_auc": 0.5675699888017917,
+      "nonstationary_shipping_gap_auc": 0.6434042553191489,
+      "nonstationary_mean_suppression_auc": 0.5575363941769317,
+      "nonstationary_concentration_auc": 0.49121313923105636,
+      "stationary_shipping_gap_auc": 0.42548712206047035
+    }
+  ],
+  "reviewed_interpretation": {
+    "nonstationary_component_synergy_supported": true,
+    "general_all_condition_feature_admission_supported": false,
+    "reason": "On entirely fresh nonstationary frames, the unchanged shipping gap concentration-minus-mean is consistently stronger than either native component alone and passes every preregistered synergy gate. However, stationary shipping-gap AUC remains weak on every seed, so this evidence is regime-specific and must not be generalized into a new all-condition feature or mapping.",
+    "component_reweighting_allowed": false,
+    "threshold_rescue_allowed": false,
+    "new_feature_mapping_allowed": false,
+    "source_candidate_allowed": false,
+    "next_step": "Keep shipping NS unchanged. If research continues, diagnose how the already-valid upstream speech_probability is consumed by VAD local probability, blend, refresh, noise update and hangover under nonstationary frames, using new fresh authority and no threshold or mapping search."
+  },
+  "authority_boundary": {
+    "source_candidate_selected": false,
+    "feature_mapping_selected": false,
+    "component_reweighting_selected": false,
+    "vad_mapping_selected": false,
+    "adaptive_state_guard_selected": false,
+    "vad_threshold_selected": false,
+    "source_merge_authorized": false,
+    "threshold_tuning_authorized": false,
+    "confirmation_consumed": false,
+    "shipping_source_changed": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

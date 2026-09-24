@@ -49,9 +49,9 @@ jobs:
       - name: Verify original evidence and reconcile governed archive
         env:
           GH_TOKEN: ${{ github.token }}
-          # Prefer a repository-scoped App/PAT. Reuse existing bootstrap identity
-          # only when configured; never alter rules or use an admin merge bypass.
-          GH_WRITE_TOKEN: ${{ secrets.RESEARCH_AUTOMATION_TOKEN || secrets.REPOSITORY_ADMIN_TOKEN }}
+          # Publishing has a dedicated identity; governance credentials are not
+          # fallback writers. Missing/invalid credentials remain a visible block.
+          GH_WRITE_TOKEN: ${{ secrets.RESEARCH_AUTOMATION_TOKEN }}
         run: |
           set -euo pipefail
           python3 .github/program/i015_finalize.py --output i015-finalization-out

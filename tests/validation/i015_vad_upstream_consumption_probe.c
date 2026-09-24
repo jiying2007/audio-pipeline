@@ -195,7 +195,10 @@ int main(int argc, char **argv) {
     }
 
     ap_ns_init(&ns_state, FRAME);
-    if (ap_module_vad_init(public_shipping_mem, sizeof(public_shipping_mem),\n                           &public_shipping_module) != AP_OK)\n        return 4;\n    diagnostic_vad_init(&shipping_state);
+    if (ap_module_vad_init(public_shipping_mem, sizeof(public_shipping_mem),
+                           &public_shipping_module) != AP_OK)
+        return 4;
+    diagnostic_vad_init(&shipping_state);
     diagnostic_vad_init(&no_upstream_state);
     diagnostic_vad_init(&blend_only_state);
     diagnostic_vad_init(&guard_only_state);

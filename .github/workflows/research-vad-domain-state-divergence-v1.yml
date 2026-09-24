@@ -6,28 +6,22 @@ on:
     branches: [main]
     paths:
       - '.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1.json'
+      - '.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json'
       - 'tests/validation/vad_domain_state_divergence_probe.c'
       - 'tests/validation/vad_domain_state_divergence.py'
       - '.github/workflows/research-vad-domain-state-divergence-v1.yml'
-      - 'src/enhance/ap_vad.c'
-      - 'src/enhance/ap_ns.c'
-      - 'src/modules/ap_vad_module.c'
-      - 'src/modules/ap_ns_module.c'
-      - 'src/modules/ap_resampler_module.c'
-      - 'validation/tools/build_stage_validation_corpus.py'
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: research-vad-domain-state-divergence-v1-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   CONTRACT: .github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1.json
-  PYTHONPATH: validation/tools:tests/validation
+  RESULT: .github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json
 
 jobs:
   contract:
@@ -37,285 +31,73 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Validate diagnostic-only contract and tooling
+
+      - name: Validate consumed diagnostic contract, tooling and reviewed result
         run: |
           set -euo pipefail
           python3 -m py_compile tests/validation/vad_domain_state_divergence.py
           python3 tests/validation/vad_domain_state_divergence.py --self-test
           python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 -m json.tool "$RESULT" >/dev/null
           python3 - <<'PY'
           import json
           from pathlib import Path
-          c = json.loads(Path(
+
+          contract = json.loads(Path(
               '.github/research/continuous-optimization/development-v4/'
               'vad-domain-state-divergence-v1.json'
           ).read_text())
-          assert c['authority'] == 'DIAGNOSTIC_ONLY_VAD_STATE_DECOMPOSITION'
-          assert c['source_base_sha'] == 'd5bd0f6d72574b6af9631dc10d7903cd43a269c3'
-          assert c['fresh_diagnostic_authority']['seeds'] == [131123, 141123, 151123]
-          assert c['fresh_diagnostic_authority']['case_profile'] == 'ns-isolated'
-          assert c['fresh_diagnostic_authority']['candidate_value_search'] is False
-          assert c['fresh_diagnostic_authority']['threshold_search'] is False
-          assert c['budget'] == {
+          result = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'vad-domain-state-divergence-v1-result.json'
+          ).read_text())
+
+          assert contract['authority'] == 'DIAGNOSTIC_ONLY_VAD_STATE_DECOMPOSITION'
+          assert contract['source_base_sha'] == 'd5bd0f6d72574b6af9631dc10d7903cd43a269c3'
+          assert contract['fresh_diagnostic_authority']['seeds'] == [131123, 141123, 151123]
+          assert contract['budget'] == {
               'candidate_limit': 0,
               'confirmation_limit': 0,
               'diagnostic_execution_limit': 1,
           }
-          assert c['forbidden_feedback']['candidate_selection_from_prior_locked_seeds'] == [
-              91123, 92123, 93123
-          ]
-          assert all(value is False for value in c['authority_boundary'].values())
+          assert all(value is False for value in contract['authority_boundary'].values())
+
+          assert result['status'] == 'CLOSED_DIAGNOSTIC_ONLY'
+          assert result['authority'] == contract['authority']
+          assert result['source_base_sha'] == contract['source_base_sha']
+          assert result['decision'] == 'VAD_STATE_DIVERGENCE_CONFIRMED_REVIEW_REQUIRED'
+          assert result['reviewed_decision'] == (
+              'LOCAL_NOISE_STATE_REFRESH_HANGOVER_CHAIN_CONFIRMED_NO_CANDIDATE'
+          )
+          assert result['authoritative_execution']['workflow_run_id'] == 35944510213
+          assert result['authoritative_execution']['artifact_id'] == 10786012888
+          assert result['authoritative_execution']['artifact_digest'] == (
+              'sha256:d35209a71491847fb56750cae1258c3df792d24d773403489f9e8f6f4e25f8ef'
+          )
+          fresh = result['fresh_authority']
+          assert fresh['seeds'] == [131123, 141123, 151123]
+          assert fresh['diagnostic_execution_limit'] == 1
+          assert fresh['diagnostic_execution_consumed'] == 1
+          assert fresh['candidate_limit_consumed'] == 0
+          assert fresh['confirmation_limit_consumed'] == 0
+          assert result['mirror_identity'] == {
+              'probability_mismatch_frames': 0,
+              'active_mismatch_frames': 0,
+              'max_probability_delta': 0.0,
+              'conclusion': 'PUBLIC_VAD_MIRROR_EXACT_ON_FRESH_DIAGNOSTIC',
+          }
+          aggregate = result['aggregate']
+          assert aggregate['lost_speech_frames'] == 105
+          assert aggregate['gained_speech_frames'] == 48
+          assert aggregate['shipping_recall'] == 0.8308641975308642
+          assert aggregate['pre_ns_recall'] == 0.7956790123456791
+          attribution = result['lost_speech_attribution']
+          assert attribution['pre_final_below_decision']['frames'] == 105
+          assert attribution['pre_noise_rms_higher']['frames'] == 105
+          assert attribution['hangover_history_lower']['frames'] == 91
+          assert attribution['refresh_changed']['frames'] == 85
+          assert attribution['transient_cap_added']['frames'] == 0
+          assert attribution['upstream_guard_lost']['frames'] == 3
+          assert all(value is False for value in result['authority_boundary'].values())
           PY
           git cat-file -e "d5bd0f6d72574b6af9631dc10d7903cd43a269c3^{commit}"
-
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: vad-domain-state-divergence-contract
-
-      - name: Compile test-only mirror probe
-        run: |
-          set -euo pipefail
-          cmake -S . -B build-vad-domain-contract \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DAP_BUILD_BENCH=OFF \
-            -DAP_STRICT_WARNINGS=ON
-          cmake --build build-vad-domain-contract --target audio_pipeline --parallel
-          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror \
-            -Iinclude -Ibuild-vad-domain-contract/generated \
-            tests/validation/vad_domain_state_divergence_probe.c \
-            build-vad-domain-contract/libaudio_pipeline.a -lm \
-            -o build-vad-domain-contract/vad_domain_state_divergence_probe
-
-      - name: Smoke public-versus-mirror identity
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import random
-          import struct
-          from pathlib import Path
-          rng = random.Random(39101)
-          frames = 40
-          samples = []
-          labels = []
-          for frame in range(frames):
-              speech = 1 if 10 <= frame < 30 else 0
-              labels.append(speech)
-              for i in range(160):
-                  noise = rng.randint(-900, 900)
-                  tone = int(2200 * __import__('math').sin(
-                      2.0 * __import__('math').pi * 223.0 * (frame * 160 + i) / 16000.0
-                  )) if speech else 0
-                  samples.append(max(-32768, min(32767, noise + tone)))
-          Path('/tmp/vad-domain-smoke.pcm').write_bytes(
-              struct.pack('<' + 'h' * len(samples), *samples)
-          )
-          Path('/tmp/vad-domain-smoke.labels').write_text(
-              ''.join(f'{x}\n' for x in labels)
-          )
-          PY
-          build-vad-domain-contract/vad_domain_state_divergence_probe \
-            /tmp/vad-domain-smoke.pcm \
-            /tmp/vad-domain-smoke.labels \
-            /tmp/vad-domain-smoke.json
-          test "$(jq -r .mirror_probability_mismatch_frames /tmp/vad-domain-smoke.json)" = 0
-          test "$(jq -r .mirror_active_mismatch_frames /tmp/vad-domain-smoke.json)" = 0
-
-  diagnose:
-    needs: contract
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          fetch-depth: 0
-
-      - name: Enforce one-shot diagnostic execution
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = refs/heads/main
-          python3 - <<'PY'
-          import json
-          import os
-          import subprocess
-          repo = os.environ['GITHUB_REPOSITORY']
-          current = int(os.environ['GITHUB_RUN_ID'])
-          workflow = 'research-vad-domain-state-divergence-v1.yml'
-          runs = json.loads(subprocess.check_output([
-              'gh', 'api',
-              f'repos/{repo}/actions/workflows/{workflow}/runs'
-              '?event=workflow_dispatch&branch=main&per_page=100',
-          ], text=True)).get('workflow_runs', [])
-          consumed = []
-          for item in runs:
-              run_id = int(item['id'])
-              if run_id == current:
-                  continue
-              jobs = json.loads(subprocess.check_output([
-                  'gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100',
-              ], text=True)).get('jobs', [])
-              if any(
-                  step.get('name') == 'Run fresh VAD state-divergence diagnostic'
-                  and step.get('conclusion') == 'success'
-                  for job in jobs
-                  for step in job.get('steps', [])
-              ):
-                  consumed.append(run_id)
-          if consumed:
-              raise SystemExit(
-                  'diagnostic execution budget already consumed by run(s): '
-                  + ','.join(str(x) for x in sorted(consumed))
-              )
-          print('one-shot diagnostic guard: PASS')
-          PY
-
-      - name: Bind exact frozen shipping source
-        run: |
-          set -euo pipefail
-          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
-          test "$SOURCE_BASE_SHA" = d5bd0f6d72574b6af9631dc10d7903cd43a269c3
-          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
-          git worktree add --detach /tmp/vad-domain-source "$SOURCE_BASE_SHA"
-          printf '%s\n' "$SOURCE_BASE_SHA" > /tmp/vad-domain-source-sha.txt
-
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: vad-domain-state-divergence-v1
-
-      - name: Build exact public module library and test-only mirror probe
-        run: |
-          set -euo pipefail
-          cmake -S /tmp/vad-domain-source -B /tmp/vad-domain-build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DAP_BUILD_BENCH=OFF \
-            -DAP_STRICT_WARNINGS=ON
-          cmake --build /tmp/vad-domain-build --target audio_pipeline ap_build_info_dump --parallel
-          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror \
-            -I/tmp/vad-domain-source/include \
-            -I/tmp/vad-domain-build/generated \
-            tests/validation/vad_domain_state_divergence_probe.c \
-            /tmp/vad-domain-build/libaudio_pipeline.a -lm \
-            -o /tmp/vad-domain-state-divergence-probe
-          mkdir -p vad-domain-out
-          /tmp/vad-domain-build/ap_build_info_dump > vad-domain-out/build-info.txt
-          ${CC:-cc} --version | head -n 1 > vad-domain-out/compiler.txt
-          sha256sum /tmp/vad-domain-state-divergence-probe > vad-domain-out/probe.sha256
-          cp "$CONTRACT" vad-domain-out/contract.json
-          cp /tmp/vad-domain-source-sha.txt vad-domain-out/source-base-revision.txt
-          printf '%s\n' "$GITHUB_SHA" > vad-domain-out/diagnostic-infra-revision.txt
-
-      - name: Generate preregistered fresh diagnostic partitions
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          import subprocess
-          from pathlib import Path
-          c = json.loads(Path(
-              '.github/research/continuous-optimization/development-v4/'
-              'vad-domain-state-divergence-v1.json'
-          ).read_text())
-          fresh = c['fresh_diagnostic_authority']
-          manifest = []
-          for seed in fresh['seeds']:
-              out = Path(f'/tmp/vad-domain-{seed}')
-              subprocess.run([
-                  'python3',
-                  str(Path('/tmp/vad-domain-source') / fresh['generator']),
-                  '--output', str(out),
-                  '--seed', str(seed),
-                  '--seconds', str(fresh['seconds']),
-              ], check=True, cwd='/tmp/vad-domain-source')
-              corpus = out / 'corpus.json'
-              payload = json.loads(corpus.read_text())
-              assert payload['generator']['seed'] == seed
-              cases = [
-                  row for row in payload['cases']
-                  if row.get('processor_profile') == 'ns-isolated'
-                  and row.get('vad_labels')
-                  and row.get('render_audio') is None
-              ]
-              assert cases, f'no ns-isolated VAD cases for seed {seed}'
-              manifest.append(str(corpus))
-          Path('vad-domain-out/corpora.txt').write_text('\n'.join(manifest) + '\n')
-          PY
-
-      - name: Run fresh VAD state-divergence diagnostic
-        run: |
-          set -euo pipefail
-          mapfile -t corpora < vad-domain-out/corpora.txt
-          args=()
-          for corpus in "${corpora[@]}"; do
-            args+=(--corpus "$corpus")
-          done
-          python3 tests/validation/vad_domain_state_divergence.py \
-            --probe /tmp/vad-domain-state-divergence-probe \
-            --contract "$CONTRACT" \
-            "${args[@]}" \
-            --output vad-domain-out/result.json \
-            | tee vad-domain-out/summary.json
-
-      - name: Enforce diagnostic-only authority boundary
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          r = json.loads(Path('vad-domain-out/result.json').read_text())
-          assert r['authority'] == 'DIAGNOSTIC_ONLY_VAD_STATE_DECOMPOSITION'
-          assert r['fresh_seeds'] == [131123, 141123, 151123]
-          assert r['decision'] in {
-              'VAD_STATE_DIVERGENCE_CONFIRMED_REVIEW_REQUIRED',
-              'NO_RECALL_DIVERGENCE_EXERCISED_REVIEW_REQUIRED',
-          }
-          assert r['candidate_budget_consumed'] == 0
-          assert r['confirmation_budget_consumed'] == 0
-          assert r['shipping_source_changed'] is False
-          assert r['candidate_selected'] is False
-          assert r['thresholds_tuned'] is False
-          assert r['summary']['mirror_probability_mismatch_frames'] == 0
-          assert r['summary']['mirror_active_mismatch_frames'] == 0
-          PY
-
-      - name: Seal diagnostic evidence
-        if: always()
-        run: |
-          set -euo pipefail
-          find vad-domain-out -type f ! -name SHA256SUMS -print0 | sort -z \
-            | xargs -0 sha256sum > vad-domain-out/SHA256SUMS
-
-      - name: Publish diagnostic summary
-        if: always()
-        run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          path = Path('vad-domain-out/result.json')
-          print('## VAD local-domain state divergence')
-          if not path.exists():
-              print('- Result: evidence incomplete')
-              raise SystemExit(0)
-          r = json.loads(path.read_text())
-          s = r['summary']
-          print(f"- Decision: {r['decision']}")
-          print(f"- Fresh seeds: {r['fresh_seeds']}")
-          print(f"- Shipping recall: {s['shipping_recall']}")
-          print(f"- Pre-NS counterfactual recall: {s['pre_ns_recall']}")
-          print(f"- Lost speech frames: {s['lost_speech_frames']}")
-          print(f"- Gained speech frames: {s['gained_speech_frames']}")
-          print(f"- Mirror probability mismatches: {s['mirror_probability_mismatch_frames']}")
-          print(f"- Mirror active mismatches: {s['mirror_active_mismatch_frames']}")
-          print(f"- Lost-speech attribution: {s['lost_speech_attribution']}")
-          print('- Authority: diagnostic only; no candidate selection, threshold tuning, confirmation, source merge, HIL, Product Certification or release authority.')
-          PY
-
-      - name: Upload hash-bound diagnostic evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: vad-domain-state-divergence-v1-${{ github.run_id }}
-          path: vad-domain-out/
-          retention-days: 90
-          if-no-files-found: error

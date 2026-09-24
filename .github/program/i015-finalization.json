@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "repository": "jiying2007/audio-pipeline",
+  "repository_id": 1347377137,
+  "investigation_id": "i015-vad-upstream-consumption-decomposition-v1",
+  "source_base_sha": "1e08e892b29515b384265e50d9fd809ea7e06bb8",
+  "diagnostic_infrastructure_sha": "72db70f76a9ef2fffb767709d9aa289814207bae",
+  "workflow_path": ".github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml",
+  "workflow_id": 365962466,
+  "run_id": 35994848668,
+  "run_attempt": 1,
+  "artifact_id": 10805915721,
+  "artifact_name": "i015-vad-upstream-consumption-decomposition-v1-35994848668",
+  "artifact_size_bytes": 8079,
+  "artifact_sha256": "5be633f57d5b77ce36cbb575b075e7cc0857c183d4b8b9bd87612f4183b857e0",
+  "member_sha256": {
+    "SHA256SUMS": "84873ea3c8a99089f857cfc0f2213a7d91aac01f5d37c2eab93f74e77b7a2b45",
+    "build-info.txt": "c989d313da99176d6e4b700e031386cca5225f12eb957e4a0b1fdfb0e5dc07cd",
+    "compiler.txt": "cd00cba2069afd1ce8b5440dd0e489e9931d6533d37bec32ca15ac39a374c77f",
+    "contract.json": "c5cb138fe6c7c75b39b15089724ba513f073b7eacca04d609d38cb540957d784",
+    "corpora.txt": "5d8f146fb740fe2f63ee9d329f0f2617e211c093e02e903d30b581b0887bb7fc",
+    "diagnostic-infra-revision.txt": "229005fea73199d409ba7f72b568e9ae1be176c23127d49a1b33aa2532399d1b",
+    "probe.sha256": "8d1fbb94ec2872ad66edfa243fe99e6f45b5096601cbe12fde766da1fdb7e189",
+    "result.json": "5b066775c7d701e45efcb1b93591a1bd721f26e25bbc499c3cfbb46377794c56",
+    "source-base-revision.txt": "98b056a6a694a669892ff0e36f5b589b84c7e9eef1c7c57d78c97d5f7c674bb4",
+    "summary.json": "e8a09e45245952246220aff2ae86df4ac6ff5ad2c1eb0273fe7c16aa9de4dede"
+  },
+  "fresh_seeds": [
+    281123,
+    291123,
+    301123
+  ],
+  "reviewed_decision": "VAD_UPSTREAM_RECALL_FALSE_ACTIVATION_TRADEOFF_NO_LANE_SELECTION",
+  "reviewed_interpretation": "Both frozen noise regimes show rescued speech and added noise-active frames. Nonstationary rescue attribution includes blend-exclusive, guard-exclusive, both single lanes and interaction-only frames. These are diagnostic observations, not a lane ranking, guard/blend/threshold change or shipping admission.",
+  "archive_root": "validation/research/evidence/i015-35994848668",
+  "closure_path": ".github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json",
+  "archive_branch": "automation/i015-evidence-35994848668",
+  "tracking_pr": 406,
+  "required_pr_workflows": [
+    ".github/workflows/verify.yml",
+    ".github/workflows/program-iteration.yml",
+    ".github/workflows/research-optimization.yml",
+    ".github/workflows/research-algorithm-parameter-optimization.yml",
+    ".github/workflows/i015-evidence-finalization-contract.yml"
+  ],
+  "verification_limits": [
+    "No raw frame traces or audio are included; AUC is not independently recomputed.",
+    "The probe hash file is preserved; the absent probe executable is not independently hash-verified.",
+    "No research execution, candidate search, confirmation, HIL, Product Certification or release is authorized."
+  ],
+  "archive_note_path": "docs/program/I015-FINALIZATION.md"
+}

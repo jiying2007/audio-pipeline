@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "diagnostic_id": "vad-calibrated-local-snr-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "DIAGNOSTIC_ONLY_FIXED_COUNTERFACTUAL",
+  "source_base_sha": "1b262387af2b0af07f22917f3bcef300fbb74aac",
+  "diagnostic_infrastructure_sha": "2cd2861844164d9b32a4b69ad36dec0d53de39f4",
+  "decision": "CALIBRATED_LOCAL_SNR_REGRESSION_REVIEW_REQUIRED",
+  "reviewed_decision": "DIRECT_CALIBRATED_LOCAL_SNR_REPLACEMENT_REJECTED_KEEP_SHIPPING_BASELINE",
+  "authoritative_execution": {
+    "workflow_run_id": 35948820088,
+    "workflow_conclusion": "success",
+    "artifact_id": 10788040667,
+    "artifact_name": "vad-calibrated-local-snr-v1-35948820088",
+    "artifact_digest": "sha256:22ebe69a2d164d29b006aa01fb64e8b72d00c377eeb5e0f4a1e8828040b61ec9",
+    "artifact_size_bytes": 5993,
+    "internal_sha256s_verified": 9,
+    "sha256sums_sha256": "11c9979b153f6fba247de69b0640a9e577fc1bd4aa4badfd19e1ef4afb2c7dde",
+    "result_sha256": "b42fcf7dc6d44584cad797dc4efb42f43991ca6ea530b24b2a71b2a578533f35",
+    "summary_sha256": "458e04136c5f33d6405b127b09f015b25451cfb2a727482c43386cb93bcfd064",
+    "contract_sha256": "92f4ce9d9e047ed74460103734853063f7305da3c4c32405b43e54a08cc05830"
+  },
+  "fresh_authority": {
+    "seeds": [161123, 171123, 181123],
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "diagnostic_execution_limit": 1,
+    "diagnostic_execution_consumed": 1,
+    "threshold_search_performed": false,
+    "candidate_search_performed": false
+  },
+  "input_integrity": {
+    "mirror_probability_mismatch_frames": 0,
+    "mirror_active_mismatch_frames": 0,
+    "floor_probability_mismatch_frames": 0,
+    "floor_active_mismatch_frames": 0,
+    "max_floor_noise_reference_delta_db": 0.0,
+    "max_floor_upstream_probability_delta": 0.0,
+    "input_violations": 0
+  },
+  "aggregate": {
+    "frames": 3600,
+    "speech_frames": 1620,
+    "noise_frames": 1980,
+    "shipping_recall": 0.8185185185185185,
+    "counterfactual_recall": 0.5012345679012346,
+    "absolute_recall_delta": -0.3172839506172839,
+    "shipping_false_positive_rate": 0.2222222222222222,
+    "counterfactual_false_positive_rate": 0.19747474747474747,
+    "absolute_false_positive_rate_delta": -0.02474747474747474,
+    "lost_speech_frames": 524,
+    "gained_speech_frames": 10,
+    "behavior_active_diff_frames": 953,
+    "behavior_probability_diff_frames": 2120,
+    "max_shipping_counter_probability_delta": 0.860265911,
+    "min_counter_ratio_db": -27.181057,
+    "max_counter_ratio_db": 16.1024895,
+    "scale_offset_db": 32.1611328125
+  },
+  "partition_regressions": [
+    {
+      "seed": 161123,
+      "shipping_recall": 0.8222222222222222,
+      "counterfactual_recall": 0.4888888888888889,
+      "recall_drop": 0.3333333333333333,
+      "allowed_recall_drop": 0.03,
+      "shipping_false_positive_rate": 0.22424242424242424,
+      "counterfactual_false_positive_rate": 0.1984848484848485,
+      "false_positive_rate_rise": -0.025757575757575757
+    },
+    {
+      "seed": 171123,
+      "shipping_recall": 0.8203703703703704,
+      "counterfactual_recall": 0.5018518518518519,
+      "recall_drop": 0.31851851851851853,
+      "allowed_recall_drop": 0.03,
+      "shipping_false_positive_rate": 0.22727272727272727,
+      "counterfactual_false_positive_rate": 0.2106060606060606,
+      "false_positive_rate_rise": -0.016666666666666663
+    },
+    {
+      "seed": 181123,
+      "shipping_recall": 0.812962962962963,
+      "counterfactual_recall": 0.512962962962963,
+      "recall_drop": 0.30000000000000004,
+      "allowed_recall_drop": 0.03,
+      "shipping_false_positive_rate": 0.21515151515151515,
+      "counterfactual_false_positive_rate": 0.18333333333333332,
+      "false_positive_rate_rise": -0.03181818181818183
+    }
+  ],
+  "reviewed_interpretation": {
+    "direct_replacement_supported": false,
+    "shipping_baseline_retained": true,
+    "reason": "The calibrated NS noise reference is floor-invariant and the counterfactual is correctly exercised, but replacing the adaptive VAD local ratio source directly makes the detector substantially more conservative: recall falls by about 0.30 to 0.33 absolute on every fresh partition while FPR improves only modestly.",
+    "tooling_or_floor_artifact_explains_failure": false,
+    "threshold_relaxation_authorized": false,
+    "parameter_search_authorized": false,
+    "source_candidate_authorized": false,
+    "next_step": "Do not tune thresholds against this failed counterfactual. If further work is justified, use a separate diagnostic-only decomposition to compare shipping adaptive noise-state ratio versus calibrated reference ratio on speech/noise frames and determine whether the calibrated reference is useful only as a bounded state-update guard or feature, not as a direct replacement."
+  },
+  "authority_boundary": {
+    "source_candidate_selected": false,
+    "source_merge_authorized": false,
+    "threshold_tuning_authorized": false,
+    "confirmation_consumed": false,
+    "shipping_source_changed": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

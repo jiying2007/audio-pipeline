@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "diagnostic_id": "vad-domain-state-divergence-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "DIAGNOSTIC_ONLY_VAD_STATE_DECOMPOSITION",
+  "source_base_sha": "d5bd0f6d72574b6af9631dc10d7903cd43a269c3",
+  "diagnostic_infrastructure_sha": "4fd72d16b9b43272e6516abcd62b030f9c4e8e5d",
+  "decision": "VAD_STATE_DIVERGENCE_CONFIRMED_REVIEW_REQUIRED",
+  "reviewed_decision": "LOCAL_NOISE_STATE_REFRESH_HANGOVER_CHAIN_CONFIRMED_NO_CANDIDATE",
+  "authoritative_execution": {
+    "workflow_run_id": 35944510213,
+    "workflow_conclusion": "success",
+    "artifact_id": 10786012888,
+    "artifact_name": "vad-domain-state-divergence-v1-35944510213",
+    "artifact_digest": "sha256:d35209a71491847fb56750cae1258c3df792d24d773403489f9e8f6f4e25f8ef",
+    "artifact_size_bytes": 6772,
+    "internal_sha256s_verified": 9,
+    "sha256sums_sha256": "ecdf8164ef06dda3446acfcce002a5c652ce8a5f9ded4d4177f7a75937017cc7",
+    "result_sha256": "3695cc5ac1b64873431a50e531081be16eb0db2dd73cb6e22a12193b6ec91157",
+    "summary_sha256": "3e750260f506bd58da6e3dfe4dbecf10841e4cc74ddeda24cbbdae2462673053",
+    "contract_sha256": "0855356ef2ed39b715ccc1186f65f6b3e4330dedce4213617d31ac88240483dc",
+    "probe_sha256": "684b24a6c11e8eefc61f0022d75e85cc7975682248475fe99b0c3bc4ca9afd8e"
+  },
+  "fresh_authority": {
+    "seeds": [131123, 141123, 151123],
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "diagnostic_execution_limit": 1,
+    "diagnostic_execution_consumed": 1,
+    "threshold_search_performed": false,
+    "candidate_search_performed": false
+  },
+  "mirror_identity": {
+    "probability_mismatch_frames": 0,
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0,
+    "conclusion": "PUBLIC_VAD_MIRROR_EXACT_ON_FRESH_DIAGNOSTIC"
+  },
+  "aggregate": {
+    "frames": 3600,
+    "speech_frames": 1620,
+    "noise_frames": 1980,
+    "shipping_recall": 0.8308641975308642,
+    "pre_ns_recall": 0.7956790123456791,
+    "shipping_false_positive_rate": 0.2196969696969697,
+    "pre_ns_false_positive_rate": 0.1595959595959596,
+    "lost_speech_frames": 105,
+    "gained_speech_frames": 48,
+    "active_diff_frames": 320,
+    "raw_probability_diff_frames": 1863,
+    "blend_diff_frames": 503,
+    "noise_update_diff_frames": 525,
+    "refresh_diff_frames": 939,
+    "hangover_before_diff_frames": 1013,
+    "hangover_after_diff_frames": 1013
+  },
+  "lost_speech_attribution": {
+    "pre_final_below_decision": {
+      "frames": 105,
+      "fraction": 1.0
+    },
+    "pre_noise_rms_higher": {
+      "frames": 105,
+      "fraction": 1.0
+    },
+    "hangover_history_lower": {
+      "frames": 91,
+      "fraction": 0.8666666666666667
+    },
+    "refresh_changed": {
+      "frames": 85,
+      "fraction": 0.8095238095238095
+    },
+    "pre_raw_below_local_guard": {
+      "frames": 68,
+      "fraction": 0.6476190476190476
+    },
+    "pre_ratio_db_lower": {
+      "frames": 55,
+      "fraction": 0.5238095238095238
+    },
+    "raw_probability_lower": {
+      "frames": 55,
+      "fraction": 0.5238095238095238
+    },
+    "noise_update_changed": {
+      "frames": 48,
+      "fraction": 0.45714285714285713
+    },
+    "shipping_final_above_decision": {
+      "frames": 48,
+      "fraction": 0.45714285714285713
+    },
+    "shipping_raw_above_local_guard": {
+      "frames": 51,
+      "fraction": 0.4857142857142857
+    },
+    "upstream_guard_lost": {
+      "frames": 3,
+      "fraction": 0.02857142857142857
+    },
+    "transient_cap_added": {
+      "frames": 0,
+      "fraction": 0.0
+    }
+  },
+  "reviewed_interpretation": {
+    "primary_causal_chain": "Changing the local observation domain changes the adaptive local noise state and local level ratio. The resulting final probability/refresh differences accumulate into lower hangover history and speech-active loss.",
+    "transient_suppression_is_primary_cause": false,
+    "upstream_ns_probability_guard_is_primary_cause": false,
+    "wholesale_pre_ns_local_observation_supported_as_fix": false,
+    "calibrated_same_domain_noise_reference_remains_worth_candidate_zero_study": true,
+    "next_step": "Run a separately preregistered candidate-zero counterfactual using the calibrated NS noise reference from i011-ns-noise-reference-scale-v1, while freezing all existing shipping VAD constants and using entirely new fresh seeds. The study must not tune thresholds or select a source candidate."
+  },
+  "authority_boundary": {
+    "source_candidate_selected": false,
+    "source_merge_authorized": false,
+    "threshold_tuning_authorized": false,
+    "confirmation_consumed": false,
+    "shipping_source_changed": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i012-ns-spectral-post-snr-v2",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "61ff84f1e38b1c928bbb1ea9efae006e33779465",
+  "diagnostic_infrastructure_sha": "e2eaa9318e2a21a71d184da61f4293145a134bab",
+  "decision": "NS_SPECTRAL_POST_SNR_INFORMATION_GAIN_NOT_SUPPORTED_REVIEW_REQUIRED",
+  "reviewed_decision": "SPECTRAL_INFORMATION_GAIN_INSUFFICIENT_KEEP_BASELINE",
+  "authoritative_execution": {
+    "workflow_run_id": 35958701243,
+    "workflow_conclusion": "success",
+    "artifact_id": 10791920720,
+    "artifact_name": "i012-ns-spectral-post-snr-v2-35958701243",
+    "artifact_digest": "sha256:3b0ddb18ba895a791d37afede84de02cf90b8791836e616f8e853f17f351e174",
+    "artifact_size_bytes": 5597,
+    "internal_sha256s_verified": 9,
+    "sha256sums_sha256": "e9af6b2a00a3d4de96773dcda65de16bc06b9f7d648910b20d2b470c0be504f2",
+    "result_sha256": "84de4ae821d4dcb4e67b75f11155271cb44759ad12294309c67a6e8f1fd42e47",
+    "summary_sha256": "3eab92d2caa171931c8dca21bbe84a384239e740a4beb2050b841e5c88825caf",
+    "contract_sha256": "027d9b2dc1abe9004ebe0479b69541f9396da552160c079bb534316de956f63a",
+    "probe_manifest_sha256": "20ed1ac171e4ab115d62ebdf5a8d2aa2eb833b8a17dcfb2b0db804a435e8d175",
+    "probe_binary_sha256": "f5cec90d44c042c2d17a34052454c31550e9299be34309d9c27c8b5043929907"
+  },
+  "pre_authority_infrastructure_failure": {
+    "workflow_run_id": 35954026665,
+    "classification": "INFRASTRUCTURE_FAILED_BEFORE_FRESH_DIAGNOSTIC",
+    "root_cause": "SOURCE_BASE_SHA was shell-step-local and unset in the build step under set -u",
+    "fresh_partitions_generated": false,
+    "diagnostic_step_executed": false,
+    "diagnostic_budget_consumed": false,
+    "repair_pr": 400
+  },
+  "build_identity": {
+    "version": "2.3.49",
+    "module_mask": 1023,
+    "aec_backend": "MDF",
+    "ns_estimator": "EMA",
+    "simd_backend": "SCALAR",
+    "resampler_mode": "BANDLIMITED",
+    "fast_math": false,
+    "compiler": "GNU 13.3.0",
+    "target_triple": "x86_64-linux-gnu",
+    "build_type": "Release",
+    "config_digest": "e8b62833a564a98a7a82d5db0f604c2bb9f03caff2ceeaca163bcd7d07ba8d5f"
+  },
+  "fresh_authority": {
+    "seeds": [191123, 201123, 211123],
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "diagnostic_execution_limit": 1,
+    "diagnostic_execution_consumed": 1,
+    "parameter_search_performed": false,
+    "threshold_tuning_performed": false,
+    "feature_mapping_selected": false
+  },
+  "input_integrity": {
+    "input_violations": 0,
+    "max_floor_spectral_snr_delta_db": 0.0,
+    "max_floor_speech_probability_delta": 0.0,
+    "floor_invariance": true
+  },
+  "preregistered_gates": {
+    "min_combined_spectral_snr_auc": 0.65,
+    "min_combined_auc_gain_over_upstream": 0.05,
+    "min_per_seed_spectral_snr_auc": 0.60
+  },
+  "summary": {
+    "combined_spectral_snr_auc": 0.634354858778151,
+    "combined_upstream_speech_probability_auc": 0.5684108912944299,
+    "combined_auc_gain_over_upstream": 0.06594396748372111,
+    "speech_spectral_snr_median_db": 2.722744225,
+    "noise_spectral_snr_median_db": 1.584982275,
+    "spectral_snr_median_separation_db": 1.13776195,
+    "combined_auc_gate_pass": false,
+    "auc_gain_gate_pass": true,
+    "per_seed_auc_gate_pass": true
+  },
+  "per_seed": [
+    {
+      "seed": 191123,
+      "spectral_snr_auc": 0.6403247480403136,
+      "upstream_speech_probability_auc": 0.572584919746174,
+      "stationary_spectral_snr_auc": 0.6918253079507278,
+      "nonstationary_spectral_snr_auc": 0.5900410600970512
+    },
+    {
+      "seed": 201123,
+      "spectral_snr_auc": 0.6323628219484883,
+      "upstream_speech_probability_auc": 0.56665546845838,
+      "stationary_spectral_snr_auc": 0.6870623366927958,
+      "nonstationary_spectral_snr_auc": 0.5839790966778649
+    },
+    {
+      "seed": 211123,
+      "spectral_snr_auc": 0.63,
+      "upstream_speech_probability_auc": 0.5657670772676372,
+      "stationary_spectral_snr_auc": 0.6739977603583427,
+      "nonstationary_spectral_snr_auc": 0.5874878686076894
+    }
+  ],
+  "reviewed_interpretation": {
+    "spectral_snr_contains_incremental_information": true,
+    "spectral_snr_feature_supported_for_admission": false,
+    "reason": "The threshold-free spectral SNR improves combined ROC AUC over the current upstream speech_probability by about 0.066 and all three seed-level AUCs exceed 0.60, but the preregistered combined AUC minimum of 0.65 is missed. The weakness is consistent in nonstationary cases, where AUC remains about 0.584 to 0.590, while stationary cases are about 0.674 to 0.692.",
+    "threshold_rescue_allowed": false,
+    "feature_mapping_selection_allowed": false,
+    "source_candidate_allowed": false,
+    "next_step": "Keep shipping baseline. Any continuation must be a separately preregistered diagnostic targeting why nonstationary spectral evidence is weak, using entirely new fresh authority. Do not tune thresholds, choose a fusion mapping, or reuse I012 seeds for selection."
+  },
+  "authority_boundary": {
+    "source_candidate_selected": false,
+    "feature_mapping_selected": false,
+    "adaptive_state_guard_selected": false,
+    "vad_threshold_selected": false,
+    "source_merge_authorized": false,
+    "threshold_tuning_authorized": false,
+    "confirmation_consumed": false,
+    "shipping_source_changed": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

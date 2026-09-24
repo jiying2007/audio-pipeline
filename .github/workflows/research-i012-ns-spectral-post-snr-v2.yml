@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - '.github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2.json'
+      - '.github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2-result.json'
       - 'tests/validation/i012_ns_spectral_post_snr_v2_probe.c'
       - 'tests/validation/i012_ns_spectral_post_snr_v2.py'
       - '.github/workflows/research-i012-ns-spectral-post-snr-v2.yml'
@@ -13,14 +14,10 @@ on:
 
 permissions:
   contents: read
-  actions: read
-
-concurrency:
-  group: research-i012-ns-spectral-post-snr-v2-${{ github.ref }}
-  cancel-in-progress: false
 
 env:
   CONTRACT: .github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2.json
+  RESULT: .github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2-result.json
   PYTHONPATH: validation/tools:tests/validation
 
 jobs:
@@ -32,57 +29,90 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate refreshed I012 contract and evaluator
+      - name: Validate consumed I012 contract, tooling and reviewed result
         run: |
           set -euo pipefail
           python3 -m py_compile tests/validation/i012_ns_spectral_post_snr_v2.py
           python3 tests/validation/i012_ns_spectral_post_snr_v2.py --self-test
           python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 -m json.tool "$RESULT" >/dev/null
           python3 - <<'PY'
           import json
           from pathlib import Path
 
-          c = json.loads(Path(
+          contract = json.loads(Path(
               '.github/research/continuous-optimization/development-v4/'
               'i012-ns-spectral-post-snr-v2.json'
           ).read_text())
-          assert c['investigation_id'] == 'i012-ns-spectral-post-snr-v2'
-          assert c['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
-          assert c['source_base_sha'] == '61ff84f1e38b1c928bbb1ea9efae006e33779465'
-          assert c['budget'] == {
+          result = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i012-ns-spectral-post-snr-v2-result.json'
+          ).read_text())
+
+          assert contract['investigation_id'] == 'i012-ns-spectral-post-snr-v2'
+          assert contract['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
+          assert contract['source_base_sha'] == '61ff84f1e38b1c928bbb1ea9efae006e33779465'
+          assert contract['fresh_diagnostic_authority']['seeds'] == [191123, 201123, 211123]
+          assert contract['budget'] == {
               'candidate_limit': 0,
               'confirmation_limit': 0,
               'diagnostic_execution_limit': 1,
           }
-          assert c['fresh_diagnostic_authority']['seeds'] == [
-              191123, 201123, 211123
-          ]
-          assert c['parameter_search_allowed'] is False
-          assert c['threshold_tuning_allowed'] is False
-          assert c['promotion_allowed'] is False
-          assert c['shipping_source_change_allowed'] is False
-          assert all(value is False for value in c['authority_boundary'].values())
+          assert contract['parameter_search_allowed'] is False
+          assert contract['threshold_tuning_allowed'] is False
+          assert contract['promotion_allowed'] is False
+          assert contract['shipping_source_change_allowed'] is False
+          assert all(value is False for value in contract['authority_boundary'].values())
 
-          scalar = json.loads(Path(
-              '.github/research/continuous-optimization/development-v4/'
-              'vad-calibrated-local-snr-v1-result.json'
-          ).read_text())
-          assert scalar['status'] == 'CLOSED_DIAGNOSTIC_ONLY'
-          assert scalar['reviewed_decision'] == (
-              'DIRECT_CALIBRATED_LOCAL_SNR_REPLACEMENT_REJECTED_KEEP_SHIPPING_BASELINE'
+          assert result['status'] == 'CLOSED_DIAGNOSTIC_ONLY'
+          assert result['authority'] == contract['authority']
+          assert result['source_base_sha'] == contract['source_base_sha']
+          assert result['decision'] == (
+              'NS_SPECTRAL_POST_SNR_INFORMATION_GAIN_NOT_SUPPORTED_REVIEW_REQUIRED'
           )
+          assert result['reviewed_decision'] == (
+              'SPECTRAL_INFORMATION_GAIN_INSUFFICIENT_KEEP_BASELINE'
+          )
+          execution = result['authoritative_execution']
+          assert execution['workflow_run_id'] == 35958701243
+          assert execution['artifact_id'] == 10791920720
+          assert execution['artifact_digest'] == (
+              'sha256:3b0ddb18ba895a791d37afede84de02cf90b8791836e616f8e853f17f351e174'
+          )
+          assert execution['internal_sha256s_verified'] == 9
 
-          divergence = json.loads(Path(
-              '.github/research/continuous-optimization/development-v4/'
-              'vad-domain-state-divergence-v1-result.json'
-          ).read_text())
-          assert divergence['status'] == 'CLOSED_DIAGNOSTIC_ONLY'
+          fresh = result['fresh_authority']
+          assert fresh['seeds'] == [191123, 201123, 211123]
+          assert fresh['diagnostic_execution_limit'] == 1
+          assert fresh['diagnostic_execution_consumed'] == 1
+          assert fresh['candidate_limit_consumed'] == 0
+          assert fresh['confirmation_limit_consumed'] == 0
+          assert fresh['parameter_search_performed'] is False
+          assert fresh['threshold_tuning_performed'] is False
+          assert fresh['feature_mapping_selected'] is False
 
-          scale = json.loads(Path(
-              '.github/research/continuous-optimization/development-v4/'
-              'i011-ns-noise-reference-scale-v1-result.json'
-          ).read_text())
-          assert scale['decision'] == 'NS_NOISE_REFERENCE_SCALE_SUPPORTED_REVIEW_REQUIRED'
+          integrity = result['input_integrity']
+          assert integrity['input_violations'] == 0
+          assert integrity['max_floor_spectral_snr_delta_db'] == 0.0
+          assert integrity['max_floor_speech_probability_delta'] == 0.0
+
+          summary = result['summary']
+          assert summary['combined_spectral_snr_auc'] == 0.634354858778151
+          assert summary['combined_upstream_speech_probability_auc'] == 0.5684108912944299
+          assert summary['combined_auc_gain_over_upstream'] == 0.06594396748372111
+          assert summary['combined_auc_gate_pass'] is False
+          assert summary['auc_gain_gate_pass'] is True
+          assert summary['per_seed_auc_gate_pass'] is True
+
+          assert all(
+              item['spectral_snr_auc'] >= 0.60
+              for item in result['per_seed']
+          )
+          assert all(
+              item['nonstationary_spectral_snr_auc'] < 0.60
+              for item in result['per_seed']
+          )
+          assert all(value is False for value in result['authority_boundary'].values())
           PY
           git cat-file -e "61ff84f1e38b1c928bbb1ea9efae006e33779465^{commit}"
 
@@ -90,212 +120,9 @@ jobs:
         with:
           namespace: i012-spectral-post-snr-v2-contract
 
-      - name: Compile test-only internal spectral probe
+      - name: Compile retained test-only internal spectral probe
         run: |
           set -euo pipefail
           cmake -S . -B build-i012-v2-contract             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON
           cmake --build build-i012-v2-contract --target audio_pipeline --parallel
           ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i012-v2-contract/generated             tests/validation/i012_ns_spectral_post_snr_v2_probe.c             build-i012-v2-contract/libaudio_pipeline.a -lm             -o build-i012-v2-contract/i012_ns_spectral_post_snr_v2_probe
-
-  diagnose:
-    needs: contract
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          fetch-depth: 0
-
-      - name: Enforce one-shot I012 v2 diagnostic execution
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = refs/heads/main
-          python3 - <<'PY'
-          import json
-          import os
-          import subprocess
-
-          repo = os.environ['GITHUB_REPOSITORY']
-          current = int(os.environ['GITHUB_RUN_ID'])
-          workflow = 'research-i012-ns-spectral-post-snr-v2.yml'
-          runs = json.loads(subprocess.check_output([
-              'gh', 'api',
-              f'repos/{repo}/actions/workflows/{workflow}/runs'
-              '?event=workflow_dispatch&branch=main&per_page=100',
-          ], text=True)).get('workflow_runs', [])
-          consumed = []
-          for item in runs:
-              run_id = int(item['id'])
-              if run_id == current:
-                  continue
-              jobs = json.loads(subprocess.check_output([
-                  'gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100',
-              ], text=True)).get('jobs', [])
-              if any(
-                  step.get('name') == 'Run fresh I012 v2 spectral information diagnostic'
-                  and step.get('conclusion') == 'success'
-                  for job in jobs
-                  for step in job.get('steps', [])
-              ):
-                  consumed.append(run_id)
-          if consumed:
-              raise SystemExit(
-                  'I012 v2 diagnostic budget already consumed by run(s): '
-                  + ','.join(str(x) for x in sorted(consumed))
-              )
-          print('one-shot I012 v2 guard: PASS')
-          PY
-
-      - name: Bind exact frozen source
-        run: |
-          set -euo pipefail
-          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
-          test "$SOURCE_BASE_SHA" = 61ff84f1e38b1c928bbb1ea9efae006e33779465
-          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
-          git worktree add --detach /tmp/i012-v2-source "$SOURCE_BASE_SHA"
-          printf '%s\n' "$SOURCE_BASE_SHA" > /tmp/i012-v2-source-sha.txt
-
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: i012-spectral-post-snr-v2
-
-      - name: Build exact source library and internal spectral probe
-        run: |
-          set -euo pipefail
-          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
-          test "$SOURCE_BASE_SHA" = 61ff84f1e38b1c928bbb1ea9efae006e33779465
-          mkdir -p i012-v2-out
-          cmake -S /tmp/i012-v2-source -B /tmp/i012-v2-build             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
-          cmake --build /tmp/i012-v2-build --target audio_pipeline ap_build_info_dump --parallel
-          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -I/tmp/i012-v2-source/include             -I/tmp/i012-v2-source/src             -I/tmp/i012-v2-build/generated             tests/validation/i012_ns_spectral_post_snr_v2_probe.c             /tmp/i012-v2-build/libaudio_pipeline.a -lm             -o /tmp/i012-ns-spectral-post-snr-v2-probe
-          mkdir -p i012-v2-out
-          /tmp/i012-v2-build/ap_build_info_dump > i012-v2-out/build-info.txt
-          ${CC:-cc} --version | head -n 1 > i012-v2-out/compiler.txt
-          sha256sum /tmp/i012-ns-spectral-post-snr-v2-probe > i012-v2-out/probe.sha256
-          cp "$CONTRACT" i012-v2-out/contract.json
-          cp /tmp/i012-v2-source-sha.txt i012-v2-out/source-base-revision.txt
-          printf '%s\n' "$GITHUB_SHA" > i012-v2-out/diagnostic-infra-revision.txt
-
-      - name: Generate preregistered fresh I012 v2 partitions
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          import subprocess
-          from pathlib import Path
-
-          c = json.loads(Path(
-              '.github/research/continuous-optimization/development-v4/'
-              'i012-ns-spectral-post-snr-v2.json'
-          ).read_text())
-          fresh = c['fresh_diagnostic_authority']
-          manifest = []
-          for seed in fresh['seeds']:
-              out = Path(f'/tmp/i012-v2-{seed}')
-              subprocess.run([
-                  'python3',
-                  str(Path('/tmp/i012-v2-source') / fresh['generator']),
-                  '--output', str(out),
-                  '--seed', str(seed),
-                  '--seconds', str(fresh['seconds']),
-              ], check=True, cwd='/tmp/i012-v2-source')
-              corpus = out / 'corpus.json'
-              payload = json.loads(corpus.read_text())
-              assert payload['generator']['seed'] == seed
-              selected = [
-                  row for row in payload['cases']
-                  if row.get('processor_profile') == 'ns-isolated'
-                  and row.get('vad_labels')
-                  and row.get('render_audio') is None
-                  and row.get('case_id') in {
-                      'stage-ns-stationary',
-                      'stage-ns-nonstationary',
-                  }
-              ]
-              assert len(selected) == 2, f'invalid I012 v2 partition for seed {seed}'
-              manifest.append(str(corpus))
-          Path('i012-v2-out/corpora.txt').write_text(
-              '\n'.join(manifest) + '\n', encoding='utf-8'
-          )
-          PY
-
-      - name: Run fresh I012 v2 spectral information diagnostic
-        run: |
-          set -euo pipefail
-          mapfile -t corpora < i012-v2-out/corpora.txt
-          args=()
-          for corpus in "${corpora[@]}"; do
-            args+=(--corpus "$corpus")
-          done
-          python3 tests/validation/i012_ns_spectral_post_snr_v2.py             --probe /tmp/i012-ns-spectral-post-snr-v2-probe             --contract "$CONTRACT"             "${args[@]}"             --output i012-v2-out/result.json             | tee i012-v2-out/summary.json
-
-      - name: Enforce I012 v2 diagnostic-only authority
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          r = json.loads(Path('i012-v2-out/result.json').read_text())
-          assert r['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
-          assert r['fresh_seeds'] == [191123, 201123, 211123]
-          assert r['candidate_budget_consumed'] == 0
-          assert r['confirmation_budget_consumed'] == 0
-          assert r['shipping_source_changed'] is False
-          assert r['interpretation']['spectral_post_snr_feature_selected'] is False
-          assert r['interpretation']['vad_mapping_selected'] is False
-          assert r['interpretation']['adaptive_state_guard_selected'] is False
-          assert r['interpretation']['vad_threshold_selected'] is False
-          assert r['decision'] in {
-              'NS_SPECTRAL_POST_SNR_INFORMATION_GAIN_SUPPORTED_REVIEW_REQUIRED',
-              'NS_SPECTRAL_POST_SNR_INFORMATION_GAIN_NOT_SUPPORTED_REVIEW_REQUIRED',
-              'NS_SPECTRAL_POST_SNR_INPUT_INVALID_REVIEW_REQUIRED',
-          }
-          PY
-
-      - name: Seal I012 v2 evidence
-        if: always()
-        run: |
-          set -euo pipefail
-          mkdir -p i012-v2-out
-          (
-            cd i012-v2-out
-            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' | sort -z | \
-              xargs -0 -r sha256sum > SHA256SUMS
-          )
-
-      - name: Publish I012 v2 summary
-        if: always()
-        run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          p = Path('i012-v2-out/result.json')
-          print('## I012 v2 NS spectral post-SNR')
-          if not p.exists():
-              print('- Result: evidence incomplete')
-              raise SystemExit(0)
-          r = json.loads(p.read_text())
-          s = r['summary']
-          print(f"- Decision: `{r['decision']}`")
-          print(f"- Fresh seeds: `{r['fresh_seeds']}`")
-          print(f"- Spectral post-SNR AUC: `{s['combined_spectral_snr_auc']:.6f}`")
-          print(f"- Current upstream probability AUC: `{s['combined_upstream_speech_probability_auc']:.6f}`")
-          print(f"- AUC gain: `{s['combined_auc_gain_over_upstream']:.6f}`")
-          print(f"- Median spectral SNR separation: `{s['spectral_snr_median_separation_db']:.6f} dB`")
-          print(f"- Floor spectral-SNR max delta: `{s['max_floor_spectral_snr_delta_db']}`")
-          print(f"- Information violations: `{len(r['information_violations'])}`")
-          print('- Authority: threshold-free diagnostic only; no feature mapping, state guard, threshold, source candidate, confirmation, shipping, HIL or Product Certification authority.')
-          PY
-
-      - name: Upload hash-bound I012 v2 evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: i012-ns-spectral-post-snr-v2-${{ github.run_id }}
-          path: i012-v2-out/
-          retention-days: 90
-          if-no-files-found: error

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Exercise the actual I015 workflow guard; never generate or read fresh audio."""
+"""Exercise the frozen historical I015 guard; never run research or fresh audio."""
 
 from contextlib import redirect_stdout
+import hashlib
 import io
 import json
 import os
@@ -13,8 +14,10 @@ import unittest
 from unittest.mock import patch
 
 
-WORKFLOW = (Path(__file__).resolve().parents[2] / '.github/workflows/'
-            'research-i015-vad-upstream-consumption-decomposition-v1.yml')
+# Consumed workflow blob from 72db70f76a9ef2fffb767709d9aa289814207bae.
+# This data fixture is outside the active workflow directory.
+WORKFLOW = Path(__file__).resolve().parent / 'data/i015-consumed-workflow.yml'
+HISTORY_BLOB = '1bf5717bf4bb02f3847606a6d7cba7c61bde70f1'
 GENERATE = 'Generate preregistered fresh I015 partitions'
 DIAGNOSE = 'Run fresh I015 VAD upstream consumption decomposition'
 CURRENT = {'id': 20, 'run_attempt': 1}
@@ -22,7 +25,10 @@ PRIOR = {'id': 10, 'run_attempt': 1}
 
 
 def guard_source():
-    text = WORKFLOW.read_text(encoding='utf-8')
+    data = WORKFLOW.read_bytes()
+    if hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest() != HISTORY_BLOB:
+        raise ValueError('historical I015 workflow fixture drift')
+    text = data.decode('utf-8')
     block = text.split('      - name: Enforce one-shot I015 diagnostic execution\n', 1)[1]
     block = block.split('      - name: Bind exact frozen source\n', 1)[0]
     return textwrap.dedent(block.split("python3 - <<'PY'\n", 1)[1]

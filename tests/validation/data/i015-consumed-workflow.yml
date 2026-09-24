@@ -1,0 +1,346 @@
+name: Research I015 VAD Upstream Consumption Decomposition v1
+run-name: "i015-vad-upstream-consumption-v1 / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1.json'
+      - 'tests/validation/i015_vad_upstream_consumption_probe.c'
+      - 'tests/validation/i015_vad_upstream_consumption_decomposition.py'
+      - 'tests/validation/test_i015_one_shot_guard.py'
+      - '.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-i015-vad-upstream-consumption-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1.json
+  PYTHONPATH: validation/tools:tests/validation
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate I015 contract and evaluator
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/i015_vad_upstream_consumption_decomposition.py
+          python3 tests/validation/i015_vad_upstream_consumption_decomposition.py --self-test
+          python3 tests/validation/test_i015_one_shot_guard.py
+          python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          c = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i015-vad-upstream-consumption-decomposition-v1.json'
+          ).read_text())
+          assert c['investigation_id'] == 'i015-vad-upstream-consumption-decomposition-v1'
+          assert c['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
+          assert c['source_base_sha'] == '1e08e892b29515b384265e50d9fd809ea7e06bb8'
+          assert c['fresh_diagnostic_authority']['seeds'] == [281123, 291123, 301123]
+          assert c['budget'] == {
+              'candidate_limit': 0,
+              'confirmation_limit': 0,
+              'diagnostic_execution_limit': 1,
+          }
+          assert c['parameter_search_allowed'] is False
+          assert c['threshold_tuning_allowed'] is False
+          assert c['promotion_allowed'] is False
+          assert c['shipping_source_change_allowed'] is False
+          assert all(value is False for value in c['authority_boundary'].values())
+
+          lanes = c['fixed_lanes']
+          assert lanes['shipping'] == {
+              'upstream_guard': True,
+              'upstream_blend': True,
+              'decision_threshold': 0.35,
+          }
+          assert lanes['no_upstream_evidence'] == {
+              'upstream_guard': False,
+              'upstream_blend': False,
+              'decision_threshold': 0.35,
+          }
+          assert lanes['blend_only'] == {
+              'upstream_guard': False,
+              'upstream_blend': True,
+              'decision_threshold': 0.35,
+          }
+          assert lanes['guard_only'] == {
+              'upstream_guard': True,
+              'upstream_blend': False,
+              'decision_threshold': 0.35,
+          }
+
+          prior = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i014-ns-upstream-component-decomposition-v1-result.json'
+          ).read_text())
+          assert prior['status'] == 'CLOSED_DIAGNOSTIC_ONLY'
+          assert prior['reviewed_decision'] == (
+              'NONSTATIONARY_UPSTREAM_COMPONENT_SYNERGY_SUPPORTED_NO_MAPPING'
+          )
+          assert prior['summary']['all_synergy_gates_pass'] is True
+          PY
+          git cat-file -e "1e08e892b29515b384265e50d9fd809ea7e06bb8^{commit}"
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i015-vad-upstream-consumption-contract
+
+      - name: Compile test-only I015 causal probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i015-contract             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i015-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i015-contract/generated             tests/validation/i015_vad_upstream_consumption_probe.c             build-i015-contract/libaudio_pipeline.a -lm             -o build-i015-contract/i015_vad_upstream_consumption_probe
+
+  diagnose:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Enforce one-shot I015 diagnostic execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          current = int(os.environ['GITHUB_RUN_ID'])
+          # GitHub reruns retain the run ID and the original workflow revision.
+          # Never permit a second attempt to re-enter fresh-data execution.
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('I015 rerun forbidden; preserve evidence and review offline')
+          workflow = 'research-i015-vad-upstream-consumption-decomposition-v1.yml'
+
+
+          def collection(endpoint, key):
+              pages = json.loads(subprocess.check_output([
+                  'gh', 'api', '--paginate', '--slurp', endpoint,
+              ], text=True))
+              return [item for page in pages for item in page[key]]
+
+
+          runs = collection(
+              f'repos/{repo}/actions/workflows/{workflow}/runs'
+              '?event=workflow_dispatch&branch=main&per_page=100',
+              'workflow_runs',
+          )
+          if not any(int(item['id']) == current for item in runs):
+              raise SystemExit('I015 current run not visible; stop before fresh generation')
+          fresh_steps = {
+              'Generate preregistered fresh I015 partitions',
+              'Run fresh I015 VAD upstream consumption decomposition',
+          }
+          consumed = set()
+          for item in runs:
+              run_id = int(item['id'])
+              if run_id == current:
+                  continue
+              attempts = int(item['run_attempt'])
+              if attempts < 1:
+                  raise SystemExit('I015 invalid historical attempt count')
+              # Latest-attempt jobs must not erase earlier fresh-data exposure.
+              for attempt in range(1, attempts + 1):
+                  jobs = collection(
+                      f'repos/{repo}/actions/runs/{run_id}/attempts/{attempt}'
+                      '/jobs?per_page=100',
+                      'jobs',
+                  )
+                  for job in jobs:
+                      if job.get('conclusion') == 'skipped':
+                          continue
+                      for step in job['steps']:
+                          if (step.get('name') in fresh_steps
+                                  and step.get('conclusion') != 'skipped'
+                                  and step.get('status') not in {'queued', 'pending', 'waiting'}):
+                              # Failed/cancelled or partial execution is not fresh again.
+                              consumed.add(run_id)
+                  if run_id in consumed:
+                      break
+          if consumed:
+              raise SystemExit(
+                  'I015 fresh authority already touched by run(s): '
+                  + ','.join(str(x) for x in sorted(consumed))
+              )
+          print('one-shot I015 guard: PASS')
+          PY
+
+      - name: Bind exact frozen source
+        run: |
+          set -euo pipefail
+          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
+          test "$SOURCE_BASE_SHA" = 1e08e892b29515b384265e50d9fd809ea7e06bb8
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/i015-source "$SOURCE_BASE_SHA"
+          printf '%s\n' "$SOURCE_BASE_SHA" > /tmp/i015-source-sha.txt
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i015-vad-upstream-consumption-v1
+
+      - name: Build exact source library and I015 probe
+        run: |
+          set -euo pipefail
+          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
+          test "$SOURCE_BASE_SHA" = 1e08e892b29515b384265e50d9fd809ea7e06bb8
+          mkdir -p i015-out
+          cmake -S /tmp/i015-source -B /tmp/i015-build             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
+          cmake --build /tmp/i015-build --target audio_pipeline ap_build_info_dump --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -I/tmp/i015-source/include             -I/tmp/i015-source/src             -I/tmp/i015-build/generated             tests/validation/i015_vad_upstream_consumption_probe.c             /tmp/i015-build/libaudio_pipeline.a -lm             -o /tmp/i015-vad-upstream-consumption-probe
+          /tmp/i015-build/ap_build_info_dump > i015-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > i015-out/compiler.txt
+          sha256sum /tmp/i015-vad-upstream-consumption-probe > i015-out/probe.sha256
+          cp "$CONTRACT" i015-out/contract.json
+          cp /tmp/i015-source-sha.txt i015-out/source-base-revision.txt
+          printf '%s\n' "$GITHUB_SHA" > i015-out/diagnostic-infra-revision.txt
+
+      - name: Generate preregistered fresh I015 partitions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          c = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i015-vad-upstream-consumption-decomposition-v1.json'
+          ).read_text())
+          fresh = c['fresh_diagnostic_authority']
+          manifest = []
+          for seed in fresh['seeds']:
+              out = Path(f'/tmp/i015-{seed}')
+              subprocess.run([
+                  'python3',
+                  str(Path('/tmp/i015-source') / fresh['generator']),
+                  '--output', str(out),
+                  '--seed', str(seed),
+                  '--seconds', str(fresh['seconds']),
+              ], check=True, cwd='/tmp/i015-source')
+              corpus = out / 'corpus.json'
+              payload = json.loads(corpus.read_text())
+              assert payload['generator']['seed'] == seed
+              selected = [
+                  row for row in payload['cases']
+                  if row.get('processor_profile') == 'ns-isolated'
+                  and row.get('vad_labels')
+                  and row.get('render_audio') is None
+                  and row.get('case_id') in {
+                      'stage-ns-stationary',
+                      'stage-ns-nonstationary',
+                  }
+              ]
+              assert len(selected) == 2, f'invalid I015 partition for seed {seed}'
+              manifest.append(str(corpus))
+          Path('i015-out/corpora.txt').write_text(
+              '\n'.join(manifest) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Run fresh I015 VAD upstream consumption decomposition
+        run: |
+          set -euo pipefail
+          mapfile -t corpora < i015-out/corpora.txt
+          args=()
+          for corpus in "${corpora[@]}"; do
+            args+=(--corpus "$corpus")
+          done
+          python3 tests/validation/i015_vad_upstream_consumption_decomposition.py             --probe /tmp/i015-vad-upstream-consumption-probe             --contract "$CONTRACT"             "${args[@]}"             --output i015-out/result.json             | tee i015-out/summary.json
+
+      - name: Enforce I015 diagnostic-only authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          r = json.loads(Path('i015-out/result.json').read_text())
+          assert r['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
+          assert r['fresh_seeds'] == [281123, 291123, 301123]
+          assert r['candidate_budget_consumed'] == 0
+          assert r['confirmation_budget_consumed'] == 0
+          assert r['shipping_source_changed'] is False
+          assert r['interpretation']['lane_selected'] is False
+          assert r['interpretation']['guard_change_selected'] is False
+          assert r['interpretation']['blend_change_selected'] is False
+          assert r['interpretation']['vad_mapping_selected'] is False
+          assert r['interpretation']['vad_threshold_selected'] is False
+          assert r['decision'] in {
+              'VAD_UPSTREAM_CONSUMPTION_DECOMPOSED_REVIEW_REQUIRED',
+              'NO_VAD_UPSTREAM_CONSUMPTION_EFFECT_REVIEW_REQUIRED',
+              'VAD_UPSTREAM_CONSUMPTION_INPUT_INVALID_REVIEW_REQUIRED',
+          }
+          PY
+
+      - name: Seal I015 evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p i015-out
+          (
+            cd i015-out
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' | sort -z |               xargs -0 -r sha256sum > SHA256SUMS
+          )
+
+      - name: Publish I015 summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          p = Path('i015-out/result.json')
+          print('## I015 VAD upstream consumption decomposition')
+          if not p.exists():
+              print('- Result: evidence incomplete')
+              raise SystemExit(0)
+          r = json.loads(p.read_text())
+          n = r['combined_nonstationary']
+          lanes = n['lane_metrics']
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Fresh seeds: `{r['fresh_seeds']}`")
+          print(f"- Shipping recall: `{lanes['shipping']['recall']:.6f}`")
+          print(f"- No-upstream recall: `{lanes['no_upstream']['recall']:.6f}`")
+          print(f"- Blend-only recall: `{lanes['blend_only']['recall']:.6f}`")
+          print(f"- Guard-only recall: `{lanes['guard_only']['recall']:.6f}`")
+          print(f"- Shipping FPR: `{lanes['shipping']['false_positive_rate']:.6f}`")
+          print(f"- No-upstream FPR: `{lanes['no_upstream']['false_positive_rate']:.6f}`")
+          print(f"- Rescued speech frames: `{n['rescued_speech_frames']}`")
+          print(f"- Added noise-active frames: `{n['added_noise_active_frames']}`")
+          print(f"- Shipping/no-upstream active differences: `{n['shipping_vs_no_upstream_active_diff_frames']}`")
+          print(f"- Mirror max delta: `{r['shipping_mirror']['max_probability_delta']}`")
+          print('- Authority: causal decomposition only; no lane selection, guard/blend change, threshold, source candidate, shipping, HIL or Product Certification authority.')
+          PY
+
+      - name: Upload hash-bound I015 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i015-vad-upstream-consumption-decomposition-v1-${{ github.run_id }}
+          path: i015-out/
+          retention-days: 90
+          if-no-files-found: error

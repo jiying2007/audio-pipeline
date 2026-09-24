@@ -4,6 +4,28 @@
 `10805915721`。它不是实验调度器，不会启动或重跑诊断，也不会改变四条 lane、
 fresh seeds、VAD 常数、阈值或研究预算。
 
+## 已关闭实验的执行入口
+
+I015 已由归档 PR #411 和 #406 的原生机器人回执正式关闭。原诊断运行
+`35994848668` 只消费一次；后续维护 run `36031859001` 已实际返回
+`ALREADY_CLOSED_NOOP`，没有生成新证据或改写回执。
+
+原研究工作流现在只保留 PR 契约、自测和 `-Werror` 编译检查；
+`workflow_dispatch` 与整个 `diagnose` job 已退役，不再查询 Actions 历史来判断
+已经关闭的实验是否还能启动。可清理的运行记录不是持久预算凭证；本次修复没有
+删除任何历史 run、artifact、归档数据或研究源码，也没有重新执行诊断。
+
+完整的已消费工作流保存在 `tests/validation/data/i015-consumed-workflow.yml`，
+Git blob 仍为 `1bf5717bf4bb02f3847606a6d7cba7c61bde70f1`，位于 Actions 执行
+目录之外，仅作为历史测试数据。原 18 项 one-shot 测试继续针对这个冻结版本运行，
+不执行其中的 shell、音频生成器或 probe。新的退役检查解析 YAML 数据并拒绝恢复
+手动/定时/事件执行入口、增加或改名诊断 job、改变契约步骤、权限或闭环文件。
+独立 Finalization Contract 同时在 PR 与 main 对这些边界进行校验。
+
+仍可重复运行的是 `i015-evidence-finalization.yml` 的幂等证据收尾；已关闭时只
+核验 Git 中的原始归档后返回 no-op。它没有新实验、换 seed、选 lane 或发布授权。
+历史提交和旧运行保留用于审计，不应从历史 ref 重新调度已消费的研究工作流。
+
 ## 无人值守的正常路径
 
 1. 收尾实现通过 PR 门禁合入 main；精确 main 的 Verify/summary 成功后，

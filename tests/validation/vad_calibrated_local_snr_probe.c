@@ -14,8 +14,6 @@
 #define BASE_FLOOR 0.12f
 #define STRESS_FLOOR 0.05f
 #define PROB_EPS 1.0e-6f
-#define FLOOR_EPS_DB 1.0e-6f
-
 #define VAD_NOISE_LIKE_CREST_DB 8.0f
 #define VAD_TRANSIENT_CREST_DB 12.0f
 #define VAD_UPSTREAM_SPEECH_GUARD 0.55f

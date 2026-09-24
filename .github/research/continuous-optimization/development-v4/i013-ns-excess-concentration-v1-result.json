@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i013-ns-excess-concentration-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "c65944d3b4a3671477fcb6450f4fec87632e6b23",
+  "diagnostic_infrastructure_sha": "7d645ea18cc725e6b1e6956d45ef854aa3b9a416",
+  "decision": "NS_EXCESS_CONCENTRATION_INFORMATION_NOT_SUPPORTED_REVIEW_REQUIRED",
+  "reviewed_decision": "EXCESS_CONCENTRATION_NOT_SUPPORTED_KEEP_BASELINE",
+  "authoritative_execution": {
+    "workflow_run_id": 35962562558,
+    "workflow_conclusion": "success",
+    "artifact_id": 10793156629,
+    "artifact_name": "i013-ns-excess-concentration-v1-35962562558",
+    "artifact_digest": "sha256:8e94b4ee1f287d5a310be18c5c0b1de0334f710e38af69a1e282f4cd8297d63c",
+    "artifact_size_bytes": 5392,
+    "internal_sha256s_verified": 9,
+    "sha256sums_sha256": "5c091f275bd162891c9c28b20f8732c0afc00a93fb94f27fa384e75c38860b7e",
+    "result_sha256": "3668ee0a849476ba983cd52b83b67c1ce88a29d0abe0b42eae9bd4175364ad13",
+    "summary_sha256": "9cf14f62ec26d45c1d63506c12978d0b699b6d4dcd327ef8216afcf68def149e",
+    "contract_sha256": "ed3fd74fe17e259576966f0489b76a79e72d9913020aae893d38280b09ee4ae9",
+    "probe_manifest_sha256": "658c22c92d28b3c5258e107c70175fdcbe5fdacb06f088c36711356818e38cf1",
+    "probe_binary_sha256": "e8c763016ee9e60c7cb16dc9eeb93e76586a98cd9af6d528ef2d73bb923f9270"
+  },
+  "build_identity": {
+    "version": "2.3.49",
+    "module_mask": 1023,
+    "aec_backend": "MDF",
+    "ns_estimator": "EMA",
+    "simd_backend": "SCALAR",
+    "resampler_mode": "BANDLIMITED",
+    "fast_math": false,
+    "compiler_id": "GNU",
+    "compiler_version": "13.3.0",
+    "target_triple": "x86_64-linux-gnu",
+    "build_type": "Release",
+    "config_digest": "e8b62833a564a98a7a82d5db0f604c2bb9f03caff2ceeaca163bcd7d07ba8d5f"
+  },
+  "fresh_authority": {
+    "seeds": [221123, 231123, 241123],
+    "candidate_limit": 0,
+    "candidate_limit_consumed": 0,
+    "confirmation_limit": 0,
+    "confirmation_limit_consumed": 0,
+    "diagnostic_execution_limit": 1,
+    "diagnostic_execution_consumed": 1,
+    "parameter_search_performed": false,
+    "threshold_tuning_performed": false,
+    "feature_mapping_selected": false
+  },
+  "input_integrity": {
+    "input_violations": 0,
+    "max_floor_concentration_delta": 0.0,
+    "max_floor_scalar_snr_delta_db": 0.0,
+    "max_floor_speech_probability_delta": 0.0,
+    "floor_invariance": true
+  },
+  "preregistered_gates": {
+    "min_combined_concentration_auc": 0.65,
+    "min_combined_nonstationary_concentration_auc": 0.62,
+    "min_combined_nonstationary_auc_gain_over_scalar_snr": 0.03,
+    "min_per_seed_nonstationary_concentration_auc": 0.60
+  },
+  "summary": {
+    "combined_concentration_auc": 0.5490496039152254,
+    "combined_scalar_snr_auc": 0.6329608892206876,
+    "combined_upstream_speech_probability_auc": 0.5630782630334702,
+    "combined_concentration_auc_gain_over_scalar_snr": -0.08391128530546221,
+    "combined_nonstationary_concentration_auc": 0.5712919414375182,
+    "combined_nonstationary_scalar_snr_auc": 0.5778507735058687,
+    "combined_nonstationary_upstream_speech_probability_auc": 0.6315590394425781,
+    "combined_nonstationary_auc_gain_over_scalar_snr": -0.006558832068350506,
+    "speech_concentration_median": 3.56183505,
+    "noise_concentration_median": 3.40962899
+  },
+  "per_seed": [
+    {
+      "seed": 221123,
+      "concentration_auc": 0.5456401642403882,
+      "scalar_snr_auc": 0.6340238895110115,
+      "upstream_speech_probability_auc": 0.5671145949981337,
+      "nonstationary_concentration_auc": 0.572153788727137,
+      "nonstationary_scalar_snr_auc": 0.5832474804031355,
+      "nonstationary_upstream_speech_probability_auc": 0.6397760358342666
+    },
+    {
+      "seed": 231123,
+      "concentration_auc": 0.5551138484509145,
+      "scalar_snr_auc": 0.6310003732736096,
+      "upstream_speech_probability_auc": 0.5679880552444942,
+      "nonstationary_concentration_auc": 0.5693019783501306,
+      "nonstationary_scalar_snr_auc": 0.5647928331466965,
+      "nonstationary_upstream_speech_probability_auc": 0.6283389324374766
+    },
+    {
+      "seed": 241123,
+      "concentration_auc": 0.5469540873460247,
+      "scalar_snr_auc": 0.6337887271369914,
+      "upstream_speech_probability_auc": 0.5538447181784247,
+      "nonstationary_concentration_auc": 0.573826054497947,
+      "nonstationary_scalar_snr_auc": 0.5856812243374393,
+      "nonstationary_upstream_speech_probability_auc": 0.6264576334453155
+    }
+  ],
+  "reviewed_interpretation": {
+    "excess_concentration_contains_admissible_information": false,
+    "concentration_family_supported_for_follow_on_tuning": false,
+    "reason": "The preregistered normalized positive-excess concentration score underperforms scalar spectral SNR overall and does not improve nonstationary discrimination. On the same fresh frames, the existing upstream speech_probability is materially stronger in nonstationary conditions.",
+    "important_observation": "The nonstationary weakness is not solved by replacing aggregate level with a simple sparsity/concentration moment. The existing NS per-bin speech-evidence aggregation carries more useful nonstationary information than either tested standalone spectral score.",
+    "threshold_rescue_allowed": false,
+    "feature_shape_search_allowed": false,
+    "source_candidate_allowed": false,
+    "next_step": "Keep shipping baseline. If research continues, decompose the existing upstream speech_probability components and their temporal behavior on entirely new fresh authority before proposing another feature. Do not tune or enumerate concentration-family variants."
+  },
+  "authority_boundary": {
+    "source_candidate_selected": false,
+    "feature_mapping_selected": false,
+    "adaptive_state_guard_selected": false,
+    "vad_threshold_selected": false,
+    "source_merge_authorized": false,
+    "threshold_tuning_authorized": false,
+    "confirmation_consumed": false,
+    "shipping_source_changed": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  }
+}

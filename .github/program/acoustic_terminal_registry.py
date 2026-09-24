@@ -100,7 +100,8 @@ def validate_registry(root: Path, registry_path: Path) -> dict[str, Any]:
     require(registry.get("authority") == "non-shipping-acoustic-terminal-registry",
             "terminal registry authority drift")
     entries = registry.get("candidates")
-    require(isinstance(entries, list), "terminal registry candidates must be a list")
+    require(isinstance(entries, list) and entries,
+            "terminal registry candidates must be a non-empty list")
     seen: set[tuple[str, str]] = set()
     normalized: list[dict[str, Any]] = []
     for raw in entries:
@@ -127,6 +128,18 @@ def validate_registry(root: Path, registry_path: Path) -> dict[str, Any]:
             "decision": raw["decision"],
             "terminal_path": str(rel),
         })
+    # Check the converse as well: validating only listed entries lets a missing
+    # row turn a rejected identity back into CANDIDATE_NOT_TERMINAL. Every
+    # archived acoustic terminal must have exactly one validated registry row.
+    archived_paths = {
+        str(path.relative_to(root))
+        for path in root.glob("docs/program/evidence/acoustic-candidate-*/**/terminal.json")
+    }
+    registered_paths = {item["terminal_path"] for item in normalized}
+    require(registered_paths == archived_paths,
+            "terminal registry evidence coverage mismatch: "
+            f"missing={sorted(archived_paths - registered_paths)} "
+            f"unarchived={sorted(registered_paths - archived_paths)}")
     return {
         "schema_version": 1,
         "authority": registry["authority"],
@@ -203,7 +216,60 @@ def self_test() -> None:
             pass
         else:
             raise AssertionError("terminal candidate regained next gate")
-    print("acoustic terminal registry self-test: OK")
+        # Metadata-only regression fixtures; never execute a candidate or audio.
+        (evidence / "terminal.json").write_text(json.dumps(terminal), encoding="utf-8")
+        first = load_object(registry_path)
+        other_path = root / "docs/program/evidence/acoustic-candidate-feedface0000/public-relative-run-2/terminal.json"
+        other_path.parent.mkdir(parents=True)
+        other = json.loads(json.dumps(terminal))
+        other["candidate"] = {"candidate_id": "feedface0000", "source_revision": "d" * 40}
+        other_path.write_text(json.dumps(other), encoding="utf-8")
+        complete = json.loads(json.dumps(first))
+        complete["candidates"].append({
+            "candidate_id": "feedface0000", "source_revision": "d" * 40,
+            "decision": other["decision"],
+            "terminal_path": str(other_path.relative_to(root)),
+        })
+
+        def write_registry(value: dict[str, Any]) -> None:
+            registry_path.write_text(json.dumps(value), encoding="utf-8")
+
+        def rejected(value: dict[str, Any], message: str) -> None:
+            write_registry(value)
+            try:
+                validate_registry(root, DEFAULT_REGISTRY)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(message)
+            finally:
+                write_registry(complete)
+
+        write_registry(complete)
+        assert len(validate_registry(root, DEFAULT_REGISTRY)["terminal_candidates"]) == 2
+        # Empty, missing collection, and either non-empty incomplete subset.
+        for entries in ([], None, complete["candidates"][:1], complete["candidates"][1:]):
+            broken_registry = {**complete, "candidates": entries}
+            rejected(broken_registry, "incomplete terminal registry was accepted")
+        rejected({k: v for k, v in complete.items() if k != "candidates"},
+                 "missing terminal collection was accepted")
+        rejected({**complete, "candidates": complete["candidates"] * 2},
+                 "duplicate terminal identities were accepted")
+        # Indexed paths must still exist and belong to the archive namespace.
+        other_path.unlink()
+        rejected(complete, "missing indexed evidence was accepted")
+        other_path.write_text(json.dumps(other), encoding="utf-8")
+        outside = root / "docs/program/evidence/other/terminal.json"
+        outside.parent.mkdir(parents=True)
+        outside.write_text(json.dumps(other), encoding="utf-8")
+        moved = json.loads(json.dumps(complete))
+        moved["candidates"][1]["terminal_path"] = str(outside.relative_to(root))
+        rejected(moved, "non-canonical terminal copy replaced archived evidence")
+        # Restore canonical coverage: unrelated non-acoustic archives do not
+        # become acoustic candidates, and registry ordering is not authority.
+        write_registry({**complete, "candidates": list(reversed(complete["candidates"]))})
+        assert len(validate_registry(root, DEFAULT_REGISTRY)["terminal_candidates"]) == 2
+    print("acoustic terminal registry self-test: OK; 8 coverage negative cases passed")
 
 
 def main() -> int:

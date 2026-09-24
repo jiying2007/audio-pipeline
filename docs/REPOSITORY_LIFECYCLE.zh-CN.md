@@ -10,6 +10,21 @@
 
 `Research Branch GC` 默认 fail-closed。受保护 main 合并后，只能自动删除 registry 中明确 `auto_gc` 的精确 ref；任何 SHA 漂移或 open PR 都会在删除前阻断整次 apply。手工 apply 必须输入 `DELETE_GC_ELIGIBLE_REFS`。
 
+## 声学候选终止登记
+
+声学候选的 canonical 终止注册表是 `.github/program/acoustic_terminal_registry.json`，校验入口是 `.github/program/acoustic_terminal_registry.py`。身份由 `source_revision + candidate_id` 共同确定：相同 tuning 在不同 source 上不是同一个候选，但“未命中终止表”也不代表已经获得新的实验或发布授权。
+
+注册表必须非空，并完整覆盖 `docs/program/evidence/acoustic-candidate-*/**/terminal.json` 中现存的声学终止记录。每一条登记都要验证其证据；反过来，每一份声学终止证据也必须有对应登记。空表、非空漏项、重复身份、缺失证据或非 canonical 路径替换都会停止，不能把漏登记解释成候选重新可用。
+
+以下命令只读取登记或运行临时元数据自测，不执行音频实验：
+
+```bash
+python3 .github/program/acoustic_terminal_registry.py --self-test
+python3 .github/program/acoustic_terminal_registry.py --check
+```
+
+Validation Grade 的 candidate resolver 在进入候选公开验证前，使用 `--assert-not-terminal` 与精确 `--source-revision` 查询；命中终止身份时以退出码 `3` 拒绝执行。覆盖校验失败时，应核对并恢复原有证据与登记，不能删除失败证据、清空表、替换 source 或放宽声学阈值来恢复流程。终止保护由既有 Verify 和 Acoustic Candidate Terminal Guard 持续检查。
+
 ## Validation Authority Qualification
 
 一次性 holdout 使用 `Validation Authority Qualification`。调用者必须提供 40 位精确 candidate SHA，并确认 `ONE_WAY_HOLDOUT`。工作流先冻结 canonical evaluator、exact correlation backend、Hosted AEC policy 与 dataset lock 的 fingerprint，再用该精确 SHA 调用可复用 Hosted Real AEC。

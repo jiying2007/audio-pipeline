@@ -447,26 +447,46 @@ def finalize_main(api, frozen, main, files):
     # The checkout is always trusted main. Never fetch or execute PR-head code here.
     for name, expected in files.items():
         require((ROOT / name).is_file() and (ROOT / name).read_bytes() == expected, 'committed archive drift: ' + name)
-    lineage = api.collection(f'commits/{main}/pulls?per_page=100')
-    eligible = [p for p in lineage if p.get('merged_at') and p['merge_commit_sha'] == main
-                and p['head']['ref'] == frozen['archive_branch'] and p['base']['ref'] == 'main']
-    require(len(eligible) == 1, 'no exact merged archive PR lineage')
+    # A receipt failure may be fixed after the archive merge. Keep the original
+    # merge identity separate from the newer, independently verified main.
+    branch = frozen['archive_branch']
+    lineage = api.collection(
+        f'pulls?state=closed&head={api.repo.split("/")[0]}:{branch}&base=main&per_page=100')
+    require(len(lineage) == 1, 'no unique merged archive PR lineage')
+    pr = api.api(f"pulls/{lineage[0]['number']}")
+    require(pr['state'] == 'closed' and pr['merged'] is True and bool(pr['merged_at'])
+            and pr['head']['ref'] == branch and pr['base']['ref'] == 'main'
+            and pr['head']['repo']['id'] == frozen['repository_id']
+            and pr['base']['repo']['id'] == frozen['repository_id'], 'invalid merged archive PR')
+    archive_sha = pr['merge_commit_sha']
+    require(isinstance(archive_sha, str) and re.fullmatch(r'[0-9a-f]{40}', archive_sha),
+            'invalid archive merge SHA')
+    comparison = api.api(f'compare/{archive_sha}...{main}')
+    require(comparison['merge_base_commit']['sha'] == archive_sha,
+            'archive merge is not an ancestor of current main')
+    expected_diff(files, api.collection(f"pulls/{pr['number']}/files?per_page=100"))
+    if not api.checks_ready(archive_sha, main=True) or not api.checks_ready(main, main=True):
+        return {'status': 'WAITING_RECEIPT_MAIN_GATES', 'archive_merge_sha': archive_sha,
+                'main': main}
     body = (MARKER + '\n\n### I015 CLOSED_DIAGNOSTIC_ONLY\n\n'
             f"Original run `{frozen['run_id']}`, artifact `{frozen['artifact_id']}`; "
             f"ZIP SHA256 `{frozen['artifact_sha256']}`. All nine internal hashes verified.\n\n"
-            f"Archive PR #{eligible[0]['number']} merged at `{main}`; exact-main Verify/summary passed. "
+            f"Archive PR #{pr['number']} merged at `{archive_sha}`; its exact-main Verify/summary passed. "
+            f"Receipt published from independently verified main `{main}`. "
             'Original text evidence is retained in Git and remains available after artifact expiry.\n\n'
             + frozen['reviewed_interpretation'] + '\n\nNo experiment was rerun; no lane, constant, seed, '
             'shipping, HIL, Product Certification or release authority changed.')
     comments = api.collection(f"issues/{frozen['tracking_pr']}/comments?per_page=100")
     marked = [c for c in comments if c['body'].startswith(MARKER) and c['user']['login'] == 'github-actions[bot]']
     require(len(marked) <= 1, 'duplicate finalization receipts')
+    require(api.main() == main, 'main moved before finalization receipt')
     if not marked:
         api.api(f"issues/{frozen['tracking_pr']}/comments", payload={'body': body})
     elif marked[0]['body'] != body:
         # An existing receipt is immutable; do not silently replace its identity.
         raise ValueError('existing finalization receipt differs')
-    return {'status': 'CLOSED_DIAGNOSTIC_ONLY', 'archive_pr': eligible[0]['number'], 'verified_main': main}
+    return {'status': 'CLOSED_DIAGNOSTIC_ONLY', 'archive_pr': pr['number'],
+            'archive_merge_sha': archive_sha, 'verified_main': main}
 
 
 def reconcile(frozen, out):

@@ -24,6 +24,8 @@ fresh seeds、VAD 常数、阈值或研究预算。
    GitHub 的 clean mergeability 同时满足，原 finalizer 才请求普通 squash merge。
    不使用 admin bypass，不修改分支保护，不要求打开仓库级 auto-merge 开关。
 6. 合并后的精确 main 再次通过 Verify/summary 后，自动在 #406 写入一次性完成回执。
+   回执延迟时，分别绑定原归档 merge SHA 与当前已验证 main；两者都须通过精确
+   Verify/summary，原归档合并必须是当前 main 的祖先，原 PR 与当前 Git 证据均须一致。
    后续重复事件校验已归档内容，不重复开 PR、不覆盖已有回执。
 
 ## 归档与产品版本的边界
@@ -46,7 +48,9 @@ main 推送仍强制完整 Verify。不为了存档制造一个新的产品版�
 只读取证使用 `GITHUB_TOKEN`。创建 PR、提交归档、更新归档分支和普通合并只使用
 `RESEARCH_AUTOMATION_TOKEN`，不回退到 `REPOSITORY_ADMIN_TOKEN` 或
 `REPOSITORY_GOVERNANCE_TOKEN`。治理凭证继续只服务原有治理安装/审计。
-完成评论由 `GITHUB_TOKEN` 的 Issues 写权限发布；写权限不授予 PR 检查 job。
+完成评论仍由 `GITHUB_TOKEN` 以 `github-actions[bot]` 身份发布。跟踪对象 #406 是
+PR，因此可信 main 的收尾 job 显式授予 Issues 与 Pull requests 写权限；Contents、
+Actions 保持只读。独立 PR 契约检查仍只读，发布提交仍必须使用专用发布身份。
 
 仓库 secret 应为仅授权 `jiying2007/audio-pipeline` 的有效 fine-grained PAT，
 具有 Contents 与 Pull requests 的 Read and write。发布令牌不需要 Administration
@@ -70,6 +74,15 @@ main 推送仍强制完整 Verify。不为了存档制造一个新的产品版�
 创建的认证问题已解除；这不等于合并或完成回执已成功。#411 原 Verify
 `36013704126` 因原始收据被错误识别为产品发布变更而失败。保留该失败，不通过
 升版、改证据或重跑诊断隐藏它。恢复实现须经独立 PR 和精确主线验收后生效。
+
+#412 合入并通过主线验收后，原生恢复已更新 #411；其新 head 的 Verify
+`36022590607` 成功。收尾 run `36023132286` 已自动合并 #411 至
+`4ec161ed7bdad80a22f5398fa1282e186a319317`，随后主线 Verify `36023171151` 成功。
+最后的 run `36023667105` 在 `POST issues/406/comments` 遇到
+`403 / INTEGRATION_PERMISSION_DENIED`；失败 artifact `10819360070` 的 SHA256 为
+`477ecf493c17dc4495e162d25b9c9eeda82ec76d485c3b5d225bb6f766894f19`。
+这次失败发生在回执评论，而不是归档发布或算法验收。补齐可信 job 的 PR 评论权限，
+并以原始归档合并提交为身份恢复回执；不能把后来的修复提交冒充归档 merge SHA。
 
 基础设施凭证确需轮换时，可在本地已认证的 `gh` 环境交互式设置：
 
@@ -108,6 +121,7 @@ gh workflow run i015-evidence-finalization.yml \
 原负例：`tests/validation/test_i015_finalize.py`。
 新增真实 Git 元数据与分支恢复测试：`tests/validation/test_ci_archive_receipts.py`、
 `tests/validation/test_i015_archive_recovery.py`。
+延迟回执身份、重复事件与权限测试：`tests/validation/test_i015_receipt.py`。
 工作流：`.github/workflows/i015-evidence-finalization.yml`。
 
 GitHub 原生事件、令牌与权限语义：
@@ -115,3 +129,4 @@ GitHub 原生事件、令牌与权限语义：
 - https://docs.github.com/en/actions/concepts/security/github_token
 - https://docs.github.com/en/rest/pulls/pulls#update-a-pull-request-branch
 - https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request
+- https://docs.github.com/en/rest/issues/comments#create-an-issue-comment

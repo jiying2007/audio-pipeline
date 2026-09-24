@@ -2,6 +2,7 @@
 """Keep consumed I015 execution retired; parse YAML as data, never run research."""
 from copy import deepcopy
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -124,6 +125,17 @@ class RetirementTests(unittest.TestCase):
         self.assertFalse((ROOT / HISTORY).resolve().is_relative_to(ROOT / '.github/workflows'))
         for path in (ROOT / '.github/workflows').glob('*.y*ml'):
             self.assertNotEqual(blob(path.read_bytes()), HISTORY_BLOB, str(path))
+
+    def test_central_registry_matches_retired_execution(self):
+        spec = importlib.util.spec_from_file_location(
+            'i015_maintenance_registry', ROOT / '.github/program/maintenance_workflow_contract.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        workflow = Path(WORKFLOW)
+        self.assertIn(workflow, module.CONTRACT_ONLY_RESEARCH_WORKFLOWS)
+        self.assertIn(Path(CLOSURE), module.CONTRACT_ONLY_RESEARCH_EVIDENCE[workflow])
+        # Exercises the existing owner rather than inventing a second path rule.
+        module.validate_program_archive_trigger_boundaries(ROOT)
 
     def test_independent_pr_and_main_contract_cover_retirement(self):
         contract = yaml_data((ROOT / '.github/workflows/i015-evidence-finalization-contract.yml').read_bytes())

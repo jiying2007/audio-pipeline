@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i014-ns-upstream-component-decomposition-v1",
+  "phase": "candidate-zero-existing-upstream-component-synergy",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "ce6aa15067cf2cffc272f55cfd7c7aaf2698e0cf",
+  "predecessors": {
+    "i012_result": ".github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2-result.json",
+    "i013_result": ".github/research/continuous-optimization/development-v4/i013-ns-excess-concentration-v1-result.json",
+    "role": "reviewed-context-only-not-selection-or-tuning"
+  },
+  "budget": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "diagnostic_execution_limit": 1
+  },
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "parameter_search_allowed": false,
+  "threshold_tuning_allowed": false,
+  "fresh_diagnostic_authority": {
+    "seeds": [251123, 261123, 271123],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "diagnosis-only"
+  },
+  "hypothesis": {
+    "shipping_probability": "clamp(concentration - mean, 0, 1)",
+    "mean": "mean per-bin NS speech_probability over the existing NS speech band",
+    "mean_suppression_score": "1 - mean",
+    "concentration": "sum(per-bin speech_probability^2) / sum(per-bin speech_probability)",
+    "speech_band": "exact existing NS evidence band: k > nfft/64 and k < 7*nfft/16",
+    "mechanism": "Broad nonstationary noise raises many bins to medium posterior values, increasing mean, while speech should concentrate evidence into fewer stronger bins. The shipping gap may therefore reject diffuse nonstationary noise better than either component alone.",
+    "comparison": "ROC AUC only for existing mean-suppression, concentration and shipping gap components; no new feature mapping is defined",
+    "candidate_mapping_selected": false
+  },
+  "diagnostic_gates": {
+    "max_shipping_mirror_probability_delta": 1e-6,
+    "max_floor_shipping_probability_delta": 1e-7,
+    "min_combined_nonstationary_shipping_auc": 0.62,
+    "min_nonstationary_shipping_auc_gain_over_mean_suppression": 0.02,
+    "min_nonstationary_shipping_auc_gain_over_concentration": 0.02,
+    "min_per_seed_nonstationary_shipping_auc": 0.60
+  },
+  "forbidden_feedback": {
+    "i010_locked_seeds": [91123, 92123, 93123],
+    "noise_scale_or_proxy_seeds": [101123, 102123, 103123, 111123, 121123],
+    "state_divergence_seeds": [131123, 141123, 151123],
+    "direct_scalar_counterfactual_seeds": [161123, 171123, 181123],
+    "i012_spectral_snr_seeds": [191123, 201123, 211123],
+    "i013_excess_concentration_seeds": [221123, 231123, 241123],
+    "reuse_for_selection": false,
+    "parameter_search": true,
+    "threshold_tuning": true,
+    "component_reweighting": true,
+    "feature_mapping_selection": true,
+    "shipping_promotion": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_COMPONENT_SYNERGY_SUPPORTED_REVIEW_REQUIRED": "Mirror/floor invariants hold and the existing shipping gap meets all preregistered nonstationary synergy gates against both native components.",
+    "NS_UPSTREAM_COMPONENT_SYNERGY_NOT_SUPPORTED_REVIEW_REQUIRED": "Input/mirror/floor invariants hold but one or more preregistered synergy gates fail.",
+    "NS_UPSTREAM_COMPONENT_INPUT_INVALID_REVIEW_REQUIRED": "Exact source/seed binding, geometry, finite-value, mirror-identity or floor-invariance preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_ns": false,
+    "may_modify_shipping_vad": false,
+    "may_select_source_candidate": false,
+    "may_choose_feature_mapping": false,
+    "may_reweight_components": false,
+    "may_tune_vad_thresholds": false,
+    "may_consume_candidate_budget": false,
+    "may_consume_confirmation": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Only decomposition of the existing shipping upstream probability may be reviewed. No component reweighting or alternative mapping may be inferred from the same data."
+}

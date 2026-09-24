@@ -90,7 +90,6 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-source-authority-v2-qualification.yml'),
     Path('.github/workflows/research-i011-ns-noise-reference-scale.yml'),
     Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
-    Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'),
 )
 
 PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
@@ -103,6 +102,7 @@ PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
 CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
     Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
+    Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (

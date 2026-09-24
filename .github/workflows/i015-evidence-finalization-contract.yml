@@ -12,6 +12,10 @@ on:
       - 'tests/validation/test_i015_archive_recovery.py'
       - 'tests/validation/test_i015_finalize.py'
       - 'tests/validation/test_i015_receipt.py'
+      - 'tests/validation/test_i015_one_shot_guard.py'
+      - 'tests/validation/test_i015_retirement.py'
+      - 'tests/validation/data/i015-consumed-workflow.yml'
+      - '.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'
       - '.github/workflows/i015-evidence-finalization*.yml'
       - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
       - 'validation/research/evidence/i015-35994848668/**'
@@ -27,6 +31,10 @@ on:
       - 'tests/validation/test_i015_archive_recovery.py'
       - 'tests/validation/test_i015_finalize.py'
       - 'tests/validation/test_i015_receipt.py'
+      - 'tests/validation/test_i015_one_shot_guard.py'
+      - 'tests/validation/test_i015_retirement.py'
+      - 'tests/validation/data/i015-consumed-workflow.yml'
+      - '.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'
       - '.github/workflows/i015-evidence-finalization*.yml'
       - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
       - 'validation/research/evidence/i015-35994848668/**'
@@ -46,6 +54,8 @@ jobs:
       - name: Validate offline finalizer contracts and any committed archive
         run: |
           set -euo pipefail
+          python3 tests/validation/test_i015_retirement.py
+          python3 tests/validation/test_i015_one_shot_guard.py
           python3 -m py_compile .github/program/i015_finalize.py .github/program/i015_archive_recovery.py
           python3 tests/validation/test_i015_finalize.py
           python3 tests/validation/test_i015_receipt.py

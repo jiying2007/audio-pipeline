@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i015-vad-upstream-consumption-decomposition-v1",
+  "phase": "candidate-zero-vad-upstream-consumption-causal-decomposition",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "1e08e892b29515b384265e50d9fd809ea7e06bb8",
+  "predecessors": {
+    "i014_result": ".github/research/continuous-optimization/development-v4/i014-ns-upstream-component-decomposition-v1-result.json",
+    "vad_state_divergence": ".github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json",
+    "role": "reviewed-context-only-not-selection-or-tuning"
+  },
+  "budget": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "diagnostic_execution_limit": 1
+  },
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "parameter_search_allowed": false,
+  "threshold_tuning_allowed": false,
+  "fresh_diagnostic_authority": {
+    "seeds": [281123, 291123, 301123],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "diagnosis-only"
+  },
+  "fixed_lanes": {
+    "shipping": {
+      "upstream_guard": true,
+      "upstream_blend": true,
+      "decision_threshold": 0.35
+    },
+    "no_upstream_evidence": {
+      "upstream_guard": false,
+      "upstream_blend": false,
+      "decision_threshold": 0.35
+    },
+    "blend_only": {
+      "upstream_guard": false,
+      "upstream_blend": true,
+      "decision_threshold": 0.35
+    },
+    "guard_only": {
+      "upstream_guard": true,
+      "upstream_blend": false,
+      "decision_threshold": 0.35
+    }
+  },
+  "shipping_constants": {
+    "noise_like_crest_db": 8.0,
+    "transient_crest_db": 12.0,
+    "fast_noise_alpha": 0.08,
+    "upstream_speech_guard": 0.55,
+    "local_speech_guard": 0.15,
+    "upstream_blend": 0.40,
+    "ns_decision_threshold": 0.35,
+    "strong_refresh_threshold": 0.50,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6
+  },
+  "hypothesis": {
+    "question": "How does the already-supported NS upstream speech_probability create its stateful VAD effect under nonstationary noise?",
+    "shipping_lane": "exact shipping guard plus blend behavior",
+    "no_upstream_evidence_lane": "same NS-assisted 0.35 decision/hold semantics but no upstream guard and no upstream blend",
+    "blend_only_lane": "same constants and state machine with upstream blend enabled but upstream guard disabled",
+    "guard_only_lane": "same constants and state machine with upstream guard enabled but upstream blend disabled",
+    "interpretation": "The lanes are causal ablations of existing shipping consumption paths, not candidate mappings. Their recall/FPR, probability AUC and frame-attribution differences are diagnostic only."
+  },
+  "diagnostic_gates": {
+    "max_shipping_mirror_probability_delta": 1e-6,
+    "shipping_mirror_active_mismatch_frames": 0,
+    "min_nonstationary_shipping_vs_no_upstream_active_diff_frames": 1
+  },
+  "forbidden_feedback": {
+    "i010_locked_seeds": [91123, 92123, 93123],
+    "noise_scale_or_proxy_seeds": [101123, 102123, 103123, 111123, 121123],
+    "state_divergence_seeds": [131123, 141123, 151123],
+    "direct_scalar_counterfactual_seeds": [161123, 171123, 181123],
+    "i012_spectral_snr_seeds": [191123, 201123, 211123],
+    "i013_excess_concentration_seeds": [221123, 231123, 241123],
+    "i014_upstream_component_seeds": [251123, 261123, 271123],
+    "reuse_for_selection": false,
+    "parameter_search": true,
+    "threshold_tuning": true,
+    "lane_selection": true,
+    "component_reweighting": true,
+    "shipping_promotion": true
+  },
+  "decision_contract": {
+    "VAD_UPSTREAM_CONSUMPTION_DECOMPOSED_REVIEW_REQUIRED": "Exact shipping mirror identity holds and fresh nonstationary data exercise a stateful difference between shipping and the same-threshold no-upstream-evidence lane.",
+    "NO_VAD_UPSTREAM_CONSUMPTION_EFFECT_REVIEW_REQUIRED": "Mirror identity holds but fresh nonstationary data do not exercise a shipping-versus-no-upstream stateful difference.",
+    "VAD_UPSTREAM_CONSUMPTION_INPUT_INVALID_REVIEW_REQUIRED": "Exact source/seed binding, finite-value, geometry, or shipping mirror identity preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_ns": false,
+    "may_modify_shipping_vad": false,
+    "may_select_source_candidate": false,
+    "may_choose_lane": false,
+    "may_change_blend": false,
+    "may_change_guard": false,
+    "may_tune_vad_thresholds": false,
+    "may_consume_candidate_budget": false,
+    "may_consume_confirmation": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Review causal attribution only. Any source candidate, guard/blend change or threshold/mapping change requires a separate preregistered hypothesis and entirely new authority."
+}

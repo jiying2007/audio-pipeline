@@ -92,6 +92,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
     Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'),
     Path('.github/workflows/research-i012-ns-spectral-post-snr-v2.yml'),
+    Path('.github/workflows/research-i013-ns-excess-concentration-v1.yml'),
 
 )
 

@@ -1,0 +1,288 @@
+name: Research I013 NS Excess Concentration v1
+run-name: "i013-excess-concentration-v1 / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i013-ns-excess-concentration-v1.json'
+      - 'tests/validation/i013_ns_excess_concentration_probe.c'
+      - 'tests/validation/i013_ns_excess_concentration.py'
+      - '.github/workflows/research-i013-ns-excess-concentration-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-i013-ns-excess-concentration-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/i013-ns-excess-concentration-v1.json
+  PYTHONPATH: validation/tools:tests/validation
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate I013 contract and evaluator
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/validation/i013_ns_excess_concentration.py
+          python3 tests/validation/i013_ns_excess_concentration.py --self-test
+          python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          c = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i013-ns-excess-concentration-v1.json'
+          ).read_text())
+          assert c['investigation_id'] == 'i013-ns-excess-concentration-v1'
+          assert c['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
+          assert c['source_base_sha'] == 'c65944d3b4a3671477fcb6450f4fec87632e6b23'
+          assert c['fresh_diagnostic_authority']['seeds'] == [221123, 231123, 241123]
+          assert c['budget'] == {
+              'candidate_limit': 0,
+              'confirmation_limit': 0,
+              'diagnostic_execution_limit': 1,
+          }
+          assert c['parameter_search_allowed'] is False
+          assert c['threshold_tuning_allowed'] is False
+          assert c['promotion_allowed'] is False
+          assert c['shipping_source_change_allowed'] is False
+          assert all(value is False for value in c['authority_boundary'].values())
+
+          prior = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i012-ns-spectral-post-snr-v2-result.json'
+          ).read_text())
+          assert prior['status'] == 'CLOSED_DIAGNOSTIC_ONLY'
+          assert prior['reviewed_decision'] == (
+              'SPECTRAL_INFORMATION_GAIN_INSUFFICIENT_KEEP_BASELINE'
+          )
+          assert prior['summary']['combined_auc_gate_pass'] is False
+          assert prior['summary']['auc_gain_gate_pass'] is True
+          PY
+          git cat-file -e "c65944d3b4a3671477fcb6450f4fec87632e6b23^{commit}"
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i013-excess-concentration-contract
+
+      - name: Compile test-only I013 probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i013-contract             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i013-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i013-contract/generated             tests/validation/i013_ns_excess_concentration_probe.c             build-i013-contract/libaudio_pipeline.a -lm             -o build-i013-contract/i013_ns_excess_concentration_probe
+
+  diagnose:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Enforce one-shot I013 diagnostic execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          current = int(os.environ['GITHUB_RUN_ID'])
+          workflow = 'research-i013-ns-excess-concentration-v1.yml'
+          runs = json.loads(subprocess.check_output([
+              'gh', 'api',
+              f'repos/{repo}/actions/workflows/{workflow}/runs'
+              '?event=workflow_dispatch&branch=main&per_page=100',
+          ], text=True)).get('workflow_runs', [])
+          consumed = []
+          for item in runs:
+              run_id = int(item['id'])
+              if run_id == current:
+                  continue
+              jobs = json.loads(subprocess.check_output([
+                  'gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100',
+              ], text=True)).get('jobs', [])
+              if any(
+                  step.get('name') == 'Run fresh I013 excess concentration diagnostic'
+                  and step.get('conclusion') == 'success'
+                  for job in jobs
+                  for step in job.get('steps', [])
+              ):
+                  consumed.append(run_id)
+          if consumed:
+              raise SystemExit(
+                  'I013 diagnostic budget already consumed by run(s): '
+                  + ','.join(str(x) for x in sorted(consumed))
+              )
+          print('one-shot I013 guard: PASS')
+          PY
+
+      - name: Bind exact frozen source
+        run: |
+          set -euo pipefail
+          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
+          test "$SOURCE_BASE_SHA" = c65944d3b4a3671477fcb6450f4fec87632e6b23
+          git cat-file -e "$SOURCE_BASE_SHA^{commit}"
+          git worktree add --detach /tmp/i013-source "$SOURCE_BASE_SHA"
+          printf '%s\n' "$SOURCE_BASE_SHA" > /tmp/i013-source-sha.txt
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i013-excess-concentration-v1
+
+      - name: Build exact source library and I013 probe
+        run: |
+          set -euo pipefail
+          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
+          test "$SOURCE_BASE_SHA" = c65944d3b4a3671477fcb6450f4fec87632e6b23
+          mkdir -p i013-out
+          cmake -S /tmp/i013-source -B /tmp/i013-build             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
+          cmake --build /tmp/i013-build --target audio_pipeline ap_build_info_dump --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -I/tmp/i013-source/include             -I/tmp/i013-source/src             -I/tmp/i013-build/generated             tests/validation/i013_ns_excess_concentration_probe.c             /tmp/i013-build/libaudio_pipeline.a -lm             -o /tmp/i013-ns-excess-concentration-probe
+          /tmp/i013-build/ap_build_info_dump > i013-out/build-info.txt
+          ${CC:-cc} --version | head -n 1 > i013-out/compiler.txt
+          sha256sum /tmp/i013-ns-excess-concentration-probe > i013-out/probe.sha256
+          cp "$CONTRACT" i013-out/contract.json
+          cp /tmp/i013-source-sha.txt i013-out/source-base-revision.txt
+          printf '%s\n' "$GITHUB_SHA" > i013-out/diagnostic-infra-revision.txt
+
+      - name: Generate preregistered fresh I013 partitions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          c = json.loads(Path(
+              '.github/research/continuous-optimization/development-v4/'
+              'i013-ns-excess-concentration-v1.json'
+          ).read_text())
+          fresh = c['fresh_diagnostic_authority']
+          manifest = []
+          for seed in fresh['seeds']:
+              out = Path(f'/tmp/i013-{seed}')
+              subprocess.run([
+                  'python3',
+                  str(Path('/tmp/i013-source') / fresh['generator']),
+                  '--output', str(out),
+                  '--seed', str(seed),
+                  '--seconds', str(fresh['seconds']),
+              ], check=True, cwd='/tmp/i013-source')
+              corpus = out / 'corpus.json'
+              payload = json.loads(corpus.read_text())
+              assert payload['generator']['seed'] == seed
+              selected = [
+                  row for row in payload['cases']
+                  if row.get('processor_profile') == 'ns-isolated'
+                  and row.get('vad_labels')
+                  and row.get('render_audio') is None
+                  and row.get('case_id') in {
+                      'stage-ns-stationary',
+                      'stage-ns-nonstationary',
+                  }
+              ]
+              assert len(selected) == 2, f'invalid I013 partition for seed {seed}'
+              manifest.append(str(corpus))
+          Path('i013-out/corpora.txt').write_text(
+              '\n'.join(manifest) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Run fresh I013 excess concentration diagnostic
+        run: |
+          set -euo pipefail
+          mapfile -t corpora < i013-out/corpora.txt
+          args=()
+          for corpus in "${corpora[@]}"; do
+            args+=(--corpus "$corpus")
+          done
+          python3 tests/validation/i013_ns_excess_concentration.py             --probe /tmp/i013-ns-excess-concentration-probe             --contract "$CONTRACT"             "${args[@]}"             --output i013-out/result.json             | tee i013-out/summary.json
+
+      - name: Enforce I013 diagnostic-only authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          r = json.loads(Path('i013-out/result.json').read_text())
+          assert r['authority'] == 'RESEARCH_DIAGNOSTIC_ONLY'
+          assert r['fresh_seeds'] == [221123, 231123, 241123]
+          assert r['candidate_budget_consumed'] == 0
+          assert r['confirmation_budget_consumed'] == 0
+          assert r['shipping_source_changed'] is False
+          assert r['interpretation']['excess_concentration_feature_selected'] is False
+          assert r['interpretation']['vad_mapping_selected'] is False
+          assert r['interpretation']['adaptive_state_guard_selected'] is False
+          assert r['interpretation']['vad_threshold_selected'] is False
+          assert r['decision'] in {
+              'NS_EXCESS_CONCENTRATION_INFORMATION_SUPPORTED_REVIEW_REQUIRED',
+              'NS_EXCESS_CONCENTRATION_INFORMATION_NOT_SUPPORTED_REVIEW_REQUIRED',
+              'NS_EXCESS_CONCENTRATION_INPUT_INVALID_REVIEW_REQUIRED',
+          }
+          PY
+
+      - name: Seal I013 evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p i013-out
+          (
+            cd i013-out
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' | sort -z |               xargs -0 -r sha256sum > SHA256SUMS
+          )
+
+      - name: Publish I013 summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          p = Path('i013-out/result.json')
+          print('## I013 NS excess concentration')
+          if not p.exists():
+              print('- Result: evidence incomplete')
+              raise SystemExit(0)
+          r = json.loads(p.read_text())
+          s = r['summary']
+          print(f"- Decision: `{r['decision']}`")
+          print(f"- Fresh seeds: `{r['fresh_seeds']}`")
+          print(f"- Combined concentration AUC: `{s['combined_concentration_auc']:.6f}`")
+          print(f"- Combined scalar SNR AUC: `{s['combined_scalar_snr_auc']:.6f}`")
+          print(f"- Nonstationary concentration AUC: `{s['combined_nonstationary_concentration_auc']:.6f}`")
+          print(f"- Nonstationary scalar SNR AUC: `{s['combined_nonstationary_scalar_snr_auc']:.6f}`")
+          print(f"- Nonstationary AUC gain: `{s['combined_nonstationary_auc_gain_over_scalar_snr']:.6f}`")
+          print(f"- Floor concentration max delta: `{s['max_floor_concentration_delta']}`")
+          print(f"- Information violations: `{len(r['information_violations'])}`")
+          print('- Authority: threshold-free diagnostic only; no feature mapping, state guard, threshold, source candidate, confirmation, shipping, HIL or Product Certification authority.')
+          PY
+
+      - name: Upload hash-bound I013 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i013-ns-excess-concentration-v1-${{ github.run_id }}
+          path: i013-out/
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i013-ns-excess-concentration-v1",
+  "phase": "candidate-zero-nonstationary-spectral-concentration",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "c65944d3b4a3671477fcb6450f4fec87632e6b23",
+  "predecessors": {
+    "i012_result": ".github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2-result.json",
+    "role": "reviewed-context-only-not-selection-or-tuning"
+  },
+  "budget": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "diagnostic_execution_limit": 1
+  },
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "parameter_search_allowed": false,
+  "threshold_tuning_allowed": false,
+  "fresh_diagnostic_authority": {
+    "seeds": [221123, 231123, 241123],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "diagnosis-only"
+  },
+  "hypothesis": {
+    "feature": "band_bins * sum(max(post_snr_bin - 1, 0)^2) / sum(max(post_snr_bin - 1, 0))^2",
+    "post_snr_bin": "pre-suppression bin power divided by updated per-bin NS noise estimate",
+    "speech_band": "exact existing NS evidence band: k > nfft/64 and k < 7*nfft/16",
+    "expected_direction": "higher normalized positive-excess concentration indicates speech-like sparse spectral evidence",
+    "mechanism": "I012 aggregate spectral SNR improved over upstream probability but remained weak in nonstationary broadband noise. A normalized second-moment concentration removes aggregate level and asks whether speech-like excess is spectrally concentrated rather than diffuse.",
+    "comparison": "same fresh frames also compute I012 scalar spectral SNR and current NS speech_probability; comparison is ROC AUC only",
+    "candidate_mapping_selected": false
+  },
+  "diagnostic_gates": {
+    "max_floor_concentration_delta": 1e-6,
+    "max_floor_scalar_snr_delta_db": 1e-6,
+    "max_floor_speech_probability_delta": 1e-7,
+    "min_combined_concentration_auc": 0.65,
+    "min_combined_nonstationary_concentration_auc": 0.62,
+    "min_combined_nonstationary_auc_gain_over_scalar_snr": 0.03,
+    "min_per_seed_nonstationary_concentration_auc": 0.60
+  },
+  "forbidden_feedback": {
+    "i010_locked_seeds": [91123, 92123, 93123],
+    "noise_scale_or_proxy_seeds": [101123, 102123, 103123, 111123, 121123],
+    "state_divergence_seeds": [131123, 141123, 151123],
+    "direct_scalar_counterfactual_seeds": [161123, 171123, 181123],
+    "i012_spectral_snr_seeds": [191123, 201123, 211123],
+    "reuse_for_selection": false,
+    "parameter_search": true,
+    "threshold_tuning": true,
+    "feature_mapping_selection": true,
+    "shipping_promotion": true
+  },
+  "decision_contract": {
+    "NS_EXCESS_CONCENTRATION_INFORMATION_SUPPORTED_REVIEW_REQUIRED": "Floor invariants hold and all preregistered combined/nonstationary concentration information gates pass.",
+    "NS_EXCESS_CONCENTRATION_INFORMATION_NOT_SUPPORTED_REVIEW_REQUIRED": "Input/floor invariants hold but one or more preregistered information gates fail.",
+    "NS_EXCESS_CONCENTRATION_INPUT_INVALID_REVIEW_REQUIRED": "Exact source/seed binding, geometry, finite-value, or floor-invariance preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_ns": false,
+    "may_modify_shipping_vad": false,
+    "may_select_source_candidate": false,
+    "may_choose_feature_mapping": false,
+    "may_tune_vad_thresholds": false,
+    "may_consume_candidate_budget": false,
+    "may_consume_confirmation": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Only threshold-free information gain may be reviewed. Any fusion mapping, adaptive-state rule, threshold, source candidate, or shipping change requires a separate preregistered hypothesis and entirely new authority."
+}

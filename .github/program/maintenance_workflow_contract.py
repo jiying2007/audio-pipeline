@@ -101,6 +101,7 @@ PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
 
 CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
+    Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -108,6 +109,10 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('.github/research/continuous-optimization/algorithm-space-v1-closure.json'),
         Path('.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json'),
         Path('.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json'),
+    ),
+    Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json'),
     ),
 }
 

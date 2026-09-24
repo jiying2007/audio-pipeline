@@ -1,0 +1,71 @@
+name: I015 Evidence Finalization
+run-name: i015-finalize / ${{ github.event_name }} / ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/program/i015-finalization.json'
+      - '.github/program/i015_finalize.py'
+      - '.github/workflows/i015-evidence-finalization.yml'
+  workflow_run:
+    workflows: [Verify, Program Archive Contract, Research Optimization, Research Algorithm Parameter Optimization, I015 Evidence Finalization Contract]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+  pull-requests: read
+
+concurrency:
+  group: i015-evidence-finalization-trusted-main
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.repository == 'jiying2007/audio-pipeline' &&
+      github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == github.repository &&
+        (github.event.workflow_run.head_branch == 'main' ||
+         github.event.workflow_run.head_branch == 'automation/i015-evidence-35994848668')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      actions: read
+      checks: read
+      pull-requests: read
+      issues: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Verify original evidence and reconcile governed archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Prefer a repository-scoped App/PAT. Reuse existing bootstrap identity
+          # only when configured; never alter rules or use an admin merge bypass.
+          GH_WRITE_TOKEN: ${{ secrets.RESEARCH_AUTOMATION_TOKEN || secrets.REPOSITORY_ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 .github/program/i015_finalize.py --output i015-finalization-out
+      - name: Publish bounded status
+        if: always()
+        run: |
+          if test -f i015-finalization-out/status.json; then
+            cat i015-finalization-out/status.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve finalization evidence independently of diagnostic execution
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i015-finalization-${{ github.run_id }}-${{ github.run_attempt }}
+          path: i015-finalization-out/
+          retention-days: 90
+          if-no-files-found: warn

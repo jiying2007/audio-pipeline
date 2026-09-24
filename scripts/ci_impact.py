@@ -60,6 +60,14 @@ RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
     re.compile(r"validation/tools/build_[A-Za-z0-9_]+_tuning_corpus\.py"),
     re.compile(r"validation/policies/validation-[A-Za-z0-9-]+-stage-tuning\.json"),
     re.compile(r"validation/tuning/search-spaces/[A-Za-z0-9._-]+\.json"),
+    # Run receipts are archived observations, not executable validators, input
+    # corpora or shipping policy. Keep the data-member allowlist narrow; this
+    # affects versioning only, never the conservative CI matrix or hash gates.
+    re.compile(
+        r"validation/research/evidence/[A-Za-z0-9][A-Za-z0-9_-]*/"
+        r"(?:SHA256SUMS|(?:build-info|compiler|corpora|diagnostic-infra-revision|"
+        r"source-base-revision)\.txt|(?:contract|result|summary)\.json|probe\.sha256)"
+    ),
 )
 VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
 VERSION_TOKEN_RE = re.compile(
@@ -410,6 +418,48 @@ def self_test() -> None:
     assert is_release_neutral("validation/policies/validation-agc-stage-tuning.json")
     assert is_release_neutral("validation/policies/validation-ns-stage-tuning.json")
     assert is_release_neutral("validation/tuning/search-spaces/agc-stage-v1.json")
+    archive_root = "validation/research/evidence/i015-35994848668/"
+    archive_paths = [archive_root + name for name in (
+        "SHA256SUMS", "build-info.txt", "compiler.txt", "contract.json",
+        "corpora.txt", "diagnostic-infra-revision.txt", "probe.sha256",
+        "result.json", "source-base-revision.txt", "summary.json",
+    )]
+    assert all(is_release_neutral(path) for path in archive_paths)
+    for path in (
+        archive_root + "validator.py", archive_root + "run.sh",
+        archive_root + "probe.c", archive_root + "probe",
+        archive_root + "policy.json", archive_root + "corpus.json",
+        archive_root + "nested/result.json", archive_root + "../result.json",
+        "validation/research/evidence-other/i015/result.json",
+        "validation/research/evidence/.hidden/result.json",
+        "validation/research/result.json",
+    ):
+        assert not is_release_neutral(path), path
+    archive = analyze(archive_paths)
+    assert archive["run_audio"] and archive["run_tuning"] and not archive["docs_only"]
+    assert analyze(archive_paths, True)["full"]
+    archive_pr_paths = archive_paths + [
+        ".github/research/continuous-optimization/development-v4/"
+        "i015-vad-upstream-consumption-decomposition-v1-result.json",
+        "docs/program/I015-FINALIZATION.md",
+    ]
+    assert analyze(archive_pr_paths)["full"]
+    # Exercise the version gate itself at unchanged SemVer, not just path flags.
+    from unittest.mock import patch
+    with patch(__name__ + ".project_version", return_value="2.3.49") as version:
+        enforce_release_version("base", "head", archive_pr_paths)
+        version.assert_not_called()
+        for product_path in (
+            "src/core/ap_pipeline.c", "validation/authority.json",
+            "validation/policies/validation-smoke.json",
+            "validation/tools/run_validation.py", archive_root + "validator.py",
+        ):
+            try:
+                enforce_release_version("base", "head", archive_pr_paths + [product_path])
+            except ValueError as error:
+                assert "must advance SemVer" in str(error)
+            else:
+                raise AssertionError("release-bearing mixed diff passed: " + product_path)
     assert not is_release_neutral("validation/authority.json")
     assert not is_release_neutral("validation/tools/run_validation.py")
     assert not is_release_neutral("validation/policies/validation-smoke.json")

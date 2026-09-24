@@ -6,6 +6,10 @@ on:
     paths:
       - '.github/program/i015-finalization.json'
       - '.github/program/i015_finalize.py'
+      - '.github/program/i015_archive_recovery.py'
+      - 'scripts/ci_impact.py'
+      - 'tests/validation/test_ci_archive_receipts.py'
+      - 'tests/validation/test_i015_archive_recovery.py'
       - 'tests/validation/test_i015_finalize.py'
       - '.github/workflows/i015-evidence-finalization*.yml'
       - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
@@ -16,6 +20,10 @@ on:
     paths:
       - '.github/program/i015-finalization.json'
       - '.github/program/i015_finalize.py'
+      - '.github/program/i015_archive_recovery.py'
+      - 'scripts/ci_impact.py'
+      - 'tests/validation/test_ci_archive_receipts.py'
+      - 'tests/validation/test_i015_archive_recovery.py'
       - 'tests/validation/test_i015_finalize.py'
       - '.github/workflows/i015-evidence-finalization*.yml'
       - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
@@ -36,8 +44,10 @@ jobs:
       - name: Validate offline finalizer contracts and any committed archive
         run: |
           set -euo pipefail
-          python3 -m py_compile .github/program/i015_finalize.py
+          python3 -m py_compile .github/program/i015_finalize.py .github/program/i015_archive_recovery.py
           python3 tests/validation/test_i015_finalize.py
+          python3 tests/validation/test_ci_archive_receipts.py
+          python3 tests/validation/test_i015_archive_recovery.py
       - name: Keep publishing credentials separate from governance
         run: |
           python3 - <<'PYCODE'

@@ -8,6 +8,7 @@ on:
       - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1.json'
       - 'tests/validation/i015_vad_upstream_consumption_probe.c'
       - 'tests/validation/i015_vad_upstream_consumption_decomposition.py'
+      - 'tests/validation/test_i015_one_shot_guard.py'
       - '.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'
   workflow_dispatch:
 
@@ -37,6 +38,7 @@ jobs:
           set -euo pipefail
           python3 -m py_compile tests/validation/i015_vad_upstream_consumption_decomposition.py
           python3 tests/validation/i015_vad_upstream_consumption_decomposition.py --self-test
+          python3 tests/validation/test_i015_one_shot_guard.py
           python3 -m json.tool "$CONTRACT" >/dev/null
           python3 - <<'PY'
           import json
@@ -129,30 +131,60 @@ jobs:
 
           repo = os.environ['GITHUB_REPOSITORY']
           current = int(os.environ['GITHUB_RUN_ID'])
+          # GitHub reruns retain the run ID and the original workflow revision.
+          # Never permit a second attempt to re-enter fresh-data execution.
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('I015 rerun forbidden; preserve evidence and review offline')
           workflow = 'research-i015-vad-upstream-consumption-decomposition-v1.yml'
-          runs = json.loads(subprocess.check_output([
-              'gh', 'api',
+
+
+          def collection(endpoint, key):
+              pages = json.loads(subprocess.check_output([
+                  'gh', 'api', '--paginate', '--slurp', endpoint,
+              ], text=True))
+              return [item for page in pages for item in page[key]]
+
+
+          runs = collection(
               f'repos/{repo}/actions/workflows/{workflow}/runs'
               '?event=workflow_dispatch&branch=main&per_page=100',
-          ], text=True)).get('workflow_runs', [])
-          consumed = []
+              'workflow_runs',
+          )
+          if not any(int(item['id']) == current for item in runs):
+              raise SystemExit('I015 current run not visible; stop before fresh generation')
+          fresh_steps = {
+              'Generate preregistered fresh I015 partitions',
+              'Run fresh I015 VAD upstream consumption decomposition',
+          }
+          consumed = set()
           for item in runs:
               run_id = int(item['id'])
               if run_id == current:
                   continue
-              jobs = json.loads(subprocess.check_output([
-                  'gh', 'api', f'repos/{repo}/actions/runs/{run_id}/jobs?per_page=100',
-              ], text=True)).get('jobs', [])
-              if any(
-                  step.get('name') == 'Run fresh I015 VAD upstream consumption decomposition'
-                  and step.get('conclusion') == 'success'
-                  for job in jobs
-                  for step in job.get('steps', [])
-              ):
-                  consumed.append(run_id)
+              attempts = int(item['run_attempt'])
+              if attempts < 1:
+                  raise SystemExit('I015 invalid historical attempt count')
+              # Latest-attempt jobs must not erase earlier fresh-data exposure.
+              for attempt in range(1, attempts + 1):
+                  jobs = collection(
+                      f'repos/{repo}/actions/runs/{run_id}/attempts/{attempt}'
+                      '/jobs?per_page=100',
+                      'jobs',
+                  )
+                  for job in jobs:
+                      if job.get('conclusion') == 'skipped':
+                          continue
+                      for step in job['steps']:
+                          if (step.get('name') in fresh_steps
+                                  and step.get('conclusion') != 'skipped'
+                                  and step.get('status') not in {'queued', 'pending', 'waiting'}):
+                              # Failed/cancelled or partial execution is not fresh again.
+                              consumed.add(run_id)
+                  if run_id in consumed:
+                      break
           if consumed:
               raise SystemExit(
-                  'I015 diagnostic budget already consumed by run(s): '
+                  'I015 fresh authority already touched by run(s): '
                   + ','.join(str(x) for x in sorted(consumed))
               )
           print('one-shot I015 guard: PASS')

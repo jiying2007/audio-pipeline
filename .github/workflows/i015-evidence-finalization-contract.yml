@@ -1,0 +1,40 @@
+name: I015 Evidence Finalization Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/program/i015-finalization.json'
+      - '.github/program/i015_finalize.py'
+      - 'tests/validation/test_i015_finalize.py'
+      - '.github/workflows/i015-evidence-finalization*.yml'
+      - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
+      - 'validation/research/evidence/i015-35994848668/**'
+      - 'docs/program/I015-FINALIZATION.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/program/i015-finalization.json'
+      - '.github/program/i015_finalize.py'
+      - 'tests/validation/test_i015_finalize.py'
+      - '.github/workflows/i015-evidence-finalization*.yml'
+      - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
+      - 'validation/research/evidence/i015-35994848668/**'
+      - 'docs/program/I015-FINALIZATION.md'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Validate offline finalizer contracts and any committed archive
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/program/i015_finalize.py
+          python3 tests/validation/test_i015_finalize.py

@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i012-ns-spectral-post-snr-v2",
+  "phase": "candidate-zero-floor-invariant-spectral-information-refresh",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "61ff84f1e38b1c928bbb1ea9efae006e33779465",
+  "predecessors": {
+    "noise_reference_scale": ".github/research/continuous-optimization/development-v4/i011-ns-noise-reference-scale-v1-result.json",
+    "vad_state_divergence": ".github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json",
+    "direct_scalar_counterfactual": ".github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1-result.json",
+    "role": "reviewed-context-only-not-selection-or-tuning"
+  },
+  "budget": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "diagnostic_execution_limit": 1
+  },
+  "promotion_allowed": false,
+  "shipping_source_change_allowed": false,
+  "parameter_search_allowed": false,
+  "threshold_tuning_allowed": false,
+  "fresh_diagnostic_authority": {
+    "seeds": [191123, 201123, 211123],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "diagnosis-only"
+  },
+  "hypothesis": {
+    "feature": "10*log10(sum(pre-suppression speech-band power) / sum(updated per-bin NS noise estimate))",
+    "speech_band": "exact existing NS evidence band: k > nfft/64 and k < 7*nfft/16",
+    "floor_invariance": "power and NS per-bin noise estimates are computed before floor_gain is applied, so the aggregate spectral SNR must be identical at ns_floor 0.12 and 0.05",
+    "information_test": "ROC AUC against existing VAD labels is threshold-free and tests whether the spectral aggregate carries more speech/noise information than current NS speech_probability",
+    "relationship_to_rejected_scalar_route": "The rejected direct scalar local-SNR replacement used frame RMS against one calibrated aggregate NS noise metric and lost about 0.30-0.33 recall absolute on every fresh partition. This diagnostic does not emulate that VAD mapping; it tests only whether preserved spectral structure contains additional information.",
+    "candidate_mapping_selected": false
+  },
+  "diagnostic_gates": {
+    "max_floor_spectral_snr_delta_db": 1e-6,
+    "max_floor_speech_probability_delta": 1e-7,
+    "min_combined_spectral_snr_auc": 0.65,
+    "min_combined_auc_gain_over_upstream": 0.05,
+    "min_per_seed_spectral_snr_auc": 0.60
+  },
+  "forbidden_feedback": {
+    "i010_locked_seeds": [91123, 92123, 93123],
+    "noise_scale_or_proxy_seeds": [101123, 102123, 103123, 111123, 121123],
+    "state_divergence_seeds": [131123, 141123, 151123],
+    "direct_scalar_counterfactual_seeds": [161123, 171123, 181123],
+    "reuse_for_selection": false,
+    "parameter_search": true,
+    "threshold_tuning": true,
+    "feature_mapping_selection": true,
+    "shipping_promotion": true
+  },
+  "decision_contract": {
+    "NS_SPECTRAL_POST_SNR_INFORMATION_GAIN_SUPPORTED_REVIEW_REQUIRED": "Floor invariance holds, combined and per-seed spectral-SNR AUC gates pass, and the combined AUC gain over current NS speech_probability meets the preregistered minimum.",
+    "NS_SPECTRAL_POST_SNR_INFORMATION_GAIN_NOT_SUPPORTED_REVIEW_REQUIRED": "Input/floor invariants hold but one or more preregistered information-gain gates fail.",
+    "NS_SPECTRAL_POST_SNR_INPUT_INVALID_REVIEW_REQUIRED": "Exact source/seed binding, geometry, finite-value, or floor-invariance preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_ns": false,
+    "may_modify_shipping_vad": false,
+    "may_select_source_candidate": false,
+    "may_choose_feature_mapping": false,
+    "may_tune_vad_thresholds": false,
+    "may_consume_candidate_budget": false,
+    "may_consume_confirmation": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Only threshold-free information gain may be reviewed. Any VAD fusion mapping, adaptive-state guard, threshold, or source candidate requires a separate preregistered hypothesis and entirely new authority."
+}

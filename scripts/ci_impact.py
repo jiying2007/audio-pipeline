@@ -11,6 +11,7 @@ shipped SDK or evidence authority may land between immutable releases.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -60,14 +61,6 @@ RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
     re.compile(r"validation/tools/build_[A-Za-z0-9_]+_tuning_corpus\.py"),
     re.compile(r"validation/policies/validation-[A-Za-z0-9-]+-stage-tuning\.json"),
     re.compile(r"validation/tuning/search-spaces/[A-Za-z0-9._-]+\.json"),
-    # Run receipts are archived observations, not executable validators, input
-    # corpora or shipping policy. Keep the data-member allowlist narrow; this
-    # affects versioning only, never the conservative CI matrix or hash gates.
-    re.compile(
-        r"validation/research/evidence/[A-Za-z0-9][A-Za-z0-9_-]*/"
-        r"(?:SHA256SUMS|(?:build-info|compiler|corpora|diagnostic-infra-revision|"
-        r"source-base-revision)\.txt|(?:contract|result|summary)\.json|probe\.sha256)"
-    ),
 )
 VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
 VERSION_TOKEN_RE = re.compile(
@@ -173,8 +166,60 @@ def cmake_version_only(base: str, head: str) -> bool:
     )
 
 
+
+def verified_archive_paths(base: str, head: str, paths: list[str]) -> set[str]:
+    """Admit only an append-only copy of receipts registered on trusted base.
+
+    A filename or PR-head manifest is not enough to waive product versioning.
+    This does not change CI selection or the independent finalization contract.
+    """
+    if not any(p.startswith("validation/research/evidence/") for p in paths):
+        return set()
+    manifest_path = ".github/program/i015-finalization.json"
+
+    def tree_entry(ref: str, path: str) -> bytes:
+        return subprocess.check_output(["git", "ls-tree", "-z", ref, "--", path])
+
+    if not tree_entry(base, manifest_path):
+        return set()  # New/head-only registrations cannot authorize themselves.
+    before = git_text(base, manifest_path)
+    if before != git_text(head, manifest_path):
+        raise ValueError("archive registration changed across verification range")
+    frozen = json.loads(before)
+    members = frozen["member_sha256"]
+    names = {
+        "SHA256SUMS", "build-info.txt", "compiler.txt", "contract.json",
+        "corpora.txt", "diagnostic-infra-revision.txt", "probe.sha256",
+        "result.json", "source-base-revision.txt", "summary.json",
+    }
+    run_id = frozen["run_id"]
+    root = frozen["archive_root"]
+    if (type(run_id) is not int or run_id <= 0
+            or root != f"validation/research/evidence/i015-{run_id}"
+            or set(members) != names
+            or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+                   for value in members.values())):
+        raise ValueError("invalid trusted-base archive registration")
+    expected = {root + "/" + name: sha for name, sha in members.items()}
+    if not set(expected).issubset(paths):
+        return set()  # Partial, modified and deleted archives are not a new receipt.
+    for path, expected_sha in expected.items():
+        if tree_entry(base, path):
+            raise ValueError("archive receipt already exists on base: " + path)
+        entry = tree_entry(head, path)
+        if not re.fullmatch(rb"100644 blob [0-9a-f]{40}\t" + re.escape(path.encode()) + rb"\x00", entry):
+            raise ValueError("archive receipt is not an added regular text file: " + path)
+        content = subprocess.check_output(["git", "show", f"{head}:{path}"])
+        if hashlib.sha256(content).hexdigest() != expected_sha:
+            raise ValueError("archive receipt digest mismatch: " + path)
+    return set(expected)
+
+
+
 def enforce_release_version(base: str, head: str, paths: list[str]) -> None:
-    release_paths = [path for path in paths if not is_release_neutral(path)]
+    verified_receipts = verified_archive_paths(base, head, paths)
+    release_paths = [path for path in paths
+                     if not is_release_neutral(path) and path not in verified_receipts]
     if not release_paths:
         return
     base_version = project_version(base)
@@ -418,48 +463,6 @@ def self_test() -> None:
     assert is_release_neutral("validation/policies/validation-agc-stage-tuning.json")
     assert is_release_neutral("validation/policies/validation-ns-stage-tuning.json")
     assert is_release_neutral("validation/tuning/search-spaces/agc-stage-v1.json")
-    archive_root = "validation/research/evidence/i015-35994848668/"
-    archive_paths = [archive_root + name for name in (
-        "SHA256SUMS", "build-info.txt", "compiler.txt", "contract.json",
-        "corpora.txt", "diagnostic-infra-revision.txt", "probe.sha256",
-        "result.json", "source-base-revision.txt", "summary.json",
-    )]
-    assert all(is_release_neutral(path) for path in archive_paths)
-    for path in (
-        archive_root + "validator.py", archive_root + "run.sh",
-        archive_root + "probe.c", archive_root + "probe",
-        archive_root + "policy.json", archive_root + "corpus.json",
-        archive_root + "nested/result.json", archive_root + "../result.json",
-        "validation/research/evidence-other/i015/result.json",
-        "validation/research/evidence/.hidden/result.json",
-        "validation/research/result.json",
-    ):
-        assert not is_release_neutral(path), path
-    archive = analyze(archive_paths)
-    assert archive["run_audio"] and archive["run_tuning"] and not archive["docs_only"]
-    assert analyze(archive_paths, True)["full"]
-    archive_pr_paths = archive_paths + [
-        ".github/research/continuous-optimization/development-v4/"
-        "i015-vad-upstream-consumption-decomposition-v1-result.json",
-        "docs/program/I015-FINALIZATION.md",
-    ]
-    assert analyze(archive_pr_paths)["full"]
-    # Exercise the version gate itself at unchanged SemVer, not just path flags.
-    from unittest.mock import patch
-    with patch(__name__ + ".project_version", return_value="2.3.49") as version:
-        enforce_release_version("base", "head", archive_pr_paths)
-        version.assert_not_called()
-        for product_path in (
-            "src/core/ap_pipeline.c", "validation/authority.json",
-            "validation/policies/validation-smoke.json",
-            "validation/tools/run_validation.py", archive_root + "validator.py",
-        ):
-            try:
-                enforce_release_version("base", "head", archive_pr_paths + [product_path])
-            except ValueError as error:
-                assert "must advance SemVer" in str(error)
-            else:
-                raise AssertionError("release-bearing mixed diff passed: " + product_path)
     assert not is_release_neutral("validation/authority.json")
     assert not is_release_neutral("validation/tools/run_validation.py")
     assert not is_release_neutral("validation/policies/validation-smoke.json")
@@ -539,6 +542,9 @@ def self_test() -> None:
     assert impact_self["full"] and impact_self["run_tuning"]
     forced = analyze([], True)
     assert forced["full"] and forced["run_lab"] and forced["run_tuning"]
+    subprocess.run(
+        ["python3", str(ROOT / "tests/validation/test_ci_archive_receipts.py")], check=True
+    )
     print("ci impact analyzer self-test: OK")
 
 

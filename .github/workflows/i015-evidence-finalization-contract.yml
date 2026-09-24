@@ -11,6 +11,7 @@ on:
       - 'tests/validation/test_ci_archive_receipts.py'
       - 'tests/validation/test_i015_archive_recovery.py'
       - 'tests/validation/test_i015_finalize.py'
+      - 'tests/validation/test_i015_receipt.py'
       - '.github/workflows/i015-evidence-finalization*.yml'
       - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
       - 'validation/research/evidence/i015-35994848668/**'
@@ -25,6 +26,7 @@ on:
       - 'tests/validation/test_ci_archive_receipts.py'
       - 'tests/validation/test_i015_archive_recovery.py'
       - 'tests/validation/test_i015_finalize.py'
+      - 'tests/validation/test_i015_receipt.py'
       - '.github/workflows/i015-evidence-finalization*.yml'
       - '.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'
       - 'validation/research/evidence/i015-35994848668/**'
@@ -46,6 +48,7 @@ jobs:
           set -euo pipefail
           python3 -m py_compile .github/program/i015_finalize.py .github/program/i015_archive_recovery.py
           python3 tests/validation/test_i015_finalize.py
+          python3 tests/validation/test_i015_receipt.py
           python3 tests/validation/test_ci_archive_receipts.py
           python3 tests/validation/test_i015_archive_recovery.py
       - name: Keep publishing credentials separate from governance

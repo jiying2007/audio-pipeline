@@ -1,0 +1,212 @@
+{
+  "authoritative_execution": {
+    "artifact_id": 10805915721,
+    "artifact_name": "i015-vad-upstream-consumption-decomposition-v1-35994848668",
+    "artifact_sha256": "5be633f57d5b77ce36cbb575b075e7cc0857c183d4b8b9bd87612f4183b857e0",
+    "artifact_size_bytes": 8079,
+    "member_sha256": {
+      "SHA256SUMS": "84873ea3c8a99089f857cfc0f2213a7d91aac01f5d37c2eab93f74e77b7a2b45",
+      "build-info.txt": "c989d313da99176d6e4b700e031386cca5225f12eb957e4a0b1fdfb0e5dc07cd",
+      "compiler.txt": "cd00cba2069afd1ce8b5440dd0e489e9931d6533d37bec32ca15ac39a374c77f",
+      "contract.json": "c5cb138fe6c7c75b39b15089724ba513f073b7eacca04d609d38cb540957d784",
+      "corpora.txt": "5d8f146fb740fe2f63ee9d329f0f2617e211c093e02e903d30b581b0887bb7fc",
+      "diagnostic-infra-revision.txt": "229005fea73199d409ba7f72b568e9ae1be176c23127d49a1b33aa2532399d1b",
+      "probe.sha256": "8d1fbb94ec2872ad66edfa243fe99e6f45b5096601cbe12fde766da1fdb7e189",
+      "result.json": "5b066775c7d701e45efcb1b93591a1bd721f26e25bbc499c3cfbb46377794c56",
+      "source-base-revision.txt": "98b056a6a694a669892ff0e36f5b589b84c7e9eef1c7c57d78c97d5f7c674bb4",
+      "summary.json": "e8a09e45245952246220aff2ae86df4ac6ff5ad2c1eb0273fe7c16aa9de4dede"
+    },
+    "run_attempt": 1,
+    "run_id": 35994848668
+  },
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "authority_boundary": {
+    "blend_change_selected": false,
+    "guard_change_selected": false,
+    "hil_authority": false,
+    "lane_selected": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "shipping_source_changed": false,
+    "source_candidate_selected": false,
+    "vad_threshold_selected": false
+  },
+  "decision": "VAD_UPSTREAM_CONSUMPTION_DECOMPOSED_REVIEW_REQUIRED",
+  "diagnostic_infrastructure_sha": "72db70f76a9ef2fffb767709d9aa289814207bae",
+  "fresh_authority": {
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "diagnostic_execution_consumed": 1,
+    "rerun_allowed": false,
+    "seeds": [
+      281123,
+      291123,
+      301123
+    ]
+  },
+  "investigation_id": "i015-vad-upstream-consumption-decomposition-v1",
+  "original_result_path": "validation/research/evidence/i015-35994848668/result.json",
+  "reviewed_decision": "VAD_UPSTREAM_RECALL_FALSE_ACTIVATION_TRADEOFF_NO_LANE_SELECTION",
+  "reviewed_interpretation": "Both frozen noise regimes show rescued speech and added noise-active frames. Nonstationary rescue attribution includes blend-exclusive, guard-exclusive, both single lanes and interaction-only frames. These are diagnostic observations, not a lane ranking, guard/blend/threshold change or shipping admission.",
+  "schema_version": 1,
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0,
+    "probability_mismatch_frames": 0
+  },
+  "source_base_sha": "1e08e892b29515b384265e50d9fd809ea7e06bb8",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "summary": {
+    "combined_nonstationary": {
+      "added_noise_active_frames": 19,
+      "added_noise_attribution": {
+        "blend_only_active": 14,
+        "blend_only_exclusive": 8,
+        "both_single_lanes_active": 6,
+        "guard_only_active": 6,
+        "guard_only_exclusive": 0,
+        "interaction_only": 5
+      },
+      "frames": 1560,
+      "lane_metrics": {
+        "blend_only": {
+          "false_positive_rate": 0.13333333333333333,
+          "noise_active": 114,
+          "noise_frames": 855,
+          "probability_auc": 0.7611231388163079,
+          "recall": 0.7049645390070922,
+          "speech_active": 497,
+          "speech_frames": 705
+        },
+        "guard_only": {
+          "false_positive_rate": 0.1239766081871345,
+          "noise_active": 106,
+          "noise_frames": 855,
+          "probability_auc": 0.7692016092240056,
+          "recall": 0.7092198581560284,
+          "speech_active": 500,
+          "speech_frames": 705
+        },
+        "no_upstream": {
+          "false_positive_rate": 0.11695906432748537,
+          "noise_active": 100,
+          "noise_frames": 855,
+          "probability_auc": 0.7397934552693791,
+          "recall": 0.6368794326241135,
+          "speech_active": 449,
+          "speech_frames": 705
+        },
+        "shipping": {
+          "false_positive_rate": 0.1391812865497076,
+          "noise_active": 119,
+          "noise_frames": 855,
+          "probability_auc": 0.7883422504251172,
+          "recall": 0.7687943262411348,
+          "speech_active": 542,
+          "speech_frames": 705
+        }
+      },
+      "lost_speech_frames": 0,
+      "max_shipping_vs_no_upstream_probability_delta": 0.501232147,
+      "removed_noise_active_frames": 0,
+      "rescued_speech_attribution": {
+        "blend_only_active": 48,
+        "blend_only_exclusive": 25,
+        "both_single_lanes_active": 23,
+        "guard_only_active": 51,
+        "guard_only_exclusive": 28,
+        "interaction_only": 17
+      },
+      "rescued_speech_frames": 93,
+      "shipping_blend_applied_frames": 1163,
+      "shipping_fast_noise_update_frames": 42,
+      "shipping_fpr_change_vs_no_upstream": 0.022222222222222227,
+      "shipping_guard_active_frames": 150,
+      "shipping_probability_auc_gain_over_no_upstream": 0.04854879515573807,
+      "shipping_recall_gain_over_no_upstream": 0.13191489361702124,
+      "shipping_strong_refresh_frames": 307,
+      "shipping_transient_capped_frames": 0,
+      "shipping_vs_no_upstream_active_diff_frames": 112,
+      "shipping_vs_no_upstream_probability_diff_frames": 1541,
+      "shipping_weak_refresh_frames": 117
+    },
+    "combined_stationary": {
+      "added_noise_active_frames": 11,
+      "added_noise_attribution": {
+        "blend_only_active": 11,
+        "blend_only_exclusive": 7,
+        "both_single_lanes_active": 4,
+        "guard_only_active": 4,
+        "guard_only_exclusive": 0,
+        "interaction_only": 0
+      },
+      "frames": 1560,
+      "lane_metrics": {
+        "blend_only": {
+          "false_positive_rate": 0.0304093567251462,
+          "noise_active": 26,
+          "noise_frames": 855,
+          "probability_auc": 0.8167657915474265,
+          "recall": 0.7631205673758865,
+          "speech_active": 538,
+          "speech_frames": 705
+        },
+        "guard_only": {
+          "false_positive_rate": 0.022222222222222223,
+          "noise_active": 19,
+          "noise_frames": 855,
+          "probability_auc": 0.8311343370245946,
+          "recall": 0.7659574468085106,
+          "speech_active": 540,
+          "speech_frames": 705
+        },
+        "no_upstream": {
+          "false_positive_rate": 0.017543859649122806,
+          "noise_active": 15,
+          "noise_frames": 855,
+          "probability_auc": 0.8128530546223716,
+          "recall": 0.6921985815602837,
+          "speech_active": 488,
+          "speech_frames": 705
+        },
+        "shipping": {
+          "false_positive_rate": 0.0304093567251462,
+          "noise_active": 26,
+          "noise_frames": 855,
+          "probability_auc": 0.8382248766123346,
+          "recall": 0.8141843971631205,
+          "speech_active": 574,
+          "speech_frames": 705
+        }
+      },
+      "lost_speech_frames": 0,
+      "max_shipping_vs_no_upstream_probability_delta": 0.416501894,
+      "removed_noise_active_frames": 0,
+      "rescued_speech_attribution": {
+        "blend_only_active": 50,
+        "blend_only_exclusive": 10,
+        "both_single_lanes_active": 40,
+        "guard_only_active": 52,
+        "guard_only_exclusive": 12,
+        "interaction_only": 24
+      },
+      "rescued_speech_frames": 86,
+      "shipping_blend_applied_frames": 1256,
+      "shipping_fast_noise_update_frames": 25,
+      "shipping_fpr_change_vs_no_upstream": 0.012865497076023392,
+      "shipping_guard_active_frames": 34,
+      "shipping_probability_auc_gain_over_no_upstream": 0.025371821989963017,
+      "shipping_recall_gain_over_no_upstream": 0.12198581560283683,
+      "shipping_strong_refresh_frames": 316,
+      "shipping_transient_capped_frames": 0,
+      "shipping_vs_no_upstream_active_diff_frames": 97,
+      "shipping_vs_no_upstream_probability_diff_frames": 1550,
+      "shipping_weak_refresh_frames": 108
+    }
+  },
+  "verification_limits": [
+    "No raw frame traces or audio are included; AUC is not independently recomputed.",
+    "The probe hash file is preserved; the absent probe executable is not independently hash-verified.",
+    "No research execution, candidate search, confirmation, HIL, Product Certification or release is authorized."
+  ]
+}

@@ -38,3 +38,33 @@ jobs:
           set -euo pipefail
           python3 -m py_compile .github/program/i015_finalize.py
           python3 tests/validation/test_i015_finalize.py
+      - name: Keep publishing credentials separate from governance
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import re
+
+          text = Path('.github/workflows/i015-evidence-finalization.yml').read_text()
+          # Build test literals at runtime: Actions must not expand secret expressions.
+          def binding(value):
+              return 'GH_WRITE_TOKEN: $' + '{{ ' + value + ' }}'
+
+          expected = binding('secrets.RESEARCH_AUTOMATION_TOKEN')
+
+          def dedicated_writer(source):
+              bindings = [line.strip() for line in source.splitlines()
+                          if line.strip().startswith('GH_WRITE_TOKEN:')]
+              secrets = set(re.findall(r'secrets\.([A-Za-z0-9_]+)', source))
+              return (bindings == [expected]
+                      and secrets == {'RESEARCH_AUTOMATION_TOKEN'})
+
+          assert dedicated_writer(text), 'publishing identity must be explicit and dedicated'
+          for invalid in (
+              binding('secrets.RESEARCH_AUTOMATION_TOKEN || secrets.REPOSITORY_ADMIN_TOKEN'),
+              binding('secrets.REPOSITORY_GOVERNANCE_TOKEN'),
+              binding('secrets.RESEARCH_AUTOMATION_TOKEN || github.token'),
+              '',
+          ):
+              assert not dedicated_writer(text.replace(expected, invalid))
+          print('dedicated writer binding: PASS; 4 negative cases: PASS')
+          PYCODE

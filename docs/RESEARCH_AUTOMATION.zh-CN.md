@@ -22,16 +22,53 @@ fresh seeds、VAD 常数、阈值或研究预算。
 
 ## 凭证与权限
 
-只读取证使用 `GITHUB_TOKEN`。创建 PR、提交归档和普通合并优先使用
-`RESEARCH_AUTOMATION_TOKEN`（仓库范围的 GitHub App 安装令牌或 PAT；需
-Contents 与 Pull requests 写权限和相关读取权限）。如未配置，则复用仓库现有
-bootstrap 使用的 `REPOSITORY_ADMIN_TOKEN`。代码不调用 Administration 接口。
+只读取证使用 `GITHUB_TOKEN`。创建 PR、提交归档和普通合并只使用
+`RESEARCH_AUTOMATION_TOKEN`，不再回退到 `REPOSITORY_ADMIN_TOKEN` 或
+`REPOSITORY_GOVERNANCE_TOKEN`。后两者继续只服务原有治理安装/审计；
+本收尾代码不调用 Administration 接口，也不自动扩大任何令牌权限。
 完成评论由 `GITHUB_TOKEN` 的 Issues 写权限发布；写权限不授予 PR 检查 job。
 
-不假设这些 secret 已存在或权限足够：缺失会报告 `BLOCKED_AUTOMATION_CREDENTIAL`，
-原始取证仍保存在 finalizer artifact 中。默认 `GITHUB_TOKEN` 创建的 PR 可能需要
-人工批准 CI，因此不把它作为“无人值守 PR 发布”的静默降级路径。凭证不应粘贴到聊天、
-日志或仓库文件；配置是一次性基础设施事项，不是每轮人工操作。
+当前实现直接读取仓库 secret。应配置仅授权 `jiying2007/audio-pipeline` 的有效
+fine-grained PAT，授予 Contents 与 Pull requests 的 Read and write；只读取证
+另用 `GITHUB_TOKEN`，发布令牌不需要 Administration 或 Actions 写权限。
+不要把短期 GitHub App installation token 当成长效 secret 保存；采用 App 时应另行
+接入逐次签发机制，本实现尚未提供该机制。PAT 的有效期和轮换需按实际基础设施管理。
+
+缺少发布 secret 时会报告 `BLOCKED_AUTOMATION_CREDENTIAL`；凭证存在但 GitHub
+拒绝认证时，报告 `401 / INVALID_CREDENTIAL`。401 不能被误判为 Contents 权限
+不足，也不能仅凭状态码断定是过期、撤销还是配置值错误。403 则需要检查该接口的
+权限、仓库授权和相关组织策略。原始取证仍保存在 finalizer artifact 中。
+默认 `GITHUB_TOKEN` 创建的 PR 工作流需要人工批准，因此不把它作为无人值守发布
+的静默降级路径。凭证不应粘贴到聊天、日志或仓库文件。
+
+### 已验证的阻塞与恢复
+
+2026-09-24，#409 合并后的精确 main `4801f0543080791e6100cdbcdeeb15771a42fc49`
+通过 Verify `36002648022` / summary 后，自动收尾 run `36003168226` 在
+`POST git/trees` 得到 `401 / INVALID_CREDENTIAL`。失败 artifact `10809142280`
+的 ZIP SHA256 为 `82c06da7c3457fa64ac1d4ccc896ff5ef447cc2e1f0d3989b2e5285011467598`；
+其中原始 I015 ZIP 仍与冻结摘要一致。旧工作流没有记录所选 secret 的名称，
+不能从这份错误反推出当时选择了哪一个 secret，更不能宣称凭证已经修好。
+
+有权限的仓库管理员需在 GitHub 的 Actions repository secrets 中配置/替换
+`RESEARCH_AUTOMATION_TOKEN`。已认证的本地 `gh` 也可交互式提交（不把值写入命令）：
+
+```bash
+gh secret set RESEARCH_AUTOMATION_TOKEN --repo jiying2007/audio-pipeline
+```
+
+secret 更新不会自动产生本工作流监听的事件。配置后，通过 Actions 页面运行一次
+**I015 Evidence Finalization**（`i015-evidence-finalization.yml`，ref 为 `main`），
+或使用已支持的 API 入口：
+
+```bash
+gh api --method POST \
+  repos/jiying2007/audio-pipeline/actions/workflows/i015-evidence-finalization.yml/dispatches \
+  -f ref=main
+```
+
+这是只读取既有证据的收尾恢复，绝不是重新触发 I015 诊断。配置有效后，正常归档
+和门禁推进无需逐轮人工操作；凭证失效仍是需要基础设施修复的异常，不能自动绕过。
 
 ## 失败恢复与停止边界
 

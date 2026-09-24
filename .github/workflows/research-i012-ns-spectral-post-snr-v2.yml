@@ -165,6 +165,9 @@ jobs:
       - name: Build exact source library and internal spectral probe
         run: |
           set -euo pipefail
+          SOURCE_BASE_SHA="$(jq -r .source_base_sha "$CONTRACT")"
+          test "$SOURCE_BASE_SHA" = 61ff84f1e38b1c928bbb1ea9efae006e33779465
+          mkdir -p i012-v2-out
           cmake -S /tmp/i012-v2-source -B /tmp/i012-v2-build             -DCMAKE_BUILD_TYPE=Release             -DAP_BUILD_BENCH=OFF             -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
           cmake --build /tmp/i012-v2-build --target audio_pipeline ap_build_info_dump --parallel
           ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -I/tmp/i012-v2-source/include             -I/tmp/i012-v2-source/src             -I/tmp/i012-v2-build/generated             tests/validation/i012_ns_spectral_post_snr_v2_probe.c             /tmp/i012-v2-build/libaudio_pipeline.a -lm             -o /tmp/i012-ns-spectral-post-snr-v2-probe
@@ -257,7 +260,12 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          find i012-v2-out -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > i012-v2-out/SHA256SUMS
+          mkdir -p i012-v2-out
+          (
+            cd i012-v2-out
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' | sort -z | \
+              xargs -0 -r sha256sum > SHA256SUMS
+          )
 
       - name: Publish I012 v2 summary
         if: always()

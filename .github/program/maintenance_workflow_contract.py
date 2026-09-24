@@ -115,6 +115,10 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json'),
     ),
+    Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1-result.json'),
+    ),
 }
 
 

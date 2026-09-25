@@ -45,11 +45,18 @@ jobs:
           set -euo pipefail
           python3 -m py_compile validation/tools/*.py .github/research/continuous-optimization/*.py
           python3 -m py_compile .github/research/continuous-optimization/development-v2/*.py
+          python3 -m py_compile .github/research/continuous-optimization/development-data-v3/*.py
           python3 .github/research/continuous-optimization/development-v2/prepare.py --self-test
           python3 .github/research/continuous-optimization/development-v2/build_corpus.py --self-test
+          python3 .github/research/continuous-optimization/development-data-v3/prepare.py --self-test
+          python3 .github/research/continuous-optimization/development-data-v3/build_corpus.py --self-test
+          python3 .github/research/continuous-optimization/development-data-v3/prepare.py \
+            --lock .github/research/continuous-optimization/development-data-v3/development.lock.json --check
           python3 validation/tools/build_aec_motion_corpus.py --self-test
           python3 -m json.tool .github/research/continuous-optimization/development-v2/development.lock.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v2/policy.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-data-v3/development.lock.json >/dev/null
+          python3 -m json.tool .github/research/continuous-optimization/development-data-v3/policy.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v2/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/fine-aec-v4.json >/dev/null
@@ -332,7 +339,7 @@ jobs:
           public_development = next(item for item in registry['datasets'] if item['id'] == 'public-development-diverse')
           assert public_development['selection_roles'] == ['development']
           assert public_development['evaluation_roles'] == [] and public_development['frozen_holdout'] is False
-          assert public_development['identity_value'] == 'audio-pipeline-public-development-v2'
+          assert public_development['identity_value'] == 'audio-pipeline-public-development-v3'
           motion = next(item for item in registry['datasets'] if item['id'] == 'aec-motion-regression')
           assert motion['source_kind'] == 'synthetic'
           assert motion['selection_roles'] == ['development']
@@ -351,10 +358,10 @@ jobs:
     timeout-minutes: 120
     env:
       SEARCH_SPACE: ${{ inputs.search_space }}
-      PYTHONPATH: validation/tools:.github/research/continuous-optimization:.github/research/continuous-optimization/development-v2
+      PYTHONPATH: validation/tools:.github/research/continuous-optimization:.github/research/continuous-optimization/development-data-v3
       RESEARCH_REGISTRY: .github/research/continuous-optimization/dataset-registry.json
-      DEV_LOCK: .github/research/continuous-optimization/development-v2/development.lock.json
-      DEV_POLICY: .github/research/continuous-optimization/development-v2/policy.json
+      DEV_LOCK: .github/research/continuous-optimization/development-data-v3/development.lock.json
+      DEV_POLICY: .github/research/continuous-optimization/development-data-v3/policy.json
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -377,7 +384,7 @@ jobs:
       - name: Initialize development workspace
         run: |
           set -euo pipefail
-          echo "DEV_ROOT=$RUNNER_TEMP/audio-pipeline-development-v2" >> "$GITHUB_ENV"
+          echo "DEV_ROOT=$RUNNER_TEMP/audio-pipeline-development-v3" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: research-optimization
@@ -402,14 +409,14 @@ jobs:
       - name: Materialize diverse public development partitions
         run: |
           set -euo pipefail
-          python3 .github/research/continuous-optimization/development-v2/prepare.py \
-            --lock "$DEV_LOCK" --root "$DEV_ROOT" --output /tmp/development-v2-materialization.json
+          python3 .github/research/continuous-optimization/development-data-v3/prepare.py \
+            --lock "$DEV_LOCK" --root "$DEV_ROOT" --output /tmp/development-v3-materialization.json
           for seed in 1507 1607; do
-            python3 .github/research/continuous-optimization/development-v2/build_corpus.py \
+            python3 .github/research/continuous-optimization/development-data-v3/build_corpus.py \
               --lock "$DEV_LOCK" \
-              --materialization /tmp/development-v2-materialization.json \
+              --materialization /tmp/development-v3-materialization.json \
               --data-root "$DEV_ROOT" \
-              --output "/tmp/development-v2-$seed" \
+              --output "/tmp/development-v3-$seed" \
               --seed "$seed" --mix-limit 40 --noise-limit 12 --clean-limit 12
           done
       - name: Materialize exact run specification
@@ -437,9 +444,9 @@ jobs:
                   'dataset_id': 'public-development-diverse',
                   'role': 'development',
                   'seed': seed,
-                  'corpus': f'/tmp/development-v2-{seed}/corpus.json',
-                  'dataset_lock': '.github/research/continuous-optimization/development-v2/development.lock.json',
-                  'policy': '.github/research/continuous-optimization/development-v2/policy.json',
+                  'corpus': f'/tmp/development-v3-{seed}/corpus.json',
+                  'dataset_lock': '.github/research/continuous-optimization/development-data-v3/development.lock.json',
+                  'policy': '.github/research/continuous-optimization/development-data-v3/policy.json',
               })
           assert search_space in {
               'validation/tuning/search-spaces/call-pr-smoke-v1.json',
@@ -545,7 +552,7 @@ jobs:
           name: research-optimization-${{ github.run_id }}
           path: |
             /tmp/research-run.json
-            /tmp/development-v2-materialization.json
+            /tmp/development-v3-materialization.json
             research-optimization-out/
           if-no-files-found: error
           retention-days: 30

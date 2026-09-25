@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json'
+      - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-source-vetting-receipt.json'
       - '.github/workflows/research-development-dataset-source-vetting.yml'
 
 permissions:
@@ -23,16 +24,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate source-vetting contract
+      - name: Validate source-vetting contract and reusable receipt
+        id: receipt
         run: |
           set -euo pipefail
           CANDIDATE=.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json
+          RECEIPT=.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-source-vetting-receipt.json
           python3 -m json.tool "$CANDIDATE" >/dev/null
           python3 - <<'PY'
-          import json
+          import json, re
           from pathlib import Path
-          p=Path('.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json')
-          c=json.loads(p.read_text())
+          candidate_path=Path('.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json')
+          receipt_path=Path('.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-source-vetting-receipt.json')
+          c=json.loads(candidate_path.read_text())
           assert c['authority']=='SOURCE_VETTING_ONLY'
           assert c['upstream']['doi']=='10.5281/zenodo.1227121'
           assert c['upstream']['license']=='CC-BY-SA-3.0'
@@ -43,10 +47,36 @@ jobs:
           assert [x['category'] for x in files]==[
             'domestic','office','public','transportation','nature']
           assert len({x['name'] for x in files})==5
-          assert all(len(x['md5'])==32 for x in files)
+          assert all(re.fullmatch(r'[0-9a-f]{32}', x['md5']) for x in files)
+          if receipt_path.exists():
+              r=json.loads(receipt_path.read_text())
+              assert r['candidate_id']==c['candidate_id']
+              assert r['authority']=='SOURCE_VETTING_ONLY'
+              assert r['selection_authorized'] is False
+              expected={(x['name'],x['category'],x['md5']) for x in files}
+              actual={(x['name'],x['category'],x['md5']) for x in r['files']}
+              assert actual==expected
+              assert len(r['files'])==5
+              assert all(int(x['bytes'])>0 for x in r['files'])
+              assert all(re.fullmatch(r'[0-9a-f]{64}', x['sha256']) for x in r['files'])
+              assert len({x['sha256'] for x in r['files']})==5
           PY
+          if test -f "$RECEIPT"; then
+            echo 'reuse=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'reuse=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reuse already reviewed hash receipt without redownloading archives
+        if: steps.receipt.outputs.reuse == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p demand-v3-vetting
+          cp .github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-source-vetting-receipt.json             demand-v3-vetting/receipt.json
+          sha256sum demand-v3-vetting/receipt.json > demand-v3-vetting/SHA256SUMS
 
       - name: Download exact upstream archives and compute SHA256
+        if: steps.receipt.outputs.reuse != 'true'
         run: |
           set -euo pipefail
           CANDIDATE=.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json
@@ -58,7 +88,8 @@ jobs:
             expected_md5=$(jq -r .md5 <<<"$row")
             url="https://zenodo.org/records/1227121/files/$name?download=1"
             path="/tmp/demand-v3-vetting/$name"
-            curl -L --fail --retry 3 --retry-delay 2 --connect-timeout 30               --max-time 420 -o "$path" "$url"
+            curl -L --fail --retry 3 --retry-delay 2 --connect-timeout 30 \
+              --max-time 420 -o "$path" "$url"
             actual_md5=$(md5sum "$path" | awk '{print $1}')
             test "$actual_md5" = "$expected_md5" || {
               echo "MD5 mismatch for $name" >&2
@@ -66,11 +97,14 @@ jobs:
             }
             actual_sha256=$(sha256sum "$path" | awk '{print $1}')
             actual_bytes=$(stat -c %s "$path")
-            printf '%s\t%s\t%s\t%s\t%s\n'               "$name" "$category" "$actual_bytes" "$actual_md5" "$actual_sha256"               >> demand-v3-vetting/hashes.tsv
+            printf '%s\t%s\t%s\t%s\t%s\n' \
+              "$name" "$category" "$actual_bytes" "$actual_md5" "$actual_sha256" \
+              >> demand-v3-vetting/hashes.tsv
             rm -f "$path"
           done
 
-      - name: Seal source-vetting receipt
+      - name: Seal new source-vetting receipt
+        if: steps.receipt.outputs.reuse != 'true'
         run: |
           set -euo pipefail
           python3 - <<'PY'

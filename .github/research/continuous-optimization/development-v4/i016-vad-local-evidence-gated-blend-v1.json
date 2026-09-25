@@ -14,30 +14,35 @@
     "development_execution_limit": 1
   },
   "fresh_development": {
-    "seeds": [311123, 321123, 331123],
+    "seeds": [
+      311123,
+      321123,
+      331123
+    ],
     "generator": "validation/tools/build_stage_validation_corpus.py",
     "seconds": 6,
-    "case_profile": "ns-isolated"
+    "case_profile": "ns-isolated",
+    "selection_role": "development"
   },
   "fixed_constants": {
-    "noise_like_crest_db": 8.0,
-    "transient_crest_db": 12.0,
+    "noise_like_crest_db": 8,
+    "transient_crest_db": 12,
     "fast_noise_alpha": 0.08,
     "upstream_speech_guard": 0.55,
     "local_speech_guard": 0.15,
-    "upstream_blend": 0.40,
+    "upstream_blend": 0.4,
     "ns_decision_threshold": 0.35,
-    "strong_refresh_threshold": 0.50,
+    "strong_refresh_threshold": 0.5,
     "strong_hold_frames": 8,
     "weak_hold_frames": 6
   },
   "development_gates": {
-    "max_shipping_mirror_probability_delta": 1e-6,
+    "max_shipping_mirror_probability_delta": 0.000001,
     "shipping_mirror_active_mismatch_frames": 0,
     "min_nonstationary_noise_active_reduction_frames": 1,
     "max_recall_regression": 0.03,
     "max_auc_regression": 0.01,
-    "max_fpr_regression": 0.0
+    "max_fpr_regression": 0
   },
   "output_authority": {
     "maximum_status": "FROZEN_RESEARCH_CANDIDATE",

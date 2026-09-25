@@ -1,0 +1,112 @@
+name: Research Development Dataset Source Vetting
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json'
+      - '.github/workflows/research-development-dataset-source-vetting.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-development-dataset-source-vetting-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Validate source-vetting contract
+        run: |
+          set -euo pipefail
+          CANDIDATE=.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json
+          python3 -m json.tool "$CANDIDATE" >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json')
+          c=json.loads(p.read_text())
+          assert c['authority']=='SOURCE_VETTING_ONLY'
+          assert c['upstream']['doi']=='10.5281/zenodo.1227121'
+          assert c['upstream']['license']=='CC-BY-SA-3.0'
+          assert c['admission']['selection_use_before_sha256_lock'] is False
+          assert c['admission']['validation_or_blind_role'] is False
+          assert c['admission']['shipping_authority'] is False
+          files=c['candidate_files']
+          assert [x['category'] for x in files]==[
+            'domestic','office','public','transportation','nature']
+          assert len({x['name'] for x in files})==5
+          assert all(len(x['md5'])==32 for x in files)
+          PY
+
+      - name: Download exact upstream archives and compute SHA256
+        run: |
+          set -euo pipefail
+          CANDIDATE=.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json
+          mkdir -p /tmp/demand-v3-vetting demand-v3-vetting
+          : > demand-v3-vetting/hashes.tsv
+          jq -c '.candidate_files[]' "$CANDIDATE" | while read -r row; do
+            name=$(jq -r .name <<<"$row")
+            category=$(jq -r .category <<<"$row")
+            expected_md5=$(jq -r .md5 <<<"$row")
+            url="https://zenodo.org/records/1227121/files/$name?download=1"
+            path="/tmp/demand-v3-vetting/$name"
+            curl -L --fail --retry 3 --retry-delay 2 --connect-timeout 30               --max-time 420 -o "$path" "$url"
+            actual_md5=$(md5sum "$path" | awk '{print $1}')
+            test "$actual_md5" = "$expected_md5" || {
+              echo "MD5 mismatch for $name" >&2
+              exit 1
+            }
+            actual_sha256=$(sha256sum "$path" | awk '{print $1}')
+            actual_bytes=$(stat -c %s "$path")
+            printf '%s\t%s\t%s\t%s\t%s\n'               "$name" "$category" "$actual_bytes" "$actual_md5" "$actual_sha256"               >> demand-v3-vetting/hashes.tsv
+            rm -f "$path"
+          done
+
+      - name: Seal source-vetting receipt
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import csv, json
+          from pathlib import Path
+          rows=[]
+          with Path('demand-v3-vetting/hashes.tsv').open() as f:
+              for row in csv.reader(f, delimiter='\t'):
+                  rows.append({
+                    'name':row[0],
+                    'category':row[1],
+                    'bytes':int(row[2]),
+                    'md5':row[3],
+                    'sha256':row[4],
+                  })
+          assert len(rows)==5
+          assert len({x['sha256'] for x in rows})==5
+          receipt={
+            'schema_version':1,
+            'candidate_id':'public-development-demand-domain-expansion-v3',
+            'authority':'SOURCE_VETTING_ONLY',
+            'upstream_record':'https://zenodo.org/records/1227121',
+            'doi':'10.5281/zenodo.1227121',
+            'files':rows,
+            'selection_authorized':False,
+            'next_step':'review receipt then create SHA256-pinned development-v3 lock',
+          }
+          Path('demand-v3-vetting/receipt.json').write_text(
+              json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          PY
+          sha256sum demand-v3-vetting/receipt.json > demand-v3-vetting/SHA256SUMS
+
+      - name: Upload source-vetting receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: demand-domain-expansion-v3-source-vetting-${{ github.run_id }}
+          path: demand-v3-vetting/
+          retention-days: 30
+          if-no-files-found: error

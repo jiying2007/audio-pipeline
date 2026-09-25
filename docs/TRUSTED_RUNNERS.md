@@ -6,6 +6,28 @@ A runner label is routing metadata, not evidence that the machine is ready. Befo
 
 `READY` means only that the runner satisfies the checked infrastructure prerequisites. It is never an acoustic PASS, HIL PASS or `product-certified` result.
 
+## Bind the qualification source before activation
+
+For release qualification, obtain the approved immutable release tag and exact source SHA from the live external-evidence tracker or reviewed qualification request. Verify that the tag resolves to that commit before running readiness. A version mentioned in historical prose, the latest software release, and current `main` are not substitutes for this approved identity. If the request and release identity disagree, resolve the discrepancy before starting a run; do not silently choose the newer revision.
+
+Bind the four role-readiness records, shipping toolchain, product inputs, HIL history and Product Certification to the intended qualification source and reviewed inputs. A later maintenance commit does not automatically replace that source. Re-run readiness when its source revision changes, even when the machine and paths are unchanged.
+
+### Automatic maintenance is not automatically release-bound
+
+The current source routing is defined by the [HIL workflow](../.github/workflows/hil-soak.yml) and [Extended Real automation](../.github/workflows/extended-real-automation.yml):
+
+| Entry | Source selected by the workflow |
+| --- | --- |
+| HIL manual dispatch | Explicit `inputs.source_sha` |
+| HIL post-release dispatch | `client_payload.release_ref`; tier `release-8h` |
+| HIL scheduled 1 h / 24 h maintenance | The scheduled main commit, `github.sha` |
+| Extended Real post-release automation | `release_ref`, checked against the supplied release tag; `commercial-core` |
+| Extended Real scheduled or manual automation | Fetched `origin/main`; `commercial-plus` |
+
+A successful scheduled main run is regression evidence for its recorded source, not automatically HIL/Extended Real evidence for a different approved release. To collect fixed-release evidence, use the reviewed exact-source entry and verify the recorded source and inputs. For Extended Real, the manual automation entry is not an exact-release selector; the canonical `validation-extended-real.yml` workflow accepts explicit `source_sha`. Do not redispatch consumed blind or research authority as an infrastructure check.
+
+When `HIL_ENABLED` or `EXTENDED_REAL_ENABLED` is not `true`, the corresponding scheduled workflow exits successfully with `HIL_SCHEDULE_SKIPPED_DISABLED` or `EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED`, without performing the physical work. Required post-release events remain fail-closed. Manual HIL can perform a reviewed exact-SHA bring-up before `HIL_ENABLED` is set, but still requires the real target and preflight; manual Extended Real automation remains blocked while disabled. A green skipped controller or an existing post-release summary is not a `READY`, HIL or Product Certification pass.
+
 ## Roles
 
 | Role | Labels | Readiness scope | Subsequent evidence |
@@ -52,9 +74,9 @@ Do not enable product/hardware claims from public validation results.
 3. Dispatch **Trusted Runner Readiness** with role `audio-target`.
 4. Run a reviewed manual `accelerated-pr` HIL against an exact SHA.
 5. Only after the runner and board route are genuinely online set repository variable `HIL_ENABLED=true`.
-6. Accumulate Nightly 1 h, post-release 8 h and Weekly 24 h evidence.
+6. Accumulate the required 1 h, 8 h and 24 h evidence for the approved source and inputs; scheduled main regression is not a substitute for fixed-release history.
 
-Scheduled/post-release HIL remains fail-visible while `HIL_ENABLED` is not true.
+Use the source-routing and disabled-event rules above when selecting the entry point.
 
 ### 3. `audio-builder` + `certification-archive`
 
@@ -119,6 +141,7 @@ python3 tools/runner_preflight.py \
 
 Re-run readiness after any change to:
 
+- the exact source revision being checked;
 - runner image/OS or installed build tools;
 - shipping compiler, sysroot or toolchain root;
 - public dataset lock/seal/cache location;

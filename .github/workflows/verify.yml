@@ -98,6 +98,8 @@ jobs:
       - name: Fast documentation gate
         run: |
           sh .github/scripts/verify-docs-gate.sh
+          python3 scripts/public_surface_contract.py --self-test
+          python3 scripts/public_surface_contract.py
 
   fast-code:
     needs: impact
@@ -118,6 +120,8 @@ jobs:
       - name: Validate test-intelligence and assurance tools
         run: |
           sh .github/scripts/verify-docs-gate.sh
+          python3 scripts/public_surface_contract.py --self-test
+          python3 scripts/public_surface_contract.py
           python3 -m py_compile scripts/*.py tools/*.py certification/*.py validation/tools/*.py
           python3 scripts/ci_failure.py --self-test
           python3 scripts/flaky_guard.py --self-test

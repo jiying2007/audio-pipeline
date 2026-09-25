@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i016-vad-local-evidence-gated-blend-v1",
+  "authority": "RESEARCH_SELECTION_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "predecessor_result": ".github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json",
+  "candidate": {
+    "candidate_id": "vad-local-evidence-gated-blend-v1",
+    "change": "Require the existing local_speech_guard=0.15 before applying the existing upstream blend. Keep every numeric VAD constant unchanged."
+  },
+  "budget": {
+    "candidate_limit": 1,
+    "confirmation_limit": 0,
+    "development_execution_limit": 1
+  },
+  "fresh_development": {
+    "seeds": [311123, 321123, 331123],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated"
+  },
+  "fixed_constants": {
+    "noise_like_crest_db": 8.0,
+    "transient_crest_db": 12.0,
+    "fast_noise_alpha": 0.08,
+    "upstream_speech_guard": 0.55,
+    "local_speech_guard": 0.15,
+    "upstream_blend": 0.40,
+    "ns_decision_threshold": 0.35,
+    "strong_refresh_threshold": 0.50,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6
+  },
+  "development_gates": {
+    "max_shipping_mirror_probability_delta": 1e-6,
+    "shipping_mirror_active_mismatch_frames": 0,
+    "min_nonstationary_noise_active_reduction_frames": 1,
+    "max_recall_regression": 0.03,
+    "max_auc_regression": 0.01,
+    "max_fpr_regression": 0.0
+  },
+  "output_authority": {
+    "maximum_status": "FROZEN_RESEARCH_CANDIDATE",
+    "next_gate": "validation-grade-blind",
+    "automatic_main_mutation": false,
+    "hil_authority": false,
+    "product_certification_authority": false
+  }
+}

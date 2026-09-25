@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "candidate_id": "public-development-demand-domain-expansion-v3",
+  "authority": "SOURCE_VETTING_ONLY",
+  "source_vetting": {
+    "workflow_run_id": 36093338967,
+    "workflow_run_attempt": 1,
+    "artifact_id": 10846422966,
+    "artifact_name": "demand-domain-expansion-v3-source-vetting-36093338967",
+    "artifact_digest": "sha256:14c94eab96160b3e9e5361b5e0d3928f05380dd35083cd96fc9254ccd2982dc7",
+    "artifact_size_bytes": 1608,
+    "receipt_sha256": "5cd2a14845dc6faf41460cf7d710324414f0590cdd054569b5a2bf3e5038e7af"
+  },
+  "upstream": {
+    "record": "https://zenodo.org/records/1227121",
+    "doi": "10.5281/zenodo.1227121",
+    "license": "CC-BY-SA-3.0"
+  },
+  "files": [
+    {
+      "name": "DLIVING_16k.zip",
+      "category": "domestic",
+      "bytes": 80170627,
+      "md5": "46741384d9e434a0bd8b3ec1830b6052",
+      "sha256": "2b1726fe06e41551ce2397f2aaf3e4fb692c912d81914b04708df0bbb5252338"
+    },
+    {
+      "name": "OOFFICE_16k.zip",
+      "category": "office",
+      "bytes": 88995191,
+      "md5": "7b61cc2d182d5a654cb9c3101ddd4041",
+      "sha256": "7570c952f621990d0d71b8398107d9a78066254f883a5569abec9c233ffda358"
+    },
+    {
+      "name": "PCAFETER_16k.zip",
+      "category": "public",
+      "bytes": 107431494,
+      "md5": "99927d148128254141a9417d051510bb",
+      "sha256": "89be7194b83cd583c4b12f4bf7c19e9cf0e612b95312e9f4aedc968cd811bcd5"
+    },
+    {
+      "name": "TBUS_16k.zip",
+      "category": "transportation",
+      "bytes": 128916709,
+      "md5": "706b11b0d8504f9f3b3f3211e91b3863",
+      "sha256": "82e79983c91c69acbabf76d56b3fc75ab06e0f1c539eadaaf21d297987a97a5a"
+    },
+    {
+      "name": "NFIELD_16k.zip",
+      "category": "nature",
+      "bytes": 86536782,
+      "md5": "a740046c6f4e174e16f5d568aaec5024",
+      "sha256": "b7ef25d2af0d9ff0b8b1e359aba3f928f59b966b87009c2aed53df93e57856e3"
+    }
+  ],
+  "selection_authorized": false,
+  "next_step": "Use these exact SHA256 values in a separately reviewed selection-only development-v3 lock; do not use this receipt as validation, blind, shipping, HIL or product-certification authority."
+}

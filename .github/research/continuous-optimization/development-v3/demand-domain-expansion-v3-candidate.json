@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "candidate_id": "public-development-demand-domain-expansion-v3",
+  "authority": "SOURCE_VETTING_ONLY",
+  "upstream": {
+    "record": "https://zenodo.org/records/1227121",
+    "doi": "10.5281/zenodo.1227121",
+    "license": "CC-BY-SA-3.0"
+  },
+  "purpose": "Expand selection-only public development noise-domain diversity without touching validation/blind datasets or changing any algorithm.",
+  "existing_domains": [
+    "DKITCHEN_16k.zip",
+    "STRAFFIC_16k.zip"
+  ],
+  "candidate_files": [
+    {
+      "name": "DLIVING_16k.zip",
+      "category": "domestic",
+      "md5": "46741384d9e434a0bd8b3ec1830b6052",
+      "published_size_mb": 80.2
+    },
+    {
+      "name": "OOFFICE_16k.zip",
+      "category": "office",
+      "md5": "7b61cc2d182d5a654cb9c3101ddd4041",
+      "published_size_mb": 89
+    },
+    {
+      "name": "PCAFETER_16k.zip",
+      "category": "public",
+      "md5": "99927d148128254141a9417d051510bb",
+      "published_size_mb": 107.4
+    },
+    {
+      "name": "TBUS_16k.zip",
+      "category": "transportation",
+      "md5": "706b11b0d8504f9f3b3f3211e91b3863",
+      "published_size_mb": 128.9
+    },
+    {
+      "name": "NFIELD_16k.zip",
+      "category": "nature",
+      "md5": "a740046c6f4e174e16f5d568aaec5024",
+      "published_size_mb": 86.5
+    }
+  ],
+  "admission": {
+    "required_checks": [
+      "download succeeds from the exact Zenodo record",
+      "MD5 matches the Zenodo published digest exactly",
+      "SHA256 is computed by GitHub Actions and preserved in a source-vetting artifact"
+    ],
+    "selection_use_before_sha256_lock": false,
+    "validation_or_blind_role": false,
+    "shipping_authority": false
+  }
+}

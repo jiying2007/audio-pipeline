@@ -16,38 +16,37 @@
     {
       "name": "DLIVING_16k.zip",
       "category": "domestic",
-      "bytes": 80200000,
-      "md5": "46741384d9e434a0bd8b3ec1830b6052"
+      "md5": "46741384d9e434a0bd8b3ec1830b6052",
+      "published_size_mb": 80.2
     },
     {
       "name": "OOFFICE_16k.zip",
       "category": "office",
-      "bytes": 89000000,
-      "md5": "7b61cc2d182d5a654cb9c3101ddd4041"
+      "md5": "7b61cc2d182d5a654cb9c3101ddd4041",
+      "published_size_mb": 89
     },
     {
       "name": "PCAFETER_16k.zip",
       "category": "public",
-      "bytes": 107400000,
-      "md5": "99927d148128254141a9417d051510bb"
+      "md5": "99927d148128254141a9417d051510bb",
+      "published_size_mb": 107.4
     },
     {
       "name": "TBUS_16k.zip",
       "category": "transportation",
-      "bytes": 128900000,
-      "md5": "706b11b0d8504f9f3b3f3211e91b3863"
+      "md5": "706b11b0d8504f9f3b3f3211e91b3863",
+      "published_size_mb": 128.9
     },
     {
       "name": "NFIELD_16k.zip",
       "category": "nature",
-      "bytes": 86500000,
-      "md5": "a740046c6f4e174e16f5d568aaec5024"
+      "md5": "a740046c6f4e174e16f5d568aaec5024",
+      "published_size_mb": 86.5
     }
   ],
   "admission": {
     "required_checks": [
       "download succeeds from the exact Zenodo record",
-      "reported Content-Length or downloaded size is close enough to the published human-readable size to detect gross mismatch",
       "MD5 matches the Zenodo published digest exactly",
       "SHA256 is computed by GitHub Actions and preserved in a source-vetting artifact"
     ],

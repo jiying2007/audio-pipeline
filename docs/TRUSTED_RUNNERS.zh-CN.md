@@ -6,6 +6,28 @@
 
 `READY` 只表示该机器满足本次检查的基础设施前提，不是 acoustic/HIL/Product Certification PASS。
 
+## 上线前先绑定资格版本
+
+为指定 Release 收集资格证据时，应从 live external-evidence tracker 或已审核的资格请求取得获准的不可变 tag 与 exact source SHA，并先核对 tag 实际指向该提交。历史说明中的版本号、最新软件 Release 和当前 `main` 都不能代替这组已审核身份。请求与发行身份不一致时，先解决差异，不得默认选择较新的提交继续执行。
+
+四类角色的 readiness、量产工具链、产品输入、HIL 历史和 Product Certification 必须对应目标资格源码及已审核输入。后续维护提交不会自动替换该源码；即使机器和路径未变，只要 readiness 对应的源码版本变化，也必须重新检查。
+
+### 定时维护不等于固定 Release 资格验证
+
+实际源码路由由 [HIL 工作流](../.github/workflows/hil-soak.yml) 和 [Extended Real 自动化](../.github/workflows/extended-real-automation.yml) 定义：
+
+| 入口 | 工作流实际选用的源码 |
+| --- | --- |
+| HIL 手动触发 | 显式 `inputs.source_sha` |
+| HIL 发布后触发 | `client_payload.release_ref`，使用 `release-8h` tier |
+| HIL 定时 1 h / 24 h 维护 | 该次定时运行的 main 提交 `github.sha` |
+| Extended Real 发布后自动化 | `release_ref`，与传入的 release tag 核对；`commercial-core` |
+| Extended Real 定时或手动自动化 | 拉取后的 `origin/main`；`commercial-plus` |
+
+定时 main 运行成功，只能作为其记录源码的回归证据，不能自动计入另一个获准 Release 的 HIL/Extended Real 资格历史。固定版本取证应使用已审核的 exact-source 入口，并核验结果中的源码和输入。Extended Real 的手动自动化入口不是固定版本选择器；canonical `validation-extended-real.yml` 接受显式 `source_sha`。不得为了检查基础设施重跑已消费的 blind 或研究验证。
+
+`HIL_ENABLED` 或 `EXTENDED_REAL_ENABLED` 不为 `true` 时，对应定时工作流会输出 `HIL_SCHEDULE_SKIPPED_DISABLED` 或 `EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED` 并正常退出，不执行实机工作；必需的发布后事件仍会报错停止。HIL 手动入口允许在开关启用前进行已审核的 exact-SHA 接入验证，但仍需要真实 target 和 preflight；Extended Real 手动自动化在未启用时仍被阻止。控制器绿色跳过或已有发布后汇总，不代表 `READY`、HIL 或 Product Certification 通过。
+
 ## 角色
 
 | 角色 | GitHub labels | 必须真实提供 | 后续用途 |
@@ -40,7 +62,7 @@ Registration token、secret、archive credential 不进入 Git。
 4. 对 exact SHA 运行 Trusted Runner Readiness；
 5. 运行人工审核的 accelerated HIL；
 6. 多次健康后才允许设置 `HIL_ENABLED=true`；
-7. 累积 Nightly 1 h、post-release 8 h、Weekly 24 h 等真实证据。
+7. 为获准源码和输入累积所需的 1 h、8 h、24 h 真实证据；定时 main 回归不能代替固定 Release 的资格历史。
 
 ### C. audio-builder
 
@@ -125,4 +147,4 @@ python3 tools/runner_preflight.py \
 
 随后真实 Product Certification 仍会在同一执行中重新检查 builder/target/archive preflight。外部 readiness 是准备证据，不是最终认证替代品。
 
-当前 v2.3.13 的产品资格目标继续使用 exact immutable release source；main 上后续 release-neutral 文档/治理提交不能代替被认证的 release source。
+产品资格继续绑定上述已审核的不可变 Release 与 exact source；main 上后续 release-neutral 文档/治理提交不能代替被认证的 release source。

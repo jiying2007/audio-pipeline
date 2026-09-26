@@ -1,0 +1,803 @@
+{
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "authority_boundary": {
+    "may_add_threshold": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_change_hold_lengths": false,
+    "may_change_thresholds": false,
+    "may_modify_shipping": false,
+    "may_promote_release": false,
+    "may_select_candidate": false,
+    "may_tune_constants": false,
+    "may_use_validation_for_selection": false
+  },
+  "candidate_budget_consumed": 0,
+  "confirmation_budget_consumed": 0,
+  "decision": "VAD_WEAK_START_EVIDENCE_DECOMPOSED_REVIEW_REQUIRED",
+  "diagnostic_execution_consumed": 1,
+  "fresh_diagnostic_seeds": [
+    431123,
+    441123,
+    451123
+  ],
+  "invalid_reasons": [],
+  "investigation_id": "i019-vad-weak-start-evidence-decomposition-v1",
+  "per_seed": [
+    {
+      "cases": {
+        "stage-ns-nonstationary": {
+          "cross_cells": {
+            "blend_dependent_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "blend_dependent_guard_inactive": {
+              "noise": 0,
+              "speech": 2,
+              "speech_fraction": 1.0,
+              "total": 2
+            },
+            "local_admissible_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible_guard_inactive": {
+              "noise": 1,
+              "speech": 2,
+              "speech_fraction": 0.6666666666666666,
+              "total": 3
+            }
+          },
+          "existing_guard": {
+            "guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "guard_inactive": {
+              "noise": 1,
+              "speech": 4,
+              "speech_fraction": 0.8,
+              "total": 5
+            }
+          },
+          "fixed_component_positive_counts": {
+            "blend_applied": {
+              "noise": 0,
+              "speech": 3
+            },
+            "local_guard_pass": {
+              "noise": 1,
+              "speech": 4
+            },
+            "upstream_guard_pass": {
+              "noise": 0,
+              "speech": 0
+            }
+          },
+          "mean_probabilities": {
+            "noise": {
+              "pre_blend_probability": 0.467309326,
+              "raw_probability": 0.467309326,
+              "shipping_probability": 0.467309326,
+              "upstream_probability": 0.1432271
+            },
+            "speech": {
+              "pre_blend_probability": 0.342577465,
+              "raw_probability": 0.342577465,
+              "shipping_probability": 0.38435180474999997,
+              "upstream_probability": 0.41868457975
+            }
+          },
+          "pre_blend_origin": {
+            "blend_dependent": {
+              "noise": 0,
+              "speech": 2,
+              "speech_fraction": 1.0,
+              "total": 2
+            },
+            "local_admissible": {
+              "noise": 1,
+              "speech": 2,
+              "speech_fraction": 0.6666666666666666,
+              "total": 3
+            }
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "weak_start_events": {
+            "noise": 1,
+            "speech": 4,
+            "speech_fraction": 0.8,
+            "total": 5
+          }
+        },
+        "stage-ns-stationary": {
+          "cross_cells": {
+            "blend_dependent_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "blend_dependent_guard_inactive": {
+              "noise": 0,
+              "speech": 4,
+              "speech_fraction": 1.0,
+              "total": 4
+            },
+            "local_admissible_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible_guard_inactive": {
+              "noise": 0,
+              "speech": 1,
+              "speech_fraction": 1.0,
+              "total": 1
+            }
+          },
+          "existing_guard": {
+            "guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "guard_inactive": {
+              "noise": 0,
+              "speech": 5,
+              "speech_fraction": 1.0,
+              "total": 5
+            }
+          },
+          "fixed_component_positive_counts": {
+            "blend_applied": {
+              "noise": 0,
+              "speech": 5
+            },
+            "local_guard_pass": {
+              "noise": 0,
+              "speech": 5
+            },
+            "upstream_guard_pass": {
+              "noise": 0,
+              "speech": 0
+            }
+          },
+          "mean_probabilities": {
+            "noise": {
+              "pre_blend_probability": null,
+              "raw_probability": null,
+              "shipping_probability": null,
+              "upstream_probability": null
+            },
+            "speech": {
+              "pre_blend_probability": 0.27812044919999995,
+              "raw_probability": 0.27812044919999995,
+              "shipping_probability": 0.36851267219999995,
+              "upstream_probability": 0.5041010082
+            }
+          },
+          "pre_blend_origin": {
+            "blend_dependent": {
+              "noise": 0,
+              "speech": 4,
+              "speech_fraction": 1.0,
+              "total": 4
+            },
+            "local_admissible": {
+              "noise": 0,
+              "speech": 1,
+              "speech_fraction": 1.0,
+              "total": 1
+            }
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "weak_start_events": {
+            "noise": 0,
+            "speech": 5,
+            "speech_fraction": 1.0,
+            "total": 5
+          }
+        }
+      },
+      "seed": 431123
+    },
+    {
+      "cases": {
+        "stage-ns-nonstationary": {
+          "cross_cells": {
+            "blend_dependent_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "blend_dependent_guard_inactive": {
+              "noise": 0,
+              "speech": 2,
+              "speech_fraction": 1.0,
+              "total": 2
+            },
+            "local_admissible_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible_guard_inactive": {
+              "noise": 4,
+              "speech": 2,
+              "speech_fraction": 0.3333333333333333,
+              "total": 6
+            }
+          },
+          "existing_guard": {
+            "guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "guard_inactive": {
+              "noise": 4,
+              "speech": 4,
+              "speech_fraction": 0.5,
+              "total": 8
+            }
+          },
+          "fixed_component_positive_counts": {
+            "blend_applied": {
+              "noise": 0,
+              "speech": 2
+            },
+            "local_guard_pass": {
+              "noise": 4,
+              "speech": 4
+            },
+            "upstream_guard_pass": {
+              "noise": 0,
+              "speech": 0
+            }
+          },
+          "mean_probabilities": {
+            "noise": {
+              "pre_blend_probability": 0.37617496399999995,
+              "raw_probability": 0.37617496399999995,
+              "shipping_probability": 0.37617496399999995,
+              "upstream_probability": 0.251771942
+            },
+            "speech": {
+              "pre_blend_probability": 0.35456264750000005,
+              "raw_probability": 0.35456264750000005,
+              "shipping_probability": 0.4011693745,
+              "upstream_probability": 0.42303794625
+            }
+          },
+          "pre_blend_origin": {
+            "blend_dependent": {
+              "noise": 0,
+              "speech": 2,
+              "speech_fraction": 1.0,
+              "total": 2
+            },
+            "local_admissible": {
+              "noise": 4,
+              "speech": 2,
+              "speech_fraction": 0.3333333333333333,
+              "total": 6
+            }
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "weak_start_events": {
+            "noise": 4,
+            "speech": 4,
+            "speech_fraction": 0.5,
+            "total": 8
+          }
+        },
+        "stage-ns-stationary": {
+          "cross_cells": {
+            "blend_dependent_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "blend_dependent_guard_inactive": {
+              "noise": 0,
+              "speech": 3,
+              "speech_fraction": 1.0,
+              "total": 3
+            },
+            "local_admissible_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible_guard_inactive": {
+              "noise": 0,
+              "speech": 2,
+              "speech_fraction": 1.0,
+              "total": 2
+            }
+          },
+          "existing_guard": {
+            "guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "guard_inactive": {
+              "noise": 0,
+              "speech": 5,
+              "speech_fraction": 1.0,
+              "total": 5
+            }
+          },
+          "fixed_component_positive_counts": {
+            "blend_applied": {
+              "noise": 0,
+              "speech": 5
+            },
+            "local_guard_pass": {
+              "noise": 0,
+              "speech": 5
+            },
+            "upstream_guard_pass": {
+              "noise": 0,
+              "speech": 0
+            }
+          },
+          "mean_probabilities": {
+            "noise": {
+              "pre_blend_probability": null,
+              "raw_probability": null,
+              "shipping_probability": null,
+              "upstream_probability": null
+            },
+            "speech": {
+              "pre_blend_probability": 0.3215485514,
+              "raw_probability": 0.3215485514,
+              "shipping_probability": 0.3986028196,
+              "upstream_probability": 0.5141842306
+            }
+          },
+          "pre_blend_origin": {
+            "blend_dependent": {
+              "noise": 0,
+              "speech": 3,
+              "speech_fraction": 1.0,
+              "total": 3
+            },
+            "local_admissible": {
+              "noise": 0,
+              "speech": 2,
+              "speech_fraction": 1.0,
+              "total": 2
+            }
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "weak_start_events": {
+            "noise": 0,
+            "speech": 5,
+            "speech_fraction": 1.0,
+            "total": 5
+          }
+        }
+      },
+      "seed": 441123
+    },
+    {
+      "cases": {
+        "stage-ns-nonstationary": {
+          "cross_cells": {
+            "blend_dependent_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "blend_dependent_guard_inactive": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible_guard_inactive": {
+              "noise": 5,
+              "speech": 5,
+              "speech_fraction": 0.5,
+              "total": 10
+            }
+          },
+          "existing_guard": {
+            "guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "guard_inactive": {
+              "noise": 5,
+              "speech": 5,
+              "speech_fraction": 0.5,
+              "total": 10
+            }
+          },
+          "fixed_component_positive_counts": {
+            "blend_applied": {
+              "noise": 0,
+              "speech": 2
+            },
+            "local_guard_pass": {
+              "noise": 5,
+              "speech": 5
+            },
+            "upstream_guard_pass": {
+              "noise": 0,
+              "speech": 0
+            }
+          },
+          "mean_probabilities": {
+            "noise": {
+              "pre_blend_probability": 0.41466148500000005,
+              "raw_probability": 0.41466148500000005,
+              "shipping_probability": 0.41466148500000005,
+              "upstream_probability": 0.2354839442
+            },
+            "speech": {
+              "pre_blend_probability": 0.379633337,
+              "raw_probability": 0.379633337,
+              "shipping_probability": 0.39535537960000006,
+              "upstream_probability": 0.3756519854
+            }
+          },
+          "pre_blend_origin": {
+            "blend_dependent": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible": {
+              "noise": 5,
+              "speech": 5,
+              "speech_fraction": 0.5,
+              "total": 10
+            }
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "weak_start_events": {
+            "noise": 5,
+            "speech": 5,
+            "speech_fraction": 0.5,
+            "total": 10
+          }
+        },
+        "stage-ns-stationary": {
+          "cross_cells": {
+            "blend_dependent_guard_active": {
+              "noise": 1,
+              "speech": 0,
+              "speech_fraction": 0.0,
+              "total": 1
+            },
+            "blend_dependent_guard_inactive": {
+              "noise": 0,
+              "speech": 5,
+              "speech_fraction": 1.0,
+              "total": 5
+            },
+            "local_admissible_guard_active": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            },
+            "local_admissible_guard_inactive": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            }
+          },
+          "existing_guard": {
+            "guard_active": {
+              "noise": 1,
+              "speech": 0,
+              "speech_fraction": 0.0,
+              "total": 1
+            },
+            "guard_inactive": {
+              "noise": 0,
+              "speech": 5,
+              "speech_fraction": 1.0,
+              "total": 5
+            }
+          },
+          "fixed_component_positive_counts": {
+            "blend_applied": {
+              "noise": 1,
+              "speech": 5
+            },
+            "local_guard_pass": {
+              "noise": 1,
+              "speech": 5
+            },
+            "upstream_guard_pass": {
+              "noise": 1,
+              "speech": 0
+            }
+          },
+          "mean_probabilities": {
+            "noise": {
+              "pre_blend_probability": 0.298874855,
+              "raw_probability": 0.298874855,
+              "shipping_probability": 0.399692833,
+              "upstream_probability": 0.550919831
+            },
+            "speech": {
+              "pre_blend_probability": 0.2925165204,
+              "raw_probability": 0.2925165204,
+              "shipping_probability": 0.3810670672,
+              "upstream_probability": 0.513892871
+            }
+          },
+          "pre_blend_origin": {
+            "blend_dependent": {
+              "noise": 1,
+              "speech": 5,
+              "speech_fraction": 0.8333333333333334,
+              "total": 6
+            },
+            "local_admissible": {
+              "noise": 0,
+              "speech": 0,
+              "speech_fraction": null,
+              "total": 0
+            }
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "weak_start_events": {
+            "noise": 1,
+            "speech": 5,
+            "speech_fraction": 0.8333333333333334,
+            "total": 6
+          }
+        }
+      },
+      "seed": 451123
+    }
+  ],
+  "schema_version": 1,
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0
+  },
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "summaries": {
+    "stage-ns-nonstationary": {
+      "cross_cells": {
+        "blend_dependent_guard_active": {
+          "noise": 0,
+          "speech": 0,
+          "speech_fraction": null,
+          "total": 0
+        },
+        "blend_dependent_guard_inactive": {
+          "noise": 0,
+          "speech": 4,
+          "speech_fraction": 1.0,
+          "total": 4
+        },
+        "local_admissible_guard_active": {
+          "noise": 0,
+          "speech": 0,
+          "speech_fraction": null,
+          "total": 0
+        },
+        "local_admissible_guard_inactive": {
+          "noise": 10,
+          "speech": 9,
+          "speech_fraction": 0.47368421052631576,
+          "total": 19
+        }
+      },
+      "existing_guard": {
+        "guard_active": {
+          "noise": 0,
+          "speech": 0,
+          "speech_fraction": null,
+          "total": 0
+        },
+        "guard_inactive": {
+          "noise": 10,
+          "speech": 13,
+          "speech_fraction": 0.5652173913043478,
+          "total": 23
+        }
+      },
+      "fixed_component_positive_counts": {
+        "blend_applied": {
+          "noise": 0,
+          "speech": 7
+        },
+        "local_guard_pass": {
+          "noise": 10,
+          "speech": 13
+        },
+        "upstream_guard_pass": {
+          "noise": 0,
+          "speech": 0
+        }
+      },
+      "mean_probabilities": {
+        "noise": {
+          "pre_blend_probability": 0.4045316607,
+          "raw_probability": 0.4045316607,
+          "shipping_probability": 0.4045316607,
+          "upstream_probability": 0.23277345890000004
+        },
+        "speech": {
+          "pre_blend_probability": 0.3605174719230769,
+          "raw_probability": 0.3605174719230769,
+          "shipping_probability": 0.3937585857692308,
+          "upstream_probability": 0.40347307930769233
+        }
+      },
+      "pre_blend_origin": {
+        "blend_dependent": {
+          "noise": 0,
+          "speech": 4,
+          "speech_fraction": 1.0,
+          "total": 4
+        },
+        "local_admissible": {
+          "noise": 10,
+          "speech": 9,
+          "speech_fraction": 0.47368421052631576,
+          "total": 19
+        }
+      },
+      "shipping_mirror": {
+        "active_mismatch_frames": 0,
+        "max_probability_delta": 0.0
+      },
+      "weak_start_events": {
+        "noise": 10,
+        "speech": 13,
+        "speech_fraction": 0.5652173913043478,
+        "total": 23
+      }
+    },
+    "stage-ns-stationary": {
+      "cross_cells": {
+        "blend_dependent_guard_active": {
+          "noise": 1,
+          "speech": 0,
+          "speech_fraction": 0.0,
+          "total": 1
+        },
+        "blend_dependent_guard_inactive": {
+          "noise": 0,
+          "speech": 12,
+          "speech_fraction": 1.0,
+          "total": 12
+        },
+        "local_admissible_guard_active": {
+          "noise": 0,
+          "speech": 0,
+          "speech_fraction": null,
+          "total": 0
+        },
+        "local_admissible_guard_inactive": {
+          "noise": 0,
+          "speech": 3,
+          "speech_fraction": 1.0,
+          "total": 3
+        }
+      },
+      "existing_guard": {
+        "guard_active": {
+          "noise": 1,
+          "speech": 0,
+          "speech_fraction": 0.0,
+          "total": 1
+        },
+        "guard_inactive": {
+          "noise": 0,
+          "speech": 15,
+          "speech_fraction": 1.0,
+          "total": 15
+        }
+      },
+      "fixed_component_positive_counts": {
+        "blend_applied": {
+          "noise": 1,
+          "speech": 15
+        },
+        "local_guard_pass": {
+          "noise": 1,
+          "speech": 15
+        },
+        "upstream_guard_pass": {
+          "noise": 1,
+          "speech": 0
+        }
+      },
+      "mean_probabilities": {
+        "noise": {
+          "pre_blend_probability": 0.298874855,
+          "raw_probability": 0.298874855,
+          "shipping_probability": 0.399692833,
+          "upstream_probability": 0.550919831
+        },
+        "speech": {
+          "pre_blend_probability": 0.2973951736666667,
+          "raw_probability": 0.2973951736666667,
+          "shipping_probability": 0.3827275196666667,
+          "upstream_probability": 0.5107260366
+        }
+      },
+      "pre_blend_origin": {
+        "blend_dependent": {
+          "noise": 1,
+          "speech": 12,
+          "speech_fraction": 0.9230769230769231,
+          "total": 13
+        },
+        "local_admissible": {
+          "noise": 0,
+          "speech": 3,
+          "speech_fraction": 1.0,
+          "total": 3
+        }
+      },
+      "shipping_mirror": {
+        "active_mismatch_frames": 0,
+        "max_probability_delta": 0.0
+      },
+      "weak_start_events": {
+        "noise": 1,
+        "speech": 15,
+        "speech_fraction": 0.9375,
+        "total": 16
+      }
+    }
+  }
+}

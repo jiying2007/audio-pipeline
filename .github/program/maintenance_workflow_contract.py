@@ -97,6 +97,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'),
     Path('.github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml'),
     Path('.github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml'),
+    Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
 
 )
 

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i019-vad-weak-start-evidence-decomposition-v1",
+  "phase": "causal-diagnostic",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "predecessor": {
+    "result": ".github/research/continuous-optimization/development-v4/i018-vad-weak-refresh-extension-only-v1-result.json",
+    "required_status": "CLOSED_REJECTED_DEVELOPMENT_ONLY",
+    "required_reviewed_decision": "WEAK_REFRESH_EXTENSION_ONLY_REJECTED_FPR_GAIN_RECALL_REGRESSION_NO_THRESHOLD_OR_HOLD_TUNING"
+  },
+  "hypothesis": "I018 proved that weak-start suppression is a causal false-activation lever but removes too many true-speech starts. Existing shipping evidence may distinguish true-speech weak starts from noise weak starts without changing numeric thresholds.",
+  "budget": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "diagnostic_execution_limit": 1
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      431123,
+      441123,
+      451123
+    ],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "development-diagnostic"
+  },
+  "fixed_constants": {
+    "noise_like_crest_db": 8,
+    "transient_crest_db": 12,
+    "fast_noise_alpha": 0.08,
+    "upstream_speech_guard": 0.55,
+    "local_speech_guard": 0.15,
+    "upstream_blend": 0.4,
+    "ns_decision_threshold": 0.35,
+    "strong_refresh_threshold": 0.5,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6
+  },
+  "weak_start_definition": "A shipping frame with pre_hangover=0 that enters active state through weak refresh: final probability > 0.35 and < 0.50, post_hangover=6.",
+  "diagnostic_axes": {
+    "ground_truth_label": [
+      "speech",
+      "noise"
+    ],
+    "pre_blend_origin": [
+      "local_admissible",
+      "blend_dependent"
+    ],
+    "existing_guard": [
+      "guard_active",
+      "guard_inactive"
+    ],
+    "fixed_guard_components": [
+      "upstream_over_0.55",
+      "raw_local_over_0.15"
+    ],
+    "cross_cells": [
+      "local_admissible_guard_active",
+      "local_admissible_guard_inactive",
+      "blend_dependent_guard_active",
+      "blend_dependent_guard_inactive"
+    ],
+    "descriptive_probabilities": [
+      "raw_local_probability",
+      "pre_blend_probability",
+      "upstream_probability",
+      "final_probability"
+    ],
+    "domains": [
+      "stage-ns-stationary",
+      "stage-ns-nonstationary"
+    ]
+  },
+  "input_gates": {
+    "max_shipping_mirror_probability_delta": 0.000001,
+    "shipping_mirror_active_mismatch_frames": 0,
+    "min_speech_weak_start_events_per_domain": 1,
+    "min_noise_weak_start_events_per_domain": 1
+  },
+  "forbidden_feedback": {
+    "i015_seeds": [
+      281123,
+      291123,
+      301123
+    ],
+    "i016_seeds": [
+      311123,
+      321123,
+      331123
+    ],
+    "i017_seeds": [
+      371123,
+      381123,
+      391123
+    ],
+    "i018_seeds": [
+      401123,
+      411123,
+      421123
+    ],
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "VAD_WEAK_START_EVIDENCE_DECOMPOSED_REVIEW_REQUIRED": "Shipping mirror is exact and weak-start events are decomposed by ground-truth label and existing shipping evidence. No gating rule or candidate is selected.",
+    "I019_INPUT_INVALID_REVIEW_REQUIRED": "Exact source, fresh seed, case geometry, finite-value, shipping-mirror or minimum weak-start event preconditions fail."
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_modify_shipping": false,
+    "may_tune_constants": false,
+    "may_add_threshold": false,
+    "may_change_thresholds": false,
+    "may_change_hold_lengths": false,
+    "may_use_validation_for_selection": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Use only the reported fixed-category evidence separation to decide whether a separately frozen single-causal weak-start admission candidate is justified. Do not choose a numeric cut point inside I019."
+}

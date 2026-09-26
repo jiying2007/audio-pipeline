@@ -10,11 +10,13 @@ on:
       - 'tests/validation/i018_vad_weak_refresh_extension_only.py'
       - 'tests/validation/test_i018_one_shot_guard.py'
       - '.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'
-  workflow_dispatch:
+      - 'tests/validation/data/i018-consumed-workflow.yml'
+      - 'tests/validation/test_i018_retirement.py'
+      - '.github/research/continuous-optimization/development-v4/i018-vad-weak-refresh-extension-only-v1-result.json'
+      - 'validation/research/evidence/i018-36253477019/**'
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: research-i018-vad-weak-refresh-extension-only-v1-${{ github.ref }}
@@ -36,6 +38,7 @@ jobs:
       - name: Validate I018 frozen single-candidate contract
         run: |
           set -euo pipefail
+          python3 tests/validation/test_i018_retirement.py
           python3 -m json.tool "$CONTRACT" >/dev/null
           python3 -m py_compile tests/validation/i018_vad_weak_refresh_extension_only.py
           python3 tests/validation/i018_vad_weak_refresh_extension_only.py --self-test
@@ -74,180 +77,3 @@ jobs:
           cmake -S . -B build-i018-contract -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
           cmake --build build-i018-contract --target audio_pipeline --parallel
           ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i018-contract/generated             tests/validation/i018_vad_weak_refresh_extension_only_probe.c             build-i018-contract/libaudio_pipeline.a -lm             -o build-i018-contract/i018-vad-weak-refresh-extension-only-probe
-
-  develop:
-    needs: contract
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Enforce one-shot I018 development execution
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = refs/heads/main
-          python3 - <<'PY'
-          import json
-          import os
-          import subprocess
-
-          repo = os.environ['GITHUB_REPOSITORY']
-          current = int(os.environ['GITHUB_RUN_ID'])
-          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
-              raise SystemExit('I018 rerun forbidden; preserve the first development result')
-          workflow = 'research-i018-vad-weak-refresh-extension-only-v1.yml'
-
-          def collection(endpoint, key):
-              pages = json.loads(subprocess.check_output([
-                  'gh', 'api', '--paginate', '--slurp', endpoint,
-              ], text=True))
-              return [item for page in pages for item in page[key]]
-
-          runs = collection(
-              f'repos/{repo}/actions/workflows/{workflow}/runs'
-              '?event=workflow_dispatch&branch=main&per_page=100',
-              'workflow_runs',
-          )
-          if not any(int(item['id']) == current for item in runs):
-              raise SystemExit('I018 current run not visible; stop before fresh generation')
-
-          fresh_steps = {
-              'Generate preregistered fresh I018 partitions',
-              'Evaluate the single weak-refresh extension-only candidate',
-          }
-          consumed = set()
-          for item in runs:
-              run_id = int(item['id'])
-              if run_id == current:
-                  continue
-              attempts = int(item['run_attempt'])
-              if attempts < 1:
-                  raise SystemExit('I018 invalid historical attempt count')
-              for attempt in range(1, attempts + 1):
-                  jobs = collection(
-                      f'repos/{repo}/actions/runs/{run_id}/attempts/{attempt}'
-                      '/jobs?per_page=100',
-                      'jobs',
-                  )
-                  for job in jobs:
-                      if job.get('conclusion') == 'skipped':
-                          continue
-                      steps = job.get('steps')
-                      if not isinstance(steps, list):
-                          raise SystemExit('I018 missing historical step collection')
-                      for step in steps:
-                          if (
-                              step.get('name') in fresh_steps
-                              and step.get('conclusion') != 'skipped'
-                              and step.get('status') not in {'queued','pending','waiting'}
-                          ):
-                              consumed.add(run_id)
-                  if run_id in consumed:
-                      break
-          if consumed:
-              raise SystemExit(
-                  'I018 fresh authority already touched by run(s): '
-                  + ','.join(str(x) for x in sorted(consumed))
-              )
-          print('one-shot I018 guard: PASS')
-          PY
-
-      - name: Bind exact shipping source
-        run: |
-          set -euo pipefail
-          source_sha=$(jq -r .source_base_sha "$CONTRACT")
-          test "$source_sha" = 57e4c64adc1cf06819e46e24e275ecd746d5f17f
-          git cat-file -e "$source_sha^{commit}"
-          git worktree add --detach /tmp/i018-source "$source_sha"
-
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: i018-vad-weak-refresh-extension-only
-
-      - name: Build exact source and state-only probe
-        run: |
-          set -euo pipefail
-          mkdir -p i018-out
-          cmake -S /tmp/i018-source -B /tmp/i018-build             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION=57e4c64adc1cf06819e46e24e275ecd746d5f17f
-          cmake --build /tmp/i018-build --target audio_pipeline ap_build_info_dump --parallel
-          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -I/tmp/i018-source/include -I/tmp/i018-source/src -I/tmp/i018-build/generated             tests/validation/i018_vad_weak_refresh_extension_only_probe.c             /tmp/i018-build/libaudio_pipeline.a -lm -o /tmp/i018-probe
-          /tmp/i018-build/ap_build_info_dump > i018-out/build-info.txt
-          sha256sum /tmp/i018-probe > i018-out/probe.sha256
-          cp "$CONTRACT" i018-out/contract.json
-
-      - name: Generate preregistered fresh I018 partitions
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json, subprocess
-          from pathlib import Path
-          c=json.loads(Path(
-            '.github/research/continuous-optimization/development-v4/'
-            'i018-vad-weak-refresh-extension-only-v1.json').read_text())
-          manifests=[]
-          for seed in c['fresh_development']['seeds']:
-              out=Path(f'/tmp/i018-{seed}')
-              subprocess.run([
-                'python3','/tmp/i018-source/'+c['fresh_development']['generator'],
-                '--output',str(out),'--seed',str(seed),
-                '--seconds',str(c['fresh_development']['seconds'])
-              ],check=True,cwd='/tmp/i018-source')
-              corpus=out/'corpus.json'
-              payload=json.loads(corpus.read_text())
-              assert payload['generator']['seed']==seed
-              selected=[row for row in payload['cases']
-                if row.get('processor_profile')=='ns-isolated'
-                and row.get('vad_labels')
-                and row.get('render_audio') is None
-                and row.get('case_id') in {'stage-ns-stationary','stage-ns-nonstationary'}]
-              assert len(selected)==2
-              manifests.append(str(corpus))
-          Path('i018-out/corpora.txt').write_text('\n'.join(manifests)+'\n')
-          PY
-
-      - name: Evaluate the single weak-refresh extension-only candidate
-        run: |
-          set -euo pipefail
-          mapfile -t corpora < i018-out/corpora.txt
-          args=()
-          for corpus in "${corpora[@]}"; do args+=(--corpus "$corpus"); done
-          python3 tests/validation/i018_vad_weak_refresh_extension_only.py             --probe /tmp/i018-probe --contract "$CONTRACT" "${args[@]}"             --output i018-out/result.json | tee i018-out/summary.json
-
-      - name: Enforce research-only output authority
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          r=json.load(open('i018-out/result.json'))
-          assert r['candidate_budget_consumed']==1
-          assert r['confirmation_budget_consumed']==0
-          assert r['decision'] in {
-            'FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED',
-            'REJECTED_DEVELOPMENT_ONLY',
-            'I018_INPUT_INVALID_REVIEW_REQUIRED'}
-          assert r['output_authority']['automatic_main_mutation'] is False
-          assert r['output_authority']['hil_authority'] is False
-          assert r['output_authority']['product_certification_authority'] is False
-          PY
-
-      - name: Seal I018 evidence
-        if: always()
-        run: |
-          set -euo pipefail
-          mkdir -p i018-out
-          (cd i018-out && find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' |
-            sort -z | xargs -0 -r sha256sum > SHA256SUMS)
-
-      - name: Upload I018 development evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: i018-vad-weak-refresh-extension-only-${{ github.run_id }}
-          path: i018-out/
-          retention-days: 90
-          if-no-files-found: error

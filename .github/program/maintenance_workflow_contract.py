@@ -114,6 +114,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i013-ns-excess-concentration-v1.yml'),
     Path('.github/workflows/research-i014-ns-upstream-component-decomposition-v1.yml'),
     Path('.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'),
+    Path('.github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -145,6 +146,10 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json'),
+    ),
+    Path('.github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i016-vad-local-evidence-gated-blend-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i016-vad-local-evidence-gated-blend-v1-result.json'),
     ),
 }
 

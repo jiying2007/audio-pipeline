@@ -8,6 +8,7 @@ on:
       - '.github/research/continuous-optimization/development-v4/i016-vad-local-evidence-gated-blend-v1.json'
       - 'tests/validation/i016_vad_local_evidence_gated_blend_probe.c'
       - 'tests/validation/i016_vad_local_evidence_gated_blend.py'
+      - 'tests/validation/test_i016_one_shot_guard.py'
       - '.github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml'
   workflow_dispatch:
 
@@ -38,6 +39,7 @@ jobs:
           python3 -m json.tool "$CONTRACT" >/dev/null
           python3 -m py_compile tests/validation/i016_vad_local_evidence_gated_blend.py
           python3 tests/validation/i016_vad_local_evidence_gated_blend.py --self-test
+          python3 tests/validation/test_i016_one_shot_guard.py
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -84,16 +86,77 @@ jobs:
         run: |
           set -euo pipefail
           test "$GITHUB_REF" = refs/heads/main
-          test "$GITHUB_RUN_ATTEMPT" = 1 || {
-            echo 'I016 rerun forbidden; preserve the first development result' >&2
-            exit 1
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          current = int(os.environ['GITHUB_RUN_ID'])
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit(
+                  'I016 rerun forbidden; preserve evidence and use a new dispatch '
+                  'only for a verified pre-fresh infrastructure failure'
+              )
+          workflow = 'research-i016-vad-local-evidence-gated-blend-v1.yml'
+
+          def collection(endpoint, key):
+              pages = json.loads(subprocess.check_output([
+                  'gh', 'api', '--paginate', '--slurp', endpoint,
+              ], text=True))
+              return [item for page in pages for item in page[key]]
+
+          runs = collection(
+              f'repos/{repo}/actions/workflows/{workflow}/runs'
+              '?event=workflow_dispatch&branch=main&per_page=100',
+              'workflow_runs',
+          )
+          if not any(int(item['id']) == current for item in runs):
+              raise SystemExit('I016 current run not visible; stop before fresh generation')
+
+          fresh_steps = {
+              'Generate preregistered fresh development partitions',
+              'Evaluate the single gated-blend candidate',
           }
-          count=$(gh api --paginate             "repos/$GITHUB_REPOSITORY/actions/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml/runs?event=workflow_dispatch&branch=main&per_page=100"             --jq '[.workflow_runs[] | select(.id != env.GITHUB_RUN_ID|tonumber)] | length' |
-            awk '{s+=$1} END{print s+0}')
-          test "$count" = 0 || {
-            echo 'I016 development authority already consumed; do not redispatch' >&2
-            exit 1
-          }
+          consumed = set()
+          for item in runs:
+              run_id = int(item['id'])
+              if run_id == current:
+                  continue
+              attempts = int(item['run_attempt'])
+              if attempts < 1:
+                  raise SystemExit('I016 invalid historical attempt count')
+              for attempt in range(1, attempts + 1):
+                  jobs = collection(
+                      f'repos/{repo}/actions/runs/{run_id}/attempts/{attempt}'
+                      '/jobs?per_page=100',
+                      'jobs',
+                  )
+                  for job in jobs:
+                      if job.get('conclusion') == 'skipped':
+                          continue
+                      steps = job.get('steps')
+                      if not isinstance(steps, list):
+                          raise SystemExit(
+                              f'I016 missing step history run={run_id} attempt={attempt}'
+                          )
+                      for step in steps:
+                          if (
+                              step.get('name') in fresh_steps
+                              and step.get('conclusion') != 'skipped'
+                              and step.get('status') not in {'queued', 'pending', 'waiting'}
+                          ):
+                              consumed.add(run_id)
+                  if run_id in consumed:
+                      break
+
+          if consumed:
+              raise SystemExit(
+                  'I016 fresh authority already touched by run(s): '
+                  + ','.join(str(x) for x in sorted(consumed))
+              )
+          print('one-shot I016 guard: PASS')
+          PY
       - name: Bind exact shipping source
         run: |
           set -euo pipefail

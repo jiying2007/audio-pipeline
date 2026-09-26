@@ -15,7 +15,12 @@ HISTORY = 'tests/validation/data/i016-consumed-workflow.yml'
 HISTORY_BLOB = '45c2f6afa9e5cc2f1073addcb83ecd417e61b0e2'
 CLOSURE = ('.github/research/continuous-optimization/development-v4/'
            'i016-vad-local-evidence-gated-blend-v1-result.json')
-EVIDENCE = 'validation/research/evidence/i016-36245702675/**'
+EVIDENCE_ROOT = Path('validation/research/evidence/i016-36245702675')
+EVIDENCE = str(EVIDENCE_ROOT) + '/**'
+EVIDENCE_MEMBERS = (
+    'SHA256SUMS', 'build-info.txt', 'contract.json', 'corpora.txt',
+    'probe.sha256', 'result.json', 'summary.json',
+)
 SELF = 'tests/validation/test_i016_retirement.py'
 GUARD_TEST = 'tests/validation/test_i016_one_shot_guard.py'
 CHECK = 'python3 ' + SELF
@@ -107,6 +112,21 @@ class RetirementTests(unittest.TestCase):
         self.assertFalse(closure['authority_boundary']['blind_validation_authorized'])
 
 
+    def test_raw_evidence_matches_trusted_closure_hashes(self):
+        closure = json.loads((ROOT / CLOSURE).read_text(encoding='utf-8'))
+        expected = closure['authoritative_execution']['member_sha256']
+        self.assertEqual(set(expected), set(EVIDENCE_MEMBERS))
+        for name in EVIDENCE_MEMBERS:
+            data = (ROOT / EVIDENCE_ROOT / name).read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(), expected[name], name)
+        raw = json.loads((ROOT / EVIDENCE_ROOT / 'result.json').read_text(encoding='utf-8'))
+        self.assertEqual(raw['decision'], closure['decision'])
+        self.assertEqual(raw['source_base_sha'], closure['source_base_sha'])
+        self.assertEqual(raw['fresh_development_seeds'],
+                         closure['fresh_authority']['seeds'])
+        self.assertEqual(raw['shipping_mirror'], closure['shipping_mirror'])
+
+
     def test_history_is_outside_active_workflow_directory(self):
         self.assertFalse((ROOT / HISTORY).resolve().is_relative_to(ROOT / '.github/workflows'))
         for path in (ROOT / '.github/workflows').glob('*.y*ml'):
@@ -127,6 +147,7 @@ class RetirementTests(unittest.TestCase):
                 Path('.github/research/continuous-optimization/development-v4/'
                      'i016-vad-local-evidence-gated-blend-v1.json'),
                 Path(CLOSURE),
+                *(EVIDENCE_ROOT / name for name in EVIDENCE_MEMBERS),
             },
         )
         module.validate_program_archive_trigger_boundaries(ROOT)

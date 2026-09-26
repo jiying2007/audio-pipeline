@@ -12,15 +12,20 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-WORKFLOW=Path(__file__).resolve().parents[2]/(
-    ".github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml")
+WORKFLOW=Path(__file__).resolve().parent/"data/i019-consumed-workflow.yml"
+HISTORY_BLOB="3c9676bd9df8efb3159c1702e9b8eea42c53fc88"
 GENERATE="Generate preregistered fresh I019 partitions"
 DIAGNOSE="Run fresh I019 weak-start evidence decomposition"
 CURRENT={"id":20,"run_attempt":1}
 PRIOR={"id":10,"run_attempt":1}
 
 def guard_source():
-    text=WORKFLOW.read_text()
+    data=WORKFLOW.read_bytes()
+    actual=__import__("hashlib").sha1(
+        b"blob "+str(len(data)).encode()+b"\\0"+data).hexdigest()
+    if actual!=HISTORY_BLOB:
+        raise ValueError("historical I019 workflow fixture drift")
+    text=data.decode()
     block=text.split("      - name: Enforce one-shot I019 diagnostic execution\n",1)[1]
     block=block.split("      - name: Bind exact shipping source\n",1)[0]
     return textwrap.dedent(

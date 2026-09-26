@@ -201,6 +201,7 @@
             "false_positive_rate": 0.02456140350877193,
             "noise_active": 7,
             "noise_active_segments": 1,
+            "noise_frames": 285,
             "recall": 0.8085106382978723,
             "speech_active": 190,
             "speech_frames": 235

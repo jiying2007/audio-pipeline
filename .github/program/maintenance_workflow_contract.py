@@ -163,6 +163,13 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i017-vad-state-persistence-decomposition-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/i017-vad-state-persistence-decomposition-v1-result.json'),
+        Path('validation/research/evidence/i017-36249750866/SHA256SUMS'),
+        Path('validation/research/evidence/i017-36249750866/build-info.txt'),
+        Path('validation/research/evidence/i017-36249750866/contract.json'),
+        Path('validation/research/evidence/i017-36249750866/corpora.txt'),
+        Path('validation/research/evidence/i017-36249750866/probe.sha256'),
+        Path('validation/research/evidence/i017-36249750866/result.json'),
+        Path('validation/research/evidence/i017-36249750866/summary.json'),
     ),
 }
 

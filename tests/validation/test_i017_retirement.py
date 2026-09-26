@@ -129,6 +129,20 @@ class RetirementTests(unittest.TestCase):
             {'hangover_carry': 28, 'strong_refresh': 1, 'weak_refresh': 2},
         )
 
+    def test_raw_evidence_matches_trusted_closure_hashes(self):
+        closure = json.loads((ROOT / CLOSURE).read_text(encoding='utf-8'))
+        expected = closure['authoritative_execution']['member_sha256']
+        self.assertEqual(set(expected), set(EVIDENCE_MEMBERS))
+        for name in EVIDENCE_MEMBERS:
+            data = (ROOT / EVIDENCE_ROOT / name).read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(), expected[name], name)
+        raw = json.loads((ROOT / EVIDENCE_ROOT / 'result.json').read_text(encoding='utf-8'))
+        self.assertEqual(raw['decision'], closure['decision'])
+        self.assertEqual(raw['source_base_sha'], closure['source_base_sha'])
+        self.assertEqual(raw['fresh_diagnostic_seeds'],
+                         closure['fresh_authority']['seeds'])
+        self.assertEqual(raw['shipping_mirror'], closure['shipping_mirror'])
+
     def test_history_is_outside_active_workflow_directory(self):
         self.assertFalse((ROOT / HISTORY).resolve().is_relative_to(ROOT / '.github/workflows'))
         for path in (ROOT / '.github/workflows').glob('*.y*ml'):
@@ -143,6 +157,15 @@ class RetirementTests(unittest.TestCase):
         self.assertIn(workflow, module.CONTRACT_ONLY_RESEARCH_WORKFLOWS)
         evidence = module.CONTRACT_ONLY_RESEARCH_EVIDENCE[workflow]
         self.assertIn(Path(CLOSURE), evidence)
+        self.assertEqual(
+            set(evidence),
+            {
+                Path('.github/research/continuous-optimization/development-v4/'
+                     'i017-vad-state-persistence-decomposition-v1.json'),
+                Path(CLOSURE),
+                *(EVIDENCE_ROOT / name for name in EVIDENCE_MEMBERS),
+            },
+        )
         module.validate_program_archive_trigger_boundaries(ROOT)
 
     def test_contract_covers_retirement_surfaces(self):

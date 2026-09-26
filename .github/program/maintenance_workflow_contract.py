@@ -176,6 +176,13 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i018-vad-weak-refresh-extension-only-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/i018-vad-weak-refresh-extension-only-v1-result.json'),
+        Path('validation/research/evidence/i018-36253477019/SHA256SUMS'),
+        Path('validation/research/evidence/i018-36253477019/build-info.txt'),
+        Path('validation/research/evidence/i018-36253477019/contract.json'),
+        Path('validation/research/evidence/i018-36253477019/corpora.txt'),
+        Path('validation/research/evidence/i018-36253477019/probe.sha256'),
+        Path('validation/research/evidence/i018-36253477019/result.json'),
+        Path('validation/research/evidence/i018-36253477019/summary.json'),
     ),
 }
 

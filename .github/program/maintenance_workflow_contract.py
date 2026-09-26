@@ -118,6 +118,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'),
     Path('.github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml'),
     Path('.github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml'),
+    Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -171,6 +172,10 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('validation/research/evidence/i017-36249750866/probe.sha256'),
         Path('validation/research/evidence/i017-36249750866/result.json'),
         Path('validation/research/evidence/i017-36249750866/summary.json'),
+    ),
+    Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i018-vad-weak-refresh-extension-only-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i018-vad-weak-refresh-extension-only-v1-result.json'),
     ),
 }
 

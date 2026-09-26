@@ -106,15 +106,6 @@ class RetirementTests(unittest.TestCase):
         )
         self.assertFalse(closure['authority_boundary']['blind_validation_authorized'])
 
-    def test_archived_raw_result_matches_closure_identity(self):
-        raw = json.loads((ROOT / 'validation/research/evidence/i016-36245702675/result.json')
-                         .read_text(encoding='utf-8'))
-        closure = json.loads((ROOT / CLOSURE).read_text(encoding='utf-8'))
-        self.assertEqual(raw['decision'], closure['decision'])
-        self.assertEqual(raw['source_base_sha'], closure['source_base_sha'])
-        self.assertEqual(raw['fresh_development_seeds'],
-                         closure['fresh_authority']['seeds'])
-        self.assertEqual(raw['shipping_mirror'], closure['shipping_mirror'])
 
     def test_history_is_outside_active_workflow_directory(self):
         self.assertFalse((ROOT / HISTORY).resolve().is_relative_to(ROOT / '.github/workflows'))
@@ -130,8 +121,14 @@ class RetirementTests(unittest.TestCase):
         self.assertIn(workflow, module.CONTRACT_ONLY_RESEARCH_WORKFLOWS)
         evidence = module.CONTRACT_ONLY_RESEARCH_EVIDENCE[workflow]
         self.assertIn(Path(CLOSURE), evidence)
-        self.assertIn(Path('validation/research/evidence/i016-36245702675/result.json'),
-                      evidence)
+        self.assertEqual(
+            set(evidence),
+            {
+                Path('.github/research/continuous-optimization/development-v4/'
+                     'i016-vad-local-evidence-gated-blend-v1.json'),
+                Path(CLOSURE),
+            },
+        )
         module.validate_program_archive_trigger_boundaries(ROOT)
 
     def test_contract_covers_retirement_surfaces(self):

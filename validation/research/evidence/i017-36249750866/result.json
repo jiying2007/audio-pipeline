@@ -1,0 +1,267 @@
+{
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "authority_boundary": {
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_change_hold_lengths": false,
+    "may_change_refresh_thresholds": false,
+    "may_modify_shipping": false,
+    "may_promote_release": false,
+    "may_select_candidate": false,
+    "may_tune_constants": false,
+    "may_use_validation_for_selection": false
+  },
+  "candidate_budget_consumed": 0,
+  "confirmation_budget_consumed": 0,
+  "decision": "VAD_STATE_PERSISTENCE_DECOMPOSED_REVIEW_REQUIRED",
+  "diagnostic_execution_consumed": 1,
+  "fresh_diagnostic_seeds": [
+    371123,
+    381123,
+    391123
+  ],
+  "investigation_id": "i017-vad-state-persistence-decomposition-v1",
+  "per_seed": [
+    {
+      "cases": {
+        "stage-ns-nonstationary": {
+          "frames": 520,
+          "noise_active_frame_origin": {
+            "hangover_carry": 34,
+            "strong_refresh": 1,
+            "weak_refresh": 7
+          },
+          "noise_active_frames": 42,
+          "noise_active_segment_start_origin": {
+            "carry_from_prior_active": 1,
+            "strong_refresh": 1,
+            "weak_refresh": 4
+          },
+          "noise_false_positive_rate": 0.14736842105263157,
+          "noise_frames": 285,
+          "noise_refresh_extension_events": {
+            "strong_refresh": 0,
+            "weak_refresh": 3
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "speech_frames": 235,
+          "speech_to_noise_active_boundary_frames": 1
+        },
+        "stage-ns-stationary": {
+          "frames": 520,
+          "noise_active_frame_origin": {
+            "hangover_carry": 7,
+            "strong_refresh": 1,
+            "weak_refresh": 0
+          },
+          "noise_active_frames": 8,
+          "noise_active_segment_start_origin": {
+            "carry_from_prior_active": 0,
+            "strong_refresh": 1,
+            "weak_refresh": 0
+          },
+          "noise_false_positive_rate": 0.028070175438596492,
+          "noise_frames": 285,
+          "noise_refresh_extension_events": {
+            "strong_refresh": 1,
+            "weak_refresh": 0
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "speech_frames": 235,
+          "speech_to_noise_active_boundary_frames": 1
+        }
+      },
+      "seed": 371123
+    },
+    {
+      "cases": {
+        "stage-ns-nonstationary": {
+          "frames": 520,
+          "noise_active_frame_origin": {
+            "hangover_carry": 31,
+            "strong_refresh": 1,
+            "weak_refresh": 7
+          },
+          "noise_active_frames": 39,
+          "noise_active_segment_start_origin": {
+            "carry_from_prior_active": 1,
+            "strong_refresh": 0,
+            "weak_refresh": 4
+          },
+          "noise_false_positive_rate": 0.1368421052631579,
+          "noise_frames": 285,
+          "noise_refresh_extension_events": {
+            "strong_refresh": 1,
+            "weak_refresh": 3
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "speech_frames": 235,
+          "speech_to_noise_active_boundary_frames": 1
+        },
+        "stage-ns-stationary": {
+          "frames": 520,
+          "noise_active_frame_origin": {
+            "hangover_carry": 14,
+            "strong_refresh": 0,
+            "weak_refresh": 2
+          },
+          "noise_active_frames": 16,
+          "noise_active_segment_start_origin": {
+            "carry_from_prior_active": 1,
+            "strong_refresh": 0,
+            "weak_refresh": 2
+          },
+          "noise_false_positive_rate": 0.056140350877192984,
+          "noise_frames": 285,
+          "noise_refresh_extension_events": {
+            "strong_refresh": 0,
+            "weak_refresh": 0
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "speech_frames": 235,
+          "speech_to_noise_active_boundary_frames": 1
+        }
+      },
+      "seed": 381123
+    },
+    {
+      "cases": {
+        "stage-ns-nonstationary": {
+          "frames": 520,
+          "noise_active_frame_origin": {
+            "hangover_carry": 31,
+            "strong_refresh": 2,
+            "weak_refresh": 8
+          },
+          "noise_active_frames": 41,
+          "noise_active_segment_start_origin": {
+            "carry_from_prior_active": 1,
+            "strong_refresh": 1,
+            "weak_refresh": 2
+          },
+          "noise_false_positive_rate": 0.14385964912280702,
+          "noise_frames": 285,
+          "noise_refresh_extension_events": {
+            "strong_refresh": 1,
+            "weak_refresh": 6
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "speech_frames": 235,
+          "speech_to_noise_active_boundary_frames": 1
+        },
+        "stage-ns-stationary": {
+          "frames": 520,
+          "noise_active_frame_origin": {
+            "hangover_carry": 7,
+            "strong_refresh": 0,
+            "weak_refresh": 0
+          },
+          "noise_active_frames": 7,
+          "noise_active_segment_start_origin": {
+            "carry_from_prior_active": 1,
+            "strong_refresh": 0,
+            "weak_refresh": 0
+          },
+          "noise_false_positive_rate": 0.02456140350877193,
+          "noise_frames": 285,
+          "noise_refresh_extension_events": {
+            "strong_refresh": 0,
+            "weak_refresh": 0
+          },
+          "shipping_mirror": {
+            "active_mismatch_frames": 0,
+            "max_probability_delta": 0.0
+          },
+          "speech_frames": 235,
+          "speech_to_noise_active_boundary_frames": 1
+        }
+      },
+      "seed": 391123
+    }
+  ],
+  "schema_version": 1,
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0
+  },
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "summaries": {
+    "stage-ns-nonstationary": {
+      "frames": 1560,
+      "noise_active_frame_origin": {
+        "hangover_carry": 96,
+        "strong_refresh": 4,
+        "weak_refresh": 22
+      },
+      "noise_active_frame_origin_fraction": {
+        "hangover_carry": 0.7868852459016393,
+        "strong_refresh": 0.03278688524590164,
+        "weak_refresh": 0.18032786885245902
+      },
+      "noise_active_frames": 122,
+      "noise_active_segment_start_origin": {
+        "carry_from_prior_active": 3,
+        "strong_refresh": 2,
+        "weak_refresh": 10
+      },
+      "noise_false_positive_rate": 0.14269005847953217,
+      "noise_frames": 855,
+      "noise_refresh_extension_events": {
+        "strong_refresh": 2,
+        "weak_refresh": 12
+      },
+      "shipping_mirror": {
+        "active_mismatch_frames": 0,
+        "max_probability_delta": 0.0
+      },
+      "speech_frames": 705,
+      "speech_to_noise_active_boundary_frames": 3
+    },
+    "stage-ns-stationary": {
+      "frames": 1560,
+      "noise_active_frame_origin": {
+        "hangover_carry": 28,
+        "strong_refresh": 1,
+        "weak_refresh": 2
+      },
+      "noise_active_frame_origin_fraction": {
+        "hangover_carry": 0.9032258064516129,
+        "strong_refresh": 0.03225806451612903,
+        "weak_refresh": 0.06451612903225806
+      },
+      "noise_active_frames": 31,
+      "noise_active_segment_start_origin": {
+        "carry_from_prior_active": 2,
+        "strong_refresh": 1,
+        "weak_refresh": 2
+      },
+      "noise_false_positive_rate": 0.03625730994152047,
+      "noise_frames": 855,
+      "noise_refresh_extension_events": {
+        "strong_refresh": 1,
+        "weak_refresh": 0
+      },
+      "shipping_mirror": {
+        "active_mismatch_frames": 0,
+        "max_probability_delta": 0.0
+      },
+      "speech_frames": 705,
+      "speech_to_noise_active_boundary_frames": 3
+    }
+  }
+}

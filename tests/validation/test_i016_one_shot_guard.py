@@ -13,9 +13,8 @@ import unittest
 from unittest.mock import patch
 
 
-WORKFLOW = Path(__file__).resolve().parents[2] / (
-    ".github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml"
-)
+WORKFLOW = Path(__file__).resolve().parent / "data/i016-consumed-workflow.yml"
+HISTORY_BLOB = "45c2f6afa9e5cc2f1073addcb83ecd417e61b0e2"
 GENERATE = "Generate preregistered fresh development partitions"
 EVALUATE = "Evaluate the single gated-blend candidate"
 CURRENT = {"id": 20, "run_attempt": 1}
@@ -23,7 +22,13 @@ PRIOR = {"id": 10, "run_attempt": 1}
 
 
 def guard_source() -> str:
-    text = WORKFLOW.read_text(encoding="utf-8")
+    data = WORKFLOW.read_bytes()
+    actual = __import__("hashlib").sha1(
+        b"blob " + str(len(data)).encode() + b"\\0" + data
+    ).hexdigest()
+    if actual != HISTORY_BLOB:
+        raise ValueError("historical I016 workflow fixture drift")
+    text = data.decode("utf-8")
     block = text.split(
         "      - name: Enforce single I016 development execution\n", 1
     )[1]

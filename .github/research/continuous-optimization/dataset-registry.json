@@ -35,6 +35,11 @@
       "candidate_id": "6f5f432da36f",
       "source_sha": "4683f049c7dca2bf1ececa6adda33d4ec10cc3d1",
       "decision": "BLIND_REJECTED_NON_SHIPPING"
+    },
+    {
+      "candidate_id": "vad-local-evidence-gated-blend-v1",
+      "source_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+      "decision": "REJECTED_DEVELOPMENT_ONLY"
     }
   ],
   "datasets": [

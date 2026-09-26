@@ -76,7 +76,8 @@
   "input_gates": {
     "max_shipping_mirror_probability_delta": 0.000001,
     "shipping_mirror_active_mismatch_frames": 0,
-    "min_weak_start_events_per_domain": 1
+    "min_speech_weak_start_events_per_domain": 1,
+    "min_noise_weak_start_events_per_domain": 1
   },
   "forbidden_feedback": {
     "i015_seeds": [

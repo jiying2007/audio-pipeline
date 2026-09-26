@@ -13,6 +13,10 @@ CLOSURE=('.github/research/continuous-optimization/development-v4/'
          'i019-vad-weak-start-evidence-decomposition-v1-result.json')
 EVIDENCE_ROOT=Path('validation/research/evidence/i019-36257346949')
 EVIDENCE=str(EVIDENCE_ROOT)+'/**'
+EVIDENCE_MEMBERS=(
+    'SHA256SUMS','build-info.txt','contract.json','corpora.txt',
+    'probe.sha256','result.json','summary.json',
+)
 SELF='tests/validation/test_i019_retirement.py'
 GUARD_TEST='tests/validation/test_i019_one_shot_guard.py'
 CHECK='python3 '+SELF
@@ -100,6 +104,19 @@ class RetirementTests(unittest.TestCase):
         self.assertEqual(st['existing_guard']['guard_active']['noise'],1)
         self.assertEqual(st['existing_guard']['guard_active']['speech'],0)
 
+    def test_raw_evidence_matches_trusted_closure_hashes(self):
+        c=json.loads((ROOT/CLOSURE).read_text())
+        expected=c['authoritative_execution']['member_sha256']
+        self.assertEqual(set(expected),set(EVIDENCE_MEMBERS))
+        for name in EVIDENCE_MEMBERS:
+            data=(ROOT/EVIDENCE_ROOT/name).read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(),expected[name],name)
+        raw=json.loads((ROOT/EVIDENCE_ROOT/'result.json').read_text())
+        self.assertEqual(raw['decision'],c['decision'])
+        self.assertEqual(raw['source_base_sha'],c['source_base_sha'])
+        self.assertEqual(raw['fresh_diagnostic_seeds'],c['fresh_authority']['seeds'])
+        self.assertEqual(raw['shipping_mirror'],c['shipping_mirror'])
+
     def test_history_is_outside_active_workflow_directory(self):
         self.assertFalse((ROOT/HISTORY).resolve().is_relative_to(ROOT/'.github/workflows'))
         for path in (ROOT/'.github/workflows').glob('*.y*ml'):
@@ -116,6 +133,7 @@ class RetirementTests(unittest.TestCase):
             Path('.github/research/continuous-optimization/development-v4/'
                  'i019-vad-weak-start-evidence-decomposition-v1.json'),
             Path(CLOSURE),
+            *(EVIDENCE_ROOT/name for name in EVIDENCE_MEMBERS),
         })
         module.validate_program_archive_trigger_boundaries(ROOT)
 

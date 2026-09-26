@@ -167,53 +167,169 @@ def cmake_version_only(base: str, head: str) -> bool:
 
 
 
-def verified_archive_paths(base: str, head: str, paths: list[str]) -> set[str]:
-    """Admit only an append-only copy of receipts registered on trusted base.
+def _tree_entry(ref: str, path: str) -> bytes:
+    return subprocess.check_output(["git", "ls-tree", "-z", ref, "--", path])
 
-    A filename or PR-head manifest is not enough to waive product versioning.
-    This does not change CI selection or the independent finalization contract.
-    """
-    if not any(p.startswith("validation/research/evidence/") for p in paths):
-        return set()
-    manifest_path = ".github/program/i015-finalization.json"
 
-    def tree_entry(ref: str, path: str) -> bytes:
-        return subprocess.check_output(["git", "ls-tree", "-z", ref, "--", path])
-
-    if not tree_entry(base, manifest_path):
-        return set()  # New/head-only registrations cannot authorize themselves.
-    before = git_text(base, manifest_path)
-    if before != git_text(head, manifest_path):
-        raise ValueError("archive registration changed across verification range")
-    frozen = json.loads(before)
-    members = frozen["member_sha256"]
-    names = {
-        "SHA256SUMS", "build-info.txt", "compiler.txt", "contract.json",
-        "corpora.txt", "diagnostic-infra-revision.txt", "probe.sha256",
-        "result.json", "source-base-revision.txt", "summary.json",
-    }
-    run_id = frozen["run_id"]
-    root = frozen["archive_root"]
-    if (type(run_id) is not int or run_id <= 0
-            or root != f"validation/research/evidence/i015-{run_id}"
-            or set(members) != names
-            or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
-                   for value in members.values())):
-        raise ValueError("invalid trusted-base archive registration")
-    expected = {root + "/" + name: sha for name, sha in members.items()}
+def _verify_append_only_archive(
+    base: str,
+    head: str,
+    paths: list[str],
+    expected: dict[str, str],
+) -> set[str]:
     if not set(expected).issubset(paths):
-        return set()  # Partial, modified and deleted archives are not a new receipt.
+        return set()
     for path, expected_sha in expected.items():
-        if tree_entry(base, path):
+        if _tree_entry(base, path):
             raise ValueError("archive receipt already exists on base: " + path)
-        entry = tree_entry(head, path)
-        if not re.fullmatch(rb"100644 blob [0-9a-f]{40}\t" + re.escape(path.encode()) + rb"\x00", entry):
+        entry = _tree_entry(head, path)
+        pattern = rb"100644 blob [0-9a-f]{40}\t" + re.escape(path.encode()) + rb"\x00"
+        if not re.fullmatch(pattern, entry):
             raise ValueError("archive receipt is not an added regular text file: " + path)
         content = subprocess.check_output(["git", "show", f"{head}:{path}"])
         if hashlib.sha256(content).hexdigest() != expected_sha:
             raise ValueError("archive receipt digest mismatch: " + path)
     return set(expected)
 
+
+def _i015_archive_registration(base: str, head: str, root: str) -> dict[str, str] | None:
+    """Retain the original I015 base-trusted finalization registration."""
+    manifest_path = ".github/program/i015-finalization.json"
+    if not _tree_entry(base, manifest_path):
+        return None
+    before = git_text(base, manifest_path)
+    if before != git_text(head, manifest_path):
+        raise ValueError("archive registration changed across verification range")
+    frozen = json.loads(before)
+    run_id = frozen["run_id"]
+    if root != frozen["archive_root"]:
+        return None
+    members = frozen["member_sha256"]
+    names = {
+        "SHA256SUMS", "build-info.txt", "compiler.txt", "contract.json",
+        "corpora.txt", "diagnostic-infra-revision.txt", "probe.sha256",
+        "result.json", "source-base-revision.txt", "summary.json",
+    }
+    if (type(run_id) is not int or run_id <= 0
+            or root != f"validation/research/evidence/i015-{run_id}"
+            or set(members) != names
+            or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+                   for value in members.values())):
+        raise ValueError("invalid trusted-base archive registration")
+    return {root + "/" + name: sha for name, sha in members.items()}
+
+
+def _terminal_research_archive_registration(
+    base: str,
+    head: str,
+    root: str,
+) -> dict[str, str] | None:
+    """Resolve a terminal research archive from an unchanged closure on base.
+
+    A PR-head closure can never authorize its own release-neutral evidence copy.
+    Only already-reviewed CLOSED_* result records from the trusted base are
+    considered, and the closure itself must remain byte-identical on head.
+    """
+    prefix = ".github/research/continuous-optimization/development-v4"
+    listing = subprocess.check_output(
+        ["git", "ls-tree", "-r", "--name-only", base, "--", prefix],
+        text=True,
+    ).splitlines()
+    matches: list[tuple[str, dict[str, str]]] = []
+    for closure_path in listing:
+        if not closure_path.endswith("-result.json"):
+            continue
+        try:
+            before = git_text(base, closure_path)
+            frozen = json.loads(before)
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
+            continue
+        original_result = frozen.get("original_result_path")
+        if not isinstance(original_result, str) or not original_result.endswith("/result.json"):
+            continue
+        archive_root = original_result[:-len("/result.json")]
+        if archive_root != root:
+            continue
+        if not _tree_entry(head, closure_path) or before != git_text(head, closure_path):
+            raise ValueError("terminal research registration changed across verification range")
+
+        execution = frozen.get("authoritative_execution")
+        fresh = frozen.get("fresh_authority")
+        boundary = frozen.get("authority_boundary")
+        status = frozen.get("status")
+        if (
+            frozen.get("schema_version") != 1
+            or not isinstance(status, str)
+            or not status.startswith("CLOSED_")
+            or not isinstance(execution, dict)
+            or not isinstance(fresh, dict)
+            or fresh.get("rerun_allowed") is not False
+            or not isinstance(boundary, dict)
+            or not boundary
+            or any(value is not False for value in boundary.values())
+        ):
+            raise ValueError("invalid trusted-base terminal research registration")
+
+        run_id = execution.get("run_id")
+        artifact_id = execution.get("artifact_id")
+        artifact_size = execution.get("artifact_size_bytes")
+        artifact_sha = execution.get("artifact_sha256")
+        members = execution.get("member_sha256")
+        required_names = {"SHA256SUMS", "contract.json", "result.json", "summary.json"}
+        if (
+            type(run_id) is not int
+            or run_id <= 0
+            or type(artifact_id) is not int
+            or artifact_id <= 0
+            or type(artifact_size) is not int
+            or artifact_size <= 0
+            or not isinstance(artifact_sha, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", artifact_sha)
+            or not re.fullmatch(r"validation/research/evidence/[A-Za-z0-9._-]+-[0-9]+", root)
+            or not root.endswith(f"-{run_id}")
+            or not isinstance(members, dict)
+            or not required_names.issubset(members)
+            or not members
+        ):
+            raise ValueError("invalid trusted-base terminal research execution identity")
+        expected: dict[str, str] = {}
+        for name, digest in members.items():
+            if (
+                not isinstance(name, str)
+                or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name)
+                or not isinstance(digest, str)
+                or not re.fullmatch(r"[0-9a-f]{64}", digest)
+            ):
+                raise ValueError("invalid terminal research member identity")
+            expected[root + "/" + name] = digest
+        matches.append((closure_path, expected))
+
+    if len(matches) > 1:
+        raise ValueError("multiple trusted-base terminal research registrations for archive root")
+    return matches[0][1] if matches else None
+
+
+def verified_archive_paths(base: str, head: str, paths: list[str]) -> set[str]:
+    """Admit append-only research receipts only from registrations trusted on base."""
+    evidence_prefix = "validation/research/evidence/"
+    evidence_paths = [path for path in paths if path.startswith(evidence_prefix)]
+    if not evidence_paths:
+        return set()
+
+    roots = sorted({
+        path.rsplit("/", 1)[0]
+        for path in evidence_paths
+        if "/" in path[len(evidence_prefix):]
+    })
+    verified: set[str] = set()
+    for root in roots:
+        expected = _i015_archive_registration(base, head, root)
+        if expected is None:
+            expected = _terminal_research_archive_registration(base, head, root)
+        if expected is None:
+            continue
+        verified.update(_verify_append_only_archive(base, head, paths, expected))
+    return verified
 
 
 def enforce_release_version(base: str, head: str, paths: list[str]) -> None:

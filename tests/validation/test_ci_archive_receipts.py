@@ -183,5 +183,170 @@ class ReceiptVersionTests(unittest.TestCase):
             self.check(base=self.head, head=commit('deleted'), paths=[ARCHIVE + 'result.json'])
 
 
+TERMINAL_ARCHIVE = 'validation/research/evidence/i016-4242/'
+TERMINAL_CLOSURE = (
+    '.github/research/continuous-optimization/development-v4/'
+    'i016-vad-local-evidence-gated-blend-v1-result.json'
+)
+TERMINAL_MEMBERS = {
+    name: ('terminal fixture: ' + name + '\n').encode()
+    for name in (
+        'SHA256SUMS', 'build-info.txt', 'contract.json', 'corpora.txt',
+        'probe.sha256', 'result.json', 'summary.json',
+    )
+}
+
+
+class TerminalClosureReceiptTests(unittest.TestCase):
+    def setUp(self):
+        self.repo = repository()
+        self.repo.__enter__()
+        self.addCleanup(self.repo.__exit__, None, None, None)
+        git('init', '-q')
+        git('config', '--local', 'maintenance.auto', 'false')
+        git('config', '--local', 'gc.auto', '0')
+        git('config', 'user.name', 'offline-test')
+        git('config', 'user.email', 'offline-test@example.invalid')
+        put('CMakeLists.txt', b'project(audio_pipeline VERSION 2.3.49)\n')
+        put('CHANGELOG.md', b'# 2.3.49\n')
+        members = {
+            name: hashlib.sha256(data).hexdigest()
+            for name, data in TERMINAL_MEMBERS.items()
+        }
+        self.closure = {
+            'schema_version': 1,
+            'investigation_id': 'i016-fixture',
+            'status': 'CLOSED_REJECTED_DEVELOPMENT_ONLY',
+            'authority': 'RESEARCH_SELECTION_ONLY',
+            'source_base_sha': 'a' * 40,
+            'authoritative_execution': {
+                'run_id': 4242,
+                'run_attempt': 1,
+                'head_sha': 'b' * 40,
+                'artifact_id': 9001,
+                'artifact_name': 'fixture',
+                'artifact_sha256': 'c' * 64,
+                'artifact_size_bytes': 1234,
+                'member_sha256': members,
+            },
+            'fresh_authority': {
+                'candidate_budget_consumed': 1,
+                'confirmation_budget_consumed': 0,
+                'development_execution_consumed': 1,
+                'rerun_allowed': False,
+                'seeds': [1, 2, 3],
+            },
+            'decision': 'REJECTED_DEVELOPMENT_ONLY',
+            'original_result_path': TERMINAL_ARCHIVE + 'result.json',
+            'authority_boundary': {
+                'shipping_source_changed': False,
+                'blind_validation_authorized': False,
+                'hil_authority': False,
+                'product_certification_authority': False,
+                'release_authority': False,
+            },
+        }
+        put(TERMINAL_CLOSURE, (json.dumps(self.closure) + '\n').encode())
+        self.base = commit('trusted terminal closure')
+        self._put_members()
+        self.head = commit('append terminal evidence')
+        self.paths = [TERMINAL_ARCHIVE + name for name in TERMINAL_MEMBERS]
+
+    def _put_members(self):
+        for name, data in TERMINAL_MEMBERS.items():
+            put(TERMINAL_ARCHIVE + name, data)
+
+    def check(self, base=None, head=None, paths=None):
+        ci.enforce_release_version(
+            base or self.base,
+            head or self.head,
+            paths if paths is not None else self.paths,
+        )
+
+    def test_complete_terminal_archive_keeps_version(self):
+        self.assertEqual(
+            ci.verified_archive_paths(self.base, self.head, self.paths),
+            set(self.paths),
+        )
+        self.check()
+
+    def test_head_only_terminal_closure_cannot_self_authorize(self):
+        git('checkout', '-q', self.base)
+        Path(TERMINAL_CLOSURE).unlink()
+        no_closure = commit('base without terminal closure')
+        put(TERMINAL_CLOSURE, (json.dumps(self.closure) + '\n').encode())
+        self._put_members()
+        self.assertRaisesRegex(
+            ValueError,
+            'advance SemVer',
+            self.check,
+            base=no_closure,
+            head=commit('head self-registration'),
+            paths=self.paths + [TERMINAL_CLOSURE],
+        )
+
+    def test_terminal_closure_cannot_change_with_archive(self):
+        git('checkout', '-q', self.base)
+        changed = json.loads(json.dumps(self.closure))
+        changed['reviewed_decision'] = 'HEAD_SELF_APPROVAL'
+        put(TERMINAL_CLOSURE, (json.dumps(changed) + '\n').encode())
+        self._put_members()
+        with self.assertRaisesRegex(ValueError, 'registration changed'):
+            self.check(head=commit('closure drift plus evidence'),
+                       paths=self.paths + [TERMINAL_CLOSURE])
+
+    def test_terminal_member_tamper_rejected(self):
+        put(TERMINAL_ARCHIVE + 'result.json', b'tampered\n')
+        with self.assertRaisesRegex(ValueError, 'digest mismatch'):
+            self.check(head=commit('tampered terminal receipt'))
+
+    def test_partial_terminal_archive_requires_version(self):
+        with self.assertRaisesRegex(ValueError, 'advance SemVer'):
+            self.check(paths=self.paths[:-1])
+
+    def test_existing_terminal_archive_is_not_append_only(self):
+        with self.assertRaisesRegex(ValueError, 'already exists'):
+            self.check(base=self.head)
+
+    def test_terminal_archive_rejects_executable_and_symlink(self):
+        Path(TERMINAL_ARCHIVE + 'result.json').chmod(0o755)
+        with self.assertRaisesRegex(ValueError, 'regular text file'):
+            self.check(head=commit('terminal executable'))
+        git('reset', '--hard', self.head)
+        path = Path(TERMINAL_ARCHIVE + 'result.json')
+        path.unlink()
+        path.symlink_to('summary.json')
+        with self.assertRaisesRegex(ValueError, 'regular text file'):
+            self.check(head=commit('terminal symlink'))
+
+    def test_unknown_terminal_archive_file_is_not_exempt(self):
+        for name in ('validator.py', 'nested/result.json', 'policy.json'):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'advance SemVer'):
+                self.check(paths=self.paths + [TERMINAL_ARCHIVE + name])
+
+    def test_terminal_authority_must_be_fully_closed(self):
+        git('checkout', '-q', self.base)
+        invalid = json.loads(json.dumps(self.closure))
+        invalid['authority_boundary']['blind_validation_authorized'] = True
+        put(TERMINAL_CLOSURE, (json.dumps(invalid) + '\n').encode())
+        bad_base = commit('invalid terminal authority on base')
+        self._put_members()
+        bad_head = commit('evidence after invalid authority')
+        with self.assertRaisesRegex(ValueError, 'invalid trusted-base terminal'):
+            self.check(base=bad_base, head=bad_head)
+
+    def test_terminal_run_id_must_bind_archive_root(self):
+        git('checkout', '-q', self.base)
+        invalid = json.loads(json.dumps(self.closure))
+        invalid['authoritative_execution']['run_id'] = 4243
+        put(TERMINAL_CLOSURE, (json.dumps(invalid) + '\n').encode())
+        bad_base = commit('invalid run/root binding')
+        self._put_members()
+        bad_head = commit('evidence after invalid run binding')
+        with self.assertRaisesRegex(ValueError, 'execution identity'):
+            self.check(base=bad_base, head=bad_head)
+
+
+
 if __name__ == '__main__':
     unittest.main()

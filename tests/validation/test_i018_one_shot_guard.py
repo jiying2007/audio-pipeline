@@ -12,9 +12,8 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-WORKFLOW = Path(__file__).resolve().parents[2] / (
-    ".github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml"
-)
+WORKFLOW = Path(__file__).resolve().parent / "data/i018-consumed-workflow.yml"
+HISTORY_BLOB = "568e8d07becb864c4d74d823ee6274098c0d2976"
 GENERATE = "Generate preregistered fresh I018 partitions"
 EVALUATE = "Evaluate the single weak-refresh extension-only candidate"
 CURRENT = {"id": 20, "run_attempt": 1}
@@ -22,7 +21,13 @@ PRIOR = {"id": 10, "run_attempt": 1}
 
 
 def guard_source() -> str:
-    text = WORKFLOW.read_text(encoding="utf-8")
+    data = WORKFLOW.read_bytes()
+    actual = __import__("hashlib").sha1(
+        b"blob " + str(len(data)).encode() + b"\\0" + data
+    ).hexdigest()
+    if actual != HISTORY_BLOB:
+        raise ValueError("historical I018 workflow fixture drift")
+    text = data.decode("utf-8")
     block = text.split(
         "      - name: Enforce one-shot I018 development execution\n", 1
     )[1]

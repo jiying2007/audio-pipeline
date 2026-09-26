@@ -23,7 +23,7 @@ PRIOR = {"id": 10, "run_attempt": 1}
 def guard_source() -> str:
     data = WORKFLOW.read_bytes()
     actual = __import__("hashlib").sha1(
-        b"blob " + str(len(data)).encode() + b"\\0" + data
+        b"blob " + str(len(data)).encode() + b"\0" + data
     ).hexdigest()
     if actual != HISTORY_BLOB:
         raise ValueError("historical I017 workflow fixture drift")

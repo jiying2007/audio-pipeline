@@ -12,9 +12,8 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-WORKFLOW = Path(__file__).resolve().parents[2] / (
-    ".github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml"
-)
+WORKFLOW = Path(__file__).resolve().parent / "data/i017-consumed-workflow.yml"
+HISTORY_BLOB = "93e84be5e886fdd5377468cb78f81b95bee54a15"
 GENERATE = "Generate preregistered fresh I017 partitions"
 DIAGNOSE = "Run fresh I017 VAD state-persistence decomposition"
 CURRENT = {"id": 20, "run_attempt": 1}
@@ -22,7 +21,13 @@ PRIOR = {"id": 10, "run_attempt": 1}
 
 
 def guard_source() -> str:
-    text = WORKFLOW.read_text(encoding="utf-8")
+    data = WORKFLOW.read_bytes()
+    actual = __import__("hashlib").sha1(
+        b"blob " + str(len(data)).encode() + b"\0" + data
+    ).hexdigest()
+    if actual != HISTORY_BLOB:
+        raise ValueError("historical I017 workflow fixture drift")
+    text = data.decode("utf-8")
     block = text.split(
         "      - name: Enforce one-shot I017 diagnostic execution\n", 1
     )[1]

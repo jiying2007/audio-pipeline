@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i017-vad-state-persistence-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "authoritative_execution": {
+    "run_id": 36249750866,
+    "run_attempt": 1,
+    "head_sha": "0c8501eec6efcf05d4bee5e1288f6a56fee6cbc3",
+    "artifact_id": 10908920317,
+    "artifact_name": "i017-vad-state-persistence-36249750866",
+    "artifact_sha256": "9d0863afea66633e943188084b0a002746a492906cc2d2ccc11a3cce2ebd1f4c",
+    "artifact_size_bytes": 4176,
+    "member_sha256": {
+      "SHA256SUMS": "0fe20747a6b1cde273623f474912d9db9a27edeb3e807e0697cef93cdfe1ffbe",
+      "build-info.txt": "c3ef7b9d021bfaaabf91f812d2d346c6e9c459ccc6db626686e06afbd83b2388",
+      "contract.json": "783f72641985958fa3149bbaee360aa072da4c37a1c7c429cc6ab5ee7d968179",
+      "corpora.txt": "fb0e443ec5571b489e62beda1bfb55d526c6f413c5561620c08f2b4c05be6054",
+      "probe.sha256": "113bacd9ed9e2f8c6444cd4829baeaa4760dd976cfd4e478c60e8f5c19b10b8c",
+      "result.json": "d0568b01444992870c2fe736e6c9fb862258552e50ed39d40360fc71e04ce783",
+      "summary.json": "6c6ab78cec6414df5e02aa92fbb8a19574d1fe34f7a1aa91b027671c02162bb9"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      371123,
+      381123,
+      391123
+    ],
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "diagnostic_execution_consumed": 1,
+    "rerun_allowed": false
+  },
+  "decision": "VAD_STATE_PERSISTENCE_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "VAD_FALSE_ACTIVE_OCCUPANCY_CARRY_DOMINATED_WEAK_REFRESH_PRIMARY_NONSTATIONARY_ENTRY_NO_CHANGE_SELECTED",
+  "reviewed_interpretation": "Across the frozen fresh diagnostic seeds, hangover carry accounts for most shipping noise-active frame occupancy in both regimes. In nonstationary noise, weak refresh starts 10 of 15 noise-active segments and contributes 12 in-segment refresh-extension events; strong refresh starts only 2 segments. In stationary noise, carry dominates frame occupancy and segment starts are split between carry, weak refresh and one strong refresh. This supports a separately frozen structural test of weak-refresh admission semantics, but I017 itself selects no candidate and changes no threshold, hold length or shipping code.",
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "stage-ns-nonstationary": {
+      "frames": 1560,
+      "speech_frames": 705,
+      "noise_frames": 855,
+      "noise_active_frames": 122,
+      "noise_false_positive_rate": 0.14269005847953217,
+      "noise_active_frame_origin": {
+        "hangover_carry": 96,
+        "strong_refresh": 4,
+        "weak_refresh": 22
+      },
+      "noise_active_frame_origin_fraction": {
+        "hangover_carry": 0.7868852459016393,
+        "strong_refresh": 0.03278688524590164,
+        "weak_refresh": 0.18032786885245902
+      },
+      "noise_active_segment_start_origin": {
+        "carry_from_prior_active": 3,
+        "strong_refresh": 2,
+        "weak_refresh": 10
+      },
+      "noise_active_segment_start_fraction": {
+        "carry_from_prior_active": 0.2,
+        "strong_refresh": 0.13333333333333333,
+        "weak_refresh": 0.6666666666666666
+      },
+      "noise_refresh_extension_events": {
+        "strong_refresh": 2,
+        "weak_refresh": 12
+      },
+      "speech_to_noise_active_boundary_frames": 3
+    },
+    "stage-ns-stationary": {
+      "frames": 1560,
+      "speech_frames": 705,
+      "noise_frames": 855,
+      "noise_active_frames": 31,
+      "noise_false_positive_rate": 0.03625730994152047,
+      "noise_active_frame_origin": {
+        "hangover_carry": 28,
+        "strong_refresh": 1,
+        "weak_refresh": 2
+      },
+      "noise_active_frame_origin_fraction": {
+        "hangover_carry": 0.9032258064516129,
+        "strong_refresh": 0.03225806451612903,
+        "weak_refresh": 0.06451612903225806
+      },
+      "noise_active_segment_start_origin": {
+        "carry_from_prior_active": 2,
+        "strong_refresh": 1,
+        "weak_refresh": 2
+      },
+      "noise_active_segment_start_fraction": {
+        "carry_from_prior_active": 0.4,
+        "strong_refresh": 0.2,
+        "weak_refresh": 0.4
+      },
+      "noise_refresh_extension_events": {
+        "strong_refresh": 1,
+        "weak_refresh": 0
+      },
+      "speech_to_noise_active_boundary_frames": 3
+    }
+  },
+  "original_result_path": "validation/research/evidence/i017-36249750866/result.json",
+  "authority_boundary": {
+    "candidate_selected": false,
+    "shipping_source_changed": false,
+    "vad_constant_changed": false,
+    "threshold_tuned": false,
+    "hold_length_changed": false,
+    "refresh_threshold_changed": false,
+    "blind_validation_authorized": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  },
+  "verification_limits": [
+    "The artifact contains aggregate/per-seed attribution and provenance but no raw frame traces or audio; frame-level attribution was not independently recomputed from raw audio.",
+    "The probe hash receipt is archived but the probe executable itself is not present in the artifact.",
+    "ZIP/member SHA256 values, attribution partitions and reported fractions were independently checked."
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "authority": "RESEARCH_SELECTION_ONLY",
+  "candidate_budget_consumed": 1,
+  "candidate_id": "vad-local-evidence-gated-blend-v1",
+  "confirmation_budget_consumed": 0,
+  "decision": "REJECTED_DEVELOPMENT_ONLY",
+  "failed_gates": [
+    "stage-ns-nonstationary:auc",
+    "nonstationary:noise_reduction"
+  ],
+  "fresh_development_seeds": [
+    311123,
+    321123,
+    331123
+  ],
+  "investigation_id": "i016-vad-local-evidence-gated-blend-v1",
+  "output_authority": {
+    "automatic_main_mutation": false,
+    "hil_authority": false,
+    "maximum_status": "FROZEN_RESEARCH_CANDIDATE",
+    "next_gate": "validation-grade-blind",
+    "product_certification_authority": false
+  },
+  "schema_version": 1,
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0
+  },
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "summaries": {
+    "stage-ns-nonstationary": {
+      "candidate": {
+        "false_positive_rate": 0.18128654970760233,
+        "noise_active": 155,
+        "noise_frames": 855,
+        "probability_auc": 0.7898693542366555,
+        "recall": 0.8085106382978723,
+        "speech_active": 570,
+        "speech_frames": 705
+      },
+      "candidate_blend_blocked_frames": 952,
+      "candidate_vs_shipping": {
+        "auc_delta": -0.0163369416448923,
+        "fpr_delta": 0.0,
+        "noise_active_reduction_frames": 0,
+        "recall_delta": 0.0
+      },
+      "shipping": {
+        "false_positive_rate": 0.18128654970760233,
+        "noise_active": 155,
+        "noise_frames": 855,
+        "probability_auc": 0.8062062958815478,
+        "recall": 0.8085106382978723,
+        "speech_active": 570,
+        "speech_frames": 705
+      },
+      "shipping_mirror": {
+        "active_mismatch_frames": 0,
+        "max_probability_delta": 0.0
+      }
+    },
+    "stage-ns-stationary": {
+      "candidate": {
+        "false_positive_rate": 0.026900584795321637,
+        "noise_active": 23,
+        "noise_frames": 855,
+        "probability_auc": 0.8421450790095807,
+        "recall": 0.826950354609929,
+        "speech_active": 583,
+        "speech_frames": 705
+      },
+      "candidate_blend_blocked_frames": 1090,
+      "candidate_vs_shipping": {
+        "auc_delta": -0.006216249844469335,
+        "fpr_delta": 0.0,
+        "noise_active_reduction_frames": 0,
+        "recall_delta": 0.0
+      },
+      "shipping": {
+        "false_positive_rate": 0.026900584795321637,
+        "noise_active": 23,
+        "noise_frames": 855,
+        "probability_auc": 0.84836132885405,
+        "recall": 0.826950354609929,
+        "speech_active": 583,
+        "speech_frames": 705
+      },
+      "shipping_mirror": {
+        "active_mismatch_frames": 0,
+        "max_probability_delta": 0.0
+      }
+    }
+  }
+}

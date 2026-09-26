@@ -1,0 +1,1 @@
+{"decision": "REJECTED_DEVELOPMENT_ONLY", "failed_gates": ["stage-ns-nonstationary:auc", "nonstationary:noise_reduction"]}

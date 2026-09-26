@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i017-vad-state-persistence-decomposition-v1",
+  "phase": "causal-diagnostic",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "predecessor": {
+    "result": ".github/research/continuous-optimization/development-v4/i016-vad-local-evidence-gated-blend-v1-result.json",
+    "required_status": "CLOSED_REJECTED_DEVELOPMENT_ONLY",
+    "required_reviewed_decision": "LOCAL_EVIDENCE_GATED_BLEND_REJECTED_NO_ACTIVE_REDUCTION_AUC_REGRESSION"
+  },
+  "hypothesis": "I016 changed shipping probabilities on many frames but left active decisions and FPR unchanged because noise-active behavior is dominated by refresh/hangover state persistence rather than the blocked blend frames themselves.",
+  "budget": {
+    "candidate_limit": 0,
+    "confirmation_limit": 0,
+    "diagnostic_execution_limit": 1
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      371123,
+      381123,
+      391123
+    ],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "development-diagnostic"
+  },
+  "fixed_constants": {
+    "noise_like_crest_db": 8,
+    "transient_crest_db": 12,
+    "fast_noise_alpha": 0.08,
+    "upstream_speech_guard": 0.55,
+    "local_speech_guard": 0.15,
+    "upstream_blend": 0.4,
+    "ns_decision_threshold": 0.35,
+    "strong_refresh_threshold": 0.5,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6
+  },
+  "diagnostic_axes": {
+    "frame_state_origin": [
+      "strong_refresh",
+      "weak_refresh",
+      "hangover_carry"
+    ],
+    "noise_active_segment_start_origin": [
+      "strong_refresh",
+      "weak_refresh",
+      "carry_from_prior_active"
+    ],
+    "noise_refresh_extension": [
+      "strong_refresh",
+      "weak_refresh"
+    ],
+    "domains": [
+      "stage-ns-stationary",
+      "stage-ns-nonstationary"
+    ]
+  },
+  "input_gates": {
+    "max_shipping_mirror_probability_delta": 0.000001,
+    "shipping_mirror_active_mismatch_frames": 0
+  },
+  "forbidden_feedback": {
+    "i015_seeds": [
+      281123,
+      291123,
+      301123
+    ],
+    "i016_seeds": [
+      311123,
+      321123,
+      331123
+    ],
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "VAD_STATE_PERSISTENCE_DECOMPOSED_REVIEW_REQUIRED": "Shipping mirror is exact and state-persistence attribution is reported for both frozen noise regimes. No state-machine change is selected.",
+    "I017_INPUT_INVALID_REVIEW_REQUIRED": "Exact source, fresh seed, case geometry, finite-value or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_modify_shipping": false,
+    "may_tune_constants": false,
+    "may_change_hold_lengths": false,
+    "may_change_refresh_thresholds": false,
+    "may_use_validation_for_selection": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "Use the diagnostic attribution only to decide whether a separately frozen single-causal state-machine candidate is justified. Do not tune thresholds or hold lengths inside I017."
+}

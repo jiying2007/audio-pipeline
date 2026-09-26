@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i019-vad-weak-start-evidence-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "authoritative_execution": {
+    "run_id": 36257346949,
+    "run_attempt": 1,
+    "head_sha": "109460deb4e005a7e7f502919a504fdb3d05a844",
+    "artifact_id": 10911057275,
+    "artifact_name": "i019-vad-weak-start-evidence-36257346949",
+    "artifact_sha256": "2f83bc1b00c8cdeda61c64f84fca567c22104e70dc788d468d7d017be33d826f",
+    "artifact_size_bytes": 5338,
+    "member_sha256": {
+      "SHA256SUMS": "0ab21214f3dc86e01ab35e75895838836e25a6397540720c6643f8a88afd749c",
+      "build-info.txt": "c3ef7b9d021bfaaabf91f812d2d346c6e9c459ccc6db626686e06afbd83b2388",
+      "contract.json": "c65f7fe99cc92478091d097abf2e7bef2339a3ef0de6a32e8e136d253fce6d8f",
+      "corpora.txt": "3d4a331cf5bb3082faf19022458196990fa203f153e4622a76102160c703c386",
+      "probe.sha256": "70dc6f3c1ac4f15ad49c82fdc2b1156826033223f6651736dbd657f9a8442eec",
+      "result.json": "b6b51913d5fa7bb00ce9440c923979750b279f5726dbb7993d7ab910428e72cf",
+      "summary.json": "a2e5e840c18eda0557ac2cd5560f3349ca8005329d259e86fbe992dbcf1ae1c4"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      431123,
+      441123,
+      451123
+    ],
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "diagnostic_execution_consumed": 1,
+    "rerun_allowed": false
+  },
+  "decision": "VAD_WEAK_START_EVIDENCE_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "VAD_WEAK_START_BLEND_APPLIED_SEPARATES_NONSTATIONARY_NOISE_WITH_STATIONARY_NEAR_ALL_SPEECH_NO_CHANGE_SELECTED",
+  "reviewed_interpretation": "On fresh diagnostic seeds, nonstationary weak starts split into 13 speech and 10 noise events. All 10 noise weak starts were local-admissible, guard-inactive and had no upstream blend; all 7 weak starts with blend_applied were speech. Stationary weak starts were 15 speech and 1 noise and all 16 used blend. The existing guard itself is not a useful positive admission rule: it was inactive for all nonstationary weak starts and active only for the single stationary noise weak start. The evidence supports a separately frozen state-only test requiring an actual upstream blend to start weak activity, but I019 selects no candidate and adds no threshold.",
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "stage-ns-nonstationary": {
+      "weak_start_events": {
+        "total": 23,
+        "speech": 13,
+        "noise": 10,
+        "speech_fraction": 0.5652173913043478
+      },
+      "pre_blend_origin": {
+        "local_admissible": {
+          "total": 19,
+          "speech": 9,
+          "noise": 10,
+          "speech_fraction": 0.47368421052631576
+        },
+        "blend_dependent": {
+          "total": 4,
+          "speech": 4,
+          "noise": 0,
+          "speech_fraction": 1
+        }
+      },
+      "existing_guard": {
+        "guard_active": {
+          "total": 0,
+          "speech": 0,
+          "noise": 0,
+          "speech_fraction": null
+        },
+        "guard_inactive": {
+          "total": 23,
+          "speech": 13,
+          "noise": 10,
+          "speech_fraction": 0.5652173913043478
+        }
+      },
+      "fixed_component_positive_counts": {
+        "upstream_guard_pass": {
+          "speech": 0,
+          "noise": 0
+        },
+        "local_guard_pass": {
+          "speech": 13,
+          "noise": 10
+        },
+        "blend_applied": {
+          "speech": 7,
+          "noise": 0
+        }
+      },
+      "mean_probabilities": {
+        "speech": {
+          "raw_probability": 0.3605174719230769,
+          "pre_blend_probability": 0.3605174719230769,
+          "upstream_probability": 0.40347307930769233,
+          "shipping_probability": 0.3937585857692308
+        },
+        "noise": {
+          "raw_probability": 0.4045316607,
+          "pre_blend_probability": 0.4045316607,
+          "upstream_probability": 0.23277345890000004,
+          "shipping_probability": 0.4045316607
+        }
+      }
+    },
+    "stage-ns-stationary": {
+      "weak_start_events": {
+        "total": 16,
+        "speech": 15,
+        "noise": 1,
+        "speech_fraction": 0.9375
+      },
+      "pre_blend_origin": {
+        "local_admissible": {
+          "total": 3,
+          "speech": 3,
+          "noise": 0,
+          "speech_fraction": 1
+        },
+        "blend_dependent": {
+          "total": 13,
+          "speech": 12,
+          "noise": 1,
+          "speech_fraction": 0.9230769230769231
+        }
+      },
+      "existing_guard": {
+        "guard_active": {
+          "total": 1,
+          "speech": 0,
+          "noise": 1,
+          "speech_fraction": 0
+        },
+        "guard_inactive": {
+          "total": 15,
+          "speech": 15,
+          "noise": 0,
+          "speech_fraction": 1
+        }
+      },
+      "fixed_component_positive_counts": {
+        "upstream_guard_pass": {
+          "speech": 0,
+          "noise": 1
+        },
+        "local_guard_pass": {
+          "speech": 15,
+          "noise": 1
+        },
+        "blend_applied": {
+          "speech": 15,
+          "noise": 1
+        }
+      },
+      "mean_probabilities": {
+        "speech": {
+          "raw_probability": 0.2973951736666667,
+          "pre_blend_probability": 0.2973951736666667,
+          "upstream_probability": 0.5107260366,
+          "shipping_probability": 0.3827275196666667
+        },
+        "noise": {
+          "raw_probability": 0.298874855,
+          "pre_blend_probability": 0.298874855,
+          "upstream_probability": 0.550919831,
+          "shipping_probability": 0.399692833
+        }
+      }
+    }
+  },
+  "proposed_followup_hypothesis": {
+    "name": "weak_start_requires_actual_upstream_blend",
+    "evidence_only": true,
+    "rationale": "In nonstationary development diagnostics, blend_applied weak starts were 7/7 speech while all 10 noise weak starts had no blend; stationary weak starts already all used blend. This is sufficient to justify a separate one-candidate state-only development test, not to authorize the rule."
+  },
+  "original_result_path": "validation/research/evidence/i019-36257346949/result.json",
+  "authority_boundary": {
+    "candidate_selected": false,
+    "shipping_source_changed": false,
+    "vad_constant_changed": false,
+    "threshold_tuned": false,
+    "threshold_added": false,
+    "hold_length_changed": false,
+    "blind_validation_authorized": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  },
+  "verification_limits": [
+    "The artifact contains aggregate/per-seed weak-start attribution and provenance but no raw frame traces or audio; event labels were not independently recomputed from raw audio.",
+    "The probe hash receipt is preserved but the probe executable itself is not present in the artifact.",
+    "ZIP/member SHA256 values, aggregate counts, fractions and cross-cell identities were independently checked."
+  ]
+}

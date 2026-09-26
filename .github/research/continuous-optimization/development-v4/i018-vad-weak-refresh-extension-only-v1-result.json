@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i018-vad-weak-refresh-extension-only-v1",
+  "status": "CLOSED_REJECTED_DEVELOPMENT_ONLY",
+  "authority": "RESEARCH_SELECTION_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "authoritative_execution": {
+    "run_id": 36253477019,
+    "run_attempt": 1,
+    "head_sha": "d2d6c49779a77ce15cc2c3e9fe0ca47c5f199aee",
+    "artifact_id": 10909278073,
+    "artifact_name": "i018-vad-weak-refresh-extension-only-36253477019",
+    "artifact_sha256": "931fd5b4e44a88da8d05801e82534093e35ea001ec43b34cded86d2afd57ce7b",
+    "artifact_size_bytes": 4619,
+    "member_sha256": {
+      "SHA256SUMS": "b68c0ceff4e927f53bdd46400eb6f14812a793791fd39655fbb3d35bfa337bb9",
+      "build-info.txt": "c3ef7b9d021bfaaabf91f812d2d346c6e9c459ccc6db626686e06afbd83b2388",
+      "contract.json": "788e1c86b28cd739d72fd3df870255ca38c9610622fdd15c5838eaf189f1dbcc",
+      "corpora.txt": "13d1c780a073404df46c90c8e3df7bbbb330c5e13cf69d60c23f0111d1907119",
+      "probe.sha256": "5bdeef90ec2adc87a3e9f7bc36b82c510158203a296c776ea50904fe6b7ad811",
+      "result.json": "5df5595bc3c2efe169906f0212476360ffd9c66c27cb07848adaef957f470670",
+      "summary.json": "21413399df2ce0e10dc42c0a5078557d343dd661025645db1328d57bc8b05d4c"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      401123,
+      411123,
+      421123
+    ],
+    "candidate_budget_consumed": 1,
+    "confirmation_budget_consumed": 0,
+    "development_execution_consumed": 1,
+    "rerun_allowed": false
+  },
+  "decision": "REJECTED_DEVELOPMENT_ONLY",
+  "reviewed_decision": "WEAK_REFRESH_EXTENSION_ONLY_REJECTED_FPR_GAIN_RECALL_REGRESSION_NO_THRESHOLD_OR_HOLD_TUNING",
+  "reviewed_interpretation": "The state-only candidate preserved shipping probabilities exactly and substantially reduced false-active occupancy and segments, proving weak-start semantics are a causal lever. However, preventing every weak refresh from starting activity also removed true-speech starts: aggregate recall regressed by 6.95 percentage points in nonstationary noise and 10.50 points in stationary noise, exceeding the preregistered 3-point limit. The candidate is terminally rejected. No threshold/hold tuning, seed replacement, second candidate, blind rescue, shipping change, HIL or product-certification promotion is authorized.",
+  "failed_gates": [
+    "stage-ns-nonstationary:recall",
+    "stage-ns-stationary:recall"
+  ],
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "candidate_probability_identity": {
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "stage-ns-nonstationary": {
+      "shipping": {
+        "recall": 0.7815602836879433,
+        "false_positive_rate": 0.15321637426900586,
+        "speech_active": 551,
+        "speech_frames": 705,
+        "noise_active": 131,
+        "noise_frames": 855,
+        "noise_active_segments": 12
+      },
+      "candidate": {
+        "recall": 0.7120567375886525,
+        "false_positive_rate": 0.05146198830409357,
+        "speech_active": 502,
+        "speech_frames": 705,
+        "noise_active": 44,
+        "noise_frames": 855,
+        "noise_active_segments": 4
+      },
+      "candidate_vs_shipping": {
+        "recall_delta": -0.06950354609929077,
+        "fpr_delta": -0.10175438596491229,
+        "noise_active_reduction_frames": 87,
+        "noise_active_segment_reduction": 8
+      },
+      "candidate_weak_start_blocked_frames": 67
+    },
+    "stage-ns-stationary": {
+      "shipping": {
+        "recall": 0.7560283687943262,
+        "false_positive_rate": 0.03625730994152047,
+        "speech_active": 533,
+        "speech_frames": 705,
+        "noise_active": 31,
+        "noise_frames": 855,
+        "noise_active_segments": 5
+      },
+      "candidate": {
+        "recall": 0.6510638297872341,
+        "false_positive_rate": 0.017543859649122806,
+        "speech_active": 459,
+        "speech_frames": 705,
+        "noise_active": 15,
+        "noise_frames": 855,
+        "noise_active_segments": 2
+      },
+      "candidate_vs_shipping": {
+        "recall_delta": -0.10496453900709213,
+        "fpr_delta": -0.01871345029239766,
+        "noise_active_reduction_frames": 16,
+        "noise_active_segment_reduction": 3
+      },
+      "candidate_weak_start_blocked_frames": 60
+    }
+  },
+  "original_result_path": "validation/research/evidence/i018-36253477019/result.json",
+  "authority_boundary": {
+    "candidate_selected": false,
+    "shipping_source_changed": false,
+    "vad_constant_changed": false,
+    "threshold_tuned": false,
+    "hold_length_changed": false,
+    "second_candidate_added": false,
+    "blind_validation_authorized": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  },
+  "verification_limits": [
+    "The artifact contains aggregate/per-seed state-only metrics and provenance but no raw frame traces or audio.",
+    "The probe hash receipt is preserved but the probe executable itself is not present in the artifact.",
+    "ZIP/member SHA256 values, probability identity, metric deltas and gate arithmetic were independently checked."
+  ]
+}

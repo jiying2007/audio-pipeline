@@ -150,8 +150,6 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i016-vad-local-evidence-gated-blend-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/i016-vad-local-evidence-gated-blend-v1-result.json'),
-        Path('validation/research/evidence/i016-36245702675/SHA256SUMS'),
-        Path('validation/research/evidence/i016-36245702675/result.json'),
     ),
 }
 

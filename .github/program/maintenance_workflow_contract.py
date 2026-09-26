@@ -189,6 +189,13 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i019-vad-weak-start-evidence-decomposition-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/i019-vad-weak-start-evidence-decomposition-v1-result.json'),
+        Path('validation/research/evidence/i019-36257346949/SHA256SUMS'),
+        Path('validation/research/evidence/i019-36257346949/build-info.txt'),
+        Path('validation/research/evidence/i019-36257346949/contract.json'),
+        Path('validation/research/evidence/i019-36257346949/corpora.txt'),
+        Path('validation/research/evidence/i019-36257346949/probe.sha256'),
+        Path('validation/research/evidence/i019-36257346949/result.json'),
+        Path('validation/research/evidence/i019-36257346949/summary.json'),
     ),
 }
 

@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i016-vad-local-evidence-gated-blend-v1",
+  "status": "CLOSED_REJECTED_DEVELOPMENT_ONLY",
+  "authority": "RESEARCH_SELECTION_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "authoritative_execution": {
+    "run_id": 36245702675,
+    "run_attempt": 1,
+    "head_sha": "282b9f07f79e627b2b41c9839abb513a0df83604",
+    "artifact_id": 10906209959,
+    "artifact_name": "i016-vad-local-evidence-gated-blend-36245702675",
+    "artifact_sha256": "6c8957ab14d04d92df670005a3abf9c6c52431c5aec5876a1532039d6ca37800",
+    "artifact_size_bytes": 3249,
+    "member_sha256": {
+      "SHA256SUMS": "033bd81a831bef4f6286dabca8f17aa2521dcc35c2cd755f102d9f94749ad58f",
+      "build-info.txt": "c3ef7b9d021bfaaabf91f812d2d346c6e9c459ccc6db626686e06afbd83b2388",
+      "contract.json": "f28c3eb23512c028f6d4a61a5e674d0158ece7be17156380e6750827368663c1",
+      "corpora.txt": "d4082d2731df5beae7593bbf2da55bc2400f12112732b3e50076004d11995f6b",
+      "probe.sha256": "f0d0ff2f1a383cb0f3cd69fa2242871af44f04c2700c5d4bd36d0cfa24cffadb",
+      "result.json": "e8839ec48e916cf280eb760615e6c57fa17a6b16296ae90888a1c08be3cf8830",
+      "summary.json": "cee9e9cf1d498e4eadf90b3446dc65204facc06c3d951bdb1cb821ccb73476a7"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      311123,
+      321123,
+      331123
+    ],
+    "candidate_budget_consumed": 1,
+    "confirmation_budget_consumed": 0,
+    "development_execution_consumed": 1,
+    "rerun_allowed": false
+  },
+  "decision": "REJECTED_DEVELOPMENT_ONLY",
+  "reviewed_decision": "LOCAL_EVIDENCE_GATED_BLEND_REJECTED_NO_ACTIVE_REDUCTION_AUC_REGRESSION",
+  "reviewed_interpretation": "Applying the existing local_speech_guard=0.15 as a prerequisite for the existing 0.40 upstream blend changed probabilities on many frames but did not reduce noise-active frames or change recall/FPR in either frozen noise regime. Nonstationary probability AUC regressed by 0.0163369416448923, exceeding the preregistered 0.01 limit. The single candidate is rejected; no threshold tuning, seed replacement, second candidate, blind rescue, shipping change, HIL or product-certification promotion is authorized.",
+  "failed_gates": [
+    "stage-ns-nonstationary:auc",
+    "nonstationary:noise_reduction"
+  ],
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "stage-ns-nonstationary": {
+      "shipping": {
+        "recall": 0.8085106382978723,
+        "false_positive_rate": 0.18128654970760233,
+        "probability_auc": 0.8062062958815478,
+        "speech_active": 570,
+        "speech_frames": 705,
+        "noise_active": 155,
+        "noise_frames": 855
+      },
+      "candidate": {
+        "recall": 0.8085106382978723,
+        "false_positive_rate": 0.18128654970760233,
+        "probability_auc": 0.7898693542366555,
+        "speech_active": 570,
+        "speech_frames": 705,
+        "noise_active": 155,
+        "noise_frames": 855
+      },
+      "candidate_vs_shipping": {
+        "recall_delta": 0,
+        "fpr_delta": 0,
+        "auc_delta": -0.0163369416448923,
+        "noise_active_reduction_frames": 0
+      },
+      "candidate_blend_blocked_frames": 952
+    },
+    "stage-ns-stationary": {
+      "shipping": {
+        "recall": 0.826950354609929,
+        "false_positive_rate": 0.026900584795321637,
+        "probability_auc": 0.84836132885405,
+        "speech_active": 583,
+        "speech_frames": 705,
+        "noise_active": 23,
+        "noise_frames": 855
+      },
+      "candidate": {
+        "recall": 0.826950354609929,
+        "false_positive_rate": 0.026900584795321637,
+        "probability_auc": 0.8421450790095807,
+        "speech_active": 583,
+        "speech_frames": 705,
+        "noise_active": 23,
+        "noise_frames": 855
+      },
+      "candidate_vs_shipping": {
+        "recall_delta": 0,
+        "fpr_delta": 0,
+        "auc_delta": -0.006216249844469335,
+        "noise_active_reduction_frames": 0
+      },
+      "candidate_blend_blocked_frames": 1090
+    }
+  },
+  "original_result_path": "validation/research/evidence/i016-36245702675/result.json",
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "vad_constant_changed": false,
+    "threshold_tuned": false,
+    "seed_replaced": false,
+    "second_candidate_added": false,
+    "blind_validation_authorized": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false
+  },
+  "verification_limits": [
+    "The artifact contains aggregate metrics and provenance but no raw frame traces or audio; probability AUC was not independently recomputed from raw frames.",
+    "The probe hash receipt is archived but the probe executable itself is not present in the artifact.",
+    "The archive and member SHA256 values were independently checked; metric delta arithmetic and active-frame count identities were independently checked."
+  ]
+}

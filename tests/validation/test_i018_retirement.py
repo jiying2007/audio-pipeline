@@ -11,7 +11,12 @@ HISTORY='tests/validation/data/i018-consumed-workflow.yml'
 HISTORY_BLOB='568e8d07becb864c4d74d823ee6274098c0d2976'
 CLOSURE=('.github/research/continuous-optimization/development-v4/'
          'i018-vad-weak-refresh-extension-only-v1-result.json')
-EVIDENCE='validation/research/evidence/i018-36253477019/**'
+EVIDENCE_ROOT=Path('validation/research/evidence/i018-36253477019')
+EVIDENCE=str(EVIDENCE_ROOT)+'/**'
+EVIDENCE_MEMBERS=(
+    'SHA256SUMS','build-info.txt','contract.json','corpora.txt',
+    'probe.sha256','result.json','summary.json',
+)
 SELF='tests/validation/test_i018_retirement.py'
 GUARD_TEST='tests/validation/test_i018_one_shot_guard.py'
 CHECK='python3 '+SELF
@@ -92,6 +97,21 @@ class RetirementTests(unittest.TestCase):
         self.assertEqual(st['noise_active_reduction_frames'],16)
         self.assertLess(st['recall_delta'],-0.03)
 
+    def test_raw_evidence_matches_trusted_closure_hashes(self):
+        c=json.loads((ROOT/CLOSURE).read_text())
+        expected=c['authoritative_execution']['member_sha256']
+        self.assertEqual(set(expected),set(EVIDENCE_MEMBERS))
+        for name in EVIDENCE_MEMBERS:
+            data=(ROOT/EVIDENCE_ROOT/name).read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(),expected[name],name)
+        raw=json.loads((ROOT/EVIDENCE_ROOT/'result.json').read_text())
+        self.assertEqual(raw['decision'],c['decision'])
+        self.assertEqual(raw['source_base_sha'],c['source_base_sha'])
+        self.assertEqual(raw['fresh_development_seeds'],c['fresh_authority']['seeds'])
+        self.assertEqual(raw['shipping_mirror'],c['shipping_mirror'])
+        self.assertEqual(raw['candidate_probability_identity'],
+                         c['candidate_probability_identity'])
+
     def test_history_is_outside_active_workflow_directory(self):
         self.assertFalse((ROOT/HISTORY).resolve().is_relative_to(ROOT/'.github/workflows'))
         for path in (ROOT/'.github/workflows').glob('*.y*ml'):
@@ -105,6 +125,12 @@ class RetirementTests(unittest.TestCase):
         self.assertIn(workflow,module.CONTRACT_ONLY_RESEARCH_WORKFLOWS)
         evidence=module.CONTRACT_ONLY_RESEARCH_EVIDENCE[workflow]
         self.assertIn(Path(CLOSURE),evidence)
+        self.assertEqual(set(evidence),{
+            Path('.github/research/continuous-optimization/development-v4/'
+                 'i018-vad-weak-refresh-extension-only-v1.json'),
+            Path(CLOSURE),
+            *(EVIDENCE_ROOT/name for name in EVIDENCE_MEMBERS),
+        })
         module.validate_program_archive_trigger_boundaries(ROOT)
 
     def test_contract_covers_retirement_surfaces(self):

@@ -10,6 +10,8 @@ on:
       - '.github/research/continuous-optimization/research_code_candidate_blind.py'
       - '.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-result.json'
       - '.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json'
+      - '.github/research/continuous-optimization/development-v4/source-patch-blind-baseline-reference-authority-v1.json'
+      - 'tests/validation/test_source_patch_blind_baseline_reference_authority.py'
       - 'tests/validation/test_i020_code_candidate_blind_one_shot.py'
       - 'tests/validation/test_i020_blind_retirement.py'
       - 'tests/validation/data/i020-consumed-blind-workflow.yml'
@@ -39,6 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tests/validation/test_i020_blind_retirement.py
+          python3 tests/validation/test_source_patch_blind_baseline_reference_authority.py
           python3 .github/research/continuous-optimization/research_code_candidate_blind.py --self-test
           python3 tests/validation/test_i020_code_candidate_blind_one_shot.py
           python3 .github/research/continuous-optimization/research_code_candidate_blind.py             --manifest .github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json             --registry .github/research/continuous-optimization/dataset-registry.json             --repo-root . --check

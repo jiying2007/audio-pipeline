@@ -97,10 +97,9 @@ jobs:
           cmake -S /tmp/i020-blind-patch-check -B /tmp/i020-blind-contract-build             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION="$SOURCE_BASE_SHA"
           cmake --build /tmp/i020-blind-contract-build --target ap_process_pcm --parallel
 
-      - name: Enforce no automatic qualification on PR
+      - name: Enforce manual-only qualification surface
         run: |
           set -euo pipefail
-          test "$GITHUB_EVENT_NAME" = pull_request
           python3 - <<'PY'
           from pathlib import Path
           text=Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml').read_text()

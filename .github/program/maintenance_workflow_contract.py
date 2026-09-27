@@ -99,7 +99,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml'),
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
-    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
 
 )
 
@@ -122,6 +122,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml'),
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -197,6 +198,12 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('validation/research/evidence/i019-36257346949/probe.sha256'),
         Path('validation/research/evidence/i019-36257346949/result.json'),
         Path('validation/research/evidence/i019-36257346949/summary.json'),
+    ),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-result.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
     ),
 }
 

@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "qualification_id": "i020-vad-weak-start-requires-blend-source-patch-blind-v1",
+  "status": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+  "decision": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+  "terminal_candidate": false,
+  "candidate_id": "vad-weak-start-requires-blend-v1",
+  "research_candidate_id": "b98b172f26ccaee3",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "patch_sha256": "369811a313859374eea133243cc804ad61b68981651a37b8910b5cfa873babde",
+  "development_evidence": {
+    "run_id": 36283565997,
+    "artifact_id": 10920075810,
+    "artifact_digest": "sha256:44b407a02330e01624dea058b6631f01ae33ba3dada3ac859a6ef4fa253b12f7",
+    "decision": "FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED"
+  },
+  "consumed_blind_partition": {
+    "source_run_id": 36304120808,
+    "source_run_attempt": 1,
+    "source_head_sha": "99ba1bf6844be910bc851f5449fb4f2388984977",
+    "source_artifact_id": 10927016997,
+    "source_artifact_digest": "sha256:eafc16de6a8984a25eca8cc383ca8ceb0d6291d63adf09ee6159397e6fe11fe8",
+    "holdout_key_fingerprint": "ebeec484da932ee7",
+    "visible_case_count": 130,
+    "blind_case_count": 30,
+    "visible_corpus_sha256": "e792054e5e04b255e82814bbf70a7be6eab1bef9a85b376dec2d41db5a3d92ee",
+    "blind_corpus_sha256": "175c74ff64e804d917fbfe1b468bfa90bc5d731d48a0300b7fe95d6fe415e7b0",
+    "visible_order_sha256": "2520512119c1cbb339e8a0792fcc896d19f5066a6140f976c15551cd2db9e165",
+    "blind_order_sha256": "41da0335d60fa5ca3cc1cdb225265d9c5b4b6e850768cde33c12d64898e44cd1",
+    "partition_consumed": true,
+    "new_partition_allowed": false,
+    "rerun_allowed": false
+  },
+  "same_partition_resume": {
+    "run_id": 36324803945,
+    "run_attempt": 1,
+    "head_sha": "deaeb2ca8d57eb7bf0263f83cccb05f86f9c3fab",
+    "artifact_id": 10934232488,
+    "artifact_name": "i020-source-patch-blind-resume-36324803945",
+    "artifact_digest": "sha256:dc212b9a0067b1ab7bf813abbe64999b84247c5d3199a7ca6044ea61dea15b3c",
+    "artifact_size_bytes": 93206,
+    "partition_changed": false,
+    "new_holdout_key_generated": false,
+    "candidate_or_policy_changed": false,
+    "member_sha256": {
+      "baseline-blind-evidence.json": "4e4405712d048b5371c69c81f72d8476b435424592f1db8048f494fb35bb2623",
+      "baseline-blind-report.json": "0d0c44eb1391348bc356bd0748a36f43721fe855e6c6dd748c7c90979824910a",
+      "baseline-build-info.txt": "c3ef7b9d021bfaaabf91f812d2d346c6e9c459ccc6db626686e06afbd83b2388",
+      "baseline-visible-evidence.json": "9776c7e18355985601e0976d7058918862d59a3a5d4a085a0d4789858365c328",
+      "baseline-visible-report.json": "b193486ffda4d0e10d9a2cc29c1b3267879c8caf66e10c6cbeb021f6aca07daf",
+      "candidate-blind-evidence.json": "0094f49b52a387a4f01c1cc196e07f9c1a3e7fbf5f528e43def9e8f92d22d0dd",
+      "candidate-blind-report.json": "fd6e733d3a2a894c5763808a0427c636479a7f61df7759ef8294831707d490d9",
+      "candidate-build-info.txt": "c3ef7b9d021bfaaabf91f812d2d346c6e9c459ccc6db626686e06afbd83b2388",
+      "candidate-visible-evidence.json": "4dff5c95dfb7b4848d296f633c5d837024f58bb7d70ba136ddd305b1cdfa4e36",
+      "candidate-visible-report.json": "f25e9960ec6754fb08830af0c6c73923866a69f6b6c5c3082092ffd20ab0f40a",
+      "github-hosted-cache.json": "b740e2f6a012909002eb54c6dce7dbbbd63a5266706d417f50aeb1a4867e224e",
+      "github-hosted-progress.json": "cf34fba4835007ddfc33026c43f5ab9c630853d331635662f8f98d8db0ca3652",
+      "original-qualification-infra-revision.txt": "3cbf648359f8752fe6254f77c204409458333a4a7c7397810cfa35c74bf1890e",
+      "qualification-summary.json": "29ca7346c25489c92306746f77145a85c0b7c1b93cfdf896e4fd0bc71e43ee8e",
+      "resume-infra-revision.txt": "44468ee010fac79890e47293d46d4e0a2be5b6ca806dfc8d65edeefc50e99419",
+      "resume-partition-receipt.json": "a64f1cc736e1a2cbed62b3469316013da873bc7504051790030a69eb1a44ad3a",
+      "source-artifact-digest.txt": "c69a3ee64ef7d9b571f0ded82e681941789e26f9fa959118f0ed84ad4f9faf38",
+      "source-artifact-id.txt": "082751cb8df1008720e91b8f2b5864ad8e5f2366423b81f6c0a007017a07c45c",
+      "source-artifact-metadata.json": "0db2f5745ce7e9913fc45dffece8334c66ce8a0ece7ef7cc8e279ad025f1f3bc",
+      "source-run-id.txt": "98875fec50ca43e8eb4cfb61c80df44a7b7d0115b735d02d98da1203dcd3a3b3"
+    }
+  },
+  "absolute_policy_results": {
+    "visible": {
+      "baseline": {
+        "validation_result": "FAIL",
+        "summary": {
+          "min_vad_recall": 0.14958448753462603,
+          "min_vad_f1": 0.2568370986920333,
+          "max_vad_false_positive_rate": 0.8235294117647058
+        },
+        "violations": [
+          {
+            "gate": "min_median_near_si_sdr_improvement_db",
+            "actual": -0.5225705768070235,
+            "expected_min": 0
+          },
+          {
+            "gate": "min_median_output_render_corr_reduction",
+            "actual": 0.0006399523277349087,
+            "expected_min": 0.05
+          },
+          {
+            "gate": "min_vad_f1",
+            "actual": 0.2568370986920333,
+            "expected_min": 0.8
+          }
+        ]
+      },
+      "candidate": {
+        "validation_result": "FAIL",
+        "summary": {
+          "min_vad_recall": 0.14958448753462603,
+          "min_vad_f1": 0.2568370986920333,
+          "max_vad_false_positive_rate": 0.7391304347826086
+        }
+      }
+    },
+    "blind": {
+      "baseline": {
+        "validation_result": "FAIL",
+        "summary": {
+          "min_vad_recall": 0.36728395061728397,
+          "min_vad_f1": 0.3700159489633174,
+          "max_vad_false_positive_rate": 0.5606060606060606
+        },
+        "violations": [
+          {
+            "gate": "min_median_output_render_corr_reduction",
+            "actual": 0.012597430343945209,
+            "expected_min": 0.05
+          },
+          {
+            "gate": "min_vad_f1",
+            "actual": 0.3700159489633174,
+            "expected_min": 0.8
+          }
+        ]
+      },
+      "candidate": {
+        "validation_result": "FAIL",
+        "summary": {
+          "min_vad_recall": 0.35030864197530864,
+          "min_vad_f1": 0.35161290322580646,
+          "max_vad_false_positive_rate": 0.5606060606060606
+        }
+      }
+    }
+  },
+  "paired_relative_observation": {
+    "authority": "review-context-only-because-baseline-absolute-pass-required",
+    "visible": {
+      "vad_recall_regression": 0,
+      "vad_f1_regression": 0,
+      "vad_false_positive_rate_regression": -0.0843989769820972,
+      "preregistered_bounds_pass": true
+    },
+    "blind": {
+      "vad_recall_regression": 0.01697530864197533,
+      "vad_f1_regression": 0.018403045737510948,
+      "vad_false_positive_rate_regression": 0,
+      "preregistered_bounds_pass": true
+    },
+    "note": "Paired relative bounds pass, but the frozen contract requires the shipping baseline to pass the same absolute visible and blind policies first. These relative observations cannot override baseline invalidity."
+  },
+  "reviewed_decision": "I020_BLIND_BASELINE_ABSOLUTE_POLICY_INVALID_REVIEW_REQUIRED_CANDIDATE_NOT_TERMINAL",
+  "reviewed_interpretation": "The exact consumed 130/30 blind partition was recovered without repartitioning, and all four baseline/candidate reports completed. The I020 candidate stays within the preregistered paired-relative VAD regression bounds on both visible and blind partitions. However, the frozen shipping baseline itself fails the current canonical absolute validation policies on both visible and blind reports, including min_vad_f1 and non-VAD aggregate gates. Because baseline absolute PASS was a preregistered prerequisite, I020 can neither qualify nor be terminally rejected from this blind attempt. No threshold/policy relaxation or new blind partition is authorized after observing the blind data.",
+  "next_gate": "baseline-policy-review",
+  "authority_boundary": {
+    "candidate_terminal": false,
+    "new_blind_partition_authorized": false,
+    "blind_rerun_authorized": false,
+    "posthoc_policy_relaxation_authorized": false,
+    "posthoc_threshold_tuning_authorized": false,
+    "source_merge_authority": false,
+    "shipping_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false,
+    "automatic_promotion": false
+  },
+  "verification_limits": [
+    "The blind partition is consumed and may not be regenerated or rerun under altered policy after observing these results.",
+    "The candidate's paired-relative results are informative review context only because the baseline absolute-pass prerequisite failed.",
+    "Any future baseline-policy correction must be justified independently of this consumed blind candidate outcome; these blind values cannot be used to tune or relax policy."
+  ]
+}

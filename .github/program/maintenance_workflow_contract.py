@@ -99,6 +99,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml'),
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
 
 )
 

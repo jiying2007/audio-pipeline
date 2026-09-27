@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i020-vad-weak-start-requires-blend-v1",
+  "phase": "single-candidate-development-selection",
+  "authority": "RESEARCH_SELECTION_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "predecessor": {
+    "result": ".github/research/continuous-optimization/development-v4/i019-vad-weak-start-evidence-decomposition-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_reviewed_decision": "VAD_WEAK_START_BLEND_APPLIED_SEPARATES_NONSTATIONARY_NOISE_WITH_STATIONARY_NEAR_ALL_SPEECH_NO_CHANGE_SELECTED"
+  },
+  "candidate": {
+    "candidate_id": "vad-weak-start-requires-blend-v1",
+    "single_causal_change": "When hangover is zero, an existing weak refresh (final probability >0.35 and <0.50) may start active state only if the existing upstream blend was actually applied on that frame. Strong refresh and weak refresh while already active remain unchanged. All numeric shipping constants and probability computation remain unchanged.",
+    "shipping_code_change_allowed": false,
+    "parameter_search_allowed": false,
+    "threshold_tuning_allowed": false,
+    "hold_length_tuning_allowed": false
+  },
+  "budget": {
+    "candidate_limit": 1,
+    "confirmation_limit": 0,
+    "development_execution_limit": 1
+  },
+  "fresh_development": {
+    "seeds": [
+      461123,
+      471123,
+      481123
+    ],
+    "generator": "validation/tools/build_stage_validation_corpus.py",
+    "seconds": 6,
+    "case_profile": "ns-isolated",
+    "selection_role": "development"
+  },
+  "fixed_constants": {
+    "noise_like_crest_db": 8,
+    "transient_crest_db": 12,
+    "fast_noise_alpha": 0.08,
+    "upstream_speech_guard": 0.55,
+    "local_speech_guard": 0.15,
+    "upstream_blend": 0.4,
+    "ns_decision_threshold": 0.35,
+    "strong_refresh_threshold": 0.5,
+    "strong_hold_frames": 8,
+    "weak_hold_frames": 6
+  },
+  "development_gates": {
+    "max_shipping_mirror_probability_delta": 0.000001,
+    "shipping_mirror_active_mismatch_frames": 0,
+    "max_candidate_probability_delta": 0.000001,
+    "min_nonstationary_noise_active_reduction_frames": 1,
+    "min_nonstationary_noise_segment_reduction": 1,
+    "min_nonstationary_blocked_weak_start_frames": 1,
+    "max_recall_regression": 0.03,
+    "max_fpr_regression": 0
+  },
+  "forbidden_feedback": {
+    "i015_seeds": [
+      281123,
+      291123,
+      301123
+    ],
+    "i016_seeds": [
+      311123,
+      321123,
+      331123
+    ],
+    "i017_seeds": [
+      371123,
+      381123,
+      391123
+    ],
+    "i018_seeds": [
+      401123,
+      411123,
+      421123
+    ],
+    "i019_seeds": [
+      431123,
+      441123,
+      451123
+    ],
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED": "The single state-only weak-start candidate passes all preregistered development gates and may proceed only to a separately authorized validation-grade-blind gate.",
+    "REJECTED_DEVELOPMENT_ONLY": "The candidate fails one or more preregistered development gates and must not be rescued by threshold/hold tuning, seed replacement, validation data or another candidate inside I020.",
+    "I020_INPUT_INVALID_REVIEW_REQUIRED": "Exact source, fresh seed, finite-value, case geometry, shipping-mirror or candidate probability-identity preconditions fail."
+  },
+  "output_authority": {
+    "maximum_status": "FROZEN_RESEARCH_CANDIDATE",
+    "next_gate": "validation-grade-blind",
+    "automatic_main_mutation": false,
+    "hil_authority": false,
+    "product_certification_authority": false
+  },
+  "authority_boundary": {
+    "may_modify_shipping": false,
+    "may_tune_constants": false,
+    "may_add_threshold": false,
+    "may_change_thresholds": false,
+    "may_change_hold_lengths": false,
+    "may_add_second_candidate": false,
+    "may_consume_confirmation": false,
+    "may_use_validation_for_selection": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false
+  },
+  "next_review": "If and only if this state-only development candidate passes, freeze its exact semantics/source and create a separate validation-grade-blind contract. Otherwise close I020 rejected without refinement."
+}

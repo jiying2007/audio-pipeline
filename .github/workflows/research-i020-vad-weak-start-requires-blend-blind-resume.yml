@@ -100,7 +100,7 @@ jobs:
         run: |
           set -euo pipefail
           git cat-file -e "$ORIGINAL_QUALIFICATION_INFRA_SHA^{commit}"
-          git diff --exit-code "$ORIGINAL_QUALIFICATION_INFRA_SHA" HEAD --             validation/authority.json             validation/datasets.lock.json             validation/policies/validation-full-partition.json             validation/policies/validation-full-blind.json             validation/tools/run_validation.py             validation/tools/run_validation_engine.py             validation/tools/stage_profile_support.py             validation/tools/render_corr_exact.py             .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py             .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py
+          git diff --exit-code "$ORIGINAL_QUALIFICATION_INFRA_SHA" HEAD --             validation/authority.json             validation/datasets.lock.json             validation/policies/validation-full-partition.json             validation/policies/validation-full-blind.json             validation/tools/run_validation*.py             validation/tools/stage_profile_support.py             validation/tools/render_corr_exact.py             .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py             .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py
 
       - name: Prove resume uses evaluator from its canonical repository root
         run: |
@@ -143,7 +143,7 @@ jobs:
           git -C infra fetch --no-tags origin main
           test "$(git -C infra rev-parse HEAD)" = "$(git -C infra rev-parse origin/main)"
           git -C infra cat-file -e "$ORIGINAL_QUALIFICATION_INFRA_SHA^{commit}"
-          git -C infra diff --exit-code "$ORIGINAL_QUALIFICATION_INFRA_SHA" HEAD --             validation/authority.json             validation/datasets.lock.json             validation/policies/validation-full-partition.json             validation/policies/validation-full-blind.json             validation/tools/run_validation.py             validation/tools/run_validation_engine.py             validation/tools/stage_profile_support.py             validation/tools/render_corr_exact.py             .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py             .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py
+          git -C infra diff --exit-code "$ORIGINAL_QUALIFICATION_INFRA_SHA" HEAD --             validation/authority.json             validation/datasets.lock.json             validation/policies/validation-full-partition.json             validation/policies/validation-full-blind.json             validation/tools/run_validation*.py             validation/tools/stage_profile_support.py             validation/tools/render_corr_exact.py             .github/research/continuous-optimization/hosted-validation/metrics_jsonl_proxy.py             .github/research/continuous-optimization/hosted-validation/prepare_full_validation.py
           python3 infra/.github/research/continuous-optimization/research_code_candidate_blind.py             --manifest "infra/$MANIFEST" --registry "infra/$REGISTRY"             --repo-root infra --check
 
       - name: Download and verify exact consumed blind artifact

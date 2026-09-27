@@ -101,6 +101,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
 
 )
 

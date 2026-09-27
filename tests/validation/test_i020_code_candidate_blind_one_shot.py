@@ -6,6 +6,7 @@ import io, json, os, re, subprocess, textwrap, unittest
 from pathlib import Path
 from unittest.mock import patch
 
+# Active blind execution is retired; keep one-shot behavior regression-bound to history.
 WORKFLOW=Path(__file__).resolve().parent/"data/i020-consumed-blind-workflow.yml"
 HISTORY_BLOB="0b64f84986298943ef930977541e9f3614c25cea"
 CONSUME="Partition run-ephemeral blind holdout"

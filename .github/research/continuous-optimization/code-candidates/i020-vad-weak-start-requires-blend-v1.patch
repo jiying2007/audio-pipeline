@@ -1,22 +1,15 @@
 diff --git a/src/enhance/ap_vad.c b/src/enhance/ap_vad.c
 --- a/src/enhance/ap_vad.c
 +++ b/src/enhance/ap_vad.c
-@@ -42,6 +42,7 @@ void ap_vad_process(ap_vad_state_t *state,
-     float rms, ratio_db, crest_db, prob;
+@@ -43,2 +43,3 @@ void ap_vad_process(ap_vad_state_t *state,
      float decision_threshold;
      int upstream_speech;
 +    int blend_applied = 0;
- 
-     for (i = 0u; i < n; ++i) {
-         const float magnitude = fabsf(x[i]);
-@@ -70,6 +71,7 @@ void ap_vad_process(ap_vad_state_t *state,
+@@ -70,3 +71,4 @@ void ap_vad_process(ap_vad_state_t *state,
      if (use_upstream_probability && upstream_speech_probability > prob) {
          prob += AP_VAD_UPSTREAM_BLEND * (upstream_speech_probability - prob);
          prob = ap_vad_clamp(prob, 0.0f, 1.0f);
 +        blend_applied = 1;
-     }
- 
-     if (prob < 0.35f) {
 @@ -98,8 +100,11 @@ void ap_vad_process(ap_vad_state_t *state,
      if (prob >= AP_VAD_STRONG_REFRESH_THRESHOLD) {
          state->hangover = AP_VAD_STRONG_HOLD_FRAMES;

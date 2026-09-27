@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "candidate_kind": "source-patch",
-  "status": "FROZEN_RESEARCH_CANDIDATE",
-  "next_gate": "validation-grade-blind",
+  "status": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+  "next_gate": "baseline-policy-review",
   "candidate_id": "vad-weak-start-requires-blend-v1",
   "research_candidate_id": "b98b172f26ccaee3",
   "hypothesis_id": "i020-vad-weak-start-requires-blend-v1",

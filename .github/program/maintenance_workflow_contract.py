@@ -784,7 +784,10 @@ def self_test() -> None:
         generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
         generic.parent.mkdir(parents=True, exist_ok=True)
         generic.write_text('name: generic\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
-        for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
+        fixture_research_workflows = tuple(dict.fromkeys(
+            (*PR_MANUAL_RESEARCH_WORKFLOWS, *CONTRACT_ONLY_RESEARCH_WORKFLOWS)
+        ))
+        for relative in fixture_research_workflows:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             if relative in CONTRACT_ONLY_RESEARCH_WORKFLOWS:

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "review_id": "source-patch-blind-baseline-reference-authority-v1",
+  "status": "CLOSED_DESIGN_REVIEW",
+  "trigger": {
+    "i020_blind_review": ".github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json",
+    "decision": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+    "rule": "I020 remains frozen under its preregistered require_baseline_absolute_pass=true contract and may not be requalified, rerun, repartitioned or retroactively reclassified by this review."
+  },
+  "historical_authority": {
+    "public_validation_policy_origin": {
+      "commit": "7f5f72b45d31fe5535cc7ae18134291a36a66970",
+      "pr": 36,
+      "release": "v1.6.0",
+      "finding": "validation-full partition/blind were introduced as strict public validation-grade policies. PR #36 explicitly deferred real Compact/Full public-data acoustic PASS rather than calibrating these aggregate gates against the shipping baseline."
+    },
+    "canonical_validation_authority": {
+      "commit": "2a5e0bac318e995b748d0e5c1c9e47f326a88824",
+      "pr": 53,
+      "release": "v2.3.0",
+      "finding": "validation-grade and validation-grade-blind have shipping_authority=false; terminal shipping authority belongs only to product-certified certification evidence."
+    },
+    "unchanged_policy_identity": {
+      "partition_policy_blob": "ae1d57fbb5672aa3c00c280e1d0d666587d63a8b",
+      "blind_policy_blob": "d425362542cc622b64951b8dde53fe8aae080112",
+      "authority_blob": "24de4a38bfa235be15b5cdad8d5a99552b4ea9fa",
+      "dataset_lock_blob": "65d1e9bef12563e1742bc43c93e3f5870459ed50",
+      "finding": "I020 already proved these authority/policy/lock blobs are identical at the frozen v2.3.16 source and current qualification infrastructure, so the baseline failure is not old-source/new-policy drift."
+    }
+  },
+  "reviewed_findings": [
+    "A validation-grade absolute policy is a candidate/public-quality acceptance contract, not a shipping-authority declaration.",
+    "A completed source-bound shipping baseline report may be valid comparison evidence even when its validation_result is FAIL against a stricter candidate-quality policy.",
+    "The I020-specific baseline absolute-PASS prerequisite conflated baseline evidence validity with candidate absolute quality. That prerequisite remains binding for I020 because it was preregistered before blind evidence was revealed.",
+    "For future source-patch candidates, baseline reference validity and candidate quality acceptance should be separate machine contracts."
+  ],
+  "future_contract": {
+    "baseline_reference_modes": {
+      "absolute-pass": "Legacy/frozen behavior: baseline visible+blind must both validation_result=PASS before candidate classification. Existing I020 manifest remains in this mode.",
+      "valid-report": "Future-only behavior: baseline visible+blind must be complete, source/corpus/policy/binding matched reports with validation_result in PASS|FAIL; baseline FAIL is preserved as reference context rather than treated as invalid evidence."
+    },
+    "future_valid_report_requirements": [
+      "same visible/blind corpus membership and policy between baseline and candidate",
+      "same authority/dataset/corpus/policy/evaluation-semantics bindings",
+      "baseline and candidate reports must both be complete PASS|FAIL reports",
+      "candidate must still absolute-PASS the unchanged visible and blind candidate-quality policies",
+      "candidate must satisfy preregistered paired relative VAD bounds",
+      "visible candidate behavior must be exercised when required",
+      "baseline absolute violations remain preserved in evidence",
+      "no shipping/HIL/PQ/release authority is gained"
+    ],
+    "prohibited": [
+      "changing validation-full policy thresholds because of I020 blind values",
+      "reclassifying or re-running I020 under valid-report mode",
+      "creating a new I020 blind split",
+      "using baseline-reference mode to bypass candidate absolute PASS",
+      "automatic shipping or source merge"
+    ]
+  },
+  "implementation_decision": "Extend the generic source-patch blind helper with an explicit baseline_reference_mode. Missing mode preserves legacy absolute-pass semantics. New valid-report mode is available only to future manifests that explicitly set require_baseline_absolute_pass=false; policy thresholds and candidate absolute-pass requirements remain unchanged.",
+  "authority_boundary": {
+    "i020_requalification_authorized": false,
+    "policy_threshold_change_authorized": false,
+    "candidate_threshold_change_authorized": false,
+    "shipping_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

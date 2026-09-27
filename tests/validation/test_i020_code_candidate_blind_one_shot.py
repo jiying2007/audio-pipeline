@@ -108,5 +108,11 @@ class GuardTests(unittest.TestCase):
         self.assertLess(guard,text.index(f"      - name: {BLIND}\n"))
         self.assertIn("if: github.event_name == 'workflow_dispatch'",text)
 
+    def test_contract_is_event_neutral_but_qualification_is_manual_only(self):
+        text=WORKFLOW.read_text()
+        self.assertNotIn('test "$GITHUB_EVENT_NAME" = pull_request', text)
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", text)
+        self.assertIn("      - name: Enforce manual-only qualification surface\n", text)
+
 if __name__=="__main__":
     unittest.main()

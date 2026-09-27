@@ -125,6 +125,8 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -206,6 +208,16 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-result.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
+    ),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'): (
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
+        Path('.github/research/continuous-optimization/qualifications/i020-vad-weak-start-requires-blend-blind-v1-result.json'),
+    ),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'): (
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
+        Path('.github/research/continuous-optimization/qualifications/i020-vad-weak-start-requires-blend-blind-v1-result.json'),
     ),
 }
 

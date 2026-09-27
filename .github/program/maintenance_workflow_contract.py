@@ -212,12 +212,14 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
+        Path('.github/research/continuous-optimization/development-v4/source-patch-blind-baseline-reference-authority-v1.json'),
     ),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
         Path('.github/research/continuous-optimization/hosted-validation/resume_code_candidate_blind.py'),
+        Path('.github/research/continuous-optimization/development-v4/source-patch-blind-baseline-reference-authority-v1.json'),
     ),
 }
 

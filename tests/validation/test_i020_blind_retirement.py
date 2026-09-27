@@ -148,6 +148,18 @@ class RetirementTests(unittest.TestCase):
             result["authority_boundary"]["source_merge_authority"]
         )
 
+        self.assertEqual(
+            manifest["research_candidate_id"], result["research_candidate_id"]
+        )
+        self.assertEqual(
+            manifest["patch"]["sha256"], result["patch_sha256"]
+        )
+        patch_path = ROOT / manifest["patch"]["path"]
+        self.assertEqual(
+            hashlib.sha256(patch_path.read_bytes()).hexdigest(),
+            result["patch_sha256"],
+        )
+
     def test_consumed_partition_identity_is_frozen(self):
         result = json.loads(
             (ROOT / QUALIFICATION_RESULT).read_text(encoding="utf-8")
@@ -228,8 +240,9 @@ def main() -> int:
     args = parser.parse_args()
     if args.self_test:
         self_test()
-    unittest.main(argv=["test_i020_blind_retirement.py"], exit=False)
-    return 0
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(RetirementTests)
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    return 0 if result.wasSuccessful() else 1
 
 
 if __name__ == "__main__":

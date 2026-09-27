@@ -19,8 +19,7 @@ on:
       - 'validation/tools/build_full_public_corpus.py'
       - 'validation/tools/prepare_public_validation.py'
       - 'validation/tools/split_holdout.py'
-      - 'validation/tools/run_validation.py'
-      - 'validation/tools/run_validation_engine.py'
+      - 'validation/tools/run_validation*.py'
       - 'validation/tools/stage_profile_support.py'
       - 'validation/tools/render_corr_exact.py'
   workflow_dispatch:

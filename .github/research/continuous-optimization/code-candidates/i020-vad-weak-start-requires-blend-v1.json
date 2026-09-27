@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "candidate_kind": "source-patch",
+  "status": "FROZEN_RESEARCH_CANDIDATE",
+  "next_gate": "validation-grade-blind",
+  "candidate_id": "vad-weak-start-requires-blend-v1",
+  "research_candidate_id": "b98b172f26ccaee3",
+  "hypothesis_id": "i020-vad-weak-start-requires-blend-v1",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "patch": {
+    "path": ".github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch",
+    "sha256": "369811a313859374eea133243cc804ad61b68981651a37b8910b5cfa873babde",
+    "allowed_paths": [
+      "src/enhance/ap_vad.c"
+    ]
+  },
+  "research_provenance": {
+    "workflow": "Research I020 VAD Weak Start Requires Blend v1",
+    "run_id": 36283565997,
+    "development_infra_sha": "27581f07cc6631fc0941d9038b32cc326327b090",
+    "artifact_id": 10920075810,
+    "artifact_name": "i020-vad-weak-start-requires-blend-36283565997",
+    "artifact_digest": "sha256:44b407a02330e01624dea058b6631f01ae33ba3dada3ac859a6ef4fa253b12f7",
+    "result_path": "result.json",
+    "result_sha256": "e91d3be5b16cf8a935236831692a3443806b5100c9f76771e0ff951185d06bd5"
+  },
+  "selection_evidence": {
+    "decision": "FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED",
+    "fresh_development_seeds": [
+      461123,
+      471123,
+      481123
+    ],
+    "shipping_mirror_active_mismatch_frames": 0,
+    "shipping_mirror_max_probability_delta": 0,
+    "candidate_probability_max_delta": 0,
+    "nonstationary_recall_delta": -0.018439716312056764,
+    "nonstationary_fpr_delta": -0.0654970760233918,
+    "nonstationary_noise_active_reduction_frames": 56,
+    "nonstationary_noise_active_segment_reduction": 6,
+    "stationary_recall_delta": 0,
+    "stationary_fpr_delta": 0
+  },
+  "blind_contract": {
+    "visible_policy": "validation/policies/validation-full-partition.json",
+    "blind_policy": "validation/policies/validation-full-blind.json",
+    "holdout_percent": 20,
+    "require_baseline_absolute_pass": true,
+    "require_candidate_absolute_pass": true,
+    "require_visible_candidate_behavior_exercised": true,
+    "max_vad_recall_regression": 0.03,
+    "max_vad_f1_regression": 0.03,
+    "max_vad_false_positive_rate_regression": 0
+  },
+  "output_authority": {
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "automatic_main_mutation": false,
+    "automatic_promotion": false
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i020-vad-weak-start-requires-blend-v1",
+  "status": "FROZEN_RESEARCH_CANDIDATE",
+  "next_gate": "validation-grade-blind",
+  "authority": "RESEARCH_SELECTION_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "candidate_id": "vad-weak-start-requires-blend-v1",
+  "research_candidate_id": "b98b172f26ccaee3",
+  "authoritative_execution": {
+    "workflow": "Research I020 VAD Weak Start Requires Blend v1",
+    "run_id": 36283565997,
+    "run_attempt": 1,
+    "head_sha": "27581f07cc6631fc0941d9038b32cc326327b090",
+    "artifact_id": 10920075810,
+    "artifact_name": "i020-vad-weak-start-requires-blend-36283565997",
+    "artifact_sha256": "44b407a02330e01624dea058b6631f01ae33ba3dada3ac859a6ef4fa253b12f7",
+    "artifact_size_bytes": 4608,
+    "member_sha256": {
+      "SHA256SUMS": "5cdcefae0fe1cf55013ed48b202829ba7e2f829dea1ce3e26936138bdb162fbd",
+      "build-info.txt": "c3ef7b9d021bfaaabf91f812d2d346c6e9c459ccc6db626686e06afbd83b2388",
+      "contract.json": "ef8fed91645c8afaaedc5d00d55183e83db7dd53adc8180aa6f331b031661ba0",
+      "corpora.txt": "63879b8b0c8541c7dd24ea929faf94593904b0482afc5aa0e22f4e6a687b8978",
+      "probe.sha256": "ead495f02a38e8817f39cd75f73db178fb13f418f85ae4df98c2843ff9878d3c",
+      "result.json": "e91d3be5b16cf8a935236831692a3443806b5100c9f76771e0ff951185d06bd5",
+      "summary.json": "aca1b35f2703e207a4e973e19f22bdc175038fe995673f394e3bc6dd1bf336f7"
+    }
+  },
+  "candidate_patch": {
+    "path": ".github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch",
+    "sha256": "369811a313859374eea133243cc804ad61b68981651a37b8910b5cfa873babde",
+    "allowed_paths": [
+      "src/enhance/ap_vad.c"
+    ],
+    "shipping_file_mutated_on_main": false
+  },
+  "fresh_authority": {
+    "seeds": [
+      461123,
+      471123,
+      481123
+    ],
+    "candidate_budget_consumed": 1,
+    "confirmation_budget_consumed": 0,
+    "development_execution_consumed": 1,
+    "rerun_allowed": false
+  },
+  "decision": "FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED",
+  "failed_gates": [],
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "candidate_probability_identity": {
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "stage-ns-nonstationary": {
+      "shipping": {
+        "recall": 0.7872340425531915,
+        "false_positive_rate": 0.14502923976608187,
+        "noise_active": 124,
+        "noise_active_segments": 12
+      },
+      "candidate": {
+        "recall": 0.7687943262411348,
+        "false_positive_rate": 0.07953216374269007,
+        "noise_active": 68,
+        "noise_active_segments": 6
+      },
+      "candidate_vs_shipping": {
+        "recall_delta": -0.018439716312056764,
+        "fpr_delta": -0.0654970760233918,
+        "noise_active_reduction_frames": 56,
+        "noise_active_segment_reduction": 6
+      },
+      "candidate_weak_start_blocked_frames": {
+        "speech": 12,
+        "noise": 17,
+        "total": 29
+      }
+    },
+    "stage-ns-stationary": {
+      "shipping": {
+        "recall": 0.826950354609929,
+        "false_positive_rate": 0.028070175438596492,
+        "noise_active": 24,
+        "noise_active_segments": 3
+      },
+      "candidate": {
+        "recall": 0.826950354609929,
+        "false_positive_rate": 0.028070175438596492,
+        "noise_active": 24,
+        "noise_active_segments": 3
+      },
+      "candidate_vs_shipping": {
+        "recall_delta": 0,
+        "fpr_delta": 0,
+        "noise_active_reduction_frames": 0,
+        "noise_active_segment_reduction": 0
+      },
+      "candidate_weak_start_blocked_frames": {
+        "speech": 0,
+        "noise": 0,
+        "total": 0
+      }
+    }
+  },
+  "reviewed_decision": "WEAK_START_REQUIRES_BLEND_DEVELOPMENT_PASS_FREEZE_FOR_INDEPENDENT_BLIND_ONLY",
+  "reviewed_interpretation": "The exact state-only candidate preserved shipping probabilities and blend application while reducing nonstationary false-active occupancy by 56 frames and six segments. Aggregate nonstationary recall regressed by 1.84 percentage points, within the preregistered 3-point limit; stationary behavior was unchanged. This freezes the candidate for a separate validation-grade-blind gate only. It does not authorize shipping, source merge, HIL or Product Certification.",
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "source_merge_authorized": false,
+    "vad_constant_changed": false,
+    "threshold_added": false,
+    "threshold_tuned": false,
+    "hold_length_changed": false,
+    "second_candidate_added": false,
+    "validation_feedback_used_for_selection": false,
+    "shipping_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  },
+  "verification_limits": [
+    "Development evidence is aggregate/per-seed and does not include raw frame traces or audio.",
+    "The exact frozen candidate is represented for blind qualification as source_base_sha plus a hash-bound source patch; the patch is not merged into shipping main.",
+    "The development artifact remains the authoritative raw evidence until the candidate reaches a terminal qualification outcome and can be archived under the base-trusted evidence rule."
+  ]
+}

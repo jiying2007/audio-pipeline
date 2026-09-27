@@ -1,0 +1,251 @@
+name: Research I020 VAD Weak Start Requires Blend v1
+run-name: "i020-vad-weak-start-requires-blend-v1 / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1.json'
+      - 'tests/validation/i020_vad_weak_start_requires_blend_probe.c'
+      - 'tests/validation/i020_vad_weak_start_requires_blend.py'
+      - 'tests/validation/test_i020_one_shot_guard.py'
+      - '.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-i020-vad-weak-start-requires-blend-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1.json
+  PYTHONPATH: validation/tools:tests/validation
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate I020 frozen single-candidate contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 -m py_compile tests/validation/i020_vad_weak_start_requires_blend.py
+          python3 tests/validation/i020_vad_weak_start_requires_blend.py --self-test
+          python3 tests/validation/test_i020_one_shot_guard.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path(
+            '.github/research/continuous-optimization/development-v4/'
+            'i020-vad-weak-start-requires-blend-v1.json').read_text())
+          assert c['authority']=='RESEARCH_SELECTION_ONLY'
+          assert c['source_base_sha']=='57e4c64adc1cf06819e46e24e275ecd746d5f17f'
+          assert c['budget']=={
+            'candidate_limit':1,'confirmation_limit':0,'development_execution_limit':1}
+          assert c['fresh_development']['seeds']==[461123,471123,481123]
+          assert c['candidate']['parameter_search_allowed'] is False
+          assert c['candidate']['threshold_tuning_allowed'] is False
+          assert c['candidate']['hold_length_tuning_allowed'] is False
+          assert c['output_authority']['maximum_status']=='FROZEN_RESEARCH_CANDIDATE'
+          assert c['output_authority']['automatic_main_mutation'] is False
+          prior=json.loads(Path(
+            '.github/research/continuous-optimization/development-v4/'
+            'i019-vad-weak-start-evidence-decomposition-v1-result.json').read_text())
+          assert prior['status']=='CLOSED_DIAGNOSTIC_ONLY'
+          assert prior['reviewed_decision']==(
+            'VAD_WEAK_START_BLEND_APPLIED_SEPARATES_NONSTATIONARY_NOISE_WITH_'
+            'STATIONARY_NEAR_ALL_SPEECH_NO_CHANGE_SELECTED')
+          PY
+          git cat-file -e "57e4c64adc1cf06819e46e24e275ecd746d5f17f^{commit}"
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i020-vad-weak-start-requires-blend-contract
+
+      - name: Compile I020 state-only probe with strict warnings
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i020-contract -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i020-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i020-contract/generated             tests/validation/i020_vad_weak_start_requires_blend_probe.c             build-i020-contract/libaudio_pipeline.a -lm             -o build-i020-contract/i020-vad-weak-start-requires-blend-probe
+
+  develop:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Enforce one-shot I020 development execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          repo=os.environ['GITHUB_REPOSITORY']
+          current=int(os.environ['GITHUB_RUN_ID'])
+          if os.environ['GITHUB_RUN_ATTEMPT']!='1':
+              raise SystemExit('I020 rerun forbidden; preserve the first development result')
+          workflow='research-i020-vad-weak-start-requires-blend-v1.yml'
+
+          def collection(endpoint,key):
+              pages=json.loads(subprocess.check_output(
+                  ['gh','api','--paginate','--slurp',endpoint],text=True))
+              return [item for page in pages for item in page[key]]
+
+          runs=collection(
+              f'repos/{repo}/actions/workflows/{workflow}/runs'
+              '?event=workflow_dispatch&branch=main&per_page=100',
+              'workflow_runs')
+          if not any(int(item['id'])==current for item in runs):
+              raise SystemExit('I020 current run not visible; stop before fresh generation')
+
+          fresh_steps={
+              'Generate preregistered fresh I020 partitions',
+              'Evaluate the single weak-start requires-blend candidate',
+          }
+          consumed=set()
+          for item in runs:
+              run_id=int(item['id'])
+              if run_id==current:
+                  continue
+              attempts=int(item['run_attempt'])
+              if attempts<1:
+                  raise SystemExit('I020 invalid historical attempt count')
+              for attempt in range(1,attempts+1):
+                  jobs=collection(
+                      f'repos/{repo}/actions/runs/{run_id}/attempts/{attempt}'
+                      '/jobs?per_page=100','jobs')
+                  for job in jobs:
+                      if job.get('conclusion')=='skipped':
+                          continue
+                      steps=job.get('steps')
+                      if not isinstance(steps,list):
+                          raise SystemExit('I020 missing historical step collection')
+                      for step in steps:
+                          if (
+                              step.get('name') in fresh_steps
+                              and step.get('conclusion')!='skipped'
+                              and step.get('status') not in {'queued','pending','waiting'}
+                          ):
+                              consumed.add(run_id)
+                  if run_id in consumed:
+                      break
+          if consumed:
+              raise SystemExit(
+                  'I020 fresh authority already touched by run(s): '
+                  + ','.join(str(x) for x in sorted(consumed)))
+          print('one-shot I020 guard: PASS')
+          PY
+
+      - name: Bind exact shipping source
+        run: |
+          set -euo pipefail
+          source_sha=$(jq -r .source_base_sha "$CONTRACT")
+          test "$source_sha" = 57e4c64adc1cf06819e46e24e275ecd746d5f17f
+          git cat-file -e "$source_sha^{commit}"
+          git worktree add --detach /tmp/i020-source "$source_sha"
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i020-vad-weak-start-requires-blend
+
+      - name: Build exact source and state-only probe
+        run: |
+          set -euo pipefail
+          mkdir -p i020-out
+          cmake -S /tmp/i020-source -B /tmp/i020-build             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON             -DAP_BUILD_SOURCE_REVISION=57e4c64adc1cf06819e46e24e275ecd746d5f17f
+          cmake --build /tmp/i020-build --target audio_pipeline ap_build_info_dump --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -I/tmp/i020-source/include -I/tmp/i020-source/src -I/tmp/i020-build/generated             tests/validation/i020_vad_weak_start_requires_blend_probe.c             /tmp/i020-build/libaudio_pipeline.a -lm -o /tmp/i020-probe
+          /tmp/i020-build/ap_build_info_dump > i020-out/build-info.txt
+          sha256sum /tmp/i020-probe > i020-out/probe.sha256
+          cp "$CONTRACT" i020-out/contract.json
+
+      - name: Generate preregistered fresh I020 partitions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          c=json.loads(Path(
+            '.github/research/continuous-optimization/development-v4/'
+            'i020-vad-weak-start-requires-blend-v1.json').read_text())
+          manifests=[]
+          for seed in c['fresh_development']['seeds']:
+              out=Path(f'/tmp/i020-{seed}')
+              subprocess.run([
+                'python3','/tmp/i020-source/'+c['fresh_development']['generator'],
+                '--output',str(out),'--seed',str(seed),
+                '--seconds',str(c['fresh_development']['seconds'])
+              ],check=True,cwd='/tmp/i020-source')
+              corpus=out/'corpus.json'
+              payload=json.loads(corpus.read_text())
+              assert payload['generator']['seed']==seed
+              selected=[row for row in payload['cases']
+                if row.get('processor_profile')=='ns-isolated'
+                and row.get('vad_labels')
+                and row.get('render_audio') is None
+                and row.get('case_id') in {'stage-ns-stationary','stage-ns-nonstationary'}]
+              assert len(selected)==2
+              manifests.append(str(corpus))
+          Path('i020-out/corpora.txt').write_text('\n'.join(manifests)+'\n')
+          PY
+
+      - name: Evaluate the single weak-start requires-blend candidate
+        run: |
+          set -euo pipefail
+          mapfile -t corpora < i020-out/corpora.txt
+          args=()
+          for corpus in "${corpora[@]}"; do args+=(--corpus "$corpus"); done
+          python3 tests/validation/i020_vad_weak_start_requires_blend.py             --probe /tmp/i020-probe --contract "$CONTRACT" "${args[@]}"             --output i020-out/result.json | tee i020-out/summary.json
+
+      - name: Enforce research-only output authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          r=json.load(open('i020-out/result.json'))
+          assert r['candidate_budget_consumed']==1
+          assert r['confirmation_budget_consumed']==0
+          assert r['decision'] in {
+            'FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED',
+            'REJECTED_DEVELOPMENT_ONLY',
+            'I020_INPUT_INVALID_REVIEW_REQUIRED'}
+          assert r['output_authority']['automatic_main_mutation'] is False
+          assert r['output_authority']['hil_authority'] is False
+          assert r['output_authority']['product_certification_authority'] is False
+          PY
+
+      - name: Seal I020 evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p i020-out
+          (cd i020-out && find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' |
+            sort -z | xargs -0 -r sha256sum > SHA256SUMS)
+
+      - name: Upload I020 development evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i020-vad-weak-start-requires-blend-${{ github.run_id }}
+          path: i020-out/
+          retention-days: 90
+          if-no-files-found: error

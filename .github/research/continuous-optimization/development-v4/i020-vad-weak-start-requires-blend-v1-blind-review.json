@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i020-vad-weak-start-requires-blend-v1",
+  "status": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+  "decision": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+  "terminal_candidate": false,
+  "next_gate": "shipping-baseline-authority-review",
+  "candidate_id": "vad-weak-start-requires-blend-v1",
+  "research_candidate_id": "b98b172f26ccaee3",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "candidate_patch": {
+    "path": ".github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch",
+    "sha256": "369811a313859374eea133243cc804ad61b68981651a37b8910b5cfa873babde"
+  },
+  "development_authority": {
+    "run_id": 36283565997,
+    "artifact_id": 10920075810,
+    "artifact_digest": "sha256:44b407a02330e01624dea058b6631f01ae33ba3dada3ac859a6ef4fa253b12f7",
+    "decision": "FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED"
+  },
+  "blind_partition_authority": {
+    "source_run_id": 36304120808,
+    "source_run_head_sha": "99ba1bf6844be910bc851f5449fb4f2388984977",
+    "source_artifact_id": 10927016997,
+    "source_artifact_digest": "sha256:eafc16de6a8984a25eca8cc383ca8ceb0d6291d63adf09ee6159397e6fe11fe8",
+    "source_decision": "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING",
+    "source_failed_stage": "evidence-incomplete",
+    "holdout_key_persisted": false,
+    "blind_key_fingerprint": "ebeec484da932ee7",
+    "visible_case_count": 130,
+    "blind_case_count": 30,
+    "visible_corpus_sha256": "e792054e5e04b255e82814bbf70a7be6eab1bef9a85b376dec2d41db5a3d92ee",
+    "blind_corpus_sha256": "175c74ff64e804d917fbfe1b468bfa90bc5d731d48a0300b7fe95d6fe415e7b0",
+    "visible_order_sha256": "2520512119c1cbb339e8a0792fcc896d19f5066a6140f976c15551cd2db9e165",
+    "blind_order_sha256": "41da0335d60fa5ca3cc1cdb225265d9c5b4b6e850768cde33c12d64898e44cd1",
+    "repartition_allowed": false,
+    "rerun_allowed": false
+  },
+  "same_partition_resume": {
+    "run_id": 36324803945,
+    "run_head_sha": "deaeb2ca8d57eb7bf0263f83cccb05f86f9c3fab",
+    "artifact_id": 10934232488,
+    "artifact_name": "i020-source-patch-blind-resume-36324803945",
+    "artifact_digest": "sha256:dc212b9a0067b1ab7bf813abbe64999b84247c5d3199a7ca6044ea61dea15b3c",
+    "artifact_size_bytes": 93206,
+    "qualification_summary_sha256": "29ca7346c25489c92306746f77145a85c0b7c1b93cfdf896e4fd0bc71e43ee8e",
+    "resume_partition_receipt_sha256": "a64f1cc736e1a2cbed62b3469316013da873bc7504051790030a69eb1a44ad3a",
+    "all_sha256s_verified": true,
+    "partition_changed": false,
+    "new_holdout_key_generated": false,
+    "candidate_or_policy_changed": false,
+    "decision": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+    "failed_stage": "shipping-baseline"
+  },
+  "baseline_contract_identity": {
+    "source_and_current_same_blobs": true,
+    "validation_full_partition_blob": "ae1d57fbb5672aa3c00c280e1d0d666587d63a8b",
+    "validation_full_blind_blob": "d425362542cc622b64951b8dde53fe8aae080112",
+    "validation_authority_blob": "24de4a38bfa235be15b5cdad8d5a99552b4ea9fa",
+    "validation_datasets_lock_blob": "65d1e9bef12563e1742bc43c93e3f5870459ed50",
+    "reviewed_interpretation": "The validation-grade policies, authority file and public dataset lock are byte-identical at the frozen v2.3.16 source and at the qualification infrastructure. Baseline invalidity is therefore not a new-policy/old-source version mismatch."
+  },
+  "shipping_baseline_absolute_results": {
+    "visible": {
+      "validation_result": "FAIL",
+      "cases": 130,
+      "pass_rate": 1,
+      "min_vad_recall": 0.14958448753462603,
+      "min_vad_f1": 0.2568370986920333,
+      "max_vad_false_positive_rate": 0.8235294117647058,
+      "median_near_si_sdr_improvement_db": -0.5225705768070235,
+      "median_output_render_corr_reduction": 0.0006399523277349087,
+      "violations": [
+        {
+          "gate": "min_median_near_si_sdr_improvement_db",
+          "actual": -0.5225705768070235,
+          "expected_min": 0
+        },
+        {
+          "gate": "min_median_output_render_corr_reduction",
+          "actual": 0.0006399523277349087,
+          "expected_min": 0.05
+        },
+        {
+          "gate": "min_vad_f1",
+          "actual": 0.2568370986920333,
+          "expected_min": 0.8
+        }
+      ]
+    },
+    "blind": {
+      "validation_result": "FAIL",
+      "cases": 30,
+      "pass_rate": 1,
+      "min_vad_recall": 0.36728395061728397,
+      "min_vad_f1": 0.3700159489633174,
+      "max_vad_false_positive_rate": 0.5606060606060606,
+      "median_near_si_sdr_improvement_db": 0.7301649545612242,
+      "median_output_render_corr_reduction": 0.012597430343945209,
+      "violations": [
+        {
+          "gate": "min_median_output_render_corr_reduction",
+          "actual": 0.012597430343945209,
+          "expected_min": 0.05
+        },
+        {
+          "gate": "min_vad_f1",
+          "actual": 0.3700159489633174,
+          "expected_min": 0.8
+        }
+      ]
+    }
+  },
+  "candidate_absolute_results": {
+    "visible": {
+      "validation_result": "FAIL",
+      "min_vad_recall": 0.14958448753462603,
+      "min_vad_f1": 0.2568370986920333,
+      "max_vad_false_positive_rate": 0.7391304347826086
+    },
+    "blind": {
+      "validation_result": "FAIL",
+      "min_vad_recall": 0.35030864197530864,
+      "min_vad_f1": 0.35161290322580646,
+      "max_vad_false_positive_rate": 0.5606060606060606
+    }
+  },
+  "paired_relative_observation": {
+    "authority": "NON_PROMOTING_OBSERVATION_ONLY_BECAUSE_BASELINE_INVALID",
+    "preregistered_bounds": {
+      "max_vad_recall_regression": 0.03,
+      "max_vad_f1_regression": 0.03,
+      "max_vad_false_positive_rate_regression": 0
+    },
+    "visible": {
+      "recall_delta": 0,
+      "f1_delta": 0,
+      "false_positive_rate_delta": -0.0843989769820972,
+      "relative_gates_pass": true
+    },
+    "blind": {
+      "recall_delta": -0.01697530864197533,
+      "f1_delta": -0.018403045737510948,
+      "false_positive_rate_delta": 0,
+      "relative_gates_pass": true
+    },
+    "relative_vad_violations": [],
+    "reviewed_interpretation": "The candidate satisfies the preregistered paired-relative VAD bounds on the consumed visible and blind partitions, but these observations cannot qualify or rescue the candidate because the frozen shipping baseline fails mandatory absolute validation-grade gates."
+  },
+  "reviewed_decision": "I020_BLIND_BASELINE_INVALID_NO_CANDIDATE_VERDICT_NO_REQUALIFICATION",
+  "reviewed_interpretation": "The exact I020 source-patch candidate cannot receive a blind PASS or FAIL under its preregistered contract because the frozen v2.3.16 shipping baseline fails mandatory absolute validation-grade gates on both visible and blind partitions. This is a shipping-baseline authority problem, not a candidate result. The consumed partition and same-partition resume are final; no rerun, repartition, policy relaxation, post-hoc reclassification or source-change review is authorized for I020.",
+  "authority_boundary": {
+    "candidate_terminalized": false,
+    "candidate_qualified": false,
+    "candidate_rejected": false,
+    "candidate_advancement_authorized": false,
+    "requalification_authorized": false,
+    "rerun_authorized": false,
+    "repartition_authorized": false,
+    "policy_relaxation_authorized": false,
+    "source_merge_authorized": false,
+    "shipping_authority": false,
+    "target_execution_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  },
+  "durable_evidence_plan": {
+    "root": "validation/research/evidence/i020-blind-baseline-invalid-36304120808-36324803945",
+    "source_partition_members": [
+      "holdout-key-origin.json",
+      "corpus-validation.json",
+      "corpus-blind.json",
+      "source-qualification-summary.json"
+    ],
+    "resume_members": [
+      "baseline-visible-report.json",
+      "candidate-visible-report.json",
+      "baseline-blind-report.json",
+      "candidate-blind-report.json",
+      "resume-partition-receipt.json",
+      "qualification-summary.json",
+      "SHA256SUMS"
+    ],
+    "archive_after_trusted_review": true
+  }
+}

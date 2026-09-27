@@ -12,8 +12,8 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-WORKFLOW=Path(__file__).resolve().parents[2]/(
-    ".github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml")
+WORKFLOW=Path(__file__).resolve().parent/"data/i020-consumed-workflow.yml"
+HISTORY_BLOB="4396acd02e7f842017d3be52c9b47602387bef4b"
 GENERATE="Generate preregistered fresh I020 partitions"
 EVALUATE="Evaluate the single weak-start requires-blend candidate"
 CURRENT={"id":20,"run_attempt":1}
@@ -21,7 +21,12 @@ PRIOR={"id":10,"run_attempt":1}
 
 
 def guard_source():
-    text=WORKFLOW.read_text()
+    data=WORKFLOW.read_bytes()
+    actual=__import__("hashlib").sha1(
+        b"blob "+str(len(data)).encode()+b"\\0"+data).hexdigest()
+    if actual!=HISTORY_BLOB:
+        raise ValueError("historical I020 workflow fixture drift")
+    text=data.decode()
     block=text.split("      - name: Enforce one-shot I020 development execution\n",1)[1]
     block=block.split("      - name: Bind exact shipping source\n",1)[0]
     return textwrap.dedent(

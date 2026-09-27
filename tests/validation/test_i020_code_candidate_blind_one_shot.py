@@ -6,15 +6,20 @@ import io, json, os, re, subprocess, textwrap, unittest
 from pathlib import Path
 from unittest.mock import patch
 
-WORKFLOW=Path(__file__).resolve().parents[2]/(
-    ".github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml")
+WORKFLOW=Path(__file__).resolve().parent/"data/i020-consumed-blind-workflow.yml"
+HISTORY_BLOB="0b64f84986298943ef930977541e9f3614c25cea"
 CONSUME="Partition run-ephemeral blind holdout"
 BLIND="Run candidate on blind holdout with summary-only report"
 CURRENT={"id":20,"run_attempt":1}
 PRIOR={"id":10,"run_attempt":1}
 
 def guard_source():
-    text=WORKFLOW.read_text()
+    data=WORKFLOW.read_bytes()
+    actual=__import__("hashlib").sha1(
+        b"blob "+str(len(data)).encode()+b"\\0"+data).hexdigest()
+    if actual!=HISTORY_BLOB:
+        raise ValueError("historical I020 blind workflow fixture drift")
+    text=data.decode()
     block=text.split("      - name: Enforce one-shot I020 blind execution\n",1)[1]
     block=block.split("      - name: Resolve frozen candidate and development artifact\n",1)[0]
     return textwrap.dedent(

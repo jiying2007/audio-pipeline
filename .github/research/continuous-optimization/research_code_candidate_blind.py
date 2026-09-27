@@ -200,13 +200,19 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         raise ValueError("stationary FPR gate no longer passes")
 
     blind = manifest["blind_contract"]
-    if set(blind) != {
+    required_blind_fields = {
         "visible_policy", "blind_policy", "holdout_percent",
         "require_baseline_absolute_pass", "require_candidate_absolute_pass",
         "require_visible_candidate_behavior_exercised",
         "max_vad_recall_regression", "max_vad_f1_regression",
         "max_vad_false_positive_rate_regression",
-    }:
+    }
+    optional_blind_fields = {"baseline_reference_mode"}
+    if (
+        not isinstance(blind, dict)
+        or not required_blind_fields.issubset(blind)
+        or set(blind) - required_blind_fields - optional_blind_fields
+    ):
         raise ValueError("blind contract fields invalid")
     if blind["visible_policy"] != "validation/policies/validation-full-partition.json":
         raise ValueError("visible policy drift")
@@ -214,8 +220,17 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         raise ValueError("blind policy drift")
     if int(blind["holdout_percent"]) not in (20, 30):
         raise ValueError("blind holdout percent invalid")
+    baseline_reference_mode = blind.get(
+        "baseline_reference_mode", "absolute-pass"
+    )
+    if baseline_reference_mode not in {"absolute-pass", "valid-report"}:
+        raise ValueError("baseline_reference_mode invalid")
+    expected_baseline_absolute_pass = baseline_reference_mode == "absolute-pass"
+    if blind["require_baseline_absolute_pass"] is not expected_baseline_absolute_pass:
+        raise ValueError(
+            "require_baseline_absolute_pass inconsistent with baseline_reference_mode"
+        )
     for key in (
-        "require_baseline_absolute_pass",
         "require_candidate_absolute_pass",
         "require_visible_candidate_behavior_exercised",
     ):
@@ -252,6 +267,7 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         "artifact_digest": provenance["artifact_digest"],
         "research_run_id": provenance["run_id"],
         "development_infra_sha": provenance["development_infra_sha"],
+        "baseline_reference_mode": baseline_reference_mode,
     }
 
 
@@ -430,7 +446,13 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
             "visible": candidate_visible["validation_result"],
             "blind": candidate_blind["validation_result"],
         }
-        if any(value != "PASS" for value in baseline_results.values()):
+        baseline_reference_mode = manifest["blind_contract"].get(
+            "baseline_reference_mode", "absolute-pass"
+        )
+        if (
+            baseline_reference_mode == "absolute-pass"
+            and any(value != "PASS" for value in baseline_results.values())
+        ):
             decision = "BLIND_BASELINE_INVALID_REVIEW_REQUIRED"
             failed_stage = "shipping-baseline"
             terminal = False
@@ -486,6 +508,21 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
         "patch_sha256": manifest["patch"]["sha256"],
         "terminal_candidate": terminal,
         "failed_stage": failed_stage,
+        "baseline_reference_mode": manifest["blind_contract"].get(
+            "baseline_reference_mode", "absolute-pass"
+        ),
+        "baseline_results": (
+            None if baseline_visible is None or baseline_blind is None else {
+                "visible": baseline_visible.get("validation_result"),
+                "blind": baseline_blind.get("validation_result"),
+            }
+        ),
+        "candidate_results": (
+            None if candidate_visible is None or candidate_blind is None else {
+                "visible": candidate_visible.get("validation_result"),
+                "blind": candidate_blind.get("validation_result"),
+            }
+        ),
         "relative_vad_violations": violations,
         "next_gate": next_gate,
         "shipping_authority": False,
@@ -496,10 +533,12 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
         "automatic_main_mutation": False,
         "automatic_promotion": False,
         "rule": (
-            "Only absolute PASS for baseline+candidate on the same visible/blind "
-            "partition plus preregistered paired VAD regression bounds can qualify "
-            "the exact source-patch candidate for separate source-change review. "
-            "No outcome changes shipping automatically."
+            "Candidate visible+blind absolute PASS plus preregistered paired VAD "
+            "regression bounds are always required. Legacy absolute-pass mode also "
+            "requires baseline visible+blind PASS. Future valid-report mode accepts "
+            "a complete identity-bound baseline PASS|FAIL report as the comparison "
+            "reference while preserving its violations. No outcome changes shipping "
+            "automatically."
         ),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -623,6 +662,39 @@ def self_test() -> None:
         review, rc = classify(
             manifest, identity, bv, cv, baseline_fail, cb, root / "baseline.json")
         assert rc == 2 and review["decision"] == "BLIND_BASELINE_INVALID_REVIEW_REQUIRED"
+        assert review["baseline_reference_mode"] == "absolute-pass"
+
+        future_manifest = json.loads(json.dumps(manifest))
+        future_manifest["blind_contract"]["baseline_reference_mode"] = "valid-report"
+        future_manifest["blind_contract"]["require_baseline_absolute_pass"] = False
+        summary = validate_manifest(future_manifest, registry, root)
+        assert summary["baseline_reference_mode"] == "valid-report"
+        future_identity = seal_identity(
+            future_manifest, baseline_processor, candidate_processor,
+            root / "future-identity.json")
+        visible_baseline_fail = json.loads(json.dumps(bv))
+        visible_baseline_fail["validation_result"] = "FAIL"
+        blind_baseline_fail = json.loads(json.dumps(bb))
+        blind_baseline_fail["validation_result"] = "FAIL"
+        future_qualified, rc = classify(
+            future_manifest, future_identity,
+            visible_baseline_fail, cv, blind_baseline_fail, cb,
+            root / "future-qualified.json")
+        assert rc == 0
+        assert future_qualified["decision"] == "BLIND_QUALIFIED_NON_SHIPPING"
+        assert future_qualified["baseline_reference_mode"] == "valid-report"
+        assert future_qualified["baseline_results"] == {
+            "visible": "FAIL", "blind": "FAIL"
+        }
+
+        future_bad_candidate = json.loads(json.dumps(cb))
+        future_bad_candidate["validation_result"] = "FAIL"
+        future_rejected, rc = classify(
+            future_manifest, future_identity,
+            visible_baseline_fail, cv, blind_baseline_fail,
+            future_bad_candidate, root / "future-rejected.json")
+        assert rc == 1
+        assert future_rejected["decision"] == "BLIND_REJECTED_NON_SHIPPING"
     print("source-patch blind helper self-test: OK")
 
 

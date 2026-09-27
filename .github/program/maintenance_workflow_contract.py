@@ -100,8 +100,6 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
-    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
-    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
 
 )
 
@@ -125,6 +123,8 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -206,6 +206,18 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-result.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
         Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
+    ),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-result.json'),
+        Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
+    ),
+    Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'),
+        Path('.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'),
+        Path('.github/research/continuous-optimization/hosted-validation/resume_code_candidate_blind.py'),
     ),
 }
 
@@ -772,7 +784,10 @@ def self_test() -> None:
         generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
         generic.parent.mkdir(parents=True, exist_ok=True)
         generic.write_text('name: generic\n\non:\n  workflow_dispatch:\n', encoding='utf-8')
-        for relative in PR_MANUAL_RESEARCH_WORKFLOWS:
+        fixture_research_workflows = tuple(dict.fromkeys(
+            (*PR_MANUAL_RESEARCH_WORKFLOWS, *CONTRACT_ONLY_RESEARCH_WORKFLOWS)
+        ))
+        for relative in fixture_research_workflows:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             if relative in CONTRACT_ONLY_RESEARCH_WORKFLOWS:

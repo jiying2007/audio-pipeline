@@ -6,7 +6,7 @@
   "authority": "RESEARCH_SELECTION_ONLY",
   "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
   "candidate_id": "vad-weak-start-requires-blend-v1",
-  "research_candidate_id": "62b14be19cefc945",
+  "research_candidate_id": "dd2273f187e01b47",
   "authoritative_execution": {
     "workflow": "Research I020 VAD Weak Start Requires Blend v1",
     "run_id": 36283565997,
@@ -28,7 +28,7 @@
   },
   "candidate_patch": {
     "path": ".github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch",
-    "sha256": "b24501a981d9560d433a12f3ebc32e978cc54064587bec635a54f084227e09cb",
+    "sha256": "c625bbd25dd759cfa8a9913189cd19334178ff714a0262713fb24a23c5a9a904",
     "allowed_paths": [
       "src/enhance/ap_vad.c"
     ],

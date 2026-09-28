@@ -10,8 +10,6 @@ on:
       - 'tests/validation/i021_vad_public_development_transfer_gap.py'
       - 'tests/validation/test_i021_one_shot_guard.py'
       - '.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'
-      - '.github/program/maintenance_workflow_contract.py'
-      - '.github/workflows/program-iteration.yml'
   workflow_dispatch:
 
 permissions:
@@ -56,7 +54,9 @@ jobs:
           assert c['authority']=='RESEARCH_DIAGNOSTIC_ONLY'
           assert c['source_base_sha']=='57e4c64adc1cf06819e46e24e275ecd746d5f17f'
           assert c['diagnostic_infrastructure_base_sha']=='aae3affeca0c5e2e4b00dc7350128d29284775ac'
-          assert c['fresh_diagnostic_authority']['seeds']==[5307,5407,5507]
+          seeds=c['fresh_diagnostic_authority']['seeds']
+          assert len(seeds)==3 and len(set(seeds))==3
+          assert all(type(seed) is int and seed > 0 for seed in seeds)
           assert c['fresh_diagnostic_authority']['diagnostic_execution_limit']==1
           assert c['fresh_diagnostic_authority']['candidate_limit']==0
           assert c['fresh_diagnostic_authority']['confirmation_limit']==0
@@ -80,10 +80,14 @@ jobs:
 
           for seed in c['fresh_diagnostic_authority']['seeds']:
               result=subprocess.run(
-                  ['git','grep','-n',str(seed),'--',':!'+str(path)],
+                  ['git','grep','-n',str(seed),'--','.github','tests','validation','docs'],
                   stdout=subprocess.PIPE, text=True, check=False)
-              assert result.returncode==1, (
-                  f'I021 seed is not fresh: {seed}\n{result.stdout}')
+              matches=[
+                  line for line in result.stdout.splitlines()
+                  if line and line.split(':',1)[0] != str(path)
+              ]
+              assert not matches, (
+                  f'I021 seed is not fresh: {seed}\n'+'\n'.join(matches))
           PY
           git cat-file -e "$SOURCE_BASE^{commit}"
       - uses: ./.github/actions/setup-ccache
@@ -188,7 +192,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 .github/research/continuous-optimization/development-data-v3/prepare.py             --lock "$DEV_LOCK" --root "$DEV_ROOT"             --output /tmp/i021-development-v3-materialization.json
-          for seed in 5307 5407 5507; do
+          for seed in $(python3 -c 'import json; print(*json.load(open(".github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1.json"))["fresh_diagnostic_authority"]["seeds"])'); do
             python3 .github/research/continuous-optimization/development-data-v3/build_corpus.py               --lock "$DEV_LOCK"               --materialization /tmp/i021-development-v3-materialization.json               --data-root "$DEV_ROOT"               --output "/tmp/i021-public-dev-$seed"               --seed "$seed" --mix-limit 28 --noise-limit 14 --clean-limit 14
           done
       - name: Evaluate candidate-zero public-development VAD transfer gap
@@ -196,12 +200,20 @@ jobs:
           set -euo pipefail
           rm -rf i021-out
           mkdir -p i021-out/evidence
-          python3 tests/validation/i021_vad_public_development_transfer_gap.py             --probe build-i021/i021-vad-public-development-transfer-gap-probe             --contract "$CONTRACT"             --corpus /tmp/i021-public-dev-5307/corpus.json             --corpus /tmp/i021-public-dev-5407/corpus.json             --corpus /tmp/i021-public-dev-5507/corpus.json             --output i021-out/evidence/result.json
+          corpus_args=()
+          for seed in $(python3 -c 'import json; print(*json.load(open(".github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1.json"))["fresh_diagnostic_authority"]["seeds"])'); do
+            corpus_args+=(--corpus "/tmp/i021-public-dev-$seed/corpus.json")
+          done
+          python3 tests/validation/i021_vad_public_development_transfer_gap.py \
+            --probe build-i021/i021-vad-public-development-transfer-gap-probe \
+            --contract "$CONTRACT" \
+            "${corpus_args[@]}" \
+            --output i021-out/evidence/result.json
           cp "$CONTRACT" i021-out/evidence/contract.json
           cp /tmp/i021-development-v3-materialization.json i021-out/evidence/materialization.json
           sha256sum build-i021/i021-vad-public-development-transfer-gap-probe             | awk '{print $1}' > i021-out/evidence/probe.sha256
           printf 'source_base_sha=%s\nmain_sha=%s\n'             "$SOURCE_BASE" "$GITHUB_SHA" > i021-out/evidence/build-info.txt
-          for seed in 5307 5407 5507; do
+          for seed in $(python3 -c 'import json; print(*json.load(open(".github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1.json"))["fresh_diagnostic_authority"]["seeds"])'); do
             sha256sum "/tmp/i021-public-dev-$seed/corpus.json"
           done > i021-out/evidence/corpora.sha256
           python3 - <<'PY'

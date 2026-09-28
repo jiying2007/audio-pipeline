@@ -125,6 +125,21 @@ class GuardTests(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             self.execute(api_error=True)
 
+    def test_seed_freshness_guard_uses_numeric_token_boundaries(self):
+        text=WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn(
+            "pattern=rf'(^|[^0-9]){seed}([^0-9]|$)'",
+            text,
+        )
+        self.assertIn(
+            "assert result.returncode in (0,1), 'git grep freshness check failed'",
+            text,
+        )
+        self.assertNotIn(
+            "['git','grep','-n',str(seed),'--'",
+            text,
+        )
+
     def test_guard_precedes_fresh_steps_and_execution_is_manual_only(self):
         text=WORKFLOW.read_text(encoding="utf-8")
         guard=text.index("      - name: Enforce one-shot I021 diagnostic execution\n")

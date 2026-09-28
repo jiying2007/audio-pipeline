@@ -128,6 +128,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
     Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'),
     Path('.github/workflows/research-i022-vad-low-local-evidence-disagreement-decomposition-v1.yml'),
+    Path('.github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (

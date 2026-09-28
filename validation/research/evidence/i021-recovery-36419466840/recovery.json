@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "recovery_id": "i021-vad-public-development-transfer-gap-v1-recovery-1",
+  "status": "FROZEN_RECOVERY_ONLY",
+  "source_run": {
+    "run_id": 36417062971,
+    "run_attempt": 1,
+    "head_sha": "d6e8c145d66aef119c0e9d166e52de9af1f54202",
+    "failed_job_id": 108910684840,
+    "materialization_step": "Materialize fresh public-development-v3 partitions",
+    "materialization_conclusion": "success",
+    "failed_step": "Evaluate candidate-zero public-development VAD transfer gap",
+    "failure": "probe exit 5 on incomplete final 160-sample PCM frame"
+  },
+  "contract_path": ".github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1.json",
+  "fixed_seeds": [
+    501307,
+    511307,
+    521307
+  ],
+  "dataset_lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+  "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+  "repair": {
+    "path": "tests/validation/i021_vad_public_development_transfer_gap_probe.c",
+    "rule": "Ignore only a final incomplete PCM frame because public-development frame_labels emits labels only for complete 10 ms frames."
+  },
+  "invariants": {
+    "new_diagnostic_authority": false,
+    "seeds_may_change": false,
+    "dataset_may_change": false,
+    "source_base_may_change": false,
+    "candidate_budget": 0,
+    "confirmation_budget": 0,
+    "selection_authority": false,
+    "shipping_authority": false
+  }
+}

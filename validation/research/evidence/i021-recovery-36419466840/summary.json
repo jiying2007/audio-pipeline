@@ -1,0 +1,147 @@
+{
+  "below_reference_slice_count": 18,
+  "decision": "PUBLIC_DEVELOPMENT_VAD_TRANSFER_GAP_DECOMPOSED_REVIEW_REQUIRED",
+  "fresh_diagnostic_seeds": [
+    501307,
+    511307,
+    521307
+  ],
+  "global": {
+    "f1": 0.5830486763450042,
+    "false_negative_mechanisms": {
+      "blended_below_threshold": 426,
+      "low_local_evidence": 7382,
+      "no_upstream_blend_rescue": 80,
+      "transient_cap": 27
+    },
+    "false_positive_origins": {
+      "hangover_tail": 8165,
+      "strong_refresh": 5217,
+      "weak_refresh": 2139
+    },
+    "false_positive_rate": 0.5307958004172224,
+    "fn": 7915,
+    "fp": 15521,
+    "frames": 53542,
+    "mean_crest_db": 6.861789656239532,
+    "mean_probability": 0.36404307916731254,
+    "mean_ratio_db": -0.715678991147643,
+    "mean_upstream_probability": 0.5210867743478321,
+    "noise_frames": 29241,
+    "precision": 0.5135550192747673,
+    "probability_bands": {
+      "local_to_decision": 30402,
+      "lt_local_guard": 5327,
+      "strong_refresh_band": 11590,
+      "weak_refresh_band": 6223
+    },
+    "recall": 0.6742932389613596,
+    "speech_frames": 24301,
+    "tn": 13720,
+    "tp": 16386
+  },
+  "invalid_reasons": [],
+  "reference_absolute_min_vad_f1": 0.8,
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0
+  },
+  "worst_development_slices": [
+    {
+      "f1": 0.4816808473693349,
+      "false_positive_rate": 0.6108774880852257,
+      "noise_frames": 3567,
+      "recall": 0.6324669402644779,
+      "slice": "noise_domain:kitchen",
+      "speech_frames": 2193
+    },
+    {
+      "f1": 0.5024829298572315,
+      "false_positive_rate": 0.7330097087378641,
+      "noise_frames": 3502,
+      "recall": 0.7170062001771479,
+      "slice": "noise_domain:office",
+      "speech_frames": 2258
+    },
+    {
+      "f1": 0.5141752577319588,
+      "false_positive_rate": 0.6368237899398924,
+      "noise_frames": 3161,
+      "recall": 0.6140823393612928,
+      "slice": "noise_domain:traffic",
+      "speech_frames": 2599
+    },
+    {
+      "f1": 0.518884892086331,
+      "false_positive_rate": 0.7689024390243903,
+      "noise_frames": 3280,
+      "recall": 0.7155849524596941,
+      "slice": "noise_domain:field",
+      "speech_frames": 2419
+    },
+    {
+      "f1": 0.5352406496796305,
+      "false_positive_rate": 0.7390364422483015,
+      "noise_frames": 3238,
+      "recall": 0.7121332275971451,
+      "slice": "noise_domain:bus",
+      "speech_frames": 2522
+    },
+    {
+      "f1": 0.5496086312671885,
+      "false_positive_rate": 0.3554338426059383,
+      "noise_frames": 3469,
+      "recall": 0.5917995444191344,
+      "slice": "noise_domain:cafeteria",
+      "speech_frames": 2195
+    },
+    {
+      "f1": 0.590748725989808,
+      "false_positive_rate": 0.3798338584932684,
+      "noise_frames": 3491,
+      "recall": 0.6641692375495813,
+      "slice": "noise_domain:living",
+      "speech_frames": 2269
+    },
+    {
+      "f1": 0.656280812463025,
+      "false_positive_rate": 0.41812471960520414,
+      "noise_frames": 2229,
+      "recall": 0.6723232323232323,
+      "slice": "snr_db:0",
+      "speech_frames": 2475
+    },
+    {
+      "f1": 0.6802629361200069,
+      "false_positive_rate": 0.534200113058225,
+      "noise_frames": 1769,
+      "recall": 0.6794612794612794,
+      "slice": "snr_db:-5",
+      "speech_frames": 2970
+    },
+    {
+      "f1": 0.6919742938275296,
+      "false_positive_rate": 0.3284813197476953,
+      "noise_frames": 2061,
+      "recall": 0.6258448229251149,
+      "slice": "snr_db:10",
+      "speech_frames": 3699
+    },
+    {
+      "f1": 0.6995157701871483,
+      "false_positive_rate": 0.3458455522971652,
+      "noise_frames": 5115,
+      "recall": 0.654382957884427,
+      "slice": "reverb:true",
+      "speech_frames": 8168
+    },
+    {
+      "f1": 0.6995157701871483,
+      "false_positive_rate": 0.3458455522971652,
+      "noise_frames": 5115,
+      "recall": 0.654382957884427,
+      "slice": "scenario:research-public-noisy-reverb",
+      "speech_frames": 8168
+    }
+  ]
+}

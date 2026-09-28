@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i021-vad-public-development-transfer-gap-v1",
+  "phase": "candidate-zero-public-development-transfer-gap",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "aae3affeca0c5e2e4b00dc7350128d29284775ac",
+  "predecessor": {
+    "i020_blind_review": ".github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json",
+    "required_i020_status": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+    "candidate_quality_scope_review": ".github/research/continuous-optimization/development-v4/source-patch-blind-candidate-quality-scope-v1.json",
+    "required_scope_status": "CLOSED_DESIGN_REVIEW"
+  },
+  "question": "On fresh public-development-diverse speech/noise/RIR mixtures, which shipping VAD error mechanisms dominate the absolute F1 transfer gap: low local evidence, transient capping, insufficient upstream/blend rescue, strong/weak false refresh, or hangover-tail false activity?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "policy_path": ".github/research/continuous-optimization/development-data-v3/policy.json",
+    "prepare_path": ".github/research/continuous-optimization/development-data-v3/prepare.py",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      501307,
+      511307,
+      521307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "minimum_mix_cases_per_noise_domain_per_seed": 4,
+    "minimum_noise_only_cases_per_noise_domain_per_seed": 2,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_noise_like_crest_db": 8,
+    "vad_transient_crest_db": 12,
+    "vad_fast_noise_alpha": 0.08,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "vad_upstream_blend": 0.4,
+    "vad_ns_decision_threshold": 0.35,
+    "vad_strong_refresh_threshold": 0.5,
+    "vad_strong_hold_frames": 8,
+    "vad_weak_hold_frames": 6
+  },
+  "diagnostic_gates": {
+    "max_shipping_mirror_probability_delta": 0.000001,
+    "shipping_mirror_active_mismatch_frames": 0,
+    "minimum_total_cases": 168,
+    "minimum_total_speech_frames": 1,
+    "minimum_total_noise_frames": 1,
+    "reference_absolute_min_vad_f1": 0.8
+  },
+  "diagnostic_outputs": [
+    "global_vad_precision_recall_f1_false_positive_rate",
+    "per_scenario_vad_metrics",
+    "per_noise_domain_vad_metrics",
+    "per_snr_vad_metrics",
+    "reverb_vs_anechoic_vad_metrics",
+    "false_negative_mechanism_counts",
+    "false_positive_origin_counts",
+    "shipping_probability_bands",
+    "worst_development_slices"
+  ],
+  "forbidden_feedback": {
+    "i011_to_i020_locked_or_consumed_seeds": true,
+    "i020_visible_validation_for_selection": true,
+    "i020_blind_validation_for_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "PUBLIC_DEVELOPMENT_VAD_TRANSFER_GAP_DECOMPOSED_REVIEW_REQUIRED": "Fresh public development evidence reproduces at least one slice below the 0.80 reference F1 and attributes errors without selecting a candidate.",
+    "PUBLIC_DEVELOPMENT_VAD_BASELINE_ADEQUATE_REVIEW_REQUIRED": "All eligible fresh public development speech-containing slices meet the 0.80 reference F1; record the transfer result without selecting a candidate.",
+    "I021_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, case coverage, shipping mirror, frame geometry, finite-value, or freshness preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_hold_lengths": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use the fresh public-development decomposition only to preregister a separate I022 hypothesis if one error mechanism is both materially dominant and causally actionable. Do not create a candidate inside I021."
+}

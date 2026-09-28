@@ -1,0 +1,295 @@
+name: Research I022 VAD Low Local Evidence Disagreement Decomposition v1
+run-name: "i022-vad-low-local-disagreement / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1.json'
+      - 'tests/validation/i022_vad_low_local_disagreement_probe.c'
+      - 'tests/validation/i022_vad_low_local_disagreement_decomposition.py'
+      - 'tests/validation/test_i022_one_shot_guard.py'
+      - '.github/workflows/research-i022-vad-low-local-evidence-disagreement-decomposition-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-i022-vad-low-local-disagreement-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1.json
+  DEV_ROOT: /tmp/audio-pipeline-i022-development-v3
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization/development-data-v3
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate I022 candidate-zero diagnostic contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 -m py_compile tests/validation/i022_vad_low_local_disagreement_decomposition.py
+          python3 tests/validation/i022_vad_low_local_disagreement_decomposition.py --self-test
+          python3 tests/validation/test_i022_one_shot_guard.py
+          python3 .github/research/continuous-optimization/development-data-v3/build_corpus.py --self-test
+          python3 .github/research/continuous-optimization/development-data-v3/prepare.py --self-test
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import re
+          import subprocess
+          from pathlib import Path
+
+          path=Path('.github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1.json')
+          c=json.loads(path.read_text())
+          assert c['authority']=='RESEARCH_DIAGNOSTIC_ONLY'
+          assert c['source_base_sha']=='57e4c64adc1cf06819e46e24e275ecd746d5f17f'
+          seeds=c['fresh_diagnostic_authority']['seeds']
+          assert len(seeds)==3 and len(set(seeds))==3
+          assert all(type(seed) is int and seed > 0 for seed in seeds)
+          assert c['fresh_diagnostic_authority']['diagnostic_execution_limit']==1
+          assert c['fresh_diagnostic_authority']['candidate_limit']==0
+          assert c['fresh_diagnostic_authority']['confirmation_limit']==0
+          assert c['dataset_authority']['role']=='development'
+          assert c['dataset_authority']['validation_holdout_consumed'] is False
+          assert all(value is False for value in c['authority_boundary'].values())
+          assert c['oracle_reference_semantics']['threshold_search'] is False
+          assert c['oracle_reference_semantics']['candidate_mapping_selected'] is False
+
+          predecessor=Path(c['predecessor']['i021_closure'])
+          prior=json.loads(predecessor.read_text())
+          assert prior['status']==c['predecessor']['required_i021_status']
+          assert prior['reviewed_decision']==c['predecessor']['required_i021_reviewed_decision']
+
+          def blob(p):
+              return subprocess.check_output(
+                  ['git','rev-parse','HEAD:'+str(p)],text=True).strip()
+
+          assert blob(predecessor)==c['predecessor']['i021_closure_blob_sha']
+          assert blob(Path(c['dataset_authority']['lock_path']))==c['dataset_authority']['dataset_lock_git_blob_sha']
+          assert blob(Path(c['dataset_authority']['builder_path']))==c['dataset_authority']['builder_git_blob_sha']
+          assert blob(Path(c['diagnostic_inputs']['probe_path']))==c['diagnostic_inputs']['probe_git_blob_sha']
+          assert blob(Path(c['diagnostic_inputs']['evaluator_path']))==c['diagnostic_inputs']['evaluator_git_blob_sha']
+          lock=Path(c['dataset_authority']['lock_path']).read_bytes()
+          assert hashlib.sha256(lock).hexdigest()==c['dataset_authority']['dataset_lock_sha256']
+
+          for seed in seeds:
+              pattern=rf'(^|[^0-9]){seed}([^0-9]|$)'
+              result=subprocess.run(
+                  ['git','grep','-n','-E',pattern,'--','.github','tests','validation','docs'],
+                  stdout=subprocess.PIPE,text=True,check=False)
+              assert result.returncode in (0,1)
+              matches=[
+                  line for line in result.stdout.splitlines()
+                  if line and line.split(':',1)[0] != str(path)
+              ]
+              assert not matches, (
+                  f'I022 seed is not fresh: {seed}\n'+'\n'.join(matches))
+          PY
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i022-vad-low-local-disagreement-contract
+      - name: Compile I022 shipping-mirror probe with strict warnings
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i022-contract             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i022-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i022-contract/generated             tests/validation/i022_vad_low_local_disagreement_probe.c             build-i022-contract/libaudio_pipeline.a -lm             -o build-i022-contract/i022-probe
+
+  diagnose:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Enforce one-shot I022 diagnostic execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_FILE: research-i022-vad-low-local-evidence-disagreement-decomposition-v1.yml
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, subprocess
+
+          repo=os.environ['GITHUB_REPOSITORY']
+          current=int(os.environ['GITHUB_RUN_ID'])
+          attempt=int(os.environ['GITHUB_RUN_ATTEMPT'])
+          if os.environ.get('GITHUB_REF')!='refs/heads/main' or attempt!=1:
+              raise SystemExit('I022 diagnostic requires first-attempt trusted main dispatch')
+
+          def pages(endpoint):
+              raw=subprocess.check_output(
+                  ['gh','api','--paginate','--slurp',endpoint],text=True)
+              value=json.loads(raw)
+              if not isinstance(value,list):
+                  raise SystemExit('unexpected GitHub API pagination shape')
+              return value
+
+          run_pages=pages(
+              f'repos/{repo}/actions/workflows/{os.environ["WORKFLOW_FILE"]}/runs'
+              '?event=workflow_dispatch&per_page=100')
+          runs=[run for page in run_pages for run in page.get('workflow_runs',[])]
+          if not any(int(run['id'])==current for run in runs):
+              raise SystemExit('current I022 run not visible; fail closed')
+
+          consuming={
+              'Materialize fresh public-development-v3 partitions',
+              'Evaluate candidate-zero low-local disagreement',
+          }
+          for run in runs:
+              run_id=int(run['id'])
+              if run_id==current:
+                  continue
+              attempts=int(run.get('run_attempt') or 0)
+              if attempts < 1:
+                  raise SystemExit('invalid prior I022 attempt count')
+              for run_attempt in range(1,attempts+1):
+                  job_pages=pages(
+                      f'repos/{repo}/actions/runs/{run_id}/attempts/{run_attempt}/jobs'
+                      '?per_page=100')
+                  for page in job_pages:
+                      for job in page.get('jobs',[]):
+                          for step in job.get('steps',[]):
+                              if step.get('name') in consuming and step.get('conclusion') != 'skipped':
+                                  raise SystemExit(
+                                      f'I022 one-shot authority already consumed by run {run_id}')
+          print('I022 one-shot authority: fresh')
+          PY
+      - name: Bind frozen diagnostic inputs and unchanged shipping source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          c=json.loads(Path('.github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1.json').read_text())
+          def blob(path):
+              return subprocess.check_output(
+                  ['git','rev-parse','HEAD:'+path],text=True).strip()
+          assert blob(c['predecessor']['i021_closure'])==c['predecessor']['i021_closure_blob_sha']
+          assert blob(c['dataset_authority']['lock_path'])==c['dataset_authority']['dataset_lock_git_blob_sha']
+          assert blob(c['dataset_authority']['builder_path'])==c['dataset_authority']['builder_git_blob_sha']
+          assert blob(c['diagnostic_inputs']['probe_path'])==c['diagnostic_inputs']['probe_git_blob_sha']
+          assert blob(c['diagnostic_inputs']['evaluator_path'])==c['diagnostic_inputs']['evaluator_git_blob_sha']
+          assert hashlib.sha256(Path(c['dataset_authority']['lock_path']).read_bytes()).hexdigest()==c['dataset_authority']['dataset_lock_sha256']
+          PY
+          SOURCE_BASE="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["source_base_sha"])')"
+          git cat-file -e "$SOURCE_BASE^{commit}"
+          git diff --exit-code "$SOURCE_BASE"...HEAD --             src/enhance/ap_vad.c             src/modules/ap_vad_module.c             src/modules/ap_ns_module.c             include/audio_pipeline/audio_modules.h             src/enhance/ap_enhance.h
+      - name: Install public-development decoder
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          command -v ffmpeg >/dev/null
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i022-vad-low-local-disagreement
+      - name: Build exact shipping source and I022 probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i022             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i022 --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i022/generated             tests/validation/i022_vad_low_local_disagreement_probe.c             build-i022/libaudio_pipeline.a -lm             -o build-i022/i022-probe
+      - name: Materialize fresh public-development-v3 partitions
+        run: |
+          set -euo pipefail
+          LOCK="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["dataset_authority"]["lock_path"])')"
+          BUILDER="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["dataset_authority"]["builder_path"])')"
+          python3 .github/research/continuous-optimization/development-data-v3/prepare.py             --lock "$LOCK" --root "$DEV_ROOT"             --output /tmp/i022-development-v3-materialization.json
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["seeds"])'); do
+            python3 "$BUILDER"               --lock "$LOCK"               --materialization /tmp/i022-development-v3-materialization.json               --data-root "$DEV_ROOT"               --output "/tmp/i022-public-dev-$seed"               --seed "$seed" --mix-limit 28 --noise-limit 14 --clean-limit 14
+          done
+      - name: Evaluate candidate-zero low-local disagreement
+        id: evaluate
+        run: |
+          set -euo pipefail
+          rm -rf i022-out
+          mkdir -p i022-out/evidence
+          corpus_args=()
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["seeds"])'); do
+            corpus_args+=(--corpus "/tmp/i022-public-dev-$seed/corpus.json")
+          done
+          set +e
+          python3 tests/validation/i022_vad_low_local_disagreement_decomposition.py             --probe build-i022/i022-probe             --contract "$CONTRACT"             "${corpus_args[@]}"             --output i022-out/evidence/result.json             > i022-out/evidence/evaluate.stdout             2> i022-out/evidence/evaluate.stderr
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > i022-out/evidence/evaluate.exit-code
+          cp "$CONTRACT" i022-out/evidence/contract.json
+          cp /tmp/i022-development-v3-materialization.json i022-out/evidence/materialization.json
+          sha256sum build-i022/i022-probe | awk '{print $1}' > i022-out/evidence/probe.sha256
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["seeds"])'); do
+            sha256sum "/tmp/i022-public-dev-$seed/corpus.json"
+          done > i022-out/evidence/corpora.sha256
+          printf 'main_sha=%s\n' "$GITHUB_SHA" > i022-out/evidence/build-info.txt
+          if test -f i022-out/evidence/result.json; then
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('i022-out/evidence/result.json').read_text())
+          Path('i022-out/evidence/summary.json').write_text(
+              json.dumps({
+                  'decision':r['decision'],
+                  'invalid_reasons':r['invalid_reasons'],
+                  'fresh_diagnostic_seeds':r['fresh_diagnostic_seeds'],
+                  'shipping_mirror':r['shipping_mirror'],
+                  'global':r['global'],
+                  'top_low_local_slices':r['low_local_slices'][:12],
+                  'interpretation_boundary':r['interpretation_boundary'],
+              },indent=2,sort_keys=True)+'\n')
+          PY
+          fi
+          (
+            cd i022-out/evidence
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\n' | sort |               while read -r file; do sha256sum "$file"; done > SHA256SUMS
+          )
+          exit "$rc"
+      - name: Enforce diagnostic-only authority
+        if: steps.evaluate.outcome == 'success'
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('i022-out/evidence/result.json').read_text())
+          assert r['decision'] in {
+              'VAD_LOW_LOCAL_DISAGREEMENT_DECOMPOSED_REVIEW_REQUIRED',
+              'VAD_LOW_LOCAL_NOT_REPRODUCED_REVIEW_REQUIRED',
+          }
+          assert r['invalid_reasons']==[]
+          assert r['diagnostic_execution_consumed']==1
+          assert r['candidate_budget_consumed']==0
+          assert r['confirmation_budget_consumed']==0
+          assert r['shipping_mirror']['active_mismatch_frames']==0
+          assert all(value is False for value in r['authority_boundary'].values())
+          PY
+      - name: Publish bounded diagnostic summary
+        if: always()
+        run: |
+          if test -f i022-out/evidence/summary.json; then
+            cat i022-out/evidence/summary.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload hash-bound I022 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i022-vad-low-local-disagreement-${{ github.run_id }}
+          path: i022-out/
+          retention-days: 90
+          if-no-files-found: error

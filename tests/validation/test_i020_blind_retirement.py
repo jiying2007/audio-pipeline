@@ -45,10 +45,11 @@ DURABLE_MANIFEST = Path(
 )
 SELF = Path("tests/validation/test_i020_blind_retirement.py")
 ONE_SHOT = Path("tests/validation/test_i020_code_candidate_blind_one_shot.py")
-EVIDENCE_GLOB = (
+EVIDENCE_ROOT = Path(
     "validation/research/evidence/"
-    "i020-blind-baseline-invalid-36304120808-36324803945/**"
+    "i020-blind-baseline-invalid-36304120808-36324803945"
 )
+EVIDENCE_GLOB = str(EVIDENCE_ROOT) + "/**"
 POLICY_BLOBS = {
     Path("validation/policies/validation-full-partition.json"):
         "ae1d57fbb5672aa3c00c280e1d0d666587d63a8b",
@@ -65,6 +66,14 @@ def git_blob(data: bytes) -> str:
     return hashlib.sha1(
         b"blob " + str(len(data)).encode("ascii") + b"\0" + data
     ).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def yaml_data(path: Path) -> dict:
@@ -282,6 +291,143 @@ class I020BlindRetirementTests(unittest.TestCase):
         for key, value in manifest["authority_boundary"].items():
             if key != "archive_copy_only":
                 self.assertFalse(value, key)
+
+    def test_durable_archive_bytes_match_trusted_manifest_and_review(self):
+        review = json.loads((ROOT / REVIEW).read_text(encoding="utf-8"))
+        manifest = json.loads(
+            (ROOT / DURABLE_MANIFEST).read_text(encoding="utf-8")
+        )
+        root = ROOT / EVIDENCE_ROOT
+        self.assertTrue(root.is_dir())
+
+        members = (
+            manifest["source_partition_artifact"]["members"]
+            + manifest["same_partition_resume_artifact"]["members"]
+        )
+        expected_names = sorted(item["archive_name"] for item in members)
+        actual_names = sorted(
+            path.name for path in root.iterdir() if path.is_file()
+        )
+        self.assertEqual(actual_names, expected_names)
+        self.assertEqual(len(expected_names), 11)
+
+        for item in members:
+            path = root / item["archive_name"]
+            self.assertEqual(path.stat().st_size, item["bytes"], path.name)
+            self.assertEqual(sha256_file(path), item["sha256"], path.name)
+
+        origin = json.loads(
+            (root / "holdout-key-origin.json").read_text(encoding="utf-8")
+        )
+        self.assertFalse(origin["key_persisted"])
+        self.assertEqual(
+            origin["key_fingerprint"],
+            review["blind_partition_authority"]["blind_key_fingerprint"],
+        )
+        self.assertEqual(
+            str(origin["github_run_id"]),
+            str(review["blind_partition_authority"]["source_run_id"]),
+        )
+
+        visible_corpus = json.loads(
+            (root / "corpus-validation.json").read_text(encoding="utf-8")
+        )
+        blind_corpus = json.loads(
+            (root / "corpus-blind.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            len(visible_corpus["cases"]),
+            review["blind_partition_authority"]["visible_case_count"],
+        )
+        self.assertEqual(
+            len(blind_corpus["cases"]),
+            review["blind_partition_authority"]["blind_case_count"],
+        )
+        self.assertEqual(
+            visible_corpus["blind_key_fingerprint"],
+            review["blind_partition_authority"]["blind_key_fingerprint"],
+        )
+        self.assertEqual(
+            blind_corpus["blind_key_fingerprint"],
+            review["blind_partition_authority"]["blind_key_fingerprint"],
+        )
+
+        source_summary = json.loads(
+            (root / "source-qualification-summary.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            source_summary["decision"],
+            review["blind_partition_authority"]["source_decision"],
+        )
+        self.assertEqual(
+            source_summary["failed_stage"],
+            review["blind_partition_authority"]["source_failed_stage"],
+        )
+
+        receipt = json.loads(
+            (root / "resume-partition-receipt.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertFalse(receipt["partition_changed"])
+        self.assertFalse(receipt["new_holdout_key_generated"])
+        self.assertFalse(receipt["candidate_or_policy_changed"])
+        self.assertEqual(
+            receipt["blind_key_fingerprint"],
+            review["blind_partition_authority"]["blind_key_fingerprint"],
+        )
+
+        qualification = json.loads(
+            (root / "qualification-summary.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(qualification["decision"], review["decision"])
+        self.assertFalse(qualification["terminal_candidate"])
+        self.assertEqual(
+            qualification["failed_stage"],
+            review["same_partition_resume"]["failed_stage"],
+        )
+
+        reports = {
+            "baseline-visible-report.json":
+                review["shipping_baseline_absolute_results"]["visible"],
+            "baseline-blind-report.json":
+                review["shipping_baseline_absolute_results"]["blind"],
+            "candidate-visible-report.json":
+                review["candidate_absolute_results"]["visible"],
+            "candidate-blind-report.json":
+                review["candidate_absolute_results"]["blind"],
+        }
+        for name, expected in reports.items():
+            report = json.loads((root / name).read_text(encoding="utf-8"))
+            self.assertEqual(
+                report["validation_result"], expected["validation_result"]
+            )
+            for key in (
+                "min_vad_recall",
+                "min_vad_f1",
+                "max_vad_false_positive_rate",
+            ):
+                self.assertAlmostEqual(
+                    float(report["summary"][key]), float(expected[key]),
+                    places=12,
+                )
+
+        sums = (root / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+        by_basename = {}
+        for line in sums:
+            digest, relative = line.split("  ", 1)
+            by_basename[Path(relative).name] = digest
+        for name in (
+            "baseline-visible-report.json",
+            "candidate-visible-report.json",
+            "baseline-blind-report.json",
+            "candidate-blind-report.json",
+            "resume-partition-receipt.json",
+            "qualification-summary.json",
+        ):
+            self.assertEqual(by_basename[name], sha256_file(root / name))
 
     def test_frozen_candidate_identity_is_unchanged(self):
         review = json.loads((ROOT / REVIEW).read_text(encoding="utf-8"))

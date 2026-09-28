@@ -32,6 +32,19 @@ VAD_SUMMARY_METRICS = (
     "min_vad_f1",
     "max_vad_false_positive_rate",
 )
+CANDIDATE_QUALITY_MODES = {
+    "full-absolute-pass",
+    "vad-impact-scoped-v1",
+}
+VAD_IMPACT_POLICY_METRICS = {
+    "pass_rate",
+    "min_vad_f1",
+}
+VAD_IMPACT_DERIVED_SUMMARY_KEYS = {
+    "pass_rate",
+    "passed_cases",
+    "scenario_pass_rate",
+}
 
 
 def sha256_file(path: Path) -> str:
@@ -207,7 +220,10 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         "max_vad_recall_regression", "max_vad_f1_regression",
         "max_vad_false_positive_rate_regression",
     }
-    optional_blind_fields = {"baseline_reference_mode"}
+    optional_blind_fields = {
+        "baseline_reference_mode",
+        "candidate_quality_mode",
+    }
     if (
         not isinstance(blind, dict)
         or not required_blind_fields.issubset(blind)
@@ -230,12 +246,32 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         raise ValueError(
             "require_baseline_absolute_pass inconsistent with baseline_reference_mode"
         )
-    for key in (
-        "require_candidate_absolute_pass",
-        "require_visible_candidate_behavior_exercised",
+    candidate_quality_mode = blind.get(
+        "candidate_quality_mode", "full-absolute-pass"
+    )
+    if candidate_quality_mode not in CANDIDATE_QUALITY_MODES:
+        raise ValueError("candidate_quality_mode invalid")
+    expected_candidate_absolute_pass = (
+        candidate_quality_mode == "full-absolute-pass"
+    )
+    if (
+        blind["require_candidate_absolute_pass"]
+        is not expected_candidate_absolute_pass
     ):
-        if blind[key] is not True:
-            raise ValueError(f"blind requirement weakened: {key}")
+        raise ValueError(
+            "require_candidate_absolute_pass inconsistent with candidate_quality_mode"
+        )
+    if (
+        candidate_quality_mode == "vad-impact-scoped-v1"
+        and baseline_reference_mode != "valid-report"
+    ):
+        raise ValueError(
+            "vad-impact-scoped-v1 requires valid-report baseline reference mode"
+        )
+    if blind["require_visible_candidate_behavior_exercised"] is not True:
+        raise ValueError(
+            "blind requirement weakened: require_visible_candidate_behavior_exercised"
+        )
     for key in (
         "max_vad_recall_regression", "max_vad_f1_regression",
         "max_vad_false_positive_rate_regression",
@@ -268,6 +304,7 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         "research_run_id": provenance["run_id"],
         "development_infra_sha": provenance["development_infra_sha"],
         "baseline_reference_mode": baseline_reference_mode,
+        "candidate_quality_mode": candidate_quality_mode,
     }
 
 
@@ -417,6 +454,95 @@ def _relative_violations(manifest: dict[str, Any],
     return violations
 
 
+def _without_vad_impact_metrics(value: Any) -> Any:
+    """Project a report fragment onto metrics a VAD-only source patch cannot own."""
+    if isinstance(value, dict):
+        result = {}
+        for key, item in value.items():
+            if (
+                key in VAD_SUMMARY_METRICS
+                or key in VAD_IMPACT_DERIVED_SUMMARY_KEYS
+                or key.startswith("vad_")
+            ):
+                continue
+            result[key] = _without_vad_impact_metrics(item)
+        return result
+    if isinstance(value, list):
+        return [_without_vad_impact_metrics(item) for item in value]
+    return value
+
+
+def _non_vad_case_metrics(report: dict[str, Any]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for case in report.get("cases", []):
+        if not isinstance(case, dict):
+            raise ValueError("validation case must be an object")
+        case_id = case.get("case_id")
+        if not isinstance(case_id, str) or not case_id or case_id in result:
+            raise ValueError("validation case identity invalid")
+        metrics = case.get("metrics")
+        if not isinstance(metrics, dict):
+            raise ValueError(f"validation case metrics missing: {case_id}")
+        result[case_id] = _without_vad_impact_metrics(metrics)
+    if not result:
+        raise ValueError("validation cases missing")
+    return result
+
+
+def _normalized_violations(report: dict[str, Any],
+                           impacted: bool) -> list[dict[str, Any]]:
+    raw = report.get("violations", [])
+    if not isinstance(raw, list):
+        raise ValueError("validation violations must be a list")
+    result = []
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("validation violation must be an object")
+        metric = item.get("metric")
+        if not isinstance(metric, str) or not metric:
+            raise ValueError("validation violation metric missing")
+        is_impacted = metric in VAD_IMPACT_POLICY_METRICS
+        if is_impacted == impacted:
+            result.append(item)
+    return sorted(
+        result,
+        key=lambda item: json.dumps(item, sort_keys=True, separators=(",", ":")),
+    )
+
+
+def _vad_impact_scoped_quality_violations(
+    baseline: dict[str, Any],
+    candidate: dict[str, Any],
+    stage: str,
+) -> list[dict[str, Any]]:
+    """Require absolute VAD policy quality and byte-equivalent non-VAD behavior."""
+    if (
+        _without_vad_impact_metrics(baseline["summary"])
+        != _without_vad_impact_metrics(candidate["summary"])
+    ):
+        raise ValueError(f"{stage} non-VAD summary drift under VAD impact scope")
+    if _non_vad_case_metrics(baseline) != _non_vad_case_metrics(candidate):
+        raise ValueError(f"{stage} non-VAD case-metric drift under VAD impact scope")
+
+    baseline_unaffected = _normalized_violations(baseline, impacted=False)
+    candidate_unaffected = _normalized_violations(candidate, impacted=False)
+    if baseline_unaffected != candidate_unaffected:
+        raise ValueError(f"{stage} non-VAD policy violation drift under VAD impact scope")
+
+    violations = []
+    for item in _normalized_violations(candidate, impacted=True):
+        violations.append({
+            "stage": stage,
+            "metric": item["metric"],
+            "gate": item.get("gate"),
+            "actual": item.get("actual"),
+            "expected_min": item.get("expected_min"),
+            "expected_max": item.get("expected_max"),
+            "kind": "impact-scoped-candidate-absolute-policy",
+        })
+    return violations
+
+
 def classify(manifest: dict[str, Any], identity: dict[str, Any],
              baseline_visible: dict[str, Any] | None,
              candidate_visible: dict[str, Any] | None,
@@ -449,6 +575,9 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
         baseline_reference_mode = manifest["blind_contract"].get(
             "baseline_reference_mode", "absolute-pass"
         )
+        candidate_quality_mode = manifest["blind_contract"].get(
+            "candidate_quality_mode", "full-absolute-pass"
+        )
         if (
             baseline_reference_mode == "absolute-pass"
             and any(value != "PASS" for value in baseline_results.values())
@@ -459,7 +588,10 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
             next_gate = EXPECTED_NEXT_GATE
             violations = []
             rc = 2
-        elif any(value != "PASS" for value in candidate_results.values()):
+        elif (
+            candidate_quality_mode == "full-absolute-pass"
+            and any(value != "PASS" for value in candidate_results.values())
+        ):
             decision = "BLIND_REJECTED_NON_SHIPPING"
             failed_stage = (
                 "visible-validation" if candidate_results["visible"] != "PASS"
@@ -469,6 +601,48 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
             next_gate = None
             violations = []
             rc = 1
+        elif candidate_quality_mode == "vad-impact-scoped-v1":
+            violations = (
+                _vad_impact_scoped_quality_violations(
+                    baseline_visible, candidate_visible, "visible"
+                )
+                + _vad_impact_scoped_quality_violations(
+                    baseline_blind, candidate_blind, "blind"
+                )
+            )
+            if violations:
+                decision = "BLIND_REJECTED_NON_SHIPPING"
+                failed_stage = "impact-scoped-candidate-quality"
+                terminal = True
+                next_gate = None
+                rc = 1
+            elif (manifest["blind_contract"]["require_visible_candidate_behavior_exercised"]
+                  and not _visible_behavior_exercised(
+                      baseline_visible, candidate_visible)):
+                decision = "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING"
+                failed_stage = "visible-candidate-behavior-not-exercised"
+                terminal = False
+                next_gate = EXPECTED_NEXT_GATE
+                rc = 2
+            else:
+                violations = (
+                    _relative_violations(
+                        manifest, baseline_visible, candidate_visible, "visible")
+                    + _relative_violations(
+                        manifest, baseline_blind, candidate_blind, "blind")
+                )
+                if violations:
+                    decision = "BLIND_REJECTED_NON_SHIPPING"
+                    failed_stage = "paired-relative-vad-gates"
+                    terminal = True
+                    next_gate = None
+                    rc = 1
+                else:
+                    decision = "BLIND_QUALIFIED_NON_SHIPPING"
+                    failed_stage = None
+                    terminal = False
+                    next_gate = "source-change-review"
+                    rc = 0
         elif (manifest["blind_contract"]["require_visible_candidate_behavior_exercised"]
               and not _visible_behavior_exercised(
                   baseline_visible, candidate_visible)):
@@ -511,6 +685,9 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
         "baseline_reference_mode": manifest["blind_contract"].get(
             "baseline_reference_mode", "absolute-pass"
         ),
+        "candidate_quality_mode": manifest["blind_contract"].get(
+            "candidate_quality_mode", "full-absolute-pass"
+        ),
         "baseline_results": (
             None if baseline_visible is None or baseline_blind is None else {
                 "visible": baseline_visible.get("validation_result"),
@@ -533,12 +710,14 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
         "automatic_main_mutation": False,
         "automatic_promotion": False,
         "rule": (
-            "Candidate visible+blind absolute PASS plus preregistered paired VAD "
-            "regression bounds are always required. Legacy absolute-pass mode also "
-            "requires baseline visible+blind PASS. Future valid-report mode accepts "
-            "a complete identity-bound baseline PASS|FAIL report as the comparison "
-            "reference while preserving its violations. No outcome changes shipping "
-            "automatically."
+            "Legacy full-absolute-pass mode requires candidate visible+blind absolute "
+            "PASS. Future vad-impact-scoped-v1 mode may retain an overall FAIL only "
+            "when every non-VAD summary/case metric and non-VAD policy violation is "
+            "identical to baseline, while candidate VAD-impact absolute policy gates "
+            "and preregistered paired VAD regression bounds pass. Legacy absolute-pass "
+            "baseline mode also requires baseline visible+blind PASS; valid-report "
+            "mode accepts a complete identity-bound baseline PASS|FAIL report. "
+            "No outcome changes shipping automatically."
         ),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -695,6 +874,71 @@ def self_test() -> None:
             future_bad_candidate, root / "future-rejected.json")
         assert rc == 1
         assert future_rejected["decision"] == "BLIND_REJECTED_NON_SHIPPING"
+
+
+        impact_manifest = json.loads(json.dumps(future_manifest))
+        impact_manifest["blind_contract"]["candidate_quality_mode"] = (
+            "vad-impact-scoped-v1"
+        )
+        impact_manifest["blind_contract"]["require_candidate_absolute_pass"] = False
+        impact_summary = validate_manifest(impact_manifest, registry, root)
+        assert impact_summary["candidate_quality_mode"] == "vad-impact-scoped-v1"
+        impact_identity = seal_identity(
+            impact_manifest, baseline_processor, candidate_processor,
+            root / "impact-identity.json")
+
+        def unrelated_fail(report_value: dict[str, Any]) -> dict[str, Any]:
+            value = json.loads(json.dumps(report_value))
+            value["validation_result"] = "FAIL"
+            value["summary"]["median_output_render_corr_reduction"] = 0.01
+            value["violations"] = [{
+                "gate": "min_median_output_render_corr_reduction",
+                "metric": "median_output_render_corr_reduction",
+                "actual": 0.01,
+                "expected_min": 0.05,
+            }]
+            return value
+
+        impact_bv = unrelated_fail(bv)
+        impact_cv = unrelated_fail(cv)
+        impact_bb = unrelated_fail(bb)
+        impact_cb = unrelated_fail(cb)
+        impact_qualified, rc = classify(
+            impact_manifest, impact_identity,
+            impact_bv, impact_cv, impact_bb, impact_cb,
+            root / "impact-qualified.json")
+        assert rc == 0
+        assert impact_qualified["decision"] == "BLIND_QUALIFIED_NON_SHIPPING"
+        assert impact_qualified["candidate_results"] == {
+            "visible": "FAIL", "blind": "FAIL"
+        }
+
+        impact_bad = unrelated_fail(cb)
+        impact_bad["summary"]["min_vad_f1"] = 0.70
+        impact_bad["violations"].append({
+            "gate": "min_vad_f1",
+            "metric": "min_vad_f1",
+            "actual": 0.70,
+            "expected_min": 0.80,
+        })
+        impact_rejected, rc = classify(
+            impact_manifest, impact_identity,
+            impact_bv, impact_cv, impact_bb, impact_bad,
+            root / "impact-rejected.json")
+        assert rc == 1
+        assert impact_rejected["failed_stage"] == "impact-scoped-candidate-quality"
+
+        impact_drift = unrelated_fail(cb)
+        impact_drift["summary"]["median_output_render_corr_reduction"] = 0.02
+        try:
+            classify(
+                impact_manifest, impact_identity,
+                impact_bv, impact_cv, impact_bb, impact_drift,
+                root / "impact-drift.json")
+        except ValueError as exc:
+            assert "non-VAD summary drift" in str(exc)
+        else:
+            raise AssertionError("non-VAD drift was accepted by impact scope")
     print("source-patch blind helper self-test: OK")
 
 

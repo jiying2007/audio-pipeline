@@ -43,6 +43,10 @@ DURABLE_MANIFEST = Path(
     ".github/research/continuous-optimization/development-v4/"
     "i020-blind-baseline-invalid-durable-evidence-v1.json"
 )
+QUALITY_REVIEW = Path(
+    ".github/research/continuous-optimization/development-v4/"
+    "source-patch-blind-candidate-quality-scope-v1.json"
+)
 SELF = Path("tests/validation/test_i020_blind_retirement.py")
 ONE_SHOT = Path("tests/validation/test_i020_code_candidate_blind_one_shot.py")
 EVIDENCE_ROOT = Path(
@@ -145,7 +149,7 @@ class I020BlindRetirementTests(unittest.TestCase):
         for workflow in (self.blind_live, self.resume_live):
             paths = workflow["on"]["pull_request"]["paths"]
             for required in (
-                str(REVIEW), str(DURABLE_MANIFEST), str(SELF),
+                str(REVIEW), str(DURABLE_MANIFEST), str(QUALITY_REVIEW), str(SELF),
                 str(BLIND_HISTORY), str(RESUME_HISTORY), EVIDENCE_GLOB,
             ):
                 self.assertIn(required, paths)
@@ -429,6 +433,31 @@ class I020BlindRetirementTests(unittest.TestCase):
         ):
             self.assertEqual(by_basename[name], sha256_file(root / name))
 
+    def test_future_quality_scope_is_bound_but_cannot_reopen_i020(self):
+        review = json.loads((ROOT / QUALITY_REVIEW).read_text(encoding="utf-8"))
+        self.assertEqual(review["status"], "CLOSED_DESIGN_REVIEW")
+        trigger = review["trigger"]
+        self.assertEqual(trigger["i020_blind_review"], str(REVIEW))
+        self.assertEqual(
+            trigger["i020_durable_archive_manifest"], str(DURABLE_MANIFEST)
+        )
+        boundary = review["authority_boundary"]
+        self.assertFalse(boundary["i020_requalification_authorized"])
+        self.assertFalse(boundary["i020_reclassification_authorized"])
+        self.assertFalse(boundary["policy_threshold_change_authorized"])
+        self.assertFalse(boundary["non_vad_regression_authorized"])
+        self.assertEqual(
+            review["future_contract"]["vad_impact_scoped_v1"][
+                "allowed_patch_paths"
+            ],
+            ["src/enhance/ap_vad.c"],
+        )
+        frozen = json.loads((ROOT / MANIFEST).read_text(encoding="utf-8"))
+        self.assertNotIn("candidate_quality_mode", frozen["blind_contract"])
+        self.assertTrue(
+            frozen["blind_contract"]["require_candidate_absolute_pass"]
+        )
+
     def test_frozen_candidate_identity_is_unchanged(self):
         review = json.loads((ROOT / REVIEW).read_text(encoding="utf-8"))
         manifest = json.loads((ROOT / MANIFEST).read_text(encoding="utf-8"))
@@ -468,6 +497,7 @@ class I020BlindRetirementTests(unittest.TestCase):
             )
             self.assertIn(REVIEW, evidence)
             self.assertIn(DURABLE_MANIFEST, evidence)
+            self.assertIn(QUALITY_REVIEW, evidence)
             self.assertIn(MANIFEST, evidence)
             self.assertIn(PATCH, evidence)
         module.validate_program_archive_trigger_boundaries(ROOT)

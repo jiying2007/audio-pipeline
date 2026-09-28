@@ -11,6 +11,7 @@ on:
       - '.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.json'
       - '.github/research/continuous-optimization/code-candidates/i020-vad-weak-start-requires-blend-v1.patch'
       - '.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json'
+      - '.github/research/continuous-optimization/development-v4/i020-blind-baseline-invalid-durable-evidence-v1.json'
       - '.github/research/continuous-optimization/development-v4/source-patch-blind-baseline-reference-authority-v1.json'
       - 'tests/validation/test_source_patch_blind_baseline_reference_authority.py'
       - 'tests/validation/test_i020_blind_retirement.py'

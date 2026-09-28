@@ -61,7 +61,8 @@
     "evaluator_changed": false,
     "candidate_selected": false,
     "threshold_changed": false,
-    "hold_changed": false
+    "hold_changed": false,
+    "repaired_probe_blob_sha": "0e5a283cc3605b4bef936f6a10fcbf398a2a8582"
   },
   "recovery_execution": {
     "trigger": "trusted-main-push-only",

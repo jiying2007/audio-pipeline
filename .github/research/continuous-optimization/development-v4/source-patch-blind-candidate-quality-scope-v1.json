@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "review_id": "source-patch-blind-candidate-quality-scope-v1",
+  "status": "CLOSED_DESIGN_REVIEW",
+  "trigger": {
+    "prior_baseline_reference_review": ".github/research/continuous-optimization/development-v4/source-patch-blind-baseline-reference-authority-v1.json",
+    "i020_blind_review": ".github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json",
+    "i020_durable_archive_manifest": ".github/research/continuous-optimization/development-v4/i020-blind-baseline-invalid-durable-evidence-v1.json",
+    "rule": "I020 remains frozen under its original full-absolute-pass candidate contract. This review is future-only and may not requalify, rerun, repartition, reclassify, or merge I020."
+  },
+  "evidence": {
+    "archive_root": "validation/research/evidence/i020-blind-baseline-invalid-36304120808-36324803945",
+    "visible": {
+      "baseline_validation_result": "FAIL",
+      "candidate_validation_result": "FAIL",
+      "baseline_median_near_si_sdr_improvement_db": -0.5225705768070235,
+      "candidate_median_near_si_sdr_improvement_db": -0.5225705768070235,
+      "baseline_median_output_render_corr_reduction": 0.0006399523277349087,
+      "candidate_median_output_render_corr_reduction": 0.0006399523277349087,
+      "baseline_min_vad_f1": 0.2568370986920333,
+      "candidate_min_vad_f1": 0.2568370986920333
+    },
+    "blind": {
+      "baseline_validation_result": "FAIL",
+      "candidate_validation_result": "FAIL",
+      "baseline_median_output_render_corr_reduction": 0.012597430343945209,
+      "candidate_median_output_render_corr_reduction": 0.012597430343945209,
+      "baseline_min_vad_f1": 0.3700159489633174,
+      "candidate_min_vad_f1": 0.35161290322580646
+    },
+    "reviewed_interpretation": "The frozen VAD-only I020 patch leaves the failing non-VAD aggregate quality metrics unchanged between baseline and candidate. Requiring overall validation-full PASS therefore couples a VAD source change to pre-existing AEC/BF/public-quality failures outside the candidate's owned impact domain. I020 still fails the VAD absolute min_f1=0.80 gate itself, so impact scoping would not rescue or reclassify it."
+  },
+  "reviewed_findings": [
+    "Baseline evidence validity and candidate quality acceptance are separate concerns; the prior valid-report baseline mode remains correct.",
+    "Candidate quality must also distinguish metrics the source patch can own from unrelated aggregate policy metrics.",
+    "For a future VAD-state source patch restricted to src/enhance/ap_vad.c, overall validation_result may remain FAIL only because of unchanged non-VAD policy violations.",
+    "The future VAD impact scope must still require the validation-full pass-rate and min_vad_f1 policy gates, paired visible/blind VAD regression bounds, and exercised visible candidate behavior.",
+    "Every non-VAD summary metric, per-case non-VAD metric, and non-VAD policy violation must remain exactly baseline-equivalent; any drift fails closed.",
+    "The existing I020 manifest remains legacy full-absolute-pass and is not eligible for the future-only mode."
+  ],
+  "future_contract": {
+    "candidate_quality_modes": {
+      "full-absolute-pass": "Legacy/default behavior. Candidate visible and blind reports must both have validation_result=PASS.",
+      "vad-impact-scoped-v1": "Future-only behavior for one source patch restricted to src/enhance/ap_vad.c. Candidate overall FAIL is allowed only when all non-VAD report behavior and policy violations are baseline-equivalent, while the VAD-impact absolute policy gates and paired VAD bounds pass."
+    },
+    "vad_impact_scoped_v1": {
+      "required_baseline_reference_mode": "valid-report",
+      "require_candidate_absolute_pass": false,
+      "require_visible_candidate_behavior_exercised": true,
+      "owned_policy_metrics": [
+        "pass_rate",
+        "min_vad_f1"
+      ],
+      "paired_relative_metrics": [
+        "min_vad_recall",
+        "min_vad_f1",
+        "max_vad_false_positive_rate"
+      ],
+      "allowed_patch_paths": [
+        "src/enhance/ap_vad.c"
+      ],
+      "unaffected_requirement": "Non-VAD summary values, non-VAD per-case metrics, and non-VAD violation records must match the baseline report exactly on both visible and blind partitions."
+    },
+    "manifest_identity": {
+      "workflow_and_artifact": "Future VAD candidate manifests provide their own non-empty workflow identity, run-bound artifact identity and digest.",
+      "development_seeds": "Future manifests provide at least three unique positive fresh development seeds; development evidence must bind exactly to those manifest seeds.",
+      "legacy_i020_values": "I020's workflow, artifact and seed values remain frozen in its existing manifest and review rather than hardcoded into the reusable helper."
+    }
+  },
+  "prohibited": [
+    "changing validation-full or validation-full-blind thresholds because of I020 values",
+    "using impact scope for any patch path outside src/enhance/ap_vad.c",
+    "ignoring or suppressing non-VAD validation failures",
+    "allowing non-VAD candidate behavior to drift relative to baseline",
+    "requalifying or re-running I020",
+    "creating a new I020 blind split",
+    "automatic source merge, shipping, HIL, Product Certification, or release"
+  ],
+  "implementation_decision": "Extend the existing source-patch blind helper with default-preserving candidate_quality_mode. Missing mode remains full-absolute-pass. Future VAD manifests may explicitly opt into vad-impact-scoped-v1 only with valid-report baseline reference mode and the single canonical VAD source path. Remove I020-only workflow/artifact/seed hardcoding so future manifests are self-describing while legacy I020 remains bound by its own committed manifest and retirement tests.",
+  "authority_boundary": {
+    "i020_requalification_authorized": false,
+    "i020_reclassification_authorized": false,
+    "policy_threshold_change_authorized": false,
+    "non_vad_regression_authorized": false,
+    "source_path_broadening_authorized": false,
+    "shipping_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

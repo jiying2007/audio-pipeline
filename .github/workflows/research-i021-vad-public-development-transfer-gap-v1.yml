@@ -176,7 +176,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git rev-parse HEAD^1)" = "$DIAGNOSTIC_BASE"
-          test "$(python3 -c 'import json; print(json.load(open("'"$CONTRACT"'"))["diagnostic_infrastructure_base_sha"])')" = "$DIAGNOSTIC_BASE"
+          test "$(python3 -c 'import json, os; print(json.load(open(os.environ["CONTRACT"]))["diagnostic_infrastructure_base_sha"])')" = "$DIAGNOSTIC_BASE"
           git cat-file -e "$SOURCE_BASE^{commit}"
           git diff --exit-code "$SOURCE_BASE"...HEAD --             src/enhance/ap_vad.c             src/modules/ap_vad_module.c             src/modules/ap_ns_module.c             include/audio_pipeline/audio_modules.h             src/enhance/ap_enhance.h
       - name: Install public-development decoder

@@ -24,7 +24,7 @@ PROBE=ROOT/"tests/validation/i021_vad_public_development_transfer_gap_probe.c"
 def git_blob(data: bytes) -> str:
     import hashlib
     return hashlib.sha1(
-        b"blob "+str(len(data)).encode()+b"\\0"+data
+        b"blob "+str(len(data)).encode()+b"\0"+data
     ).hexdigest()
 
 

@@ -134,6 +134,14 @@ class GuardTests(unittest.TestCase):
         self.assertNotIn("\n  push:\n",text)
         self.assertNotIn("\n  schedule:\n",text)
         self.assertIn("if: github.event_name == 'workflow_dispatch'",text)
+        self.assertIn(
+            'DIAGNOSTIC_BASE: aae3affeca0c5e2e4b00dc7350128d29284775ac',
+            text,
+        )
+        self.assertIn(
+            'test "$(git rev-parse HEAD^1)" = "$DIAGNOSTIC_BASE"',
+            text,
+        )
 
 
 if __name__=="__main__":

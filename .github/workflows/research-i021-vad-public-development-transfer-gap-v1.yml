@@ -79,9 +79,12 @@ jobs:
           assert scope['status']==c['predecessor']['required_scope_status']
 
           for seed in c['fresh_diagnostic_authority']['seeds']:
+              pattern=rf'(^|[^0-9]){seed}([^0-9]|$)'
               result=subprocess.run(
-                  ['git','grep','-n',str(seed),'--','.github','tests','validation','docs'],
+                  ['git','grep','-n','-E',pattern,'--',
+                   '.github','tests','validation','docs'],
                   stdout=subprocess.PIPE, text=True, check=False)
+              assert result.returncode in (0,1), 'git grep freshness check failed'
               matches=[
                   line for line in result.stdout.splitlines()
                   if line and line.split(':',1)[0] != str(path)

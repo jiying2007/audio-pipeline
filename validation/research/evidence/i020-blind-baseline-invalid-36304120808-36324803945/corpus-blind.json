@@ -1,0 +1,800 @@
+{
+  "blind_key_fingerprint": "ebeec484da932ee7",
+  "cases": [
+    {
+      "case_id": "aec-compact-04f40ac5c75f9487",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/0LjSIBZX0U2UziIEDluI0A_doubletalk-with-movement_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/0LjSIBZX0U2UziIEDluI0A_doubletalk-with-movement_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-doubletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "04f40ac5c75f948783a4cc8f7b07c94d562175ce9f49729f27bffd7a40c9c5b7",
+        "render_sha256": "9230afd196ab2a21a5e2aad4dbc3075e86ae651bf95f79e67027301963502a2e",
+        "source_id": "0LjSIBZX0U2UziIEDluI0A_doubletalk-with-movement"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-10459fa70792fbdc",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0ULb7yhaREWtC0TkByLxxw_farend-singletalk-with-movement_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0ULb7yhaREWtC0TkByLxxw_farend-singletalk-with-movement_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-farend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "10459fa70792fbdcca81d136d62a01149830f1a248b38762b10242e0f15af73b",
+        "render_sha256": "400daed0753bae5369e21e9378f058ac329e10e037c03a75fd1a545bf9bf0a0b",
+        "source_id": "0ULb7yhaREWtC0TkByLxxw_farend-singletalk-with-movement"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-3ca12c3a6d069c93",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/07Psr2RgdUi9314NjGXFdw_doubletalk-with-movement_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/07Psr2RgdUi9314NjGXFdw_doubletalk-with-movement_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-doubletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "3ca12c3a6d069c936adcac7cb647cab6e1d44432596a33985fcbcdab8e8e5da3",
+        "render_sha256": "c3c3147cd87d4319476ce1218059cb1d3b747c53a52302e21737782876fdf745",
+        "source_id": "07Psr2RgdUi9314NjGXFdw_doubletalk-with-movement"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-583caf521e0e0377",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_farend-singletalk_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/07bf4531-cb93-462c-8e4c-ff8daa422461_farend-singletalk_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-farend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "583caf521e0e03770a5db667190e500094f295d270dbc9725e5d99ad8152d3d1",
+        "render_sha256": "e134eff407ad99ec2f48cf6d0c8e7244f7652dc2ecbdad9cb3c9b5a258ba1736",
+        "source_id": "07bf4531-cb93-462c-8e4c-ff8daa422461_farend-singletalk"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-708bf682cefd16fb",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/01866103-b85f-468a-94df-6becff38f663_farend-singletalk-with-movement_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/01866103-b85f-468a-94df-6becff38f663_farend-singletalk-with-movement_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-farend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "708bf682cefd16fb698e948c7b3a9964e61eb3a80fc9decd074e26a2d9c7ee47",
+        "render_sha256": "bc679bc1de5e4bdc8b9f7337317627e6fe0daea6fd36876f9f44edb2be9b2a43",
+        "source_id": "01866103-b85f-468a-94df-6becff38f663_farend-singletalk-with-movement"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-83d1128c652f2e3f",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/0b35c31b-ae40-4a3e-b36b-92984e1c161a_doubletalk-with-movement_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/0b35c31b-ae40-4a3e-b36b-92984e1c161a_doubletalk-with-movement_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-doubletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "83d1128c652f2e3fc9001224c175b3907c5866d832c3bd94110cbba9eb1d9a7d",
+        "render_sha256": "2239f1f3c5134a7cf72784b60514c906b41a2ac67aee88f3348ced11072d373f",
+        "source_id": "0b35c31b-ae40-4a3e-b36b-92984e1c161a_doubletalk-with-movement"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-975d310c8b892e74",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0b8986a1-a5f8-483a-8192-278401d07ddf_farend-singletalk_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0b8986a1-a5f8-483a-8192-278401d07ddf_farend-singletalk_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-farend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "975d310c8b892e7468e9e7db182a8e63a0051ac07c8135edb15ba5ec0e10410c",
+        "render_sha256": "e1fb4fe2a275c88f7730aa290a668ff440ab01a68fb2303f1f4e3d3a29406424",
+        "source_id": "0b8986a1-a5f8-483a-8192-278401d07ddf_farend-singletalk"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-9a60d75d318af498",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/041fc379-f23d-4b00-ad7e-41104440307a_farend-singletalk_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/041fc379-f23d-4b00-ad7e-41104440307a_farend-singletalk_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-farend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "9a60d75d318af498b3cba5454778426cedc655473102437ed462b8787b9b8d9b",
+        "render_sha256": "5171ff412ae3073a2a0f08e2bc2435ac0b9c651a210c691c3163a031874ac119",
+        "source_id": "041fc379-f23d-4b00-ad7e-41104440307a_farend-singletalk"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-ae200217508cd541",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0f388840-e084-4081-b2a9-b0ca5582083e_farend-singletalk_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0f388840-e084-4081-b2a9-b0ca5582083e_farend-singletalk_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-farend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "ae200217508cd541052a05319455ff0c5de788e24c6bd6b7563d2a44dac9e0e2",
+        "render_sha256": "45df7a3b27eb1a372c917ac6b029a9d513c892c1108f05dd5c172686dac3da8a",
+        "source_id": "0f388840-e084-4081-b2a9-b0ca5582083e_farend-singletalk"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-c4aa7009d22bc0c8",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/nearend-singletalk/03d6ced2-3cc1-4b32-bcea-770fe2d260ff_nearend-singletalk_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/nearend-singletalk/03d6ced2-3cc1-4b32-bcea-770fe2d260ff_nearend-singletalk_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-nearend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "c4aa7009d22bc0c8048a6058c3656b0d3ecc2251f19769b51cbef9790c858607",
+        "render_sha256": "f41174a4c10254514f9dad3ea8bcaad72b1703c69c6f93d88ff1b8cc9e2ec4bd",
+        "source_id": "03d6ced2-3cc1-4b32-bcea-770fe2d260ff_nearend-singletalk"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-e2eca914fde091b7",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0bb0ya0TuUGN0849UmKk6Q_farend-singletalk-with-movement_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/farend-singletalk/0bb0ya0TuUGN0849UmKk6Q_farend-singletalk-with-movement_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-farend-singletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "e2eca914fde091b7cf24e7aff51ae5a6550b6d6473401f0edc1313083d78f7dd",
+        "render_sha256": "6ec3fabbcb615b81527e520ec2921f85cecabdcc3315c1d5483dbfd2794f74f2",
+        "source_id": "0bb0ya0TuUGN0849UmKk6Q_farend-singletalk-with-movement"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "aec-compact-f1640b7b942af5a7",
+      "clean_near_audio": null,
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/0lFpo0iOFkqIrv7Erv6XYQ_doubletalk-with-movement_mic.wav",
+      "mic_channels": 1,
+      "render_audio": "/home/runner/work/_temp/audio-validation-data/AEC-Challenge/datasets/test_set_icassp2022/doubletalk/0lFpo0iOFkqIrv7Erv6XYQ_doubletalk-with-movement_lpb.wav",
+      "sample_rate_hz": 48000,
+      "scenario": "aec-doubletalk",
+      "source": {
+        "dataset_id": "microsoft-aec-challenge",
+        "mic_sha256": "f1640b7b942af5a73d9156327884ff8b2246fda5bbf5682ca551b15789baf213",
+        "render_sha256": "0b650b41030c89c0b6785ebdf84336ccec321a6399166adf5b7b725dc648d939",
+        "source_id": "0lFpo0iOFkqIrv7Erv6XYQ_doubletalk-with-movement"
+      },
+      "split": "blind",
+      "vad_labels": null
+    },
+    {
+      "case_id": "compact-bf-006",
+      "clean_near_audio": "cases/compact-bf-006/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-bf-006/mic.pcm",
+      "mic_channels": 2,
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "bf-offaxis",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "0d3c57ca8ce331f1823d4b73ed4d63dae9ce49f9c973af805515184e76fbbb01",
+          "scenario": "nearend-singletalk",
+          "source_id": "0b97fb2f-726c-405f-8056-9f87dd7c7301_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0030.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0006.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-006"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-bf-006/vad.labels"
+    },
+    {
+      "case_id": "compact-bf-007",
+      "clean_near_audio": "cases/compact-bf-007/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-bf-007/mic.pcm",
+      "mic_channels": 2,
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "bf-offaxis",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "486d8052a509d3c18112f6bbe321d0011688c57940849c357d102c4a5c8c2504",
+          "scenario": "nearend-singletalk",
+          "source_id": "0bc1ec70-901d-4d67-8184-431dfb1b7881_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0035.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0007.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-007"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-bf-007/vad.labels"
+    },
+    {
+      "case_id": "compact-bf-010",
+      "clean_near_audio": "cases/compact-bf-010/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-bf-010/mic.pcm",
+      "mic_channels": 2,
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "bf-offaxis",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "aeda3bce7b0273892fcade6699344c2fb7ba3028e16a164f11b181c74aa6da72",
+          "scenario": "nearend-singletalk",
+          "source_id": "16VGwgJAEUyh30mVBBPNdA_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0050.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0010.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-010"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-bf-010/vad.labels"
+    },
+    {
+      "case_id": "compact-bf-014",
+      "clean_near_audio": "cases/compact-bf-014/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-bf-014/mic.pcm",
+      "mic_channels": 2,
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "bf-offaxis",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "c313b852d35e8bba16ba2434616d7021d16b52c98f5fe5e48e5cc24e2521bc2b",
+          "scenario": "nearend-singletalk",
+          "source_id": "07ca291e-ad71-4c1f-acc1-646da8241add_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0070.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0014.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-014"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-bf-014/vad.labels"
+    },
+    {
+      "case_id": "compact-ns-006",
+      "clean_near_audio": "cases/compact-ns-006/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-ns-006/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "0d3c57ca8ce331f1823d4b73ed4d63dae9ce49f9c973af805515184e76fbbb01",
+          "scenario": "nearend-singletalk",
+          "source_id": "0b97fb2f-726c-405f-8056-9f87dd7c7301_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0030.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0006.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-006"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-ns-006/vad.labels"
+    },
+    {
+      "case_id": "compact-ns-007",
+      "clean_near_audio": "cases/compact-ns-007/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-ns-007/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "486d8052a509d3c18112f6bbe321d0011688c57940849c357d102c4a5c8c2504",
+          "scenario": "nearend-singletalk",
+          "source_id": "0bc1ec70-901d-4d67-8184-431dfb1b7881_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0035.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0007.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-007"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-ns-007/vad.labels"
+    },
+    {
+      "case_id": "compact-ns-010",
+      "clean_near_audio": "cases/compact-ns-010/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-ns-010/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "aeda3bce7b0273892fcade6699344c2fb7ba3028e16a164f11b181c74aa6da72",
+          "scenario": "nearend-singletalk",
+          "source_id": "16VGwgJAEUyh30mVBBPNdA_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0050.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0010.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-010"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-ns-010/vad.labels"
+    },
+    {
+      "case_id": "compact-ns-014",
+      "clean_near_audio": "cases/compact-ns-014/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/compact-ns-014/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived",
+      "source": {
+        "clean": {
+          "dataset_id": "microsoft-aec-challenge",
+          "mic_sha256": "c313b852d35e8bba16ba2434616d7021d16b52c98f5fe5e48e5cc24e2521bc2b",
+          "scenario": "nearend-singletalk",
+          "source_id": "07ca291e-ad71-4c1f-acc1-646da8241add_nearend-singletalk"
+        },
+        "dataset_id": "microsoft-aec-challenge+openslr-slr28",
+        "noise_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0070.wav",
+        "rir_member": "RIRS_NOISES/pointsource_noises/noise-free-sound-0014.wav",
+        "slr28_archive_sha256": "3b50cfde915b3984738169b4beb341e9f6b8062ae4c2076146c5db71c2c05dc7",
+        "source_id": "compact-derived-014"
+      },
+      "split": "blind",
+      "vad_labels": "cases/compact-ns-014/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-004",
+      "clean_near_audio": "cases/dns-derived-004/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-004/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_male6_excerpts_spoken_m6_row_spoken_48kHz.wav",
+          "sha1": "bf1e45fe55ee6b65c33d8312d45835f55c125585",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 0.3808671328671329,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/fan_Freesound_validated_465613_0.wav",
+          "sha1": "808f7a7328ed599b7c7445a90f73584bb6a600c3",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-004"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-004/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-007",
+      "clean_near_audio": "cases/dns-derived-007/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-007/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_female4_arpeggios_vibrato_f4_arpeggios_vibrato_a_48kHz.wav",
+          "sha1": "54bce79cc3a7fde162b122fe04b6ded72a1f5c6e",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 0.22846204046117033,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/door_Freesound_validated_457235_2.wav",
+          "sha1": "925d7d2a96de83b0886b9be171e7740a3172cf40",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-007"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-007/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-009",
+      "clean_near_audio": "cases/dns-derived-009/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-009/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_female4_excerpts_straight_f4_caro_straight_48kHz.wav",
+          "sha1": "321ab4191ea15f78c6a098f0b037ea4a81eefe5b",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 3.3834654586636472,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/door_Freesound_validated_268574_0.wav",
+          "sha1": "e8905e43452e12a1c85b119f49376429f33daf64",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-009"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-009/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-010",
+      "clean_near_audio": "cases/dns-derived-010/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-010/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_female2_scales_vocal_fry_f2_scales_vocal_fry_o_48kHz.wav",
+          "sha1": "606559a4beef8d455dae2b2fcfe5a97505424726",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 0.02805236656596173,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/fan_Freesound_validated_329714_4.wav",
+          "sha1": "7c3044a6b2a25fb121d33f0794faedb7eb87c0ee",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-010"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-010/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-014",
+      "clean_near_audio": "cases/dns-derived-014/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-014/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_male10_long_tones_trillo_m10_long_trillo_e_48kHz.wav",
+          "sha1": "bd47d2c3c8834b82ae195ba32ffead812f685c6c",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 1.5443398916452808,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/fan_Freesound_validated_329710_2.wav",
+          "sha1": "5c8dba0c750ad36269118a52bfbcb88259b641e8",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-014"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-014/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-020",
+      "clean_near_audio": "cases/dns-derived-020/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-020/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_female4_long_tones_forte_f4_long_forte_u_48kHz.wav",
+          "sha1": "4814f67fe7b682ee43b5dc2d7dab3919d7e61735",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 0.04176580101606134,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/door_Freesound_validated_349308_0.wav",
+          "sha1": "88e5a2e39f4e6f3dc596b8775637f82f88daa68c",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-020"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-020/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-042",
+      "clean_near_audio": "cases/dns-derived-042/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-042/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_female2_scales_vocal_fry_f2_scales_vocal_fry_o_48kHz.wav",
+          "sha1": "606559a4beef8d455dae2b2fcfe5a97505424726",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 0.5596383726770467,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/door_Freesound_validated_427109_4.wav",
+          "sha1": "028b4a00468644ea290069f68e90fa7bea8313b4",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-042"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-042/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-046",
+      "clean_near_audio": "cases/dns-derived-046/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-046/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_male10_long_tones_trillo_m10_long_trillo_e_48kHz.wav",
+          "sha1": "bd47d2c3c8834b82ae195ba32ffead812f685c6c",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 0.06334502923976608,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/door_Freesound_validated_119495_0.wav",
+          "sha1": "47753ff58e7261802a2dd4c9fde43cfa1cd23dd9",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-046"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-046/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-052",
+      "clean_near_audio": "cases/dns-derived-052/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-052/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_female4_long_tones_forte_f4_long_forte_u_48kHz.wav",
+          "sha1": "4814f67fe7b682ee43b5dc2d7dab3919d7e61735",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 1.3446095238095237,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/typing_Freesound_validated_399603_47.wav",
+          "sha1": "e5d31c1debe1a4789cae7d1095106580c9e42247",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-052"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-052/vad.labels"
+    },
+    {
+      "case_id": "dns-derived-054",
+      "clean_near_audio": "cases/dns-derived-054/clean.pcm",
+      "control": {},
+      "echo_audio": null,
+      "expected": {},
+      "mic_audio": "cases/dns-derived-054/mic.pcm",
+      "mic_channels": 1,
+      "processor_profile": "ns-isolated",
+      "render_audio": null,
+      "sample_rate_hz": 16000,
+      "scenario": "ns-public-derived-dns",
+      "source": {
+        "clean": {
+          "kind": "clean",
+          "path": "datasets_fullband/clean_fullband/VocalSet_48kHz_mono/vocalset_female4_scales_vibrato_f4_scales_vibrato_e_48kHz.wav",
+          "sha1": "2a38cd244e5af0665e7068a070adc27602d91535",
+          "source_rate_hz": 48000
+        },
+        "dataset_id": "microsoft-dns-challenge",
+        "mix_noise_gain": 0.4572260647979614,
+        "noise": {
+          "kind": "noise",
+          "path": "datasets_fullband/noise_fullband/door_Freesound_validated_196152_0.wav",
+          "sha1": "ae3722e9484ba04a698ae7b9c69ad1e23bb79f45",
+          "source_rate_hz": 48000
+        },
+        "source_id": "dns-derived-054"
+      },
+      "split": "blind",
+      "vad_labels": "cases/dns-derived-054/vad.labels"
+    }
+  ],
+  "corpus_id": "public-validation-full-v2-blind",
+  "dataset_lock_sha256": "46b854fc54be3a4c454c4fd17a1f0b582f37f62ca1cd7ae9bc2128d4c96e40dc",
+  "generator": {
+    "name": "build_full_public_corpus.py",
+    "version": 1
+  },
+  "local_seal_sha256": "df393dee693075e27be5fd41d60d6afdf30c85a8a03d4cfd677f730cb403a216",
+  "schema_version": 1,
+  "sealed_data": true,
+  "sources": [
+    "microsoft-aec-challenge",
+    "microsoft-dns-challenge",
+    "openslr-slr28"
+  ],
+  "tier": "validation-grade-blind"
+}

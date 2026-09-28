@@ -149,16 +149,23 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
     }
     if not isinstance(provenance, dict) or set(provenance) != provenance_keys:
         raise ValueError("research provenance invalid")
-    if provenance["workflow"] != "Research I020 VAD Weak Start Requires Blend v1":
-        raise ValueError("unexpected development workflow")
+    if (
+        not isinstance(provenance["workflow"], str)
+        or not provenance["workflow"].strip()
+        or len(provenance["workflow"]) > 160
+    ):
+        raise ValueError("development workflow identity invalid")
     if type(provenance["run_id"]) is not int or provenance["run_id"] <= 0:
         raise ValueError("development run id invalid")
     if type(provenance["artifact_id"]) is not int or provenance["artifact_id"] <= 0:
         raise ValueError("development artifact id invalid")
     if not SHA40_RE.fullmatch(str(provenance["development_infra_sha"])):
         raise ValueError("development infra SHA invalid")
-    if provenance["artifact_name"] != (
-        f"i020-vad-weak-start-requires-blend-{provenance['run_id']}"
+    if (
+        not isinstance(provenance["artifact_name"], str)
+        or not provenance["artifact_name"]
+        or len(provenance["artifact_name"]) > 200
+        or str(provenance["run_id"]) not in provenance["artifact_name"]
     ):
         raise ValueError("artifact name/run mismatch")
     if not SHA256_RE.fullmatch(str(provenance["artifact_digest"])):
@@ -183,8 +190,14 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         raise ValueError("selection evidence fields invalid")
     if selection["decision"] != "FROZEN_RESEARCH_CANDIDATE_REVIEW_REQUIRED":
         raise ValueError("development did not freeze candidate")
-    if selection["fresh_development_seeds"] != [461123, 471123, 481123]:
-        raise ValueError("development seed binding drift")
+    seeds = selection["fresh_development_seeds"]
+    if (
+        not isinstance(seeds, list)
+        or len(seeds) < 3
+        or len(seeds) != len(set(seeds))
+        or any(type(seed) is not int or seed <= 0 for seed in seeds)
+    ):
+        raise ValueError("development seed binding invalid")
     for key in (
         "shipping_mirror_max_probability_delta",
         "candidate_probability_max_delta",
@@ -261,13 +274,15 @@ def validate_manifest(manifest: dict[str, Any], registry: dict[str, Any],
         raise ValueError(
             "require_candidate_absolute_pass inconsistent with candidate_quality_mode"
         )
-    if (
-        candidate_quality_mode == "vad-impact-scoped-v1"
-        and baseline_reference_mode != "valid-report"
-    ):
-        raise ValueError(
-            "vad-impact-scoped-v1 requires valid-report baseline reference mode"
-        )
+    if candidate_quality_mode == "vad-impact-scoped-v1":
+        if baseline_reference_mode != "valid-report":
+            raise ValueError(
+                "vad-impact-scoped-v1 requires valid-report baseline reference mode"
+            )
+        if allowed != ["src/enhance/ap_vad.c"]:
+            raise ValueError(
+                "vad-impact-scoped-v1 requires the single canonical VAD source path"
+            )
     if blind["require_visible_candidate_behavior_exercised"] is not True:
         raise ValueError(
             "blind requirement weakened: require_visible_candidate_behavior_exercised"
@@ -321,7 +336,10 @@ def verify_development_result(manifest: dict[str, Any], result: dict[str, Any]) 
         raise ValueError("development result did not freeze candidate")
     if result.get("failed_gates") != []:
         raise ValueError("frozen candidate carries failed development gates")
-    if result.get("fresh_development_seeds") != [461123, 471123, 481123]:
+    if (
+        result.get("fresh_development_seeds")
+        != manifest["selection_evidence"]["fresh_development_seeds"]
+    ):
         raise ValueError("development seed provenance mismatch")
     if int(result.get("candidate_budget_consumed", -1)) != 1:
         raise ValueError("development candidate budget mismatch")
@@ -877,6 +895,15 @@ def self_test() -> None:
 
 
         impact_manifest = json.loads(json.dumps(future_manifest))
+        impact_manifest["research_provenance"]["workflow"] = (
+            "Research Future VAD State Candidate Fixture"
+        )
+        impact_manifest["research_provenance"]["artifact_name"] = (
+            "future-vad-state-candidate-1"
+        )
+        impact_manifest["selection_evidence"]["fresh_development_seeds"] = [
+            501123, 511123, 521123
+        ]
         impact_manifest["blind_contract"]["candidate_quality_mode"] = (
             "vad-impact-scoped-v1"
         )

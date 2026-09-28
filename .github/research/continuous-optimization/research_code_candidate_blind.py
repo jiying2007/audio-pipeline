@@ -499,8 +499,10 @@ def _non_vad_case_metrics(report: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(case_id, str) or not case_id or case_id in result:
             raise ValueError("validation case identity invalid")
         metrics = case.get("metrics")
+        if metrics is None:
+            metrics = {}
         if not isinstance(metrics, dict):
-            raise ValueError(f"validation case metrics missing: {case_id}")
+            raise ValueError(f"validation case metrics invalid: {case_id}")
         result[case_id] = _without_vad_impact_metrics(metrics)
     if not result:
         raise ValueError("validation cases missing")
@@ -569,6 +571,13 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
              output: Path) -> tuple[dict[str, Any], int]:
     if identity.get("authority") != "non-shipping-source-patch-blind-qualification":
         raise ValueError("invalid source-patch qualification identity")
+    for key in ("candidate_id", "research_candidate_id", "source_base_sha"):
+        if identity.get(key) != manifest.get(key):
+            raise ValueError(f"qualification identity mismatch: {key}")
+    if identity.get("patch") != manifest.get("patch"):
+        raise ValueError("qualification identity patch mismatch")
+    if identity.get("blind_contract") != manifest.get("blind_contract"):
+        raise ValueError("qualification identity blind contract mismatch")
     reports = (baseline_visible, candidate_visible, baseline_blind, candidate_blind)
     if any(report is None for report in reports):
         decision = "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING"
@@ -596,6 +605,38 @@ def classify(manifest: dict[str, Any], identity: dict[str, Any],
         candidate_quality_mode = manifest["blind_contract"].get(
             "candidate_quality_mode", "full-absolute-pass"
         )
+        if baseline_reference_mode not in {"absolute-pass", "valid-report"}:
+            raise ValueError("baseline_reference_mode invalid")
+        if candidate_quality_mode not in CANDIDATE_QUALITY_MODES:
+            raise ValueError("candidate_quality_mode invalid")
+        if (
+            candidate_quality_mode == "vad-impact-scoped-v1"
+            and baseline_reference_mode != "valid-report"
+        ):
+            raise ValueError(
+                "vad-impact-scoped-v1 requires valid-report baseline reference mode"
+            )
+
+        baseline_processor = identity.get("baseline_processor_sha256")
+        candidate_processor = identity.get("candidate_processor_sha256")
+        if (
+            not isinstance(baseline_processor, str)
+            or not SHA64_RE.fullmatch(baseline_processor)
+            or not isinstance(candidate_processor, str)
+            or not SHA64_RE.fullmatch(candidate_processor)
+        ):
+            raise ValueError("qualification processor identity invalid")
+        for stage_name, baseline_report, candidate_report in (
+            ("visible", baseline_visible, candidate_visible),
+            ("blind", baseline_blind, candidate_blind),
+        ):
+            b_bindings = baseline_report.get("bindings", {})
+            c_bindings = candidate_report.get("bindings", {})
+            if b_bindings.get("processor_sha256") != baseline_processor:
+                raise ValueError(f"{stage_name} baseline processor binding mismatch")
+            if c_bindings.get("processor_sha256") != candidate_processor:
+                raise ValueError(f"{stage_name} candidate processor binding mismatch")
+
         if (
             baseline_reference_mode == "absolute-pass"
             and any(value != "PASS" for value in baseline_results.values())
@@ -749,8 +790,8 @@ def self_test() -> None:
         patch = root / ".github/research/continuous-optimization/code-candidates/f.patch"
         patch.parent.mkdir(parents=True)
         patch.write_text(
-            "diff --git a/src/x.c b/src/x.c\n"
-            "--- a/src/x.c\n+++ b/src/x.c\n"
+            "diff --git a/src/enhance/ap_vad.c b/src/enhance/ap_vad.c\n"
+            "--- a/src/enhance/ap_vad.c\n+++ b/src/enhance/ap_vad.c\n"
             "@@ -1 +1 @@\n-a\n+b\n",
             encoding="utf-8",
         )
@@ -765,7 +806,7 @@ def self_test() -> None:
             "hypothesis_id": hypothesis, "source_base_sha": source,
             "patch": {
                 "path": str(patch.relative_to(root)), "sha256": patch_sha,
-                "allowed_paths": ["src/x.c"],
+                "allowed_paths": ["src/enhance/ap_vad.c"],
             },
             "research_provenance": {
                 "workflow": "Research I020 VAD Weak Start Requires Blend v1",
@@ -840,10 +881,20 @@ def self_test() -> None:
                 }],
             }
 
-        bv = report("validation-grade", "PASS", 0.90, 0.88, 0.10, "b")
-        cv = report("validation-grade", "PASS", 0.89, 0.88, 0.08, "c", True)
-        bb = report("validation-grade-blind", "PASS", 0.88, 0.86, 0.12, "b")
-        cb = report("validation-grade-blind", "PASS", 0.87, 0.85, 0.11, "c")
+        baseline_processor_sha = identity["baseline_processor_sha256"]
+        candidate_processor_sha = identity["candidate_processor_sha256"]
+        bv = report(
+            "validation-grade", "PASS", 0.90, 0.88, 0.10,
+            baseline_processor_sha)
+        cv = report(
+            "validation-grade", "PASS", 0.89, 0.88, 0.08,
+            candidate_processor_sha, True)
+        bb = report(
+            "validation-grade-blind", "PASS", 0.88, 0.86, 0.12,
+            baseline_processor_sha)
+        cb = report(
+            "validation-grade-blind", "PASS", 0.87, 0.85, 0.11,
+            candidate_processor_sha)
         qualified, rc = classify(
             manifest, identity, bv, cv, bb, cb, root / "qualified.json")
         assert rc == 0 and qualified["decision"] == "BLIND_QUALIFIED_NON_SHIPPING"

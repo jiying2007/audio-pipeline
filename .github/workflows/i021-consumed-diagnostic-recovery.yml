@@ -1,0 +1,124 @@
+name: I021 Consumed Diagnostic Recovery
+run-name: "i021-consumed-recovery / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i021-consumed-diagnostic-tail-frame-recovery-v1.json'
+      - '.github/program/i021_consumed_recovery.py'
+      - 'tests/validation/i021_vad_public_development_transfer_gap_probe.c'
+      - 'tests/validation/test_i021_consumed_recovery.py'
+      - '.github/workflows/i021-consumed-diagnostic-recovery.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i021-consumed-diagnostic-tail-frame-recovery-v1.json'
+      - '.github/program/i021_consumed_recovery.py'
+      - 'tests/validation/i021_vad_public_development_transfer_gap_probe.c'
+      - 'tests/validation/test_i021_consumed_recovery.py'
+      - '.github/workflows/i021-consumed-diagnostic-recovery.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i021-consumed-diagnostic-recovery
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization/development-data-v3
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate frozen recovery contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool             .github/research/continuous-optimization/development-v4/i021-consumed-diagnostic-tail-frame-recovery-v1.json >/dev/null
+          python3 -m py_compile .github/program/i021_consumed_recovery.py
+          python3 .github/program/i021_consumed_recovery.py --check
+          python3 tests/validation/test_i021_consumed_recovery.py
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i021-consumed-recovery-contract
+      - name: Compile repaired probe and prove partial-tail semantics
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i021-recovery-contract             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i021-recovery-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i021-recovery-contract/generated             tests/validation/i021_vad_public_development_transfer_gap_probe.c             build-i021-recovery-contract/libaudio_pipeline.a -lm             -o build-i021-recovery-contract/i021-probe
+          python3 - <<'PY'
+          import array
+          import sys
+          from pathlib import Path
+          for name, count in (("one-frame-plus-tail", 161), ("partial-only", 159)):
+              values=array.array("h", [0] * count)
+              if sys.byteorder != "little":
+                  values.byteswap()
+              Path("/tmp/" + name + ".pcm").write_bytes(values.tobytes())
+          PY
+          test "$(build-i021-recovery-contract/i021-probe             /tmp/one-frame-plus-tail.pcm | wc -l)" -eq 1
+          set +e
+          build-i021-recovery-contract/i021-probe /tmp/partial-only.pcm >/tmp/i021-partial.out
+          rc=$?
+          set -e
+          test "$rc" -eq 7
+          test ! -s /tmp/i021-partial.out
+
+  recover:
+    needs: contract
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned-input decoder dependency
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          command -v ffmpeg >/dev/null
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i021-consumed-recovery
+      - name: Build repaired probe on trusted main
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i021-recovery             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i021-recovery --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror             -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1             -Iinclude -Isrc -Ibuild-i021-recovery/generated             tests/validation/i021_vad_public_development_transfer_gap_probe.c             build-i021-recovery/libaudio_pipeline.a -lm             -o build-i021-recovery/i021-probe
+      - name: Recover the consumed I021 diagnostic only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 .github/program/i021_consumed_recovery.py             --recover             --probe build-i021-recovery/i021-probe             --output i021-recovery-out
+      - name: Publish bounded recovery status
+        if: always()
+        run: |
+          if test -f i021-recovery-out/status.json; then
+            cat i021-recovery-out/status.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve recovered consumed evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i021-consumed-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: i021-recovery-out/
+          retention-days: 90
+          if-no-files-found: error

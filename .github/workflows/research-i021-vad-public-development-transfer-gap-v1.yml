@@ -25,6 +25,7 @@ env:
   DEV_ROOT: /tmp/audio-pipeline-i021-development-v3
   PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization/development-data-v3
   SOURCE_BASE: 57e4c64adc1cf06819e46e24e275ecd746d5f17f
+  DIAGNOSTIC_BASE: aae3affeca0c5e2e4b00dc7350128d29284775ac
 
 jobs:
   contract:
@@ -174,6 +175,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^1)" = "$DIAGNOSTIC_BASE"
+          test "$(python3 -c 'import json; print(json.load(open("'"$CONTRACT"'"))["diagnostic_infrastructure_base_sha"])')" = "$DIAGNOSTIC_BASE"
           git cat-file -e "$SOURCE_BASE^{commit}"
           git diff --exit-code "$SOURCE_BASE"...HEAD --             src/enhance/ap_vad.c             src/modules/ap_vad_module.c             src/modules/ap_ns_module.c             include/audio_pipeline/audio_modules.h             src/enhance/ap_enhance.h
       - name: Install public-development decoder

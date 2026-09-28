@@ -189,7 +189,7 @@ jobs:
           assert blob(c['diagnostic_inputs']['evaluator_path'])==c['diagnostic_inputs']['evaluator_git_blob_sha']
           assert hashlib.sha256(Path(c['dataset_authority']['lock_path']).read_bytes()).hexdigest()==c['dataset_authority']['dataset_lock_sha256']
           PY
-          SOURCE_BASE="$(python3 -c 'import json; print(json.load(open("'"$CONTRACT"'"))["source_base_sha"])')"
+          SOURCE_BASE="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["source_base_sha"])')"
           git cat-file -e "$SOURCE_BASE^{commit}"
           git diff --exit-code "$SOURCE_BASE"...HEAD --             src/enhance/ap_vad.c             src/modules/ap_vad_module.c             src/modules/ap_ns_module.c             include/audio_pipeline/audio_modules.h             src/enhance/ap_enhance.h
       - name: Install public-development decoder
@@ -210,10 +210,10 @@ jobs:
       - name: Materialize fresh public-development-v3 partitions
         run: |
           set -euo pipefail
-          LOCK="$(python3 -c 'import json; print(json.load(open("'"$CONTRACT"'"))["dataset_authority"]["lock_path"])')"
-          BUILDER="$(python3 -c 'import json; print(json.load(open("'"$CONTRACT"'"))["dataset_authority"]["builder_path"])')"
+          LOCK="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["dataset_authority"]["lock_path"])')"
+          BUILDER="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["dataset_authority"]["builder_path"])')"
           python3 .github/research/continuous-optimization/development-data-v3/prepare.py             --lock "$LOCK" --root "$DEV_ROOT"             --output /tmp/i022-development-v3-materialization.json
-          for seed in $(python3 -c 'import json; print(*json.load(open("'"$CONTRACT"'"))["fresh_diagnostic_authority"]["seeds"])'); do
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["seeds"])'); do
             python3 "$BUILDER"               --lock "$LOCK"               --materialization /tmp/i022-development-v3-materialization.json               --data-root "$DEV_ROOT"               --output "/tmp/i022-public-dev-$seed"               --seed "$seed" --mix-limit 28 --noise-limit 14 --clean-limit 14
           done
       - name: Evaluate candidate-zero low-local disagreement
@@ -223,7 +223,7 @@ jobs:
           rm -rf i022-out
           mkdir -p i022-out/evidence
           corpus_args=()
-          for seed in $(python3 -c 'import json; print(*json.load(open("'"$CONTRACT"'"))["fresh_diagnostic_authority"]["seeds"])'); do
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["seeds"])'); do
             corpus_args+=(--corpus "/tmp/i022-public-dev-$seed/corpus.json")
           done
           set +e
@@ -234,7 +234,7 @@ jobs:
           cp "$CONTRACT" i022-out/evidence/contract.json
           cp /tmp/i022-development-v3-materialization.json i022-out/evidence/materialization.json
           sha256sum build-i022/i022-probe | awk '{print $1}' > i022-out/evidence/probe.sha256
-          for seed in $(python3 -c 'import json; print(*json.load(open("'"$CONTRACT"'"))["fresh_diagnostic_authority"]["seeds"])'); do
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["seeds"])'); do
             sha256sum "/tmp/i022-public-dev-$seed/corpus.json"
           done > i022-out/evidence/corpora.sha256
           printf 'main_sha=%s\n' "$GITHUB_SHA" > i022-out/evidence/build-info.txt

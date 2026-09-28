@@ -313,7 +313,7 @@ def evaluate(
     semantics = contract["fixed_shipping_semantics"]
     upstream_guard = float(semantics["vad_upstream_speech_guard"])
     local_guard = float(semantics["vad_local_speech_guard"])
-    expected_lock = contract["dataset_authority"]["dataset_lock_blob_sha"]
+    expected_lock = contract["dataset_authority"]["dataset_lock_sha256"]
 
     actual_seeds: list[int] = []
     global_acc = empty_accumulator()

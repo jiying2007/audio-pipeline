@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i022-vad-low-local-evidence-disagreement-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "6c7f8ada1542dfd6b994c6692c0f2bfe243dfa58",
+  "decision": "VAD_LOW_LOCAL_DISAGREEMENT_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "LOW_LOCAL_FN_MOSTLY_REFERENCE_FAIL_UPSTREAM_DISAGREEMENT_COMMON_NO_CANDIDATE",
+  "reviewed_interpretation": "Fresh I022 public-development evidence is valid and shipping-mirror exact. Low-local evidence again dominates false negatives: 8779/9367 frames (93.72%). Of those low-local false negatives, 5201/8779 (59.24%) already have upstream speech probability above the unchanged 0.55 shipping upstream guard, confirming upstream/local disagreement is common. However replacing only the adaptive local noise state with the per-case oracle-labeled true-noise-state median while preserving the shipping local-evidence mapping and 0.15 local guard makes only 1312/8779 (14.94%) low-local false negatives pass; 7467/8779 (85.05%) remain reference-fail. The largest quadrant is upstream-high/reference-fail at 4499/8779 (51.25%). Therefore adaptive noise-state elevation is not a sufficient explanation for most low-local false negatives, and directly lowering/bypassing the local guard is not justified because I022 does not yet quantify how often upstream-high/local-low disagreement occurs on non-speech frames.",
+  "authoritative_execution": {
+    "run_id": 36432159733,
+    "run_attempt": 1,
+    "head_sha": "4709764a5aed6b2de2ebf4b105c1e0a7ef49c8a4",
+    "artifact_id": 10973704995,
+    "artifact_name": "i022-vad-low-local-disagreement-36432159733",
+    "artifact_size_bytes": 38361,
+    "artifact_sha256": "91c840a37531170e86dda8b4c4e4e9b2eed7ad9f649dd477c7e1299fe2c3efb0",
+    "member_sha256": {
+      "build-info.txt": "8f2254621afeb5e6b6f82775531feaffe310d5a18326bb9ef3122873f015751d",
+      "contract.json": "fd9c8d104e88dfbb1cd40b5c35adda63cd04fa48f9f55c490a9c9bb82003cfd3",
+      "corpora.sha256": "aac8a1d673e01016744e8f2a9809abc4e78b9a382808de011f0a92a92ccb5b90",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "62ef9017bdacfdb66236d8dd4a99b4c13a3ae12079c88d8ab05d8bae3e727228",
+      "materialization.json": "f1ad7aad7863d30d1bb251af97fa592fd3f4b036d77694116776965efe1b376e",
+      "probe.sha256": "e62e980dfc393d27476eced7aac18b34ef019f5ccf31f0264e4f4b7a113f84f0",
+      "result.json": "8c32f23f17626257550c2cccc92c17c47242494e4160a30b8e77963219774048",
+      "summary.json": "e9cda8a7fd03f5a6c488ee554d4339c91228a4e5df5c8cd07564f0875ee22cef",
+      "SHA256SUMS": "994e6eb3a7b911e749ee5117f3ec5ce23d7a7a40f3cade86986b25ef9dfd30cc"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      601307,
+      611307,
+      621307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "global_f1": 0.5353578059226852,
+    "global_precision": 0.4778813336833815,
+    "global_recall": 0.6085502946215888,
+    "global_false_positive_rate": 0.5375544818731628,
+    "speech_frames": 23929,
+    "noise_frames": 29597,
+    "false_negative_frames": 9367,
+    "false_positive_frames": 15910,
+    "low_local_false_negatives": 8779,
+    "low_local_fraction_of_false_negatives": 0.937226433223017,
+    "upstream_high_fraction_of_low_local": 0.5924364961840757,
+    "reference_pass_fraction_of_applicable_low_local": 0.1494475452785055,
+    "adaptive_state_over_reference_db": {
+      "median": 1.5053748646182388,
+      "p10": -1.0851813698226132,
+      "p90": 5.039182645810291
+    },
+    "shipping_ratio_db_low_local_median": -1.83762181,
+    "reference_ratio_db_low_local_median": -0.3646565541818575,
+    "upstream_probability_low_local_median": 0.582625747,
+    "low_local_matrix": {
+      "upstream_high_reference_fail": {
+        "frames": 4499,
+        "fraction": 0.5124729468048753
+      },
+      "upstream_high_reference_pass": {
+        "frames": 702,
+        "fraction": 0.07996354937920036
+      },
+      "upstream_not_high_reference_fail": {
+        "frames": 2968,
+        "fraction": 0.3380795079166192
+      },
+      "upstream_not_high_reference_pass": {
+        "frames": 610,
+        "fraction": 0.06948399589930516
+      }
+    }
+  },
+  "cross_slice_review": {
+    "low_local_fraction_min_observed_by_noise_domain": 0.9138888888888889,
+    "low_local_fraction_max_observed_by_noise_domain": 0.9601873536299765,
+    "upstream_high_fraction_range_by_noise_domain": [
+      0.4894117647058824,
+      0.64075382803298
+    ],
+    "reference_pass_fraction_range_by_noise_domain": [
+      0.08054711246200608,
+      0.17272727272727273
+    ],
+    "reviewed_interpretation": "The same qualitative result persists across all seven noise domains and across -5/0/5/10/15 dB SNR plus reverb/anechoic and clean-preservation slices: low-local false negatives remain dominant, upstream-high disagreement is substantial, and the diagnostic true-noise-state reference rescues only a minority."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i023-vad-upstream-local-disagreement-risk-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "I022 shows upstream-high/local-low disagreement is common on false negatives while adaptive noise-state normalization rescues only a minority. Before any local-guard bypass or upstream-trust candidate can be justified, measure the same upstream-high/local-low state on oracle-labeled non-speech frames and quantify its conditional speech precision, noise occupancy, temporal refresh/hangover behavior, and cross-domain stability using new fresh public-development authority.",
+    "prohibited": [
+      "local guard threshold tuning",
+      "upstream guard threshold tuning",
+      "decision threshold tuning",
+      "blend tuning",
+      "hold-length tuning",
+      "source candidate selection",
+      "reuse of I022 seeds",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i022-36432159733/result.json",
+  "verification_limits": [
+    "I022 is candidate-zero and uses development-only oracle labels for diagnosis; its true-noise-state reference is not a shipping estimator or selected algorithm.",
+    "The reference counterfactual changes only the denominator noise-state reference while preserving the shipping local-evidence mapping and 0.15 local guard; reference-pass therefore means state elevation is sufficient to explain that frame, not that such a replacement should ship.",
+    "I022 does not count upstream-high/local-low occupancy on non-speech frames as a dedicated conditional-risk population, so it cannot justify bypassing the local guard based on upstream probability.",
+    "The artifact contains per-case/per-slice aggregate evidence but no raw frame trace archive or audio."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "source_candidate_selected": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "upstream_guard_changed": false,
+    "local_guard_changed": false,
+    "blend_changed": false,
+    "hold_length_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

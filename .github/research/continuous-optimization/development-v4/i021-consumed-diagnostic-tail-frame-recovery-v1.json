@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "recovery_id": "i021-consumed-diagnostic-tail-frame-recovery-v1",
+  "status": "FROZEN_RECOVERY_CONTRACT",
+  "failed_execution": {
+    "workflow": "Research I021 VAD Public Development Transfer Gap v1",
+    "workflow_path": ".github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml",
+    "run_id": 36417062971,
+    "run_attempt": 1,
+    "diagnose_job_id": 108910684840,
+    "head_sha": "d6e8c145d66aef119c0e9d166e52de9af1f54202",
+    "event": "workflow_dispatch",
+    "conclusion": "failure",
+    "required_step_state": {
+      "Enforce one-shot I021 diagnostic execution": "success",
+      "Bind exact shipping source and trusted diagnostic infrastructure": "success",
+      "Build exact shipping source and I021 probe": "success",
+      "Materialize fresh public-development-v3 partitions": "success",
+      "Evaluate candidate-zero public-development VAD transfer gap": "failure",
+      "Upload hash-bound I021 evidence": "failure"
+    },
+    "artifact_count": 0,
+    "reviewed_failure_signature": {
+      "case_id": "public-dev-mix-009",
+      "probe_exit_code": 5,
+      "meaning": "The probe rejected a final partial 160-sample frame before any result.json was written. Corpus materialization completed successfully."
+    }
+  },
+  "frozen_inputs": {
+    "investigation_id": "i021-vad-public-development-transfer-gap-v1",
+    "contract_path": ".github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1.json",
+    "contract_blob_sha": "70bfbe981faa3865304bad1842ff08a30d3829fc",
+    "dataset_lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "materializer_path": ".github/research/continuous-optimization/development-data-v3/prepare.py",
+    "materializer_blob_sha": "22462a535becbd4da6c81a8f6d559399642cb92f",
+    "evaluator_path": "tests/validation/i021_vad_public_development_transfer_gap.py",
+    "evaluator_blob_sha": "df23ed14e3d07dd1ab53c2b545656fcccfb8e7a6",
+    "failed_probe_path": "tests/validation/i021_vad_public_development_transfer_gap_probe.c",
+    "failed_probe_blob_sha": "9ca24855d9234e7d6123f0b3e1b763380bfb8926",
+    "failed_workflow_blob_sha": "bff679a710d6a3b6634363258c1762d5e6e1267c",
+    "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+    "diagnostic_infrastructure_base_sha": "aae3affeca0c5e2e4b00dc7350128d29284775ac",
+    "seeds": [
+      501307,
+      511307,
+      521307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14
+  },
+  "repair": {
+    "class": "MECHANICAL_INPUT_FRAMING_ONLY",
+    "required_behavior": "Process every complete 160-sample frame and ignore a final partial frame. Files containing zero complete frames remain invalid.",
+    "shipping_source_changed": false,
+    "dataset_changed": false,
+    "seed_changed": false,
+    "evaluator_changed": false,
+    "candidate_selected": false,
+    "threshold_changed": false,
+    "hold_changed": false
+  },
+  "recovery_execution": {
+    "trigger": "trusted-main-push-only",
+    "required_parent_sha": "d6e8c145d66aef119c0e9d166e52de9af1f54202",
+    "maximum_successful_recoveries": 1,
+    "rebuild_same_consumed_inputs_only": true,
+    "preserve_corpus_member_hash_manifest": true,
+    "preserve_result_hash_manifest": true
+  },
+  "authority_boundary": {
+    "new_diagnostic_authority": false,
+    "new_candidate_authority": false,
+    "new_confirmation_authority": false,
+    "seed_replacement_authorized": false,
+    "validation_holdout_authorized": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

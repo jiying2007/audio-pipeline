@@ -28,7 +28,7 @@
     "probe_path": "tests/validation/i022_vad_low_local_disagreement_probe.c",
     "probe_git_blob_sha": "d475bb3b961aa29390a311dc95a624fb20ab9b26",
     "evaluator_path": "tests/validation/i022_vad_low_local_disagreement_decomposition.py",
-    "evaluator_git_blob_sha": "8dfe29aecc4b062710989be420996b0abb9adfdd"
+    "evaluator_git_blob_sha": "192437d0567e54339e79b2418fcb33dc6ae32b4a"
   },
   "fresh_diagnostic_authority": {
     "seeds": [

@@ -92,7 +92,7 @@ def validate_closure(closure: dict) -> dict[str, str]:
     require(execution["run_attempt"] == 1, "diagnostic attempt drift")
     require(execution["head_sha"] == EXPECTED_HEAD, "diagnostic head drift")
     require(execution["artifact_id"] == EXPECTED_ARTIFACT, "artifact id drift")
-    require(execution["artifact_name"] == "i022-vad-low-local-disagreement-36441887773",
+    require(execution["artifact_name"] == "i023-vad-upstream-local-disagreement-risk-36441887773",
             "artifact name drift")
     require(execution["artifact_size_bytes"] == EXPECTED_ZIP_BYTES, "artifact size drift")
     require(execution["artifact_sha256"] == EXPECTED_ZIP_SHA256, "artifact digest drift")

@@ -12,7 +12,13 @@ import unittest
 ROOT=Path(__file__).resolve().parents[2]
 LIVE=ROOT/".github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml"
 HISTORY=ROOT/"tests/validation/data/i021-consumed-workflow.yml"
-RECOVERY_WF=ROOT/".github/workflows/i021-consumed-diagnostic-recovery.yml"
+RECOVERY_LIVE=ROOT/".github/workflows/i021-consumed-diagnostic-recovery.yml"
+RECOVERY_HISTORY=ROOT/"tests/validation/data/i021-consumed-recovery-workflow.yml"
+RECOVERY_HISTORY_BLOB="da45fd7cf01bd35faabdf2a82dc8c520d81fbb06"
+RESULT=ROOT/(
+    ".github/research/continuous-optimization/development-v4/"
+    "i021-vad-public-development-transfer-gap-v1-result.json")
+EVIDENCE_ROOT=Path("validation/research/evidence/i021-recovery-36419466840")
 CONTRACT=ROOT/(
     ".github/research/continuous-optimization/development-v4/"
     "i021-vad-public-development-transfer-gap-v1.json")
@@ -47,8 +53,37 @@ class I021RetirementTests(unittest.TestCase):
         self.assertEqual(jobs,["contract"])
         self.assertIn("--self-test",text)
 
-    def test_recovery_is_only_post_consumption_execution(self):
-        text=RECOVERY_WF.read_text()
+    def test_reviewed_closure_is_non_shipping_and_archive_bound(self):
+        result=json.loads(RESULT.read_text())
+        self.assertEqual(result["status"],"CLOSED_DIAGNOSTIC_ONLY")
+        self.assertEqual(
+            result["reviewed_decision"],
+            "PUBLIC_DEVELOPMENT_TRANSFER_GAP_CONFIRMED_LOW_LOCAL_EVIDENCE_DOMINANT_NO_CANDIDATE",
+        )
+        self.assertFalse(result["fresh_authority"]["rerun_allowed"])
+        self.assertEqual(
+            result["authoritative_execution"]["run_id"],36419466840)
+        self.assertEqual(
+            result["authoritative_execution"]["artifact_id"],10968739971)
+        self.assertEqual(
+            result["original_result_path"],
+            str(EVIDENCE_ROOT/"result.json"),
+        )
+        self.assertGreater(
+            result["summary"]["false_negative_mechanisms"]["low_local_evidence"]["fraction"],
+            0.90,
+        )
+        self.assertEqual(result["summary"]["below_reference_slices"],18)
+        self.assertEqual(result["summary"]["eligible_speech_slices"],18)
+        self.assertTrue(all(
+            value is False
+            for value in result["authority_boundary"].values()
+        ))
+
+    def test_recovery_is_retired_as_immutable_history(self):
+        self.assertFalse(RECOVERY_LIVE.exists())
+        self.assertEqual(git_blob(RECOVERY_HISTORY.read_bytes()),RECOVERY_HISTORY_BLOB)
+        text=RECOVERY_HISTORY.read_text()
         self.assertIn("\n  pull_request:\n",text)
         self.assertIn("\n  push:\n",text)
         self.assertNotIn("\n  workflow_dispatch:\n",text)

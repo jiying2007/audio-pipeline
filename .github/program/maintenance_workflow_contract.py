@@ -256,6 +256,8 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('tests/validation/test_i021_one_shot_guard.py'),
         Path('tests/validation/test_i021_recovery_contract.py'),
         Path('tests/validation/test_i021_retirement.py'),
+        Path('.github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1-result.json'),
+        Path('tests/validation/data/i021-consumed-recovery-workflow.yml'),
     ),
 }
 

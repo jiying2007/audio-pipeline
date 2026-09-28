@@ -15,8 +15,17 @@ RECOVERY=ROOT/(
 CONTRACT=ROOT/(
     ".github/research/continuous-optimization/development-v4/"
     "i021-vad-public-development-transfer-gap-v1.json")
-WORKFLOW=ROOT/".github/workflows/i021-consumed-diagnostic-recovery.yml"
+LIVE_WORKFLOW=ROOT/".github/workflows/i021-consumed-diagnostic-recovery.yml"
+WORKFLOW=ROOT/"tests/validation/data/i021-consumed-recovery-workflow.yml"
+WORKFLOW_BLOB="da45fd7cf01bd35faabdf2a82dc8c520d81fbb06"
 PROBE=ROOT/"tests/validation/i021_vad_public_development_transfer_gap_probe.c"
+
+
+def git_blob(data: bytes) -> str:
+    import hashlib
+    return hashlib.sha1(
+        b"blob "+str(len(data)).encode()+b"\0"+data
+    ).hexdigest()
 
 
 class I021RecoveryContractTests(unittest.TestCase):
@@ -43,6 +52,8 @@ class I021RecoveryContractTests(unittest.TestCase):
         self.assertFalse(inv["shipping_authority"])
 
     def test_recovery_has_no_manual_or_recurring_execution_surface(self):
+        self.assertFalse(LIVE_WORKFLOW.exists())
+        self.assertEqual(git_blob(WORKFLOW.read_bytes()),WORKFLOW_BLOB)
         text=WORKFLOW.read_text()
         self.assertIn("\n  pull_request:\n",text)
         self.assertIn("\n  push:\n",text)

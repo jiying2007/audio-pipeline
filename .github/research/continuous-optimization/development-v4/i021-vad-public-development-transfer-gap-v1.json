@@ -25,9 +25,9 @@
   },
   "fresh_diagnostic_authority": {
     "seeds": [
-      5307,
-      5407,
-      5507
+      501307,
+      511307,
+      521307
     ],
     "mix_limit_per_seed": 28,
     "noise_limit_per_seed": 14,

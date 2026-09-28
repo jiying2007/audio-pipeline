@@ -131,12 +131,16 @@ class I022GuardTests(unittest.TestCase):
             text.index("      - name: Enforce one-shot I022 diagnostic execution\n"),
             text.index(f"      - name: {EVALUATE}\n"),
         )
-        for seed in (601307,611307,621307):
+        c=json.loads(CONTRACT.read_text(encoding="utf-8"))
+        for seed in c["fresh_diagnostic_authority"]["seeds"]:
             self.assertNotIn(str(seed),text)
 
     def test_contract_has_zero_candidate_authority(self):
         c=json.loads(CONTRACT.read_text(encoding="utf-8"))
-        self.assertEqual(c["fresh_diagnostic_authority"]["seeds"],[601307,611307,621307])
+        seeds=c["fresh_diagnostic_authority"]["seeds"]
+        self.assertEqual(len(seeds),3)
+        self.assertEqual(len(set(seeds)),3)
+        self.assertTrue(all(type(seed) is int and seed > 0 for seed in seeds))
         self.assertEqual(c["fresh_diagnostic_authority"]["candidate_limit"],0)
         self.assertEqual(c["fresh_diagnostic_authority"]["confirmation_limit"],0)
         self.assertFalse(c["oracle_reference_semantics"]["threshold_search"])

@@ -118,7 +118,24 @@ class BaselineReferenceAuthorityTests(unittest.TestCase):
         cv=json.loads((EVIDENCE_ROOT/"candidate-visible-report.json").read_text())
         bb=json.loads((EVIDENCE_ROOT/"baseline-blind-report.json").read_text())
         cb=json.loads((EVIDENCE_ROOT/"candidate-blind-report.json").read_text())
-        identity={"authority":"non-shipping-source-patch-blind-qualification"}
+        identity={
+            "authority":"non-shipping-source-patch-blind-qualification",
+            "candidate_id":counterfactual["candidate_id"],
+            "research_candidate_id":counterfactual["research_candidate_id"],
+            "source_base_sha":counterfactual["source_base_sha"],
+            "patch":counterfactual["patch"],
+            "blind_contract":counterfactual["blind_contract"],
+            "baseline_processor_sha256":bv["bindings"]["processor_sha256"],
+            "candidate_processor_sha256":cv["bindings"]["processor_sha256"],
+        }
+        self.assertEqual(
+            bb["bindings"]["processor_sha256"],
+            identity["baseline_processor_sha256"],
+        )
+        self.assertEqual(
+            cb["bindings"]["processor_sha256"],
+            identity["candidate_processor_sha256"],
+        )
         with tempfile.TemporaryDirectory() as tmp:
             result,rc=module.classify(
                 counterfactual,identity,bv,cv,bb,cb,

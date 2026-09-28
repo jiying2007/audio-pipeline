@@ -39,6 +39,10 @@ DEVELOPMENT_RESULT = Path(
     ".github/research/continuous-optimization/development-v4/"
     "i020-vad-weak-start-requires-blend-v1-result.json"
 )
+DURABLE_MANIFEST = Path(
+    ".github/research/continuous-optimization/development-v4/"
+    "i020-blind-baseline-invalid-durable-evidence-v1.json"
+)
 SELF = Path("tests/validation/test_i020_blind_retirement.py")
 ONE_SHOT = Path("tests/validation/test_i020_code_candidate_blind_one_shot.py")
 EVIDENCE_GLOB = (
@@ -132,8 +136,8 @@ class I020BlindRetirementTests(unittest.TestCase):
         for workflow in (self.blind_live, self.resume_live):
             paths = workflow["on"]["pull_request"]["paths"]
             for required in (
-                str(REVIEW), str(SELF), str(BLIND_HISTORY),
-                str(RESUME_HISTORY), EVIDENCE_GLOB,
+                str(REVIEW), str(DURABLE_MANIFEST), str(SELF),
+                str(BLIND_HISTORY), str(RESUME_HISTORY), EVIDENCE_GLOB,
             ):
                 self.assertIn(required, paths)
             contract = workflow["jobs"]["contract"]
@@ -231,6 +235,54 @@ class I020BlindRetirementTests(unittest.TestCase):
             review["authority_boundary"]["candidate_advancement_authorized"]
         )
 
+    def test_durable_archive_manifest_is_frozen_and_review_bound(self):
+        review = json.loads((ROOT / REVIEW).read_text(encoding="utf-8"))
+        manifest = json.loads(
+            (ROOT / DURABLE_MANIFEST).read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["status"], "FROZEN_ARCHIVE_MANIFEST")
+        self.assertEqual(manifest["review_path"], str(REVIEW))
+        self.assertEqual(
+            manifest["required_review_status"], review["status"]
+        )
+        self.assertEqual(
+            manifest["archive_root"],
+            review["durable_evidence_plan"]["root"],
+        )
+        source = manifest["source_partition_artifact"]
+        resume = manifest["same_partition_resume_artifact"]
+        self.assertEqual(
+            source["run_id"], review["blind_partition_authority"]["source_run_id"]
+        )
+        self.assertEqual(
+            source["artifact_id"],
+            review["blind_partition_authority"]["source_artifact_id"],
+        )
+        self.assertEqual(
+            source["artifact_digest"],
+            review["blind_partition_authority"]["source_artifact_digest"],
+        )
+        self.assertEqual(
+            resume["run_id"], review["same_partition_resume"]["run_id"]
+        )
+        self.assertEqual(
+            resume["artifact_id"], review["same_partition_resume"]["artifact_id"]
+        )
+        self.assertEqual(
+            resume["artifact_digest"],
+            review["same_partition_resume"]["artifact_digest"],
+        )
+        self.assertEqual(
+            manifest["invariants"]["decision"], review["decision"]
+        )
+        self.assertFalse(manifest["invariants"]["terminal_candidate"])
+        self.assertTrue(
+            manifest["authority_boundary"]["archive_copy_only"]
+        )
+        for key, value in manifest["authority_boundary"].items():
+            if key != "archive_copy_only":
+                self.assertFalse(value, key)
+
     def test_frozen_candidate_identity_is_unchanged(self):
         review = json.loads((ROOT / REVIEW).read_text(encoding="utf-8"))
         manifest = json.loads((ROOT / MANIFEST).read_text(encoding="utf-8"))
@@ -269,6 +321,7 @@ class I020BlindRetirementTests(unittest.TestCase):
                 module.CONTRACT_ONLY_RESEARCH_EVIDENCE[workflow]
             )
             self.assertIn(REVIEW, evidence)
+            self.assertIn(DURABLE_MANIFEST, evidence)
             self.assertIn(MANIFEST, evidence)
             self.assertIn(PATCH, evidence)
         module.validate_program_archive_trigger_boundaries(ROOT)

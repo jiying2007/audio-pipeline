@@ -1,0 +1,148 @@
+{
+  "decision": "VAD_LOW_LOCAL_DISAGREEMENT_DECOMPOSED_REVIEW_REQUIRED",
+  "fresh_diagnostic_seeds": [
+    601307,
+    611307,
+    621307
+  ],
+  "global": {
+    "f1": 0.5353578059226852,
+    "false_positive_rate": 0.5375544818731628,
+    "fn": 9367,
+    "fp": 15910,
+    "frames": 53526,
+    "low_local_false_negatives": 8779,
+    "low_local_fraction_of_false_negatives": 0.937226433223017,
+    "low_local_matrix": {
+      "upstream_high__reference_fail": 4499,
+      "upstream_high__reference_pass": 702,
+      "upstream_not_high__reference_fail": 2968,
+      "upstream_not_high__reference_pass": 610
+    },
+    "noise_frames": 29597,
+    "precision": 0.4778813336833815,
+    "recall": 0.6085502946215888,
+    "reference_applicable_low_local": 8779,
+    "reference_pass_fraction_of_applicable_low_local": 0.1494475452785055,
+    "reference_ratio_db_low_local_median": -0.3646565541818575,
+    "shipping_ratio_db_low_local_median": -1.83762181,
+    "speech_frames": 23929,
+    "state_over_reference_db": {
+      "median": 1.5053748646182388,
+      "p10": -1.0851813698226132,
+      "p90": 5.039182645810291
+    },
+    "tn": 13687,
+    "tp": 14562,
+    "upstream_high_fraction_of_low_local": 0.5924364961840757,
+    "upstream_probability_low_local_median": 0.582625747
+  },
+  "interpretation_boundary": {
+    "matrix_is_descriptive_only": true,
+    "noise_reference": "Per-case median shipping noise_rms_before over oracle-labeled true-noise frames in the same post-NS diagnostic domain.",
+    "reference_pass": "Recompute only the existing shipping local-evidence mapping with that diagnostic reference and the unchanged local guard; this is not a candidate or threshold search."
+  },
+  "invalid_reasons": [],
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0
+  },
+  "top_low_local_slices": [
+    {
+      "low_local_false_negatives": 3483,
+      "low_local_fraction_of_false_negatives": 0.9330297347977498,
+      "reference_pass_fraction_of_applicable_low_local": 0.11943726672408843,
+      "slice": "reverb:false",
+      "state_over_reference_db_median": 1.2105533795317787,
+      "upstream_high_fraction_of_low_local": 0.5877117427505024
+    },
+    {
+      "low_local_false_negatives": 3483,
+      "low_local_fraction_of_false_negatives": 0.9330297347977498,
+      "reference_pass_fraction_of_applicable_low_local": 0.11943726672408843,
+      "slice": "scenario:research-public-noisy-clean",
+      "state_over_reference_db_median": 1.2105533795317787,
+      "upstream_high_fraction_of_low_local": 0.5877117427505024
+    },
+    {
+      "low_local_false_negatives": 3072,
+      "low_local_fraction_of_false_negatives": 0.9411764705882353,
+      "reference_pass_fraction_of_applicable_low_local": 0.19010416666666666,
+      "slice": "clean_only:true",
+      "state_over_reference_db_median": 2.254510269015891,
+      "upstream_high_fraction_of_low_local": 0.5960286458333334
+    },
+    {
+      "low_local_false_negatives": 3072,
+      "low_local_fraction_of_false_negatives": 0.9411764705882353,
+      "reference_pass_fraction_of_applicable_low_local": 0.19010416666666666,
+      "slice": "scenario:research-public-clean-preservation",
+      "state_over_reference_db_median": 2.254510269015891,
+      "upstream_high_fraction_of_low_local": 0.5960286458333334
+    },
+    {
+      "low_local_false_negatives": 2224,
+      "low_local_fraction_of_false_negatives": 0.9383966244725739,
+      "reference_pass_fraction_of_applicable_low_local": 0.14028776978417265,
+      "slice": "reverb:true",
+      "state_over_reference_db_median": 1.2862109916555564,
+      "upstream_high_fraction_of_low_local": 0.5948741007194245
+    },
+    {
+      "low_local_false_negatives": 2224,
+      "low_local_fraction_of_false_negatives": 0.9383966244725739,
+      "reference_pass_fraction_of_applicable_low_local": 0.14028776978417265,
+      "slice": "scenario:research-public-noisy-reverb",
+      "state_over_reference_db_median": 1.2862109916555564,
+      "upstream_high_fraction_of_low_local": 0.5948741007194245
+    },
+    {
+      "low_local_false_negatives": 1380,
+      "low_local_fraction_of_false_negatives": 0.9362279511533242,
+      "reference_pass_fraction_of_applicable_low_local": 0.09130434782608696,
+      "slice": "snr_db:0",
+      "state_over_reference_db_median": 0.6954073849204807,
+      "upstream_high_fraction_of_low_local": 0.5623188405797102
+    },
+    {
+      "low_local_false_negatives": 1292,
+      "low_local_fraction_of_false_negatives": 0.934876989869754,
+      "reference_pass_fraction_of_applicable_low_local": 0.1586687306501548,
+      "slice": "snr_db:5",
+      "state_over_reference_db_median": 1.4134498241819364,
+      "upstream_high_fraction_of_low_local": 0.6323529411764706
+    },
+    {
+      "low_local_false_negatives": 1243,
+      "low_local_fraction_of_false_negatives": 0.9345864661654135,
+      "reference_pass_fraction_of_applicable_low_local": 0.14641995172968625,
+      "slice": "snr_db:10",
+      "state_over_reference_db_median": 2.1002589388648714,
+      "upstream_high_fraction_of_low_local": 0.6017699115044248
+    },
+    {
+      "low_local_false_negatives": 1143,
+      "low_local_fraction_of_false_negatives": 0.951706910907577,
+      "reference_pass_fraction_of_applicable_low_local": 0.14348206474190725,
+      "slice": "snr_db:15",
+      "state_over_reference_db_median": 1.7034706369746664,
+      "upstream_high_fraction_of_low_local": 0.6404199475065617
+    },
+    {
+      "low_local_false_negatives": 1130,
+      "low_local_fraction_of_false_negatives": 0.9519797809604044,
+      "reference_pass_fraction_of_applicable_low_local": 0.08938053097345133,
+      "slice": "noise_domain:cafeteria",
+      "state_over_reference_db_median": 0.6240182970737697,
+      "upstream_high_fraction_of_low_local": 0.5787610619469027
+    },
+    {
+      "low_local_false_negatives": 850,
+      "low_local_fraction_of_false_negatives": 0.9320175438596491,
+      "reference_pass_fraction_of_applicable_low_local": 0.15764705882352942,
+      "slice": "noise_domain:traffic",
+      "state_over_reference_db_median": 1.2532478699622516,
+      "upstream_high_fraction_of_low_local": 0.4894117647058824
+    }
+  ]
+}

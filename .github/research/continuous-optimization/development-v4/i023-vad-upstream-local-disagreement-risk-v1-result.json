@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i023-vad-upstream-local-disagreement-risk-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "ec937ab87683b0596d72190a247e8bb18308a1ff",
+  "decision": "VAD_UPSTREAM_LOCAL_DISAGREEMENT_RISK_PROFILED_REVIEW_REQUIRED",
+  "reviewed_decision": "UPSTREAM_LOCAL_DISAGREEMENT_NOISE_RISK_HIGH_NO_DIRECT_TRUST_CANDIDATE",
+  "reviewed_interpretation": "Fresh I023 public-development evidence is valid and shipping-mirror exact. The upstream-high/local-low disagreement state covers 5210/8520 low-local false negatives (61.15%), so it is highly relevant to the recall gap, but it is not a safe speech admission state: it occurs on 8337 oracle-speech frames and 9147 oracle-noise frames, giving development-corpus conditional speech precision of only 47.68%. It occupies 30.65% of all oracle-noise frames and 35.36% of oracle-speech frames. On noise disagreement frames, 33.22% are already shipping-active and 36.14% enter with pre-existing hangover, while 98.47% perform no current-frame refresh, 1.53% weak-refresh and 0% strong-refresh. Median shipping probability on noise disagreement is only 0.2479, below the 0.35 decision threshold. Therefore directly trusting upstream-high/local-low disagreement for activation, guard bypass, threshold relaxation or hold refresh is not justified; the current state machine is suppressing a large population of upstream-high noise frames. Any next step must first test whether existing observables can separate disagreement speech from disagreement noise without tuning or candidate selection.",
+  "authoritative_execution": {
+    "run_id": 36441887773,
+    "run_attempt": 1,
+    "head_sha": "1ede137771caeb24fef503419b1cc3e3f7f9fde1",
+    "artifact_id": 10979618377,
+    "artifact_name": "i023-vad-upstream-local-disagreement-risk-36441887773",
+    "artifact_size_bytes": 45861,
+    "artifact_sha256": "1d2f3084cedb28e29b1d646712ce7425e16733eac793ab77c98613a9f8e1d270",
+    "member_sha256": {
+      "build-info.txt": "e683a9e24c6ed1155eeee68b248cb5c40cf61e89327b5a77d420be93516bec0e",
+      "contract.json": "5e1992b492285f395e0a06997e35e99431e8af21c5e703c31d1b149982c3dbba",
+      "corpora.sha256": "d9043c4d38cc204be08f2950a3227598b6f6bd7fe36a8bbbe0453638d9ab5d3b",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "4e861ab4340971534f438058bfea0c5bd075cc453edf5f8fbde6fe4cd07abe62",
+      "materialization.json": "6bdcd51c6f7a5a44709e95f9ef3d088750410ce3d645c7313e6547208de83e54",
+      "probe.sha256": "9c092b49e4b6053d60e8a3d7382766a6dcf15b76af39873e648245414c409cc6",
+      "result.json": "75a764aa1c95afab23f4515210c733c1d8a6d5a310a650583e7ea8099e0165a2",
+      "summary.json": "cf301d6bb7a65fcba791ece1d0355236a6fced084e341f616c9fb997514ec431",
+      "SHA256SUMS": "fd4d55acd16cb1d67877c1f63dd52a094470b36439fa91aa7148b49f30a2beca"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      701307,
+      711307,
+      721307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "global_f1": 0.537418121764302,
+    "global_precision": 0.4777000725737283,
+    "global_recall": 0.6142002799338339,
+    "global_false_positive_rate": 0.5305076227173731,
+    "speech_frames": 23577,
+    "noise_frames": 29845,
+    "false_negative_frames": 9096,
+    "false_positive_frames": 15833,
+    "low_local_false_negatives": 8520,
+    "low_local_fraction_of_false_negatives": 0.9366754617414248,
+    "disagreement_low_local_false_negatives": 5210,
+    "disagreement_coverage_of_low_local_false_negatives": 0.6115023474178404,
+    "disagreement_speech_frames": 8337,
+    "disagreement_noise_frames": 9147,
+    "disagreement_conditional_speech_precision": 0.4768359643102265,
+    "disagreement_speech_occupancy": 0.35360732917674004,
+    "disagreement_noise_occupancy": 0.3064834980733791,
+    "disagreement_noise_active_fraction": 0.3322400787143326,
+    "disagreement_noise_pre_hangover_fraction": 0.361429977041653,
+    "disagreement_noise_refresh_fraction": {
+      "none": 0.9846944353339893,
+      "weak": 0.015305564666010714,
+      "strong": 0
+    },
+    "disagreement_noise_shipping_probability_median": 0.247928664,
+    "disagreement_noise_upstream_probability_median": 0.612094343,
+    "disagreement_noise_ratio_db_median": -6.43904924,
+    "noise_disagreement_episodes": 4067,
+    "noise_disagreement_episode_length_median": 1,
+    "noise_disagreement_episode_length_p90": 5,
+    "post_disagreement_active_fraction_observed": 0.512965582272513
+  },
+  "cross_slice_review": {
+    "conditional_speech_precision_range_by_noise_domain": [
+      0.34008740564163686,
+      0.5308970099667774
+    ],
+    "noise_occupancy_range_by_noise_domain": [
+      0.220625,
+      0.4670978627671541
+    ],
+    "low_local_fn_coverage_range_by_noise_domain": [
+      0.5535911602209945,
+      0.6232159847764034
+    ],
+    "noise_active_fraction_range_by_noise_domain": [
+      0.21559268098647574,
+      0.5042492917847026
+    ],
+    "conditional_speech_precision_range_by_snr": [
+      0.48299912816041846,
+      0.5506088280060882
+    ],
+    "noise_occupancy_range_by_snr": [
+      0.3652173913043478,
+      0.5324616771866546
+    ],
+    "reviewed_interpretation": "The same safety conclusion persists across all seven noise domains and all -5/0/5/10/15 dB SNR slices. No noise domain reaches even 0.54 development conditional speech precision, while disagreement occupies at least 22.06% of oracle-noise frames in every noise domain. Reverb and anechoic slices likewise remain near chance conditional precision with high noise occupancy. The disagreement state is therefore not a domain-local artifact and cannot be treated as a safe direct admission signal."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i024-vad-disagreement-feature-separability-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "I023 rejects direct trust of the upstream-high/local-low state because it is common on noise as well as speech. Before abandoning state-only improvement entirely, one final candidate-zero decomposition should test whether already-observed shipping diagnostics (upstream probability margin, local ratio_db, crest_db, raw/pre-blend probability, noise-update state, pre-hangover and short temporal context) robustly separate disagreement speech from disagreement noise across domains. If no stable separation exists, close the state-only VAD route and move root cause upstream rather than tuning guards.",
+    "prohibited": [
+      "local guard threshold tuning",
+      "upstream guard threshold tuning",
+      "decision threshold tuning",
+      "blend tuning",
+      "hold-length tuning",
+      "direct disagreement activation",
+      "direct disagreement refresh",
+      "source candidate selection",
+      "reuse of I023 seeds",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i023-36441887773/result.json",
+  "verification_limits": [
+    "I023 is candidate-zero and uses development-only oracle labels. Its disagreement conditional speech precision is conditional on the constructed public-development sampling distribution and is not a calibrated product-environment positive predictive value.",
+    "The post-disagreement active fraction is descriptive occupancy only. Subsequent non-disagreement frames may receive independent evidence or refresh, so this metric cannot be interpreted as causal hangover attributable solely to the preceding disagreement episode.",
+    "I023 observes current shipping behavior only; it does not execute a local-guard bypass, upstream-trust activation, threshold relaxation, blend change or hold change.",
+    "The artifact contains per-case/per-slice aggregate evidence but no raw frame trace archive or audio."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "source_candidate_selected": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "upstream_guard_changed": false,
+    "local_guard_changed": false,
+    "local_guard_bypassed": false,
+    "blend_changed": false,
+    "hold_length_changed": false,
+    "disagreement_activation_added": false,
+    "disagreement_refresh_added": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "decision": "VAD_UPSTREAM_LOCAL_DISAGREEMENT_RISK_PROFILED_REVIEW_REQUIRED",
+  "fresh_diagnostic_seeds": [
+    701307,
+    711307,
+    721307
+  ],
+  "global": {
+    "disagreement_conditional_speech_precision": 0.4768359643102265,
+    "disagreement_coverage_of_low_local_false_negatives": 0.6115023474178404,
+    "disagreement_low_local_false_negatives": 5210,
+    "disagreement_noise_active_fraction": 0.3322400787143326,
+    "disagreement_noise_blend_fraction": 1.0,
+    "disagreement_noise_frames": 9147,
+    "disagreement_noise_occupancy": 0.3064834980733791,
+    "disagreement_noise_pre_hangover_fraction": 0.361429977041653,
+    "disagreement_noise_ratio_db_median": -6.43904924,
+    "disagreement_noise_refresh": {
+      "none": 9007,
+      "weak": 140
+    },
+    "disagreement_noise_refresh_fraction": {
+      "none": 0.9846944353339893,
+      "weak": 0.015305564666010714
+    },
+    "disagreement_noise_shipping_probability_median": 0.247928664,
+    "disagreement_noise_upstream_probability_median": 0.612094343,
+    "disagreement_speech_active_fraction": 0.3750749670145136,
+    "disagreement_speech_frames": 8337,
+    "disagreement_speech_occupancy": 0.35360732917674004,
+    "disagreement_total_frames": 17484,
+    "f1": 0.537418121764302,
+    "false_positive_rate": 0.5305076227173731,
+    "fn": 9096,
+    "fp": 15833,
+    "frames": 53422,
+    "low_local_false_negatives": 8520,
+    "noise_disagreement_episode_length_median": 1,
+    "noise_disagreement_episode_length_p90": 5.0,
+    "noise_disagreement_episodes": 4067,
+    "noise_frames": 29845,
+    "post_disagreement_tail_active_fraction": 0.512965582272513,
+    "post_disagreement_tail_active_frames": 5440,
+    "post_disagreement_tail_noise_frames": 10605,
+    "precision": 0.4777000725737283,
+    "recall": 0.6142002799338339,
+    "speech_frames": 23577,
+    "tn": 14012,
+    "tp": 14481
+  },
+  "interpretation_boundary": {
+    "conditional_precision_is_diagnostic_only": true,
+    "disagreement_state": "Existing upstream probability above the unchanged shipping upstream guard while the unchanged local guard fails.",
+    "no_guard_bypass_counterfactual_is_executed": true,
+    "tail_horizon_frames": 8
+  },
+  "invalid_reasons": [],
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0
+  },
+  "top_risk_slices": [
+    {
+      "disagreement_conditional_speech_precision": 0.49299521191700657,
+      "disagreement_coverage_of_low_local_false_negatives": 0.5778301886792453,
+      "disagreement_noise_active_fraction": 0.22910108429520812,
+      "disagreement_noise_occupancy": 0.5070947144377439,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9884575026232949,
+        "weak": 0.011542497376705142
+      },
+      "disagreement_total_frames": 5639,
+      "post_disagreement_tail_active_fraction": 0.2792617775619233,
+      "slice": "reverb:false"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.49299521191700657,
+      "disagreement_coverage_of_low_local_false_negatives": 0.5778301886792453,
+      "disagreement_noise_active_fraction": 0.22910108429520812,
+      "disagreement_noise_occupancy": 0.5070947144377439,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9884575026232949,
+        "weak": 0.011542497376705142
+      },
+      "disagreement_total_frames": 5639,
+      "post_disagreement_tail_active_fraction": 0.2792617775619233,
+      "slice": "scenario:research-public-noisy-clean"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.5359773371104816,
+      "disagreement_coverage_of_low_local_false_negatives": 0.6209239130434783,
+      "disagreement_noise_active_fraction": 0.29833129833129834,
+      "disagreement_noise_occupancy": 0.4600262123197903,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9861619861619861,
+        "weak": 0.013838013838013839
+      },
+      "disagreement_total_frames": 5295,
+      "post_disagreement_tail_active_fraction": 0.4225663716814159,
+      "slice": "reverb:true"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.5359773371104816,
+      "disagreement_coverage_of_low_local_false_negatives": 0.6209239130434783,
+      "disagreement_noise_active_fraction": 0.29833129833129834,
+      "disagreement_noise_occupancy": 0.4600262123197903,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9861619861619861,
+        "weak": 0.013838013838013839
+      },
+      "disagreement_total_frames": 5295,
+      "post_disagreement_tail_active_fraction": 0.4225663716814159,
+      "slice": "scenario:research-public-noisy-reverb"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.6027488361782309,
+      "disagreement_coverage_of_low_local_false_negatives": 0.6391871165644172,
+      "disagreement_noise_active_fraction": 0.27734375,
+      "disagreement_noise_occupancy": 0.33026170291190565,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9620535714285714,
+        "weak": 0.03794642857142857
+      },
+      "disagreement_total_frames": 4511,
+      "post_disagreement_tail_active_fraction": 0.21608040201005024,
+      "slice": "clean_only:true"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.6027488361782309,
+      "disagreement_coverage_of_low_local_false_negatives": 0.6391871165644172,
+      "disagreement_noise_active_fraction": 0.27734375,
+      "disagreement_noise_occupancy": 0.33026170291190565,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9620535714285714,
+        "weak": 0.03794642857142857
+      },
+      "disagreement_total_frames": 4511,
+      "post_disagreement_tail_active_fraction": 0.21608040201005024,
+      "slice": "scenario:research-public-clean-preservation"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.5506088280060882,
+      "disagreement_coverage_of_low_local_false_negatives": 0.6340852130325815,
+      "disagreement_noise_active_fraction": 0.15241320914479256,
+      "disagreement_noise_occupancy": 0.5324616771866546,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9889923793395428,
+        "weak": 0.01100762066045724
+      },
+      "disagreement_total_frames": 2628,
+      "post_disagreement_tail_active_fraction": 0.2018716577540107,
+      "slice": "snr_db:10"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.34008740564163686,
+      "disagreement_coverage_of_low_local_false_negatives": 0.6232159847764034,
+      "disagreement_noise_active_fraction": 0.275737507525587,
+      "disagreement_noise_occupancy": 0.4670978627671541,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9957856712823601,
+        "weak": 0.004214328717639976
+      },
+      "disagreement_total_frames": 2517,
+      "post_disagreement_tail_active_fraction": 0.45549318364073776,
+      "slice": "noise_domain:cafeteria"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.5190495698484228,
+      "disagreement_coverage_of_low_local_false_negatives": 0.5963503649635037,
+      "disagreement_noise_active_fraction": 0.2708688245315162,
+      "disagreement_noise_occupancy": 0.50625269512721,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9889267461669506,
+        "weak": 0.011073253833049404
+      },
+      "disagreement_total_frames": 2441,
+      "post_disagreement_tail_active_fraction": 0.33801169590643276,
+      "slice": "snr_db:5"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.48299912816041846,
+      "disagreement_coverage_of_low_local_false_negatives": 0.5823327615780446,
+      "disagreement_noise_active_fraction": 0.2403035413153457,
+      "disagreement_noise_occupancy": 0.5053259480187473,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9730185497470489,
+        "weak": 0.026981450252951095
+      },
+      "disagreement_total_frames": 2294,
+      "post_disagreement_tail_active_fraction": 0.21136063408190225,
+      "slice": "snr_db:15"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.42550274223034734,
+      "disagreement_coverage_of_low_local_false_negatives": 0.599047619047619,
+      "disagreement_noise_active_fraction": 0.21559268098647574,
+      "disagreement_noise_occupancy": 0.3603784403669725,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9992044550517104,
+        "weak": 0.0007955449482895784
+      },
+      "disagreement_total_frames": 2188,
+      "post_disagreement_tail_active_fraction": 0.5087136929460581,
+      "slice": "noise_domain:kitchen"
+    },
+    {
+      "disagreement_conditional_speech_precision": 0.0,
+      "disagreement_coverage_of_low_local_false_negatives": null,
+      "disagreement_noise_active_fraction": 0.5659637076998528,
+      "disagreement_noise_occupancy": 0.1517113095238095,
+      "disagreement_noise_refresh_fraction": {
+        "none": 0.9975478175576263,
+        "weak": 0.0024521824423737125
+      },
+      "disagreement_total_frames": 2039,
+      "post_disagreement_tail_active_fraction": 0.750758035172832,
+      "slice": "scenario:research-public-noise-only"
+    }
+  ]
+}

@@ -1,0 +1,452 @@
+{
+  "bindings": {
+    "authority_sha256": "e7f6791f605d702ec906a545f111023eb5f7b4c0460b9545729f4fd30f684be5",
+    "corpus_sha256": "175c74ff64e804d917fbfe1b468bfa90bc5d731d48a0300b7fe95d6fe415e7b0",
+    "dataset_lock_sha256": "46b854fc54be3a4c454c4fd17a1f0b582f37f62ca1cd7ae9bc2128d4c96e40dc",
+    "policy_sha256": "31bc9be25d6d698176819522ccc4555b3a5fa15dc77fb8651ccba18999d4ed83",
+    "processor_sha256": "dac12a95c6d71d853c006e4ad35262b3edca7e27039d4a45e1d7bd0803c5ee18",
+    "render_corr_compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "render_corr_helper_binary_sha256": "77499af684aab889115e3742e82aa8c1da2ad50194c2c4a1fb5915a9866609fa",
+    "render_corr_helper_source_sha256": "19cbf9af3b3e36c5ca88546b4a6ab091af0292cbb2bffd69ac121eda70be90ac",
+    "render_corr_loader_sha256": "0a2f720e5b1eb29f7f4174bcadc8bca0d88bc5d0e34b9b19337c13d683127a81",
+    "render_corr_search": "exact-all-integer-lags-stride4-v1",
+    "validation_evaluator_sha256": "9082b061e7e46aa1c48c82c0ec845524110e01e910aa51e5b83c2c9d9594789a"
+  },
+  "cases": [
+    {
+      "case_id": "aec-compact-04f40ac5c75f9487",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-10459fa70792fbdc",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-3ca12c3a6d069c93",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-583caf521e0e0377",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-708bf682cefd16fb",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-83d1128c652f2e3f",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-975d310c8b892e74",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-9a60d75d318af498",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-ae200217508cd541",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-c4aa7009d22bc0c8",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-e2eca914fde091b7",
+      "passed": true
+    },
+    {
+      "case_id": "aec-compact-f1640b7b942af5a7",
+      "passed": true
+    },
+    {
+      "case_id": "compact-bf-006",
+      "passed": true
+    },
+    {
+      "case_id": "compact-bf-007",
+      "passed": true
+    },
+    {
+      "case_id": "compact-bf-010",
+      "passed": true
+    },
+    {
+      "case_id": "compact-bf-014",
+      "passed": true
+    },
+    {
+      "case_id": "compact-ns-006",
+      "passed": true
+    },
+    {
+      "case_id": "compact-ns-007",
+      "passed": true
+    },
+    {
+      "case_id": "compact-ns-010",
+      "passed": true
+    },
+    {
+      "case_id": "compact-ns-014",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-004",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-007",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-009",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-010",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-014",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-020",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-042",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-046",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-052",
+      "passed": true
+    },
+    {
+      "case_id": "dns-derived-054",
+      "passed": true
+    }
+  ],
+  "corpus_id": "public-validation-full-v2-blind",
+  "policy_id": "validation-full-blind-v1",
+  "schema_version": 1,
+  "source_revision": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "summary": {
+    "cases": 30,
+    "dimension_values": {},
+    "max_output_clip_fraction": 0.0,
+    "max_output_dc_offset_dbfs": -48.36885573136642,
+    "max_vad_false_positive_rate": 0.5606060606060606,
+    "median_erle_db": null,
+    "median_near_si_sdr_improvement_db": 0.7301649545612242,
+    "median_output_render_corr_reduction": 0.012597430343945209,
+    "min_vad_f1": 0.3700159489633174,
+    "min_vad_recall": 0.36728395061728397,
+    "near_si_sdr_improvement_applicable_cases": 18,
+    "p10_near_si_sdr_improvement_db": -5.462951235663272,
+    "p10_noise_only_attenuation_db": -5.858477851962906,
+    "p10_output_render_corr_reduction": -0.03275178433206185,
+    "pass_rate": 1.0,
+    "passed_cases": 30,
+    "scenario_metrics": {
+      "aec-doubletalk": {
+        "cases": 4,
+        "metrics": {
+          "output_clip_fraction": {
+            "count": 4,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 4,
+            "max": -90.4446767296116,
+            "median": -98.40826361562927,
+            "min": -109.42868051072651,
+            "p10": -107.81929999774302
+          },
+          "output_render_corr_reduction": {
+            "count": 4,
+            "max": 0.23978277417543503,
+            "median": 0.09311843197767675,
+            "min": -0.00771386968226934,
+            "p10": -0.0037705703248081266
+          }
+        },
+        "passed_cases": 4
+      },
+      "aec-farend-singletalk": {
+        "cases": 7,
+        "metrics": {
+          "output_clip_fraction": {
+            "count": 7,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 7,
+            "max": -67.46992116757662,
+            "median": -110.11734377195322,
+            "min": -120.35504768459157,
+            "p10": -116.4155903556508
+          },
+          "output_render_corr_reduction": {
+            "count": 7,
+            "max": 0.089123890158749,
+            "median": 0.019764399178622383,
+            "min": -0.07839585348524998,
+            "p10": -0.05257164759621866
+          }
+        },
+        "passed_cases": 7
+      },
+      "aec-nearend-singletalk": {
+        "cases": 1,
+        "metrics": {
+          "output_clip_fraction": {
+            "count": 1,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 1,
+            "max": -94.92130856295879,
+            "median": -94.92130856295879,
+            "min": -94.92130856295879,
+            "p10": -94.92130856295879
+          },
+          "output_render_corr_reduction": {
+            "count": 1,
+            "max": 0.0005654601336288687,
+            "median": 0.0005654601336288687,
+            "min": 0.0005654601336288687,
+            "p10": 0.0005654601336288687
+          }
+        },
+        "passed_cases": 1
+      },
+      "bf-offaxis": {
+        "cases": 4,
+        "metrics": {
+          "near_si_sdr_improvement_db": {
+            "count": 4,
+            "max": 4.182483188880567,
+            "median": 2.93710628137642,
+            "min": -5.432425077182074,
+            "p10": -3.1894519238492505
+          },
+          "noise_only_attenuation_db": {
+            "count": 4,
+            "max": -3.266775628591023,
+            "median": -6.352854524276745,
+            "min": -9.68873300191663,
+            "p10": -9.058751962860043
+          },
+          "output_clip_fraction": {
+            "count": 4,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 4,
+            "max": -89.86778088972542,
+            "median": -95.92352553832072,
+            "min": -121.29824325932236,
+            "p10": -113.69482296164489
+          },
+          "speech_active_attenuation_db": {
+            "count": 4,
+            "max": -9.97625371597813,
+            "median": -11.764638353578112,
+            "min": -16.674873340867833,
+            "p10": -15.585932821288857
+          },
+          "vad_f1": {
+            "count": 4,
+            "max": 0.7784552845528455,
+            "median": 0.6851530368852343,
+            "min": 0.3925233644859813,
+            "p10": 0.47521178943862785
+          },
+          "vad_false_positive_rate": {
+            "count": 4,
+            "max": 0.5103448275862069,
+            "median": 0.38445511780359576,
+            "min": 0.14224137931034483,
+            "p10": 0.20408509454949947
+          },
+          "vad_recall": {
+            "count": 4,
+            "max": 0.9141914191419142,
+            "median": 0.6432703363035355,
+            "min": 0.5727272727272728,
+            "p10": 0.584582560296846
+          }
+        },
+        "passed_cases": 4
+      },
+      "ns-public-derived": {
+        "cases": 4,
+        "metrics": {
+          "near_si_sdr_improvement_db": {
+            "count": 4,
+            "max": 2.4202754570206144,
+            "median": 0.8241631146664521,
+            "min": -1.1680899242622012,
+            "p10": -0.6992595983299483
+          },
+          "noise_only_attenuation_db": {
+            "count": 4,
+            "max": 5.139984308868834,
+            "median": 2.6308614731280855,
+            "min": 1.4844819771745212,
+            "p10": 1.751803665104633
+          },
+          "output_clip_fraction": {
+            "count": 4,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 4,
+            "max": -87.63792116115741,
+            "median": -104.09940000674627,
+            "min": -119.35235126552769,
+            "p10": -115.37247201216069
+          },
+          "speech_active_attenuation_db": {
+            "count": 4,
+            "max": 1.074838714826529,
+            "median": 0.7550965373747976,
+            "min": 0.48672995880701275,
+            "p10": 0.5413427390217562
+          },
+          "vad_f1": {
+            "count": 4,
+            "max": 0.7924151696606787,
+            "median": 0.6649275964992436,
+            "min": 0.3700159489633174,
+            "p10": 0.4435756626205185
+          },
+          "vad_false_positive_rate": {
+            "count": 4,
+            "max": 0.5017241379310344,
+            "median": 0.43887843188161224,
+            "min": 0.15948275862068967,
+            "p10": 0.24141660306667595
+          },
+          "vad_recall": {
+            "count": 4,
+            "max": 0.9504950495049505,
+            "median": 0.6341657085369359,
+            "min": 0.5272727272727272,
+            "p10": 0.5399072356215213
+          }
+        },
+        "passed_cases": 4
+      },
+      "ns-public-derived-dns": {
+        "cases": 10,
+        "metrics": {
+          "near_si_sdr_improvement_db": {
+            "count": 10,
+            "max": 8.421523669086334,
+            "median": -0.21846195732496454,
+            "min": -9.227219377567671,
+            "p10": -5.903482982664227
+          },
+          "noise_only_attenuation_db": {
+            "count": 10,
+            "max": 10.782481305162904,
+            "median": 3.5932919242088808,
+            "min": 1.4713164678891768,
+            "p10": 1.9889311081901837
+          },
+          "output_clip_fraction": {
+            "count": 10,
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "output_dc_offset_dbfs": {
+            "count": 10,
+            "max": -48.36885573136642,
+            "median": -94.3970331754988,
+            "min": -112.6367992936426,
+            "p10": -110.22227587413288
+          },
+          "speech_active_attenuation_db": {
+            "count": 10,
+            "max": 5.203996850396271,
+            "median": 0.5909917652055812,
+            "min": 0.28662576972673004,
+            "p10": 0.3065387385576245
+          },
+          "vad_f1": {
+            "count": 10,
+            "max": 0.9747048903878585,
+            "median": 0.8491811069679023,
+            "min": 0.5225027442371021,
+            "p10": 0.6187208626590044
+          },
+          "vad_false_positive_rate": {
+            "count": 10,
+            "max": 0.5606060606060606,
+            "median": 0.2232624831309042,
+            "min": 0.0,
+            "p10": 0.0
+          },
+          "vad_recall": {
+            "count": 10,
+            "max": 0.9962962962962963,
+            "median": 0.7379986197377502,
+            "min": 0.36728395061728397,
+            "p10": 0.47272839506172837
+          }
+        },
+        "passed_cases": 10
+      }
+    },
+    "scenario_pass_rate": {
+      "aec-doubletalk": 1.0,
+      "aec-farend-singletalk": 1.0,
+      "aec-nearend-singletalk": 1.0,
+      "bf-offaxis": 1.0,
+      "ns-public-derived": 1.0,
+      "ns-public-derived-dns": 1.0
+    }
+  },
+  "tier": "validation-grade-blind",
+  "validation_result": "FAIL",
+  "violations": [
+    {
+      "actual": 0.012597430343945209,
+      "expected_min": 0.05,
+      "gate": "min_median_output_render_corr_reduction",
+      "metric": "median_output_render_corr_reduction"
+    },
+    {
+      "actual": 0.3700159489633174,
+      "expected_min": 0.8,
+      "gate": "min_vad_f1",
+      "metric": "min_vad_f1"
+    }
+  ]
+}

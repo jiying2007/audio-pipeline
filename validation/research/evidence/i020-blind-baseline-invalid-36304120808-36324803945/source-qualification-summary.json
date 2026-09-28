@@ -1,0 +1,21 @@
+{
+  "authority": "non-shipping-source-patch-blind-qualification",
+  "automatic_main_mutation": false,
+  "automatic_promotion": false,
+  "candidate_id": "vad-weak-start-requires-blend-v1",
+  "decision": "BLIND_QUALIFICATION_INCOMPLETE_NON_SHIPPING",
+  "failed_stage": "evidence-incomplete",
+  "hil_authority": false,
+  "next_gate": "validation-grade-blind",
+  "patch_sha256": "369811a313859374eea133243cc804ad61b68981651a37b8910b5cfa873babde",
+  "product_certification_authority": false,
+  "relative_vad_violations": [],
+  "research_candidate_id": "b98b172f26ccaee3",
+  "rule": "Only absolute PASS for baseline+candidate on the same visible/blind partition plus preregistered paired VAD regression bounds can qualify the exact source-patch candidate for separate source-change review. No outcome changes shipping automatically.",
+  "schema_version": 1,
+  "shipping_authority": false,
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "source_merge_authority": false,
+  "target_execution_authority": false,
+  "terminal_candidate": false
+}

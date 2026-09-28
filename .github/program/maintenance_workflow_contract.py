@@ -266,17 +266,6 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('tests/validation/data/i022-consumed-workflow.yml'),
         Path('tests/validation/test_i022_one_shot_guard.py'),
         Path('tests/validation/test_i022_retirement.py'),
-        Path('validation/research/evidence/i022-36432159733/SHA256SUMS'),
-        Path('validation/research/evidence/i022-36432159733/build-info.txt'),
-        Path('validation/research/evidence/i022-36432159733/contract.json'),
-        Path('validation/research/evidence/i022-36432159733/corpora.sha256'),
-        Path('validation/research/evidence/i022-36432159733/evaluate.exit-code'),
-        Path('validation/research/evidence/i022-36432159733/evaluate.stderr'),
-        Path('validation/research/evidence/i022-36432159733/evaluate.stdout'),
-        Path('validation/research/evidence/i022-36432159733/materialization.json'),
-        Path('validation/research/evidence/i022-36432159733/probe.sha256'),
-        Path('validation/research/evidence/i022-36432159733/result.json'),
-        Path('validation/research/evidence/i022-36432159733/summary.json'),
     ),
 }
 

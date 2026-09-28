@@ -38,7 +38,8 @@
       "probe.sha256": "2f6caed713ebb642992c663b14b6e903e9e1054be5e5e5b430821c19ac8dd677",
       "recovery.json": "48df826723ab90847b229fe392bfc1092c48b8bc1e997d14acb30bf0784ffc9d",
       "result.json": "ad624b2b80a36fc58e56c86050d2090c7b2522b104831dff9e86e49aa8cada65",
-      "summary.json": "6b9724a13f504c5f5659fe69ec0a35d9701bc28b909828248bcf2907115395f0"
+      "summary.json": "6b9724a13f504c5f5659fe69ec0a35d9701bc28b909828248bcf2907115395f0",
+      "SHA256SUMS": "979896141026c4ec7c073a07e9a76342c801ca7074370186b7506e339fe4f886"
     },
     "recovery_only": true,
     "new_diagnostic_authority": false

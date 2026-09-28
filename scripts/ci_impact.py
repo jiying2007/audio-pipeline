@@ -309,6 +309,150 @@ def _terminal_research_archive_registration(
     return matches[0][1] if matches else None
 
 
+def _durable_research_archive_registration(
+    base: str,
+    head: str,
+    root: str,
+) -> dict[str, str] | None:
+    """Resolve one copy-only evidence archive from a trusted frozen manifest.
+
+    The manifest and its reviewed authority record must already exist on base
+    and remain byte-identical on head. A PR can therefore copy exact evidence
+    bytes authorized by a prior review, but can never self-authorize its own
+    release-neutral archive registration.
+    """
+    prefix = ".github/research/continuous-optimization/development-v4"
+    listing = subprocess.check_output(
+        ["git", "ls-tree", "-r", "--name-only", base, "--", prefix],
+        text=True,
+    ).splitlines()
+    matches: list[tuple[str, dict[str, str]]] = []
+    for manifest_path in listing:
+        if not manifest_path.endswith(".json"):
+            continue
+        try:
+            before = git_text(base, manifest_path)
+            manifest = json.loads(before)
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
+            continue
+        if manifest.get("status") != "FROZEN_ARCHIVE_MANIFEST":
+            continue
+        if manifest.get("archive_root") != root:
+            continue
+        if not _tree_entry(head, manifest_path) or before != git_text(head, manifest_path):
+            raise ValueError(
+                "durable archive registration changed across verification range"
+            )
+
+        if manifest.get("schema_version") != 1:
+            raise ValueError("invalid trusted-base durable archive schema")
+        review_path = manifest.get("review_path")
+        required_status = manifest.get("required_review_status")
+        if (
+            not isinstance(review_path, str)
+            or not review_path.startswith(prefix + "/")
+            or not review_path.endswith(".json")
+            or not isinstance(required_status, str)
+            or not required_status
+            or not _tree_entry(base, review_path)
+        ):
+            raise ValueError("invalid trusted-base durable archive review identity")
+        review_before = git_text(base, review_path)
+        if not _tree_entry(head, review_path) or review_before != git_text(head, review_path):
+            raise ValueError(
+                "durable archive review changed across verification range"
+            )
+        try:
+            review = json.loads(review_before)
+        except json.JSONDecodeError as exc:
+            raise ValueError("invalid trusted-base durable archive review JSON") from exc
+        if review.get("status") != required_status:
+            raise ValueError("durable archive review status mismatch")
+        plan = review.get("durable_evidence_plan")
+        if not isinstance(plan, dict) or plan.get("root") != root:
+            raise ValueError("durable archive review/root mismatch")
+
+        boundary = manifest.get("authority_boundary")
+        if (
+            not isinstance(boundary, dict)
+            or boundary.get("archive_copy_only") is not True
+            or any(
+                value is not False
+                for key, value in boundary.items()
+                if key != "archive_copy_only"
+            )
+        ):
+            raise ValueError("invalid trusted-base durable archive authority")
+
+        invariants = manifest.get("invariants")
+        if (
+            not isinstance(invariants, dict)
+            or invariants.get("decision") != review.get("decision")
+            or invariants.get("terminal_candidate") is not False
+        ):
+            raise ValueError("durable archive decision identity mismatch")
+
+        expected: dict[str, str] = {}
+        archive_names: set[str] = set()
+        groups = (
+            manifest.get("source_partition_artifact"),
+            manifest.get("same_partition_resume_artifact"),
+        )
+        for group in groups:
+            if not isinstance(group, dict):
+                raise ValueError("durable archive artifact identity missing")
+            run_id = group.get("run_id")
+            artifact_id = group.get("artifact_id")
+            digest = group.get("artifact_digest")
+            members = group.get("members")
+            if (
+                type(run_id) is not int
+                or run_id <= 0
+                or type(artifact_id) is not int
+                or artifact_id <= 0
+                or not isinstance(digest, str)
+                or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest)
+                or not isinstance(members, list)
+                or not members
+            ):
+                raise ValueError("invalid durable archive artifact identity")
+            for item in members:
+                if not isinstance(item, dict) or set(item) != {
+                    "source_path", "archive_name", "bytes", "sha256"
+                }:
+                    raise ValueError("invalid durable archive member schema")
+                source_path = item["source_path"]
+                archive_name = item["archive_name"]
+                size = item["bytes"]
+                digest = item["sha256"]
+                if (
+                    not isinstance(source_path, str)
+                    or not source_path
+                    or source_path.startswith("/")
+                    or ".." in Path(source_path).parts
+                    or not isinstance(archive_name, str)
+                    or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", archive_name)
+                    or archive_name in archive_names
+                    or type(size) is not int
+                    or size <= 0
+                    or not isinstance(digest, str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", digest)
+                ):
+                    raise ValueError("invalid durable archive member identity")
+                archive_names.add(archive_name)
+                expected[root + "/" + archive_name] = digest
+
+        if set(plan.get("source_partition_members", [])) | set(
+            plan.get("resume_members", [])
+        ) != archive_names:
+            raise ValueError("durable archive review/member set mismatch")
+        matches.append((manifest_path, expected))
+
+    if len(matches) > 1:
+        raise ValueError("multiple trusted-base durable archive registrations for archive root")
+    return matches[0][1] if matches else None
+
+
 def verified_archive_paths(base: str, head: str, paths: list[str]) -> set[str]:
     """Admit append-only research receipts only from registrations trusted on base."""
     evidence_prefix = "validation/research/evidence/"
@@ -326,6 +470,8 @@ def verified_archive_paths(base: str, head: str, paths: list[str]) -> set[str]:
         expected = _i015_archive_registration(base, head, root)
         if expected is None:
             expected = _terminal_research_archive_registration(base, head, root)
+        if expected is None:
+            expected = _durable_research_archive_registration(base, head, root)
         if expected is None:
             continue
         verified.update(_verify_append_only_archive(base, head, paths, expected))

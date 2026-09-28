@@ -126,6 +126,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
+    Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -247,6 +248,14 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('validation/research/evidence/i020-blind-baseline-invalid-36304120808-36324803945/qualification-summary.json'),
         Path('validation/research/evidence/i020-blind-baseline-invalid-36304120808-36324803945/resume-partition-receipt.json'),
         Path('validation/research/evidence/i020-blind-baseline-invalid-36304120808-36324803945/source-qualification-summary.json'),
+    ),
+    Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1-recovery.json'),
+        Path('tests/validation/data/i021-consumed-workflow.yml'),
+        Path('tests/validation/test_i021_one_shot_guard.py'),
+        Path('tests/validation/test_i021_recovery_contract.py'),
+        Path('tests/validation/test_i021_retirement.py'),
     ),
 }
 

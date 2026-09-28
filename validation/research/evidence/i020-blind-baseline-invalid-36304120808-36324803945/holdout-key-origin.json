@@ -1,0 +1,9 @@
+{
+  "generator": "python.secrets.token_hex(32)",
+  "github_run_attempt": "1",
+  "github_run_id": "36304120808",
+  "key_fingerprint": "ebeec484da932ee7",
+  "key_persisted": false,
+  "origin": "github-hosted-run-ephemeral",
+  "schema_version": 1
+}

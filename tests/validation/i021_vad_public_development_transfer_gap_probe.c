@@ -184,10 +184,12 @@ int main(int argc, char **argv) {
         uint32_t i;
 
         if (got == 0u) break;
-        if (got != FRAME) {
-            fclose(input_file);
-            return 5;
-        }
+        /*
+         * Public-development labels are defined only for complete 10 ms
+         * frames (frame_labels() floors the sample count). Ignore the final
+         * incomplete PCM tail so probe geometry matches label geometry.
+         */
+        if (got != FRAME) break;
         for (i = 0u; i < FRAME; ++i)
             input[i] = (float)raw[i] / 32768.0f;
 

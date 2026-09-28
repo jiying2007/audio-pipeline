@@ -12,7 +12,7 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-WORKFLOW=Path(__file__).resolve().parents[2]/".github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml"
+WORKFLOW=Path(__file__).resolve().parents[2]/"tests/validation/data/i021-consumed-workflow.yml"
 MATERIALIZE="Materialize fresh public-development-v3 partitions"
 EVALUATE="Evaluate candidate-zero public-development VAD transfer gap"
 CURRENT={"id":21,"run_attempt":1}

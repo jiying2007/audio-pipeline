@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i023-vad-upstream-local-disagreement-risk-v1",
+  "phase": "candidate-zero-upstream-local-disagreement-risk",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "ec937ab87683b0596d72190a247e8bb18308a1ff",
+  "predecessor": {
+    "i022_closure": ".github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1-result.json",
+    "i022_closure_blob_sha": "a3d3f94788e51112e3dc51e79cec7c215978d756",
+    "required_i022_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_i022_reviewed_decision": "LOW_LOCAL_FN_MOSTLY_REFERENCE_FAIL_UPSTREAM_DISAGREEMENT_COMMON_NO_CANDIDATE"
+  },
+  "question": "On fresh public-development authority, how risky is the existing upstream-high/local-low disagreement state (upstream probability above the unchanged 0.55 shipping guard while local_guard_pass is false): what is its conditional speech precision, how often does it occur on oracle-labeled non-speech frames, how often are those noise frames already active or refreshing the state machine, and how much active hangover follows disagreement episodes?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i023_vad_upstream_local_disagreement_risk_probe.c",
+    "probe_git_blob_sha": "5d8132e7c5d2f1922ba26133b3a677f48cb6e6d2",
+    "evaluator_path": "tests/validation/i023_vad_upstream_local_disagreement_risk.py",
+    "evaluator_git_blob_sha": "686742576d4dd2523f4c859bd4ddcdf1bad8bc89"
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      701307,
+      711307,
+      721307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "minimum_mix_cases_per_noise_domain_per_seed": 4,
+    "minimum_noise_only_cases_per_noise_domain_per_seed": 2,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "vad_upstream_blend": 0.4,
+    "vad_ns_decision_threshold": 0.35,
+    "vad_strong_refresh_threshold": 0.5,
+    "vad_strong_hold_frames": 8,
+    "vad_weak_hold_frames": 6
+  },
+  "disagreement_definition": {
+    "upstream_high": "upstream_probability > vad_upstream_speech_guard",
+    "local_low": "local_guard_pass == 0",
+    "combined_state": "upstream_high && local_low",
+    "shipping_behavior_changed": false,
+    "guard_bypass_simulated": false
+  },
+  "temporal_risk_semantics": {
+    "noise_episode": "contiguous oracle-labeled non-speech frames in the disagreement state",
+    "tail_horizon_frames": 8,
+    "tail_counting": "after a noise disagreement episode ends, count subsequent oracle-noise non-disagreement frames until speech, a new disagreement episode, or the 8-frame horizon",
+    "candidate_behavior_simulated": false
+  },
+  "diagnostic_gates": {
+    "max_shipping_mirror_probability_delta": 0.000001,
+    "shipping_mirror_active_mismatch_frames": 0,
+    "minimum_total_cases": 168,
+    "minimum_disagreement_speech_frames": 1,
+    "minimum_disagreement_noise_frames": 1
+  },
+  "diagnostic_outputs": [
+    "global_vad_precision_recall_f1_false_positive_rate",
+    "disagreement_conditional_speech_precision",
+    "disagreement_speech_occupancy",
+    "disagreement_noise_occupancy",
+    "disagreement_coverage_of_low_local_false_negatives",
+    "disagreement_noise_active_fraction",
+    "disagreement_noise_refresh_kind_distribution",
+    "disagreement_noise_pre_hangover_fraction",
+    "disagreement_noise_blend_fraction",
+    "noise_disagreement_episode_lengths",
+    "post_disagreement_tail_active_fraction",
+    "per_scenario_risk",
+    "per_noise_domain_risk",
+    "per_snr_risk",
+    "reverb_vs_anechoic_risk",
+    "clean_preservation_risk"
+  ],
+  "forbidden_feedback": {
+    "i022_seeds": true,
+    "i022_result_for_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "VAD_UPSTREAM_LOCAL_DISAGREEMENT_RISK_PROFILED_REVIEW_REQUIRED": "Fresh public-development authority contains both speech and noise disagreement frames and the diagnostic risk profile is valid. Review risk without selecting a bypass, guard, threshold or source candidate.",
+    "VAD_UPSTREAM_LOCAL_DISAGREEMENT_NOT_REPRODUCED_REVIEW_REQUIRED": "Fresh public-development authority is valid but the disagreement state is absent. Close the I022 follow-up hypothesis without selecting a candidate.",
+    "I023_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, case coverage, shipping mirror, frozen input identity, finite-value, or disagreement population preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_hold_lengths": false,
+    "may_change_local_guard": false,
+    "may_change_upstream_guard": false,
+    "may_bypass_local_guard": false,
+    "may_change_blend": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use I023 only to decide whether the upstream-high/local-low state has enough conditional speech precision and low enough non-speech occupancy to justify a separately preregistered causal counterfactual. Do not bypass or tune either guard inside I023."
+}

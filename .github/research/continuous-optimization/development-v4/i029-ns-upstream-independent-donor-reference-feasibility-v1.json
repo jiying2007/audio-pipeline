@@ -31,7 +31,7 @@
     "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
     "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
     "evaluator_path": "tests/validation/i029_ns_upstream_independent_donor_reference_feasibility.py",
-    "evaluator_git_blob_sha": "81b0b8640d382b18698f4e9a57921cadab2d4740"
+    "evaluator_git_blob_sha": "65ef5ff024ab83bb4b285690fa48b21ba344c650"
   },
   "fresh_diagnostic_authority": {
     "donor_seeds": [

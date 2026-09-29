@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i024-vad-disagreement-feature-separability-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "b4f56e162b2ad7476fc11f9eed9c2800df659df8",
+  "decision": "VAD_DISAGREEMENT_FEATURE_SEPARABILITY_PROFILED_REVIEW_REQUIRED",
+  "reviewed_decision": "STATE_ONLY_DISAGREEMENT_FEATURE_SEPARABILITY_INSUFFICIENT_MOVE_UPSTREAM_NO_CANDIDATE",
+  "reviewed_interpretation": "Fresh I024 public-development evidence is valid and shipping-mirror exact. The disagreement population contains 16,297 frames (7,578 oracle-speech, 8,719 oracle-noise). No preregistered existing shipping observable provides strong and stable univariate speech/noise separation across domains. ratio_db has the highest global separability AUC at 0.6905, but its seven-noise-domain floor falls to 0.5854. shipping_probability has the strongest domain floor at 0.6247 but only 0.6607 global AUC and a 0.5857 SNR floor. upstream_margin is 0.6441 global with a 0.6048 domain floor; its three-frame mean reaches 0.6557 global but drops to a 0.5689 domain floor and 0.5469 SNR floor. The remaining preregistered numeric features are weaker, and noise_update_kind has only 0.0290 total-variation distance between speech and noise. Simple three-frame causal context therefore does not resolve the disagreement. I024 selects no feature, threshold or model. The repeated state-only guard/hold/observable route is closed under the preregistered observables; next root-cause work should move upstream to explain why NS speech_probability is high on the large disagreement-noise population, while respecting prior I014 evidence that upstream component synergy is useful in nonstationary conditions overall.",
+  "authoritative_execution": {
+    "run_id": 36499446662,
+    "run_attempt": 1,
+    "head_sha": "e6ce1e5d06af7cea4ad66f0f2c33321e808d16ca",
+    "artifact_id": 11005581022,
+    "artifact_name": "i024-vad-disagreement-feature-separability-36499446662",
+    "artifact_size_bytes": 31742,
+    "artifact_sha256": "db3666b146b071f6644d73a5f98950efb26b45e2b1577801f07bd845dd0047cb",
+    "member_sha256": {
+      "build-info.txt": "4a3d952f55aa5305072ad115562afc07056df8ffc44085030843ab308dae361b",
+      "contract.json": "7e3e4c687c0b5ad0d3aea46d92babd9e3b011543855cd30fb34f6ba1c2ef35d8",
+      "corpora.sha256": "20dfbe8afba5e2d6df2cbf3a4156bc3e766ed00a9a46fe022a12248a4d701cb3",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "ae354cda2f83cfe827c2d4b7d3e475c8448b96ac87a484142e042ca9e37bf4c5",
+      "materialization.json": "4e221d97a4d69f0d28da32b14f77a62da81c5118f8a23b5620778fbfbd444698",
+      "probe.sha256": "7b981ad5d673c0eaa6bf68fccc0b3dd3a98a04aa85595681e7e76c866f3a2b5b",
+      "result.json": "b61ec33d0cf3d8c4e226d46d4b2c7c7de4dbc6ea97f2938b31cffcbcffa373be",
+      "summary.json": "fe4b95a1140eb982d7bf378a533a3cd1354babfccfb9cf511c06f3d6bcc8687e",
+      "SHA256SUMS": "d22732a59c68dd0f479e856db12f07c73a2901d8d017d95a14f32ef628ea452c"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      801307,
+      811307,
+      821307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0
+  },
+  "summary": {
+    "disagreement_frames": 16297,
+    "disagreement_speech_frames": 7578,
+    "disagreement_noise_frames": 8719,
+    "best_global_numeric_feature": {
+      "feature": "ratio_db",
+      "separability_auc": 0.6904523119741257,
+      "cross_domain_floor": 0.5854425865133381,
+      "cross_domain_median": 0.6833238161981641,
+      "cross_snr_floor": 0.6425409619450317,
+      "cross_snr_median": 0.741702693964707
+    },
+    "strongest_cross_domain_floor_feature": {
+      "feature": "shipping_probability",
+      "separability_auc": 0.6606920325892516,
+      "cross_domain_floor": 0.6246670896601734,
+      "cross_domain_median": 0.6683818065249384,
+      "cross_snr_floor": 0.5856805702372563,
+      "cross_snr_median": 0.6280155536709912
+    },
+    "upstream_margin": {
+      "separability_auc": 0.6441399701921744,
+      "cross_domain_floor": 0.6048217318825444,
+      "cross_snr_floor": 0.5524616942802468
+    },
+    "upstream_margin_mean3": {
+      "separability_auc": 0.6557125162749051,
+      "cross_domain_floor": 0.5689344110472242,
+      "cross_snr_floor": 0.546878670425182
+    },
+    "ratio_db_mean3": {
+      "separability_auc": 0.6548621635521978,
+      "cross_domain_floor": 0.5884982907175884,
+      "cross_snr_floor": 0.6351211974395113
+    },
+    "noise_update_kind_total_variation_distance": 0.029037914698111872,
+    "maximum_cross_domain_floor_over_preregistered_numeric_features": 0.6246670896601734,
+    "maximum_global_separability_over_preregistered_numeric_features": 0.6904523119741257
+  },
+  "cross_slice_review": {
+    "ratio_db_domain_auc_range": [
+      0.5854425865133381,
+      0.7119039876855703
+    ],
+    "ratio_db_snr_auc_range": [
+      0.6425409619450317,
+      0.8229996835924321
+    ],
+    "shipping_probability_domain_auc_range": [
+      0.6246670896601734,
+      0.7001553166346669
+    ],
+    "upstream_margin_domain_auc_range": [
+      0.6048217318825444,
+      0.6890985831129726
+    ],
+    "reviewed_interpretation": "The feature ordering is not stable enough to support a state-only rule. ratio_db is strongest globally and becomes highly separable at high SNR, but degrades sharply in cafeteria noise. shipping_probability has the best domain floor but weakens at low SNR. Three-frame upstream/local summaries do not remove the domain/SNR sensitivity. The evidence is therefore consistent with condition-dependent overlap rather than a robust single shipping observable."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i025-ns-upstream-disagreement-noise-source-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "I023 shows upstream-high/local-low disagreement is common on noise, and I024 finds no preregistered state-only observable with robust cross-domain univariate separation. Move the root-cause boundary upstream: on new fresh public-development authority, decompose NS speech_probability on oracle-noise disagreement frames into already-available upstream component/state diagnostics and short causal persistence, explicitly reconciling the result with I014's finding that upstream component synergy is useful on nonstationary speech/noise overall. The goal is causal localization, not reweighting, mapping or threshold selection.",
+    "prohibited": [
+      "local guard threshold tuning",
+      "upstream guard threshold tuning",
+      "decision threshold tuning",
+      "blend tuning",
+      "hold-length tuning",
+      "state-only feature candidate selection",
+      "multivariate model fitting",
+      "upstream component reweighting",
+      "upstream feature mapping selection",
+      "source candidate selection",
+      "reuse of I024 seeds",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i024-36499446662/result.json",
+  "verification_limits": [
+    "I024 is candidate-zero and uses development-only oracle labels. ROC-AUC values describe the constructed public-development sampling distribution and are not calibrated product-environment error rates.",
+    "I024 evaluates preregistered univariate observables and simple causal three-frame summaries only. It does not establish that every possible multivariate classifier is incapable of separating disagreement speech and noise.",
+    "No numeric AUC, category distance or cross-slice statistic is a selected feature, threshold, model or shipping rule.",
+    "The closure ends further hand-designed state-only guard/hold/feature iteration under the tested observables; it does not invalidate prior I014 evidence that upstream component synergy can be useful in nonstationary regimes.",
+    "The artifact contains aggregate per-case/per-slice evidence but no raw audio archive."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "source_candidate_selected": false,
+    "feature_selected": false,
+    "feature_ranked_for_shipping": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "model_fitted": false,
+    "upstream_guard_changed": false,
+    "local_guard_changed": false,
+    "local_guard_bypassed": false,
+    "blend_changed": false,
+    "hold_length_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

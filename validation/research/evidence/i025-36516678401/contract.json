@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i025-ns-upstream-disagreement-noise-source-decomposition-v1",
+  "phase": "candidate-zero-upstream-noise-source-decomposition",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "589718ec7eceb2db939130532589eedf040b5198",
+  "predecessors": {
+    "i024_closure": ".github/research/continuous-optimization/development-v4/i024-vad-disagreement-feature-separability-v1-result.json",
+    "i024_closure_blob_sha": "79593a0fabd7a3839b198be7ab151cb173d240d7",
+    "required_i024_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_i024_reviewed_decision": "STATE_ONLY_DISAGREEMENT_FEATURE_SEPARABILITY_INSUFFICIENT_MOVE_UPSTREAM_NO_CANDIDATE",
+    "i014_context": ".github/research/continuous-optimization/development-v4/i014-ns-upstream-component-decomposition-v1-result.json",
+    "i014_context_blob_sha": "b0bc80f9a5720047c608475229efb714d56ada28",
+    "required_i014_reviewed_decision": "NONSTATIONARY_UPSTREAM_COMPONENT_SYNERGY_SUPPORTED_NO_MAPPING",
+    "i014_role": "reviewed-context-only-not-selection-or-tuning"
+  },
+  "question": "On fresh public-development oracle-noise frames where shipping NS speech_probability is above the unchanged 0.55 upstream guard while the unchanged VAD local guard fails, which existing NS component/state diagnostics differ from ordinary oracle-noise frames, how persistent are those shifts over the current and previous two frames, and do the same diagnostics distinguish disagreement speech from disagreement noise without component reweighting or mapping selection?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_decomposition.py",
+    "evaluator_git_blob_sha": "4e0b5b4bf60337d3d86c36267e83d8f2874ce60f"
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      901307,
+      911307,
+      921307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "minimum_mix_cases_per_noise_domain_per_seed": 4,
+    "minimum_noise_only_cases_per_noise_domain_per_seed": 2,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "ns_estimator": "EMA",
+    "ns_upstream_mapping": "clamp(concentration - mean, 0, 1)",
+    "native_tracker_slow_update_speech_threshold": 0.35,
+    "native_tracker_regular_alpha": 0.92,
+    "native_tracker_slow_alpha": 0.995,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15
+  },
+  "population_definition": {
+    "noise_disagreement": "oracle_label == 0 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "speech_disagreement": "oracle_label == 1 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "noise_reference": "oracle_label == 0 && !(upstream_probability > 0.55 && local_guard_pass == 0)",
+    "oracle_labels_used_for_evaluation_only": true,
+    "shipping_behavior_changed": false
+  },
+  "diagnostic_feature_registry": {
+    "numeric_features": [
+      "mirror_mean",
+      "mirror_mean_suppression",
+      "mirror_concentration",
+      "posterior_max",
+      "posterior_variance",
+      "positive_bin_fraction",
+      "slow_update_bin_fraction",
+      "mean_post_ratio",
+      "max_post_ratio",
+      "ns_noise_rms_dbfs",
+      "gap_to_concentration",
+      "upstream_probability_mean3",
+      "concentration_mean3",
+      "slow_update_bin_fraction_mean3",
+      "upstream_high_run_length",
+      "disagreement_run_length"
+    ],
+    "tracker_slow_update_definition": "existing per-bin speech_probability > 0.35, which selects EMA alpha=0.995 instead of 0.92",
+    "temporal_context": {
+      "window_frames": 3,
+      "causal_only": true,
+      "includes_current_frame": true,
+      "future_frames_used": false,
+      "learned_weights": false
+    }
+  },
+  "comparisons": {
+    "noise_disagreement_vs_noise_reference": "localize component/state shifts associated with false-high upstream on oracle-noise frames",
+    "speech_disagreement_vs_noise_disagreement": "check whether the same upstream internals distinguish true speech from false-high noise",
+    "statistic": "signed ROC-AUC plus orientation-free separability AUC and p10/median/p90; cross-domain and cross-SNR AUC ranges are descriptive only",
+    "feature_selection": false,
+    "threshold_search": false,
+    "component_reweighting": false,
+    "mapping_selection": false
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "minimum_total_cases": 168,
+    "minimum_noise_disagreement_frames": 100,
+    "minimum_speech_disagreement_frames": 100,
+    "minimum_noise_reference_frames": 100,
+    "minimum_per_domain_population_frames": 20
+  },
+  "forbidden_feedback": {
+    "i024_seeds": true,
+    "i024_result_for_selection": true,
+    "i014_seeds_for_reuse": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_DISAGREEMENT_NOISE_SOURCE_DECOMPOSED_REVIEW_REQUIRED": "Fresh public-development authority contains valid disagreement-noise, disagreement-speech and ordinary-noise populations, both shipping mirrors are exact, and all preregistered upstream component/state profiles are reported for review without selecting a component, weight, mapping or threshold.",
+    "NS_UPSTREAM_DISAGREEMENT_NOISE_NOT_REPRODUCED_REVIEW_REQUIRED": "Fresh public-development authority is valid but the disagreement-noise population is absent. Close the upstream-noise hypothesis without selecting a candidate.",
+    "I025_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, case coverage, mirror identity, finite-value, frozen-input, or required-population preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_fit_model": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_noise_tracker_alpha": false,
+    "may_change_upstream_mapping": false,
+    "may_change_vad_guards": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use I025 only to localize whether disagreement-noise is associated with sparse posterior concentration, native slow-update tracker occupancy, post-ratio inflation, persistent high upstream state, or no stable upstream-localizable mechanism. Any component weight, tracker-alpha, mapping or threshold change requires a separate preregistered causal counterfactual."
+}

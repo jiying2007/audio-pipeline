@@ -342,6 +342,7 @@ jobs:
           assert r['shipping_mirror']['vad_active_mismatch_frames']==0
           assert r['interpretation_boundary']['donor_and_target_cases_disjoint'] is True
           assert r['interpretation_boundary']['donor_selection_metadata_only'] is True
+          assert r['interpretation_boundary']['matching_metadata_development_only_not_shippable'] is True
           assert r['interpretation_boundary']['target_first_ready_reference_retrospective_benchmark_only'] is True
           assert r['interpretation_boundary']['same_target_future_frames_never_enter_donor_reference'] is True
           assert r['interpretation_boundary']['readiness_threshold_fixed_at_prior_reference_frames']==8

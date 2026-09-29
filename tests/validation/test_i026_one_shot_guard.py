@@ -148,6 +148,10 @@ class I026GuardTests(unittest.TestCase):
             c["counterfactual_reference"]["reference_selected_before_target_readout"])
         self.assertTrue(
             c["counterfactual_reference"]["oracle_reference_not_shippable"])
+        self.assertEqual(
+            c["counterfactual_reference"]["reference_time_order"],
+            "prior ordinary-noise frames only; future frames forbidden",
+        )
         self.assertFalse(c["readout"]["threshold_search"])
         self.assertFalse(c["readout"]["mapping_search"])
         self.assertFalse(c["readout"]["component_weight_search"])
@@ -158,7 +162,7 @@ class I026GuardTests(unittest.TestCase):
         text=EVALUATOR.read_text(encoding="utf-8")
         block=text.split("def analyze_case(",1)[1].split("\ndef evaluate(",1)[0]
         self.assertIn("prior_reference_rows",block)
-        self.assertNotIn("reference_rows: list[dict[str, Any]]",block)
+        self.assertNotIn("\n    reference_rows: list[dict[str, Any]] = []\n",block)
         self.assertIn(
             "if len(prior_reference_rows) < minimum_reference_frames:",
             block,

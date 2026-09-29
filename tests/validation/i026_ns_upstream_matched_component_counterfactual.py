@@ -524,8 +524,9 @@ def evaluate(
         "invalid_reasons": sorted(set(invalid_reasons)),
         "interpretation_boundary": {
             "reference": (
-                "Per-case median mirror_mean and mirror_concentration over "
-                "oracle-noise non-disagreement frames after the fixed warmup."
+                "Per-target causal median mirror_mean and mirror_concentration "
+                "over prior oracle-noise non-disagreement frames after the fixed "
+                "warmup; future frames are excluded."
             ),
             "counterfactuals": (
                 "Replace only mean, only concentration, or both with the same-case "

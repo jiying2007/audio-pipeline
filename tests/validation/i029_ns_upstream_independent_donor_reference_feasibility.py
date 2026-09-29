@@ -583,6 +583,7 @@ def evaluate(
         "interpretation_boundary":{
             "donor_and_target_cases_disjoint":True,
             "donor_selection_metadata_only":True,
+            "matching_metadata_development_only_not_shippable":True,
             "target_first_ready_reference_retrospective_benchmark_only":True,
             "same_target_future_frames_never_enter_donor_reference":True,
             "readiness_threshold_fixed_at_prior_reference_frames":REFERENCE_COUNT,

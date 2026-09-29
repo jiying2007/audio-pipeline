@@ -369,6 +369,21 @@ def sign_counts(values: list[float]) -> dict[str,int]:
     }
 
 
+def truthy_fraction(records: list[dict[str,Any]],path: tuple[str,...]) -> float | None:
+    values=[]
+    for record in records:
+        value: Any=record
+        ok=True
+        for key in path:
+            if not isinstance(value,dict) or key not in value:
+                ok=False
+                break
+            value=value[key]
+        if ok and value is not None:
+            values.append(float(value))
+    return sum(v>0.5 for v in values)/len(values) if values else None
+
+
 def population_summary(records: list[dict[str,Any]]) -> dict[str,Any]:
     if not records:
         return {"paired_cases":0}
@@ -419,7 +434,9 @@ def population_summary(records: list[dict[str,Any]]) -> dict[str,Any]:
         "median_gap_axis_fraction":
             median_dict(records,("matched_alignment","gap_axis_fraction")),
         "same_sign_component_residual_fraction":
-            median_dict(records,("matched_alignment","component_residual_same_sign")),
+            truthy_fraction(
+                records,("matched_alignment","component_residual_same_sign")
+            ),
     }
 
 
@@ -680,6 +697,35 @@ def evaluate(
         ])
         for value in (False,True)
     }
+
+    def gap_improvement(record: dict[str,Any]) -> float:
+        return (
+            float(record["negative_abs_error"]["gap"])
+            - float(record["matched_abs_error"]["gap"])
+        )
+
+    by_gap_outcome={
+        "matched_better":population_summary([
+            r for r in paired if gap_improvement(r)>0.0
+        ]),
+        "matched_worse":population_summary([
+            r for r in paired if gap_improvement(r)<0.0
+        ]),
+        "tie":population_summary([
+            r for r in paired if gap_improvement(r)==0.0
+        ]),
+    }
+    pre_ready_by_gap_outcome={
+        "matched_better":population_summary([
+            r for r in pre_ready if gap_improvement(r)>0.0
+        ]),
+        "matched_worse":population_summary([
+            r for r in pre_ready if gap_improvement(r)<0.0
+        ]),
+        "tie":population_summary([
+            r for r in pre_ready if gap_improvement(r)==0.0
+        ]),
+    }
     decision=(
         "I030_INPUT_INVALID_REVIEW_REQUIRED"
         if invalid_reasons else
@@ -719,6 +765,8 @@ def evaluate(
             "by_noise_domain":by_domain,
             "by_snr_db":by_snr,
             "by_reverb":by_reverb,
+            "by_gap_outcome":by_gap_outcome,
+            "pre_ready_speech_by_gap_outcome":pre_ready_by_gap_outcome,
             "stress_domains":list(STRESS_DOMAINS),
             "comparison_domains":list(COMPARISON_DOMAINS),
         },

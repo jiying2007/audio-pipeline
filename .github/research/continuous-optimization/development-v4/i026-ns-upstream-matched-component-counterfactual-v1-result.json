@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i026-ns-upstream-matched-component-counterfactual-v1",
+  "status": "CLOSED_INVALID_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "a94c59337f650ee046e873f1cc425a6294650277",
+  "decision": "I026_INPUT_INVALID_REVIEW_REQUIRED",
+  "reviewed_decision": "CAUSAL_REFERENCE_COVERAGE_INVALID_NO_COMPONENT_CONCLUSION_NO_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I026 execution consumed its fresh authority and preserved exact shipping mirrors, but the preregistered causal reference precondition failed. The corrected prior-only evaluator found 8,701 oracle-noise disagreement targets and 8,480 oracle-speech disagreement targets across all 168 cases, while 3,413 target frames occurred before the same-case ordinary-noise reference pool reached the required eight prior frames. Only 27 of 168 cases had every target backed by the preregistered prior-only reference, for full-case reference coverage 0.1607142857. Therefore the run is input-invalid for the component-causal question. The emitted rescue/preservation fractions are retained only as invalid-run diagnostics: ineligible target frames remain in their class denominators while no counterfactual can be computed for those frames, so the fractions cannot rank mean, concentration, their joint reference, or any shipping mapping. The NS upstream mirror and VAD shipping mirror remained exact, proving implementation identity but not causal component validity. I026 selects no component, mapping, weight, threshold, tracker change, source candidate, or shipping change. A new independent diagnostic may use fresh seeds and a preregistered reference-ready target cohort: target frames enter causal numerators and denominators only after the same-case prior ordinary-noise pool reaches readiness, with explicit global/per-domain eligibility coverage gates and no reuse of I026 observations for candidate selection.",
+  "authoritative_execution": {
+    "run_id": 36560845882,
+    "run_attempt": 1,
+    "head_sha": "5e898494c42a104c67dd67ca7f3d2423d179234f",
+    "artifact_id": 11030586812,
+    "artifact_name": "i026-ns-upstream-matched-component-36560845882",
+    "artifact_size_bytes": 41647,
+    "artifact_sha256": "483f29d858a9481e0680f522552f5a226a9a502854c74d5960255067e2c2efab",
+    "member_sha256": {
+      "build-info.txt": "2302fbeca290951fc8c83ae508928be37e5e5127e4d118e87dee53939b0cc1e9",
+      "contract.json": "232cd1c34ecb585a3bb4100ecfc1ee33d339a832859161bbc1cb6ec34729209",
+      "corpora.sha256": "f2b70b5fb5112938ca9689b22edb30f7644f8aa0e19e5e7620ec388691fa7fe0",
+      "evaluate.exit-code": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "ed87d7d880c629de1c55398e4c9510547ea000c357c940258668fca9364c4689",
+      "materialization.json": "e6cebbbbc6bf4d7c517cb4461e1600696d79803b9c9eabf83056d511b186a1b4",
+      "probe.sha256": "3c3210af6dae82116996fadf77bde1378e8c63584eb754e84d2c190e058b7c32",
+      "result.json": "3279cd513430beffb7c096aad305950af3749fdf9c9885957966e78efc35a125",
+      "summary.json": "dbd0db973e3fd77e5059826d533c060b779b489e92a12ef9cb5ce3ecb63a68a1",
+      "SHA256SUMS": "928bb38864a95ef13ce6323429ca577dcf07ddde1e7591c76611b2ba0572f3c2"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      1001307,
+      1011307,
+      1021307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "invalidity_review": {
+    "invalid_reasons": [
+      "missing_case_reference"
+    ],
+    "target_cases": 168,
+    "target_cases_with_full_reference": 27,
+    "full_case_reference_coverage": 0.16071428571428573,
+    "missing_reference_targets": 3413,
+    "noise_targets": 8701,
+    "speech_targets": 8480,
+    "required_prior_reference_frames_per_target": 8,
+    "cause": "The prior-only causal correction is valid, but many disagreement targets occur before eight same-case ordinary-noise non-disagreement frames have accumulated. Requiring every target in a case to have a reference therefore invalidates 141 of 168 cases.",
+    "experiment_design_failure_not_shipping_failure": true
+  },
+  "invalid_observations": {
+    "interpretation_allowed": false,
+    "reason": "Targets without a valid prior reference remain in class denominators but cannot contribute counterfactual successes. These fractions are diagnostic traces from an invalid run and must not be used to rank components or mappings.",
+    "noise_rescue_fraction": {
+      "mean_reference": 0.30789564417883003,
+      "concentration_reference": 0.5217791058499023,
+      "both_reference": 0.7938168026663602
+    },
+    "speech_preservation_fraction": {
+      "mean_reference": 0.6089622641509433,
+      "concentration_reference": 0.15141509433962264,
+      "both_reference": 0.04209905660377358
+    }
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i027-ns-upstream-reference-ready-component-counterfactual-v1",
+    "authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+    "rationale": "Use entirely fresh public-development seeds and the unchanged target stream. Maintain the same prior-only ordinary-noise reference pool, but preregister a reference-ready target cohort: a disagreement target becomes eligible only after at least eight prior same-case ordinary-noise non-disagreement frames exist. Excluded early targets are counted separately and never enter rescue/preservation denominators. Require explicit global and per-noise-domain eligibility coverage before interpreting mean-only, concentration-only, or both-reference counterfactuals. This preserves online time ordering without altering tracker state or manufacturing a calibration prefix.",
+    "required_gates": [
+      "fresh seeds disjoint from I025 and I026",
+      "eligible target fractions reported separately for oracle-noise and oracle-speech",
+      "global eligible target coverage at least 0.75 for each class",
+      "per-noise-domain eligible target coverage at least 0.60 for each class",
+      "minimum eligible target counts retained per noise domain",
+      "shipping mirrors remain exact",
+      "no excluded target may enter a counterfactual denominator"
+    ],
+    "prohibited": [
+      "reuse of I026 seeds",
+      "reinterpretation of I026 invalid fractions",
+      "future-frame reference leakage",
+      "component reweighting",
+      "mapping selection",
+      "threshold tuning",
+      "tracker alpha changes",
+      "shipping source changes",
+      "candidate selection",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i026-36560845882/result.json",
+  "verification_limits": [
+    "I026 is terminally invalid for its preregistered component-causal question because prior-reference coverage failed; the run must not be rerun.",
+    "The raw rescue and speech-preservation fractions from the invalid result are non-authoritative and must not be compared to rank mean, concentration, or the joint reference.",
+    "Exact NS/VAD mirrors demonstrate implementation identity only; they do not rescue an invalid reference design.",
+    "The invalidity is a diagnostic experiment-design failure, not evidence that shipping NS/VAD behavior regressed.",
+    "No validation-grade, blind, hosted-real, HIL, product-certification, or release authority was consumed.",
+    "The artifact contains aggregate evidence and hashes; no raw audio is promoted as durable authority by this closure."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "source_candidate_selected": false,
+    "component_selected": false,
+    "component_ranked_for_shipping": false,
+    "mapping_selected": false,
+    "component_reweighted": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

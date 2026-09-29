@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i026-ns-upstream-matched-component-counterfactual-v1",
+  "phase": "candidate-zero-matched-component-causal-diagnostic",
+  "authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "a94c59337f650ee046e873f1cc425a6294650277",
+  "predecessor": {
+    "i025_closure": ".github/research/continuous-optimization/development-v4/i025-ns-upstream-disagreement-noise-source-decomposition-v1-result.json",
+    "i025_closure_blob_sha": "7fb05993a0ad6e0b7011c3cea2719d60135ac4a5",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_reviewed_decision": "FALSE_HIGH_NOISE_ASSOCIATED_WITH_SPARSE_POSTERIOR_GAP_SLOW_UPDATE_LOCK_NOT_SUPPORTED_NO_CANDIDATE",
+    "required_followup_id": "i026-ns-upstream-matched-component-counterfactual-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY"
+  },
+  "question": "On fresh public-development disagreement frames, using a same-case ordinary-noise reference fixed before each target readout, how often is false-high NS upstream evidence causally removed when only mirror mean is replaced, only mirror concentration is replaced, or both are replaced in the unchanged clamp(concentration - mean, 0, 1) mapping, and how often does each substitution preserve high upstream evidence on oracle-speech disagreement frames?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i026_ns_upstream_matched_component_counterfactual.py",
+    "evaluator_git_blob_sha": "3f203caf45a99517b749efbd049857e8fd485659"
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      1001307,
+      1011307,
+      1021307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "minimum_mix_cases_per_noise_domain_per_seed": 4,
+    "minimum_noise_only_cases_per_noise_domain_per_seed": 2,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "ns_upstream_mapping": "clamp(concentration - mean, 0, 1)",
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15
+  },
+  "population_definition": {
+    "noise_target": "oracle_label == 0 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "speech_target": "oracle_label == 1 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "ordinary_noise_reference": "oracle_label == 0 && !(upstream_probability > 0.55 && local_guard_pass == 0)",
+    "oracle_labels_used_for_diagnostic_only": true
+  },
+  "counterfactual_reference": {
+    "scope": "same case after fixed warmup",
+    "statistics": "median",
+    "minimum_reference_frames_per_target_case": 8,
+    "mean_reference": "median mirror_mean over ordinary_noise_reference frames",
+    "concentration_reference": "median mirror_concentration over ordinary_noise_reference frames",
+    "mean_only": "clamp(original_concentration - reference_mean, 0, 1)",
+    "concentration_only": "clamp(reference_concentration - original_mean, 0, 1)",
+    "both": "clamp(reference_concentration - reference_mean, 0, 1)",
+    "reference_selected_before_target_readout": true,
+    "oracle_reference_not_shippable": true,
+    "reference_time_order": "prior ordinary-noise frames only; future frames forbidden"
+  },
+  "readout": {
+    "threshold": "unchanged shipping upstream guard 0.55",
+    "noise_rescue": "counterfactual upstream <= 0.55 on original noise_target",
+    "speech_preservation": "counterfactual upstream > 0.55 on original speech_target",
+    "threshold_search": false,
+    "mapping_search": false,
+    "component_weight_search": false,
+    "candidate_selection": false
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "minimum_total_cases": 168,
+    "minimum_noise_targets": 100,
+    "minimum_speech_targets": 100,
+    "minimum_per_domain_target_frames": 20
+  },
+  "diagnostic_outputs": [
+    "global_mean_only_noise_rescue_and_speech_preservation",
+    "global_concentration_only_noise_rescue_and_speech_preservation",
+    "global_both_reference_noise_rescue_and_speech_preservation",
+    "noise_frame_attribution_mean_only_concentration_only_both_neither_joint_only",
+    "median_gap_reduction_per_counterfactual",
+    "per_noise_domain_counterfactual_fractions",
+    "per_snr_counterfactual_fractions",
+    "per_case_reference_identity_and_population"
+  ],
+  "forbidden_feedback": {
+    "i025_seeds": true,
+    "i025_result_for_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_MATCHED_COMPONENT_COUNTERFACTUAL_DECOMPOSED_REVIEW_REQUIRED": "Fresh authority and mirrors are valid, every target case has the preregistered same-case ordinary-noise reference, and mean-only, concentration-only and both-reference causal readouts are reported for review without selecting a mapping or candidate.",
+    "NS_UPSTREAM_FALSE_HIGH_NOT_REPRODUCED_REVIEW_REQUIRED": "Fresh authority is valid but the false-high disagreement population is absent. Close the component-causal hypothesis without selecting a candidate.",
+    "I026_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, frozen-input identity, mirror identity, case coverage, target population, same-case reference, finite-value, or authority preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use I026 only to determine whether false-high disagreement noise is causally more sensitive to the mean term, the concentration term, their joint ordinary-noise reference, or neither. Any shippable mapping, component weight, tracker change or source candidate requires a new preregistered development candidate with independent authority."
+}

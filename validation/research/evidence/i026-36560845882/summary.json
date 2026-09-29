@@ -1,0 +1,64 @@
+{
+  "decision": "I026_INPUT_INVALID_REVIEW_REQUIRED",
+  "fresh_diagnostic_seeds": [
+    1001307,
+    1011307,
+    1021307
+  ],
+  "global": {
+    "median_gap_reduction": {
+      "noise_both_reference": 0.12749336829999997,
+      "noise_concentration_reference": 0.09753456515000003,
+      "noise_mean_reference": -0.010934995825000016,
+      "speech_both_reference": 0.410695998965,
+      "speech_concentration_reference": 0.56442854525,
+      "speech_mean_reference": -0.10541775352194999
+    },
+    "missing_reference_targets": 3413,
+    "noise_individual_attribution_fraction": {
+      "both_individual": 0.014596023445580968,
+      "concentration_only": 0.5071830824043213,
+      "joint_only": 0.02804275370647052,
+      "mean_only": 0.29329962073324906,
+      "neither_individual": 0.0606826801517067
+    },
+    "noise_rescue_fraction": {
+      "both_reference": 0.7938168026663602,
+      "concentration_reference": 0.5217791058499023,
+      "mean_reference": 0.30789564417883003
+    },
+    "noise_targets": 8701,
+    "reference_case_coverage": 0.16071428571428573,
+    "reference_frames": 20799,
+    "reference_medians_across_cases": {
+      "concentration": 0.493713737,
+      "gap": 0.4473157321,
+      "mean": 0.0168063361
+    },
+    "speech_preservation_fraction": {
+      "both_reference": 0.04209905660377358,
+      "concentration_reference": 0.15141509433962264,
+      "mean_reference": 0.6089622641509433
+    },
+    "speech_targets": 8480,
+    "target_cases": 168,
+    "target_cases_with_reference": 27
+  },
+  "interpretation_boundary": {
+    "counterfactuals": "Replace only mean, only concentration, or both with the same-case ordinary-noise reference and recompute the existing clamp(concentration - mean, 0, 1) mapping.",
+    "no_component_mapping_selected": true,
+    "no_shipping_candidate": true,
+    "no_threshold_search": true,
+    "oracle_reference_not_shippable": true,
+    "readout": "The unchanged shipping upstream guard 0.55 is used only to count false-high rescue on oracle-noise targets and high-evidence preservation on oracle-speech targets.",
+    "reference": "Per-target causal median mirror_mean and mirror_concentration over prior oracle-noise non-disagreement frames after the fixed warmup; future frames are excluded."
+  },
+  "invalid_reasons": [
+    "missing_case_reference"
+  ],
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  }
+}

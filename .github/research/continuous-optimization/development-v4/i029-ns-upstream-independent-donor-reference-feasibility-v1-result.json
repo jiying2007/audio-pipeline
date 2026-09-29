@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i029-ns-upstream-independent-donor-reference-feasibility-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "1195d4e37f93093f831a54fd47c79df9da3881a9",
+  "decision": "NS_UPSTREAM_INDEPENDENT_DONOR_REFERENCE_FEASIBILITY_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "MATCHED_DONOR_PRIMARY_GAP_DIRECTION_NOT_SUPPORTED_NO_REFERENCE_SOURCE_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I029 execution is valid and fully covered: 126 donor cases and 126 target cases were evaluated, all donor cases reached the fixed first-ready eight-reference snapshot, every noise domain had 18 ready donors, target benchmark coverage and matched/negative donor coverage were all 1.0, and NS/VAD shipping mirrors were exact. On the preregistered primary population of 69 target cases with at least one pre-ready speech target, the metadata-matched donor had a lower median absolute gap error than the fixed cross-domain negative control (0.066090957 versus 0.210468486), a positive median paired improvement of 0.041638762, and was better on 62.32% of non-tied pairs. However the preregistered one-sided paired sign-test was p=0.0266446819, above the frozen p<=0.01 support threshold. Therefore the primary directional hypothesis is not supported and I029 selects no reference-source candidate. The secondary concentration metric was stronger (p=0.0077161487), but it was explicitly secondary and must not replace the failed primary gap criterion post hoc. Per-domain descriptive outputs are heterogeneous: living shows a strong gap advantage (median paired improvement 0.23039842775, p=0.0037689209), while bus and field show negative median gap improvement (-0.029482439 and -0.005488776 respectively). Cafeteria remains directionally positive but not decisive. These descriptive differences motivate a fresh stability/residual decomposition, not a donor selection or shipping change.",
+  "authoritative_execution": {
+    "run_id": 36595080698,
+    "run_attempt": 1,
+    "head_sha": "f8b4e927d7132e03fa9d8548eb47594581f7891f",
+    "artifact_id": 11046820253,
+    "artifact_name": "i029-ns-upstream-independent-donor-reference-36595080698",
+    "artifact_size_bytes": 31830,
+    "artifact_sha256": "a0844f57df3685ae6c416ec1b38e6f95d906579bb9c601cfee90da4736574ba1",
+    "member_sha256": {
+      "SHA256SUMS": "1f2ab1a637744af7b0fe0c09489081604d20e1600d549ec1eae11e28f89db94e",
+      "build-info.txt": "7409849417ae4114d4cedc91a8b24721381391eecccd16d085a2d3ce546caa36",
+      "contract.json": "269d1fbac26b52f5ff142e2c53cbda2bc31545d2c4fc1fce6097137e7ef83d3e",
+      "corpora.sha256": "bff43c18c14b96daa9e02a183e8a77e741ad005906459819acfaafa818699f6b",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "f8d7adde8ede21d059baad00f25525af333aaf3bc12a1c3609352a41f78d5458",
+      "materialization.json": "ea0ca40e65729acf206e43afa0b1924a69793aa2c9a2e07dffaa2233536976c5",
+      "probe.sha256": "2ab5f3843c1d6600f5e7ba0602eebc3d73d61d3ee117d55414f345028343c738",
+      "result.json": "0fdf1a87fc52b8180b58015056b2acc39bf140cac99f05260bc40aec19ce2243",
+      "summary.json": "bf28c07cc72e3066a436d43cf5c9b2be38ff9939891f9cf5c6094942d3e704e6"
+    }
+  },
+  "fresh_authority": {
+    "donor_seeds": [
+      1301307,
+      1311307,
+      1321307
+    ],
+    "target_seeds": [
+      1331307,
+      1341307,
+      1351307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "coverage_review": {
+    "donor_cases": 126,
+    "ready_donor_cases": 126,
+    "target_cases": 126,
+    "target_benchmark_cases": 126,
+    "target_benchmark_coverage": 1,
+    "matched_donor_coverage": 1,
+    "negative_control_coverage": 1,
+    "ready_donors_per_domain": {
+      "bus": 18,
+      "cafeteria": 18,
+      "field": 18,
+      "kitchen": 18,
+      "living": 18,
+      "office": 18,
+      "traffic": 18
+    }
+  },
+  "primary_directional_review": {
+    "population": "target cases with at least one pre-ready speech target",
+    "paired_cases": 69,
+    "metric": "gap",
+    "median_matched_abs_error": 0.066090957,
+    "median_negative_abs_error": 0.21046848599999995,
+    "median_paired_improvement": 0.041638761999999996,
+    "matched_better_fraction": 0.6231884057971014,
+    "one_sided_sign_test_p": 0.026644681908256817,
+    "preregistered_maximum_p": 0.01,
+    "supported": false
+  },
+  "secondary_observations": {
+    "concentration": {
+      "median_matched_abs_error": 0.15168181050000007,
+      "median_negative_abs_error": 0.312218547,
+      "median_paired_improvement": 0.15916863500000006,
+      "matched_better_fraction": 0.6521739130434783,
+      "one_sided_sign_test_p": 0.0077161487268506326,
+      "interpretation": "secondary diagnostic only; cannot replace the failed primary gap metric"
+    },
+    "mean": {
+      "median_paired_improvement": 0.027573064199999997,
+      "matched_better_fraction": 0.6086956521739131,
+      "one_sided_sign_test_p": 0.04559324528350576
+    },
+    "descriptive_domain_gap": {
+      "living": {
+        "paired_cases": 18,
+        "median_paired_improvement": 0.23039842774999997,
+        "matched_better_fraction": 0.8333333333333334,
+        "one_sided_sign_test_p": 0.0037689208984375
+      },
+      "bus": {
+        "paired_cases": 18,
+        "median_paired_improvement": -0.029482439000000027,
+        "matched_better_fraction": 0.4444444444444444,
+        "one_sided_sign_test_p": 0.7596588134765625
+      },
+      "field": {
+        "paired_cases": 18,
+        "median_paired_improvement": -0.0054887760000000285,
+        "matched_better_fraction": 0.4444444444444444,
+        "one_sided_sign_test_p": 0.7596588134765625
+      },
+      "cafeteria": {
+        "paired_cases": 18,
+        "median_paired_improvement": 0.1179740805,
+        "matched_better_fraction": 0.5555555555555556,
+        "one_sided_sign_test_p": 0.40726470947265625
+      }
+    }
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i030-ns-upstream-donor-joint-residual-stability-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use entirely fresh, disjoint donor and target public-development seeds while freezing the I029 K=3 matched-donor selection rule and the same cross-domain negative-control map. Do not tune donor matching and do not select a reference source. Preserve the eight joint (mean, concentration, gap) ordinary-noise frames that form each donor and target first-ready reference instead of retaining only independent component medians. Decompose matched-donor transfer error into signed mean/concentration/gap residuals, within-donor and between-donor dispersion, target-reference dispersion, and joint residual alignment. Preregister bus and field as adverse stress domains and living/cafeteria as comparison domains based on I029 descriptive outputs; also report fixed SNR strata without changing matching. The goal is to determine whether the failed primary gap direction is caused by donor-pool instability, component-residual misalignment, or condition-specific transfer, before any donor-rule redesign or candidate test.",
+    "required_gates": [
+      "fresh donor and target seeds disjoint from I025-I029",
+      "donor and target identities are seed-bound and disjoint",
+      "I029 K=3 metadata-only matched-donor rule frozen unchanged",
+      "I029 cross-domain negative-control map frozen unchanged",
+      "all first-ready references preserve eight joint per-frame mean/concentration/gap tuples",
+      "same-target future frames never enter the donor reference",
+      "global and per-domain donor/target coverage reported",
+      "shipping mirrors remain exact",
+      "no component counterfactual executed"
+    ],
+    "prohibited": [
+      "reuse of I029 seeds",
+      "post-hoc change of K",
+      "post-hoc change of matching priority or negative-control map",
+      "reference-source candidate selection",
+      "component counterfactual ranking",
+      "component reweighting",
+      "mapping selection",
+      "threshold tuning",
+      "tracker alpha changes",
+      "shipping source changes",
+      "assumption that development matching metadata is available in shipping",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i029-36595080698/result.json",
+  "verification_limits": [
+    "I029 is development-only; its donor selection uses synthetic/development metadata and does not establish that equivalent metadata is available in a shipping product.",
+    "The primary gap hypothesis failed its preregistered p<=0.01 support threshold even though medians were directionally favorable; the threshold must not be relaxed after observing the result.",
+    "The secondary concentration p-value must not be promoted into a replacement primary endpoint or used to select a donor/reference candidate post hoc.",
+    "Per-domain differences are descriptive outputs from I029 and motivate fresh decomposition only; they are not shipping-domain admission decisions.",
+    "The target first-ready snapshot is a retrospective benchmark only and never a causal reference for earlier target frames.",
+    "No reference-source candidate, component counterfactual, mapping, threshold, tracker change, validation-grade, blind, HIL, product-certification, source-merge or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "component_selected": false,
+    "component_ranked_for_shipping": false,
+    "mapping_selected": false,
+    "component_reweighted": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "assumed_matching_metadata_available_in_shipping": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

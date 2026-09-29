@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i028-ns-upstream-reference-readiness-temporal-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "e50488408298c38b79ffa6d965cca15736a37e9c",
+  "decision": "NS_UPSTREAM_REFERENCE_READINESS_TEMPORAL_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "PRE_READY_SPEECH_DRIVEN_BY_EARLY_TARGET_AND_DELAYED_INITIAL_REFERENCE_ARRIVAL_CAFETERIA_AMPLIFIED_NO_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I028 execution is valid: all 17,046 raw disagreement targets are represented exactly once, the fixed eight-prior-reference observation boundary is unchanged, and NS/VAD shipping mirrors are exact. The dominant readiness failure is temporal ordering rather than a lack of later ordinary-noise observations. Across all 168 target cases, 139 cases (82.74%) see the first disagreement target before the eight-reference pool is ready, and 98 cases (58.33%) see the first target before even the first ordinary-noise reference. The median first target occurs at frame 4 from warmup, while the median first ordinary-noise reference occurs at frame 10 and the median eight-reference readiness point at frame 43; the median readiness delay from first target is 36 frames. This affects oracle-speech substantially more than oracle-noise: 36.37% of speech targets are pre-ready versus 12.93% of noise targets, and 1,290 of 3,113 pre-ready speech targets (41.44%) have zero prior ordinary-noise references at target time. Cafeteria is the clearest amplification: 54.46% of speech targets are pre-ready, 12 of 18 cases have first target before first reference, 15 of 18 have first target before readiness, the median first target/reference/ready frames are 5/24/44, and the median readiness delay is 41 frames. Moreover 289 of 574 cafeteria pre-ready speech targets (50.35%) have zero prior references; the median prior-reference count for those pre-ready speech targets is 0, while the median across all cafeteria speech targets is only 6. Cafeteria later accumulates usable ordinary-noise observations (median 56 per target case), and its median reference inter-arrival is still 1 frame, so the primary problem is delayed initial availability and condition-specific long gaps/order, not a uniformly slow steady-state reference cadence. I028 therefore selects no readiness threshold, reference mechanism, component, mapping, candidate or shipping change.",
+  "authoritative_execution": {
+    "run_id": 36579696633,
+    "run_attempt": 1,
+    "head_sha": "22283d183853ffd8fddea91d7520377957560e61",
+    "artifact_id": 11038379441,
+    "artifact_name": "i028-ns-upstream-reference-readiness-temporal-36579696633",
+    "artifact_size_bytes": 236227,
+    "artifact_sha256": "823dd334bd2fde581bd15ba788227d4a7b6c2c5b180efadd7d65e8e05492bacd",
+    "member_sha256": {
+      "SHA256SUMS": "b00a50cbaf028cdfdd9d39bbd9d4bfbdf92ed97104e6464bb1cc3a4e7bf4cbbc",
+      "build-info.txt": "0e4fd04b397cb0ca5c14ba506201e0afd8b5669ce352380f37eb644da74b8af0",
+      "contract.json": "e62f079d501de0e72a0927a10c116e2cbaf8a196c06bd64084662621d81fd0e6",
+      "corpora.sha256": "40e886d68fea6260da767da069e7bc8875ed7023cd9c5b94da0df9a3cfb51119",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "00637c7a17157b7fc4a7dbe7215abb8a205718b32214abaf3eeec9e12407d614",
+      "materialization.json": "cf82ad1439025cefb05b494e6ffa1b1e6a7792456ea70e2035fc9d5dc1fc1f22",
+      "probe.sha256": "613ec88730dc16894ada6eb67e4e5d254388f5428ee1f47f518117ebab5a6ff8",
+      "result.json": "1057b2b56d64d2dff29b3bf3ce4c1711da4f6b7cb5e8be3bf07ce349706b9243",
+      "summary.json": "0ebc0402ca523179c4ce6b5402ca09b7ceb1720ba1b12bcb5dd8a1d2e9db5fd3"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      1201307,
+      1211307,
+      1221307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "target_accounting": {
+    "raw_target_count": 17046,
+    "target_receipt_count": 17046,
+    "all_raw_targets_represented_exactly_once": true,
+    "raw_noise_targets": 8486,
+    "raw_speech_targets": 8560,
+    "target_cases": 168
+  },
+  "global_readiness_review": {
+    "pre_ready_fraction": {
+      "noise": 0.1292717416921989,
+      "speech": 0.3636682242990654
+    },
+    "pre_ready_targets": {
+      "noise": 1097,
+      "speech": 3113
+    },
+    "ready_targets": {
+      "noise": 7389,
+      "speech": 5447
+    },
+    "cases_first_target_before_ready": 139,
+    "first_target_before_ready_case_fraction": 0.8273809523809523,
+    "cases_first_target_before_first_reference": 98,
+    "first_target_before_first_reference_case_fraction": 0.5833333333333334,
+    "cases_never_ready": 1,
+    "median_first_target_frame_index": 4,
+    "median_first_reference_frame_index": 10,
+    "median_first_ready_frame_index": 43,
+    "median_ready_minus_first_target_frames": 36,
+    "median_reference_frames_before_first_target": 0,
+    "median_reference_interarrival_frames": 1,
+    "median_max_reference_interarrival_frames": 40.5,
+    "pre_ready_speech_zero_prior_reference_targets": 1290,
+    "pre_ready_speech_zero_prior_reference_fraction": 0.41439126244779956
+  },
+  "cafeteria_readiness_review": {
+    "raw_noise_targets": 1763,
+    "raw_speech_targets": 1054,
+    "pre_ready_fraction": {
+      "noise": 0.10606920022688598,
+      "speech": 0.5445920303605313
+    },
+    "pre_ready_noise_targets": 187,
+    "pre_ready_speech_targets": 574,
+    "cases_first_target_before_ready": 15,
+    "first_target_before_ready_case_fraction": 0.8333333333333334,
+    "cases_first_target_before_first_reference": 12,
+    "first_target_before_first_reference_case_fraction": 0.6666666666666666,
+    "cases_never_ready": 1,
+    "median_first_target_frame_index": 5,
+    "median_first_reference_frame_index": 24,
+    "median_first_ready_frame_index": 44,
+    "median_ready_minus_first_target_frames": 41,
+    "median_reference_frames_before_first_target": 0,
+    "median_pre_ready_speech_prior_reference_count": 0,
+    "median_all_speech_prior_reference_count": 6,
+    "pre_ready_speech_zero_prior_reference_targets": 289,
+    "pre_ready_speech_zero_prior_reference_fraction": 0.5034843205574913,
+    "median_reference_interarrival_frames": 1,
+    "median_max_reference_interarrival_frames": 45.5,
+    "median_reference_frames_total_per_target_case": 56
+  },
+  "hypothesis_review": {
+    "early_target_timing_supported": true,
+    "delayed_initial_reference_arrival_supported": true,
+    "cafeteria_condition_specific_ordering_supported": true,
+    "uniform_steady_state_reference_scarcity_supported": false,
+    "explanation": "Most target cases begin producing disagreement before the fixed eight-reference pool is ready, and more than half begin before the first ordinary-noise reference. Cafeteria shifts the first ordinary-noise reference later and leaves many speech targets at prior_reference_count=0. However, once references are present, the median inter-arrival is 1 frame globally and in cafeteria, so the evidence points to startup/ordering and intermittent gaps rather than uniformly slow steady-state reference arrival."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i029-ns-upstream-independent-donor-reference-feasibility-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use entirely fresh public-development authority to test whether an independent, metadata-matched ordinary-noise donor reference can be available causally from target start without changing the fixed eight-frame same-case observation boundary or using target-future frames. Before any component counterfactual, compare preregistered donor-reference mean/concentration/gap summaries against each target case's own later ready-phase ordinary-noise reference only as a retrospective agreement benchmark. Use disjoint donor/target cases and fixed matching dimensions (noise domain first, then preregistered scenario/SNR/reverb compatibility where available), report match error and donor coverage globally and per domain, with special attention to cafeteria. The purpose is feasibility of a causally available diagnostic reference, not selection of a shipping reference source, component, mapping, threshold or candidate.",
+    "required_gates": [
+      "fresh seeds disjoint from I025/I026/I027/I028",
+      "donor and target cases disjoint",
+      "donor selection uses only preregistered metadata and never target outputs",
+      "no target-future frame contributes to the causal donor reference",
+      "target case later ready-phase reference is retrospective benchmark only",
+      "global and per-noise-domain donor coverage and agreement reported",
+      "shipping mirrors remain exact",
+      "no component counterfactual executed"
+    ],
+    "prohibited": [
+      "reuse of I028 seeds",
+      "post-hoc lowering of the eight-frame readiness threshold",
+      "same-target future-frame reference leakage",
+      "component counterfactual ranking",
+      "component reweighting",
+      "mapping selection",
+      "threshold tuning",
+      "tracker alpha changes",
+      "shipping source changes",
+      "reference source candidate selection",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i028-36579696633/result.json",
+  "verification_limits": [
+    "I028 is development-only and uses oracle labels to define diagnostic target/reference populations; timing distributions describe the constructed public-development authority and are not calibrated product-environment rates.",
+    "The fixed eight-prior-reference count remains an observation boundary only. I028 does not compare, tune or justify any alternative readiness threshold.",
+    "first_ready_frame and frames_until_ready are retrospective diagnostics; future readiness timing is never a causal input available to the target frame.",
+    "The conclusion that initial temporal ordering dominates does not prove that any specific alternative reference mechanism is valid or shippable.",
+    "Cafeteria later accumulates ordinary-noise references, but the evidence does not establish that those later same-case references may be used causally for earlier targets.",
+    "No component counterfactual, component ranking, mapping selection, source candidate, validation-grade, blind, hosted-real, HIL, product-certification, confirmation, source-merge or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "source_candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "component_selected": false,
+    "component_ranked_for_shipping": false,
+    "mapping_selected": false,
+    "component_reweighted": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

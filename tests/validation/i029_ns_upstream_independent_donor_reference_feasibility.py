@@ -66,10 +66,13 @@ def disagreement(row: dict[str,Any],upstream_guard: float) -> bool:
     )
 
 
-def metadata(case: dict[str,Any]) -> dict[str,Any]:
+def metadata(case: dict[str,Any],seed: int) -> dict[str,Any]:
     dims=case.get("dimensions",{})
+    case_id=str(case["case_id"])
     return {
-        "case_id":str(case["case_id"]),
+        "seed":seed,
+        "case_id":case_id,
+        "case_key":f"{seed}:{case_id}",
         "scenario":str(case["scenario"]),
         "noise_domain":dims.get("noise_domain"),
         "reverb":dims.get("reverb"),
@@ -120,7 +123,7 @@ def compatibility_score(target: dict[str,Any],donor: dict[str,Any]) -> tuple:
         snr_missing_penalty,
         snr_distance,
         scenario_penalty,
-        donor["case_id"],
+        donor["case_key"],
     )
 
 
@@ -136,8 +139,9 @@ def analyze_case(
     corpus_path: Path,
     case: dict[str,Any],
     upstream_guard: float,
+    seed: int,
 ) -> dict[str,Any]:
-    meta=metadata(case)
+    meta=metadata(case,seed)
     mic=engine.resolve(corpus_path,case.get("mic_audio"))
     labels_path=engine.resolve(corpus_path,case.get("vad_labels"))
     require(mic is not None and labels_path is not None,
@@ -360,7 +364,7 @@ def evaluate(
         require(len(domain_cases)==expected_domain_cases,
                 f"unexpected domain case count for seed={seed}")
         for case in domain_cases:
-            record=analyze_case(probe,path,case,upstream_guard)
+            record=analyze_case(probe,path,case,upstream_guard,seed)
             out.append(record)
             max_ns_delta=max(
                 max_ns_delta,float(record["mirror"]["max_ns_upstream_gap_delta"])
@@ -379,8 +383,8 @@ def evaluate(
         process_corpus(path,seed,target_records)
         actual_target_seeds.append(seed)
 
-    donor_ids={r["metadata"]["case_id"] for r in donor_records}
-    target_ids={r["metadata"]["case_id"] for r in target_records}
+    donor_ids={r["metadata"]["case_key"] for r in donor_records}
+    target_ids={r["metadata"]["case_key"] for r in target_records}
     require(donor_ids.isdisjoint(target_ids),"donor/target case identity overlap")
 
     donor_ready=[r for r in donor_records if r["first_ready_reference"] is not None]
@@ -409,7 +413,9 @@ def evaluate(
             negative_covered+=1
 
         receipt={
+            "target_case_key":meta["case_key"],
             "target_case_id":meta["case_id"],
+            "target_seed":meta["seed"],
             "metadata":meta,
             "pre_ready_speech_targets":target["raw_targets"]["pre_ready_speech"],
             "pre_ready_noise_targets":target["raw_targets"]["pre_ready_noise"],
@@ -417,8 +423,8 @@ def evaluate(
                 target["first_ready_reference"] is not None,
             "matched_domain":domain,
             "negative_control_domain":negative_domain,
-            "matched_donor_case_ids":[r["metadata"]["case_id"] for r in matched],
-            "negative_donor_case_ids":[r["metadata"]["case_id"] for r in negative],
+            "matched_donor_case_keys":[r["metadata"]["case_key"] for r in matched],
+            "negative_donor_case_keys":[r["metadata"]["case_key"] for r in negative],
         }
 
         if (
@@ -430,7 +436,9 @@ def evaluate(
             negative_ref=aggregate_reference(negative)
             benchmark=target["first_ready_reference"]
             pair={
+                "target_case_key":meta["case_key"],
                 "target_case_id":meta["case_id"],
+                "target_seed":meta["seed"],
                 "noise_domain":domain,
                 "has_pre_ready_speech":
                     target["raw_targets"]["pre_ready_speech"]>0,
@@ -499,11 +507,19 @@ def evaluate(
         item for item in paired if item["has_pre_ready_speech"]
     ]
 
+    pre_ready_speech_summary=paired_summary(pre_ready_speech_pairs)
     directional=contract["directional_hypothesis"]
     primary=directional["primary_metric"]
-    p=paired_global["sign_test_one_sided_p"].get(primary)
-    improvement=paired_global["median_paired_improvement"].get(primary)
-    better=paired_global["matched_better_fraction"].get(primary)
+    p=pre_ready_speech_summary["sign_test_one_sided_p"].get(primary)
+    improvement=pre_ready_speech_summary["median_paired_improvement"].get(primary)
+    better=pre_ready_speech_summary["matched_better_fraction"].get(primary)
+    if len(pre_ready_speech_pairs)<int(
+        gates["minimum_primary_pre_ready_speech_paired_cases"]
+    ):
+        invalid_reasons.append("primary_pre_ready_speech_paired_cases")
+    cafeteria_pairs=domain_pairs["cafeteria"]
+    if len(cafeteria_pairs)<int(gates["minimum_cafeteria_paired_cases"]):
+        invalid_reasons.append("cafeteria_paired_cases")
     supported=(
         not invalid_reasons
         and p is not None
@@ -549,10 +565,12 @@ def evaluate(
             },
         },
         "paired_global":paired_global,
-        "paired_pre_ready_speech_cases":paired_summary(pre_ready_speech_pairs),
+        "paired_pre_ready_speech_cases":pre_ready_speech_summary,
         "paired_by_noise_domain":domain_summary,
         "directional_hypothesis":{
+            "primary_population":"target cases with at least one pre-ready speech target",
             "primary_metric":primary,
+            "paired_cases":len(pre_ready_speech_pairs),
             "supported":supported,
             "maximum_one_sided_sign_test_p":
                 directional["maximum_one_sided_sign_test_p"],
@@ -584,7 +602,9 @@ def evaluate(
 
 def self_test() -> None:
     target={
+        "seed":999,
         "case_id":"target",
+        "case_key":"999:target",
         "scenario":"research-public-noisy-clean",
         "noise_domain":"cafeteria",
         "reverb":False,
@@ -592,15 +612,15 @@ def self_test() -> None:
     }
     donors=[
         {"metadata":{
-            "case_id":"a","scenario":"research-public-noisy-clean",
+            "seed":1,"case_id":"a","case_key":"1:a","scenario":"research-public-noisy-clean",
             "noise_domain":"cafeteria","reverb":False,"snr_db":5.0,
         }},
         {"metadata":{
-            "case_id":"b","scenario":"research-public-noisy-clean",
+            "seed":2,"case_id":"b","case_key":"2:b","scenario":"research-public-noisy-clean",
             "noise_domain":"cafeteria","reverb":False,"snr_db":10.0,
         }},
         {"metadata":{
-            "case_id":"c","scenario":"research-public-noise-only",
+            "seed":3,"case_id":"c","case_key":"3:c","scenario":"research-public-noise-only",
             "noise_domain":"cafeteria","reverb":None,"snr_db":None,
         }},
     ]

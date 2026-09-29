@@ -15,6 +15,7 @@ from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
 WORKFLOW=ROOT/".github/workflows/research-i026-ns-upstream-matched-component-counterfactual-v1.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i026-ns-upstream-matched-component-counterfactual-v1.json"
+EVALUATOR=ROOT/"tests/validation/i026_ns_upstream_matched_component_counterfactual.py"
 MATERIALIZE="Materialize fresh public-development-v3 partitions"
 EVALUATE="Evaluate candidate-zero matched component counterfactual"
 CURRENT={"id":26,"run_attempt":1}
@@ -152,6 +153,33 @@ class I026GuardTests(unittest.TestCase):
         self.assertFalse(c["readout"]["component_weight_search"])
         self.assertFalse(c["readout"]["candidate_selection"])
         self.assertTrue(all(value is False for value in c["authority_boundary"].values()))
+
+    def test_evaluator_forbids_future_reference_leakage(self):
+        text=EVALUATOR.read_text(encoding="utf-8")
+        block=text.split("def analyze_case(",1)[1].split("\ndef evaluate(",1)[0]
+        self.assertIn("prior_reference_rows",block)
+        self.assertNotIn("reference_rows: list[dict[str, Any]]",block)
+        self.assertIn(
+            "if len(prior_reference_rows) < minimum_reference_frames:",
+            block,
+        )
+        self.assertIn(
+            "prior_reference_rows.append(row)",
+            block,
+        )
+        self.assertIn(
+            '"causal_prior_only": True',
+            block,
+        )
+        self.assertLess(
+            block.index("for row, label in zip(rows, labels):"),
+            block.index("prior_reference_rows.append(row)"),
+        )
+        self.assertNotIn(
+            "statistics.median(\n        float(row[\"mirror_mean\"]) "
+            "for row in reference_rows",
+            block,
+        )
 
     def test_dispatch_binds_causal_inputs_and_shipping_sources(self):
         text=WORKFLOW.read_text(encoding="utf-8")

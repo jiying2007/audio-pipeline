@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i030-ns-upstream-donor-joint-residual-stability-decomposition-v1",
+  "phase": "candidate-zero-donor-joint-residual-stability-diagnostic",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "0c943830ff9561d15e879877125dc1442b2ec4ac",
+  "predecessor": {
+    "i029_closure": ".github/research/continuous-optimization/development-v4/i029-ns-upstream-independent-donor-reference-feasibility-v1-result.json",
+    "i029_closure_blob_sha": "12f9f73dec9713621f047371799f022551554cc7",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_UPSTREAM_INDEPENDENT_DONOR_REFERENCE_FEASIBILITY_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "MATCHED_DONOR_PRIMARY_GAP_DIRECTION_NOT_SUPPORTED_NO_REFERENCE_SOURCE_CANDIDATE",
+    "required_followup_id": "i030-ns-upstream-donor-joint-residual-stability-decomposition-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Why did the frozen I029 metadata-matched K=3 donor rule fail its preregistered primary gap-direction support threshold despite favorable medians: donor-pool instability, within-donor instability, mean/concentration residual misalignment, or condition-specific transfer heterogeneity?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i030_ns_upstream_donor_joint_residual_stability_decomposition.py",
+    "evaluator_git_blob_sha": "fbd562440b7b912788e162bbe48507b47491db8d"
+  },
+  "fresh_diagnostic_authority": {
+    "donor_seeds": [
+      1401307,
+      1411307,
+      1421307
+    ],
+    "target_seeds": [
+      1431307,
+      1441307,
+      1451307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15
+  },
+  "frozen_i029_donor_rule": {
+    "donor_select_k": 3,
+    "same_noise_domain_required": true,
+    "ordering": "lexicographically minimize [scenario_group_mismatch, reverb_mismatch, snr_missing_penalty, absolute_snr_distance, exact_scenario_mismatch, case_key]",
+    "scenario_groups": {
+      "research-public-noise-only": "noise-only",
+      "research-public-noisy-clean": "mix",
+      "research-public-noisy-reverb": "mix"
+    },
+    "negative_control_domain_map": {
+      "kitchen": "traffic",
+      "traffic": "living",
+      "living": "office",
+      "office": "cafeteria",
+      "cafeteria": "bus",
+      "bus": "field",
+      "field": "kitchen"
+    },
+    "may_tune_rule": false,
+    "may_change_k": false,
+    "may_change_negative_control": false
+  },
+  "joint_reference_semantics": {
+    "readiness_reference_frames": 8,
+    "first_ready_reference": "the first eight ordinary-noise non-disagreement frames after warmup, preserved as ordered joint tuples of mirror_mean, mirror_concentration and mirror_gap",
+    "donor_case_summary": "component-wise medians across the eight joint frames",
+    "selected_donor_aggregate": "component-wise median across the frozen K=3 donor-case summaries",
+    "target_reference_role": "retrospective benchmark only; never a causal input for earlier target frames",
+    "same_target_future_frames_in_donor_reference": false,
+    "preserve_joint_frames": true,
+    "readiness_threshold_changed": false
+  },
+  "decomposition_metrics": {
+    "signed_residuals": [
+      "mean",
+      "concentration",
+      "gap"
+    ],
+    "absolute_errors": [
+      "mean",
+      "concentration",
+      "gap"
+    ],
+    "within_donor_dispersion": "per selected donor case, component MAD across its eight joint frames; aggregate by median across K=3 donors",
+    "between_donor_dispersion": "component MAD across the K=3 donor-case medians",
+    "target_dispersion": "component MAD across the target benchmark's eight joint frames",
+    "joint_l1_dispersion": "median per-frame L1 deviation from each case's joint median",
+    "component_implied_gap_residual": "concentration signed residual minus mean signed residual",
+    "gap_alignment_error": "absolute difference between observed gap signed residual and component-implied gap residual",
+    "gap_axis_projection": "(concentration residual - mean residual)/sqrt(2)",
+    "common_mode_projection": "(concentration residual + mean residual)/sqrt(2)",
+    "gap_axis_fraction": "absolute gap-axis projection divided by absolute gap-axis plus absolute common-mode projection",
+    "gap_outcome_partition": "frozen I029 continuity measure: negative-control absolute gap error minus matched-donor absolute gap error; positive=matched better, negative=matched worse"
+  },
+  "preregistered_slices": {
+    "primary_population": "target cases with at least one pre-ready oracle-speech disagreement target under the unchanged eight-reference observation boundary",
+    "stress_noise_domains": [
+      "bus",
+      "field"
+    ],
+    "comparison_noise_domains": [
+      "living",
+      "cafeteria"
+    ],
+    "all_noise_domains": [
+      "kitchen",
+      "traffic",
+      "living",
+      "office",
+      "cafeteria",
+      "bus",
+      "field"
+    ],
+    "snr_db": [
+      -5,
+      0,
+      5,
+      10,
+      15
+    ],
+    "reverb": [
+      false,
+      true
+    ],
+    "gap_outcome": [
+      "matched_better",
+      "matched_worse",
+      "tie"
+    ],
+    "note": "All slices are descriptive decomposition only. No slice may select a donor/reference candidate or replace I029's failed primary endpoint."
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "expected_target_cases": 126,
+    "expected_donor_cases": 126,
+    "minimum_ready_donor_cases": 120,
+    "minimum_ready_donors_per_domain": 12,
+    "minimum_target_benchmark_coverage": 0.95,
+    "minimum_target_benchmark_coverage_per_domain": 0.8,
+    "minimum_matched_donor_coverage": 0.95,
+    "minimum_negative_control_coverage": 0.95,
+    "minimum_pre_ready_speech_paired_cases": 30,
+    "minimum_named_domain_paired_cases": 12
+  },
+  "diagnostic_outputs": [
+    "all selected donor and target first-ready references with eight joint mean/concentration/gap tuples",
+    "signed matched and negative residuals",
+    "within-donor, between-donor and target MAD decomposition",
+    "joint gap-alignment diagnostics",
+    "matched-vs-negative gap outcome partition",
+    "global and pre-ready-speech population summaries",
+    "per-noise-domain summaries",
+    "fixed SNR-stratum summaries",
+    "reverb summaries",
+    "gap-win versus gap-loss stability summaries",
+    "shipping mirror identity"
+  ],
+  "forbidden_feedback": {
+    "i025_seeds": true,
+    "i026_seeds": true,
+    "i027_seeds": true,
+    "i028_seeds": true,
+    "i029_seeds": true,
+    "i029_secondary_endpoint_as_new_primary": true,
+    "target_outputs_for_donor_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_DONOR_JOINT_RESIDUAL_STABILITY_DECOMPOSED_REVIEW_REQUIRED": "Fresh donor/target authority, frozen I029 donor rule, exact eight-frame joint references, coverage and shipping mirrors are valid. Report stability/residual decomposition for review without redesigning donor matching or selecting a reference source.",
+    "I030_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, frozen-input identity, donor/target disjointness, donor/benchmark coverage, joint-frame preservation, named-slice population or shipping mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_run_component_counterfactual": false,
+    "may_change_donor_k": false,
+    "may_change_donor_matching_rule": false,
+    "may_change_negative_control_map": false,
+    "may_promote_secondary_endpoint": false,
+    "may_assume_matching_metadata_available_in_shipping": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use I030 only to attribute I029 transfer instability. Any donor-rule redesign, reference-source candidate, component counterfactual, mapping or shipping change requires a new independently preregistered authority."
+}

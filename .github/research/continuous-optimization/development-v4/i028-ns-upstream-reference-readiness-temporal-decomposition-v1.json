@@ -31,7 +31,7 @@
     "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
     "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
     "evaluator_path": "tests/validation/i028_ns_upstream_reference_readiness_temporal_decomposition.py",
-    "evaluator_git_blob_sha": "34ecc7e1647fc1d5fc9f9b504a36b3c6958be10a"
+    "evaluator_git_blob_sha": "ca34f252ed44f30be806abaac6768668c8a9f43a"
   },
   "fresh_diagnostic_authority": {
     "seeds": [
@@ -85,7 +85,12 @@
     "component_counterfactual": false,
     "component_mapping_selection": false,
     "threshold_search": false,
-    "candidate_selection": false
+    "candidate_selection": false,
+    "target_frame_index_from_warmup": true,
+    "target_ready_at_readout": true,
+    "target_frames_until_first_ready": true,
+    "reference_interarrival_summary": true,
+    "future_readiness_timestamp_role": "retrospective diagnostic only; never a deployable causal input"
   },
   "diagnostic_gates": {
     "max_ns_upstream_mirror_delta": 0.000001,
@@ -93,15 +98,19 @@
     "vad_shipping_mirror_active_mismatch_frames": 0,
     "minimum_total_cases": 168,
     "minimum_global_raw_targets_per_class": 100,
-    "minimum_raw_targets_per_noise_domain": 20
+    "minimum_raw_targets_per_noise_domain": 20,
+    "all_raw_targets_represented_exactly_once": true
   },
   "diagnostic_outputs": [
+    "per_target_readiness_receipt_for_every_raw_disagreement_target",
     "global_pre_ready_and_ready_target_counts_and_fractions",
+    "all_target_prior_reference_count_summary_by_class",
     "pre_ready_prior_reference_count_histogram_by_class",
     "median_target_frame_index_pre_ready_and_ready_by_class",
-    "first_target_and_first_ready_frame_distributions",
+    "first_reference_first_target_and_first_ready_frame_distributions",
     "ready_minus_first_target_frame_distribution",
     "reference_frames_before_first_target_distribution",
+    "reference_interarrival_median_and_max_distribution",
     "per_noise_domain_readiness_decomposition",
     "per_scenario_snr_reverb_readiness_decomposition",
     "per_case_temporal_readiness_receipt"
@@ -144,5 +153,5 @@
     "may_promote_release": false,
     "automatic_main_mutation": false
   },
-  "next_review": "Use I028 only to explain temporal/reference-arrival causes of pre-ready targets. Any new reference mechanism, readiness threshold, component counterfactual, mapping or shipping candidate requires a new independently preregistered authority."
+  "next_review": "Use I028 only to explain temporal/reference-arrival causes of pre-ready targets from exact per-target readiness receipts and retrospective case timing. Any new reference mechanism, readiness threshold, component counterfactual, mapping or shipping candidate requires a new independently preregistered authority."
 }

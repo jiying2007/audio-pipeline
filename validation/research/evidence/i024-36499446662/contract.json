@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i024-vad-disagreement-feature-separability-v1",
+  "phase": "candidate-zero-disagreement-feature-separability",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "b4f56e162b2ad7476fc11f9eed9c2800df659df8",
+  "predecessor": {
+    "i023_closure": ".github/research/continuous-optimization/development-v4/i023-vad-upstream-local-disagreement-risk-v1-result.json",
+    "i023_closure_blob_sha": "2ab9f179991fad53602cd9e8d0de6f62aa8864f1",
+    "required_i023_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_i023_reviewed_decision": "UPSTREAM_LOCAL_DISAGREEMENT_NOISE_RISK_HIGH_NO_DIRECT_TRUST_CANDIDATE"
+  },
+  "question": "Within fresh upstream-high/local-low disagreement frames, do already-observed shipping diagnostics provide stable threshold-free speech/noise separability across noise domains and SNRs, or is the state-only VAD route exhausted?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i023_vad_upstream_local_disagreement_risk_probe.c",
+    "probe_git_blob_sha": "5d8132e7c5d2f1922ba26133b3a677f48cb6e6d2",
+    "evaluator_path": "tests/validation/i024_vad_disagreement_feature_separability.py",
+    "evaluator_git_blob_sha": "f4d27bfb9bb74ed55f7af4483d87abb1e4587561"
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      801307,
+      811307,
+      821307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "minimum_mix_cases_per_noise_domain_per_seed": 4,
+    "minimum_noise_only_cases_per_noise_domain_per_seed": 2,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "vad_upstream_blend": 0.4,
+    "vad_ns_decision_threshold": 0.35,
+    "vad_strong_refresh_threshold": 0.5,
+    "vad_strong_hold_frames": 8,
+    "vad_weak_hold_frames": 6
+  },
+  "population_definition": {
+    "upstream_high": "upstream_probability > vad_upstream_speech_guard",
+    "local_low": "local_guard_pass == 0",
+    "disagreement_state": "upstream_high && local_low",
+    "oracle_labels_used_for_evaluation_only": true,
+    "shipping_behavior_changed": false
+  },
+  "feature_registry": {
+    "numeric_features": [
+      "upstream_margin",
+      "ratio_db",
+      "crest_db",
+      "raw_probability",
+      "pre_blend_probability",
+      "shipping_probability",
+      "pre_hangover",
+      "upstream_margin_mean3",
+      "upstream_margin_min3",
+      "ratio_db_mean3",
+      "pre_blend_probability_mean3",
+      "disagreement_run_length"
+    ],
+    "categorical_features": [
+      "noise_update_kind"
+    ],
+    "temporal_context": {
+      "window_frames": 3,
+      "causal_only": true,
+      "includes_current_frame": true,
+      "future_frames_used": false,
+      "learned_weights": false
+    }
+  },
+  "separability_statistics": {
+    "numeric": "signed ROC-AUC plus orientation-free separability_auc=max(AUC,1-AUC), speech/noise p10/median/p90, and per-domain/per-SNR AUC ranges",
+    "categorical": "speech/noise category fractions and total-variation distance",
+    "model_fitting": false,
+    "feature_selection": false,
+    "threshold_search": false,
+    "ranking_authority": false
+  },
+  "diagnostic_gates": {
+    "max_shipping_mirror_probability_delta": 0.000001,
+    "shipping_mirror_active_mismatch_frames": 0,
+    "minimum_total_cases": 168,
+    "minimum_disagreement_speech_frames": 100,
+    "minimum_disagreement_noise_frames": 100,
+    "minimum_per_domain_class_frames": 20
+  },
+  "diagnostic_outputs": [
+    "global_numeric_feature_auc_and_quantiles",
+    "global_noise_update_kind_total_variation",
+    "per_noise_domain_feature_auc",
+    "per_snr_feature_auc",
+    "cross_domain_min_median_max_separability_auc",
+    "cross_snr_min_median_max_separability_auc",
+    "per_case_disagreement_population_counts"
+  ],
+  "forbidden_feedback": {
+    "i023_seeds": true,
+    "i023_result_for_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "VAD_DISAGREEMENT_FEATURE_SEPARABILITY_PROFILED_REVIEW_REQUIRED": "Fresh public-development disagreement speech/noise populations are valid and all preregistered feature statistics are reported for review without selecting a feature or threshold.",
+    "VAD_DISAGREEMENT_NOT_REPRODUCED_REVIEW_REQUIRED": "Fresh public-development authority is valid but the disagreement population is absent. Close the state-only follow-up without selecting a candidate.",
+    "I024_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, case coverage, shipping mirror, frozen input identity, disagreement class population, or finite-value preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_feature": false,
+    "may_rank_feature_for_shipping": false,
+    "may_fit_model": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_hold_lengths": false,
+    "may_change_local_guard": false,
+    "may_change_upstream_guard": false,
+    "may_bypass_local_guard": false,
+    "may_change_blend": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "If no preregistered observable has stable cross-domain separability, close the state-only VAD route and move root-cause work upstream. If a stable observable exists, it still requires a separate preregistered causal counterfactual before any candidate can be formed."
+}

@@ -1,0 +1,125 @@
+{
+  "decision": "VAD_DISAGREEMENT_FEATURE_SEPARABILITY_PROFILED_REVIEW_REQUIRED",
+  "fresh_diagnostic_seeds": [
+    801307,
+    811307,
+    821307
+  ],
+  "interpretation_boundary": {
+    "categorical_statistic": "Total variation distance between speech/noise category distributions; no category is promoted to a rule.",
+    "no_feature_selection": true,
+    "no_model_fitting": true,
+    "numeric_statistic": "Univariate ROC-AUC only. separability_auc=max(AUC,1-AUC) is orientation-free and does not select a threshold or feature.",
+    "population": "Only frames in the existing upstream-high/local-low disagreement state are profiled.",
+    "temporal_context": "Current plus up to two previous frames only; no future information and no learned weights."
+  },
+  "invalid_reasons": [],
+  "noise_update_kind_tv": 0.029037914698111872,
+  "numeric_features": {
+    "crest_db": {
+      "cross_domain_floor": 0.5514705592578435,
+      "cross_domain_median": 0.6175669177752845,
+      "cross_snr_floor": 0.5691647714261241,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.5752420951250248,
+      "signed_auc": 0.5752420951250248
+    },
+    "disagreement_run_length": {
+      "cross_domain_floor": 0.5117664445293935,
+      "cross_domain_median": 0.6317776905879048,
+      "cross_snr_floor": 0.5126333809867392,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.590339840207849,
+      "signed_auc": 0.590339840207849
+    },
+    "pre_blend_probability": {
+      "cross_domain_floor": 0.5324306494551614,
+      "cross_domain_median": 0.5439225303401873,
+      "cross_snr_floor": 0.5492002143528306,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.5475672344695112,
+      "signed_auc": 0.5475672344695112
+    },
+    "pre_blend_probability_mean3": {
+      "cross_domain_floor": 0.501324435641074,
+      "cross_domain_median": 0.5350338723492616,
+      "cross_snr_floor": 0.5577100951374208,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.5447834171214923,
+      "signed_auc": 0.5447834171214923
+    },
+    "pre_hangover": {
+      "cross_domain_floor": 0.5001368529894775,
+      "cross_domain_median": 0.5218193110784071,
+      "cross_snr_floor": 0.5233182111815833,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.5206093656215827,
+      "signed_auc": 0.5206093656215827
+    },
+    "ratio_db": {
+      "cross_domain_floor": 0.5854425865133381,
+      "cross_domain_median": 0.6833238161981641,
+      "cross_snr_floor": 0.6425409619450317,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.6904523119741257,
+      "signed_auc": 0.6904523119741257
+    },
+    "ratio_db_mean3": {
+      "cross_domain_floor": 0.5884982907175884,
+      "cross_domain_median": 0.650963589973371,
+      "cross_snr_floor": 0.6351211974395113,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.6548621635521978,
+      "signed_auc": 0.6548621635521978
+    },
+    "raw_probability": {
+      "cross_domain_floor": 0.5324306494551614,
+      "cross_domain_median": 0.5439225303401873,
+      "cross_snr_floor": 0.5492002143528306,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.5475672344695112,
+      "signed_auc": 0.5475672344695112
+    },
+    "shipping_probability": {
+      "cross_domain_floor": 0.6246670896601734,
+      "cross_domain_median": 0.6683818065249384,
+      "cross_snr_floor": 0.5856805702372563,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.6606920325892516,
+      "signed_auc": 0.6606920325892516
+    },
+    "upstream_margin": {
+      "cross_domain_floor": 0.6048217318825444,
+      "cross_domain_median": 0.6552168179632517,
+      "cross_snr_floor": 0.5524616942802468,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.6441399701921744,
+      "signed_auc": 0.6441399701921744
+    },
+    "upstream_margin_mean3": {
+      "cross_domain_floor": 0.5689344110472242,
+      "cross_domain_median": 0.6677190440425471,
+      "cross_snr_floor": 0.546878670425182,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.6557125162749051,
+      "signed_auc": 0.6557125162749051
+    },
+    "upstream_margin_min3": {
+      "cross_domain_floor": 0.5407788072371299,
+      "cross_domain_median": 0.651773643337735,
+      "cross_snr_floor": 0.5415097559901338,
+      "direction": "higher_in_speech",
+      "separability_auc": 0.6391605900916661,
+      "signed_auc": 0.6391605900916661
+    }
+  },
+  "population": {
+    "frames": 16297,
+    "noise_frames": 8719,
+    "speech_frames": 7578
+  },
+  "shipping_mirror": {
+    "active_mismatch_frames": 0,
+    "max_probability_delta": 0.0
+  }
+}

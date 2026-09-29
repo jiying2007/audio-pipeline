@@ -100,7 +100,7 @@ class I024RetirementTests(unittest.TestCase):
         limits="\n".join(result["verification_limits"])
         self.assertIn("does not establish that every possible multivariate classifier",limits)
         self.assertIn("does not invalidate prior I014 evidence",limits)
-        self.assertIn("not a selected feature, threshold, model or shipping rule",limits)
+        self.assertIn("is a selected feature, threshold, model or shipping rule",limits)
 
     def test_followup_moves_root_cause_upstream_without_candidate_authority(self):
         result=json.loads(RESULT.read_text(encoding="utf-8"))

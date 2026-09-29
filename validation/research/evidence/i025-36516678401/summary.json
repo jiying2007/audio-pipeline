@@ -1,0 +1,224 @@
+{
+  "decision": "NS_UPSTREAM_DISAGREEMENT_NOISE_SOURCE_DECOMPOSED_REVIEW_REQUIRED",
+  "disagreement_class_features": {
+    "concentration_mean3": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.7140537495743773,
+      "signed_auc": 0.7140537495743773
+    },
+    "disagreement_run_length": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.607020906974393,
+      "signed_auc": 0.607020906974393
+    },
+    "gap_to_concentration": {
+      "direction": "lower_in_positive",
+      "separability_auc": 0.551911275267716,
+      "signed_auc": 0.44808872473228406
+    },
+    "max_post_ratio": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.7120859774107132,
+      "signed_auc": 0.7120859774107132
+    },
+    "mean_post_ratio": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6288106166257156,
+      "signed_auc": 0.6288106166257156
+    },
+    "mirror_concentration": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6992543356897786,
+      "signed_auc": 0.6992543356897786
+    },
+    "mirror_mean": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.5767929845700982,
+      "signed_auc": 0.5767929845700982
+    },
+    "mirror_mean_suppression": {
+      "direction": "lower_in_positive",
+      "separability_auc": 0.5767929708430992,
+      "signed_auc": 0.4232070291569008
+    },
+    "ns_noise_rms_dbfs": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.7015243763704263,
+      "signed_auc": 0.7015243763704263
+    },
+    "positive_bin_fraction": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.5150656353023272,
+      "signed_auc": 0.5150656353023272
+    },
+    "posterior_max": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.5105681625457873,
+      "signed_auc": 0.5105681625457873
+    },
+    "posterior_variance": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.606147547256395,
+      "signed_auc": 0.606147547256395
+    },
+    "slow_update_bin_fraction": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.5700373655775048,
+      "signed_auc": 0.5700373655775048
+    },
+    "slow_update_bin_fraction_mean3": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.570911445962948,
+      "signed_auc": 0.570911445962948
+    },
+    "upstream_high_run_length": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6395660497547432,
+      "signed_auc": 0.6395660497547432
+    },
+    "upstream_probability_mean3": {
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6613706326094332,
+      "signed_auc": 0.6613706326094332
+    }
+  },
+  "fresh_diagnostic_seeds": [
+    901307,
+    911307,
+    921307
+  ],
+  "interpretation_boundary": {
+    "class_comparison": "speech_disagreement vs noise_disagreement checks whether the same upstream internals distinguish true speech from false-high noise.",
+    "no_component_reweighting": true,
+    "no_mapping_selection": true,
+    "no_threshold_search": true,
+    "short_context": "Current plus up to two previous frames only; no future information.",
+    "source_comparison": "noise_disagreement vs oracle-noise non-disagreement frames localizes state/component shifts associated with false-high upstream.",
+    "tracker_slow_update_state": "slow_update_bin_fraction counts existing EMA noise-tracker bins whose current per-bin speech_probability exceeds the native 0.35 alpha-switch threshold, causing alpha=0.995 rather than 0.92."
+  },
+  "invalid_reasons": [],
+  "noise_source_features": {
+    "concentration_mean3": {
+      "cross_domain_floor": 0.5014608864431803,
+      "cross_domain_median": 0.569770839481208,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.559746567229246,
+      "signed_auc": 0.559746567229246
+    },
+    "disagreement_run_length": {
+      "cross_domain_floor": 1.0,
+      "cross_domain_median": 1.0,
+      "direction": "higher_in_positive",
+      "separability_auc": 1.0,
+      "signed_auc": 1.0
+    },
+    "gap_to_concentration": {
+      "cross_domain_floor": 0.7235526211640977,
+      "cross_domain_median": 0.7765634944287428,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.753994373838577,
+      "signed_auc": 0.753994373838577
+    },
+    "max_post_ratio": {
+      "cross_domain_floor": 0.50067300481092,
+      "cross_domain_median": 0.5465529168742834,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.5564130238100528,
+      "signed_auc": 0.5564130238100528
+    },
+    "mean_post_ratio": {
+      "cross_domain_floor": 0.5904491791455073,
+      "cross_domain_median": 0.689479308315028,
+      "direction": "lower_in_positive",
+      "separability_auc": 0.5776403543728745,
+      "signed_auc": 0.42235964562712547
+    },
+    "mirror_concentration": {
+      "cross_domain_floor": 0.5080561750463207,
+      "cross_domain_median": 0.5377315341812238,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6066082593479238,
+      "signed_auc": 0.6066082593479238
+    },
+    "mirror_mean": {
+      "cross_domain_floor": 0.6289646060075789,
+      "cross_domain_median": 0.7160211090669308,
+      "direction": "lower_in_positive",
+      "separability_auc": 0.6120561697605977,
+      "signed_auc": 0.3879438302394022
+    },
+    "mirror_mean_suppression": {
+      "cross_domain_floor": 0.628964606007579,
+      "cross_domain_median": 0.7160209039652312,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6120561611363835,
+      "signed_auc": 0.6120561611363835
+    },
+    "ns_noise_rms_dbfs": {
+      "cross_domain_floor": 0.5554252831435386,
+      "cross_domain_median": 0.6307841836205875,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6178302192100487,
+      "signed_auc": 0.6178302192100487
+    },
+    "positive_bin_fraction": {
+      "cross_domain_floor": 0.6892144767135733,
+      "cross_domain_median": 0.7763874617228953,
+      "direction": "lower_in_positive",
+      "separability_auc": 0.670034548832394,
+      "signed_auc": 0.32996545116760595
+    },
+    "posterior_max": {
+      "cross_domain_floor": 0.5288737876689826,
+      "cross_domain_median": 0.5368270356856447,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.6086907426212027,
+      "signed_auc": 0.6086907426212027
+    },
+    "posterior_variance": {
+      "cross_domain_floor": 0.5739434121771414,
+      "cross_domain_median": 0.6586656493622363,
+      "direction": "lower_in_positive",
+      "separability_auc": 0.5634513342027461,
+      "signed_auc": 0.4365486657972539
+    },
+    "slow_update_bin_fraction": {
+      "cross_domain_floor": 0.6386875589949139,
+      "cross_domain_median": 0.7261217524709627,
+      "direction": "lower_in_positive",
+      "separability_auc": 0.6206651479310326,
+      "signed_auc": 0.3793348520689674
+    },
+    "slow_update_bin_fraction_mean3": {
+      "cross_domain_floor": 0.6253029801422381,
+      "cross_domain_median": 0.7116050643711684,
+      "direction": "lower_in_positive",
+      "separability_auc": 0.613962379843422,
+      "signed_auc": 0.386037620156578
+    },
+    "upstream_high_run_length": {
+      "cross_domain_floor": 0.886614176276856,
+      "cross_domain_median": 0.9481554174820035,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.9555984914938339,
+      "signed_auc": 0.9555984914938339
+    },
+    "upstream_probability_mean3": {
+      "cross_domain_floor": 0.8146207429580117,
+      "cross_domain_median": 0.8324891076610993,
+      "direction": "higher_in_positive",
+      "separability_auc": 0.8502873168487112,
+      "signed_auc": 0.8502873168487112
+    }
+  },
+  "population_counts": {
+    "noise_disagreement": 8417,
+    "noise_reference": 20664,
+    "speech_disagreement": 8655
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  }
+}

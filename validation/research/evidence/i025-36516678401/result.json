@@ -1,0 +1,4353 @@
+{
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "authority_boundary": {
+    "automatic_main_mutation": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_authorize_source_patch": false,
+    "may_change_noise_tracker_alpha": false,
+    "may_change_upstream_mapping": false,
+    "may_change_vad_guards": false,
+    "may_consume_confirmation": false,
+    "may_consume_validation_holdout": false,
+    "may_fit_model": false,
+    "may_modify_shipping_source": false,
+    "may_promote_release": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_search_parameters": false,
+    "may_select_candidate": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_tune_thresholds": false
+  },
+  "candidate_budget_consumed": 0,
+  "confirmation_budget_consumed": 0,
+  "cross_domain_disagreement_class": {
+    "numeric_features": {
+      "concentration_mean3": {
+        "separability_auc_max": 0.7591171086752817,
+        "separability_auc_median": 0.7260148290025619,
+        "separability_auc_min": 0.6574341349087791,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7360801886349332,
+            "signed_auc": 0.7360801886349332
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6574341349087791,
+            "signed_auc": 0.6574341349087791
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7172515335158013,
+            "signed_auc": 0.7172515335158013
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7591171086752817,
+            "signed_auc": 0.7591171086752817
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7260148290025619,
+            "signed_auc": 0.7260148290025619
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7294244775713021,
+            "signed_auc": 0.7294244775713021
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7147908081501831,
+            "signed_auc": 0.7147908081501831
+          }
+        }
+      },
+      "disagreement_run_length": {
+        "separability_auc_max": 0.6522386154788646,
+        "separability_auc_median": 0.6189153446359694,
+        "separability_auc_min": 0.5484692941568482,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6052140327427085,
+            "signed_auc": 0.6052140327427085
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5484692941568482,
+            "signed_auc": 0.5484692941568482
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6492298958270831,
+            "signed_auc": 0.6492298958270831
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6189153446359694,
+            "signed_auc": 0.6189153446359694
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6231224041494566,
+            "signed_auc": 0.6231224041494566
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6522386154788646,
+            "signed_auc": 0.6522386154788646
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6161794585622711,
+            "signed_auc": 0.6161794585622711
+          }
+        }
+      },
+      "gap_to_concentration": {
+        "separability_auc_max": 0.6023041317813627,
+        "separability_auc_median": 0.5608547255333522,
+        "separability_auc_min": 0.5290993625848441,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5938953999433666,
+            "signed_auc": 0.4061046000566334
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5659332307496472,
+            "signed_auc": 0.43406676925035287
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5467439617094143,
+            "signed_auc": 0.4532560382905857
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5608547255333522,
+            "signed_auc": 0.4391452744666478
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5290993625848441,
+            "signed_auc": 0.4709006374151558
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6023041317813627,
+            "signed_auc": 0.3976958682186373
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5533496451465201,
+            "signed_auc": 0.44665035485347987
+          }
+        }
+      },
+      "max_post_ratio": {
+        "separability_auc_max": 0.7856498834143258,
+        "separability_auc_median": 0.7211870573881846,
+        "separability_auc_min": 0.6365684633787472,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.710010024921391,
+            "signed_auc": 0.710010024921391
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6365684633787472,
+            "signed_auc": 0.6365684633787472
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7211870573881846,
+            "signed_auc": 0.7211870573881846
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7856498834143258,
+            "signed_auc": 0.7856498834143258
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7300878096504494,
+            "signed_auc": 0.7300878096504494
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7384146756517596,
+            "signed_auc": 0.7384146756517596
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7201064560439561,
+            "signed_auc": 0.7201064560439561
+          }
+        }
+      },
+      "mean_post_ratio": {
+        "separability_auc_max": 0.6687733986794636,
+        "separability_auc_median": 0.6310084818385882,
+        "separability_auc_min": 0.6139206810957735,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6506335025625953,
+            "signed_auc": 0.6506335025625953
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6139206810957735,
+            "signed_auc": 0.6139206810957735
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6310084818385882,
+            "signed_auc": 0.6310084818385882
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6634950641766001,
+            "signed_auc": 0.6634950641766001
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.626183742296417,
+            "signed_auc": 0.626183742296417
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6687733986794636,
+            "signed_auc": 0.6687733986794636
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6259586767399268,
+            "signed_auc": 0.6259586767399268
+          }
+        }
+      },
+      "mirror_concentration": {
+        "separability_auc_max": 0.7500340495543595,
+        "separability_auc_median": 0.6999503939204994,
+        "separability_auc_min": 0.6408971954219222,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7065811528793802,
+            "signed_auc": 0.7065811528793802
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6408971954219222,
+            "signed_auc": 0.6408971954219222
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6839326622326636,
+            "signed_auc": 0.6839326622326636
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7500340495543595,
+            "signed_auc": 0.7500340495543595
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6999503939204994,
+            "signed_auc": 0.6999503939204994
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7177242869784222,
+            "signed_auc": 0.7177242869784222
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6878863324175825,
+            "signed_auc": 0.6878863324175825
+          }
+        }
+      },
+      "mirror_mean": {
+        "separability_auc_max": 0.6260976107821115,
+        "separability_auc_median": 0.5828408193216748,
+        "separability_auc_min": 0.5588894209294021,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6152335860365058,
+            "signed_auc": 0.6152335860365058
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5828408193216748,
+            "signed_auc": 0.5828408193216748
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5702924872726266,
+            "signed_auc": 0.5702924872726266
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5903906709668983,
+            "signed_auc": 0.5903906709668983
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5588894209294021,
+            "signed_auc": 0.5588894209294021
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6260976107821115,
+            "signed_auc": 0.6260976107821115
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5777901785714286,
+            "signed_auc": 0.5777901785714286
+          }
+        }
+      },
+      "mirror_mean_suppression": {
+        "separability_auc_max": 0.6260976107821115,
+        "separability_auc_median": 0.5828408193216748,
+        "separability_auc_min": 0.558889420929402,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6152335860365057,
+            "signed_auc": 0.38476641396349426
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5828408193216748,
+            "signed_auc": 0.41715918067832525
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5702924872726265,
+            "signed_auc": 0.42970751272737345
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5903906709668985,
+            "signed_auc": 0.4096093290331016
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.558889420929402,
+            "signed_auc": 0.441110579070598
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6260976107821115,
+            "signed_auc": 0.3739023892178885
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5777894631410256,
+            "signed_auc": 0.42221053685897436
+          }
+        }
+      },
+      "ns_noise_rms_dbfs": {
+        "separability_auc_max": 0.8150030513030749,
+        "separability_auc_median": 0.7285599816849817,
+        "separability_auc_min": 0.5797410698349176,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5797410698349176,
+            "signed_auc": 0.5797410698349176
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8150030513030749,
+            "signed_auc": 0.8150030513030749
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6549277897525605,
+            "signed_auc": 0.6549277897525605
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7022434570376342,
+            "signed_auc": 0.7022434570376342
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7789429082253081,
+            "signed_auc": 0.7789429082253081
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7678110748077054,
+            "signed_auc": 0.7678110748077054
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7285599816849817,
+            "signed_auc": 0.7285599816849817
+          }
+        }
+      },
+      "positive_bin_fraction": {
+        "separability_auc_max": 0.5673694779116466,
+        "separability_auc_median": 0.5261548246856546,
+        "separability_auc_min": 0.5122058165135074,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5607594783820018,
+            "signed_auc": 0.5607594783820018
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5354827236343079,
+            "signed_auc": 0.5354827236343079
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5122058165135074,
+            "signed_auc": 0.5122058165135074
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5261548246856546,
+            "signed_auc": 0.5261548246856546
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5124813259521324,
+            "signed_auc": 0.4875186740478676
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5673694779116466,
+            "signed_auc": 0.5673694779116466
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5201214800824175,
+            "signed_auc": 0.5201214800824175
+          }
+        }
+      },
+      "posterior_max": {
+        "separability_auc_max": 0.5209430487540329,
+        "separability_auc_median": 0.5107743818681318,
+        "separability_auc_min": 0.5011505097360903,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.514273099257458,
+            "signed_auc": 0.514273099257458
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5011505097360903,
+            "signed_auc": 0.5011505097360903
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5209430487540329,
+            "signed_auc": 0.5209430487540329
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5072580030072567,
+            "signed_auc": 0.5072580030072567
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5077320031554978,
+            "signed_auc": 0.5077320031554978
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5137958614117487,
+            "signed_auc": 0.5137958614117487
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5107743818681318,
+            "signed_auc": 0.5107743818681318
+          }
+        }
+      },
+      "posterior_variance": {
+        "separability_auc_max": 0.6528486828670614,
+        "separability_auc_median": 0.6057520604395604,
+        "separability_auc_min": 0.5956059577820111,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6396141411782705,
+            "signed_auc": 0.6396141411782705
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6024125885907472,
+            "signed_auc": 0.6024125885907472
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5991104300613714,
+            "signed_auc": 0.5991104300613714
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6230850530628255,
+            "signed_auc": 0.6230850530628255
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5956059577820111,
+            "signed_auc": 0.5956059577820111
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6528486828670614,
+            "signed_auc": 0.6528486828670614
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6057520604395604,
+            "signed_auc": 0.6057520604395604
+          }
+        }
+      },
+      "slow_update_bin_fraction": {
+        "separability_auc_max": 0.6197816690490777,
+        "separability_auc_median": 0.5777385913088405,
+        "separability_auc_min": 0.5500963988512518,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6102982917372907,
+            "signed_auc": 0.6102982917372907
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5777385913088405,
+            "signed_auc": 0.5777385913088405
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5637599484289444,
+            "signed_auc": 0.5637599484289444
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.580646369500316,
+            "signed_auc": 0.580646369500316
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5500963988512518,
+            "signed_auc": 0.5500963988512518
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6197816690490777,
+            "signed_auc": 0.6197816690490777
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5706187042124542,
+            "signed_auc": 0.5706187042124542
+          }
+        }
+      },
+      "slow_update_bin_fraction_mean3": {
+        "separability_auc_max": 0.6258899298523908,
+        "separability_auc_median": 0.5796684662991131,
+        "separability_auc_min": 0.5565928431747431,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6258899298523908,
+            "signed_auc": 0.6258899298523908
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5823383838951101,
+            "signed_auc": 0.5823383838951101
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5672054549622525,
+            "signed_auc": 0.5672054549622525
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5796684662991131,
+            "signed_auc": 0.5796684662991131
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5565928431747431,
+            "signed_auc": 0.5565928431747431
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6030656524402696,
+            "signed_auc": 0.6030656524402696
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5773594894688645,
+            "signed_auc": 0.5773594894688645
+          }
+        }
+      },
+      "upstream_high_run_length": {
+        "separability_auc_max": 0.7068603965986489,
+        "separability_auc_median": 0.6596640338827838,
+        "separability_auc_min": 0.5538276069921639,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6209304791160891,
+            "signed_auc": 0.6209304791160891
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5538276069921639,
+            "signed_auc": 0.5538276069921639
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7068603965986489,
+            "signed_auc": 0.7068603965986489
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.66200777964218,
+            "signed_auc": 0.66200777964218
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.655435827301946,
+            "signed_auc": 0.655435827301946
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6761937580831802,
+            "signed_auc": 0.6761937580831802
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6596640338827838,
+            "signed_auc": 0.6596640338827838
+          }
+        }
+      },
+      "upstream_probability_mean3": {
+        "separability_auc_max": 0.7184483209483754,
+        "separability_auc_median": 0.6712204751208223,
+        "separability_auc_min": 0.5623933447897596,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6410688955005952,
+            "signed_auc": 0.6410688955005952
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5623933447897596,
+            "signed_auc": 0.5623933447897596
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6912752297388984,
+            "signed_auc": 0.6912752297388984
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7184483209483754,
+            "signed_auc": 0.7184483209483754
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6722060122109039,
+            "signed_auc": 0.6722060122109039
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6712204751208223,
+            "signed_auc": 0.6712204751208223
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6709635416666667,
+            "signed_auc": 0.6709635416666667
+          }
+        }
+      }
+    }
+  },
+  "cross_domain_noise_source": {
+    "numeric_features": {
+      "concentration_mean3": {
+        "separability_auc_max": 0.7056890640203657,
+        "separability_auc_median": 0.569770839481208,
+        "separability_auc_min": 0.5014608864431803,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5014608864431803,
+            "signed_auc": 0.4985391135568197
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7056890640203657,
+            "signed_auc": 0.29431093597963437
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5373498566112216,
+            "signed_auc": 0.5373498566112216
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.569770839481208,
+            "signed_auc": 0.43022916051879195
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5315192087996834,
+            "signed_auc": 0.46848079120031666
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5754595445149263,
+            "signed_auc": 0.5754595445149263
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5777462668058517,
+            "signed_auc": 0.42225373319414833
+          }
+        }
+      },
+      "disagreement_run_length": {
+        "separability_auc_max": 1.0,
+        "separability_auc_median": 1.0,
+        "separability_auc_min": 1.0,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          }
+        }
+      },
+      "gap_to_concentration": {
+        "separability_auc_max": 0.8246794180873873,
+        "separability_auc_median": 0.7765634944287428,
+        "separability_auc_min": 0.7235526211640977,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7235526211640977,
+            "signed_auc": 0.7235526211640977
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8246794180873873,
+            "signed_auc": 0.8246794180873873
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7765634944287428,
+            "signed_auc": 0.7765634944287428
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.799917759577381,
+            "signed_auc": 0.799917759577381
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7637011011910255,
+            "signed_auc": 0.7637011011910255
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7463839443186543,
+            "signed_auc": 0.7463839443186543
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7776218424247808,
+            "signed_auc": 0.7776218424247808
+          }
+        }
+      },
+      "max_post_ratio": {
+        "separability_auc_max": 0.6696606053645834,
+        "separability_auc_median": 0.5465529168742834,
+        "separability_auc_min": 0.50067300481092,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5142118096064039,
+            "signed_auc": 0.48578819039359616
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6696606053645834,
+            "signed_auc": 0.3303393946354166
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.50067300481092,
+            "signed_auc": 0.49932699518907997
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5465529168742834,
+            "signed_auc": 0.4534470831257166
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5300496551214919,
+            "signed_auc": 0.469950344878508
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5666778005710806,
+            "signed_auc": 0.5666778005710806
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.548724013859275,
+            "signed_auc": 0.45127598614072495
+          }
+        }
+      },
+      "mean_post_ratio": {
+        "separability_auc_max": 0.7803550679821609,
+        "separability_auc_median": 0.689479308315028,
+        "separability_auc_min": 0.5904491791455073,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6237688289162597,
+            "signed_auc": 0.37623117108374027
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7803550679821609,
+            "signed_auc": 0.21964493201783905
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6185536455245999,
+            "signed_auc": 0.3814463544754001
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7241070867055939,
+            "signed_auc": 0.2758929132944062
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.689479308315028,
+            "signed_auc": 0.310520691684972
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5904491791455073,
+            "signed_auc": 0.4095508208544927
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6957493040748638,
+            "signed_auc": 0.3042506959251362
+          }
+        }
+      },
+      "mirror_concentration": {
+        "separability_auc_max": 0.6661479871437765,
+        "separability_auc_median": 0.5377315341812238,
+        "separability_auc_min": 0.5080561750463207,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5314090585283763,
+            "signed_auc": 0.5314090585283763
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6661479871437765,
+            "signed_auc": 0.33385201285622346
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6043501327997327,
+            "signed_auc": 0.6043501327997327
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5080561750463207,
+            "signed_auc": 0.4919438249536793
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5377315341812238,
+            "signed_auc": 0.5377315341812238
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.633358557045988,
+            "signed_auc": 0.633358557045988
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5101982646292348,
+            "signed_auc": 0.5101982646292348
+          }
+        }
+      },
+      "mirror_mean": {
+        "separability_auc_max": 0.802917156556809,
+        "separability_auc_median": 0.7160211090669308,
+        "separability_auc_min": 0.6289646060075789,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6465403318225462,
+            "signed_auc": 0.35345966817745383
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.802917156556809,
+            "signed_auc": 0.1970828434431911
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6774271020620256,
+            "signed_auc": 0.3225728979379744
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7569006971085235,
+            "signed_auc": 0.2430993028914765
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7160211090669308,
+            "signed_auc": 0.28397889093306916
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6289646060075789,
+            "signed_auc": 0.3710353939924211
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7334097740464345,
+            "signed_auc": 0.2665902259535655
+          }
+        }
+      },
+      "mirror_mean_suppression": {
+        "separability_auc_max": 0.802917156556809,
+        "separability_auc_median": 0.7160209039652312,
+        "separability_auc_min": 0.628964606007579,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6465403318225462,
+            "signed_auc": 0.6465403318225462
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.802917156556809,
+            "signed_auc": 0.802917156556809
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6774271020620256,
+            "signed_auc": 0.6774271020620256
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7569006971085235,
+            "signed_auc": 0.7569006971085235
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7160209039652312,
+            "signed_auc": 0.7160209039652312
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.628964606007579,
+            "signed_auc": 0.628964606007579
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.733409542688344,
+            "signed_auc": 0.733409542688344
+          }
+        }
+      },
+      "ns_noise_rms_dbfs": {
+        "separability_auc_max": 0.7807388092554339,
+        "separability_auc_median": 0.6307841836205875,
+        "separability_auc_min": 0.5554252831435386,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5554252831435386,
+            "signed_auc": 0.44457471685646144
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6280749333451315,
+            "signed_auc": 0.6280749333451315
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7325370807638523,
+            "signed_auc": 0.7325370807638523
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7807388092554339,
+            "signed_auc": 0.7807388092554339
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6193492943476022,
+            "signed_auc": 0.6193492943476022
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7189001968631948,
+            "signed_auc": 0.7189001968631948
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6307841836205875,
+            "signed_auc": 0.6307841836205875
+          }
+        }
+      },
+      "positive_bin_fraction": {
+        "separability_auc_max": 0.8330564218518146,
+        "separability_auc_median": 0.7763874617228953,
+        "separability_auc_min": 0.6892144767135733,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6892144767135733,
+            "signed_auc": 0.31078552328642667
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.8330564218518146,
+            "signed_auc": 0.16694357814818545
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7625641210382504,
+            "signed_auc": 0.23743587896174953
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.820237674821369,
+            "signed_auc": 0.17976232517863103
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7763874617228953,
+            "signed_auc": 0.2236125382771047
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6956165424201759,
+            "signed_auc": 0.30438345757982416
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7903687477789623,
+            "signed_auc": 0.20963125222103768
+          }
+        }
+      },
+      "posterior_max": {
+        "separability_auc_max": 0.5913241266782144,
+        "separability_auc_median": 0.5368270356856447,
+        "separability_auc_min": 0.5288737876689826,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5833017152080171,
+            "signed_auc": 0.5833017152080171
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5288737876689826,
+            "signed_auc": 0.5288737876689826
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5544814587993332,
+            "signed_auc": 0.5544814587993332
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.533819196849708,
+            "signed_auc": 0.533819196849708
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5368270356856447,
+            "signed_auc": 0.5368270356856447
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5913241266782144,
+            "signed_auc": 0.5913241266782144
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5319519404465767,
+            "signed_auc": 0.5319519404465767
+          }
+        }
+      },
+      "posterior_variance": {
+        "separability_auc_max": 0.7717035060915819,
+        "separability_auc_median": 0.6586656493622363,
+        "separability_auc_min": 0.5739434121771414,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.605255663731128,
+            "signed_auc": 0.39474433626887195
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7717035060915819,
+            "signed_auc": 0.22829649390841808
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6169243516392825,
+            "signed_auc": 0.3830756483607175
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6974655436817586,
+            "signed_auc": 0.3025344563182414
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6586656493622363,
+            "signed_auc": 0.34133435063776374
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5739434121771414,
+            "signed_auc": 0.4260565878228586
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6813995498696992,
+            "signed_auc": 0.31860045013030086
+          }
+        }
+      },
+      "slow_update_bin_fraction": {
+        "separability_auc_max": 0.8085476377175717,
+        "separability_auc_median": 0.7261217524709627,
+        "separability_auc_min": 0.6386875589949139,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6514992153542778,
+            "signed_auc": 0.34850078464572215
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.8085476377175717,
+            "signed_auc": 0.19145236228242837
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6921128530273208,
+            "signed_auc": 0.30788714697267916
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7669243533242063,
+            "signed_auc": 0.23307564667579375
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7261217524709627,
+            "signed_auc": 0.2738782475290373
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6386875589949139,
+            "signed_auc": 0.36131244100508614
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7436820732646292,
+            "signed_auc": 0.25631792673537074
+          }
+        }
+      },
+      "slow_update_bin_fraction_mean3": {
+        "separability_auc_max": 0.8004770408219297,
+        "separability_auc_median": 0.7116050643711684,
+        "separability_auc_min": 0.6253029801422381,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6443892238546065,
+            "signed_auc": 0.3556107761453935
+          },
+          "noise_domain:cafeteria": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.8004770408219297,
+            "signed_auc": 0.19952295917807025
+          },
+          "noise_domain:field": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6723932116575568,
+            "signed_auc": 0.32760678834244317
+          },
+          "noise_domain:kitchen": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7535704437596451,
+            "signed_auc": 0.2464295562403549
+          },
+          "noise_domain:living": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7116050643711684,
+            "signed_auc": 0.28839493562883156
+          },
+          "noise_domain:office": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6253029801422381,
+            "signed_auc": 0.3746970198577619
+          },
+          "noise_domain:traffic": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.7358078006544657,
+            "signed_auc": 0.26419219934553423
+          }
+        }
+      },
+      "upstream_high_run_length": {
+        "separability_auc_max": 0.9684112917555082,
+        "separability_auc_median": 0.9481554174820035,
+        "separability_auc_min": 0.886614176276856,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.886614176276856,
+            "signed_auc": 0.886614176276856
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9473650107516962,
+            "signed_auc": 0.9473650107516962
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9469636184406593,
+            "signed_auc": 0.9469636184406593
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9668259067006594,
+            "signed_auc": 0.9668259067006594
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9667870613643775,
+            "signed_auc": 0.9667870613643775
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9481554174820035,
+            "signed_auc": 0.9481554174820035
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9684112917555082,
+            "signed_auc": 0.9684112917555082
+          }
+        }
+      },
+      "upstream_probability_mean3": {
+        "separability_auc_max": 0.8812575326983039,
+        "separability_auc_median": 0.8324891076610993,
+        "separability_auc_min": 0.8146207429580117,
+        "slices": {
+          "noise_domain:bus": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8237945535950884,
+            "signed_auc": 0.8237945535950884
+          },
+          "noise_domain:cafeteria": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8812575326983039,
+            "signed_auc": 0.8812575326983039
+          },
+          "noise_domain:field": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8146207429580117,
+            "signed_auc": 0.8146207429580117
+          },
+          "noise_domain:kitchen": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8557161931392137,
+            "signed_auc": 0.8557161931392137
+          },
+          "noise_domain:living": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8494024361979887,
+            "signed_auc": 0.8494024361979887
+          },
+          "noise_domain:office": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8203172571577211,
+            "signed_auc": 0.8203172571577211
+          },
+          "noise_domain:traffic": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8324891076610993,
+            "signed_auc": 0.8324891076610993
+          }
+        }
+      }
+    }
+  },
+  "cross_snr_noise_source": {
+    "numeric_features": {
+      "concentration_mean3": {
+        "separability_auc_max": 0.6872802445478973,
+        "separability_auc_median": 0.6499121217114296,
+        "separability_auc_min": 0.5073517372367947,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5073517372367947,
+            "signed_auc": 0.5073517372367947
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5911696678820348,
+            "signed_auc": 0.5911696678820348
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6499121217114296,
+            "signed_auc": 0.6499121217114296
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6872802445478973,
+            "signed_auc": 0.6872802445478973
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6678108014556613,
+            "signed_auc": 0.6678108014556613
+          }
+        }
+      },
+      "disagreement_run_length": {
+        "separability_auc_max": 1.0,
+        "separability_auc_median": 1.0,
+        "separability_auc_min": 1.0,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 1.0,
+            "signed_auc": 1.0
+          }
+        }
+      },
+      "gap_to_concentration": {
+        "separability_auc_max": 0.6428746859781342,
+        "separability_auc_median": 0.5746354032256425,
+        "separability_auc_min": 0.5001927160805666,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6428746859781342,
+            "signed_auc": 0.6428746859781342
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5394979165116452,
+            "signed_auc": 0.5394979165116452
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.599542071730653,
+            "signed_auc": 0.599542071730653
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5746354032256425,
+            "signed_auc": 0.5746354032256425
+          },
+          "snr_db:5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5001927160805666,
+            "signed_auc": 0.49980728391943346
+          }
+        }
+      },
+      "max_post_ratio": {
+        "separability_auc_max": 0.7075727618726365,
+        "separability_auc_median": 0.6573234195639039,
+        "separability_auc_min": 0.5017975851309184,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5017975851309184,
+            "signed_auc": 0.5017975851309184
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5907898653173599,
+            "signed_auc": 0.5907898653173599
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6573234195639039,
+            "signed_auc": 0.6573234195639039
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7075727618726365,
+            "signed_auc": 0.7075727618726365
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6822289579298925,
+            "signed_auc": 0.6822289579298925
+          }
+        }
+      },
+      "mean_post_ratio": {
+        "separability_auc_max": 0.639181444596395,
+        "separability_auc_median": 0.5986040353856446,
+        "separability_auc_min": 0.5185219634397401,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5986040353856446,
+            "signed_auc": 0.4013959646143554
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5185219634397401,
+            "signed_auc": 0.5185219634397401
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5701131432965343,
+            "signed_auc": 0.5701131432965343
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.639181444596395,
+            "signed_auc": 0.639181444596395
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6018308027653823,
+            "signed_auc": 0.6018308027653823
+          }
+        }
+      },
+      "mirror_concentration": {
+        "separability_auc_max": 0.7328931958869027,
+        "separability_auc_median": 0.7098451145163948,
+        "separability_auc_min": 0.533411458698815,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.533411458698815,
+            "signed_auc": 0.533411458698815
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6281035295284867,
+            "signed_auc": 0.6281035295284867
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7098451145163948,
+            "signed_auc": 0.7098451145163948
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7328931958869027,
+            "signed_auc": 0.7328931958869027
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7190489554975537,
+            "signed_auc": 0.7190489554975537
+          }
+        }
+      },
+      "mirror_mean": {
+        "separability_auc_max": 0.6499376505818037,
+        "separability_auc_median": 0.6085451372807695,
+        "separability_auc_min": 0.5163888682193616,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6085451372807695,
+            "signed_auc": 0.3914548627192305
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5163888682193616,
+            "signed_auc": 0.5163888682193616
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5744226121821278,
+            "signed_auc": 0.5744226121821278
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6499376505818037,
+            "signed_auc": 0.6499376505818037
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.60877793681532,
+            "signed_auc": 0.60877793681532
+          }
+        }
+      },
+      "mirror_mean_suppression": {
+        "separability_auc_max": 0.6499376505818037,
+        "separability_auc_median": 0.6085451372807694,
+        "separability_auc_min": 0.5163888682193616,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6085451372807694,
+            "signed_auc": 0.6085451372807694
+          },
+          "snr_db:0": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5163888682193616,
+            "signed_auc": 0.4836111317806384
+          },
+          "snr_db:10": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5744226121821278,
+            "signed_auc": 0.42557738781787224
+          },
+          "snr_db:15": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6499376505818037,
+            "signed_auc": 0.35006234941819625
+          },
+          "snr_db:5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.60877793681532,
+            "signed_auc": 0.39122206318468
+          }
+        }
+      },
+      "ns_noise_rms_dbfs": {
+        "separability_auc_max": 0.6109000088885146,
+        "separability_auc_median": 0.5164772304486941,
+        "separability_auc_min": 0.5070126200967322,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6109000088885146,
+            "signed_auc": 0.38909999111148535
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5164772304486941,
+            "signed_auc": 0.5164772304486941
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5532133932004174,
+            "signed_auc": 0.5532133932004174
+          },
+          "snr_db:15": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5072966768877718,
+            "signed_auc": 0.49270332311222825
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5070126200967322,
+            "signed_auc": 0.5070126200967322
+          }
+        }
+      },
+      "positive_bin_fraction": {
+        "separability_auc_max": 0.6552905374744455,
+        "separability_auc_median": 0.5684202894483268,
+        "separability_auc_min": 0.522130862911427,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6552905374744455,
+            "signed_auc": 0.34470946252555446
+          },
+          "snr_db:0": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.522130862911427,
+            "signed_auc": 0.47786913708857304
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5285096391497776,
+            "signed_auc": 0.5285096391497776
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6148123387500449,
+            "signed_auc": 0.6148123387500449
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5684202894483268,
+            "signed_auc": 0.5684202894483268
+          }
+        }
+      },
+      "posterior_max": {
+        "separability_auc_max": 0.7833274743168488,
+        "separability_auc_median": 0.7161862797376816,
+        "separability_auc_min": 0.5566712980506084,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5566712980506084,
+            "signed_auc": 0.5566712980506084
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6388573678597118,
+            "signed_auc": 0.6388573678597118
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7190194705333114,
+            "signed_auc": 0.7190194705333114
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7833274743168488,
+            "signed_auc": 0.7833274743168488
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.7161862797376816,
+            "signed_auc": 0.7161862797376816
+          }
+        }
+      },
+      "posterior_variance": {
+        "separability_auc_max": 0.6729402170342268,
+        "separability_auc_median": 0.6072588839457351,
+        "separability_auc_min": 0.545718927499566,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.5695923914314719,
+            "signed_auc": 0.4304076085685281
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.545718927499566,
+            "signed_auc": 0.545718927499566
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6072588839457351,
+            "signed_auc": 0.6072588839457351
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6729402170342268,
+            "signed_auc": 0.6729402170342268
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6364860187290093,
+            "signed_auc": 0.6364860187290093
+          }
+        }
+      },
+      "slow_update_bin_fraction": {
+        "separability_auc_max": 0.6473562966138949,
+        "separability_auc_median": 0.6052290608365375,
+        "separability_auc_min": 0.5107530632239502,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6121520029566007,
+            "signed_auc": 0.38784799704339934
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5107530632239502,
+            "signed_auc": 0.5107530632239502
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5709071373647499,
+            "signed_auc": 0.5709071373647499
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6473562966138949,
+            "signed_auc": 0.6473562966138949
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6052290608365375,
+            "signed_auc": 0.6052290608365375
+          }
+        }
+      },
+      "slow_update_bin_fraction_mean3": {
+        "separability_auc_max": 0.6069036825103955,
+        "separability_auc_median": 0.5753365515047758,
+        "separability_auc_min": 0.5025578540069946,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "lower_in_positive",
+            "separability_auc": 0.6060779896986794,
+            "signed_auc": 0.3939220103013206
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5025578540069946,
+            "signed_auc": 0.5025578540069946
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5441008266051519,
+            "signed_auc": 0.5441008266051519
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.6069036825103955,
+            "signed_auc": 0.6069036825103955
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.5753365515047758,
+            "signed_auc": 0.5753365515047758
+          }
+        }
+      },
+      "upstream_high_run_length": {
+        "separability_auc_max": 0.994678116471829,
+        "separability_auc_median": 0.9522087508068816,
+        "separability_auc_min": 0.9005626663672641,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9005626663672641,
+            "signed_auc": 0.9005626663672641
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9298620929136593,
+            "signed_auc": 0.9298620929136593
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9835516559565003,
+            "signed_auc": 0.9835516559565003
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.994678116471829,
+            "signed_auc": 0.994678116471829
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.9522087508068816,
+            "signed_auc": 0.9522087508068816
+          }
+        }
+      },
+      "upstream_probability_mean3": {
+        "separability_auc_max": 0.8883434020362284,
+        "separability_auc_median": 0.8445641903585829,
+        "separability_auc_min": 0.8096442722879504,
+        "slices": {
+          "snr_db:-5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8096442722879504,
+            "signed_auc": 0.8096442722879504
+          },
+          "snr_db:0": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8374770568246646,
+            "signed_auc": 0.8374770568246646
+          },
+          "snr_db:10": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8484490855165596,
+            "signed_auc": 0.8484490855165596
+          },
+          "snr_db:15": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8883434020362284,
+            "signed_auc": 0.8883434020362284
+          },
+          "snr_db:5": {
+            "direction": "higher_in_positive",
+            "separability_auc": 0.8445641903585829,
+            "signed_auc": 0.8445641903585829
+          }
+        }
+      }
+    }
+  },
+  "dataset_id": "public-development-diverse",
+  "decision": "NS_UPSTREAM_DISAGREEMENT_NOISE_SOURCE_DECOMPOSED_REVIEW_REQUIRED",
+  "diagnostic_execution_consumed": 1,
+  "domain_case_counts": {
+    "bus": {
+      "mix": 12,
+      "noise": 6
+    },
+    "cafeteria": {
+      "mix": 12,
+      "noise": 6
+    },
+    "field": {
+      "mix": 12,
+      "noise": 6
+    },
+    "kitchen": {
+      "mix": 12,
+      "noise": 6
+    },
+    "living": {
+      "mix": 12,
+      "noise": 6
+    },
+    "office": {
+      "mix": 12,
+      "noise": 6
+    },
+    "traffic": {
+      "mix": 12,
+      "noise": 6
+    }
+  },
+  "fresh_diagnostic_seeds": [
+    901307,
+    911307,
+    921307
+  ],
+  "interpretation_boundary": {
+    "class_comparison": "speech_disagreement vs noise_disagreement checks whether the same upstream internals distinguish true speech from false-high noise.",
+    "no_component_reweighting": true,
+    "no_mapping_selection": true,
+    "no_threshold_search": true,
+    "short_context": "Current plus up to two previous frames only; no future information.",
+    "source_comparison": "noise_disagreement vs oracle-noise non-disagreement frames localizes state/component shifts associated with false-high upstream.",
+    "tracker_slow_update_state": "slow_update_bin_fraction counts existing EMA noise-tracker bins whose current per-bin speech_probability exceeds the native 0.35 alpha-switch threshold, causing alpha=0.995 rather than 0.92."
+  },
+  "invalid_reasons": [],
+  "investigation_id": "i025-ns-upstream-disagreement-noise-source-decomposition-v1",
+  "noise_disagreement_vs_noise_reference": {
+    "concentration_mean3": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.7471546928333332,
+        "p10": 0.14863172036666683,
+        "p90": 0.8824704786666668
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.7584257123333332,
+        "p10": 0.5850430391333333,
+        "p90": 0.87841204
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.559746567229246,
+      "signed_auc": 0.559746567229246
+    },
+    "disagreement_run_length": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.0,
+        "p10": 0.0,
+        "p90": 0.0
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 2.0,
+        "p10": 1.0,
+        "p90": 8.0
+      },
+      "positive_count": 8417,
+      "separability_auc": 1.0,
+      "signed_auc": 1.0
+    },
+    "gap_to_concentration": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.6827797455573463,
+        "p10": 0.0,
+        "p90": 0.9688725762731898
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.8346305005720792,
+        "p10": 0.6971595848438004,
+        "p90": 0.9653547147277044
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.753994373838577,
+      "signed_auc": 0.753994373838577
+    },
+    "max_post_ratio": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 11.31555465,
+        "p10": 1.235735106,
+        "p90": 67.55471418
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 12.2694769,
+        "p10": 5.531970694,
+        "p90": 50.056849660000054
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.5564130238100528,
+      "signed_auc": 0.5564130238100528
+    },
+    "mean_post_ratio": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 1.7498973,
+        "p10": 0.089308808,
+        "p90": 5.078688621000001
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 1.26762378,
+        "p10": 0.3886392836,
+        "p90": 2.7390362780000004
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.5776403543728745,
+      "signed_auc": 0.42235964562712547
+    },
+    "mirror_concentration": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.7450802624999999,
+        "p10": 0.0,
+        "p90": 0.8945727585000001
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.773111284,
+        "p10": 0.6584532378,
+        "p90": 0.8869330168
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.6066082593479238,
+      "signed_auc": 0.6066082593479238
+    },
+    "mirror_mean": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 0.211335413,
+        "p10": 0.0,
+        "p90": 0.4349020658
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.125548422,
+        "p10": 0.024679716640000002,
+        "p90": 0.25543017980000005
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.6120561697605977,
+      "signed_auc": 0.3879438302394022
+    },
+    "mirror_mean_suppression": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.7886645795,
+        "p10": 0.5650979342,
+        "p90": 1.0
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.874451578,
+        "p10": 0.7445698022,
+        "p90": 0.9753202674
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.6120561611363835,
+      "signed_auc": 0.6120561611363835
+    },
+    "ns_noise_rms_dbfs": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": -73.75911335,
+        "p10": -86.70006103,
+        "p90": -59.692192469999995
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": -68.0496368,
+        "p10": -83.55403442,
+        "p90": -58.574755100000004
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.6178302192100487,
+      "signed_auc": 0.6178302192100487
+    },
+    "positive_bin_fraction": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 0.423255801,
+        "p10": 0.0,
+        "p90": 0.604651153
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.251162797,
+        "p10": 0.0558139533,
+        "p90": 0.418604642
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.670034548832394,
+      "signed_auc": 0.32996545116760595
+    },
+    "posterior_max": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 1.0,
+        "p10": 0.0,
+        "p90": 1.0
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 1.0,
+        "p10": 1.0,
+        "p90": 1.0
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.6086907426212027,
+      "signed_auc": 0.6086907426212027
+    },
+    "posterior_variance": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 0.1112359835,
+        "p10": 0.0,
+        "p90": 0.1908031941
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.0796234086,
+        "p10": 0.01655188908,
+        "p90": 0.1516019314
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.5634513342027461,
+      "signed_auc": 0.4365486657972539
+    },
+    "slow_update_bin_fraction": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 0.241860464,
+        "p10": 0.0,
+        "p90": 0.46511629199999993
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.139534891,
+        "p10": 0.0279069766,
+        "p90": 0.279069781
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.6206651479310326,
+      "signed_auc": 0.3793348520689674
+    },
+    "slow_update_bin_fraction_mean3": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 0.241860469,
+        "p10": 0.00155038759,
+        "p90": 0.45116279499999995
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.1472868188,
+        "p10": 0.027906977883333337,
+        "p90": 0.3023255861333334
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.613962379843422,
+      "signed_auc": 0.386037620156578
+    },
+    "upstream_high_run_length": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.0,
+        "p10": 0.0,
+        "p90": 1.0
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 2.0,
+        "p10": 1.0,
+        "p90": 12.0
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.9555984914938339,
+      "signed_auc": 0.9555984914938339
+    },
+    "upstream_probability_mean3": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.5085723496666666,
+        "p10": 0.137548417,
+        "p90": 0.5647180768666666
+      },
+      "negative_count": 20664,
+      "positive": {
+        "median": 0.5875320236666667,
+        "p10": 0.506057314,
+        "p90": 0.7068366487333333
+      },
+      "positive_count": 8417,
+      "separability_auc": 0.8502873168487112,
+      "signed_auc": 0.8502873168487112
+    }
+  },
+  "per_case": [
+    {
+      "case_id": "public-dev-mix-000",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 46,
+      "noise_reference_frames": 42,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 47
+    },
+    {
+      "case_id": "public-dev-mix-001",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 106,
+      "noise_reference_frames": 180,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 7
+    },
+    {
+      "case_id": "public-dev-mix-002",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 74,
+      "noise_reference_frames": 92,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 87
+    },
+    {
+      "case_id": "public-dev-mix-003",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 56,
+      "noise_reference_frames": 22,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 121
+    },
+    {
+      "case_id": "public-dev-mix-004",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 76,
+      "noise_reference_frames": 71,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 50
+    },
+    {
+      "case_id": "public-dev-mix-005",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 66,
+      "noise_reference_frames": 50,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 102
+    },
+    {
+      "case_id": "public-dev-mix-006",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 78,
+      "noise_reference_frames": 55,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 63
+    },
+    {
+      "case_id": "public-dev-mix-007",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 32,
+      "noise_reference_frames": 54,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 85
+    },
+    {
+      "case_id": "public-dev-mix-008",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": false,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 32,
+      "noise_reference_frames": 123,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 50
+    },
+    {
+      "case_id": "public-dev-mix-009",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": true,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 34,
+      "noise_reference_frames": 62,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 97
+    },
+    {
+      "case_id": "public-dev-mix-010",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 101,
+      "noise_reference_frames": 43,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 30
+    },
+    {
+      "case_id": "public-dev-mix-011",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 53,
+      "noise_reference_frames": 75,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 66
+    },
+    {
+      "case_id": "public-dev-mix-012",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 30,
+      "noise_reference_frames": 63,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 59
+    },
+    {
+      "case_id": "public-dev-mix-013",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 62,
+      "noise_reference_frames": 45,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 101
+    },
+    {
+      "case_id": "public-dev-mix-014",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 29,
+      "noise_reference_frames": 49,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 57
+    },
+    {
+      "case_id": "public-dev-mix-015",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 125,
+      "noise_reference_frames": 73,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 69
+    },
+    {
+      "case_id": "public-dev-mix-016",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 54,
+      "noise_reference_frames": 104,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 32
+    },
+    {
+      "case_id": "public-dev-mix-017",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 101,
+      "noise_reference_frames": 79,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 16
+    },
+    {
+      "case_id": "public-dev-mix-018",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": false,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 75,
+      "noise_reference_frames": 83,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 30
+    },
+    {
+      "case_id": "public-dev-mix-019",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": true,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 40,
+      "noise_reference_frames": 49,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 75
+    },
+    {
+      "case_id": "public-dev-mix-020",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 80,
+      "noise_reference_frames": 38,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 64
+    },
+    {
+      "case_id": "public-dev-mix-021",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 26,
+      "noise_reference_frames": 17,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 122
+    },
+    {
+      "case_id": "public-dev-mix-022",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 29,
+      "noise_reference_frames": 31,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 129
+    },
+    {
+      "case_id": "public-dev-mix-023",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 35,
+      "noise_reference_frames": 109,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 64
+    },
+    {
+      "case_id": "public-dev-mix-024",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 101,
+      "noise_reference_frames": 83,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 54
+    },
+    {
+      "case_id": "public-dev-mix-025",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 51,
+      "noise_reference_frames": 50,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 111
+    },
+    {
+      "case_id": "public-dev-mix-026",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 65,
+      "noise_reference_frames": 73,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 107
+    },
+    {
+      "case_id": "public-dev-mix-027",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 18,
+      "noise_reference_frames": 32,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 123
+    },
+    {
+      "case_id": "public-dev-noise-000",
+      "dimensions": {
+        "noise_domain": "cafeteria"
+      },
+      "noise_disagreement_frames": 118,
+      "noise_reference_frames": 202,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-001",
+      "dimensions": {
+        "noise_domain": "bus"
+      },
+      "noise_disagreement_frames": 61,
+      "noise_reference_frames": 259,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-002",
+      "dimensions": {
+        "noise_domain": "field"
+      },
+      "noise_disagreement_frames": 13,
+      "noise_reference_frames": 307,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-003",
+      "dimensions": {
+        "noise_domain": "kitchen"
+      },
+      "noise_disagreement_frames": 14,
+      "noise_reference_frames": 306,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-004",
+      "dimensions": {
+        "noise_domain": "traffic"
+      },
+      "noise_disagreement_frames": 32,
+      "noise_reference_frames": 288,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-005",
+      "dimensions": {
+        "noise_domain": "living"
+      },
+      "noise_disagreement_frames": 86,
+      "noise_reference_frames": 234,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-006",
+      "dimensions": {
+        "noise_domain": "office"
+      },
+      "noise_disagreement_frames": 14,
+      "noise_reference_frames": 306,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-007",
+      "dimensions": {
+        "noise_domain": "cafeteria"
+      },
+      "noise_disagreement_frames": 81,
+      "noise_reference_frames": 239,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-008",
+      "dimensions": {
+        "noise_domain": "bus"
+      },
+      "noise_disagreement_frames": 65,
+      "noise_reference_frames": 255,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-009",
+      "dimensions": {
+        "noise_domain": "field"
+      },
+      "noise_disagreement_frames": 29,
+      "noise_reference_frames": 291,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-010",
+      "dimensions": {
+        "noise_domain": "kitchen"
+      },
+      "noise_disagreement_frames": 3,
+      "noise_reference_frames": 317,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-011",
+      "dimensions": {
+        "noise_domain": "traffic"
+      },
+      "noise_disagreement_frames": 81,
+      "noise_reference_frames": 239,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-012",
+      "dimensions": {
+        "noise_domain": "living"
+      },
+      "noise_disagreement_frames": 74,
+      "noise_reference_frames": 246,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-013",
+      "dimensions": {
+        "noise_domain": "office"
+      },
+      "noise_disagreement_frames": 21,
+      "noise_reference_frames": 299,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-clean-000",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 61,
+      "noise_reference_frames": 138,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 66
+    },
+    {
+      "case_id": "public-dev-clean-001",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 41,
+      "noise_reference_frames": 77,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 84
+    },
+    {
+      "case_id": "public-dev-clean-002",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 34,
+      "noise_reference_frames": 81,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 97
+    },
+    {
+      "case_id": "public-dev-clean-003",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 66,
+      "noise_reference_frames": 100,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 89
+    },
+    {
+      "case_id": "public-dev-clean-004",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 5,
+      "noise_reference_frames": 68,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 45
+    },
+    {
+      "case_id": "public-dev-clean-005",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 29,
+      "noise_reference_frames": 64,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 62
+    },
+    {
+      "case_id": "public-dev-clean-006",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 42,
+      "noise_reference_frames": 156,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 8
+    },
+    {
+      "case_id": "public-dev-clean-007",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 27,
+      "noise_reference_frames": 33,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 130
+    },
+    {
+      "case_id": "public-dev-clean-008",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 23,
+      "noise_reference_frames": 32,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 57
+    },
+    {
+      "case_id": "public-dev-clean-009",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 56,
+      "noise_reference_frames": 91,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 49
+    },
+    {
+      "case_id": "public-dev-clean-010",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 31,
+      "noise_reference_frames": 64,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 104
+    },
+    {
+      "case_id": "public-dev-clean-011",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 15,
+      "noise_reference_frames": 63,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 66
+    },
+    {
+      "case_id": "public-dev-clean-012",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 26,
+      "noise_reference_frames": 76,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 60
+    },
+    {
+      "case_id": "public-dev-clean-013",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 61,
+      "noise_reference_frames": 123,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 17
+    },
+    {
+      "case_id": "public-dev-mix-000",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 72,
+      "noise_reference_frames": 89,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 65
+    },
+    {
+      "case_id": "public-dev-mix-001",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 45,
+      "noise_reference_frames": 41,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 80
+    },
+    {
+      "case_id": "public-dev-mix-002",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 39,
+      "noise_reference_frames": 34,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 117
+    },
+    {
+      "case_id": "public-dev-mix-003",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 75,
+      "noise_reference_frames": 48,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 79
+    },
+    {
+      "case_id": "public-dev-mix-004",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 22,
+      "noise_reference_frames": 52,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 65
+    },
+    {
+      "case_id": "public-dev-mix-005",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 32,
+      "noise_reference_frames": 42,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 80
+    },
+    {
+      "case_id": "public-dev-mix-006",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 97,
+      "noise_reference_frames": 62,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 79
+    },
+    {
+      "case_id": "public-dev-mix-007",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 17,
+      "noise_reference_frames": 17,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 66
+    },
+    {
+      "case_id": "public-dev-mix-008",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": false,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 55,
+      "noise_reference_frames": 69,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 69
+    },
+    {
+      "case_id": "public-dev-mix-009",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 27,
+      "noise_reference_frames": 35,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 28
+    },
+    {
+      "case_id": "public-dev-mix-010",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 60,
+      "noise_reference_frames": 43,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 69
+    },
+    {
+      "case_id": "public-dev-mix-011",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 63,
+      "noise_reference_frames": 44,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 111
+    },
+    {
+      "case_id": "public-dev-mix-012",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 59,
+      "noise_reference_frames": 112,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 53
+    },
+    {
+      "case_id": "public-dev-mix-013",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 26,
+      "noise_reference_frames": 16,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 160
+    },
+    {
+      "case_id": "public-dev-mix-014",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 76,
+      "noise_reference_frames": 42,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 77
+    },
+    {
+      "case_id": "public-dev-mix-015",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 96,
+      "noise_reference_frames": 56,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 72
+    },
+    {
+      "case_id": "public-dev-mix-016",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 40,
+      "noise_reference_frames": 46,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 80
+    },
+    {
+      "case_id": "public-dev-mix-017",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 119,
+      "noise_reference_frames": 85,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 13
+    },
+    {
+      "case_id": "public-dev-mix-018",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": false,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 41,
+      "noise_reference_frames": 169,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 12
+    },
+    {
+      "case_id": "public-dev-mix-019",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": true,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 59,
+      "noise_reference_frames": 158,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 18
+    },
+    {
+      "case_id": "public-dev-mix-020",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 74,
+      "noise_reference_frames": 49,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 71
+    },
+    {
+      "case_id": "public-dev-mix-021",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 39,
+      "noise_reference_frames": 64,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 37
+    },
+    {
+      "case_id": "public-dev-mix-022",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 26,
+      "noise_reference_frames": 101,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 31
+    },
+    {
+      "case_id": "public-dev-mix-023",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 55,
+      "noise_reference_frames": 59,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 77
+    },
+    {
+      "case_id": "public-dev-mix-024",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 41,
+      "noise_reference_frames": 23,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 66
+    },
+    {
+      "case_id": "public-dev-mix-025",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 30,
+      "noise_reference_frames": 37,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 78
+    },
+    {
+      "case_id": "public-dev-mix-026",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 41,
+      "noise_reference_frames": 76,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 110
+    },
+    {
+      "case_id": "public-dev-mix-027",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 121,
+      "noise_reference_frames": 79,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 8
+    },
+    {
+      "case_id": "public-dev-noise-000",
+      "dimensions": {
+        "noise_domain": "traffic"
+      },
+      "noise_disagreement_frames": 21,
+      "noise_reference_frames": 299,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-001",
+      "dimensions": {
+        "noise_domain": "living"
+      },
+      "noise_disagreement_frames": 57,
+      "noise_reference_frames": 263,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-002",
+      "dimensions": {
+        "noise_domain": "office"
+      },
+      "noise_disagreement_frames": 32,
+      "noise_reference_frames": 288,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-003",
+      "dimensions": {
+        "noise_domain": "cafeteria"
+      },
+      "noise_disagreement_frames": 127,
+      "noise_reference_frames": 193,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-004",
+      "dimensions": {
+        "noise_domain": "bus"
+      },
+      "noise_disagreement_frames": 31,
+      "noise_reference_frames": 289,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-005",
+      "dimensions": {
+        "noise_domain": "field"
+      },
+      "noise_disagreement_frames": 25,
+      "noise_reference_frames": 295,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-006",
+      "dimensions": {
+        "noise_domain": "kitchen"
+      },
+      "noise_disagreement_frames": 34,
+      "noise_reference_frames": 286,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-007",
+      "dimensions": {
+        "noise_domain": "traffic"
+      },
+      "noise_disagreement_frames": 11,
+      "noise_reference_frames": 309,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-008",
+      "dimensions": {
+        "noise_domain": "living"
+      },
+      "noise_disagreement_frames": 49,
+      "noise_reference_frames": 271,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-009",
+      "dimensions": {
+        "noise_domain": "office"
+      },
+      "noise_disagreement_frames": 36,
+      "noise_reference_frames": 284,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-010",
+      "dimensions": {
+        "noise_domain": "cafeteria"
+      },
+      "noise_disagreement_frames": 111,
+      "noise_reference_frames": 209,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-011",
+      "dimensions": {
+        "noise_domain": "bus"
+      },
+      "noise_disagreement_frames": 17,
+      "noise_reference_frames": 303,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-012",
+      "dimensions": {
+        "noise_domain": "field"
+      },
+      "noise_disagreement_frames": 33,
+      "noise_reference_frames": 287,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-013",
+      "dimensions": {
+        "noise_domain": "kitchen"
+      },
+      "noise_disagreement_frames": 15,
+      "noise_reference_frames": 305,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-clean-000",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 29,
+      "noise_reference_frames": 167,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 16
+    },
+    {
+      "case_id": "public-dev-clean-001",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 25,
+      "noise_reference_frames": 39,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 39
+    },
+    {
+      "case_id": "public-dev-clean-002",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 36,
+      "noise_reference_frames": 48,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 87
+    },
+    {
+      "case_id": "public-dev-clean-003",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 35,
+      "noise_reference_frames": 124,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 71
+    },
+    {
+      "case_id": "public-dev-clean-004",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 60,
+      "noise_reference_frames": 61,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 101
+    },
+    {
+      "case_id": "public-dev-clean-005",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 39,
+      "noise_reference_frames": 47,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 49
+    },
+    {
+      "case_id": "public-dev-clean-006",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 22,
+      "noise_reference_frames": 93,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 34
+    },
+    {
+      "case_id": "public-dev-clean-007",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 41,
+      "noise_reference_frames": 76,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 109
+    },
+    {
+      "case_id": "public-dev-clean-008",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 44,
+      "noise_reference_frames": 84,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 65
+    },
+    {
+      "case_id": "public-dev-clean-009",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 46,
+      "noise_reference_frames": 78,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 40
+    },
+    {
+      "case_id": "public-dev-clean-010",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 17,
+      "noise_reference_frames": 26,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 163
+    },
+    {
+      "case_id": "public-dev-clean-011",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 41,
+      "noise_reference_frames": 169,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 3
+    },
+    {
+      "case_id": "public-dev-clean-012",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 18,
+      "noise_reference_frames": 69,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 113
+    },
+    {
+      "case_id": "public-dev-clean-013",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 63,
+      "noise_reference_frames": 98,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 62
+    },
+    {
+      "case_id": "public-dev-mix-000",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 31,
+      "noise_reference_frames": 24,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 121
+    },
+    {
+      "case_id": "public-dev-mix-001",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 80,
+      "noise_reference_frames": 54,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 39
+    },
+    {
+      "case_id": "public-dev-mix-002",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 66,
+      "noise_reference_frames": 55,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 99
+    },
+    {
+      "case_id": "public-dev-mix-003",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 73,
+      "noise_reference_frames": 33,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 85
+    },
+    {
+      "case_id": "public-dev-mix-004",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 29,
+      "noise_reference_frames": 23,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 111
+    },
+    {
+      "case_id": "public-dev-mix-005",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 72,
+      "noise_reference_frames": 51,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 32
+    },
+    {
+      "case_id": "public-dev-mix-006",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 94,
+      "noise_reference_frames": 85,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 40
+    },
+    {
+      "case_id": "public-dev-mix-007",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 74,
+      "noise_reference_frames": 67,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 24
+    },
+    {
+      "case_id": "public-dev-mix-008",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": false,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 40,
+      "noise_reference_frames": 65,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 124
+    },
+    {
+      "case_id": "public-dev-mix-009",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 52,
+      "noise_reference_frames": 48,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 78
+    },
+    {
+      "case_id": "public-dev-mix-010",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 50,
+      "noise_reference_frames": 49,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 79
+    },
+    {
+      "case_id": "public-dev-mix-011",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 40,
+      "noise_reference_frames": 54,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 119
+    },
+    {
+      "case_id": "public-dev-mix-012",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 101,
+      "noise_reference_frames": 83,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 53
+    },
+    {
+      "case_id": "public-dev-mix-013",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 32,
+      "noise_reference_frames": 81,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 21
+    },
+    {
+      "case_id": "public-dev-mix-014",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 15,
+      "noise_reference_frames": 58,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 98
+    },
+    {
+      "case_id": "public-dev-mix-015",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 23,
+      "noise_reference_frames": 77,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 74
+    },
+    {
+      "case_id": "public-dev-mix-016",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 107,
+      "noise_reference_frames": 69,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 22
+    },
+    {
+      "case_id": "public-dev-mix-017",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 98,
+      "noise_reference_frames": 88,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 80
+    },
+    {
+      "case_id": "public-dev-mix-018",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": false,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 46,
+      "noise_reference_frames": 87,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 57
+    },
+    {
+      "case_id": "public-dev-mix-019",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 75,
+      "noise_reference_frames": 67,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 58
+    },
+    {
+      "case_id": "public-dev-mix-020",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": false,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 68,
+      "noise_reference_frames": 50,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 124
+    },
+    {
+      "case_id": "public-dev-mix-021",
+      "dimensions": {
+        "noise_domain": "living",
+        "reverb": true,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 72,
+      "noise_reference_frames": 30,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 113
+    },
+    {
+      "case_id": "public-dev-mix-022",
+      "dimensions": {
+        "noise_domain": "office",
+        "reverb": false,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 56,
+      "noise_reference_frames": 117,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 52
+    },
+    {
+      "case_id": "public-dev-mix-023",
+      "dimensions": {
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "snr_db": -5.0
+      },
+      "noise_disagreement_frames": 109,
+      "noise_reference_frames": 44,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 67
+    },
+    {
+      "case_id": "public-dev-mix-024",
+      "dimensions": {
+        "noise_domain": "bus",
+        "reverb": false,
+        "snr_db": 0.0
+      },
+      "noise_disagreement_frames": 36,
+      "noise_reference_frames": 86,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 31
+    },
+    {
+      "case_id": "public-dev-mix-025",
+      "dimensions": {
+        "noise_domain": "field",
+        "reverb": true,
+        "snr_db": 5.0
+      },
+      "noise_disagreement_frames": 33,
+      "noise_reference_frames": 100,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 17
+    },
+    {
+      "case_id": "public-dev-mix-026",
+      "dimensions": {
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "snr_db": 10.0
+      },
+      "noise_disagreement_frames": 90,
+      "noise_reference_frames": 95,
+      "scenario": "research-public-noisy-clean",
+      "speech_disagreement_frames": 76
+    },
+    {
+      "case_id": "public-dev-mix-027",
+      "dimensions": {
+        "noise_domain": "traffic",
+        "reverb": true,
+        "snr_db": 15.0
+      },
+      "noise_disagreement_frames": 61,
+      "noise_reference_frames": 128,
+      "scenario": "research-public-noisy-reverb",
+      "speech_disagreement_frames": 57
+    },
+    {
+      "case_id": "public-dev-noise-000",
+      "dimensions": {
+        "noise_domain": "bus"
+      },
+      "noise_disagreement_frames": 45,
+      "noise_reference_frames": 275,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-001",
+      "dimensions": {
+        "noise_domain": "field"
+      },
+      "noise_disagreement_frames": 22,
+      "noise_reference_frames": 298,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-002",
+      "dimensions": {
+        "noise_domain": "kitchen"
+      },
+      "noise_disagreement_frames": 21,
+      "noise_reference_frames": 299,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-003",
+      "dimensions": {
+        "noise_domain": "traffic"
+      },
+      "noise_disagreement_frames": 24,
+      "noise_reference_frames": 296,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-004",
+      "dimensions": {
+        "noise_domain": "living"
+      },
+      "noise_disagreement_frames": 38,
+      "noise_reference_frames": 282,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-005",
+      "dimensions": {
+        "noise_domain": "office"
+      },
+      "noise_disagreement_frames": 8,
+      "noise_reference_frames": 312,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-006",
+      "dimensions": {
+        "noise_domain": "cafeteria"
+      },
+      "noise_disagreement_frames": 67,
+      "noise_reference_frames": 253,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-007",
+      "dimensions": {
+        "noise_domain": "bus"
+      },
+      "noise_disagreement_frames": 24,
+      "noise_reference_frames": 296,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-008",
+      "dimensions": {
+        "noise_domain": "field"
+      },
+      "noise_disagreement_frames": 30,
+      "noise_reference_frames": 290,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-009",
+      "dimensions": {
+        "noise_domain": "kitchen"
+      },
+      "noise_disagreement_frames": 18,
+      "noise_reference_frames": 302,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-010",
+      "dimensions": {
+        "noise_domain": "traffic"
+      },
+      "noise_disagreement_frames": 44,
+      "noise_reference_frames": 276,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-011",
+      "dimensions": {
+        "noise_domain": "living"
+      },
+      "noise_disagreement_frames": 49,
+      "noise_reference_frames": 271,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-012",
+      "dimensions": {
+        "noise_domain": "office"
+      },
+      "noise_disagreement_frames": 10,
+      "noise_reference_frames": 310,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-noise-013",
+      "dimensions": {
+        "noise_domain": "cafeteria"
+      },
+      "noise_disagreement_frames": 144,
+      "noise_reference_frames": 176,
+      "scenario": "research-public-noise-only",
+      "speech_disagreement_frames": 0
+    },
+    {
+      "case_id": "public-dev-clean-000",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 50,
+      "noise_reference_frames": 104,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 87
+    },
+    {
+      "case_id": "public-dev-clean-001",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 21,
+      "noise_reference_frames": 34,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 111
+    },
+    {
+      "case_id": "public-dev-clean-002",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 41,
+      "noise_reference_frames": 70,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 35
+    },
+    {
+      "case_id": "public-dev-clean-003",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 26,
+      "noise_reference_frames": 73,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 93
+    },
+    {
+      "case_id": "public-dev-clean-004",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 18,
+      "noise_reference_frames": 72,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 54
+    },
+    {
+      "case_id": "public-dev-clean-005",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 56,
+      "noise_reference_frames": 62,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 108
+    },
+    {
+      "case_id": "public-dev-clean-006",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 27,
+      "noise_reference_frames": 137,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 4
+    },
+    {
+      "case_id": "public-dev-clean-007",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 60,
+      "noise_reference_frames": 61,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 101
+    },
+    {
+      "case_id": "public-dev-clean-008",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 40,
+      "noise_reference_frames": 95,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 23
+    },
+    {
+      "case_id": "public-dev-clean-009",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 32,
+      "noise_reference_frames": 152,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 54
+    },
+    {
+      "case_id": "public-dev-clean-010",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 88,
+      "noise_reference_frames": 103,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 59
+    },
+    {
+      "case_id": "public-dev-clean-011",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 53,
+      "noise_reference_frames": 120,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 51
+    },
+    {
+      "case_id": "public-dev-clean-012",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 68,
+      "noise_reference_frames": 140,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 44
+    },
+    {
+      "case_id": "public-dev-clean-013",
+      "dimensions": {
+        "clean_only": true
+      },
+      "noise_disagreement_frames": 24,
+      "noise_reference_frames": 28,
+      "scenario": "research-public-clean-preservation",
+      "speech_disagreement_frames": 105
+    }
+  ],
+  "population_counts": {
+    "noise_disagreement": 8417,
+    "noise_reference": 20664,
+    "speech_disagreement": 8655
+  },
+  "schema_version": 1,
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  },
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "speech_disagreement_vs_noise_disagreement": {
+    "concentration_mean3": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.7584257123333332,
+        "p10": 0.5850430391333333,
+        "p90": 0.87841204
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.842470487,
+        "p10": 0.6913090585999999,
+        "p90": 0.921032842
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.7140537495743773,
+      "signed_auc": 0.7140537495743773
+    },
+    "disagreement_run_length": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 2.0,
+        "p10": 1.0,
+        "p90": 8.0
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 3.0,
+        "p10": 1.0,
+        "p90": 11.0
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.607020906974393,
+      "signed_auc": 0.607020906974393
+    },
+    "gap_to_concentration": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 0.8346305005720792,
+        "p10": 0.6971595848438004,
+        "p90": 0.9653547147277044
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.8175163502935063,
+        "p10": 0.6630771207691353,
+        "p90": 0.949720398700304
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.551911275267716,
+      "signed_auc": 0.44808872473228406
+    },
+    "max_post_ratio": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 12.2694769,
+        "p10": 5.531970694,
+        "p90": 50.056849660000054
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 29.3095322,
+        "p10": 7.952033136,
+        "p90": 155.99142160000005
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.7120859774107132,
+      "signed_auc": 0.7120859774107132
+    },
+    "mean_post_ratio": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 1.26762378,
+        "p10": 0.3886392836,
+        "p90": 2.7390362780000004
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 1.7108103,
+        "p10": 0.5192067386000001,
+        "p90": 6.137015628
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.6288106166257156,
+      "signed_auc": 0.6288106166257156
+    },
+    "mirror_concentration": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.773111284,
+        "p10": 0.6584532378,
+        "p90": 0.8869330168
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.84640193,
+        "p10": 0.7095344304000001,
+        "p90": 0.9293340084000001
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.6992543356897786,
+      "signed_auc": 0.6992543356897786
+    },
+    "mirror_mean": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.125548422,
+        "p10": 0.024679716640000002,
+        "p90": 0.25543017980000005
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.15241766,
+        "p10": 0.03812845868,
+        "p90": 0.3019509078
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.5767929845700982,
+      "signed_auc": 0.5767929845700982
+    },
+    "mirror_mean_suppression": {
+      "direction": "lower_in_positive",
+      "negative": {
+        "median": 0.874451578,
+        "p10": 0.7445698022,
+        "p90": 0.9753202674
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.84758234,
+        "p10": 0.6980490805999999,
+        "p90": 0.9618715644
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.5767929708430992,
+      "signed_auc": 0.4232070291569008
+    },
+    "ns_noise_rms_dbfs": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": -68.0496368,
+        "p10": -83.55403442,
+        "p90": -58.574755100000004
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": -63.0896568,
+        "p10": -70.2334366,
+        "p90": -56.89254758
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.7015243763704263,
+      "signed_auc": 0.7015243763704263
+    },
+    "positive_bin_fraction": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.251162797,
+        "p10": 0.0558139533,
+        "p90": 0.418604642
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.255813956,
+        "p10": 0.0790697709,
+        "p90": 0.42790699
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.5150656353023272,
+      "signed_auc": 0.5150656353023272
+    },
+    "posterior_max": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 1.0,
+        "p10": 1.0,
+        "p90": 1.0
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 1.0,
+        "p10": 1.0,
+        "p90": 1.0
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.5105681625457873,
+      "signed_auc": 0.5105681625457873
+    },
+    "posterior_variance": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.0796234086,
+        "p10": 0.01655188908,
+        "p90": 0.1516019314
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.103585906,
+        "p10": 0.027185721340000003,
+        "p90": 0.18175971500000004
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.606147547256395,
+      "signed_auc": 0.606147547256395
+    },
+    "slow_update_bin_fraction": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.139534891,
+        "p10": 0.0279069766,
+        "p90": 0.279069781
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.162790701,
+        "p10": 0.041860465,
+        "p90": 0.320930243
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.5700373655775048,
+      "signed_auc": 0.5700373655775048
+    },
+    "slow_update_bin_fraction_mean3": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.1472868188,
+        "p10": 0.027906977883333337,
+        "p90": 0.3023255861333334
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.17364341033333333,
+        "p10": 0.04837209365400007,
+        "p90": 0.3472868234666667
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.570911445962948,
+      "signed_auc": 0.570911445962948
+    },
+    "upstream_high_run_length": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 2.0,
+        "p10": 1.0,
+        "p90": 12.0
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 5.0,
+        "p10": 1.0,
+        "p90": 16.0
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.6395660497547432,
+      "signed_auc": 0.6395660497547432
+    },
+    "upstream_probability_mean3": {
+      "direction": "higher_in_positive",
+      "negative": {
+        "median": 0.5875320236666667,
+        "p10": 0.506057314,
+        "p90": 0.7068366487333333
+      },
+      "negative_count": 8417,
+      "positive": {
+        "median": 0.6412494583333334,
+        "p10": 0.5336521068,
+        "p90": 0.7640031298666666
+      },
+      "positive_count": 8655,
+      "separability_auc": 0.6613706326094332,
+      "signed_auc": 0.6613706326094332
+    }
+  }
+}

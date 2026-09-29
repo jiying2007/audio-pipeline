@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i028-ns-upstream-reference-readiness-temporal-decomposition-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i028-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i028-ns-upstream-reference-readiness-temporal-decomposition-v1.json"
 EVALUATOR=ROOT/"tests/validation/i028_ns_upstream_reference_readiness_temporal_decomposition.py"
 MATERIALIZE="Materialize fresh public-development-v3 partitions"

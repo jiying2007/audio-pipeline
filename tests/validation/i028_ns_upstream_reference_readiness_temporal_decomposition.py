@@ -69,10 +69,15 @@ def empty_accumulator() -> dict[str, Any]:
         "ready_speech_frame_index":[],
         "pre_ready_noise_prior_count":[],
         "pre_ready_speech_prior_count":[],
+        "all_noise_prior_count":[],
+        "all_speech_prior_count":[],
+        "first_reference_frame_index":[],
         "first_target_frame_index":[],
         "first_ready_frame_index":[],
         "ready_minus_first_target_frames":[],
         "reference_frames_before_first_target":[],
+        "median_reference_interarrival_frames":[],
+        "max_reference_interarrival_frames":[],
     }
 
 
@@ -89,9 +94,13 @@ def append_case(acc: dict[str, Any], item: dict[str, Any]) -> None:
         "pre_ready_noise_frame_index","pre_ready_speech_frame_index",
         "ready_noise_frame_index","ready_speech_frame_index",
         "pre_ready_noise_prior_count","pre_ready_speech_prior_count",
+        "all_noise_prior_count","all_speech_prior_count",
+        "first_reference_frame_index",
         "first_target_frame_index","first_ready_frame_index",
         "ready_minus_first_target_frames",
         "reference_frames_before_first_target",
+        "median_reference_interarrival_frames",
+        "max_reference_interarrival_frames",
     ):
         acc[key].extend(item[key])
 
@@ -142,18 +151,28 @@ def summary(acc: dict[str, Any]) -> dict[str, Any]:
             "noise":median(acc["pre_ready_noise_prior_count"]),
             "speech":median(acc["pre_ready_speech_prior_count"]),
         },
+        "median_prior_reference_count_at_target":{
+            "noise":median(acc["all_noise_prior_count"]),
+            "speech":median(acc["all_speech_prior_count"]),
+        },
         "median_target_frame_index":{
             "pre_ready_noise":median(acc["pre_ready_noise_frame_index"]),
             "pre_ready_speech":median(acc["pre_ready_speech_frame_index"]),
             "ready_noise":median(acc["ready_noise_frame_index"]),
             "ready_speech":median(acc["ready_speech_frame_index"]),
         },
+        "median_first_reference_frame_index":
+            median(acc["first_reference_frame_index"]),
         "median_first_target_frame_index":median(acc["first_target_frame_index"]),
         "median_first_ready_frame_index":median(acc["first_ready_frame_index"]),
         "median_ready_minus_first_target_frames":
             median(acc["ready_minus_first_target_frames"]),
         "median_reference_frames_before_first_target":
             median(acc["reference_frames_before_first_target"]),
+        "median_reference_interarrival_frames":
+            median(acc["median_reference_interarrival_frames"]),
+        "median_max_reference_interarrival_frames":
+            median(acc["max_reference_interarrival_frames"]),
     }
 
 
@@ -194,6 +213,8 @@ def analyze_case(
     labels=labels[WARMUP:count]
 
     result=empty_accumulator()
+    target_receipts: list[dict[str,Any]]=[]
+    reference_frame_indexes: list[int]=[]
     prior_reference_count=0
     first_ready_frame: int | None=None
     first_target_frame: int | None=None
@@ -221,6 +242,7 @@ def analyze_case(
         is_disagreement=disagreement(row,upstream_guard)
         if label==0 and not is_disagreement:
             prior_reference_count+=1
+            reference_frame_indexes.append(frame_index)
             result["ordinary_reference_frames"]+=1
             if (
                 first_ready_frame is None
@@ -238,7 +260,15 @@ def analyze_case(
 
         speech=label==1
         raw_key="raw_speech_targets" if speech else "raw_noise_targets"
+        all_prior_key="all_speech_prior_count" if speech else "all_noise_prior_count"
         result[raw_key]+=1
+        result[all_prior_key].append(prior_reference_count)
+        target_receipts.append({
+            "class":"speech" if speech else "noise",
+            "frame_index_from_warmup":frame_index,
+            "prior_reference_count":prior_reference_count,
+            "ready_at_target":prior_reference_count>=REFERENCE_READY_COUNT,
+        })
         if prior_reference_count<REFERENCE_READY_COUNT:
             count_key=(
                 "pre_ready_speech_targets"
@@ -282,6 +312,35 @@ def analyze_case(
                 first_target_frame<=first_ready_frame
             )
 
+    reference_interarrivals=[
+        b-a for a,b in zip(reference_frame_indexes,reference_frame_indexes[1:])
+    ]
+    if reference_frame_indexes:
+        result["first_reference_frame_index"].append(reference_frame_indexes[0])
+    if reference_interarrivals:
+        result["median_reference_interarrival_frames"].append(
+            statistics.median(reference_interarrivals)
+        )
+        result["max_reference_interarrival_frames"].append(
+            max(reference_interarrivals)
+        )
+
+    for receipt in target_receipts:
+        receipt["first_ready_frame_index"]=first_ready_frame
+        if first_ready_frame is None:
+            receipt["frames_until_ready"]=None
+            receipt["frames_since_ready"]=None
+        elif receipt["ready_at_target"]:
+            receipt["frames_until_ready"]=0
+            receipt["frames_since_ready"]=(
+                receipt["frame_index_from_warmup"]-first_ready_frame
+            )
+        else:
+            receipt["frames_until_ready"]=max(
+                0,first_ready_frame-receipt["frame_index_from_warmup"]
+            )
+            receipt["frames_since_ready"]=None
+
     require(
         result["pre_ready_noise_targets"]+result["ready_noise_targets"]
         == result["raw_noise_targets"],
@@ -298,6 +357,24 @@ def analyze_case(
         "scenario":str(case["scenario"]),
         "dimensions":case.get("dimensions",{}),
         "readiness":result,
+        "target_receipts":target_receipts,
+        "reference_arrival":{
+            "first_reference_frame_index":
+                reference_frame_indexes[0] if reference_frame_indexes else None,
+            "first_target_frame_index":first_target_frame,
+            "first_ready_frame_index":first_ready_frame,
+            "reference_frames_before_first_target":refs_before_first_target,
+            "ordinary_reference_frames_total":len(reference_frame_indexes),
+            "median_reference_interarrival_frames":
+                statistics.median(reference_interarrivals)
+                if reference_interarrivals else None,
+            "max_reference_interarrival_frames":
+                max(reference_interarrivals) if reference_interarrivals else None,
+            "ready_minus_first_target_frames":
+                (first_ready_frame-first_target_frame)
+                if first_ready_frame is not None and first_target_frame is not None
+                else None,
+        },
         "mirror":{
             "max_ns_upstream_gap_delta":max_ns_delta,
             "max_vad_probability_delta":max_vad_delta,
@@ -350,6 +427,7 @@ def evaluate(
     max_ns_delta=0.0
     max_vad_delta=0.0
     active_mismatch=0
+    target_receipt_count=0
     domain_case_counts={
         domain:{"mix":0,"noise":0} for domain in NOISE_DOMAINS
     }
@@ -368,9 +446,16 @@ def evaluate(
 
         for case in cases:
             item=analyze_case(probe,corpus_path,case,upstream_guard)
+            target_receipt_count+=len(item["target_receipts"])
             per_case.append({
-                key:value for key,value in item.items() if key!="readiness"
-            } | {"readiness":summary(item["readiness"])})
+                "case_id":item["case_id"],
+                "scenario":item["scenario"],
+                "dimensions":item["dimensions"],
+                "readiness":summary(item["readiness"]),
+                "reference_arrival":item["reference_arrival"],
+                "target_receipts":item["target_receipts"],
+                "mirror":item["mirror"],
+            })
             append_case(global_acc,item["readiness"])
             for key in slice_keys(case):
                 slice_acc.setdefault(key,empty_accumulator())
@@ -396,6 +481,14 @@ def evaluate(
 
     require(actual_seeds==expected_seeds,f"fresh seed mismatch: {actual_seeds}")
     global_summary=summary(global_acc)
+    expected_target_receipts=(
+        int(global_summary["raw_noise_targets"])
+        + int(global_summary["raw_speech_targets"])
+    )
+    require(
+        target_receipt_count==expected_target_receipts,
+        "raw target receipt accounting mismatch",
+    )
     slices={
         key:summary(acc) for key,acc in sorted(slice_acc.items())
         if acc["raw_noise_targets"] or acc["raw_speech_targets"]
@@ -470,6 +563,12 @@ def evaluate(
         "slices":slices,
         "per_case":per_case,
         "domain_case_counts":domain_case_counts,
+        "target_accounting":{
+            "raw_target_count":expected_target_receipts,
+            "target_receipt_count":target_receipt_count,
+            "all_raw_targets_represented_exactly_once":
+                target_receipt_count==expected_target_receipts,
+        },
         "decision":decision,
         "invalid_reasons":sorted(set(invalid_reasons)),
         "interpretation_boundary":{
@@ -481,6 +580,8 @@ def evaluate(
             "no_shipping_candidate":True,
             "oracle_labels_diagnostic_only":True,
             "temporal_observation_only":True,
+            "future_readiness_timestamp_retrospective_diagnostic_only":True,
+            "per_target_prior_reference_count_recorded":True,
         },
         "authority_boundary":contract["authority_boundary"],
     }
@@ -510,10 +611,15 @@ def self_test() -> None:
     case["ready_speech_frame_index"]=[23,24,25]
     case["pre_ready_noise_prior_count"]=[5]
     case["pre_ready_speech_prior_count"]=[5,6]
+    case["all_noise_prior_count"]=[5,8,9,10]
+    case["all_speech_prior_count"]=[5,6,8,9,10]
+    case["first_reference_frame_index"]=[1]
     case["first_target_frame_index"]=[10]
     case["first_ready_frame_index"]=[19]
     case["ready_minus_first_target_frames"]=[9]
     case["reference_frames_before_first_target"]=[5]
+    case["median_reference_interarrival_frames"]=[2]
+    case["max_reference_interarrival_frames"]=[5]
     append_case(acc,case)
     value=summary(acc)
     assert value["pre_ready_fraction"]["noise"]==0.25
@@ -522,6 +628,8 @@ def self_test() -> None:
     assert value["pre_ready_prior_reference_count_histogram"]["speech"]["5"]==1
     assert value["pre_ready_prior_reference_count_histogram"]["speech"]["6"]==1
     assert value["median_ready_minus_first_target_frames"]==9
+    assert value["median_prior_reference_count_at_target"]["speech"]==8
+    assert value["median_reference_interarrival_frames"]==2
     print("I028 reference-readiness temporal decomposition self-test: OK")
 
 

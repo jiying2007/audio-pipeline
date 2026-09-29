@@ -31,7 +31,7 @@
     "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
     "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
     "evaluator_path": "tests/validation/i029_ns_upstream_independent_donor_reference_feasibility.py",
-    "evaluator_git_blob_sha": "65ef5ff024ab83bb4b285690fa48b21ba344c650"
+    "evaluator_git_blob_sha": "9929e8feb6a056b8c61c6845c4f90a972300a5fc"
   },
   "fresh_diagnostic_authority": {
     "donor_seeds": [
@@ -79,7 +79,8 @@
       "reverb",
       "snr_db",
       "case_key for deterministic tie break"
-    ]
+    ],
+    "matching_metadata_role": "development/synthetic diagnostic metadata only; no shipping availability or deployability is asserted"
   },
   "matched_donor_selection": {
     "same_noise_domain_required": true,
@@ -185,7 +186,8 @@
     "may_authorize_hil": false,
     "may_authorize_product_certification": false,
     "may_promote_release": false,
-    "automatic_main_mutation": false
+    "automatic_main_mutation": false,
+    "may_assume_matching_metadata_available_in_shipping": false
   },
   "next_review": "Use I029 only to judge whether metadata-matched independent donor references have measurable agreement advantage over the fixed cross-domain control on the pre-ready-speech population. Any reference-source candidate, donor persistence mechanism, component counterfactual, mapping or shipping change requires a new independently preregistered authority."
 }

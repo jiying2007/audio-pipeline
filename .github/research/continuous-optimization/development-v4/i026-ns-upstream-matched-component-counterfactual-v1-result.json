@@ -18,7 +18,7 @@
     "artifact_sha256": "483f29d858a9481e0680f522552f5a226a9a502854c74d5960255067e2c2efab",
     "member_sha256": {
       "build-info.txt": "2302fbeca290951fc8c83ae508928be37e5e5127e4d118e87dee53939b0cc1e9",
-      "contract.json": "232cd1c34ecb585a3bb4100ecfc1ee33d339a832859161bbc1cb6ec34729209",
+      "contract.json": "232cd1c34ecb5855a3bb4100ecfc1ee33d339a832859161bbc1cb6ec34729209",
       "corpora.sha256": "f2b70b5fb5112938ca9689b22edb30f7644f8aa0e19e5e7620ec388691fa7fe0",
       "evaluate.exit-code": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
       "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

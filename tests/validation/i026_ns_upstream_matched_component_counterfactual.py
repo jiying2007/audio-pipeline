@@ -63,6 +63,7 @@ def empty_accumulator() -> dict[str, Any]:
         "noise_targets": 0,
         "speech_targets": 0,
         "reference_frames": 0,
+        "missing_reference_targets": 0,
         "noise_mean_rescued": 0,
         "noise_concentration_rescued": 0,
         "noise_both_rescued": 0,
@@ -94,7 +95,7 @@ def append_case(
 ) -> None:
     for key in (
         "noise_targets", "speech_targets", "reference_frames",
-        "noise_mean_rescued", "noise_concentration_rescued",
+        "missing_reference_targets", "noise_mean_rescued", "noise_concentration_rescued",
         "noise_both_rescued", "noise_mean_only",
         "noise_concentration_only", "noise_both_individual",
         "noise_neither_individual", "noise_joint_only",
@@ -130,6 +131,7 @@ def summary(acc: dict[str, Any]) -> dict[str, Any]:
         "noise_targets": noise,
         "speech_targets": speech,
         "reference_frames": int(acc["reference_frames"]),
+        "missing_reference_targets": int(acc["missing_reference_targets"]),
         "target_cases": target_cases,
         "target_cases_with_reference": referenced,
         "reference_case_coverage": referenced / target_cases if target_cases else None,
@@ -215,94 +217,52 @@ def analyze_case(
     mirror_ns_delta = 0.0
     mirror_vad_delta = 0.0
     mirror_active_mismatch = 0
-    reference_rows: list[dict[str, Any]] = []
-    noise_targets: list[dict[str, Any]] = []
-    speech_targets: list[dict[str, Any]] = []
-
-    for row, label in zip(rows, labels):
-        require(label in (0, 1), "invalid label")
-        upstream = float(row["upstream_probability"])
-        gap = float(row["mirror_gap"])
-        public = float(row["public_shipping_probability"])
-        shipping = float(row["shipping_probability"])
-        require(all(math.isfinite(value) for value in (
-            upstream, gap, public, shipping,
-            float(row["mirror_mean"]), float(row["mirror_concentration"]),
-        )), "non-finite I026 metric")
-        mirror_ns_delta = max(mirror_ns_delta, abs(upstream - gap))
-        mirror_vad_delta = max(mirror_vad_delta, abs(public - shipping))
-        mirror_active_mismatch += int(
-            int(row["public_shipping_active"]) != int(row["shipping_active"])
-        )
-
-        is_disagreement = disagreement(row, upstream_guard)
-        if label == 0 and not is_disagreement:
-            reference_rows.append(row)
-        elif label == 0 and is_disagreement:
-            noise_targets.append(row)
-        elif label == 1 and is_disagreement:
-            speech_targets.append(row)
-
-    has_target = bool(noise_targets or speech_targets)
+    prior_reference_rows: list[dict[str, Any]] = []
     result = empty_accumulator()
-    result["noise_targets"] = len(noise_targets)
-    result["speech_targets"] = len(speech_targets)
-    result["reference_frames"] = len(reference_rows)
-    result["target_cases"] = int(has_target)
+    missing_reference_targets = 0
 
-    if not has_target:
-        return {
-            "case_id": str(case["case_id"]),
-            "scenario": str(case["scenario"]),
-            "dimensions": case.get("dimensions", {}),
-            "reference_available": True,
-            "counterfactual": result,
-            "mirror": {
-                "max_ns_upstream_gap_delta": mirror_ns_delta,
-                "max_vad_probability_delta": mirror_vad_delta,
-                "vad_active_mismatch_frames": mirror_active_mismatch,
-            },
-        }
+    def apply_target(row: dict[str, Any], *, speech: bool) -> None:
+        nonlocal missing_reference_targets
+        if len(prior_reference_rows) < minimum_reference_frames:
+            missing_reference_targets += 1
+            result["missing_reference_targets"] += 1
+            return
 
-    reference_available = len(reference_rows) >= minimum_reference_frames
-    if not reference_available:
-        return {
-            "case_id": str(case["case_id"]),
-            "scenario": str(case["scenario"]),
-            "dimensions": case.get("dimensions", {}),
-            "reference_available": False,
-            "counterfactual": result,
-            "mirror": {
-                "max_ns_upstream_gap_delta": mirror_ns_delta,
-                "max_vad_probability_delta": mirror_vad_delta,
-                "vad_active_mismatch_frames": mirror_active_mismatch,
-            },
-        }
-
-    ref_mean = statistics.median(
-        float(row["mirror_mean"]) for row in reference_rows
-    )
-    ref_concentration = statistics.median(
-        float(row["mirror_concentration"]) for row in reference_rows
-    )
-    ref_gap = clamp01(ref_concentration - ref_mean)
-    result["target_cases_with_reference"] = 1
-    result["reference_mean"].append(ref_mean)
-    result["reference_concentration"].append(ref_concentration)
-    result["reference_gap"].append(ref_gap)
-
-    def values(row: dict[str, Any]) -> tuple[float, float, float, float]:
+        ref_mean = statistics.median(
+            float(item["mirror_mean"]) for item in prior_reference_rows
+        )
+        ref_concentration = statistics.median(
+            float(item["mirror_concentration"]) for item in prior_reference_rows
+        )
+        ref_gap = clamp01(ref_concentration - ref_mean)
         mean = float(row["mirror_mean"])
         concentration = float(row["mirror_concentration"])
         base = float(row["mirror_gap"])
         mean_cf = clamp01(concentration - ref_mean)
         concentration_cf = clamp01(ref_concentration - mean)
         both_cf = ref_gap
-        return base, mean_cf, concentration_cf, both_cf
 
-    for row in noise_targets:
-        base, mean_cf, concentration_cf, both_cf = values(row)
-        require(base > upstream_guard, "noise target lost upstream-high identity")
+        result["reference_mean"].append(ref_mean)
+        result["reference_concentration"].append(ref_concentration)
+        result["reference_gap"].append(ref_gap)
+
+        if speech:
+            require(base > upstream_guard,
+                    "speech target lost upstream-high identity")
+            result["speech_mean_preserved"] += int(mean_cf > upstream_guard)
+            result["speech_concentration_preserved"] += int(
+                concentration_cf > upstream_guard
+            )
+            result["speech_both_preserved"] += int(both_cf > upstream_guard)
+            result["speech_base_minus_mean_cf"].append(base - mean_cf)
+            result["speech_base_minus_concentration_cf"].append(
+                base - concentration_cf
+            )
+            result["speech_base_minus_both_cf"].append(base - both_cf)
+            return
+
+        require(base > upstream_guard,
+                "noise target lost upstream-high identity")
         mean_rescue = mean_cf <= upstream_guard
         concentration_rescue = concentration_cf <= upstream_guard
         both_rescue = both_cf <= upstream_guard
@@ -328,31 +288,48 @@ def analyze_case(
         )
         result["noise_base_minus_both_cf"].append(base - both_cf)
 
-    for row in speech_targets:
-        base, mean_cf, concentration_cf, both_cf = values(row)
-        require(base > upstream_guard, "speech target lost upstream-high identity")
-        result["speech_mean_preserved"] += int(mean_cf > upstream_guard)
-        result["speech_concentration_preserved"] += int(
-            concentration_cf > upstream_guard
+    for row, label in zip(rows, labels):
+        require(label in (0, 1), "invalid label")
+        upstream = float(row["upstream_probability"])
+        gap = float(row["mirror_gap"])
+        public = float(row["public_shipping_probability"])
+        shipping = float(row["shipping_probability"])
+        require(all(math.isfinite(value) for value in (
+            upstream, gap, public, shipping,
+            float(row["mirror_mean"]), float(row["mirror_concentration"]),
+        )), "non-finite I026 metric")
+        mirror_ns_delta = max(mirror_ns_delta, abs(upstream - gap))
+        mirror_vad_delta = max(mirror_vad_delta, abs(public - shipping))
+        mirror_active_mismatch += int(
+            int(row["public_shipping_active"]) != int(row["shipping_active"])
         )
-        result["speech_both_preserved"] += int(both_cf > upstream_guard)
-        result["speech_base_minus_mean_cf"].append(base - mean_cf)
-        result["speech_base_minus_concentration_cf"].append(
-            base - concentration_cf
-        )
-        result["speech_base_minus_both_cf"].append(base - both_cf)
 
-    return {
+        is_disagreement = disagreement(row, upstream_guard)
+        if label == 0 and not is_disagreement:
+            # Causal ordering is intentional: a reference row becomes available
+            # only after its own readout, so no target can observe future frames.
+            prior_reference_rows.append(row)
+            continue
+        if label == 0 and is_disagreement:
+            result["noise_targets"] += 1
+            apply_target(row, speech=False)
+        elif label == 1 and is_disagreement:
+            result["speech_targets"] += 1
+            apply_target(row, speech=True)
+
+    has_target = bool(result["noise_targets"] or result["speech_targets"])
+    result["reference_frames"] = len(prior_reference_rows)
+    result["target_cases"] = int(has_target)
+    result["target_cases_with_reference"] = int(
+        has_target and missing_reference_targets == 0
+    )
+    reference_available = missing_reference_targets == 0
+
+    payload = {
         "case_id": str(case["case_id"]),
         "scenario": str(case["scenario"]),
         "dimensions": case.get("dimensions", {}),
-        "reference_available": True,
-        "reference": {
-            "frames": len(reference_rows),
-            "mean": ref_mean,
-            "concentration": ref_concentration,
-            "gap": ref_gap,
-        },
+        "reference_available": reference_available,
         "counterfactual": result,
         "mirror": {
             "max_ns_upstream_gap_delta": mirror_ns_delta,
@@ -360,7 +337,20 @@ def analyze_case(
             "vad_active_mismatch_frames": mirror_active_mismatch,
         },
     }
-
+    if has_target:
+        payload["reference"] = {
+            "ordinary_noise_frames_total": len(prior_reference_rows),
+            "minimum_prior_frames_per_target": minimum_reference_frames,
+            "missing_target_frames": missing_reference_targets,
+            "median_prior_reference_mean":
+                median(result["reference_mean"]),
+            "median_prior_reference_concentration":
+                median(result["reference_concentration"]),
+            "median_prior_reference_gap":
+                median(result["reference_gap"]),
+            "causal_prior_only": True,
+        }
+    return payload
 
 def evaluate(
     probe: Path,

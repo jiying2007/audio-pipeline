@@ -1,0 +1,950 @@
+{
+  "decision": "I027_INPUT_INVALID_REVIEW_REQUIRED",
+  "fresh_diagnostic_seeds": [
+    1101307,
+    1111307,
+    1121307
+  ],
+  "global": {
+    "eligible_case_fraction": 1.0,
+    "eligible_target_fraction": {
+      "noise": 0.8864610111396743,
+      "speech": 0.7449760145209386
+    },
+    "excluded_noise_targets": 1060,
+    "excluded_speech_targets": 1967,
+    "median_gap_reduction": {
+      "noise_both_reference": 0.1274673334,
+      "noise_concentration_reference": 0.08548856514999995,
+      "noise_mean_reference": -0.010031339314999943,
+      "speech_both_reference": 0.30792438840999997,
+      "speech_concentration_reference": 0.46085905275000005,
+      "speech_mean_reference": -0.10071895669999997
+    },
+    "noise_individual_attribution_fraction": {
+      "both_individual": 0.013170613823102948,
+      "concentration_only": 0.5567907201546641,
+      "joint_only": 0.0333494441759304,
+      "mean_only": 0.3287820202996617,
+      "neither_individual": 0.10125664572257129
+    },
+    "noise_rescue_fraction": {
+      "both_reference": 0.8579023682938618,
+      "concentration_reference": 0.569961333977767,
+      "mean_reference": 0.3419526341227646
+    },
+    "noise_targets": 8276,
+    "raw_noise_targets": 9336,
+    "raw_speech_targets": 7713,
+    "reference_frames": 20947,
+    "reference_medians_across_eligible_targets": {
+      "concentration": 0.5341731009999999,
+      "gap": 0.482304484,
+      "mean": 0.0299336314
+    },
+    "speech_preservation_fraction": {
+      "both_reference": 0.08353637312913331,
+      "concentration_reference": 0.18726070309780718,
+      "mean_reference": 0.8776540201879568
+    },
+    "speech_targets": 5746,
+    "target_cases": 168,
+    "target_cases_with_any_eligible_target": 168
+  },
+  "interpretation_boundary": {
+    "conditional_population": "Any valid counterfactual fractions describe the preregistered reference-ready target cohort, not pre-ready disagreement targets.",
+    "coverage_bias_guarded": true,
+    "eligibility": "A target enters counterfactual numerators and denominators only after the preregistered prior-reference pool is ready. Early excluded targets are counted only in eligibility coverage.",
+    "excluded_targets_enter_counterfactual_denominator": false,
+    "no_component_mapping_selected": true,
+    "no_shipping_candidate": true,
+    "no_threshold_search": true,
+    "oracle_reference_not_shippable": true,
+    "reference": "Per-target median mirror_mean and mirror_concentration use only prior same-case oracle-noise non-disagreement frames after the fixed warmup."
+  },
+  "invalid_reasons": [
+    "domain_eligible_fraction:cafeteria:speech",
+    "global_eligible_fraction:speech"
+  ],
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  },
+  "slices": {
+    "clean_only:true": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.9064976228209192,
+        "speech": 0.7821710999281093
+      },
+      "excluded_noise_targets": 177,
+      "excluded_speech_targets": 606,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.598944485,
+        "noise_concentration_reference": 0.6213791074999999,
+        "noise_mean_reference": -0.06737856673000003,
+        "speech_both_reference": 0.6393127144999999,
+        "speech_concentration_reference": 0.66282673365,
+        "speech_mean_reference": -0.1380857344425
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.0005827505827505828,
+        "concentration_only": 0.8927738927738927,
+        "joint_only": 0.00641025641025641,
+        "mean_only": 0.07342657342657342,
+        "neither_individual": 0.033216783216783216
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.9557109557109557,
+        "concentration_reference": 0.8933566433566433,
+        "mean_reference": 0.07400932400932402
+      },
+      "noise_targets": 1716,
+      "raw_noise_targets": 1893,
+      "raw_speech_targets": 2782,
+      "reference_frames": 3590,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.0,
+        "gap": 0.0,
+        "mean": 0.0
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.011948529411764705,
+        "concentration_reference": 0.050091911764705885,
+        "mean_reference": 0.9595588235294118
+      },
+      "speech_targets": 2176,
+      "target_cases": 42,
+      "target_cases_with_any_eligible_target": 42
+    },
+    "noise_domain:bus": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.9521575984990619,
+        "speech": 0.8823529411764706
+      },
+      "excluded_noise_targets": 51,
+      "excluded_speech_targets": 62,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.10298647650000015,
+        "noise_concentration_reference": 0.024575204000000017,
+        "noise_mean_reference": 0.010312766400000006,
+        "speech_both_reference": 0.147757158,
+        "speech_concentration_reference": 0.19740915350000005,
+        "speech_mean_reference": -0.08341686749999999
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.0019704433497536944,
+        "concentration_only": 0.4147783251231527,
+        "joint_only": 0.026600985221674877,
+        "mean_only": 0.3251231527093596,
+        "neither_individual": 0.258128078817734
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.6088669950738916,
+        "concentration_reference": 0.41674876847290643,
+        "mean_reference": 0.3270935960591133
+      },
+      "noise_targets": 1015,
+      "raw_noise_targets": 1066,
+      "raw_speech_targets": 527,
+      "reference_frames": 2894,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.736387849,
+        "gap": 0.5236973508,
+        "mean": 0.09487912805
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.221505376344086,
+        "concentration_reference": 0.37849462365591396,
+        "mean_reference": 0.8258064516129032
+      },
+      "speech_targets": 465,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "noise_domain:cafeteria": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8728291316526611,
+        "speech": 0.5537084398976982
+      },
+      "excluded_noise_targets": 227,
+      "excluded_speech_targets": 349,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.09302552025,
+        "noise_concentration_reference": -0.037130027499999996,
+        "noise_mean_reference": 0.12726566950000004,
+        "speech_both_reference": 0.1510345635,
+        "speech_concentration_reference": 0.04252961200000005,
+        "speech_mean_reference": 0.022515885499999944
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.014762516046213094,
+        "concentration_only": 0.21181001283697048,
+        "joint_only": 0.03401797175866496,
+        "mean_only": 0.7086007702182285,
+        "neither_individual": 0.06482670089858793
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.9056482670089859,
+        "concentration_reference": 0.22657252888318358,
+        "mean_reference": 0.7233632862644416
+      },
+      "noise_targets": 1558,
+      "raw_noise_targets": 1785,
+      "raw_speech_targets": 782,
+      "reference_frames": 1759,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.8259930609999999,
+        "gap": 0.5118280049999999,
+        "mean": 0.3018049
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.07852193995381063,
+        "concentration_reference": 0.5173210161662818,
+        "mean_reference": 0.5750577367205543
+      },
+      "speech_targets": 433,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "noise_domain:field": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8688711516533637,
+        "speech": 0.7614906832298136
+      },
+      "excluded_noise_targets": 115,
+      "excluded_speech_targets": 192,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.11327095860000008,
+        "noise_concentration_reference": 0.10888637625000003,
+        "noise_mean_reference": -0.01318948314149998,
+        "speech_both_reference": 0.16887359470000007,
+        "speech_concentration_reference": 0.28331963750000005,
+        "speech_mean_reference": -0.09576462969499988
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.028871391076115485,
+        "concentration_only": 0.615485564304462,
+        "joint_only": 0.03937007874015748,
+        "mean_only": 0.2572178477690289,
+        "neither_individual": 0.0984251968503937
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.889763779527559,
+        "concentration_reference": 0.6443569553805775,
+        "mean_reference": 0.28608923884514437
+      },
+      "noise_targets": 762,
+      "raw_noise_targets": 877,
+      "raw_speech_targets": 805,
+      "reference_frames": 2536,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.5483222905,
+        "gap": 0.49828084549999996,
+        "mean": 0.036160968249999995
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.14518760195758565,
+        "concentration_reference": 0.2267536704730832,
+        "mean_reference": 0.8613376835236541
+      },
+      "speech_targets": 613,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "noise_domain:kitchen": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.7762886597938145,
+        "speech": 0.6225626740947076
+      },
+      "excluded_noise_targets": 217,
+      "excluded_speech_targets": 271,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.06383306190000004,
+        "noise_concentration_reference": 0.06386803099999994,
+        "noise_mean_reference": -0.005413203999999894,
+        "speech_both_reference": 0.06974044499999987,
+        "speech_concentration_reference": 0.10211600300000007,
+        "speech_mean_reference": -0.03164422499999997
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.021248339973439574,
+        "concentration_only": 0.5856573705179283,
+        "joint_only": 0.08366533864541832,
+        "mean_only": 0.24302788844621515,
+        "neither_individual": 0.150066401062417
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.8326693227091634,
+        "concentration_reference": 0.6069057104913679,
+        "mean_reference": 0.2642762284196547
+      },
+      "noise_targets": 753,
+      "raw_noise_targets": 970,
+      "raw_speech_targets": 718,
+      "reference_frames": 2588,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.683952153,
+        "gap": 0.5332423745,
+        "mean": 0.135026574
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.20134228187919462,
+        "concentration_reference": 0.3333333333333333,
+        "mean_reference": 0.843400447427293
+      },
+      "speech_targets": 447,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "noise_domain:living": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.9131334022750776,
+        "speech": 0.8366197183098592
+      },
+      "excluded_noise_targets": 84,
+      "excluded_speech_targets": 116,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.079397351,
+        "noise_concentration_reference": 0.01295381799999995,
+        "noise_mean_reference": 0.03985638899999999,
+        "speech_both_reference": 0.120157823,
+        "speech_concentration_reference": 0.19573091700000003,
+        "speech_mean_reference": -0.06222384887000004
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.0362400906002265,
+        "concentration_only": 0.39071347678369195,
+        "joint_only": 0.03850509626274066,
+        "mean_only": 0.47904869762174407,
+        "neither_individual": 0.09399773499433749
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.8131370328425821,
+        "concentration_reference": 0.4269535673839185,
+        "mean_reference": 0.5152887882219706
+      },
+      "noise_targets": 883,
+      "raw_noise_targets": 967,
+      "raw_speech_targets": 710,
+      "reference_frames": 2326,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.748442769,
+        "gap": 0.5160009860000001,
+        "mean": 0.203659534
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.1531986531986532,
+        "concentration_reference": 0.3282828282828283,
+        "mean_reference": 0.7575757575757576
+      },
+      "speech_targets": 594,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "noise_domain:office": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.905940594059406,
+        "speech": 0.7728758169934641
+      },
+      "excluded_noise_targets": 76,
+      "excluded_speech_targets": 139,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.243156921975,
+        "noise_concentration_reference": 0.3528989162,
+        "noise_mean_reference": -0.05298279075000001,
+        "speech_both_reference": 0.48214533897999995,
+        "speech_concentration_reference": 0.584079504,
+        "speech_mean_reference": -0.14585643999999998
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.004098360655737705,
+        "concentration_only": 0.7254098360655737,
+        "joint_only": 0.012295081967213115,
+        "mean_only": 0.15846994535519127,
+        "neither_individual": 0.11202185792349727
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.796448087431694,
+        "concentration_reference": 0.7295081967213115,
+        "mean_reference": 0.16256830601092895
+      },
+      "noise_targets": 732,
+      "raw_noise_targets": 808,
+      "raw_speech_targets": 612,
+      "reference_frames": 2814,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.378761053,
+        "gap": 0.37255546302000003,
+        "mean": 0.00687761883
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.06765327695560254,
+        "concentration_reference": 0.048625792811839326,
+        "mean_reference": 0.9936575052854123
+      },
+      "speech_targets": 473,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "noise_domain:traffic": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8835051546391752,
+        "speech": 0.7014157014157014
+      },
+      "excluded_noise_targets": 113,
+      "excluded_speech_targets": 232,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.09149608000000004,
+        "noise_concentration_reference": 0.09236735100000004,
+        "noise_mean_reference": -0.01133453800000006,
+        "speech_both_reference": 0.15361863235000006,
+        "speech_concentration_reference": 0.29969587950000004,
+        "speech_mean_reference": -0.10894913025000008
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.011668611435239206,
+        "concentration_only": 0.6289381563593932,
+        "joint_only": 0.057176196032672114,
+        "mean_only": 0.28354725787631274,
+        "neither_individual": 0.07584597432905485
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.9626604434072346,
+        "concentration_reference": 0.6406067677946324,
+        "mean_reference": 0.2952158693115519
+      },
+      "noise_targets": 857,
+      "raw_noise_targets": 970,
+      "raw_speech_targets": 777,
+      "reference_frames": 2440,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.6038799585,
+        "gap": 0.49520550815000003,
+        "mean": 0.0674468353
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.027522935779816515,
+        "concentration_reference": 0.11192660550458716,
+        "mean_reference": 0.9119266055045872
+      },
+      "speech_targets": 545,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "reverb:false": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8283216783216784,
+        "speech": 0.731021897810219
+      },
+      "excluded_noise_targets": 491,
+      "excluded_speech_targets": 737,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.12182724060000005,
+        "noise_concentration_reference": 0.12195346600000001,
+        "noise_mean_reference": -0.0195345938,
+        "speech_both_reference": 0.16443682849999997,
+        "speech_concentration_reference": 0.2753751275,
+        "speech_mean_reference": -0.08885992319999991
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.008442380751371888,
+        "concentration_only": 0.6424651751794006,
+        "joint_only": 0.061629379485014776,
+        "mean_only": 0.23723089911355003,
+        "neither_individual": 0.1118615449556775
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.8940481215702828,
+        "concentration_reference": 0.6509075559307724,
+        "mean_reference": 0.2456732798649219
+      },
+      "noise_targets": 2369,
+      "raw_noise_targets": 2860,
+      "raw_speech_targets": 2740,
+      "reference_frames": 2962,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.585508883,
+        "gap": 0.5077370562500001,
+        "mean": 0.0575368889
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.10234648027958063,
+        "concentration_reference": 0.22466300549176235,
+        "mean_reference": 0.8686969545681478
+      },
+      "speech_targets": 2003,
+      "target_cases": 42,
+      "target_cases_with_any_eligible_target": 42
+    },
+    "reverb:true": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8679893170545593,
+        "speech": 0.7151985394796896
+      },
+      "excluded_noise_targets": 346,
+      "excluded_speech_targets": 624,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.12753666949999998,
+        "noise_concentration_reference": 0.11342802699999999,
+        "noise_mean_reference": -0.01902783197999991,
+        "speech_both_reference": 0.13936816370000005,
+        "speech_concentration_reference": 0.2258363887,
+        "speech_mean_reference": -0.06341957269499998
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.0013186813186813187,
+        "concentration_only": 0.5789010989010989,
+        "joint_only": 0.03032967032967033,
+        "mean_only": 0.2545054945054945,
+        "neither_individual": 0.16527472527472528
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.7498901098901098,
+        "concentration_reference": 0.5802197802197803,
+        "mean_reference": 0.2558241758241758
+      },
+      "noise_targets": 2275,
+      "raw_noise_targets": 2621,
+      "raw_speech_targets": 2191,
+      "reference_frames": 2917,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.6085940894999999,
+        "gap": 0.4982692154999999,
+        "mean": 0.0599392727
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.15890236119974474,
+        "concentration_reference": 0.3299298021697511,
+        "mean_reference": 0.7753669432035737
+      },
+      "speech_targets": 1567,
+      "target_cases": 42,
+      "target_cases_with_any_eligible_target": 42
+    },
+    "scenario:research-public-clean-preservation": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.9064976228209192,
+        "speech": 0.7821710999281093
+      },
+      "excluded_noise_targets": 177,
+      "excluded_speech_targets": 606,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.598944485,
+        "noise_concentration_reference": 0.6213791074999999,
+        "noise_mean_reference": -0.06737856673000003,
+        "speech_both_reference": 0.6393127144999999,
+        "speech_concentration_reference": 0.66282673365,
+        "speech_mean_reference": -0.1380857344425
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.0005827505827505828,
+        "concentration_only": 0.8927738927738927,
+        "joint_only": 0.00641025641025641,
+        "mean_only": 0.07342657342657342,
+        "neither_individual": 0.033216783216783216
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.9557109557109557,
+        "concentration_reference": 0.8933566433566433,
+        "mean_reference": 0.07400932400932402
+      },
+      "noise_targets": 1716,
+      "raw_noise_targets": 1893,
+      "raw_speech_targets": 2782,
+      "reference_frames": 3590,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.0,
+        "gap": 0.0,
+        "mean": 0.0
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.011948529411764705,
+        "concentration_reference": 0.050091911764705885,
+        "mean_reference": 0.9595588235294118
+      },
+      "speech_targets": 2176,
+      "target_cases": 42,
+      "target_cases_with_any_eligible_target": 42
+    },
+    "scenario:research-public-noise-only": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.9765545361875637,
+        "speech": null
+      },
+      "excluded_noise_targets": 46,
+      "excluded_speech_targets": 0,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.05821133400000006,
+        "noise_concentration_reference": -0.03021129950000001,
+        "noise_mean_reference": 0.09195648900000003,
+        "speech_both_reference": null,
+        "speech_concentration_reference": null,
+        "speech_mean_reference": null
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.044363256784968684,
+        "concentration_only": 0.12369519832985386,
+        "joint_only": 0.026096033402922755,
+        "mean_only": 0.7588726513569938,
+        "neither_individual": 0.07306889352818371
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.8538622129436325,
+        "concentration_reference": 0.16805845511482254,
+        "mean_reference": 0.8032359081419624
+      },
+      "noise_targets": 1916,
+      "raw_noise_targets": 1962,
+      "raw_speech_targets": 0,
+      "reference_frames": 11478,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.813475847,
+        "gap": 0.52091518,
+        "mean": 0.2792319285
+      },
+      "speech_preservation_fraction": {
+        "both_reference": null,
+        "concentration_reference": null,
+        "mean_reference": null
+      },
+      "speech_targets": 0,
+      "target_cases": 42,
+      "target_cases_with_any_eligible_target": 42
+    },
+    "scenario:research-public-noisy-clean": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8283216783216784,
+        "speech": 0.731021897810219
+      },
+      "excluded_noise_targets": 491,
+      "excluded_speech_targets": 737,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.12182724060000005,
+        "noise_concentration_reference": 0.12195346600000001,
+        "noise_mean_reference": -0.0195345938,
+        "speech_both_reference": 0.16443682849999997,
+        "speech_concentration_reference": 0.2753751275,
+        "speech_mean_reference": -0.08885992319999991
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.008442380751371888,
+        "concentration_only": 0.6424651751794006,
+        "joint_only": 0.061629379485014776,
+        "mean_only": 0.23723089911355003,
+        "neither_individual": 0.1118615449556775
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.8940481215702828,
+        "concentration_reference": 0.6509075559307724,
+        "mean_reference": 0.2456732798649219
+      },
+      "noise_targets": 2369,
+      "raw_noise_targets": 2860,
+      "raw_speech_targets": 2740,
+      "reference_frames": 2962,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.585508883,
+        "gap": 0.5077370562500001,
+        "mean": 0.0575368889
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.10234648027958063,
+        "concentration_reference": 0.22466300549176235,
+        "mean_reference": 0.8686969545681478
+      },
+      "speech_targets": 2003,
+      "target_cases": 42,
+      "target_cases_with_any_eligible_target": 42
+    },
+    "scenario:research-public-noisy-reverb": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8679893170545593,
+        "speech": 0.7151985394796896
+      },
+      "excluded_noise_targets": 346,
+      "excluded_speech_targets": 624,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.12753666949999998,
+        "noise_concentration_reference": 0.11342802699999999,
+        "noise_mean_reference": -0.01902783197999991,
+        "speech_both_reference": 0.13936816370000005,
+        "speech_concentration_reference": 0.2258363887,
+        "speech_mean_reference": -0.06341957269499998
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.0013186813186813187,
+        "concentration_only": 0.5789010989010989,
+        "joint_only": 0.03032967032967033,
+        "mean_only": 0.2545054945054945,
+        "neither_individual": 0.16527472527472528
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.7498901098901098,
+        "concentration_reference": 0.5802197802197803,
+        "mean_reference": 0.2558241758241758
+      },
+      "noise_targets": 2275,
+      "raw_noise_targets": 2621,
+      "raw_speech_targets": 2191,
+      "reference_frames": 2917,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.6085940894999999,
+        "gap": 0.4982692154999999,
+        "mean": 0.0599392727
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.15890236119974474,
+        "concentration_reference": 0.3299298021697511,
+        "mean_reference": 0.7753669432035737
+      },
+      "speech_targets": 1567,
+      "target_cases": 42,
+      "target_cases_with_any_eligible_target": 42
+    },
+    "snr_db:-5": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8217391304347826,
+        "speech": 0.8138766519823789
+      },
+      "excluded_noise_targets": 123,
+      "excluded_speech_targets": 169,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.05107806599999998,
+        "noise_concentration_reference": 0.05744955340000002,
+        "noise_mean_reference": -0.008929364999999967,
+        "speech_both_reference": 0.0826209255,
+        "speech_concentration_reference": 0.11250986150000009,
+        "speech_mean_reference": -0.039072990000000085
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.007054673721340388,
+        "concentration_only": 0.5555555555555556,
+        "joint_only": 0.05114638447971781,
+        "mean_only": 0.25396825396825395,
+        "neither_individual": 0.18342151675485008
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.6772486772486772,
+        "concentration_reference": 0.562610229276896,
+        "mean_reference": 0.26102292768959434
+      },
+      "noise_targets": 567,
+      "raw_noise_targets": 690,
+      "raw_speech_targets": 908,
+      "reference_frames": 1062,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.68893218,
+        "gap": 0.531016395,
+        "mean": 0.111066714
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.2219215155615697,
+        "concentration_reference": 0.3761840324763194,
+        "mean_reference": 0.7604871447902571
+      },
+      "speech_targets": 739,
+      "target_cases": 15,
+      "target_cases_with_any_eligible_target": 15
+    },
+    "snr_db:0": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8357664233576643,
+        "speech": 0.6960907944514502
+      },
+      "excluded_noise_targets": 135,
+      "excluded_speech_targets": 241,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.05708356199999998,
+        "noise_concentration_reference": 0.022435411999999877,
+        "noise_mean_reference": 0.017441481999999953,
+        "speech_both_reference": 0.06905143499999997,
+        "speech_concentration_reference": 0.07356403750000001,
+        "speech_mean_reference": -0.009072808200000004
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.008733624454148471,
+        "concentration_only": 0.37409024745269287,
+        "joint_only": 0.07569141193595343,
+        "mean_only": 0.34643377001455605,
+        "neither_individual": 0.27074235807860264
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.6564774381368268,
+        "concentration_reference": 0.38282387190684136,
+        "mean_reference": 0.3551673944687045
+      },
+      "noise_targets": 687,
+      "raw_noise_targets": 822,
+      "raw_speech_targets": 793,
+      "reference_frames": 1238,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.737850964,
+        "gap": 0.5341812785000001,
+        "mean": 0.171840221
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.18659420289855072,
+        "concentration_reference": 0.45471014492753625,
+        "mean_reference": 0.7663043478260869
+      },
+      "speech_targets": 552,
+      "target_cases": 15,
+      "target_cases_with_any_eligible_target": 15
+    },
+    "snr_db:10": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8501845018450185,
+        "speech": 0.674937965260546
+      },
+      "excluded_noise_targets": 203,
+      "excluded_speech_targets": 393,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.2194181481,
+        "noise_concentration_reference": 0.28320703309999995,
+        "noise_mean_reference": -0.04395698873749998,
+        "speech_both_reference": 0.28865428054,
+        "speech_concentration_reference": 0.45664626175,
+        "speech_mean_reference": -0.12924206649999997
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.004340277777777778,
+        "concentration_only": 0.7751736111111112,
+        "joint_only": 0.020833333333333332,
+        "mean_only": 0.1605902777777778,
+        "neither_individual": 0.059895833333333336
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.9383680555555556,
+        "concentration_reference": 0.7795138888888888,
+        "mean_reference": 0.16493055555555555
+      },
+      "noise_targets": 1152,
+      "raw_noise_targets": 1355,
+      "raw_speech_targets": 1209,
+      "reference_frames": 1156,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.421126753,
+        "gap": 0.41332949037,
+        "mean": 0.0107609639
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.011029411764705883,
+        "concentration_reference": 0.09803921568627451,
+        "mean_reference": 0.9338235294117647
+      },
+      "speech_targets": 816,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "snr_db:15": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8782535684298909,
+        "speech": 0.708
+      },
+      "excluded_noise_targets": 145,
+      "excluded_speech_targets": 292,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.20718623498000005,
+        "noise_concentration_reference": 0.27801368104999996,
+        "noise_mean_reference": -0.04841346799999996,
+        "speech_both_reference": 0.417594800265,
+        "speech_concentration_reference": 0.562433034,
+        "speech_mean_reference": -0.12703532597830502
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.0009560229445506692,
+        "concentration_only": 0.7791586998087954,
+        "joint_only": 0.0372848948374761,
+        "mean_only": 0.15678776290630975,
+        "neither_individual": 0.06309751434034416
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.9684512428298279,
+        "concentration_reference": 0.780114722753346,
+        "mean_reference": 0.1577437858508604
+      },
+      "noise_targets": 1046,
+      "raw_noise_targets": 1191,
+      "raw_speech_targets": 1000,
+      "reference_frames": 1205,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.457582414,
+        "gap": 0.44254306145,
+        "mean": 0.0148661043
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.00423728813559322,
+        "concentration_reference": 0.10310734463276836,
+        "mean_reference": 0.923728813559322
+      },
+      "speech_targets": 708,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    },
+    "snr_db:5": {
+      "eligible_case_fraction": 1.0,
+      "eligible_target_fraction": {
+        "noise": 0.8376669009135629,
+        "speech": 0.7394711067580804
+      },
+      "excluded_noise_targets": 231,
+      "excluded_speech_targets": 266,
+      "median_gap_reduction": {
+        "noise_both_reference": 0.11251421999999994,
+        "noise_concentration_reference": 0.049390062750000074,
+        "noise_mean_reference": 0.012766500849999973,
+        "speech_both_reference": 0.131356329,
+        "speech_concentration_reference": 0.17787128600000002,
+        "speech_mean_reference": -0.06000670699999999
+      },
+      "noise_individual_attribution_fraction": {
+        "both_individual": 0.00587248322147651,
+        "concentration_only": 0.46895973154362414,
+        "joint_only": 0.05956375838926174,
+        "mean_only": 0.34395973154362414,
+        "neither_individual": 0.18120805369127516
+      },
+      "noise_rescue_fraction": {
+        "both_reference": 0.7508389261744967,
+        "concentration_reference": 0.4748322147651007,
+        "mean_reference": 0.3498322147651007
+      },
+      "noise_targets": 1192,
+      "raw_noise_targets": 1423,
+      "raw_speech_targets": 1021,
+      "reference_frames": 1218,
+      "reference_medians_across_eligible_targets": {
+        "concentration": 0.7062520385,
+        "gap": 0.5113129465,
+        "mean": 0.114613146
+      },
+      "speech_preservation_fraction": {
+        "both_reference": 0.23178807947019867,
+        "concentration_reference": 0.37748344370860926,
+        "mean_reference": 0.7337748344370861
+      },
+      "speech_targets": 755,
+      "target_cases": 18,
+      "target_cases_with_any_eligible_target": 18
+    }
+  }
+}

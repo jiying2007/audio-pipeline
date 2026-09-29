@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i027-ns-upstream-reference-ready-component-counterfactual-v1",
+  "phase": "candidate-zero-reference-ready-component-causal-diagnostic",
+  "authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "3b2b8593e9ca366f31346d207bd2aa3b88e7688e",
+  "predecessor": {
+    "i026_closure": ".github/research/continuous-optimization/development-v4/i026-ns-upstream-matched-component-counterfactual-v1-result.json",
+    "i026_closure_blob_sha": "8eb9623e6e3f15b24a9838038b4fcfd9ef686dab",
+    "required_status": "CLOSED_INVALID_DIAGNOSTIC_ONLY",
+    "required_decision": "I026_INPUT_INVALID_REVIEW_REQUIRED",
+    "required_reviewed_decision": "CAUSAL_REFERENCE_COVERAGE_INVALID_NO_COMPONENT_CONCLUSION_NO_CANDIDATE",
+    "required_followup_id": "i027-ns-upstream-reference-ready-component-counterfactual-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY"
+  },
+  "question": "On entirely fresh public-development disagreement frames, after a same-case prior ordinary-noise reference pool is ready, how often do mean-only, concentration-only, or both-reference substitutions remove false-high NS upstream evidence on oracle-noise targets while preserving high upstream evidence on oracle-speech targets, with eligibility coverage itself gated globally and across domain/scenario/SNR/reverb slices?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i027_ns_upstream_reference_ready_component_counterfactual.py",
+    "evaluator_git_blob_sha": "8e435362a5d73d52929acef9f2a00945d2618cfa"
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      1101307,
+      1111307,
+      1121307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "minimum_mix_cases_per_noise_domain_per_seed": 4,
+    "minimum_noise_only_cases_per_noise_domain_per_seed": 2,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "ns_upstream_mapping": "clamp(concentration - mean, 0, 1)",
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15
+  },
+  "population_definition": {
+    "raw_noise_target": "oracle_label == 0 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "raw_speech_target": "oracle_label == 1 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "ordinary_noise_reference": "oracle_label == 0 && !(upstream_probability > 0.55 && local_guard_pass == 0)",
+    "eligible_target": "raw target with at least 8 prior same-case ordinary-noise reference frames",
+    "excluded_target": "raw target before reference readiness; counted only for eligibility coverage",
+    "oracle_labels_used_for_diagnostic_only": true
+  },
+  "counterfactual_reference": {
+    "scope": "same case after fixed warmup",
+    "statistics": "median",
+    "minimum_reference_frames_per_target": 8,
+    "reference_time_order": "prior ordinary-noise frames only; future frames forbidden",
+    "mean_reference": "median mirror_mean over prior ordinary_noise_reference frames",
+    "concentration_reference": "median mirror_concentration over prior ordinary_noise_reference frames",
+    "mean_only": "clamp(original_concentration - reference_mean, 0, 1)",
+    "concentration_only": "clamp(reference_concentration - original_mean, 0, 1)",
+    "both": "clamp(reference_concentration - reference_mean, 0, 1)",
+    "excluded_targets_enter_counterfactual_denominator": false,
+    "oracle_reference_not_shippable": true
+  },
+  "readout": {
+    "threshold": "unchanged shipping upstream guard 0.55",
+    "noise_rescue": "counterfactual upstream <= 0.55 on eligible oracle-noise target",
+    "speech_preservation": "counterfactual upstream > 0.55 on eligible oracle-speech target",
+    "eligibility_coverage": "eligible targets / all raw targets, separately by class and slice",
+    "threshold_search": false,
+    "mapping_search": false,
+    "component_weight_search": false,
+    "candidate_selection": false
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "minimum_total_cases": 168,
+    "minimum_global_raw_targets_per_class": 100,
+    "minimum_global_eligible_targets_per_class": 100,
+    "minimum_global_eligible_fraction": 0.75,
+    "minimum_raw_targets_per_noise_domain": 20,
+    "minimum_eligible_targets_per_noise_domain": 20,
+    "minimum_per_noise_domain_eligible_fraction": 0.6,
+    "secondary_slice_gate_minimum_raw_targets": 50,
+    "secondary_slice_minimum_eligible_targets": 20,
+    "secondary_slice_minimum_eligible_fraction": 0.5
+  },
+  "coverage_slices": {
+    "required_primary": [
+      "global",
+      "noise_domain"
+    ],
+    "required_secondary": [
+      "scenario",
+      "snr_db",
+      "reverb"
+    ],
+    "secondary_gate_rule": "apply count/fraction gate only when raw class target count in slice is at least 50",
+    "interpretation": "counterfactual effects are conditional on the preregistered reference-ready cohort and must not be generalized to excluded pre-ready targets"
+  },
+  "diagnostic_outputs": [
+    "global_raw_eligible_excluded_target_counts_and_fractions",
+    "per_noise_domain_raw_eligible_excluded_target_counts_and_fractions",
+    "per_scenario_snr_reverb_raw_eligible_excluded_target_counts_and_fractions",
+    "eligible_only_mean_concentration_both_noise_rescue",
+    "eligible_only_mean_concentration_both_speech_preservation",
+    "eligible_only_noise_component_attribution",
+    "eligible_only_median_gap_reduction",
+    "per_case_reference_readiness_and_population"
+  ],
+  "forbidden_feedback": {
+    "i025_seeds": true,
+    "i026_seeds": true,
+    "i026_invalid_counterfactual_fractions": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_REFERENCE_READY_COMPONENT_COUNTERFACTUAL_DECOMPOSED_REVIEW_REQUIRED": "Fresh authority, mirrors, eligible-only denominators, and preregistered global/domain/secondary eligibility coverage gates are valid; report mean-only, concentration-only and both-reference causal readouts for review without selecting a component, mapping or candidate.",
+    "NS_UPSTREAM_FALSE_HIGH_NOT_REPRODUCED_REVIEW_REQUIRED": "Fresh authority is valid but the false-high disagreement-noise population is absent; close without selecting a candidate.",
+    "I027_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, frozen-input identity, mirror identity, raw/eligible population, prior-only reference ordering, or preregistered eligibility coverage gates fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Interpret I027 only if all preregistered eligibility gates pass. Any apparent mean/concentration difference remains diagnostic and conditional on the reference-ready cohort; a shippable mapping, component weight, tracker change or source candidate requires a new independently preregistered candidate authority."
+}

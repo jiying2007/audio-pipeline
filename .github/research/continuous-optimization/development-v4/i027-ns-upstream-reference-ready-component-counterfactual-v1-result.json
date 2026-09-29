@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i027-ns-upstream-reference-ready-component-counterfactual-v1",
+  "status": "CLOSED_INVALID_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "3b2b8593e9ca366f31346d207bd2aa3b88e7688e",
+  "decision": "I027_INPUT_INVALID_REVIEW_REQUIRED",
+  "reviewed_decision": "REFERENCE_READY_SPEECH_COVERAGE_GATE_FAILED_NO_COMPONENT_CONCLUSION_NO_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I027 execution consumed its fresh development-only authority, preserved exact NS/VAD shipping mirrors, and correctly excluded pre-ready targets from all counterfactual denominators. The denominator correction therefore worked as designed. However, the preregistered eligibility-coverage gates did not all pass: oracle-noise global eligibility was 0.8864610111, but oracle-speech global eligibility was 0.7449760145, below the frozen 0.75 gate; cafeteria oracle-speech eligibility was 0.5537084399, below the frozen per-domain 0.60 gate. All 168 target cases had at least one eligible target, and no scenario/SNR/reverb secondary coverage gate failed, so the remaining invalidity is specifically speech reference-readiness coverage rather than missing implementation identity or general corpus failure. Because the global and cafeteria speech gates failed, the emitted mean-only, concentration-only and both-reference rescue/preservation fractions remain non-authoritative diagnostic traces and must not be compared to rank components, select mappings, relax the eight-frame readiness threshold, or justify a shipping change. I027 selects no component, mapping, weight, threshold, tracker change, source candidate, or shipping change. The next independent diagnostic should explain the temporal/reference-arrival cause of pre-ready speech targets—especially in cafeteria—before any further component counterfactual is attempted.",
+  "authoritative_execution": {
+    "run_id": 36570600341,
+    "run_attempt": 1,
+    "head_sha": "a62610fa3005f369e7c30dcb1db7bdfbb82b4a55",
+    "artifact_id": 11034169094,
+    "artifact_name": "i027-ns-upstream-reference-ready-component-36570600341",
+    "artifact_size_bytes": 47994,
+    "artifact_sha256": "8b76658586686485414305022b6a6f25cf8d4e77c61d3af188f386e83f35cc1f",
+    "member_sha256": {
+      "build-info.txt": "6184a34e0571d5472f92a47cd40546382022edb3ae65c2db31f13483c376e9fd",
+      "contract.json": "af6927f3e6e81607d7da11258a13989fced71df4f9de11fd7366c645c233c954",
+      "corpora.sha256": "ef4d81d7c7c2282209c7fa94f624b21339f85edc069f01168dc9eb79fa615d8f",
+      "evaluate.exit-code": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "48331f517b21a748d9ab63940f26ff8015d33fd9a5a66f58ae121208b3fcd7a9",
+      "materialization.json": "63551ef6e2ae33419200606590b15a55f8564fd7169848e2ee9920387535e8d8",
+      "probe.sha256": "d83a5689538995de958f48de18d6356deff5b9cf2f51373d9fd42216f6871c41",
+      "result.json": "3e3c2e22c7f189ee57e87d472258c7f2756c3a52ad9357c8b6ff2324ba8e0421",
+      "summary.json": "07be5409a612db728773902b0e26a2a3b351e55be9017c09bce8051610a0c5ab",
+      "SHA256SUMS": "4afda9950a97d054753e390c1d1ef8dc9cf30419feb265265ecf24115a809449"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      1101307,
+      1111307,
+      1121307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "invalidity_review": {
+    "invalid_reasons": [
+      "domain_eligible_fraction:cafeteria:speech",
+      "global_eligible_fraction:speech"
+    ],
+    "target_cases": 168,
+    "target_cases_with_any_eligible_target": 168,
+    "global": {
+      "noise": {
+        "raw_targets": 9336,
+        "eligible_targets": 8276,
+        "excluded_targets": 1060,
+        "eligible_fraction": 0.8864610111396743,
+        "required_fraction": 0.75,
+        "gate_passed": true
+      },
+      "speech": {
+        "raw_targets": 7713,
+        "eligible_targets": 5746,
+        "excluded_targets": 1967,
+        "eligible_fraction": 0.7449760145209386,
+        "required_fraction": 0.75,
+        "gate_passed": false,
+        "shortfall": 0.0050239854790614
+      }
+    },
+    "cafeteria_speech": {
+      "raw_targets": 782,
+      "eligible_targets": 433,
+      "excluded_targets": 349,
+      "eligible_fraction": 0.5537084398976982,
+      "required_fraction": 0.6,
+      "gate_passed": false,
+      "shortfall": 0.0462915601023018
+    },
+    "secondary_scenario_snr_reverb_coverage_gates_passed": true,
+    "denominator_correction_worked": true,
+    "experiment_design_coverage_failure_not_shipping_failure": true
+  },
+  "invalid_observations": {
+    "interpretation_allowed": false,
+    "reason": "The reference-ready denominator semantics are correct, but preregistered speech eligibility coverage failed globally and in cafeteria. Counterfactual fractions from this run are retained only as invalid-run traces and must not be used to rank mean, concentration, their joint reference, mappings, thresholds, or shipping candidates.",
+    "noise_rescue_fraction": {
+      "mean_reference": 0.3419526341227646,
+      "concentration_reference": 0.569961333977767,
+      "both_reference": 0.8579023682938618
+    },
+    "speech_preservation_fraction": {
+      "mean_reference": 0.8776540201879568,
+      "concentration_reference": 0.18726070309780718,
+      "both_reference": 0.08353637312913331
+    }
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i028-ns-upstream-reference-readiness-temporal-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use entirely fresh public-development seeds and the unchanged shipping mirrors, but do not run component counterfactuals. For every raw disagreement target, record the causal prior ordinary-noise reference count, target frame/time from warmup, first frame/time at which the fixed eight-reference pool becomes ready, excluded-versus-eligible status, and ordinary-noise reference arrival/persistence summaries. Decompose readiness separately for oracle-speech and oracle-noise across noise domain, scenario, SNR and reverb, with special attention to cafeteria speech. The goal is to determine whether failed speech coverage comes from early target timing, scarce ordinary-noise reference arrival, or condition-specific ordering before designing any new reference mechanism.",
+    "required_gates": [
+      "fresh seeds disjoint from I025/I026/I027",
+      "fixed eight-frame readiness definition retained as an observation boundary",
+      "all raw disagreement targets represented exactly once in readiness accounting",
+      "global and per-noise-domain raw target minimums",
+      "shipping mirrors remain exact",
+      "scenario/SNR/reverb readiness summaries reported without component counterfactual interpretation"
+    ],
+    "prohibited": [
+      "reuse of I027 seeds",
+      "reinterpretation of I027 invalid component fractions",
+      "post-hoc lowering of the eight-frame readiness threshold",
+      "future-frame reference leakage",
+      "component counterfactual ranking",
+      "component reweighting",
+      "mapping selection",
+      "threshold tuning",
+      "tracker alpha changes",
+      "shipping source changes",
+      "candidate selection",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i027-36570600341/result.json",
+  "verification_limits": [
+    "I027 is terminally invalid for its preregistered component-causal question because the global oracle-speech eligibility fraction missed the frozen 0.75 gate and cafeteria oracle-speech missed the frozen 0.60 per-domain gate; the run must not be rerun.",
+    "The global speech miss is small in absolute terms, but the preregistered threshold is authoritative and must not be relaxed after observing the data.",
+    "Eligible-only denominator semantics were correct and every target case contained at least one eligible target; this does not override failed population-coverage gates.",
+    "The raw rescue, attribution, gap-reduction and speech-preservation values from the invalid result are non-authoritative and must not be used to rank components or mappings.",
+    "Exact NS/VAD mirrors demonstrate implementation identity only; they do not rescue failed readiness coverage.",
+    "No validation-grade, blind, hosted-real, HIL, product-certification, confirmation, source-merge or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "source_candidate_selected": false,
+    "component_selected": false,
+    "component_ranked_for_shipping": false,
+    "mapping_selected": false,
+    "component_reweighted": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

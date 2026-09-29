@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i029-ns-upstream-independent-donor-reference-feasibility-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i029-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i029-ns-upstream-independent-donor-reference-feasibility-v1.json"
 EVALUATOR=ROOT/"tests/validation/i029_ns_upstream_independent_donor_reference_feasibility.py"
 MATERIALIZE="Materialize fresh donor and target public-development-v3 partitions"

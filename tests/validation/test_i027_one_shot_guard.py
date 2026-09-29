@@ -25,7 +25,7 @@ PRIOR={"id":16,"run_attempt":1}
 def guard_source() -> str:
     text=WORKFLOW.read_text(encoding="utf-8")
     block=text.split("      - name: Enforce one-shot I027 diagnostic execution\n",1)[1]
-    block=block.split("      - name: Bind frozen causal inputs and unchanged shipping source\n",1)[0]
+    block=block.split("      - name: Bind frozen reference-ready inputs and unchanged shipping source\n",1)[0]
     return textwrap.dedent(
         block.split("python3 - <<'PY'\n",1)[1].split("\n          PY",1)[0]
     )

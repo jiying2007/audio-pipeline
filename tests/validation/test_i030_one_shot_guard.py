@@ -2,6 +2,7 @@
 """Exercise I030 one-shot authority and donor-stability diagnostic boundaries."""
 
 from contextlib import redirect_stdout
+import ast
 import io
 import json
 import os
@@ -16,6 +17,7 @@ ROOT=Path(__file__).resolve().parents[2]
 WORKFLOW=ROOT/".github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.json"
 EVALUATOR=ROOT/"tests/validation/i030_ns_upstream_donor_joint_residual_stability_decomposition.py"
+I029_EVALUATOR=ROOT/"tests/validation/i029_ns_upstream_independent_donor_reference_feasibility.py"
 MATERIALIZE="Materialize fresh I030 donor and target public-development-v3 partitions"
 EVALUATE="Evaluate candidate-zero donor joint-residual stability decomposition"
 CURRENT={"id":30,"run_attempt":1}
@@ -214,6 +216,63 @@ class I030GuardTests(unittest.TestCase):
             "upstream_probability",
         ):
             self.assertNotIn(forbidden,score)
+
+    def test_i029_matching_rule_is_ast_equivalent_and_negative_map_frozen(self):
+        def function_dump(path: Path,name: str) -> str:
+            tree=ast.parse(path.read_text(encoding="utf-8"))
+            funcs=[
+                node for node in tree.body
+                if isinstance(node,ast.FunctionDef) and node.name==name
+            ]
+            self.assertEqual(len(funcs),1)
+            node=funcs[0]
+            node=ast.FunctionDef(
+                name=node.name,
+                args=node.args,
+                body=[
+                    item for item in node.body
+                    if not (
+                        isinstance(item,ast.Expr)
+                        and isinstance(item.value,ast.Constant)
+                        and isinstance(item.value.value,str)
+                    )
+                ],
+                decorator_list=node.decorator_list,
+                returns=node.returns,
+                type_comment=node.type_comment,
+            )
+            return ast.dump(node,include_attributes=False)
+
+        self.assertEqual(
+            function_dump(I029_EVALUATOR,"scenario_group"),
+            function_dump(EVALUATOR,"scenario_group"),
+        )
+        self.assertEqual(
+            function_dump(I029_EVALUATOR,"compatibility_score"),
+            function_dump(EVALUATOR,"compatibility_score"),
+        )
+
+        def assigned_literal(path: Path,name: str):
+            tree=ast.parse(path.read_text(encoding="utf-8"))
+            for node in tree.body:
+                if (
+                    isinstance(node,ast.Assign)
+                    and any(
+                        isinstance(target,ast.Name) and target.id==name
+                        for target in node.targets
+                    )
+                ):
+                    return ast.literal_eval(node.value)
+            self.fail(f"missing assignment: {name}")
+
+        self.assertEqual(
+            assigned_literal(I029_EVALUATOR,"DONOR_SELECT_K"),
+            assigned_literal(EVALUATOR,"DONOR_SELECT_K"),
+        )
+        self.assertEqual(
+            assigned_literal(I029_EVALUATOR,"NEGATIVE_DOMAIN"),
+            assigned_literal(EVALUATOR,"NEGATIVE_DOMAIN"),
+        )
 
     def test_dispatch_binds_i029_closure_and_shipping_sources(self):
         text=WORKFLOW.read_text(encoding="utf-8")

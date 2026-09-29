@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i024-vad-disagreement-feature-separability-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i024-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i024-vad-disagreement-feature-separability-v1.json"
 MATERIALIZE="Materialize fresh public-development-v3 partitions"
 EVALUATE="Evaluate candidate-zero feature separability"

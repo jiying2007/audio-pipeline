@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i025-ns-upstream-disagreement-noise-source-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "RESEARCH_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "589718ec7eceb2db939130532589eedf040b5198",
+  "decision": "NS_UPSTREAM_DISAGREEMENT_NOISE_SOURCE_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "FALSE_HIGH_NOISE_ASSOCIATED_WITH_SPARSE_POSTERIOR_GAP_SLOW_UPDATE_LOCK_NOT_SUPPORTED_NO_CANDIDATE",
+  "reviewed_interpretation": "Fresh I025 public-development evidence is valid and both the NS upstream mirror and VAD shipping mirror are exact. The authoritative populations contain 8,417 oracle-noise disagreement frames, 20,664 ordinary oracle-noise reference frames, and 8,655 oracle-speech disagreement frames. Variables that are partly defined by the selected population, especially disagreement_run_length and upstream_high_run_length, are treated only as persistence descriptions and not as causal source evidence. Among non-definition upstream component/state diagnostics, the strongest stable association with false-high noise is a sparser posterior shape: gap_to_concentration has global separability AUC 0.7540 with a seven-domain floor 0.7236; positive_bin_fraction is lower on disagreement-noise (median 0.2512 versus 0.4233 ordinary noise) and remains stable across domains. The gap appears to grow primarily because mean posterior activity is lower on disagreement-noise (mirror_mean median 0.1255 versus 0.2113), while concentration is only modestly higher (0.7731 versus 0.7451) and has weak noise-source cross-domain separation. The preregistered slow-noise-update self-lock hypothesis is not supported: slow_update_bin_fraction is lower on disagreement-noise (median 0.1395 versus 0.2419 ordinary noise), its three-frame mean is also lower, and mean_post_ratio is lower (1.2676 versus 1.7499). For disagreement speech versus disagreement noise, concentration_mean3, max_post_ratio and mirror_concentration retain moderate separation, confirming that useful upstream structure remains even though no mapping or component is selected. This reconciles with I014: concentration-minus-mean synergy can remain useful overall in nonstationary regimes while a sparse-posterior subset of oracle noise still produces false-high gap values. I025 therefore selects no component, weight, mapping, threshold, tracker alpha or source candidate. The next diagnostic may use fresh authority to perform a matched oracle-noise component counterfactual that independently replaces only mean or only concentration with same-case ordinary-noise references, using the unchanged 0.55 upstream guard solely as a causal readout.",
+  "authoritative_execution": {
+    "run_id": 36516678401,
+    "run_attempt": 1,
+    "head_sha": "3c3e3c1c2c98fbee70a21b8bf276949ba2f71a96",
+    "artifact_id": 11011413710,
+    "artifact_name": "i025-ns-upstream-disagreement-noise-36516678401",
+    "artifact_size_bytes": 21981,
+    "artifact_sha256": "7f9e5ec608db4d2187d1459a11c81cf309f985b0f12bd84513c564a101ded4d7",
+    "member_sha256": {
+      "build-info.txt": "bc6795a814f565e17d9b9f76cdb8d1a78074e3d8bc5221da4c7fe6b95b027856",
+      "contract.json": "6f17cd220d57af807ac1da51df33662b111a2a2c217dbfbad54fb1e7e62233c9",
+      "corpora.sha256": "f5e3c934737e25a20648d1382aed0334035a677440d0749e205de166053485f8",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "c3b59808845ca7afaa9ffe7b85d5b9063a13c751b7322f56635c90ec2c43c4a6",
+      "materialization.json": "5a4a02add824a8c49678d4ce91a1b6fa13545e6ba741d8ca12e3a8ff4ac77e97",
+      "probe.sha256": "94b0c6f2da833a831ad1cdc39fdd1a52a7f8aba19bd026bc255ad1e85267aa18",
+      "result.json": "2ab2e1c1f8e3a3e428a10b730b0a9d95f2ec46337cf7bc269c89aedf57e79392",
+      "summary.json": "056b31cf091b314c9d15739203a607b77b7f052f7d9e2eb27e3b85a31b734081",
+      "SHA256SUMS": "a4d2203e2cb8d48c66eb81709cc5d3f79c6b91a1091958232729f53f464b3c1f"
+    }
+  },
+  "fresh_authority": {
+    "seeds": [
+      901307,
+      911307,
+      921307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "population_counts": {
+    "noise_disagreement": 8417,
+    "noise_reference": 20664,
+    "speech_disagreement": 8655
+  },
+  "noise_source_review": {
+    "gap_to_concentration": {
+      "separability_auc": 0.753994373838577,
+      "cross_domain_floor": 0.7235526211640977,
+      "noise_disagreement_median": 0.8346305005720792,
+      "noise_reference_median": 0.6827797455573463
+    },
+    "positive_bin_fraction": {
+      "separability_auc": 0.670034548832394,
+      "cross_domain_floor": 0.6892144767135733,
+      "noise_disagreement_median": 0.251162797,
+      "noise_reference_median": 0.423255801,
+      "direction": "lower_on_noise_disagreement"
+    },
+    "mirror_mean": {
+      "separability_auc": 0.6120561697605977,
+      "cross_domain_floor": 0.6289646060075789,
+      "noise_disagreement_median": 0.125548422,
+      "noise_reference_median": 0.211335413,
+      "direction": "lower_on_noise_disagreement"
+    },
+    "mirror_concentration": {
+      "separability_auc": 0.6066082593479238,
+      "cross_domain_floor": 0.5080561750463207,
+      "noise_disagreement_median": 0.773111284,
+      "noise_reference_median": 0.7450802625,
+      "direction": "higher_on_noise_disagreement_but_weak_cross_domain"
+    },
+    "slow_update_bin_fraction": {
+      "separability_auc": 0.6206651479310326,
+      "cross_domain_floor": 0.6386875589949139,
+      "noise_disagreement_median": 0.139534891,
+      "noise_reference_median": 0.241860464,
+      "direction": "lower_on_noise_disagreement"
+    },
+    "slow_update_bin_fraction_mean3": {
+      "separability_auc": 0.613962379843422,
+      "cross_domain_floor": 0.6253029801422381,
+      "noise_disagreement_median": 0.1472868188,
+      "noise_reference_median": 0.241860469,
+      "direction": "lower_on_noise_disagreement"
+    },
+    "mean_post_ratio": {
+      "separability_auc": 0.5776403543728745,
+      "noise_disagreement_median": 1.26762378,
+      "noise_reference_median": 1.7498973,
+      "direction": "lower_on_noise_disagreement"
+    }
+  },
+  "disagreement_class_review": {
+    "concentration_mean3": {
+      "separability_auc": 0.7140537495743773,
+      "cross_domain_floor": 0.6574341349087791,
+      "speech_disagreement_median": 0.842470487,
+      "noise_disagreement_median": 0.7584257123333332
+    },
+    "max_post_ratio": {
+      "separability_auc": 0.7120859774107132,
+      "cross_domain_floor": 0.6365684633787472,
+      "speech_disagreement_median": 29.3095322,
+      "noise_disagreement_median": 12.2694769
+    },
+    "mirror_concentration": {
+      "separability_auc": 0.6992543356897786,
+      "cross_domain_floor": 0.6408971954219222,
+      "speech_disagreement_median": 0.84640193,
+      "noise_disagreement_median": 0.773111284
+    }
+  },
+  "definition_conditioned_metrics": {
+    "disagreement_run_length": {
+      "noise_source_separability_auc": 1,
+      "note": "Tautological for noise_disagreement versus noise_reference because disagreement membership defines a positive run and reference frames are explicitly non-disagreement; not causal source evidence."
+    },
+    "upstream_high_run_length": {
+      "noise_source_separability_auc": 0.9555984914938339,
+      "note": "Strong persistence description but partly conditioned by population selection on upstream_probability > 0.55; not a component-cause selector."
+    }
+  },
+  "hypothesis_review": {
+    "native_slow_update_self_lock_supported": false,
+    "sparse_posterior_gap_association_supported": true,
+    "stable_component_candidate_selected": false,
+    "explanation": "False-high noise is associated with fewer active posterior bins and a larger concentration-minus-mean gap relative to concentration, while slow-update occupancy and mean post-ratio are lower rather than higher. The evidence supports sparse posterior gap formation as the next causal localization target but does not identify a shippable component rule."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i026-ns-upstream-matched-component-counterfactual-v1",
+    "authority": "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+    "rationale": "On entirely fresh public-development authority, construct same-case oracle-noise references from ordinary-noise frames and independently replace only the existing mirror mean or only the existing concentration when evaluating false-high disagreement-noise gap. Use the unchanged shipping upstream guard 0.55 only as a diagnostic readout of how often each replacement removes false-high status. Also report the same substitutions on disagreement-speech frames to expose whether a component is merely necessary for both classes. This localizes causal contribution without selecting a new mapping or source candidate.",
+    "prohibited": [
+      "reuse of I025 seeds",
+      "component reweighting",
+      "mean or concentration mapping selection",
+      "upstream guard threshold tuning",
+      "VAD guard threshold tuning",
+      "tracker alpha changes",
+      "shipping source changes",
+      "candidate selection",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i025-36516678401/result.json",
+  "verification_limits": [
+    "I025 is candidate-zero and uses development-only oracle labels; AUCs and medians describe the constructed public-development distribution and are not calibrated product-environment rates.",
+    "The per-bin upstream internals are produced by a deterministic mirror tracker whose aggregate concentration-minus-mean gap exactly matches shipping NS speech_probability on the authoritative run; they remain diagnostic observations rather than a new runtime interface.",
+    "disagreement_run_length and upstream_high_run_length are conditioned by the population definition and must not be interpreted as independent causal source features.",
+    "Association of sparse posterior shape with false-high noise does not prove that changing mean, concentration, sparsity, tracker alpha or any mapping will improve shipping behavior.",
+    "The lower slow_update_bin_fraction and lower mean_post_ratio on false-high noise contradict the preregistered slow-update self-lock hypothesis under this authority, but do not prove tracker dynamics are irrelevant in every regime.",
+    "I014 remains authoritative that concentration-minus-mean synergy is useful overall in nonstationary regimes; I025 only localizes a false-high subset and does not authorize removal or reweighting of either component.",
+    "The artifact contains aggregate per-case/per-slice evidence and no raw audio archive."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "source_candidate_selected": false,
+    "component_selected": false,
+    "component_ranked_for_shipping": false,
+    "mapping_selected": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "model_fitted": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

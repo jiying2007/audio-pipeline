@@ -30,7 +30,7 @@
     "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
     "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
     "evaluator_path": "tests/validation/i026_ns_upstream_matched_component_counterfactual.py",
-    "evaluator_git_blob_sha": "67b2058533f4a877a6b893f10acb3e8ce262d11f"
+    "evaluator_git_blob_sha": "337f139e9e41e28a539dee51c81712e007c802d3"
   },
   "fresh_diagnostic_authority": {
     "seeds": [
@@ -70,7 +70,8 @@
     "concentration_only": "clamp(reference_concentration - original_mean, 0, 1)",
     "both": "clamp(reference_concentration - reference_mean, 0, 1)",
     "reference_selected_before_target_readout": true,
-    "oracle_reference_not_shippable": true
+    "oracle_reference_not_shippable": true,
+    "reference_time_order": "prior ordinary-noise frames only; future frames forbidden"
   },
   "readout": {
     "threshold": "unchanged shipping upstream guard 0.55",

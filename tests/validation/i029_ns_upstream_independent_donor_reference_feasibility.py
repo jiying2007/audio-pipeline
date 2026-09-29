@@ -385,6 +385,8 @@ def evaluate(
 
     donor_ids={r["metadata"]["case_key"] for r in donor_records}
     target_ids={r["metadata"]["case_key"] for r in target_records}
+    require(len(donor_ids)==len(donor_records),"duplicate donor case identity")
+    require(len(target_ids)==len(target_records),"duplicate target case identity")
     require(donor_ids.isdisjoint(target_ids),"donor/target case identity overlap")
 
     donor_ready=[r for r in donor_records if r["first_ready_reference"] is not None]

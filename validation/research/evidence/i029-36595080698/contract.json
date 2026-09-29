@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i029-ns-upstream-independent-donor-reference-feasibility-v1",
+  "phase": "candidate-zero-independent-donor-reference-feasibility-diagnostic",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "1195d4e37f93093f831a54fd47c79df9da3881a9",
+  "predecessor": {
+    "i028_closure": ".github/research/continuous-optimization/development-v4/i028-ns-upstream-reference-readiness-temporal-decomposition-v1-result.json",
+    "i028_closure_blob_sha": "c915d6253138dff245626fa9ceb99469f02b1d35",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_UPSTREAM_REFERENCE_READINESS_TEMPORAL_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "PRE_READY_SPEECH_DRIVEN_BY_EARLY_TARGET_AND_DELAYED_INITIAL_REFERENCE_ARRIVAL_CAFETERIA_AMPLIFIED_NO_CANDIDATE",
+    "required_followup_id": "i029-ns-upstream-independent-donor-reference-feasibility-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Can a causally pre-available ordinary-noise reference built only from disjoint metadata-matched donor cases approximate each target case's own first-ready eight-frame ordinary-noise reference better than a preregistered cross-noise-domain negative-control donor, especially for target cases that exhibit pre-ready speech?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i029_ns_upstream_independent_donor_reference_feasibility.py",
+    "evaluator_git_blob_sha": "9929e8feb6a056b8c61c6845c4f90a972300a5fc"
+  },
+  "fresh_diagnostic_authority": {
+    "donor_seeds": [
+      1301307,
+      1311307,
+      1321307
+    ],
+    "target_seeds": [
+      1331307,
+      1341307,
+      1351307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15
+  },
+  "reference_semantics": {
+    "readiness_reference_frames": 8,
+    "donor_reference_available_before_target_evaluation": true,
+    "donor_case_summary": "median mirror_mean, mirror_concentration and mirror_gap over the first eight ordinary-noise non-disagreement frames after warmup",
+    "target_benchmark": "the target case's own first-ready snapshot: medians over its first eight ordinary-noise non-disagreement frames after warmup",
+    "target_benchmark_role": "retrospective agreement benchmark only; never a causal input for earlier target frames",
+    "donor_aggregate": "component-wise median across the selected K donor-case first-ready summaries",
+    "donor_select_k": 3,
+    "same_target_future_frames_in_donor_reference": false,
+    "readiness_threshold_changed": false
+  },
+  "donor_target_separation": {
+    "donor_and_target_seed_sets_disjoint": true,
+    "case_identity": "(seed, case_id)",
+    "donor_selection_may_use_target_outputs": false,
+    "donor_selection_metadata_only": [
+      "noise_domain",
+      "scenario",
+      "reverb",
+      "snr_db",
+      "case_key for deterministic tie break"
+    ],
+    "matching_metadata_role": "development/synthetic diagnostic metadata only; no shipping availability or deployability is asserted"
+  },
+  "matched_donor_selection": {
+    "same_noise_domain_required": true,
+    "ordering": "lexicographically minimize [scenario_group_mismatch, reverb_mismatch, snr_missing_penalty, absolute_snr_distance, exact_scenario_mismatch, case_key]",
+    "scenario_groups": {
+      "research-public-noise-only": "noise-only",
+      "research-public-noisy-clean": "mix",
+      "research-public-noisy-reverb": "mix"
+    }
+  },
+  "negative_control": {
+    "purpose": "preregistered cross-noise-domain control using the identical metadata-compatibility ordering",
+    "domain_map": {
+      "kitchen": "traffic",
+      "traffic": "living",
+      "living": "office",
+      "office": "cafeteria",
+      "cafeteria": "bus",
+      "bus": "field",
+      "field": "kitchen"
+    }
+  },
+  "populations": {
+    "evaluation_scope": "all metadata-defined noise-domain target cases; clean-only cases are outside donor-domain feasibility scope",
+    "primary_directional_population": "target cases with at least one pre-ready oracle-speech disagreement target under the unchanged eight-reference observation boundary",
+    "cafeteria_secondary_population": "all benchmarkable cafeteria target cases",
+    "donor_selection_independent_of_population_outcomes": true
+  },
+  "directional_hypothesis": {
+    "primary_population": "target cases with at least one pre-ready speech target",
+    "primary_metric": "gap",
+    "comparison": "absolute error of matched donor reference versus absolute error of fixed cross-domain negative-control reference against target first-ready benchmark",
+    "support_requires": [
+      "one-sided paired sign-test p <= 0.01",
+      "median paired improvement (negative error - matched error) > 0",
+      "matched-better fraction among non-ties > 0.5"
+    ],
+    "maximum_one_sided_sign_test_p": 0.01,
+    "mean_and_concentration_metrics": "secondary descriptive diagnostics only"
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "expected_target_cases": 126,
+    "expected_donor_cases": 126,
+    "minimum_ready_donor_cases": 120,
+    "minimum_ready_donors_per_domain": 12,
+    "minimum_target_benchmark_coverage": 0.95,
+    "minimum_target_benchmark_coverage_per_domain": 0.8,
+    "minimum_matched_donor_coverage": 0.95,
+    "minimum_negative_control_coverage": 0.95,
+    "minimum_primary_pre_ready_speech_paired_cases": 30,
+    "minimum_cafeteria_paired_cases": 12
+  },
+  "diagnostic_outputs": [
+    "global and per-domain donor/benchmark coverage",
+    "per-target selected matched and negative donor case identities",
+    "matched and negative absolute errors for mean, concentration and gap",
+    "paired median error improvement and matched-better fractions",
+    "one-sided paired sign test for the preregistered primary gap metric",
+    "pre-ready-speech primary-population paired summary",
+    "cafeteria paired summary",
+    "shipping mirror identity"
+  ],
+  "forbidden_feedback": {
+    "i025_seeds": true,
+    "i026_seeds": true,
+    "i027_seeds": true,
+    "i028_seeds": true,
+    "i028_result_for_donor_selection": true,
+    "target_outputs_for_donor_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_INDEPENDENT_DONOR_REFERENCE_FEASIBILITY_DECOMPOSED_REVIEW_REQUIRED": "Fresh donor/target authority, disjoint identity, frozen metadata-only donor selection, benchmark/coverage gates and exact mirrors are valid. Report matched-versus-negative donor agreement and the preregistered directional hypothesis for review without selecting a reference source or running component counterfactuals.",
+    "I029_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, frozen-input identity, donor/target disjointness, donor/benchmark coverage, per-domain donor availability, paired-population coverage, shipping mirror or authority preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_run_component_counterfactual": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false,
+    "may_assume_matching_metadata_available_in_shipping": false
+  },
+  "next_review": "Use I029 only to judge whether metadata-matched independent donor references have measurable agreement advantage over the fixed cross-domain control on the pre-ready-speech population. Any reference-source candidate, donor persistence mechanism, component counterfactual, mapping or shipping change requires a new independently preregistered authority."
+}

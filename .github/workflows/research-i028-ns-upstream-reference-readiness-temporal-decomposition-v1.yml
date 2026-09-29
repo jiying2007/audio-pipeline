@@ -64,8 +64,14 @@ jobs:
           assert c['readiness_boundary']['alternative_thresholds_evaluated'] is False
           assert c['readiness_boundary']['threshold_selection'] is False
           assert c['diagnostic_readout']['component_counterfactual'] is False
+          assert c['diagnostic_readout']['component_mapping_selection'] is False
           assert c['diagnostic_readout']['threshold_search'] is False
           assert c['diagnostic_readout']['candidate_selection'] is False
+          assert c['diagnostic_readout']['target_prior_reference_count'] is True
+          assert c['diagnostic_readout']['target_frame_index_from_warmup'] is True
+          assert c['diagnostic_readout']['target_frames_until_first_ready'] is True
+          assert c['diagnostic_readout']['reference_interarrival_summary'] is True
+          assert c['diagnostic_gates']['all_raw_targets_represented_exactly_once'] is True
           assert all(value is False for value in c['authority_boundary'].values())
 
           predecessor=Path(c['predecessor']['i027_closure'])
@@ -99,7 +105,8 @@ jobs:
               ]
               assert not matches, (
                   f'I028 seed is not fresh: {seed}\n'+'\n'.join(matches))
-          PY      - uses: ./.github/actions/setup-ccache
+          PY
+      - uses: ./.github/actions/setup-ccache
         with:
           namespace: i028-ns-reference-readiness-temporal-contract
       - name: Compile frozen I025 dual-mirror probe with strict warnings
@@ -186,7 +193,7 @@ jobs:
           def blob(path):
               return subprocess.check_output(
                   ['git','rev-parse','HEAD:'+path],text=True).strip()
-          assert blob(c['predecessor']['i026_closure'])==c['predecessor']['i026_closure_blob_sha']
+          assert blob(c['predecessor']['i027_closure'])==c['predecessor']['i027_closure_blob_sha']
           assert blob(c['dataset_authority']['lock_path'])==c['dataset_authority']['dataset_lock_git_blob_sha']
           assert blob(c['dataset_authority']['builder_path'])==c['dataset_authority']['builder_git_blob_sha']
           assert blob(c['diagnostic_inputs']['probe_path'])==c['diagnostic_inputs']['probe_git_blob_sha']
@@ -253,6 +260,7 @@ jobs:
                   'invalid_reasons':r['invalid_reasons'],
                   'fresh_diagnostic_seeds':r['fresh_diagnostic_seeds'],
                   'shipping_mirror':r['shipping_mirror'],
+                  'target_accounting':r['target_accounting'],
                   'global':r['global'],
                   'slices':r['slices'],
                   'interpretation_boundary':r['interpretation_boundary'],
@@ -278,6 +286,8 @@ jobs:
           assert r['candidate_budget_consumed']==0
           assert r['confirmation_budget_consumed']==0
           assert r['shipping_mirror']['vad_active_mismatch_frames']==0
+          assert r['target_accounting']['all_raw_targets_represented_exactly_once'] is True
+          assert r['target_accounting']['raw_target_count']==r['target_accounting']['target_receipt_count']
           assert r['interpretation_boundary']['readiness_threshold_fixed_at_prior_reference_frames']==8
           assert r['interpretation_boundary']['no_alternative_readiness_threshold_evaluated'] is True
           assert r['interpretation_boundary']['no_component_counterfactual'] is True
@@ -285,6 +295,8 @@ jobs:
           assert r['interpretation_boundary']['no_threshold_search'] is True
           assert r['interpretation_boundary']['no_shipping_candidate'] is True
           assert r['interpretation_boundary']['temporal_observation_only'] is True
+          assert r['interpretation_boundary']['future_readiness_timestamp_retrospective_diagnostic_only'] is True
+          assert r['interpretation_boundary']['per_target_prior_reference_count_recorded'] is True
           assert all(value is False for value in r['authority_boundary'].values())
           PY
       - name: Publish bounded diagnostic summary

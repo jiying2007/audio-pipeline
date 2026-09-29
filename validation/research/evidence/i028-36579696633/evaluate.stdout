@@ -1,0 +1,1 @@
+{"cases_first_target_before_ready": 139, "decision": "NS_UPSTREAM_REFERENCE_READINESS_TEMPORAL_DECOMPOSED_REVIEW_REQUIRED", "invalid_reasons": [], "median_ready_minus_first_target_frames": 36, "pre_ready_fraction": {"noise": 0.1292717416921989, "speech": 0.3636682242990654}}

@@ -1,0 +1,1313 @@
+{
+  "decision": "NS_UPSTREAM_REFERENCE_READINESS_TEMPORAL_DECOMPOSED_REVIEW_REQUIRED",
+  "fresh_diagnostic_seeds": [
+    1201307,
+    1211307,
+    1221307
+  ],
+  "global": {
+    "cases_first_target_before_ready": 139,
+    "cases_never_ready": 1,
+    "first_target_before_ready_case_fraction": 0.8273809523809523,
+    "median_first_ready_frame_index": 43,
+    "median_first_reference_frame_index": 10.0,
+    "median_first_target_frame_index": 4.0,
+    "median_max_reference_interarrival_frames": 40.5,
+    "median_pre_ready_prior_reference_count": {
+      "noise": 3,
+      "speech": 2
+    },
+    "median_prior_reference_count_at_target": {
+      "noise": 39.0,
+      "speech": 17.0
+    },
+    "median_ready_minus_first_target_frames": 36,
+    "median_reference_frames_before_first_target": 0.0,
+    "median_reference_interarrival_frames": 1.0,
+    "median_target_frame_index": {
+      "pre_ready_noise": 37,
+      "pre_ready_speech": 51,
+      "ready_noise": 184,
+      "ready_speech": 209
+    },
+    "ordinary_reference_frames": 20668,
+    "pre_ready_fraction": {
+      "noise": 0.1292717416921989,
+      "speech": 0.3636682242990654
+    },
+    "pre_ready_noise_targets": 1097,
+    "pre_ready_prior_reference_count_histogram": {
+      "noise": {
+        "0": 274,
+        "1": 134,
+        "2": 120,
+        "3": 88,
+        "4": 142,
+        "5": 92,
+        "6": 133,
+        "7": 114
+      },
+      "speech": {
+        "0": 1290,
+        "1": 181,
+        "2": 372,
+        "3": 199,
+        "4": 211,
+        "5": 248,
+        "6": 297,
+        "7": 315
+      }
+    },
+    "pre_ready_speech_targets": 3113,
+    "raw_noise_targets": 8486,
+    "raw_speech_targets": 8560,
+    "ready_fraction": {
+      "noise": 0.8707282583078011,
+      "speech": 0.6363317757009346
+    },
+    "ready_noise_targets": 7389,
+    "ready_speech_targets": 5447,
+    "target_cases": 168
+  },
+  "interpretation_boundary": {
+    "future_readiness_timestamp_retrospective_diagnostic_only": true,
+    "no_alternative_readiness_threshold_evaluated": true,
+    "no_component_counterfactual": true,
+    "no_component_mapping_selected": true,
+    "no_shipping_candidate": true,
+    "no_threshold_search": true,
+    "oracle_labels_diagnostic_only": true,
+    "per_target_prior_reference_count_recorded": true,
+    "readiness_threshold_fixed_at_prior_reference_frames": 8,
+    "temporal_observation_only": true
+  },
+  "invalid_reasons": [],
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  },
+  "slices": {
+    "clean_only:true": {
+      "cases_first_target_before_ready": 39,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.9285714285714286,
+      "median_first_ready_frame_index": 59.5,
+      "median_first_reference_frame_index": 16.5,
+      "median_first_target_frame_index": 2.0,
+      "median_max_reference_interarrival_frames": 44.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 3,
+        "speech": 2.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 35,
+        "speech": 21.0
+      },
+      "median_ready_minus_first_target_frames": 47.0,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 34,
+        "pre_ready_speech": 45.0,
+        "ready_noise": 186.0,
+        "ready_speech": 201.0
+      },
+      "ordinary_reference_frames": 3525,
+      "pre_ready_fraction": {
+        "noise": 0.17220543806646527,
+        "speech": 0.3321579689703808
+      },
+      "pre_ready_noise_targets": 285,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 66,
+          "1": 48,
+          "2": 22,
+          "3": 29,
+          "4": 40,
+          "5": 25,
+          "6": 25,
+          "7": 30
+        },
+        "speech": {
+          "0": 376,
+          "1": 40,
+          "2": 69,
+          "3": 87,
+          "4": 72,
+          "5": 75,
+          "6": 93,
+          "7": 130
+        }
+      },
+      "pre_ready_speech_targets": 942,
+      "raw_noise_targets": 1655,
+      "raw_speech_targets": 2836,
+      "ready_fraction": {
+        "noise": 0.8277945619335347,
+        "speech": 0.6678420310296191
+      },
+      "ready_noise_targets": 1370,
+      "ready_speech_targets": 1894,
+      "target_cases": 42
+    },
+    "noise_domain:bus": {
+      "cases_first_target_before_ready": 13,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.7222222222222222,
+      "median_first_ready_frame_index": 21.0,
+      "median_first_reference_frame_index": 3.0,
+      "median_first_target_frame_index": 7.0,
+      "median_max_reference_interarrival_frames": 35.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 4,
+        "speech": 4.5
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 46,
+        "speech": 32.0
+      },
+      "median_ready_minus_first_target_frames": 14.5,
+      "median_reference_frames_before_first_target": 2.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 25,
+        "pre_ready_speech": 50.0,
+        "ready_noise": 173.5,
+        "ready_speech": 230.0
+      },
+      "ordinary_reference_frames": 2686,
+      "pre_ready_fraction": {
+        "noise": 0.09325681492109039,
+        "speech": 0.29975429975429974
+      },
+      "pre_ready_noise_targets": 65,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 16,
+          "1": 3,
+          "2": 1,
+          "3": 11,
+          "4": 9,
+          "5": 8,
+          "6": 11,
+          "7": 6
+        },
+        "speech": {
+          "0": 78,
+          "1": 1,
+          "2": 1,
+          "3": 31,
+          "4": 11,
+          "5": 45,
+          "6": 60,
+          "7": 17
+        }
+      },
+      "pre_ready_speech_targets": 244,
+      "raw_noise_targets": 697,
+      "raw_speech_targets": 814,
+      "ready_fraction": {
+        "noise": 0.9067431850789096,
+        "speech": 0.7002457002457002
+      },
+      "ready_noise_targets": 632,
+      "ready_speech_targets": 570,
+      "target_cases": 18
+    },
+    "noise_domain:cafeteria": {
+      "cases_first_target_before_ready": 15,
+      "cases_never_ready": 1,
+      "first_target_before_ready_case_fraction": 0.8333333333333334,
+      "median_first_ready_frame_index": 44,
+      "median_first_reference_frame_index": 24.0,
+      "median_first_target_frame_index": 5.0,
+      "median_max_reference_interarrival_frames": 45.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 2,
+        "speech": 0.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 36,
+        "speech": 6.0
+      },
+      "median_ready_minus_first_target_frames": 41,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 78,
+        "pre_ready_speech": 71.5,
+        "ready_noise": 188.0,
+        "ready_speech": 225.5
+      },
+      "ordinary_reference_frames": 1655,
+      "pre_ready_fraction": {
+        "noise": 0.10606920022688598,
+        "speech": 0.5445920303605313
+      },
+      "pre_ready_noise_targets": 187,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 65,
+          "1": 7,
+          "2": 34,
+          "3": 4,
+          "4": 8,
+          "5": 14,
+          "6": 42,
+          "7": 13
+        },
+        "speech": {
+          "0": 289,
+          "1": 4,
+          "2": 206,
+          "3": 0,
+          "4": 5,
+          "5": 21,
+          "6": 41,
+          "7": 8
+        }
+      },
+      "pre_ready_speech_targets": 574,
+      "raw_noise_targets": 1763,
+      "raw_speech_targets": 1054,
+      "ready_fraction": {
+        "noise": 0.893930799773114,
+        "speech": 0.45540796963946867
+      },
+      "ready_noise_targets": 1576,
+      "ready_speech_targets": 480,
+      "target_cases": 18
+    },
+    "noise_domain:field": {
+      "cases_first_target_before_ready": 14,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.7777777777777778,
+      "median_first_ready_frame_index": 50.5,
+      "median_first_reference_frame_index": 11.0,
+      "median_first_target_frame_index": 4.5,
+      "median_max_reference_interarrival_frames": 32.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 2,
+        "speech": 1
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 44.0,
+        "speech": 21
+      },
+      "median_ready_minus_first_target_frames": 46.0,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 35,
+        "pre_ready_speech": 45,
+        "ready_noise": 185,
+        "ready_speech": 218.0
+      },
+      "ordinary_reference_frames": 2692,
+      "pre_ready_fraction": {
+        "noise": 0.15714285714285714,
+        "speech": 0.36507936507936506
+      },
+      "pre_ready_noise_targets": 121,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 33,
+          "1": 24,
+          "2": 6,
+          "3": 2,
+          "4": 23,
+          "5": 9,
+          "6": 9,
+          "7": 15
+        },
+        "speech": {
+          "0": 157,
+          "1": 24,
+          "2": 22,
+          "3": 1,
+          "4": 53,
+          "5": 30,
+          "6": 6,
+          "7": 52
+        }
+      },
+      "pre_ready_speech_targets": 345,
+      "raw_noise_targets": 770,
+      "raw_speech_targets": 945,
+      "ready_fraction": {
+        "noise": 0.8428571428571429,
+        "speech": 0.6349206349206349
+      },
+      "ready_noise_targets": 649,
+      "ready_speech_targets": 600,
+      "target_cases": 18
+    },
+    "noise_domain:kitchen": {
+      "cases_first_target_before_ready": 15,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.8333333333333334,
+      "median_first_ready_frame_index": 24.5,
+      "median_first_reference_frame_index": 2.0,
+      "median_first_target_frame_index": 2.0,
+      "median_max_reference_interarrival_frames": 41.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 2,
+        "speech": 2
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 39,
+        "speech": 13
+      },
+      "median_ready_minus_first_target_frames": 18.5,
+      "median_reference_frames_before_first_target": 1.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 14,
+        "pre_ready_speech": 52,
+        "ready_noise": 173.0,
+        "ready_speech": 180.0
+      },
+      "ordinary_reference_frames": 2362,
+      "pre_ready_fraction": {
+        "noise": 0.08842297174111212,
+        "speech": 0.2749658002735978
+      },
+      "pre_ready_noise_targets": 97,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 16,
+          "1": 21,
+          "2": 18,
+          "3": 14,
+          "4": 8,
+          "5": 6,
+          "6": 10,
+          "7": 4
+        },
+        "speech": {
+          "0": 76,
+          "1": 0,
+          "2": 40,
+          "3": 21,
+          "4": 1,
+          "5": 4,
+          "6": 43,
+          "7": 16
+        }
+      },
+      "pre_ready_speech_targets": 201,
+      "raw_noise_targets": 1097,
+      "raw_speech_targets": 731,
+      "ready_fraction": {
+        "noise": 0.9115770282588879,
+        "speech": 0.7250341997264022
+      },
+      "ready_noise_targets": 1000,
+      "ready_speech_targets": 530,
+      "target_cases": 18
+    },
+    "noise_domain:living": {
+      "cases_first_target_before_ready": 15,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.8333333333333334,
+      "median_first_ready_frame_index": 57.5,
+      "median_first_reference_frame_index": 8.0,
+      "median_first_target_frame_index": 5.5,
+      "median_max_reference_interarrival_frames": 43.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 4,
+        "speech": 1.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 32.0,
+        "speech": 11
+      },
+      "median_ready_minus_first_target_frames": 35.0,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 48,
+        "pre_ready_speech": 55.0,
+        "ready_noise": 192,
+        "ready_speech": 209
+      },
+      "ordinary_reference_frames": 2400,
+      "pre_ready_fraction": {
+        "noise": 0.171,
+        "speech": 0.39809296781883197
+      },
+      "pre_ready_noise_targets": 171,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 46,
+          "1": 6,
+          "2": 18,
+          "3": 12,
+          "4": 29,
+          "5": 19,
+          "6": 29,
+          "7": 12
+        },
+        "speech": {
+          "0": 160,
+          "1": 33,
+          "2": 0,
+          "3": 23,
+          "4": 17,
+          "5": 28,
+          "6": 47,
+          "7": 26
+        }
+      },
+      "pre_ready_speech_targets": 334,
+      "raw_noise_targets": 1000,
+      "raw_speech_targets": 839,
+      "ready_fraction": {
+        "noise": 0.829,
+        "speech": 0.601907032181168
+      },
+      "ready_noise_targets": 829,
+      "ready_speech_targets": 505,
+      "target_cases": 18
+    },
+    "noise_domain:office": {
+      "cases_first_target_before_ready": 16,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.8888888888888888,
+      "median_first_ready_frame_index": 41.5,
+      "median_first_reference_frame_index": 12.5,
+      "median_first_target_frame_index": 4.5,
+      "median_max_reference_interarrival_frames": 39.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 3,
+        "speech": 2.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 42.0,
+        "speech": 24
+      },
+      "median_ready_minus_first_target_frames": 22.5,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 32,
+        "pre_ready_speech": 46.0,
+        "ready_noise": 174,
+        "ready_speech": 221
+      },
+      "ordinary_reference_frames": 2665,
+      "pre_ready_fraction": {
+        "noise": 0.14637305699481865,
+        "speech": 0.35182679296346414
+      },
+      "pre_ready_noise_targets": 113,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 25,
+          "1": 14,
+          "2": 15,
+          "3": 14,
+          "4": 22,
+          "5": 5,
+          "6": 2,
+          "7": 16
+        },
+        "speech": {
+          "0": 81,
+          "1": 27,
+          "2": 31,
+          "3": 27,
+          "4": 39,
+          "5": 13,
+          "6": 0,
+          "7": 42
+        }
+      },
+      "pre_ready_speech_targets": 260,
+      "raw_noise_targets": 772,
+      "raw_speech_targets": 739,
+      "ready_fraction": {
+        "noise": 0.8536269430051814,
+        "speech": 0.6481732070365359
+      },
+      "ready_noise_targets": 659,
+      "ready_speech_targets": 479,
+      "target_cases": 18
+    },
+    "noise_domain:traffic": {
+      "cases_first_target_before_ready": 12,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.6666666666666666,
+      "median_first_ready_frame_index": 20.5,
+      "median_first_reference_frame_index": 2.5,
+      "median_first_target_frame_index": 9.5,
+      "median_max_reference_interarrival_frames": 30.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 4.5,
+        "speech": 1
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 45.0,
+        "speech": 12.0
+      },
+      "median_ready_minus_first_target_frames": 17.0,
+      "median_reference_frames_before_first_target": 1.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 58.5,
+        "pre_ready_speech": 39,
+        "ready_noise": 191.5,
+        "ready_speech": 183
+      },
+      "ordinary_reference_frames": 2683,
+      "pre_ready_fraction": {
+        "noise": 0.07923497267759563,
+        "speech": 0.3538205980066445
+      },
+      "pre_ready_noise_targets": 58,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 7,
+          "1": 11,
+          "2": 6,
+          "3": 2,
+          "4": 3,
+          "5": 6,
+          "6": 5,
+          "7": 18
+        },
+        "speech": {
+          "0": 73,
+          "1": 52,
+          "2": 3,
+          "3": 9,
+          "4": 13,
+          "5": 32,
+          "6": 7,
+          "7": 24
+        }
+      },
+      "pre_ready_speech_targets": 213,
+      "raw_noise_targets": 732,
+      "raw_speech_targets": 602,
+      "ready_fraction": {
+        "noise": 0.9207650273224044,
+        "speech": 0.6461794019933554
+      },
+      "ready_noise_targets": 674,
+      "ready_speech_targets": 389,
+      "target_cases": 18
+    },
+    "reverb:false": {
+      "cases_first_target_before_ready": 41,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.9761904761904762,
+      "median_first_ready_frame_index": 75.0,
+      "median_first_reference_frame_index": 21.5,
+      "median_first_target_frame_index": 2.0,
+      "median_max_reference_interarrival_frames": 47.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 4.0,
+        "speech": 2.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 27.0,
+        "speech": 14
+      },
+      "median_ready_minus_first_target_frames": 71.0,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 51.5,
+        "pre_ready_speech": 45.0,
+        "ready_noise": 188.0,
+        "ready_speech": 219
+      },
+      "ordinary_reference_frames": 2821,
+      "pre_ready_fraction": {
+        "noise": 0.1630170316301703,
+        "speech": 0.3979695431472081
+      },
+      "pre_ready_noise_targets": 402,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 90,
+          "1": 27,
+          "2": 51,
+          "3": 25,
+          "4": 47,
+          "5": 38,
+          "6": 72,
+          "7": 52
+        },
+        "speech": {
+          "0": 515,
+          "1": 44,
+          "2": 141,
+          "3": 13,
+          "4": 83,
+          "5": 118,
+          "6": 158,
+          "7": 104
+        }
+      },
+      "pre_ready_speech_targets": 1176,
+      "raw_noise_targets": 2466,
+      "raw_speech_targets": 2955,
+      "ready_fraction": {
+        "noise": 0.8369829683698297,
+        "speech": 0.6020304568527919
+      },
+      "ready_noise_targets": 2064,
+      "ready_speech_targets": 1779,
+      "target_cases": 42
+    },
+    "reverb:true": {
+      "cases_first_target_before_ready": 42,
+      "cases_never_ready": 1,
+      "first_target_before_ready_case_fraction": 1.0,
+      "median_first_ready_frame_index": 64,
+      "median_first_reference_frame_index": 17.0,
+      "median_first_target_frame_index": 5.0,
+      "median_max_reference_interarrival_frames": 48.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 2.0,
+        "speech": 2
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 30,
+        "speech": 15
+      },
+      "median_ready_minus_first_target_frames": 54,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 42.5,
+        "pre_ready_speech": 60,
+        "ready_noise": 185,
+        "ready_speech": 201.0
+      },
+      "ordinary_reference_frames": 2994,
+      "pre_ready_fraction": {
+        "noise": 0.14558366622281402,
+        "speech": 0.3593355001805706
+      },
+      "pre_ready_noise_targets": 328,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 78,
+          "1": 49,
+          "2": 39,
+          "3": 32,
+          "4": 51,
+          "5": 29,
+          "6": 28,
+          "7": 22
+        },
+        "speech": {
+          "0": 399,
+          "1": 97,
+          "2": 162,
+          "3": 99,
+          "4": 56,
+          "5": 55,
+          "6": 46,
+          "7": 81
+        }
+      },
+      "pre_ready_speech_targets": 995,
+      "raw_noise_targets": 2253,
+      "raw_speech_targets": 2769,
+      "ready_fraction": {
+        "noise": 0.854416333777186,
+        "speech": 0.6406644998194294
+      },
+      "ready_noise_targets": 1925,
+      "ready_speech_targets": 1774,
+      "target_cases": 42
+    },
+    "scenario:research-public-clean-preservation": {
+      "cases_first_target_before_ready": 39,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.9285714285714286,
+      "median_first_ready_frame_index": 59.5,
+      "median_first_reference_frame_index": 16.5,
+      "median_first_target_frame_index": 2.0,
+      "median_max_reference_interarrival_frames": 44.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 3,
+        "speech": 2.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 35,
+        "speech": 21.0
+      },
+      "median_ready_minus_first_target_frames": 47.0,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 34,
+        "pre_ready_speech": 45.0,
+        "ready_noise": 186.0,
+        "ready_speech": 201.0
+      },
+      "ordinary_reference_frames": 3525,
+      "pre_ready_fraction": {
+        "noise": 0.17220543806646527,
+        "speech": 0.3321579689703808
+      },
+      "pre_ready_noise_targets": 285,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 66,
+          "1": 48,
+          "2": 22,
+          "3": 29,
+          "4": 40,
+          "5": 25,
+          "6": 25,
+          "7": 30
+        },
+        "speech": {
+          "0": 376,
+          "1": 40,
+          "2": 69,
+          "3": 87,
+          "4": 72,
+          "5": 75,
+          "6": 93,
+          "7": 130
+        }
+      },
+      "pre_ready_speech_targets": 942,
+      "raw_noise_targets": 1655,
+      "raw_speech_targets": 2836,
+      "ready_fraction": {
+        "noise": 0.8277945619335347,
+        "speech": 0.6678420310296191
+      },
+      "ready_noise_targets": 1370,
+      "ready_speech_targets": 1894,
+      "target_cases": 42
+    },
+    "scenario:research-public-noise-only": {
+      "cases_first_target_before_ready": 17,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.40476190476190477,
+      "median_first_ready_frame_index": 7.0,
+      "median_first_reference_frame_index": 0.0,
+      "median_first_target_frame_index": 12.0,
+      "median_max_reference_interarrival_frames": 5.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 1.0,
+        "speech": null
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 113.0,
+        "speech": null
+      },
+      "median_ready_minus_first_target_frames": -5.0,
+      "median_reference_frames_before_first_target": 12.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 7.0,
+        "pre_ready_speech": null,
+        "ready_noise": 174.0,
+        "ready_speech": null
+      },
+      "ordinary_reference_frames": 11328,
+      "pre_ready_fraction": {
+        "noise": 0.038825757575757576,
+        "speech": null
+      },
+      "pre_ready_noise_targets": 82,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 40,
+          "1": 10,
+          "2": 8,
+          "3": 2,
+          "4": 4,
+          "5": 0,
+          "6": 8,
+          "7": 10
+        },
+        "speech": {
+          "0": 0,
+          "1": 0,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0,
+          "6": 0,
+          "7": 0
+        }
+      },
+      "pre_ready_speech_targets": 0,
+      "raw_noise_targets": 2112,
+      "raw_speech_targets": 0,
+      "ready_fraction": {
+        "noise": 0.9611742424242424,
+        "speech": null
+      },
+      "ready_noise_targets": 2030,
+      "ready_speech_targets": 0,
+      "target_cases": 42
+    },
+    "scenario:research-public-noisy-clean": {
+      "cases_first_target_before_ready": 41,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.9761904761904762,
+      "median_first_ready_frame_index": 75.0,
+      "median_first_reference_frame_index": 21.5,
+      "median_first_target_frame_index": 2.0,
+      "median_max_reference_interarrival_frames": 47.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 4.0,
+        "speech": 2.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 27.0,
+        "speech": 14
+      },
+      "median_ready_minus_first_target_frames": 71.0,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 51.5,
+        "pre_ready_speech": 45.0,
+        "ready_noise": 188.0,
+        "ready_speech": 219
+      },
+      "ordinary_reference_frames": 2821,
+      "pre_ready_fraction": {
+        "noise": 0.1630170316301703,
+        "speech": 0.3979695431472081
+      },
+      "pre_ready_noise_targets": 402,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 90,
+          "1": 27,
+          "2": 51,
+          "3": 25,
+          "4": 47,
+          "5": 38,
+          "6": 72,
+          "7": 52
+        },
+        "speech": {
+          "0": 515,
+          "1": 44,
+          "2": 141,
+          "3": 13,
+          "4": 83,
+          "5": 118,
+          "6": 158,
+          "7": 104
+        }
+      },
+      "pre_ready_speech_targets": 1176,
+      "raw_noise_targets": 2466,
+      "raw_speech_targets": 2955,
+      "ready_fraction": {
+        "noise": 0.8369829683698297,
+        "speech": 0.6020304568527919
+      },
+      "ready_noise_targets": 2064,
+      "ready_speech_targets": 1779,
+      "target_cases": 42
+    },
+    "scenario:research-public-noisy-reverb": {
+      "cases_first_target_before_ready": 42,
+      "cases_never_ready": 1,
+      "first_target_before_ready_case_fraction": 1.0,
+      "median_first_ready_frame_index": 64,
+      "median_first_reference_frame_index": 17.0,
+      "median_first_target_frame_index": 5.0,
+      "median_max_reference_interarrival_frames": 48.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 2.0,
+        "speech": 2
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 30,
+        "speech": 15
+      },
+      "median_ready_minus_first_target_frames": 54,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 42.5,
+        "pre_ready_speech": 60,
+        "ready_noise": 185,
+        "ready_speech": 201.0
+      },
+      "ordinary_reference_frames": 2994,
+      "pre_ready_fraction": {
+        "noise": 0.14558366622281402,
+        "speech": 0.3593355001805706
+      },
+      "pre_ready_noise_targets": 328,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 78,
+          "1": 49,
+          "2": 39,
+          "3": 32,
+          "4": 51,
+          "5": 29,
+          "6": 28,
+          "7": 22
+        },
+        "speech": {
+          "0": 399,
+          "1": 97,
+          "2": 162,
+          "3": 99,
+          "4": 56,
+          "5": 55,
+          "6": 46,
+          "7": 81
+        }
+      },
+      "pre_ready_speech_targets": 995,
+      "raw_noise_targets": 2253,
+      "raw_speech_targets": 2769,
+      "ready_fraction": {
+        "noise": 0.854416333777186,
+        "speech": 0.6406644998194294
+      },
+      "ready_noise_targets": 1925,
+      "ready_speech_targets": 1774,
+      "target_cases": 42
+    },
+    "snr_db:-5": {
+      "cases_first_target_before_ready": 14,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 0.9333333333333333,
+      "median_first_ready_frame_index": 52,
+      "median_first_reference_frame_index": 12,
+      "median_first_target_frame_index": 5,
+      "median_max_reference_interarrival_frames": 42,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 4.0,
+        "speech": 3
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 30.0,
+        "speech": 20.0
+      },
+      "median_ready_minus_first_target_frames": 20,
+      "median_reference_frames_before_first_target": 0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 58.0,
+        "pre_ready_speech": 50,
+        "ready_noise": 155.0,
+        "ready_speech": 198
+      },
+      "ordinary_reference_frames": 1226,
+      "pre_ready_fraction": {
+        "noise": 0.12313432835820895,
+        "speech": 0.22317073170731708
+      },
+      "pre_ready_noise_targets": 66,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 13,
+          "1": 9,
+          "2": 1,
+          "3": 4,
+          "4": 8,
+          "5": 9,
+          "6": 10,
+          "7": 12
+        },
+        "speech": {
+          "0": 52,
+          "1": 16,
+          "2": 1,
+          "3": 23,
+          "4": 18,
+          "5": 24,
+          "6": 23,
+          "7": 26
+        }
+      },
+      "pre_ready_speech_targets": 183,
+      "raw_noise_targets": 536,
+      "raw_speech_targets": 820,
+      "ready_fraction": {
+        "noise": 0.8768656716417911,
+        "speech": 0.776829268292683
+      },
+      "ready_noise_targets": 470,
+      "ready_speech_targets": 637,
+      "target_cases": 15
+    },
+    "snr_db:0": {
+      "cases_first_target_before_ready": 15,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 1.0,
+      "median_first_ready_frame_index": 73,
+      "median_first_reference_frame_index": 17,
+      "median_first_target_frame_index": 3,
+      "median_max_reference_interarrival_frames": 47,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 3,
+        "speech": 2
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 36,
+        "speech": 25
+      },
+      "median_ready_minus_first_target_frames": 65,
+      "median_reference_frames_before_first_target": 0,
+      "median_reference_interarrival_frames": 1,
+      "median_target_frame_index": {
+        "pre_ready_noise": 46,
+        "pre_ready_speech": 47,
+        "ready_noise": 180.0,
+        "ready_speech": 224.0
+      },
+      "ordinary_reference_frames": 1254,
+      "pre_ready_fraction": {
+        "noise": 0.17378351539225423,
+        "speech": 0.3617021276595745
+      },
+      "pre_ready_noise_targets": 175,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 33,
+          "1": 16,
+          "2": 33,
+          "3": 16,
+          "4": 18,
+          "5": 21,
+          "6": 15,
+          "7": 23
+        },
+        "speech": {
+          "0": 115,
+          "1": 26,
+          "2": 67,
+          "3": 4,
+          "4": 18,
+          "5": 33,
+          "6": 4,
+          "7": 56
+        }
+      },
+      "pre_ready_speech_targets": 323,
+      "raw_noise_targets": 1007,
+      "raw_speech_targets": 893,
+      "ready_fraction": {
+        "noise": 0.8262164846077458,
+        "speech": 0.6382978723404256
+      },
+      "ready_noise_targets": 832,
+      "ready_speech_targets": 570,
+      "target_cases": 15
+    },
+    "snr_db:10": {
+      "cases_first_target_before_ready": 18,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 1.0,
+      "median_first_ready_frame_index": 75.0,
+      "median_first_reference_frame_index": 23.5,
+      "median_first_target_frame_index": 4.0,
+      "median_max_reference_interarrival_frames": 50.5,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 3,
+        "speech": 1.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 33.0,
+        "speech": 10
+      },
+      "median_ready_minus_first_target_frames": 71.0,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 48,
+        "pre_ready_speech": 52.5,
+        "ready_noise": 201,
+        "ready_speech": 219
+      },
+      "ordinary_reference_frames": 1230,
+      "pre_ready_fraction": {
+        "noise": 0.12813620071684587,
+        "speech": 0.4386677497969131
+      },
+      "pre_ready_noise_targets": 143,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 43,
+          "1": 12,
+          "2": 14,
+          "3": 14,
+          "4": 9,
+          "5": 17,
+          "6": 19,
+          "7": 15
+        },
+        "speech": {
+          "0": 257,
+          "1": 46,
+          "2": 48,
+          "3": 16,
+          "4": 0,
+          "5": 74,
+          "6": 80,
+          "7": 19
+        }
+      },
+      "pre_ready_speech_targets": 540,
+      "raw_noise_targets": 1116,
+      "raw_speech_targets": 1231,
+      "ready_fraction": {
+        "noise": 0.8718637992831542,
+        "speech": 0.561332250203087
+      },
+      "ready_noise_targets": 973,
+      "ready_speech_targets": 691,
+      "target_cases": 18
+    },
+    "snr_db:15": {
+      "cases_first_target_before_ready": 18,
+      "cases_never_ready": 0,
+      "first_target_before_ready_case_fraction": 1.0,
+      "median_first_ready_frame_index": 65.5,
+      "median_first_reference_frame_index": 19.0,
+      "median_first_target_frame_index": 2.5,
+      "median_max_reference_interarrival_frames": 58.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 4,
+        "speech": 0.0
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 21.0,
+        "speech": 13.0
+      },
+      "median_ready_minus_first_target_frames": 61.5,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 61,
+        "pre_ready_speech": 46.5,
+        "ready_noise": 188,
+        "ready_speech": 205.0
+      },
+      "ordinary_reference_frames": 1044,
+      "pre_ready_fraction": {
+        "noise": 0.17552182163187854,
+        "speech": 0.3835616438356164
+      },
+      "pre_ready_noise_targets": 185,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 58,
+          "1": 9,
+          "2": 20,
+          "3": 5,
+          "4": 32,
+          "5": 9,
+          "6": 34,
+          "7": 18
+        },
+        "speech": {
+          "0": 285,
+          "1": 29,
+          "2": 74,
+          "3": 23,
+          "4": 38,
+          "5": 31,
+          "6": 43,
+          "7": 37
+        }
+      },
+      "pre_ready_speech_targets": 560,
+      "raw_noise_targets": 1054,
+      "raw_speech_targets": 1460,
+      "ready_fraction": {
+        "noise": 0.8244781783681214,
+        "speech": 0.6164383561643836
+      },
+      "ready_noise_targets": 869,
+      "ready_speech_targets": 900,
+      "target_cases": 18
+    },
+    "snr_db:5": {
+      "cases_first_target_before_ready": 18,
+      "cases_never_ready": 1,
+      "first_target_before_ready_case_fraction": 1.0,
+      "median_first_ready_frame_index": 77,
+      "median_first_reference_frame_index": 20.5,
+      "median_first_target_frame_index": 3.0,
+      "median_max_reference_interarrival_frames": 47.0,
+      "median_pre_ready_prior_reference_count": {
+        "noise": 3,
+        "speech": 2
+      },
+      "median_prior_reference_count_at_target": {
+        "noise": 28.0,
+        "speech": 13.0
+      },
+      "median_ready_minus_first_target_frames": 77,
+      "median_reference_frames_before_first_target": 0.0,
+      "median_reference_interarrival_frames": 1.0,
+      "median_target_frame_index": {
+        "pre_ready_noise": 45,
+        "pre_ready_speech": 63,
+        "ready_noise": 199,
+        "ready_speech": 207
+      },
+      "ordinary_reference_frames": 1061,
+      "pre_ready_fraction": {
+        "noise": 0.16003976143141152,
+        "speech": 0.42803030303030304
+      },
+      "pre_ready_noise_targets": 161,
+      "pre_ready_prior_reference_count_histogram": {
+        "noise": {
+          "0": 21,
+          "1": 30,
+          "2": 22,
+          "3": 18,
+          "4": 31,
+          "5": 11,
+          "6": 22,
+          "7": 6
+        },
+        "speech": {
+          "0": 205,
+          "1": 24,
+          "2": 113,
+          "3": 46,
+          "4": 65,
+          "5": 11,
+          "6": 54,
+          "7": 47
+        }
+      },
+      "pre_ready_speech_targets": 565,
+      "raw_noise_targets": 1006,
+      "raw_speech_targets": 1320,
+      "ready_fraction": {
+        "noise": 0.8399602385685885,
+        "speech": 0.571969696969697
+      },
+      "ready_noise_targets": 845,
+      "ready_speech_targets": 755,
+      "target_cases": 18
+    }
+  },
+  "target_accounting": {
+    "all_raw_targets_represented_exactly_once": true,
+    "raw_target_count": 17046,
+    "target_receipt_count": 17046
+  }
+}

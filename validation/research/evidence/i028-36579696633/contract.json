@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i028-ns-upstream-reference-readiness-temporal-decomposition-v1",
+  "phase": "candidate-zero-reference-readiness-temporal-diagnostic",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "e50488408298c38b79ffa6d965cca15736a37e9c",
+  "predecessor": {
+    "i027_closure": ".github/research/continuous-optimization/development-v4/i027-ns-upstream-reference-ready-component-counterfactual-v1-result.json",
+    "i027_closure_blob_sha": "399dbbc7b4754365316387a71599ed9012b6015e",
+    "required_status": "CLOSED_INVALID_DIAGNOSTIC_ONLY",
+    "required_decision": "I027_INPUT_INVALID_REVIEW_REQUIRED",
+    "required_reviewed_decision": "REFERENCE_READY_SPEECH_COVERAGE_GATE_FAILED_NO_COMPONENT_CONCLUSION_NO_CANDIDATE",
+    "required_followup_id": "i028-ns-upstream-reference-readiness-temporal-decomposition-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "On fresh public-development disagreement targets, why do oracle-speech targets—especially cafeteria speech—arrive before the fixed eight-frame same-case ordinary-noise reference pool is ready: early target timing, slow/scarce ordinary-noise reference arrival, or condition-specific temporal ordering?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i028_ns_upstream_reference_readiness_temporal_decomposition.py",
+    "evaluator_git_blob_sha": "ca34f252ed44f30be806abaac6768668c8a9f43a"
+  },
+  "fresh_diagnostic_authority": {
+    "seeds": [
+      1201307,
+      1211307,
+      1221307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "minimum_mix_cases_per_noise_domain_per_seed": 4,
+    "minimum_noise_only_cases_per_noise_domain_per_seed": 2,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15
+  },
+  "population_definition": {
+    "raw_noise_target": "oracle_label == 0 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "raw_speech_target": "oracle_label == 1 && upstream_probability > 0.55 && local_guard_pass == 0",
+    "ordinary_noise_reference": "oracle_label == 0 && !(upstream_probability > 0.55 && local_guard_pass == 0)",
+    "oracle_labels_used_for_diagnostic_only": true
+  },
+  "readiness_boundary": {
+    "prior_reference_frames": 8,
+    "time_order": "prior same-case ordinary-noise frames only; future frames forbidden",
+    "fixed_observation_boundary": true,
+    "alternative_thresholds_evaluated": false,
+    "threshold_selection": false
+  },
+  "diagnostic_readout": {
+    "target_prior_reference_count": true,
+    "pre_ready_vs_ready_target_counts": true,
+    "first_target_frame_index": true,
+    "first_ready_frame_index": true,
+    "ready_minus_first_target_frames": true,
+    "reference_frames_before_first_target": true,
+    "prior_reference_count_histogram_for_pre_ready_targets": true,
+    "slices": [
+      "global",
+      "noise_domain",
+      "scenario",
+      "snr_db",
+      "reverb"
+    ],
+    "component_counterfactual": false,
+    "component_mapping_selection": false,
+    "threshold_search": false,
+    "candidate_selection": false,
+    "target_frame_index_from_warmup": true,
+    "target_ready_at_readout": true,
+    "target_frames_until_first_ready": true,
+    "reference_interarrival_summary": true,
+    "future_readiness_timestamp_role": "retrospective diagnostic only; never a deployable causal input"
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "minimum_total_cases": 168,
+    "minimum_global_raw_targets_per_class": 100,
+    "minimum_raw_targets_per_noise_domain": 20,
+    "all_raw_targets_represented_exactly_once": true
+  },
+  "diagnostic_outputs": [
+    "per_target_readiness_receipt_for_every_raw_disagreement_target",
+    "global_pre_ready_and_ready_target_counts_and_fractions",
+    "all_target_prior_reference_count_summary_by_class",
+    "pre_ready_prior_reference_count_histogram_by_class",
+    "median_target_frame_index_pre_ready_and_ready_by_class",
+    "first_reference_first_target_and_first_ready_frame_distributions",
+    "ready_minus_first_target_frame_distribution",
+    "reference_frames_before_first_target_distribution",
+    "reference_interarrival_median_and_max_distribution",
+    "per_noise_domain_readiness_decomposition",
+    "per_scenario_snr_reverb_readiness_decomposition",
+    "per_case_temporal_readiness_receipt"
+  ],
+  "forbidden_feedback": {
+    "i025_seeds": true,
+    "i026_seeds": true,
+    "i027_seeds": true,
+    "i027_invalid_component_fractions": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_REFERENCE_READINESS_TEMPORAL_DECOMPOSED_REVIEW_REQUIRED": "Fresh authority, raw target populations and exact mirrors are valid; report temporal/reference-arrival readiness decomposition for review without evaluating any alternative readiness threshold or component counterfactual.",
+    "I028_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, frozen-input identity, mirror identity, raw target accounting, case/domain population or authority preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use I028 only to explain temporal/reference-arrival causes of pre-ready targets from exact per-target readiness receipts and retrospective case timing. Any new reference mechanism, readiness threshold, component counterfactual, mapping or shipping candidate requires a new independently preregistered authority."
+}

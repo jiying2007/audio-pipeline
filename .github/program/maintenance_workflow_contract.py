@@ -102,6 +102,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
     Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'),
     Path('.github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml'),
+    Path('.github/workflows/research-i028-ns-upstream-reference-readiness-temporal-decomposition-v1.yml'),
 
 )
 

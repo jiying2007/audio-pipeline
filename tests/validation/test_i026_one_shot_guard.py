@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i026-ns-upstream-matched-component-counterfactual-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i026-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i026-ns-upstream-matched-component-counterfactual-v1.json"
 EVALUATOR=ROOT/"tests/validation/i026_ns_upstream_matched_component_counterfactual.py"
 MATERIALIZE="Materialize fresh public-development-v3 partitions"

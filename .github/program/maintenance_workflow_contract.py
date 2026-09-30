@@ -140,6 +140,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml'),
     Path('.github/workflows/research-i031-ns-upstream-joint-coherent-donor-aggregation-v1.yml'),
     Path('.github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml'),
+    Path('.github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -348,6 +349,13 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('tests/validation/data/i032-consumed-workflow.yml'),
         Path('tests/validation/test_i032_one_shot_guard.py'),
         Path('tests/validation/test_i032_retirement.py'),
+    ),
+    Path('.github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i033-ns-vad-causal-noise-delta-alignment-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i033-ns-vad-causal-noise-delta-alignment-v1-result.json'),
+        Path('tests/validation/data/i033-consumed-workflow.yml'),
+        Path('tests/validation/test_i033_one_shot_guard.py'),
+        Path('tests/validation/test_i033_retirement.py'),
     ),
 
 }

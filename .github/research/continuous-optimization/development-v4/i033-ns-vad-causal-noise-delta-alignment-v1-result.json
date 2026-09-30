@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i033-ns-vad-causal-noise-delta-alignment-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "5f569b6a05d9d3ca1ad3afa4e17ad9f99f46db2c",
+  "decision": "NS_VAD_CAUSAL_NOISE_DELTA_ALIGNMENT_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "RELATIVE_NS_TO_POST_NS_NOISE_DELTA_ALIGNMENT_NOT_SUPPORTED_NO_REFRESH_MAPPING_OR_SOURCE_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I033 execution is valid and terminal. Fresh target authority, causal anchor/target semantics, coverage gates and exact shipping mirrors all passed. The preregistered relative-delta fidelity hypothesis failed decisively: across 39 benchmarkable causal-anchor cases, median absolute delta error was 6.32364465 dB versus the <=3 dB bound and nearest-rank p90 absolute delta error was 12.9380684 dB versus the <=6 dB bound. Therefore shipping ns_noise_rms_dbfs relative change cannot be promoted as a parameter-free proxy for the later post-NS local observation-domain noise-level change, and no VAD noise-state refresh rule, mapping, threshold or source candidate is selected. Descriptively, shipping NS movement was much smaller than the later local-domain movement: median absolute causal NS delta was 0.4106674 dB versus 6.9787598 dB median absolute future local delta; Pearson correlation was approximately -0.001, Spearman approximately 0.185, and sign agreement was 0.538. These post-hoc diagnostics suggest a state-dynamics/temporal-response mismatch is more informative to test next than another scale or threshold mapping, but they are descriptive only and do not establish a lag or filter candidate.",
+  "authoritative_execution": {
+    "run_id": 36719045384,
+    "run_attempt": 1,
+    "head_sha": "60267394933898f517ff6dd5cec49d8345bf07d0",
+    "run_conclusion": "failure",
+    "evaluator_result_valid": true,
+    "evaluator_return_code": 0,
+    "artifact_id": 11099050975,
+    "artifact_name": "i033-ns-vad-causal-noise-delta-36719045384",
+    "artifact_size_bytes": 26775,
+    "artifact_sha256": "9a2a66cfff362e201a4c598c96c322b7b5497958dfb15d51a5ebc911032ba734",
+    "member_sha256": {
+      "SHA256SUMS": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build-info.txt": "08f122deb67343b03848e83f763adf7e64d0eeab1e95fd0b6bd9fa7a816aed67",
+      "contract.json": "21252059ea564bcc8a26b51fa1c2f904c53f9a85d085383b73a9bd5a98b951a5",
+      "corpora.sha256": "e4ddad6d42b65bbc5517c456a07b8004abc1202194a6932f9ea87ce593db5a55",
+      "evaluate.exit-code": "101770a4004c3406015d7e013e2729f1d23b7e8ceb486069d48f2693088cf7c4",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "52018933d7bedf5726ba0c119ff1365a63c95314500fa7415cb7d4c56790e791",
+      "materialization.json": "f80683629170c786328b4032b1f5dc76acde252ef66d1d2623d468ae922d6971",
+      "probe.sha256": "9051b4e35ca8149b52f9d06d4cb9dbafa649f6901d8f58b33346f4112ce75d4c",
+      "result.json": "788daaf269a23a4f7a68f3f16ad8e857cbaa77be7f1a4f879ef89d81dab866c0",
+      "summary.json": "d21f66427f06ebf3a6cc8f3621e0fe2e80c78645aa83a1d3e7d6ef3787f68ab1"
+    }
+  },
+  "artifact_packaging_review": {
+    "research_result_valid": true,
+    "packaging_step_failed_after_evaluator_success": true,
+    "root_cause": "Literal backslash-n escaping in the workflow packaging shell/Python snippets caused find -printf to emit one backslash-n-delimited string instead of newline-delimited filenames. The subsequent sha256sum command failed after result.json had already been written successfully.",
+    "sha256sums_member_empty": true,
+    "summary_json_has_literal_backslash_n_suffix": true,
+    "evaluate_exit_code_bytes_represent_literal_zero_backslash_n": true,
+    "build_info_has_literal_backslash_n_suffix": true,
+    "evaluator_stderr_empty": true,
+    "trust_root": "GitHub artifact digest plus independently reviewed per-member SHA256 values frozen in this closure; the malformed internal SHA256SUMS member is not treated as an integrity authority.",
+    "rerun_required": false
+  },
+  "fresh_authority": {
+    "target_seeds": [
+      1701307,
+      1711307,
+      1721307,
+      1731307,
+      1741307,
+      1751307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "coverage_review": {
+    "target_cases": 252,
+    "causal_target_cases": 143,
+    "causal_anchor_cases": 39,
+    "benchmarkable_anchor_cases": 39,
+    "causal_anchor_coverage": 0.2727272727272727,
+    "post_target_benchmark_coverage": 1
+  },
+  "delta_alignment_review": {
+    "population": "target cases with a first pre-ready-speech disagreement, at least one strictly prior ordinary-noise causal anchor, and eight strictly post-target ordinary-noise benchmark frames",
+    "cases": 39,
+    "median_absolute_delta_error_db": 6.3236446499999985,
+    "p90_absolute_delta_error_db": 12.938068399999999,
+    "maximum_absolute_delta_error_db": 14.05537610000001,
+    "median_signed_delta_error_db": -1.2581977499999972,
+    "median_causal_ns_delta_db": -0.19490820000000042,
+    "median_future_local_delta_db": 1.2887162999999973,
+    "preregistered_maximum_median_absolute_delta_error_db": 3,
+    "preregistered_maximum_p90_absolute_delta_error_db": 6,
+    "supported": false,
+    "by_noise_domain": {
+      "bus": {
+        "cases": 5,
+        "median_absolute_delta_error_db": 1.5179271000000014,
+        "p90_absolute_delta_error_db": 4.733503300000002,
+        "median_signed_delta_error_db": 0.2728272000000018
+      },
+      "cafeteria": {
+        "cases": 3,
+        "median_absolute_delta_error_db": 7.182910900000007,
+        "p90_absolute_delta_error_db": 14.05537610000001,
+        "median_signed_delta_error_db": 7.182910900000007
+      },
+      "field": {
+        "cases": 5,
+        "median_absolute_delta_error_db": 2.5389213499999954,
+        "p90_absolute_delta_error_db": 12.478416450000005,
+        "median_signed_delta_error_db": -1.7000399000000002
+      },
+      "kitchen": {
+        "cases": 6,
+        "median_absolute_delta_error_db": 7.663764950000001,
+        "p90_absolute_delta_error_db": 9.492286700000005,
+        "median_signed_delta_error_db": 3.0354042249999935
+      },
+      "living": {
+        "cases": 7,
+        "median_absolute_delta_error_db": 6.501664250000001,
+        "p90_absolute_delta_error_db": 12.82430455,
+        "median_signed_delta_error_db": -4.259654999999995
+      },
+      "office": {
+        "cases": 3,
+        "median_absolute_delta_error_db": 10.350852100000001,
+        "p90_absolute_delta_error_db": 12.981257400000004,
+        "median_signed_delta_error_db": -10.350852100000001
+      },
+      "traffic": {
+        "cases": 10,
+        "median_absolute_delta_error_db": 8.792056075000001,
+        "p90_absolute_delta_error_db": 12.938068399999999,
+        "median_signed_delta_error_db": -0.5201769250000048
+      }
+    }
+  },
+  "descriptive_dynamic_review": {
+    "cases": 39,
+    "median_absolute_causal_ns_delta_db": 0.41066740000000834,
+    "p90_absolute_causal_ns_delta_db": 1.6387023999999997,
+    "median_absolute_future_local_delta_db": 6.978759799999992,
+    "p90_absolute_future_local_delta_db": 12.709980049999999,
+    "pearson_causal_ns_delta_vs_future_local_delta": -0.0009914337318121997,
+    "spearman_causal_ns_delta_vs_future_local_delta": 0.18502024291497976,
+    "sign_agreement_fraction": 0.5384615384615384,
+    "authority": "post-hoc descriptive only; cannot select a lag, smoothing constant, refresh rule, mapping or candidate"
+  },
+  "root_cause_review": {
+    "relative_delta_alignment_supported": false,
+    "causal_ns_state_movement_descriptively_small_relative_to_local_change": true,
+    "exact_temporal_lag_established": false,
+    "refresh_rule_authorized": false,
+    "mapping_authorized": false,
+    "source_patch_authorized": false,
+    "note": "I033 rejects direct parameter-free relative-value alignment. The next diagnostic should decompose temporal response/inertia before any mapping, tracker-alpha, threshold or refresh-source candidate is designed."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i034-ns-vad-noise-state-temporal-response-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use fresh public-development target seeds and unchanged shipping NS/VAD source to measure how shipping ns_noise_rms_dbfs responds over a preregistered fixed post-target horizon grid relative to the post-NS local observation trajectory. Preserve the same causal target and strictly prior anchor semantics, but treat all post-target frames as retrospective diagnostic evidence only. Report response amplitude and signed error at fixed horizons, plus descriptive lag/correlation structure, to distinguish tracker inertia from scale/domain mismatch. Do not choose an optimal lag, smoothing constant, refresh source, mapping, threshold or candidate.",
+    "required_gates": [
+      "fresh target seeds disjoint from I025-I033",
+      "shipping NS/VAD source unchanged",
+      "causal target and last-prior-reference anchor frozen before future observations",
+      "fixed preregistered temporal horizons only; no best-lag selection",
+      "sufficient causal-anchor and trajectory coverage",
+      "shipping mirrors remain exact",
+      "all temporal comparisons remain diagnostic-only"
+    ],
+    "prohibited": [
+      "reuse of I033 seeds",
+      "best-lag or best-horizon selection",
+      "tracker alpha tuning",
+      "absolute or relative normalization mapping selection",
+      "VAD noise-state refresh source patch",
+      "threshold tuning",
+      "source candidate execution",
+      "validation-grade or blind feedback",
+      "shipping source changes"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i033-36719045384/result.json",
+  "verification_limits": [
+    "I033 is public-development diagnostic evidence and does not establish product acoustic behavior.",
+    "The global relative-delta hypothesis is rejected under the preregistered bounds; no per-domain subset may be promoted as a candidate from this run.",
+    "The post-hoc dynamic metrics are descriptive only and cannot select a lag, smoothing factor, refresh source or mapping.",
+    "The artifact packaging step has a newline-escaping defect. Integrity authority is the GitHub ZIP digest plus the independently reviewed member hashes frozen here, not the empty internal SHA256SUMS file.",
+    "No mapping, reference-source candidate, VAD refresh rule, source patch, component, threshold, tracker change, validation-grade, blind, HIL, product-certification or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "noise_scale_normalization_selected": false,
+    "vad_noise_state_refresh_selected": false,
+    "source_patch_selected": false,
+    "component_selected": false,
+    "mapping_selected": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

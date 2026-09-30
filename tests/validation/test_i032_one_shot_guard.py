@@ -210,7 +210,7 @@ class I032GuardTests(unittest.TestCase):
             self.assertIn(token,analyze)
 
         probe=PROBE.read_text(encoding="utf-8")
-        self.assertIn('"ns_noise_rms_dbfs"',probe)
+        self.assertIn("ns_noise_rms_dbfs",probe)
         self.assertIn("(double)ns_result.noise_rms_dbfs",probe)
         self.assertIn("ap_ns_process(&ns_state",probe)
 

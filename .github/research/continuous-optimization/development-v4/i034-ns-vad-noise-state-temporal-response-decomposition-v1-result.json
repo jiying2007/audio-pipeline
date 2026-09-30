@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i034-ns-vad-noise-state-temporal-response-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "dcdb61c32b67651fc60bace5d86c4cb746451457",
+  "decision": "NS_VAD_NOISE_STATE_TEMPORAL_RESPONSE_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "FIXED_HORIZON_TEMPORAL_CATCHUP_NOT_OBSERVED_PERSISTENT_NS_RESPONSE_AMPLITUDE_GAP_NO_LAG_ALPHA_MAPPING_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I034 execution is valid and terminal. All preregistered coverage gates passed, all four fixed post-target reference horizons had full coverage among 52 causal-anchor cases, and shipping NS/VAD mirrors remained exact. Across horizons 1/2/4/8, median absolute shipping-NS response remained only 1.16-1.36 dB while the post-NS local observation response remained 5.93-7.40 dB. The global median absolute NS/local response ratio stayed approximately 0.18-0.20 rather than increasing with horizon. Median absolute alignment error moved 6.96 -> 6.67 -> 5.32 -> 6.90 dB and p90 error 12.05 -> 13.93 -> 15.50 -> 14.21 dB, so there is no monotonic fixed-horizon catch-up. H4 is descriptive only and cannot be promoted as a selected lag or horizon. I034 therefore does not support a lag-only explanation for I033; it supports a persistent response-amplitude/domain mismatch that still requires mechanism decomposition. No lag, tracker alpha, refresh rule, mapping, threshold or source candidate is selected.",
+  "authoritative_execution": {
+    "run_id": 36784701187,
+    "run_attempt": 1,
+    "head_sha": "d949508d81d5ae6b7ee717805cea2293dbd6a633",
+    "run_conclusion": "success",
+    "evaluator_result_valid": true,
+    "evaluator_return_code": 0,
+    "artifact_id": 11129761829,
+    "artifact_name": "i034-ns-vad-temporal-response-36784701187",
+    "artifact_size_bytes": 41456,
+    "artifact_sha256": "c381cf1e97dace522f0f3048e8da427f54979d611967c698ebaa6f1a254031b1",
+    "member_sha256": {
+      "SHA256SUMS": "7e57af547a8d462cb3b8be011c805cc6fdf958df1cf81734b54c8558c464cd12",
+      "build-info.txt": "005a0e6bf06649a1352a43cec7349f18590cd9ac615557e41988322a3bc92841",
+      "contract.json": "dc6b4b73bb285f96b9e5c269c78b3645a85e8b745c010a8ba4f242917113cb98",
+      "corpora.sha256": "04004c58514fb8d40071f271d587dd2fa813835d4cf7670371efab9b6738731b",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "d793f8a43fbe903502c1f4313e03f6f2ad2e39705df3e1ed98ec344d833b7dd9",
+      "materialization.json": "9e2139651265688525a17d2880cc6698c3c95667bf43c355702b762ebb295b8f",
+      "probe.sha256": "45e540c3fba99e5d648b2df79c9820193cb6ca0c91cce7c717d8a7aa0303f6f5",
+      "result.json": "28b4be472d8dd3a4fb427114c8deffc55f6c3a0b1b94e1fc448e6557ea84675d",
+      "summary.json": "42f5c59e0586ad2dad25812f5ad1e9c1523196df4bcbb5f90383915e05623137"
+    },
+    "internal_sha256sums_verified": true
+  },
+  "fresh_authority": {
+    "target_seeds": [
+      1761307,
+      1771307,
+      1781307,
+      1791307,
+      1801307,
+      1811307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "coverage_review": {
+    "target_cases": 252,
+    "causal_target_cases": 149,
+    "causal_anchor_cases": 52,
+    "causal_anchor_coverage": 0.348993288590604,
+    "fixed_horizon_coverage": {
+      "1": 1,
+      "2": 1,
+      "4": 1,
+      "8": 1
+    },
+    "all_noise_domains_have_full_fixed_horizon_coverage": true
+  },
+  "temporal_response_review": {
+    "population": "target cases with a first pre-ready-speech disagreement, a strictly prior ordinary-noise causal anchor, and sufficient strictly post-target ordinary-noise references for each fixed cumulative horizon",
+    "reference_horizons": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "global": {
+      "1": {
+        "cases": 52,
+        "median_elapsed_frames_from_target": 14.5,
+        "median_absolute_ns_response_db": 1.2498054500000002,
+        "median_absolute_local_response_db": 6.348785400000001,
+        "median_abs_response_ratio_ns_over_local": 0.1968574099228492,
+        "median_absolute_alignment_error_db": 6.958270050000001,
+        "p90_absolute_alignment_error_db": 12.045440700000004,
+        "maximum_absolute_alignment_error_db": 25.884815299999993,
+        "median_signed_alignment_error_db": -1.312418000000001
+      },
+      "2": {
+        "cases": 52,
+        "median_elapsed_frames_from_target": 18.5,
+        "median_absolute_ns_response_db": 1.2288674999999998,
+        "median_absolute_local_response_db": 6.3932757499999955,
+        "median_abs_response_ratio_ns_over_local": 0.19221249763863238,
+        "median_absolute_alignment_error_db": 6.674743674999998,
+        "p90_absolute_alignment_error_db": 13.934318499999996,
+        "maximum_absolute_alignment_error_db": 23.784326599999993,
+        "median_signed_alignment_error_db": 0.34810497500000004
+      },
+      "4": {
+        "cases": 52,
+        "median_elapsed_frames_from_target": 33,
+        "median_absolute_ns_response_db": 1.1634340500000029,
+        "median_absolute_local_response_db": 5.927310000000002,
+        "median_abs_response_ratio_ns_over_local": 0.19628365143716162,
+        "median_absolute_alignment_error_db": 5.3159428,
+        "p90_absolute_alignment_error_db": 15.497485250000004,
+        "maximum_absolute_alignment_error_db": 23.804823000000006,
+        "median_signed_alignment_error_db": 1.6038565750000071
+      },
+      "8": {
+        "cases": 52,
+        "median_elapsed_frames_from_target": 56,
+        "median_absolute_ns_response_db": 1.3633375,
+        "median_absolute_local_response_db": 7.402173049999998,
+        "median_abs_response_ratio_ns_over_local": 0.1841807116357541,
+        "median_absolute_alignment_error_db": 6.904939899999996,
+        "p90_absolute_alignment_error_db": 14.207099849999992,
+        "maximum_absolute_alignment_error_db": 27.064024000000003,
+        "median_signed_alignment_error_db": 1.3968963749999936
+      }
+    },
+    "response_ratio_range_ns_over_local": [
+      0.1841807116357541,
+      0.1968574099228492
+    ],
+    "median_alignment_error_progression_db": [
+      6.958270050000001,
+      6.674743674999998,
+      5.3159428,
+      6.904939899999996
+    ],
+    "p90_alignment_error_progression_db": [
+      12.045440700000004,
+      13.934318499999996,
+      15.497485250000004,
+      14.207099849999992
+    ],
+    "monotonic_temporal_catchup_observed": false,
+    "best_horizon_selected": false
+  },
+  "root_cause_review": {
+    "lag_only_explanation_supported": false,
+    "persistent_response_amplitude_gap_observed": true,
+    "shipping_ns_response_materially_smaller_than_local_response": true,
+    "exact_tracker_update_mechanism_established": false,
+    "exact_scale_or_aggregation_mechanism_established": false,
+    "tracker_alpha_change_authorized": false,
+    "lag_or_horizon_authorized": false,
+    "refresh_rule_authorized": false,
+    "mapping_authorized": false,
+    "source_patch_authorized": false,
+    "note": "I034 shows that the shipping NS state does not progressively converge toward local post-NS movement over the preregistered fixed horizon grid. The next diagnostic should isolate the existing noise tracker's update-regime exposure and per-bin update contribution before any alpha, lag, mapping or refresh-source candidate is designed."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i035-ns-noise-tracker-update-regime-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use fresh public-development target seeds and unchanged shipping NS/VAD source. Preserve the I034 causal target/anchor and fixed 1/2/4/8 post-target reference horizons. Extend diagnostic-only mirror observation to decompose the existing EMA noise tracker update regime: fixed slow-update branch exposure (speech_probability > 0.35), fast-update exposure, post-ratio pressure, and aggregate slow/fast-bin contribution to noise-estimate movement at the target and fixed horizons. Test whether the persistent NS response deficit co-varies with slow-update exposure or remains after update opportunity is available. Do not change or search alpha, select a horizon/lag, normalize scale, choose a refresh rule, threshold or source candidate.",
+    "required_gates": [
+      "fresh target seeds disjoint from I025-I034",
+      "shipping NS/VAD source unchanged",
+      "same causal target and strictly prior anchor semantics",
+      "fixed post-target reference horizons 1/2/4/8 only",
+      "fixed existing tracker branch threshold 0.35 observed but not changed",
+      "slow/fast update contribution accounting is mirror-only and source-equivalent",
+      "sufficient causal-anchor and fixed-horizon coverage",
+      "shipping mirrors remain exact",
+      "all update-regime associations remain diagnostic-only"
+    ],
+    "prohibited": [
+      "reuse of I034 seeds",
+      "tracker alpha tuning or search",
+      "tracker branch-threshold tuning",
+      "best-horizon or best-lag selection",
+      "absolute or relative normalization mapping selection",
+      "VAD noise-state refresh source patch",
+      "threshold tuning",
+      "source candidate execution",
+      "validation-grade or blind feedback",
+      "shipping source changes"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i034-36784701187/result.json",
+  "verification_limits": [
+    "I034 is public-development diagnostic evidence and does not establish product acoustic behavior.",
+    "The fixed-horizon trajectory rejects a simple monotonic catch-up interpretation; the lower h4 median error is descriptive only and cannot select h4 or any lag.",
+    "The persistent response-amplitude gap does not by itself establish whether the mechanism is tracker update gating, estimator aggregation/scale, or another internal state dynamic.",
+    "No lag, horizon, tracker alpha, update threshold, mapping, refresh rule, source patch, validation-grade, blind, HIL, product-certification or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "noise_scale_normalization_selected": false,
+    "vad_noise_state_refresh_selected": false,
+    "source_patch_selected": false,
+    "component_selected": false,
+    "mapping_selected": false,
+    "best_horizon_selected": false,
+    "lag_selected": false,
+    "tracker_alpha_changed": false,
+    "tracker_update_threshold_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

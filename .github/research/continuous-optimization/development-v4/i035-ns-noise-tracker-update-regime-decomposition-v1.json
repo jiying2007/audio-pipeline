@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i035-ns-noise-tracker-update-regime-decomposition-v1",
+  "phase": "candidate-zero-target-noise-tracker-update-regime-decomposition",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "0e2d50efe5504ece832480a68d145a576de1b75d",
+  "predecessor": {
+    "i034_closure": ".github/research/continuous-optimization/development-v4/i034-ns-vad-noise-state-temporal-response-decomposition-v1-result.json",
+    "i034_closure_blob_sha": "2fbb72ba2359bb1d265624a602867f6662bd7ada",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_VAD_NOISE_STATE_TEMPORAL_RESPONSE_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "FIXED_HORIZON_TEMPORAL_CATCHUP_NOT_OBSERVED_PERSISTENT_NS_RESPONSE_AMPLITUDE_GAP_NO_LAG_ALPHA_MAPPING_CANDIDATE",
+    "required_followup_id": "i035-ns-noise-tracker-update-regime-decomposition-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Does the persistent shipping-NS response-amplitude deficit observed in I034 co-vary with exposure to the existing EMA tracker's slow-update branch, or does the deficit persist even when fast-update opportunity and fast-bin update contribution are present?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i035_ns_noise_tracker_update_regime_probe.c",
+    "probe_git_blob_sha": "37fd097d51b387e081f5f84ac12df7f11e4b4c0f",
+    "evaluator_path": "tests/validation/i035_ns_noise_tracker_update_regime_decomposition.py",
+    "evaluator_git_blob_sha": "4b57d4b19902278c2aed72b6909913ffb6f8c5d2"
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      1821307,
+      1831307,
+      1841307,
+      1851307,
+      1861307,
+      1871307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "ns_noise_scale_field": "ns_noise_rms_dbfs",
+    "local_observation_field": "post_ns_rms_dbfs",
+    "shipping_ns_vad_source_must_remain_unchanged": true
+  },
+  "fixed_tracker_mechanism": {
+    "implementation": "EMA branch in src/enhance/ap_noise_tracker.c under AP_BUILD_NS_EMA",
+    "speech_probability_from_post_ratio": "clamp((post - 1.4) * 0.35, 0, 1)",
+    "slow_update_speech_probability_threshold": 0.35,
+    "slow_alpha": 0.995,
+    "fast_alpha": 0.92,
+    "update_equation": "noise_next = alpha * noise_previous + (1 - alpha) * power",
+    "parameters_are_observed_not_changed": true
+  },
+  "causal_anchor_semantics": {
+    "target": "first oracle-speech disagreement frame with fewer than eight prior same-case ordinary-noise non-disagreement references",
+    "anchor": "last strictly prior same-case ordinary-noise non-disagreement reference",
+    "require_at_least_one_prior_reference": true,
+    "anchor_and_target_are_causal": true,
+    "may_use_future_frames_for_anchor_or_target": false
+  },
+  "fixed_horizons": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "update_regime_observations": {
+    "slow_update_bin_fraction": "fraction of speech-band tracker bins with shipping speech_probability > 0.35",
+    "fast_update_bin_fraction": "fraction of speech-band tracker bins with shipping speech_probability <= 0.35",
+    "slow_update_abs_contribution_fraction": "share of absolute per-bin noise-estimate movement contributed by slow-branch bins",
+    "fast_update_abs_contribution_fraction": "share of absolute per-bin noise-estimate movement contributed by fast-branch bins",
+    "slow_signed_update_fraction_of_previous_noise": "aggregate signed slow-bin noise-estimate movement normalized by previous speech-band noise estimate",
+    "fast_signed_update_fraction_of_previous_noise": "aggregate signed fast-bin noise-estimate movement normalized by previous speech-band noise estimate",
+    "total_abs_update_fraction_of_previous_noise": "aggregate absolute bin movement normalized by previous speech-band noise estimate",
+    "slow_mean_post_ratio": "mean pre-update post ratio for slow-branch speech-band bins",
+    "fast_mean_post_ratio": "mean pre-update post ratio for fast-branch speech-band bins",
+    "aggregation_at_fixed_horizon": "cumulative median across first N strictly post-target ordinary-noise references",
+    "response_deficit_db": "abs(local response delta) minus abs(shipping NS response delta) against the same causal anchor"
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "expected_target_cases": 252,
+    "minimum_causal_target_cases": 100,
+    "minimum_causal_anchor_cases": 35,
+    "minimum_causal_anchor_coverage": 0.25,
+    "minimum_fixed_horizon_coverage": 0.8
+  },
+  "diagnostic_outputs": [
+    "target-frame slow/fast update branch exposure and update contribution",
+    "fixed horizon 1/2/4/8 cumulative slow/fast exposure and contribution",
+    "fixed horizon NS/local response deficit against the same causal anchor",
+    "Spearman association of slow exposure, fast absolute contribution and total update opportunity with response deficit",
+    "fixed rank-quartile response-deficit descriptions for slow exposure and fast contribution",
+    "global and per-noise-domain mechanism summaries",
+    "exact shipping NS/VAD mirror identity and contribution accounting invariants"
+  ],
+  "forbidden_feedback": {
+    "i025_to_i034_seeds": true,
+    "donor_selection": true,
+    "reference_source_selection": true,
+    "tracker_alpha_search": true,
+    "tracker_branch_threshold_search": true,
+    "best_horizon_or_lag_selection": true,
+    "absolute_normalization_mapping_selection": true,
+    "relative_normalization_mapping_selection": true,
+    "vad_noise_state_refresh_rule_selection": true,
+    "threshold_search": true,
+    "source_candidate_execution": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_NOISE_TRACKER_UPDATE_REGIME_DECOMPOSED_REVIEW_REQUIRED": "Fresh target-only authority, causal target/anchor pairing, fixed 1/2/4/8 horizons, mirror accounting and coverage are valid. Report update-regime exposure/contribution associations for review without selecting alpha, tracker threshold, horizon/lag, mapping, refresh rule or source candidate.",
+    "I035_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, fresh-seed identity, causal target/anchor coverage, fixed-horizon coverage, shipping mirrors or slow/fast accounting preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_vad_noise_state_refresh": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_select_best_horizon": false,
+    "may_select_lag": false,
+    "may_change_tracker_alpha": false,
+    "may_change_tracker_update_threshold": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_use_donor_selection": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Review whether I034 response deficit is concentrated under slow-update exposure or remains when fast-update bins materially contribute. I035 cannot select alpha, tracker threshold, horizon, lag, mapping, refresh rule, source candidate or shipping change. Any successor authority must be preregistered from the reviewed I035 result."
+}

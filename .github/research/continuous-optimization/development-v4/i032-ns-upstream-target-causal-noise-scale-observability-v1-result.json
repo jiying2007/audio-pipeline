@@ -17,7 +17,7 @@
     "artifact_size_bytes": 26120,
     "artifact_sha256": "f9c4886ff0991b063dbaf65bd0d21c39526b86a8286602ef40692826f4858c5c",
     "member_sha256": {
-      "SHA256SUMS": "placeholder",
+      "SHA256SUMS": "9ce188de5a7def9d4adf205d9bac32fdcc0f850abe75499db9e4a59e2df0c3ec",
       "build-info.txt": "6cdc689cd1e0800fb5b0b8fe96340b42c00a475bd365f964cac064b401a770ac",
       "contract.json": "413fb80d3488c3ca133019852eeb481305fb982daa4b044f25d812baecb9f976",
       "corpora.sha256": "043bcd7c6299d98711e528b4c3419e256dd3807fd641119e3246f12c4ff54154",

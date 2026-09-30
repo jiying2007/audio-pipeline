@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i031-ns-upstream-joint-coherent-donor-aggregation-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "eb17a14c94f67da0488669281f25b7acd8ce9790",
+  "decision": "NS_UPSTREAM_JOINT_COHERENT_DONOR_AGGREGATION_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "JOINT_COHERENCE_RESTORED_BUT_PRIMARY_GAP_ERROR_WORSENED_NO_OPERATOR_OR_REFERENCE_SOURCE_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I031 execution is valid and fully covered: 126 donor and 126 target cases, all seven noise domains with 18 ready donors and 18 benchmarkable targets, matched/negative donor coverage 1.0, exact NS/VAD shipping mirrors, and no authority-boundary violation. The only preregistered joint-coherent operator succeeded at its structural goal: it always emitted an actually observed donor joint frame and reduced algebraic inconsistency to at most 3.0e-8. However structural coherence did not translate into target-reference agreement. On the preregistered pre-ready-speech population (71 paired cases), the frozen control median gap absolute error was 0.0683747085 while the joint-coherent operator error worsened to 0.0873505325; median paired improvement was -0.0082003475, only 32/71 non-tied cases improved (45.07%), and the one-sided sign-test was p=0.8287645008 versus the frozen p<=0.01 support threshold. Global performance was also essentially flat-to-negative (median improvement -0.00026056175, 62 wins versus 64 losses). Living was directionally positive, but bus, field, cafeteria and kitchen were negative, so no condition-stable benefit exists. A deterministic same-evidence sanity check that simply reprojected the frozen control gap to clamp(concentration-mean) also trended worse and is non-authoritative; it only reinforces that another algebraic-only repair is not a high-information next step. Therefore I031 selects no aggregation operator, donor/reference source, component, mapping, threshold or shipping change. The next question moves away from aggregation search: whether a target-side, causally available noise-scale observable can faithfully represent the later target ordinary-noise state and explain frozen-donor transfer error.",
+  "authoritative_execution": {
+    "run_id": 36666717040,
+    "run_attempt": 1,
+    "head_sha": "69fe6c72ec9969e24b1d8c439c8c5bc123f9f308",
+    "artifact_id": 11077390422,
+    "artifact_name": "i031-ns-upstream-joint-coherent-donor-36666717040",
+    "artifact_size_bytes": 41377,
+    "artifact_sha256": "0062a4a13975fdba27b5ba0bacc8ec876bd10cfcbec87fa6b3b94a07712d1268",
+    "member_sha256": {
+      "SHA256SUMS": "d94664683b85ea7d159eb4c12245313fc060c55795d23fddc82e2edc16352019",
+      "build-info.txt": "caf42006596dc641afdadf1e6120d1fb9fc553d61c484e08593017e506b8d513",
+      "contract.json": "3f3f37be345d9ba5304084cab9373c69f1931f1d60c32596f577ae87c219e89a",
+      "corpora.sha256": "407f941856f315b63ceba20cb3a3ec700f5e94019ea7fadad57f2582b7d7cd58",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "ac12712df8bb24223f6b687c7a4977293a46d2ac2f0bdc733903154c8759e7cb",
+      "materialization.json": "abca2a7152973c3f2cfd143381ac3ca3a9956974f97be9fc66b31602d2cf4248",
+      "probe.sha256": "6d684037bc618c4cfa384a77c524c1f1d3694ca45f9ea5cc8f803d3e266732d7",
+      "result.json": "9a20b2cf4a91c11a19a534f199c8ffc5e0847360f6814c16dbfeff4e0a8d8864",
+      "summary.json": "19958731092e0dfec25e259ebd8e6394582245f0c22692a11a2e9f83f072797b"
+    }
+  },
+  "fresh_authority": {
+    "donor_seeds": [
+      1501307,
+      1511307,
+      1521307
+    ],
+    "target_seeds": [
+      1531307,
+      1541307,
+      1551307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "coverage_review": {
+    "donor_cases": 126,
+    "ready_donor_cases": 126,
+    "target_cases": 126,
+    "target_benchmark_cases": 126,
+    "target_benchmark_coverage": 1,
+    "matched_donor_coverage": 1,
+    "negative_control_coverage": 1,
+    "ready_donors_per_domain": {
+      "bus": 18,
+      "cafeteria": 18,
+      "field": 18,
+      "kitchen": 18,
+      "living": 18,
+      "office": 18,
+      "traffic": 18
+    }
+  },
+  "primary_directional_review": {
+    "population": "target cases with at least one pre-ready speech disagreement",
+    "paired_cases": 71,
+    "primary_metric": "gap_absolute_error",
+    "median_control_gap_abs_error": 0.06837470849999994,
+    "median_joint_coherent_gap_abs_error": 0.08735053249999997,
+    "median_gap_error_improvement": -0.008200347499999983,
+    "gap_better_cases": 32,
+    "gap_worse_cases": 39,
+    "gap_better_fraction": 0.4507042253521127,
+    "one_sided_sign_test_p": 0.828764500790066,
+    "preregistered_maximum_p": 0.01,
+    "supported": false,
+    "max_joint_coherent_algebraic_inconsistency": 3.0000000039720476e-8
+  },
+  "global_review": {
+    "paired_cases": 126,
+    "median_control_gap_abs_error": 0.05423314899999998,
+    "median_joint_coherent_gap_abs_error": 0.05158086124999997,
+    "median_gap_error_improvement": -0.0002605617499999435,
+    "gap_better_cases": 62,
+    "gap_worse_cases": 64,
+    "gap_better_fraction": 0.49206349206349204,
+    "one_sided_sign_test_p": 0.6053020276559281
+  },
+  "domain_review": {
+    "bus": {
+      "paired_cases": 18,
+      "median_gap_error_improvement": -0.009967848999999973,
+      "gap_better_fraction": 0.4444444444444444
+    },
+    "field": {
+      "paired_cases": 18,
+      "median_gap_error_improvement": -0.009042143499999988,
+      "gap_better_fraction": 0.2777777777777778
+    },
+    "cafeteria": {
+      "paired_cases": 18,
+      "median_gap_error_improvement": -0.005168333999999941,
+      "gap_better_fraction": 0.3333333333333333
+    },
+    "kitchen": {
+      "paired_cases": 18,
+      "median_gap_error_improvement": -0.01788204949999994,
+      "gap_better_fraction": 0.3888888888888889
+    },
+    "living": {
+      "paired_cases": 18,
+      "median_gap_error_improvement": 0.017215221999999974,
+      "gap_better_fraction": 0.7777777777777778
+    },
+    "office": {
+      "paired_cases": 18,
+      "median_gap_error_improvement": 0.004147343750000004,
+      "gap_better_fraction": 0.5555555555555556
+    },
+    "traffic": {
+      "paired_cases": 18,
+      "median_gap_error_improvement": 0.0008754429999999758,
+      "gap_better_fraction": 0.6666666666666666
+    }
+  },
+  "root_cause_review": {
+    "joint_algebraic_incoherence_is_real": true,
+    "joint_algebraic_incoherence_is_sufficient_explanation": false,
+    "observed_frame_coherent_operator_supported": false,
+    "aggregation_only_search_should_continue": false,
+    "target_state_or_reference_transfer_mismatch_remains_plausible": true,
+    "note": "I031 proves that restoring joint identity alone is insufficient. It does not prove that all donor-reference transfer is unusable, but further aggregation-operator search is not justified by this evidence."
+  },
+  "non_authoritative_sanity_check": {
+    "description": "Using the already-consumed I031 evidence only, recomputing the frozen-control gap as clamp(control concentration - control mean) while leaving control mean/concentration unchanged also produced worse descriptive gap error. This was not preregistered and carries no authority.",
+    "pre_ready_speech_median_gap_error_improvement_approx": -0.00836168215000005,
+    "use_for_candidate_selection": false
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i032-ns-upstream-target-causal-noise-scale-observability-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use entirely fresh, disjoint donor and target public-development seeds. Freeze the I029/I030 donor selection function, K=3, negative-control map and the independent-component-median donor control; do not evaluate another aggregation operator. Add only one target-side causal observable already produced by the frozen probe: ns_noise_rms_dbfs. For each target case with at least one pre-ready speech disagreement, capture ns_noise_rms_dbfs at the first such causal target frame. Retrospectively compare it with the median ns_noise_rms_dbfs over that target case's first eight later ordinary-noise non-disagreement reference frames. Preregister engineering fidelity bounds of median absolute error <=3 dB and 90th-percentile absolute error <=6 dB. Also report, descriptively only, whether absolute frozen-donor versus causal-target noise-scale mismatch co-varies with frozen donor gap transfer error. This asks whether a deployable target-side state observable is faithful enough to explain/adapt donor transfer before any normalization rule or candidate is designed.",
+    "required_gates": [
+      "fresh donor and target seeds disjoint from I025-I031",
+      "I029/I030 donor selection function, K=3 and negative-control map frozen unchanged",
+      "frozen independent-component-median donor control unchanged",
+      "no joint aggregation operator evaluated",
+      "first pre-ready-speech ns_noise_rms_dbfs captured causally at target time",
+      "target later eight-frame ordinary-noise ns_noise_rms_dbfs used only as retrospective benchmark",
+      "median causal-proxy absolute error and p90 error reported",
+      "global and per-domain coverage reported",
+      "shipping mirrors remain exact",
+      "no normalization mapping or component counterfactual executed"
+    ],
+    "prohibited": [
+      "reuse of I031 seeds",
+      "change of K",
+      "change of matching priority or negative-control map",
+      "search or evaluation of another aggregation operator",
+      "noise-scale normalization mapping selection",
+      "reference-source candidate selection",
+      "component counterfactual ranking",
+      "component reweighting",
+      "threshold tuning",
+      "tracker alpha changes",
+      "shipping source changes",
+      "assumption that development matching metadata is available in shipping",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i031-36666717040/result.json",
+  "verification_limits": [
+    "I031 is development-only; donor matching uses synthetic/development metadata and does not establish shipping metadata availability.",
+    "The joint-coherent operator restored algebraic consistency but failed the preregistered primary gap-error hypothesis; this failure must not be reinterpreted as support through domain slices.",
+    "Living was directionally positive, but multiple other domains were negative; no domain-specific operator admission is authorized.",
+    "The non-authoritative projection sanity check is descriptive only and cannot be treated as a second tested operator.",
+    "No aggregation operator, donor/reference source, component, mapping, threshold, normalization rule, validation-grade, blind, HIL, product-certification, source-merge or release authority was selected or consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "joint_aggregation_candidate_selected": false,
+    "component_selected": false,
+    "component_ranked_for_shipping": false,
+    "mapping_selected": false,
+    "noise_scale_normalization_selected": false,
+    "component_reweighted": false,
+    "donor_k_changed": false,
+    "donor_matching_changed": false,
+    "negative_control_changed": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "assumed_matching_metadata_available_in_shipping": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

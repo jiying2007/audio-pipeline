@@ -51,9 +51,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
-      contents: read
+      contents: write
       actions: read
-      pull-requests: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -62,7 +62,7 @@ jobs:
       - name: Reverify I032 artifact and publish exact-byte archive PR
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_WRITE_TOKEN: ${{ secrets.RESEARCH_AUTOMATION_TOKEN }}
+          GH_WRITE_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 .github/program/i032_archive.py \

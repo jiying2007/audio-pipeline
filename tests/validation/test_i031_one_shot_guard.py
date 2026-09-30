@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i031-ns-upstream-joint-coherent-donor-aggregation-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i031-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i031-ns-upstream-joint-coherent-donor-aggregation-v1.json"
 EVALUATOR=ROOT/"tests/validation/i031_ns_upstream_joint_coherent_donor_aggregation.py"
 I030_EVALUATOR=ROOT/"tests/validation/i030_ns_upstream_donor_joint_residual_stability_decomposition.py"

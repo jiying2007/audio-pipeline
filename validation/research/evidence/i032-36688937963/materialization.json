@@ -1,0 +1,111 @@
+{
+  "archives": [
+    {
+      "audio_files": 1519,
+      "bytes": 332954390,
+      "files": 1552,
+      "id": "openslr-slr31-train-clean-5",
+      "license": "CC-BY-4.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/clean-speech",
+      "role": "clean-speech",
+      "sha256": "47805806c8b15f7549f3c51bd6b7da72ec0128a34d32830c8014a88658c0292d",
+      "usage_class": "research-development"
+    },
+    {
+      "audio_files": 16,
+      "bytes": 128916709,
+      "files": 16,
+      "id": "demand-tbus-16k",
+      "license": "CC-BY-SA-3.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/noise-bus",
+      "role": "noise-bus",
+      "sha256": "82e79983c91c69acbabf76d56b3fc75ab06e0f1c539eadaaf21d297987a97a5a",
+      "usage_class": "research-development-only"
+    },
+    {
+      "audio_files": 16,
+      "bytes": 107431494,
+      "files": 16,
+      "id": "demand-pcafeter-16k",
+      "license": "CC-BY-SA-3.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/noise-cafeteria",
+      "role": "noise-cafeteria",
+      "sha256": "89be7194b83cd583c4b12f4bf7c19e9cf0e612b95312e9f4aedc968cd811bcd5",
+      "usage_class": "research-development-only"
+    },
+    {
+      "audio_files": 16,
+      "bytes": 86536782,
+      "files": 16,
+      "id": "demand-nfield-16k",
+      "license": "CC-BY-SA-3.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/noise-field",
+      "role": "noise-field",
+      "sha256": "b7ef25d2af0d9ff0b8b1e359aba3f928f59b966b87009c2aed53df93e57856e3",
+      "usage_class": "research-development-only"
+    },
+    {
+      "audio_files": 16,
+      "bytes": 110501049,
+      "files": 16,
+      "id": "demand-dkitchen-16k",
+      "license": "CC-BY-SA-3.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/noise-kitchen",
+      "role": "noise-kitchen",
+      "sha256": "9d68e46d2709847c59580770e2f8aa160607ebff7475788174aa1080332cc845",
+      "usage_class": "research-development-only"
+    },
+    {
+      "audio_files": 16,
+      "bytes": 80170627,
+      "files": 16,
+      "id": "demand-dliving-16k",
+      "license": "CC-BY-SA-3.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/noise-living",
+      "role": "noise-living",
+      "sha256": "2b1726fe06e41551ce2397f2aaf3e4fb692c912d81914b04708df0bbb5252338",
+      "usage_class": "research-development-only"
+    },
+    {
+      "audio_files": 16,
+      "bytes": 88995191,
+      "files": 16,
+      "id": "demand-ooffice-16k",
+      "license": "CC-BY-SA-3.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/noise-office",
+      "role": "noise-office",
+      "sha256": "7570c952f621990d0d71b8398107d9a78066254f883a5569abec9c233ffda358",
+      "usage_class": "research-development-only"
+    },
+    {
+      "audio_files": 16,
+      "bytes": 118572691,
+      "files": 16,
+      "id": "demand-straffic-16k",
+      "license": "CC-BY-SA-3.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/noise-traffic",
+      "role": "noise-traffic",
+      "sha256": "2df9b444afb3b789df92d96cb6f58a50653cdbbbe7e7e74fcd9de2af6385fbea",
+      "usage_class": "research-development-only"
+    },
+    {
+      "audio_files": 60000,
+      "bytes": 178818025,
+      "files": 60007,
+      "id": "openslr-slr26-sim-rir-16k",
+      "license": "Apache-2.0",
+      "path": "/tmp/audio-pipeline-i032-development-v3/extracted/sim-rir",
+      "role": "sim-rir",
+      "sha256": "7a2c2e78ce03302bc7dfc1bd5a8a737b21d0776e89b9015f6e2e42300212f731",
+      "usage_class": "research-development"
+    }
+  ],
+  "catalog_id": "audio-pipeline-public-development-v3",
+  "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+  "root": "/tmp/audio-pipeline-i032-development-v3",
+  "schema_version": 1,
+  "selection_authority": "research-development-only",
+  "shipping_authority": false,
+  "source_vetting_receipt_sha256": "8608bb85a33c137ed766f67c1858fc2f91bf4494f088162500f3f81769abb70c",
+  "validation_grade_authority": false
+}

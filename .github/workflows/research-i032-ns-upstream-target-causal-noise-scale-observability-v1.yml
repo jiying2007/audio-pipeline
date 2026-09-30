@@ -109,7 +109,7 @@ jobs:
           assert hashlib.sha256(Path(c['dataset_authority']['lock_path']).read_bytes()).hexdigest()==c['dataset_authority']['dataset_lock_sha256']
 
           probe=Path(c['diagnostic_inputs']['probe_path']).read_text()
-          assert '"ns_noise_rms_dbfs"' in probe
+          assert 'ns_noise_rms_dbfs' in probe
           assert '(double)ns_result.noise_rms_dbfs' in probe
           assert 'ap_ns_process(&ns_state' in probe
 

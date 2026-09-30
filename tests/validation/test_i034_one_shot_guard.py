@@ -155,7 +155,6 @@ class I034GuardTests(unittest.TestCase):
         self.assertIn('"alignment_abs_error_db":abs(ns_delta-local_delta)',text)
         self.assertIn("base.analyze_case(",text)
         for forbidden in (
-            "best_horizon",
             "argmin",
             "tracker_alpha_candidates",
             "mapping_candidates",

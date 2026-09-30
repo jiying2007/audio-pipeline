@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i033-ns-vad-causal-noise-delta-alignment-v1",
+  "phase": "candidate-zero-target-causal-noise-delta-alignment-diagnostic",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "5f569b6a05d9d3ca1ad3afa4e17ad9f99f46db2c",
+  "predecessor": {
+    "i032_closure": ".github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1-result.json",
+    "i032_closure_blob_sha": "4f99de97d1ad1abdc3a391c2e302299e570c4d30",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_UPSTREAM_TARGET_CAUSAL_NOISE_SCALE_OBSERVABILITY_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "TARGET_CAUSAL_NS_NOISE_SCALE_FIDELITY_SUPPORTED_NO_NORMALIZATION_OR_REFERENCE_SOURCE_CANDIDATE",
+    "required_followup_id": "i033-ns-vad-causal-noise-delta-alignment-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Does the causal relative change in shipping NS ns_noise_rms_dbfs from the last prior ordinary-noise reference to the first pre-ready-speech disagreement align with the later post-NS local observation-domain noise-level change closely enough to justify one future parameter-free VAD noise-state alignment candidate?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i033_ns_vad_causal_noise_delta_probe.c",
+    "probe_git_blob_sha": "97421085e7faa12f9a9d7a45e69a52e17d176a20",
+    "evaluator_path": "tests/validation/i033_ns_vad_causal_noise_delta_alignment.py",
+    "evaluator_git_blob_sha": "722c64746bb631a1cc48d0d718c8563f47ac7a56"
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      1701307,
+      1711307,
+      1721307,
+      1731307,
+      1741307,
+      1751307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "ns_noise_scale_field": "ns_noise_rms_dbfs",
+    "local_observation_field": "post_ns_rms_dbfs",
+    "shipping_ns_vad_source_must_remain_unchanged": true
+  },
+  "causal_anchor_semantics": {
+    "target": "first oracle-speech disagreement frame with fewer than eight prior same-case ordinary-noise non-disagreement references",
+    "anchor": "last strictly prior same-case ordinary-noise non-disagreement reference",
+    "require_at_least_one_prior_reference": true,
+    "anchor_and_target_are_causal": true,
+    "same_anchor_for_ns_and_local_deltas": true,
+    "may_use_future_frames_for_anchor_or_target": false
+  },
+  "retrospective_benchmark_semantics": {
+    "benchmark": "median post_ns_rms_dbfs over the first eight strictly post-target ordinary-noise non-disagreement frames",
+    "reference_frames": 8,
+    "strictly_post_target": true,
+    "role": "retrospective fidelity benchmark only; never a causal input or refresh source"
+  },
+  "delta_alignment_hypothesis": {
+    "primary_population": "target cases with a first pre-ready-speech disagreement, at least one prior ordinary-noise causal anchor and eight strictly post-target ordinary-noise benchmark frames",
+    "causal_ns_delta": "target ns_noise_rms_dbfs minus anchor ns_noise_rms_dbfs",
+    "future_local_delta": "later eight-frame median post_ns_rms_dbfs minus anchor post_ns_rms_dbfs",
+    "primary_metric": "absolute error between causal NS delta and future local-domain delta",
+    "support_requires": [
+      "median absolute delta error <= 3 dB",
+      "nearest-rank 90th-percentile absolute delta error <= 6 dB"
+    ],
+    "maximum_median_absolute_delta_error_db": 3,
+    "maximum_p90_absolute_delta_error_db": 6,
+    "percentile_definition": "nearest-rank"
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "expected_target_cases": 252,
+    "minimum_causal_target_cases": 100,
+    "minimum_causal_anchor_cases": 35,
+    "minimum_causal_anchor_coverage": 0.25,
+    "minimum_post_target_benchmark_coverage": 0.8
+  },
+  "diagnostic_outputs": [
+    "per-case causal target and last-prior-reference anchor identity",
+    "anchor and target shipping NS ns_noise_rms_dbfs",
+    "anchor and target post-NS RMS dBFS",
+    "strictly post-target eight-reference local-domain benchmark",
+    "causal NS delta and future local-domain delta",
+    "signed and absolute delta error",
+    "global and per-noise-domain median/p90 delta fidelity",
+    "causal-anchor and benchmark coverage",
+    "exact shipping mirror identity"
+  ],
+  "forbidden_feedback": {
+    "i025_to_i032_seeds": true,
+    "donor_selection": true,
+    "reference_source_selection": true,
+    "absolute_normalization_mapping_selection": true,
+    "joint_aggregation_operator_search": true,
+    "vad_noise_state_refresh_rule_selection": true,
+    "threshold_search": true,
+    "tracker_alpha_search": true,
+    "source_candidate_execution": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_VAD_CAUSAL_NOISE_DELTA_ALIGNMENT_DECOMPOSED_REVIEW_REQUIRED": "Fresh target-only authority, causal anchor/target pairing, strictly post-target benchmark, coverage and shipping mirrors are valid. Report relative delta fidelity for review without selecting any source patch, normalization mapping, threshold or shipping candidate.",
+    "I033_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, fresh-seed identity, causal target count, anchor count/coverage, post-target benchmark coverage or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_vad_noise_state_refresh": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_use_donor_selection": false,
+    "may_evaluate_joint_aggregation_operator": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "If and only if I033 passes the preregistered global relative-delta fidelity bounds with valid causal-anchor coverage, a new authority may test exactly one parameter-free VAD noise-state relative-alignment source candidate. Otherwise close this transfer path without threshold or mapping search."
+}

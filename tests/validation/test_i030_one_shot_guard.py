@@ -251,6 +251,10 @@ class I030GuardTests(unittest.TestCase):
             function_dump(I029_EVALUATOR,"compatibility_score"),
             function_dump(EVALUATOR,"compatibility_score"),
         )
+        self.assertEqual(
+            function_dump(I029_EVALUATOR,"select_donors"),
+            function_dump(EVALUATOR,"select_donors"),
+        )
 
         def assigned_literal(path: Path,name: str):
             tree=ast.parse(path.read_text(encoding="utf-8"))

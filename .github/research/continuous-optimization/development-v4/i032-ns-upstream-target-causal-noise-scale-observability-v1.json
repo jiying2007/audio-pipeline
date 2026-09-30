@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i032-ns-upstream-target-causal-noise-scale-observability-v1",
+  "phase": "candidate-zero-target-causal-noise-scale-observability-diagnostic",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "3568cbf93392ac6a84ef9288314e05ddfc648e67",
+  "predecessor": {
+    "i031_closure": ".github/research/continuous-optimization/development-v4/i031-ns-upstream-joint-coherent-donor-aggregation-v1-result.json",
+    "i031_closure_blob_sha": "6b1a2a5b01aa3a15f2dfa8db9501c281d0e8f3bc",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_UPSTREAM_JOINT_COHERENT_DONOR_AGGREGATION_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "JOINT_COHERENCE_RESTORED_BUT_PRIMARY_GAP_ERROR_WORSENED_NO_OPERATOR_OR_REFERENCE_SOURCE_CANDIDATE",
+    "required_followup_id": "i032-ns-upstream-target-causal-noise-scale-observability-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Is frozen shipping-NS ns_noise_rms_dbfs, observed causally at the first pre-ready-speech disagreement frame, faithful enough to represent the same target case's later ordinary-noise state before any donor normalization rule is designed?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i032_ns_upstream_target_causal_noise_scale_observability.py",
+    "evaluator_git_blob_sha": "3d4a0cf12203687869d920118cf2968324252a07"
+  },
+  "fresh_diagnostic_authority": {
+    "donor_seeds": [
+      1601307,
+      1611307,
+      1621307
+    ],
+    "target_seeds": [
+      1631307,
+      1641307,
+      1651307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "causal_noise_scale_field": "ns_noise_rms_dbfs",
+    "causal_noise_scale_provenance": "direct field from ap_ns_process shipping NS result; not diagnostic VAD state"
+  },
+  "frozen_donor_selection": {
+    "donor_select_k": 3,
+    "same_noise_domain_required": true,
+    "ordering": "lexicographically minimize [scenario_group_mismatch, reverb_mismatch, snr_missing_penalty, absolute_snr_distance, exact_scenario_mismatch, case_key]",
+    "scenario_groups": {
+      "research-public-noise-only": "noise-only",
+      "research-public-noisy-clean": "mix",
+      "research-public-noisy-reverb": "mix"
+    },
+    "negative_control_domain_map": {
+      "kitchen": "traffic",
+      "traffic": "living",
+      "living": "office",
+      "office": "cafeteria",
+      "cafeteria": "bus",
+      "bus": "field",
+      "field": "kitchen"
+    },
+    "must_remain_ast_equivalent_to_i031": true,
+    "may_change_k": false,
+    "may_change_matching_rule": false,
+    "may_change_negative_control_map": false
+  },
+  "frozen_donor_control": {
+    "id": "independent-component-median-v1",
+    "rule": "For K=3 selected donor cases, use the component-wise median of each donor case first-ready summary for mean, concentration and gap exactly as in I030/I031.",
+    "noise_scale_summary": "For descriptive mismatch only, use the median donor first-ready ns_noise_rms_dbfs across the same frozen K=3 selected donors.",
+    "may_change": false
+  },
+  "causal_proxy_semantics": {
+    "trigger": "first oracle-speech disagreement frame for which fewer than eight same-case ordinary-noise non-disagreement references have previously accumulated",
+    "proxy": "ns_noise_rms_dbfs on that exact target frame",
+    "causal": true,
+    "prior_reference_threshold": 8,
+    "may_use_future_frames_for_proxy": false
+  },
+  "retrospective_benchmark_semantics": {
+    "benchmark": "median ns_noise_rms_dbfs over the first eight ordinary-noise non-disagreement frames strictly after the causal target frame",
+    "reference_frames": 8,
+    "strictly_post_target": true,
+    "role": "retrospective fidelity benchmark only; never a causal input or normalization source",
+    "gap_benchmark": "median mirror_gap over the same eight later frames, used only for descriptive frozen-donor transfer error"
+  },
+  "fidelity_hypothesis": {
+    "primary_population": "target cases with at least one causal pre-ready-speech target and at least eight later ordinary-noise non-disagreement reference frames",
+    "primary_metric": "absolute error in dB between causal ns_noise_rms_dbfs and later eight-frame median ns_noise_rms_dbfs",
+    "support_requires": [
+      "median absolute error <= 3 dB",
+      "90th-percentile absolute error <= 6 dB"
+    ],
+    "maximum_median_absolute_error_db": 3,
+    "maximum_p90_absolute_error_db": 6,
+    "percentile_definition": "nearest-rank"
+  },
+  "descriptive_transfer_association": {
+    "x": "absolute difference between frozen K=3 donor noise-scale summary and causal target ns_noise_rms_dbfs",
+    "y": "absolute frozen donor gap error versus later target gap benchmark",
+    "outputs": [
+      "Spearman rank correlation",
+      "noise-scale mismatch quartile summaries"
+    ],
+    "authority": "descriptive only",
+    "may_select_normalization_mapping": false,
+    "may_select_candidate": false
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "expected_target_cases": 126,
+    "expected_donor_cases": 126,
+    "minimum_ready_donor_cases": 120,
+    "minimum_ready_donors_per_domain": 12,
+    "minimum_causal_target_cases": 40,
+    "minimum_causal_benchmark_coverage": 0.8,
+    "minimum_matched_donor_coverage": 0.95
+  },
+  "diagnostic_outputs": [
+    "per-target causal pre-ready-speech frame index and prior reference count",
+    "causal ns_noise_rms_dbfs",
+    "strictly post-target eight-frame ns_noise_rms_dbfs benchmark",
+    "causal proxy signed and absolute dB error",
+    "global and per-noise-domain fidelity summaries",
+    "median and nearest-rank p90 absolute error",
+    "frozen donor noise-scale mismatch versus causal target noise scale",
+    "frozen donor gap transfer error against later target gap benchmark",
+    "descriptive Spearman association and mismatch quartiles",
+    "coverage and exact shipping mirror identity"
+  ],
+  "forbidden_feedback": {
+    "i025_seeds": true,
+    "i026_seeds": true,
+    "i027_seeds": true,
+    "i028_seeds": true,
+    "i029_seeds": true,
+    "i030_seeds": true,
+    "i031_seeds": true,
+    "target_future_frames_for_causal_proxy": true,
+    "search_or_evaluation_of_joint_aggregation_operator": true,
+    "noise_scale_normalization_mapping_selection": true,
+    "target_outputs_for_donor_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_TARGET_CAUSAL_NOISE_SCALE_OBSERVABILITY_DECOMPOSED_REVIEW_REQUIRED": "Fresh donor/target authority, frozen donor rule/control, causal shipping-NS proxy capture, strictly post-target benchmark, coverage and shipping mirrors are valid. Report fidelity and descriptive transfer association for review without selecting a normalization mapping or candidate.",
+    "I032_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, frozen-input identity, donor/target disjointness, causal target count, post-target benchmark coverage, donor coverage or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_run_component_counterfactual": false,
+    "may_change_donor_k": false,
+    "may_change_donor_matching_rule": false,
+    "may_change_negative_control_map": false,
+    "may_change_donor_control": false,
+    "may_evaluate_joint_aggregation_operator": false,
+    "may_assume_matching_metadata_available_in_shipping": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use I032 only to determine whether the existing target-side shipping NS noise-scale state is a faithful causal observable. Any normalization mapping, donor adaptation rule, reference-source candidate, component counterfactual or shipping change requires a new independently preregistered authority."
+}

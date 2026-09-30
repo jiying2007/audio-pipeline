@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i033-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i033-ns-vad-causal-noise-delta-alignment-v1.json"
 EVALUATOR=ROOT/"tests/validation/i033_ns_vad_causal_noise_delta_alignment.py"
 PROBE=ROOT/"tests/validation/i033_ns_vad_causal_noise_delta_probe.c"

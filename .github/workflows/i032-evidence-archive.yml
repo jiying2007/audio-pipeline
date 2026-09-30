@@ -1,4 +1,4 @@
-name: I032 Donor Evidence Archive
+name: I032 Causal Noise Scale Evidence Archive
 run-name: "i032-evidence-archive / ${{ github.event_name }} / ${{ github.ref_name }}"
 
 on:
@@ -8,7 +8,7 @@ on:
       - '.github/program/i032_archive.py'
       - '.github/workflows/i032-evidence-archive.yml'
       - 'tests/validation/test_i032_archive.py'
-      - '.github/research/continuous-optimization/development-v4/i032-ns-upstream-causal-noise-scale-donor-aggregation-v1-result.json'
+      - '.github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1-result.json'
       - 'validation/research/evidence/i032-36688937963/**'
   push:
     branches: [main]
@@ -16,7 +16,7 @@ on:
       - '.github/program/i032_archive.py'
       - '.github/workflows/i032-evidence-archive.yml'
       - 'tests/validation/test_i032_archive.py'
-      - '.github/research/continuous-optimization/development-v4/i032-ns-upstream-causal-noise-scale-donor-aggregation-v1-result.json'
+      - '.github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1-result.json'
       - 'validation/research/evidence/i032-36688937963/**'
 
 permissions:

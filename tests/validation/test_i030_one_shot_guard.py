@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i030-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.json"
 EVALUATOR=ROOT/"tests/validation/i030_ns_upstream_donor_joint_residual_stability_decomposition.py"
 I029_EVALUATOR=ROOT/"tests/validation/i029_ns_upstream_independent_donor_reference_feasibility.py"

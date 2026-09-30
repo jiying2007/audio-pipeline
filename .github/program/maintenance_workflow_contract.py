@@ -102,7 +102,6 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
     Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'),
     Path('.github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml'),
-    Path('.github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml'),
 
 )
 
@@ -137,6 +136,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i027-ns-upstream-reference-ready-component-counterfactual-v1.yml'),
     Path('.github/workflows/research-i028-ns-upstream-reference-readiness-temporal-decomposition-v1.yml'),
     Path('.github/workflows/research-i029-ns-upstream-independent-donor-reference-feasibility-v1.yml'),
+    Path('.github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -323,6 +323,13 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('tests/validation/data/i029-consumed-workflow.yml'),
         Path('tests/validation/test_i029_one_shot_guard.py'),
         Path('tests/validation/test_i029_retirement.py'),
+    ),
+    Path('.github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1-result.json'),
+        Path('tests/validation/data/i030-consumed-workflow.yml'),
+        Path('tests/validation/test_i030_one_shot_guard.py'),
+        Path('tests/validation/test_i030_retirement.py'),
     ),
 
 }

@@ -1,0 +1,5330 @@
+{
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "authority_boundary": {
+    "automatic_main_mutation": false,
+    "may_assume_matching_metadata_available_in_shipping": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_authorize_source_patch": false,
+    "may_change_donor_control": false,
+    "may_change_donor_k": false,
+    "may_change_donor_matching_rule": false,
+    "may_change_negative_control_map": false,
+    "may_change_readiness_threshold": false,
+    "may_change_tracker_alpha": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_consume_confirmation": false,
+    "may_consume_validation_holdout": false,
+    "may_evaluate_joint_aggregation_operator": false,
+    "may_modify_shipping_source": false,
+    "may_promote_release": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_run_component_counterfactual": false,
+    "may_search_parameters": false,
+    "may_select_candidate": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_reference_source_candidate": false,
+    "may_tune_thresholds": false
+  },
+  "candidate_budget_consumed": 0,
+  "confirmation_budget_consumed": 0,
+  "coverage": {
+    "benchmarkable_causal_cases": 72,
+    "causal_benchmark_coverage": 1.0,
+    "causal_target_cases": 72,
+    "donor_cases": 126,
+    "matched_donor_coverage": 1.0,
+    "per_domain": {
+      "bus": {
+        "benchmarkable_causal_cases": 9,
+        "causal_benchmark_coverage": 1.0,
+        "causal_target_cases": 9,
+        "ready_donors": 18
+      },
+      "cafeteria": {
+        "benchmarkable_causal_cases": 12,
+        "causal_benchmark_coverage": 1.0,
+        "causal_target_cases": 12,
+        "ready_donors": 17
+      },
+      "field": {
+        "benchmarkable_causal_cases": 11,
+        "causal_benchmark_coverage": 1.0,
+        "causal_target_cases": 11,
+        "ready_donors": 18
+      },
+      "kitchen": {
+        "benchmarkable_causal_cases": 9,
+        "causal_benchmark_coverage": 1.0,
+        "causal_target_cases": 9,
+        "ready_donors": 18
+      },
+      "living": {
+        "benchmarkable_causal_cases": 9,
+        "causal_benchmark_coverage": 1.0,
+        "causal_target_cases": 9,
+        "ready_donors": 18
+      },
+      "office": {
+        "benchmarkable_causal_cases": 12,
+        "causal_benchmark_coverage": 1.0,
+        "causal_target_cases": 12,
+        "ready_donors": 18
+      },
+      "traffic": {
+        "benchmarkable_causal_cases": 10,
+        "causal_benchmark_coverage": 1.0,
+        "causal_target_cases": 10,
+        "ready_donors": 18
+      }
+    },
+    "ready_donor_cases": 125,
+    "target_cases": 126
+  },
+  "decision": "NS_UPSTREAM_TARGET_CAUSAL_NOISE_SCALE_OBSERVABILITY_DECOMPOSED_REVIEW_REQUIRED",
+  "descriptive_donor_transfer_association": {
+    "mismatch_quartiles": {
+      "q1": {
+        "cases": 18,
+        "median_frozen_donor_gap_transfer_error": 0.038312628749999966,
+        "median_noise_scale_mismatch_db": 1.2297276999999944
+      },
+      "q2": {
+        "cases": 18,
+        "median_frozen_donor_gap_transfer_error": 0.049253016750000045,
+        "median_noise_scale_mismatch_db": 3.246026074999996
+      },
+      "q3": {
+        "cases": 18,
+        "median_frozen_donor_gap_transfer_error": 0.06799849875000002,
+        "median_noise_scale_mismatch_db": 6.117136950000006
+      },
+      "q4": {
+        "cases": 18,
+        "median_frozen_donor_gap_transfer_error": 0.14625273625000001,
+        "median_noise_scale_mismatch_db": 8.988575925000003
+      }
+    },
+    "spearman_noise_scale_mismatch_vs_gap_transfer_error": 0.3256479516367612,
+    "use_for_mapping_or_candidate_selection": false
+  },
+  "diagnostic_execution_consumed": 1,
+  "fidelity": {
+    "by_noise_domain": {
+      "bus": {
+        "cases": 9,
+        "max_absolute_error_db": 3.1460818999999987,
+        "median_absolute_error_db": 1.4171676500000032,
+        "median_signed_error_db": 0.3819580500000086,
+        "p90_absolute_error_db": 3.1460818999999987
+      },
+      "cafeteria": {
+        "cases": 12,
+        "max_absolute_error_db": 6.946819299999994,
+        "median_absolute_error_db": 1.5318927249999987,
+        "median_signed_error_db": 0.25144385000000113,
+        "p90_absolute_error_db": 2.625102950000006
+      },
+      "field": {
+        "cases": 11,
+        "max_absolute_error_db": 5.0362797000000015,
+        "median_absolute_error_db": 1.9415035500000002,
+        "median_signed_error_db": 1.0891570499999972,
+        "p90_absolute_error_db": 2.890571599999994
+      },
+      "kitchen": {
+        "cases": 9,
+        "max_absolute_error_db": 6.07858275000001,
+        "median_absolute_error_db": 1.8415641500000106,
+        "median_signed_error_db": 1.8415641500000106,
+        "p90_absolute_error_db": 6.07858275000001
+      },
+      "living": {
+        "cases": 9,
+        "max_absolute_error_db": 4.160057099999996,
+        "median_absolute_error_db": 2.0491942999999964,
+        "median_signed_error_db": 2.0491942999999964,
+        "p90_absolute_error_db": 4.160057099999996
+      },
+      "office": {
+        "cases": 12,
+        "max_absolute_error_db": 4.916917799999993,
+        "median_absolute_error_db": 0.7818689499999998,
+        "median_signed_error_db": -0.020917924999999116,
+        "p90_absolute_error_db": 3.575731250000004
+      },
+      "traffic": {
+        "cases": 10,
+        "max_absolute_error_db": 2.6813430999999923,
+        "median_absolute_error_db": 1.5176277750000011,
+        "median_signed_error_db": 0.8016567499999994,
+        "p90_absolute_error_db": 2.410621649999996
+      }
+    },
+    "global": {
+      "cases": 72,
+      "max_absolute_error_db": 6.946819299999994,
+      "median_absolute_error_db": 1.605659475000003,
+      "median_signed_error_db": 0.5782012999999964,
+      "p90_absolute_error_db": 3.575731250000004
+    }
+  },
+  "fidelity_hypothesis": {
+    "maximum_median_absolute_error_db": 3,
+    "maximum_p90_absolute_error_db": 6,
+    "supported": true
+  },
+  "fresh_diagnostic_authority": {
+    "donor_seeds": [
+      1601307,
+      1611307,
+      1621307
+    ],
+    "target_seeds": [
+      1631307,
+      1641307,
+      1651307
+    ]
+  },
+  "interpretation_boundary": {
+    "causal_proxy_is_shipping_ns_noise_rms_dbfs": true,
+    "donor_selection_metadata_only": true,
+    "frozen_independent_component_median_donor_control": true,
+    "i029_i030_donor_selection_frozen": true,
+    "later_benchmark_is_retrospective_only": true,
+    "later_benchmark_uses_only_post_target_reference_frames": true,
+    "matching_metadata_development_only_not_shippable": true,
+    "no_joint_aggregation_operator_evaluated": true,
+    "no_noise_scale_normalization_mapping": true,
+    "no_reference_source_candidate_selected": true,
+    "no_shipping_candidate": true,
+    "proxy_captured_at_first_pre_ready_speech_target_frame": true
+  },
+  "invalid_reasons": [],
+  "investigation_id": "i032-ns-upstream-target-causal-noise-scale-observability-v1",
+  "receipts": [
+    {
+      "causal_target": {
+        "absolute_frame_index": 87,
+        "local_frame_index": 7,
+        "mirror_concentration": 0.875175536,
+        "mirror_gap": 0.679585695,
+        "mirror_mean": 0.195589826,
+        "ns_noise_rms_dbfs": -64.8293152,
+        "prior_reference_count": 1
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.1277131325,
+        "gap": 0.1261684897,
+        "mean": 0.000944868982,
+        "ns_noise_rms_dbfs": -64.95651244999999
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-026",
+        "1621307:public-dev-mix-004",
+        "1601307:public-dev-mix-012"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-000",
+        "case_key": "1631307:public-dev-mix-000",
+        "noise_domain": "field",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 87,
+        "causal_ns_noise_rms_dbfs": -64.8293152,
+        "causal_prior_reference_count": 1,
+        "causal_proxy_abs_error_db": 0.1271972499999947,
+        "causal_proxy_signed_error_db": 0.1271972499999947,
+        "donor_vs_causal_noise_scale_mismatch_db": 3.168313999999995,
+        "frozen_donor_gap": 0.22353800015000003,
+        "frozen_donor_gap_transfer_error": 0.09736951045000003,
+        "frozen_donor_noise_scale_dbfs": -61.6610012,
+        "later_gap_benchmark": 0.1261684897,
+        "later_noise_scale_benchmark_dbfs": -64.95651244999999,
+        "metadata": {
+          "case_id": "public-dev-mix-000",
+          "case_key": "1631307:public-dev-mix-000",
+          "noise_domain": "field",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-000"
+      },
+      "target_case_key": "1631307:public-dev-mix-000"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 102,
+        "local_frame_index": 22,
+        "mirror_concentration": 0.815654159,
+        "mirror_gap": 0.565107465,
+        "mirror_mean": 0.250546664,
+        "ns_noise_rms_dbfs": -62.194458,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.625808805,
+        "gap": 0.5129208565000001,
+        "mean": 0.0964709819,
+        "ns_noise_rms_dbfs": -68.27304075
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-027",
+        "1621307:public-dev-mix-005",
+        "1611307:public-dev-mix-009"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-001",
+        "case_key": "1631307:public-dev-mix-001",
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 102,
+        "causal_ns_noise_rms_dbfs": -62.194458,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 6.07858275000001,
+        "causal_proxy_signed_error_db": 6.07858275000001,
+        "donor_vs_causal_noise_scale_mismatch_db": 0.04005049999999244,
+        "frozen_donor_gap": 0.48692074399999996,
+        "frozen_donor_gap_transfer_error": 0.026000112500000117,
+        "frozen_donor_noise_scale_dbfs": -62.154407500000005,
+        "later_gap_benchmark": 0.5129208565000001,
+        "later_noise_scale_benchmark_dbfs": -68.27304075,
+        "metadata": {
+          "case_id": "public-dev-mix-001",
+          "case_key": "1631307:public-dev-mix-001",
+          "noise_domain": "kitchen",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1631307:public-dev-mix-001"
+      },
+      "target_case_key": "1631307:public-dev-mix-001"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 126,
+        "local_frame_index": 46,
+        "mirror_concentration": 0.854665041,
+        "mirror_gap": 0.675314903,
+        "mirror_mean": 0.179350138,
+        "ns_noise_rms_dbfs": -59.157608,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.30257552849999997,
+        "gap": 0.29917510599999997,
+        "mean": 0.0034004258900000002,
+        "ns_noise_rms_dbfs": -60.994319950000005
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-006",
+        "1601307:public-dev-mix-000",
+        "1611307:public-dev-mix-010"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-002",
+        "case_key": "1631307:public-dev-mix-002",
+        "noise_domain": "traffic",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 126,
+        "causal_ns_noise_rms_dbfs": -59.157608,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 1.8367119500000015,
+        "causal_proxy_signed_error_db": 1.8367119500000015,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.3476085499999968,
+        "frozen_donor_gap": 0.429899827,
+        "frozen_donor_gap_transfer_error": 0.13072472100000004,
+        "frozen_donor_noise_scale_dbfs": -57.80999945000001,
+        "later_gap_benchmark": 0.29917510599999997,
+        "later_noise_scale_benchmark_dbfs": -60.994319950000005,
+        "metadata": {
+          "case_id": "public-dev-mix-002",
+          "case_key": "1631307:public-dev-mix-002",
+          "noise_domain": "traffic",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1631307:public-dev-mix-002"
+      },
+      "target_case_key": "1631307:public-dev-mix-002"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 106,
+        "local_frame_index": 26,
+        "mirror_concentration": 0.751729012,
+        "mirror_gap": 0.582493305,
+        "mirror_mean": 0.169235691,
+        "ns_noise_rms_dbfs": -48.3282623,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.707803637,
+        "gap": 0.560842603,
+        "mean": 0.130954016,
+        "ns_noise_rms_dbfs": -47.25461385
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-015",
+        "1611307:public-dev-mix-025",
+        "1601307:public-dev-mix-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-003",
+        "case_key": "1631307:public-dev-mix-003",
+        "noise_domain": "living",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 106,
+        "causal_ns_noise_rms_dbfs": -48.3282623,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.0736484500000003,
+        "causal_proxy_signed_error_db": -1.0736484500000003,
+        "donor_vs_causal_noise_scale_mismatch_db": 11.7004929,
+        "frozen_donor_gap": 0.47290954,
+        "frozen_donor_gap_transfer_error": 0.08793306299999998,
+        "frozen_donor_noise_scale_dbfs": -60.0287552,
+        "later_gap_benchmark": 0.560842603,
+        "later_noise_scale_benchmark_dbfs": -47.25461385,
+        "metadata": {
+          "case_id": "public-dev-mix-003",
+          "case_key": "1631307:public-dev-mix-003",
+          "noise_domain": "living",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-003"
+      },
+      "target_case_key": "1631307:public-dev-mix-003"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 84,
+        "local_frame_index": 4,
+        "mirror_concentration": 0.76701802,
+        "mirror_gap": 0.624986291,
+        "mirror_mean": 0.142031714,
+        "ns_noise_rms_dbfs": -57.7507706,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5068455935,
+        "gap": 0.45068392150000003,
+        "mean": 0.0242628013,
+        "ns_noise_rms_dbfs": -57.3575592
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-008",
+        "1601307:public-dev-mix-016",
+        "1611307:public-dev-mix-026"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-004",
+        "case_key": "1631307:public-dev-mix-004",
+        "noise_domain": "office",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 84,
+        "causal_ns_noise_rms_dbfs": -57.7507706,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 0.39321140000000554,
+        "causal_proxy_signed_error_db": -0.39321140000000554,
+        "donor_vs_causal_noise_scale_mismatch_db": 7.9924087499999885,
+        "frozen_donor_gap": 0.375523135,
+        "frozen_donor_gap_transfer_error": 0.07516078650000002,
+        "frozen_donor_noise_scale_dbfs": -65.74317934999999,
+        "later_gap_benchmark": 0.45068392150000003,
+        "later_noise_scale_benchmark_dbfs": -57.3575592,
+        "metadata": {
+          "case_id": "public-dev-mix-004",
+          "case_key": "1631307:public-dev-mix-004",
+          "noise_domain": "office",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1631307:public-dev-mix-004"
+      },
+      "target_case_key": "1631307:public-dev-mix-004"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 95,
+        "local_frame_index": 15,
+        "mirror_concentration": 0.738907814,
+        "mirror_gap": 0.619533718,
+        "mirror_mean": 0.119374081,
+        "ns_noise_rms_dbfs": -56.2511101,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.9002600905,
+        "gap": 0.4957824945,
+        "mean": 0.397111282,
+        "ns_noise_rms_dbfs": -56.58732035
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-009",
+        "1601307:public-dev-mix-003",
+        "1601307:public-dev-mix-017"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-005",
+        "case_key": "1631307:public-dev-mix-005",
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 95,
+        "causal_ns_noise_rms_dbfs": -56.2511101,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.3362102500000006,
+        "causal_proxy_signed_error_db": 0.3362102500000006,
+        "donor_vs_causal_noise_scale_mismatch_db": 9.94011305,
+        "frozen_donor_gap": 0.5019009409999999,
+        "frozen_donor_gap_transfer_error": 0.00611844649999993,
+        "frozen_donor_noise_scale_dbfs": -66.19122315,
+        "later_gap_benchmark": 0.4957824945,
+        "later_noise_scale_benchmark_dbfs": -56.58732035,
+        "metadata": {
+          "case_id": "public-dev-mix-005",
+          "case_key": "1631307:public-dev-mix-005",
+          "noise_domain": "cafeteria",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-005"
+      },
+      "target_case_key": "1631307:public-dev-mix-005"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 87,
+        "local_frame_index": 7,
+        "mirror_concentration": 0.905277312,
+        "mirror_gap": 0.750864327,
+        "mirror_mean": 0.154412985,
+        "ns_noise_rms_dbfs": -67.0257645,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.457460001,
+        "gap": 0.43389868750000005,
+        "mean": 0.024834237949999997,
+        "ns_noise_rms_dbfs": -65.2075577
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-000",
+        "1621307:public-dev-mix-010",
+        "1601307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-006",
+        "case_key": "1631307:public-dev-mix-006",
+        "noise_domain": "bus",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 87,
+        "causal_ns_noise_rms_dbfs": -67.0257645,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.8182067999999987,
+        "causal_proxy_signed_error_db": -1.8182067999999987,
+        "donor_vs_causal_noise_scale_mismatch_db": 9.287755999999987,
+        "frozen_donor_gap": 0.0,
+        "frozen_donor_gap_transfer_error": 0.43389868750000005,
+        "frozen_donor_noise_scale_dbfs": -57.73800850000001,
+        "later_gap_benchmark": 0.43389868750000005,
+        "later_noise_scale_benchmark_dbfs": -65.2075577,
+        "metadata": {
+          "case_id": "public-dev-mix-006",
+          "case_key": "1631307:public-dev-mix-006",
+          "noise_domain": "bus",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1631307:public-dev-mix-006"
+      },
+      "target_case_key": "1631307:public-dev-mix-006"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 86,
+        "local_frame_index": 6,
+        "mirror_concentration": 0.845594645,
+        "mirror_gap": 0.798826158,
+        "mirror_mean": 0.0467684716,
+        "ns_noise_rms_dbfs": -63.5341835,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.1800666155,
+        "gap": 0.178938195,
+        "mean": 0.0011284216350000002,
+        "ns_noise_rms_dbfs": -66.11832045
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-001",
+        "1621307:public-dev-mix-011",
+        "1601307:public-dev-mix-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-007",
+        "case_key": "1631307:public-dev-mix-007",
+        "noise_domain": "field",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 86,
+        "causal_ns_noise_rms_dbfs": -63.5341835,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 2.5841369500000013,
+        "causal_proxy_signed_error_db": 2.5841369500000013,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.7791671500000064,
+        "frozen_donor_gap": 0.48423145700000003,
+        "frozen_donor_gap_transfer_error": 0.30529326200000007,
+        "frozen_donor_noise_scale_dbfs": -66.31335065,
+        "later_gap_benchmark": 0.178938195,
+        "later_noise_scale_benchmark_dbfs": -66.11832045,
+        "metadata": {
+          "case_id": "public-dev-mix-007",
+          "case_key": "1631307:public-dev-mix-007",
+          "noise_domain": "field",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1631307:public-dev-mix-007"
+      },
+      "target_case_key": "1631307:public-dev-mix-007"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 88,
+        "local_frame_index": 8,
+        "mirror_concentration": 0.831438899,
+        "mirror_gap": 0.556363285,
+        "mirror_mean": 0.275075614,
+        "ns_noise_rms_dbfs": -50.8273849,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.732721776,
+        "gap": 0.5280892845,
+        "mean": 0.198125787,
+        "ns_noise_rms_dbfs": -55.006599449999996
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-020",
+        "1601307:public-dev-mix-006",
+        "1611307:public-dev-mix-016"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-008",
+        "case_key": "1631307:public-dev-mix-008",
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 88,
+        "causal_ns_noise_rms_dbfs": -50.8273849,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 4.1792145499999975,
+        "causal_proxy_signed_error_db": 4.1792145499999975,
+        "donor_vs_causal_noise_scale_mismatch_db": 13.772876800000006,
+        "frozen_donor_gap": 0.4858997615,
+        "frozen_donor_gap_transfer_error": 0.04218952300000001,
+        "frozen_donor_noise_scale_dbfs": -64.6002617,
+        "later_gap_benchmark": 0.5280892845,
+        "later_noise_scale_benchmark_dbfs": -55.006599449999996,
+        "metadata": {
+          "case_id": "public-dev-mix-008",
+          "case_key": "1631307:public-dev-mix-008",
+          "noise_domain": "kitchen",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-008"
+      },
+      "target_case_key": "1631307:public-dev-mix-008"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 86,
+        "local_frame_index": 6,
+        "mirror_concentration": 0.842027843,
+        "mirror_gap": 0.56720078,
+        "mirror_mean": 0.274827093,
+        "ns_noise_rms_dbfs": -61.431076,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.763290733,
+        "gap": 0.524238497,
+        "mean": 0.2510551365,
+        "ns_noise_rms_dbfs": -62.6296196
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-003",
+        "1621307:public-dev-mix-013",
+        "1601307:public-dev-mix-021"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-009",
+        "case_key": "1631307:public-dev-mix-009",
+        "noise_domain": "traffic",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 86,
+        "causal_ns_noise_rms_dbfs": -61.431076,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.1985436000000007,
+        "causal_proxy_signed_error_db": 1.1985436000000007,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.224813399999995,
+        "frozen_donor_gap": 0.514518678,
+        "frozen_donor_gap_transfer_error": 0.009719819000000074,
+        "frozen_donor_noise_scale_dbfs": -60.2062626,
+        "later_gap_benchmark": 0.524238497,
+        "later_noise_scale_benchmark_dbfs": -62.6296196,
+        "metadata": {
+          "case_id": "public-dev-mix-009",
+          "case_key": "1631307:public-dev-mix-009",
+          "noise_domain": "traffic",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1631307:public-dev-mix-009"
+      },
+      "target_case_key": "1631307:public-dev-mix-009"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 115,
+        "local_frame_index": 35,
+        "mirror_concentration": 0.765020013,
+        "mirror_gap": 0.63517338,
+        "mirror_mean": 0.129846632,
+        "ns_noise_rms_dbfs": -62.8918037,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7174559835000001,
+        "gap": 0.506669998,
+        "mean": 0.175648801,
+        "ns_noise_rms_dbfs": -66.33597945
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-000",
+        "1611307:public-dev-mix-004",
+        "1621307:public-dev-mix-014"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-010",
+        "case_key": "1631307:public-dev-mix-010",
+        "noise_domain": "living",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 115,
+        "causal_ns_noise_rms_dbfs": -62.8918037,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 3.4441757499999994,
+        "causal_proxy_signed_error_db": 3.4441757499999994,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.1872462999999982,
+        "frozen_donor_gap": 0.49301369500000003,
+        "frozen_donor_gap_transfer_error": 0.01365630299999998,
+        "frozen_donor_noise_scale_dbfs": -61.7045574,
+        "later_gap_benchmark": 0.506669998,
+        "later_noise_scale_benchmark_dbfs": -66.33597945,
+        "metadata": {
+          "case_id": "public-dev-mix-010",
+          "case_key": "1631307:public-dev-mix-010",
+          "noise_domain": "living",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-010"
+      },
+      "target_case_key": "1631307:public-dev-mix-010"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 83,
+        "local_frame_index": 3,
+        "mirror_concentration": 0.949481428,
+        "mirror_gap": 0.568768561,
+        "mirror_mean": 0.380712867,
+        "ns_noise_rms_dbfs": -59.8793793,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.452567577,
+        "gap": 0.4145123215,
+        "mean": 0.01181312137,
+        "ns_noise_rms_dbfs": -63.45511055
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-001",
+        "1611307:public-dev-mix-005",
+        "1621307:public-dev-mix-015"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-011",
+        "case_key": "1631307:public-dev-mix-011",
+        "noise_domain": "office",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 83,
+        "causal_ns_noise_rms_dbfs": -59.8793793,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 3.575731250000004,
+        "causal_proxy_signed_error_db": 3.575731250000004,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.5476493500000004,
+        "frozen_donor_gap": 0.4308517725,
+        "frozen_donor_gap_transfer_error": 0.016339451000000005,
+        "frozen_donor_noise_scale_dbfs": -61.42702865,
+        "later_gap_benchmark": 0.4145123215,
+        "later_noise_scale_benchmark_dbfs": -63.45511055,
+        "metadata": {
+          "case_id": "public-dev-mix-011",
+          "case_key": "1631307:public-dev-mix-011",
+          "noise_domain": "office",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1631307:public-dev-mix-011"
+      },
+      "target_case_key": "1631307:public-dev-mix-011"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 94,
+        "local_frame_index": 14,
+        "mirror_concentration": 0.883455515,
+        "mirror_gap": 0.858628511,
+        "mirror_mean": 0.0248270165,
+        "ns_noise_rms_dbfs": -64.5657654,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5305921735,
+        "gap": 0.4696436375,
+        "mean": 0.01751040105,
+        "ns_noise_rms_dbfs": -62.5864258
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-002",
+        "1611307:public-dev-mix-006",
+        "1621307:public-dev-mix-016"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-012",
+        "case_key": "1631307:public-dev-mix-012",
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 94,
+        "causal_ns_noise_rms_dbfs": -64.5657654,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.979339600000003,
+        "causal_proxy_signed_error_db": -1.979339600000003,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.2346419999999938,
+        "frozen_donor_gap": 0.487322971,
+        "frozen_donor_gap_transfer_error": 0.017679333500000005,
+        "frozen_donor_noise_scale_dbfs": -65.8004074,
+        "later_gap_benchmark": 0.4696436375,
+        "later_noise_scale_benchmark_dbfs": -62.5864258,
+        "metadata": {
+          "case_id": "public-dev-mix-012",
+          "case_key": "1631307:public-dev-mix-012",
+          "noise_domain": "cafeteria",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1631307:public-dev-mix-012"
+      },
+      "target_case_key": "1631307:public-dev-mix-012"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 82,
+        "local_frame_index": 2,
+        "mirror_concentration": 0.835879326,
+        "mirror_gap": 0.757082105,
+        "mirror_mean": 0.0787972137,
+        "ns_noise_rms_dbfs": -63.376152,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.8239170014999999,
+        "gap": 0.6216987375,
+        "mean": 0.07310271635,
+        "ns_noise_rms_dbfs": -62.687664049999995
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-003",
+        "1601307:public-dev-mix-025",
+        "1601307:public-dev-mix-011"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-013",
+        "case_key": "1631307:public-dev-mix-013",
+        "noise_domain": "bus",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 82,
+        "causal_ns_noise_rms_dbfs": -63.376152,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.6884879500000025,
+        "causal_proxy_signed_error_db": -0.6884879500000025,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.7534980499999975,
+        "frozen_donor_gap": 0.5317771435,
+        "frozen_donor_gap_transfer_error": 0.089921594,
+        "frozen_donor_noise_scale_dbfs": -60.62265395,
+        "later_gap_benchmark": 0.6216987375,
+        "later_noise_scale_benchmark_dbfs": -62.687664049999995,
+        "metadata": {
+          "case_id": "public-dev-mix-013",
+          "case_key": "1631307:public-dev-mix-013",
+          "noise_domain": "bus",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-013"
+      },
+      "target_case_key": "1631307:public-dev-mix-013"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 85,
+        "local_frame_index": 5,
+        "mirror_concentration": 0.747554004,
+        "mirror_gap": 0.656838298,
+        "mirror_mean": 0.090715684,
+        "ns_noise_rms_dbfs": -59.6091995,
+        "prior_reference_count": 1
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.669818789,
+        "gap": 0.5267813205,
+        "mean": 0.1492134335,
+        "ns_noise_rms_dbfs": -56.94927405
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-004",
+        "1611307:public-dev-mix-008",
+        "1621307:public-dev-mix-018"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-014",
+        "case_key": "1631307:public-dev-mix-014",
+        "noise_domain": "field",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 85,
+        "causal_ns_noise_rms_dbfs": -59.6091995,
+        "causal_prior_reference_count": 1,
+        "causal_proxy_abs_error_db": 2.659925450000003,
+        "causal_proxy_signed_error_db": -2.659925450000003,
+        "donor_vs_causal_noise_scale_mismatch_db": 4.555414150000004,
+        "frozen_donor_gap": 0.501379013,
+        "frozen_donor_gap_transfer_error": 0.025402307500000054,
+        "frozen_donor_noise_scale_dbfs": -55.05378535,
+        "later_gap_benchmark": 0.5267813205,
+        "later_noise_scale_benchmark_dbfs": -56.94927405,
+        "metadata": {
+          "case_id": "public-dev-mix-014",
+          "case_key": "1631307:public-dev-mix-014",
+          "noise_domain": "field",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1631307:public-dev-mix-014"
+      },
+      "target_case_key": "1631307:public-dev-mix-014"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 82,
+        "local_frame_index": 2,
+        "mirror_concentration": 0.960882306,
+        "mirror_gap": 0.605126739,
+        "mirror_mean": 0.355755568,
+        "ns_noise_rms_dbfs": -70.2512283,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.47971490000000006,
+        "gap": 0.43974304200000003,
+        "mean": 0.0343354866,
+        "ns_noise_rms_dbfs": -72.5600662
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-005",
+        "1611307:public-dev-mix-009",
+        "1621307:public-dev-mix-019"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-015",
+        "case_key": "1631307:public-dev-mix-015",
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 82,
+        "causal_ns_noise_rms_dbfs": -70.2512283,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.3088379000000003,
+        "causal_proxy_signed_error_db": 2.3088379000000003,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.096820799999989,
+        "frozen_donor_gap": 0.48692074399999996,
+        "frozen_donor_gap_transfer_error": 0.04717770199999993,
+        "frozen_donor_noise_scale_dbfs": -62.154407500000005,
+        "later_gap_benchmark": 0.43974304200000003,
+        "later_noise_scale_benchmark_dbfs": -72.5600662,
+        "metadata": {
+          "case_id": "public-dev-mix-015",
+          "case_key": "1631307:public-dev-mix-015",
+          "noise_domain": "kitchen",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-015"
+      },
+      "target_case_key": "1631307:public-dev-mix-015"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 121,
+        "local_frame_index": 41,
+        "mirror_concentration": 0.817790389,
+        "mirror_gap": 0.607852101,
+        "mirror_mean": 0.209938273,
+        "ns_noise_rms_dbfs": -60.329052,
+        "prior_reference_count": 1
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.4552771,
+        "gap": 0.4293739345,
+        "mean": 0.02580079715,
+        "ns_noise_rms_dbfs": -62.59853365
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-006",
+        "1601307:public-dev-mix-000",
+        "1611307:public-dev-mix-010"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-016",
+        "case_key": "1631307:public-dev-mix-016",
+        "noise_domain": "traffic",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 121,
+        "causal_ns_noise_rms_dbfs": -60.329052,
+        "causal_prior_reference_count": 1,
+        "causal_proxy_abs_error_db": 2.269481650000003,
+        "causal_proxy_signed_error_db": 2.269481650000003,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.5190525499999907,
+        "frozen_donor_gap": 0.429899827,
+        "frozen_donor_gap_transfer_error": 0.0005258925000000136,
+        "frozen_donor_noise_scale_dbfs": -57.80999945000001,
+        "later_gap_benchmark": 0.4293739345,
+        "later_noise_scale_benchmark_dbfs": -62.59853365,
+        "metadata": {
+          "case_id": "public-dev-mix-016",
+          "case_key": "1631307:public-dev-mix-016",
+          "noise_domain": "traffic",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1631307:public-dev-mix-016"
+      },
+      "target_case_key": "1631307:public-dev-mix-016"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.823980153,
+        "mirror_gap": 0.585104108,
+        "mirror_mean": 0.238876075,
+        "ns_noise_rms_dbfs": -63.6056709,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.9326375124999999,
+        "gap": 0.354957074,
+        "mean": 0.577680439,
+        "ns_noise_rms_dbfs": -67.765728
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-007",
+        "1601307:public-dev-mix-001",
+        "1611307:public-dev-mix-011"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-017",
+        "case_key": "1631307:public-dev-mix-017",
+        "noise_domain": "living",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -63.6056709,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 4.160057099999996,
+        "causal_proxy_signed_error_db": 4.160057099999996,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.529518099999997,
+        "frozen_donor_gap": 0.46824589400000005,
+        "frozen_donor_gap_transfer_error": 0.11328882000000007,
+        "frozen_donor_noise_scale_dbfs": -62.0761528,
+        "later_gap_benchmark": 0.354957074,
+        "later_noise_scale_benchmark_dbfs": -67.765728,
+        "metadata": {
+          "case_id": "public-dev-mix-017",
+          "case_key": "1631307:public-dev-mix-017",
+          "noise_domain": "living",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1631307:public-dev-mix-017"
+      },
+      "target_case_key": "1631307:public-dev-mix-017"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 93,
+        "local_frame_index": 13,
+        "mirror_concentration": 0.756544411,
+        "mirror_gap": 0.647476017,
+        "mirror_mean": 0.109068416,
+        "ns_noise_rms_dbfs": -61.3016472,
+        "prior_reference_count": 6
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.4803465455,
+        "gap": 0.44837521,
+        "mean": 0.0396323595,
+        "ns_noise_rms_dbfs": -60.049810449999995
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-008",
+        "1601307:public-dev-mix-016",
+        "1611307:public-dev-mix-026"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-018",
+        "case_key": "1631307:public-dev-mix-018",
+        "noise_domain": "office",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 93,
+        "causal_ns_noise_rms_dbfs": -61.3016472,
+        "causal_prior_reference_count": 6,
+        "causal_proxy_abs_error_db": 1.2518367500000025,
+        "causal_proxy_signed_error_db": -1.2518367500000025,
+        "donor_vs_causal_noise_scale_mismatch_db": 4.441532149999993,
+        "frozen_donor_gap": 0.375523135,
+        "frozen_donor_gap_transfer_error": 0.07285207500000002,
+        "frozen_donor_noise_scale_dbfs": -65.74317934999999,
+        "later_gap_benchmark": 0.44837521,
+        "later_noise_scale_benchmark_dbfs": -60.049810449999995,
+        "metadata": {
+          "case_id": "public-dev-mix-018",
+          "case_key": "1631307:public-dev-mix-018",
+          "noise_domain": "office",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-018"
+      },
+      "target_case_key": "1631307:public-dev-mix-018"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 89,
+        "local_frame_index": 9,
+        "mirror_concentration": 0.890924454,
+        "mirror_gap": 0.614598036,
+        "mirror_mean": 0.276326388,
+        "ns_noise_rms_dbfs": -58.8564911,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.8441238105,
+        "gap": 0.5139862,
+        "mean": 0.312718913,
+        "ns_noise_rms_dbfs": -58.90838815
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-009",
+        "1601307:public-dev-mix-003",
+        "1621307:public-dev-mix-023"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-019",
+        "case_key": "1631307:public-dev-mix-019",
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 89,
+        "causal_ns_noise_rms_dbfs": -58.8564911,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.05189705000000089,
+        "causal_proxy_signed_error_db": 0.05189705000000089,
+        "donor_vs_causal_noise_scale_mismatch_db": 3.6777858500000065,
+        "frozen_donor_gap": 0.433260262,
+        "frozen_donor_gap_transfer_error": 0.08072593799999994,
+        "frozen_donor_noise_scale_dbfs": -62.534276950000006,
+        "later_gap_benchmark": 0.5139862,
+        "later_noise_scale_benchmark_dbfs": -58.90838815,
+        "metadata": {
+          "case_id": "public-dev-mix-019",
+          "case_key": "1631307:public-dev-mix-019",
+          "noise_domain": "cafeteria",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1631307:public-dev-mix-019"
+      },
+      "target_case_key": "1631307:public-dev-mix-019"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.965382576,
+        "mirror_gap": 0.590235591,
+        "mirror_mean": 0.375146955,
+        "ns_noise_rms_dbfs": -65.3467178,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.0592136811,
+        "gap": 0.0588857122,
+        "mean": 0.0003279695665,
+        "ns_noise_rms_dbfs": -65.72867585
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-000",
+        "1621307:public-dev-mix-010",
+        "1601307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-020",
+        "case_key": "1631307:public-dev-mix-020",
+        "noise_domain": "bus",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -65.3467178,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.3819580500000086,
+        "causal_proxy_signed_error_db": 0.3819580500000086,
+        "donor_vs_causal_noise_scale_mismatch_db": 7.608709299999987,
+        "frozen_donor_gap": 0.0,
+        "frozen_donor_gap_transfer_error": 0.0588857122,
+        "frozen_donor_noise_scale_dbfs": -57.73800850000001,
+        "later_gap_benchmark": 0.0588857122,
+        "later_noise_scale_benchmark_dbfs": -65.72867585,
+        "metadata": {
+          "case_id": "public-dev-mix-020",
+          "case_key": "1631307:public-dev-mix-020",
+          "noise_domain": "bus",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-020"
+      },
+      "target_case_key": "1631307:public-dev-mix-020"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 89,
+        "local_frame_index": 9,
+        "mirror_concentration": 0.884320557,
+        "mirror_gap": 0.572515011,
+        "mirror_mean": 0.311805576,
+        "ns_noise_rms_dbfs": -71.6261597,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.1520518885,
+        "gap": 0.150981307,
+        "mean": 0.0015371481400000002,
+        "ns_noise_rms_dbfs": -72.71531675
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-001",
+        "1621307:public-dev-mix-011",
+        "1601307:public-dev-mix-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-021",
+        "case_key": "1631307:public-dev-mix-021",
+        "noise_domain": "field",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 89,
+        "causal_ns_noise_rms_dbfs": -71.6261597,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.0891570499999972,
+        "causal_proxy_signed_error_db": 1.0891570499999972,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.3128090499999985,
+        "frozen_donor_gap": 0.48423145700000003,
+        "frozen_donor_gap_transfer_error": 0.33325015,
+        "frozen_donor_noise_scale_dbfs": -66.31335065,
+        "later_gap_benchmark": 0.150981307,
+        "later_noise_scale_benchmark_dbfs": -72.71531675,
+        "metadata": {
+          "case_id": "public-dev-mix-021",
+          "case_key": "1631307:public-dev-mix-021",
+          "noise_domain": "field",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1631307:public-dev-mix-021"
+      },
+      "target_case_key": "1631307:public-dev-mix-021"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-002",
+        "1621307:public-dev-mix-012",
+        "1601307:public-dev-mix-006"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-022",
+        "case_key": "1631307:public-dev-mix-022",
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 15.0
+      },
+      "target_case_key": "1631307:public-dev-mix-022"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 88,
+        "local_frame_index": 8,
+        "mirror_concentration": 0.627626956,
+        "mirror_gap": 0.555712044,
+        "mirror_mean": 0.0719149187,
+        "ns_noise_rms_dbfs": -53.9869728,
+        "prior_reference_count": 5
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.49856174,
+        "gap": 0.45111078,
+        "mean": 0.057422501949999996,
+        "ns_noise_rms_dbfs": -54.391742699999995
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-003",
+        "1621307:public-dev-mix-013",
+        "1601307:public-dev-mix-021"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-023",
+        "case_key": "1631307:public-dev-mix-023",
+        "noise_domain": "traffic",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 88,
+        "causal_ns_noise_rms_dbfs": -53.9869728,
+        "causal_prior_reference_count": 5,
+        "causal_proxy_abs_error_db": 0.404769899999998,
+        "causal_proxy_signed_error_db": 0.404769899999998,
+        "donor_vs_causal_noise_scale_mismatch_db": 6.219289800000006,
+        "frozen_donor_gap": 0.514518678,
+        "frozen_donor_gap_transfer_error": 0.06340789799999996,
+        "frozen_donor_noise_scale_dbfs": -60.2062626,
+        "later_gap_benchmark": 0.45111078,
+        "later_noise_scale_benchmark_dbfs": -54.391742699999995,
+        "metadata": {
+          "case_id": "public-dev-mix-023",
+          "case_key": "1631307:public-dev-mix-023",
+          "noise_domain": "traffic",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-023"
+      },
+      "target_case_key": "1631307:public-dev-mix-023"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 85,
+        "local_frame_index": 5,
+        "mirror_concentration": 0.778194547,
+        "mirror_gap": 0.717667043,
+        "mirror_mean": 0.0605275258,
+        "ns_noise_rms_dbfs": -60.3103676,
+        "prior_reference_count": 4
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.518058315,
+        "gap": 0.45047079050000005,
+        "mean": 0.04036339185,
+        "ns_noise_rms_dbfs": -60.06139375
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-004",
+        "1621307:public-dev-mix-014",
+        "1601307:public-dev-mix-008"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-024",
+        "case_key": "1631307:public-dev-mix-024",
+        "noise_domain": "living",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 85,
+        "causal_ns_noise_rms_dbfs": -60.3103676,
+        "causal_prior_reference_count": 4,
+        "causal_proxy_abs_error_db": 0.24897384999999872,
+        "causal_proxy_signed_error_db": -0.24897384999999872,
+        "donor_vs_causal_noise_scale_mismatch_db": 0.19916540000000538,
+        "frozen_donor_gap": 0.501862392,
+        "frozen_donor_gap_transfer_error": 0.051391601499999995,
+        "frozen_donor_noise_scale_dbfs": -60.111202199999994,
+        "later_gap_benchmark": 0.45047079050000005,
+        "later_noise_scale_benchmark_dbfs": -60.06139375,
+        "metadata": {
+          "case_id": "public-dev-mix-024",
+          "case_key": "1631307:public-dev-mix-024",
+          "noise_domain": "living",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1631307:public-dev-mix-024"
+      },
+      "target_case_key": "1631307:public-dev-mix-024"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 93,
+        "local_frame_index": 13,
+        "mirror_concentration": 0.728561342,
+        "mirror_gap": 0.688087285,
+        "mirror_mean": 0.040474046,
+        "ns_noise_rms_dbfs": -60.5693474,
+        "prior_reference_count": 5
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5335855185,
+        "gap": 0.507436946,
+        "mean": 0.03544831835,
+        "ns_noise_rms_dbfs": -60.525377250000005
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-005",
+        "1621307:public-dev-mix-015",
+        "1601307:public-dev-mix-009"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-025",
+        "case_key": "1631307:public-dev-mix-025",
+        "noise_domain": "office",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 93,
+        "causal_ns_noise_rms_dbfs": -60.5693474,
+        "causal_prior_reference_count": 5,
+        "causal_proxy_abs_error_db": 0.043970149999992714,
+        "causal_proxy_signed_error_db": -0.043970149999992714,
+        "donor_vs_causal_noise_scale_mismatch_db": 0.5344238500000031,
+        "frozen_donor_gap": 0.482417196,
+        "frozen_donor_gap_transfer_error": 0.025019750000000007,
+        "frozen_donor_noise_scale_dbfs": -61.10377125,
+        "later_gap_benchmark": 0.507436946,
+        "later_noise_scale_benchmark_dbfs": -60.525377250000005,
+        "metadata": {
+          "case_id": "public-dev-mix-025",
+          "case_key": "1631307:public-dev-mix-025",
+          "noise_domain": "office",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1631307:public-dev-mix-025"
+      },
+      "target_case_key": "1631307:public-dev-mix-025"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.76284337,
+        "mirror_gap": 0.600273252,
+        "mirror_mean": 0.162570089,
+        "ns_noise_rms_dbfs": -71.3431091,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.8902159635,
+        "gap": 0.3975397645,
+        "mean": 0.3998332025,
+        "ns_noise_rms_dbfs": -70.98703385
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-006",
+        "1621307:public-dev-mix-016",
+        "1601307:public-dev-mix-010"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-026",
+        "case_key": "1631307:public-dev-mix-026",
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1631307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -71.3431091,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.3560752500000035,
+        "causal_proxy_signed_error_db": -0.3560752500000035,
+        "donor_vs_causal_noise_scale_mismatch_db": 7.121215800000002,
+        "frozen_donor_gap": 0.466094196,
+        "frozen_donor_gap_transfer_error": 0.06855443150000001,
+        "frozen_donor_noise_scale_dbfs": -64.2218933,
+        "later_gap_benchmark": 0.3975397645,
+        "later_noise_scale_benchmark_dbfs": -70.98703385,
+        "metadata": {
+          "case_id": "public-dev-mix-026",
+          "case_key": "1631307:public-dev-mix-026",
+          "noise_domain": "cafeteria",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1631307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1631307:public-dev-mix-026"
+      },
+      "target_case_key": "1631307:public-dev-mix-026"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 81,
+        "local_frame_index": 1,
+        "mirror_concentration": 0.870232522,
+        "mirror_gap": 0.649816036,
+        "mirror_mean": 0.220416456,
+        "ns_noise_rms_dbfs": -62.0296402,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.0,
+        "gap": 0.0,
+        "mean": 0.0,
+        "ns_noise_rms_dbfs": -64.11631015
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-007",
+        "1621307:public-dev-mix-017",
+        "1601307:public-dev-mix-011"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-027",
+        "case_key": "1631307:public-dev-mix-027",
+        "noise_domain": "bus",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1631307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 81,
+        "causal_ns_noise_rms_dbfs": -62.0296402,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.086669950000001,
+        "causal_proxy_signed_error_db": 2.086669950000001,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.32814789999999,
+        "frozen_donor_gap": 0.41216816,
+        "frozen_donor_gap_transfer_error": 0.41216816,
+        "frozen_donor_noise_scale_dbfs": -70.3577881,
+        "later_gap_benchmark": 0.0,
+        "later_noise_scale_benchmark_dbfs": -64.11631015,
+        "metadata": {
+          "case_id": "public-dev-mix-027",
+          "case_key": "1631307:public-dev-mix-027",
+          "noise_domain": "bus",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1631307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1631307:public-dev-mix-027"
+      },
+      "target_case_key": "1631307:public-dev-mix-027"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-005",
+        "1601307:public-dev-noise-012",
+        "1611307:public-dev-noise-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-000",
+        "case_key": "1631307:public-dev-noise-000",
+        "noise_domain": "living",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-000"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-006",
+        "1601307:public-dev-noise-013",
+        "1611307:public-dev-noise-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-001",
+        "case_key": "1631307:public-dev-noise-001",
+        "noise_domain": "office",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-001"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-000",
+        "1601307:public-dev-noise-007",
+        "1611307:public-dev-noise-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-002",
+        "case_key": "1631307:public-dev-noise-002",
+        "noise_domain": "cafeteria",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-002"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-001",
+        "1601307:public-dev-noise-008",
+        "1611307:public-dev-noise-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-003",
+        "case_key": "1631307:public-dev-noise-003",
+        "noise_domain": "bus",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-003"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-002",
+        "1601307:public-dev-noise-009",
+        "1611307:public-dev-noise-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-004",
+        "case_key": "1631307:public-dev-noise-004",
+        "noise_domain": "field",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-004"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-003",
+        "1601307:public-dev-noise-010",
+        "1611307:public-dev-noise-006"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-005",
+        "case_key": "1631307:public-dev-noise-005",
+        "noise_domain": "kitchen",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-005"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-004",
+        "1601307:public-dev-noise-011",
+        "1611307:public-dev-noise-000"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-006",
+        "case_key": "1631307:public-dev-noise-006",
+        "noise_domain": "traffic",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-006"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-005",
+        "1601307:public-dev-noise-012",
+        "1611307:public-dev-noise-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-007",
+        "case_key": "1631307:public-dev-noise-007",
+        "noise_domain": "living",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-007"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-006",
+        "1601307:public-dev-noise-013",
+        "1611307:public-dev-noise-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-008",
+        "case_key": "1631307:public-dev-noise-008",
+        "noise_domain": "office",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-008"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-000",
+        "1601307:public-dev-noise-007",
+        "1611307:public-dev-noise-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-009",
+        "case_key": "1631307:public-dev-noise-009",
+        "noise_domain": "cafeteria",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-009"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-001",
+        "1601307:public-dev-noise-008",
+        "1611307:public-dev-noise-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-010",
+        "case_key": "1631307:public-dev-noise-010",
+        "noise_domain": "bus",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-010"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-002",
+        "1601307:public-dev-noise-009",
+        "1611307:public-dev-noise-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-011",
+        "case_key": "1631307:public-dev-noise-011",
+        "noise_domain": "field",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-011"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-003",
+        "1601307:public-dev-noise-010",
+        "1611307:public-dev-noise-006"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-012",
+        "case_key": "1631307:public-dev-noise-012",
+        "noise_domain": "kitchen",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-012"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-004",
+        "1601307:public-dev-noise-011",
+        "1611307:public-dev-noise-000"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-013",
+        "case_key": "1631307:public-dev-noise-013",
+        "noise_domain": "traffic",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1631307,
+        "snr_db": null
+      },
+      "target_case_key": "1631307:public-dev-noise-013"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.916027725,
+        "mirror_gap": 0.646971464,
+        "mirror_mean": 0.269056231,
+        "ns_noise_rms_dbfs": -62.9441872,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.0,
+        "gap": 0.0,
+        "mean": 0.0,
+        "ns_noise_rms_dbfs": -62.946321499999996
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-016",
+        "1611307:public-dev-mix-026",
+        "1601307:public-dev-mix-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-000",
+        "case_key": "1641307:public-dev-mix-000",
+        "noise_domain": "office",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -62.9441872,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.0021342999999944823,
+        "causal_proxy_signed_error_db": 0.0021342999999944823,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.7989921499999895,
+        "frozen_donor_gap": 0.207352139,
+        "frozen_donor_gap_transfer_error": 0.207352139,
+        "frozen_donor_noise_scale_dbfs": -65.74317934999999,
+        "later_gap_benchmark": 0.0,
+        "later_noise_scale_benchmark_dbfs": -62.946321499999996,
+        "metadata": {
+          "case_id": "public-dev-mix-000",
+          "case_key": "1641307:public-dev-mix-000",
+          "noise_domain": "office",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-000"
+      },
+      "target_case_key": "1641307:public-dev-mix-000"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 83,
+        "local_frame_index": 3,
+        "mirror_concentration": 0.912618816,
+        "mirror_gap": 0.678977132,
+        "mirror_mean": 0.233641669,
+        "ns_noise_rms_dbfs": -63.8901062,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.9374834599999999,
+        "gap": 0.354967773,
+        "mean": 0.5825156869999999,
+        "ns_noise_rms_dbfs": -56.943286900000004
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-017",
+        "1611307:public-dev-mix-027",
+        "1621307:public-dev-mix-009"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-001",
+        "case_key": "1641307:public-dev-mix-001",
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 83,
+        "causal_ns_noise_rms_dbfs": -63.8901062,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 6.946819299999994,
+        "causal_proxy_signed_error_db": -6.946819299999994,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.833869900000003,
+        "frozen_donor_gap": 0.433260262,
+        "frozen_donor_gap_transfer_error": 0.07829248900000002,
+        "frozen_donor_noise_scale_dbfs": -69.7239761,
+        "later_gap_benchmark": 0.354967773,
+        "later_noise_scale_benchmark_dbfs": -56.943286900000004,
+        "metadata": {
+          "case_id": "public-dev-mix-001",
+          "case_key": "1641307:public-dev-mix-001",
+          "noise_domain": "cafeteria",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1641307:public-dev-mix-001"
+      },
+      "target_case_key": "1641307:public-dev-mix-001"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-000",
+        "1621307:public-dev-mix-010",
+        "1601307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-002",
+        "case_key": "1641307:public-dev-mix-002",
+        "noise_domain": "bus",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 15.0
+      },
+      "target_case_key": "1641307:public-dev-mix-002"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 103,
+        "local_frame_index": 23,
+        "mirror_concentration": 0.803155065,
+        "mirror_gap": 0.681062341,
+        "mirror_mean": 0.122092694,
+        "ns_noise_rms_dbfs": -55.1521263,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7481766045,
+        "gap": 0.5809476375,
+        "mean": 0.124294456,
+        "ns_noise_rms_dbfs": -56.05072785
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-019",
+        "1601307:public-dev-mix-005",
+        "1611307:public-dev-mix-015"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-003",
+        "case_key": "1641307:public-dev-mix-003",
+        "noise_domain": "field",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 103,
+        "causal_ns_noise_rms_dbfs": -55.1521263,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.8986015500000022,
+        "causal_proxy_signed_error_db": 0.8986015500000022,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.333589600000003,
+        "frozen_donor_gap": 0.414824933,
+        "frozen_donor_gap_transfer_error": 0.1661227045,
+        "frozen_donor_noise_scale_dbfs": -63.4857159,
+        "later_gap_benchmark": 0.5809476375,
+        "later_noise_scale_benchmark_dbfs": -56.05072785,
+        "metadata": {
+          "case_id": "public-dev-mix-003",
+          "case_key": "1641307:public-dev-mix-003",
+          "noise_domain": "field",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-003"
+      },
+      "target_case_key": "1641307:public-dev-mix-003"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 102,
+        "local_frame_index": 22,
+        "mirror_concentration": 0.725627005,
+        "mirror_gap": 0.579683304,
+        "mirror_mean": 0.145943701,
+        "ns_noise_rms_dbfs": -56.3624763,
+        "prior_reference_count": 4
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.6193010809999999,
+        "gap": 0.529028118,
+        "mean": 0.0933947787,
+        "ns_noise_rms_dbfs": -56.16734315
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-020",
+        "1601307:public-dev-mix-006",
+        "1611307:public-dev-mix-016"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-004",
+        "case_key": "1641307:public-dev-mix-004",
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 102,
+        "causal_ns_noise_rms_dbfs": -56.3624763,
+        "causal_prior_reference_count": 4,
+        "causal_proxy_abs_error_db": 0.19513314999999665,
+        "causal_proxy_signed_error_db": -0.19513314999999665,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.237785400000007,
+        "frozen_donor_gap": 0.4858997615,
+        "frozen_donor_gap_transfer_error": 0.04312835650000002,
+        "frozen_donor_noise_scale_dbfs": -64.6002617,
+        "later_gap_benchmark": 0.529028118,
+        "later_noise_scale_benchmark_dbfs": -56.16734315,
+        "metadata": {
+          "case_id": "public-dev-mix-004",
+          "case_key": "1641307:public-dev-mix-004",
+          "noise_domain": "kitchen",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1641307:public-dev-mix-004"
+      },
+      "target_case_key": "1641307:public-dev-mix-004"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-021",
+        "1601307:public-dev-mix-007",
+        "1611307:public-dev-mix-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-005",
+        "case_key": "1641307:public-dev-mix-005",
+        "noise_domain": "traffic",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 5.0
+      },
+      "target_case_key": "1641307:public-dev-mix-005"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-022",
+        "1621307:public-dev-mix-000",
+        "1611307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-006",
+        "case_key": "1641307:public-dev-mix-006",
+        "noise_domain": "living",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 10.0
+      },
+      "target_case_key": "1641307:public-dev-mix-006"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.669291973,
+        "mirror_gap": 0.608486593,
+        "mirror_mean": 0.060805399,
+        "ns_noise_rms_dbfs": -67.9879074,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.1650584721,
+        "gap": 0.16228744275,
+        "mean": 0.002771030237,
+        "ns_noise_rms_dbfs": -63.070989600000004
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-001",
+        "1611307:public-dev-mix-005",
+        "1621307:public-dev-mix-015"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-007",
+        "case_key": "1641307:public-dev-mix-007",
+        "noise_domain": "office",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -67.9879074,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 4.916917799999993,
+        "causal_proxy_signed_error_db": -4.916917799999993,
+        "donor_vs_causal_noise_scale_mismatch_db": 6.5608787500000005,
+        "frozen_donor_gap": 0.4308517725,
+        "frozen_donor_gap_transfer_error": 0.26856432975,
+        "frozen_donor_noise_scale_dbfs": -61.42702865,
+        "later_gap_benchmark": 0.16228744275,
+        "later_noise_scale_benchmark_dbfs": -63.070989600000004,
+        "metadata": {
+          "case_id": "public-dev-mix-007",
+          "case_key": "1641307:public-dev-mix-007",
+          "noise_domain": "office",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1641307:public-dev-mix-007"
+      },
+      "target_case_key": "1641307:public-dev-mix-007"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.894345999,
+        "mirror_gap": 0.758220732,
+        "mirror_mean": 0.136125252,
+        "ns_noise_rms_dbfs": -54.1576691,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7894766925000001,
+        "gap": 0.533910155,
+        "mean": 0.18203758450000002,
+        "ns_noise_rms_dbfs": -55.84202955
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-024",
+        "1601307:public-dev-mix-010",
+        "1611307:public-dev-mix-020"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-008",
+        "case_key": "1641307:public-dev-mix-008",
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -54.1576691,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.6843604499999998,
+        "causal_proxy_signed_error_db": 1.6843604499999998,
+        "donor_vs_causal_noise_scale_mismatch_db": 9.828388150000002,
+        "frozen_donor_gap": 0.463511124,
+        "frozen_donor_gap_transfer_error": 0.07039903100000006,
+        "frozen_donor_noise_scale_dbfs": -63.98605725,
+        "later_gap_benchmark": 0.533910155,
+        "later_noise_scale_benchmark_dbfs": -55.84202955,
+        "metadata": {
+          "case_id": "public-dev-mix-008",
+          "case_key": "1641307:public-dev-mix-008",
+          "noise_domain": "cafeteria",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-008"
+      },
+      "target_case_key": "1641307:public-dev-mix-008"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.833723843,
+        "mirror_gap": 0.608594418,
+        "mirror_mean": 0.225129411,
+        "ns_noise_rms_dbfs": -65.9343567,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.9312321245,
+        "gap": 0.43192982700000004,
+        "mean": 0.457320064,
+        "ns_noise_rms_dbfs": -62.788274799999996
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-025",
+        "1621307:public-dev-mix-003",
+        "1601307:public-dev-mix-011"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-009",
+        "case_key": "1641307:public-dev-mix-009",
+        "noise_domain": "bus",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -65.9343567,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 3.1460818999999987,
+        "causal_proxy_signed_error_db": -3.1460818999999987,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.311702749999995,
+        "frozen_donor_gap": 0.5317771435,
+        "frozen_donor_gap_transfer_error": 0.0998473165,
+        "frozen_donor_noise_scale_dbfs": -60.62265395,
+        "later_gap_benchmark": 0.43192982700000004,
+        "later_noise_scale_benchmark_dbfs": -62.788274799999996,
+        "metadata": {
+          "case_id": "public-dev-mix-009",
+          "case_key": "1641307:public-dev-mix-009",
+          "noise_domain": "bus",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1641307:public-dev-mix-009"
+      },
+      "target_case_key": "1641307:public-dev-mix-009"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 99,
+        "local_frame_index": 19,
+        "mirror_concentration": 0.931515574,
+        "mirror_gap": 0.633522749,
+        "mirror_mean": 0.297992855,
+        "ns_noise_rms_dbfs": -55.9406967,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.492604077,
+        "gap": 0.46218204500000004,
+        "mean": 0.0255326312,
+        "ns_noise_rms_dbfs": -60.9769764
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-026",
+        "1621307:public-dev-mix-004",
+        "1601307:public-dev-mix-012"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-010",
+        "case_key": "1641307:public-dev-mix-010",
+        "noise_domain": "field",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 99,
+        "causal_ns_noise_rms_dbfs": -55.9406967,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 5.0362797000000015,
+        "causal_proxy_signed_error_db": 5.0362797000000015,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.720304500000005,
+        "frozen_donor_gap": 0.22353800015000003,
+        "frozen_donor_gap_transfer_error": 0.23864404485000001,
+        "frozen_donor_noise_scale_dbfs": -61.6610012,
+        "later_gap_benchmark": 0.46218204500000004,
+        "later_noise_scale_benchmark_dbfs": -60.9769764,
+        "metadata": {
+          "case_id": "public-dev-mix-010",
+          "case_key": "1641307:public-dev-mix-010",
+          "noise_domain": "field",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-010"
+      },
+      "target_case_key": "1641307:public-dev-mix-010"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-027",
+        "1621307:public-dev-mix-005",
+        "1611307:public-dev-mix-009"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-011",
+        "case_key": "1641307:public-dev-mix-011",
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 10.0
+      },
+      "target_case_key": "1641307:public-dev-mix-011"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 84,
+        "local_frame_index": 4,
+        "mirror_concentration": 0.862468958,
+        "mirror_gap": 0.725355864,
+        "mirror_mean": 0.137113079,
+        "ns_noise_rms_dbfs": -67.346817,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.6333772095000001,
+        "gap": 0.3904475275,
+        "mean": 0.220423288535,
+        "ns_noise_rms_dbfs": -69.63176345
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-006",
+        "1601307:public-dev-mix-000",
+        "1611307:public-dev-mix-010"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-012",
+        "case_key": "1641307:public-dev-mix-012",
+        "noise_domain": "traffic",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 84,
+        "causal_ns_noise_rms_dbfs": -67.346817,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.2849464499999925,
+        "causal_proxy_signed_error_db": 2.2849464499999925,
+        "donor_vs_causal_noise_scale_mismatch_db": 9.536817549999995,
+        "frozen_donor_gap": 0.429899827,
+        "frozen_donor_gap_transfer_error": 0.03945229950000001,
+        "frozen_donor_noise_scale_dbfs": -57.80999945000001,
+        "later_gap_benchmark": 0.3904475275,
+        "later_noise_scale_benchmark_dbfs": -69.63176345,
+        "metadata": {
+          "case_id": "public-dev-mix-012",
+          "case_key": "1641307:public-dev-mix-012",
+          "noise_domain": "traffic",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1641307:public-dev-mix-012"
+      },
+      "target_case_key": "1641307:public-dev-mix-012"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.778002143,
+        "mirror_gap": 0.62413609,
+        "mirror_mean": 0.153866068,
+        "ns_noise_rms_dbfs": -57.7316742,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.8792032005,
+        "gap": 0.415582344,
+        "mean": 0.463620856,
+        "ns_noise_rms_dbfs": -58.380809799999994
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-015",
+        "1611307:public-dev-mix-025",
+        "1601307:public-dev-mix-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-013",
+        "case_key": "1641307:public-dev-mix-013",
+        "noise_domain": "living",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -57.7316742,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.6491355999999939,
+        "causal_proxy_signed_error_db": 0.6491355999999939,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.2970809999999986,
+        "frozen_donor_gap": 0.47290954,
+        "frozen_donor_gap_transfer_error": 0.057327196000000025,
+        "frozen_donor_noise_scale_dbfs": -60.0287552,
+        "later_gap_benchmark": 0.415582344,
+        "later_noise_scale_benchmark_dbfs": -58.380809799999994,
+        "metadata": {
+          "case_id": "public-dev-mix-013",
+          "case_key": "1641307:public-dev-mix-013",
+          "noise_domain": "living",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-013"
+      },
+      "target_case_key": "1641307:public-dev-mix-013"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 85,
+        "local_frame_index": 5,
+        "mirror_concentration": 0.850666404,
+        "mirror_gap": 0.584037483,
+        "mirror_mean": 0.266628921,
+        "ns_noise_rms_dbfs": -63.3601761,
+        "prior_reference_count": 4
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.937108338,
+        "gap": 0.3876695635,
+        "mean": 0.5494387745,
+        "ns_noise_rms_dbfs": -63.19880295
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-008",
+        "1601307:public-dev-mix-016",
+        "1611307:public-dev-mix-026"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-014",
+        "case_key": "1641307:public-dev-mix-014",
+        "noise_domain": "office",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 85,
+        "causal_ns_noise_rms_dbfs": -63.3601761,
+        "causal_prior_reference_count": 4,
+        "causal_proxy_abs_error_db": 0.16137314999999575,
+        "causal_proxy_signed_error_db": -0.16137314999999575,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.3830032499999945,
+        "frozen_donor_gap": 0.375523135,
+        "frozen_donor_gap_transfer_error": 0.012146428499999973,
+        "frozen_donor_noise_scale_dbfs": -65.74317934999999,
+        "later_gap_benchmark": 0.3876695635,
+        "later_noise_scale_benchmark_dbfs": -63.19880295,
+        "metadata": {
+          "case_id": "public-dev-mix-014",
+          "case_key": "1641307:public-dev-mix-014",
+          "noise_domain": "office",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1641307:public-dev-mix-014"
+      },
+      "target_case_key": "1641307:public-dev-mix-014"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 85,
+        "local_frame_index": 5,
+        "mirror_concentration": 0.876943231,
+        "mirror_gap": 0.55584991,
+        "mirror_mean": 0.321093321,
+        "ns_noise_rms_dbfs": -57.4632645,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.2588610275,
+        "gap": 0.2575941605,
+        "mean": 0.0012668654650000001,
+        "ns_noise_rms_dbfs": -59.667337450000005
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-009",
+        "1601307:public-dev-mix-003",
+        "1601307:public-dev-mix-017"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-015",
+        "case_key": "1641307:public-dev-mix-015",
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 85,
+        "causal_ns_noise_rms_dbfs": -57.4632645,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.204072950000004,
+        "causal_proxy_signed_error_db": 2.204072950000004,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.727958649999998,
+        "frozen_donor_gap": 0.5019009409999999,
+        "frozen_donor_gap_transfer_error": 0.24430678049999993,
+        "frozen_donor_noise_scale_dbfs": -66.19122315,
+        "later_gap_benchmark": 0.2575941605,
+        "later_noise_scale_benchmark_dbfs": -59.667337450000005,
+        "metadata": {
+          "case_id": "public-dev-mix-015",
+          "case_key": "1641307:public-dev-mix-015",
+          "noise_domain": "cafeteria",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-015"
+      },
+      "target_case_key": "1641307:public-dev-mix-015"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 104,
+        "local_frame_index": 24,
+        "mirror_concentration": 0.741259336,
+        "mirror_gap": 0.704335928,
+        "mirror_mean": 0.0369233787,
+        "ns_noise_rms_dbfs": -66.6546478,
+        "prior_reference_count": 4
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5807391405,
+        "gap": 0.3352464515,
+        "mean": 0.212945822555,
+        "ns_noise_rms_dbfs": -67.1619148
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-000",
+        "1621307:public-dev-mix-010",
+        "1601307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-016",
+        "case_key": "1641307:public-dev-mix-016",
+        "noise_domain": "bus",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 104,
+        "causal_ns_noise_rms_dbfs": -66.6546478,
+        "causal_prior_reference_count": 4,
+        "causal_proxy_abs_error_db": 0.5072669999999988,
+        "causal_proxy_signed_error_db": 0.5072669999999988,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.9166393,
+        "frozen_donor_gap": 0.0,
+        "frozen_donor_gap_transfer_error": 0.3352464515,
+        "frozen_donor_noise_scale_dbfs": -57.73800850000001,
+        "later_gap_benchmark": 0.3352464515,
+        "later_noise_scale_benchmark_dbfs": -67.1619148,
+        "metadata": {
+          "case_id": "public-dev-mix-016",
+          "case_key": "1641307:public-dev-mix-016",
+          "noise_domain": "bus",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1641307:public-dev-mix-016"
+      },
+      "target_case_key": "1641307:public-dev-mix-016"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 91,
+        "local_frame_index": 11,
+        "mirror_concentration": 0.565635085,
+        "mirror_gap": 0.5517205,
+        "mirror_mean": 0.0139145572,
+        "ns_noise_rms_dbfs": -57.2528381,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.0,
+        "gap": 0.0,
+        "mean": 0.0,
+        "ns_noise_rms_dbfs": -57.73981285
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-001",
+        "1621307:public-dev-mix-011",
+        "1601307:public-dev-mix-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-017",
+        "case_key": "1641307:public-dev-mix-017",
+        "noise_domain": "field",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 91,
+        "causal_ns_noise_rms_dbfs": -57.2528381,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.4869747500000017,
+        "causal_proxy_signed_error_db": 0.4869747500000017,
+        "donor_vs_causal_noise_scale_mismatch_db": 9.060512550000006,
+        "frozen_donor_gap": 0.48423145700000003,
+        "frozen_donor_gap_transfer_error": 0.48423145700000003,
+        "frozen_donor_noise_scale_dbfs": -66.31335065,
+        "later_gap_benchmark": 0.0,
+        "later_noise_scale_benchmark_dbfs": -57.73981285,
+        "metadata": {
+          "case_id": "public-dev-mix-017",
+          "case_key": "1641307:public-dev-mix-017",
+          "noise_domain": "field",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1641307:public-dev-mix-017"
+      },
+      "target_case_key": "1641307:public-dev-mix-017"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 95,
+        "local_frame_index": 15,
+        "mirror_concentration": 0.854528308,
+        "mirror_gap": 0.61293447,
+        "mirror_mean": 0.241593808,
+        "ns_noise_rms_dbfs": -58.5852776,
+        "prior_reference_count": 6
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.6835118235,
+        "gap": 0.5323935445,
+        "mean": 0.15475226949999998,
+        "ns_noise_rms_dbfs": -59.84179115
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-020",
+        "1601307:public-dev-mix-006",
+        "1611307:public-dev-mix-016"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-018",
+        "case_key": "1641307:public-dev-mix-018",
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 95,
+        "causal_ns_noise_rms_dbfs": -58.5852776,
+        "causal_prior_reference_count": 6,
+        "causal_proxy_abs_error_db": 1.256513550000001,
+        "causal_proxy_signed_error_db": 1.256513550000001,
+        "donor_vs_causal_noise_scale_mismatch_db": 6.014984100000007,
+        "frozen_donor_gap": 0.4858997615,
+        "frozen_donor_gap_transfer_error": 0.046493782999999955,
+        "frozen_donor_noise_scale_dbfs": -64.6002617,
+        "later_gap_benchmark": 0.5323935445,
+        "later_noise_scale_benchmark_dbfs": -59.84179115,
+        "metadata": {
+          "case_id": "public-dev-mix-018",
+          "case_key": "1641307:public-dev-mix-018",
+          "noise_domain": "kitchen",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-018"
+      },
+      "target_case_key": "1641307:public-dev-mix-018"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 94,
+        "local_frame_index": 14,
+        "mirror_concentration": 0.863992453,
+        "mirror_gap": 0.657401025,
+        "mirror_mean": 0.206591412,
+        "ns_noise_rms_dbfs": -65.1160583,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7787130175,
+        "gap": 0.5408250095,
+        "mean": 0.1826915295,
+        "ns_noise_rms_dbfs": -64.90016175
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-003",
+        "1621307:public-dev-mix-013",
+        "1601307:public-dev-mix-021"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-019",
+        "case_key": "1641307:public-dev-mix-019",
+        "noise_domain": "traffic",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 94,
+        "causal_ns_noise_rms_dbfs": -65.1160583,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 0.21589655000001073,
+        "causal_proxy_signed_error_db": -0.21589655000001073,
+        "donor_vs_causal_noise_scale_mismatch_db": 4.909795700000004,
+        "frozen_donor_gap": 0.514518678,
+        "frozen_donor_gap_transfer_error": 0.026306331500000057,
+        "frozen_donor_noise_scale_dbfs": -60.2062626,
+        "later_gap_benchmark": 0.5408250095,
+        "later_noise_scale_benchmark_dbfs": -64.90016175,
+        "metadata": {
+          "case_id": "public-dev-mix-019",
+          "case_key": "1641307:public-dev-mix-019",
+          "noise_domain": "traffic",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1641307:public-dev-mix-019"
+      },
+      "target_case_key": "1641307:public-dev-mix-019"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 81,
+        "local_frame_index": 1,
+        "mirror_concentration": 0.738458633,
+        "mirror_gap": 0.643895328,
+        "mirror_mean": 0.094563283,
+        "ns_noise_rms_dbfs": -58.9044571,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.614781439,
+        "gap": 0.5216513574999999,
+        "mean": 0.08885188405,
+        "ns_noise_rms_dbfs": -61.07972335
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-000",
+        "1611307:public-dev-mix-004",
+        "1621307:public-dev-mix-014"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-020",
+        "case_key": "1641307:public-dev-mix-020",
+        "noise_domain": "living",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 81,
+        "causal_ns_noise_rms_dbfs": -58.9044571,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.17526625,
+        "causal_proxy_signed_error_db": 2.17526625,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.800100299999997,
+        "frozen_donor_gap": 0.49301369500000003,
+        "frozen_donor_gap_transfer_error": 0.028637662499999883,
+        "frozen_donor_noise_scale_dbfs": -61.7045574,
+        "later_gap_benchmark": 0.5216513574999999,
+        "later_noise_scale_benchmark_dbfs": -61.07972335,
+        "metadata": {
+          "case_id": "public-dev-mix-020",
+          "case_key": "1641307:public-dev-mix-020",
+          "noise_domain": "living",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-020"
+      },
+      "target_case_key": "1641307:public-dev-mix-020"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 84,
+        "local_frame_index": 4,
+        "mirror_concentration": 0.898371875,
+        "mirror_gap": 0.80322969,
+        "mirror_mean": 0.0951421857,
+        "ns_noise_rms_dbfs": -69.433136,
+        "prior_reference_count": 2
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7467509805000001,
+        "gap": 0.7045877875,
+        "mean": 0.014589537400000002,
+        "ns_noise_rms_dbfs": -69.49212645
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-001",
+        "1611307:public-dev-mix-005",
+        "1621307:public-dev-mix-015"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-021",
+        "case_key": "1641307:public-dev-mix-021",
+        "noise_domain": "office",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 84,
+        "causal_ns_noise_rms_dbfs": -69.433136,
+        "causal_prior_reference_count": 2,
+        "causal_proxy_abs_error_db": 0.05899044999999603,
+        "causal_proxy_signed_error_db": 0.05899044999999603,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.006107350000008,
+        "frozen_donor_gap": 0.4308517725,
+        "frozen_donor_gap_transfer_error": 0.27373601499999994,
+        "frozen_donor_noise_scale_dbfs": -61.42702865,
+        "later_gap_benchmark": 0.7045877875,
+        "later_noise_scale_benchmark_dbfs": -69.49212645,
+        "metadata": {
+          "case_id": "public-dev-mix-021",
+          "case_key": "1641307:public-dev-mix-021",
+          "noise_domain": "office",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1641307:public-dev-mix-021"
+      },
+      "target_case_key": "1641307:public-dev-mix-021"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 85,
+        "local_frame_index": 5,
+        "mirror_concentration": 0.759299755,
+        "mirror_gap": 0.638405263,
+        "mirror_mean": 0.120894499,
+        "ns_noise_rms_dbfs": -63.4079437,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.0381066464,
+        "gap": 0.03780786695,
+        "mean": 0.0002987807965,
+        "ns_noise_rms_dbfs": -64.6430931
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-002",
+        "1611307:public-dev-mix-006",
+        "1621307:public-dev-mix-016"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-022",
+        "case_key": "1641307:public-dev-mix-022",
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 85,
+        "causal_ns_noise_rms_dbfs": -63.4079437,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.2351494000000045,
+        "causal_proxy_signed_error_db": 1.2351494000000045,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.3924637000000004,
+        "frozen_donor_gap": 0.487322971,
+        "frozen_donor_gap_transfer_error": 0.44951510405,
+        "frozen_donor_noise_scale_dbfs": -65.8004074,
+        "later_gap_benchmark": 0.03780786695,
+        "later_noise_scale_benchmark_dbfs": -64.6430931,
+        "metadata": {
+          "case_id": "public-dev-mix-022",
+          "case_key": "1641307:public-dev-mix-022",
+          "noise_domain": "cafeteria",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1641307:public-dev-mix-022"
+      },
+      "target_case_key": "1641307:public-dev-mix-022"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 90,
+        "local_frame_index": 10,
+        "mirror_concentration": 0.754872084,
+        "mirror_gap": 0.679072022,
+        "mirror_mean": 0.0758000836,
+        "ns_noise_rms_dbfs": -68.4062805,
+        "prior_reference_count": 6
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.478284478,
+        "gap": 0.4512036145,
+        "mean": 0.013615604949999999,
+        "ns_noise_rms_dbfs": -69.47000505
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-003",
+        "1601307:public-dev-mix-025",
+        "1601307:public-dev-mix-011"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-023",
+        "case_key": "1641307:public-dev-mix-023",
+        "noise_domain": "bus",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 90,
+        "causal_ns_noise_rms_dbfs": -68.4062805,
+        "causal_prior_reference_count": 6,
+        "causal_proxy_abs_error_db": 1.0637245500000034,
+        "causal_proxy_signed_error_db": 1.0637245500000034,
+        "donor_vs_causal_noise_scale_mismatch_db": 7.783626549999994,
+        "frozen_donor_gap": 0.5317771435,
+        "frozen_donor_gap_transfer_error": 0.08057352900000003,
+        "frozen_donor_noise_scale_dbfs": -60.62265395,
+        "later_gap_benchmark": 0.4512036145,
+        "later_noise_scale_benchmark_dbfs": -69.47000505,
+        "metadata": {
+          "case_id": "public-dev-mix-023",
+          "case_key": "1641307:public-dev-mix-023",
+          "noise_domain": "bus",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-023"
+      },
+      "target_case_key": "1641307:public-dev-mix-023"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-004",
+        "1611307:public-dev-mix-008",
+        "1621307:public-dev-mix-018"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-024",
+        "case_key": "1641307:public-dev-mix-024",
+        "noise_domain": "field",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 0.0
+      },
+      "target_case_key": "1641307:public-dev-mix-024"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 81,
+        "local_frame_index": 1,
+        "mirror_concentration": 0.828209162,
+        "mirror_gap": 0.585407853,
+        "mirror_mean": 0.242801294,
+        "ns_noise_rms_dbfs": -63.6687508,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5520861145,
+        "gap": 0.5148032905,
+        "mean": 0.0693851076,
+        "ns_noise_rms_dbfs": -65.51031495000001
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-005",
+        "1611307:public-dev-mix-009",
+        "1621307:public-dev-mix-019"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-025",
+        "case_key": "1641307:public-dev-mix-025",
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 81,
+        "causal_ns_noise_rms_dbfs": -63.6687508,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.8415641500000106,
+        "causal_proxy_signed_error_db": 1.8415641500000106,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.514343299999993,
+        "frozen_donor_gap": 0.48692074399999996,
+        "frozen_donor_gap_transfer_error": 0.027882546499999994,
+        "frozen_donor_noise_scale_dbfs": -62.154407500000005,
+        "later_gap_benchmark": 0.5148032905,
+        "later_noise_scale_benchmark_dbfs": -65.51031495000001,
+        "metadata": {
+          "case_id": "public-dev-mix-025",
+          "case_key": "1641307:public-dev-mix-025",
+          "noise_domain": "kitchen",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1641307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1641307:public-dev-mix-025"
+      },
+      "target_case_key": "1641307:public-dev-mix-025"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 107,
+        "local_frame_index": 27,
+        "mirror_concentration": 0.857402444,
+        "mirror_gap": 0.626933515,
+        "mirror_mean": 0.230468944,
+        "ns_noise_rms_dbfs": -56.9697113,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5791936815000001,
+        "gap": 0.5310307445,
+        "mean": 0.042812751600000004,
+        "ns_noise_rms_dbfs": -59.380332949999996
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-006",
+        "1601307:public-dev-mix-000",
+        "1611307:public-dev-mix-010"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-026",
+        "case_key": "1641307:public-dev-mix-026",
+        "noise_domain": "traffic",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1641307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 107,
+        "causal_ns_noise_rms_dbfs": -56.9697113,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.410621649999996,
+        "causal_proxy_signed_error_db": 2.410621649999996,
+        "donor_vs_causal_noise_scale_mismatch_db": 0.8402881500000063,
+        "frozen_donor_gap": 0.429899827,
+        "frozen_donor_gap_transfer_error": 0.10113091749999997,
+        "frozen_donor_noise_scale_dbfs": -57.80999945000001,
+        "later_gap_benchmark": 0.5310307445,
+        "later_noise_scale_benchmark_dbfs": -59.380332949999996,
+        "metadata": {
+          "case_id": "public-dev-mix-026",
+          "case_key": "1641307:public-dev-mix-026",
+          "noise_domain": "traffic",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1641307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1641307:public-dev-mix-026"
+      },
+      "target_case_key": "1641307:public-dev-mix-026"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-007",
+        "1601307:public-dev-mix-001",
+        "1611307:public-dev-mix-011"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-027",
+        "case_key": "1641307:public-dev-mix-027",
+        "noise_domain": "living",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1641307,
+        "snr_db": 15.0
+      },
+      "target_case_key": "1641307:public-dev-mix-027"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-002",
+        "1601307:public-dev-noise-009",
+        "1611307:public-dev-noise-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-000",
+        "case_key": "1641307:public-dev-noise-000",
+        "noise_domain": "field",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-000"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-003",
+        "1601307:public-dev-noise-010",
+        "1611307:public-dev-noise-006"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-001",
+        "case_key": "1641307:public-dev-noise-001",
+        "noise_domain": "kitchen",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-001"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-004",
+        "1601307:public-dev-noise-011",
+        "1611307:public-dev-noise-000"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-002",
+        "case_key": "1641307:public-dev-noise-002",
+        "noise_domain": "traffic",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-002"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-005",
+        "1601307:public-dev-noise-012",
+        "1611307:public-dev-noise-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-003",
+        "case_key": "1641307:public-dev-noise-003",
+        "noise_domain": "living",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-003"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-006",
+        "1601307:public-dev-noise-013",
+        "1611307:public-dev-noise-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-004",
+        "case_key": "1641307:public-dev-noise-004",
+        "noise_domain": "office",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-004"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-000",
+        "1601307:public-dev-noise-007",
+        "1611307:public-dev-noise-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-005",
+        "case_key": "1641307:public-dev-noise-005",
+        "noise_domain": "cafeteria",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-005"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-001",
+        "1601307:public-dev-noise-008",
+        "1611307:public-dev-noise-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-006",
+        "case_key": "1641307:public-dev-noise-006",
+        "noise_domain": "bus",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-006"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-002",
+        "1601307:public-dev-noise-009",
+        "1611307:public-dev-noise-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-007",
+        "case_key": "1641307:public-dev-noise-007",
+        "noise_domain": "field",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-007"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-003",
+        "1601307:public-dev-noise-010",
+        "1611307:public-dev-noise-006"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-008",
+        "case_key": "1641307:public-dev-noise-008",
+        "noise_domain": "kitchen",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-008"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-004",
+        "1601307:public-dev-noise-011",
+        "1611307:public-dev-noise-000"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-009",
+        "case_key": "1641307:public-dev-noise-009",
+        "noise_domain": "traffic",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-009"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-005",
+        "1601307:public-dev-noise-012",
+        "1611307:public-dev-noise-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-010",
+        "case_key": "1641307:public-dev-noise-010",
+        "noise_domain": "living",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-010"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-006",
+        "1601307:public-dev-noise-013",
+        "1611307:public-dev-noise-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-011",
+        "case_key": "1641307:public-dev-noise-011",
+        "noise_domain": "office",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-011"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-000",
+        "1601307:public-dev-noise-007",
+        "1611307:public-dev-noise-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-012",
+        "case_key": "1641307:public-dev-noise-012",
+        "noise_domain": "cafeteria",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-012"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-001",
+        "1601307:public-dev-noise-008",
+        "1611307:public-dev-noise-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-013",
+        "case_key": "1641307:public-dev-noise-013",
+        "noise_domain": "bus",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1641307,
+        "snr_db": null
+      },
+      "target_case_key": "1641307:public-dev-noise-013"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-020",
+        "1601307:public-dev-mix-006",
+        "1611307:public-dev-mix-016"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-000",
+        "case_key": "1651307:public-dev-mix-000",
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 5.0
+      },
+      "target_case_key": "1651307:public-dev-mix-000"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 85,
+        "local_frame_index": 5,
+        "mirror_concentration": 0.857829213,
+        "mirror_gap": 0.56346041,
+        "mirror_mean": 0.294368804,
+        "ns_noise_rms_dbfs": -62.8968811,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.9143545925000001,
+        "gap": 0.501097709,
+        "mean": 0.41818930200000004,
+        "ns_noise_rms_dbfs": -63.2496433
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-021",
+        "1601307:public-dev-mix-007",
+        "1611307:public-dev-mix-017"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-001",
+        "case_key": "1651307:public-dev-mix-001",
+        "noise_domain": "traffic",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 85,
+        "causal_ns_noise_rms_dbfs": -62.8968811,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 0.3527622000000008,
+        "causal_proxy_signed_error_db": 0.3527622000000008,
+        "donor_vs_causal_noise_scale_mismatch_db": 2.0790672500000085,
+        "frozen_donor_gap": 0.465151325,
+        "frozen_donor_gap_transfer_error": 0.03594638399999994,
+        "frozen_donor_noise_scale_dbfs": -64.97594835000001,
+        "later_gap_benchmark": 0.501097709,
+        "later_noise_scale_benchmark_dbfs": -63.2496433,
+        "metadata": {
+          "case_id": "public-dev-mix-001",
+          "case_key": "1651307:public-dev-mix-001",
+          "noise_domain": "traffic",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1651307:public-dev-mix-001"
+      },
+      "target_case_key": "1651307:public-dev-mix-001"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 108,
+        "local_frame_index": 28,
+        "mirror_concentration": 0.85351944,
+        "mirror_gap": 0.691097856,
+        "mirror_mean": 0.162421614,
+        "ns_noise_rms_dbfs": -60.931282,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.9165154099999999,
+        "gap": 0.425571129,
+        "mean": 0.486615762,
+        "ns_noise_rms_dbfs": -63.934948
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-022",
+        "1621307:public-dev-mix-000",
+        "1611307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-002",
+        "case_key": "1651307:public-dev-mix-002",
+        "noise_domain": "living",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 108,
+        "causal_ns_noise_rms_dbfs": -60.931282,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 3.0036659999999955,
+        "causal_proxy_signed_error_db": 3.0036659999999955,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.333416000000007,
+        "frozen_donor_gap": 0.49301369500000003,
+        "frozen_donor_gap_transfer_error": 0.06744256600000004,
+        "frozen_donor_noise_scale_dbfs": -66.26469800000001,
+        "later_gap_benchmark": 0.425571129,
+        "later_noise_scale_benchmark_dbfs": -63.934948,
+        "metadata": {
+          "case_id": "public-dev-mix-002",
+          "case_key": "1651307:public-dev-mix-002",
+          "noise_domain": "living",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1651307:public-dev-mix-002"
+      },
+      "target_case_key": "1651307:public-dev-mix-002"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 120,
+        "local_frame_index": 40,
+        "mirror_concentration": 0.874232411,
+        "mirror_gap": 0.567532361,
+        "mirror_mean": 0.306700051,
+        "ns_noise_rms_dbfs": -54.6200714,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7104905545,
+        "gap": 0.49275840800000004,
+        "mean": 0.08524223415,
+        "ns_noise_rms_dbfs": -55.790597899999995
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-023",
+        "1601307:public-dev-mix-009",
+        "1611307:public-dev-mix-019"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-003",
+        "case_key": "1651307:public-dev-mix-003",
+        "noise_domain": "office",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 120,
+        "causal_ns_noise_rms_dbfs": -54.6200714,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.170526499999994,
+        "causal_proxy_signed_error_db": 1.170526499999994,
+        "donor_vs_causal_noise_scale_mismatch_db": 7.974628449999997,
+        "frozen_donor_gap": 0.501621306,
+        "frozen_donor_gap_transfer_error": 0.008862897999999952,
+        "frozen_donor_noise_scale_dbfs": -62.59469985,
+        "later_gap_benchmark": 0.49275840800000004,
+        "later_noise_scale_benchmark_dbfs": -55.790597899999995,
+        "metadata": {
+          "case_id": "public-dev-mix-003",
+          "case_key": "1651307:public-dev-mix-003",
+          "noise_domain": "office",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1651307:public-dev-mix-003"
+      },
+      "target_case_key": "1651307:public-dev-mix-003"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 97,
+        "local_frame_index": 17,
+        "mirror_concentration": 0.847041965,
+        "mirror_gap": 0.630711794,
+        "mirror_mean": 0.216330141,
+        "ns_noise_rms_dbfs": -62.8675308,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.837764412,
+        "gap": 0.5468593534999999,
+        "mean": 0.245936535,
+        "ns_noise_rms_dbfs": -61.4881058
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-024",
+        "1601307:public-dev-mix-010",
+        "1611307:public-dev-mix-020"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-004",
+        "case_key": "1651307:public-dev-mix-004",
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 97,
+        "causal_ns_noise_rms_dbfs": -62.8675308,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 1.3794249999999977,
+        "causal_proxy_signed_error_db": -1.3794249999999977,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.1185264500000045,
+        "frozen_donor_gap": 0.463511124,
+        "frozen_donor_gap_transfer_error": 0.08334822949999993,
+        "frozen_donor_noise_scale_dbfs": -63.98605725,
+        "later_gap_benchmark": 0.5468593534999999,
+        "later_noise_scale_benchmark_dbfs": -61.4881058,
+        "metadata": {
+          "case_id": "public-dev-mix-004",
+          "case_key": "1651307:public-dev-mix-004",
+          "noise_domain": "cafeteria",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1651307:public-dev-mix-004"
+      },
+      "target_case_key": "1651307:public-dev-mix-004"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-025",
+        "1601307:public-dev-mix-011",
+        "1611307:public-dev-mix-021"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-005",
+        "case_key": "1651307:public-dev-mix-005",
+        "noise_domain": "bus",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 5.0
+      },
+      "target_case_key": "1651307:public-dev-mix-005"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 140,
+        "local_frame_index": 60,
+        "mirror_concentration": 0.690770686,
+        "mirror_gap": 0.672994614,
+        "mirror_mean": 0.0177760962,
+        "ns_noise_rms_dbfs": -59.9430618,
+        "prior_reference_count": 4
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.16374457615,
+        "gap": 0.1618121323,
+        "mean": 0.0019324455365,
+        "ns_noise_rms_dbfs": -62.8336334
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-026",
+        "1601307:public-dev-mix-012",
+        "1611307:public-dev-mix-022"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-006",
+        "case_key": "1651307:public-dev-mix-006",
+        "noise_domain": "field",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 140,
+        "causal_ns_noise_rms_dbfs": -59.9430618,
+        "causal_prior_reference_count": 4,
+        "causal_proxy_abs_error_db": 2.890571599999994,
+        "causal_proxy_signed_error_db": 2.890571599999994,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.7179393999999988,
+        "frozen_donor_gap": 0.22353800015000003,
+        "frozen_donor_gap_transfer_error": 0.06172586785000003,
+        "frozen_donor_noise_scale_dbfs": -61.6610012,
+        "later_gap_benchmark": 0.1618121323,
+        "later_noise_scale_benchmark_dbfs": -62.8336334,
+        "metadata": {
+          "case_id": "public-dev-mix-006",
+          "case_key": "1651307:public-dev-mix-006",
+          "noise_domain": "field",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1651307:public-dev-mix-006"
+      },
+      "target_case_key": "1651307:public-dev-mix-006"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 84,
+        "local_frame_index": 4,
+        "mirror_concentration": 0.785274208,
+        "mirror_gap": 0.590794563,
+        "mirror_mean": 0.194479614,
+        "ns_noise_rms_dbfs": -63.4345932,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5682992335,
+        "gap": 0.49486041049999996,
+        "mean": 0.0632809978,
+        "ns_noise_rms_dbfs": -62.7209225
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-027",
+        "1621307:public-dev-mix-005",
+        "1611307:public-dev-mix-009"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-007",
+        "case_key": "1651307:public-dev-mix-007",
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 84,
+        "causal_ns_noise_rms_dbfs": -63.4345932,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.7136707000000015,
+        "causal_proxy_signed_error_db": -0.7136707000000015,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.280185699999997,
+        "frozen_donor_gap": 0.48692074399999996,
+        "frozen_donor_gap_transfer_error": 0.007939666499999998,
+        "frozen_donor_noise_scale_dbfs": -62.154407500000005,
+        "later_gap_benchmark": 0.49486041049999996,
+        "later_noise_scale_benchmark_dbfs": -62.7209225,
+        "metadata": {
+          "case_id": "public-dev-mix-007",
+          "case_key": "1651307:public-dev-mix-007",
+          "noise_domain": "kitchen",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1651307:public-dev-mix-007"
+      },
+      "target_case_key": "1651307:public-dev-mix-007"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-014",
+        "1611307:public-dev-mix-024",
+        "1601307:public-dev-mix-000"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-008",
+        "case_key": "1651307:public-dev-mix-008",
+        "noise_domain": "traffic",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": -5.0
+      },
+      "target_case_key": "1651307:public-dev-mix-008"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 99,
+        "local_frame_index": 19,
+        "mirror_concentration": 0.81535238,
+        "mirror_gap": 0.655669987,
+        "mirror_mean": 0.159682378,
+        "ns_noise_rms_dbfs": -65.381073,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5908346474999999,
+        "gap": 0.5362553895,
+        "mean": 0.0574478265,
+        "ns_noise_rms_dbfs": -67.4302673
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-015",
+        "1611307:public-dev-mix-025",
+        "1601307:public-dev-mix-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-009",
+        "case_key": "1651307:public-dev-mix-009",
+        "noise_domain": "living",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 99,
+        "causal_ns_noise_rms_dbfs": -65.381073,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.0491942999999964,
+        "causal_proxy_signed_error_db": 2.0491942999999964,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.352317800000002,
+        "frozen_donor_gap": 0.47290954,
+        "frozen_donor_gap_transfer_error": 0.06334584949999994,
+        "frozen_donor_noise_scale_dbfs": -60.0287552,
+        "later_gap_benchmark": 0.5362553895,
+        "later_noise_scale_benchmark_dbfs": -67.4302673,
+        "metadata": {
+          "case_id": "public-dev-mix-009",
+          "case_key": "1651307:public-dev-mix-009",
+          "noise_domain": "living",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1651307:public-dev-mix-009"
+      },
+      "target_case_key": "1651307:public-dev-mix-009"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.937666655,
+        "mirror_gap": 0.552349925,
+        "mirror_mean": 0.38531673,
+        "ns_noise_rms_dbfs": -57.3034058,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5500167905,
+        "gap": 0.510587752,
+        "mean": 0.02451089025,
+        "ns_noise_rms_dbfs": -59.548759450000006
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-016",
+        "1611307:public-dev-mix-026",
+        "1601307:public-dev-mix-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-010",
+        "case_key": "1651307:public-dev-mix-010",
+        "noise_domain": "office",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -57.3034058,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.2453536500000055,
+        "causal_proxy_signed_error_db": 2.2453536500000055,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.439773549999991,
+        "frozen_donor_gap": 0.207352139,
+        "frozen_donor_gap_transfer_error": 0.30323561299999996,
+        "frozen_donor_noise_scale_dbfs": -65.74317934999999,
+        "later_gap_benchmark": 0.510587752,
+        "later_noise_scale_benchmark_dbfs": -59.548759450000006,
+        "metadata": {
+          "case_id": "public-dev-mix-010",
+          "case_key": "1651307:public-dev-mix-010",
+          "noise_domain": "office",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1651307:public-dev-mix-010"
+      },
+      "target_case_key": "1651307:public-dev-mix-010"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 83,
+        "local_frame_index": 3,
+        "mirror_concentration": 0.846703053,
+        "mirror_gap": 0.579097867,
+        "mirror_mean": 0.267605156,
+        "ns_noise_rms_dbfs": -62.4244347,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.3968755305,
+        "gap": 0.380934298,
+        "mean": 0.01499808205,
+        "ns_noise_rms_dbfs": -65.04953765
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-017",
+        "1611307:public-dev-mix-027",
+        "1621307:public-dev-mix-009"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-011",
+        "case_key": "1651307:public-dev-mix-011",
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 83,
+        "causal_ns_noise_rms_dbfs": -62.4244347,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.625102950000006,
+        "causal_proxy_signed_error_db": 2.625102950000006,
+        "donor_vs_causal_noise_scale_mismatch_db": 7.2995414000000025,
+        "frozen_donor_gap": 0.433260262,
+        "frozen_donor_gap_transfer_error": 0.052325964,
+        "frozen_donor_noise_scale_dbfs": -69.7239761,
+        "later_gap_benchmark": 0.380934298,
+        "later_noise_scale_benchmark_dbfs": -65.04953765,
+        "metadata": {
+          "case_id": "public-dev-mix-011",
+          "case_key": "1651307:public-dev-mix-011",
+          "noise_domain": "cafeteria",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1651307:public-dev-mix-011"
+      },
+      "target_case_key": "1651307:public-dev-mix-011"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 85,
+        "local_frame_index": 5,
+        "mirror_concentration": 0.902491033,
+        "mirror_gap": 0.708783746,
+        "mirror_mean": 0.193707287,
+        "ns_noise_rms_dbfs": -61.8397713,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.02971477715,
+        "gap": 0.0295765698,
+        "mean": 0.000138208263,
+        "ns_noise_rms_dbfs": -63.256938950000006
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-000",
+        "1621307:public-dev-mix-010",
+        "1601307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-012",
+        "case_key": "1651307:public-dev-mix-012",
+        "noise_domain": "bus",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 85,
+        "causal_ns_noise_rms_dbfs": -61.8397713,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.4171676500000032,
+        "causal_proxy_signed_error_db": 1.4171676500000032,
+        "donor_vs_causal_noise_scale_mismatch_db": 4.101762799999996,
+        "frozen_donor_gap": 0.0,
+        "frozen_donor_gap_transfer_error": 0.0295765698,
+        "frozen_donor_noise_scale_dbfs": -57.73800850000001,
+        "later_gap_benchmark": 0.0295765698,
+        "later_noise_scale_benchmark_dbfs": -63.256938950000006,
+        "metadata": {
+          "case_id": "public-dev-mix-012",
+          "case_key": "1651307:public-dev-mix-012",
+          "noise_domain": "bus",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1651307:public-dev-mix-012"
+      },
+      "target_case_key": "1651307:public-dev-mix-012"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 82,
+        "local_frame_index": 2,
+        "mirror_concentration": 0.731405377,
+        "mirror_gap": 0.712073445,
+        "mirror_mean": 0.0193319228,
+        "ns_noise_rms_dbfs": -54.1632156,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.702296734,
+        "gap": 0.541207701,
+        "mean": 0.1362393575,
+        "ns_noise_rms_dbfs": -56.10471915
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-019",
+        "1601307:public-dev-mix-005",
+        "1611307:public-dev-mix-015"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-013",
+        "case_key": "1651307:public-dev-mix-013",
+        "noise_domain": "field",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 82,
+        "causal_ns_noise_rms_dbfs": -54.1632156,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.9415035500000002,
+        "causal_proxy_signed_error_db": 1.9415035500000002,
+        "donor_vs_causal_noise_scale_mismatch_db": 9.322500300000002,
+        "frozen_donor_gap": 0.414824933,
+        "frozen_donor_gap_transfer_error": 0.12638276800000003,
+        "frozen_donor_noise_scale_dbfs": -63.4857159,
+        "later_gap_benchmark": 0.541207701,
+        "later_noise_scale_benchmark_dbfs": -56.10471915,
+        "metadata": {
+          "case_id": "public-dev-mix-013",
+          "case_key": "1651307:public-dev-mix-013",
+          "noise_domain": "field",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1651307:public-dev-mix-013"
+      },
+      "target_case_key": "1651307:public-dev-mix-013"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 84,
+        "local_frame_index": 4,
+        "mirror_concentration": 0.786953449,
+        "mirror_gap": 0.613967657,
+        "mirror_mean": 0.172985762,
+        "ns_noise_rms_dbfs": -59.1349869,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.6293057200000001,
+        "gap": 0.539508909,
+        "mean": 0.08513520285000001,
+        "ns_noise_rms_dbfs": -59.63510895
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-020",
+        "1601307:public-dev-mix-006",
+        "1611307:public-dev-mix-016"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-014",
+        "case_key": "1651307:public-dev-mix-014",
+        "noise_domain": "kitchen",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 84,
+        "causal_ns_noise_rms_dbfs": -59.1349869,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.5001220500000017,
+        "causal_proxy_signed_error_db": 0.5001220500000017,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.465274800000003,
+        "frozen_donor_gap": 0.4858997615,
+        "frozen_donor_gap_transfer_error": 0.05360914750000001,
+        "frozen_donor_noise_scale_dbfs": -64.6002617,
+        "later_gap_benchmark": 0.539508909,
+        "later_noise_scale_benchmark_dbfs": -59.63510895,
+        "metadata": {
+          "case_id": "public-dev-mix-014",
+          "case_key": "1651307:public-dev-mix-014",
+          "noise_domain": "kitchen",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1651307:public-dev-mix-014"
+      },
+      "target_case_key": "1651307:public-dev-mix-014"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 92,
+        "local_frame_index": 12,
+        "mirror_concentration": 0.766921282,
+        "mirror_gap": 0.621124446,
+        "mirror_mean": 0.145796821,
+        "ns_noise_rms_dbfs": -59.764061,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.8027477565000001,
+        "gap": 0.525396645,
+        "mean": 0.3014626205,
+        "ns_noise_rms_dbfs": -59.293855699999995
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-021",
+        "1601307:public-dev-mix-007",
+        "1611307:public-dev-mix-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-015",
+        "case_key": "1651307:public-dev-mix-015",
+        "noise_domain": "traffic",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 92,
+        "causal_ns_noise_rms_dbfs": -59.764061,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.4702053000000035,
+        "causal_proxy_signed_error_db": -0.4702053000000035,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.5622558000000026,
+        "frozen_donor_gap": 0.465151325,
+        "frozen_donor_gap_transfer_error": 0.06024532000000005,
+        "frozen_donor_noise_scale_dbfs": -61.3263168,
+        "later_gap_benchmark": 0.525396645,
+        "later_noise_scale_benchmark_dbfs": -59.293855699999995,
+        "metadata": {
+          "case_id": "public-dev-mix-015",
+          "case_key": "1651307:public-dev-mix-015",
+          "noise_domain": "traffic",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1651307:public-dev-mix-015"
+      },
+      "target_case_key": "1651307:public-dev-mix-015"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 104,
+        "local_frame_index": 24,
+        "mirror_concentration": 0.917829156,
+        "mirror_gap": 0.577956796,
+        "mirror_mean": 0.33987233,
+        "ns_noise_rms_dbfs": -65.16716,
+        "prior_reference_count": 3
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7708598375,
+        "gap": 0.5336925685,
+        "mean": 0.16134940465,
+        "ns_noise_rms_dbfs": -66.6941185
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-022",
+        "1621307:public-dev-mix-000",
+        "1611307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-016",
+        "case_key": "1651307:public-dev-mix-016",
+        "noise_domain": "living",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 104,
+        "causal_ns_noise_rms_dbfs": -65.16716,
+        "causal_prior_reference_count": 3,
+        "causal_proxy_abs_error_db": 1.5269585000000063,
+        "causal_proxy_signed_error_db": 1.5269585000000063,
+        "donor_vs_causal_noise_scale_mismatch_db": 1.0975380000000143,
+        "frozen_donor_gap": 0.49301369500000003,
+        "frozen_donor_gap_transfer_error": 0.04067887349999999,
+        "frozen_donor_noise_scale_dbfs": -66.26469800000001,
+        "later_gap_benchmark": 0.5336925685,
+        "later_noise_scale_benchmark_dbfs": -66.6941185,
+        "metadata": {
+          "case_id": "public-dev-mix-016",
+          "case_key": "1651307:public-dev-mix-016",
+          "noise_domain": "living",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1651307:public-dev-mix-016"
+      },
+      "target_case_key": "1651307:public-dev-mix-016"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 86,
+        "local_frame_index": 6,
+        "mirror_concentration": 0.759719968,
+        "mirror_gap": 0.698161244,
+        "mirror_mean": 0.0615587085,
+        "ns_noise_rms_dbfs": -69.5795898,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.0,
+        "gap": 0.0,
+        "mean": 0.0,
+        "ns_noise_rms_dbfs": -66.8672218
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-001",
+        "1611307:public-dev-mix-005",
+        "1621307:public-dev-mix-015"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-017",
+        "case_key": "1651307:public-dev-mix-017",
+        "noise_domain": "office",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 86,
+        "causal_ns_noise_rms_dbfs": -69.5795898,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.712367999999998,
+        "causal_proxy_signed_error_db": -2.712367999999998,
+        "donor_vs_causal_noise_scale_mismatch_db": 8.152561149999997,
+        "frozen_donor_gap": 0.4308517725,
+        "frozen_donor_gap_transfer_error": 0.4308517725,
+        "frozen_donor_noise_scale_dbfs": -61.42702865,
+        "later_gap_benchmark": 0.0,
+        "later_noise_scale_benchmark_dbfs": -66.8672218,
+        "metadata": {
+          "case_id": "public-dev-mix-017",
+          "case_key": "1651307:public-dev-mix-017",
+          "noise_domain": "office",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1651307:public-dev-mix-017"
+      },
+      "target_case_key": "1651307:public-dev-mix-017"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 93,
+        "local_frame_index": 13,
+        "mirror_concentration": 0.874381185,
+        "mirror_gap": 0.571792483,
+        "mirror_mean": 0.302588701,
+        "ns_noise_rms_dbfs": -50.0804367,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.800195038,
+        "gap": 0.5577009319999999,
+        "mean": 0.254763387,
+        "ns_noise_rms_dbfs": -50.24711415
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-024",
+        "1601307:public-dev-mix-010",
+        "1611307:public-dev-mix-020"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-018",
+        "case_key": "1651307:public-dev-mix-018",
+        "noise_domain": "cafeteria",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": -5.0
+      },
+      "paired": {
+        "causal_frame_index": 93,
+        "causal_ns_noise_rms_dbfs": -50.0804367,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 0.16667745000000167,
+        "causal_proxy_signed_error_db": 0.16667745000000167,
+        "donor_vs_causal_noise_scale_mismatch_db": 13.905620550000002,
+        "frozen_donor_gap": 0.463511124,
+        "frozen_donor_gap_transfer_error": 0.09418980799999993,
+        "frozen_donor_noise_scale_dbfs": -63.98605725,
+        "later_gap_benchmark": 0.5577009319999999,
+        "later_noise_scale_benchmark_dbfs": -50.24711415,
+        "metadata": {
+          "case_id": "public-dev-mix-018",
+          "case_key": "1651307:public-dev-mix-018",
+          "noise_domain": "cafeteria",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": -5.0
+        },
+        "target_case_key": "1651307:public-dev-mix-018"
+      },
+      "target_case_key": "1651307:public-dev-mix-018"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 104,
+        "local_frame_index": 24,
+        "mirror_concentration": 0.709095657,
+        "mirror_gap": 0.655400336,
+        "mirror_mean": 0.0536953136,
+        "ns_noise_rms_dbfs": -55.7659187,
+        "prior_reference_count": 2
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5257464350000001,
+        "gap": 0.490598306,
+        "mean": 0.025865322000000003,
+        "ns_noise_rms_dbfs": -53.2021446
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-025",
+        "1621307:public-dev-mix-003",
+        "1601307:public-dev-mix-011"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-019",
+        "case_key": "1651307:public-dev-mix-019",
+        "noise_domain": "bus",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 104,
+        "causal_ns_noise_rms_dbfs": -55.7659187,
+        "causal_prior_reference_count": 2,
+        "causal_proxy_abs_error_db": 2.5637741000000034,
+        "causal_proxy_signed_error_db": -2.5637741000000034,
+        "donor_vs_causal_noise_scale_mismatch_db": 4.85673525,
+        "frozen_donor_gap": 0.5317771435,
+        "frozen_donor_gap_transfer_error": 0.041178837500000065,
+        "frozen_donor_noise_scale_dbfs": -60.62265395,
+        "later_gap_benchmark": 0.490598306,
+        "later_noise_scale_benchmark_dbfs": -53.2021446,
+        "metadata": {
+          "case_id": "public-dev-mix-019",
+          "case_key": "1651307:public-dev-mix-019",
+          "noise_domain": "bus",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1651307:public-dev-mix-019"
+      },
+      "target_case_key": "1651307:public-dev-mix-019"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.823086023,
+        "mirror_gap": 0.745666623,
+        "mirror_mean": 0.0774193853,
+        "ns_noise_rms_dbfs": -61.8779373,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7273974415,
+        "gap": 0.5079455374999999,
+        "mean": 0.20040141815,
+        "ns_noise_rms_dbfs": -60.167989750000004
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-026",
+        "1621307:public-dev-mix-004",
+        "1601307:public-dev-mix-012"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-020",
+        "case_key": "1651307:public-dev-mix-020",
+        "noise_domain": "field",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -61.8779373,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.7099475499999954,
+        "causal_proxy_signed_error_db": -1.7099475499999954,
+        "donor_vs_causal_noise_scale_mismatch_db": 0.21693609999999808,
+        "frozen_donor_gap": 0.22353800015000003,
+        "frozen_donor_gap_transfer_error": 0.2844075373499999,
+        "frozen_donor_noise_scale_dbfs": -61.6610012,
+        "later_gap_benchmark": 0.5079455374999999,
+        "later_noise_scale_benchmark_dbfs": -60.167989750000004,
+        "metadata": {
+          "case_id": "public-dev-mix-020",
+          "case_key": "1651307:public-dev-mix-020",
+          "noise_domain": "field",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1651307:public-dev-mix-020"
+      },
+      "target_case_key": "1651307:public-dev-mix-020"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 113,
+        "local_frame_index": 33,
+        "mirror_concentration": 0.883119047,
+        "mirror_gap": 0.817982197,
+        "mirror_mean": 0.0651368424,
+        "ns_noise_rms_dbfs": -65.8482285,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.5646002295,
+        "gap": 0.501049921,
+        "mean": 0.0645257477,
+        "ns_noise_rms_dbfs": -69.74444965
+      },
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-027",
+        "1621307:public-dev-mix-005",
+        "1611307:public-dev-mix-009"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-021",
+        "case_key": "1651307:public-dev-mix-021",
+        "noise_domain": "kitchen",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 10.0
+      },
+      "paired": {
+        "causal_frame_index": 113,
+        "causal_ns_noise_rms_dbfs": -65.8482285,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 3.8962211500000024,
+        "causal_proxy_signed_error_db": 3.8962211500000024,
+        "donor_vs_causal_noise_scale_mismatch_db": 3.693821,
+        "frozen_donor_gap": 0.48692074399999996,
+        "frozen_donor_gap_transfer_error": 0.014129177000000048,
+        "frozen_donor_noise_scale_dbfs": -62.154407500000005,
+        "later_gap_benchmark": 0.501049921,
+        "later_noise_scale_benchmark_dbfs": -69.74444965,
+        "metadata": {
+          "case_id": "public-dev-mix-021",
+          "case_key": "1651307:public-dev-mix-021",
+          "noise_domain": "kitchen",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 10.0
+        },
+        "target_case_key": "1651307:public-dev-mix-021"
+      },
+      "target_case_key": "1651307:public-dev-mix-021"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 103,
+        "local_frame_index": 23,
+        "mirror_concentration": 0.796495199,
+        "mirror_gap": 0.763906717,
+        "mirror_mean": 0.0325884707,
+        "ns_noise_rms_dbfs": -64.5225754,
+        "prior_reference_count": 4
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.7241094109999999,
+        "gap": 0.49978409749999997,
+        "mean": 0.17978262520000002,
+        "ns_noise_rms_dbfs": -61.8412323
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-006",
+        "1601307:public-dev-mix-000",
+        "1611307:public-dev-mix-010"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-022",
+        "case_key": "1651307:public-dev-mix-022",
+        "noise_domain": "traffic",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 103,
+        "causal_ns_noise_rms_dbfs": -64.5225754,
+        "causal_prior_reference_count": 4,
+        "causal_proxy_abs_error_db": 2.6813430999999923,
+        "causal_proxy_signed_error_db": -2.6813430999999923,
+        "donor_vs_causal_noise_scale_mismatch_db": 6.712575949999987,
+        "frozen_donor_gap": 0.429899827,
+        "frozen_donor_gap_transfer_error": 0.06988427049999996,
+        "frozen_donor_noise_scale_dbfs": -57.80999945000001,
+        "later_gap_benchmark": 0.49978409749999997,
+        "later_noise_scale_benchmark_dbfs": -61.8412323,
+        "metadata": {
+          "case_id": "public-dev-mix-022",
+          "case_key": "1651307:public-dev-mix-022",
+          "noise_domain": "traffic",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1651307:public-dev-mix-022"
+      },
+      "target_case_key": "1651307:public-dev-mix-022"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-mix-015",
+        "1611307:public-dev-mix-025",
+        "1601307:public-dev-mix-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-023",
+        "case_key": "1651307:public-dev-mix-023",
+        "noise_domain": "living",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": -5.0
+      },
+      "target_case_key": "1651307:public-dev-mix-023"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 90,
+        "local_frame_index": 10,
+        "mirror_concentration": 0.886311829,
+        "mirror_gap": 0.577691436,
+        "mirror_mean": 0.308620393,
+        "ns_noise_rms_dbfs": -60.4347839,
+        "prior_reference_count": 1
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.4753672035,
+        "gap": 0.37365728600000003,
+        "mean": 0.011803709910000001,
+        "ns_noise_rms_dbfs": -60.7231808
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-008",
+        "1601307:public-dev-mix-016",
+        "1611307:public-dev-mix-026"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-024",
+        "case_key": "1651307:public-dev-mix-024",
+        "noise_domain": "office",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 0.0
+      },
+      "paired": {
+        "causal_frame_index": 90,
+        "causal_ns_noise_rms_dbfs": -60.4347839,
+        "causal_prior_reference_count": 1,
+        "causal_proxy_abs_error_db": 0.2883969000000022,
+        "causal_proxy_signed_error_db": 0.2883969000000022,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.308395449999992,
+        "frozen_donor_gap": 0.375523135,
+        "frozen_donor_gap_transfer_error": 0.001865848999999975,
+        "frozen_donor_noise_scale_dbfs": -65.74317934999999,
+        "later_gap_benchmark": 0.37365728600000003,
+        "later_noise_scale_benchmark_dbfs": -60.7231808,
+        "metadata": {
+          "case_id": "public-dev-mix-024",
+          "case_key": "1651307:public-dev-mix-024",
+          "noise_domain": "office",
+          "reverb": false,
+          "scenario": "research-public-noisy-clean",
+          "seed": 1651307,
+          "snr_db": 0.0
+        },
+        "target_case_key": "1651307:public-dev-mix-024"
+      },
+      "target_case_key": "1651307:public-dev-mix-024"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 82,
+        "local_frame_index": 2,
+        "mirror_concentration": 0.775642753,
+        "mirror_gap": 0.577490926,
+        "mirror_mean": 0.198151827,
+        "ns_noise_rms_dbfs": -62.867485,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.605398208,
+        "gap": 0.47553586950000004,
+        "mean": 0.08730946654999999,
+        "ns_noise_rms_dbfs": -64.70745085
+      },
+      "matched_donor_case_keys": [
+        "1621307:public-dev-mix-009",
+        "1601307:public-dev-mix-003",
+        "1601307:public-dev-mix-017"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-025",
+        "case_key": "1651307:public-dev-mix-025",
+        "noise_domain": "cafeteria",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 5.0
+      },
+      "paired": {
+        "causal_frame_index": 82,
+        "causal_ns_noise_rms_dbfs": -62.867485,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 1.8399658499999987,
+        "causal_proxy_signed_error_db": 1.8399658499999987,
+        "donor_vs_causal_noise_scale_mismatch_db": 3.323738149999997,
+        "frozen_donor_gap": 0.5019009409999999,
+        "frozen_donor_gap_transfer_error": 0.026365071499999893,
+        "frozen_donor_noise_scale_dbfs": -66.19122315,
+        "later_gap_benchmark": 0.47553586950000004,
+        "later_noise_scale_benchmark_dbfs": -64.70745085,
+        "metadata": {
+          "case_id": "public-dev-mix-025",
+          "case_key": "1651307:public-dev-mix-025",
+          "noise_domain": "cafeteria",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 5.0
+        },
+        "target_case_key": "1651307:public-dev-mix-025"
+      },
+      "target_case_key": "1651307:public-dev-mix-025"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-000",
+        "1621307:public-dev-mix-010",
+        "1601307:public-dev-mix-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-026",
+        "case_key": "1651307:public-dev-mix-026",
+        "noise_domain": "bus",
+        "reverb": false,
+        "scenario": "research-public-noisy-clean",
+        "seed": 1651307,
+        "snr_db": 10.0
+      },
+      "target_case_key": "1651307:public-dev-mix-026"
+    },
+    {
+      "causal_target": {
+        "absolute_frame_index": 80,
+        "local_frame_index": 0,
+        "mirror_concentration": 0.730724037,
+        "mirror_gap": 0.675804853,
+        "mirror_mean": 0.0549192056,
+        "ns_noise_rms_dbfs": -61.2437973,
+        "prior_reference_count": 0
+      },
+      "later_reference_count": 8,
+      "later_reference_summary": {
+        "concentration": 0.282208502,
+        "gap": 0.275081143,
+        "mean": 0.007127354155,
+        "ns_noise_rms_dbfs": -63.4239712
+      },
+      "matched_donor_case_keys": [
+        "1611307:public-dev-mix-001",
+        "1621307:public-dev-mix-011",
+        "1601307:public-dev-mix-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-mix-027",
+        "case_key": "1651307:public-dev-mix-027",
+        "noise_domain": "field",
+        "reverb": true,
+        "scenario": "research-public-noisy-reverb",
+        "seed": 1651307,
+        "snr_db": 15.0
+      },
+      "paired": {
+        "causal_frame_index": 80,
+        "causal_ns_noise_rms_dbfs": -61.2437973,
+        "causal_prior_reference_count": 0,
+        "causal_proxy_abs_error_db": 2.1801738999999998,
+        "causal_proxy_signed_error_db": 2.1801738999999998,
+        "donor_vs_causal_noise_scale_mismatch_db": 5.069553350000007,
+        "frozen_donor_gap": 0.48423145700000003,
+        "frozen_donor_gap_transfer_error": 0.20915031400000006,
+        "frozen_donor_noise_scale_dbfs": -66.31335065,
+        "later_gap_benchmark": 0.275081143,
+        "later_noise_scale_benchmark_dbfs": -63.4239712,
+        "metadata": {
+          "case_id": "public-dev-mix-027",
+          "case_key": "1651307:public-dev-mix-027",
+          "noise_domain": "field",
+          "reverb": true,
+          "scenario": "research-public-noisy-reverb",
+          "seed": 1651307,
+          "snr_db": 15.0
+        },
+        "target_case_key": "1651307:public-dev-mix-027"
+      },
+      "target_case_key": "1651307:public-dev-mix-027"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-006",
+        "1601307:public-dev-noise-013",
+        "1611307:public-dev-noise-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-000",
+        "case_key": "1651307:public-dev-noise-000",
+        "noise_domain": "office",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-000"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-000",
+        "1601307:public-dev-noise-007",
+        "1611307:public-dev-noise-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-001",
+        "case_key": "1651307:public-dev-noise-001",
+        "noise_domain": "cafeteria",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-001"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-001",
+        "1601307:public-dev-noise-008",
+        "1611307:public-dev-noise-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-002",
+        "case_key": "1651307:public-dev-noise-002",
+        "noise_domain": "bus",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-002"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-002",
+        "1601307:public-dev-noise-009",
+        "1611307:public-dev-noise-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-003",
+        "case_key": "1651307:public-dev-noise-003",
+        "noise_domain": "field",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-003"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-003",
+        "1601307:public-dev-noise-010",
+        "1611307:public-dev-noise-006"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-004",
+        "case_key": "1651307:public-dev-noise-004",
+        "noise_domain": "kitchen",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-004"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-004",
+        "1601307:public-dev-noise-011",
+        "1611307:public-dev-noise-000"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-005",
+        "case_key": "1651307:public-dev-noise-005",
+        "noise_domain": "traffic",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-005"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-005",
+        "1601307:public-dev-noise-012",
+        "1611307:public-dev-noise-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-006",
+        "case_key": "1651307:public-dev-noise-006",
+        "noise_domain": "living",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-006"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-006",
+        "1601307:public-dev-noise-013",
+        "1611307:public-dev-noise-002"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-007",
+        "case_key": "1651307:public-dev-noise-007",
+        "noise_domain": "office",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-007"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-000",
+        "1601307:public-dev-noise-007",
+        "1611307:public-dev-noise-003"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-008",
+        "case_key": "1651307:public-dev-noise-008",
+        "noise_domain": "cafeteria",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-008"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-001",
+        "1601307:public-dev-noise-008",
+        "1611307:public-dev-noise-004"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-009",
+        "case_key": "1651307:public-dev-noise-009",
+        "noise_domain": "bus",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-009"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-002",
+        "1601307:public-dev-noise-009",
+        "1611307:public-dev-noise-005"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-010",
+        "case_key": "1651307:public-dev-noise-010",
+        "noise_domain": "field",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-010"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-003",
+        "1601307:public-dev-noise-010",
+        "1611307:public-dev-noise-006"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-011",
+        "case_key": "1651307:public-dev-noise-011",
+        "noise_domain": "kitchen",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-011"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-004",
+        "1601307:public-dev-noise-011",
+        "1611307:public-dev-noise-000"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-012",
+        "case_key": "1651307:public-dev-noise-012",
+        "noise_domain": "traffic",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-012"
+    },
+    {
+      "causal_target": null,
+      "later_reference_count": 0,
+      "later_reference_summary": null,
+      "matched_donor_case_keys": [
+        "1601307:public-dev-noise-005",
+        "1601307:public-dev-noise-012",
+        "1611307:public-dev-noise-001"
+      ],
+      "metadata": {
+        "case_id": "public-dev-noise-013",
+        "case_key": "1651307:public-dev-noise-013",
+        "noise_domain": "living",
+        "reverb": null,
+        "scenario": "research-public-noise-only",
+        "seed": 1651307,
+        "snr_db": null
+      },
+      "target_case_key": "1651307:public-dev-noise-013"
+    }
+  ],
+  "schema_version": 1,
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  },
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f"
+}

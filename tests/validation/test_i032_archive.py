@@ -70,9 +70,9 @@ class I032ArchiveTests(unittest.TestCase):
         if status["status"]=="DURABLE_ARCHIVE_PRESENT_AND_VERIFIED":
             self.assertEqual(status["members"],11)
 
-    def test_publisher_is_push_only_and_uses_one_dedicated_writer(self):
+    def test_publisher_is_push_only_and_uses_ephemeral_github_writer(self):
         text=WORKFLOW.read_text(encoding="utf-8")
-        expected="GH_WRITE_TOKEN: $"+ "{{ secrets.RESEARCH_AUTOMATION_TOKEN }}"
+        expected="GH_WRITE_TOKEN: $"+ "{{ github.token }}"
         bindings=[
             line.strip()
             for line in text.splitlines()
@@ -81,7 +81,7 @@ class I032ArchiveTests(unittest.TestCase):
         self.assertEqual(bindings,[expected])
         self.assertEqual(
             set(re.findall(r"secrets\.([A-Za-z0-9_]+)",text)),
-            {"RESEARCH_AUTOMATION_TOKEN"},
+            set(),
         )
         self.assertIn(
             "if: github.event_name == 'push' && github.ref == 'refs/heads/main'",
@@ -90,8 +90,9 @@ class I032ArchiveTests(unittest.TestCase):
         self.assertNotIn("\n  workflow_dispatch:\n",text)
         self.assertNotIn("\n  schedule:\n",text)
         self.assertIn("persist-credentials: false",text)
-        self.assertNotIn("contents: write",text)
-        self.assertNotIn("pull-requests: write",text)
+        publish=text[text.index("\n  publish:"):]
+        self.assertIn("      contents: write",publish)
+        self.assertIn("      pull-requests: write",publish)
 
     def test_program_archive_covers_finalizer_and_archive_root(self):
         text=PROGRAM_ARCHIVE.read_text(encoding="utf-8")

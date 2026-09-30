@@ -261,16 +261,14 @@ jobs:
           python3 tests/validation/i033_ns_vad_causal_noise_delta_alignment.py             --probe build-i033/i033-probe             --contract "$CONTRACT"             "${target_args[@]}"             --output i033-out/evidence/result.json             > i033-out/evidence/evaluate.stdout             2> i033-out/evidence/evaluate.stderr
           rc=$?
           set -e
-          printf '%s
-' "$rc" > i033-out/evidence/evaluate.exit-code
+          printf '%s\\n' "$rc" > i033-out/evidence/evaluate.exit-code
           cp "$CONTRACT" i033-out/evidence/contract.json
           cp /tmp/i033-development-v3-materialization.json i033-out/evidence/materialization.json
           sha256sum build-i033/i033-probe | awk '{print $1}' > i033-out/evidence/probe.sha256
           for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["target_seeds"])'); do
             sha256sum "/tmp/i033-target-$seed/corpus.json"
           done > i033-out/evidence/corpora.sha256
-          printf 'main_sha=%s
-' "$GITHUB_SHA" > i033-out/evidence/build-info.txt
+          printf 'main_sha=%s\\n' "$GITHUB_SHA" > i033-out/evidence/build-info.txt
           if test -f i033-out/evidence/result.json; then
             python3 - <<'PY'
           import json
@@ -286,14 +284,12 @@ jobs:
                   'delta_alignment':r['delta_alignment'],
                   'delta_alignment_hypothesis':r['delta_alignment_hypothesis'],
                   'interpretation_boundary':r['interpretation_boundary'],
-              },indent=2,sort_keys=True)+'
-')
+              },indent=2,sort_keys=True)+'\\n')
           PY
           fi
           (
             cd i033-out/evidence
-            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f
-' | sort |               while read -r file; do sha256sum "$file"; done > SHA256SUMS
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\\n' | sort |               while read -r file; do sha256sum "$file"; done > SHA256SUMS
           )
           exit "$rc"
       - name: Enforce delta-diagnostic-only authority

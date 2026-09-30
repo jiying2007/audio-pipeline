@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i034-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i034-ns-vad-noise-state-temporal-response-decomposition-v1.json"
 EVALUATOR=ROOT/"tests/validation/i034_ns_vad_noise_state_temporal_response_decomposition.py"
 BASE_EVALUATOR=ROOT/"tests/validation/i033_ns_vad_causal_noise_delta_alignment.py"

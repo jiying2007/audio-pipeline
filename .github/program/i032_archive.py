@@ -441,7 +441,7 @@ def publish(api: GitHub,files: dict[str,bytes],main: str) -> dict:
     body=(
         PR_MARKER+"\n\n"
         "Copy-only durable archive of the already-consumed valid I032 "
-        "causal-noise-scale donor aggregation diagnostic evidence.\n\n"
+        "target causal noise-scale observability diagnostic evidence.\n\n"
         "Trusted closure on main binds run 36688937963, artifact 11084259758, "
         "ZIP SHA256 "+EXPECTED_ZIP_SHA256+", and all 11 member SHA256 values. "
         "This PR contains only those original artifact bytes under "

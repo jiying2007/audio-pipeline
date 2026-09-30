@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i032-ns-upstream-target-causal-noise-scale-observability-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "3568cbf93392ac6a84ef9288314e05ddfc648e67",
+  "decision": "NS_UPSTREAM_TARGET_CAUSAL_NOISE_SCALE_OBSERVABILITY_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "TARGET_CAUSAL_NS_NOISE_SCALE_FIDELITY_SUPPORTED_NO_NORMALIZATION_OR_REFERENCE_SOURCE_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I032 execution is valid. All 72 target cases with a causal pre-ready-speech disagreement had an eight-frame strictly post-target ordinary-noise benchmark, giving causal benchmark coverage 1.0. The shipping NS field ns_noise_rms_dbfs, captured on the first causal pre-ready-speech target frame, met both preregistered engineering fidelity bounds against the later same-case ordinary-noise state: median absolute error 1.605659475 dB <= 3 dB and nearest-rank p90 absolute error 3.57573125 dB <= 6 dB. Exact NS/VAD shipping mirrors remained zero-delta. This supports ns_noise_rms_dbfs as a faithful target-side causal noise-scale observable in the public-development diagnostic population. It does not select a normalization mapping, reference source, component, threshold or shipping change. Descriptively, frozen donor-versus-causal-target noise-scale mismatch co-varies with frozen donor gap transfer error: Spearman rho is 0.3256479516, and median gap error rises monotonically from 0.03831 in the lowest mismatch quartile to 0.14625 in the highest. However absolute proxy bias is condition-dependent: global median signed error is +0.578 dB, while living and kitchen are near +2 dB and office is near zero; kitchen p90 absolute error is 6.0786 dB. Therefore the next high-information step should test offset-invariant relative noise-state change alignment between shipping NS and the post-NS/VAD observation domain before any absolute normalization or source patch is designed.",
+  "authoritative_execution": {
+    "run_id": 36688937963,
+    "run_attempt": 1,
+    "head_sha": "8e9861313553aa3c774fd365ad0e0f09d3e1b1c2",
+    "artifact_id": 11084259758,
+    "artifact_name": "i032-ns-upstream-target-causal-noise-scale-36688937963",
+    "artifact_size_bytes": 26120,
+    "artifact_sha256": "f9c4886ff0991b063dbaf65bd0d21c39526b86a8286602ef40692826f4858c5c",
+    "member_sha256": {
+      "SHA256SUMS": "placeholder",
+      "build-info.txt": "6cdc689cd1e0800fb5b0b8fe96340b42c00a475bd365f964cac064b401a770ac",
+      "contract.json": "413fb80d3488c3ca133019852eeb481305fb982daa4b044f25d812baecb9f976",
+      "corpora.sha256": "043bcd7c6299d98711e528b4c3419e256dd3807fd641119e3246f12c4ff54154",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "632cfef0c156b1283167db72aa015912fcd8c61b809432cdb8d9fb5ab123e419",
+      "materialization.json": "71779d1149f38a047c6130c8033a3f5d415c057daa105463a08f521e6bac5ade",
+      "probe.sha256": "8b952a561bdcf13ef6e7a0698cf59aadb935f03bf1b4341d37be4b5e05a9a10b",
+      "result.json": "2831bf6867fa7ec1eee5e13bbf15f9b650de3c9821872cda4c0b8d4ed233ed03",
+      "summary.json": "8ac23d449afc72f0c6cc2e95ecb0852761f06d177090a88a754252aec6d0c475"
+    }
+  },
+  "fresh_authority": {
+    "donor_seeds": [
+      1601307,
+      1611307,
+      1621307
+    ],
+    "target_seeds": [
+      1631307,
+      1641307,
+      1651307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "coverage_review": {
+    "donor_cases": 126,
+    "ready_donor_cases": 125,
+    "target_cases": 126,
+    "causal_target_cases": 72,
+    "benchmarkable_causal_cases": 72,
+    "causal_benchmark_coverage": 1,
+    "matched_donor_coverage": 1
+  },
+  "fidelity_review": {
+    "population": "target cases with at least one causal pre-ready-speech target and eight strictly post-target ordinary-noise reference frames",
+    "cases": 72,
+    "median_absolute_error_db": 1.605659475000003,
+    "p90_absolute_error_db": 3.575731250000004,
+    "maximum_absolute_error_db": 6.946819299999994,
+    "median_signed_error_db": 0.5782012999999964,
+    "preregistered_maximum_median_absolute_error_db": 3,
+    "preregistered_maximum_p90_absolute_error_db": 6,
+    "supported": true,
+    "by_noise_domain": {
+      "bus": {
+        "cases": 9,
+        "median_absolute_error_db": 1.4171676500000032,
+        "p90_absolute_error_db": 3.1460818999999987,
+        "median_signed_error_db": 0.3819580500000086
+      },
+      "cafeteria": {
+        "cases": 12,
+        "median_absolute_error_db": 1.5318927249999987,
+        "p90_absolute_error_db": 2.625102950000006,
+        "median_signed_error_db": 0.25144385000000113
+      },
+      "field": {
+        "cases": 11,
+        "median_absolute_error_db": 1.9415035500000002,
+        "p90_absolute_error_db": 2.890571599999994,
+        "median_signed_error_db": 1.0891570499999972
+      },
+      "kitchen": {
+        "cases": 9,
+        "median_absolute_error_db": 1.8415641500000106,
+        "p90_absolute_error_db": 6.07858275000001,
+        "median_signed_error_db": 1.8415641500000106
+      },
+      "living": {
+        "cases": 9,
+        "median_absolute_error_db": 2.0491942999999964,
+        "p90_absolute_error_db": 4.160057099999996,
+        "median_signed_error_db": 2.0491942999999964
+      },
+      "office": {
+        "cases": 12,
+        "median_absolute_error_db": 0.7818689499999998,
+        "p90_absolute_error_db": 3.575731250000004,
+        "median_signed_error_db": -0.020917924999999116
+      },
+      "traffic": {
+        "cases": 10,
+        "median_absolute_error_db": 1.5176277750000011,
+        "p90_absolute_error_db": 2.410621649999996,
+        "median_signed_error_db": 0.8016567499999994
+      }
+    }
+  },
+  "descriptive_transfer_review": {
+    "spearman_noise_scale_mismatch_vs_gap_transfer_error": 0.3256479516367612,
+    "mismatch_quartiles": {
+      "q1": {
+        "cases": 18,
+        "median_noise_scale_mismatch_db": 1.2297276999999944,
+        "median_frozen_donor_gap_transfer_error": 0.038312628749999966
+      },
+      "q2": {
+        "cases": 18,
+        "median_noise_scale_mismatch_db": 3.246026074999996,
+        "median_frozen_donor_gap_transfer_error": 0.049253016750000045
+      },
+      "q3": {
+        "cases": 18,
+        "median_noise_scale_mismatch_db": 6.117136950000006,
+        "median_frozen_donor_gap_transfer_error": 0.06799849875000002
+      },
+      "q4": {
+        "cases": 18,
+        "median_noise_scale_mismatch_db": 8.988575925000003,
+        "median_frozen_donor_gap_transfer_error": 0.14625273625000001
+      }
+    },
+    "authority": "descriptive only; cannot select a mapping or candidate"
+  },
+  "root_cause_review": {
+    "target_causal_noise_scale_observable_supported": true,
+    "absolute_scale_bias_condition_dependent": true,
+    "direct_absolute_normalization_mapping_supported": false,
+    "donor_mismatch_association_descriptively_positive": true,
+    "source_patch_authorized": false,
+    "note": "I032 supports observability, not an absolute-value normalization law. Condition-dependent bias makes an offset-invariant relative-state differential the next appropriate test."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i033-ns-vad-causal-noise-delta-alignment-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use entirely fresh public-development target seeds and the unchanged shipping NS/VAD path. Do not use donor cases or evaluate a normalization/source candidate. For each target case with a first pre-ready-speech disagreement and at least one prior ordinary-noise non-disagreement reference, use the last prior reference as a causal anchor. Capture shipping NS ns_noise_rms_dbfs and post-NS frame RMS dBFS at the anchor and at the causal target. Retrospectively benchmark the local observation-domain change using the median post-NS RMS dBFS over the first eight strictly post-target ordinary-noise non-disagreement frames. Compare the causal NS delta [target ns_noise_rms_dbfs - anchor ns_noise_rms_dbfs] with the future local-domain delta [later median post-NS RMS dBFS - anchor post-NS RMS dBFS]. This removes per-domain absolute offset and tests whether the shipping NS state can drive a parameter-free relative VAD-noise-state alignment. Preregister median absolute delta error <=3 dB and nearest-rank p90 <=6 dB, plus sufficient causal-anchor coverage. Also report the existing VAD noise-state error descriptively if exposed, but do not select a refresh rule.",
+    "required_gates": [
+      "fresh target seeds disjoint from I025-I032",
+      "shipping NS/VAD source unchanged",
+      "first pre-ready-speech target and last prior ordinary-noise anchor are both causal",
+      "post-target eight-frame benchmark is retrospective only",
+      "NS delta and local-domain delta use the same causal anchor",
+      "median absolute delta error and nearest-rank p90 reported",
+      "shipping mirrors remain exact",
+      "no donor selection, normalization mapping, threshold search or source candidate evaluated"
+    ],
+    "prohibited": [
+      "reuse of I032 seeds",
+      "absolute-value normalization mapping selection",
+      "donor/reference-source selection",
+      "joint aggregation operator search",
+      "VAD noise-state refresh source patch",
+      "threshold tuning",
+      "tracker alpha changes",
+      "shipping source changes",
+      "validation-grade or blind feedback"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i032-36688937963/result.json",
+  "verification_limits": [
+    "I032 is development-only and does not establish product acoustic behavior.",
+    "Global fidelity passed the preregistered engineering bounds, but per-domain signed bias and tails are heterogeneous; the global PASS must not be converted into an absolute normalization law.",
+    "The donor mismatch correlation and quartiles are descriptive only and cannot select a mapping, donor, component or candidate.",
+    "The later eight-frame reference is retrospective evidence only and is not available causally at the target frame.",
+    "No normalization mapping, reference-source candidate, source patch, component counterfactual, threshold, tracker change, validation-grade, blind, HIL, product-certification or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "noise_scale_normalization_selected": false,
+    "source_patch_selected": false,
+    "component_selected": false,
+    "mapping_selected": false,
+    "component_reweighted": false,
+    "donor_k_changed": false,
+    "donor_matching_changed": false,
+    "negative_control_changed": false,
+    "tracker_alpha_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

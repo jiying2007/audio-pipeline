@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i031-ns-upstream-joint-coherent-donor-aggregation-v1",
+  "phase": "candidate-zero-joint-coherent-donor-aggregation-diagnostic",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "eb17a14c94f67da0488669281f25b7acd8ce9790",
+  "predecessor": {
+    "i030_closure": ".github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1-result.json",
+    "i030_closure_blob_sha": "a6725f08a932c8ba83db0c310e5760b5e2974cf2",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_UPSTREAM_DONOR_JOINT_RESIDUAL_STABILITY_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "PRE_READY_DONOR_TRANSFER_FAILURE_ASSOCIATED_WITH_JOINT_SUMMARY_INCOHERENCE_AND_CONDITION_HETEROGENEITY_NOT_SIMPLE_POOL_DISPERSION_NO_CANDIDATE",
+    "required_followup_id": "i031-ns-upstream-joint-coherent-donor-aggregation-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "With donor selection frozen exactly as in I029/I030, does one preregistered joint-coherent observed-frame aggregation operator eliminate donor-summary algebraic inconsistency and reduce gap absolute error versus the frozen independent-component-median control on fresh pre-ready-speech target cases?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i025_ns_upstream_disagreement_noise_source_probe.c",
+    "probe_git_blob_sha": "2e3a01fd95e8f171ee37ee21208a9e634335145f",
+    "evaluator_path": "tests/validation/i031_ns_upstream_joint_coherent_donor_aggregation.py",
+    "evaluator_git_blob_sha": "2813d7045142974fabbf99bc453b4695d4622856"
+  },
+  "fresh_diagnostic_authority": {
+    "donor_seeds": [
+      1501307,
+      1511307,
+      1521307
+    ],
+    "target_seeds": [
+      1531307,
+      1541307,
+      1551307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15
+  },
+  "frozen_donor_selection": {
+    "donor_select_k": 3,
+    "same_noise_domain_required": true,
+    "ordering": "lexicographically minimize [scenario_group_mismatch, reverb_mismatch, snr_missing_penalty, absolute_snr_distance, exact_scenario_mismatch, case_key]",
+    "scenario_groups": {
+      "research-public-noise-only": "noise-only",
+      "research-public-noisy-clean": "mix",
+      "research-public-noisy-reverb": "mix"
+    },
+    "negative_control_domain_map": {
+      "kitchen": "traffic",
+      "traffic": "living",
+      "living": "office",
+      "office": "cafeteria",
+      "cafeteria": "bus",
+      "bus": "field",
+      "field": "kitchen"
+    },
+    "must_remain_ast_equivalent_to_i030": true,
+    "may_change_k": false,
+    "may_change_matching_rule": false,
+    "may_change_negative_control_map": false
+  },
+  "frozen_control_aggregation": {
+    "id": "independent-component-median-v1",
+    "rule": "For each of the K=3 selected donor cases, summarize its first eight ordinary-noise non-disagreement frames by independent medians of mean, concentration and gap; then take independent medians across the K=3 donor summaries.",
+    "may_change": false
+  },
+  "joint_coherent_operator": {
+    "id": "observed-frame-medoid-locator-v1",
+    "operator_count": 1,
+    "pool": "all 24 first-ready joint frames from the frozen K=3 selected donor cases",
+    "locator_center": "component-wise median of pooled mean, concentration and gap; center is not emitted as the aggregate",
+    "distance": "unweighted L1 distance in (mean, concentration, gap)",
+    "output": "the single actually observed pooled joint frame with minimum distance to the locator center",
+    "deterministic_tie_break": [
+      "seed-bound donor case_key",
+      "frame_index"
+    ],
+    "expected_pooled_frame_count": 24,
+    "preserves_observed_joint_identity": true,
+    "maximum_algebraic_inconsistency": 0.000001,
+    "search_across_operators": false
+  },
+  "target_benchmark": {
+    "readiness_reference_frames": 8,
+    "summary": "independent medians of the target case's first eight ordinary-noise non-disagreement frames after warmup, unchanged from I030",
+    "role": "retrospective benchmark only; never a causal input for earlier target frames",
+    "same_target_future_frames_in_donor_reference": false
+  },
+  "directional_hypothesis": {
+    "primary_population": "target cases with at least one pre-ready oracle-speech disagreement target under the unchanged eight-reference observation boundary",
+    "primary_metric": "gap_absolute_error",
+    "comparison": "frozen control gap absolute error minus joint-coherent operator gap absolute error against the unchanged target first-ready benchmark",
+    "support_requires": [
+      "one-sided paired sign-test p <= 0.01",
+      "median paired gap-error improvement > 0",
+      "joint-coherent better fraction among non-ties > 0.5",
+      "joint-coherent algebraic inconsistency <= 1e-6"
+    ],
+    "maximum_one_sided_sign_test_p": 0.01
+  },
+  "preregistered_slices": {
+    "global": true,
+    "pre_ready_speech": true,
+    "noise_domains": [
+      "kitchen",
+      "traffic",
+      "living",
+      "office",
+      "cafeteria",
+      "bus",
+      "field"
+    ],
+    "named_review_domains": [
+      "bus",
+      "field",
+      "living",
+      "cafeteria"
+    ],
+    "note": "Slices are descriptive. They cannot select a reference-source candidate or trigger donor-rule tuning."
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "expected_target_cases": 126,
+    "expected_donor_cases": 126,
+    "minimum_ready_donor_cases": 120,
+    "minimum_ready_donors_per_domain": 12,
+    "minimum_target_benchmark_coverage": 0.95,
+    "minimum_target_benchmark_coverage_per_domain": 0.8,
+    "minimum_matched_donor_coverage": 0.95,
+    "minimum_negative_control_coverage": 0.95,
+    "minimum_pre_ready_speech_paired_cases": 30,
+    "minimum_named_domain_paired_cases": 12,
+    "max_joint_coherent_algebraic_inconsistency": 0.000001
+  },
+  "diagnostic_outputs": [
+    "frozen control aggregate and algebraic inconsistency",
+    "joint-coherent selected observed donor frame and deterministic origin",
+    "joint-coherent locator center and L1 distance",
+    "control versus coherent absolute errors for mean, concentration and gap",
+    "global and pre-ready-speech paired gap comparison",
+    "one-sided paired sign test for preregistered primary gap error",
+    "per-domain descriptive comparison",
+    "negative-control continuity gap errors",
+    "coverage and shipping mirror identity"
+  ],
+  "forbidden_feedback": {
+    "i025_seeds": true,
+    "i026_seeds": true,
+    "i027_seeds": true,
+    "i028_seeds": true,
+    "i029_seeds": true,
+    "i030_seeds": true,
+    "search_multiple_joint_operators": true,
+    "target_outputs_for_donor_selection": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "pcr02_product_external": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_UPSTREAM_JOINT_COHERENT_DONOR_AGGREGATION_DECOMPOSED_REVIEW_REQUIRED": "Fresh donor/target authority, frozen donor selection/control aggregation, single joint-coherent observed-frame operator, coverage and shipping mirrors are valid. Report algebraic consistency and paired gap-error comparison for review without selecting a reference source.",
+    "I031_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, frozen-input identity, donor/target disjointness, donor/benchmark coverage, observed-frame operator identity, algebraic-consistency or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_joint_aggregation_candidate": false,
+    "may_select_component": false,
+    "may_rank_component_for_shipping": false,
+    "may_reweight_components": false,
+    "may_select_mapping": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_run_component_counterfactual": false,
+    "may_change_donor_k": false,
+    "may_change_donor_matching_rule": false,
+    "may_change_negative_control_map": false,
+    "may_change_control_aggregation": false,
+    "may_search_joint_aggregation_operators": false,
+    "may_assume_matching_metadata_available_in_shipping": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Use I031 only to determine whether removing the structural aggregation incoherence is sufficient to improve frozen-donor gap agreement. Any donor-rule redesign, reference-source candidate, additional aggregation operator, component counterfactual, mapping or shipping change requires a new independently preregistered authority."
+}

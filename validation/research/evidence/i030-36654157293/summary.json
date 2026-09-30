@@ -1,0 +1,1274 @@
+{
+  "coverage": {
+    "donor_cases": 126,
+    "matched_donor_coverage": 1.0,
+    "negative_control_coverage": 1.0,
+    "per_domain": {
+      "bus": {
+        "benchmark_cases": 18,
+        "benchmark_coverage": 1.0,
+        "ready_donors": 18,
+        "target_cases": 18
+      },
+      "cafeteria": {
+        "benchmark_cases": 18,
+        "benchmark_coverage": 1.0,
+        "ready_donors": 18,
+        "target_cases": 18
+      },
+      "field": {
+        "benchmark_cases": 18,
+        "benchmark_coverage": 1.0,
+        "ready_donors": 18,
+        "target_cases": 18
+      },
+      "kitchen": {
+        "benchmark_cases": 18,
+        "benchmark_coverage": 1.0,
+        "ready_donors": 18,
+        "target_cases": 18
+      },
+      "living": {
+        "benchmark_cases": 18,
+        "benchmark_coverage": 1.0,
+        "ready_donors": 18,
+        "target_cases": 18
+      },
+      "office": {
+        "benchmark_cases": 17,
+        "benchmark_coverage": 0.9444444444444444,
+        "ready_donors": 18,
+        "target_cases": 18
+      },
+      "traffic": {
+        "benchmark_cases": 18,
+        "benchmark_coverage": 1.0,
+        "ready_donors": 18,
+        "target_cases": 18
+      }
+    },
+    "ready_donor_cases": 126,
+    "target_benchmark_cases": 125,
+    "target_benchmark_coverage": 0.9920634920634921,
+    "target_cases": 126
+  },
+  "decision": "NS_UPSTREAM_DONOR_JOINT_RESIDUAL_STABILITY_DECOMPOSED_REVIEW_REQUIRED",
+  "decomposition": {
+    "by_gap_outcome": {
+      "matched_better": {
+        "median_donor_between_mad": {
+          "concentration": 0.056315273000000055,
+          "gap": 0.026301421500000005,
+          "mean": 0.018555127000000005
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.05790731300000007,
+          "gap": 0.030447065999999967,
+          "mean": 0.0381968315
+        },
+        "median_gap_alignment_error": 0.01872011224999995,
+        "median_gap_axis_fraction": 0.26188357490299313,
+        "median_matched_abs_error": {
+          "concentration": 0.18078080574999997,
+          "gap": 0.037225522250000004,
+          "mean": 0.10072096055
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.33010922349999994,
+          "gap": 0.14637543275,
+          "mean": 0.12249897245
+        },
+        "median_paired_improvement": {
+          "concentration": 0.06941416500000014,
+          "gap": 0.050086953000000045,
+          "mean": 0.03065518575374998
+        },
+        "median_signed_residual": {
+          "concentration": 0.04461188625000004,
+          "gap": 0.014289304749999954,
+          "mean": 0.0184317177485
+        },
+        "median_target_mad": {
+          "concentration": 0.04928176824999998,
+          "gap": 0.03972846275000001,
+          "mean": 0.022054119025
+        },
+        "paired_cases": 68,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 27,
+            "positive": 41,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 0,
+            "positive": 68,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 27,
+            "positive": 41,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9117647058823529
+      },
+      "matched_worse": {
+        "median_donor_between_mad": {
+          "concentration": 0.030915915500000057,
+          "gap": 0.01469026499999998,
+          "mean": 0.03442713288
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.03347456449999997,
+          "gap": 0.030745283000000012,
+          "mean": 0.028819650500000002
+        },
+        "median_gap_alignment_error": 0.017417606034999866,
+        "median_gap_axis_fraction": 0.28647886236526937,
+        "median_matched_abs_error": {
+          "concentration": 0.13653993600000003,
+          "gap": 0.08364871149999997,
+          "mean": 0.06859417250000005
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.11384457349999999,
+          "gap": 0.027808874999999955,
+          "mean": 0.07424802311499999
+        },
+        "median_paired_improvement": {
+          "concentration": -0.001673817000000133,
+          "gap": -0.03383082150000005,
+          "mean": 0.008280588249999998
+        },
+        "median_signed_residual": {
+          "concentration": 0.0057497024999999535,
+          "gap": -0.006693661499999948,
+          "mean": 0.020904026500000006
+        },
+        "median_target_mad": {
+          "concentration": 0.04211112849999993,
+          "gap": 0.034454912000000004,
+          "mean": 0.015757422850000008
+        },
+        "paired_cases": 57,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 30,
+            "positive": 27,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 57,
+            "positive": 0,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 26,
+            "positive": 31,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9122807017543859
+      },
+      "tie": {
+        "paired_cases": 0
+      }
+    },
+    "by_noise_domain": {
+      "bus": {
+        "median_donor_between_mad": {
+          "concentration": 0.05389057085000002,
+          "gap": 0.05507421450000005,
+          "mean": 0.01484440250000002
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.0627977252,
+          "gap": 0.05140647300000001,
+          "mean": 0.04376930005
+        },
+        "median_gap_alignment_error": 0.04234623225000006,
+        "median_gap_axis_fraction": 0.35281398944586706,
+        "median_matched_abs_error": {
+          "concentration": 0.12058246149999996,
+          "gap": 0.12336315250000005,
+          "mean": 0.070005133585
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.14155463850000005,
+          "gap": 0.07725997274999999,
+          "mean": 0.07234485947
+        },
+        "median_paired_improvement": {
+          "concentration": 0.0008717775000000039,
+          "gap": -0.060085393750000105,
+          "mean": 0.010713263999999945
+        },
+        "median_signed_residual": {
+          "concentration": -0.007469192250000034,
+          "gap": 0.09272245350000005,
+          "mean": 0.0032560252200000217
+        },
+        "median_target_mad": {
+          "concentration": 0.04243725550000002,
+          "gap": 0.03558205800000003,
+          "mean": 0.009523633012500001
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 9,
+            "positive": 9,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 14,
+            "positive": 4,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 8,
+            "positive": 10,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.8888888888888888
+      },
+      "cafeteria": {
+        "median_donor_between_mad": {
+          "concentration": 0.0173880460000001,
+          "gap": 0.06503698250000006,
+          "mean": 0.07827150800000005
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.02352494000000005,
+          "gap": 0.030447065999999967,
+          "mean": 0.0381968315
+        },
+        "median_gap_alignment_error": 0.012045517000000089,
+        "median_gap_axis_fraction": 0.1370347750167688,
+        "median_matched_abs_error": {
+          "concentration": 0.13450972724999993,
+          "gap": 0.03021402650000002,
+          "mean": 0.1705106885
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.33010922349999994,
+          "gap": 0.07358308175000006,
+          "mean": 0.131784024
+        },
+        "median_paired_improvement": {
+          "concentration": 0.035818501999999974,
+          "gap": 0.050086953000000045,
+          "mean": 0.006439346674999968
+        },
+        "median_signed_residual": {
+          "concentration": 0.007387697749999977,
+          "gap": -0.015644959999999986,
+          "mean": 0.0616555912375
+        },
+        "median_target_mad": {
+          "concentration": 0.03984935574999998,
+          "gap": 0.031942024750000006,
+          "mean": 0.045836109749999986
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 6,
+            "positive": 12,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 5,
+            "positive": 13,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 8,
+            "positive": 10,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.8888888888888888
+      },
+      "field": {
+        "median_donor_between_mad": {
+          "concentration": 0.08310143250000002,
+          "gap": 0.011439695999999944,
+          "mean": 0.024173489190000015
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.12323869762499998,
+          "gap": 0.04517024025000001,
+          "mean": 0.031966811839999984
+        },
+        "median_gap_alignment_error": 0.010375645000000058,
+        "median_gap_axis_fraction": 0.34792273282141534,
+        "median_matched_abs_error": {
+          "concentration": 0.14517540475,
+          "gap": 0.04078682524999999,
+          "mean": 0.035712276715000005
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.16391119325000003,
+          "gap": 0.11760617980000002,
+          "mean": 0.1409620755
+        },
+        "median_paired_improvement": {
+          "concentration": 0.09723998575000004,
+          "gap": -0.004470110500000013,
+          "mean": 0.06883241938500001
+        },
+        "median_signed_residual": {
+          "concentration": 0.03903920949999998,
+          "gap": -0.004400946000000044,
+          "mean": 0.029925633250000028
+        },
+        "median_target_mad": {
+          "concentration": 0.03414763502499998,
+          "gap": 0.045324759524999994,
+          "mean": 0.007886129349999993
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 7,
+            "positive": 11,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 10,
+            "positive": 8,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 6,
+            "positive": 12,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.8888888888888888
+      },
+      "kitchen": {
+        "median_donor_between_mad": {
+          "concentration": 0.029223084499999885,
+          "gap": 0.009875386999999958,
+          "mean": 0.06379654995
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.025063515000000036,
+          "gap": 0.018931269500000014,
+          "mean": 0.02863657265
+        },
+        "median_gap_alignment_error": 0.013829700749999979,
+        "median_gap_axis_fraction": 0.13751007160531248,
+        "median_matched_abs_error": {
+          "concentration": 0.19099330874999998,
+          "gap": 0.04235403274999999,
+          "mean": 0.15878418658000001
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.07901258750000001,
+          "gap": 0.027036457999999874,
+          "mean": 0.0497560946294
+        },
+        "median_paired_improvement": {
+          "concentration": -0.1177244930000001,
+          "gap": -0.006648093500000063,
+          "mean": -0.14063368375
+        },
+        "median_signed_residual": {
+          "concentration": 0.0205858055,
+          "gap": 0.00856275875000001,
+          "mean": 0.0160110127
+        },
+        "median_target_mad": {
+          "concentration": 0.04377452274999996,
+          "gap": 0.03275777400000002,
+          "mean": 0.016812995520000006
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 13,
+            "positive": 5,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 12,
+            "positive": 6,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 12,
+            "positive": 6,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9444444444444444
+      },
+      "living": {
+        "median_donor_between_mad": {
+          "concentration": 0.03582218250000002,
+          "gap": 0.028554455000000034,
+          "mean": 0.0060151145000000295
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.020141243999999947,
+          "gap": 0.022058799500000004,
+          "mean": 0.040518284
+        },
+        "median_gap_alignment_error": 0.019917894750000054,
+        "median_gap_axis_fraction": 0.3053357053870108,
+        "median_matched_abs_error": {
+          "concentration": 0.15487033149999996,
+          "gap": 0.03911759025,
+          "mean": 0.11462600748749999
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.34144298000000006,
+          "gap": 0.28737726799999996,
+          "mean": 0.05749744999000002
+        },
+        "median_paired_improvement": {
+          "concentration": 0.07285856450000017,
+          "gap": 0.25089040349999997,
+          "mean": 0.02448970791624997
+        },
+        "median_signed_residual": {
+          "concentration": 0.026207402500000032,
+          "gap": 0.012191392499999953,
+          "mean": 0.020173873499999995
+        },
+        "median_target_mad": {
+          "concentration": 0.054888867000000036,
+          "gap": 0.05137562725,
+          "mean": 0.053389487975
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 6,
+            "positive": 12,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 2,
+            "positive": 16,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 8,
+            "positive": 10,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.8333333333333334
+      },
+      "office": {
+        "median_donor_between_mad": {
+          "concentration": 0.0768149795,
+          "gap": 0.0758616255,
+          "mean": 0.006902413450000002
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.03347456449999997,
+          "gap": 0.024667382000000015,
+          "mean": 0.008821430600000001
+        },
+        "median_gap_alignment_error": 0.008821424013500001,
+        "median_gap_axis_fraction": 0.4079325445047171,
+        "median_matched_abs_error": {
+          "concentration": 0.16299977899999996,
+          "gap": 0.135927305,
+          "mean": 0.031183019000000034
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.2329841855,
+          "gap": 0.15253917899999997,
+          "mean": 0.14082373650000002
+        },
+        "median_paired_improvement": {
+          "concentration": 0.06998440650000004,
+          "gap": 0.01179555050000003,
+          "mean": 0.077665577978
+        },
+        "median_signed_residual": {
+          "concentration": 0.0768149795,
+          "gap": 0.019169867499999993,
+          "mean": 0.0027591453985
+        },
+        "median_target_mad": {
+          "concentration": 0.05973830445,
+          "gap": 0.059988603,
+          "mean": 0.006638330493
+        },
+        "paired_cases": 17,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 7,
+            "positive": 10,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 7,
+            "positive": 10,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 4,
+            "positive": 13,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 1.0
+      },
+      "traffic": {
+        "median_donor_between_mad": {
+          "concentration": 0.006922393999999943,
+          "gap": 0.01469026499999998,
+          "mean": 0.0254473204
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.04873828600000005,
+          "gap": 0.03260764499999996,
+          "mean": 0.02483686105
+        },
+        "median_gap_alignment_error": 0.03415788832249994,
+        "median_gap_axis_fraction": 0.2562912150258227,
+        "median_matched_abs_error": {
+          "concentration": 0.14165690525000002,
+          "gap": 0.028732753999999944,
+          "mean": 0.08405781905
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.09785553824999998,
+          "gap": 0.027737930250000015,
+          "mean": 0.09410723649999997
+        },
+        "median_paired_improvement": {
+          "concentration": 0.0008080900000000391,
+          "gap": 0.01325989500000005,
+          "mean": 0.0011794864999999932
+        },
+        "median_signed_residual": {
+          "concentration": -0.004674553999999942,
+          "gap": 0.008178755249999947,
+          "mean": 0.007975731000000014
+        },
+        "median_target_mad": {
+          "concentration": 0.029705424774999982,
+          "gap": 0.025840217099999965,
+          "mean": 0.018384486599999996
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 9,
+            "positive": 9,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 7,
+            "positive": 11,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 7,
+            "positive": 11,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9444444444444444
+      }
+    },
+    "by_reverb": {
+      "false": {
+        "median_donor_between_mad": {
+          "concentration": 0.0768149795,
+          "gap": 0.06342861050000004,
+          "mean": 0.05420374144999998
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.11652994174999996,
+          "gap": 0.03159034250000001,
+          "mean": 0.0381968315
+        },
+        "median_gap_alignment_error": 0.039638126664999884,
+        "median_gap_axis_fraction": 0.32309156398254235,
+        "median_matched_abs_error": {
+          "concentration": 0.271001756,
+          "gap": 0.08364871149999997,
+          "mean": 0.11201923083499998
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.33762373,
+          "gap": 0.1591188910000001,
+          "mean": 0.09723155086
+        },
+        "median_paired_improvement": {
+          "concentration": 0.05607152000000004,
+          "gap": 0.006648093500000063,
+          "mean": 0.028487816199999974
+        },
+        "median_signed_residual": {
+          "concentration": 0.1391277310000001,
+          "gap": 0.06138609400000006,
+          "mean": 0.0053409705155
+        },
+        "median_target_mad": {
+          "concentration": 0.06753228650000002,
+          "gap": 0.05267748250000001,
+          "mean": 0.007456163165
+        },
+        "paired_cases": 41,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 20,
+            "positive": 21,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 19,
+            "positive": 22,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 19,
+            "positive": 22,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 1.0
+      },
+      "true": {
+        "median_donor_between_mad": {
+          "concentration": 0.0377603769999999,
+          "gap": 0.030670553749999996,
+          "mean": 0.034830958772500004
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.0630118251,
+          "gap": 0.06540368449999995,
+          "mean": 0.02483686105
+        },
+        "median_gap_alignment_error": 0.012045517000000089,
+        "median_gap_axis_fraction": 0.28369387268725615,
+        "median_matched_abs_error": {
+          "concentration": 0.21229408650000003,
+          "gap": 0.07751651100000001,
+          "mean": 0.07101526604225
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.3108154215,
+          "gap": 0.15039097524999992,
+          "mean": 0.11289888817499996
+        },
+        "median_paired_improvement": {
+          "concentration": 0.05802017100000012,
+          "gap": 0.01661187399999997,
+          "mean": 0.026783196503749995
+        },
+        "median_signed_residual": {
+          "concentration": 0.121174993,
+          "gap": 0.005084790500000019,
+          "mean": 0.027523631439999998
+        },
+        "median_target_mad": {
+          "concentration": 0.07745537175000002,
+          "gap": 0.05922237685000001,
+          "mean": 0.01035988875
+        },
+        "paired_cases": 42,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 17,
+            "positive": 25,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 16,
+            "positive": 26,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 17,
+            "positive": 25,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.8809523809523809
+      }
+    },
+    "by_snr_db": {
+      "-5": {
+        "median_donor_between_mad": {
+          "concentration": 0.09445396049999999,
+          "gap": 0.024048387999999976,
+          "mean": 0.03442713288
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.06322592499999999,
+          "gap": 0.05077099800000001,
+          "mean": 0.02863657265
+        },
+        "median_gap_alignment_error": 0.02829860904999998,
+        "median_gap_axis_fraction": 0.2814441461348158,
+        "median_matched_abs_error": {
+          "concentration": 0.2076485455,
+          "gap": 0.08364871149999997,
+          "mean": 0.07378437380000001
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.22922563549999997,
+          "gap": 0.07897396350000002,
+          "mean": 0.10227218999999999
+        },
+        "median_paired_improvement": {
+          "concentration": -0.001673817000000133,
+          "gap": -0.02118590450000002,
+          "mean": 0.037691284379999995
+        },
+        "median_signed_residual": {
+          "concentration": 0.09396379099999999,
+          "gap": -0.028409182499999908,
+          "mean": 0.007013023850000001
+        },
+        "median_target_mad": {
+          "concentration": 0.08053930150000005,
+          "gap": 0.05948396,
+          "mean": 0.019500464200000005
+        },
+        "paired_cases": 15,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 8,
+            "positive": 7,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 9,
+            "positive": 6,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 6,
+            "positive": 9,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9333333333333333
+      },
+      "0": {
+        "median_donor_between_mad": {
+          "concentration": 0.0377603769999999,
+          "gap": 0.027719192500000017,
+          "mean": 0.038930943443
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.08703120049999996,
+          "gap": 0.040427960500000026,
+          "mean": 0.032300724574999995
+        },
+        "median_gap_alignment_error": 0.03717548778900001,
+        "median_gap_axis_fraction": 0.20647630852667678,
+        "median_matched_abs_error": {
+          "concentration": 0.18077397325000005,
+          "gap": 0.03687383275000003,
+          "mean": 0.19896531595
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.28623137624999995,
+          "gap": 0.06526380800000003,
+          "mean": 0.12117497338724996
+        },
+        "median_paired_improvement": {
+          "concentration": 0.07278261725000007,
+          "gap": -0.006648093500000063,
+          "mean": 1.3877787807814457e-17
+        },
+        "median_signed_residual": {
+          "concentration": -0.028223723000000034,
+          "gap": 0.0004823952499999895,
+          "mean": -0.04788963324999999
+        },
+        "median_target_mad": {
+          "concentration": 0.05313686325000003,
+          "gap": 0.0294909255,
+          "mean": 0.03674756817499999
+        },
+        "paired_cases": 14,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 5,
+            "positive": 9,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 8,
+            "positive": 6,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 7,
+            "positive": 7,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9285714285714286
+      },
+      "10": {
+        "median_donor_between_mad": {
+          "concentration": 0.06522242735000003,
+          "gap": 0.06342861050000004,
+          "mean": 0.05420374144999998
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.05959577850000006,
+          "gap": 0.05987022742500001,
+          "mean": 0.045496214024999995
+        },
+        "median_gap_alignment_error": 0.017294666975000067,
+        "median_gap_axis_fraction": 0.40794516721268637,
+        "median_matched_abs_error": {
+          "concentration": 0.33388204795,
+          "gap": 0.12388094500000005,
+          "mean": 0.0742744725625
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.40729471674999995,
+          "gap": 0.29257872269999996,
+          "mean": 0.088551989962
+        },
+        "median_paired_improvement": {
+          "concentration": 0.0,
+          "gap": 0.01682582499999999,
+          "mean": 0.031155549700000035
+        },
+        "median_signed_residual": {
+          "concentration": 0.24796586934999998,
+          "gap": 0.06455997375000005,
+          "mean": 0.029841221999999952
+        },
+        "median_target_mad": {
+          "concentration": 0.07537195824999994,
+          "gap": 0.07075330729499998,
+          "mean": 0.0043168665815
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 9,
+            "positive": 9,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 8,
+            "positive": 10,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 8,
+            "positive": 10,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 1.0
+      },
+      "15": {
+        "median_donor_between_mad": {
+          "concentration": 0.11180090899999995,
+          "gap": 0.06531858449999994,
+          "mean": 0.048389732538499985
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.06322592499999999,
+          "gap": 0.056650221499999986,
+          "mean": 0.04036417417999999
+        },
+        "median_gap_alignment_error": 0.014363763637500027,
+        "median_gap_axis_fraction": 0.3725280495904481,
+        "median_matched_abs_error": {
+          "concentration": 0.28751885875000005,
+          "gap": 0.12763585175000006,
+          "mean": 0.063528267885
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.41478460275,
+          "gap": 0.19640269900000001,
+          "mean": 0.09623226816250001
+        },
+        "median_paired_improvement": {
+          "concentration": 0.14626562599999998,
+          "gap": 0.01661187399999997,
+          "mean": 0.011729911337500001
+        },
+        "median_signed_residual": {
+          "concentration": 0.2627042755,
+          "gap": 0.12763585175000006,
+          "mean": 0.02129669161825
+        },
+        "median_target_mad": {
+          "concentration": 0.070481253475,
+          "gap": 0.08419734275,
+          "mean": 0.0028428346257500002
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 8,
+            "positive": 10,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 6,
+            "positive": 12,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 8,
+            "positive": 10,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9444444444444444
+      },
+      "5": {
+        "median_donor_between_mad": {
+          "concentration": 0.08363951749999995,
+          "gap": 0.03278665249999996,
+          "mean": 0.03152432187
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.09873703099999998,
+          "gap": 0.03156402725,
+          "mean": 0.031516846274999996
+        },
+        "median_gap_alignment_error": 0.035365278494999944,
+        "median_gap_axis_fraction": 0.2691751308634904,
+        "median_matched_abs_error": {
+          "concentration": 0.21781053375000003,
+          "gap": 0.059627818000000055,
+          "mean": 0.15658943800500003
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.3108154215,
+          "gap": 0.14383082125000002,
+          "mean": 0.11600088467
+        },
+        "median_paired_improvement": {
+          "concentration": 0.07619909937499991,
+          "gap": 0.03911376,
+          "mean": 0.021549651628749972
+        },
+        "median_signed_residual": {
+          "concentration": 0.004915490999999994,
+          "gap": 0.0016721862500000129,
+          "mean": 0.0007504940725000001
+        },
+        "median_target_mad": {
+          "concentration": 0.08494450149999999,
+          "gap": 0.044713564250000004,
+          "mean": 0.009302639474999999
+        },
+        "paired_cases": 18,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 7,
+            "positive": 11,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 4,
+            "positive": 14,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 7,
+            "positive": 11,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.8888888888888888
+      }
+    },
+    "comparison_domains": [
+      "living",
+      "cafeteria"
+    ],
+    "global": {
+      "median_donor_between_mad": {
+        "concentration": 0.0377603769999999,
+        "gap": 0.02276974949999999,
+        "mean": 0.018555127000000005
+      },
+      "median_donor_within_mad": {
+        "concentration": 0.03956204699999999,
+        "gap": 0.030447065999999967,
+        "mean": 0.033385314
+      },
+      "median_gap_alignment_error": 0.01786636499999994,
+      "median_gap_axis_fraction": 0.27866839609249827,
+      "median_matched_abs_error": {
+        "concentration": 0.16100257649999994,
+        "gap": 0.051030963500000026,
+        "mean": 0.076055492295
+      },
+      "median_negative_abs_error": {
+        "concentration": 0.159704685,
+        "gap": 0.07038645450000003,
+        "mean": 0.09654074950000002
+      },
+      "median_paired_improvement": {
+        "concentration": 0.011765599500000001,
+        "gap": 0.004275530500000069,
+        "mean": 0.014160700825
+      },
+      "median_signed_residual": {
+        "concentration": 0.02149561050000004,
+        "gap": 0.010831072999999969,
+        "mean": 0.019443720499999984
+      },
+      "median_target_mad": {
+        "concentration": 0.04552793500000002,
+        "gap": 0.03516407250000003,
+        "mean": 0.017268508999999987
+      },
+      "paired_cases": 125,
+      "paired_improvement_sign_counts": {
+        "concentration": {
+          "negative": 57,
+          "positive": 68,
+          "zero": 0
+        },
+        "gap": {
+          "negative": 57,
+          "positive": 68,
+          "zero": 0
+        },
+        "mean": {
+          "negative": 53,
+          "positive": 72,
+          "zero": 0
+        }
+      },
+      "same_sign_component_residual_fraction": 0.912
+    },
+    "pre_ready_speech": {
+      "median_donor_between_mad": {
+        "concentration": 0.0768149795,
+        "gap": 0.03278665249999996,
+        "mean": 0.035234784665000005
+      },
+      "median_donor_within_mad": {
+        "concentration": 0.06322592499999999,
+        "gap": 0.03260764499999996,
+        "mean": 0.0381968315
+      },
+      "median_gap_alignment_error": 0.031651058800000034,
+      "median_gap_axis_fraction": 0.30717668260805825,
+      "median_matched_abs_error": {
+        "concentration": 0.2534265145,
+        "gap": 0.07697530475000004,
+        "mean": 0.1081331248175
+      },
+      "median_negative_abs_error": {
+        "concentration": 0.33294045899999997,
+        "gap": 0.15298488025,
+        "mean": 0.10745563192499999
+      },
+      "median_paired_improvement": {
+        "concentration": 0.06245772175000014,
+        "gap": 0.01661187399999997,
+        "mean": 0.03165326560374996
+      },
+      "median_signed_residual": {
+        "concentration": 0.14393290875000003,
+        "gap": 0.03274998850000005,
+        "mean": 0.0184317177485
+      },
+      "median_target_mad": {
+        "concentration": 0.06988518725000004,
+        "gap": 0.05703700912499999,
+        "mean": 0.009725005124999998
+      },
+      "paired_cases": 72,
+      "paired_improvement_sign_counts": {
+        "concentration": {
+          "negative": 31,
+          "positive": 41,
+          "zero": 0
+        },
+        "gap": {
+          "negative": 29,
+          "positive": 43,
+          "zero": 0
+        },
+        "mean": {
+          "negative": 30,
+          "positive": 42,
+          "zero": 0
+        }
+      },
+      "same_sign_component_residual_fraction": 0.9305555555555556
+    },
+    "pre_ready_speech_by_gap_outcome": {
+      "matched_better": {
+        "median_donor_between_mad": {
+          "concentration": 0.09445396049999999,
+          "gap": 0.02944809199999998,
+          "mean": 0.024137302949999995
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.06322592499999999,
+          "gap": 0.032067135000000024,
+          "mean": 0.0381968315
+        },
+        "median_gap_alignment_error": 0.023992970000000058,
+        "median_gap_axis_fraction": 0.2694283223889472,
+        "median_matched_abs_error": {
+          "concentration": 0.25988391,
+          "gap": 0.04661397600000006,
+          "mean": 0.14750242199999997
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.442029476,
+          "gap": 0.285061225,
+          "mean": 0.14698195020000002
+        },
+        "median_paired_improvement": {
+          "concentration": 0.114172563,
+          "gap": 0.10290899100000006,
+          "mean": 0.05712498866499999
+        },
+        "median_signed_residual": {
+          "concentration": 0.14873808649999998,
+          "gap": 0.01630847200000002,
+          "mean": 0.01846460321
+        },
+        "median_target_mad": {
+          "concentration": 0.05973830445,
+          "gap": 0.05267748250000001,
+          "mean": 0.01019330275
+        },
+        "paired_cases": 43,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 11,
+            "positive": 32,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 0,
+            "positive": 43,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 15,
+            "positive": 28,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9302325581395349
+      },
+      "matched_worse": {
+        "median_donor_between_mad": {
+          "concentration": 0.06764712950000007,
+          "gap": 0.03278665249999996,
+          "mean": 0.05420374144999998
+        },
+        "median_donor_within_mad": {
+          "concentration": 0.0836922524999999,
+          "gap": 0.04878878600000003,
+          "mean": 0.0381968315
+        },
+        "median_gap_alignment_error": 0.041939987999999984,
+        "median_gap_axis_fraction": 0.32309156398254235,
+        "median_matched_abs_error": {
+          "concentration": 0.2384905665,
+          "gap": 0.1365716010000001,
+          "mean": 0.07577965975
+        },
+        "median_negative_abs_error": {
+          "concentration": 0.1327314825000001,
+          "gap": 0.07038645450000003,
+          "mean": 0.065255007322
+        },
+        "median_paired_improvement": {
+          "concentration": -0.09450695274999998,
+          "gap": -0.05039770900000007,
+          "mean": -0.0014965983745
+        },
+        "median_signed_residual": {
+          "concentration": 0.1391277310000001,
+          "gap": 0.06271371200000003,
+          "mean": 0.008250642500000002
+        },
+        "median_target_mad": {
+          "concentration": 0.07223808800000003,
+          "gap": 0.06691235299999998,
+          "mean": 0.008371406425000002
+        },
+        "paired_cases": 29,
+        "paired_improvement_sign_counts": {
+          "concentration": {
+            "negative": 20,
+            "positive": 9,
+            "zero": 0
+          },
+          "gap": {
+            "negative": 29,
+            "positive": 0,
+            "zero": 0
+          },
+          "mean": {
+            "negative": 15,
+            "positive": 14,
+            "zero": 0
+          }
+        },
+        "same_sign_component_residual_fraction": 0.9310344827586207
+      },
+      "tie": {
+        "paired_cases": 0
+      }
+    },
+    "stress_domains": [
+      "bus",
+      "field"
+    ]
+  },
+  "fresh_diagnostic_authority": {
+    "donor_seeds": [
+      1401307,
+      1411307,
+      1421307
+    ],
+    "target_seeds": [
+      1431307,
+      1441307,
+      1451307
+    ]
+  },
+  "interpretation_boundary": {
+    "donor_and_target_cases_disjoint": true,
+    "donor_selection_metadata_only": true,
+    "i029_k3_matching_rule_frozen": true,
+    "i029_negative_control_map_frozen": true,
+    "joint_eight_frame_references_preserved": true,
+    "matching_metadata_development_only_not_shippable": true,
+    "no_component_counterfactual": true,
+    "no_matching_rule_tuning": true,
+    "no_reference_source_candidate_selected": true,
+    "no_shipping_candidate": true,
+    "same_target_future_frames_never_enter_donor_reference": true,
+    "target_first_ready_reference_retrospective_benchmark_only": true
+  },
+  "invalid_reasons": [],
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  }
+}

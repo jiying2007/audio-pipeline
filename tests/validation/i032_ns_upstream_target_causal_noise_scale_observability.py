@@ -297,8 +297,16 @@ def frozen_donor_control(records: list[dict[str,Any]]) -> dict[str,float]:
             float(record["initial_reference_summary"][key])
             for record in records
         )
-        for key in ("mean","concentration","gap","ns_noise_rms_dbfs")
+        for key in ("mean","concentration","gap")
     }
+
+
+def frozen_donor_noise_scale(records: list[dict[str,Any]]) -> float:
+    require(len(records)==DONOR_SELECT_K,"I032 donor noise-scale requires K records")
+    return statistics.median(
+        float(record["initial_reference_summary"]["ns_noise_rms_dbfs"])
+        for record in records
+    )
 
 
 def fidelity_summary(records: list[dict[str,Any]]) -> dict[str,Any]:
@@ -465,7 +473,7 @@ def evaluate(
             donor=frozen_donor_control(matched)
             proxy=float(causal["ns_noise_rms_dbfs"])
             benchmark=float(later["ns_noise_rms_dbfs"])
-            donor_noise=float(donor["ns_noise_rms_dbfs"])
+            donor_noise=frozen_donor_noise_scale(matched)
             row={
                 "target_case_key":meta["case_key"],
                 "metadata":meta,
@@ -688,8 +696,7 @@ def main() -> int:
             "--probe --contract --donor-corpus --target-corpus --output are required"
         )
     result=evaluate(
-        args.probe,args.donor_corpus,args.target_corpora if False else args.target_corpus,
-        args.contract,args.output
+        args.probe,args.donor_corpus,args.target_corpus,args.contract,args.output
     )
     print(json.dumps({
         "decision":result["decision"],

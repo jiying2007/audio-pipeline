@@ -1,0 +1,175 @@
+{
+  "coverage": {
+    "benchmarkable_anchor_cases": 39,
+    "causal_anchor_cases": 39,
+    "causal_anchor_coverage": 0.2727272727272727,
+    "causal_target_cases": 143,
+    "per_domain": {
+      "bus": {
+        "benchmarkable_anchor_cases": 5,
+        "causal_anchor_cases": 5,
+        "causal_anchor_coverage": 0.2631578947368421,
+        "causal_target_cases": 19,
+        "post_target_benchmark_coverage": 1.0
+      },
+      "cafeteria": {
+        "benchmarkable_anchor_cases": 3,
+        "causal_anchor_cases": 3,
+        "causal_anchor_coverage": 0.13636363636363635,
+        "causal_target_cases": 22,
+        "post_target_benchmark_coverage": 1.0
+      },
+      "field": {
+        "benchmarkable_anchor_cases": 5,
+        "causal_anchor_cases": 5,
+        "causal_anchor_coverage": 0.29411764705882354,
+        "causal_target_cases": 17,
+        "post_target_benchmark_coverage": 1.0
+      },
+      "kitchen": {
+        "benchmarkable_anchor_cases": 6,
+        "causal_anchor_cases": 6,
+        "causal_anchor_coverage": 0.2608695652173913,
+        "causal_target_cases": 23,
+        "post_target_benchmark_coverage": 1.0
+      },
+      "living": {
+        "benchmarkable_anchor_cases": 7,
+        "causal_anchor_cases": 7,
+        "causal_anchor_coverage": 0.3333333333333333,
+        "causal_target_cases": 21,
+        "post_target_benchmark_coverage": 1.0
+      },
+      "office": {
+        "benchmarkable_anchor_cases": 3,
+        "causal_anchor_cases": 3,
+        "causal_anchor_coverage": 0.14285714285714285,
+        "causal_target_cases": 21,
+        "post_target_benchmark_coverage": 1.0
+      },
+      "traffic": {
+        "benchmarkable_anchor_cases": 10,
+        "causal_anchor_cases": 10,
+        "causal_anchor_coverage": 0.5,
+        "causal_target_cases": 20,
+        "post_target_benchmark_coverage": 1.0
+      }
+    },
+    "post_target_benchmark_coverage": 1.0,
+    "target_cases": 252
+  },
+  "decision": "NS_VAD_CAUSAL_NOISE_DELTA_ALIGNMENT_DECOMPOSED_REVIEW_REQUIRED",
+  "delta_alignment": {
+    "by_noise_domain": {
+      "bus": {
+        "cases": 5,
+        "max_absolute_delta_error_db": 4.733503300000002,
+        "median_absolute_delta_error_db": 1.5179271000000014,
+        "median_causal_ns_delta_db": -0.09478759999999653,
+        "median_future_local_delta_db": 0.8461876000000004,
+        "median_signed_delta_error_db": 0.2728272000000018,
+        "p90_absolute_delta_error_db": 4.733503300000002
+      },
+      "cafeteria": {
+        "cases": 3,
+        "max_absolute_delta_error_db": 14.05537610000001,
+        "median_absolute_delta_error_db": 7.182910900000007,
+        "median_causal_ns_delta_db": 0.13198850000000562,
+        "median_future_local_delta_db": -7.050922400000001,
+        "median_signed_delta_error_db": 7.182910900000007,
+        "p90_absolute_delta_error_db": 14.05537610000001
+      },
+      "field": {
+        "cases": 5,
+        "max_absolute_delta_error_db": 12.478416450000005,
+        "median_absolute_delta_error_db": 2.5389213499999954,
+        "median_causal_ns_delta_db": -0.2315635999999941,
+        "median_future_local_delta_db": 1.2887162999999973,
+        "median_signed_delta_error_db": -1.7000399000000002,
+        "p90_absolute_delta_error_db": 12.478416450000005
+      },
+      "kitchen": {
+        "cases": 6,
+        "max_absolute_delta_error_db": 9.492286700000005,
+        "median_absolute_delta_error_db": 7.663764950000001,
+        "median_causal_ns_delta_db": -0.08747860000000429,
+        "median_future_local_delta_db": -3.882556924999996,
+        "median_signed_delta_error_db": 3.0354042249999935,
+        "p90_absolute_delta_error_db": 9.492286700000005
+      },
+      "living": {
+        "cases": 7,
+        "max_absolute_delta_error_db": 12.82430455,
+        "median_absolute_delta_error_db": 6.501664250000001,
+        "median_causal_ns_delta_db": 0.021400400000004538,
+        "median_future_local_delta_db": 4.403217300000001,
+        "median_signed_delta_error_db": -4.259654999999995,
+        "p90_absolute_delta_error_db": 12.82430455
+      },
+      "office": {
+        "cases": 3,
+        "max_absolute_delta_error_db": 12.981257400000004,
+        "median_absolute_delta_error_db": 10.350852100000001,
+        "median_causal_ns_delta_db": -0.2295189000000022,
+        "median_future_local_delta_db": 10.0643225,
+        "median_signed_delta_error_db": -10.350852100000001,
+        "p90_absolute_delta_error_db": 12.981257400000004
+      },
+      "traffic": {
+        "cases": 10,
+        "max_absolute_delta_error_db": 13.06579020000001,
+        "median_absolute_delta_error_db": 8.792056075000001,
+        "median_causal_ns_delta_db": -0.47048950000000644,
+        "median_future_local_delta_db": 0.20641232500000228,
+        "median_signed_delta_error_db": -0.5201769250000048,
+        "p90_absolute_delta_error_db": 12.938068399999999
+      }
+    },
+    "global": {
+      "cases": 39,
+      "max_absolute_delta_error_db": 14.05537610000001,
+      "median_absolute_delta_error_db": 6.3236446499999985,
+      "median_causal_ns_delta_db": -0.19490820000000042,
+      "median_future_local_delta_db": 1.2887162999999973,
+      "median_signed_delta_error_db": -1.2581977499999972,
+      "p90_absolute_delta_error_db": 12.938068399999999
+    }
+  },
+  "delta_alignment_hypothesis": {
+    "maximum_median_absolute_delta_error_db": 3,
+    "maximum_p90_absolute_delta_error_db": 6,
+    "supported": false
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      1701307,
+      1711307,
+      1721307,
+      1731307,
+      1741307,
+      1751307
+    ]
+  },
+  "interpretation_boundary": {
+    "anchor_and_target_are_causal": true,
+    "causal_anchor_is_last_prior_ordinary_noise_reference": true,
+    "local_delta_uses_post_ns_frame_rms_dbfs": true,
+    "no_absolute_normalization_mapping": true,
+    "no_shipping_candidate": true,
+    "no_source_candidate": true,
+    "no_threshold_search": true,
+    "no_vad_noise_state_refresh_rule": true,
+    "ns_delta_uses_shipping_ns_noise_rms_dbfs": true,
+    "post_target_benchmark_is_retrospective_only": true,
+    "same_anchor_used_for_ns_and_local_deltas": true,
+    "shipping_ns_vad_source_unchanged": true,
+    "target_is_first_pre_ready_speech_disagreement": true,
+    "target_only_no_donor_selection": true
+  },
+  "invalid_reasons": [],
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  }
+}\n

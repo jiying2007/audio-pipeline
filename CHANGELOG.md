@@ -1,3 +1,9 @@
+# 2.3.50
+
+- Restore the release governance preflight to the dedicated `REPOSITORY_GOVERNANCE_TOKEN` with repository `Administration(read)`, which GitHub requires to read the current immutable-releases setting.
+- Distinguish immutable-release governance states fail-closed: HTTP 404 means disabled, while HTTP 401/403 means the current credential cannot verify the setting. Main/tag ruleset requirements and immutable-release enforcement requirements are unchanged.
+- This is release-governance infrastructure only; DSP behavior, acoustic parameters, public API/ABI, research authority, HIL and Product Qualification semantics are unchanged.
+
 # 2.3.49
 
 - Add fail-closed reuse of canonical baseline validation reports in bounded tuning. Reuse is opt-in and requires the full development/validation/shadow triplet.

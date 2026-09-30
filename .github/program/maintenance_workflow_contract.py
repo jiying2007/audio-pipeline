@@ -102,7 +102,6 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
     Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'),
     Path('.github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml'),
-    Path('.github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml'),
 
 )
 
@@ -139,6 +138,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i029-ns-upstream-independent-donor-reference-feasibility-v1.yml'),
     Path('.github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml'),
     Path('.github/workflows/research-i031-ns-upstream-joint-coherent-donor-aggregation-v1.yml'),
+    Path('.github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -339,6 +339,14 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('tests/validation/data/i031-consumed-workflow.yml'),
         Path('tests/validation/test_i031_one_shot_guard.py'),
         Path('tests/validation/test_i031_retirement.py'),
+    ),
+
+    Path('.github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1-result.json'),
+        Path('tests/validation/data/i032-consumed-workflow.yml'),
+        Path('tests/validation/test_i032_one_shot_guard.py'),
+        Path('tests/validation/test_i032_retirement.py'),
     ),
 
 }

@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i032-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1.json"
 EVALUATOR=ROOT/"tests/validation/i032_ns_upstream_target_causal_noise_scale_observability.py"
 I031_EVALUATOR=ROOT/"tests/validation/i031_ns_upstream_joint_coherent_donor_aggregation.py"

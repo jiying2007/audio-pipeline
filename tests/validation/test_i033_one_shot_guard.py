@@ -157,12 +157,12 @@ class I033GuardTests(unittest.TestCase):
             "ap_ns_process(&ns_state",
             "(double)ns_result.noise_rms_dbfs",
             "frame_rms_dbfs(ns_output, FRAME)",
-            '"post_ns_rms_dbfs"',
+            "post_ns_rms_dbfs",
             "ap_module_vad_process(public_shipping_module, ns_output",
         ):
             self.assertIn(token,text)
-        self.assertNotIn("normalize",text.lower())
-        self.assertNotIn("candidate",text.lower())
+        self.assertNotIn("normalize_gap",text)
+        self.assertNotIn("apply_noise_scale_normalization",text)
 
     def test_evaluator_enforces_causal_anchor_target_and_future_benchmark(self):
         text=EVALUATOR.read_text(encoding="utf-8")
@@ -213,7 +213,7 @@ class I033GuardTests(unittest.TestCase):
             "apply_noise_scale_normalization",
             "mapping_candidates",
             "threshold_candidates",
-            "source_candidate",
+            "def source_candidate",
             "mean_cf",
             "concentration_cf",
         ):

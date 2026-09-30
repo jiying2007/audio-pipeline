@@ -178,11 +178,11 @@ class I035GuardTests(unittest.TestCase):
         for forbidden in (
             "alpha_candidates",
             "threshold_candidates",
-            "best_horizon",
-            "best_lag",
             "mapping_candidates",
             "select_donors",
             "def source_candidate",
+            "argmin",
+            "argmax",
         ):
             self.assertNotIn(forbidden,text)
         funcs={

@@ -1,0 +1,526 @@
+{
+  "coverage": {
+    "causal_anchor_cases": 52,
+    "causal_anchor_coverage": 0.348993288590604,
+    "causal_target_cases": 149,
+    "fixed_horizon_coverage": {
+      "1": 1.0,
+      "2": 1.0,
+      "4": 1.0,
+      "8": 1.0
+    },
+    "per_domain": {
+      "bus": {
+        "causal_anchor_cases": 8,
+        "causal_target_cases": 20,
+        "horizon_coverage": {
+          "1": 1.0,
+          "2": 1.0,
+          "4": 1.0,
+          "8": 1.0
+        }
+      },
+      "cafeteria": {
+        "causal_anchor_cases": 8,
+        "causal_target_cases": 23,
+        "horizon_coverage": {
+          "1": 1.0,
+          "2": 1.0,
+          "4": 1.0,
+          "8": 1.0
+        }
+      },
+      "field": {
+        "causal_anchor_cases": 6,
+        "causal_target_cases": 21,
+        "horizon_coverage": {
+          "1": 1.0,
+          "2": 1.0,
+          "4": 1.0,
+          "8": 1.0
+        }
+      },
+      "kitchen": {
+        "causal_anchor_cases": 6,
+        "causal_target_cases": 23,
+        "horizon_coverage": {
+          "1": 1.0,
+          "2": 1.0,
+          "4": 1.0,
+          "8": 1.0
+        }
+      },
+      "living": {
+        "causal_anchor_cases": 7,
+        "causal_target_cases": 19,
+        "horizon_coverage": {
+          "1": 1.0,
+          "2": 1.0,
+          "4": 1.0,
+          "8": 1.0
+        }
+      },
+      "office": {
+        "causal_anchor_cases": 10,
+        "causal_target_cases": 22,
+        "horizon_coverage": {
+          "1": 1.0,
+          "2": 1.0,
+          "4": 1.0,
+          "8": 1.0
+        }
+      },
+      "traffic": {
+        "causal_anchor_cases": 7,
+        "causal_target_cases": 21,
+        "horizon_coverage": {
+          "1": 1.0,
+          "2": 1.0,
+          "4": 1.0,
+          "8": 1.0
+        }
+      }
+    },
+    "target_cases": 252
+  },
+  "decision": "NS_VAD_NOISE_STATE_TEMPORAL_RESPONSE_DECOMPOSED_REVIEW_REQUIRED",
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      1761307,
+      1771307,
+      1781307,
+      1791307,
+      1801307,
+      1811307
+    ]
+  },
+  "interpretation_boundary": {
+    "anchor_and_target_are_causal": true,
+    "causal_anchor_is_last_prior_ordinary_noise_reference": true,
+    "cumulative_median_through_each_horizon": true,
+    "elapsed_frames_are_reported_not_selected": true,
+    "fixed_reference_horizons_only": true,
+    "no_absolute_or_relative_normalization_mapping": true,
+    "no_best_horizon_or_lag_selection": true,
+    "no_shipping_candidate": true,
+    "no_source_candidate": true,
+    "no_threshold_search": true,
+    "no_tracker_alpha_search": true,
+    "no_vad_noise_state_refresh_rule": true,
+    "post_target_references_are_retrospective_only": true,
+    "shipping_ns_vad_source_unchanged": true,
+    "target_is_first_pre_ready_speech_disagreement": true,
+    "target_only_no_donor_selection": true
+  },
+  "invalid_reasons": [],
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0.0,
+    "max_vad_probability_delta": 0.0,
+    "vad_active_mismatch_frames": 0
+  },
+  "temporal_response": {
+    "by_noise_domain": {
+      "bus": {
+        "1": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 9.274310100000001,
+          "median_abs_response_ratio_ns_over_local": 0.17828686878983435,
+          "median_absolute_alignment_error_db": 6.636479349999997,
+          "median_absolute_local_response_db": 6.0743952,
+          "median_absolute_ns_response_db": 1.0829848999999996,
+          "median_elapsed_frames_from_target": 7.5,
+          "median_signed_alignment_error_db": -1.7098598000000003,
+          "p90_absolute_alignment_error_db": 9.274310100000001
+        },
+        "2": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 14.728620500000012,
+          "median_abs_response_ratio_ns_over_local": 0.18656840484572498,
+          "median_absolute_alignment_error_db": 6.766955149999998,
+          "median_absolute_local_response_db": 5.95340755,
+          "median_absolute_ns_response_db": 1.1107177499999956,
+          "median_elapsed_frames_from_target": 8.5,
+          "median_signed_alignment_error_db": 0.2880344749999999,
+          "p90_absolute_alignment_error_db": 14.728620500000012
+        },
+        "4": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 16.990039750000008,
+          "median_abs_response_ratio_ns_over_local": 0.17777794899406077,
+          "median_absolute_alignment_error_db": 5.622843499999998,
+          "median_absolute_local_response_db": 5.999559174999998,
+          "median_absolute_ns_response_db": 1.066589324999999,
+          "median_elapsed_frames_from_target": 19.0,
+          "median_signed_alignment_error_db": 2.25150395,
+          "p90_absolute_alignment_error_db": 16.990039750000008
+        },
+        "8": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 9.766744550000006,
+          "median_abs_response_ratio_ns_over_local": 0.2966992582429704,
+          "median_absolute_alignment_error_db": 6.506222225000002,
+          "median_absolute_local_response_db": 4.679049025000001,
+          "median_absolute_ns_response_db": 1.388270374999994,
+          "median_elapsed_frames_from_target": 41.0,
+          "median_signed_alignment_error_db": -0.6003837499999989,
+          "p90_absolute_alignment_error_db": 9.766744550000006
+        }
+      },
+      "cafeteria": {
+        "1": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 23.552162099999997,
+          "median_abs_response_ratio_ns_over_local": 0.49492484414168264,
+          "median_absolute_alignment_error_db": 2.1457414500000045,
+          "median_absolute_local_response_db": 2.3186282999999968,
+          "median_absolute_ns_response_db": 1.147546749999993,
+          "median_elapsed_frames_from_target": 13.0,
+          "median_signed_alignment_error_db": -1.1217346500000005,
+          "p90_absolute_alignment_error_db": 23.552162099999997
+        },
+        "2": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 20.853622349999995,
+          "median_abs_response_ratio_ns_over_local": 0.5429418948707779,
+          "median_absolute_alignment_error_db": 1.3440718999999994,
+          "median_absolute_local_response_db": 2.199576900000004,
+          "median_absolute_ns_response_db": 1.1942424499999937,
+          "median_elapsed_frames_from_target": 18.0,
+          "median_signed_alignment_error_db": 0.28709127500000875,
+          "p90_absolute_alignment_error_db": 20.853622349999995
+        },
+        "4": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 21.687278850000006,
+          "median_abs_response_ratio_ns_over_local": 0.21750225100832676,
+          "median_absolute_alignment_error_db": 3.9600477749999996,
+          "median_absolute_local_response_db": 6.477152850000003,
+          "median_absolute_ns_response_db": 1.4087953249999998,
+          "median_elapsed_frames_from_target": 46.0,
+          "median_signed_alignment_error_db": -1.002327000000001,
+          "p90_absolute_alignment_error_db": 21.687278850000006
+        },
+        "8": {
+          "cases": 8,
+          "maximum_absolute_alignment_error_db": 18.193256299999994,
+          "median_abs_response_ratio_ns_over_local": 0.14670675969684743,
+          "median_absolute_alignment_error_db": 9.012185125,
+          "median_absolute_local_response_db": 10.109762175000002,
+          "median_absolute_ns_response_db": 1.483170450000003,
+          "median_elapsed_frames_from_target": 90.5,
+          "median_signed_alignment_error_db": 1.677941274999995,
+          "p90_absolute_alignment_error_db": 18.193256299999994
+        }
+      },
+      "field": {
+        "1": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 11.203735399999996,
+          "median_abs_response_ratio_ns_over_local": 0.09191219302086052,
+          "median_absolute_alignment_error_db": 8.848695799999994,
+          "median_absolute_local_response_db": 9.157379149999997,
+          "median_absolute_ns_response_db": 0.8416748000000034,
+          "median_elapsed_frames_from_target": 7.0,
+          "median_signed_alignment_error_db": -4.619039599999997,
+          "p90_absolute_alignment_error_db": 11.203735399999996
+        },
+        "2": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 12.77083969999999,
+          "median_abs_response_ratio_ns_over_local": 0.13898460732614493,
+          "median_absolute_alignment_error_db": 6.036382624999991,
+          "median_absolute_local_response_db": 6.491783100000003,
+          "median_absolute_ns_response_db": 0.9022579250000042,
+          "median_elapsed_frames_from_target": 9.0,
+          "median_signed_alignment_error_db": 0.7130365000000047,
+          "p90_absolute_alignment_error_db": 12.77083969999999
+        },
+        "4": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 10.4308987,
+          "median_abs_response_ratio_ns_over_local": 0.14526941485995662,
+          "median_absolute_alignment_error_db": 5.3711833999999925,
+          "median_absolute_local_response_db": 5.200503325000003,
+          "median_absolute_ns_response_db": 0.7554740750000093,
+          "median_elapsed_frames_from_target": 11.0,
+          "median_signed_alignment_error_db": 3.6471909999999994,
+          "p90_absolute_alignment_error_db": 10.4308987
+        },
+        "8": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 14.207099849999992,
+          "median_abs_response_ratio_ns_over_local": 0.12085592503534812,
+          "median_absolute_alignment_error_db": 7.868271874999994,
+          "median_absolute_local_response_db": 7.9094905749999995,
+          "median_absolute_ns_response_db": 0.9559087999999925,
+          "median_elapsed_frames_from_target": 24.0,
+          "median_signed_alignment_error_db": 4.778959275000005,
+          "p90_absolute_alignment_error_db": 14.207099849999992
+        }
+      },
+      "kitchen": {
+        "1": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 12.045440700000004,
+          "median_abs_response_ratio_ns_over_local": 0.1976477459478889,
+          "median_absolute_alignment_error_db": 6.32050319999999,
+          "median_absolute_local_response_db": 10.5606365,
+          "median_absolute_ns_response_db": 2.0872860000000024,
+          "median_elapsed_frames_from_target": 26.5,
+          "median_signed_alignment_error_db": -4.471677799999991,
+          "p90_absolute_alignment_error_db": 12.045440700000004
+        },
+        "2": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 8.40834240000001,
+          "median_abs_response_ratio_ns_over_local": 0.3101070428531888,
+          "median_absolute_alignment_error_db": 6.243510300000008,
+          "median_absolute_local_response_db": 6.537893274999998,
+          "median_absolute_ns_response_db": 2.0274467499999993,
+          "median_elapsed_frames_from_target": 27.5,
+          "median_signed_alignment_error_db": -1.838958800000004,
+          "p90_absolute_alignment_error_db": 8.40834240000001
+        },
+        "4": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 9.316227949999998,
+          "median_abs_response_ratio_ns_over_local": 0.29357244575147934,
+          "median_absolute_alignment_error_db": 3.366416975,
+          "median_absolute_local_response_db": 6.031854575000004,
+          "median_absolute_ns_response_db": 1.770786300000001,
+          "median_elapsed_frames_from_target": 40.0,
+          "median_signed_alignment_error_db": -1.2614603500000037,
+          "p90_absolute_alignment_error_db": 9.316227949999998
+        },
+        "8": {
+          "cases": 6,
+          "maximum_absolute_alignment_error_db": 12.404341749999997,
+          "median_abs_response_ratio_ns_over_local": 0.14304412854164594,
+          "median_absolute_alignment_error_db": 6.876418149999999,
+          "median_absolute_local_response_db": 10.28107735,
+          "median_absolute_ns_response_db": 1.4706477500000048,
+          "median_elapsed_frames_from_target": 86.0,
+          "median_signed_alignment_error_db": -2.933784499999998,
+          "p90_absolute_alignment_error_db": 12.404341749999997
+        }
+      },
+      "living": {
+        "1": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 11.181930500000007,
+          "median_abs_response_ratio_ns_over_local": 0.1720383657701815,
+          "median_absolute_alignment_error_db": 7.331890100000006,
+          "median_absolute_local_response_db": 6.658821100000001,
+          "median_absolute_ns_response_db": 1.1455727000000024,
+          "median_elapsed_frames_from_target": 13.0,
+          "median_signed_alignment_error_db": -2.812118499999997,
+          "p90_absolute_alignment_error_db": 11.181930500000007
+        },
+        "2": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 12.212846850000005,
+          "median_abs_response_ratio_ns_over_local": 0.17263368495813614,
+          "median_absolute_alignment_error_db": 8.157139750000006,
+          "median_absolute_local_response_db": 7.4674482,
+          "median_absolute_ns_response_db": 1.2891331000000008,
+          "median_elapsed_frames_from_target": 14.0,
+          "median_signed_alignment_error_db": -0.8888854999999936,
+          "p90_absolute_alignment_error_db": 12.212846850000005
+        },
+        "4": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 11.759828650000003,
+          "median_abs_response_ratio_ns_over_local": 0.21075274369661667,
+          "median_absolute_alignment_error_db": 5.44337655,
+          "median_absolute_local_response_db": 4.963413199999998,
+          "median_absolute_ns_response_db": 1.0460529500000035,
+          "median_elapsed_frames_from_target": 30.0,
+          "median_signed_alignment_error_db": 1.6168785000000057,
+          "p90_absolute_alignment_error_db": 11.759828650000003
+        },
+        "8": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 11.039078699999997,
+          "median_abs_response_ratio_ns_over_local": 0.1698683554551463,
+          "median_absolute_alignment_error_db": 6.554361300000011,
+          "median_absolute_local_response_db": 7.378030750000001,
+          "median_absolute_ns_response_db": 1.2532939499999998,
+          "median_elapsed_frames_from_target": 56.0,
+          "median_signed_alignment_error_db": 3.170017250000001,
+          "p90_absolute_alignment_error_db": 11.039078699999997
+        }
+      },
+      "office": {
+        "1": {
+          "cases": 10,
+          "maximum_absolute_alignment_error_db": 15.001922699999994,
+          "median_abs_response_ratio_ns_over_local": 0.38383875502176856,
+          "median_absolute_alignment_error_db": 6.802296549999996,
+          "median_absolute_local_response_db": 5.590908999999998,
+          "median_absolute_ns_response_db": 2.14600755,
+          "median_elapsed_frames_from_target": 37.0,
+          "median_signed_alignment_error_db": -1.7162360999999962,
+          "p90_absolute_alignment_error_db": 12.180545799999997
+        },
+        "2": {
+          "cases": 10,
+          "maximum_absolute_alignment_error_db": 14.985780749999996,
+          "median_abs_response_ratio_ns_over_local": 0.27062995245849975,
+          "median_absolute_alignment_error_db": 8.605493075000005,
+          "median_absolute_local_response_db": 8.3738208,
+          "median_absolute_ns_response_db": 2.2662067249999964,
+          "median_elapsed_frames_from_target": 38.0,
+          "median_signed_alignment_error_db": -1.1859349749999986,
+          "p90_absolute_alignment_error_db": 13.934318499999996
+        },
+        "4": {
+          "cases": 10,
+          "maximum_absolute_alignment_error_db": 16.58176985,
+          "median_abs_response_ratio_ns_over_local": 0.23925690221862436,
+          "median_absolute_alignment_error_db": 8.48476075,
+          "median_absolute_local_response_db": 8.412416449999998,
+          "median_absolute_ns_response_db": 2.0127286999999967,
+          "median_elapsed_frames_from_target": 42.0,
+          "median_signed_alignment_error_db": 0.4984546000000041,
+          "p90_absolute_alignment_error_db": 15.485830299999996
+        },
+        "8": {
+          "cases": 10,
+          "maximum_absolute_alignment_error_db": 18.614511499999992,
+          "median_abs_response_ratio_ns_over_local": 0.22648451580559448,
+          "median_absolute_alignment_error_db": 7.245719474999996,
+          "median_absolute_local_response_db": 5.6063418749999965,
+          "median_absolute_ns_response_db": 1.2697496250000029,
+          "median_elapsed_frames_from_target": 80.0,
+          "median_signed_alignment_error_db": 0.9868393250000018,
+          "p90_absolute_alignment_error_db": 16.177520799999996
+        }
+      },
+      "traffic": {
+        "1": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 25.884815299999993,
+          "median_abs_response_ratio_ns_over_local": 0.12471413179783686,
+          "median_absolute_alignment_error_db": 8.5822659,
+          "median_absolute_local_response_db": 9.5303097,
+          "median_absolute_ns_response_db": 1.188564300000003,
+          "median_elapsed_frames_from_target": 13.0,
+          "median_signed_alignment_error_db": 3.231256600000002,
+          "p90_absolute_alignment_error_db": 25.884815299999993
+        },
+        "2": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 23.784326599999993,
+          "median_abs_response_ratio_ns_over_local": 0.1926801404118161,
+          "median_absolute_alignment_error_db": 7.387373950000001,
+          "median_absolute_local_response_db": 6.429971699999996,
+          "median_absolute_ns_response_db": 1.2389278500000032,
+          "median_elapsed_frames_from_target": 15.0,
+          "median_signed_alignment_error_db": 0.45572100000000404,
+          "p90_absolute_alignment_error_db": 23.784326599999993
+        },
+        "4": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 23.804823000000006,
+          "median_abs_response_ratio_ns_over_local": 0.25125933213191026,
+          "median_absolute_alignment_error_db": 6.2421398,
+          "median_absolute_local_response_db": 5.386972450000002,
+          "median_absolute_ns_response_db": 1.3535271000000009,
+          "median_elapsed_frames_from_target": 17.0,
+          "median_signed_alignment_error_db": 2.0518447000000037,
+          "p90_absolute_alignment_error_db": 23.804823000000006
+        },
+        "8": {
+          "cases": 7,
+          "maximum_absolute_alignment_error_db": 27.064024000000003,
+          "median_abs_response_ratio_ns_over_local": 0.1997358791778796,
+          "median_absolute_alignment_error_db": 6.1344090000000016,
+          "median_absolute_local_response_db": 8.591181800000001,
+          "median_absolute_ns_response_db": 1.7159672499999985,
+          "median_elapsed_frames_from_target": 28.0,
+          "median_signed_alignment_error_db": 1.7440196000000014,
+          "p90_absolute_alignment_error_db": 27.064024000000003
+        }
+      }
+    },
+    "global": {
+      "1": {
+        "cases": 52,
+        "maximum_absolute_alignment_error_db": 25.884815299999993,
+        "median_abs_response_ratio_ns_over_local": 0.1968574099228492,
+        "median_absolute_alignment_error_db": 6.958270050000001,
+        "median_absolute_local_response_db": 6.348785400000001,
+        "median_absolute_ns_response_db": 1.2498054500000002,
+        "median_elapsed_frames_from_target": 14.5,
+        "median_signed_alignment_error_db": -1.312418000000001,
+        "p90_absolute_alignment_error_db": 12.045440700000004
+      },
+      "2": {
+        "cases": 52,
+        "maximum_absolute_alignment_error_db": 23.784326599999993,
+        "median_abs_response_ratio_ns_over_local": 0.19221249763863238,
+        "median_absolute_alignment_error_db": 6.674743674999998,
+        "median_absolute_local_response_db": 6.3932757499999955,
+        "median_absolute_ns_response_db": 1.2288674999999998,
+        "median_elapsed_frames_from_target": 18.5,
+        "median_signed_alignment_error_db": 0.34810497500000004,
+        "p90_absolute_alignment_error_db": 13.934318499999996
+      },
+      "4": {
+        "cases": 52,
+        "maximum_absolute_alignment_error_db": 23.804823000000006,
+        "median_abs_response_ratio_ns_over_local": 0.19628365143716162,
+        "median_absolute_alignment_error_db": 5.3159428,
+        "median_absolute_local_response_db": 5.927310000000002,
+        "median_absolute_ns_response_db": 1.1634340500000029,
+        "median_elapsed_frames_from_target": 33.0,
+        "median_signed_alignment_error_db": 1.6038565750000071,
+        "p90_absolute_alignment_error_db": 15.497485250000004
+      },
+      "8": {
+        "cases": 52,
+        "maximum_absolute_alignment_error_db": 27.064024000000003,
+        "median_abs_response_ratio_ns_over_local": 0.1841807116357541,
+        "median_absolute_alignment_error_db": 6.904939899999996,
+        "median_absolute_local_response_db": 7.402173049999998,
+        "median_absolute_ns_response_db": 1.3633375,
+        "median_elapsed_frames_from_target": 56.0,
+        "median_signed_alignment_error_db": 1.3968963749999936,
+        "p90_absolute_alignment_error_db": 14.207099849999992
+      }
+    },
+    "progression": {
+      "authority": "descriptive fixed-horizon decomposition only; cannot select a best horizon, lag, alpha, mapping or candidate",
+      "median_absolute_alignment_error_db": [
+        6.958270050000001,
+        6.674743674999998,
+        5.3159428,
+        6.904939899999996
+      ],
+      "median_absolute_local_response_db": [
+        6.348785400000001,
+        6.3932757499999955,
+        5.927310000000002,
+        7.402173049999998
+      ],
+      "median_absolute_ns_response_db": [
+        1.2498054500000002,
+        1.2288674999999998,
+        1.1634340500000029,
+        1.3633375
+      ],
+      "median_elapsed_frames_from_target": [
+        14.5,
+        18.5,
+        33.0,
+        56.0
+      ],
+      "reference_horizons": [
+        1,
+        2,
+        4,
+        8
+      ]
+    }
+  }
+}

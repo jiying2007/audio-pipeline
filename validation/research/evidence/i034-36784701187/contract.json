@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i034-ns-vad-noise-state-temporal-response-decomposition-v1",
+  "phase": "candidate-zero-target-noise-state-temporal-response-decomposition",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "dcdb61c32b67651fc60bace5d86c4cb746451457",
+  "predecessor": {
+    "i033_closure": ".github/research/continuous-optimization/development-v4/i033-ns-vad-causal-noise-delta-alignment-v1-result.json",
+    "i033_closure_blob_sha": "e575d1502d9ed69bbf3c8ce03ecea00b7fcc0e5c",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_VAD_CAUSAL_NOISE_DELTA_ALIGNMENT_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "RELATIVE_NS_TO_POST_NS_NOISE_DELTA_ALIGNMENT_NOT_SUPPORTED_NO_REFRESH_MAPPING_OR_SOURCE_CANDIDATE",
+    "required_followup_id": "i034-ns-vad-noise-state-temporal-response-decomposition-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Across fixed cumulative post-target ordinary-noise reference horizons, how does the unchanged shipping NS noise state respond relative to the post-NS local observation trajectory, and does the I033 mismatch look more like tracker inertia or a persistent domain/scale mismatch?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i033_ns_vad_causal_noise_delta_probe.c",
+    "probe_git_blob_sha": "97421085e7faa12f9a9d7a45e69a52e17d176a20",
+    "causal_extractor_path": "tests/validation/i033_ns_vad_causal_noise_delta_alignment.py",
+    "causal_extractor_git_blob_sha": "722c64746bb631a1cc48d0d718c8563f47ac7a56",
+    "evaluator_path": "tests/validation/i034_ns_vad_noise_state_temporal_response_decomposition.py",
+    "evaluator_git_blob_sha": "72eaf0c26d324a7e588ef3437d001c8834f1963b"
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      1761307,
+      1771307,
+      1781307,
+      1791307,
+      1801307,
+      1811307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "ns_noise_scale_field": "ns_noise_rms_dbfs",
+    "local_observation_field": "post_ns_rms_dbfs",
+    "shipping_ns_vad_source_must_remain_unchanged": true
+  },
+  "causal_anchor_semantics": {
+    "target": "first oracle-speech disagreement frame with fewer than eight prior same-case ordinary-noise non-disagreement references",
+    "anchor": "last strictly prior same-case ordinary-noise non-disagreement reference",
+    "require_at_least_one_prior_reference": true,
+    "anchor_and_target_are_causal": true,
+    "may_use_future_frames_for_anchor_or_target": false
+  },
+  "fixed_temporal_response_semantics": {
+    "reference_horizons": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "horizon_definition": "first N strictly post-target ordinary-noise non-disagreement references",
+    "cumulative_median_through_horizon": true,
+    "ns_response_delta": "median ns_noise_rms_dbfs over first N post-target references minus anchor ns_noise_rms_dbfs",
+    "local_response_delta": "median post_ns_rms_dbfs over first N post-target references minus anchor post_ns_rms_dbfs",
+    "alignment_error": "NS response delta minus local response delta at the same fixed horizon",
+    "elapsed_frames_role": "descriptive timing only; report target-to-Nth-reference elapsed frames without selecting a lag",
+    "post_target_evidence_role": "retrospective diagnostic evidence only; never a causal input or refresh source",
+    "best_horizon_selection_allowed": false
+  },
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "expected_target_cases": 252,
+    "minimum_causal_target_cases": 100,
+    "minimum_causal_anchor_cases": 35,
+    "minimum_causal_anchor_coverage": 0.25,
+    "minimum_fixed_horizon_coverage": 0.8
+  },
+  "diagnostic_outputs": [
+    "per-case causal target and last-prior-reference anchor identity",
+    "fixed cumulative post-target reference horizons 1/2/4/8",
+    "NS and local response deltas at every fixed horizon",
+    "signed/absolute alignment error at every fixed horizon",
+    "target-to-horizon elapsed frame counts as descriptive timing only",
+    "global and per-noise-domain horizon summaries",
+    "fixed-horizon coverage and exact shipping mirror identity"
+  ],
+  "forbidden_feedback": {
+    "i025_to_i033_seeds": true,
+    "donor_selection": true,
+    "reference_source_selection": true,
+    "best_horizon_or_lag_selection": true,
+    "tracker_alpha_search": true,
+    "absolute_normalization_mapping_selection": true,
+    "relative_normalization_mapping_selection": true,
+    "vad_noise_state_refresh_rule_selection": true,
+    "threshold_search": true,
+    "source_candidate_execution": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_VAD_NOISE_STATE_TEMPORAL_RESPONSE_DECOMPOSED_REVIEW_REQUIRED": "Fresh target-only authority, causal anchor/target extraction, all fixed reference horizons, coverage and shipping mirrors are valid. Report the fixed-horizon response trajectory for review without selecting any lag, alpha, refresh rule, mapping, threshold or source candidate.",
+    "I034_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, fresh-seed identity, causal target count, anchor count/coverage, fixed-horizon coverage or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_vad_noise_state_refresh": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_select_best_horizon": false,
+    "may_select_lag": false,
+    "may_change_tracker_alpha": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_use_donor_selection": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Review whether fixed-horizon NS response materially catches up with the post-NS local trajectory. I034 itself cannot select a horizon, lag, tracker alpha, mapping, refresh rule, threshold or source candidate. A subsequent authority must be preregistered from the reviewed I034 result."
+}

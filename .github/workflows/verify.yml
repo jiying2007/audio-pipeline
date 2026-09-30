@@ -57,6 +57,15 @@ jobs:
           python3 .github/program/promotion_governance.py --self-test
           python3 .github/program/terminal_workflow_retirement.py --self-test --check
           python3 .github/program/maintenance_workflow_contract.py --self-test --check
+          python3 - <<'PY'
+          from pathlib import Path
+          text=Path('.github/workflows/release.yml').read_text(encoding='utf-8')
+          expected="GH_TOKEN: $"+ "{{ github.token }}"
+          assert expected in text, 'release governance preflight must use github.token'
+          assert 'REPOSITORY_GOVERNANCE_TOKEN' not in text, (
+              'release governance preflight must not depend on a long-lived secret'
+          )
+          PY
           python3 .github/research/continuous-optimization/source_candidate_execution_v2_contract.py --self-test --check
       - name: Resolve verification range
         id: refs

@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i037-ns-noise-estimate-aggregation-exact-order-recovery-v1",
+  "phase": "candidate-zero-exact-order-aggregation-reconstruction-recovery",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "32d5be81eba605dec8238f29ba1d05ba501598f8",
+  "predecessor": {
+    "i036_closure": ".github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1-result.json",
+    "i036_closure_blob_sha": "59eb47834e8aaf6878dfd28f04d30923305214b0",
+    "required_status": "CLOSED_INVALID_DIAGNOSTIC_ONLY",
+    "required_decision": "I036_INPUT_INVALID_REVIEW_REQUIRED",
+    "required_reviewed_decision": "NUMERIC_RECONSTRUCTION_GATE_FAILED_FLOAT_REDUCTION_ORDER_NO_AGGREGATION_MECHANISM_VERDICT",
+    "required_followup_id": "i037-ns-noise-estimate-aggregation-exact-order-recovery-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "After correcting only the diagnostic all-bin floating-point accumulation order to exactly match shipping, does the fixed low/speech/high aggregation decomposition become bitwise valid, and does the response deficit persist within the fixed speech-band estimate?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i037_ns_noise_estimate_aggregation_exact_order_probe.c",
+    "probe_git_blob_sha": "bbef66ba95691675451cccbf47806d3900351240",
+    "evaluator_path": "tests/validation/i037_ns_noise_estimate_aggregation_exact_order_recovery.py",
+    "evaluator_git_blob_sha": "32c0e825706e3bb526ecdfb18a761686726fa1d5"
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      1941307,
+      1951307,
+      1961307,
+      1971307,
+      1981307,
+      1991307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "ns_noise_scale_field": "ns_noise_rms_dbfs",
+    "local_observation_field": "post_ns_rms_dbfs",
+    "shipping_ns_vad_source_must_remain_unchanged": true
+  },
+  "exact_order_reconstruction": {
+    "all_noise_sum_initial": "1.0e-18f",
+    "accumulation_order": "single dedicated all_noise_sum updated sequentially for k=0..256 immediately after each shipping ap_noise_tracker_update mirror call",
+    "final_expression": "10.0f * log10f(all_noise_sum / (float)bins / ((float)nfft * (float)nfft) + 1.0e-18f)",
+    "comparison": "uint32 bit pattern equality between reconstructed all_noise_rms_dbfs and shipping ns_noise_rms_dbfs on every observed frame",
+    "post_hoc_tolerance_not_allowed": true
+  },
+  "fixed_spectral_partitions": {
+    "nfft": 512,
+    "low_bins": {
+      "first": 0,
+      "last": 8,
+      "count": 9
+    },
+    "speech_bins": {
+      "first": 9,
+      "last": 223,
+      "count": 215
+    },
+    "high_bins": {
+      "first": 224,
+      "last": 256,
+      "count": 33
+    },
+    "derivation": "same fixed shipping speech-band predicate as I036; partition sums remain descriptive and cannot affect dedicated all_noise_sum",
+    "boundaries_are_fixed_not_searched": true
+  },
+  "causal_anchor_semantics": {
+    "target": "first oracle-speech disagreement frame with fewer than eight prior same-case ordinary-noise non-disagreement references",
+    "anchor": "last strictly prior same-case ordinary-noise non-disagreement reference",
+    "require_at_least_one_prior_reference": true,
+    "anchor_and_target_are_causal": true,
+    "may_use_future_frames_for_anchor_or_target": false
+  },
+  "fixed_horizons": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "noise_rms_bitwise_mismatch_frames": 0,
+    "expected_target_cases": 252,
+    "minimum_causal_target_cases": 100,
+    "minimum_causal_anchor_cases": 35,
+    "minimum_causal_anchor_coverage": 0.25,
+    "minimum_fixed_horizon_coverage": 0.8
+  },
+  "diagnostic_outputs": [
+    "zero/failed bitwise all-bin shipping noise_rms reconstruction mismatch count",
+    "fixed low/speech/high tracker-estimate energy share",
+    "fixed low/speech/high absolute update contribution share",
+    "fixed horizon 1/2/4/8 all-bin and speech-band response deltas",
+    "all-bin versus speech-band alignment error and response deficit against the same local benchmark",
+    "global and per-noise-domain aggregation summaries",
+    "exact shipping NS/VAD mirrors and partition accounting invariants"
+  ],
+  "forbidden_feedback": {
+    "i025_to_i036_seeds": true,
+    "post_hoc_i036_gate_relaxation": true,
+    "donor_selection": true,
+    "reference_source_selection": true,
+    "spectral_band_boundary_search": true,
+    "estimator_selection": true,
+    "tracker_alpha_search": true,
+    "tracker_branch_threshold_search": true,
+    "best_horizon_or_lag_selection": true,
+    "absolute_normalization_mapping_selection": true,
+    "relative_normalization_mapping_selection": true,
+    "vad_noise_state_refresh_rule_selection": true,
+    "threshold_search": true,
+    "source_candidate_execution": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_NOISE_ESTIMATE_AGGREGATION_EXACT_ORDER_RECOVERED_REVIEW_REQUIRED": "Fresh target-only authority, exact shipping-order all-bin reconstruction, zero bitwise mismatch, fixed spectral partitions, causal target/anchor pairing, fixed 1/2/4/8 horizons, coverage and shipping mirrors are valid. Report aggregation/domain observations for review without selecting a band, estimator, normalization, alpha, tracker threshold, horizon/lag, refresh rule or source candidate.",
+    "I037_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, fresh-seed identity, exact-order bitwise reconstruction, partition accounting, causal target/anchor coverage, fixed-horizon coverage or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_vad_noise_state_refresh": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_select_spectral_band": false,
+    "may_select_estimator": false,
+    "may_select_best_horizon": false,
+    "may_select_lag": false,
+    "may_change_tracker_alpha": false,
+    "may_change_tracker_update_threshold": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_use_donor_selection": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Only if zero bitwise mismatch and all preregistered gates pass, review whether speech-band response materially closes the all-bin/local response gap. I037 itself cannot select a band, estimator, normalization, alpha, tracker threshold, horizon, lag, refresh rule, source candidate or shipping change."
+}

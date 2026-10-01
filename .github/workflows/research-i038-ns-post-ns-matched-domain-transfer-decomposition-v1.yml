@@ -106,7 +106,8 @@ jobs:
               'post_ns_speech_mean_power_dbfs',
           ):
               assert token in probe
-          assert probe.index('all_noise_sum += noise_result.noise') < probe.index('if (k <= low_last)')
+          mirror=probe.split('static void mirror_upstream_components',1)[1].split('static void process_vad_diagnostic',1)[0]
+          assert mirror.index('all_noise_sum += noise_result.noise') < mirror.index('if (k <= low_last)')
           observation=c['post_ns_matched_domain_observation']
           assert observation['selection_or_tuning_allowed'] is False
           assert observation['domains']==['all','low','speech','high']

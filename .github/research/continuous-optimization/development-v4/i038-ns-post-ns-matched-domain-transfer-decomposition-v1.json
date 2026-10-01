@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i038-ns-post-ns-matched-domain-transfer-decomposition-v1",
+  "phase": "candidate-zero-post-ns-matched-domain-transfer-decomposition",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "460520519a1fc6d3fd3cdb4d0c606aae26ca0712",
+  "predecessor": {
+    "i037_closure": ".github/research/continuous-optimization/development-v4/i037-ns-noise-estimate-aggregation-exact-order-recovery-v1-result.json",
+    "i037_closure_blob_sha": "125e3482e69d7675fb145a5b49c7050ead4e54f3",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_NOISE_ESTIMATE_AGGREGATION_EXACT_ORDER_RECOVERED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "EXACT_ORDER_RECOVERED_FIXED_SPEECH_BAND_DOES_NOT_CONSISTENTLY_CLOSE_ALIGNMENT_OR_RESPONSE_GAP_NO_BAND_ESTIMATOR_OR_NORMALIZATION_CANDIDATE",
+    "required_followup_id": "i038-ns-post-ns-matched-domain-transfer-decomposition-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "After preserving I037 exact-order reconstruction, does the tracker-to-local response deficit persist when the tracker estimate and post-NS observation are measured within the same fixed low/speech/high spectral domains?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i038_ns_post_ns_matched_domain_transfer_probe.c",
+    "probe_git_blob_sha": "7b29b732b26ade27c4438add59f83f03a5cab0a5",
+    "evaluator_path": "tests/validation/i038_ns_post_ns_matched_domain_transfer_decomposition.py",
+    "evaluator_git_blob_sha": "3a3ddc8c186b4ecba995e40a52b90593504be28d"
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      2001307,
+      2011307,
+      2021307,
+      2031307,
+      2041307,
+      2051307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "vad_upstream_speech_guard": 0.55,
+    "vad_local_speech_guard": 0.15,
+    "ns_noise_scale_field": "ns_noise_rms_dbfs",
+    "post_ns_time_observation_field": "post_ns_rms_dbfs",
+    "shipping_ns_vad_source_must_remain_unchanged": true
+  },
+  "exact_order_reconstruction": {
+    "inherited_from": "i037-ns-noise-estimate-aggregation-exact-order-recovery-v1",
+    "all_noise_sum_initial": "1.0e-18f",
+    "accumulation_order": "single dedicated all_noise_sum updated sequentially for k=0..256 immediately after each shipping ap_noise_tracker_update mirror call",
+    "comparison": "uint32 bit pattern equality between reconstructed all_noise_rms_dbfs and shipping ns_noise_rms_dbfs on every observed frame",
+    "post_hoc_tolerance_not_allowed": true
+  },
+  "fixed_spectral_partitions": {
+    "nfft": 512,
+    "low_bins": {
+      "first": 0,
+      "last": 8,
+      "count": 9
+    },
+    "speech_bins": {
+      "first": 9,
+      "last": 223,
+      "count": 215
+    },
+    "high_bins": {
+      "first": 224,
+      "last": 256,
+      "count": 33
+    },
+    "derivation": "same fixed shipping speech-band predicate retained from I036/I037",
+    "boundaries_are_fixed_not_searched": true
+  },
+  "post_ns_matched_domain_observation": {
+    "source": "shipping ap_ns_process output frame only",
+    "analysis": "same 512-point two-frame analysis window and fixed bin partitions as tracker-side diagnostic",
+    "previous_frame_state": "diagnostic-only post_ns_previous buffer; no feedback into shipping processing",
+    "normalization": "per-domain mean spectral power divided by nfft^2 then converted with 10*log10",
+    "domains": [
+      "all",
+      "low",
+      "speech",
+      "high"
+    ],
+    "selection_or_tuning_allowed": false
+  },
+  "causal_anchor_semantics": {
+    "target": "first oracle-speech disagreement frame with fewer than eight prior same-case ordinary-noise non-disagreement references",
+    "anchor": "last strictly prior same-case ordinary-noise non-disagreement reference",
+    "require_at_least_one_prior_reference": true,
+    "anchor_and_target_are_causal": true,
+    "may_use_future_frames_for_anchor_or_target": false
+  },
+  "fixed_horizons": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "noise_rms_bitwise_mismatch_frames": 0,
+    "max_post_ns_partition_energy_share_gap": 0.00002,
+    "expected_target_cases": 252,
+    "minimum_causal_target_cases": 100,
+    "minimum_causal_anchor_cases": 35,
+    "minimum_causal_anchor_coverage": 0.25,
+    "minimum_fixed_horizon_coverage": 0.8
+  },
+  "diagnostic_outputs": [
+    "I037 exact-order bitwise all-bin reconstruction retained as a validity gate",
+    "fixed low/speech/high tracker-estimate energy and update contribution shares",
+    "fixed low/speech/high post-NS observation energy shares",
+    "fixed horizon 1/2/4/8 tracker response and post-NS response within identical domains",
+    "matched-domain response deficit and alignment error for all/low/speech/high",
+    "global and per-noise-domain matched-domain summaries",
+    "exact shipping NS/VAD mirrors and partition-accounting invariants"
+  ],
+  "forbidden_feedback": {
+    "i025_to_i037_seeds": true,
+    "post_hoc_i037_gate_relaxation": true,
+    "donor_selection": true,
+    "reference_source_selection": true,
+    "spectral_band_boundary_search": true,
+    "estimator_selection": true,
+    "absolute_normalization_mapping_selection": true,
+    "relative_normalization_mapping_selection": true,
+    "tracker_alpha_search": true,
+    "tracker_branch_threshold_search": true,
+    "best_horizon_or_lag_selection": true,
+    "vad_noise_state_refresh_rule_selection": true,
+    "threshold_search": true,
+    "source_candidate_execution": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_POST_NS_MATCHED_DOMAIN_TRANSFER_DECOMPOSED_REVIEW_REQUIRED": "Fresh target-only authority, retained exact-order bitwise reconstruction, fixed identical tracker/post-NS spectral domains, causal target/anchor pairing, fixed 1/2/4/8 horizons, coverage and shipping mirrors are valid. Report matched-domain transfer observations for review without selecting a band, estimator, normalization, alpha, tracker threshold, horizon/lag, refresh rule or source candidate.",
+    "I038_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, fresh-seed identity, inherited exact-order reconstruction, post-NS partition accounting, causal target/anchor coverage, fixed-horizon coverage or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_vad_noise_state_refresh": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_select_spectral_band": false,
+    "may_select_estimator": false,
+    "may_select_best_horizon": false,
+    "may_select_lag": false,
+    "may_change_tracker_alpha": false,
+    "may_change_tracker_update_threshold": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_use_donor_selection": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Only if all preregistered gates pass, review whether response deficit persists after tracker and post-NS observation are compared within identical fixed spectral domains. I038 itself cannot select a domain, band, estimator, normalization, alpha, tracker threshold, horizon, lag, refresh rule, source candidate or shipping change."
+}

@@ -17,7 +17,7 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[2]
 CLOSURE=ROOT/(
     ".github/research/continuous-optimization/development-v4/"
-    "i035-ns-vad-noise-state-temporal-response-decomposition-v1-result.json"
+    "i035-ns-noise-tracker-update-regime-decomposition-v1-result.json"
 )
 ARCHIVE_ROOT="validation/research/evidence/i035-36795467909"
 ARCHIVE_BRANCH="automation/i035-evidence-36795467909"

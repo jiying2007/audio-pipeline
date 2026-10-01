@@ -1,0 +1,82 @@
+name: I039 Suppression Transfer Evidence Archive
+run-name: "i039-evidence-archive / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/program/i039_archive.py'
+      - '.github/workflows/i039-evidence-archive.yml'
+      - 'tests/validation/test_i039_archive.py'
+      - '.github/research/continuous-optimization/development-v4/i039-ns-suppression-transfer-path-decomposition-v1-result.json'
+      - 'validation/research/evidence/i039-36861549133/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/program/i039_archive.py'
+      - '.github/workflows/i039-evidence-archive.yml'
+      - 'tests/validation/test_i039_archive.py'
+      - '.github/research/continuous-optimization/development-v4/i039-ns-suppression-transfer-path-decomposition-v1-result.json'
+      - 'validation/research/evidence/i039-36861549133/**'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: i039-evidence-archive-trusted-main
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Validate copy-only I039 evidence archive contract
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/program/i039_archive.py
+          python3 .github/program/i039_archive.py --self-test
+          python3 .github/program/i039_archive.py --check
+          python3 tests/validation/test_i039_archive.py
+
+  publish:
+    needs: contract
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Reverify I039 artifact and publish exact-byte archive branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_WRITE_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 .github/program/i039_archive.py \
+            --publish \
+            --output i039-archive-out
+      - name: Publish bounded archive status
+        if: always()
+        run: |
+          if test -f i039-archive-out/status.json; then
+            cat i039-archive-out/status.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve archive publication receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i039-archive-publication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: i039-archive-out/
+          retention-days: 90
+          if-no-files-found: warn

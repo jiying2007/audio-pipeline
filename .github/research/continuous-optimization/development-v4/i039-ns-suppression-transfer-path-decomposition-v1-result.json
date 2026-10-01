@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i039-ns-suppression-transfer-path-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "a13a77069e31f661b9e3d8d0dd553bdd29c455c2",
+  "decision": "NS_SUPPRESSION_TRANSFER_PATH_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "SUPPRESSION_TRANSFER_PARTIALLY_EXPLAINS_SPEECH_RESPONSE_BUT_PREDICTED_POST_RESIDUAL_PERSISTS_NO_GAIN_FLOOR_DOMAIN_OR_ESTIMATOR_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I039 execution is valid and terminal. All preregistered dataset, fresh-seed, causal coverage, fixed-horizon, exact-order bitwise reconstruction, post-NS partition-accounting, suppression-transfer invariant and shipping-mirror gates passed. The fixed shipping suppression transfer explains part of the response mismatch in the fixed speech domain: across horizons 1/2/4/8 the median predicted-suppressed versus actual post-NS alignment error is about 6.17/4.90/4.68/4.53 dB, smaller than the corresponding tracker-versus-post-NS error of about 10.31/9.42/7.37/6.71 dB, while the predicted/post response-magnitude ratio rises from about 0.67 to 0.85. However a substantial residual remains. In the all domain the predicted-versus-post median alignment error remains about 4.34-5.62 dB and is not consistently better than tracker-versus-post. Therefore instantaneous suppression gain alone is not a complete mechanism for the matched-domain mismatch. These observations remain diagnostic and do not select any domain, estimator, normalization, NS floor, suppression gain, alpha, threshold, horizon, lag, mapping, refresh rule or source candidate.",
+  "authoritative_execution": {
+    "run_id": 36861549133,
+    "run_attempt": 1,
+    "head_sha": "165688cbaabed8bc22c65ed5bbab33f83207ef0d",
+    "run_conclusion": "success",
+    "evaluator_result_valid": true,
+    "evaluator_return_code": 0,
+    "artifact_id": 11162786250,
+    "artifact_name": "i039-ns-suppression-transfer-path-36861549133",
+    "artifact_size_bytes": 340508,
+    "artifact_sha256": "037b876021dbc5317ff5ef41de2da01a92fffe849ce41b176cc637b26138769b",
+    "member_sha256": {
+      "SHA256SUMS": "4620f2b4370de503d867e512d86229b2292a16150750897f0b85bd6e408e5b8f",
+      "build-info.txt": "60a0c478cd027a42be18ec9968b47675045dc2564cc02209ac0f347c194eb8fa",
+      "contract.json": "7ff4d8281d7c510315b29537da93ad19ed4798ffbcdebbadde03d601dd15a742",
+      "corpora.sha256": "4681ef3ede2e289b0bc4ed962071f41e0e28c92538a17efaef49494e93b4a673",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "053c7b68517dc9982bf6b811f2ccd15f467dc6a369d868d696a6e1d8ffbab4a9",
+      "materialization.json": "5c426de932b55bd071e489912181182815331d4e07c04df6f948a8b863344e74",
+      "probe.sha256": "00dcc78411ca9464164e58731a34bc8b0361d43f047fe75e9a95171b6b3b23d2",
+      "result.json": "b37620e112e40156ee780401fe9ba0ab52436bbba3dc2d0cdbe1f4bc0cbefb16",
+      "summary.json": "117e86bcdf7668f91359ed9274129cb4026cd6686ca67cfa3dd7c2903c7009d5"
+    }
+  },
+  "artifact_packaging_review": {
+    "research_result_valid": true,
+    "packaging_completed": true,
+    "original_artifact_member_count": 11,
+    "sha256_manifest_present": true,
+    "sha256_manifest_verified": true,
+    "summary_present": true,
+    "evaluator_stderr_empty": true,
+    "evaluate_exit_code_is_zero": true,
+    "synthetic_repair_authorized": false,
+    "rerun_required": false,
+    "trust_root": "GitHub artifact ZIP SHA256 plus independently verified internal SHA256SUMS and SHA256 for all eleven original members frozen in this closure."
+  },
+  "fresh_authority": {
+    "target_seeds": [
+      2061307,
+      2071307,
+      2081307,
+      2091307,
+      2101307,
+      2111307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0,
+    "max_noise_rms_reconstruction_gap_db": 0,
+    "noise_rms_bitwise_mismatch_frames": 0
+  },
+  "transfer_invariants": {
+    "max_post_ns_partition_energy_share_gap": 1.4421130001274207e-7,
+    "max_predicted_suppressed_power_excess_db": 0,
+    "max_suppression_attenuation_identity_gap_db": 0.000001000000006357027
+  },
+  "coverage_review": {
+    "target_cases": 252,
+    "causal_target_cases": 143,
+    "causal_anchor_cases": 50,
+    "causal_anchor_coverage": 0.34965034965034963,
+    "fixed_horizon_coverage": {
+      "1": 1,
+      "2": 1,
+      "4": 1,
+      "8": 1
+    }
+  },
+  "target_suppression_review": {
+    "cases": 50,
+    "median_all": {
+      "attenuation_db": -4.066825865,
+      "floor_fraction": 0.6361867489999999,
+      "mean_gain": 0.32484570150000003
+    },
+    "median_low": {
+      "attenuation_db": -4.62861633,
+      "floor_fraction": 0.555555582,
+      "mean_gain": 0.37306501
+    },
+    "median_speech": {
+      "attenuation_db": -2.5337409949999996,
+      "floor_fraction": 0.641860455,
+      "mean_gain": 0.335380867
+    },
+    "median_high": {
+      "attenuation_db": -6.001392365,
+      "floor_fraction": 0.6818181875,
+      "mean_gain": 0.26248522100000005
+    }
+  },
+  "fixed_horizon_suppression_transfer_review": {
+    "1": {
+      "cases": 50,
+      "median_all_tracker_vs_pre_alignment_abs_error_db": 3.7603091999999947,
+      "median_all_predicted_vs_post_alignment_abs_error_db": 5.6234131000000005,
+      "median_all_tracker_vs_post_alignment_abs_error_db": 4.210521700000008,
+      "median_all_tracker_to_pre_magnitude_ratio": 0.18700575485539916,
+      "median_all_predicted_to_post_magnitude_ratio": 1.3064101108616706,
+      "all_predicted_post_direction_agreement_fraction": 0.76,
+      "median_speech_tracker_vs_pre_alignment_abs_error_db": 4.13574225,
+      "median_speech_predicted_vs_post_alignment_abs_error_db": 6.171955149999995,
+      "median_speech_tracker_vs_post_alignment_abs_error_db": 10.305469600000006,
+      "median_speech_tracker_to_pre_magnitude_ratio": 0.39529849668116424,
+      "median_speech_predicted_to_post_magnitude_ratio": 0.6687434943571678,
+      "speech_predicted_post_direction_agreement_fraction": 0.74
+    },
+    "2": {
+      "cases": 50,
+      "median_all_tracker_vs_pre_alignment_abs_error_db": 3.288163249999993,
+      "median_all_predicted_vs_post_alignment_abs_error_db": 4.339063649999993,
+      "median_all_tracker_vs_post_alignment_abs_error_db": 4.628039425000001,
+      "median_all_tracker_to_pre_magnitude_ratio": 0.2576713198333691,
+      "median_all_predicted_to_post_magnitude_ratio": 1.042666173556249,
+      "all_predicted_post_direction_agreement_fraction": 0.76,
+      "median_speech_tracker_vs_pre_alignment_abs_error_db": 4.8015,
+      "median_speech_predicted_vs_post_alignment_abs_error_db": 4.8997,
+      "median_speech_tracker_vs_post_alignment_abs_error_db": 9.4182,
+      "median_speech_tracker_to_pre_magnitude_ratio": 0.4543,
+      "median_speech_predicted_to_post_magnitude_ratio": 0.6999,
+      "speech_predicted_post_direction_agreement_fraction": 0.8
+    },
+    "4": {
+      "cases": 50,
+      "median_all_tracker_vs_pre_alignment_abs_error_db": 3.0873,
+      "median_all_predicted_vs_post_alignment_abs_error_db": 5.2083,
+      "median_all_tracker_vs_post_alignment_abs_error_db": 4.2723,
+      "median_all_tracker_to_pre_magnitude_ratio": 0.3295,
+      "median_all_predicted_to_post_magnitude_ratio": 1.2151,
+      "all_predicted_post_direction_agreement_fraction": 0.74,
+      "median_speech_tracker_vs_pre_alignment_abs_error_db": 4.0204,
+      "median_speech_predicted_vs_post_alignment_abs_error_db": 4.682,
+      "median_speech_tracker_vs_post_alignment_abs_error_db": 7.3746,
+      "median_speech_tracker_to_pre_magnitude_ratio": 0.5183,
+      "median_speech_predicted_to_post_magnitude_ratio": 0.7856,
+      "speech_predicted_post_direction_agreement_fraction": 0.68
+    },
+    "8": {
+      "cases": 50,
+      "median_all_tracker_vs_pre_alignment_abs_error_db": 2.868939400000002,
+      "median_all_predicted_vs_post_alignment_abs_error_db": 5.259355550000009,
+      "median_all_tracker_vs_post_alignment_abs_error_db": 4.102432200000003,
+      "median_all_tracker_to_pre_magnitude_ratio": 0.5409300927778897,
+      "median_all_predicted_to_post_magnitude_ratio": 1.341138181401083,
+      "all_predicted_post_direction_agreement_fraction": 0.74,
+      "median_speech_tracker_vs_pre_alignment_abs_error_db": 4.139095349999998,
+      "median_speech_predicted_vs_post_alignment_abs_error_db": 4.534561125000014,
+      "median_speech_tracker_vs_post_alignment_abs_error_db": 6.711740500000005,
+      "median_speech_tracker_to_pre_magnitude_ratio": 0.6199172736715699,
+      "median_speech_predicted_to_post_magnitude_ratio": 0.8546828310983743,
+      "speech_predicted_post_direction_agreement_fraction": 0.74
+    }
+  },
+  "root_cause_review": {
+    "instantaneous_suppression_partial_explanation_in_speech_domain_supported": true,
+    "instantaneous_suppression_complete_explanation_supported": false,
+    "all_domain_predicted_post_residual_persists": true,
+    "speech_domain_predicted_post_residual_persists": true,
+    "tracker_state_response_remains_smaller_than_pre_ns_response": true,
+    "synthesis_or_overlap_add_transfer_not_yet_isolated": true,
+    "spectral_band_or_domain_selection_authorized": false,
+    "estimator_selection_authorized": false,
+    "normalization_selection_authorized": false,
+    "ns_floor_change_authorized": false,
+    "suppression_gain_change_authorized": false,
+    "tracker_alpha_change_authorized": false,
+    "tracker_branch_threshold_change_authorized": false,
+    "horizon_or_lag_authorized": false,
+    "mapping_authorized": false,
+    "refresh_rule_authorized": false,
+    "source_patch_authorized": false,
+    "note": "I039 shows that the instantaneous fixed suppression transfer improves explanatory alignment in the speech domain but leaves a substantial predicted-to-post residual and does not consistently improve the all-domain comparison. The next diagnostic should mirror the shipping frequency-domain suppressed complex spectrum through inverse FFT, synthesis windows and overlap-add state before any NS floor, gain, estimator, normalization or control parameter is designed."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i040-ns-synthesis-overlap-add-transfer-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use fresh public-development target seeds and unchanged shipping NS/VAD source. Preserve I039 exact-order reconstruction, fixed low/speech/high domains, causal target/anchor semantics and fixed 1/2/4/8 horizons. Extend diagnostic-only observation from the mirrored suppressed complex spectrum through the same inverse FFT, synthesis windows and overlap-add state used by shipping, then reanalyze the predicted synthesized output with the same fixed domains. Determine whether the residual predicted-suppressed versus actual post-NS mismatch is explained by synthesis/overlap-add transfer. Do not select or tune a domain, window, overlap rule, estimator, normalization, NS floor, suppression gain, alpha, threshold, horizon, lag, mapping, refresh rule or source candidate.",
+    "required_gates": [
+      "fresh target seeds disjoint from I025-I039",
+      "shipping NS/VAD source unchanged",
+      "I039 exact-order bitwise all-bin reconstruction remains exact",
+      "same causal target and strictly prior anchor semantics",
+      "fixed post-target reference horizons 1/2/4/8 only",
+      "same fixed low=0..8, speech=9..223, high=224..256 partitions; no domain or band search",
+      "mirrored suppressed complex spectrum uses the exact frozen shipping full-mode suppression gain and NS floor",
+      "diagnostic inverse FFT, synthesis-window and overlap-add accounting follows shipping operation order and state without feedback into shipping",
+      "shipping mirrors remain exact",
+      "all synthesis-transfer observations remain diagnostic-only"
+    ],
+    "prohibited": [
+      "reuse of I039 seeds",
+      "spectral-band or domain selection",
+      "window or overlap-add selection/tuning",
+      "estimator selection",
+      "normalization mapping selection",
+      "NS floor or suppression-gain tuning",
+      "tracker alpha tuning or search",
+      "tracker branch-threshold tuning",
+      "best-horizon or best-lag selection",
+      "VAD noise-state refresh source patch",
+      "threshold tuning",
+      "source candidate execution",
+      "validation-grade or blind feedback",
+      "shipping source changes"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i039-36861549133/result.json",
+  "verification_limits": [
+    "I039 is public-development diagnostic evidence and does not establish product acoustic behavior.",
+    "Suppression-transfer observations are descriptive and do not authorize domain, band, floor or gain selection.",
+    "The result supports only a partial speech-domain explanatory role for instantaneous suppression transfer and does not establish that synthesis/overlap-add is the remaining cause.",
+    "No domain, band, estimator, normalization, NS floor, suppression gain, alpha, tracker threshold, horizon, lag, mapping, refresh rule, source patch, validation-grade, blind, HIL, product-certification or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "spectral_band_selected": false,
+    "domain_selected": false,
+    "estimator_selected": false,
+    "noise_scale_normalization_selected": false,
+    "vad_noise_state_refresh_selected": false,
+    "source_patch_selected": false,
+    "component_selected": false,
+    "mapping_selected": false,
+    "best_horizon_selected": false,
+    "lag_selected": false,
+    "ns_floor_changed": false,
+    "suppression_gain_changed": false,
+    "synthesis_window_selected": false,
+    "overlap_add_rule_selected": false,
+    "tracker_alpha_changed": false,
+    "tracker_update_threshold_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

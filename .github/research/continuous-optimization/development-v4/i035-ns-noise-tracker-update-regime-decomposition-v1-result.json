@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i035-ns-noise-tracker-update-regime-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "0e2d50efe5504ece832480a68d145a576de1b75d",
+  "decision": "NS_NOISE_TRACKER_UPDATE_REGIME_DECOMPOSED_REVIEW_REQUIRED",
+  "reviewed_decision": "FAST_UPDATE_DOMINATES_NOISE_ESTIMATE_MOVEMENT_RESPONSE_DEFICIT_PERSISTS_NO_ALPHA_THRESHOLD_OR_LAG_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I035 execution is valid and terminal. Fresh target authority, causal target/anchor semantics, fixed horizons, mirror accounting and exact shipping mirrors all passed. The I034 response-amplitude deficit is not explained by lack of fast-update opportunity. Across fixed horizons 1/2/4/8, the median slow-update bin fraction is only about 4.7-5.6% while the median fast-update bin fraction is about 94.4-95.3%. The fast branch contributes about 99.8-99.9% of absolute tracker estimate movement, yet the median response deficit remains 4.29/5.30/5.15/2.55 dB. Slow-update exposure is descriptively negatively associated with response deficit at all fixed horizons (Spearman about -0.27 to -0.40), rather than positively associated as a simple slow-gating explanation would suggest. At h8, fast absolute contribution and total absolute update opportunity are positively associated with response deficit (about +0.43 and +0.45). These descriptive associations do not establish causality, but they reject a simple 'too many slow-update bins' explanation and provide no basis to tune alpha or the 0.35 branch threshold. The remaining mechanism question is whether all-bin noise-estimate aggregation and spectral/domain transfer dilute or misalign the speech-band tracker movement relative to post-NS local observation energy.",
+  "authoritative_execution": {
+    "run_id": 36795467909,
+    "run_attempt": 1,
+    "head_sha": "d4bac5e8ac3f847c78143b64634d16a16780df3f",
+    "run_conclusion": "success",
+    "evaluator_result_valid": true,
+    "evaluator_return_code": 0,
+    "artifact_id": 11133847821,
+    "artifact_name": "i035-ns-noise-tracker-update-regime-36795467909",
+    "artifact_size_bytes": 80389,
+    "artifact_sha256": "2e6595d6d51acfc0eb5c27b439ac6aee2c617696e76ecef809191a807f650ad7",
+    "member_sha256": {
+      "SHA256SUMS": "8043e8ca01183076d9891d43a7df0732e3c6de40f5f1b236bec827c16cc99c4e",
+      "build-info.txt": "bed68d8620d7b856bdf1ef1f7476cf59da9b7f3e0709c2319c20c951f6b1f1c8",
+      "contract.json": "c2bba47ebe08daa4a4e5f13ce64e04e78412e8b87247e14050eafebf8c705a4e",
+      "corpora.sha256": "a2469066a8cb83de24690966fc4365fb89ee13b547d55e305137d8b4de2a71f4",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "5fc56c39c8aeebdfa8e76b2b17aed641b6378da7cbe0cd0921a1f0e39a6ee312",
+      "materialization.json": "ac45b74e7c0ecc74653b62b77d8df9a5c44244b454fb42d18f0e584d50aad328",
+      "probe.sha256": "bafeba23d117ccf26de81d6555544d50cbf650908a509bd1e12d388c0716d44c",
+      "result.json": "33bec750f7156753366b26085ca1bf81ebb60054ccf67fea34a805ca8285b0c4",
+      "summary.json": "6c29b4e028969570f0b91cf0a6437a7f7a7da0ad0ed12d75f48370da70deb49a"
+    },
+    "internal_sha256sums_verified": true
+  },
+  "fresh_authority": {
+    "target_seeds": [
+      1821307,
+      1831307,
+      1841307,
+      1851307,
+      1861307,
+      1871307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0
+  },
+  "coverage_review": {
+    "target_cases": 252,
+    "causal_target_cases": 144,
+    "causal_anchor_cases": 39,
+    "causal_anchor_coverage": 0.2708333333333333,
+    "fixed_horizon_coverage": {
+      "1": 1,
+      "2": 1,
+      "4": 1,
+      "8": 1
+    }
+  },
+  "target_regime_review": {
+    "cases": 39,
+    "median_slow_update_bin_fraction": 0.158139542,
+    "median_fast_update_bin_fraction": 0.841860473,
+    "median_slow_update_abs_contribution_fraction": 0.019222701,
+    "median_fast_update_abs_contribution_fraction": 0.980777204,
+    "median_total_abs_update_fraction_of_previous_noise": 0.0599516407,
+    "median_slow_mean_post_ratio": 6.62450123,
+    "median_fast_mean_post_ratio": 0.57952565
+  },
+  "fixed_horizon_regime_review": {
+    "1": {
+      "cases": 39,
+      "median_slow_update_bin_fraction": 0.0558139533,
+      "median_fast_update_bin_fraction": 0.944186032,
+      "median_slow_update_abs_contribution_fraction": 0.000495218206,
+      "median_fast_update_abs_contribution_fraction": 0.999504924,
+      "median_total_abs_update_fraction_of_previous_noise": 0.0676472783,
+      "median_response_deficit_db": 4.289529799999993,
+      "p90_response_deficit_db": 16.2176991,
+      "median_alignment_abs_error_db": 5.506555600000009,
+      "spearman_slow_update_bin_fraction_vs_response_deficit": -0.3389125702629433,
+      "spearman_fast_update_abs_contribution_fraction_vs_response_deficit": 0.12340018938500143,
+      "spearman_total_abs_update_fraction_vs_response_deficit": 0.018421052631578946
+    },
+    "2": {
+      "cases": 39,
+      "median_slow_update_bin_fraction": 0.053488374,
+      "median_fast_update_bin_fraction": 0.9465116259999999,
+      "median_slow_update_abs_contribution_fraction": 0.0019930625275,
+      "median_fast_update_abs_contribution_fraction": 0.99800694,
+      "median_total_abs_update_fraction_of_previous_noise": 0.0702464655,
+      "median_response_deficit_db": 5.297044750000012,
+      "p90_response_deficit_db": 15.348631899999994,
+      "median_alignment_abs_error_db": 5.811450950000001,
+      "spearman_slow_update_bin_fraction_vs_response_deficit": -0.2786599234948463,
+      "spearman_fast_update_abs_contribution_fraction_vs_response_deficit": 0.05536130388231161,
+      "spearman_total_abs_update_fraction_vs_response_deficit": -0.044534412955465584
+    },
+    "4": {
+      "cases": 39,
+      "median_slow_update_bin_fraction": 0.04651162775,
+      "median_fast_update_bin_fraction": 0.95348838,
+      "median_slow_update_abs_contribution_fraction": 0.001293634383,
+      "median_fast_update_abs_contribution_fraction": 0.998706192,
+      "median_total_abs_update_fraction_of_previous_noise": 0.07276012375,
+      "median_response_deficit_db": 5.152004150000003,
+      "p90_response_deficit_db": 14.941112500000003,
+      "median_alignment_abs_error_db": 5.152004150000003,
+      "spearman_slow_update_bin_fraction_vs_response_deficit": -0.2698002802140333,
+      "spearman_fast_update_abs_contribution_fraction_vs_response_deficit": 0.21041053708974708,
+      "spearman_total_abs_update_fraction_vs_response_deficit": 0.03097165991902834
+    },
+    "8": {
+      "cases": 39,
+      "median_slow_update_bin_fraction": 0.04883720915,
+      "median_fast_update_bin_fraction": 0.9511627855,
+      "median_slow_update_abs_contribution_fraction": 0.0009906283235,
+      "median_fast_update_abs_contribution_fraction": 0.999009311,
+      "median_total_abs_update_fraction_of_previous_noise": 0.071818348,
+      "median_response_deficit_db": 2.5498275500000034,
+      "p90_response_deficit_db": 11.307224250000012,
+      "median_alignment_abs_error_db": 4.629825650000001,
+      "spearman_slow_update_bin_fraction_vs_response_deficit": -0.40388715647714934,
+      "spearman_fast_update_abs_contribution_fraction_vs_response_deficit": 0.4302962646241814,
+      "spearman_total_abs_update_fraction_vs_response_deficit": 0.45161943319838055
+    }
+  },
+  "root_cause_review": {
+    "simple_slow_update_gating_explanation_supported": false,
+    "fast_update_opportunity_dominant": true,
+    "fast_update_absolute_contribution_dominant": true,
+    "response_deficit_persists_with_fast_update_opportunity": true,
+    "tracker_alpha_change_authorized": false,
+    "tracker_branch_threshold_change_authorized": false,
+    "lag_or_horizon_authorized": false,
+    "mapping_authorized": false,
+    "refresh_rule_authorized": false,
+    "source_patch_authorized": false,
+    "exact_aggregation_or_domain_transfer_mechanism_established": false,
+    "note": "I035 shows that the persistent I034 response deficit remains while fast-update bins dominate both exposure and actual estimate movement. Slow-update exposure is not positively associated with the deficit. The next diagnostic should decompose fixed spectral-band and all-bin aggregation contributions to shipping noise_rms_dbfs versus post-NS local observation movement before any estimator, alpha, threshold, normalization or refresh-source candidate is designed."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i036-ns-noise-estimate-aggregation-domain-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use fresh public-development target seeds and unchanged shipping NS/VAD source. Preserve the I035 causal target/anchor and fixed 1/2/4/8 post-target reference horizons. Extend mirror-only observation to decompose the shipping EMA noise estimate into fixed low, speech-band and high spectral partitions plus the all-bin aggregate used by noise_rms_dbfs. Report each partition's estimate-energy share, update contribution, and fixed-horizon response delta, and verify exact reconstruction of the shipping all-bin noise_rms_dbfs. Test whether the response deficit is caused by all-bin aggregation diluting speech-band movement or persists within the speech-band estimate itself. Do not select a band, normalization, estimator, alpha, branch threshold, horizon, lag, refresh rule or source candidate.",
+    "required_gates": [
+      "fresh target seeds disjoint from I025-I035",
+      "shipping NS/VAD source unchanged",
+      "same causal target and strictly prior anchor semantics",
+      "fixed post-target reference horizons 1/2/4/8 only",
+      "fixed spectral partitions derived from the existing nfft=512 bin layout; no band search",
+      "exact all-bin mirror reconstruction of shipping noise_rms_dbfs",
+      "sufficient causal-anchor and fixed-horizon coverage",
+      "shipping mirrors remain exact",
+      "all aggregation/domain associations remain diagnostic-only"
+    ],
+    "prohibited": [
+      "reuse of I035 seeds",
+      "spectral-band boundary search",
+      "tracker alpha tuning or search",
+      "tracker branch-threshold tuning",
+      "best-horizon or best-lag selection",
+      "absolute or relative normalization mapping selection",
+      "VAD noise-state refresh source patch",
+      "threshold tuning",
+      "source candidate execution",
+      "validation-grade or blind feedback",
+      "shipping source changes"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i035-36795467909/result.json",
+  "verification_limits": [
+    "I035 is public-development diagnostic evidence and does not establish product acoustic behavior.",
+    "The observed associations are descriptive and cannot establish causal effects of slow/fast update exposure.",
+    "Fast-update dominance rejects a simple slow-gating explanation but does not by itself identify aggregation, spectral-domain transfer or another internal state mechanism.",
+    "No alpha, tracker branch threshold, horizon, lag, mapping, refresh rule, source patch, validation-grade, blind, HIL, product-certification or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "noise_scale_normalization_selected": false,
+    "vad_noise_state_refresh_selected": false,
+    "source_patch_selected": false,
+    "component_selected": false,
+    "mapping_selected": false,
+    "best_horizon_selected": false,
+    "lag_selected": false,
+    "tracker_alpha_changed": false,
+    "tracker_update_threshold_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

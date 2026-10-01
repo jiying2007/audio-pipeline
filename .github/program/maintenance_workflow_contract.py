@@ -144,6 +144,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml'),
     Path('.github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml'),
     Path('.github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml'),
+    Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -366,6 +367,13 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('tests/validation/data/i034-consumed-workflow.yml'),
         Path('tests/validation/test_i034_one_shot_guard.py'),
         Path('tests/validation/test_i034_retirement.py'),
+    ),
+    Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i035-ns-noise-tracker-update-regime-decomposition-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i035-ns-noise-tracker-update-regime-decomposition-v1-result.json'),
+        Path('tests/validation/data/i035-consumed-workflow.yml'),
+        Path('tests/validation/test_i035_one_shot_guard.py'),
+        Path('tests/validation/test_i035_retirement.py'),
     ),
 
 }

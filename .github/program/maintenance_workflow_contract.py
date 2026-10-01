@@ -151,6 +151,7 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.yml'),
     Path('.github/workflows/research-i038-ns-post-ns-matched-domain-transfer-decomposition-v1.yml'),
     Path('.github/workflows/research-i039-ns-suppression-transfer-path-decomposition-v1.yml'),
+    Path('.github/workflows/research-i040-ns-synthesis-overlap-add-transfer-decomposition-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -408,6 +409,13 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('tests/validation/data/i039-consumed-workflow.yml'),
         Path('tests/validation/test_i039_one_shot_guard.py'),
         Path('tests/validation/test_i039_retirement.py'),
+    ),
+    Path('.github/workflows/research-i040-ns-synthesis-overlap-add-transfer-decomposition-v1.yml'): (
+        Path('.github/research/continuous-optimization/development-v4/i040-ns-synthesis-overlap-add-transfer-decomposition-v1.json'),
+        Path('.github/research/continuous-optimization/development-v4/i040-ns-synthesis-overlap-add-transfer-decomposition-v1-result.json'),
+        Path('tests/validation/data/i040-consumed-workflow.yml'),
+        Path('tests/validation/test_i040_one_shot_guard.py'),
+        Path('tests/validation/test_i040_retirement.py'),
     ),
 
 }

@@ -105,6 +105,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml'),
     Path('.github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml'),
     Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'),
+    Path('.github/workflows/research-i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.yml'),
 
 )
 
@@ -146,7 +147,6 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml'),
     Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'),
     Path('.github/workflows/research-i036-ns-noise-estimate-aggregation-domain-decomposition-v1.yml'),
-    Path('.github/workflows/research-i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (

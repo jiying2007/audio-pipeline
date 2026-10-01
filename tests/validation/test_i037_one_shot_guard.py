@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i037-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.json"
 EVALUATOR=ROOT/"tests/validation/i037_ns_noise_estimate_aggregation_exact_order_recovery.py"
 PROBE=ROOT/"tests/validation/i037_ns_noise_estimate_aggregation_exact_order_probe.c"

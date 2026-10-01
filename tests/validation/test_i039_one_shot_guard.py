@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i039-ns-suppression-transfer-path-decomposition-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i039-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i039-ns-suppression-transfer-path-decomposition-v1.json"
 EVALUATOR=ROOT/"tests/validation/i039_ns_suppression_transfer_path_decomposition.py"
 PROBE=ROOT/"tests/validation/i039_ns_suppression_transfer_path_probe.c"

@@ -13,6 +13,18 @@ trap 'git worktree remove --force "$TMP/base" >/dev/null 2>&1 || true; rm -rf "$
 if [ "$REPS" -lt 3 ]; then echo "repetitions must be >= 3" >&2; exit 2; fi
 
 git fetch origin main --depth=1
+
+# Timing two builds from the same runtime inputs only measures hosted-runner
+# scheduling noise. Skip the microbenchmark when none of the inputs that can
+# affect the runtime libraries or throughput harness changed. Any runtime/build
+# input change still falls through to the original strict paired benchmark.
+if git diff --quiet "$BASE_REF"...HEAD -- \
+  CMakeLists.txt CMakePresets.json cmake include src \
+  bench/bench_runtime_throughput.c; then
+  echo "same_runner_runtime_perf noop: runtime inputs unchanged base=$BASE_REF head=$(git rev-parse HEAD)"
+  exit 0
+fi
+
 git worktree add --detach "$TMP/base" "$BASE_REF" >/dev/null
 COMMON_FLAGS='-DCMAKE_BUILD_TYPE=Release -DAP_BUILD_TESTS=OFF -DAP_BUILD_BENCH=OFF -DAP_BUILD_EXAMPLES=OFF'
 # shellcheck disable=SC2086

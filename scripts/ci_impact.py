@@ -56,6 +56,7 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/release_manifest.py", "scripts/post_release_status.py",
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
+    "scripts/compare-runtime-perf.sh",
 }
 RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
     re.compile(r"validation/tools/build_[A-Za-z0-9_]+_tuning_corpus\.py"),
@@ -709,6 +710,7 @@ def self_test() -> None:
     assert is_release_neutral("scripts/check-abi-contract.sh")
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
+    assert is_release_neutral("scripts/compare-runtime-perf.sh")
     assert is_release_neutral("docs/program/plan.json")
     assert is_release_neutral("docs/program/iterations/I001.json")
     assert not is_release_neutral("scripts/unregistered-program.py")

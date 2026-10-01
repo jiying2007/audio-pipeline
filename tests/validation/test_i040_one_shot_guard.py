@@ -152,7 +152,7 @@ class I040GuardTests(unittest.TestCase):
             "noise_rms_bitwise_match",
             "post_ns_previous",
             "post_ns_spectrum",
-            "measure_post_ns_components",
+            "measure_spectral_components",
             "suppression_post = power / (noise_result.noise + 1.0e-12f)",
             "sqrtf((suppression_post - 1.0f) / suppression_post)",
             "clampf_local(suppression_gain, NS_FLOOR, 1.0f)",
@@ -208,9 +208,9 @@ class I040GuardTests(unittest.TestCase):
         self.assertIn("+'\\n')",text)
         self.assertNotIn("printf '%s\\\\n' \"$rc\"",text)
         evaluate=text.split(
-            "      - name: Evaluate candidate-zero suppression-transfer path\n",1
+            "      - name: Evaluate candidate-zero synthesis-overlap-add transfer\n",1
         )[1].split(
-            "      - name: Enforce suppression-transfer-diagnostic-only authority\n",1
+            "      - name: Enforce synthesis-overlap-add-diagnostic-only authority\n",1
         )[0]
         self.assertIn("'synthesis_overlap_add_transfer':r['synthesis_overlap_add_transfer']",evaluate)
         self.assertIn("'transfer_invariants':r['transfer_invariants']",evaluate)

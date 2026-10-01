@@ -140,9 +140,12 @@ class I038GuardTests(unittest.TestCase):
             "post_ns_speech_mean_power_dbfs",
         ):
             self.assertIn(token,text)
+        mirror=text.split(
+            "static void mirror_upstream_components",1
+        )[1].split("static void process_vad_diagnostic",1)[0]
         self.assertLess(
-            text.index("all_noise_sum += noise_result.noise"),
-            text.index("if (k <= low_last)"),
+            mirror.index("all_noise_sum += noise_result.noise"),
+            mirror.index("if (k <= low_last)"),
         )
         self.assertNotIn("tolerance_candidates",text)
 

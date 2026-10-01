@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i039-ns-suppression-transfer-path-decomposition-v1",
+  "phase": "candidate-zero-suppression-transfer-path-decomposition",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "a13a77069e31f661b9e3d8d0dd553bdd29c455c2",
+  "predecessor": {
+    "i038_closure": ".github/research/continuous-optimization/development-v4/i038-ns-post-ns-matched-domain-transfer-decomposition-v1-result.json",
+    "i038_closure_blob_sha": "30c24d803b8952c76e1bb82e32839425fca6280a",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_POST_NS_MATCHED_DOMAIN_TRANSFER_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "MATCHED_DOMAIN_RESPONSE_DEFICIT_PERSISTS_TRACKER_MOVEMENT_SMALL_RELATIVE_TO_POST_NS_NO_DOMAIN_ESTIMATOR_OR_NORMALIZATION_CANDIDATE",
+    "required_followup_id": "i039-ns-suppression-transfer-path-decomposition-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Within the same fixed domains, is the persistent tracker-to-post-NS response mismatch explained by the instantaneous shipping suppression transfer from pre-NS power through tracker noise estimate and fixed suppression gain, or does a substantial residual remain after predicted suppressed power is compared with actual post-NS power?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i039_ns_suppression_transfer_path_probe.c",
+    "probe_git_blob_sha": "2be5f1d5d6c0a607fe8d21d0340830ab188757c9",
+    "evaluator_path": "tests/validation/i039_ns_suppression_transfer_path_decomposition.py",
+    "evaluator_git_blob_sha": "69591eb174d7e6d8b5c96e166379a46552ac1287"
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      2061307,
+      2071307,
+      2081307,
+      2091307,
+      2101307,
+      2111307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "enhance_mode": "AP_ENHANCE_FULL",
+    "frequency_res_enabled": false,
+    "vad_upstream_speech_guard": 0.55,
+    "shipping_ns_vad_source_must_remain_unchanged": true
+  },
+  "exact_order_reconstruction": {
+    "inherited_from": "i038-ns-post-ns-matched-domain-transfer-decomposition-v1",
+    "all_noise_sum_initial": "1.0e-18f",
+    "accumulation_order": "single dedicated all_noise_sum updated sequentially for k=0..256 immediately after each shipping ap_noise_tracker_update mirror call",
+    "comparison": "uint32 bit pattern equality between reconstructed all_noise_rms_dbfs and shipping ns_noise_rms_dbfs on every observed frame",
+    "post_hoc_tolerance_not_allowed": true
+  },
+  "fixed_spectral_partitions": {
+    "nfft": 512,
+    "low_bins": {
+      "first": 0,
+      "last": 8,
+      "count": 9
+    },
+    "speech_bins": {
+      "first": 9,
+      "last": 223,
+      "count": 215
+    },
+    "high_bins": {
+      "first": 224,
+      "last": 256,
+      "count": 33
+    },
+    "derivation": "same fixed shipping speech-band predicate retained from I036-I038",
+    "boundaries_are_fixed_not_searched": true
+  },
+  "suppression_transfer_observation": {
+    "domains": [
+      "all",
+      "low",
+      "speech",
+      "high"
+    ],
+    "pre_ns_power_source": "existing diagnostic input analysis spectrum before shipping ap_ns_process",
+    "tracker_noise_source": "same exact-order mirror using shipping ap_noise_tracker_update",
+    "suppression_post_expression": "power / (noise + 1.0e-12f)",
+    "suppression_gain_expression": "post > 1 ? sqrt((post - 1) / post) : 0, then clamp to fixed NS floor 0.12..1.0",
+    "residual_gain": "1.0 because frequency RES is disabled in the frozen shipping call",
+    "predicted_suppressed_power_expression": "pre_ns_power * suppression_gain^2",
+    "actual_post_ns_source": "shipping ap_ns_process output reanalyzed with the same fixed 512-point two-frame diagnostic window and fixed domains",
+    "fixed_ns_floor": 0.12,
+    "report_mean_gain": true,
+    "report_floor_gain_fraction": true,
+    "selection_or_tuning_allowed": false
+  },
+  "causal_anchor_semantics": {
+    "target": "first oracle-speech disagreement frame with fewer than eight prior same-case ordinary-noise non-disagreement references",
+    "anchor": "last strictly prior same-case ordinary-noise non-disagreement reference",
+    "require_at_least_one_prior_reference": true,
+    "anchor_and_target_are_causal": true,
+    "may_use_future_frames_for_anchor_or_target": false
+  },
+  "fixed_horizons": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "noise_rms_bitwise_mismatch_frames": 0,
+    "max_post_ns_partition_energy_share_gap": 0.00002,
+    "max_suppression_attenuation_identity_gap_db": 0.00002,
+    "max_predicted_suppressed_power_excess_db": 0.00002,
+    "expected_target_cases": 252,
+    "minimum_causal_target_cases": 100,
+    "minimum_causal_anchor_cases": 35,
+    "minimum_causal_anchor_coverage": 0.25,
+    "minimum_fixed_horizon_coverage": 0.8
+  },
+  "diagnostic_outputs": [
+    "I038 exact-order bitwise all-bin reconstruction retained as a validity gate",
+    "fixed-domain pre-NS input spectral-power response",
+    "fixed-domain tracker noise-estimate response",
+    "fixed-domain mirrored shipping suppression gain, attenuation and floor-hit fraction",
+    "fixed-domain predicted suppressed spectral-power response",
+    "fixed-domain actual post-NS spectral-power response",
+    "tracker-vs-pre and predicted-vs-post alignment/deficit decomposition across fixed horizons 1/2/4/8",
+    "global and per-noise-domain suppression-transfer summaries",
+    "exact shipping NS/VAD mirrors and suppression-transfer accounting invariants"
+  ],
+  "forbidden_feedback": {
+    "i025_to_i038_seeds": true,
+    "post_hoc_i038_gate_relaxation": true,
+    "donor_selection": true,
+    "reference_source_selection": true,
+    "spectral_band_or_domain_selection": true,
+    "estimator_selection": true,
+    "absolute_normalization_mapping_selection": true,
+    "relative_normalization_mapping_selection": true,
+    "ns_floor_or_suppression_gain_tuning": true,
+    "tracker_alpha_search": true,
+    "tracker_branch_threshold_search": true,
+    "best_horizon_or_lag_selection": true,
+    "vad_noise_state_refresh_rule_selection": true,
+    "threshold_search": true,
+    "source_candidate_execution": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_SUPPRESSION_TRANSFER_PATH_DECOMPOSED_REVIEW_REQUIRED": "Fresh target-only authority, retained exact-order bitwise reconstruction, fixed identical spectral domains, exact frozen suppression formula/floor, causal target/anchor pairing, fixed 1/2/4/8 horizons, coverage and shipping mirrors are valid. Report pre-NS, tracker, predicted-suppressed and actual post-NS transfer observations for review without selecting a domain, estimator, normalization, floor, alpha, tracker threshold, horizon/lag, refresh rule or source candidate.",
+    "I039_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, fresh-seed identity, inherited exact-order reconstruction, post-NS partition accounting, suppression attenuation identity, predicted-power monotonicity, causal target/anchor coverage, fixed-horizon coverage or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_vad_noise_state_refresh": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_select_spectral_band": false,
+    "may_select_estimator": false,
+    "may_select_best_horizon": false,
+    "may_select_lag": false,
+    "may_change_ns_floor": false,
+    "may_change_suppression_gain": false,
+    "may_change_tracker_alpha": false,
+    "may_change_tracker_update_threshold": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_use_donor_selection": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Only if all preregistered gates pass, review whether predicted suppressed power materially explains the actual post-NS response while tracker-state movement remains small. I039 itself cannot select a domain, estimator, normalization, floor, alpha, tracker threshold, horizon, lag, mapping, refresh rule, source candidate or shipping change."
+}

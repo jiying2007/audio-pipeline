@@ -1,0 +1,362 @@
+name: Research I036 NS Noise Estimate Aggregation Domain Decomposition v1
+run-name: "i036-aggregation-domain / ${{ github.event_name }} / ${{ github.ref_name }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/research/continuous-optimization/development-v4/i035-ns-noise-tracker-update-regime-decomposition-v1-result.json'
+      - '.github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1.json'
+      - 'tests/validation/i036_ns_noise_estimate_aggregation_domain_probe.c'
+      - 'tests/validation/i036_ns_noise_estimate_aggregation_domain_decomposition.py'
+      - 'tests/validation/test_i036_one_shot_guard.py'
+      - '.github/workflows/research-i036-ns-noise-estimate-aggregation-domain-decomposition-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-i036-aggregation-domain-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CONTRACT: .github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1.json
+  DEV_ROOT: /tmp/audio-pipeline-i036-development-v3
+  PYTHONPATH: validation/tools:tests/validation:.github/research/continuous-optimization/development-data-v3
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate I036 aggregation-domain contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool "$CONTRACT" >/dev/null
+          python3 -m py_compile \
+            tests/validation/i036_ns_noise_estimate_aggregation_domain_decomposition.py \
+            tests/validation/test_i036_one_shot_guard.py
+          python3 tests/validation/i036_ns_noise_estimate_aggregation_domain_decomposition.py --self-test
+          python3 tests/validation/test_i036_one_shot_guard.py
+          python3 .github/research/continuous-optimization/development-data-v3/build_corpus.py --self-test
+          python3 .github/research/continuous-optimization/development-data-v3/prepare.py --self-test
+          python3 - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+
+          path=Path('.github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1.json')
+          c=json.loads(path.read_text())
+          assert c['authority']=='CANDIDATE_ZERO_DIAGNOSTIC_ONLY'
+          assert c['source_base_sha']=='57e4c64adc1cf06819e46e24e275ecd746d5f17f'
+
+          a=c['fresh_diagnostic_authority']
+          seeds=a['target_seeds']
+          assert len(seeds)==6 and len(set(seeds))==6
+          assert all(type(seed) is int and seed>0 for seed in seeds)
+          assert a['diagnostic_execution_limit']==1
+          assert a['candidate_limit']==0
+          assert a['confirmation_limit']==0
+
+          p=c['fixed_spectral_partitions']
+          assert p['nfft']==512
+          assert p['low_bins']=={'first':0,'last':8,'count':9}
+          assert p['speech_bins']=={'first':9,'last':223,'count':215}
+          assert p['high_bins']=={'first':224,'last':256,'count':33}
+          assert p['boundaries_are_fixed_not_searched'] is True
+          assert c['fixed_horizons']==[1,2,4,8]
+
+          predecessor=Path(c['predecessor']['i035_closure'])
+          prior=json.loads(predecessor.read_text())
+          assert prior['status']==c['predecessor']['required_status']
+          assert prior['decision']==c['predecessor']['required_decision']
+          assert prior['reviewed_decision']==c['predecessor']['required_reviewed_decision']
+          assert prior['proposed_followup_hypothesis']['id']==c['predecessor']['required_followup_id']
+          assert prior['proposed_followup_hypothesis']['authority']==c['predecessor']['required_followup_authority']
+
+          def blob(p):
+              return subprocess.check_output(
+                  ['git','rev-parse','HEAD:'+str(p)],text=True).strip()
+
+          assert blob(predecessor)==c['predecessor']['i035_closure_blob_sha']
+          assert blob(Path(c['dataset_authority']['lock_path']))==c['dataset_authority']['dataset_lock_git_blob_sha']
+          assert blob(Path(c['dataset_authority']['builder_path']))==c['dataset_authority']['builder_git_blob_sha']
+          assert blob(Path(c['diagnostic_inputs']['probe_path']))==c['diagnostic_inputs']['probe_git_blob_sha']
+          assert blob(Path(c['diagnostic_inputs']['evaluator_path']))==c['diagnostic_inputs']['evaluator_git_blob_sha']
+          assert hashlib.sha256(Path(c['dataset_authority']['lock_path']).read_bytes()).hexdigest()==c['dataset_authority']['dataset_lock_sha256']
+
+          probe=Path(c['diagnostic_inputs']['probe_path']).read_text()
+          shipping_ns=Path('src/enhance/ap_ns.c').read_text()
+          for token in (
+              'ap_noise_tracker_update(&mirror_tracker',
+              'all_noise_rms_dbfs',
+              'noise_rms_reconstruction_gap',
+              'low_noise_energy_share',
+              'speech_noise_energy_share',
+              'high_noise_energy_share',
+              'low_update_abs_contribution_fraction',
+              'speech_update_abs_contribution_fraction',
+              'high_update_abs_contribution_fraction',
+          ):
+              assert token in probe
+          assert 'if (k > nfft / 64u && k < nfft * 7u / 16u)' in shipping_ns
+
+          for seed in seeds:
+              pattern=rf'(^|[^0-9]){seed}([^0-9]|$)'
+              result=subprocess.run(
+                  ['git','grep','-n','-E',pattern,'--','.github','tests','validation','docs'],
+                  stdout=subprocess.PIPE,text=True,check=False)
+              assert result.returncode in (0,1)
+              matches=[
+                  line for line in result.stdout.splitlines()
+                  if line and line.split(':',1)[0] != str(path)
+              ]
+              assert not matches, (
+                  f'I036 seed is not fresh: {seed}\n'+'\n'.join(matches))
+          PY
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i036-aggregation-domain-contract
+      - name: Compile I036 aggregation-domain probe with strict warnings
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i036-contract \
+            -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i036-contract --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror \
+            -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1 \
+            -Iinclude -Isrc -Ibuild-i036-contract/generated \
+            tests/validation/i036_ns_noise_estimate_aggregation_domain_probe.c \
+            build-i036-contract/libaudio_pipeline.a -lm \
+            -o build-i036-contract/i036-probe
+
+  diagnose:
+    needs: contract
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Enforce one-shot I036 diagnostic execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_FILE: research-i036-ns-noise-estimate-aggregation-domain-decomposition-v1.yml
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,subprocess
+
+          repo=os.environ['GITHUB_REPOSITORY']
+          current=int(os.environ['GITHUB_RUN_ID'])
+          attempt=int(os.environ['GITHUB_RUN_ATTEMPT'])
+          if os.environ.get('GITHUB_REF')!='refs/heads/main' or attempt!=1:
+              raise SystemExit('I036 diagnostic requires first-attempt trusted main dispatch')
+
+          def pages(endpoint):
+              raw=subprocess.check_output(
+                  ['gh','api','--paginate','--slurp',endpoint],text=True)
+              value=json.loads(raw)
+              if not isinstance(value,list):
+                  raise SystemExit('unexpected GitHub API pagination shape')
+              return value
+
+          run_pages=pages(
+              f'repos/{repo}/actions/workflows/{os.environ["WORKFLOW_FILE"]}/runs'
+              '?event=workflow_dispatch&per_page=100')
+          runs=[run for page in run_pages for run in page.get('workflow_runs',[])]
+          if not any(int(run['id'])==current for run in runs):
+              raise SystemExit('current I036 run not visible; fail closed')
+
+          consuming={
+              'Materialize fresh I036 target public-development-v3 partitions',
+              'Evaluate candidate-zero NS aggregation-domain decomposition',
+          }
+          for run in runs:
+              run_id=int(run['id'])
+              if run_id==current:
+                  continue
+              attempts=int(run.get('run_attempt') or 0)
+              if attempts<1:
+                  raise SystemExit('invalid prior I036 attempt count')
+              for run_attempt in range(1,attempts+1):
+                  job_pages=pages(
+                      f'repos/{repo}/actions/runs/{run_id}/attempts/{run_attempt}/jobs'
+                      '?per_page=100')
+                  for page in job_pages:
+                      for job in page.get('jobs',[]):
+                          for step in job.get('steps',[]):
+                              if (
+                                  step.get('name') in consuming
+                                  and step.get('conclusion')!='skipped'
+                              ):
+                                  raise SystemExit(
+                                      f'I036 one-shot authority already consumed by run {run_id}')
+          print('I036 one-shot authority: fresh')
+          PY
+      - name: Bind frozen I036 inputs and unchanged shipping source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          c=json.loads(Path('.github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1.json').read_text())
+          def blob(path):
+              return subprocess.check_output(
+                  ['git','rev-parse','HEAD:'+path],text=True).strip()
+          assert blob(c['predecessor']['i035_closure'])==c['predecessor']['i035_closure_blob_sha']
+          assert blob(c['dataset_authority']['lock_path'])==c['dataset_authority']['dataset_lock_git_blob_sha']
+          assert blob(c['dataset_authority']['builder_path'])==c['dataset_authority']['builder_git_blob_sha']
+          assert blob(c['diagnostic_inputs']['probe_path'])==c['diagnostic_inputs']['probe_git_blob_sha']
+          assert blob(c['diagnostic_inputs']['evaluator_path'])==c['diagnostic_inputs']['evaluator_git_blob_sha']
+          assert hashlib.sha256(Path(c['dataset_authority']['lock_path']).read_bytes()).hexdigest()==c['dataset_authority']['dataset_lock_sha256']
+          PY
+          SOURCE_BASE="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["source_base_sha"])')"
+          git cat-file -e "$SOURCE_BASE^{commit}"
+          git diff --exit-code "$SOURCE_BASE"...HEAD -- \
+            src/enhance/ap_noise_tracker.c \
+            src/enhance/ap_noise_tracker.h \
+            src/enhance/ap_ns.c \
+            src/enhance/ap_vad.c \
+            src/modules/ap_vad_module.c \
+            src/modules/ap_ns_module.c \
+            include/audio_pipeline/audio_modules.h \
+            src/enhance/ap_enhance.h
+      - name: Install public-development decoder
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          command -v ffmpeg >/dev/null
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: i036-aggregation-domain
+      - name: Build I036 aggregation-domain probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-i036 \
+            -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-i036 --target audio_pipeline --parallel
+          ${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror \
+            -DAP_BUILD_STAGE_NS=1 -DAP_BUILD_STAGE_RES=1 -DAP_BUILD_NS_EMA=1 \
+            -Iinclude -Isrc -Ibuild-i036/generated \
+            tests/validation/i036_ns_noise_estimate_aggregation_domain_probe.c \
+            build-i036/libaudio_pipeline.a -lm \
+            -o build-i036/i036-probe
+      - name: Materialize fresh I036 target public-development-v3 partitions
+        run: |
+          set -euo pipefail
+          LOCK="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["dataset_authority"]["lock_path"])')"
+          BUILDER="$(python3 -c 'import json,os; print(json.load(open(os.environ["CONTRACT"]))["dataset_authority"]["builder_path"])')"
+          python3 .github/research/continuous-optimization/development-data-v3/prepare.py \
+            --lock "$LOCK" --root "$DEV_ROOT" \
+            --output /tmp/i036-development-v3-materialization.json
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["target_seeds"])'); do
+            python3 "$BUILDER" \
+              --lock "$LOCK" \
+              --materialization /tmp/i036-development-v3-materialization.json \
+              --data-root "$DEV_ROOT" \
+              --output "/tmp/i036-target-$seed" \
+              --seed "$seed" --mix-limit 28 --noise-limit 14 --clean-limit 14
+          done
+      - name: Evaluate candidate-zero NS aggregation-domain decomposition
+        id: evaluate
+        run: |
+          set -euo pipefail
+          rm -rf i036-out
+          mkdir -p i036-out/evidence
+          target_args=()
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["target_seeds"])'); do
+            target_args+=(--target-corpus "/tmp/i036-target-$seed/corpus.json")
+          done
+          set +e
+          python3 tests/validation/i036_ns_noise_estimate_aggregation_domain_decomposition.py \
+            --probe build-i036/i036-probe \
+            --contract "$CONTRACT" \
+            "${target_args[@]}" \
+            --output i036-out/evidence/result.json \
+            > i036-out/evidence/evaluate.stdout \
+            2> i036-out/evidence/evaluate.stderr
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > i036-out/evidence/evaluate.exit-code
+          cp "$CONTRACT" i036-out/evidence/contract.json
+          cp /tmp/i036-development-v3-materialization.json i036-out/evidence/materialization.json
+          sha256sum build-i036/i036-probe | awk '{print $1}' > i036-out/evidence/probe.sha256
+          for seed in $(python3 -c 'import json,os; print(*json.load(open(os.environ["CONTRACT"]))["fresh_diagnostic_authority"]["target_seeds"])'); do
+            sha256sum "/tmp/i036-target-$seed/corpus.json"
+          done > i036-out/evidence/corpora.sha256
+          printf 'main_sha=%s\n' "$GITHUB_SHA" > i036-out/evidence/build-info.txt
+          if test -f i036-out/evidence/result.json; then
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('i036-out/evidence/result.json').read_text())
+          Path('i036-out/evidence/summary.json').write_text(
+              json.dumps({
+                  'decision':r['decision'],
+                  'invalid_reasons':r['invalid_reasons'],
+                  'fresh_diagnostic_authority':r['fresh_diagnostic_authority'],
+                  'shipping_mirror':r['shipping_mirror'],
+                  'coverage':r['coverage'],
+                  'aggregation_domain':r['aggregation_domain'],
+                  'interpretation_boundary':r['interpretation_boundary'],
+              },indent=2,sort_keys=True)+'\n')
+          PY
+          fi
+          (
+            cd i036-out/evidence
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\n' | sort | \
+              while read -r file; do sha256sum "$file"; done > SHA256SUMS
+          )
+          exit "$rc"
+      - name: Enforce aggregation-domain-diagnostic-only authority
+        if: steps.evaluate.outcome == 'success'
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('.github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1.json').read_text())
+          r=json.loads(Path('i036-out/evidence/result.json').read_text())
+          assert r['decision']=='NS_NOISE_ESTIMATE_AGGREGATION_DOMAIN_DECOMPOSED_REVIEW_REQUIRED'
+          assert r['invalid_reasons']==[]
+          assert r['diagnostic_execution_consumed']==1
+          assert r['candidate_budget_consumed']==0
+          assert r['confirmation_budget_consumed']==0
+          assert r['shipping_mirror']['vad_active_mismatch_frames']==0
+          assert r['shipping_mirror']['max_noise_rms_reconstruction_gap_db'] <= c['diagnostic_gates']['max_noise_rms_reconstruction_gap_db']
+          assert list(r['aggregation_domain']['global_fixed_horizons'])==['1','2','4','8']
+          b=r['interpretation_boundary']
+          assert b['fixed_low_speech_high_partitions_only'] is True
+          assert b['all_bin_noise_rms_reconstructed_from_mirror'] is True
+          assert b['no_spectral_band_search'] is True
+          assert b['no_estimator_selection'] is True
+          assert b['no_tracker_alpha_search'] is True
+          assert b['no_source_candidate'] is True
+          assert all(value is False for value in r['authority_boundary'].values())
+          PY
+      - name: Publish bounded diagnostic summary
+        if: always()
+        run: |
+          if test -f i036-out/evidence/summary.json; then
+            cat i036-out/evidence/summary.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload hash-bound I036 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: i036-ns-noise-estimate-aggregation-domain-${{ github.run_id }}
+          path: i036-out/
+          retention-days: 90
+          if-no-files-found: error

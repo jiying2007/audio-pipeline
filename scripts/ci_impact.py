@@ -277,6 +277,24 @@ def _terminal_research_archive_registration(
         artifact_sha = execution.get("artifact_sha256")
         members = execution.get("member_sha256")
         required_names = {"SHA256SUMS", "contract.json", "result.json", "summary.json"}
+        packaging = frozen.get("artifact_packaging_review")
+        packaging_missing: set[str] = set()
+        packaging_defect_ok = False
+        if isinstance(members, dict):
+            packaging_missing = required_names - set(members)
+            if packaging_missing:
+                packaging_defect_ok = (
+                    packaging_missing <= {"SHA256SUMS", "summary.json"}
+                    and isinstance(packaging, dict)
+                    and packaging.get("research_result_valid") is True
+                    and packaging.get("packaging_step_failed_after_evaluator_success") is True
+                    and packaging.get("rerun_required") is False
+                    and packaging.get("synthetic_repair_authorized") is False
+                    and packaging.get("original_artifact_member_count") == len(members)
+                    and set(packaging.get("missing_members", [])) == packaging_missing
+                    and execution.get("evaluator_result_valid") is True
+                    and execution.get("evaluator_return_code") == 0
+                )
         if (
             type(run_id) is not int
             or run_id <= 0
@@ -289,8 +307,8 @@ def _terminal_research_archive_registration(
             or not re.fullmatch(r"validation/research/evidence/[A-Za-z0-9._-]+-[0-9]+", root)
             or not root.endswith(f"-{run_id}")
             or not isinstance(members, dict)
-            or not required_names.issubset(members)
             or not members
+            or (packaging_missing and not packaging_defect_ok)
         ):
             raise ValueError("invalid trusted-base terminal research execution identity")
         expected: dict[str, str] = {}

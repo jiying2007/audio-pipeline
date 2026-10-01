@@ -347,6 +347,86 @@ class TerminalClosureReceiptTests(unittest.TestCase):
             self.check(base=bad_base, head=bad_head)
 
 
+    def test_trusted_packaging_defect_can_archive_only_original_members(self):
+        git('checkout', '-q', self.base)
+        defect = json.loads(json.dumps(self.closure))
+        members = defect['authoritative_execution']['member_sha256']
+        missing = ['SHA256SUMS', 'summary.json']
+        for name in missing:
+            members.pop(name)
+        defect['authoritative_execution']['evaluator_result_valid'] = True
+        defect['authoritative_execution']['evaluator_return_code'] = 0
+        defect['artifact_packaging_review'] = {
+            'research_result_valid': True,
+            'packaging_step_failed_after_evaluator_success': True,
+            'original_artifact_member_count': len(members),
+            'missing_members': missing,
+            'synthetic_repair_authorized': False,
+            'rerun_required': False,
+        }
+        put(TERMINAL_CLOSURE, (json.dumps(defect) + '\n').encode())
+        defect_base = commit('trusted packaging-defect closure')
+        actual = {
+            name: data for name, data in TERMINAL_MEMBERS.items()
+            if name not in missing
+        }
+        for name, data in actual.items():
+            put(TERMINAL_ARCHIVE + name, data)
+        defect_head = commit('append exact partial artifact members')
+        paths = [TERMINAL_ARCHIVE + name for name in actual]
+        self.assertEqual(
+            ci.verified_archive_paths(defect_base, defect_head, paths),
+            set(paths),
+        )
+        self.check(base=defect_base, head=defect_head, paths=paths)
+
+    def test_missing_auxiliary_members_without_trusted_defect_are_rejected(self):
+        git('checkout', '-q', self.base)
+        invalid = json.loads(json.dumps(self.closure))
+        for name in ('SHA256SUMS', 'summary.json'):
+            invalid['authoritative_execution']['member_sha256'].pop(name)
+        put(TERMINAL_CLOSURE, (json.dumps(invalid) + '\n').encode())
+        bad_base = commit('unregistered packaging defect')
+        for name, data in TERMINAL_MEMBERS.items():
+            if name not in {'SHA256SUMS', 'summary.json'}:
+                put(TERMINAL_ARCHIVE + name, data)
+        bad_head = commit('partial artifact after unregistered defect')
+        paths = [
+            TERMINAL_ARCHIVE + name for name in TERMINAL_MEMBERS
+            if name not in {'SHA256SUMS', 'summary.json'}
+        ]
+        with self.assertRaisesRegex(ValueError, 'execution identity'):
+            self.check(base=bad_base, head=bad_head, paths=paths)
+
+    def test_packaging_defect_cannot_excuse_missing_result(self):
+        git('checkout', '-q', self.base)
+        invalid = json.loads(json.dumps(self.closure))
+        members = invalid['authoritative_execution']['member_sha256']
+        members.pop('result.json')
+        invalid['authoritative_execution']['evaluator_result_valid'] = True
+        invalid['authoritative_execution']['evaluator_return_code'] = 0
+        invalid['artifact_packaging_review'] = {
+            'research_result_valid': True,
+            'packaging_step_failed_after_evaluator_success': True,
+            'original_artifact_member_count': len(members),
+            'missing_members': ['result.json'],
+            'synthetic_repair_authorized': False,
+            'rerun_required': False,
+        }
+        put(TERMINAL_CLOSURE, (json.dumps(invalid) + '\n').encode())
+        bad_base = commit('packaging defect missing result')
+        for name, data in TERMINAL_MEMBERS.items():
+            if name != 'result.json':
+                put(TERMINAL_ARCHIVE + name, data)
+        bad_head = commit('archive missing result')
+        paths = [
+            TERMINAL_ARCHIVE + name for name in TERMINAL_MEMBERS
+            if name != 'result.json'
+        ]
+        with self.assertRaisesRegex(ValueError, 'execution identity'):
+            self.check(base=bad_base, head=bad_head, paths=paths)
+
+
 
 if __name__ == '__main__':
     unittest.main()

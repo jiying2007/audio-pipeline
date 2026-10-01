@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i036-ns-noise-estimate-aggregation-domain-decomposition-v1",
+  "status": "CLOSED_INVALID_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "93a3b37b6254ea6d9e3750b28d29af5ea384b77c",
+  "decision": "I036_INPUT_INVALID_REVIEW_REQUIRED",
+  "reviewed_decision": "NUMERIC_RECONSTRUCTION_GATE_FAILED_FLOAT_REDUCTION_ORDER_NO_AGGREGATION_MECHANISM_VERDICT",
+  "reviewed_interpretation": "The single authoritative I036 execution is consumed and terminal, but invalid under its preregistered contract. Dataset identity, fresh seeds, causal target/anchor coverage, fixed 1/2/4/8 horizon coverage, partition accounting, and exact NS/VAD mirrors all passed. The sole invalid reason is the all-bin noise_rms reconstruction gate: maximum observed reconstruction gap 1.52587891e-05 dB exceeded the preregistered 1.0e-05 dB bound by 5.2587891e-06 dB. Source review identifies a diagnostic reduction-order mismatch: shipping ap_ns_process accumulates all 257 noise estimates sequentially in bin order, whereas the I036 mirror accumulated low/speech/high partition sums separately and then combined those partial sums. The observed reconstruction deltas occur on single-precision quantization steps and are consistent with this changed floating-point reduction order. Because the gate failed, all aggregation/spectral response observations are descriptive only and cannot establish or reject an aggregation-domain mechanism. No band, estimator, normalization, alpha, threshold, horizon, lag, mapping, refresh rule, source candidate, HIL or release authority is selected. The consumed I036 run must not be rerun.",
+  "authoritative_execution": {
+    "run_id": 36803529573,
+    "run_attempt": 1,
+    "head_sha": "9768801f9dd6d8c674a158e3a78d863e00cfedb5",
+    "run_conclusion": "failure",
+    "evaluator_result_structured": true,
+    "evaluator_input_valid": false,
+    "evaluator_return_code": 2,
+    "artifact_id": 11137255580,
+    "artifact_name": "i036-ns-noise-estimate-aggregation-domain-36803529573",
+    "artifact_size_bytes": 109960,
+    "artifact_sha256": "423056a3e463fcdc415598517c4536f738976e7f30abe622ac1d979729a9e7b5",
+    "member_sha256": {
+      "SHA256SUMS": "e600fe5e84cfc295033fd9c87f7e65b2949c923104553bb7ed9087649ee336e6",
+      "build-info.txt": "ab4795d234c91bb236c48ac1d93ee59e1152e0ffcd4926598cfb1b7be61d299c",
+      "contract.json": "8c0c1511476de846bc068fc774b56141924c6d5148a4463fbdab456520cc60b0",
+      "corpora.sha256": "af3077c25c3a212a549c2ddaf333ab227afe51d7b58bd3a93dec34ed2b848a2c",
+      "evaluate.exit-code": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "64be3e53607cc1d52584afbac6caf1c358d2c15dfeb484d913af51bd0b5f5f48",
+      "materialization.json": "eb82378b724b4342c43466d692b73ac59e5cb88ea212d884df35fdbc98790a14",
+      "probe.sha256": "cbe0c28863b3c5d8b33e63bf0af4b89fa742e224b2490b404bc55ef979ae8c81",
+      "result.json": "8c936105b622af5d7f28c60f1e4a1d463aed5824c3dae112b289440b3df4b44f",
+      "summary.json": "970eb12a4a18c2bd6c9d1fdb3cc8dac0ca8548b205186dacafcb8f8cda3c8407"
+    },
+    "internal_sha256sums_verified": true
+  },
+  "fresh_authority": {
+    "target_seeds": [
+      1881307,
+      1891307,
+      1901307,
+      1911307,
+      1921307,
+      1931307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0,
+    "max_noise_rms_reconstruction_gap_db": 0.0000152587891
+  },
+  "coverage_review": {
+    "target_cases": 252,
+    "causal_target_cases": 140,
+    "causal_anchor_cases": 52,
+    "causal_anchor_coverage": 0.37142857142857144,
+    "fixed_horizon_coverage": {
+      "1": 1,
+      "2": 1,
+      "4": 1,
+      "8": 1
+    }
+  },
+  "invalidity_review": {
+    "invalid_reasons": [
+      "noise_rms_reconstruction"
+    ],
+    "preregistered_max_noise_rms_reconstruction_gap_db": 0.00001,
+    "observed_max_noise_rms_reconstruction_gap_db": 0.0000152587891,
+    "excess_over_bound_db": 0.0000052587891,
+    "all_other_preregistered_validity_gates_passed": true,
+    "evaluate_stderr_empty": true,
+    "packaging_valid": true,
+    "post_hoc_gate_relaxation_authorized": false,
+    "descriptive_result_promotion_authorized": false
+  },
+  "instrumentation_review": {
+    "shipping_accumulation": "noise_sum starts at 1e-18f and adds each per-bin tracker noise sequentially for k=0..256 before log10f",
+    "i036_mirror_accumulation": "low, speech and high partition sums were accumulated separately and then added to form the all-bin sum before log10f",
+    "floating_reduction_order_changed": true,
+    "retained_receipt_reconstruction_gap_values_db": [
+      0,
+      0.00000381469727,
+      0.00000762939453,
+      0.0000114440918
+    ],
+    "retained_receipt_values_are_single_precision_quantization_steps": true,
+    "full_frame_maximum_db": 0.0000152587891,
+    "reviewed_interpretation": "The failed reconstruction gate is attributable to the diagnostic mirror's changed floating-point reduction order rather than a shipping NS/VAD source change. This explains the instrumentation failure but does not retroactively make I036 valid."
+  },
+  "descriptive_only_non_authoritative": {
+    "note": "These values are preserved for diagnosis only because the preregistered reconstruction validity gate failed. They must not be used to select a band or assert an aggregation mechanism.",
+    "target_cases_with_anchor": 52,
+    "target_median_noise_energy_share": {
+      "low": 0.6457041205,
+      "speech": 0.3538878415,
+      "high": 0.0005580477885
+    },
+    "target_median_update_abs_contribution_fraction": {
+      "low": 0.550678432,
+      "speech": 0.4469829795,
+      "high": 0.000623803702
+    },
+    "fixed_horizon": {
+      "1": {
+        "all_response_deficit_db": 5.56208515,
+        "speech_response_deficit_db": 5.09073255,
+        "all_alignment_abs_error_db": 6.69555235,
+        "speech_alignment_abs_error_db": 6.30028725,
+        "speech_alignment_better_fraction": 0.3653846154
+      },
+      "2": {
+        "all_response_deficit_db": 5.37720585,
+        "speech_response_deficit_db": 4.962220225,
+        "all_alignment_abs_error_db": 6.524618125,
+        "speech_alignment_abs_error_db": 7.627583475,
+        "speech_alignment_better_fraction": 0.3269230769
+      },
+      "4": {
+        "all_response_deficit_db": 4.965925225,
+        "speech_response_deficit_db": 4.030764075,
+        "all_alignment_abs_error_db": 6.15567165,
+        "speech_alignment_abs_error_db": 6.6569781,
+        "speech_alignment_better_fraction": 0.3269230769
+      },
+      "8": {
+        "all_response_deficit_db": 4.5625415,
+        "speech_response_deficit_db": 3.917169575,
+        "all_alignment_abs_error_db": 5.833343425,
+        "speech_alignment_abs_error_db": 6.34788565,
+        "speech_alignment_better_fraction": 0.4230769231
+      }
+    }
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i037-ns-noise-estimate-aggregation-exact-order-recovery-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use fresh public-development target seeds and unchanged shipping NS/VAD source. Preserve I036 fixed low/speech/high partitions, causal target/anchor semantics and fixed 1/2/4/8 horizons. Correct only the diagnostic all-bin reconstruction by accumulating mirror noise estimates sequentially in the exact shipping bin order into a dedicated all_noise_sum while retaining separate partition sums for descriptive decomposition. Require per-frame bitwise equality of reconstructed all-bin noise_rms_dbfs and shipping ns_noise_rms_dbfs before any aggregation-domain observation is reviewable. Do not change spectral boundaries, estimator, normalization, alpha, tracker threshold, horizon, lag, VAD refresh rule or source candidate.",
+    "required_gates": [
+      "fresh target seeds disjoint from I025-I036",
+      "shipping NS/VAD source unchanged",
+      "same causal target and strictly prior anchor semantics",
+      "fixed post-target reference horizons 1/2/4/8 only",
+      "same fixed low=0..8, speech=9..223, high=224..256 partitions; no band search",
+      "dedicated all_noise_sum initialized and accumulated in the same k=0..256 order as shipping",
+      "zero per-frame bitwise mismatch between reconstructed and shipping noise_rms_dbfs",
+      "sufficient causal-anchor and fixed-horizon coverage",
+      "shipping NS/VAD mirrors remain exact",
+      "all aggregation observations remain diagnostic-only"
+    ],
+    "prohibited": [
+      "reuse of I036 seeds",
+      "post-hoc relaxation of the I036 reconstruction gate",
+      "spectral-band boundary search",
+      "estimator selection",
+      "tracker alpha tuning or search",
+      "tracker branch-threshold tuning",
+      "best-horizon or best-lag selection",
+      "absolute or relative normalization mapping selection",
+      "VAD noise-state refresh source patch",
+      "threshold tuning",
+      "source candidate execution",
+      "validation-grade or blind feedback",
+      "shipping source changes"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i036-36803529573/result.json",
+  "verification_limits": [
+    "I036 is invalid diagnostic evidence because the preregistered all-bin reconstruction gate failed.",
+    "Descriptive partition and response measurements are retained for debugging only and cannot establish an aggregation-domain mechanism.",
+    "No post-hoc gate relaxation, rerun of I036, band selection, estimator selection, alpha/threshold tuning, horizon/lag selection, normalization/mapping, refresh rule, source patch, validation-grade, blind, HIL, product-certification or release authority is permitted."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "spectral_band_selected": false,
+    "estimator_selected": false,
+    "noise_scale_normalization_selected": false,
+    "vad_noise_state_refresh_selected": false,
+    "source_patch_selected": false,
+    "component_selected": false,
+    "mapping_selected": false,
+    "best_horizon_selected": false,
+    "lag_selected": false,
+    "tracker_alpha_changed": false,
+    "tracker_update_threshold_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

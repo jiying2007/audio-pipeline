@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i037-ns-noise-estimate-aggregation-exact-order-recovery-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "32d5be81eba605dec8238f29ba1d05ba501598f8",
+  "decision": "NS_NOISE_ESTIMATE_AGGREGATION_EXACT_ORDER_RECOVERED_REVIEW_REQUIRED",
+  "reviewed_decision": "EXACT_ORDER_RECOVERED_FIXED_SPEECH_BAND_DOES_NOT_CONSISTENTLY_CLOSE_ALIGNMENT_OR_RESPONSE_GAP_NO_BAND_ESTIMATOR_OR_NORMALIZATION_CANDIDATE",
+  "reviewed_interpretation": "The single authoritative I037 execution is valid and terminal. The exact shipping-order all-bin reconstruction produced zero per-frame float-bit mismatches and zero numeric reconstruction gap, confirming that I036 failed because its diagnostic changed floating-point reduction order rather than because shipping NS/VAD changed. Under the fixed low=0..8, speech=9..223 and high=224..256 partitions, target median noise energy is split roughly 51.3% low / 48.7% speech / 0.064% high, while absolute tracker movement is roughly 39.8% low / 60.1% speech / 0.063% high. Across fixed horizons 1/2/4/8, the speech-band response deficit remains 4.93/4.05/2.01/1.95 dB. Casewise speech-vs-all deficit improvement is modestly positive, but casewise alignment improvement is slightly negative at every fixed horizon and the fraction of cases with better speech-band alignment is 0.48/0.41/0.37/0.37. Therefore a simple all-bin dilution explanation is not supported and the fixed speech band does not consistently align better with the current local benchmark. No spectral band, estimator, normalization, alpha, threshold, horizon, lag, mapping, refresh rule or source candidate is selected.",
+  "authoritative_execution": {
+    "run_id": 36824635292,
+    "run_attempt": 1,
+    "head_sha": "4204ae2fa9bff472ec2f70e42b6710b6e088bc74",
+    "run_conclusion": "success",
+    "evaluator_result_valid": true,
+    "evaluator_return_code": 0,
+    "artifact_id": 11144499769,
+    "artifact_name": "i037-ns-aggregation-exact-order-recovery-36824635292",
+    "artifact_size_bytes": 115706,
+    "artifact_sha256": "fdb2e7b488dd9e541e886a8da8fd27dcf6c28f4badcb62a263ab238a0708be6f",
+    "member_sha256": {
+      "SHA256SUMS": "29177958e610747e4d1606e0110e94146bbed4abdb9ae2634984c16cb0c39248",
+      "build-info.txt": "4eb7d75676dfb6791686963574bad7a2c11e9d45643451c8196c9b02445179cb",
+      "contract.json": "47edc5adf79562c9ab171f58dbc92fe4695cd748a2982170aab04d8b3ec19497",
+      "corpora.sha256": "d5d06d0dc182af7a4512d736eb227435227c45e511afffa3b4ed47267501153e",
+      "evaluate.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "evaluate.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "evaluate.stdout": "af1357c5b2210636190b13c22e780a9a04b05e96b57bf34fbc8ee812b5270c66",
+      "materialization.json": "cf414bb85a4bb43fb6000e2373cc5883b53a24a55895352aee29d41b40fae142",
+      "probe.sha256": "5a5a1208340e384388ec7b31897eb9f084b9c5f603210bf27a677de23b430827",
+      "result.json": "bfc10a4bf24e17e9683ff65d45cfcdf7f78d89274ad223245fdc90d2c9e5b1ca",
+      "summary.json": "2c7f322f8d23f0429d0c3a0807cd948a0dd1f9aca5210767eb12060080b2333f"
+    },
+    "internal_sha256sums_verified": true
+  },
+  "fresh_authority": {
+    "target_seeds": [
+      1941307,
+      1951307,
+      1961307,
+      1971307,
+      1981307,
+      1991307
+    ],
+    "diagnostic_execution_consumed": 1,
+    "candidate_budget_consumed": 0,
+    "confirmation_budget_consumed": 0,
+    "rerun_allowed": false
+  },
+  "shipping_mirror": {
+    "max_ns_upstream_gap_delta": 0,
+    "max_vad_probability_delta": 0,
+    "vad_active_mismatch_frames": 0,
+    "max_noise_rms_reconstruction_gap_db": 0,
+    "noise_rms_bitwise_mismatch_frames": 0
+  },
+  "coverage_review": {
+    "target_cases": 252,
+    "causal_target_cases": 150,
+    "causal_anchor_cases": 54,
+    "causal_anchor_coverage": 0.36,
+    "fixed_horizon_coverage": {
+      "1": 1,
+      "2": 1,
+      "4": 1,
+      "8": 1
+    }
+  },
+  "aggregation_review": {
+    "target": {
+      "cases": 54,
+      "median_low_noise_energy_share": 0.512903333,
+      "median_speech_noise_energy_share": 0.48704499,
+      "median_high_noise_energy_share": 0.0006370608755,
+      "median_low_update_abs_contribution_fraction": 0.3980864435,
+      "median_speech_update_abs_contribution_fraction": 0.601266503,
+      "median_high_update_abs_contribution_fraction": 0.0006272061435
+    },
+    "fixed_horizons": {
+      "1": {
+        "cases": 54,
+        "median_all_response_deficit_db": 4.4244775999999995,
+        "median_speech_response_deficit_db": 4.934197499999996,
+        "median_speech_vs_all_deficit_improvement_db": 0.6343002500000026,
+        "median_speech_vs_all_alignment_improvement_db": -0.024997700000007228,
+        "speech_alignment_better_fraction": 0.48148148148148145
+      },
+      "2": {
+        "cases": 54,
+        "median_all_response_deficit_db": 4.7909154749999985,
+        "median_speech_response_deficit_db": 4.048617450000002,
+        "median_speech_vs_all_deficit_improvement_db": 0.7373056250000012,
+        "median_speech_vs_all_alignment_improvement_db": -0.23332597500000674,
+        "speech_alignment_better_fraction": 0.4074074074074074
+      },
+      "4": {
+        "cases": 54,
+        "median_all_response_deficit_db": 2.4997911499999965,
+        "median_speech_response_deficit_db": 2.0103673999999963,
+        "median_speech_vs_all_deficit_improvement_db": 0.6680717249999972,
+        "median_speech_vs_all_alignment_improvement_db": -0.20346447499998987,
+        "speech_alignment_better_fraction": 0.37037037037037035
+      },
+      "8": {
+        "cases": 54,
+        "median_all_response_deficit_db": 3.536267300000004,
+        "median_speech_response_deficit_db": 1.952369749999999,
+        "median_speech_vs_all_deficit_improvement_db": 0.5096206500000093,
+        "median_speech_vs_all_alignment_improvement_db": -0.2018165500000002,
+        "speech_alignment_better_fraction": 0.37037037037037035
+      }
+    }
+  },
+  "root_cause_review": {
+    "exact_order_reconstruction_recovered": true,
+    "i036_float_reduction_order_defect_confirmed": true,
+    "simple_all_bin_aggregation_dilution_explanation_supported": false,
+    "fixed_speech_band_consistently_improves_alignment": false,
+    "speech_band_response_deficit_persists": true,
+    "spectral_band_selection_authorized": false,
+    "estimator_selection_authorized": false,
+    "normalization_selection_authorized": false,
+    "tracker_alpha_change_authorized": false,
+    "tracker_branch_threshold_change_authorized": false,
+    "horizon_or_lag_authorized": false,
+    "mapping_authorized": false,
+    "refresh_rule_authorized": false,
+    "source_patch_authorized": false,
+    "note": "I037 restores exact bitwise all-bin reconstruction, so I036's failed numeric gate is resolved as an instrumentation reduction-order defect. With the gate valid, the fixed speech-band side channel shows modest response-deficit reduction but no consistent casewise alignment advantage and a persistent residual response deficit. The next informative diagnostic should compare tracker-estimate movement with post-NS observation energy in matched fixed spectral domains before any band, estimator or normalization candidate is designed."
+  },
+  "proposed_followup_hypothesis": {
+    "id": "i038-ns-post-ns-matched-domain-transfer-decomposition-v1",
+    "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+    "rationale": "Use fresh public-development target seeds and unchanged shipping NS/VAD source. Preserve I037 exact-order reconstruction, fixed low/speech/high partitions, causal target/anchor semantics and fixed 1/2/4/8 horizons. Add diagnostic-only post-NS spectral observation accounting in the same fixed partitions so tracker-estimate response and local post-NS response are compared within matched domains. Determine whether the persistent deficit is a cross-domain benchmark artifact or remains after matched-domain comparison. Do not search/select a band, estimator, normalization, alpha, tracker threshold, horizon, lag, mapping, refresh rule or source candidate.",
+    "required_gates": [
+      "fresh target seeds disjoint from I025-I037",
+      "shipping NS/VAD source unchanged",
+      "I037 exact-order bitwise all-bin reconstruction remains exact",
+      "same causal target and strictly prior anchor semantics",
+      "fixed post-target reference horizons 1/2/4/8 only",
+      "same fixed low=0..8, speech=9..223, high=224..256 partitions; no band search",
+      "post-NS diagnostic observation is partitioned with the same fixed bin domains",
+      "shipping mirrors remain exact",
+      "all matched-domain observations remain diagnostic-only"
+    ],
+    "prohibited": [
+      "reuse of I037 seeds",
+      "spectral-band boundary search",
+      "estimator selection",
+      "normalization mapping selection",
+      "tracker alpha tuning or search",
+      "tracker branch-threshold tuning",
+      "best-horizon or best-lag selection",
+      "VAD noise-state refresh source patch",
+      "threshold tuning",
+      "source candidate execution",
+      "validation-grade or blind feedback",
+      "shipping source changes"
+    ]
+  },
+  "original_result_path": "validation/research/evidence/i037-36824635292/result.json",
+  "verification_limits": [
+    "I037 is public-development diagnostic evidence and does not establish product acoustic behavior.",
+    "The fixed low/speech/high comparisons are descriptive and cannot authorize spectral-band selection.",
+    "The fixed speech-band residual and casewise alignment result do not by themselves establish which matched-domain estimator or normalization, if any, should change.",
+    "No band, estimator, normalization, alpha, tracker threshold, horizon, lag, mapping, refresh rule, source patch, validation-grade, blind, HIL, product-certification or release authority was consumed."
+  ],
+  "authority_boundary": {
+    "candidate_selected": false,
+    "reference_source_candidate_selected": false,
+    "spectral_band_selected": false,
+    "estimator_selected": false,
+    "noise_scale_normalization_selected": false,
+    "vad_noise_state_refresh_selected": false,
+    "source_patch_selected": false,
+    "component_selected": false,
+    "mapping_selected": false,
+    "best_horizon_selected": false,
+    "lag_selected": false,
+    "tracker_alpha_changed": false,
+    "tracker_update_threshold_changed": false,
+    "threshold_selected": false,
+    "threshold_tuned": false,
+    "readiness_threshold_changed": false,
+    "shipping_source_changed": false,
+    "validation_holdout_consumed": false,
+    "confirmation_consumed": false,
+    "shipping_authority": false,
+    "source_merge_authority": false,
+    "hil_authority": false,
+    "product_certification_authority": false,
+    "release_authority": false,
+    "automatic_main_mutation": false
+  }
+}

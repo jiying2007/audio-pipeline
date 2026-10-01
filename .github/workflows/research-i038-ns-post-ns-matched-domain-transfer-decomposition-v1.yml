@@ -216,7 +216,7 @@ jobs:
           c=json.loads(Path('.github/research/continuous-optimization/development-v4/i038-ns-post-ns-matched-domain-transfer-decomposition-v1.json').read_text())
           def blob(path):
               return subprocess.check_output(['git','rev-parse','HEAD:'+path],text=True).strip()
-          assert blob(c['predecessor']['i036_closure'])==c['predecessor']['i036_closure_blob_sha']
+          assert blob(c['predecessor']['i037_closure'])==c['predecessor']['i037_closure_blob_sha']
           assert blob(c['dataset_authority']['lock_path'])==c['dataset_authority']['dataset_lock_git_blob_sha']
           assert blob(c['dataset_authority']['builder_path'])==c['dataset_authority']['builder_git_blob_sha']
           assert blob(c['diagnostic_inputs']['probe_path'])==c['diagnostic_inputs']['probe_git_blob_sha']

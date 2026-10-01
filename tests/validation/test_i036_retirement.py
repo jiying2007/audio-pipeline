@@ -131,7 +131,7 @@ class I036RetirementTests(unittest.TestCase):
         )
         self.assertEqual(review["full_frame_maximum_db"],1.52587891e-05)
         desc=result["descriptive_only_non_authoritative"]
-        self.assertIn("debugging only",desc["note"])
+        self.assertIn("diagnosis only",desc["note"])
         self.assertFalse(
             result["invalidity_review"]["descriptive_result_promotion_authorized"]
         )

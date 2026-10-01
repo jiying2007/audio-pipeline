@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[2]
-WORKFLOW=ROOT/".github/workflows/research-i036-ns-noise-estimate-aggregation-domain-decomposition-v1.yml"
+WORKFLOW=ROOT/"tests/validation/data/i036-consumed-workflow.yml"
 CONTRACT=ROOT/".github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1.json"
 EVALUATOR=ROOT/"tests/validation/i036_ns_noise_estimate_aggregation_domain_decomposition.py"
 PROBE=ROOT/"tests/validation/i036_ns_noise_estimate_aggregation_domain_probe.c"

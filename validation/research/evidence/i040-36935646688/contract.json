@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "investigation_id": "i040-ns-synthesis-overlap-add-transfer-decomposition-v1",
+  "phase": "candidate-zero-synthesis-overlap-add-transfer-decomposition",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "source_base_sha": "57e4c64adc1cf06819e46e24e275ecd746d5f17f",
+  "diagnostic_infrastructure_base_sha": "732e226d73e561cbbde66716c9e6908b6c1a8339",
+  "predecessor": {
+    "i039_closure": ".github/research/continuous-optimization/development-v4/i039-ns-suppression-transfer-path-decomposition-v1-result.json",
+    "i039_closure_blob_sha": "95e4d1815dfb6f384ab0d1f3bc63f56ed8ca3df3",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY",
+    "required_decision": "NS_SUPPRESSION_TRANSFER_PATH_DECOMPOSED_REVIEW_REQUIRED",
+    "required_reviewed_decision": "SUPPRESSION_TRANSFER_PARTIALLY_EXPLAINS_SPEECH_RESPONSE_BUT_PREDICTED_POST_RESIDUAL_PERSISTS_NO_GAIN_FLOOR_DOMAIN_OR_ESTIMATOR_CANDIDATE",
+    "required_followup_id": "i040-ns-synthesis-overlap-add-transfer-decomposition-v1",
+    "required_followup_authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+  },
+  "question": "Does mirroring the frozen suppressed complex spectrum through shipping inverse FFT, synthesis windows and overlap-add state explain the residual predicted-suppressed versus actual post-NS response mismatch within the same fixed spectral domains?",
+  "dataset_authority": {
+    "dataset_id": "public-development-diverse",
+    "catalog_id": "audio-pipeline-public-development-v3",
+    "registry_path": ".github/research/continuous-optimization/dataset-registry.json",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "dataset_lock_git_blob_sha": "bc2562de74528da41ef02d0b848d8e1828f9c607",
+    "dataset_lock_sha256": "6a387d00395cd132f45879bee5202f554872622a3e198942542e87c1d256b293",
+    "builder_path": ".github/research/continuous-optimization/development-data-v3/build_corpus.py",
+    "builder_git_blob_sha": "0973c035c49a0a197e7c18a0323fc90004a498f5",
+    "role": "development",
+    "validation_holdout_consumed": false
+  },
+  "diagnostic_inputs": {
+    "probe_path": "tests/validation/i040_ns_synthesis_overlap_add_transfer_probe.c",
+    "probe_git_blob_sha": "d3f4024d1a1c1786d604a0204be2bb7d7b4c54fd",
+    "evaluator_path": "tests/validation/i040_ns_synthesis_overlap_add_transfer_decomposition.py",
+    "evaluator_git_blob_sha": "ebf561f4bfcde783b53f73c6af29c15adc62f94b"
+  },
+  "shipping_synthesis_reference": {
+    "path": "src/enhance/ap_ns.c",
+    "git_blob_sha": "6218be60d4a70e769a7ffbf42889a2fc30cf286d",
+    "operation_order": "suppressed complex spectrum -> ap_fft(...,1) -> out[i]=ifft_head*w0+overlap[i] -> overlap[i]=ifft_tail*w1",
+    "selection_or_tuning_allowed": false
+  },
+  "fresh_diagnostic_authority": {
+    "target_seeds": [
+      2121307,
+      2131307,
+      2141307,
+      2151307,
+      2161307,
+      2171307
+    ],
+    "mix_limit_per_seed": 28,
+    "noise_limit_per_seed": 14,
+    "clean_limit_per_seed": 14,
+    "expected_cases_per_seed": 56,
+    "expected_noise_domain_cases_per_seed": 42,
+    "diagnostic_execution_limit": 1,
+    "candidate_limit": 0,
+    "confirmation_limit": 0
+  },
+  "fixed_shipping_semantics": {
+    "ns_floor": 0.12,
+    "enhance_mode": "AP_ENHANCE_FULL",
+    "frequency_res_enabled": false,
+    "vad_upstream_speech_guard": 0.55,
+    "shipping_ns_vad_source_must_remain_unchanged": true
+  },
+  "exact_order_reconstruction": {
+    "inherited_from": "i039-ns-suppression-transfer-path-decomposition-v1",
+    "all_noise_sum_initial": "1.0e-18f",
+    "accumulation_order": "single dedicated all_noise_sum updated sequentially for k=0..256 immediately after each shipping ap_noise_tracker_update mirror call",
+    "comparison": "uint32 bit pattern equality between reconstructed all_noise_rms_dbfs and shipping ns_noise_rms_dbfs on every observed frame",
+    "post_hoc_tolerance_not_allowed": true
+  },
+  "fixed_spectral_partitions": {
+    "nfft": 512,
+    "low_bins": {
+      "first": 0,
+      "last": 8,
+      "count": 9
+    },
+    "speech_bins": {
+      "first": 9,
+      "last": 223,
+      "count": 215
+    },
+    "high_bins": {
+      "first": 224,
+      "last": 256,
+      "count": 33
+    },
+    "derivation": "same fixed shipping speech-band predicate retained from I036-I039",
+    "boundaries_are_fixed_not_searched": true
+  },
+  "synthesis_overlap_add_observation": {
+    "domains": [
+      "all",
+      "low",
+      "speech",
+      "high"
+    ],
+    "fixed_ns_floor": 0.12,
+    "suppressed_complex_spectrum": "exact I039 mirror using frozen shipping full-mode suppression gain with frequency RES disabled",
+    "inverse_fft": "ap_fft(synthesis_spectrum,nfft,1) in shipping order",
+    "synthesis_window": "ap_window_half(FRAME), w0=window[i], w1=window[FRAME-1-i]",
+    "overlap_add": "predicted_out[i]=ifft_head*w0+synthesis_overlap[i], then synthesis_overlap[i]=ifft_tail*w1",
+    "state_isolation": "all synthesis/OLA and predicted-output reanalysis state is diagnostic-only and cannot feed shipping processing",
+    "predicted_output_reanalysis": "same 512-point two-frame analysis window and fixed low/speech/high domains as actual post-NS reanalysis",
+    "selection_or_tuning_allowed": false
+  },
+  "causal_anchor_semantics": {
+    "target": "first oracle-speech disagreement frame with fewer than eight prior same-case ordinary-noise non-disagreement references",
+    "anchor": "last strictly prior same-case ordinary-noise non-disagreement reference",
+    "require_at_least_one_prior_reference": true,
+    "anchor_and_target_are_causal": true,
+    "may_use_future_frames_for_anchor_or_target": false
+  },
+  "fixed_horizons": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "diagnostic_gates": {
+    "max_ns_upstream_mirror_delta": 0.000001,
+    "max_vad_shipping_mirror_probability_delta": 0.000001,
+    "vad_shipping_mirror_active_mismatch_frames": 0,
+    "noise_rms_bitwise_mismatch_frames": 0,
+    "max_post_ns_partition_energy_share_gap": 0.00002,
+    "max_predicted_post_ns_partition_energy_share_gap": 0.00002,
+    "max_suppression_attenuation_identity_gap_db": 0.00002,
+    "max_predicted_suppressed_power_excess_db": 0.00002,
+    "max_synthesis_output_abs_sample_delta": 0.00002,
+    "max_synthesis_output_rmse": 0.000005,
+    "expected_target_cases": 252,
+    "minimum_causal_target_cases": 100,
+    "minimum_causal_anchor_cases": 35,
+    "minimum_causal_anchor_coverage": 0.25,
+    "minimum_fixed_horizon_coverage": 0.8
+  },
+  "diagnostic_outputs": [
+    "I039 exact-order bitwise all-bin reconstruction retained as a validity gate",
+    "I039 fixed-domain pre-NS, tracker, suppression-gain and predicted-suppressed observations retained",
+    "diagnostic predicted synthesized time-domain output after mirrored inverse FFT/window/overlap-add",
+    "predicted synthesized output reanalyzed in fixed all/low/speech/high domains",
+    "suppressed-spectrum vs actual-post and synthesized-output vs actual-post residuals at horizons 1/2/4/8",
+    "synthesis alignment improvement and residual transfer by fixed domain",
+    "time-domain synthesis mirror max-abs and RMSE invariants",
+    "global and per-noise-domain summaries"
+  ],
+  "forbidden_feedback": {
+    "i025_to_i039_seeds": true,
+    "post_hoc_i039_gate_relaxation": true,
+    "spectral_band_or_domain_selection": true,
+    "window_or_overlap_add_selection": true,
+    "estimator_selection": true,
+    "normalization_mapping_selection": true,
+    "ns_floor_or_suppression_gain_tuning": true,
+    "tracker_alpha_search": true,
+    "tracker_branch_threshold_search": true,
+    "best_horizon_or_lag_selection": true,
+    "vad_noise_state_refresh_rule_selection": true,
+    "threshold_search": true,
+    "source_candidate_execution": true,
+    "validation_grade": true,
+    "validation_grade_blind": true,
+    "hosted_real": true,
+    "extended_real": true,
+    "hil": true,
+    "product_certification": true
+  },
+  "decision_contract": {
+    "NS_SYNTHESIS_OVERLAP_ADD_TRANSFER_DECOMPOSED_REVIEW_REQUIRED": "Fresh target-only authority, retained exact-order reconstruction, fixed suppression mirror, shipping-order inverse FFT/window/overlap-add mirror, fixed domains, causal target/anchor pairing, fixed 1/2/4/8 horizons, coverage and shipping mirrors are valid. Report whether synthesized-output response closes the suppressed-spectrum versus actual-post residual without selecting or tuning any window, overlap rule, domain, estimator, normalization, floor, gain, alpha, threshold, horizon, lag, mapping or source candidate.",
+    "I040_INPUT_INVALID_REVIEW_REQUIRED": "Dataset identity, fresh-seed identity, inherited exact-order reconstruction, suppression invariants, predicted-output partition accounting, synthesis time-domain mirror bounds, causal target/anchor coverage, fixed-horizon coverage or shipping-mirror preconditions fail."
+  },
+  "authority_boundary": {
+    "may_modify_shipping_source": false,
+    "may_select_candidate": false,
+    "may_select_reference_source_candidate": false,
+    "may_select_noise_scale_normalization": false,
+    "may_select_vad_noise_state_refresh": false,
+    "may_select_component": false,
+    "may_select_mapping": false,
+    "may_select_spectral_band": false,
+    "may_select_synthesis_window": false,
+    "may_select_overlap_add_rule": false,
+    "may_select_estimator": false,
+    "may_select_best_horizon": false,
+    "may_select_lag": false,
+    "may_change_ns_floor": false,
+    "may_change_suppression_gain": false,
+    "may_change_tracker_alpha": false,
+    "may_change_tracker_update_threshold": false,
+    "may_search_parameters": false,
+    "may_tune_thresholds": false,
+    "may_change_readiness_threshold": false,
+    "may_change_upstream_guard": false,
+    "may_change_vad_guards": false,
+    "may_use_donor_selection": false,
+    "may_consume_validation_holdout": false,
+    "may_consume_confirmation": false,
+    "may_authorize_source_patch": false,
+    "may_authorize_hil": false,
+    "may_authorize_product_certification": false,
+    "may_promote_release": false,
+    "automatic_main_mutation": false
+  },
+  "next_review": "Only if all preregistered gates pass, review whether synthesized-output response materially closes the suppressed-spectrum-to-post residual. I040 itself cannot select or tune a synthesis window, overlap rule, domain, estimator, normalization, floor, gain, alpha, threshold, horizon, lag, mapping, refresh rule, source candidate or shipping change."
+}

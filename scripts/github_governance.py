@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -98,8 +99,18 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
     if tag_candidates and not tags_enforced:
         findings.append("v* tag ruleset must protect deletion/force-update and have no bypass actors")
 
-    immutable_enabled = bool(immutable and immutable.get("enabled") is True)
-    if not immutable_enabled:
+    immutable_readable = bool(
+        immutable is not None and immutable.get("_readable", True) is not False
+    )
+    immutable_enabled = bool(
+        immutable_readable and immutable and immutable.get("enabled") is True
+    )
+    if not immutable_readable:
+        findings.append(
+            "immutable releases setting could not be verified; "
+            "governance credential requires repository Administration(read)"
+        )
+    elif not immutable_enabled:
         findings.append("immutable releases are not enabled")
 
     return {
@@ -107,9 +118,21 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
         "result": "PASS" if not findings else "FAIL",
         "main_ruleset_enforced": main_enforced,
         "version_tag_ruleset_enforced": tags_enforced,
+        "immutable_releases_readable": immutable_readable,
         "immutable_releases_enabled": immutable_enabled,
+        "immutable_releases_http_status":
+            immutable.get("_http_status") if isinstance(immutable, dict) else None,
         "findings": findings,
     }
+
+
+class GitHubAPIError(RuntimeError):
+    def __init__(self,status: int | None,stderr: str):
+        super().__init__(
+            f"GitHub API request failed: HTTP {status if status is not None else 'unknown'}"
+        )
+        self.status=status
+        self.stderr=stderr
 
 
 def _gh_json(args: list[str]) -> object:
@@ -119,7 +142,17 @@ def _gh_json(args: list[str]) -> object:
         "-H", f"X-GitHub-Api-Version: {API_VERSION}",
         *args,
     ]
-    return json.loads(subprocess.check_output(command, text=True))
+    process=subprocess.run(
+        command,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+        check=False,
+    )
+    if process.returncode:
+        match=re.search(r"\(HTTP ([1-5][0-9]{2})\)",process.stderr)
+        raise GitHubAPIError(
+            int(match.group(1)) if match else None,
+            process.stderr,
+        )
+    return json.loads(process.stdout)
 
 
 def fetch_live(repository: str) -> tuple[list[dict], dict | None]:
@@ -135,8 +168,21 @@ def fetch_live(repository: str) -> tuple[list[dict], dict | None]:
             details.append(detail)
     try:
         immutable = _gh_json([f"repos/{repository}/immutable-releases"])
-    except subprocess.CalledProcessError:
-        immutable = None
+    except GitHubAPIError as exc:
+        if exc.status == 404:
+            immutable = {
+                "enabled":False,
+                "_readable":True,
+                "_http_status":404,
+            }
+        elif exc.status in {401,403}:
+            immutable = {
+                "enabled":None,
+                "_readable":False,
+                "_http_status":exc.status,
+            }
+        else:
+            raise
     return details, immutable if isinstance(immutable, dict) else None
 
 
@@ -182,6 +228,20 @@ def self_test() -> None:
     failed = audit([main, tags], {"enabled": False})
     assert failed["result"] == "FAIL"
     assert not failed["main_ruleset_enforced"]
+    main["bypass_actors"] = []
+    unreadable = audit(
+        [main, tags],
+        {"enabled":None,"_readable":False,"_http_status":403},
+    )
+    assert unreadable["result"] == "FAIL"
+    assert unreadable["main_ruleset_enforced"]
+    assert unreadable["version_tag_ruleset_enforced"]
+    assert unreadable["immutable_releases_readable"] is False
+    assert unreadable["immutable_releases_http_status"] == 403
+    assert any(
+        "Administration(read)" in finding
+        for finding in unreadable["findings"]
+    )
     print("github governance self-test: OK")
 
 

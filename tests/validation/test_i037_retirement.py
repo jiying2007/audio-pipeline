@@ -47,7 +47,7 @@ class I037RetirementTests(unittest.TestCase):
         self.assertNotIn("\n  push:\n",text)
         self.assertNotIn("\n  schedule:\n",text)
         jobs=re.findall(
-            r"(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\\s*$",
+            r"(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$",
             text[text.index("\njobs:")+1:],
         )
         self.assertEqual(jobs,["contract"])

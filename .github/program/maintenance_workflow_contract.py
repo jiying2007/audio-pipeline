@@ -106,6 +106,7 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml'),
     Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'),
     Path('.github/workflows/research-i039-ns-suppression-transfer-path-decomposition-v1.yml'),
+    Path('.github/workflows/research-i040-ns-synthesis-overlap-add-transfer-decomposition-v1.yml'),
 
 )
 

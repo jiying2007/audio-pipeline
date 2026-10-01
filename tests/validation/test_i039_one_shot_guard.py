@@ -192,9 +192,9 @@ class I039GuardTests(unittest.TestCase):
         self.assertIn("+'\\n')",text)
         self.assertNotIn("printf '%s\\\\n' \"$rc\"",text)
         evaluate=text.split(
-            "      - name: Evaluate candidate-zero suppression-transfer path\\n",1
+            "      - name: Evaluate candidate-zero suppression-transfer path\n",1
         )[1].split(
-            "      - name: Enforce suppression-transfer-diagnostic-only authority\\n",1
+            "      - name: Enforce suppression-transfer-diagnostic-only authority\n",1
         )[0]
         self.assertIn("'suppression_transfer_path':r['suppression_transfer_path']",evaluate)
         self.assertIn("'transfer_invariants':r['transfer_invariants']",evaluate)

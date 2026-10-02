@@ -58,6 +58,11 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",
 }
+RELEASE_NEUTRAL_VALIDATION_FILES = {
+    "validation/failure-replay/schema-v1.json",
+    "validation/tools/build_system_robustness_corpus.py",
+    "validation/tools/system_robustness_attribution.py",
+}
 RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
     re.compile(r"validation/tools/build_[A-Za-z0-9_]+_tuning_corpus\.py"),
     re.compile(r"validation/policies/validation-[A-Za-z0-9-]+-stage-tuning\.json"),
@@ -106,6 +111,7 @@ def is_release_neutral(path: str) -> bool:
         or path in RELEASE_NEUTRAL_FILES
         or path.startswith("docs/program/")
         or path.startswith(RELEASE_NEUTRAL_PREFIXES)
+        or path in RELEASE_NEUTRAL_VALIDATION_FILES
         or any(pattern.fullmatch(path) for pattern in RELEASE_NEUTRAL_VALIDATION_PATTERNS)
     )
 
@@ -745,6 +751,9 @@ def self_test() -> None:
     assert is_release_neutral("validation/policies/validation-agc-stage-tuning.json")
     assert is_release_neutral("validation/policies/validation-ns-stage-tuning.json")
     assert is_release_neutral("validation/tuning/search-spaces/agc-stage-v1.json")
+    for path in sorted(RELEASE_NEUTRAL_VALIDATION_FILES):
+        assert is_release_neutral(path), path
+    assert not is_release_neutral("validation/failure-replay/observed-failure.json")
     assert not is_release_neutral("validation/authority.json")
     assert not is_release_neutral("validation/tools/run_validation.py")
     assert not is_release_neutral("validation/policies/validation-smoke.json")

@@ -173,3 +173,14 @@ The test-only NS internal-state probe was bitwise output-equivalent to the stand
 The earlier 4/4 confirmation on seeds 13107–13407 remains a truthful result for that seed set, but it is no longer treated as an invariant across subsequent fresh seeds. State trajectories on the three applicable seeds remain descriptive evidence only; no state family is ranked and no NS root cause or parameter-search authority is granted.
 
 The next authorized phase is `S003_AEC_ECHO_PATH_RECOVERY_SIGN_VARIABILITY_V1`: explain why NS-minus-RES recovery changes sign and magnitude across fresh seeds under the confirmed `100w-50s` research geometry. Reuse test-only traces and pipeline telemetry; do not tune NS/AEC/RES parameters or define a performance threshold.
+
+
+## S003 echo-path recovery sign-variability checkpoint
+
+On fresh seeds 13907–14607 under the confirmed `100w-50s` research geometry, RES→NS recovery was `+50/+100 ms` on 7/8 seeds and neutral on seed 14107; no contraction occurred in this fresh set. The test-only NS-state probe remained bitwise-equivalent on all seeds.
+
+The neutral seed is mechanically a **RES-side delay**: RES recovery moved from the common 150 ms to 250 ms while NS remained at 250 ms. Its immediately preceding RES recovery window missed the fixed recovery limit by only `+0.049 dB`. The earlier contraction seed 13707 showed the same direction of variation—RES at 300 ms versus NS at 250 ms—with a preceding RES margin of `+0.196 dB`.
+
+This localizes the remaining sign variability to RES/AEC-side recovery timing, but does not prove an RES root cause or a recovery-threshold artifact. No NS/RES/AEC parameter search, state-family ranking, threshold fitting, shipping change, or S004 admission is authorized.
+
+The next phase is `S003_AEC_ECHO_PATH_RES_SIDE_RECOVERY_VARIABILITY_V1`: observe AEC→RES→NS recovery together with test-only standalone RES gain state and existing AEC telemetry on fresh seeds.

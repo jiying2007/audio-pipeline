@@ -30,7 +30,17 @@
       "prefix-res",
       "prefix-ns"
     ],
-    "cases_per_seed": 3
+    "cases_per_seed": 3,
+    "profiles": [
+      "prefix-res",
+      "prefix-ns",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "default": "full"
+    }
   },
   "measurement": {
     "geometry_id": "100w-50s",

@@ -98,7 +98,12 @@ def collect(args: argparse.Namespace) -> dict:
     return result
 
 
-def validate_profile(profile_id: str, profile_spec: dict, measured: dict) -> list[str]:
+def validate_profile(
+    profile_id: str,
+    profile_spec: dict,
+    measured: dict,
+    source_revision: str,
+) -> list[str]:
     errors: list[str] = []
     if measured.get("profile_id") != profile_id:
         errors.append("profile_id mismatch")
@@ -112,8 +117,10 @@ def validate_profile(profile_id: str, profile_spec: dict, measured: dict) -> lis
                 f"expected_build.{key}: {probe.get(key)!r} != {expected_value!r}"
             )
 
-    if not isinstance(probe.get("source_revision"), str) or not probe["source_revision"]:
-        errors.append("missing source_revision")
+    if probe.get("source_revision") != source_revision:
+        errors.append(
+            f"source_revision mismatch: {probe.get('source_revision')!r} != {source_revision!r}"
+        )
     digest = probe.get("config_digest")
     if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
         errors.append("invalid config_digest")
@@ -151,7 +158,9 @@ def qualify(spec: dict, metrics: dict[str, dict], source_revision: str) -> dict:
     all_errors: list[str] = []
     for profile_id in sorted(expected_profiles):
         measured = metrics[profile_id]
-        errors = validate_profile(profile_id, spec["profiles"][profile_id], measured)
+        errors = validate_profile(
+            profile_id, spec["profiles"][profile_id], measured, source_revision
+        )
         all_errors.extend(f"{profile_id}: {item}" for item in errors)
         profiles[profile_id] = {
             "status": "PASS" if not errors else "FAIL",
@@ -251,7 +260,7 @@ def self_test() -> None:
             "conservative": metric("conservative", "low", 16000),
             "effect-first": metric("effect-first", "full", 48000),
         },
-        "deadbeef",
+        "abc",
     )
     assert result["status"] == "PASS"
     assert result["silicon_calibration"]["frame_p99_ms"]["value"] is None
@@ -259,8 +268,17 @@ def self_test() -> None:
 
     bad = metric("conservative", "low", 16000)
     bad["direct_heap_allocator_symbol_references"] = ["malloc"]
-    errors = validate_profile("conservative", spec["profiles"]["conservative"], bad)
+    errors = validate_profile(
+        "conservative", spec["profiles"]["conservative"], bad, "abc"
+    )
     assert any("allocator" in item for item in errors)
+
+    revision_bad = metric("conservative", "low", 16000)
+    revision_bad["probe"]["source_revision"] = "unknown"
+    errors = validate_profile(
+        "conservative", spec["profiles"]["conservative"], revision_bad, "abc"
+    )
+    assert any("source_revision mismatch" in item for item in errors)
     print("resource profile qualification self-test: OK")
 
 

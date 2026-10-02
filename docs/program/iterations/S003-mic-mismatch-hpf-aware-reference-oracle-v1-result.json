@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "id": "S003-mic-mismatch-hpf-aware-reference-oracle-v1-result",
+  "investigation_id": "S003-mic-mismatch-hpf-aware-reference-oracle-v1",
+  "status": "CLOSED_DIAGNOSTIC_METRIC_REFERENCE_ARTIFACT_REJECTED",
+  "authority": "DIAGNOSTIC_ONLY_TERMINAL_REJECTION_NO_CANDIDATE_OR_RELEASE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36979768886,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "1b56ca91a1fc9f97bf9c5e22feeeeb38b55a72ed",
+    "artifact_id": 11215231517,
+    "artifact_name": "s003-hpf-aware-reference-oracle-36979768886",
+    "artifact_zip_sha256": "47df4da418467c3912296897f8047bb55f76b6fbb50bf32afb702f4935574ebb"
+  },
+  "scope": {
+    "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
+    "scoped_subsignature": "severe-near-reference-degradation",
+    "watch_metric": "near_si_sdr_improvement_db",
+    "watch_limit_db": -10,
+    "stage_profile": "prefix-capture",
+    "stage_mask": "AP_STAGE_HPF",
+    "public_source_family": "OpenSLR SLR31 Mini LibriSpeech train-clean-5",
+    "fixed_utterance_count": 8,
+    "fresh_seeds": [
+      9707,
+      9807
+    ]
+  },
+  "mechanical_result": {
+    "9707": {
+      "current_severe_cases": 8,
+      "hpf_aware_severe_cases": 0,
+      "reference_metric_artifact_cases": 8,
+      "right_channel_affects_prefix_capture_cases": 0,
+      "total_cases": 8,
+      "gate_satisfied": true
+    },
+    "9807": {
+      "current_severe_cases": 8,
+      "hpf_aware_severe_cases": 0,
+      "reference_metric_artifact_cases": 8,
+      "right_channel_affects_prefix_capture_cases": 0,
+      "total_cases": 8,
+      "gate_satisfied": true
+    },
+    "metric_reference_domain_artifact_detected": true,
+    "candidate_relevant_subsignature_valid": false
+  },
+  "reviewed_validity": {
+    "source_input_domain_oracle_history": {
+      "result": "docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json",
+      "interpretation": "The clean/reference and constructed two-mic input geometry were valid under absolute source-domain controls. That historical result remains valid but was narrower than full candidate-admission measurement-domain validity."
+    },
+    "metric_reference_domain_artifact_sufficiently_proven": true,
+    "candidate_admission_measurement_domain_exclusion_satisfied": false,
+    "interpretation": "The raw-clean SI-SDR improvement watch is severe on all fixed cases, but the same output is non-severe when scored against the clean reference passed through the same HPF. The HPF-only output is bitwise invariant to replacing the right mismatch channel with the left channel. The candidate-relevant first-observable symptom is therefore an evaluation reference/metric-target artifact, not evidence that right-channel gain/delay mismatch requires a DSP candidate.",
+    "not_supported": [
+      "HPF is defective",
+      "HPF is the causal root cause of an acoustic product failure",
+      "right-channel gain/delay mismatch is harmless at later BF or full-pipeline stages",
+      "any shipping parameter change"
+    ],
+    "root_cause_claim_authority": false
+  },
+  "candidate_line_review": {
+    "status": "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT",
+    "s004_open": false,
+    "candidate_authority": false,
+    "resource_fit_required": false,
+    "resource_fit_status": "NOT_APPLICABLE_AFTER_TERMINAL_REJECTION",
+    "reason": "candidate-relevant severe-near-reference-degradation subsignature is invalidated by HPF-aware reference oracle"
+  },
+  "historical_prerequisites": {
+    "repeated_fresh_seed_observation": true,
+    "multiple_public_family_observation": true,
+    "source_input_domain_oracle_valid": true,
+    "downstream_stage_not_necessary_for_first_observation": true,
+    "note": "These historical facts remain evidence history; they do not override the later metric/reference-domain rejection."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_METRIC_SAFE_EVIDENCE_EXPANSION",
+    "candidate_limit": 0,
+    "description": "Retire this mic-mismatch candidate line. Continue system-robustness on AEC transition evidence using stage-appropriate metrics such as ERLE/render correlation and HPF-aware near-end quality, not the invalidated raw-clean SI-SDR improvement watch."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false
+}

@@ -89,6 +89,24 @@ def main() -> int:
     assert aec_safe["preregistered_rules"]["no_aec_parameter_search"] is True
     assert aec_safe["authority_boundary"]["may_open_s004"] is False
 
+    recovery = json.loads((ITER / "S003-aec-transition-recovery-latency-v1.json").read_text())
+    assert recovery["authority"] == "CANDIDATE_ZERO_MEASUREMENT_ONLY"
+    assert recovery["candidate_limit"] == 0 and recovery["confirmation_limit"] == 0
+    assert recovery["promotion_allowed"] is False and recovery["shipping_change_allowed"] is False
+    assert recovery["corpus"]["fresh_seeds"] == [10507, 10607]
+    assert recovery["corpus"]["target_cases"] == [
+        "echo-path-change", "speaker-acoustic-gain-step", "render-level-step"
+    ]
+    assert recovery["measurement"]["window_ms"] == 100
+    assert recovery["measurement"]["pre_baseline_ms"] == [-1000, -200]
+    assert abs(recovery["measurement"]["recovery_excess_db"] - 3.01029995664) < 1e-12
+    assert recovery["measurement"]["continuous_hold_ms"] == 300
+    assert recovery["measurement"]["search_ms"] == [0, 2500]
+    assert recovery["preregistered_rules"]["censored_is_valid_evidence_not_ci_failure"] is True
+    assert recovery["preregistered_rules"]["no_recovery_time_pass_fail_threshold"] is True
+    assert recovery["preregistered_rules"]["no_parameter_search"] is True
+    assert recovery["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

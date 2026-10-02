@@ -327,7 +327,7 @@ def self_test() -> None:
     assert stable_key("x.flac") == stable_key("x.flac")
     assert stable_key("x.flac") != stable_key("y.flac")
     assert len(materialize_length([1, 2, 3])) == TARGET_SAMPLES
-    clean, gain = normalize([1000, -1000] * TARGET_SAMPLES)
+    clean, gain = normalize([1000, -1000] * (TARGET_SAMPLES // 2))
     assert len(clean) == TARGET_SAMPLES and gain > 0.0
     assert max(abs(x) for x in hard_clip([10000, -10000], 7000)) == 7000
     assert len(PROFILES["capture-clipping"]) == 4

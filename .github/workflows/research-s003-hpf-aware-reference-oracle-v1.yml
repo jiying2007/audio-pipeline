@@ -11,7 +11,7 @@ on:
       - '.github/research/continuous-optimization/development-data-v3/development.lock.json'
       - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
       - 'validation/tools/hpf_aware_reference_oracle.py'
-      - 'validation/tools/run_validation_engine.py'
+      - 'validation/tools/run_validation*.py'
       - 'tests/validation/stage_prefix_process_pcm.c'
       - '.github/workflows/research-s003-hpf-aware-reference-oracle-v1.yml'
   push:
@@ -24,7 +24,7 @@ on:
       - '.github/research/continuous-optimization/development-data-v3/development.lock.json'
       - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
       - 'validation/tools/hpf_aware_reference_oracle.py'
-      - 'validation/tools/run_validation_engine.py'
+      - 'validation/tools/run_validation*.py'
       - 'tests/validation/stage_prefix_process_pcm.c'
       - '.github/workflows/research-s003-hpf-aware-reference-oracle-v1.yml'
   workflow_dispatch:

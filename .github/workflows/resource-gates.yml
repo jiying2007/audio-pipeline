@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   sku-hard-ceilings:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup-ccache
@@ -96,7 +96,7 @@ jobs:
           test $((voice - raw)) -ge 64
 
   cortex-a32-rom:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
       credentials:
@@ -144,7 +144,7 @@ jobs:
           ccache --show-stats
 
   ssc305-commercial-profile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash

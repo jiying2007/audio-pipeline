@@ -35,3 +35,7 @@ Current catalog: [`catalog.json`](catalog.json).
 
 No replay entry grants S004 candidate authority, release acceptance authority,
 HIL authority, or product certification.
+
+## Public cross-source review
+
+A durable replay may reproduce exactly on its deterministic synthetic seeds yet transfer only partially to a public source family. Such evidence is stored as a supplemental review, not by rewriting the original replay truth. A stable sub-signature does not make the broader composite signature cross-source. Raw-prefix checks are sanity evidence only when the watched metric is itself an input-to-output delta; they do not independently prove measurement-domain validity. S004 remains closed until all explicit blockers are independently satisfied.

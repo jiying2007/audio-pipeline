@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-measurement-resolution-v1",
+  "phase": "S003_AEC_RECOVERY_MEASUREMENT_RESOLUTION_V1",
+  "authority": "CANDIDATE_ZERO_MEASUREMENT_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_VARIABILITY_DECOMPOSED"
+  },
+  "corpus": {
+    "generator": "validation/tools/build_aec_stage_recovery_corpus.py",
+    "policy": "validation/policies/validation-s003-aec-stage-recovery.json",
+    "fresh_seeds": [
+      11507,
+      11607,
+      11707,
+      11807
+    ],
+    "seconds": 6,
+    "target_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "prefix-aec",
+      "prefix-res",
+      "prefix-ns",
+      "prefix-agc",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "prefix-agc": "AGC",
+      "default": "full"
+    },
+    "cases_per_seed": 15
+  },
+  "fixed_baseline": {
+    "window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "statistic": "median of complete 100 ms windows"
+  },
+  "paired_measurements": {
+    "100ms": {
+      "post_window_ms": 100,
+      "recovery_excess_db": 3.01029995664,
+      "continuous_hold_ms": 300,
+      "required_consecutive_windows": 3,
+      "search_ms": [
+        0,
+        2500
+      ]
+    },
+    "50ms": {
+      "post_window_ms": 50,
+      "recovery_excess_db": 3.01029995664,
+      "continuous_hold_ms": 300,
+      "required_consecutive_windows": 6,
+      "search_ms": [
+        0,
+        2500
+      ]
+    }
+  },
+  "isolation_rule": "Both post grids use the exact same audio output, exact same 100 ms pre-baseline value, exact same +3.01029995664 dB recovery limit, and exact same 300 ms hold. Only post-transition window duration/step differs.",
+  "derived_observations": [
+    "recovery_time_100ms",
+    "recovery_time_50ms",
+    "paired_recovery_delta_ms_50_minus_100",
+    "cross_seed_range_100ms",
+    "cross_seed_range_50ms",
+    "range_delta_ms_50_minus_100",
+    "censoring_by_grid"
+  ],
+  "preregistered_rules": {
+    "require_exact_case_profile_matrix": true,
+    "require_same_output_for_both_grids": true,
+    "require_same_baseline_for_both_grids": true,
+    "require_same_recovery_limit_for_both_grids": true,
+    "require_same_hold_duration_for_both_grids": true,
+    "censored_is_valid_evidence_not_ci_failure": true,
+    "no_resolution_pass_fail_threshold": true,
+    "no_multi_resolution_sweep_beyond_100_and_50_ms": true,
+    "no_performance_threshold_search": true,
+    "no_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_claim_measurement_artifact": false,
+    "may_change_recovery_threshold": false,
+    "may_change_dsp_parameters": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "complete paired 100 ms/50 ms recovery map on fresh seeds and descriptive resolution sensitivity, not a measurement-artifact verdict, product requirement, or candidate"
+}

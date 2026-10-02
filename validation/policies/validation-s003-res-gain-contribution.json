@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-s003-res-gain-contribution-v1",
+  "allowed_tiers": [
+    "regression"
+  ],
+  "minimum_cases": 2,
+  "required_public_sources": [],
+  "aggregate": {
+    "min_pass_rate": 1
+  }
+}

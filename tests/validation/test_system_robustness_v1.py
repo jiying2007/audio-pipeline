@@ -12,12 +12,23 @@ I040 = ROOT / ".github/research/continuous-optimization/development-v4/i040-ns-s
 
 
 def main() -> int:
+    items = {}
     for name in ("S001", "S002", "S003"):
         item = json.loads((ITER / f"{name}.json").read_text())
+        items[name] = item
         assert item["candidate_limit"] == 0
         assert item["confirmation_limit"] == 0
         assert item["promotion_allowed"] is False
         assert item["shipping_change_allowed"] is False
+
+    watch = items["S001"]["diagnostic_watch"]
+    assert watch["authority"] == "replay-trigger-only-not-release-acceptance-gate"
+    assert watch["confirmation_seeds"] == [5307, 5407]
+    assert {rule["id"] for rule in watch["rules"]} == {
+        "severe-near-reference-degradation",
+        "noise-amplification",
+        "severe-vad-degradation",
+    }
 
     schema = json.loads(SCHEMA.read_text())
     assert schema["properties"]["schema_version"]["const"] == 1

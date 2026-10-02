@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-rebaseline-100w50s-v1-result",
+  "investigation_id": "S003-aec-recovery-rebaseline-100w50s-v1",
+  "status": "CLOSED_DIAGNOSTIC_100W50S_REBASELINED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_CAUSAL_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37012061058,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "a9e586b2e53c6a32982781e1e7fe65896d3f78d6",
+    "artifact_id": 11228052440,
+    "artifact_name": "s003-aec-recovery-rebaseline-100w50s-37012061058",
+    "artifact_zip_sha256": "1e32e8fd7a70787ba99694b968ffffe118b49ac6c33659b64aa719879f55afa4",
+    "artifact_zip_bytes": 32338,
+    "aggregate_member": "cross-seed-rebaseline-summary.json",
+    "aggregate_member_sha256": "67c5f000b40be92799b145144c6618fbcf36e735713a6d5bb851eefe8a679c08"
+  },
+  "qualification": {
+    "verify_run_id": 37012061349,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37012060954,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37012060976,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37012060963,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37012060951,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37012060959,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37012441138,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37012441535,
+    "i015_finalization_conclusion": "success"
+  },
+  "research_geometry": {
+    "id": "100w-50s",
+    "integration_window_ms": 100,
+    "stride_ms": 50,
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "scope": {
+    "fresh_seeds": [
+      12707,
+      12807,
+      12907,
+      13007
+    ],
+    "transition_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "AEC",
+      "RES",
+      "NS",
+      "AGC",
+      "full"
+    ],
+    "observations_per_seed": 15,
+    "total_stage_observations": 60,
+    "censored_observations": 0
+  },
+  "mechanical_result": {
+    "retained_nonzero_phenomenon_count": 1,
+    "retained_nonzero_phenomena": [
+      {
+        "base_case_id": "echo-path-change",
+        "from_stage": "RES",
+        "to_stage": "NS",
+        "classification": "repeatable_extension",
+        "delta_ms": [
+          50,
+          100,
+          100,
+          100
+        ]
+      }
+    ],
+    "full_pipeline_cross_seed_range_ms": {
+      "echo-path-change": 50,
+      "speaker-acoustic-gain-step": 0,
+      "render-level-step": 50
+    },
+    "rejected_historical_speaker_gain_res_to_ns_hypothesis_revived": false
+  },
+  "reviewed_validity": {
+    "retained_echo_path_res_to_ns_boundary_observation": true,
+    "retained_observation_is_causal_claim": false,
+    "retained_observation_is_parameter_recommendation": false,
+    "speaker_gain_res_to_ns_hypothesis_remains_rejected": true,
+    "measurement_method_change_survived": true,
+    "algorithm_pass_fail_verdict": "NOT_AUTHORIZED",
+    "interpretation": "After rebasing to the independently confirmed 100w-50s research geometry, the only 4/4-seed repeatable non-zero adjacent-stage recovery delta is echo-path-change RES→NS (+50/+100/+100/+100 ms). The prior speaker-gain RES→NS hypothesis does not survive and remains rejected."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_ECHO_PATH_RES_NS_RECOVERY_EXTENSION_CONFIRMATION_V1",
+    "candidate_limit": 0,
+    "hypothesis": "For echo-path-change under 100w-50s, NS recovery_time_ms - RES recovery_time_ms >= 50 on every independent fresh confirmation seed.",
+    "confirm_profiles": [
+      "prefix-res",
+      "prefix-ns",
+      "default"
+    ],
+    "confirmation_rule": "NS recovery_time_ms - RES recovery_time_ms >= 50 on every fresh confirmation seed; full pipeline is context-only",
+    "no_parameter_search": true,
+    "no_ns_internal_hypothesis_until_confirmed": true
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "causal_stage_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

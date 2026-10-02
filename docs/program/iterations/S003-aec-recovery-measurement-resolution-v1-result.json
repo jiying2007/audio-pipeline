@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-measurement-resolution-v1-result",
+  "investigation_id": "S003-aec-recovery-measurement-resolution-v1",
+  "status": "CLOSED_DIAGNOSTIC_MEASUREMENT_GEOMETRY_SENSITIVE",
+  "authority": "DIAGNOSTIC_ONLY_NO_ARTIFACT_OR_CANDIDATE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37002887914,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "6d3c91f10613e83fe3a5278bb24ff3a18647772c",
+    "artifact_id": 11224214179,
+    "artifact_name": "s003-aec-recovery-measurement-resolution-37002887914",
+    "artifact_zip_sha256": "c9187602dad43f0e9a93f9b06ae269dc7348d582e5459349e14588ca97241e39",
+    "artifact_zip_bytes": 33458,
+    "aggregate_member": "cross-seed-resolution-summary.json",
+    "aggregate_member_sha256": "fb07a2cca3d9676fafd290ef1881f6a2b611ff6e6bb1e50c74fd66d9e08eb37a"
+  },
+  "qualification": {
+    "verify_run_id": 37002888207,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37002887908,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37002888010,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37002887900,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37002887954,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37002887911,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37003399348,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37003399490,
+    "i015_finalization_conclusion": "success"
+  },
+  "scope": {
+    "fresh_seeds": [
+      11507,
+      11607,
+      11707,
+      11807
+    ],
+    "transition_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "AEC",
+      "RES",
+      "NS",
+      "AGC",
+      "full"
+    ],
+    "observations_per_seed": 15,
+    "total_observations": 60,
+    "censored_100ms": 0,
+    "censored_50ms": 0
+  },
+  "paired_measurement": {
+    "shared_pre_baseline": {
+      "window_ms": 100,
+      "interval_ms": [
+        -1000,
+        -200
+      ],
+      "statistic": "median of complete 100 ms windows"
+    },
+    "shared_recovery_excess_db": 3.01029995664,
+    "shared_continuous_hold_ms": 300,
+    "shared_search_ms": [
+      0,
+      2500
+    ],
+    "compared_geometries": {
+      "original_100ms": {
+        "window_ms": 100,
+        "stride_ms": 100,
+        "required_windows": 3
+      },
+      "paired_50ms": {
+        "window_ms": 50,
+        "stride_ms": 50,
+        "required_windows": 6
+      }
+    }
+  },
+  "mechanical_result": {
+    "cross_seed_range_direction_counts": {
+      "shrank": 5,
+      "grew": 3,
+      "unchanged": 7,
+      "total_case_profiles": 15
+    },
+    "paired_recovery_time_change": {
+      "changed_observations": 46,
+      "unchanged_observations": 14,
+      "total_observations": 60,
+      "delta_ms_counts": {
+        "0": 14,
+        "50": 12,
+        "100": 8,
+        "150": 1,
+        "200": 1,
+        "-50": 24
+      },
+      "median_delta_ms": 0,
+      "mean_delta_ms": 9.166666666666666
+    },
+    "cross_seed_ranges_ms": {
+      "echo-path-change": {
+        "AEC": {
+          "100ms": 100,
+          "50ms": 0,
+          "delta": -100
+        },
+        "RES": {
+          "100ms": 0,
+          "50ms": 150,
+          "delta": 150
+        },
+        "NS": {
+          "100ms": 100,
+          "50ms": 0,
+          "delta": -100
+        },
+        "AGC": {
+          "100ms": 100,
+          "50ms": 0,
+          "delta": -100
+        },
+        "full": {
+          "100ms": 100,
+          "50ms": 0,
+          "delta": -100
+        }
+      },
+      "speaker-acoustic-gain-step": {
+        "AEC": {
+          "100ms": 0,
+          "50ms": 150,
+          "delta": 150
+        },
+        "RES": {
+          "100ms": 0,
+          "50ms": 0,
+          "delta": 0
+        },
+        "NS": {
+          "100ms": 0,
+          "50ms": 0,
+          "delta": 0
+        },
+        "AGC": {
+          "100ms": 0,
+          "50ms": 0,
+          "delta": 0
+        },
+        "full": {
+          "100ms": 0,
+          "50ms": 0,
+          "delta": 0
+        }
+      },
+      "render-level-step": {
+        "AEC": {
+          "100ms": 0,
+          "50ms": 50,
+          "delta": 50
+        },
+        "RES": {
+          "100ms": 100,
+          "50ms": 50,
+          "delta": -50
+        },
+        "NS": {
+          "100ms": 0,
+          "50ms": 0,
+          "delta": 0
+        },
+        "AGC": {
+          "100ms": 0,
+          "50ms": 0,
+          "delta": 0
+        },
+        "full": {
+          "100ms": 0,
+          "50ms": 0,
+          "delta": 0
+        }
+      }
+    }
+  },
+  "reviewed_validity": {
+    "measurement_geometry_sensitivity_observed": true,
+    "simpler_100ms_quantization_only_explanation_supported": false,
+    "measurement_artifact_proven": false,
+    "performance_requirement_established": false,
+    "algorithm_pass_fail_verdict": "NOT_AUTHORIZED",
+    "interpretation": "Changing from a 100 ms/100 ms post grid to 50 ms/50 ms changes recovery times broadly and alters cross-seed ranges in both directions. Some ranges collapse while others appear or grow. The evidence therefore shows measurement-geometry sensitivity but cannot distinguish integration-window duration from stride/sampling-phase effects and does not establish a measurement artifact."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RECOVERY_WINDOW_GEOMETRY_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "fresh_seeds": [
+      11907,
+      12007,
+      12107,
+      12207
+    ],
+    "geometries": [
+      {
+        "id": "100w-100s",
+        "window_ms": 100,
+        "stride_ms": 100,
+        "required_windows_for_300ms_coverage": 3
+      },
+      {
+        "id": "100w-50s",
+        "window_ms": 100,
+        "stride_ms": 50,
+        "required_windows_for_300ms_coverage": 5
+      },
+      {
+        "id": "50w-50s",
+        "window_ms": 50,
+        "stride_ms": 50,
+        "required_windows_for_300ms_coverage": 6
+      }
+    ],
+    "description": "On the same output and fixed 100 ms pre-baseline, compare only these three preregistered geometries. 100w-100s vs 100w-50s isolates stride/sampling-grid sensitivity at fixed integration length; 100w-50s vs 50w-50s isolates integration-window length at fixed stride. Do not sweep additional geometries or change DSP."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "measurement_artifact_verdict_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

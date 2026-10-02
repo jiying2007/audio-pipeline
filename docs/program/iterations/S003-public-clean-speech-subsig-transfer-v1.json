@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "id": "S003-public-clean-speech-subsig-transfer-v1",
+  "phase": "S003_EVIDENCE_EXPANSION",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_ONLY_PARTIAL_SUBSIGNATURE_TRANSFER",
+    "stable_subsignature": "severe-near-reference-degradation"
+  },
+  "public_source": {
+    "dataset_family": "OpenSLR SLR31 Mini LibriSpeech train-clean-5",
+    "dataset_id": "openslr-slr31-clean-speech",
+    "parent_catalog": "audio-pipeline-public-development-v3",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "archive_id": "openslr-slr31-train-clean-5",
+    "archive_role": "clean-speech",
+    "archive_bytes": 332954390,
+    "archive_sha256": "47805806c8b15f7549f3c51bd6b7da72ec0128a34d32830c8014a88658c0292d",
+    "license": "CC-BY-4.0",
+    "usage_class": "research-development",
+    "role": "second-independent-public-development-family"
+  },
+  "microset": {
+    "utterance_count": 8,
+    "selection_rule": "enumerate all FLAC members after verified extraction; sort by sha256('s003-slr31-v1:'+relative_path); keep first item from each unique LibriSpeech speaker id until 8 utterances are selected",
+    "selection_is_acoustic_result_independent": true,
+    "require_unique_speakers": true,
+    "materialization": "ffmpeg decode to mono PCM16 16kHz; repeat cyclically if shorter than 6s; truncate to 6s; per-utterance RMS normalize to 3500 with peak-preserving cap at 0.95*32767",
+    "result_driven_selection": false
+  },
+  "fresh_seeds": [
+    9307,
+    9407
+  ],
+  "perturbations": {
+    "capture-clipping": {
+      "noise": "deterministic nonstationary synthetic noise",
+      "noise_scale": 0.35,
+      "clip_limit": 7000,
+      "stage_profiles": [
+        "prefix-capture",
+        "prefix-ns",
+        "prefix-agc",
+        "default"
+      ]
+    },
+    "mic-gain-delay-mismatch": {
+      "noise": "deterministic synthetic noise",
+      "left_noise_scale": 0.25,
+      "right_gain": 0.72,
+      "right_delay_samples": 3,
+      "right_noise_scale": 0.38,
+      "stage_profiles": [
+        "prefix-capture",
+        "prefix-bf",
+        "prefix-ns",
+        "prefix-agc",
+        "default"
+      ]
+    }
+  },
+  "preregistered_evidence_rules": {
+    "required_subsignature": "severe-near-reference-degradation",
+    "minimum_reproduced_utterances_per_seed": 6,
+    "required_total_utterances_per_seed": 8,
+    "multi_public_dataset_gate": "count as second independent public dataset family only if the required subsignature is present in >=6/8 fixed utterances for each fresh seed for at least one durable failure family",
+    "first_observable_stage_is_observation_only": true,
+    "no_result_driven_utterance_selection": true
+  },
+  "outputs": [
+    "per-seed corpus/report/stage-interaction-attribution",
+    "slr31-subsig-transfer.json",
+    "source-manifest.json",
+    "SHA256SUMS"
+  ],
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_thresholds": false,
+    "may_update_shipping_source": false,
+    "may_consume_validation_grade": false,
+    "may_consume_validation_grade_blind": false,
+    "may_claim_root_cause": false,
+    "may_open_s004": false
+  },
+  "next_review": "If the severe subsignature repeats on both public families, mark only the multiple-public-dataset repetition blocker satisfied. Measurement-domain exclusion, downstream-transfer exclusion and bounded candidate resource fit remain separate prerequisites."
+}

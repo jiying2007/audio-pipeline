@@ -9,6 +9,11 @@ on:
       - 'validation/failure-replay/**'
       - 'validation/tools/build_system_robustness_corpus.py'
       - 'validation/tools/build_aec_transition_corpus.py'
+      - 'validation/tools/build_stage_interaction_corpus.py'
+      - 'validation/tools/stage_profile_support.py'
+      - 'validation/tools/stage_interaction_attribution.py'
+      - 'validation/tools/stage_interaction_consistency.py'
+      - 'examples/process_pcm.c'
       - 'validation/policies/validation-aec-transition-development.json'
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
@@ -22,6 +27,11 @@ on:
       - 'validation/failure-replay/**'
       - 'validation/tools/build_system_robustness_corpus.py'
       - 'validation/tools/build_aec_transition_corpus.py'
+      - 'validation/tools/build_stage_interaction_corpus.py'
+      - 'validation/tools/stage_profile_support.py'
+      - 'validation/tools/stage_interaction_attribution.py'
+      - 'validation/tools/stage_interaction_consistency.py'
+      - 'examples/process_pcm.c'
       - 'validation/policies/validation-aec-transition-development.json'
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
@@ -50,11 +60,16 @@ jobs:
           python3 -m py_compile \
             validation/tools/build_system_robustness_corpus.py \
             validation/tools/build_aec_transition_corpus.py \
+            validation/tools/build_stage_interaction_corpus.py \
+            validation/tools/stage_profile_support.py \
+            validation/tools/stage_interaction_attribution.py \
+            validation/tools/stage_interaction_consistency.py \
             validation/tools/system_robustness_attribution.py \
             tests/validation/test_system_robustness_v1.py
           python3 tests/validation/test_system_robustness_v1.py
           python3 validation/tools/build_system_robustness_corpus.py --self-test
           python3 validation/tools/build_aec_transition_corpus.py --self-test
+          python3 validation/tools/build_stage_interaction_corpus.py --self-test
           for f in docs/program/iterations/S001.json docs/program/iterations/S002.json \
                    docs/program/iterations/S003.json validation/failure-replay/schema-v1.json \
                    ci/ssc305-resource-profiles.json; do
@@ -201,7 +216,7 @@ jobs:
 
   s003-stage-attribution:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -209,27 +224,46 @@ jobs:
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: system-robustness-s003
-      - name: Run isolated stage replay baseline
+      - name: Build diagnostic stage-prefix processor
         run: |
           set -euo pipefail
           cmake -S . -B build-s003 -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
           cmake --build build-s003 --target ap_process_pcm --parallel
-          root=/tmp/s003-stage
+      - name: Run fresh cross-stage interaction replays
+        run: |
+          set -euo pipefail
           out=system-robustness-out/s003
           mkdir -p "$out"
-          python3 validation/tools/build_stage_validation_corpus.py --output "$root" --seed 7107
-          python3 validation/tools/run_validation.py \
-            --source-revision '${{ github.sha }}' \
-            --corpus "$root/corpus.json" \
-            --policy validation/policies/validation-smoke.json \
-            --dataset-lock validation/datasets.lock.json \
-            --processor build-s003/ap_process_pcm \
-            --output "$out/report.json" \
-            --evidence-manifest "$out/evidence-manifest.json"
-          python3 validation/tools/system_robustness_attribution.py \
-            --corpus "$root/corpus.json" --report "$out/report.json" --output-dir "$out"
-          cp "$root/corpus.json" "$out/corpus.json"
-          find "$out" -type f -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+
+          for seed in 7307 7407; do
+            root="/tmp/s003-stage-$seed"
+            seed_out="$out/$seed"
+            mkdir -p "$seed_out"
+            python3 validation/tools/build_stage_interaction_corpus.py               --output "$root" --seed "$seed" --seconds 6
+            python3 validation/tools/run_validation.py               --source-revision '${{ github.sha }}'               --corpus "$root/corpus.json"               --policy validation/policies/validation-smoke.json               --dataset-lock validation/datasets.lock.json               --processor build-s003/ap_process_pcm               --output "$seed_out/report.json"               --evidence-manifest "$seed_out/evidence-manifest.json"
+            python3 validation/tools/stage_interaction_attribution.py               --corpus "$root/corpus.json"               --report "$seed_out/report.json"               --watch-contract docs/program/iterations/S001.json               --output-dir "$seed_out"
+            cp "$root/corpus.json" "$seed_out/corpus.json"
+          done
+
+          python3 validation/tools/stage_interaction_consistency.py             --attribution "$out/7307/stage-interaction-attribution.json"             --attribution "$out/7407/stage-interaction-attribution.json"             --output "$out/stage-interaction-consistency.json"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
+      - name: Publish S003 summary
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          root=Path("system-robustness-out/s003")
+          consistency=json.loads((root/"stage-interaction-consistency.json").read_text())
+          print("## S003 stage-interaction attribution")
+          print("- Authority: candidate-zero / observation-only / non-shipping")
+          print(f"- Fresh seeds: {consistency['seeds']}")
+          print(f"- Base cases: {consistency['summary']['case_count']}")
+          print(f"- Consistent first-stage cases: {consistency['summary']['consistent_first_stage_count']}")
+          print(f"- Repeated non-null stages: {consistency['summary']['repeated_non_null_stage_count']}")
+          print(f"- S004 stage-consistency preconditions: {consistency['summary']['s004_stage_consistency_precondition_count']}")
+          print("- Root-cause authority: none")
+          print("- S004 candidate authority: none")
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: system-robustness-s003-${{ github.run_id }}

@@ -149,3 +149,9 @@ This does not change the research measurement default yet. It authorizes a singl
 Independent fresh confirmation on seeds 12307–12607 establishes `100w-50s`—100 ms integration with 50 ms stride—as the preferred **research** recovery measurement geometry for future S003 AEC diagnostics. It was non-worse than `100w-100s` in 14/15 case/profile pairs, reduced summed cross-seed recovery range from 1000 ms to 600 ms, and introduced no censoring.
 
 This is a measurement-method authority only. It does not define a product recovery requirement, does not select or modify a DSP candidate, does not alter shipping source/API, and does not open S004. The next authorized phase is to rebaseline retained recovery/variability evidence under `100w-50s`, preserving rejected hypotheses as rejected and admitting only phenomena that survive the confirmed measurement-method change.
+
+## S003 AEC recovery rebaseline on 100w-50s
+
+Fresh seeds 12707–13007 rebaseline the AEC transition stage-recovery evidence on the confirmed `100w-50s` research geometry. The only 4/4-seed repeatable non-zero adjacent-stage delta is **echo-path-change RES→NS**, at +50/+100/+100/+100 ms. Full-pipeline cross-seed range is 50 ms for echo-path change, 0 ms for speaker-gain step, and 50 ms for render-level step. The previously rejected speaker-gain RES→NS hypothesis remains rejected.
+
+This observation is not a causal NS claim and does not authorize parameter search. The only next authorized step is an independent candidate-zero confirmation of the echo-path-change RES→NS recovery extension; full pipeline remains context-only and S004 stays closed.

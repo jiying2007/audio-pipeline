@@ -253,6 +253,22 @@ def main() -> int:
     assert res_side["preregistered_rules"]["no_res_alpha_or_gain_search"] is True
     assert res_side["authority_boundary"]["may_open_s004"] is False
 
+    contribution = json.loads((ITER / "S003-aec-echo-path-res-gain-contribution-decomposition-v1.json").read_text())
+    assert contribution["authority"] == "CANDIDATE_ZERO_COUNTERFACTUAL_ANALYSIS_ONLY"
+    assert contribution["candidate_limit"] == 0 and contribution["confirmation_limit"] == 0
+    assert contribution["promotion_allowed"] is False and contribution["shipping_change_allowed"] is False
+    assert contribution["corpus"]["fresh_seeds"] == [15507, 15607, 15707, 15807, 15907, 16007, 16107, 16207]
+    assert contribution["corpus"]["profiles"] == ["prefix-aec", "prefix-res"]
+    assert contribution["measurement"]["geometry_id"] == "100w-50s"
+    assert contribution["shipping_res_formula"]["floor_gain"] == 0.10
+    assert contribution["shipping_res_formula"]["normal_release_alpha"] == 0.08
+    assert contribution["probe"]["per_frame_formula_validation"]["max_abs_error"] == 1e-5
+    assert all(contribution["validity_gates"].values())
+    assert contribution["preregistered_rules"]["no_gain_or_alpha_search"] is True
+    assert contribution["preregistered_rules"]["no_counterfactual_parameter_sweep"] is True
+    assert contribution["preregistered_rules"]["no_root_cause_selection"] is True
+    assert contribution["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

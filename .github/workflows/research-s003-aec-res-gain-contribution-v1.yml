@@ -1,0 +1,173 @@
+name: Research S003 AEC RES Gain Contribution v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1.json'
+      - 'docs/program/iterations/S003-aec-echo-path-res-side-recovery-variability-v1-result.json'
+      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c'
+      - '.github/workflows/research-s003-aec-res-gain-contribution-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1.json'
+      - 'docs/program/iterations/S003-aec-echo-path-res-side-recovery-variability-v1-result.json'
+      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
+      - 'validation/policies/validation-s003-echo-path-res-ns-confirm.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c'
+      - '.github/workflows/research-s003-aec-res-gain-contribution-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: s003-aec-res-gain-contribution-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: s003-aec-res-gain-contribution
+
+      - name: Validate candidate-zero counterfactual contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool             docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1.json >/dev/null
+          python3 -m py_compile             validation/tools/aec_res_gain_contribution_decomposition.py
+          PYTHONPATH=validation/tools             python3 validation/tools/aec_res_gain_contribution_decomposition.py self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1.json').read_text())
+          p=json.loads(Path('docs/program/iterations/S003-aec-echo-path-res-side-recovery-variability-v1-result.json').read_text())
+          assert c['authority']=='CANDIDATE_ZERO_COUNTERFACTUAL_ANALYSIS_ONLY'
+          assert c['candidate_limit']==0 and c['confirmation_limit']==0
+          assert c['corpus']['fresh_seeds']==[15507,15607,15707,15807,15907,16007,16107,16207]
+          assert c['corpus']['profiles']==['prefix-aec','prefix-res']
+          assert c['measurement']['geometry_id']=='100w-50s'
+          assert c['shipping_res_formula']['floor_gain']==0.10
+          assert c['shipping_res_formula']['normal_release_alpha']==0.08
+          assert c['probe']['per_frame_formula_validation']['max_abs_error']==1e-5
+          assert all(c['validity_gates'].values())
+          assert c['preregistered_rules']['no_gain_or_alpha_search'] is True
+          assert c['preregistered_rules']['no_counterfactual_parameter_sweep'] is True
+          assert c['preregistered_rules']['no_root_cause_selection'] is True
+          assert c['authority_boundary']['may_open_s004'] is False
+          assert p['status']==c['predecessor']['required_status']
+          assert p['reviewed_validity']['standalone_res_only_explanation_supported'] is False
+          print('S003 RES gain contribution authority: PASS')
+          PY
+
+      - name: Build fixed processor and contribution probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-s003-res-contribution             -DCMAKE_BUILD_TYPE=Release             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s003-res-contribution --target audio_pipeline --parallel
+
+          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-res-contribution/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-res-contribution/libaudio_pipeline.a -lm             -o build-s003-res-contribution/stage_prefix_process_pcm
+
+          python3 - <<'PY' > /tmp/s003-res-contribution-defs.txt
+          import json, shlex
+          from pathlib import Path
+          db=json.loads(Path('build-s003-res-contribution/compile_commands.json').read_text())
+          matches=[
+              row for row in db
+              if 'audio_pipeline.dir' in row.get('command','')
+              or 'audio_pipeline.dir' in ' '.join(row.get('arguments',[]))
+          ]
+          if not matches:
+              raise SystemExit('audio_pipeline compile command not found')
+          row=matches[0]
+          args=row.get('arguments') or shlex.split(row['command'])
+          defs=[]
+          for arg in args:
+              if arg.startswith('-D') and arg not in defs:
+                  defs.append(arg)
+          required=['AP_BUILD_STAGE_AEC=1','AP_BUILD_STAGE_RES=1','AP_BUILD_STAGE_SYNC=1']
+          joined=' '.join(defs)
+          for item in required:
+              if item not in joined:
+                  raise SystemExit(f'missing required compile define: {item}')
+          print('\n'.join(defs))
+          PY
+          mapfile -t AP_DEFS < /tmp/s003-res-contribution-defs.txt
+          cc -std=c11 -Wall -Wextra -Werror             "${AP_DEFS[@]}"             -Iinclude -Isrc -Ibuild-s003-res-contribution/generated             tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c             build-s003-res-contribution/libaudio_pipeline.a -lm             -o build-s003-res-contribution/s003_aec_echo_path_res_gain_contribution_probe
+
+      - name: Run fresh contribution decomposition
+        run: |
+          set -euo pipefail
+          out=s003-res-contribution-out
+          mkdir -p "$out"
+          contract=docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1.json
+
+          for seed in 15507 15607 15707 15807 15907 16007 16107 16207; do
+            corpus="/tmp/s003-res-contribution-$seed"
+            seed_out="$out/$seed"
+            mkdir -p "$seed_out"
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_res_gain_contribution_decomposition.py build                 --output "$corpus" --seed "$seed" --seconds 6
+
+            PYTHONPATH=validation/tools               python3 validation/tools/stage_interaction_run.py                 --source-revision '${{ github.sha }}'                 --corpus "$corpus/corpus.json"                 --policy validation/policies/validation-s003-res-gain-contribution.json                 --dataset-lock validation/datasets.lock.json                 --processor build-s003-res-contribution/stage_prefix_process_pcm                 --output "$seed_out/canonical-report.json"                 --evidence-manifest "$seed_out/evidence-manifest.json"                 --enforce
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_res_gain_contribution_decomposition.py run                 --corpus "$corpus/corpus.json"                 --report "$seed_out/canonical-report.json"                 --processor build-s003-res-contribution/stage_prefix_process_pcm                 --probe build-s003-res-contribution/s003_aec_echo_path_res_gain_contribution_probe                 --contract "$contract"                 --trace-output "$seed_out/gain-contribution-trace.jsonl"                 --output "$seed_out/contribution-receipt.json"
+
+            cp "$corpus/corpus.json" "$seed_out/corpus.json"
+          done
+
+          PYTHONPATH=validation/tools             python3 validation/tools/aec_res_gain_contribution_decomposition.py aggregate               --contract "$contract"               --input "$out/15507/contribution-receipt.json"               --input "$out/15607/contribution-receipt.json"               --input "$out/15707/contribution-receipt.json"               --input "$out/15807/contribution-receipt.json"               --input "$out/15907/contribution-receipt.json"               --input "$out/16007/contribution-receipt.json"               --input "$out/16107/contribution-receipt.json"               --input "$out/16207/contribution-receipt.json"               --output "$out/cross-seed-contribution-summary.json"
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('s003-res-contribution-out/cross-seed-contribution-summary.json').read_text())
+          v=r['mechanical_validity']
+          assert v['probe_output_bitwise_equivalent_all_seeds'] is True
+          assert v['gain_formula_valid_all_seeds'] is True
+          assert v['analytic_actual_matches_standard_res_all_seeds'] is True
+          assert v['analytic_aec_matches_standard_aec_all_seeds'] is True
+          assert v['frozen_pre_gain_matches_standard_aec_all_seeds'] is True
+          assert v['evidence_accepted'] is True
+          print(r['contribution_summary'])
+          PY
+
+          cp "$contract" "$out/contract.json"
+          git rev-parse HEAD > "$out/source-sha.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish counterfactual evidence
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r=json.loads(Path('s003-res-contribution-out/cross-seed-contribution-summary.json').read_text())
+          print('## S003 RES gain contribution decomposition')
+          print('')
+          print('- Authority: **candidate-zero counterfactual analysis only**')
+          print(f"- Mechanical validity: `{r['mechanical_validity']}`")
+          print(f"- Standard AEC→RES ms: `{r['contribution_summary']['standard_aec_to_res_ms']}`")
+          print(f"- Instantaneous target minus AEC ms: `{r['contribution_summary']['instantaneous_target_minus_aec_ms']}`")
+          print(f"- Actual minus instantaneous-target ms: `{r['contribution_summary']['actual_minus_instantaneous_target_ms']}`")
+          print('- Root-cause attribution: **NOT_AUTHORIZED**')
+          print('- Candidate authority: **none**')
+          PY
+
+      - name: Upload hash-bound counterfactual evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: s003-aec-res-gain-contribution-${{ github.run_id }}
+          path: s003-res-contribution-out/
+          if-no-files-found: error
+          retention-days: 30

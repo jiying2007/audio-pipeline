@@ -30,8 +30,12 @@
     "selection_rule": "enumerate all FLAC members after verified extraction; sort by sha256('s003-slr31-v1:'+relative_path); keep first item from each unique LibriSpeech speaker id until 8 utterances are selected",
     "selection_is_acoustic_result_independent": true,
     "require_unique_speakers": true,
-    "materialization": "ffmpeg decode to mono PCM16 16kHz; repeat cyclically if shorter than 6s; truncate to 6s; per-utterance RMS normalize to 3500 with peak-preserving cap at 0.95*32767",
-    "result_driven_selection": false
+    "materialization": "pinned soundfile==0.13.1 decode; require source mono 16kHz PCM-equivalent samples; repeat cyclically if shorter than 6s; truncate to 6s; per-utterance RMS normalize to 3500 with peak-preserving cap at 0.95*32767",
+    "result_driven_selection": false,
+    "decoder_runtime": [
+      "numpy==2.2.6",
+      "soundfile==0.13.1"
+    ]
   },
   "fresh_seeds": [
     9307,

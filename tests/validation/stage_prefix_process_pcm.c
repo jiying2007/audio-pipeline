@@ -14,7 +14,7 @@ static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
             "[--capture-only] "
-            "[--capture-profile default|prefix-capture|prefix-bf|prefix-sync|prefix-aec|prefix-res|prefix-ns|prefix-agc|prefix-vad] "
+            "[--capture-profile default|prefix-raw|prefix-capture|prefix-bf|prefix-sync|prefix-aec|prefix-res|prefix-ns|prefix-agc|prefix-vad] "
             "[--metrics-jsonl FILE] [--echo-path-change-frame N] "
             "[--discontinuity-frame N --discontinuity-flags MASK "
             "--discontinuity-lost-frames N] "
@@ -34,6 +34,7 @@ static int parse_u32(const char *text, uint32_t *value) {
 
 static int valid_profile(const char *profile) {
     return strcmp(profile, "default") == 0 ||
+           strcmp(profile, "prefix-raw") == 0 ||
            strcmp(profile, "prefix-capture") == 0 ||
            strcmp(profile, "prefix-bf") == 0 ||
            strcmp(profile, "prefix-sync") == 0 ||
@@ -68,7 +69,9 @@ static void apply_profile(ap_config_t *cfg,
     if (capture_only) {
         cfg->enable_delay_tracking = 0u;
         cfg->enable_clock_drift_compensation = 0u;
-        if (strcmp(profile, "default") == 0) {
+        if (strcmp(profile, "prefix-raw") == 0) {
+            cfg->stages = 0u;
+        } else if (strcmp(profile, "default") == 0) {
             cfg->stages &= ~(AP_STAGE_SYNC | AP_STAGE_AEC | AP_STAGE_RES);
         } else if (strcmp(profile, "prefix-capture") == 0) {
             cfg->stages = AP_STAGE_HPF;

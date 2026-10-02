@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-res-ns-recovery-extension-confirmation-v1-result",
+  "investigation_id": "S003-aec-echo-path-res-ns-recovery-extension-confirmation-v1",
+  "status": "CLOSED_DIAGNOSTIC_SINGLE_HYPOTHESIS_CONFIRMED",
+  "authority": "DIAGNOSTIC_ONLY_NO_ROOT_CAUSE_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37013949148,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "e8cd8978b5e1011f64267af4b0d0e74b0b352005",
+    "artifact_id": 11229605062,
+    "artifact_name": "s003-aec-echo-path-res-ns-confirm-37013949148",
+    "artifact_zip_sha256": "3007e1d316233c3db004d3dbea1056e97fa16b446074c6d4dc4a84d996e15e82",
+    "artifact_zip_bytes": 20500,
+    "aggregate_member": "cross-seed-confirmation.json",
+    "aggregate_member_sha256": "8ae4385c488f900202a2602d4c229441159b87bbc59c88e7926fbba00be73318"
+  },
+  "qualification": {
+    "verify_run_id": 37013949987,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37013949066,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37013949374,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37013949212,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37013949389,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37013949378,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37014343536,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37014343817,
+    "i015_finalization_conclusion": "success"
+  },
+  "hypothesis": {
+    "case_id": "echo-path-change",
+    "statement": "Under confirmed 100w-50s research geometry, NS recovery is at least one 50 ms stride later than RES on every independent fresh confirmation seed.",
+    "gate": "ns_recovery_time_ms - res_recovery_time_ms >= 50",
+    "geometry_id": "100w-50s",
+    "fresh_seeds": [
+      13107,
+      13207,
+      13307,
+      13407
+    ]
+  },
+  "mechanical_result": {
+    "hypothesis_confirmed": true,
+    "outcome": "CONFIRMED",
+    "observations": [
+      {
+        "seed": 13107,
+        "res_recovery_time_ms": 150,
+        "ns_recovery_time_ms": 250,
+        "full_recovery_time_ms": 250,
+        "ns_minus_res_ms": 100,
+        "confirmed_on_seed": true
+      },
+      {
+        "seed": 13207,
+        "res_recovery_time_ms": 150,
+        "ns_recovery_time_ms": 200,
+        "full_recovery_time_ms": 200,
+        "ns_minus_res_ms": 50,
+        "confirmed_on_seed": true
+      },
+      {
+        "seed": 13307,
+        "res_recovery_time_ms": 150,
+        "ns_recovery_time_ms": 200,
+        "full_recovery_time_ms": 200,
+        "ns_minus_res_ms": 50,
+        "confirmed_on_seed": true
+      },
+      {
+        "seed": 13407,
+        "res_recovery_time_ms": 150,
+        "ns_recovery_time_ms": 200,
+        "full_recovery_time_ms": 200,
+        "ns_minus_res_ms": 50,
+        "confirmed_on_seed": true
+      }
+    ],
+    "minimum_ns_minus_res_ms": 50,
+    "maximum_ns_minus_res_ms": 100,
+    "confirmed_seed_count": 4,
+    "total_seed_count": 4
+  },
+  "reviewed_validity": {
+    "res_to_ns_recovery_extension_repeatable": true,
+    "ns_root_cause_proven": false,
+    "ns_parameter_search_authorized": false,
+    "aec_parameter_search_authorized": false,
+    "res_parameter_search_authorized": false,
+    "algorithm_performance_verdict": "NOT_AUTHORIZED",
+    "interpretation": "The confirmed observation is a stage-boundary timing fact under the 100w-50s research geometry: the signal meets the recovery criterion at RES before it meets the same criterion after NS on every fresh seed. This does not identify the NS internal state or parameter responsible and does not prove causal root cause."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_ECHO_PATH_NS_STATE_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Observe existing NS internal state/telemetry around echo-path transitions and compare the 50-100 ms RES→NS recovery extension against state trajectories. Observation only: no threshold fitting, no NS parameter search, no shipping changes."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

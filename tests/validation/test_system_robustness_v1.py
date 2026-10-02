@@ -239,6 +239,20 @@ def main() -> int:
     assert sign_var["preregistered_rules"]["no_recovery_threshold_search"] is True
     assert sign_var["authority_boundary"]["may_open_s004"] is False
 
+    res_side = json.loads((ITER / "S003-aec-echo-path-res-side-recovery-variability-v1.json").read_text())
+    assert res_side["authority"] == "CANDIDATE_ZERO_RES_SIDE_OBSERVATION_ONLY"
+    assert res_side["candidate_limit"] == 0 and res_side["confirmation_limit"] == 0
+    assert res_side["promotion_allowed"] is False and res_side["shipping_change_allowed"] is False
+    assert res_side["corpus"]["fresh_seeds"] == [14707, 14807, 14907, 15007, 15107, 15207, 15307, 15407]
+    assert res_side["corpus"]["profiles"] == ["prefix-aec", "prefix-res", "prefix-ns", "default"]
+    assert res_side["measurement"]["geometry_id"] == "100w-50s"
+    assert res_side["res_probe"]["fixed_transition_relative_snapshots_ms"] == [0, 50, 100, 150, 200, 250, 300, 400]
+    assert res_side["preregistered_rules"]["retain_all_fresh_seeds"] is True
+    assert res_side["preregistered_rules"]["no_res_gain_threshold_fitting"] is True
+    assert res_side["preregistered_rules"]["no_root_cause_selection"] is True
+    assert res_side["preregistered_rules"]["no_res_alpha_or_gain_search"] is True
+    assert res_side["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

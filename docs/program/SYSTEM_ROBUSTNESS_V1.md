@@ -74,3 +74,11 @@ S004 remains closed. The next authorized work is candidate-zero downstream-trans
 For the mic-gain/delay-mismatch `severe-near-reference-degradation` sub-signature, two independent public families reproduce the symptom at the test-only `prefix-capture` observation. That prefix is source-bound to `AP_STAGE_HPF` only; BF, NS, AGC, VAD and final/full-pipeline processing have not yet occurred. Therefore those downstream stages are not necessary for the symptom to become observable. This does **not** prove HPF is causal.
 
 The scoped S004 prerequisites now have only one unresolved item: `bounded_candidate_resource_fit`. S004 remains closed until a candidate-independent conservative resource envelope is qualified. No parameter search or candidate design is authorized by this checkpoint alone.
+
+## S003 HPF-aware metric-reference checkpoint
+
+A final candidate-zero oracle invalidated the mic-gain/delay-mismatch `severe-near-reference-degradation` line for S004 admission. On the frozen SLR31 8-speaker microset and fresh seeds 9707/9807, the existing raw-clean SI-SDR watch remained severe in 8/8 cases, but the same output scored against an HPF-processed clean reference was severe in 0/8 cases. Replacing the right mismatch channel with the left channel produced bitwise-identical HPF-only output in 8/8 cases on both seeds.
+
+Therefore the first-observable severe symptom is an evaluation reference/metric-target artifact, not evidence that right-channel gain/delay mismatch needs a DSP candidate. This does not mean HPF is defective and does not claim anything about later BF/full-pipeline sensitivity to real microphone mismatch. The candidate line is terminally rejected; resource-fit admission is not applicable and S004 remains closed.
+
+The next authorized work is S003 AEC metric-safe evidence expansion using stage-appropriate AEC metrics (ERLE, render correlation/reduction, transition recovery) and HPF-aware near-end quality where needed. Candidate budget remains zero.

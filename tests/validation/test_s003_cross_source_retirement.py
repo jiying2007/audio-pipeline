@@ -102,10 +102,13 @@ def main() -> int:
         )
         assert review["measurement_domain_artifact_exclusion_status"] == "UNRESOLVED"
         assert entry["s004_eligibility"]["eligible"] is False
-        # Historical dEchorate evidence is immutable, while the live entry may
-        # advance as later independent reviews close blockers.
-        assert entry["s004_eligibility"]["eligible"] is False
-        assert "bounded_candidate_resource_fit" in entry["s004_eligibility"]["missing"]
+        # Historical dEchorate evidence is immutable. The mic-mismatch candidate
+        # line may later be terminally rejected by independent metric/reference
+        # evidence; capture-clipping keeps its ordinary blockers.
+        if entry["failure_id"] == "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1" and entry["s004_eligibility"].get("status") == "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT":
+            assert entry["s004_eligibility"]["not_applicable"] == ["bounded_candidate_resource_fit"]
+        else:
+            assert "bounded_candidate_resource_fit" in entry["s004_eligibility"]["missing"]
 
     print("S003 dEchorate reviewed terminal state: OK")
     return 0

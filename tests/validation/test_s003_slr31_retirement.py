@@ -94,14 +94,17 @@ def main() -> int:
     mm_review = mismatch_entry["public_clean_speech_review"]
     assert mm_review["second_public_family_repetition_satisfied"] is True
     assert mm_review["reproduced_utterances"] == {"9307": 8, "9407": 8}
-    assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["satisfied"]
     # The immutable SLR31 result freezes the blockers at review time. The live
     # replay entry may legitimately advance as later independent evidence closes
     # blockers, but it must never lose the SLR31 multi-public evidence or grant
     # candidate authority implicitly.
     assert mismatch_entry["s004_eligibility"]["eligible"] is False
-    assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["satisfied"]
-    assert "bounded_candidate_resource_fit" in mismatch_entry["s004_eligibility"]["missing"]
+    if mismatch_entry["s004_eligibility"].get("status") == "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT":
+        assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["historical_satisfied"]
+        assert mismatch_entry["s004_eligibility"]["not_applicable"] == ["bounded_candidate_resource_fit"]
+    else:
+        assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["satisfied"]
+        assert "bounded_candidate_resource_fit" in mismatch_entry["s004_eligibility"]["missing"]
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     slr = [

@@ -51,3 +51,7 @@ For a candidate-relevant sub-signature, measurement-domain exclusion must be bas
 ## Downstream-transfer exclusion
 
 A stage-prefix review may prove that later stages are not necessary for a diagnostic symptom to appear. This is weaker than a root-cause claim. For the mic-gain/delay-mismatch severe sub-signature, observation at an HPF-only capture prefix excludes BF, NS, AGC, VAD and final/full-pipeline transfer as necessary causes of appearance, while HPF causality remains unproven. Such evidence can close the downstream-transfer blocker without granting candidate authority.
+
+## Metric/reference-domain rejection
+
+Source-domain validity is necessary but not sufficient when a diagnostic metric compares outputs after an intentional stage transform against a raw reference. The mic gain/delay mismatch line is a concrete example: the raw-clean SI-SDR improvement watch remained severe at an HPF-only prefix, but the severe score disappeared when the clean reference was passed through the same HPF; changing only the right mismatch channel had no bitwise effect at that prefix. The candidate line is therefore terminally rejected as a metric/reference-target artifact. Historical replay evidence remains reproducible, but it no longer grants a path toward S004 candidate design.

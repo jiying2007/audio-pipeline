@@ -91,14 +91,17 @@ def main() -> int:
     assert review["pipeline_output_consumed"] is False
     assert review["near_si_sdr_improvement_consumed"] is False
     assert review["measurement_domain_artifact_exclusion_satisfied"] is True
-    assert "measurement_domain_artifact_exclusion" in entry["s004_eligibility"]["satisfied"]
-    # The immutable measurement-oracle result freezes blockers at its review time.
-    # The live replay entry may advance as later independent evidence closes the
-    # downstream blocker, but resource fit must remain unresolved until a
-    # separately reviewed admission envelope exists.
+    # The source-domain oracle result remains immutable and valid. A later
+    # HPF-aware metric/reference review may show that this narrower source-input
+    # control was insufficient for candidate-admission measurement validity.
     assert entry["s004_eligibility"]["eligible"] is False
-    assert "measurement_domain_artifact_exclusion" in entry["s004_eligibility"]["satisfied"]
-    assert "bounded_candidate_resource_fit" in entry["s004_eligibility"]["missing"]
+    if entry["s004_eligibility"].get("status") == "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT":
+        assert "source_input_domain_oracle_valid" in entry["s004_eligibility"]["historical_satisfied"]
+        assert "candidate_admission_measurement_domain_artifact_exclusion" in entry["s004_eligibility"]["failed"]
+        assert entry["s004_eligibility"]["not_applicable"] == ["bounded_candidate_resource_fit"]
+    else:
+        assert "measurement_domain_artifact_exclusion" in entry["s004_eligibility"]["satisfied"]
+        assert "bounded_candidate_resource_fit" in entry["s004_eligibility"]["missing"]
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     matches = [

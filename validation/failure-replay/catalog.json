@@ -69,6 +69,19 @@
       "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
       "downstream_transfer_artifact_exclusion_satisfied": true,
       "s004_candidate_authority": false
+    },
+    {
+      "kind": "metric-reference-domain-artifact-review",
+      "review_path": "docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1-result.json",
+      "workflow_run_id": 36979768886,
+      "artifact_id": 11215231517,
+      "artifact_zip_sha256": "47df4da418467c3912296897f8047bb55f76b6fbb50bf32afb702f4935574ebb",
+      "head_sha": "1b56ca91a1fc9f97bf9c5e22feeeeb38b55a72ed",
+      "authority": "diagnostic-terminal-rejection",
+      "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
+      "metric_reference_domain_artifact_detected": true,
+      "candidate_relevant_subsignature_valid": false,
+      "s004_candidate_authority": false
     }
   ]
 }

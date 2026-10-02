@@ -130,3 +130,9 @@ After the speaker-gain RES→NS +100 ms hypothesis was rejected on independent c
 The remaining cross-seed recovery spread is bounded to 100 ms. AEC-stage recovery is stable for all three transition families; variability appears at selected downstream boundaries. In every observation at the slower end of a 100 ms range, the immediately preceding 100 ms recovery window misses the preregistered limit by only 0.058–0.585 dB. The reviewed AEC boolean telemetry does not show a common state change aligned with those slower observations.
 
 This is not yet proof of a measurement-resolution artifact and does not identify a causal stage. The next authorized step is a paired temporal-resolution measurement on fresh seeds: retain the original 100 ms definition and compare it with a 50 ms post-transition grid while keeping the same pre-transition baseline, +3.01029995664 dB recovery limit, and 300 ms continuous hold. Candidate budget remains zero and no DSP parameter search is authorized.
+
+## S003 AEC recovery measurement-resolution checkpoint
+
+Paired measurements on fresh seeds 11507–11807 show that recovery latency is materially sensitive to post-transition measurement geometry. Moving from 100 ms windows/100 ms stride to 50 ms windows/50 ms stride changed 46/60 paired recovery times. Cross-seed range shrank for 5 case/profile pairs, grew for 3, and was unchanged for 7. Therefore the simple explanation “100 ms quantization alone causes recovery variability” is rejected; the evidence does not establish a measurement artifact.
+
+The next authorized work is candidate-zero window-geometry decomposition on exactly three preregistered geometries: `100w-100s`, `100w-50s`, and `50w-50s`. This isolates stride/sampling-grid sensitivity at fixed 100 ms integration length, then integration-window sensitivity at fixed 50 ms stride. No additional geometry sweep, DSP parameter search, performance threshold, causal claim, or S004 admission is authorized.

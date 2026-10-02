@@ -103,3 +103,12 @@ Observed recovery:
 - censored cases: 0.
 
 These are measurements, not a product requirement or algorithm pass/fail threshold. The next authorized step is candidate-zero stage-prefix recovery decomposition across AEC/RES/NS/AGC/full to locate where the 200-400 ms recovery trajectory is formed or extended. Parameter search remains forbidden.
+
+
+## S003 AEC stage-recovery decomposition checkpoint
+
+Fresh seeds 10707/10807 decomposed the same transition recovery measurement across AEC, RES, NS, AGC and full-pipeline diagnostic prefixes. The only repeatable stage-boundary recovery extension was the speaker acoustic gain step: AEC 200/200 ms, RES 200/200 ms, NS 300/300 ms, with AGC/full retaining 300/300 ms. The NS boundary also increased the first-1000-ms peak excess and positive excess area on both seeds.
+
+Echo-path and render-level transitions did not show a repeatable single stage-boundary recovery-time extension across both seeds.
+
+This is an observational stage boundary, not an NS root-cause claim. The next authorized work is one focused fresh-seed confirmation using only RES, NS and full for the speaker acoustic gain step. Candidate budget remains zero and NS internal parameter search remains forbidden until that boundary is independently confirmed.

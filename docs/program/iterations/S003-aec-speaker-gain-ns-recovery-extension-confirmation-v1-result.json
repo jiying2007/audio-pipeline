@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1-result",
+  "investigation_id": "S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1",
+  "status": "CLOSED_DIAGNOSTIC_SINGLE_HYPOTHESIS_REJECTED",
+  "authority": "DIAGNOSTIC_ONLY_NEGATIVE_EVIDENCE_NO_CANDIDATE_OR_ROOT_CAUSE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36992340263,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "f84c7167248c7657659ebb565c64274ed62d7293",
+    "artifact_id": 11219823878,
+    "artifact_name": "s003-speaker-gain-ns-recovery-confirmation-36992340263",
+    "artifact_zip_sha256": "5c45968a576f2c97c9dcf81ed7fe8c2ca363e96ef1e6462498d2d103d9a1f3a8",
+    "aggregate_member": "cross-seed-confirmation.json",
+    "aggregate_member_sha256": "56f65bad053784b6390a376caadc43a2bdb6b5f1a4d229d906d138f445ea551b"
+  },
+  "qualification": {
+    "verify_run_id": 36992340534,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 36992340056,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 36992340191,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 36992340200,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 36992340046,
+    "program_archive_conclusion": "success",
+    "release_run_id": 36992732028,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 36992732048,
+    "i015_finalization_conclusion": "success"
+  },
+  "preregistered_hypothesis": {
+    "case_id": "speaker-acoustic-gain-step",
+    "statement": "NS stage extends recovery by at least one 100 ms window relative to RES on every fresh confirmation seed.",
+    "gate": "ns_recovery_time_ms - res_recovery_time_ms >= 100",
+    "full_pipeline_role": "context-only-non-gating"
+  },
+  "observations": {
+    "10907": {
+      "res_recovery_time_ms": 300,
+      "ns_recovery_time_ms": 300,
+      "full_recovery_time_ms": 300,
+      "ns_minus_res_ms": 0,
+      "confirmed_on_seed": false
+    },
+    "11007": {
+      "res_recovery_time_ms": 200,
+      "ns_recovery_time_ms": 300,
+      "full_recovery_time_ms": 300,
+      "ns_minus_res_ms": 100,
+      "confirmed_on_seed": true
+    }
+  },
+  "mechanical_result": {
+    "hypothesis_confirmed": false,
+    "outcome": "REJECTED",
+    "fresh_seed_count": 2,
+    "confirming_seed_count": 1,
+    "rejecting_seed_count": 1
+  },
+  "historical_context": {
+    "predecessor_result": "docs/program/iterations/S003-aec-transition-stage-recovery-decomposition-v1-result.json",
+    "predecessor_observation": "RES 200/200 ms -> NS 300/300 ms on seeds 10707/10807",
+    "precedence_rule": "the preregistered independent fresh-seed confirmation governs hypothesis status; the earlier observation remains historical evidence but cannot override rejection"
+  },
+  "reviewed_validity": {
+    "stable_ns_stage_extension_supported": false,
+    "ns_root_cause_claim_authority": false,
+    "ns_temporal_state_attribution_authority": false,
+    "ns_parameter_search_authority": false,
+    "candidate_authority": false,
+    "interpretation": "The earlier +100 ms RES→NS recovery extension is not stable across independent confirmation seeds. Seed 10907 shows no RES→NS extension while seed 11007 shows +100 ms. The strong stage-boundary hypothesis is therefore rejected.",
+    "not_supported": [
+      "NS is the root cause of speaker-gain transition recovery latency",
+      "NS state should be tuned",
+      "NS parameter search",
+      "an NS candidate should be created from the prior +100 ms observation"
+    ]
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RECOVERY_VARIABILITY_SOURCE_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Return to broader candidate-zero AEC recovery evidence. Explain cross-seed recovery variability by correlating stage-appropriate telemetry and residual trajectories with recovery outcomes, without assuming one stage is causal and without changing DSP parameters.",
+    "suggested_observables": [
+      "per-profile pre_baseline_db",
+      "peak_excess_db_in_first_1000ms",
+      "positive_excess_area_db_ms_0_2500",
+      "late_window_excess_db_2000_2500",
+      "aec_converged frame trajectory",
+      "erle_valid/erle_db frame trajectory",
+      "estimated_delay_ms/delay_error_samples",
+      "far_end_active/double_talk_active"
+    ],
+    "forbidden": [
+      "NS internal parameter search",
+      "NLMS step-size search",
+      "DTD threshold search",
+      "RES parameter search",
+      "performance-threshold fitting from these seeds"
+    ]
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "s004_open": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false
+}

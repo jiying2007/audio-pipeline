@@ -5,96 +5,38 @@ on:
     branches: [main]
     paths:
       - 'docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json'
-      - 'docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json'
-      - 'docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json'
-      - 'docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
-      - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
+      - 'docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json'
+      - 'validation/failure-replay/catalog.json'
+      - 'validation/failure-replay/entries/s003-mic-gain-delay-mismatch-v1.json'
+      - 'validation/failure-replay/README.md'
+      - 'docs/program/SYSTEM_ROBUSTNESS_V1.md'
+      - 'tests/validation/data/s003-mic-mismatch-downstream-transfer-consumed-workflow.yml'
+      - 'tests/validation/test_s003_mic_mismatch_downstream_transfer_retirement.py'
+      - 'tests/validation/test_s003_mic_mismatch_measurement_oracle_retirement.py'
+      - 'tests/validation/test_s003_slr31_retirement.py'
+      - 'tests/validation/test_s003_cross_source_retirement.py'
       - '.github/workflows/research-s003-mic-mismatch-downstream-transfer-v1.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json'
-      - 'docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json'
-      - 'docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json'
-      - 'docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
-      - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
-      - '.github/workflows/research-s003-mic-mismatch-downstream-transfer-v1.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: research-s003-mic-mismatch-downstream-transfer-v1-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  review:
+  contract:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-
-      - name: Validate candidate-zero evidence contract
+      - name: Validate reviewed terminal evidence
         run: |
           set -euo pipefail
           python3 -m json.tool             docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json >/dev/null
-          python3 -m py_compile             validation/tools/mic_mismatch_downstream_transfer_review.py
-          python3 validation/tools/mic_mismatch_downstream_transfer_review.py --self-test
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          c=json.loads(Path('docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json').read_text())
-          assert c['authority']=='CANDIDATE_ZERO_EVIDENCE_SYNTHESIS_ONLY'
-          assert c['candidate_limit']==0 and c['confirmation_limit']==0
-          assert c['promotion_allowed'] is False and c['shipping_change_allowed'] is False
-          assert c['scoped_failure']=='FR-S003-MIC-GAIN-DELAY-MISMATCH-V1'
-          assert c['scoped_subsignature']=='severe-near-reference-degradation'
-          assert c['stage_semantics']['capture_prefix_required_mask']=='AP_STAGE_HPF'
-          assert c['authority_boundary']['may_claim_hpf_root_cause'] is False
-          assert c['authority_boundary']['may_claim_bf_root_cause'] is False
-          assert c['authority_boundary']['may_open_s004'] is False
-          PY
-
-      - name: Synthesize frozen public stage-prefix evidence
-        run: |
-          set -euo pipefail
-          out=s003-downstream-transfer-out
-          mkdir -p "$out"
-          python3 validation/tools/mic_mismatch_downstream_transfer_review.py             --contract docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json             --dechorate-result docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json             --slr31-result docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json             --measurement-result docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json             --stage-source tests/validation/stage_prefix_process_pcm.c             --output "$out/downstream-transfer-review.json"
-          cp docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json             "$out/contract.json"
-          git rev-parse HEAD > "$out/source-sha.txt"
-          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
-
-      - name: Publish review outcome
-        run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          r=json.loads(Path('s003-downstream-transfer-out/downstream-transfer-review.json').read_text())
-          print('## S003 mic-mismatch downstream-transfer review')
-          print('')
-          print('- Authority: **candidate-zero evidence synthesis / non-shipping**')
-          for family in r['public_family_evidence']:
-              counts=[
-                  (x['seed'],x['severe_subsignature_cases'],x['first_observable_capture_cases'],x['total_cases'])
-                  for x in family['per_seed']
-              ]
-              print(f"- {family['family']}: `{counts}`")
-          print(f"- prefix-capture mask: `{r['stage_semantics']['prefix_capture_mask']}`")
-          print(f"- downstream-transfer artifact exclusion: `{r['downstream_transfer_artifact_exclusion_satisfied']}`")
-          print('- HPF root-cause authority: **none**')
-          print('- S004 candidate authority: **none**')
-          PY
-
-      - name: Upload hash-bound review evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: s003-mic-mismatch-downstream-transfer-${{ github.run_id }}
-          path: s003-downstream-transfer-out/
-          if-no-files-found: error
-          retention-days: 30
+          python3 -m json.tool             docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json >/dev/null
+          python3 -m json.tool validation/failure-replay/catalog.json >/dev/null
+          python3 -m json.tool             validation/failure-replay/entries/s003-mic-gain-delay-mismatch-v1.json >/dev/null
+          python3 -m py_compile             tests/validation/test_s003_mic_mismatch_downstream_transfer_retirement.py             tests/validation/test_s003_mic_mismatch_measurement_oracle_retirement.py             tests/validation/test_s003_slr31_retirement.py             tests/validation/test_s003_cross_source_retirement.py
+          python3 tests/validation/test_s003_mic_mismatch_downstream_transfer_retirement.py
+          python3 tests/validation/test_s003_mic_mismatch_measurement_oracle_retirement.py
+          python3 tests/validation/test_s003_slr31_retirement.py
+          python3 tests/validation/test_s003_cross_source_retirement.py

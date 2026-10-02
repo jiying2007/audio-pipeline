@@ -47,3 +47,7 @@ A blocker may be closed for a narrowly identified sub-signature without closing 
 ## Measurement-domain oracle review
 
 For a candidate-relevant sub-signature, measurement-domain exclusion must be based on source/reference controls that do not depend on the same output-vs-input delta that raised the diagnostic. The mic gain/delay mismatch line now has a reviewed SLR31 source-domain oracle: both fresh seeds pass 8/8 fixed utterances using absolute clipping, component SNR, correlation, lag and gain controls with no pipeline output. This closes only the measurement-domain blocker for that narrow sub-signature; it does not identify a DSP root cause or grant S004 authority.
+
+## Downstream-transfer exclusion
+
+A stage-prefix review may prove that later stages are not necessary for a diagnostic symptom to appear. This is weaker than a root-cause claim. For the mic-gain/delay-mismatch severe sub-signature, observation at an HPF-only capture prefix excludes BF, NS, AGC, VAD and final/full-pipeline transfer as necessary causes of appearance, while HPF causality remains unproven. Such evidence can close the downstream-transfer blocker without granting candidate authority.

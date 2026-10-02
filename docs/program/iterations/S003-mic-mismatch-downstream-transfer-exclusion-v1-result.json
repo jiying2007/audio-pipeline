@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "S003-mic-mismatch-downstream-transfer-exclusion-v1-result",
+  "investigation_id": "S003-mic-mismatch-downstream-transfer-exclusion-v1",
+  "status": "CLOSED_DIAGNOSTIC_DOWNSTREAM_TRANSFER_ARTIFACT_EXCLUDED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_RELEASE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36971346158,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "a5b84b27f44ed6985262e20ce4f689e2bd137bd9",
+    "artifact_id": 11211114715,
+    "artifact_name": "s003-mic-mismatch-downstream-transfer-36971346158",
+    "artifact_zip_sha256": "cc796af72e21a38f32774e4e70cce3c49f4dafb138f5900f5f21865d32a20d08",
+    "aggregate_member": "downstream-transfer-review.json",
+    "aggregate_member_sha256": "196bb20e4aa7eb8c7ee003e005a733895026c8a4ff394b9d02c1512e5b5c6b43"
+  },
+  "qualification": {
+    "verify_run_id": 36971346434,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 36971346131,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 36971346105,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 36971346137,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 36971346110,
+    "program_archive_conclusion": "success",
+    "release_run_id": 36971678353,
+    "release_conclusion": "success"
+  },
+  "scope": {
+    "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
+    "scoped_subsignature": "severe-near-reference-degradation",
+    "stage_prefix_source": "tests/validation/stage_prefix_process_pcm.c",
+    "stage_prefix_source_git_blob_sha1": "4decaeeb323ecce5dc38dc442f8c23a06e1b86df",
+    "prefix_capture_mask": "AP_STAGE_HPF"
+  },
+  "mechanical_result": {
+    "dechorate": {
+      "8307": {
+        "severe_cases": 11,
+        "capture_first_observable_cases": 11,
+        "total_cases": 11
+      },
+      "8407": {
+        "severe_cases": 11,
+        "capture_first_observable_cases": 11,
+        "total_cases": 11
+      }
+    },
+    "slr31": {
+      "9307": {
+        "severe_cases": 8,
+        "capture_first_observable_cases": 8,
+        "total_cases": 8
+      },
+      "9407": {
+        "severe_cases": 8,
+        "capture_first_observable_cases": 8,
+        "total_cases": 8
+      }
+    },
+    "measurement_domain_artifact_exclusion_satisfied": true,
+    "prefix_capture_hpf_only": true,
+    "bf_enabled_at_prefix_capture": false,
+    "ns_enabled_at_prefix_capture": false,
+    "agc_enabled_at_prefix_capture": false,
+    "vad_enabled_at_prefix_capture": false,
+    "final_full_pipeline_reached_at_prefix_capture": false,
+    "downstream_transfer_artifact_exclusion_satisfied": true
+  },
+  "reviewed_validity": {
+    "downstream_transfer_artifact_exclusion_sufficiently_proven": true,
+    "supported": "The scoped severe subsignature is already observable at an HPF-only capture prefix in both independent public families; BF, NS, AGC, VAD and final/full-pipeline transfer are not necessary for the subsignature to appear.",
+    "not_supported": [
+      "HPF is the causal root cause",
+      "BF is the causal root cause",
+      "any shipping parameter change",
+      "candidate selection"
+    ],
+    "root_cause_claim_authority": false
+  },
+  "s004_review": {
+    "open": false,
+    "candidate_authority": false,
+    "scope": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1 severe-near-reference-degradation only",
+    "satisfied": [
+      "multiple_fresh_seed_repetition",
+      "same_first_observable_stage",
+      "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature",
+      "measurement_domain_artifact_exclusion",
+      "downstream_transfer_artifact_exclusion"
+    ],
+    "missing": [
+      "bounded_candidate_resource_fit"
+    ]
+  },
+  "next_authorized_step": {
+    "phase": "S004_ADMISSION_RESOURCE_ENVELOPE",
+    "candidate_limit": 0,
+    "description": "Define and qualify a bounded resource envelope for any future candidate before candidate design authority is granted. Do not select or tune a DSP candidate yet."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false
+}

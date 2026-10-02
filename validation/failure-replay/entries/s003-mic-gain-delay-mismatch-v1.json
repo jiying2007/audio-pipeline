@@ -52,7 +52,8 @@
       "multiple_fresh_seed_repetition",
       "same_first_observable_stage",
       "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature",
-      "measurement_domain_artifact_exclusion"
+      "measurement_domain_artifact_exclusion",
+      "downstream_transfer_artifact_exclusion"
     ],
     "partial_evidence": [
       "dechorate_measured_rir_reproduces_severe_near_reference_degradation_11_of_11_on_both_seeds",
@@ -60,10 +61,9 @@
       "original_noise_amplification_component_remains_source_specific_or_unconfirmed"
     ],
     "missing": [
-      "downstream_transfer_artifact_exclusion",
       "bounded_candidate_resource_fit"
     ],
-    "caution": "measurement-domain artifact exclusion is supported only for the mic-gain/delay-mismatch severe-near-reference-degradation subsignature; this remains non-causal and grants no candidate authority"
+    "caution": "downstream-transfer exclusion proves the severe subsignature is observable before BF/NS/AGC/VAD/final; it does not prove HPF causality. Candidate authority remains closed until a bounded resource envelope is independently qualified."
   },
   "root_cause_claim_authority": false,
   "release_acceptance_authority": false,
@@ -151,5 +151,47 @@
     "near_si_sdr_improvement_consumed": false,
     "measurement_domain_artifact_exclusion_satisfied": true,
     "root_cause_claim_authority": false
+  },
+  "downstream_transfer_review": {
+    "review_status": "DOWNSTREAM_TRANSFER_ARTIFACT_EXCLUDED",
+    "reviewed_result": "docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json",
+    "source_families": [
+      "dechorate-measured-rir",
+      "openslr-slr31-clean-speech"
+    ],
+    "public_family_observations": {
+      "dechorate": {
+        "8307": {
+          "capture": 11,
+          "total": 11
+        },
+        "8407": {
+          "capture": 11,
+          "total": 11
+        }
+      },
+      "slr31": {
+        "9307": {
+          "capture": 8,
+          "total": 8
+        },
+        "9407": {
+          "capture": 8,
+          "total": 8
+        }
+      }
+    },
+    "prefix_capture_mask": "AP_STAGE_HPF",
+    "stage_prefix_source_git_blob_sha1": "4decaeeb323ecce5dc38dc442f8c23a06e1b86df",
+    "excluded_as_necessary": [
+      "BF",
+      "NS",
+      "AGC",
+      "VAD",
+      "final/full-pipeline"
+    ],
+    "downstream_transfer_artifact_exclusion_satisfied": true,
+    "hpf_root_cause_claim_authority": false,
+    "bf_root_cause_claim_authority": false
   }
 }

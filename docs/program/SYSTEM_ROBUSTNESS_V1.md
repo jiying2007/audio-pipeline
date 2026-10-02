@@ -41,7 +41,7 @@ Two declared delivery profiles are tracked:
 - **conservative**: current SSC305 Cortex-A32 LOW product preset; stability/low-resource default.
 - **effect-first**: Cortex-A32 full graph research envelope; may consume more resources but has no shipping authority.
 
-Hosted/QEMU evidence may gate deterministic build identity, ROM/static state and relative regressions. Silicon CPU/thermal/power budgets remain calibration-required and cannot be fabricated from hosted timing.
+Hosted/QEMU evidence gates deterministic AArch32 build identity, pipeline/runtime state, linked text/rodata and ELF size, direct allocator-symbol absence, algorithmic latency, and repeated QEMU execution identity for both profiles. Silicon CPU ms/audio-second, frame p50/p95/p99, RSS, whole-thread stack, adaptive warm-up, transition worst-case timing, thermal and power remain calibration-required and cannot be fabricated from hosted or QEMU timing.
 
 ## Runner baseline
 

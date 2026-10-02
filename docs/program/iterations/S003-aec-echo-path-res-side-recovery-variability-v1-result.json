@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-res-side-recovery-variability-v1-result",
+  "investigation_id": "S003-aec-echo-path-res-side-recovery-variability-v1",
+  "status": "CLOSED_DIAGNOSTIC_RES_SIDE_VARIABILITY_MAPPED_AEC_LATE_RECOVERY_RETAINED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CAUSAL_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37034854322,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "1bf43b8d486e5d79585f69f877726a9bf759a978",
+    "artifact_id": 11238644302,
+    "artifact_name": "s003-aec-echo-path-res-side-37034854322",
+    "artifact_zip_sha256": "32c47e669b11c898459482ea017361c0199ad16b3f23fadfb7fe99499b744cef",
+    "artifact_zip_bytes": 206466,
+    "aggregate_member": "cross-seed-res-side-summary.json",
+    "aggregate_member_sha256": "2eea7dda5d94c29d346db84f5429d6dd7e9888014b558808bb6099e270033bf6"
+  },
+  "qualification": {
+    "verify_run_id": 37034854863,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37034854250,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37034854332,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37034854205,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37034854234,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37034854327,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37035248218,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37035248200,
+    "i015_finalization_conclusion": "success"
+  },
+  "probe_validity": {
+    "test_only_res_state_probe": true,
+    "output_bitwise_equivalent_all_seeds": true,
+    "public_api_changed": false,
+    "shipping_source_changed": false,
+    "full_res_state_trace_retained": true
+  },
+  "mechanical_result": {
+    "fresh_seeds": [
+      14707,
+      14807,
+      14907,
+      15007,
+      15107,
+      15207,
+      15307,
+      15407
+    ],
+    "recovery_ms_by_seed": {
+      "14707": {
+        "AEC": 100,
+        "RES": 150,
+        "NS": 250,
+        "full": 250,
+        "aec_to_res_ms": 50,
+        "res_to_ns_ms": 100
+      },
+      "14807": {
+        "AEC": 250,
+        "RES": 300,
+        "NS": 250,
+        "full": 250,
+        "aec_to_res_ms": 50,
+        "res_to_ns_ms": -50
+      },
+      "14907": {
+        "AEC": 250,
+        "RES": 300,
+        "NS": 250,
+        "full": 250,
+        "aec_to_res_ms": 50,
+        "res_to_ns_ms": -50
+      },
+      "15007": {
+        "AEC": 100,
+        "RES": 150,
+        "NS": 200,
+        "full": 200,
+        "aec_to_res_ms": 50,
+        "res_to_ns_ms": 50
+      },
+      "15107": {
+        "AEC": 300,
+        "RES": 300,
+        "NS": 300,
+        "full": 300,
+        "aec_to_res_ms": 0,
+        "res_to_ns_ms": 0
+      },
+      "15207": {
+        "AEC": 100,
+        "RES": 150,
+        "NS": 200,
+        "full": 200,
+        "aec_to_res_ms": 50,
+        "res_to_ns_ms": 50
+      },
+      "15307": {
+        "AEC": 100,
+        "RES": 150,
+        "NS": 200,
+        "full": 200,
+        "aec_to_res_ms": 50,
+        "res_to_ns_ms": 50
+      },
+      "15407": {
+        "AEC": 150,
+        "RES": 150,
+        "NS": 250,
+        "full": 250,
+        "aec_to_res_ms": 0,
+        "res_to_ns_ms": 100
+      }
+    },
+    "sign_distribution": {
+      "extension": [
+        14707,
+        15007,
+        15207,
+        15307,
+        15407
+      ],
+      "neutral": [
+        15107
+      ],
+      "contraction": [
+        14807,
+        14907
+      ],
+      "censored": []
+    },
+    "non_positive_seed_count": 3,
+    "non_positive_seeds": [
+      14807,
+      14907,
+      15107
+    ],
+    "non_positive_all_have_aec_recovery_at_or_after_250ms": true,
+    "contraction_pattern": {
+      "seeds": [
+        14807,
+        14907
+      ],
+      "aec_recovery_time_ms": 250,
+      "res_recovery_time_ms": 300,
+      "ns_recovery_time_ms": 250,
+      "aec_to_res_ms": 50,
+      "res_to_ns_ms": -50
+    },
+    "neutral_pattern": {
+      "seed": 15107,
+      "aec_recovery_time_ms": 300,
+      "res_recovery_time_ms": 300,
+      "ns_recovery_time_ms": 300,
+      "aec_to_res_ms": 0,
+      "res_to_ns_ms": 0
+    },
+    "fixed_time_res_gain_observation": {
+      "at_150ms": {
+        "extension_range": [
+          0.105550259,
+          0.136332601
+        ],
+        "neutral": 0.147427902,
+        "contraction_range": [
+          0.120734766,
+          0.129596263
+        ]
+      },
+      "at_200ms": {
+        "all_seed_range": [
+          0.100102425,
+          0.100875184
+        ],
+        "interpretation": "gain is already tightly clustered near the floor across all sign classes"
+      },
+      "at_250ms": {
+        "extension_range": [
+          0.100002408,
+          0.111097224
+        ],
+        "neutral": 0.133862376,
+        "contraction_range": [
+          0.12231005,
+          0.127771333
+        ]
+      }
+    },
+    "threshold_edge_observation": {
+      "contraction_aec_previous_window_margin_db": [
+        0.1213416839213366,
+        0.9153305520567514
+      ],
+      "neutral_aec_previous_window_margin_db": 1.2518439475230103,
+      "note": "non-positive seeds are mechanically late at the AEC recovery boundary and sit near the fixed recovery threshold, but no new threshold is fitted or inferred"
+    }
+  },
+  "reviewed_validity": {
+    "res_side_timing_variability_repeatable_on_fresh_set": true,
+    "standalone_res_only_explanation_supported": false,
+    "all_non_positive_signs_coincide_with_late_aec_recovery_on_this_fresh_set": true,
+    "contraction_seeds_add_an_extra_50ms_aec_to_res_delay": true,
+    "single_res_gain_state_separator_supported": false,
+    "res_gain_root_cause_proven": false,
+    "aec_root_cause_proven": false,
+    "recovery_threshold_artifact_proven": false,
+    "interpretation": "The non-positive RES-to-NS signs on this fresh set are not standalone RES phenomena: AEC recovery is already late at 250-300 ms. The two contraction seeds then add a further +50 ms AEC-to-RES delay, while the neutral seed does not. RES gain trajectories differ descriptively, but by 200 ms all seeds are already clustered near 0.100-0.101, so a single RES-gain state or threshold cannot be promoted as the cause."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_ECHO_PATH_RES_GAIN_CONTRIBUTION_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Using the same confirmed 100w-50s recovery geometry, decompose the standalone RES recovery curve into AEC residual trajectory plus exact scalar RES-gain contribution. Compute analysis-only counterfactual recovery with the gain contribution removed/frozen to the preregistered pre-transition reference. No DSP execution change, gain/alpha search, AEC parameter search, recovery-threshold change, state ranking, or root-cause claim."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-100w50s-geometry-confirmation-v1",
+  "phase": "S003_AEC_RECOVERY_100W50S_GEOMETRY_CONFIRMATION_V1",
+  "authority": "CANDIDATE_ZERO_MEASUREMENT_METHOD_CONFIRMATION_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_WINDOW_GEOMETRY_DECOMPOSED"
+  },
+  "hypothesis": {
+    "statement": "On independent fresh seeds, 100 ms integration with 50 ms stride yields a more stable research recovery measurement than 100 ms integration with 100 ms stride without introducing censoring.",
+    "compared_geometries": [
+      "100w-100s",
+      "100w-50s"
+    ],
+    "confirmation_rule": {
+      "minimum_non_worse_case_profiles": 13,
+      "total_case_profiles": 15,
+      "total_cross_seed_range_rule": "sum(range_100w50s) < sum(range_100w100s)",
+      "censoring_rule": "zero censored observations under both geometries"
+    },
+    "if_confirmed": "authorize 100w-50s as the preferred research recovery measurement geometry for future S003 diagnostics only",
+    "if_rejected": "retain 100w-100s as current research measurement and do not continue geometry tuning from this result"
+  },
+  "corpus": {
+    "generator": "validation/tools/build_aec_stage_recovery_corpus.py",
+    "policy": "validation/policies/validation-s003-aec-stage-recovery.json",
+    "fresh_seeds": [
+      12307,
+      12407,
+      12507,
+      12607
+    ],
+    "seconds": 6,
+    "target_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "prefix-aec",
+      "prefix-res",
+      "prefix-ns",
+      "prefix-agc",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "prefix-agc": "AGC",
+      "default": "full"
+    },
+    "cases_per_seed": 15
+  },
+  "fixed_measurement": {
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ],
+    "baseline_geometry": {
+      "id": "100w-100s",
+      "window_ms": 100,
+      "stride_ms": 100,
+      "required_windows": 3
+    },
+    "candidate_geometry": {
+      "id": "100w-50s",
+      "window_ms": 100,
+      "stride_ms": 50,
+      "required_windows": 5
+    }
+  },
+  "preregistered_rules": {
+    "require_same_output_for_both_geometries": true,
+    "require_same_pre_baseline": true,
+    "require_same_recovery_limit": true,
+    "require_same_300ms_coverage": true,
+    "require_confirmation_rule_on_independent_fresh_seeds": true,
+    "either_outcome_is_valid_evidence": true,
+    "no_geometry_sweep": true,
+    "no_threshold_search": true,
+    "no_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_dsp_candidate": false,
+    "may_change_dsp_parameters": false,
+    "may_define_product_recovery_requirement": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false,
+    "may_adopt_research_measurement_geometry_only_if_confirmed": true
+  },
+  "success_definition": "confirm or reject the single preregistered 100w-50s research measurement-method hypothesis on independent fresh seeds"
+}

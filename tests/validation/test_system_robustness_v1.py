@@ -171,6 +171,18 @@ def main() -> int:
     assert geometry["authority_boundary"]["may_claim_measurement_artifact"] is False
     assert geometry["authority_boundary"]["may_open_s004"] is False
 
+    geom_confirm = json.loads((ITER / "S003-aec-recovery-100w50s-geometry-confirmation-v1.json").read_text())
+    assert geom_confirm["authority"] == "CANDIDATE_ZERO_MEASUREMENT_METHOD_CONFIRMATION_ONLY"
+    assert geom_confirm["candidate_limit"] == 0 and geom_confirm["confirmation_limit"] == 0
+    assert geom_confirm["promotion_allowed"] is False and geom_confirm["shipping_change_allowed"] is False
+    assert geom_confirm["corpus"]["fresh_seeds"] == [12307, 12407, 12507, 12607]
+    assert geom_confirm["hypothesis"]["compared_geometries"] == ["100w-100s", "100w-50s"]
+    assert geom_confirm["hypothesis"]["confirmation_rule"]["minimum_non_worse_case_profiles"] == 13
+    assert geom_confirm["preregistered_rules"]["either_outcome_is_valid_evidence"] is True
+    assert geom_confirm["preregistered_rules"]["no_geometry_sweep"] is True
+    assert geom_confirm["preregistered_rules"]["no_parameter_search"] is True
+    assert geom_confirm["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

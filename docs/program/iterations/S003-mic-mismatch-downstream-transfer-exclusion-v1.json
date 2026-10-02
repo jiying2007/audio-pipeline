@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "id": "S003-mic-mismatch-downstream-transfer-exclusion-v1",
+  "phase": "S003_DOWNSTREAM_TRANSFER_ARTIFACT_EXCLUSION",
+  "authority": "CANDIDATE_ZERO_EVIDENCE_SYNTHESIS_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
+  "scoped_subsignature": "severe-near-reference-degradation",
+  "predecessors": {
+    "measured_rir_result": "docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json",
+    "clean_speech_result": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json",
+    "measurement_oracle_result": "docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json"
+  },
+  "stage_semantics": {
+    "source": "tests/validation/stage_prefix_process_pcm.c",
+    "expected_source_sha": "4decaeeb323ecce5dc38dc442f8c23a06e1b86df",
+    "capture_prefix": "prefix-capture",
+    "capture_prefix_required_mask": "AP_STAGE_HPF",
+    "downstream_stages_excluded_as_necessary": [
+      "AP_STAGE_BF",
+      "AP_STAGE_NS",
+      "AP_STAGE_AGC",
+      "AP_STAGE_VAD",
+      "final/full-pipeline"
+    ],
+    "interpretation": "Observation at prefix-capture proves listed downstream stages are not necessary for the scoped subsignature. It does not prove HPF is causal."
+  },
+  "preregistered_evidence_rules": {
+    "dechorate_min_capture_observations_per_seed": 6,
+    "dechorate_total_per_seed": 11,
+    "slr31_min_capture_observations_per_seed": 6,
+    "slr31_total_per_seed": 8,
+    "required_dechorate_seeds": [
+      8307,
+      8407
+    ],
+    "required_slr31_seeds": [
+      9307,
+      9407
+    ],
+    "measurement_domain_artifact_exclusion_must_already_be_true": true,
+    "stage_source_must_match_expected_sha": true,
+    "downstream_transfer_artifact_exclusion_gate": "satisfied only if the scoped severe subsignature is first observable at capture in at least the preregistered count for every seed in both independent public families, measurement-domain exclusion is already closed, and prefix-capture is mechanically HPF-only before BF/NS/AGC/VAD/final"
+  },
+  "outputs": [
+    "downstream-transfer-review.json",
+    "SHA256SUMS"
+  ],
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_thresholds": false,
+    "may_update_shipping_source": false,
+    "may_consume_validation_grade": false,
+    "may_consume_validation_grade_blind": false,
+    "may_claim_hpf_root_cause": false,
+    "may_claim_bf_root_cause": false,
+    "may_open_s004": false
+  },
+  "next_review": "If satisfied, mark only downstream_transfer_artifact_exclusion satisfied for the scoped mic-mismatch severe subsignature. Bounded candidate resource fit remains the final S004 admission blocker."
+}

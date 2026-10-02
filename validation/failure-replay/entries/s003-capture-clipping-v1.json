@@ -52,13 +52,58 @@
       "multiple_fresh_seed_repetition",
       "same_first_observable_stage"
     ],
+    "partial_evidence": [
+      "one_public_measured_rir_family_reproduces_severe_near_reference_degradation_subsignature"
+    ],
     "missing": [
-      "independent_source_family_or_public_domain_repetition",
+      "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature",
       "measurement_domain_artifact_exclusion",
       "downstream_transfer_artifact_exclusion",
       "bounded_candidate_resource_fit"
     ]
   },
   "root_cause_claim_authority": false,
-  "release_acceptance_authority": false
+  "release_acceptance_authority": false,
+  "public_cross_source_review": {
+    "review_status": "PARTIAL_SUBSIGNATURE_REPRODUCTION_ONLY",
+    "reviewed_result": "docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json",
+    "source_family": "dechorate-measured-rir",
+    "public_dataset_family_index": 1,
+    "fresh_seeds": [
+      8307,
+      8407
+    ],
+    "exact_full_durable_signature_rooms": {
+      "8307": 0,
+      "8407": 0
+    },
+    "stable_subsignature": [
+      "severe-near-reference-degradation"
+    ],
+    "stable_subsignature_rooms": {
+      "8307": 11,
+      "8407": 11
+    },
+    "source_specific_or_unconfirmed_signature_components": [
+      "noise-amplification"
+    ],
+    "raw_watch_clear_rooms": {
+      "8307": 11,
+      "8407": 11
+    },
+    "raw_watch_clear_authority": "SANITY_ONLY_NOT_SUFFICIENT_FOR_MEASUREMENT_DOMAIN_ARTIFACT_EXCLUSION",
+    "measurement_domain_artifact_exclusion_status": "UNRESOLVED",
+    "downstream_transfer_artifact_exclusion_status": "UNRESOLVED_FULL_COMPOSITE_SIGNATURE_NOT_REPRODUCED",
+    "first_observable_stage_distribution": {
+      "8307": {
+        "NS": 7,
+        "AGC": 4
+      },
+      "8407": {
+        "NS": 6,
+        "AGC": 5
+      }
+    },
+    "root_cause_claim_authority": false
+  }
 }

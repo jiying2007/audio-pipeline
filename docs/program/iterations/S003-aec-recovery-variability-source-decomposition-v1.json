@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-variability-source-decomposition-v1",
+  "phase": "S003_AEC_RECOVERY_VARIABILITY_SOURCE_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_OBSERVATION_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_SINGLE_HYPOTHESIS_REJECTED"
+  },
+  "corpus": {
+    "generator": "validation/tools/build_aec_stage_recovery_corpus.py",
+    "policy": "validation/policies/validation-s003-aec-stage-recovery.json",
+    "fresh_seeds": [
+      11107,
+      11207,
+      11307,
+      11407
+    ],
+    "seconds": 6,
+    "target_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "prefix-aec",
+      "prefix-res",
+      "prefix-ns",
+      "prefix-agc",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "prefix-agc": "AGC",
+      "default": "full"
+    },
+    "cases_per_seed": 15
+  },
+  "recovery_measurement": {
+    "inherited_from": "docs/program/iterations/S003-aec-transition-recovery-latency-v1-result.json",
+    "metric": "residual_to_echo_power_db",
+    "window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "telemetry_observables": [
+    "aec_converged",
+    "erle_valid",
+    "erle_db",
+    "estimated_delay_ms",
+    "delay_error_samples",
+    "far_end_active",
+    "double_talk_active"
+  ],
+  "telemetry_windows": {
+    "pre_ms": [
+      -1000,
+      -200
+    ],
+    "early_post_ms": [
+      0,
+      500
+    ],
+    "recovery_band_ms": [
+      0,
+      1000
+    ],
+    "late_post_ms": [
+      1500,
+      2500
+    ]
+  },
+  "derived_observations": [
+    "recovery_time_ms",
+    "pre_baseline_db",
+    "peak_excess_db_in_first_1000ms",
+    "positive_excess_area_db_ms_0_2500",
+    "late_window_excess_db_2000_2500",
+    "telemetry_window_summaries",
+    "cross_seed_recovery_range_ms",
+    "fastest_vs_slowest_seed_telemetry_delta"
+  ],
+  "preregistered_rules": {
+    "require_exact_case_profile_matrix": true,
+    "require_complete_recovery_measurements": true,
+    "require_complete_telemetry_windows": true,
+    "censored_is_valid_evidence_not_ci_failure": true,
+    "no_correlation_significance_threshold": true,
+    "no_root_cause_selection": true,
+    "no_performance_threshold_search": true,
+    "no_parameter_search": true,
+    "no_ns_parameter_search": true,
+    "no_nlms_step_size_search": true,
+    "no_dtd_threshold_search": true,
+    "no_res_parameter_search": true,
+    "no_agc_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_claim_causal_stage": false,
+    "may_change_dsp_parameters": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "complete cross-seed recovery/telemetry variability map and bounded descriptive comparisons, not a causal attribution, performance verdict, or candidate"
+}

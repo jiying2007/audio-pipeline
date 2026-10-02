@@ -43,11 +43,12 @@
   ],
   "source_assets": [
     "validation/tools/build_stage_interaction_corpus.py",
-    "validation/tools/stage_profile_support.py",
+    "validation/tools/stage_interaction_run.py",
     "validation/tools/stage_interaction_attribution.py",
     "validation/tools/stage_interaction_consistency.py",
     "validation/tools/build_system_robustness_corpus.py",
-    "validation/tools/build_aec_transition_corpus.py"
+    "validation/tools/build_aec_transition_corpus.py",
+    "tests/validation/stage_prefix_process_pcm.c"
   ],
   "watch_contract": "docs/program/iterations/S001.json",
   "consistency_rule": "compare identical base cases across fresh seeds; repeated non-null stage is only one S004 precondition",

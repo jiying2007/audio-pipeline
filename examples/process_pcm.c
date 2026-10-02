@@ -14,7 +14,7 @@
 static void usage(const char *argv0) {
     fprintf(stderr,
             "usage: %s [--sample-rate HZ] [--mic-channels 1|2] "
-            "[--capture-only] [--capture-profile default|ns-isolated|vad-isolated|agc-isolated|bf-isolated|prefix-capture|prefix-bf|prefix-sync|prefix-aec|prefix-res|prefix-ns|prefix-agc|prefix-vad] [--metrics-jsonl FILE] "
+            "[--capture-only] [--capture-profile default|ns-isolated|vad-isolated|agc-isolated|bf-isolated] [--metrics-jsonl FILE] "
             "[--print-default-tuning] "
             "[--aec-mu VALUE] [--ns-floor VALUE] [--agc-target-dbfs VALUE] [--limiter-dbfs VALUE] "
             "[--echo-path-change-frame N] "
@@ -49,29 +49,7 @@ static int valid_capture_profile(const char *profile) {
            strcmp(profile, "ns-isolated") == 0 ||
            strcmp(profile, "vad-isolated") == 0 ||
            strcmp(profile, "agc-isolated") == 0 ||
-           strcmp(profile, "bf-isolated") == 0 ||
-           strcmp(profile, "prefix-capture") == 0 ||
-           strcmp(profile, "prefix-bf") == 0 ||
-           strcmp(profile, "prefix-sync") == 0 ||
-           strcmp(profile, "prefix-aec") == 0 ||
-           strcmp(profile, "prefix-res") == 0 ||
-           strcmp(profile, "prefix-ns") == 0 ||
-           strcmp(profile, "prefix-agc") == 0 ||
-           strcmp(profile, "prefix-vad") == 0;
-}
-
-static int profile_requires_render(const char *profile) {
-    return strcmp(profile, "prefix-sync") == 0 ||
-           strcmp(profile, "prefix-aec") == 0 ||
-           strcmp(profile, "prefix-res") == 0;
-}
-
-static int profile_supports_render(const char *profile) {
-    return strcmp(profile, "default") == 0 ||
-           profile_requires_render(profile) ||
-           strcmp(profile, "prefix-ns") == 0 ||
-           strcmp(profile, "prefix-agc") == 0 ||
-           strcmp(profile, "prefix-vad") == 0;
+           strcmp(profile, "bf-isolated") == 0;
 }
 
 int main(int argc, char **argv) {
@@ -205,8 +183,7 @@ int main(int argc, char **argv) {
         return 2;
     }
     if ((!capture_only && argc - arg != 3) || (capture_only && argc - arg != 2) ||
-        (capture_only && profile_requires_render(capture_profile)) ||
-        (!capture_only && !profile_supports_render(capture_profile))) {
+        (!capture_only && strcmp(capture_profile, "default") != 0)) {
         usage(argv[0]);
         return 2;
     }
@@ -219,7 +196,6 @@ int main(int argc, char **argv) {
     cfg.mic_channels = channels;
     if (channels == 1u) cfg.stages &= ~AP_STAGE_BF;
     if (capture_only) {
-        const ap_stage_mask_t front = AP_STAGE_HPF | (channels == 2u ? AP_STAGE_BF : 0u);
         cfg.stages &= ~(AP_STAGE_SYNC | AP_STAGE_AEC | AP_STAGE_RES);
         cfg.enable_delay_tracking = 0u;
         cfg.enable_clock_drift_compensation = 0u;
@@ -231,40 +207,6 @@ int main(int argc, char **argv) {
             cfg.stages = AP_STAGE_AGC;
         else if (strcmp(capture_profile, "bf-isolated") == 0)
             cfg.stages = AP_STAGE_BF;
-        else if (strcmp(capture_profile, "prefix-capture") == 0)
-            cfg.stages = AP_STAGE_HPF;
-        else if (strcmp(capture_profile, "prefix-bf") == 0)
-            cfg.stages = front;
-        else if (strcmp(capture_profile, "prefix-ns") == 0)
-            cfg.stages = front | AP_STAGE_NS;
-        else if (strcmp(capture_profile, "prefix-agc") == 0)
-            cfg.stages = front | AP_STAGE_NS | AP_STAGE_AGC;
-        else if (strcmp(capture_profile, "prefix-vad") == 0)
-            cfg.stages = front | AP_STAGE_NS | AP_STAGE_AGC | AP_STAGE_VAD;
-    } else if (strcmp(capture_profile, "default") != 0) {
-        const ap_stage_mask_t front = AP_STAGE_HPF | (channels == 2u ? AP_STAGE_BF : 0u);
-        ap_stage_mask_t stages = front | AP_STAGE_SYNC;
-        if (strcmp(capture_profile, "prefix-aec") == 0 ||
-            strcmp(capture_profile, "prefix-res") == 0 ||
-            strcmp(capture_profile, "prefix-ns") == 0 ||
-            strcmp(capture_profile, "prefix-agc") == 0 ||
-            strcmp(capture_profile, "prefix-vad") == 0)
-            stages |= AP_STAGE_AEC;
-        if (strcmp(capture_profile, "prefix-res") == 0 ||
-            strcmp(capture_profile, "prefix-ns") == 0 ||
-            strcmp(capture_profile, "prefix-agc") == 0 ||
-            strcmp(capture_profile, "prefix-vad") == 0)
-            stages |= AP_STAGE_RES;
-        if (strcmp(capture_profile, "prefix-ns") == 0 ||
-            strcmp(capture_profile, "prefix-agc") == 0 ||
-            strcmp(capture_profile, "prefix-vad") == 0)
-            stages |= AP_STAGE_NS;
-        if (strcmp(capture_profile, "prefix-agc") == 0 ||
-            strcmp(capture_profile, "prefix-vad") == 0)
-            stages |= AP_STAGE_AGC;
-        if (strcmp(capture_profile, "prefix-vad") == 0)
-            stages |= AP_STAGE_VAD;
-        cfg.stages = stages;
     }
     if (ap_pipeline_validate_config(&cfg) != AP_OK) {
         fprintf(stderr, "invalid processor geometry/stage configuration\n");

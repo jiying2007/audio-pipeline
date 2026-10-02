@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-res-gain-contribution-decomposition-v1-result",
+  "investigation_id": "S003-aec-echo-path-res-gain-contribution-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_RES_GAIN_TARGET_DRIVER_RETAINED_SMOOTHING_REJECTED",
+  "authority": "DIAGNOSTIC_ONLY_NO_PARAMETER_OR_CANDIDATE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37038235197,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "802c021cf72d66b646c5ca05d05b692b57ad7d05",
+    "artifact_id": 11240323902,
+    "artifact_name": "s003-aec-res-gain-contribution-37038235197",
+    "artifact_zip_sha256": "5efdd3e488895e3d06c22d400989aa9c7621f7a047ed8ce95482d19f775b40e2",
+    "aggregate_member": "cross-seed-contribution-summary.json",
+    "aggregate_member_sha256": "ea5a1aaf3f4026aec2eda97686bed646c41ced9d350a9872ecf55ea4b873d51a"
+  },
+  "qualification": {
+    "verify_run_id": 37038235964,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37038235280,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37038235392,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37038235384,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37038235449,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37038235346,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37038723944,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37038723869,
+    "i015_finalization_conclusion": "success"
+  },
+  "mechanical_validity": {
+    "probe_output_bitwise_equivalent_all_seeds": true,
+    "gain_formula_valid_all_seeds": true,
+    "analytic_actual_matches_standard_res_all_seeds": true,
+    "analytic_aec_matches_standard_aec_all_seeds": true,
+    "frozen_pre_gain_matches_standard_aec_all_seeds": true,
+    "evidence_accepted": true
+  },
+  "fresh_seeds": [
+    15507,
+    15607,
+    15707,
+    15807,
+    15907,
+    16007,
+    16107,
+    16207
+  ],
+  "contribution_summary": {
+    "standard_aec_to_res_ms": {
+      "15507": 50,
+      "15607": 0,
+      "15707": 50,
+      "15807": 50,
+      "15907": 50,
+      "16007": 50,
+      "16107": 50,
+      "16207": 0
+    },
+    "instantaneous_target_minus_aec_ms": {
+      "15507": 50,
+      "15607": 0,
+      "15707": 50,
+      "15807": 150,
+      "15907": 50,
+      "16007": 50,
+      "16107": 50,
+      "16207": 150
+    },
+    "actual_minus_instantaneous_target_ms": {
+      "15507": 0,
+      "15607": 0,
+      "15707": 0,
+      "15807": -100,
+      "15907": 0,
+      "16007": 0,
+      "16107": 0,
+      "16207": -150
+    }
+  },
+  "reviewed_validity": {
+    "post_transition_res_gain_path_explains_standard_aec_to_res_difference": true,
+    "frozen_pre_gain_removes_res_delay_all_seeds": true,
+    "smoothing_history_is_primary_recovery_delay_source": false,
+    "smoothing_history_adds_positive_recovery_delay_seed_count": 0,
+    "smoothing_history_neutral_seed_count": 6,
+    "smoothing_history_accelerates_vs_instantaneous_target_seed_count": 2,
+    "instantaneous_target_trajectory_remains_candidate_relevant_mechanical_driver": true,
+    "release_alpha_search_authorized": false,
+    "gain_search_authorized": false,
+    "target_formula_parameter_search_authorized": false,
+    "root_cause_claim_authority": false,
+    "interpretation": "The standard RES delay disappears under a frozen pre-transition gain, so post-transition RES gain action matters mechanically. However, shipping smoothing/history does not create the observed delay: it is neutral on six seeds and accelerates recovery relative to the instantaneous target on two. The remaining bounded question is therefore the instantaneous target trajectory driven by residual_energy and echo_energy, not release-alpha/history tuning."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RES_TARGET_DRIVER_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Decompose the instantaneous RES target into its existing residual_energy and echo_energy drivers using analysis-only counterfactuals. Hold one driver at its preregistered pre-transition reference while preserving the other, reconstruct target_gain/recovery, and determine which driver is necessary for the retained target-induced recovery delay. No parameter sweep, no formula change, no candidate selection."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

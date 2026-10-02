@@ -92,11 +92,13 @@ def main() -> int:
     assert review["near_si_sdr_improvement_consumed"] is False
     assert review["measurement_domain_artifact_exclusion_satisfied"] is True
     assert "measurement_domain_artifact_exclusion" in entry["s004_eligibility"]["satisfied"]
-    assert entry["s004_eligibility"]["missing"] == [
-        "downstream_transfer_artifact_exclusion",
-        "bounded_candidate_resource_fit",
-    ]
+    # The immutable measurement-oracle result freezes blockers at its review time.
+    # The live replay entry may advance as later independent evidence closes the
+    # downstream blocker, but resource fit must remain unresolved until a
+    # separately reviewed admission envelope exists.
     assert entry["s004_eligibility"]["eligible"] is False
+    assert "measurement_domain_artifact_exclusion" in entry["s004_eligibility"]["satisfied"]
+    assert "bounded_candidate_resource_fit" in entry["s004_eligibility"]["missing"]
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     matches = [

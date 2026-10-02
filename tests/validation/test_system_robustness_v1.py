@@ -183,6 +183,20 @@ def main() -> int:
     assert geom_confirm["preregistered_rules"]["no_parameter_search"] is True
     assert geom_confirm["authority_boundary"]["may_open_s004"] is False
 
+    rebaseline = json.loads((ITER / "S003-aec-recovery-rebaseline-100w50s-v1.json").read_text())
+    assert rebaseline["authority"] == "CANDIDATE_ZERO_REBASELINE_ONLY"
+    assert rebaseline["candidate_limit"] == 0 and rebaseline["confirmation_limit"] == 0
+    assert rebaseline["promotion_allowed"] is False and rebaseline["shipping_change_allowed"] is False
+    assert rebaseline["corpus"]["fresh_seeds"] == [12707, 12807, 12907, 13007]
+    assert rebaseline["measurement"]["geometry_id"] == "100w-50s"
+    assert rebaseline["measurement"]["post_window_ms"] == 100
+    assert rebaseline["measurement"]["post_stride_ms"] == 50
+    assert rebaseline["retention_rule"]["minimum_nonzero_delta_ms"] == 50
+    assert rebaseline["preregistered_rules"]["rejected_ns_hypothesis_remains_rejected"] is True
+    assert rebaseline["preregistered_rules"]["no_parameter_search"] is True
+    assert rebaseline["authority_boundary"]["may_claim_causal_stage"] is False
+    assert rebaseline["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

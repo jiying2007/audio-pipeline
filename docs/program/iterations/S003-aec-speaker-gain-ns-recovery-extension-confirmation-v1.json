@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1",
+  "phase": "S003_AEC_SPEAKER_GAIN_NS_RECOVERY_EXTENSION_CONFIRMATION_V1",
+  "authority": "CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-transition-stage-recovery-decomposition-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_STAGE_RECOVERY_DECOMPOSED"
+  },
+  "hypothesis": {
+    "case_id": "speaker-acoustic-gain-step",
+    "statement": "NS stage extends recovery by at least one 100 ms window relative to RES on every fresh confirmation seed.",
+    "gate": "ns_recovery_time_ms - res_recovery_time_ms >= 100",
+    "full_pipeline_role": "context-only-non-gating"
+  },
+  "corpus": {
+    "base_generator": "validation/tools/build_aec_transition_corpus.py",
+    "fresh_seeds": [
+      10907,
+      11007
+    ],
+    "seconds": 6,
+    "profiles": [
+      "prefix-res",
+      "prefix-ns",
+      "default"
+    ],
+    "cases_per_seed": 3,
+    "stage_labels": {
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "default": "full"
+    }
+  },
+  "measurement": {
+    "inherited_from": "docs/program/iterations/S003-aec-transition-recovery-latency-v1-result.json",
+    "metric": "residual_to_echo_power_db",
+    "window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "preregistered_rules": {
+    "require_exact_profile_set": true,
+    "require_non_censored_res_and_ns": true,
+    "require_hypothesis_on_every_fresh_seed": true,
+    "full_pipeline_context_only": true,
+    "no_performance_threshold_search": true,
+    "no_parameter_search": true,
+    "no_ns_internal_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_ns_parameters": false,
+    "may_change_aec_parameters": false,
+    "may_change_res_parameters": false,
+    "may_open_s004": false,
+    "may_claim_ns_root_cause": false
+  },
+  "success_definition": "confirm or reject the single RES→NS recovery-extension hypothesis on fresh seeds; either outcome is valid evidence"
+}

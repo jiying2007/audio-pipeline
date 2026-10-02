@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-transition-stage-recovery-decomposition-v1-result",
+  "investigation_id": "S003-aec-transition-stage-recovery-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_STAGE_RECOVERY_DECOMPOSED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_PERFORMANCE_VERDICT_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36990768856,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "9224a1029ec823ffbcf26d8cde9ecdaffba4152f",
+    "artifact_id": 11219557406,
+    "artifact_name": "s003-aec-stage-recovery-decomposition-36990768856",
+    "artifact_zip_sha256": "5448f4bf2372db747d4c5edfb404756c1c04fc5f79a74cba40ef371ba31d3cab",
+    "aggregate_member": "cross-seed-stage-recovery-summary.json",
+    "aggregate_member_sha256": "7977d8b3d2d8155f7c86b279e6b19f4ed881ce4301cdf0b3ed90220efbe0ceec"
+  },
+  "qualification": {
+    "verify_run_id": 36990769177,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 36990768819,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 36990768887,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 36990768941,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 36990768859,
+    "program_archive_conclusion": "success",
+    "release_run_id": 36991109697,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 36991109811,
+    "i015_finalization_conclusion": "success"
+  },
+  "measurement": {
+    "inherited_from": "docs/program/iterations/S003-aec-transition-recovery-latency-v1-result.json",
+    "profiles": [
+      "AEC",
+      "RES",
+      "NS",
+      "AGC",
+      "full"
+    ],
+    "fresh_seeds": [
+      10707,
+      10807
+    ],
+    "performance_threshold_defined": false
+  },
+  "mechanical_result": {
+    "echo-path-change": {
+      "AEC": [
+        100,
+        200
+      ],
+      "RES": [
+        200,
+        200
+      ],
+      "NS": [
+        200,
+        200
+      ],
+      "AGC": [
+        200,
+        200
+      ],
+      "full": [
+        200,
+        200
+      ]
+    },
+    "speaker-acoustic-gain-step": {
+      "AEC": [
+        200,
+        200
+      ],
+      "RES": [
+        200,
+        200
+      ],
+      "NS": [
+        300,
+        300
+      ],
+      "AGC": [
+        300,
+        300
+      ],
+      "full": [
+        300,
+        300
+      ],
+      "ns_minus_res_ms": [
+        100,
+        100
+      ],
+      "res_peak_excess_db_first_1000ms": [
+        30.844369370311362,
+        30.632853545087745
+      ],
+      "ns_peak_excess_db_first_1000ms": [
+        38.92818845276083,
+        39.35252618855682
+      ],
+      "res_positive_excess_area_db_ms": [
+        5531.720934996953,
+        5503.002675813435
+      ],
+      "ns_positive_excess_area_db_ms": [
+        8762.501664374988,
+        8946.5858608003
+      ]
+    },
+    "render-level-step": {
+      "AEC": [
+        300,
+        300
+      ],
+      "RES": [
+        300,
+        400
+      ],
+      "NS": [
+        300,
+        300
+      ],
+      "AGC": [
+        300,
+        300
+      ],
+      "full": [
+        300,
+        300
+      ]
+    }
+  },
+  "reviewed_validity": {
+    "all_measurements_complete": true,
+    "censored_observations": 0,
+    "stable_stage_boundary_extension": {
+      "case": "speaker-acoustic-gain-step",
+      "from_stage": "RES",
+      "to_stage": "NS",
+      "recovery_extension_ms": [
+        100,
+        100
+      ],
+      "retained_through": [
+        "AGC",
+        "full"
+      ],
+      "repeatable_on_both_fresh_seeds": true
+    },
+    "non_stable_observations": [
+      "echo-path-change has a +100 ms AEC-to-RES delta only on seed 10707",
+      "render-level-step has a +100 ms AEC-to-RES delta only on seed 10807"
+    ],
+    "ns_root_cause_claim_authority": false,
+    "algorithm_pass_fail_verdict": "NOT_AUTHORIZED",
+    "interpretation": "The only repeatable stage boundary extension is speaker acoustic gain step RES→NS. This authorizes a focused fresh-seed confirmation of the stage boundary, not NS parameter search or a root-cause claim."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_SPEAKER_GAIN_NS_RECOVERY_EXTENSION_CONFIRMATION_V1",
+    "candidate_limit": 0,
+    "hypothesis": "For speaker-acoustic-gain-step, NS recovery time is at least one 100 ms window later than RES on each fresh confirmation seed; full-pipeline recovery is recorded as a non-gating context.",
+    "confirm_profiles": [
+      "prefix-res",
+      "prefix-ns",
+      "default"
+    ],
+    "confirmation_rule": "NS recovery_time_ms - RES recovery_time_ms >= 100 on every fresh confirmation seed",
+    "no_parameter_search": true,
+    "no_ns_internal_hypothesis_until_confirmed": true
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "product_release_authority": false
+}

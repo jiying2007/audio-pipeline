@@ -88,5 +88,20 @@
   "rerun_required": false,
   "shipping_change_authority": false,
   "root_cause_claim_authority": false,
-  "product_release_authority": false
+  "product_release_authority": false,
+  "qualification": {
+    "verify_run_id": 36979769108,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 36979768921,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 36979768899,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 36979768924,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 36979769069,
+    "program_archive_conclusion": "success",
+    "i015_finalization_conclusion": "success",
+    "release_run_id": 36980171074,
+    "release_conclusion": "success"
+  }
 }

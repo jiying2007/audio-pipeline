@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-res-ns-recovery-extension-confirmation-v1",
+  "phase": "S003_AEC_ECHO_PATH_RES_NS_RECOVERY_EXTENSION_CONFIRMATION_V1",
+  "authority": "CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-recovery-rebaseline-100w50s-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_100W50S_REBASELINED"
+  },
+  "hypothesis": {
+    "case_id": "echo-path-change",
+    "statement": "Under confirmed 100w-50s research geometry, NS recovery is at least one 50 ms stride later than RES on every independent fresh confirmation seed.",
+    "gate": "ns_recovery_time_ms - res_recovery_time_ms >= 50",
+    "full_pipeline_role": "context-only-non-gating"
+  },
+  "corpus": {
+    "base_generator": "validation/tools/build_aec_transition_corpus.py",
+    "fresh_seeds": [
+      13107,
+      13207,
+      13307,
+      13407
+    ],
+    "seconds": 6,
+    "profiles": [
+      "prefix-res",
+      "prefix-ns",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "default": "full"
+    },
+    "cases_per_seed": 3
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "preregistered_rules": {
+    "require_exact_profile_set": true,
+    "require_non_censored_res_and_ns": true,
+    "require_hypothesis_on_every_fresh_seed": true,
+    "full_pipeline_context_only": true,
+    "either_outcome_is_valid_evidence": true,
+    "no_performance_threshold_search": true,
+    "no_parameter_search": true,
+    "no_ns_internal_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_ns_parameters": false,
+    "may_change_aec_parameters": false,
+    "may_change_res_parameters": false,
+    "may_open_s004": false,
+    "may_claim_ns_root_cause": false
+  },
+  "if_confirmed": {
+    "next_phase": "S003_AEC_ECHO_PATH_NS_STATE_DECOMPOSITION_V1",
+    "authority": "candidate-zero internal-state attribution only; no parameter search"
+  },
+  "if_rejected": {
+    "next_phase": "S003_AEC_RECOVERY_VARIABILITY_REVIEW_V2",
+    "authority": "retain the negative confirmation and do not reopen RES→NS stage attribution from this observation"
+  },
+  "success_definition": "confirm or reject the single echo-path RES→NS recovery-extension hypothesis on independent fresh seeds; either outcome is valid evidence"
+}

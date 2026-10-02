@@ -29,7 +29,12 @@
       "prefix-ns",
       "default"
     ],
-    "cases_per_seed": 3
+    "cases_per_seed": 3,
+    "stage_labels": {
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "default": "full"
+    }
   },
   "measurement": {
     "inherited_from": "docs/program/iterations/S003-aec-transition-recovery-latency-v1-result.json",

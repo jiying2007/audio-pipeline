@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-transition-stage-recovery-decomposition-v1",
+  "phase": "S003_AEC_TRANSITION_STAGE_RECOVERY_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_STAGE_MEASUREMENT_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-transition-recovery-latency-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_RECOVERY_LATENCY_MEASURED"
+  },
+  "corpus": {
+    "base_generator": "validation/tools/build_aec_transition_corpus.py",
+    "stage_generator": "validation/tools/build_aec_stage_recovery_corpus.py",
+    "policy": "validation/policies/validation-s003-aec-stage-recovery.json",
+    "fresh_seeds": [
+      10707,
+      10807
+    ],
+    "seconds": 6,
+    "target_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "prefix-aec",
+      "prefix-res",
+      "prefix-ns",
+      "prefix-agc",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "prefix-agc": "AGC",
+      "default": "full"
+    },
+    "cases_per_seed": 15
+  },
+  "measurement": {
+    "metric": "residual_to_echo_power_db",
+    "window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "pre_baseline_statistic": "median of complete 100 ms windows",
+    "recovery_excess_db": 3.01029995664,
+    "recovery_power_ratio": 2,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ],
+    "recovery_time_definition": "start offset of the first three consecutive 100 ms post-transition windows whose residual_to_echo_power_db are each <= the same profile's pre_baseline_db + 3.01029995664 dB",
+    "censored_definition": "true when no qualifying 300 ms run is found within 0..2500 ms",
+    "comparative_evidence": [
+      "recovery_time_ms",
+      "delta_vs_prefix_aec_ms",
+      "peak_excess_db_in_first_1000ms",
+      "positive_excess_area_db_ms_0_2500",
+      "late_window_excess_db_2000_2500"
+    ]
+  },
+  "preregistered_rules": {
+    "require_exact_target_case_set": true,
+    "require_exact_stage_profile_set": true,
+    "require_complete_pre_baseline_windows": true,
+    "require_complete_search_windows": true,
+    "require_canonical_case_presence": true,
+    "censored_is_valid_evidence_not_ci_failure": true,
+    "no_stage_recovery_pass_fail_threshold": true,
+    "no_parameter_search": true,
+    "no_nlms_step_size_search": true,
+    "no_dtd_threshold_search": true,
+    "no_res_parameter_search": true,
+    "no_ns_parameter_search": true,
+    "no_agc_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "outputs": [
+    "per-seed stage-recovery-decomposition.json",
+    "cross-seed-stage-recovery-summary.json",
+    "canonical stage-profile reports",
+    "SHA256SUMS"
+  ],
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_aec_parameters": false,
+    "may_change_res_parameters": false,
+    "may_change_ns_parameters": false,
+    "may_change_agc_parameters": false,
+    "may_define_product_recovery_requirement": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "complete repeatable recovery measurements at AEC/RES/NS/AGC/full profiles for all target transitions, not a performance verdict or parameter recommendation"
+}

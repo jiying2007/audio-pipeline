@@ -107,6 +107,19 @@ def main() -> int:
     assert recovery["preregistered_rules"]["no_parameter_search"] is True
     assert recovery["authority_boundary"]["may_open_s004"] is False
 
+    stage_recovery = json.loads((ITER / "S003-aec-transition-stage-recovery-decomposition-v1.json").read_text())
+    assert stage_recovery["authority"] == "CANDIDATE_ZERO_STAGE_MEASUREMENT_ONLY"
+    assert stage_recovery["candidate_limit"] == 0 and stage_recovery["confirmation_limit"] == 0
+    assert stage_recovery["promotion_allowed"] is False and stage_recovery["shipping_change_allowed"] is False
+    assert stage_recovery["corpus"]["fresh_seeds"] == [10707, 10807]
+    assert stage_recovery["corpus"]["stage_profiles"] == [
+        "prefix-aec", "prefix-res", "prefix-ns", "prefix-agc", "default",
+    ]
+    assert stage_recovery["corpus"]["cases_per_seed"] == 15
+    assert stage_recovery["preregistered_rules"]["no_stage_recovery_pass_fail_threshold"] is True
+    assert stage_recovery["preregistered_rules"]["no_parameter_search"] is True
+    assert stage_recovery["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

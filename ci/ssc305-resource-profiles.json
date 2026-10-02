@@ -1,49 +1,81 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "authority": "build-and-resource-qualification-not-silicon-performance",
   "profiles": {
     "conservative": {
       "authority": "shipping-default-build-contract",
       "preset": "ssc305-cortex-a32-low",
       "intent": "low CPU/RAM and stability first",
-      "required_metrics": [
-        "pipeline_state_bytes",
-        "runtime_state_bytes",
-        "rom_text_rodata_bytes",
-        "aarch32_build_identity",
-        "qemu_deterministic_execution"
-      ],
-      "silicon_calibration_required": [
-        "cpu_ms_per_audio_second",
-        "frame_p50_ms",
-        "frame_p95_ms",
-        "frame_p99_ms",
-        "peak_rss",
-        "stack_upper_bound",
-        "thermal",
-        "power"
-      ]
+      "expected_build": {
+        "simd_backend": "NEON",
+        "aec_backend": "MDF",
+        "ns_estimator": "EMA",
+        "max_io_rate_hz": 16000,
+        "max_internal_rate_hz": 16000,
+        "max_mic_channels": 2,
+        "max_delay_ms": 60,
+        "max_aec_tail_ms": 64,
+        "runtime_queue_depth": 4,
+        "bf_direction_tracking": 0
+      },
+      "ceilings": {
+        "pipeline_state_bytes": 80000,
+        "runtime_state_bytes": 65536,
+        "rom_text_rodata_bytes": 40960
+      }
     },
     "effect-first": {
       "authority": "research-only-resource-envelope",
-      "build_contract": "cortex-a32 full graph with BF/AEC/RES/NS/AGC/VAD",
+      "preset": "cortex-a32-neon",
       "intent": "measure whether extra resources buy repeatable acoustic effect",
-      "required_metrics": [
-        "pipeline_state_bytes",
-        "rom_text_rodata_bytes",
-        "aarch32_build_identity",
-        "qemu_deterministic_execution"
-      ],
-      "silicon_calibration_required": [
-        "cpu_ms_per_audio_second",
-        "frame_p50_ms",
-        "frame_p95_ms",
-        "frame_p99_ms",
-        "peak_rss",
-        "stack_upper_bound",
-        "thermal",
-        "power"
-      ]
+      "expected_build": {
+        "simd_backend": "NEON",
+        "aec_backend": "MDF",
+        "ns_estimator": "EMA",
+        "max_io_rate_hz": 48000,
+        "max_internal_rate_hz": 16000,
+        "max_mic_channels": 2,
+        "max_delay_ms": 300,
+        "max_aec_tail_ms": 120,
+        "runtime_queue_depth": 8,
+        "bf_direction_tracking": 1
+      },
+      "ceilings": {
+        "pipeline_state_bytes": 80000,
+        "runtime_state_bytes": 65536,
+        "rom_text_rodata_bytes": 40960
+      }
     }
   },
-  "rule": "hosted or QEMU timing must not be relabeled as SSC305 silicon timing"
+  "qualify_now": [
+    "aarch32_build_identity",
+    "pipeline_state_bytes",
+    "runtime_state_bytes",
+    "rom_text_bytes",
+    "rom_rodata_bytes",
+    "rom_text_rodata_bytes",
+    "linked_elf_file_bytes",
+    "direct_heap_allocator_symbol_references",
+    "algorithmic_latency_ms",
+    "algorithmic_latency_frames",
+    "qemu_deterministic_execution"
+  ],
+  "silicon_calibration_required": [
+    "cpu_ms_per_audio_second",
+    "frame_p50_ms",
+    "frame_p95_ms",
+    "frame_p99_ms",
+    "peak_rss",
+    "whole_thread_stack_upper_bound",
+    "warmup_to_stable_quality_frames",
+    "transition_worst_case_frame_ms",
+    "thermal",
+    "power"
+  ],
+  "rules": [
+    "hosted or QEMU timing must not be relabeled as SSC305 silicon timing",
+    "direct allocator symbol absence proves no direct malloc/calloc/realloc/free dependency in the linked pipeline/runtime libraries; it is not a whole-process libc allocation count",
+    "algorithmic latency is not the same as adaptive warmup or convergence time",
+    "effect-first remains research-only until an acoustic benefit and all S004 evidence gates are independently satisfied"
+  ]
 }

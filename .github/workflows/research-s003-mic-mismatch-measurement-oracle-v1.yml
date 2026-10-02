@@ -5,154 +5,35 @@ on:
     branches: [main]
     paths:
       - 'docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1.json'
-      - 'docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json'
-      - '.github/research/continuous-optimization/development-data-v3/development.lock.json'
-      - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
-      - 'validation/tools/slr31_mic_mismatch_source_oracle.py'
+      - 'docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json'
+      - 'validation/failure-replay/catalog.json'
+      - 'validation/failure-replay/entries/s003-mic-gain-delay-mismatch-v1.json'
+      - 'validation/failure-replay/README.md'
+      - 'tests/validation/data/s003-mic-mismatch-measurement-oracle-consumed-workflow.yml'
+      - 'tests/validation/test_s003_mic_mismatch_measurement_oracle_retirement.py'
+      - 'tests/validation/test_s003_slr31_retirement.py'
+      - 'tests/validation/test_s003_cross_source_retirement.py'
       - '.github/workflows/research-s003-mic-mismatch-measurement-oracle-v1.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1.json'
-      - 'docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json'
-      - '.github/research/continuous-optimization/development-data-v3/development.lock.json'
-      - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
-      - 'validation/tools/slr31_mic_mismatch_source_oracle.py'
-      - '.github/workflows/research-s003-mic-mismatch-measurement-oracle-v1.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: research-s003-mic-mismatch-measurement-oracle-v1-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  diagnose:
+  contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-
-      - name: Validate candidate-zero authority and predecessor
+      - name: Validate reviewed terminal evidence
         run: |
           set -euo pipefail
           python3 -m json.tool             docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1.json >/dev/null
-          python3 -m py_compile             validation/tools/build_slr31_subsig_transfer_corpus.py             validation/tools/slr31_mic_mismatch_source_oracle.py
-          python3 validation/tools/slr31_mic_mismatch_source_oracle.py self-test
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          c=json.loads(Path('docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1.json').read_text())
-          p=json.loads(Path('docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json').read_text())
-          lock=json.loads(Path(c['public_source']['lock_path']).read_text())
-          assert c['authority']=='CANDIDATE_ZERO_DIAGNOSTIC_ONLY'
-          assert c['candidate_limit']==0 and c['confirmation_limit']==0
-          assert c['promotion_allowed'] is False and c['shipping_change_allowed'] is False
-          assert c['fresh_seeds']==[9507,9607]
-          assert c['fixed_utterance_count']==8
-          assert c['preregistered_evidence_rules']['minimum_oracle_valid_utterances_per_seed']==6
-          assert c['preregistered_evidence_rules']['no_pipeline_output_metrics_in_gate'] is True
-          assert c['preregistered_evidence_rules']['no_near_si_sdr_improvement_in_gate'] is True
-          assert c['authority_boundary']['may_open_s004'] is False
-          assert p['status']==c['predecessor']['required_status']
-          assert p['s004_review']['open'] is False
-          assert 'measurement_domain_artifact_exclusion' in p['s004_review']['missing']
-          src=[x for x in lock['archives'] if x['id']==c['public_source']['archive_id']]
-          assert len(src)==1
-          assert src[0]['bytes']==c['public_source']['archive_bytes']
-          assert src[0]['sha256']==c['public_source']['archive_sha256']
-          assert src[0]['license']==c['public_source']['license']
-          assert src[0]['usage_class']==c['public_source']['usage_class']
-          print('S003 mic-mismatch measurement oracle authority: PASS')
-          PY
-
-      - name: Download and verify exact SLR31 archive
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/s003-mm-oracle
-          python3 - <<'PY'
-          import hashlib,json,tarfile,urllib.request
-          from pathlib import Path
-
-          c=json.loads(Path('docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1.json').read_text())
-          lock=json.loads(Path(c['public_source']['lock_path']).read_text())
-          src=next(x for x in lock['archives'] if x['id']==c['public_source']['archive_id'])
-          archive=Path('/tmp/s003-mm-oracle/source.tar.gz')
-          req=urllib.request.Request(src['url'],headers={'User-Agent':'audio-pipeline-s003-mm-oracle/1'})
-          h=hashlib.sha256(); size=0
-          with urllib.request.urlopen(req,timeout=240) as response, archive.open('wb') as out:
-              while True:
-                  chunk=response.read(1024*1024)
-                  if not chunk: break
-                  size += len(chunk); h.update(chunk); out.write(chunk)
-          assert size==src['bytes'],(size,src['bytes'])
-          assert h.hexdigest()==src['sha256'],h.hexdigest()
-          extract=Path('/tmp/s003-mm-oracle/extracted')
-          extract.mkdir()
-          with tarfile.open(archive,'r:gz') as tf:
-              members=tf.getmembers()
-              for member in members:
-                  p=Path(member.name)
-                  assert not p.is_absolute() and '..' not in p.parts,member.name
-                  assert not member.issym() and not member.islnk(),member.name
-              tf.extractall(extract,members=members)
-          assert len(list(extract.rglob('*.flac'))) >= 8
-          print({'archive_bytes':size,'sha256':h.hexdigest()})
-          PY
-
-      - name: Install pinned SLR31 decoder
-        run: |
-          set -euo pipefail
-          python3 -m venv /tmp/s003-mm-oracle-venv
-          /tmp/s003-mm-oracle-venv/bin/python -m pip install --disable-pip-version-check             'numpy==2.2.6' 'soundfile==0.13.1'
-          /tmp/s003-mm-oracle-venv/bin/python - <<'PY'
-          import soundfile
-          assert soundfile.__version__ == '0.13.1'
-          print({'soundfile':soundfile.__version__,'libsndfile':soundfile.__libsndfile_version__})
-          PY
-
-      - name: Run fresh source-domain oracle controls
-        run: |
-          set -euo pipefail
-          out=s003-mm-oracle-out
-          mkdir -p "$out"
-          contract=docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1.json
-          for seed in 9507 9607; do
-            /tmp/s003-mm-oracle-venv/bin/python               validation/tools/slr31_mic_mismatch_source_oracle.py run               --source-root /tmp/s003-mm-oracle/extracted               --contract "$contract"               --seed "$seed"               --output "$out/$seed.json"
-          done
-
-          /tmp/s003-mm-oracle-venv/bin/python             validation/tools/slr31_mic_mismatch_source_oracle.py aggregate             --contract "$contract"             --input "$out/9507.json"             --input "$out/9607.json"             --output "$out/measurement-domain-oracle-summary.json"
-
-          cp "$contract" "$out/contract.json"
-          git rev-parse HEAD > "$out/source-sha.txt"
-          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
-
-      - name: Publish oracle outcome
-        run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          r=json.loads(Path('s003-mm-oracle-out/measurement-domain-oracle-summary.json').read_text())
-          print('## S003 mic-mismatch measurement-domain oracle')
-          print('')
-          print('- Authority: **candidate-zero / source-domain oracle only / non-shipping**')
-          print(f"- Failure: `{r['scoped_failure']}`")
-          print(f"- Subsignature: `{r['scoped_subsignature']}`")
-          for obs in r['per_seed']:
-              print(f"- seed `{obs['seed']}`: oracle-valid `{obs['oracle_valid_utterances']}/{obs['total_utterances']}`")
-          print(f"- Measurement-domain artifact exclusion: `{r['measurement_domain_artifact_exclusion_satisfied']}`")
-          print('- Pipeline output metrics used by gate: **none**')
-          print('- S004 candidate authority: **none**')
-          PY
-
-      - name: Upload hash-bound oracle evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: s003-mic-mismatch-measurement-oracle-${{ github.run_id }}
-          path: s003-mm-oracle-out/
-          if-no-files-found: error
-          retention-days: 30
+          python3 -m json.tool             docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json >/dev/null
+          python3 -m json.tool validation/failure-replay/catalog.json >/dev/null
+          python3 -m json.tool             validation/failure-replay/entries/s003-mic-gain-delay-mismatch-v1.json >/dev/null
+          python3 -m py_compile             tests/validation/test_s003_mic_mismatch_measurement_oracle_retirement.py             tests/validation/test_s003_slr31_retirement.py             tests/validation/test_s003_cross_source_retirement.py
+          python3 tests/validation/test_s003_mic_mismatch_measurement_oracle_retirement.py
+          python3 tests/validation/test_s003_slr31_retirement.py
+          python3 tests/validation/test_s003_cross_source_retirement.py

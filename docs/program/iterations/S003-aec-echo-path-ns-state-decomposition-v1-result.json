@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-ns-state-decomposition-v1-result",
+  "investigation_id": "S003-aec-echo-path-ns-state-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_STATE_OBSERVED_EXTENSION_NOT_INVARIANT",
+  "authority": "DIAGNOSTIC_ONLY_NO_STATE_RANKING_ROOT_CAUSE_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37017986746,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "03ae115863defcf6a5136565d0b99e064f60e0dd",
+    "artifact_id": 11231721444,
+    "artifact_name": "s003-aec-echo-path-ns-state-37017986746",
+    "artifact_zip_sha256": "b66bf1d3fa9506d772fe656ddfaabbc85a3b13c8a6fc0dc43d1eb1a772ba92d5",
+    "artifact_zip_bytes": 336561,
+    "aggregate_member": "cross-seed-state-summary.json",
+    "aggregate_member_sha256": "806f1566ab9674c824ac9058d78b1a1dc345021024fb08254257ce31839d683d"
+  },
+  "qualification": {
+    "verify_run_id": 37017986777,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37017986702,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37017986603,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37017987162,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37017987284,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37017987115,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37018369514,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37018369656,
+    "i015_finalization_conclusion": "success"
+  },
+  "probe_validity": {
+    "test_only_internal_state_probe": true,
+    "shipping_api_changed": false,
+    "shipping_source_changed": false,
+    "output_bitwise_equivalent_all_fresh_seeds": true,
+    "full_per_frame_state_trace_retained": true
+  },
+  "mechanical_result": {
+    "fresh_seeds": [
+      13507,
+      13607,
+      13707,
+      13807
+    ],
+    "extension_ms_by_seed": {
+      "13507": 100,
+      "13607": 50,
+      "13707": -50,
+      "13807": 100
+    },
+    "applicable_seed_count": 3,
+    "non_applicable_seeds": [
+      13707
+    ],
+    "extension_reproduction_rule": "state decomposition applies only when ns_minus_res_ms >= 50",
+    "cross_followup_fresh_seed_invariant": false,
+    "sign_flip_observed": true,
+    "sign_flip_seed": 13707
+  },
+  "descriptive_state_observations_on_applicable_seeds": {
+    "note": "Directional observations are reported only; state-family ranking and causal selection are not authorized.",
+    "erle_db_ns_minus_res": [
+      6.87049392,
+      4.45179514,
+      6.92972465
+    ],
+    "speech_probability_ns_minus_res": [
+      0.228286922,
+      0.244345635,
+      0.103353172
+    ],
+    "noise_rms_dbfs_ns_minus_res": [
+      -2.8143921,
+      -1.6466828,
+      -2.6532745
+    ],
+    "noise_estimate_mean_after_ns_minus_res": [
+      -0.0192641696,
+      -0.0116238365,
+      -0.019354657
+    ],
+    "noise_estimate_abs_delta_mean_ns_minus_res": [
+      -0.002180475749,
+      -0.00073540305,
+      -0.00167485018
+    ],
+    "residual_echo_gain_ns_minus_res": [
+      -0.016486585,
+      -0.010199249,
+      -0.012913823
+    ],
+    "residual_gain_mean_after_ns_minus_res": [
+      -0.016486657,
+      -0.010199348,
+      -0.01291387
+    ],
+    "overlap_rms_after_ns_minus_res": [
+      -0.000622184076,
+      -0.000004548638,
+      -0.000621447045
+    ],
+    "tracker_phase_at_recovery_boundaries": [
+      {
+        "seed": 13507,
+        "res_mod8": 4,
+        "ns_mod8": 6,
+        "extension_ms": 100
+      },
+      {
+        "seed": 13607,
+        "res_mod8": 4,
+        "ns_mod8": 1,
+        "extension_ms": 50
+      },
+      {
+        "seed": 13807,
+        "res_mod8": 4,
+        "ns_mod8": 6,
+        "extension_ms": 100
+      }
+    ]
+  },
+  "reviewed_validity": {
+    "previous_confirmation_still_truthful_for_its_seed_set": true,
+    "previous_4_of_4_confirmation_is_cross_future_seed_invariant": false,
+    "ns_state_decomposition_applicable_to_all_new_fresh_seeds": false,
+    "state_family_ranking_authorized": false,
+    "ns_root_cause_proven": false,
+    "ns_parameter_search_authorized": false,
+    "interpretation": "The prior 4/4 RES-to-NS extension confirmation was real for seeds 13107-13407, but the next independent fresh set produced +100,+50,-50,+100 ms. Therefore the stage-boundary extension is not invariant across subsequent fresh seeds. Internal-state trajectories may be described for the three applicable seeds, but no state family may be promoted as a cause from this evidence."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_ECHO_PATH_RECOVERY_SIGN_VARIABILITY_V1",
+    "candidate_limit": 0,
+    "description": "Explain the sign and magnitude variability of NS-minus-RES recovery across fresh seeds before any further NS-state attribution. Reuse the confirmed 100w-50s geometry and test-only probes; compare residual/recovery boundary geometry, AEC telemetry, and NS state on positive, zero, and negative extension seeds. No state-family ranking, threshold fitting, or parameter search."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

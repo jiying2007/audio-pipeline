@@ -16,6 +16,7 @@ on:
       - 'validation/tools/slr31_subsig_transfer.py'
       - 'validation/tools/slr31_mic_mismatch_source_oracle.py'
       - 'validation/tools/hpf_aware_reference_oracle.py'
+      - 'validation/tools/aec_metric_safe_evidence.py'
       - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
       - 'validation/policies/validation-s003-slr31-subsig-transfer.json'
       - 'validation/tools/build_stage_interaction_corpus.py'
@@ -43,6 +44,7 @@ on:
       - 'validation/tools/slr31_subsig_transfer.py'
       - 'validation/tools/slr31_mic_mismatch_source_oracle.py'
       - 'validation/tools/hpf_aware_reference_oracle.py'
+      - 'validation/tools/aec_metric_safe_evidence.py'
       - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
       - 'validation/policies/validation-s003-slr31-subsig-transfer.json'
       - 'validation/tools/build_stage_interaction_corpus.py'
@@ -84,6 +86,7 @@ jobs:
             validation/tools/slr31_subsig_transfer.py \
             validation/tools/slr31_mic_mismatch_source_oracle.py \
             validation/tools/hpf_aware_reference_oracle.py \
+            validation/tools/aec_metric_safe_evidence.py \
             validation/tools/mic_mismatch_downstream_transfer_review.py \
             validation/tools/build_stage_interaction_corpus.py \
             validation/tools/stage_interaction_attribution.py \
@@ -99,6 +102,7 @@ jobs:
           python3 validation/tools/slr31_subsig_transfer.py --self-test
           python3 validation/tools/slr31_mic_mismatch_source_oracle.py self-test
           PYTHONPATH=validation/tools python3 validation/tools/hpf_aware_reference_oracle.py self-test
+          PYTHONPATH=validation/tools python3 validation/tools/aec_metric_safe_evidence.py self-test
           python3 validation/tools/mic_mismatch_downstream_transfer_review.py --self-test
           python3 validation/tools/build_stage_interaction_corpus.py --self-test
           for f in docs/program/iterations/S001.json docs/program/iterations/S002.json \
@@ -107,6 +111,7 @@ jobs:
                    docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1.json \
                    docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1.json \
                    docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1.json \
+                   docs/program/iterations/S003-aec-metric-safe-evidence-v1.json \
                    docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json \
                    validation/failure-replay/schema-v1.json \
                    validation/policies/validation-s003-dechorate-artifact-exclusion.json \

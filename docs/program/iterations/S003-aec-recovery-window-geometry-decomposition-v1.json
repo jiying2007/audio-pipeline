@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-window-geometry-decomposition-v1",
+  "phase": "S003_AEC_RECOVERY_WINDOW_GEOMETRY_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_MEASUREMENT_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-recovery-measurement-resolution-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_MEASUREMENT_GEOMETRY_SENSITIVE"
+  },
+  "corpus": {
+    "generator": "validation/tools/build_aec_stage_recovery_corpus.py",
+    "policy": "validation/policies/validation-s003-aec-stage-recovery.json",
+    "fresh_seeds": [
+      11907,
+      12007,
+      12107,
+      12207
+    ],
+    "seconds": 6,
+    "target_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "prefix-aec",
+      "prefix-res",
+      "prefix-ns",
+      "prefix-agc",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "prefix-agc": "AGC",
+      "default": "full"
+    },
+    "cases_per_seed": 15
+  },
+  "fixed_baseline": {
+    "window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "statistic": "median of complete 100 ms windows"
+  },
+  "shared_recovery": {
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "geometries": [
+    {
+      "id": "100w-100s",
+      "window_ms": 100,
+      "stride_ms": 100,
+      "required_windows_for_300ms_coverage": 3
+    },
+    {
+      "id": "100w-50s",
+      "window_ms": 100,
+      "stride_ms": 50,
+      "required_windows_for_300ms_coverage": 5
+    },
+    {
+      "id": "50w-50s",
+      "window_ms": 50,
+      "stride_ms": 50,
+      "required_windows_for_300ms_coverage": 6
+    }
+  ],
+  "isolation": {
+    "stride_effect": "100w-50s minus 100w-100s; same 100 ms integration window, only stride/grid changes",
+    "integration_effect": "50w-50s minus 100w-50s; same 50 ms stride, only integration window changes"
+  },
+  "derived_observations": [
+    "recovery_time_by_geometry",
+    "paired_stride_delta_ms",
+    "paired_integration_delta_ms",
+    "cross_seed_range_by_geometry",
+    "range_stride_delta_ms",
+    "range_integration_delta_ms",
+    "censoring_by_geometry"
+  ],
+  "preregistered_rules": {
+    "require_exact_case_profile_matrix": true,
+    "require_same_output_for_all_geometries": true,
+    "require_same_pre_baseline_for_all_geometries": true,
+    "require_same_recovery_limit_for_all_geometries": true,
+    "require_same_300ms_coverage": true,
+    "no_geometry_sweep_beyond_preregistered_three": true,
+    "censored_is_valid_evidence_not_ci_failure": true,
+    "no_geometry_pass_fail_threshold": true,
+    "no_measurement_artifact_verdict_from_single_geometry_pair": true,
+    "no_performance_threshold_search": true,
+    "no_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_claim_measurement_artifact": false,
+    "may_change_recovery_threshold": false,
+    "may_change_dsp_parameters": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "complete paired three-geometry recovery map that descriptively separates stride/grid sensitivity from integration-window sensitivity, not an artifact verdict, performance requirement, or candidate"
+}

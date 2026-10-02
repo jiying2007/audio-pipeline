@@ -159,6 +159,18 @@ def main() -> int:
     assert resolution["authority_boundary"]["may_claim_measurement_artifact"] is False
     assert resolution["authority_boundary"]["may_open_s004"] is False
 
+    geometry = json.loads((ITER / "S003-aec-recovery-window-geometry-decomposition-v1.json").read_text())
+    assert geometry["authority"] == "CANDIDATE_ZERO_MEASUREMENT_ONLY"
+    assert geometry["candidate_limit"] == 0 and geometry["confirmation_limit"] == 0
+    assert geometry["promotion_allowed"] is False and geometry["shipping_change_allowed"] is False
+    assert geometry["corpus"]["fresh_seeds"] == [11907, 12007, 12107, 12207]
+    assert [x["id"] for x in geometry["geometries"]] == ["100w-100s", "100w-50s", "50w-50s"]
+    assert geometry["preregistered_rules"]["no_geometry_sweep_beyond_preregistered_three"] is True
+    assert geometry["preregistered_rules"]["no_measurement_artifact_verdict_from_single_geometry_pair"] is True
+    assert geometry["preregistered_rules"]["no_parameter_search"] is True
+    assert geometry["authority_boundary"]["may_claim_measurement_artifact"] is False
+    assert geometry["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

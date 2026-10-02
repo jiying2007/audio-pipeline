@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-variability-source-decomposition-v1-result",
+  "investigation_id": "S003-aec-recovery-variability-source-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_VARIABILITY_DECOMPOSED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CAUSAL_OR_CANDIDATE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37001173725,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "4724b4d6fedef6314bcff522fda61bafa63d817e",
+    "artifact_id": 11224270402,
+    "artifact_name": "s003-aec-recovery-variability-37001173725",
+    "artifact_zip_sha256": "12e7d70684bc351b39a072781fcfa8e559c573688849cb65881aff3bf48498c7",
+    "aggregate_member": "cross-seed-variability-summary.json",
+    "aggregate_member_sha256": "996d2bdc2ee3baff5fd0d0372efeab3cbb2924ec37c1c55f50fa401f7b202ad4"
+  },
+  "qualification": {
+    "verify_run_id": 37001174222,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37001173784,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37001173839,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37001173834,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37001173817,
+    "program_archive_conclusion": "success",
+    "release_run_id": 37001596906,
+    "release_conclusion": "success",
+    "i015_contract_run_id": 37001173836,
+    "i015_contract_conclusion": "success"
+  },
+  "scope": {
+    "fresh_seeds": [
+      11107,
+      11207,
+      11307,
+      11407
+    ],
+    "transition_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "AEC",
+      "RES",
+      "NS",
+      "AGC",
+      "full"
+    ],
+    "observations_per_seed": 15,
+    "total_observations": 60,
+    "censored_observations": 0
+  },
+  "mechanical_result": {
+    "cross_seed_recovery_range_ms": {
+      "echo-path-change": {
+        "AEC": 0,
+        "RES": 100,
+        "NS": 100,
+        "AGC": 100,
+        "full": 100
+      },
+      "speaker-acoustic-gain-step": {
+        "AEC": 0,
+        "RES": 100,
+        "NS": 0,
+        "AGC": 0,
+        "full": 0
+      },
+      "render-level-step": {
+        "AEC": 0,
+        "RES": 100,
+        "NS": 0,
+        "AGC": 0,
+        "full": 0
+      }
+    },
+    "representative_recovery_ms": {
+      "speaker-acoustic-gain-step": {
+        "AEC": [
+          200,
+          200,
+          200,
+          200
+        ],
+        "RES": [
+          300,
+          200,
+          200,
+          200
+        ],
+        "NS": [
+          300,
+          300,
+          300,
+          300
+        ],
+        "full": [
+          300,
+          300,
+          300,
+          300
+        ]
+      },
+      "render-level-step": {
+        "AEC": [
+          300,
+          300,
+          300,
+          300
+        ],
+        "RES": [
+          500,
+          400,
+          400,
+          400
+        ],
+        "NS": [
+          300,
+          300,
+          300,
+          300
+        ],
+        "full": [
+          300,
+          300,
+          300,
+          300
+        ]
+      },
+      "echo-path-change": {
+        "AEC": [
+          100,
+          100,
+          100,
+          100
+        ],
+        "RES": [
+          200,
+          300,
+          200,
+          200
+        ],
+        "NS": [
+          200,
+          300,
+          200,
+          300
+        ],
+        "full": [
+          200,
+          300,
+          200,
+          300
+        ]
+      }
+    },
+    "slow_observation_previous_window_margin_db": {
+      "min": 0.05750619145143787,
+      "max": 0.5850187168492837,
+      "median": 0.43858754610135264,
+      "interpretation": "for every observation at the slower end of a 100 ms cross-seed range, the immediately preceding recovery window missed the preregistered limit by less than 0.6 dB"
+    },
+    "telemetry_review": {
+      "common_boolean_state_shift_observed": false,
+      "reviewed_boolean_fields": [
+        "aec_converged_fraction",
+        "erle_valid_fraction",
+        "far_end_active_fraction",
+        "double_talk_active_fraction"
+      ],
+      "delay_state_common_shift_observed": false,
+      "erle_distribution_seed_variation_observed": true,
+      "causal_interpretation_authorized": false
+    }
+  },
+  "reviewed_validity": {
+    "all_measurements_complete": true,
+    "cross_seed_variability_is_bounded_to_100ms": true,
+    "stable_causal_stage_identified": false,
+    "recovery_boundary_sensitivity_observed": true,
+    "measurement_resolution_artifact_proven": false,
+    "algorithm_pass_fail_verdict": "NOT_AUTHORIZED",
+    "root_cause_claim_authority": false,
+    "interpretation": "The remaining recovery variability is small (0/100 ms), appears at selected stage/case boundaries, and is not accompanied by a stable common AEC telemetry-state shift. Slow observations sit close to the preregistered recovery threshold. This justifies an independent temporal-resolution check, not a DSP root-cause claim."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RECOVERY_MEASUREMENT_RESOLUTION_V1",
+    "candidate_limit": 0,
+    "fresh_seeds": [
+      11507,
+      11607,
+      11707,
+      11807
+    ],
+    "description": "Measure the same stage recovery on fresh seeds using the original 100 ms post-transition windows and a paired 50 ms post-transition grid. Keep the same pre-baseline, +3.01029995664 dB recovery limit and 300 ms continuous hold. Compare cross-seed recovery ranges without fitting performance thresholds or changing DSP."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

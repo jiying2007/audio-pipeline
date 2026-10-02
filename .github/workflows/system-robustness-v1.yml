@@ -22,6 +22,7 @@ on:
       - 'validation/tools/aec_stage_recovery_decomposition.py'
       - 'validation/tools/aec_speaker_gain_ns_recovery_confirmation.py'
       - 'validation/tools/aec_recovery_variability_decomposition.py'
+      - 'validation/tools/aec_recovery_measurement_resolution.py'
       - 'validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json'
       - 'validation/policies/validation-s003-aec-stage-recovery.json'
       - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
@@ -57,6 +58,7 @@ on:
       - 'validation/tools/aec_stage_recovery_decomposition.py'
       - 'validation/tools/aec_speaker_gain_ns_recovery_confirmation.py'
       - 'validation/tools/aec_recovery_variability_decomposition.py'
+      - 'validation/tools/aec_recovery_measurement_resolution.py'
       - 'validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json'
       - 'validation/policies/validation-s003-aec-stage-recovery.json'
       - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
@@ -106,6 +108,7 @@ jobs:
             validation/tools/aec_stage_recovery_decomposition.py \
             validation/tools/aec_speaker_gain_ns_recovery_confirmation.py \
             validation/tools/aec_recovery_variability_decomposition.py \
+            validation/tools/aec_recovery_measurement_resolution.py \
             validation/tools/mic_mismatch_downstream_transfer_review.py \
             validation/tools/build_stage_interaction_corpus.py \
             validation/tools/stage_interaction_attribution.py \
@@ -127,6 +130,7 @@ jobs:
           PYTHONPATH=validation/tools python3 validation/tools/aec_stage_recovery_decomposition.py self-test
           PYTHONPATH=validation/tools python3 validation/tools/aec_speaker_gain_ns_recovery_confirmation.py self-test
           PYTHONPATH=validation/tools python3 validation/tools/aec_recovery_variability_decomposition.py self-test
+          PYTHONPATH=validation/tools python3 validation/tools/aec_recovery_measurement_resolution.py self-test
           python3 validation/tools/mic_mismatch_downstream_transfer_review.py --self-test
           python3 validation/tools/build_stage_interaction_corpus.py --self-test
           for f in docs/program/iterations/S001.json docs/program/iterations/S002.json \
@@ -140,6 +144,7 @@ jobs:
                    docs/program/iterations/S003-aec-transition-stage-recovery-decomposition-v1.json \
                    docs/program/iterations/S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1.json \
                    docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1.json \
+                   docs/program/iterations/S003-aec-recovery-measurement-resolution-v1.json \
                    docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json \
                    validation/failure-replay/schema-v1.json \
                    validation/policies/validation-s003-dechorate-artifact-exclusion.json \

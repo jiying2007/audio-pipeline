@@ -12,6 +12,9 @@ on:
       - 'validation/tools/build_dechorate_artifact_exclusion_corpus.py'
       - 'validation/tools/cross_source_artifact_exclusion.py'
       - 'validation/policies/validation-s003-dechorate-artifact-exclusion.json'
+      - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
+      - 'validation/tools/slr31_subsig_transfer.py'
+      - 'validation/policies/validation-s003-slr31-subsig-transfer.json'
       - 'validation/tools/build_stage_interaction_corpus.py'
       - 'validation/tools/stage_interaction_attribution.py'
       - 'validation/tools/stage_interaction_consistency.py'
@@ -33,6 +36,9 @@ on:
       - 'validation/tools/build_dechorate_artifact_exclusion_corpus.py'
       - 'validation/tools/cross_source_artifact_exclusion.py'
       - 'validation/policies/validation-s003-dechorate-artifact-exclusion.json'
+      - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
+      - 'validation/tools/slr31_subsig_transfer.py'
+      - 'validation/policies/validation-s003-slr31-subsig-transfer.json'
       - 'validation/tools/build_stage_interaction_corpus.py'
       - 'validation/tools/stage_interaction_attribution.py'
       - 'validation/tools/stage_interaction_consistency.py'
@@ -68,6 +74,8 @@ jobs:
             validation/tools/build_aec_transition_corpus.py \
             validation/tools/build_dechorate_artifact_exclusion_corpus.py \
             validation/tools/cross_source_artifact_exclusion.py \
+            validation/tools/build_slr31_subsig_transfer_corpus.py \
+            validation/tools/slr31_subsig_transfer.py \
             validation/tools/build_stage_interaction_corpus.py \
             validation/tools/stage_interaction_attribution.py \
             validation/tools/stage_interaction_consistency.py \
@@ -78,12 +86,16 @@ jobs:
           python3 validation/tools/build_system_robustness_corpus.py --self-test
           python3 validation/tools/build_aec_transition_corpus.py --self-test
           python3 validation/tools/cross_source_artifact_exclusion.py --self-test
+          python3 validation/tools/build_slr31_subsig_transfer_corpus.py --self-test
+          python3 validation/tools/slr31_subsig_transfer.py --self-test
           python3 validation/tools/build_stage_interaction_corpus.py --self-test
           for f in docs/program/iterations/S001.json docs/program/iterations/S002.json \
                    docs/program/iterations/S003.json \
                    docs/program/iterations/S003-cross-source-artifact-exclusion-v1.json \
+                   docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1.json \
                    validation/failure-replay/schema-v1.json \
                    validation/policies/validation-s003-dechorate-artifact-exclusion.json \
+                   validation/policies/validation-s003-slr31-subsig-transfer.json \
                    ci/ssc305-resource-profiles.json; do
             python3 -m json.tool "$f" >/dev/null
           done

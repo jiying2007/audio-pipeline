@@ -208,3 +208,133 @@ jobs:
           qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-core-consumer
           qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-runtime-consumer
           ccache --show-stats
+
+
+  ssc305-delivery-profiles:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: ssc305-delivery-profiles
+
+      - name: Validate delivery-profile qualification contracts
+        run: |
+          set -euo pipefail
+          python3 -m json.tool ci/ssc305-resource-profiles.json >/dev/null
+          python3 -m py_compile tests/validation/resource_profile_qualification.py
+          python3 tests/validation/resource_profile_qualification.py self-test
+
+      - name: Build exact conservative and effect-first AArch32 profiles
+        run: |
+          set -euo pipefail
+          cmake --preset ssc305-cortex-a32-low
+          cmake --build build/ssc305-cortex-a32-low --parallel
+          cmake --preset cortex-a32-neon
+          cmake --build build/cortex-a32-neon --parallel
+
+      - name: Collect exact AArch32 resource evidence
+        run: |
+          set -euo pipefail
+          mkdir -p resource-profile-out
+          cflags='-O3 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard -ffunction-sections -fdata-sections'
+          ldflags='-Wl,--gc-sections'
+
+          collect_profile() {
+            profile_id="$1"
+            preset="$2"
+            build_dir="$3"
+            probe="/tmp/resource-probe-$profile_id"
+            rom="/tmp/resource-rom-$profile_id"
+
+            # shellcheck disable=SC2086
+            arm-linux-gnueabihf-gcc $cflags $ldflags \
+              -Iinclude -I"$build_dir/generated" \
+              tests/validation/resource_profile_probe.c \
+              "$build_dir/libaudio_pipeline_runtime.a" \
+              "$build_dir/libaudio_pipeline.a" \
+              -lm -pthread -o "$probe"
+
+            # Keep the selected DSP graph resident in the ROM measurement.
+            # shellcheck disable=SC2086
+            arm-linux-gnueabihf-gcc $cflags $ldflags \
+              -Iinclude -I"$build_dir/generated" \
+              tests/rom_probe.c "$build_dir/libaudio_pipeline.a" \
+              -lm -o "$rom"
+
+            qemu-arm -cpu max -L /usr/arm-linux-gnueabihf "$probe" \
+              > "resource-profile-out/$profile_id-probe.json"
+            qemu-arm -cpu max -L /usr/arm-linux-gnueabihf "$probe" \
+              > "resource-profile-out/$profile_id-probe-repeat.json"
+
+            python3 tests/validation/resource_profile_qualification.py collect \
+              --profile-id "$profile_id" \
+              --preset "$preset" \
+              --probe "resource-profile-out/$profile_id-probe.json" \
+              --probe-repeat "resource-profile-out/$profile_id-probe-repeat.json" \
+              --elf "$rom" \
+              --library "$build_dir/libaudio_pipeline.a" \
+              --library "$build_dir/libaudio_pipeline_runtime.a" \
+              --output "resource-profile-out/$profile_id-metrics.json"
+          }
+
+          collect_profile conservative ssc305-cortex-a32-low build/ssc305-cortex-a32-low
+          collect_profile effect-first cortex-a32-neon build/cortex-a32-neon
+
+      - name: Enforce delivery-profile qualification without target timing claims
+        run: |
+          set -euo pipefail
+          python3 tests/validation/resource_profile_qualification.py qualify \
+            --spec ci/ssc305-resource-profiles.json \
+            --metrics conservative=resource-profile-out/conservative-metrics.json \
+            --metrics effect-first=resource-profile-out/effect-first-metrics.json \
+            --source-revision '${{ github.sha }}' \
+            --output resource-profile-out/qualification.json
+
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          q=json.loads(Path("resource-profile-out/qualification.json").read_text())
+          print("## SSC305 delivery profiles")
+          print(f"- Qualification: {q['status']}")
+          for name, item in q["profiles"].items():
+              m=item["measured"]
+              p=m["probe"]
+              rom=m["rom"]
+              print(
+                  f"- {name}: state={p['pipeline_state_bytes']} B, "
+                  f"runtime={p['runtime_state_bytes']} B, "
+                  f"text+rodata={rom['text_rodata_bytes']} B, "
+                  f"ELF={rom['linked_elf_file_bytes']} B, "
+                  f"latency={p['algorithmic_latency_ms']} ms, "
+                  f"heap-refs={len(m['direct_heap_allocator_symbol_references'])}, "
+                  f"QEMU-deterministic={m['qemu_deterministic_execution']}"
+              )
+          print(
+              f"- Silicon metrics still calibration-required: "
+              f"{len(q['silicon_calibration'])}"
+          )
+          print("- S004 candidate authority: none")
+          print("- Product certification authority: none")
+          PY
+
+          find resource-profile-out -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > resource-profile-out/SHA256SUMS
+
+      - name: Upload delivery-profile evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ssc305-delivery-profiles-${{ github.run_id }}
+          path: resource-profile-out/
+          if-no-files-found: error
+          retention-days: 30

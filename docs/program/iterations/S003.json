@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "S003",
+  "phase": "system-robustness-v1",
+  "title": "Stage interaction and failure attribution v1",
+  "status": "ACTIVE_DIAGNOSTIC",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "stage_order": [
+    "capture",
+    "BF",
+    "SYNC",
+    "AEC",
+    "RES",
+    "NS",
+    "AGC",
+    "VAD",
+    "final"
+  ],
+  "isolated_assets": [
+    "validation/tools/build_stage_validation_corpus.py",
+    "validation/tools/stage_profile_support.py"
+  ],
+  "attribution_rule": "earliest stage with repeatable failing observable; unknown is preferred to guessed attribution",
+  "outputs": [
+    "first-observable-stage taxonomy",
+    "cross-seed consistency",
+    "failure replay linkage"
+  ]
+}

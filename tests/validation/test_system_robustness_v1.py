@@ -68,6 +68,16 @@ def main() -> int:
     assert downstream["authority_boundary"]["may_claim_bf_root_cause"] is False
     assert downstream["authority_boundary"]["may_open_s004"] is False
 
+    hpf_ref = json.loads((ITER / "S003-mic-mismatch-hpf-aware-reference-oracle-v1.json").read_text())
+    assert hpf_ref["authority"] == "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+    assert hpf_ref["candidate_limit"] == 0 and hpf_ref["confirmation_limit"] == 0
+    assert hpf_ref["promotion_allowed"] is False and hpf_ref["shipping_change_allowed"] is False
+    assert hpf_ref["fresh_seeds"] == [9707, 9807]
+    assert hpf_ref["fixed_utterance_count"] == 8
+    assert hpf_ref["oracle"]["original_watch_limit_db"] == -10.0
+    assert hpf_ref["preregistered_evidence_rules"]["minimum_artifact_cases_per_seed"] == 6
+    assert hpf_ref["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-s003-slr31-subsig-transfer-v1",
+  "allowed_tiers": [
+    "research-validation"
+  ],
+  "minimum_cases": 72,
+  "required_public_sources": [
+    "openslr-slr31"
+  ],
+  "aggregate": {
+    "min_pass_rate": 1
+  }
+}

@@ -35,6 +35,17 @@ def main() -> int:
     assert cross["preregistered_evidence_rules"]["minimum_exact_rooms_per_seed"] == 6
     assert cross["authority_boundary"]["may_open_s004"] is False
 
+    slr31 = json.loads((ITER / "S003-public-clean-speech-subsig-transfer-v1.json").read_text())
+    assert slr31["authority"] == "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+    assert slr31["candidate_limit"] == 0 and slr31["confirmation_limit"] == 0
+    assert slr31["promotion_allowed"] is False and slr31["shipping_change_allowed"] is False
+    assert slr31["fresh_seeds"] == [9307, 9407]
+    assert slr31["microset"]["utterance_count"] == 8
+    assert slr31["microset"]["require_unique_speakers"] is True
+    assert slr31["preregistered_evidence_rules"]["minimum_reproduced_utterances_per_seed"] == 6
+    assert slr31["preregistered_evidence_rules"]["required_subsignature"] == "severe-near-reference-degradation"
+    assert slr31["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

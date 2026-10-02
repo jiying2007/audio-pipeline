@@ -10,7 +10,6 @@ import json
 import math
 import os
 import re
-import subprocess
 from pathlib import Path
 
 from build_validation_corpus import (
@@ -86,21 +85,17 @@ def select_microset(root: Path) -> list[Path]:
 
 
 def decode_flac(path: Path) -> list[int]:
-    completed = subprocess.run(
-        [
-            "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error",
-            "-i", str(path), "-f", "s16le", "-ac", "1", "-ar", str(RATE), "pipe:1",
-        ],
-        check=True,
-        stdout=subprocess.PIPE,
-    )
-    values = array.array("h")
-    values.frombytes(completed.stdout)
-    if os.sys.byteorder != "little":
-        values.byteswap()
-    if not values:
+    import soundfile as sf
+
+    values, rate = sf.read(str(path), dtype="int16", always_2d=True)
+    if int(rate) != RATE:
+        raise ValueError(f"SLR31 source rate must be {RATE} Hz: {path} rate={rate}")
+    if values.ndim != 2 or values.shape[1] != 1:
+        raise ValueError(f"SLR31 source must be mono: {path} shape={values.shape}")
+    out = [int(value) for value in values[:, 0]]
+    if not out:
         raise ValueError(f"empty decoded audio: {path}")
-    return list(values)
+    return out
 
 
 def materialize_length(samples: list[int]) -> list[int]:
@@ -289,6 +284,7 @@ def build(
         "selection_salt": SELECT_SALT,
         "selection_rule": "stable hash order with one utterance per unique speaker",
         "selected": selected_manifest,
+        "decoder": {"python_package": "soundfile==0.13.1", "required_rate_hz": RATE, "required_channels": 1},
         "selection_authority": "research-development-only",
         "candidate_authority": False,
         "shipping_authority": False,

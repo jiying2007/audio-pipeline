@@ -195,3 +195,12 @@ The two contraction seeds are mechanically `AEC 250 ms → RES 300 ms → NS 250
 The standalone RES gain trajectory is not a sufficient single-state explanation. By 200 ms all eight seeds have converged tightly to approximately 0.100–0.101 gain even though their measured recovery branches differ. No gain threshold, RES alpha, AEC parameter, or recovery-threshold search is authorized.
 
 The next authorized phase is `S003_AEC_ECHO_PATH_RES_GAIN_CONTRIBUTION_DECOMPOSITION_V1`: analysis-only decomposition of the RES recovery curve into the AEC residual trajectory plus exact scalar RES-gain contribution, including a counterfactual recovery calculation with the gain contribution removed/frozen to its preregistered pre-transition reference. Candidate budget remains zero and shipping execution is unchanged.
+
+
+## S003 RES gain contribution checkpoint
+
+The shipping scalar RES formula was reconstructed exactly on fresh seeds 15507–16207 with test-only probe PCM bitwise-equivalent to standard `prefix-res`. Freezing the pre-transition gain reproduced the standard AEC recovery time on all eight seeds, proving that post-transition RES gain action mechanically accounts for the AEC→RES recovery difference.
+
+However, smoothing/history is not the delay source: the actual-smoothed path and instantaneous-target path recover at the same time on six seeds, while on 15807 and 16207 the smoothed path recovers **100–150 ms earlier** than the instantaneous target. Therefore release-alpha/history tuning is not authorized by this evidence.
+
+The only retained bounded question is the instantaneous target trajectory itself, driven by existing `residual_energy` and `echo_energy`. The next authorized phase is `S003_AEC_RES_TARGET_DRIVER_DECOMPOSITION_V1`, candidate-zero counterfactual analysis only. No gain/alpha search, formula change, root-cause claim, shipping change, or S004 admission is authorized.

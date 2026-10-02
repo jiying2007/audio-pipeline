@@ -81,6 +81,7 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/aec_recovery_100w50s_confirmation.py",
     "validation/tools/aec_recovery_rebaseline_100w50s.py",
     "validation/tools/aec_echo_path_res_ns_confirmation.py",
+    "validation/tools/aec_echo_path_ns_state_decomposition.py",
     "validation/policies/validation-s003-echo-path-res-ns-confirm.json",
     "validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json",
     "validation/policies/validation-s003-aec-stage-recovery.json",

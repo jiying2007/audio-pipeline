@@ -150,7 +150,7 @@ jobs:
             corpus="/tmp/s003-slr31-$seed"
             seed_out="$out/$seed"
             mkdir -p "$seed_out"
-            python3 validation/tools/build_slr31_subsig_transfer_corpus.py               --source-root /tmp/s003-slr31/extracted               --archive-sha256 "$archive_sha"               --output "$corpus"               --seed "$seed"
+            /tmp/s003-slr31-venv/bin/python validation/tools/build_slr31_subsig_transfer_corpus.py               --source-root /tmp/s003-slr31/extracted               --archive-sha256 "$archive_sha"               --output "$corpus"               --seed "$seed"
 
             python3 validation/tools/stage_interaction_run.py               --source-revision '${{ github.sha }}'               --corpus "$corpus/corpus.json"               --policy validation/policies/validation-s003-slr31-subsig-transfer.json               --dataset-lock .github/research/continuous-optimization/development-data-v3/development.lock.json               --source-manifest "$corpus/source-manifest.json"               --processor build-s003-slr31/stage_prefix_process_pcm               --output "$seed_out/report.json"               --evidence-manifest "$seed_out/evidence-manifest.json"               --enforce
 

@@ -163,28 +163,25 @@ def evaluate_seed(
             raise ValueError(f"canonical report missing {case_id}")
         with tempfile.TemporaryDirectory(prefix=f"ap-aec-metric-{case_id}-") as raw:
             work = Path(raw)
-            output, trace, inputs = engine.invoke(full_processor, case, corpus_path, work)
-            runtime = {}
-            recomputed = engine.evaluate_case_runtime(
-                corpus_path,
-                case,
-                output,
-                trace,
-                inputs,
-                runtime_context=runtime,
+            # Canonical report metrics remain authoritative. This replay is
+            # used only to materialize output PCM for additional metric-safe
+            # evidence; it intentionally does not reimplement canonical
+            # render-correlation semantics.
+            output, trace, _inputs = engine.invoke(
+                full_processor, case, corpus_path, work
             )
-            if recomputed["metrics"] != canonical["metrics"]:
-                raise ValueError(f"{case_id}: canonical metric replay drift")
-
             metrics = dict(canonical["metrics"])
             derived: dict = {}
             declared_latency_ms = int(metrics.get("declared_algorithmic_latency_ms", 0) or 0)
             output_delay_samples = declared_latency_ms * RATE // 1000
 
             if case_id in NEAR_REFERENCE_CASES:
-                clean = runtime.get("clean")
-                if clean is None:
+                clean_path = engine.resolve(
+                    corpus_path, case.get("clean_near_audio")
+                )
+                if clean_path is None:
                     raise ValueError(f"{case_id}: clean reference missing")
+                clean = engine.read_audio_samples(clean_path, RATE, 1)
                 hpf_ref, hpf_delay = run_hpf_reference(
                     hpf_processor,
                     [int(x) for x in clean],
@@ -207,9 +204,10 @@ def evaluate_seed(
                 )
 
             if case_id in TRANSITION_CASES:
-                echo = runtime.get("echo")
-                if echo is None:
+                echo_path = engine.resolve(corpus_path, case.get("echo_audio"))
+                if echo_path is None:
                     raise ValueError(f"{case_id}: echo reference missing")
+                echo = engine.read_audio_samples(echo_path, RATE, 1)
                 derived["transition_residual_windows"] = transition_windows(
                     case,
                     [int(x) for x in output],

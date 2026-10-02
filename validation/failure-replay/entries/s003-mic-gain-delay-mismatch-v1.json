@@ -47,23 +47,23 @@
     "fixed_regression": null
   },
   "s004_eligibility": {
+    "status": "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT",
     "eligible": false,
-    "satisfied": [
+    "historical_satisfied": [
       "multiple_fresh_seed_repetition",
       "same_first_observable_stage",
       "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature",
-      "measurement_domain_artifact_exclusion",
+      "source_input_domain_oracle_valid",
       "downstream_transfer_artifact_exclusion"
     ],
-    "partial_evidence": [
-      "dechorate_measured_rir_reproduces_severe_near_reference_degradation_11_of_11_on_both_seeds",
-      "slr31_clean_speech_reproduces_severe_near_reference_degradation_8_of_8_on_both_seeds",
-      "original_noise_amplification_component_remains_source_specific_or_unconfirmed"
+    "failed": [
+      "candidate_admission_measurement_domain_artifact_exclusion"
     ],
-    "missing": [
+    "not_applicable": [
       "bounded_candidate_resource_fit"
     ],
-    "caution": "downstream-transfer exclusion proves the severe subsignature is observable before BF/NS/AGC/VAD/final; it does not prove HPF causality. Candidate authority remains closed until a bounded resource envelope is independently qualified."
+    "terminal_reason": "HPF-aware reference oracle invalidates the severe-near-reference-degradation subsignature as a candidate-relevant failure; current severe score is a metric/reference-target artifact at HPF-only observation.",
+    "caution": "Historical source-domain and downstream-transfer reviews remain valid in their original scope. They do not override the later metric/reference-domain rejection."
   },
   "root_cause_claim_authority": false,
   "release_acceptance_authority": false,
@@ -193,5 +193,34 @@
     "downstream_transfer_artifact_exclusion_satisfied": true,
     "hpf_root_cause_claim_authority": false,
     "bf_root_cause_claim_authority": false
+  },
+  "candidate_line_status": "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT",
+  "metric_reference_oracle_review": {
+    "review_status": "HPF_AWARE_REFERENCE_ARTIFACT_CONFIRMED",
+    "reviewed_result": "docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1-result.json",
+    "source_family": "openslr-slr31-clean-speech",
+    "fresh_seeds": [
+      9707,
+      9807
+    ],
+    "current_severe_cases": {
+      "9707": 8,
+      "9807": 8
+    },
+    "hpf_aware_severe_cases": {
+      "9707": 0,
+      "9807": 0
+    },
+    "reference_metric_artifact_cases": {
+      "9707": 8,
+      "9807": 8
+    },
+    "right_channel_affects_prefix_capture_cases": {
+      "9707": 0,
+      "9807": 0
+    },
+    "metric_reference_domain_artifact_detected": true,
+    "candidate_relevant_subsignature_valid": false,
+    "root_cause_claim_authority": false
   }
 }

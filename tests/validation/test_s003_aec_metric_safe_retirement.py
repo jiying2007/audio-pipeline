@@ -33,7 +33,7 @@ def main() -> int:
     assert "\n  workflow_dispatch:\n" in consumed
     assert "Run fresh canonical AEC transition evidence" in consumed
     assert "10307 10407" in consumed
-    assert "no AEC parameter search" in consumed
+    assert "no_aec_parameter_search" in consumed
 
     assert result["status"] == "CLOSED_DIAGNOSTIC_METRIC_APPLICABILITY_ESTABLISHED"
     assert result["investigation_terminal"] is True

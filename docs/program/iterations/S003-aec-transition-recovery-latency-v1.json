@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-transition-recovery-latency-v1",
+  "phase": "S003_AEC_TRANSITION_RECOVERY_LATENCY_V1",
+  "authority": "CANDIDATE_ZERO_MEASUREMENT_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-metric-safe-evidence-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_METRIC_APPLICABILITY_ESTABLISHED"
+  },
+  "corpus": {
+    "generator": "validation/tools/build_aec_transition_corpus.py",
+    "policy": "validation/policies/validation-aec-transition-development.json",
+    "fresh_seeds": [
+      10507,
+      10607
+    ],
+    "seconds": 6,
+    "target_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ]
+  },
+  "measurement": {
+    "metric": "residual_to_echo_power_db",
+    "window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "pre_baseline_statistic": "median of complete 100 ms windows",
+    "recovery_excess_db": 3.01029995664,
+    "recovery_power_ratio": 2,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ],
+    "recovery_time_definition": "start offset of the first three consecutive 100 ms post-transition windows whose residual_to_echo_power_db are each <= pre_baseline_db + 3.01029995664 dB",
+    "censored_definition": "true when no qualifying 300 ms run is found within 0..2500 ms",
+    "additional_evidence": [
+      "peak_excess_db_in_first_1000ms",
+      "positive_excess_area_db_ms_0_2500",
+      "late_window_excess_db_2000_2500"
+    ]
+  },
+  "preregistered_rules": {
+    "require_exact_target_case_set": true,
+    "require_complete_pre_baseline_windows": true,
+    "require_complete_search_windows": true,
+    "censored_is_valid_evidence_not_ci_failure": true,
+    "no_recovery_time_pass_fail_threshold": true,
+    "no_parameter_search": true,
+    "no_nlms_step_size_search": true,
+    "no_dtd_threshold_search": true,
+    "no_res_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "outputs": [
+    "per-seed recovery-latency report",
+    "cross-seed recovery summary",
+    "SHA256SUMS"
+  ],
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_aec_parameters": false,
+    "may_change_thresholds_from_results": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false,
+    "may_claim_product_recovery_requirement": false
+  },
+  "success_definition": "complete repeatable recovery-latency measurements or explicit censoring for all target transition cases, not a performance verdict"
+}

@@ -1,0 +1,182 @@
+name: Research S003 AEC Echo-Path Recovery Sign Variability v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-aec-echo-path-recovery-sign-variability-v1.json'
+      - 'docs/program/iterations/S003-aec-echo-path-ns-state-decomposition-v1-result.json'
+      - 'validation/tools/aec_echo_path_recovery_sign_variability.py'
+      - 'validation/tools/aec_echo_path_ns_state_decomposition.py'
+      - 'validation/tools/aec_echo_path_res_ns_confirmation.py'
+      - 'validation/tools/aec_recovery_rebaseline_100w50s.py'
+      - 'validation/policies/validation-s003-echo-path-res-ns-confirm.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_echo_path_ns_state_probe.c'
+      - '.github/workflows/research-s003-aec-echo-path-recovery-sign-variability-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-aec-echo-path-recovery-sign-variability-v1.json'
+      - 'docs/program/iterations/S003-aec-echo-path-ns-state-decomposition-v1-result.json'
+      - 'validation/tools/aec_echo_path_recovery_sign_variability.py'
+      - 'validation/tools/aec_echo_path_ns_state_decomposition.py'
+      - 'validation/tools/aec_echo_path_res_ns_confirmation.py'
+      - 'validation/tools/aec_recovery_rebaseline_100w50s.py'
+      - 'validation/policies/validation-s003-echo-path-res-ns-confirm.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_echo_path_ns_state_probe.c'
+      - '.github/workflows/research-s003-aec-echo-path-recovery-sign-variability-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: s003-aec-echo-path-recovery-sign-variability-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: s003-aec-echo-sign-variability
+
+      - name: Validate candidate-zero sign-variability contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool             docs/program/iterations/S003-aec-echo-path-recovery-sign-variability-v1.json >/dev/null
+          python3 -m py_compile             validation/tools/aec_echo_path_recovery_sign_variability.py             validation/tools/aec_echo_path_ns_state_decomposition.py             validation/tools/aec_echo_path_res_ns_confirmation.py             validation/tools/aec_recovery_rebaseline_100w50s.py
+          PYTHONPATH=validation/tools             python3 validation/tools/aec_echo_path_recovery_sign_variability.py self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          c=json.loads(Path('docs/program/iterations/S003-aec-echo-path-recovery-sign-variability-v1.json').read_text())
+          p=json.loads(Path('docs/program/iterations/S003-aec-echo-path-ns-state-decomposition-v1-result.json').read_text())
+          assert c['authority']=='CANDIDATE_ZERO_SIGN_VARIABILITY_OBSERVATION_ONLY'
+          assert c['candidate_limit']==0 and c['confirmation_limit']==0
+          assert c['corpus']['fresh_seeds']==[13907,14007,14107,14207,14307,14407,14507,14607]
+          assert c['corpus']['profiles']==['prefix-res','prefix-ns','default']
+          assert c['measurement']['geometry_id']=='100w-50s'
+          assert c['state_probe']['fixed_transition_relative_snapshots_ms']==[0,50,100,150,200,250,300,400]
+          assert c['preregistered_rules']['retain_all_sign_classes'] is True
+          assert c['preregistered_rules']['no_sign_bucket_selection_for_candidate'] is True
+          assert c['preregistered_rules']['no_state_family_ranking'] is True
+          assert c['preregistered_rules']['no_root_cause_selection'] is True
+          assert c['preregistered_rules']['no_state_threshold_fitting'] is True
+          assert c['preregistered_rules']['no_recovery_threshold_search'] is True
+          assert c['preregistered_rules']['no_ns_parameter_search'] is True
+          assert c['authority_boundary']['may_open_s004'] is False
+          assert p['status']==c['predecessor']['required_status']
+          assert p['mechanical_result']['sign_flip_observed'] is True
+          assert p['reviewed_validity']['previous_4_of_4_confirmation_is_cross_future_seed_invariant'] is False
+          print('S003 echo-path recovery sign variability authority: PASS')
+          PY
+
+      - name: Build fixed processors and internal-state probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-s003-sign-variability             -DCMAKE_BUILD_TYPE=Release             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s003-sign-variability --target audio_pipeline --parallel
+
+          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-sign-variability/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-sign-variability/libaudio_pipeline.a -lm             -o build-s003-sign-variability/stage_prefix_process_pcm
+
+          python3 - <<'PY' > /tmp/s003-sign-variability-defs.txt
+          import json, shlex
+          from pathlib import Path
+          db=json.loads(Path('build-s003-sign-variability/compile_commands.json').read_text())
+          matches=[
+              row for row in db
+              if 'audio_pipeline.dir' in row.get('command','')
+              or 'audio_pipeline.dir' in ' '.join(row.get('arguments',[]))
+          ]
+          if not matches:
+              raise SystemExit('audio_pipeline compile command not found')
+          row=matches[0]
+          args=row.get('arguments') or shlex.split(row['command'])
+          defs=[]
+          for arg in args:
+              if arg.startswith('-D') and arg not in defs:
+                  defs.append(arg)
+          required=[
+              'AP_BUILD_STAGE_AEC=1','AP_BUILD_STAGE_RES=1',
+              'AP_BUILD_STAGE_NS=1','AP_BUILD_STAGE_SYNC=1',
+          ]
+          joined=' '.join(defs)
+          for item in required:
+              if item not in joined:
+                  raise SystemExit(f'missing required compile define: {item}')
+          print('\n'.join(defs))
+          PY
+          mapfile -t AP_DEFS < /tmp/s003-sign-variability-defs.txt
+          cc -std=c11 -Wall -Wextra -Werror             "${AP_DEFS[@]}"             -Iinclude -Isrc -Ibuild-s003-sign-variability/generated             tests/validation/s003_aec_echo_path_ns_state_probe.c             build-s003-sign-variability/libaudio_pipeline.a -lm             -o build-s003-sign-variability/s003_aec_echo_path_ns_state_probe
+
+      - name: Run fresh sign-variability observations
+        run: |
+          set -euo pipefail
+          out=s003-aec-sign-variability-out
+          mkdir -p "$out"
+          contract=docs/program/iterations/S003-aec-echo-path-recovery-sign-variability-v1.json
+
+          for seed in 13907 14007 14107 14207 14307 14407 14507 14607; do
+            corpus="/tmp/s003-aec-sign-variability-$seed"
+            seed_out="$out/$seed"
+            mkdir -p "$seed_out"
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_echo_path_res_ns_confirmation.py build                 --output "$corpus" --seed "$seed" --seconds 6
+
+            PYTHONPATH=validation/tools               python3 validation/tools/stage_interaction_run.py                 --source-revision '${{ github.sha }}'                 --corpus "$corpus/corpus.json"                 --policy validation/policies/validation-s003-echo-path-res-ns-confirm.json                 --dataset-lock validation/datasets.lock.json                 --processor build-s003-sign-variability/stage_prefix_process_pcm                 --output "$seed_out/canonical-report.json"                 --evidence-manifest "$seed_out/evidence-manifest.json"                 --enforce
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_echo_path_recovery_sign_variability.py run                 --corpus "$corpus/corpus.json"                 --report "$seed_out/canonical-report.json"                 --processor build-s003-sign-variability/stage_prefix_process_pcm                 --state-probe build-s003-sign-variability/s003_aec_echo_path_ns_state_probe                 --contract "$contract"                 --trace-output "$seed_out/ns-state-trace.jsonl"                 --output "$seed_out/sign-receipt.json"
+
+            cp "$corpus/corpus.json" "$seed_out/corpus.json"
+          done
+
+          PYTHONPATH=validation/tools             python3 validation/tools/aec_echo_path_recovery_sign_variability.py aggregate               --contract "$contract"               --input "$out/13907/sign-receipt.json"               --input "$out/14007/sign-receipt.json"               --input "$out/14107/sign-receipt.json"               --input "$out/14207/sign-receipt.json"               --input "$out/14307/sign-receipt.json"               --input "$out/14407/sign-receipt.json"               --input "$out/14507/sign-receipt.json"               --input "$out/14607/sign-receipt.json"               --output "$out/cross-seed-sign-summary.json"
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('s003-aec-sign-variability-out/cross-seed-sign-summary.json').read_text())
+          assert result['probe_output_bitwise_equivalent_all_seeds'] is True
+          print({
+              'sign_distribution':result['sign_distribution'],
+              'extension_ms_by_seed':result['extension_ms_by_seed'],
+          })
+          PY
+
+          cp "$contract" "$out/contract.json"
+          git rev-parse HEAD > "$out/source-sha.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish sign-variability evidence
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r=json.loads(Path('s003-aec-sign-variability-out/cross-seed-sign-summary.json').read_text())
+          print('## S003 echo-path recovery sign variability')
+          print('')
+          print('- Authority: **candidate-zero observation only**')
+          print(f"- Probe bitwise-equivalent: `{r['probe_output_bitwise_equivalent_all_seeds']}`")
+          print(f"- Sign distribution: `{r['sign_distribution']}`")
+          print(f"- NS-minus-RES ms by seed: `{r['extension_ms_by_seed']}`")
+          print('- State-family ranking: **NOT_AUTHORIZED**')
+          print('- Root-cause attribution: **NOT_AUTHORIZED**')
+          print('- Candidate authority: **none**')
+          PY
+
+      - name: Upload hash-bound sign evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: s003-aec-echo-path-sign-variability-${{ github.run_id }}
+          path: s003-aec-sign-variability-out/
+          if-no-files-found: error
+          retention-days: 30

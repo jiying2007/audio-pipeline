@@ -224,6 +224,21 @@ def main() -> int:
     assert ns_state["authority_boundary"]["may_claim_ns_root_cause"] is False
     assert ns_state["authority_boundary"]["may_open_s004"] is False
 
+    sign_var = json.loads((ITER / "S003-aec-echo-path-recovery-sign-variability-v1.json").read_text())
+    assert sign_var["authority"] == "CANDIDATE_ZERO_SIGN_VARIABILITY_OBSERVATION_ONLY"
+    assert sign_var["candidate_limit"] == 0 and sign_var["confirmation_limit"] == 0
+    assert sign_var["promotion_allowed"] is False and sign_var["shipping_change_allowed"] is False
+    assert sign_var["corpus"]["fresh_seeds"] == [13907, 14007, 14107, 14207, 14307, 14407, 14507, 14607]
+    assert sign_var["corpus"]["profiles"] == ["prefix-res", "prefix-ns", "default"]
+    assert sign_var["measurement"]["geometry_id"] == "100w-50s"
+    assert sign_var["state_probe"]["fixed_transition_relative_snapshots_ms"] == [0, 50, 100, 150, 200, 250, 300, 400]
+    assert sign_var["preregistered_rules"]["retain_all_sign_classes"] is True
+    assert sign_var["preregistered_rules"]["no_sign_bucket_selection_for_candidate"] is True
+    assert sign_var["preregistered_rules"]["no_state_family_ranking"] is True
+    assert sign_var["preregistered_rules"]["no_root_cause_selection"] is True
+    assert sign_var["preregistered_rules"]["no_recovery_threshold_search"] is True
+    assert sign_var["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

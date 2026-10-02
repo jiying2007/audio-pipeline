@@ -82,7 +82,10 @@ def main() -> int:
     }
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
-    supplemental = catalog["supplemental_evidence"]
+    supplemental = [
+        item for item in catalog["supplemental_evidence"]
+        if item.get("kind") == "public-cross-source-diagnostic-review"
+    ]
     assert len(supplemental) == 1
     assert supplemental[0]["review_path"] == str(RESULT.relative_to(ROOT))
     assert supplemental[0]["workflow_run_id"] == 36960922825
@@ -99,7 +102,6 @@ def main() -> int:
         )
         assert review["measurement_domain_artifact_exclusion_status"] == "UNRESOLVED"
         assert entry["s004_eligibility"]["eligible"] is False
-        assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in entry["s004_eligibility"]["missing"]
         assert "measurement_domain_artifact_exclusion" in entry["s004_eligibility"]["missing"]
         assert "downstream_transfer_artifact_exclusion" in entry["s004_eligibility"]["missing"]
         assert "bounded_candidate_resource_fit" in entry["s004_eligibility"]["missing"]

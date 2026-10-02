@@ -57,4 +57,8 @@ The first public measured-RIR review is terminal and diagnostic-only. Frozen dEc
 - therefore the original composite durable signatures did not reproduce exactly cross-source;
 - raw-prefix watch-clear is retained only as a sanity observation because the watched metrics are input-to-output deltas and raw bypass is structurally near-neutral.
 
-This does not open S004. Only one public dataset family has been exercised, measurement-domain artifact exclusion is not independently closed, the complete downstream-transfer condition is not closed, and no bounded candidate exists for resource-fit qualification. The next authorized work remains S003 evidence expansion on a second independent public-development dataset family, with candidate budget zero.
+That first review did not open S004. A second public-development review is now also terminal: on the frozen 8-speaker SLR31 Mini LibriSpeech microset, capture clipping reproduced the severe sub-signature in 0/8 utterances on both seeds, while mic gain/delay mismatch reproduced `severe-near-reference-degradation` in 8/8 utterances on both seeds with first observable stage `capture`.
+
+Therefore the multiple-independent-public-dataset repetition prerequisite is closed only for the mic-gain/delay-mismatch severe sub-signature (dEchorate 11/11 on both seeds + SLR31 8/8 on both seeds). It is not closed for capture clipping and it is not a root-cause claim.
+
+S004 remains closed. The mic-mismatch line still requires independently sufficient measurement-domain artifact exclusion, downstream-transfer artifact exclusion, and a later bounded candidate resource-fit qualification. The next authorized work is candidate-zero measurement-domain artifact exclusion using source-domain/oracle metrics independent of output-vs-input delta metrics; no DSP tuning or validation-grade/blind feedback is authorized.

@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "id": "S003-public-clean-speech-subsig-transfer-v1-result",
+  "investigation_id": "S003-public-clean-speech-subsig-transfer-v1",
+  "status": "CLOSED_DIAGNOSTIC_SECOND_PUBLIC_FAMILY_REPETITION",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_RELEASE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36965720270,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "61d7e5ac95ff113ebac0ad7753a9303f8c8aaa32",
+    "artifact_id": 11210085727,
+    "artifact_name": "s003-slr31-subsig-transfer-36965720270",
+    "artifact_zip_sha256": "694f8d9e5b85b103893488ade95cb500e2dfd446940d2fc968e870b6e18e2b1b",
+    "artifact_zip_bytes": 57536,
+    "aggregate_member": "slr31-subsig-transfer.json",
+    "aggregate_member_sha256": "654763f7c599f83b33d015732d90178631ee7be433ee0960176c5751610fdb28"
+  },
+  "source_review": {
+    "public_source_family": "OpenSLR SLR31 Mini LibriSpeech train-clean-5",
+    "dataset_id": "openslr-slr31-clean-speech",
+    "parent_catalog": "audio-pipeline-public-development-v3",
+    "archive_bytes": 332954390,
+    "archive_sha256": "47805806c8b15f7549f3c51bd6b7da72ec0128a34d32830c8014a88658c0292d",
+    "license": "CC-BY-4.0",
+    "decoder_runtime": {
+      "numpy": "2.2.6",
+      "soundfile": "0.13.1",
+      "libsndfile": "1.2.2"
+    },
+    "fixed_utterance_count": 8,
+    "fixed_unique_speaker_count": 8,
+    "selected_microset": [
+      {
+        "path": "LibriSpeech/train-clean-5/163/122947/163-122947-0095.flac",
+        "speaker_id": "163",
+        "sha256": "b3f87ea1557a75279e0982466243bdee82c7ed32c5280d4917174e418f73291e"
+      },
+      {
+        "path": "LibriSpeech/train-clean-5/669/129074/669-129074-0017.flac",
+        "speaker_id": "669",
+        "sha256": "4b2dcec25efdcdf9419701e74ea5465a3e92a203b1cfb12c5b9e5f025fd8e224"
+      },
+      {
+        "path": "LibriSpeech/train-clean-5/8629/261139/8629-261139-0041.flac",
+        "speaker_id": "8629",
+        "sha256": "b02ae66552cbad79f24fcde08c044ae009ba6e8cc80e89440d13895956bdf20a"
+      },
+      {
+        "path": "LibriSpeech/train-clean-5/3947/13262/3947-13262-0044.flac",
+        "speaker_id": "3947",
+        "sha256": "c290b99da71da662f0338ce8e5e3e306e1d410017f98eb2a9018697ac36be4cf"
+      },
+      {
+        "path": "LibriSpeech/train-clean-5/6272/70171/6272-70171-0027.flac",
+        "speaker_id": "6272",
+        "sha256": "e63eb51ad349737ec0bb089f988a7f285bba148ea7c5c0d3437c802961592447"
+      },
+      {
+        "path": "LibriSpeech/train-clean-5/1088/134318/1088-134318-0015.flac",
+        "speaker_id": "1088",
+        "sha256": "a5e5597d3c9b6f70601b63156cf1748ea64048a454a6151c106cfbafb367ee17"
+      },
+      {
+        "path": "LibriSpeech/train-clean-5/1737/146161/1737-146161-0006.flac",
+        "speaker_id": "1737",
+        "sha256": "fd7f63b781329929ee3a1ef914794bf66c5a1a539de6e33c7cee4df92271a287"
+      },
+      {
+        "path": "LibriSpeech/train-clean-5/118/47824/118-47824-0042.flac",
+        "speaker_id": "118",
+        "sha256": "d82d56fc80fd86ff40d852f71d13a642c6701d0bcbd08c71fc34db1d594b4b8c"
+      }
+    ],
+    "selection_is_acoustic_result_independent": true,
+    "fresh_seeds": [
+      9307,
+      9407
+    ],
+    "no_result_driven_selection": true
+  },
+  "mechanical_result": {
+    "FR-S003-CAPTURE-CLIPPING-V1": {
+      "required_subsignature": "severe-near-reference-degradation",
+      "reproduced_utterances": {
+        "9307": 0,
+        "9407": 0
+      },
+      "minimum_required_per_seed": 6,
+      "second_public_family_repetition_satisfied": false,
+      "first_observable_stage_distribution": {
+        "9307": {},
+        "9407": {}
+      }
+    },
+    "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1": {
+      "required_subsignature": "severe-near-reference-degradation",
+      "reproduced_utterances": {
+        "9307": 8,
+        "9407": 8
+      },
+      "minimum_required_per_seed": 6,
+      "second_public_family_repetition_satisfied": true,
+      "first_observable_stage_distribution": {
+        "9307": {
+          "capture": 8
+        },
+        "9407": {
+          "capture": 8
+        }
+      }
+    }
+  },
+  "reviewed_validity": {
+    "multiple_public_dataset_repetition_supported_for": [
+      "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1::severe-near-reference-degradation"
+    ],
+    "multiple_public_dataset_repetition_not_supported_for": [
+      "FR-S003-CAPTURE-CLIPPING-V1::severe-near-reference-degradation"
+    ],
+    "public_family_1": {
+      "family": "dechorate-measured-rir",
+      "evidence": "docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json",
+      "mic_mismatch_severe_counts": {
+        "8307": 11,
+        "8407": 11
+      }
+    },
+    "public_family_2": {
+      "family": "openslr-slr31-clean-speech",
+      "mic_mismatch_severe_counts": {
+        "9307": 8,
+        "9407": 8
+      }
+    },
+    "interpretation": "The multiple-public-dataset prerequisite is satisfied only for the mic-gain/delay-mismatch severe-near-reference-degradation subsignature. This is not a root-cause claim and does not generalize to capture clipping.",
+    "root_cause_claim_authority": false
+  },
+  "s004_review": {
+    "open": false,
+    "candidate_authority": false,
+    "satisfied": [
+      "multiple_fresh_seed_repetition",
+      "same_first_observable_stage",
+      "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature"
+    ],
+    "scope": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1 severe-near-reference-degradation only",
+    "missing": [
+      "measurement_domain_artifact_exclusion",
+      "downstream_transfer_artifact_exclusion",
+      "bounded_candidate_resource_fit"
+    ]
+  },
+  "next_authorized_step": {
+    "phase": "S003_MEASUREMENT_DOMAIN_ARTIFACT_EXCLUSION",
+    "candidate_limit": 0,
+    "description": "Establish an input-domain/oracle reference control for mic-gain/delay-mismatch severe-near-reference-degradation using absolute source-domain metrics independent of output-vs-input deltas. Do not tune DSP or consume validation-grade/blind feedback."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false
+}

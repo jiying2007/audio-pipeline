@@ -87,9 +87,17 @@ def main() -> int:
     assert review["prefix_capture_mask"] == "AP_STAGE_HPF"
     assert review["hpf_root_cause_claim_authority"] is False
     assert review["bf_root_cause_claim_authority"] is False
-    assert "downstream_transfer_artifact_exclusion" in entry["s004_eligibility"]["satisfied"]
-    assert entry["s004_eligibility"]["missing"] == ["bounded_candidate_resource_fit"]
+    # The immutable downstream result remains true in its original scope.
+    # A later metric/reference review may terminally reject candidate admission
+    # without invalidating the historical stage-prefix observation.
+    assert review["downstream_transfer_artifact_exclusion_satisfied"] is True
     assert entry["s004_eligibility"]["eligible"] is False
+    if entry["s004_eligibility"].get("status") == "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT":
+        assert "downstream_transfer_artifact_exclusion" in entry["s004_eligibility"]["historical_satisfied"]
+        assert entry["s004_eligibility"]["not_applicable"] == ["bounded_candidate_resource_fit"]
+    else:
+        assert "downstream_transfer_artifact_exclusion" in entry["s004_eligibility"]["satisfied"]
+        assert entry["s004_eligibility"]["missing"] == ["bounded_candidate_resource_fit"]
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     matches = [

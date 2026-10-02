@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "S002",
+  "phase": "system-robustness-v1",
+  "title": "AEC double-talk and echo-path transition decomposition v1",
+  "status": "ACTIVE_DIAGNOSTIC",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "source_assets": [
+    "validation/tools/build_aec_motion_corpus.py",
+    "validation/tools/build_validation_corpus.py"
+  ],
+  "required_conditions": [
+    "far_end_only",
+    "near_end_only",
+    "double_talk",
+    "echo_path_static",
+    "echo_path_change",
+    "speaker_level_change",
+    "render_discontinuity",
+    "motion_path_variation"
+  ],
+  "forbidden_search": [
+    "nlms_step_size",
+    "dtd_threshold",
+    "res_parameter_sweep"
+  ],
+  "output": "aec-transition-report"
+}

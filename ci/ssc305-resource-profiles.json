@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "conservative": {
+      "authority": "shipping-default-build-contract",
+      "preset": "ssc305-cortex-a32-low",
+      "intent": "low CPU/RAM and stability first",
+      "required_metrics": [
+        "pipeline_state_bytes",
+        "runtime_state_bytes",
+        "rom_text_rodata_bytes",
+        "aarch32_build_identity",
+        "qemu_deterministic_execution"
+      ],
+      "silicon_calibration_required": [
+        "cpu_ms_per_audio_second",
+        "frame_p50_ms",
+        "frame_p95_ms",
+        "frame_p99_ms",
+        "peak_rss",
+        "stack_upper_bound",
+        "thermal",
+        "power"
+      ]
+    },
+    "effect-first": {
+      "authority": "research-only-resource-envelope",
+      "build_contract": "cortex-a32 full graph with BF/AEC/RES/NS/AGC/VAD",
+      "intent": "measure whether extra resources buy repeatable acoustic effect",
+      "required_metrics": [
+        "pipeline_state_bytes",
+        "rom_text_rodata_bytes",
+        "aarch32_build_identity",
+        "qemu_deterministic_execution"
+      ],
+      "silicon_calibration_required": [
+        "cpu_ms_per_audio_second",
+        "frame_p50_ms",
+        "frame_p95_ms",
+        "frame_p99_ms",
+        "peak_rss",
+        "stack_upper_bound",
+        "thermal",
+        "power"
+      ]
+    }
+  },
+  "rule": "hosted or QEMU timing must not be relabeled as SSC305 silicon timing"
+}

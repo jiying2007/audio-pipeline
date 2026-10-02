@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audio-pipeline/failure-replay/schema-v1",
+  "title": "Audio Pipeline Failure Replay v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "failure_id",
+    "source_identity",
+    "seed",
+    "perturbation",
+    "expected_failure_signature",
+    "shipping_output",
+    "first_observable_stage",
+    "regression_assertion"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "failure_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_identity": {
+      "type": "object",
+      "required": [
+        "corpus_id",
+        "case_id"
+      ],
+      "properties": {
+        "corpus_id": {
+          "type": "string"
+        },
+        "case_id": {
+          "type": "string"
+        },
+        "source_revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "perturbation": {
+      "type": "object"
+    },
+    "telemetry": {
+      "type": "object"
+    },
+    "expected_failure_signature": {
+      "type": "object"
+    },
+    "shipping_output": {
+      "type": "object"
+    },
+    "first_observable_stage": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "capture",
+        "BF",
+        "SYNC",
+        "AEC",
+        "RES",
+        "NS",
+        "AGC",
+        "VAD",
+        "final",
+        null
+      ]
+    },
+    "regression_assertion": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

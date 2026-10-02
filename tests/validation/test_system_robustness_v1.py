@@ -130,6 +130,18 @@ def main() -> int:
     assert ns_confirm["authority_boundary"]["may_claim_ns_root_cause"] is False
     assert ns_confirm["authority_boundary"]["may_open_s004"] is False
 
+    variability = json.loads((ITER / "S003-aec-recovery-variability-source-decomposition-v1.json").read_text())
+    assert variability["authority"] == "CANDIDATE_ZERO_OBSERVATION_ONLY"
+    assert variability["candidate_limit"] == 0 and variability["confirmation_limit"] == 0
+    assert variability["promotion_allowed"] is False and variability["shipping_change_allowed"] is False
+    assert variability["corpus"]["fresh_seeds"] == [11107, 11207, 11307, 11407]
+    assert variability["corpus"]["cases_per_seed"] == 15
+    assert variability["preregistered_rules"]["no_correlation_significance_threshold"] is True
+    assert variability["preregistered_rules"]["no_root_cause_selection"] is True
+    assert variability["preregistered_rules"]["no_parameter_search"] is True
+    assert variability["authority_boundary"]["may_claim_causal_stage"] is False
+    assert variability["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

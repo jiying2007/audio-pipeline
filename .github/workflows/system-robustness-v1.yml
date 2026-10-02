@@ -35,6 +35,7 @@ on:
       - 'tests/validation/s003_aec_echo_path_res_state_probe.c'
       - 'tests/validation/s003_aec_echo_path_ns_state_probe.c'
       - 'validation/policies/validation-s003-echo-path-res-ns-confirm.json'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
       - 'validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json'
       - 'validation/policies/validation-s003-aec-stage-recovery.json'
       - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
@@ -83,6 +84,7 @@ on:
       - 'tests/validation/s003_aec_echo_path_res_state_probe.c'
       - 'tests/validation/s003_aec_echo_path_ns_state_probe.c'
       - 'validation/policies/validation-s003-echo-path-res-ns-confirm.json'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
       - 'validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json'
       - 'validation/policies/validation-s003-aec-stage-recovery.json'
       - 'validation/tools/mic_mismatch_downstream_transfer_review.py'
@@ -200,6 +202,7 @@ jobs:
                    validation/policies/validation-s003-aec-stage-recovery.json \
                    validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json \
                    validation/policies/validation-s003-echo-path-res-ns-confirm.json \
+                   validation/policies/validation-s003-res-gain-contribution.json \
                    ci/ssc305-resource-profiles.json; do
             python3 -m json.tool "$f" >/dev/null
           done

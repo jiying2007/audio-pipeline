@@ -63,14 +63,16 @@
           "default"
         ]
       }
-    }
+    },
+    "max_unperturbed_clean_clip_fraction": 0.001
   },
   "preregistered_evidence_rules": {
     "minimum_exact_rooms_per_seed": 6,
     "cross_source_repetition": "expected durable signature union and expected first-observable stage repeat in >=6/11 fixed rooms for each fresh seed",
     "measurement_domain_artifact_exclusion": "no durable replay diagnostic signature is active at prefix-raw in >=6/11 fixed rooms for each fresh seed",
     "downstream_transfer_artifact_exclusion": "expected signature is observed before final output and remains in the stage-prefix signature union in >=6/11 fixed rooms for each fresh seed",
-    "no_result_driven_room_selection": true
+    "no_result_driven_room_selection": true,
+    "input_validity": "all 11 unperturbed room/mic0 signals must have clip_fraction <= 0.001 after one global reference-room calibration"
   },
   "expected_durable_signatures": {
     "FR-S003-CAPTURE-CLIPPING-V1": {

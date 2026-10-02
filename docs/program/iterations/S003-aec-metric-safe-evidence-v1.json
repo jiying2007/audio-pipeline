@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-metric-safe-evidence-v1",
+  "phase": "S003_AEC_METRIC_SAFE_EVIDENCE_EXPANSION",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "terminal_rejection": "docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_METRIC_REFERENCE_ARTIFACT_REJECTED"
+  },
+  "corpus": {
+    "generator": "validation/tools/build_aec_transition_corpus.py",
+    "policy": "validation/policies/validation-aec-transition-development.json",
+    "fresh_seeds": [
+      10307,
+      10407
+    ],
+    "seconds": 6,
+    "case_count": 8
+  },
+  "metric_applicability": {
+    "far-end-static-a": {
+      "role": "far_end_only",
+      "required_metrics": [
+        "erle_db",
+        "output_render_corr_ratio",
+        "output_render_corr_reduction"
+      ],
+      "forbidden_primary_metrics": [
+        "near_si_sdr_improvement_db"
+      ]
+    },
+    "near-end-only": {
+      "role": "near_end_only",
+      "required_metrics": [
+        "hpf_aware_near_si_sdr_db",
+        "speech_active_attenuation_db",
+        "vad_f1"
+      ],
+      "forbidden_primary_metrics": [
+        "near_si_sdr_improvement_db"
+      ]
+    },
+    "double-talk": {
+      "role": "double_talk",
+      "required_metrics": [
+        "hpf_aware_near_si_sdr_db",
+        "output_render_corr_ratio",
+        "output_render_corr_reduction",
+        "vad_f1"
+      ],
+      "secondary_metrics": [
+        "near_si_sdr_improvement_db"
+      ]
+    },
+    "echo-path-change": {
+      "role": "echo_path_transition",
+      "required_metrics": [
+        "erle_db",
+        "output_render_corr_ratio",
+        "transition_residual_windows"
+      ]
+    },
+    "speaker-acoustic-gain-step": {
+      "role": "echo_gain_transition",
+      "required_metrics": [
+        "erle_db",
+        "output_render_corr_ratio",
+        "transition_residual_windows"
+      ]
+    },
+    "render-level-step": {
+      "role": "render_level_transition",
+      "required_metrics": [
+        "erle_db",
+        "output_render_corr_ratio",
+        "transition_residual_windows"
+      ]
+    },
+    "clipped-playback": {
+      "role": "nonlinear_playback",
+      "required_metrics": [
+        "erle_db",
+        "output_render_corr_ratio",
+        "output_render_corr_reduction"
+      ]
+    },
+    "soft-saturated-playback": {
+      "role": "nonlinear_playback",
+      "required_metrics": [
+        "erle_db",
+        "output_render_corr_ratio",
+        "output_render_corr_reduction"
+      ]
+    }
+  },
+  "hpf_aware_reference": {
+    "processor": "tests/validation/stage_prefix_process_pcm.c",
+    "profile": "prefix-capture",
+    "required_mask": "AP_STAGE_HPF",
+    "expected_git_blob_sha1": "4decaeeb323ecce5dc38dc442f8c23a06e1b86df",
+    "use_for": [
+      "near-end-only",
+      "double-talk"
+    ]
+  },
+  "transition_windows": {
+    "pre_ms": [
+      -1000,
+      -200
+    ],
+    "early_post_ms": [
+      100,
+      600
+    ],
+    "late_post_ms": [
+      1000,
+      1800
+    ],
+    "metric": "residual_to_echo_power_db",
+    "interpretation": "lower is better; record trajectory only, no algorithm-performance threshold in v1"
+  },
+  "preregistered_rules": {
+    "require_all_applicable_metrics_present": true,
+    "require_fresh_seed_metric_role_consistency": true,
+    "reject_raw_clean_si_sdr_as_primary_near_end_only_metric": true,
+    "no_performance_threshold_search": true,
+    "no_aec_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "outputs": [
+    "per-seed canonical report",
+    "aec-metric-safe-report.json",
+    "cross-seed-metric-consistency.json",
+    "SHA256SUMS"
+  ],
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_nlms_step_size": false,
+    "may_change_dtd_threshold": false,
+    "may_change_res_parameters": false,
+    "may_change_hpf": false,
+    "may_change_release_policy": false,
+    "may_open_s004": false
+  },
+  "success_definition": "complete stage-appropriate metric map and transition recovery evidence, not a best parameter or pass/fail algorithm verdict"
+}

@@ -78,6 +78,17 @@ def main() -> int:
     assert hpf_ref["preregistered_evidence_rules"]["minimum_artifact_cases_per_seed"] == 6
     assert hpf_ref["authority_boundary"]["may_open_s004"] is False
 
+    aec_safe = json.loads((ITER / "S003-aec-metric-safe-evidence-v1.json").read_text())
+    assert aec_safe["authority"] == "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+    assert aec_safe["candidate_limit"] == 0 and aec_safe["confirmation_limit"] == 0
+    assert aec_safe["promotion_allowed"] is False and aec_safe["shipping_change_allowed"] is False
+    assert aec_safe["corpus"]["fresh_seeds"] == [10307, 10407]
+    assert aec_safe["corpus"]["case_count"] == 8
+    assert aec_safe["metric_applicability"]["near-end-only"]["forbidden_primary_metrics"] == ["near_si_sdr_improvement_db"]
+    assert aec_safe["preregistered_rules"]["no_performance_threshold_search"] is True
+    assert aec_safe["preregistered_rules"]["no_aec_parameter_search"] is True
+    assert aec_safe["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

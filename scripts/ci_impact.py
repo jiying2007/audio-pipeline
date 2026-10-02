@@ -70,6 +70,7 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/slr31_subsig_transfer.py",
     "validation/tools/slr31_mic_mismatch_source_oracle.py",
     "validation/tools/hpf_aware_reference_oracle.py",
+    "validation/tools/aec_metric_safe_evidence.py",
     "validation/tools/mic_mismatch_downstream_transfer_review.py",
     "validation/tools/build_stage_interaction_corpus.py",
     "validation/tools/build_system_robustness_corpus.py",

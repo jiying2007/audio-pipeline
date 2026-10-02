@@ -33,6 +33,8 @@ Real measured RIR, Microsoft AEC/DNS development partitions and Pyroomacoustics 
 
 Every failed diagnostic case must be representable by the v1 failure replay schema with input/source identity, seed, perturbation configuration, report/telemetry references, expected signature, shipping output identity, first-observable stage and regression assertion.
 
+Release-policy PASS and diagnostic degradation are separate facts. The initial 5107/5207 exploratory run showed that the permissive smoke policy can remain PASS while severe stress signatures are visible in raw metrics. S001 therefore pre-registers a replay-only diagnostic watch and confirms it on fresh seeds 5307/5407. These watch rules create replay evidence only; they do not authorize a release failure, candidate, parameter change or promotion.
+
 ## Resource delivery
 
 Two declared delivery profiles are tracked:

@@ -28,7 +28,11 @@
       "prefix-aec",
       "prefix-res"
     ],
-    "cases_per_seed": 2
+    "cases_per_seed": 2,
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES"
+    }
   },
   "measurement": {
     "geometry_id": "100w-50s",

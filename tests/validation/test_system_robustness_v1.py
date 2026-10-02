@@ -46,6 +46,17 @@ def main() -> int:
     assert slr31["preregistered_evidence_rules"]["required_subsignature"] == "severe-near-reference-degradation"
     assert slr31["authority_boundary"]["may_open_s004"] is False
 
+    oracle = json.loads((ITER / "S003-mic-mismatch-measurement-domain-oracle-v1.json").read_text())
+    assert oracle["authority"] == "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+    assert oracle["candidate_limit"] == 0 and oracle["confirmation_limit"] == 0
+    assert oracle["promotion_allowed"] is False and oracle["shipping_change_allowed"] is False
+    assert oracle["fresh_seeds"] == [9507, 9607]
+    assert oracle["fixed_utterance_count"] == 8
+    assert oracle["preregistered_evidence_rules"]["minimum_oracle_valid_utterances_per_seed"] == 6
+    assert oracle["preregistered_evidence_rules"]["no_pipeline_output_metrics_in_gate"] is True
+    assert oracle["preregistered_evidence_rules"]["no_near_si_sdr_improvement_in_gate"] is True
+    assert oracle["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "id": "S003-mic-mismatch-measurement-domain-oracle-v1",
+  "phase": "S003_MEASUREMENT_DOMAIN_ARTIFACT_EXCLUSION",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_SECOND_PUBLIC_FAMILY_REPETITION",
+    "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
+    "required_subsignature": "severe-near-reference-degradation"
+  },
+  "public_source": {
+    "dataset_family": "OpenSLR SLR31 Mini LibriSpeech train-clean-5",
+    "dataset_id": "openslr-slr31-clean-speech",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "archive_id": "openslr-slr31-train-clean-5",
+    "archive_bytes": 332954390,
+    "archive_sha256": "47805806c8b15f7549f3c51bd6b7da72ec0128a34d32830c8014a88658c0292d",
+    "license": "CC-BY-4.0",
+    "usage_class": "research-development",
+    "fixed_microset_result": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json"
+  },
+  "fresh_seeds": [
+    9507,
+    9607
+  ],
+  "fixed_utterance_count": 8,
+  "perturbation": {
+    "left_noise_amplitude": 2200,
+    "left_noise_scale": 0.25,
+    "right_gain": 0.72,
+    "right_delay_samples": 3,
+    "right_noise_scale": 0.38,
+    "right_noise_rotation_samples": 137
+  },
+  "source_domain_oracle": {
+    "description": "Validate clean/reference/microphone construction independently of pipeline output and independently of near_si_sdr_improvement_db.",
+    "metrics": [
+      "clean_clip_fraction",
+      "left_clip_fraction",
+      "right_clip_fraction",
+      "left_component_snr_db",
+      "right_expected_component_snr_db",
+      "left_clean_cosine_corr",
+      "right_expected_cosine_corr",
+      "left_best_lag_samples",
+      "right_best_lag_samples",
+      "right_recovered_gain"
+    ],
+    "thresholds": {
+      "max_clean_clip_fraction": 0.001,
+      "max_left_clip_fraction": 0.001,
+      "max_right_clip_fraction": 0.001,
+      "min_left_component_snr_db": 15,
+      "min_right_expected_component_snr_db": 10,
+      "min_left_clean_cosine_corr": 0.95,
+      "min_right_expected_cosine_corr": 0.9,
+      "required_left_best_lag_samples": 0,
+      "min_right_best_lag_samples": 2,
+      "max_right_best_lag_samples": 4,
+      "min_right_recovered_gain": 0.65,
+      "max_right_recovered_gain": 0.8
+    },
+    "threshold_basis": "wide margins around the fixed perturbation construction (left clean+low noise; right 0.72 gain, 3-sample delay, bounded noise), not derived from pipeline output or prior oracle results"
+  },
+  "preregistered_evidence_rules": {
+    "minimum_oracle_valid_utterances_per_seed": 6,
+    "required_total_utterances_per_seed": 8,
+    "measurement_domain_artifact_exclusion_gate": "satisfied only if >=6/8 fixed utterances pass every source-domain oracle check on each fresh seed",
+    "no_pipeline_output_metrics_in_gate": true,
+    "no_near_si_sdr_improvement_in_gate": true,
+    "no_result_driven_utterance_selection": true
+  },
+  "outputs": [
+    "per-seed-source-oracle.json",
+    "measurement-domain-oracle-summary.json",
+    "source-manifest.json",
+    "SHA256SUMS"
+  ],
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_thresholds": false,
+    "may_update_shipping_source": false,
+    "may_consume_validation_grade": false,
+    "may_consume_validation_grade_blind": false,
+    "may_claim_root_cause": false,
+    "may_open_s004": false
+  },
+  "next_review": "If the source-domain oracle passes, mark only measurement_domain_artifact_exclusion satisfied for the mic-mismatch severe subsignature. Downstream-transfer exclusion and bounded candidate resource fit remain separate prerequisites."
+}

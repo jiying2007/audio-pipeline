@@ -68,6 +68,7 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/policies/validation-s003-slr31-subsig-transfer.json",
     "validation/tools/build_slr31_subsig_transfer_corpus.py",
     "validation/tools/slr31_subsig_transfer.py",
+    "validation/tools/slr31_mic_mismatch_source_oracle.py",
     "validation/tools/build_stage_interaction_corpus.py",
     "validation/tools/build_system_robustness_corpus.py",
     "validation/tools/stage_interaction_attribution.py",

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-metric-safe-evidence-v1-result",
+  "investigation_id": "S003-aec-metric-safe-evidence-v1",
+  "status": "CLOSED_DIAGNOSTIC_METRIC_APPLICABILITY_ESTABLISHED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_PERFORMANCE_VERDICT_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36984527224,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "89b3a8170061ac0fadd3de7559086384a60bf751",
+    "artifact_id": 11217011011,
+    "artifact_name": "s003-aec-metric-safe-evidence-36984527224",
+    "artifact_zip_sha256": "4f764fc824d7c391c71d797a1a9739f06e430aec268acfeb775dc56907978ad5",
+    "aggregate_member": "cross-seed-metric-consistency.json",
+    "aggregate_member_sha256": "75692c82060b42c2cfe3180261d7c7c829d998685d854f99f408bf7ec1cbcd80"
+  },
+  "qualification": {
+    "verify_run_id": 36984527579,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 36984527256,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 36984527233,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 36984527164,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 36984527157,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 36984527190,
+    "i015_contract_conclusion": "success"
+  },
+  "metric_contract": {
+    "fresh_seeds": [
+      10307,
+      10407
+    ],
+    "cases_per_seed": 8,
+    "metric_contract_complete_cases": {
+      "10307": 8,
+      "10407": 8
+    },
+    "incomplete_cases": {
+      "10307": 0,
+      "10407": 0
+    },
+    "metric_applicability_map_complete": true,
+    "algorithm_performance_verdict_authority": false,
+    "candidate_authority": false,
+    "near_end_only_raw_clean_si_sdr_primary_metric_rejected": true
+  },
+  "representative_metrics": {
+    "10307": {
+      "far_end_static_erle_db": 42.77767947284397,
+      "double_talk_render_corr_reduction": 0.6185904638363112,
+      "near_end_only_raw_clean_si_sdr_improvement_db": -231.7482389342121,
+      "near_end_only_hpf_aware_si_sdr_db": 6.057568965003233,
+      "double_talk_hpf_aware_si_sdr_db": 6.371389656430524
+    },
+    "10407": {
+      "far_end_static_erle_db": 42.36924036999784,
+      "double_talk_render_corr_reduction": 0.6173896928670048,
+      "near_end_only_raw_clean_si_sdr_improvement_db": -231.99109828802557,
+      "near_end_only_hpf_aware_si_sdr_db": 5.7423765251500765,
+      "double_talk_hpf_aware_si_sdr_db": 6.572336935553401
+    }
+  },
+  "transition_residual_trajectory_db": {
+    "echo-path-change": {
+      "10307": {
+        "pre": -42.708166320030195,
+        "early_post": -32.952408810261836,
+        "late_post": -46.736996731625254
+      },
+      "10407": {
+        "pre": -42.42814603922717,
+        "early_post": -35.791968923454306,
+        "late_post": -46.06904396739787
+      }
+    },
+    "speaker-acoustic-gain-step": {
+      "10307": {
+        "pre": -42.72170972530762,
+        "early_post": -28.120757579916884,
+        "late_post": -42.21837687841253
+      },
+      "10407": {
+        "pre": -42.42390713262792,
+        "early_post": -30.82853647627513,
+        "late_post": -42.904050927617305
+      }
+    },
+    "render-level-step": {
+      "10307": {
+        "pre": -42.71643745872414,
+        "early_post": -27.779245120913544,
+        "late_post": -43.08333725187934
+      },
+      "10407": {
+        "pre": -42.413648743726284,
+        "early_post": -26.371518410437027,
+        "late_post": -42.35042756146232
+      }
+    }
+  },
+  "reviewed_validity": {
+    "metric_applicability_sufficiently_established": true,
+    "near_end_only_raw_clean_si_sdr_invalid_as_primary_metric": true,
+    "transition_residual_spike_repeatable": true,
+    "transition_late_recovery_observed": true,
+    "performance_threshold_established": false,
+    "algorithm_pass_fail_verdict": "NOT_AUTHORIZED",
+    "interpretation": "AEC transition evidence must use scenario-appropriate metrics. The existing transition corpus shows repeatable early residual spikes after echo-path/gain/render changes and late recovery, motivating recovery-latency measurement rather than parameter search."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_TRANSITION_RECOVERY_LATENCY_V1",
+    "candidate_limit": 0,
+    "definition": "Measure recovery latency relative to each case's own pre-transition residual baseline. Use 100 ms windows; recovered means residual power <= 2x pre baseline (pre+3.01029995664 dB) for 300 ms continuously; search 0..2500 ms and record censored if not recovered.",
+    "no_performance_threshold": true,
+    "no_parameter_search": true
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "product_release_authority": false
+}

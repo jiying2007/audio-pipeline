@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "id": "S003-mic-mismatch-measurement-domain-oracle-v1-result",
+  "investigation_id": "S003-mic-mismatch-measurement-domain-oracle-v1",
+  "status": "CLOSED_DIAGNOSTIC_MEASUREMENT_DOMAIN_ARTIFACT_EXCLUDED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_RELEASE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36969688211,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "7f0a68e6b573c8eaccaee064e4843b62c496ef7c",
+    "artifact_id": 11210684570,
+    "artifact_name": "s003-mic-mismatch-measurement-oracle-36969688211",
+    "artifact_zip_sha256": "67f950f418486b23be847a21549d7e2dd6a71f81b3b3acf9a45e665e4c50ea5a"
+  },
+  "qualification": {
+    "verify_run_id": 36969688227,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 36969688074,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_conclusion": "success",
+    "i015_finalization_conclusion": "success"
+  },
+  "source_review": {
+    "dataset_family": "OpenSLR SLR31 Mini LibriSpeech train-clean-5",
+    "dataset_id": "openslr-slr31-clean-speech",
+    "archive_bytes": 332954390,
+    "archive_sha256": "47805806c8b15f7549f3c51bd6b7da72ec0128a34d32830c8014a88658c0292d",
+    "fixed_utterance_count": 8,
+    "fresh_seeds": [
+      9507,
+      9607
+    ],
+    "selection_inherited_from": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json",
+    "selection_is_result_independent": true
+  },
+  "oracle_scope": {
+    "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
+    "scoped_subsignature": "severe-near-reference-degradation",
+    "pipeline_invoked": false,
+    "pipeline_output_consumed": false,
+    "near_si_sdr_improvement_consumed": false,
+    "absolute_source_domain_metrics": [
+      "clean/left/right clip fraction",
+      "left clean-component SNR",
+      "right expected-component SNR",
+      "left clean cosine correlation",
+      "right expected-component cosine correlation",
+      "left/right recovered lag",
+      "right recovered gain"
+    ]
+  },
+  "mechanical_result": {
+    "9507": {
+      "oracle_valid_utterances": 8,
+      "total_utterances": 8,
+      "oracle_invalid_utterances": 0
+    },
+    "9607": {
+      "oracle_valid_utterances": 8,
+      "total_utterances": 8,
+      "oracle_invalid_utterances": 0
+    },
+    "minimum_required_per_seed": 6,
+    "measurement_domain_artifact_exclusion_satisfied": true
+  },
+  "reviewed_validity": {
+    "measurement_domain_artifact_exclusion_sufficiently_proven": true,
+    "interpretation": "The severe mic-mismatch subsignature has at least one public-development family where the clean/reference and constructed two-mic input geometry are independently valid under absolute source-domain oracle controls. Measurement-domain/reference-construction artifact is therefore not a sufficient explanation of the repeated degradation.",
+    "scope_limit": "This does not identify a DSP root cause, does not prove downstream stage causality, and does not authorize a candidate.",
+    "root_cause_claim_authority": false
+  },
+  "s004_review": {
+    "open": false,
+    "candidate_authority": false,
+    "scope": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1 severe-near-reference-degradation only",
+    "satisfied": [
+      "multiple_fresh_seed_repetition",
+      "same_first_observable_stage",
+      "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature",
+      "measurement_domain_artifact_exclusion"
+    ],
+    "missing": [
+      "downstream_transfer_artifact_exclusion",
+      "bounded_candidate_resource_fit"
+    ]
+  },
+  "next_authorized_step": {
+    "phase": "S003_DOWNSTREAM_TRANSFER_ARTIFACT_EXCLUSION",
+    "candidate_limit": 0,
+    "description": "Review or freshly confirm stage-prefix evidence showing the severe subsignature is observable before downstream BF/NS/AGC/final transfer on independent public families. Do not tune DSP or consume validation-grade/blind feedback."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false
+}

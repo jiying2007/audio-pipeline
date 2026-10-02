@@ -62,3 +62,9 @@ That first review did not open S004. A second public-development review is now a
 Therefore the multiple-independent-public-dataset repetition prerequisite is closed only for the mic-gain/delay-mismatch severe sub-signature (dEchorate 11/11 on both seeds + SLR31 8/8 on both seeds). It is not closed for capture clipping and it is not a root-cause claim.
 
 S004 remains closed. The mic-mismatch line still requires independently sufficient measurement-domain artifact exclusion, downstream-transfer artifact exclusion, and a later bounded candidate resource-fit qualification. The next authorized work is candidate-zero measurement-domain artifact exclusion using source-domain/oracle metrics independent of output-vs-input delta metrics; no DSP tuning or validation-grade/blind feedback is authorized.
+
+## S003 mic-mismatch measurement-domain checkpoint
+
+For `FR-S003-MIC-GAIN-DELAY-MISMATCH-V1` → `severe-near-reference-degradation`, the independent SLR31 source-domain oracle passed 8/8 fixed utterances on fresh seeds 9507 and 9607 without invoking the audio pipeline or consuming `near_si_sdr_improvement_db`. The measurement-domain/reference-construction artifact blocker is therefore closed for this narrow sub-signature.
+
+S004 remains closed. The next authorized work is candidate-zero downstream-transfer artifact exclusion; bounded candidate resource fit remains after that. No DSP tuning, validation-grade/blind feedback, or root-cause claim is authorized by this checkpoint.

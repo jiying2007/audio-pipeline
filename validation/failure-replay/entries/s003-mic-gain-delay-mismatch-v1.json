@@ -51,7 +51,8 @@
     "satisfied": [
       "multiple_fresh_seed_repetition",
       "same_first_observable_stage",
-      "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature"
+      "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature",
+      "measurement_domain_artifact_exclusion"
     ],
     "partial_evidence": [
       "dechorate_measured_rir_reproduces_severe_near_reference_degradation_11_of_11_on_both_seeds",
@@ -59,11 +60,10 @@
       "original_noise_amplification_component_remains_source_specific_or_unconfirmed"
     ],
     "missing": [
-      "measurement_domain_artifact_exclusion",
       "downstream_transfer_artifact_exclusion",
       "bounded_candidate_resource_fit"
     ],
-    "caution": "multiple-public-dataset repetition is satisfied only for the mic-gain/delay-mismatch severe-near-reference-degradation subsignature; this is not a causal claim and does not authorize BF or later-stage changes"
+    "caution": "measurement-domain artifact exclusion is supported only for the mic-gain/delay-mismatch severe-near-reference-degradation subsignature; this remains non-causal and grants no candidate authority"
   },
   "root_cause_claim_authority": false,
   "release_acceptance_authority": false,
@@ -131,6 +131,25 @@
         "capture": 8
       }
     },
+    "root_cause_claim_authority": false
+  },
+  "measurement_domain_oracle_review": {
+    "review_status": "SOURCE_DOMAIN_ORACLE_VALIDATED",
+    "reviewed_result": "docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json",
+    "source_family": "openslr-slr31-clean-speech",
+    "fresh_seeds": [
+      9507,
+      9607
+    ],
+    "oracle_valid_utterances": {
+      "9507": 8,
+      "9607": 8
+    },
+    "total_utterances_per_seed": 8,
+    "minimum_required_per_seed": 6,
+    "pipeline_output_consumed": false,
+    "near_si_sdr_improvement_consumed": false,
+    "measurement_domain_artifact_exclusion_satisfied": true,
     "root_cause_claim_authority": false
   }
 }

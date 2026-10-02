@@ -90,3 +90,16 @@ The first AEC metric-safe pass is terminal and candidate-zero. Fresh seeds 10307
 The transition trajectories show a repeatable early residual spike after echo-path, acoustic-gain and render-level changes followed by late recovery. This is evidence, not an algorithm performance verdict, and no new AEC performance threshold or parameter search has been authorized.
 
 The next authorized work is `S003_AEC_TRANSITION_RECOVERY_LATENCY_V1`: measure time-to-recovery relative to each case's own pre-transition residual baseline. Use 100 ms windows; define recovered as residual power no more than 2x pre baseline (+3.01029995664 dB) for 300 ms continuously; search 0..2500 ms and record censored when recovery is not observed. Candidate budget remains zero.
+
+
+## S003 AEC transition recovery-latency checkpoint
+
+Using the metric-safe AEC evidence map, the three transition cases were measured on fresh seeds 10507/10607 with a fixed recovery definition: 100 ms residual-to-echo windows, pre-transition median baseline from -1000..-200 ms, recovered when residual stays within +3.0103 dB (2x power) of baseline for 300 ms continuously.
+
+Observed recovery:
+- echo-path change: 200 ms / 200 ms;
+- speaker acoustic gain step: 300 ms / 300 ms;
+- render-level step: 400 ms / 300 ms;
+- censored cases: 0.
+
+These are measurements, not a product requirement or algorithm pass/fail threshold. The next authorized step is candidate-zero stage-prefix recovery decomposition across AEC/RES/NS/AGC/full to locate where the 200-400 ms recovery trajectory is formed or extended. Parameter search remains forbidden.

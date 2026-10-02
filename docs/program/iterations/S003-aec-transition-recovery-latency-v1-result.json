@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-transition-recovery-latency-v1-result",
+  "investigation_id": "S003-aec-transition-recovery-latency-v1",
+  "status": "CLOSED_DIAGNOSTIC_RECOVERY_LATENCY_MEASURED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_PERFORMANCE_VERDICT_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36986384168,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "23d776f68a4bd7688f265a2a7702ebdf757cac89",
+    "artifact_id": 11217782676,
+    "artifact_name": "s003-aec-transition-recovery-latency-36986384168",
+    "artifact_zip_sha256": "11bc3a86ab4d6667c72abd267f70c817a9e0e0022e38f231b10221dea1166ad2",
+    "aggregate_member": "cross-seed-recovery-summary.json",
+    "aggregate_member_sha256": "c6ad5d27047f789883b7a18d4212f1ff398046e27833b1c977741376255cb033"
+  },
+  "qualification": {
+    "verify_run_id": 36986384489,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 36986384124,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 36986384108,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 36986384156,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 36986384242,
+    "program_archive_conclusion": "success",
+    "release_run_id": 36986748719,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 36986748784,
+    "i015_finalization_conclusion": "success"
+  },
+  "measurement_definition": {
+    "metric": "residual_to_echo_power_db",
+    "window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "pre_baseline_statistic": "median of complete 100 ms windows",
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ],
+    "performance_threshold_defined": false
+  },
+  "mechanical_result": {
+    "echo-path-change": {
+      "10507": {
+        "recovery_time_ms": 200,
+        "censored": false,
+        "peak_excess_db_in_first_1000ms": 39.99156981817355,
+        "positive_excess_area_db_ms_0_2500": 4919.778109855684,
+        "late_window_excess_db_2000_2500": -4.601348867835824
+      },
+      "10607": {
+        "recovery_time_ms": 200,
+        "censored": false,
+        "peak_excess_db_in_first_1000ms": 39.757866929412714,
+        "positive_excess_area_db_ms_0_2500": 5246.277230935864,
+        "late_window_excess_db_2000_2500": -3.7040586659802983
+      }
+    },
+    "speaker-acoustic-gain-step": {
+      "10507": {
+        "recovery_time_ms": 300,
+        "censored": false,
+        "peak_excess_db_in_first_1000ms": 40.35518168257988,
+        "positive_excess_area_db_ms_0_2500": 8722.072556651983,
+        "late_window_excess_db_2000_2500": -1.2366955055945965
+      },
+      "10607": {
+        "recovery_time_ms": 300,
+        "censored": false,
+        "peak_excess_db_in_first_1000ms": 39.91172582475393,
+        "positive_excess_area_db_ms_0_2500": 8525.183951819088,
+        "late_window_excess_db_2000_2500": -0.1464757750838288
+      }
+    },
+    "render-level-step": {
+      "10507": {
+        "recovery_time_ms": 400,
+        "censored": false,
+        "peak_excess_db_in_first_1000ms": 23.226203999264786,
+        "positive_excess_area_db_ms_0_2500": 9190.266833009779,
+        "late_window_excess_db_2000_2500": 0.7978176173328535
+      },
+      "10607": {
+        "recovery_time_ms": 300,
+        "censored": false,
+        "peak_excess_db_in_first_1000ms": 23.317968533493342,
+        "positive_excess_area_db_ms_0_2500": 8167.891059791501,
+        "late_window_excess_db_2000_2500": 1.1650696698282985
+      }
+    }
+  },
+  "reviewed_validity": {
+    "measurements_complete": true,
+    "censored_cases": 0,
+    "recovery_latency_repeatable": true,
+    "transition_ordering_observation": "echo-path-change recovers fastest at 200 ms; speaker gain step is 300 ms; render-level step is 300-400 ms",
+    "performance_requirement_established": false,
+    "algorithm_pass_fail_verdict": "NOT_AUTHORIZED",
+    "interpretation": "Recovery-latency evidence is sufficiently stable to justify stage-prefix decomposition. It does not justify parameter search or a product requirement."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_TRANSITION_STAGE_RECOVERY_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Replay the same transition cases at prefix-aec, prefix-res, prefix-ns, prefix-agc and full pipeline; measure the same preregistered recovery latency at each prefix to locate where the 200-400 ms recovery trajectory is formed or extended. Do not tune parameters or define a pass/fail threshold."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "product_release_authority": false
+}

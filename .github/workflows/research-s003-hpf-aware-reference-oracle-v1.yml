@@ -1,0 +1,179 @@
+name: Research S003 HPF-Aware Reference Oracle v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1.json'
+      - 'docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json'
+      - 'docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json'
+      - 'docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json'
+      - '.github/research/continuous-optimization/development-data-v3/development.lock.json'
+      - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
+      - 'validation/tools/hpf_aware_reference_oracle.py'
+      - 'validation/tools/run_validation*.py'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - '.github/workflows/research-s003-hpf-aware-reference-oracle-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1.json'
+      - 'docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json'
+      - 'docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json'
+      - 'docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json'
+      - '.github/research/continuous-optimization/development-data-v3/development.lock.json'
+      - 'validation/tools/build_slr31_subsig_transfer_corpus.py'
+      - 'validation/tools/hpf_aware_reference_oracle.py'
+      - 'validation/tools/run_validation*.py'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - '.github/workflows/research-s003-hpf-aware-reference-oracle-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-s003-hpf-aware-reference-oracle-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: s003-hpf-aware-reference
+
+      - name: Validate candidate-zero reference-oracle contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool             docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1.json >/dev/null
+          python3 -m py_compile             validation/tools/build_slr31_subsig_transfer_corpus.py             validation/tools/hpf_aware_reference_oracle.py
+          python3 validation/tools/hpf_aware_reference_oracle.py self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1.json').read_text())
+          d=json.loads(Path('docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json').read_text())
+          m=json.loads(Path('docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json').read_text())
+          s=json.loads(Path('docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json').read_text())
+          lock=json.loads(Path(c['public_source']['lock_path']).read_text())
+          assert c['authority']=='CANDIDATE_ZERO_DIAGNOSTIC_ONLY'
+          assert c['candidate_limit']==0 and c['confirmation_limit']==0
+          assert c['promotion_allowed'] is False and c['shipping_change_allowed'] is False
+          assert c['fresh_seeds']==[9707,9807]
+          assert c['fixed_utterance_count']==8
+          assert c['oracle']['original_watch_limit_db']==-10.0
+          assert c['preregistered_evidence_rules']['minimum_artifact_cases_per_seed']==6
+          assert c['preregistered_evidence_rules']['no_threshold_search'] is True
+          assert c['authority_boundary']['may_open_s004'] is False
+          assert d['status']=='CLOSED_DIAGNOSTIC_DOWNSTREAM_TRANSFER_ARTIFACT_EXCLUDED'
+          assert m['status']=='CLOSED_DIAGNOSTIC_MEASUREMENT_DOMAIN_ARTIFACT_EXCLUDED'
+          assert s['status']=='CLOSED_DIAGNOSTIC_SECOND_PUBLIC_FAMILY_REPETITION'
+          src=next(x for x in lock['archives'] if x['id']==c['public_source']['archive_id'])
+          assert src['bytes']==c['public_source']['archive_bytes']
+          assert src['sha256']==c['public_source']['archive_sha256']
+          print('S003 HPF-aware reference-oracle authority: PASS')
+          PY
+
+      - name: Download and verify exact SLR31 archive
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/s003-hpf-aware
+          python3 - <<'PY'
+          import hashlib,json,tarfile,urllib.request
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1.json').read_text())
+          lock=json.loads(Path(c['public_source']['lock_path']).read_text())
+          src=next(x for x in lock['archives'] if x['id']==c['public_source']['archive_id'])
+          archive=Path('/tmp/s003-hpf-aware/source.tar.gz')
+          req=urllib.request.Request(src['url'],headers={'User-Agent':'audio-pipeline-s003-hpf-aware/1'})
+          h=hashlib.sha256(); size=0
+          with urllib.request.urlopen(req,timeout=240) as response, archive.open('wb') as out:
+              while True:
+                  chunk=response.read(1024*1024)
+                  if not chunk: break
+                  size += len(chunk); h.update(chunk); out.write(chunk)
+          assert size==src['bytes'],(size,src['bytes'])
+          assert h.hexdigest()==src['sha256'],h.hexdigest()
+          extract=Path('/tmp/s003-hpf-aware/extracted')
+          extract.mkdir()
+          with tarfile.open(archive,'r:gz') as tf:
+              members=tf.getmembers()
+              for member in members:
+                  p=Path(member.name)
+                  assert not p.is_absolute() and '..' not in p.parts,member.name
+                  assert not member.issym() and not member.islnk(),member.name
+              tf.extractall(extract,members=members)
+          assert len(list(extract.rglob('*.flac'))) >= 8
+          print({'archive_bytes':size,'sha256':h.hexdigest()})
+          PY
+
+      - name: Install pinned SLR31 decoder
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/s003-hpf-aware-venv
+          /tmp/s003-hpf-aware-venv/bin/python -m pip install --disable-pip-version-check             'numpy==2.2.6' 'soundfile==0.13.1'
+          /tmp/s003-hpf-aware-venv/bin/python - <<'PY'
+          import soundfile
+          assert soundfile.__version__ == '0.13.1'
+          print({'soundfile':soundfile.__version__,'libsndfile':soundfile.__libsndfile_version__})
+          PY
+
+      - name: Build test-only HPF-only stage-prefix processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-s003-hpf-aware             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s003-hpf-aware --target audio_pipeline --parallel
+          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-hpf-aware/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-hpf-aware/libaudio_pipeline.a -lm             -o build-s003-hpf-aware/stage_prefix_process_pcm
+
+      - name: Run fresh HPF-aware reference controls
+        run: |
+          set -euo pipefail
+          out=s003-hpf-aware-out
+          mkdir -p "$out"
+          contract=docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1.json
+          slr31=docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json
+          for seed in 9707 9807; do
+            PYTHONPATH=validation/tools             /tmp/s003-hpf-aware-venv/bin/python               validation/tools/hpf_aware_reference_oracle.py run               --source-root /tmp/s003-hpf-aware/extracted               --processor build-s003-hpf-aware/stage_prefix_process_pcm               --stage-source tests/validation/stage_prefix_process_pcm.c               --contract "$contract"               --slr31-result "$slr31"               --seed "$seed"               --output "$out/$seed.json"
+          done
+
+          PYTHONPATH=validation/tools           /tmp/s003-hpf-aware-venv/bin/python             validation/tools/hpf_aware_reference_oracle.py aggregate             --contract "$contract"             --input "$out/9707.json"             --input "$out/9807.json"             --output "$out/hpf-aware-reference-summary.json"
+
+          cp "$contract" "$out/contract.json"
+          git rev-parse HEAD > "$out/source-sha.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish oracle outcome
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r=json.loads(Path('s003-hpf-aware-out/hpf-aware-reference-summary.json').read_text())
+          print('## S003 HPF-aware reference oracle')
+          print('')
+          print('- Authority: **candidate-zero / metric-reference review / non-shipping**')
+          for obs in r['per_seed']:
+              print(
+                  f"- seed `{obs['seed']}`: current-severe "
+                  f"`{obs['current_severe_cases']}/8`, HPF-aware-severe "
+                  f"`{obs['hpf_aware_severe_cases']}/8`, reference-artifact "
+                  f"`{obs['reference_metric_artifact_cases']}/8`, "
+                  f"right-channel-affects `{obs['right_channel_affects_prefix_capture_cases']}/8`"
+              )
+          print(f"- Metric/reference artifact detected: `{r['metric_reference_domain_artifact_detected']}`")
+          print(f"- Candidate-relevant subsignature valid: `{r['candidate_relevant_subsignature_valid']}`")
+          print('- S004 candidate authority: **none**')
+          PY
+
+      - name: Upload hash-bound oracle evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: s003-hpf-aware-reference-oracle-${{ github.run_id }}
+          path: s003-hpf-aware-out/
+          if-no-files-found: error
+          retention-days: 30

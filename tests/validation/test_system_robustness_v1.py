@@ -142,6 +142,23 @@ def main() -> int:
     assert variability["authority_boundary"]["may_claim_causal_stage"] is False
     assert variability["authority_boundary"]["may_open_s004"] is False
 
+    resolution = json.loads((ITER / "S003-aec-recovery-measurement-resolution-v1.json").read_text())
+    assert resolution["authority"] == "CANDIDATE_ZERO_MEASUREMENT_ONLY"
+    assert resolution["candidate_limit"] == 0 and resolution["confirmation_limit"] == 0
+    assert resolution["promotion_allowed"] is False and resolution["shipping_change_allowed"] is False
+    assert resolution["corpus"]["fresh_seeds"] == [11507, 11607, 11707, 11807]
+    assert resolution["corpus"]["cases_per_seed"] == 15
+    assert resolution["fixed_baseline"]["window_ms"] == 100
+    assert resolution["paired_measurements"]["100ms"]["post_window_ms"] == 100
+    assert resolution["paired_measurements"]["50ms"]["post_window_ms"] == 50
+    assert resolution["paired_measurements"]["100ms"]["continuous_hold_ms"] == 300
+    assert resolution["paired_measurements"]["50ms"]["continuous_hold_ms"] == 300
+    assert resolution["preregistered_rules"]["no_multi_resolution_sweep_beyond_100_and_50_ms"] is True
+    assert resolution["preregistered_rules"]["no_resolution_pass_fail_threshold"] is True
+    assert resolution["preregistered_rules"]["no_parameter_search"] is True
+    assert resolution["authority_boundary"]["may_claim_measurement_artifact"] is False
+    assert resolution["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

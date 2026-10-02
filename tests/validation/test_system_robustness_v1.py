@@ -26,6 +26,15 @@ def main() -> int:
     assert "nonlinear_clipped_playback" in s002["required_conditions"]
     assert {"nlms_step_size", "dtd_threshold", "res_parameter_sweep"} <= set(s002["forbidden_search"])
 
+    cross = json.loads((ITER / "S003-cross-source-artifact-exclusion-v1.json").read_text())
+    assert cross["authority"] == "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"
+    assert cross["candidate_limit"] == 0 and cross["confirmation_limit"] == 0
+    assert cross["promotion_allowed"] is False and cross["shipping_change_allowed"] is False
+    assert cross["fresh_seeds"] == [8307, 8407]
+    assert cross["public_source"]["expected_room_count"] == 11
+    assert cross["preregistered_evidence_rules"]["minimum_exact_rooms_per_seed"] == 6
+    assert cross["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

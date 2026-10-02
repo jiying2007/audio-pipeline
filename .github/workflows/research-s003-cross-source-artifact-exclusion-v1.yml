@@ -1,0 +1,201 @@
+name: Research S003 Cross-Source Artifact Exclusion v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-cross-source-artifact-exclusion-v1.json'
+      - 'docs/program/iterations/S001.json'
+      - 'validation/failure-replay/catalog.json'
+      - 'validation/failure-replay/entries/s003-capture-clipping-v1.json'
+      - 'validation/failure-replay/entries/s003-mic-gain-delay-mismatch-v1.json'
+      - '.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json'
+      - 'validation/tools/build_dechorate_artifact_exclusion_corpus.py'
+      - 'validation/tools/cross_source_artifact_exclusion.py'
+      - 'validation/tools/stage_interaction_run.py'
+      - 'validation/tools/stage_interaction_attribution.py'
+      - 'validation/policies/validation-s003-dechorate-artifact-exclusion.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - '.github/workflows/research-s003-cross-source-artifact-exclusion-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-cross-source-artifact-exclusion-v1.json'
+      - 'docs/program/iterations/S001.json'
+      - 'validation/failure-replay/catalog.json'
+      - 'validation/failure-replay/entries/s003-capture-clipping-v1.json'
+      - 'validation/failure-replay/entries/s003-mic-gain-delay-mismatch-v1.json'
+      - '.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json'
+      - 'validation/tools/build_dechorate_artifact_exclusion_corpus.py'
+      - 'validation/tools/cross_source_artifact_exclusion.py'
+      - 'validation/tools/stage_interaction_run.py'
+      - 'validation/tools/stage_interaction_attribution.py'
+      - 'validation/policies/validation-s003-dechorate-artifact-exclusion.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - '.github/workflows/research-s003-cross-source-artifact-exclusion-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-s003-cross-source-artifact-exclusion-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: s003-dechorate-artifact-exclusion
+
+      - name: Validate candidate-zero authority and frozen source identity
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/program/iterations/S003-cross-source-artifact-exclusion-v1.json >/dev/null
+          python3 -m json.tool validation/policies/validation-s003-dechorate-artifact-exclusion.json >/dev/null
+          python3 -m py_compile             validation/tools/build_dechorate_artifact_exclusion_corpus.py             validation/tools/cross_source_artifact_exclusion.py             validation/tools/stage_interaction_run.py             validation/tools/stage_interaction_attribution.py
+          python3 validation/tools/cross_source_artifact_exclusion.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          c=json.loads(Path('docs/program/iterations/S003-cross-source-artifact-exclusion-v1.json').read_text())
+          q=json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json').read_text())
+          assert c['authority']=='CANDIDATE_ZERO_DIAGNOSTIC_ONLY'
+          assert c['candidate_limit']==0 and c['confirmation_limit']==0
+          assert c['promotion_allowed'] is False and c['shipping_change_allowed'] is False
+          assert c['fresh_seeds']==[8307,8407]
+          assert c['public_source']['expected_room_count']==11
+          assert c['preregistered_evidence_rules']['minimum_exact_rooms_per_seed']==6
+          assert c['authority_boundary']['may_open_s004'] is False
+          assert q['authority']=='SOURCE_QUALIFICATION_ONLY' and q['candidate_budget']==0
+          assert q['inventory_protocol']['inventory_frozen'] is True
+          assert q['inventory_protocol']['expected_unique_room_count']==11
+          assert q['inventory_protocol']['expected_selected_fingerprint_sha256']==c['public_source']['expected_selected_fingerprint_sha256']
+          for name in ('s003-capture-clipping-v1.json','s003-mic-gain-delay-mismatch-v1.json'):
+              p=json.loads((Path('validation/failure-replay/entries')/name).read_text())
+              assert p['lifecycle_status']=='OPEN_DIAGNOSTIC'
+              assert p['s004_eligibility']['eligible'] is False
+          print('S003 cross-source authority: PASS')
+          PY
+
+      - name: Materialize exact frozen dEchorate SOFA microset
+        run: |
+          set -euo pipefail
+          mkdir -p s003-cross-source-out/source
+          python3 - <<'PY'
+          import hashlib,json,urllib.request
+          from pathlib import Path
+          from urllib.parse import urljoin
+
+          q=json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json').read_text())
+          objects=[x for x in q['inventory_protocol']['expected_selected_objects'] if x['name'].endswith('.sofa')]
+          assert len(objects)==11
+          root=Path('s003-cross-source-out/source')
+          for obj in objects:
+              req=urllib.request.Request(
+                  urljoin(q['source']['sofa_mirror_index'],obj['name']),
+                  headers={'User-Agent':'audio-pipeline-s003-cross-source/1'},
+              )
+              with urllib.request.urlopen(req,timeout=120) as response:
+                  data=response.read(int(obj['size_bytes'])+1)
+              assert len(data)==int(obj['size_bytes']),obj['name']
+              assert hashlib.sha256(data).hexdigest()==obj['sha256'],obj['name']
+              (root/obj['name']).write_bytes(data)
+          print({'objects':len(objects),'bytes':sum(int(x['size_bytes']) for x in objects)})
+          PY
+
+      - name: Install pinned measured-RIR reader
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/s003-dechorate-venv
+          /tmp/s003-dechorate-venv/bin/python -m pip install --disable-pip-version-check             'numpy==2.2.6' 'h5py==3.14.0'
+          /tmp/s003-dechorate-venv/bin/python             validation/tools/build_dechorate_artifact_exclusion_corpus.py --self-test
+
+      - name: Build test-only stage-prefix processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-s003-cross-source             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s003-cross-source --target audio_pipeline --parallel
+          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-cross-source/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-cross-source/libaudio_pipeline.a -lm             -o build-s003-cross-source/stage_prefix_process_pcm
+
+      - name: Run fresh dEchorate stage-prefix diagnostics
+        run: |
+          set -euo pipefail
+          root=s003-cross-source-out
+          for seed in 8307 8407; do
+            corpus="/tmp/s003-dechorate-$seed"
+            seed_out="$root/$seed"
+            mkdir -p "$seed_out"
+
+            /tmp/s003-dechorate-venv/bin/python               validation/tools/build_dechorate_artifact_exclusion_corpus.py               --input-dir "$root/source"               --qualification-manifest                 .github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json               --output "$corpus"               --seed "$seed"               --seconds 6
+
+            /tmp/s003-dechorate-venv/bin/python - <<PY
+          import json
+          from pathlib import Path
+          corpus=json.loads(Path("$corpus/corpus.json").read_text())
+          assert len(corpus['room_manifest'])==11
+          ceiling=0.001
+          bad=[x for x in corpus['room_manifest'] if float(x['clean_mic0_clip_fraction'])>ceiling]
+          assert not bad,bad
+          assert corpus['candidate_limit']==0 and corpus['confirmation_limit']==0
+          print({'seed':$seed,'rooms':11,'cases':len(corpus['cases']),'global_gain':corpus['level_calibration']['global_gain']})
+          PY
+
+            /tmp/s003-dechorate-venv/bin/python               validation/tools/stage_interaction_run.py               --source-revision '${{ github.sha }}'               --corpus "$corpus/corpus.json"               --policy validation/policies/validation-s003-dechorate-artifact-exclusion.json               --dataset-lock                 .github/research/continuous-optimization/development-data-v3/development.lock.json               --source-manifest "$corpus/source-manifest.json"               --processor build-s003-cross-source/stage_prefix_process_pcm               --output "$seed_out/report.json"               --evidence-manifest "$seed_out/evidence-manifest.json"               --enforce
+
+            /tmp/s003-dechorate-venv/bin/python               validation/tools/stage_interaction_attribution.py               --corpus "$corpus/corpus.json"               --report "$seed_out/report.json"               --watch-contract docs/program/iterations/S001.json               --output-dir "$seed_out"
+
+            cp "$corpus/corpus.json" "$seed_out/corpus.json"
+            cp "$corpus/source-manifest.json" "$seed_out/source-manifest.json"
+          done
+
+      - name: Aggregate cross-source and artifact-exclusion evidence
+        run: |
+          set -euo pipefail
+          /tmp/s003-dechorate-venv/bin/python             validation/tools/cross_source_artifact_exclusion.py             --contract docs/program/iterations/S003-cross-source-artifact-exclusion-v1.json             --attribution s003-cross-source-out/8307/stage-interaction-attribution.json             --attribution s003-cross-source-out/8407/stage-interaction-attribution.json             --output s003-cross-source-out/cross-source-artifact-exclusion.json
+
+          cp docs/program/iterations/S003-cross-source-artifact-exclusion-v1.json             s003-cross-source-out/contract.json
+          git rev-parse HEAD > s003-cross-source-out/source-sha.txt
+          find s003-cross-source-out -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > s003-cross-source-out/SHA256SUMS
+
+      - name: Publish diagnostic outcome
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          result=json.loads(Path('s003-cross-source-out/cross-source-artifact-exclusion.json').read_text())
+          print('## S003 cross-source artifact exclusion')
+          print('')
+          print('- Authority: **candidate-zero / diagnostic-only / non-shipping**')
+          print(f"- Source family: `{result['source_family']}`")
+          print(f"- Fresh seeds: `{result['fresh_seeds']}`")
+          for failure_id,d in result['decisions'].items():
+              print(
+                  f"- `{failure_id}`: cross-source=`{d['cross_source_repetition_satisfied']}`, "
+                  f"measurement-artifact-excluded=`{d['measurement_domain_artifact_exclusion_satisfied']}`, "
+                  f"downstream-transfer-excluded=`{d['downstream_transfer_artifact_exclusion_satisfied']}`"
+              )
+              for item in d['per_seed']:
+                  print(
+                      f"  - seed `{item['seed']}`: exact `{item['exact_cross_source_reproduction_rooms']}/11`, "
+                      f"raw-clear `{item['measurement_domain_artifact_excluded_rooms']}/11`, "
+                      f"pre-final `{item['downstream_transfer_artifact_excluded_rooms']}/11`"
+                  )
+          print('- S004 candidate authority: **none**')
+          PY
+
+      - name: Upload hash-bound diagnostic evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: s003-cross-source-artifact-exclusion-${{ github.run_id }}
+          path: s003-cross-source-out/
+          if-no-files-found: error
+          retention-days: 30

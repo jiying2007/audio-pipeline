@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "id": "S003-cross-source-artifact-exclusion-v1",
+  "phase": "system-robustness-v1",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "durable_replay_catalog": "validation/failure-replay/catalog.json",
+    "required_failures": [
+      "FR-S003-CAPTURE-CLIPPING-V1",
+      "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1"
+    ]
+  },
+  "public_source": {
+    "dataset": "dEchorate",
+    "qualification_manifest": ".github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json",
+    "expected_selected_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953",
+    "expected_room_count": 11,
+    "source_token": "src1",
+    "array_token": "arr1",
+    "microphones": "mics1-5",
+    "role": "research-development-cross-source"
+  },
+  "fresh_seeds": [
+    8307,
+    8407
+  ],
+  "audio_contract": {
+    "sample_rate_hz": 16000,
+    "seconds": 6,
+    "excitation": "deterministic-speech-like",
+    "rir_resampling": "linear 48kHz to 16kHz, identical rule for every room/mic",
+    "level_calibration": "one global gain derived from frozen room000000 mic1 to target_rms=3500; identical gain applied to all rooms/channels",
+    "per_room_normalization": false,
+    "perturbations": {
+      "capture-clipping": {
+        "noise": "deterministic nonstationary noise",
+        "noise_scale": 0.35,
+        "clip_limit": 7000,
+        "stage_profiles": [
+          "prefix-raw",
+          "prefix-capture",
+          "prefix-ns",
+          "prefix-agc",
+          "default"
+        ]
+      },
+      "mic-gain-delay-mismatch": {
+        "noise": "deterministic colored noise",
+        "left_noise_scale": 0.25,
+        "right_gain": 0.72,
+        "right_delay_samples": 3,
+        "right_noise_scale": 0.38,
+        "stage_profiles": [
+          "prefix-raw",
+          "prefix-capture",
+          "prefix-bf",
+          "prefix-ns",
+          "prefix-agc",
+          "default"
+        ]
+      }
+    },
+    "max_unperturbed_clean_clip_fraction": 0.001
+  },
+  "preregistered_evidence_rules": {
+    "minimum_exact_rooms_per_seed": 6,
+    "cross_source_repetition": "expected durable signature union and expected first-observable stage repeat in >=6/11 fixed rooms for each fresh seed",
+    "measurement_domain_artifact_exclusion": "no durable replay diagnostic signature is active at prefix-raw in >=6/11 fixed rooms for each fresh seed",
+    "downstream_transfer_artifact_exclusion": "expected signature is observed before final output and remains in the stage-prefix signature union in >=6/11 fixed rooms for each fresh seed",
+    "no_result_driven_room_selection": true,
+    "input_validity": "all 11 unperturbed room/mic0 signals must have clip_fraction <= 0.001 after one global reference-room calibration"
+  },
+  "expected_durable_signatures": {
+    "FR-S003-CAPTURE-CLIPPING-V1": {
+      "base_failure": "capture-clipping",
+      "expected_first_observable_stage": "NS",
+      "expected_signature_union": [
+        "noise-amplification",
+        "severe-near-reference-degradation"
+      ]
+    },
+    "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1": {
+      "base_failure": "mic-gain-delay-mismatch",
+      "expected_first_observable_stage": "capture",
+      "expected_signature_union": [
+        "noise-amplification",
+        "severe-near-reference-degradation"
+      ]
+    }
+  },
+  "outputs": [
+    "per-seed corpus/report/stage-interaction-attribution",
+    "cross-source-artifact-exclusion.json",
+    "SHA256SUMS"
+  ],
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_thresholds": false,
+    "may_update_shipping_source": false,
+    "may_consume_validation_grade": false,
+    "may_consume_validation_grade_blind": false,
+    "may_claim_root_cause": false,
+    "may_open_s004": false
+  }
+}

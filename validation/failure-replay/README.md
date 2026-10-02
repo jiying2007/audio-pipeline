@@ -43,3 +43,7 @@ A durable replay may reproduce exactly on its deterministic synthetic seeds yet 
 ## Multiple public-family evidence
 
 A blocker may be closed for a narrowly identified sub-signature without closing it for every failure in the bank. The current second-family SLR31 review closes the multiple-public-dataset repetition prerequisite only for `FR-S003-MIC-GAIN-DELAY-MISMATCH-V1` → `severe-near-reference-degradation`. Capture clipping did not reproduce that sub-signature on SLR31 and remains independently blocked. This evidence never grants root-cause, candidate, release, HIL, or product-certification authority.
+
+## Measurement-domain oracle review
+
+For a candidate-relevant sub-signature, measurement-domain exclusion must be based on source/reference controls that do not depend on the same output-vs-input delta that raised the diagnostic. The mic gain/delay mismatch line now has a reviewed SLR31 source-domain oracle: both fresh seeds pass 8/8 fixed utterances using absolute clipping, component SNR, correlation, lag and gain controls with no pipeline output. This closes only the measurement-domain blocker for that narrow sub-signature; it does not identify a DSP root cause or grant S004 authority.

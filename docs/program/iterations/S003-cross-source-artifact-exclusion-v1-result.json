@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "id": "S003-cross-source-artifact-exclusion-v1-result",
+  "investigation_id": "S003-cross-source-artifact-exclusion-v1",
+  "status": "CLOSED_DIAGNOSTIC_ONLY_PARTIAL_SUBSIGNATURE_TRANSFER",
+  "authority": "DIAGNOSTIC_ONLY_NO_CANDIDATE_OR_RELEASE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 36960922825,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "4d4ef43f869e5e52bc6dabc53ffbe77fb11ca358",
+    "artifact_id": 11207877723,
+    "artifact_name": "s003-cross-source-artifact-exclusion-36960922825",
+    "artifact_zip_sha256": "62625c7b72cee6205c84e50135fd5366994544c18d6b2ce7fe14670abd6fb732",
+    "artifact_zip_bytes": 18543616,
+    "aggregate_member": "cross-source-artifact-exclusion.json",
+    "aggregate_member_sha256": "07a3cae7f0cf27f0724ec2af38c7eecb050a88f59f95e06a476d674e53869d98"
+  },
+  "source_review": {
+    "public_source_family": "dEchorate measured RIR",
+    "qualification_manifest": ".github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json",
+    "selected_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953",
+    "fixed_room_count": 11,
+    "fresh_seeds": [
+      8307,
+      8407
+    ],
+    "no_result_driven_room_selection": true,
+    "public_dataset_families_counted_toward_multi_dataset_gate": 1
+  },
+  "mechanical_result": {
+    "FR-S003-CAPTURE-CLIPPING-V1": {
+      "exact_full_durable_signature_rooms": {
+        "8307": 0,
+        "8407": 0
+      },
+      "raw_watch_clear_rooms": {
+        "8307": 11,
+        "8407": 11
+      },
+      "full_durable_signature_pre_final_rooms": {
+        "8307": 0,
+        "8407": 0
+      },
+      "stable_public_subsignature": [
+        "severe-near-reference-degradation"
+      ],
+      "stable_subsignature_rooms": {
+        "8307": 11,
+        "8407": 11
+      },
+      "absent_original_signature_component": [
+        "noise-amplification"
+      ],
+      "first_observable_stage_distribution": {
+        "8307": {
+          "NS": 7,
+          "AGC": 4
+        },
+        "8407": {
+          "NS": 6,
+          "AGC": 5
+        }
+      }
+    },
+    "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1": {
+      "exact_full_durable_signature_rooms": {
+        "8307": 0,
+        "8407": 0
+      },
+      "raw_watch_clear_rooms": {
+        "8307": 11,
+        "8407": 11
+      },
+      "full_durable_signature_pre_final_rooms": {
+        "8307": 0,
+        "8407": 0
+      },
+      "stable_public_subsignature": [
+        "severe-near-reference-degradation"
+      ],
+      "stable_subsignature_rooms": {
+        "8307": 11,
+        "8407": 11
+      },
+      "absent_original_signature_component": [
+        "noise-amplification"
+      ],
+      "first_observable_stage_distribution": {
+        "8307": {
+          "capture": 11
+        },
+        "8407": {
+          "capture": 11
+        }
+      }
+    }
+  },
+  "reviewed_validity": {
+    "exact_full_signature_cross_source_reproduction_supported": false,
+    "stable_severe_near_reference_subsignature_transfer_supported": true,
+    "noise_amplification_cross_source_transfer_supported": false,
+    "raw_watch_clear_mechanical_result": true,
+    "raw_watch_clear_interpretation": "SANITY_ONLY_NOT_SUFFICIENT_MEASUREMENT_DOMAIN_ARTIFACT_EXCLUSION",
+    "measurement_domain_artifact_exclusion_sufficiently_proven": false,
+    "measurement_domain_artifact_exclusion_status": "UNRESOLVED",
+    "downstream_transfer_artifact_exclusion_sufficiently_proven": false,
+    "downstream_transfer_artifact_exclusion_status": "UNRESOLVED_FULL_COMPOSITE_SIGNATURE_NOT_REPRODUCED",
+    "rationale": [
+      "the replay watch uses input-to-output delta metrics such as near_si_sdr_improvement_db, so a raw bypass is structurally near-neutral and cannot independently prove measurement-domain validity",
+      "the original composite signature did not reproduce because noise-amplification was absent in all fixed dEchorate rooms",
+      "first-observable stage remains observational and does not grant causal root-cause authority"
+    ]
+  },
+  "s004_review": {
+    "open": false,
+    "candidate_authority": false,
+    "satisfied": [
+      "synthetic_multiple_fresh_seed_repetition",
+      "synthetic_same_first_observable_stage"
+    ],
+    "partial_evidence": [
+      "one_public_measured_rir_family_reproduces_severe_near_reference_degradation_subsignature"
+    ],
+    "missing": [
+      "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature",
+      "measurement_domain_artifact_exclusion",
+      "downstream_transfer_artifact_exclusion",
+      "bounded_candidate_resource_fit"
+    ]
+  },
+  "next_authorized_step": {
+    "phase": "S003_EVIDENCE_EXPANSION",
+    "candidate_limit": 0,
+    "description": "test the stable severe-near-reference-degradation subsignature on a second independent public-development dataset family; do not search parameters or use validation-grade/blind feedback"
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false
+}

@@ -83,6 +83,7 @@ def run_state_probe(
     case: dict,
     work: Path,
 ) -> tuple[list[int], list[dict]]:
+    work.mkdir(parents=True, exist_ok=True)
     mic = engine.resolve(corpus_path, case.get("mic_audio"))
     render = engine.resolve(corpus_path, case.get("render_audio"))
     if mic is None or render is None:
@@ -111,6 +112,7 @@ def standard_output(
     case: dict,
     work: Path,
 ) -> list[int]:
+    work.mkdir(parents=True, exist_ok=True)
     output, _trace, _inputs = stage_interaction_run.invoke(
         processor, case, corpus_path, work
     )

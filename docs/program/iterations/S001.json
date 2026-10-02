@@ -32,7 +32,36 @@
   "outputs": [
     "failure-heatmap.json",
     "attribution.json",
-    "failure-replay-index.json"
+    "failure-replay-index.json",
+    "diagnostic-watch.json"
   ],
-  "success_definition": "repeatable failure map and replayable taxonomy, not best parameters"
+  "success_definition": "repeatable failure map and replayable taxonomy, not best parameters",
+  "diagnostic_watch": {
+    "authority": "replay-trigger-only-not-release-acceptance-gate",
+    "provenance": "pre-registered after exploratory seeds 5107/5207 exposed that smoke PASS is not a failure taxonomy",
+    "confirmation_seeds": [
+      5307,
+      5407
+    ],
+    "rules": [
+      {
+        "id": "severe-near-reference-degradation",
+        "metric": "near_si_sdr_improvement_db",
+        "operator": "lt",
+        "limit": -10
+      },
+      {
+        "id": "noise-amplification",
+        "metric": "noise_only_attenuation_db",
+        "operator": "lt",
+        "limit": -3
+      },
+      {
+        "id": "severe-vad-degradation",
+        "metric": "vad_f1",
+        "operator": "lt",
+        "limit": 0.5
+      }
+    ]
+  }
 }

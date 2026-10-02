@@ -86,6 +86,7 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/aec_echo_path_res_side_recovery.py",
     "validation/tools/aec_res_gain_contribution_decomposition.py",
     "validation/policies/validation-s003-echo-path-res-ns-confirm.json",
+    "validation/policies/validation-s003-res-gain-contribution.json",
     "validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json",
     "validation/policies/validation-s003-aec-stage-recovery.json",
     "validation/tools/mic_mismatch_downstream_transfer_review.py",

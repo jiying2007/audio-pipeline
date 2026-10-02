@@ -82,3 +82,11 @@ A final candidate-zero oracle invalidated the mic-gain/delay-mismatch `severe-ne
 Therefore the first-observable severe symptom is an evaluation reference/metric-target artifact, not evidence that right-channel gain/delay mismatch needs a DSP candidate. This does not mean HPF is defective and does not claim anything about later BF/full-pipeline sensitivity to real microphone mismatch. The candidate line is terminally rejected; resource-fit admission is not applicable and S004 remains closed.
 
 The next authorized work is S003 AEC metric-safe evidence expansion using stage-appropriate AEC metrics (ERLE, render correlation/reduction, transition recovery) and HPF-aware near-end quality where needed. Candidate budget remains zero.
+
+## S003 AEC metric-safe checkpoint
+
+The first AEC metric-safe pass is terminal and candidate-zero. Fresh seeds 10307/10407 both completed all eight S002 transition cases with a consistent stage-appropriate metric map. Near-end-only raw-clean SI-SDR improvement is explicitly rejected as a primary metric; HPF-aware near-end quality is used instead. Far-end/nonlinear cases use ERLE and render-correlation evidence, while transition cases add fixed pre / early-post / late-post residual-to-echo trajectories.
+
+The transition trajectories show a repeatable early residual spike after echo-path, acoustic-gain and render-level changes followed by late recovery. This is evidence, not an algorithm performance verdict, and no new AEC performance threshold or parameter search has been authorized.
+
+The next authorized work is `S003_AEC_TRANSITION_RECOVERY_LATENCY_V1`: measure time-to-recovery relative to each case's own pre-transition residual baseline. Use 100 ms windows; define recovered as residual power no more than 2x pre baseline (+3.01029995664 dB) for 300 ms continuously; search 0..2500 ms and record censored when recovery is not observed. Candidate budget remains zero.

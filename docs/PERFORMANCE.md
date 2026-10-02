@@ -63,6 +63,19 @@ Runtime resource classes remain tuning envelopes:
 
 Compile-time SKU envelopes can additionally cap max I/O/internal rate, mic count, delay, AEC tail and runtime queue depth. Runtime class and compile-time cap are separate dimensions.
 
+## SSC305 delivery-profile qualification
+
+Repository CI has two explicit Cortex-A32 delivery profiles:
+
+- `conservative`: exact `ssc305-cortex-a32-low` preset; shipping-default build contract, low-resource/stability first.
+- `effect-first`: exact `cortex-a32-neon` full graph; research-only envelope for determining whether extra resources later buy repeatable acoustic benefit.
+
+The resource gate produces a machine-readable qualification artifact for both profiles. It proves exact AArch32 build identity, pipeline/runtime caller-owned state sizes, linked `.text/.rodata`, final ELF size, absence of direct `malloc/calloc/realloc/free` references from the linked core/runtime libraries, algorithmic latency, and byte-identical repeated QEMU probe output.
+
+That evidence is deliberately **not** SSC305 silicon performance evidence. CPU ms/audio-second, frame p50/p95/p99, peak RSS, whole-thread stack upper bound, adaptive warm-up/convergence, transition worst-case timing, thermal and power remain `CALIBRATION_REQUIRED` until real target evidence is available. Hosted/QEMU timing must never fill those fields.
+
+Machine-readable policy: [`ci/ssc305-resource-profiles.json`](../ci/ssc305-resource-profiles.json).
+
 ## Initial target-board gates
 
 | Metric | Initial board-validation gate |

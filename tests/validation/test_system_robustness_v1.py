@@ -26,6 +26,17 @@ def main() -> int:
     assert "nonlinear_clipped_playback" in s002["required_conditions"]
     assert {"nlms_step_size", "dtd_threshold", "res_parameter_sweep"} <= set(s002["forbidden_search"])
 
+    s003 = items["S003"]
+    assert s003["fresh_seeds"] == [7307, 7407]
+    assert s003["watch_contract"] == "docs/program/iterations/S001.json"
+    assert s003["s004_candidate_authority"] is False
+    assert s003["stage_prefix_profiles"] == [
+        "prefix-capture", "prefix-bf", "prefix-sync", "prefix-aec",
+        "prefix-res", "prefix-ns", "prefix-agc", "prefix-vad", "default",
+    ]
+    for path in s003["source_assets"]:
+        assert (ROOT / path).is_file(), path
+
     watch = items["S001"]["diagnostic_watch"]
     assert watch["authority"] == "replay-trigger-only-not-release-acceptance-gate"
     assert watch["confirmation_seeds"] == [5307, 5407]

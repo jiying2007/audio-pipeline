@@ -62,7 +62,11 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/failure-replay/schema-v1.json",
     "validation/policies/validation-aec-transition-development.json",
     "validation/tools/build_aec_transition_corpus.py",
+    "validation/tools/build_stage_interaction_corpus.py",
     "validation/tools/build_system_robustness_corpus.py",
+    "validation/tools/stage_interaction_attribution.py",
+    "validation/tools/stage_interaction_consistency.py",
+    "validation/tools/stage_interaction_run.py",
     "validation/tools/system_robustness_attribution.py",
 }
 RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
@@ -758,6 +762,7 @@ def self_test() -> None:
     assert not is_release_neutral("validation/failure-replay/observed-failure.json")
     assert not is_release_neutral("validation/authority.json")
     assert not is_release_neutral("validation/tools/run_validation.py")
+    assert not is_release_neutral("validation/tools/stage_profile_support.py")
     assert not is_release_neutral("validation/policies/validation-smoke.json")
     assert not is_release_neutral("lab/requirements-ansible.txt")
     assert not is_release_neutral("src/core/ap_pipeline.c")

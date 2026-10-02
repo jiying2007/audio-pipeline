@@ -51,12 +51,14 @@ def main() -> int:
     assert "first_observable_stage" in schema["required"]
 
     resources = json.loads(RES.read_text())
+    assert resources["schema_version"] == 2
+    assert resources["authority"] == "build-and-resource-qualification-not-silicon-performance"
     assert set(resources["profiles"]) == {"conservative", "effect-first"}
     assert resources["profiles"]["conservative"]["preset"] == "ssc305-cortex-a32-low"
-    assert (
-        "cpu_ms_per_audio_second"
-        in resources["profiles"]["conservative"]["silicon_calibration_required"]
-    )
+    assert resources["profiles"]["effect-first"]["preset"] == "cortex-a32-neon"
+    assert "qemu_deterministic_execution" in resources["qualify_now"]
+    assert "cpu_ms_per_audio_second" in resources["silicon_calibration_required"]
+    assert "frame_p99_ms" in resources["silicon_calibration_required"]
 
     i040 = json.loads(I040.read_text())
     assert i040["research_line_terminal"] is True

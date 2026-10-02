@@ -1,0 +1,150 @@
+name: Failure Replay Bank v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'validation/failure-replay/**'
+      - 'validation/policies/validation-smoke.json'
+      - 'validation/tools/build_validation_corpus.py'
+      - 'validation/tools/build_system_robustness_corpus.py'
+      - 'validation/tools/build_aec_transition_corpus.py'
+      - 'validation/tools/build_stage_interaction_corpus.py'
+      - 'validation/tools/render_corr_exact.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/tools/stage_interaction_run.py'
+      - 'validation/tools/stage_interaction_attribution.py'
+      - 'validation/tools/system_robustness_attribution.py'
+      - 'docs/program/iterations/S001.json'
+      - 'docs/program/iterations/S003.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/failure_replay_bank.py'
+      - '.github/workflows/failure-replay-bank.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'validation/failure-replay/**'
+      - 'validation/policies/validation-smoke.json'
+      - 'validation/tools/build_validation_corpus.py'
+      - 'validation/tools/build_system_robustness_corpus.py'
+      - 'validation/tools/build_aec_transition_corpus.py'
+      - 'validation/tools/build_stage_interaction_corpus.py'
+      - 'validation/tools/render_corr_exact.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/tools/stage_interaction_run.py'
+      - 'validation/tools/stage_interaction_attribution.py'
+      - 'validation/tools/system_robustness_attribution.py'
+      - 'docs/program/iterations/S001.json'
+      - 'docs/program/iterations/S003.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/failure_replay_bank.py'
+      - '.github/workflows/failure-replay-bank.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: failure-replay-bank-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: failure-replay-bank-v1
+
+      - name: Validate durable replay contracts
+        run: |
+          set -euo pipefail
+          python3 -m json.tool validation/failure-replay/catalog.json >/dev/null
+          for f in validation/failure-replay/entries/*.json; do
+            python3 -m json.tool "$f" >/dev/null
+          done
+          python3 -m py_compile tests/validation/failure_replay_bank.py
+          python3 tests/validation/failure_replay_bank.py --self-test
+
+      - name: Build test-only stage-prefix processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-replay -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-replay --target audio_pipeline --parallel
+          cc -std=c11 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-replay/generated \
+            tests/validation/stage_prefix_process_pcm.c \
+            build-replay/libaudio_pipeline.a -lm \
+            -o build-replay/stage_prefix_process_pcm
+
+      - name: Regenerate open diagnostic replays
+        run: |
+          set -euo pipefail
+          out=failure-replay-out
+          mkdir -p "$out"
+
+          for seed in 7307 7407; do
+            root="/tmp/failure-replay-$seed"
+            seed_out="$out/$seed"
+            mkdir -p "$seed_out"
+            python3 validation/tools/build_stage_interaction_corpus.py \
+              --output "$root" --seed "$seed" --seconds 6
+            python3 validation/tools/stage_interaction_run.py \
+              --source-revision '${{ github.sha }}' \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor build-replay/stage_prefix_process_pcm \
+              --output "$seed_out/report.json" \
+              --evidence-manifest "$seed_out/evidence-manifest.json"
+            python3 validation/tools/stage_interaction_attribution.py \
+              --corpus "$root/corpus.json" \
+              --report "$seed_out/report.json" \
+              --watch-contract docs/program/iterations/S001.json \
+              --output-dir "$seed_out"
+          done
+
+          python3 tests/validation/failure_replay_bank.py \
+            --catalog validation/failure-replay/catalog.json \
+            --attribution 7307="$out/7307/stage-interaction-attribution.json" \
+            --attribution 7407="$out/7407/stage-interaction-attribution.json" \
+            --output "$out/bank-validation.json"
+
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish replay-bank summary
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          result=json.loads(Path("failure-replay-out/bank-validation.json").read_text())
+          print("## Failure Replay Bank v1")
+          print(f"- Status: {result['status']}")
+          print(f"- Seeds: {result['seeds']}")
+          print(f"- Entries: {len(result['entries'])}")
+          for item in result["entries"]:
+              print(f"- {item['failure_id']}: {item['lifecycle_status']} / {item['status']}")
+          print("- S004 candidate authority: none")
+          print("- Release acceptance authority: none")
+          PY
+
+      - name: Upload regenerated replay evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: failure-replay-bank-v1-${{ github.run_id }}
+          path: failure-replay-out/
+          if-no-files-found: error
+          retention-days: 30

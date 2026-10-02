@@ -73,6 +73,7 @@ RELEASE_NEUTRAL_VALIDATION_PATTERNS = (
     re.compile(r"validation/tools/build_[A-Za-z0-9_]+_tuning_corpus\.py"),
     re.compile(r"validation/policies/validation-[A-Za-z0-9-]+-stage-tuning\.json"),
     re.compile(r"validation/tuning/search-spaces/[A-Za-z0-9._-]+\.json"),
+    re.compile(r"validation/failure-replay/(?:catalog\.json|entries/[A-Za-z0-9._-]+\.json)"),
 )
 VERSION_RE = re.compile(r"project\s*\([^)]*?VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)", re.S)
 VERSION_TOKEN_RE = re.compile(
@@ -763,6 +764,8 @@ def self_test() -> None:
     assert not is_release_neutral("validation/authority.json")
     assert not is_release_neutral("validation/tools/run_validation.py")
     assert not is_release_neutral("validation/tools/stage_profile_support.py")
+    assert is_release_neutral("validation/failure-replay/catalog.json")
+    assert is_release_neutral("validation/failure-replay/entries/s003-capture-clipping-v1.json")
     assert not is_release_neutral("validation/policies/validation-smoke.json")
     assert not is_release_neutral("lab/requirements-ansible.txt")
     assert not is_release_neutral("src/core/ap_pipeline.c")

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "failure_id": "FR-S003-CAPTURE-CLIPPING-V1",
+  "lifecycle_status": "OPEN_DIAGNOSTIC",
+  "authority": "replay-only",
+  "source_identity": {
+    "source_family": "s001-perturbation",
+    "base_case_id": "capture-clipping",
+    "generator": "validation/tools/build_system_robustness_corpus.py",
+    "stage_interaction_generator": "validation/tools/build_stage_interaction_corpus.py",
+    "seeds": [
+      7307,
+      7407
+    ]
+  },
+  "prior_evidence": {
+    "workflow_run_id": 36956293883,
+    "artifact_id": 11205874197,
+    "artifact_zip_sha256": "c9bb19c06f0dc073f541cbfcf72d14bf7849c1246ca9149c0e5830346706768a",
+    "execution_head_sha": "95760d70217fca3e20882d08d9024c44867240dd",
+    "merged_main_sha": "132357970f6849b4da0e70bedf11f993e66f89ae"
+  },
+  "expected_replay": {
+    "release_policy_passed": true,
+    "first_observable_stage": "NS",
+    "signature_union": [
+      "noise-amplification",
+      "severe-near-reference-degradation"
+    ],
+    "stage_transitions": {
+      "prefix-ns": {
+        "new_signatures": [
+          "severe-near-reference-degradation"
+        ]
+      },
+      "prefix-agc": {
+        "new_signatures": [
+          "noise-amplification"
+        ]
+      }
+    },
+    "cross_seed_first_stage_consistent": true,
+    "cross_seed_signature_set_consistent": true
+  },
+  "regression_assertion": {
+    "open_diagnostic": "current code must reproduce the frozen diagnostic signature on all listed seeds; disappearance/change requires explicit lifecycle review, not silent deletion",
+    "fixed_regression": null
+  },
+  "s004_eligibility": {
+    "eligible": false,
+    "satisfied": [
+      "multiple_fresh_seed_repetition",
+      "same_first_observable_stage"
+    ],
+    "missing": [
+      "independent_source_family_or_public_domain_repetition",
+      "measurement_domain_artifact_exclusion",
+      "downstream_transfer_artifact_exclusion",
+      "bounded_candidate_resource_fit"
+    ]
+  },
+  "root_cause_claim_authority": false,
+  "release_acceptance_authority": false
+}

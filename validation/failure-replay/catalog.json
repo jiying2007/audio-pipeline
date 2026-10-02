@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "bank_id": "system-robustness-failure-replay-v1",
+  "authority": "diagnostic-regression-only-not-release-or-candidate-authority",
+  "source_evidence": {
+    "phase": "S003",
+    "workflow_run_id": 36956293883,
+    "artifact_id": 11205874197,
+    "artifact_name": "system-robustness-s003-36956293883",
+    "artifact_zip_sha256": "c9bb19c06f0dc073f541cbfcf72d14bf7849c1246ca9149c0e5830346706768a",
+    "artifact_zip_bytes": 37778,
+    "execution_head_sha": "95760d70217fca3e20882d08d9024c44867240dd",
+    "merged_main_sha": "132357970f6849b4da0e70bedf11f993e66f89ae",
+    "evidence_retention_note": "Actions artifact is transient provenance only; replay truth is regenerated from committed generators/contracts."
+  },
+  "entries": [
+    "entries/s003-capture-clipping-v1.json",
+    "entries/s003-mic-gain-delay-mismatch-v1.json"
+  ],
+  "lifecycle": {
+    "open_status": "OPEN_DIAGNOSTIC",
+    "fixed_status": "FIXED_REGRESSION",
+    "rule": "an entry may change lifecycle only in a reviewed commit that preserves its historical evidence identity and adds the new regression assertion"
+  },
+  "s004_candidate_authority": false
+}

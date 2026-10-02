@@ -79,6 +79,7 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/aec_recovery_measurement_resolution.py",
     "validation/tools/aec_recovery_window_geometry.py",
     "validation/tools/aec_recovery_100w50s_confirmation.py",
+    "validation/tools/aec_recovery_rebaseline_100w50s.py",
     "validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json",
     "validation/policies/validation-s003-aec-stage-recovery.json",
     "validation/tools/mic_mismatch_downstream_transfer_review.py",

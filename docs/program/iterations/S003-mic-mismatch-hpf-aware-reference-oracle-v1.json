@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "S003-mic-mismatch-hpf-aware-reference-oracle-v1",
+  "phase": "S003_METRIC_REFERENCE_DOMAIN_ARTIFACT_REVIEW",
+  "authority": "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "scoped_failure": "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1",
+  "scoped_subsignature": "severe-near-reference-degradation",
+  "predecessors": {
+    "downstream_result": "docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json",
+    "measurement_source_oracle_result": "docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json",
+    "public_clean_speech_result": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json"
+  },
+  "public_source": {
+    "dataset_id": "openslr-slr31-clean-speech",
+    "archive_id": "openslr-slr31-train-clean-5",
+    "lock_path": ".github/research/continuous-optimization/development-data-v3/development.lock.json",
+    "archive_bytes": 332954390,
+    "archive_sha256": "47805806c8b15f7549f3c51bd6b7da72ec0128a34d32830c8014a88658c0292d",
+    "fixed_microset_result": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json"
+  },
+  "fresh_seeds": [
+    9707,
+    9807
+  ],
+  "fixed_utterance_count": 8,
+  "processor_contract": {
+    "source": "tests/validation/stage_prefix_process_pcm.c",
+    "expected_git_blob_sha1": "4decaeeb323ecce5dc38dc442f8c23a06e1b86df",
+    "profile": "prefix-capture",
+    "required_mask": "AP_STAGE_HPF",
+    "channels": 2
+  },
+  "fixed_perturbation": {
+    "left_noise_amplitude": 2200,
+    "left_noise_scale": 0.25,
+    "right_gain": 0.72,
+    "right_delay_samples": 3,
+    "right_noise_scale": 0.38,
+    "right_noise_rotation_samples": 137
+  },
+  "oracle": {
+    "original_watch_limit_db": -10,
+    "current_metric": "SI_SDR(clean, HPF(stereo-mismatch-output)) - SI_SDR(clean, left-input)",
+    "hpf_aware_metric": "SI_SDR(HPF(stereo-clean), HPF(stereo-mismatch-output)) - SI_SDR(clean, left-input)",
+    "channel_contribution_control": "bitwise compare HPF(stereo(left,left)) vs HPF(stereo(left,right-mismatch))",
+    "artifact_case_definition": "current_metric < -10 dB AND hpf_aware_metric >= -10 dB AND channel_contribution_control is bitwise identical",
+    "interpretation": "If satisfied, the candidate-relevant severe subsignature is explained by reference/metric target mismatch at the HPF-only observation; the right-channel gain/delay mismatch is not required at that first-observable stage."
+  },
+  "preregistered_evidence_rules": {
+    "minimum_artifact_cases_per_seed": 6,
+    "total_cases_per_seed": 8,
+    "current_severe_must_repeat": true,
+    "hpf_aware_threshold_is_same_original_watch_limit": true,
+    "no_threshold_search": true,
+    "no_result_driven_utterance_selection": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_hpf": false,
+    "may_change_thresholds": false,
+    "may_consume_validation_grade": false,
+    "may_consume_validation_grade_blind": false,
+    "may_claim_hpf_root_cause": false,
+    "may_open_s004": false
+  },
+  "next_review": "If the metric/reference artifact gate is satisfied, retire this candidate line and reopen the overall measurement-domain criterion as failed for candidate admission. If not satisfied, retain the prior measurement exclusion and proceed to bounded resource-fit admission."
+}

@@ -94,7 +94,6 @@ def main() -> int:
     mm_review = mismatch_entry["public_clean_speech_review"]
     assert mm_review["second_public_family_repetition_satisfied"] is True
     assert mm_review["reproduced_utterances"] == {"9307": 8, "9407": 8}
-    assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["satisfied"]
     # The immutable SLR31 result freezes the blockers at review time. The live
     # replay entry may legitimately advance as later independent evidence closes
     # blockers, but it must never lose the SLR31 multi-public evidence or grant

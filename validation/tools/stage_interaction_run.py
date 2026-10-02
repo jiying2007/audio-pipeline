@@ -18,6 +18,7 @@ import run_validation
 import run_validation_engine as engine
 
 PREFIX_PROFILES = {
+    "prefix-raw",
     "prefix-capture",
     "prefix-bf",
     "prefix-sync",
@@ -76,7 +77,7 @@ def invoke(processor: Path, case: dict, corpus_path: Path, work: Path):
 
     use_render = (
         render_raw is not None
-        and profile not in {"prefix-capture", "prefix-bf"}
+        and profile not in {"prefix-raw", "prefix-capture", "prefix-bf"}
     )
     output_path = work / "out.pcm"
     metrics_path = work / "metrics.jsonl"

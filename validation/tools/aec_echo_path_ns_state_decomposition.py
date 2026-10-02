@@ -159,26 +159,17 @@ def boundary_snapshot(row: dict) -> dict:
         "noise_tracker_frame_after",
         "noise_tracker_frame_mod8_after",
         "frequency_res_active",
-        "residual_echo_gain",
-        "noise_rms_dbfs",
-        "speech_probability",
-        "noise_estimate_mean_after",
-        "noise_estimate_abs_update_fraction_of_previous_sum",
-        "residual_gain_mean_after",
-        "residual_gain_min_after",
-        "residual_gain_max_after",
-        "residual_gain_abs_delta_mean",
-        "overlap_rms_after",
-        "previous_rms_after",
         "far_end_active",
         "double_talk_active",
         "aec_converged",
         "erle_valid",
-        "erle_db",
         "estimated_delay_ms",
         "delay_error_samples",
     )
-    return {key: row[key] for key in keys}
+    out = {key: row[key] for key in keys}
+    for name in STATE_METRICS:
+        out[name] = row[name]
+    return out
 
 
 def analyze_seed(

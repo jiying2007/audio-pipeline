@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        seed: [5107, 5207]
+        seed: [5307, 5407]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -91,7 +91,8 @@ jobs:
             --output "$out/report.json" \
             --evidence-manifest "$out/evidence-manifest.json"
           python3 validation/tools/system_robustness_attribution.py \
-            --corpus "$root/corpus.json" --report "$out/report.json" --output-dir "$out"
+            --corpus "$root/corpus.json" --report "$out/report.json" --output-dir "$out" \
+            --watch-contract docs/program/iterations/S001.json
           cp "$root/corpus.json" "$out/corpus.json"
           find "$out" -type f -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
       - name: Publish S001 summary
@@ -107,7 +108,10 @@ jobs:
           print(f"## S001 seed {seed}")
           print("- Authority: candidate-zero / regression-only / non-shipping")
           print(f"- Validation result: {report['validation_result']}")
+          watch=json.loads((root/'diagnostic-watch.json').read_text())
           print(f"- Failure replay entries: {len(replay['failures'])}")
+          print(f"- Diagnostic degradations: {watch['diagnostic_degradation_count']}")
+          print(f"- Policy failures: {watch['policy_failure_count']}")
           print(f"- Families: {len(heat['families'])}")
           PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

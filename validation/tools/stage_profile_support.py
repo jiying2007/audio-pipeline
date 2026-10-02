@@ -35,10 +35,10 @@ SUPPORTED_CAPTURE_PROFILES = {"default"} | ISOLATED_CAPTURE_PROFILES | PREFIX_PR
 RENDER_REQUIRED_PROFILES = {"prefix-sync", "prefix-aec", "prefix-res"}
 
 
-def _control_args(case: dict) -> list[str]:
+def _control_args(case: dict, *, allow_echo_path_change: bool) -> list[str]:
     control = case.get("control", {})
     args: list[str] = []
-    if "echo_path_change_frame" in control:
+    if allow_echo_path_change and "echo_path_change_frame" in control:
         args += [
             "--echo-path-change-frame",
             str(int(control["echo_path_change_frame"])),
@@ -100,6 +100,13 @@ def build_invoke(engine: Any):
 
         output_path = work / "out.pcm"
         metrics_path = work / "metrics.jsonl"
+
+        # Capture/BF prefixes intentionally observe the pre-reference path even
+        # for full-duplex cases. Later prefixes consume the exact same render.
+        use_render = (
+            render_raw is not None
+            and profile not in {"prefix-capture", "prefix-bf"}
+        )
         command = [
             str(processor),
             "--sample-rate",
@@ -110,15 +117,8 @@ def build_invoke(engine: Any):
             str(metrics_path),
             "--capture-profile",
             profile,
-            *_control_args(case),
+            *_control_args(case, allow_echo_path_change=use_render),
         ]
-
-        # Capture/BF prefixes intentionally observe the pre-reference path even
-        # for full-duplex cases. Later prefixes consume the exact same render.
-        use_render = (
-            render_raw is not None
-            and profile not in {"prefix-capture", "prefix-bf"}
-        )
         if use_render:
             command += [str(mic_raw), str(render_raw), str(output_path)]
         else:

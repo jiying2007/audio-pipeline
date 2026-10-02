@@ -120,8 +120,17 @@ jobs:
           assert len(flacs)>=8,len(flacs)
           print({'archive_bytes':size,'sha256':h.hexdigest(),'flac_files':len(flacs)})
           PY
-          command -v ffmpeg
-          ffmpeg -version | head -n 1
+      - name: Install pinned FLAC reader
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/s003-slr31-venv
+          /tmp/s003-slr31-venv/bin/python -m pip install --disable-pip-version-check \
+            'numpy==2.2.6' 'soundfile==0.13.1'
+          /tmp/s003-slr31-venv/bin/python - <<'PY'
+          import soundfile
+          print({'soundfile': soundfile.__version__, 'libsndfile': soundfile.__libsndfile_version__})
+          assert soundfile.__version__ == '0.13.1'
+          PY
 
       - name: Build test-only stage-prefix processor
         run: |

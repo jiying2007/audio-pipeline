@@ -269,6 +269,21 @@ def main() -> int:
     assert contribution["preregistered_rules"]["no_root_cause_selection"] is True
     assert contribution["authority_boundary"]["may_open_s004"] is False
 
+    target_driver = json.loads((ITER / "S003-aec-res-target-driver-decomposition-v1.json").read_text())
+    assert target_driver["authority"] == "CANDIDATE_ZERO_TARGET_DRIVER_COUNTERFACTUAL_ONLY"
+    assert target_driver["candidate_limit"] == 0 and target_driver["confirmation_limit"] == 0
+    assert target_driver["promotion_allowed"] is False and target_driver["shipping_change_allowed"] is False
+    assert target_driver["corpus"]["fresh_seeds"] == [16307, 16407, 16507, 16607, 16707, 16807, 16907, 17007]
+    assert target_driver["corpus"]["profiles"] == ["prefix-aec", "prefix-res"]
+    assert target_driver["measurement"]["geometry_id"] == "100w-50s"
+    assert target_driver["preregistered_rules"]["no_echo_weight_search"] is True
+    assert target_driver["preregistered_rules"]["no_floor_gain_search"] is True
+    assert target_driver["preregistered_rules"]["no_residual_scale_search"] is True
+    assert target_driver["preregistered_rules"]["no_echo_scale_search"] is True
+    assert target_driver["preregistered_rules"]["no_counterfactual_parameter_sweep"] is True
+    assert target_driver["authority_boundary"]["may_claim_driver_root_cause"] is False
+    assert target_driver["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

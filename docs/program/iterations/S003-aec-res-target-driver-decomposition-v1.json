@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-res-target-driver-decomposition-v1",
+  "phase": "S003_AEC_RES_TARGET_DRIVER_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_TARGET_DRIVER_COUNTERFACTUAL_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_RES_GAIN_TARGET_DRIVER_RETAINED_SMOOTHING_REJECTED"
+  },
+  "corpus": {
+    "fresh_seeds": [
+      16307,
+      16407,
+      16507,
+      16607,
+      16707,
+      16807,
+      16907,
+      17007
+    ],
+    "seconds": 6,
+    "case_id": "echo-path-change",
+    "profiles": [
+      "prefix-aec",
+      "prefix-res"
+    ],
+    "cases_per_seed": 2,
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES"
+    }
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "shipping_target_formula": {
+    "floor_gain": 0.1,
+    "echo_weight": 0.8,
+    "epsilon": 1e-12,
+    "active_condition": "far_end_active && !double_talk_active",
+    "active_target": "sqrt(residual_energy / (residual_energy + 0.8 * echo_energy + epsilon)), clamped to [0.1,1.0]",
+    "inactive_target": 1
+  },
+  "pre_transition_references": {
+    "interval_ms": [
+      -1000,
+      -200
+    ],
+    "statistic": "median per-frame energy",
+    "residual_energy_reference": "median pre_res_energy",
+    "echo_energy_reference": "median echo_energy"
+  },
+  "counterfactuals": {
+    "actual_instantaneous_target": {
+      "target_inputs": [
+        "actual residual_energy",
+        "actual echo_energy"
+      ],
+      "output_energy": "actual residual_energy * target_gain^2"
+    },
+    "freeze_echo_driver": {
+      "target_inputs": [
+        "actual residual_energy",
+        "pre-transition median echo_energy"
+      ],
+      "output_energy": "actual residual_energy * counterfactual_target_gain^2"
+    },
+    "freeze_residual_driver": {
+      "target_inputs": [
+        "pre-transition median residual_energy",
+        "actual echo_energy"
+      ],
+      "output_energy": "actual residual_energy * counterfactual_target_gain^2"
+    },
+    "freeze_both_drivers": {
+      "target_inputs": [
+        "pre-transition median residual_energy",
+        "pre-transition median echo_energy"
+      ],
+      "output_energy": "actual residual_energy * counterfactual_target_gain^2"
+    }
+  },
+  "validity_gates": {
+    "require_existing_probe_bitwise_equivalence": true,
+    "require_existing_formula_validity": true,
+    "require_actual_instantaneous_formula_reconstruction": true,
+    "require_actual_aec_recovery_reconstruction": true,
+    "either_counterfactual_outcome_is_valid_evidence": true
+  },
+  "descriptive_outputs": [
+    "standard AEC recovery",
+    "standard RES recovery",
+    "actual instantaneous-target recovery",
+    "freeze-echo recovery",
+    "freeze-residual recovery",
+    "freeze-both recovery",
+    "target-induced delay vs AEC for every path",
+    "per-seed delay eliminated/preserved flags",
+    "pre-transition residual/echo references"
+  ],
+  "preregistered_rules": {
+    "no_echo_weight_search": true,
+    "no_floor_gain_search": true,
+    "no_epsilon_search": true,
+    "no_residual_scale_search": true,
+    "no_echo_scale_search": true,
+    "no_aec_parameter_search": true,
+    "no_res_parameter_search": true,
+    "no_recovery_threshold_search": true,
+    "no_counterfactual_parameter_sweep": true,
+    "no_candidate_selection": true,
+    "no_root_cause_selection": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_change_target_formula": false,
+    "may_change_echo_weight": false,
+    "may_change_floor_gain": false,
+    "may_change_aec_parameters": false,
+    "may_change_res_parameters": false,
+    "may_change_recovery_threshold": false,
+    "may_select_candidate": false,
+    "may_claim_driver_root_cause": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "valid driver-isolation counterfactual recovery receipts on all fresh seeds; descriptive necessity evidence only, with no target-formula or parameter recommendation"
+}

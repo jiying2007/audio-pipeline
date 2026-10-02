@@ -7,7 +7,7 @@ on:
       - 'docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1.json'
       - 'docs/program/iterations/S003-aec-echo-path-res-side-recovery-variability-v1-result.json'
       - 'validation/tools/aec_res_gain_contribution_decomposition.py'
-      - 'validation/policies/validation-s003-echo-path-res-ns-confirm.json'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
       - 'tests/validation/stage_prefix_process_pcm.c'
       - 'tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c'
       - '.github/workflows/research-s003-aec-res-gain-contribution-v1.yml'
@@ -120,7 +120,7 @@ jobs:
 
             PYTHONPATH=validation/tools               python3 validation/tools/aec_res_gain_contribution_decomposition.py build                 --output "$corpus" --seed "$seed" --seconds 6
 
-            PYTHONPATH=validation/tools               python3 validation/tools/stage_interaction_run.py                 --source-revision '${{ github.sha }}'                 --corpus "$corpus/corpus.json"                 --policy validation/policies/validation-s003-echo-path-res-ns-confirm.json                 --dataset-lock validation/datasets.lock.json                 --processor build-s003-res-contribution/stage_prefix_process_pcm                 --output "$seed_out/canonical-report.json"                 --evidence-manifest "$seed_out/evidence-manifest.json"                 --enforce
+            PYTHONPATH=validation/tools               python3 validation/tools/stage_interaction_run.py                 --source-revision '${{ github.sha }}'                 --corpus "$corpus/corpus.json"                 --policy validation/policies/validation-s003-res-gain-contribution.json                 --dataset-lock validation/datasets.lock.json                 --processor build-s003-res-contribution/stage_prefix_process_pcm                 --output "$seed_out/canonical-report.json"                 --evidence-manifest "$seed_out/evidence-manifest.json"                 --enforce
 
             PYTHONPATH=validation/tools               python3 validation/tools/aec_res_gain_contribution_decomposition.py run                 --corpus "$corpus/corpus.json"                 --report "$seed_out/canonical-report.json"                 --processor build-s003-res-contribution/stage_prefix_process_pcm                 --probe build-s003-res-contribution/s003_aec_echo_path_res_gain_contribution_probe                 --contract "$contract"                 --trace-output "$seed_out/gain-contribution-trace.jsonl"                 --output "$seed_out/contribution-receipt.json"
 

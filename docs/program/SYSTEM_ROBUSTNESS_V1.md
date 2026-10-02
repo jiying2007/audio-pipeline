@@ -164,3 +164,12 @@ After rebaselining AEC recovery on the confirmed `100w-50s` research measurement
 This is a stage-boundary timing observation only. It does **not** prove an NS root cause and authorizes no NS/AEC/RES parameter search, no shipping change, and no S004 admission.
 
 The next authorized phase is `S003_AEC_ECHO_PATH_NS_STATE_DECOMPOSITION_V1`: observe existing NS state/telemetry around the echo-path transition and determine which state trajectories align with the confirmed 50–100 ms extension. The work remains candidate-zero and observation-only.
+
+
+## S003 echo-path NS-state applicability checkpoint
+
+The test-only NS internal-state probe was bitwise output-equivalent to the standard `prefix-ns` processor on fresh seeds 13507–13807. However, the prerequisite RES→NS recovery extension did **not** remain invariant on this next fresh set: the measured extensions were `+100, +50, -50, +100 ms`. Seed 13707 therefore invalidated all-seed applicability of the NS-state attribution experiment.
+
+The earlier 4/4 confirmation on seeds 13107–13407 remains a truthful result for that seed set, but it is no longer treated as an invariant across subsequent fresh seeds. State trajectories on the three applicable seeds remain descriptive evidence only; no state family is ranked and no NS root cause or parameter-search authority is granted.
+
+The next authorized phase is `S003_AEC_ECHO_PATH_RECOVERY_SIGN_VARIABILITY_V1`: explain why NS-minus-RES recovery changes sign and magnitude across fresh seeds under the confirmed `100w-50s` research geometry. Reuse test-only traces and pipeline telemetry; do not tune NS/AEC/RES parameters or define a performance threshold.

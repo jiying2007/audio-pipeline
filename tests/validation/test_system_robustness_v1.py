@@ -208,6 +208,22 @@ def main() -> int:
     assert echo_confirm["authority_boundary"]["may_claim_ns_root_cause"] is False
     assert echo_confirm["authority_boundary"]["may_open_s004"] is False
 
+    ns_state = json.loads((ITER / "S003-aec-echo-path-ns-state-decomposition-v1.json").read_text())
+    assert ns_state["authority"] == "CANDIDATE_ZERO_INTERNAL_STATE_OBSERVATION_ONLY"
+    assert ns_state["candidate_limit"] == 0 and ns_state["confirmation_limit"] == 0
+    assert ns_state["promotion_allowed"] is False and ns_state["shipping_change_allowed"] is False
+    assert ns_state["corpus"]["fresh_seeds"] == [13507, 13607, 13707, 13807]
+    assert ns_state["corpus"]["profiles"] == ["prefix-res", "prefix-ns", "default"]
+    assert ns_state["measurement"]["geometry_id"] == "100w-50s"
+    assert ns_state["probe"]["required_output_equivalence"].startswith("bitwise identical")
+    assert ns_state["preregistered_rules"]["extension_reproduction_is_applicability_condition"] is True
+    assert ns_state["preregistered_rules"]["non_reproduction_is_valid_evidence"] is True
+    assert ns_state["preregistered_rules"]["no_state_threshold_fitting"] is True
+    assert ns_state["preregistered_rules"]["no_state_family_ranking"] is True
+    assert ns_state["preregistered_rules"]["no_ns_parameter_search"] is True
+    assert ns_state["authority_boundary"]["may_claim_ns_root_cause"] is False
+    assert ns_state["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

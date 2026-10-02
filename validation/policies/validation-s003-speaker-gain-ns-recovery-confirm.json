@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-s003-speaker-gain-ns-recovery-confirm-v1",
+  "allowed_tiers": [
+    "regression"
+  ],
+  "minimum_cases": 3,
+  "required_public_sources": [],
+  "aggregate": {
+    "min_pass_rate": 1
+  }
+}

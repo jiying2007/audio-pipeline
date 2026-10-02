@@ -121,3 +121,12 @@ The focused fresh-seed confirmation rejected the earlier RES→NS recovery-exten
 The prior 10707/10807 observation of +100/+100 ms remains historical evidence, but it does not override the independent confirmation. This closes the NS-boundary hypothesis: there is no authority to claim NS root cause, open NS temporal-state attribution, search NS parameters, or create an NS candidate from this line.
 
 The next authorized work returns to broad candidate-zero AEC recovery variability/source decomposition using stage-appropriate telemetry and residual trajectories. The goal is to explain why recovery varies across seeds without assuming any stage is causal. S004 remains closed.
+
+
+## S003 AEC recovery variability checkpoint
+
+After the speaker-gain RES→NS +100 ms hypothesis was rejected on independent confirmation seeds, a broader candidate-zero matrix measured four new seeds across three transition cases and AEC/RES/NS/AGC/full profiles. All 60 observations completed with no censoring.
+
+The remaining cross-seed recovery spread is bounded to 100 ms. AEC-stage recovery is stable for all three transition families; variability appears at selected downstream boundaries. In every observation at the slower end of a 100 ms range, the immediately preceding 100 ms recovery window misses the preregistered limit by only 0.058–0.585 dB. The reviewed AEC boolean telemetry does not show a common state change aligned with those slower observations.
+
+This is not yet proof of a measurement-resolution artifact and does not identify a causal stage. The next authorized step is a paired temporal-resolution measurement on fresh seeds: retain the original 100 ms definition and compare it with a 50 ms post-transition grid while keeping the same pre-transition baseline, +3.01029995664 dB recovery limit, and 300 ms continuous hold. Candidate budget remains zero and no DSP parameter search is authorized.

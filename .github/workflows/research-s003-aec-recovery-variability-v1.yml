@@ -5,133 +5,26 @@ on:
     branches: [main]
     paths:
       - 'docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1.json'
-      - 'docs/program/iterations/S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1-result.json'
-      - 'validation/tools/build_aec_stage_recovery_corpus.py'
-      - 'validation/tools/aec_transition_recovery_latency.py'
-      - 'validation/tools/aec_recovery_variability_decomposition.py'
-      - 'validation/policies/validation-s003-aec-stage-recovery.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1-result.json'
+      - 'tests/validation/data/s003-aec-recovery-variability-consumed-workflow.yml'
+      - 'tests/validation/test_s003_aec_recovery_variability_retirement.py'
       - '.github/workflows/research-s003-aec-recovery-variability-v1.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1.json'
-      - 'docs/program/iterations/S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1-result.json'
-      - 'validation/tools/build_aec_stage_recovery_corpus.py'
-      - 'validation/tools/aec_transition_recovery_latency.py'
-      - 'validation/tools/aec_recovery_variability_decomposition.py'
-      - 'validation/policies/validation-s003-aec-stage-recovery.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
-      - '.github/workflows/research-s003-aec-recovery-variability-v1.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: research-s003-aec-recovery-variability-v1-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  diagnose:
+  contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: s003-aec-recovery-variability
-
-      - name: Validate candidate-zero variability contract
+      - name: Validate reviewed terminal evidence
         run: |
           set -euo pipefail
           python3 -m json.tool             docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1.json >/dev/null
-          python3 -m py_compile             validation/tools/build_aec_stage_recovery_corpus.py             validation/tools/aec_transition_recovery_latency.py             validation/tools/aec_recovery_variability_decomposition.py
-          PYTHONPATH=validation/tools             python3 validation/tools/aec_recovery_variability_decomposition.py self-test
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          c=json.loads(Path('docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1.json').read_text())
-          p=json.loads(Path('docs/program/iterations/S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1-result.json').read_text())
-          assert c['authority']=='CANDIDATE_ZERO_OBSERVATION_ONLY'
-          assert c['candidate_limit']==0 and c['confirmation_limit']==0
-          assert c['promotion_allowed'] is False and c['shipping_change_allowed'] is False
-          assert c['corpus']['fresh_seeds']==[11107,11207,11307,11407]
-          assert c['corpus']['cases_per_seed']==15
-          assert c['corpus']['stage_profiles']==['prefix-aec','prefix-res','prefix-ns','prefix-agc','default']
-          assert c['preregistered_rules']['no_correlation_significance_threshold'] is True
-          assert c['preregistered_rules']['no_root_cause_selection'] is True
-          assert c['preregistered_rules']['no_parameter_search'] is True
-          assert c['authority_boundary']['may_claim_causal_stage'] is False
-          assert c['authority_boundary']['may_open_s004'] is False
-          assert p['status']==c['predecessor']['required_status']
-          assert p['mechanical_result']['outcome']=='REJECTED'
-          print('S003 AEC recovery variability authority: PASS')
-          PY
-
-      - name: Build fixed diagnostic stage-prefix processor
-        run: |
-          set -euo pipefail
-          cmake -S . -B build-s003-aec-variability             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-          cmake --build build-s003-aec-variability --target audio_pipeline --parallel
-          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-aec-variability/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-aec-variability/libaudio_pipeline.a -lm             -o build-s003-aec-variability/stage_prefix_process_pcm
-
-      - name: Run fresh recovery variability matrix
-        run: |
-          set -euo pipefail
-          out=s003-aec-variability-out
-          mkdir -p "$out"
-          contract=docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1.json
-
-          for seed in 11107 11207 11307 11407; do
-            corpus="/tmp/s003-aec-variability-$seed"
-            seed_out="$out/$seed"
-            mkdir -p "$seed_out"
-
-            python3 validation/tools/build_aec_stage_recovery_corpus.py               --output "$corpus" --seed "$seed" --seconds 6
-
-            PYTHONPATH=validation/tools             python3 validation/tools/stage_interaction_run.py               --source-revision '${{ github.sha }}'               --corpus "$corpus/corpus.json"               --policy validation/policies/validation-s003-aec-stage-recovery.json               --dataset-lock validation/datasets.lock.json               --processor build-s003-aec-variability/stage_prefix_process_pcm               --output "$seed_out/canonical-report.json"               --evidence-manifest "$seed_out/evidence-manifest.json"               --enforce
-
-            PYTHONPATH=validation/tools             python3 validation/tools/aec_recovery_variability_decomposition.py run               --corpus "$corpus/corpus.json"               --report "$seed_out/canonical-report.json"               --processor build-s003-aec-variability/stage_prefix_process_pcm               --contract "$contract"               --output "$seed_out/recovery-variability.json"
-
-            cp "$corpus/corpus.json" "$seed_out/corpus.json"
-          done
-
-          PYTHONPATH=validation/tools           python3 validation/tools/aec_recovery_variability_decomposition.py aggregate             --contract "$contract"             --input "$out/11107/recovery-variability.json"             --input "$out/11207/recovery-variability.json"             --input "$out/11307/recovery-variability.json"             --input "$out/11407/recovery-variability.json"             --output "$out/cross-seed-variability-summary.json"
-
-          cp "$contract" "$out/contract.json"
-          git rev-parse HEAD > "$out/source-sha.txt"
-          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
-
-      - name: Publish variability evidence
-        run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          r=json.loads(Path('s003-aec-variability-out/cross-seed-variability-summary.json').read_text())
-          print('## S003 AEC recovery variability source decomposition')
-          print('')
-          print('- Authority: **candidate-zero observation only / non-shipping**')
-          print(f"- Fresh seeds: `{r['fresh_seeds']}`")
-          print('- Causal attribution: **NOT_AUTHORIZED**')
-          print('- Performance threshold: **none**')
-          for row in r['matrix']:
-              rng=row['cross_seed_recovery_range_ms']
-              if rng and rng > 0:
-                  print(
-                      f"- `{row['base_case_id']}::{row['stage_label']}`: "
-                      f"range=`{rng} ms`, fastest=`{row['fastest_seed']}`, "
-                      f"slowest=`{row['slowest_seed']}`"
-                  )
-          print('- Candidate authority: **none**')
-          PY
-
-      - name: Upload hash-bound variability evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: s003-aec-recovery-variability-${{ github.run_id }}
-          path: s003-aec-variability-out/
-          if-no-files-found: error
-          retention-days: 30
+          python3 -m json.tool             docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1-result.json >/dev/null
+          python3 -m py_compile             tests/validation/test_s003_aec_recovery_variability_retirement.py
+          python3 tests/validation/test_s003_aec_recovery_variability_retirement.py

@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-recovery-sign-variability-v1-result",
+  "investigation_id": "S003-aec-echo-path-recovery-sign-variability-v1",
+  "status": "CLOSED_DIAGNOSTIC_SIGN_VARIABILITY_MAPPED_RES_SIDE_VARIATION_RETAINED",
+  "authority": "DIAGNOSTIC_ONLY_NO_CAUSAL_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37026989089,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "8aa983dd97ece54cfcc795ffeee0dbe3b72bc057",
+    "artifact_id": 11235626112,
+    "artifact_name": "s003-aec-echo-path-sign-variability-37026989089",
+    "artifact_zip_sha256": "3e6c3ac6a353cc60551038bc4b70e0e6a9c759f66f7bbfe20844099553e8ed68",
+    "artifact_zip_bytes": 674669,
+    "aggregate_member": "cross-seed-sign-summary.json",
+    "aggregate_member_sha256": "ea64388ddb5075f9909a78b853de9a4076325f6b250a10c2e856433885cdf2e9"
+  },
+  "qualification": {
+    "verify_run_id": 37026990013,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37026989193,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37026989348,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37026989368,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37026989078,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37026989039,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37027446086,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37027445927,
+    "i015_finalization_conclusion": "success"
+  },
+  "probe_validity": {
+    "test_only_internal_state_probe": true,
+    "output_bitwise_equivalent_all_seeds": true,
+    "public_api_changed": false,
+    "shipping_source_changed": false,
+    "full_per_frame_state_trace_retained": true
+  },
+  "mechanical_result": {
+    "fresh_seeds": [
+      13907,
+      14007,
+      14107,
+      14207,
+      14307,
+      14407,
+      14507,
+      14607
+    ],
+    "sign_distribution": {
+      "extension": [
+        13907,
+        14007,
+        14207,
+        14307,
+        14407,
+        14507,
+        14607
+      ],
+      "neutral": [
+        14107
+      ],
+      "contraction": [],
+      "censored": []
+    },
+    "ns_minus_res_ms_by_seed": {
+      "13907": 50,
+      "14007": 100,
+      "14107": 0,
+      "14207": 100,
+      "14307": 50,
+      "14407": 100,
+      "14507": 50,
+      "14607": 100
+    },
+    "res_recovery_time_ms_by_seed": {
+      "13907": 150,
+      "14007": 150,
+      "14107": 250,
+      "14207": 150,
+      "14307": 150,
+      "14407": 150,
+      "14507": 150,
+      "14607": 150
+    },
+    "ns_recovery_time_ms_by_seed": {
+      "13907": 200,
+      "14007": 250,
+      "14107": 250,
+      "14207": 250,
+      "14307": 200,
+      "14407": 250,
+      "14507": 200,
+      "14607": 250
+    },
+    "full_recovery_time_ms_by_seed": {
+      "13907": 200,
+      "14007": 250,
+      "14107": 250,
+      "14207": 250,
+      "14307": 200,
+      "14407": 250,
+      "14507": 200,
+      "14607": 250
+    },
+    "neutral_seed": {
+      "seed": 14107,
+      "res_recovery_time_ms": 250,
+      "ns_recovery_time_ms": 250,
+      "res_previous_window_margin_db": 0.049364658309904996,
+      "res_recovery_start_margin_db": -0.6761160683484704,
+      "res_recovery_hold_max_margin_db": -0.6761160683484704,
+      "ns_previous_window_margin_db": 2.370773706465954,
+      "ns_recovery_start_margin_db": -5.5846045492207494,
+      "ns_recovery_hold_max_margin_db": -5.4382185392199816
+    },
+    "extension_seed_res_recovery_invariant_ms": 150,
+    "extension_seed_count": 7,
+    "neutral_seed_count": 1,
+    "contraction_seed_count": 0,
+    "censored_seed_count": 0
+  },
+  "prior_context": {
+    "predecessor_sign_flip_seed": 13707,
+    "predecessor_ns_minus_res_ms": -50,
+    "predecessor_res_recovery_time_ms": 300,
+    "predecessor_ns_recovery_time_ms": 250,
+    "predecessor_res_previous_window_margin_db": 0.19612002372001314,
+    "interpretation": "The prior contraction and the current neutral seed both arise from RES recovery moving later than its common 150 ms value; neither requires NS recovery to become earlier than its observed 200-250 ms band."
+  },
+  "reviewed_validity": {
+    "res_to_ns_extension_is_common_but_not_invariant": true,
+    "positive_extension_rate_on_current_fresh_set": "7/8",
+    "non_positive_seed_is_res_side_delay": true,
+    "ns_state_family_ranking_authorized": false,
+    "ns_root_cause_proven": false,
+    "res_root_cause_proven": false,
+    "recovery_threshold_artifact_proven": false,
+    "interpretation": "On the eight-seed fresh set, seven seeds retain a +50/+100 ms RES-to-NS extension. The one neutral seed is explained mechanically by RES recovery shifting from the common 150 ms to 250 ms while NS remains at 250 ms. Together with the earlier -50 ms seed, the remaining sign variability is therefore localized to RES-side recovery timing, but the evidence does not identify whether AEC residual realization, standalone RES gain state, or threshold-edge geometry is causal."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_ECHO_PATH_RES_SIDE_RECOVERY_VARIABILITY_V1",
+    "candidate_limit": 0,
+    "description": "Measure AEC->RES->NS recovery on fresh seeds while observing test-only standalone RES gain state and AEC/public telemetry. Determine whether non-positive NS-minus-RES signs coincide with AEC/RES-side recovery delay and threshold-edge geometry. Observation only: no gain/alpha/mu/threshold tuning, no state-family ranking, no root-cause selection."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

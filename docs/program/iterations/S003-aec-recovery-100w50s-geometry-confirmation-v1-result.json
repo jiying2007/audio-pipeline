@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-100w50s-geometry-confirmation-v1-result",
+  "investigation_id": "S003-aec-recovery-100w50s-geometry-confirmation-v1",
+  "status": "CLOSED_DIAGNOSTIC_RESEARCH_GEOMETRY_CONFIRMED",
+  "authority": "RESEARCH_MEASUREMENT_METHOD_ONLY_NO_DSP_OR_PRODUCT_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37010050284,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "68b1b18ed8b608bf74a060717a16e6bee39a1f1a",
+    "artifact_id": 11227571224,
+    "artifact_name": "s003-aec-100w50s-confirmation-37010050284",
+    "artifact_zip_sha256": "8f5087a435644dc557e0d077defad68c3929f61a0291b83aede471706901654f",
+    "artifact_zip_bytes": 33072,
+    "aggregate_member": "cross-seed-confirmation.json",
+    "aggregate_member_sha256": "473d6389776eac0e357613db3be5c3690a0cfd555c2b7f18520baa8d9a97637b"
+  },
+  "qualification": {
+    "verify_run_id": 37010050668,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37010050243,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37010050297,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37010050330,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37010050224,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37010050263,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37010469556,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37010469474,
+    "i015_finalization_conclusion": "success"
+  },
+  "hypothesis": {
+    "statement": "100 ms integration with 50 ms stride yields a more stable research recovery measurement than 100 ms integration with 100 ms stride without introducing censoring.",
+    "baseline_geometry": "100w-100s",
+    "candidate_geometry": "100w-50s",
+    "fresh_seeds": [
+      12307,
+      12407,
+      12507,
+      12607
+    ]
+  },
+  "mechanical_result": {
+    "hypothesis_confirmed": true,
+    "outcome": "CONFIRMED",
+    "non_worse_case_profiles": 14,
+    "total_case_profiles": 15,
+    "non_worse_rule_satisfied": true,
+    "summed_cross_seed_range_ms": {
+      "100w-100s": 1000,
+      "100w-50s": 600
+    },
+    "summed_range_rule_satisfied": true,
+    "censored_observations": {
+      "100w-100s": 0,
+      "100w-50s": 0
+    },
+    "zero_censor_rule_satisfied": true
+  },
+  "reviewed_validity": {
+    "research_measurement_geometry_authorized": "100w-50s",
+    "research_measurement_geometry_authority_scope": "future S003 AEC recovery diagnostics only",
+    "product_recovery_requirement_authority": false,
+    "dsp_candidate_authority": false,
+    "dsp_parameter_change_authority": false,
+    "shipping_source_change_authority": false,
+    "s004_open": false,
+    "interpretation": "Independent fresh confirmation supports 100w-50s as the preferred research recovery measurement geometry. This is a measurement-method decision only; it is not an algorithm improvement, product requirement, or candidate-selection result."
+  },
+  "research_default_geometry": {
+    "id": "100w-50s",
+    "integration_window_ms": 100,
+    "stride_ms": 50,
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ],
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "use": "S003 AEC recovery diagnostics unless a later independently reviewed measurement-method investigation supersedes it"
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RECOVERY_REBASELINE_100W50S_V1",
+    "candidate_limit": 0,
+    "description": "Re-express the retained recovery/variability evidence using the confirmed 100w-50s research geometry, then identify only repeatable candidate-zero phenomena that survive the measurement-method change. Do not reopen rejected NS hypotheses, tune DSP parameters, or define product thresholds."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "product_release_authority": false
+}

@@ -21,6 +21,11 @@ def main() -> int:
         assert item["promotion_allowed"] is False
         assert item["shipping_change_allowed"] is False
 
+    s002 = items["S002"]
+    assert "validation/tools/build_aec_transition_corpus.py" in s002["source_assets"]
+    assert "nonlinear_clipped_playback" in s002["required_conditions"]
+    assert {"nlms_step_size", "dtd_threshold", "res_parameter_sweep"} <= set(s002["forbidden_search"])
+
     watch = items["S001"]["diagnostic_watch"]
     assert watch["authority"] == "replay-trigger-only-not-release-acceptance-gate"
     assert watch["confirmation_seeds"] == [5307, 5407]

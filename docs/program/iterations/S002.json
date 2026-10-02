@@ -9,6 +9,7 @@
   "promotion_allowed": false,
   "shipping_change_allowed": false,
   "source_assets": [
+    "validation/tools/build_aec_transition_corpus.py",
     "validation/tools/build_aec_motion_corpus.py",
     "validation/tools/build_validation_corpus.py"
   ],
@@ -19,6 +20,8 @@
     "echo_path_static",
     "echo_path_change",
     "speaker_level_change",
+    "render_level_change",
+    "nonlinear_clipped_playback",
     "render_discontinuity",
     "motion_path_variation"
   ],
@@ -27,5 +30,10 @@
     "dtd_threshold",
     "res_parameter_sweep"
   ],
-  "output": "aec-transition-report"
+  "output": "aec-transition-report",
+  "outputs": [
+    "aec-transition-report.json",
+    "aec-motion-report.json",
+    "source manifests and SHA256SUMS"
+  ]
 }

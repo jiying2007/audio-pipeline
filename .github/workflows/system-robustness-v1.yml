@@ -8,6 +8,8 @@ on:
       - 'docs/program/iterations/S00*.json'
       - 'validation/failure-replay/**'
       - 'validation/tools/build_system_robustness_corpus.py'
+      - 'validation/tools/build_aec_transition_corpus.py'
+      - 'validation/policies/validation-aec-transition-development.json'
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
       - 'tests/validation/test_system_robustness_v1.py'
@@ -19,6 +21,8 @@ on:
       - 'docs/program/iterations/S00*.json'
       - 'validation/failure-replay/**'
       - 'validation/tools/build_system_robustness_corpus.py'
+      - 'validation/tools/build_aec_transition_corpus.py'
+      - 'validation/policies/validation-aec-transition-development.json'
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
       - 'tests/validation/test_system_robustness_v1.py'
@@ -45,10 +49,12 @@ jobs:
           set -euo pipefail
           python3 -m py_compile \
             validation/tools/build_system_robustness_corpus.py \
+            validation/tools/build_aec_transition_corpus.py \
             validation/tools/system_robustness_attribution.py \
             tests/validation/test_system_robustness_v1.py
           python3 tests/validation/test_system_robustness_v1.py
           python3 validation/tools/build_system_robustness_corpus.py --self-test
+          python3 validation/tools/build_aec_transition_corpus.py --self-test
           for f in docs/program/iterations/S001.json docs/program/iterations/S002.json \
                    docs/program/iterations/S003.json validation/failure-replay/schema-v1.json \
                    ci/ssc305-resource-profiles.json; do
@@ -123,7 +129,7 @@ jobs:
 
   s002-aec-transition:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -131,26 +137,61 @@ jobs:
       - uses: ./.github/actions/setup-ccache
         with:
           namespace: system-robustness-s002
-      - name: Reuse canonical AEC motion authority without tuning
+      - name: Run AEC transition and continuous-motion decomposition without tuning
         run: |
           set -euo pipefail
+          python3 validation/tools/build_aec_transition_corpus.py --self-test
           python3 validation/tools/build_aec_motion_corpus.py --self-test
           cmake -S . -B build-s002 -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
           cmake --build build-s002 --target ap_process_pcm --parallel
-          root=/tmp/s002-aec
+
+          transition_root=/tmp/s002-transition
+          motion_root=/tmp/s002-motion
           out=system-robustness-out/s002
-          mkdir -p "$out"
-          python3 validation/tools/build_aec_motion_corpus.py --output "$root" --seed 6107 --seconds 8
+          mkdir -p "$out/transition" "$out/motion"
+
+          python3 validation/tools/build_aec_transition_corpus.py \
+            --output "$transition_root" --seed 6307 --seconds 6
           python3 validation/tools/run_validation.py \
             --source-revision '${{ github.sha }}' \
-            --corpus "$root/corpus.json" \
+            --corpus "$transition_root/corpus.json" \
+            --policy validation/policies/validation-aec-transition-development.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor build-s002/ap_process_pcm \
+            --output "$out/transition/report.json" \
+            --evidence-manifest "$out/transition/evidence-manifest.json"
+          cp "$transition_root/corpus.json" "$out/transition/corpus.json"
+
+          python3 validation/tools/build_aec_motion_corpus.py \
+            --output "$motion_root" --seed 6107 --seconds 8
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ github.sha }}' \
+            --corpus "$motion_root/corpus.json" \
             --policy validation/policies/validation-aec-motion-development.json \
             --dataset-lock validation/datasets.lock.json \
             --processor build-s002/ap_process_pcm \
-            --output "$out/report.json" \
-            --evidence-manifest "$out/evidence-manifest.json"
-          cp "$root/corpus.json" "$out/corpus.json"
+            --output "$out/motion/report.json" \
+            --evidence-manifest "$out/motion/evidence-manifest.json"
+          cp "$motion_root/corpus.json" "$out/motion/corpus.json"
+          cp "$motion_root/source-manifest.json" "$out/motion/source-manifest.json"
+
           find "$out" -type f -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish S002 summary
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          root=Path("system-robustness-out/s002")
+          transition=json.loads((root/"transition/report.json").read_text())
+          motion=json.loads((root/"motion/report.json").read_text())
+          print("## S002 AEC transition decomposition")
+          print("- Authority: candidate-zero / development-only / non-shipping")
+          print(f"- Transition cases: {len(transition['cases'])}; result: {transition['validation_result']}")
+          print(f"- Motion cases: {len(motion['cases'])}; result: {motion['validation_result']}")
+          print("- Parameter search: none")
+          PY
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: system-robustness-s002-${{ github.run_id }}

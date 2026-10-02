@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "policy_id": "validation-aec-transition-development-v1",
+  "allowed_tiers": [
+    "regression"
+  ],
+  "minimum_cases": 8,
+  "required_public_sources": [],
+  "required_scenarios": [
+    "aec-transition-far-end-static",
+    "aec-transition-near-end-only",
+    "aec-transition-double-talk",
+    "aec-transition-echo-path-change",
+    "aec-transition-speaker-acoustic-gain-step",
+    "aec-transition-render-level-step",
+    "aec-transition-clipped-playback",
+    "aec-transition-soft-saturated-playback"
+  ],
+  "minimum_cases_by_scenario": {
+    "aec-transition-far-end-static": 1,
+    "aec-transition-near-end-only": 1,
+    "aec-transition-double-talk": 1,
+    "aec-transition-echo-path-change": 1,
+    "aec-transition-speaker-acoustic-gain-step": 1,
+    "aec-transition-render-level-step": 1,
+    "aec-transition-clipped-playback": 1,
+    "aec-transition-soft-saturated-playback": 1
+  },
+  "aggregate": {
+    "min_pass_rate": 1,
+    "max_output_clip_fraction": 0.02,
+    "max_output_dc_offset_dbfs": -20
+  }
+}

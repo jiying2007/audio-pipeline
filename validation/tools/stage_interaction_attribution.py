@@ -11,6 +11,7 @@ from pathlib import Path
 from system_robustness_attribution import diagnostic_signatures, load_watch
 
 PROFILE_STAGE = {
+    "prefix-raw": "raw",
     "prefix-capture": "capture",
     "prefix-bf": "BF",
     "prefix-sync": "SYNC",

@@ -10,10 +10,10 @@ on:
       - 'validation/tools/build_system_robustness_corpus.py'
       - 'validation/tools/build_aec_transition_corpus.py'
       - 'validation/tools/build_stage_interaction_corpus.py'
-      - 'validation/tools/stage_profile_support.py'
       - 'validation/tools/stage_interaction_attribution.py'
       - 'validation/tools/stage_interaction_consistency.py'
-      - 'examples/process_pcm.c'
+      - 'validation/tools/stage_interaction_run.py'
+      - 'tests/validation/stage_prefix_process_pcm.c'
       - 'validation/policies/validation-aec-transition-development.json'
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
@@ -28,10 +28,10 @@ on:
       - 'validation/tools/build_system_robustness_corpus.py'
       - 'validation/tools/build_aec_transition_corpus.py'
       - 'validation/tools/build_stage_interaction_corpus.py'
-      - 'validation/tools/stage_profile_support.py'
       - 'validation/tools/stage_interaction_attribution.py'
       - 'validation/tools/stage_interaction_consistency.py'
-      - 'examples/process_pcm.c'
+      - 'validation/tools/stage_interaction_run.py'
+      - 'tests/validation/stage_prefix_process_pcm.c'
       - 'validation/policies/validation-aec-transition-development.json'
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
@@ -61,9 +61,9 @@ jobs:
             validation/tools/build_system_robustness_corpus.py \
             validation/tools/build_aec_transition_corpus.py \
             validation/tools/build_stage_interaction_corpus.py \
-            validation/tools/stage_profile_support.py \
             validation/tools/stage_interaction_attribution.py \
             validation/tools/stage_interaction_consistency.py \
+            validation/tools/stage_interaction_run.py \
             validation/tools/system_robustness_attribution.py \
             tests/validation/test_system_robustness_v1.py
           python3 tests/validation/test_system_robustness_v1.py
@@ -228,7 +228,12 @@ jobs:
         run: |
           set -euo pipefail
           cmake -S . -B build-s003 -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-          cmake --build build-s003 --target ap_process_pcm --parallel
+          cmake --build build-s003 --target audio_pipeline --parallel
+          cc -std=c11 -Wall -Wextra -Werror \
+            -Iinclude -Ibuild-s003/generated \
+            tests/validation/stage_prefix_process_pcm.c \
+            build-s003/libaudio_pipeline.a -lm \
+            -o build-s003/stage_prefix_process_pcm
       - name: Run fresh cross-stage interaction replays
         run: |
           set -euo pipefail
@@ -239,14 +244,30 @@ jobs:
             root="/tmp/s003-stage-$seed"
             seed_out="$out/$seed"
             mkdir -p "$seed_out"
-            python3 validation/tools/build_stage_interaction_corpus.py               --output "$root" --seed "$seed" --seconds 6
-            python3 validation/tools/run_validation.py               --source-revision '${{ github.sha }}'               --corpus "$root/corpus.json"               --policy validation/policies/validation-smoke.json               --dataset-lock validation/datasets.lock.json               --processor build-s003/ap_process_pcm               --output "$seed_out/report.json"               --evidence-manifest "$seed_out/evidence-manifest.json"
-            python3 validation/tools/stage_interaction_attribution.py               --corpus "$root/corpus.json"               --report "$seed_out/report.json"               --watch-contract docs/program/iterations/S001.json               --output-dir "$seed_out"
+            python3 validation/tools/build_stage_interaction_corpus.py \
+              --output "$root" --seed "$seed" --seconds 6
+            python3 validation/tools/stage_interaction_run.py \
+              --source-revision '${{ github.sha }}' \
+              --corpus "$root/corpus.json" \
+              --policy validation/policies/validation-smoke.json \
+              --dataset-lock validation/datasets.lock.json \
+              --processor build-s003/stage_prefix_process_pcm \
+              --output "$seed_out/report.json" \
+              --evidence-manifest "$seed_out/evidence-manifest.json"
+            python3 validation/tools/stage_interaction_attribution.py \
+              --corpus "$root/corpus.json" \
+              --report "$seed_out/report.json" \
+              --watch-contract docs/program/iterations/S001.json \
+              --output-dir "$seed_out"
             cp "$root/corpus.json" "$seed_out/corpus.json"
           done
 
-          python3 validation/tools/stage_interaction_consistency.py             --attribution "$out/7307/stage-interaction-attribution.json"             --attribution "$out/7407/stage-interaction-attribution.json"             --output "$out/stage-interaction-consistency.json"
-          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
+          python3 validation/tools/stage_interaction_consistency.py \
+            --attribution "$out/7307/stage-interaction-attribution.json" \
+            --attribution "$out/7407/stage-interaction-attribution.json" \
+            --output "$out/stage-interaction-consistency.json"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > "$out/SHA256SUMS"
       - name: Publish S003 summary
         run: |
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"

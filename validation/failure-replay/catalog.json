@@ -33,6 +33,17 @@
       "head_sha": "4d4ef43f869e5e52bc6dabc53ffbe77fb11ca358",
       "authority": "diagnostic-only",
       "s004_candidate_authority": false
+    },
+    {
+      "kind": "public-clean-speech-subsig-transfer-review",
+      "review_path": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json",
+      "workflow_run_id": 36965720270,
+      "artifact_id": 11210085727,
+      "artifact_zip_sha256": "694f8d9e5b85b103893488ade95cb500e2dfd446940d2fc968e870b6e18e2b1b",
+      "head_sha": "61d7e5ac95ff113ebac0ad7753a9303f8c8aaa32",
+      "aggregate_member_sha256": "654763f7c599f83b33d015732d90178631ee7be433ee0960176c5751610fdb28",
+      "authority": "diagnostic-only",
+      "s004_candidate_authority": false
     }
   ]
 }

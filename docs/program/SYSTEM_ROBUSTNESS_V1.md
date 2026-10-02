@@ -155,3 +155,12 @@ This is a measurement-method authority only. It does not define a product recove
 Fresh seeds 12707–13007 rebaseline the AEC transition stage-recovery evidence on the confirmed `100w-50s` research geometry. The only 4/4-seed repeatable non-zero adjacent-stage delta is **echo-path-change RES→NS**, at +50/+100/+100/+100 ms. Full-pipeline cross-seed range is 50 ms for echo-path change, 0 ms for speaker-gain step, and 50 ms for render-level step. The previously rejected speaker-gain RES→NS hypothesis remains rejected.
 
 This observation is not a causal NS claim and does not authorize parameter search. The only next authorized step is an independent candidate-zero confirmation of the echo-path-change RES→NS recovery extension; full pipeline remains context-only and S004 stays closed.
+
+
+## S003 confirmed echo-path RES-to-NS recovery extension
+
+After rebaselining AEC recovery on the confirmed `100w-50s` research measurement geometry, the only retained non-zero stage-extension phenomenon was independently confirmed for `echo-path-change`: RES recovered at 150 ms on all fresh seeds 13107–13407, while NS recovered at 200–250 ms, yielding a repeatable **+50 to +100 ms** RES→NS extension.
+
+This is a stage-boundary timing observation only. It does **not** prove an NS root cause and authorizes no NS/AEC/RES parameter search, no shipping change, and no S004 admission.
+
+The next authorized phase is `S003_AEC_ECHO_PATH_NS_STATE_DECOMPOSITION_V1`: observe existing NS state/telemetry around the echo-path transition and determine which state trajectories align with the confirmed 50–100 ms extension. The work remains candidate-zero and observation-only.

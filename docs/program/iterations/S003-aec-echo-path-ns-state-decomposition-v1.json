@@ -139,5 +139,17 @@
     "probe-equivalence receipt",
     "SHA256SUMS"
   ],
-  "success_definition": "non-perturbing NS internal-state trajectories aligned to any freshly reproduced RES-to-NS recovery extension, or an explicit non-reproduction receipt; no causal attribution or parameter selection"
+  "success_definition": "non-perturbing NS internal-state trajectories aligned to any freshly reproduced RES-to-NS recovery extension, or an explicit non-reproduction receipt; no causal attribution or parameter selection",
+  "state_windows": {
+    "pre_transition_ms": [
+      -500,
+      -100
+    ],
+    "extension_window": "measured RES recovery boundary inclusive to NS recovery boundary exclusive",
+    "post_ns_recovery_ms": [
+      0,
+      300
+    ],
+    "frame_duration_ms": 10
+  }
 }

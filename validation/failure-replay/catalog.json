@@ -26,7 +26,7 @@
   "supplemental_evidence": [
     {
       "kind": "public-cross-source-diagnostic-review",
-      "review_path": "../../docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json",
+      "review_path": "docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json",
       "workflow_run_id": 36960922825,
       "artifact_id": 11207877723,
       "artifact_zip_sha256": "62625c7b72cee6205c84e50135fd5366994544c18d6b2ce7fe14670abd6fb732",

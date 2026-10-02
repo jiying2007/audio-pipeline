@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-recovery-window-geometry-decomposition-v1-result",
+  "investigation_id": "S003-aec-recovery-window-geometry-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_WINDOW_GEOMETRY_DECOMPOSED",
+  "authority": "DIAGNOSTIC_ONLY_NO_MEASUREMENT_DEFAULT_OR_CANDIDATE_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37007715869,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "6ac1f3118f11b30b0daae7f9bba19bc5aac15f19",
+    "artifact_id": 11226891116,
+    "artifact_name": "s003-aec-recovery-window-geometry-37007715869",
+    "artifact_zip_sha256": "4477e2a10d31d1b7209ab94572c36d3f4def93de52ff5bce2e3b183abf2a7a48",
+    "aggregate_member": "cross-seed-window-geometry-summary.json",
+    "aggregate_member_sha256": "a28c013b4bd4770e6002f82e431f0f453426750ddc37e29999d5e8559d2d9cbc"
+  },
+  "qualification": {
+    "verify_run_id": 37007716204,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37007715917,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37007715977,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37007715999,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37007716005,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37007715930,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37008113609,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37008113557,
+    "i015_finalization_conclusion": "success"
+  },
+  "scope": {
+    "fresh_seeds": [
+      11907,
+      12007,
+      12107,
+      12207
+    ],
+    "transition_cases": [
+      "echo-path-change",
+      "speaker-acoustic-gain-step",
+      "render-level-step"
+    ],
+    "stage_profiles": [
+      "AEC",
+      "RES",
+      "NS",
+      "AGC",
+      "full"
+    ],
+    "case_profiles": 15,
+    "observations": 60,
+    "geometries": [
+      "100w-100s",
+      "100w-50s",
+      "50w-50s"
+    ]
+  },
+  "mechanical_result": {
+    "per_seed": {
+      "11907": {
+        "stride_changed_observations": 7,
+        "integration_changed_observations": 1,
+        "censored": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 0
+        }
+      },
+      "12007": {
+        "stride_changed_observations": 9,
+        "integration_changed_observations": 4,
+        "censored": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 1
+        }
+      },
+      "12107": {
+        "stride_changed_observations": 6,
+        "integration_changed_observations": 8,
+        "censored": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 0
+        }
+      },
+      "12207": {
+        "stride_changed_observations": 11,
+        "integration_changed_observations": 5,
+        "censored": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 0
+        }
+      }
+    },
+    "cross_seed_range_effect_counts": {
+      "stride_100w100s_to_100w50s": {
+        "shrank": 9,
+        "grew": 1,
+        "unchanged": 5,
+        "total": 15
+      },
+      "integration_100w50s_to_50w50s": {
+        "shrank": 1,
+        "grew": 3,
+        "unchanged": 11,
+        "total": 15
+      }
+    },
+    "total_cross_seed_range_ms": {
+      "100w-100s": 1000,
+      "100w-50s": 600,
+      "50w-50s": 1000
+    },
+    "representative_range_ms": {
+      "echo-path-change": {
+        "AEC": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 200
+        },
+        "RES": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 150
+        },
+        "NS": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 50
+        },
+        "AGC": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 50
+        },
+        "full": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 50
+        }
+      },
+      "speaker-acoustic-gain-step": {
+        "AEC": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 0
+        },
+        "RES": {
+          "100w-100s": 0,
+          "100w-50s": 50,
+          "50w-50s": 0
+        },
+        "NS": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 0
+        },
+        "AGC": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 0
+        },
+        "full": {
+          "100w-100s": 0,
+          "100w-50s": 0,
+          "50w-50s": 0
+        }
+      },
+      "render-level-step": {
+        "AEC": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 200
+        },
+        "RES": {
+          "100w-100s": 200,
+          "100w-50s": 150,
+          "50w-50s": 150
+        },
+        "NS": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 50
+        },
+        "AGC": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 50
+        },
+        "full": {
+          "100w-100s": 100,
+          "100w-50s": 50,
+          "50w-50s": 50
+        }
+      }
+    }
+  },
+  "reviewed_validity": {
+    "stride_sensitivity_observed": true,
+    "integration_window_sensitivity_observed": true,
+    "100w_50s_exploratory_stability_advantage_observed": true,
+    "100w_50s_non_worse_pairs": 14,
+    "100w_50s_better_pairs": 9,
+    "100w_50s_worse_pairs": 1,
+    "100w_50s_total_range_reduction_ms": 400,
+    "50w_50s_short_window_instability_observed": true,
+    "measurement_default_change_authority": false,
+    "measurement_artifact_verdict": "NOT_AUTHORIZED",
+    "algorithm_performance_verdict": "NOT_AUTHORIZED",
+    "interpretation": "At fixed 100 ms integration length, halving stride from 100 to 50 ms reduced cross-seed recovery range in 9/15 case-profile pairs and increased it in only 1/15, with total range 1000→600 ms. Shortening integration to 50 ms at the same 50 ms stride did not provide a general stability benefit and introduced one censored observation. This supports independent confirmation of 100w-50s as a research measurement geometry, not immediate adoption."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RECOVERY_100W50S_GEOMETRY_CONFIRMATION_V1",
+    "candidate_limit": 0,
+    "fresh_seeds": [
+      12307,
+      12407,
+      12507,
+      12607
+    ],
+    "compared_geometries": [
+      "100w-100s",
+      "100w-50s"
+    ],
+    "confirmation_rule": {
+      "minimum_non_worse_case_profiles": 13,
+      "total_case_profiles": 15,
+      "total_cross_seed_range_rule": "sum(range_100w50s) < sum(range_100w100s)",
+      "censoring_rule": "zero censored observations under both geometries",
+      "interpretation": "confirmation grants research-measurement-method authority only, never DSP candidate or product requirement authority"
+    },
+    "no_parameter_search": true,
+    "no_measurement_threshold_change": true
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "measurement_default_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

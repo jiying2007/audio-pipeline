@@ -5,142 +5,26 @@ on:
     branches: [main]
     paths:
       - 'docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1.json'
-      - 'docs/program/iterations/S003-aec-recovery-measurement-resolution-v1-result.json'
-      - 'validation/tools/build_aec_stage_recovery_corpus.py'
-      - 'validation/tools/aec_recovery_window_geometry.py'
-      - 'validation/policies/validation-s003-aec-stage-recovery.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1-result.json'
+      - 'tests/validation/data/s003-aec-recovery-window-geometry-consumed-workflow.yml'
+      - 'tests/validation/test_s003_aec_recovery_window_geometry_retirement.py'
       - '.github/workflows/research-s003-aec-recovery-window-geometry-v1.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1.json'
-      - 'docs/program/iterations/S003-aec-recovery-measurement-resolution-v1-result.json'
-      - 'validation/tools/build_aec_stage_recovery_corpus.py'
-      - 'validation/tools/aec_recovery_window_geometry.py'
-      - 'validation/policies/validation-s003-aec-stage-recovery.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
-      - '.github/workflows/research-s003-aec-recovery-window-geometry-v1.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: research-s003-aec-recovery-window-geometry-v1-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  measure:
+  contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: s003-aec-recovery-window-geometry
-
-      - name: Validate candidate-zero geometry contract
+      - name: Validate reviewed terminal evidence
         run: |
           set -euo pipefail
           python3 -m json.tool             docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1.json >/dev/null
-          python3 -m py_compile             validation/tools/build_aec_stage_recovery_corpus.py             validation/tools/aec_recovery_window_geometry.py
-          PYTHONPATH=validation/tools             python3 validation/tools/aec_recovery_window_geometry.py self-test
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          c=json.loads(Path('docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1.json').read_text())
-          p=json.loads(Path('docs/program/iterations/S003-aec-recovery-measurement-resolution-v1-result.json').read_text())
-          assert c['authority']=='CANDIDATE_ZERO_MEASUREMENT_ONLY'
-          assert c['candidate_limit']==0 and c['confirmation_limit']==0
-          assert c['promotion_allowed'] is False and c['shipping_change_allowed'] is False
-          assert c['corpus']['fresh_seeds']==[11907,12007,12107,12207]
-          assert [x['id'] for x in c['geometries']]==['100w-100s','100w-50s','50w-50s']
-          assert c['geometries'][0]=={
-              'id':'100w-100s','window_ms':100,'stride_ms':100,
-              'required_windows_for_300ms_coverage':3,
-          }
-          assert c['geometries'][1]=={
-              'id':'100w-50s','window_ms':100,'stride_ms':50,
-              'required_windows_for_300ms_coverage':5,
-          }
-          assert c['geometries'][2]=={
-              'id':'50w-50s','window_ms':50,'stride_ms':50,
-              'required_windows_for_300ms_coverage':6,
-          }
-          assert c['preregistered_rules']['no_geometry_sweep_beyond_preregistered_three'] is True
-          assert c['preregistered_rules']['no_measurement_artifact_verdict_from_single_geometry_pair'] is True
-          assert c['preregistered_rules']['no_parameter_search'] is True
-          assert c['authority_boundary']['may_claim_measurement_artifact'] is False
-          assert c['authority_boundary']['may_open_s004'] is False
-          assert p['status']==c['predecessor']['required_status']
-          assert p['reviewed_validity']['measurement_artifact_proven'] is False
-          print('S003 AEC recovery window-geometry authority: PASS')
-          PY
-
-      - name: Build fixed diagnostic stage-prefix processor
-        run: |
-          set -euo pipefail
-          cmake -S . -B build-s003-aec-geometry             -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-          cmake --build build-s003-aec-geometry --target audio_pipeline --parallel
-          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-aec-geometry/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-aec-geometry/libaudio_pipeline.a -lm             -o build-s003-aec-geometry/stage_prefix_process_pcm
-
-      - name: Run fresh paired geometry measurements
-        run: |
-          set -euo pipefail
-          out=s003-aec-geometry-out
-          mkdir -p "$out"
-          contract=docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1.json
-
-          for seed in 11907 12007 12107 12207; do
-            corpus="/tmp/s003-aec-geometry-$seed"
-            seed_out="$out/$seed"
-            mkdir -p "$seed_out"
-
-            python3 validation/tools/build_aec_stage_recovery_corpus.py               --output "$corpus" --seed "$seed" --seconds 6
-
-            PYTHONPATH=validation/tools             python3 validation/tools/stage_interaction_run.py               --source-revision '${{ github.sha }}'               --corpus "$corpus/corpus.json"               --policy validation/policies/validation-s003-aec-stage-recovery.json               --dataset-lock validation/datasets.lock.json               --processor build-s003-aec-geometry/stage_prefix_process_pcm               --output "$seed_out/canonical-report.json"               --evidence-manifest "$seed_out/evidence-manifest.json"               --enforce
-
-            PYTHONPATH=validation/tools             python3 validation/tools/aec_recovery_window_geometry.py run               --corpus "$corpus/corpus.json"               --report "$seed_out/canonical-report.json"               --processor build-s003-aec-geometry/stage_prefix_process_pcm               --contract "$contract"               --output "$seed_out/window-geometry.json"
-
-            cp "$corpus/corpus.json" "$seed_out/corpus.json"
-          done
-
-          PYTHONPATH=validation/tools           python3 validation/tools/aec_recovery_window_geometry.py aggregate             --contract "$contract"             --input "$out/11907/window-geometry.json"             --input "$out/12007/window-geometry.json"             --input "$out/12107/window-geometry.json"             --input "$out/12207/window-geometry.json"             --output "$out/cross-seed-window-geometry-summary.json"
-
-          cp "$contract" "$out/contract.json"
-          git rev-parse HEAD > "$out/source-sha.txt"
-          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
-
-      - name: Publish geometry evidence
-        run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          r=json.loads(Path('s003-aec-geometry-out/cross-seed-window-geometry-summary.json').read_text())
-          print('## S003 AEC recovery window geometry')
-          print('')
-          print('- Authority: candidate-zero measurement only / non-shipping')
-          print(f"- Fresh seeds: {r['fresh_seeds']}")
-          print('- Geometries: 100w-100s, 100w-50s, 50w-50s only')
-          print('- Measurement-artifact verdict: NOT_AUTHORIZED')
-          for row in r['matrix']:
-              if row['range_stride_delta_ms'] or row['range_integration_delta_ms']:
-                  print(
-                      f"- {row['base_case_id']}::{row['stage_label']}: "
-                      f"ranges={row['cross_seed_range_ms']}, "
-                      f"stride-delta={row['range_stride_delta_ms']}, "
-                      f"integration-delta={row['range_integration_delta_ms']}"
-                  )
-          print('- Candidate authority: none')
-          PY
-
-      - name: Upload hash-bound geometry evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: s003-aec-recovery-window-geometry-${{ github.run_id }}
-          path: s003-aec-geometry-out/
-          if-no-files-found: error
-          retention-days: 30
+          python3 -m json.tool             docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1-result.json >/dev/null
+          python3 -m py_compile tests/validation/test_s003_aec_recovery_window_geometry_retirement.py
+          python3 tests/validation/test_s003_aec_recovery_window_geometry_retirement.py

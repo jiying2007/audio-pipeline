@@ -60,6 +60,8 @@ RELEASE_NEUTRAL_FILES = {
 }
 RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/failure-replay/schema-v1.json",
+    "validation/policies/validation-aec-transition-development.json",
+    "validation/tools/build_aec_transition_corpus.py",
     "validation/tools/build_system_robustness_corpus.py",
     "validation/tools/system_robustness_attribution.py",
 }

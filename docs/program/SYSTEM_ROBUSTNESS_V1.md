@@ -112,3 +112,12 @@ Fresh seeds 10707/10807 decomposed the same transition recovery measurement acro
 Echo-path and render-level transitions did not show a repeatable single stage-boundary recovery-time extension across both seeds.
 
 This is an observational stage boundary, not an NS root-cause claim. The next authorized work is one focused fresh-seed confirmation using only RES, NS and full for the speaker acoustic gain step. Candidate budget remains zero and NS internal parameter search remains forbidden until that boundary is independently confirmed.
+
+
+## S003 speaker-gain NS recovery confirmation checkpoint
+
+The focused fresh-seed confirmation rejected the earlier RES→NS recovery-extension hypothesis. On seed 10907, speaker acoustic gain recovery was RES=300 ms, NS=300 ms, full=300 ms (Δ=0). On seed 11007 it was RES=200 ms, NS=300 ms, full=300 ms (Δ=+100 ms). The preregistered rule required NS−RES >=100 ms on every fresh confirmation seed, so the outcome is **REJECTED**.
+
+The prior 10707/10807 observation of +100/+100 ms remains historical evidence, but it does not override the independent confirmation. This closes the NS-boundary hypothesis: there is no authority to claim NS root cause, open NS temporal-state attribution, search NS parameters, or create an NS candidate from this line.
+
+The next authorized work returns to broad candidate-zero AEC recovery variability/source decomposition using stage-appropriate telemetry and residual trajectories. The goal is to explain why recovery varies across seeds without assuming any stage is causal. S004 remains closed.

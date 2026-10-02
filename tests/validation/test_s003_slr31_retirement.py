@@ -100,8 +100,12 @@ def main() -> int:
     # blockers, but it must never lose the SLR31 multi-public evidence or grant
     # candidate authority implicitly.
     assert mismatch_entry["s004_eligibility"]["eligible"] is False
-    assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["satisfied"]
-    assert "bounded_candidate_resource_fit" in mismatch_entry["s004_eligibility"]["missing"]
+    if mismatch_entry["s004_eligibility"].get("status") == "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT":
+        assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["historical_satisfied"]
+        assert mismatch_entry["s004_eligibility"]["not_applicable"] == ["bounded_candidate_resource_fit"]
+    else:
+        assert "multiple_independent_public_dataset_repetition_of_candidate_relevant_signature" in mismatch_entry["s004_eligibility"]["satisfied"]
+        assert "bounded_candidate_resource_fit" in mismatch_entry["s004_eligibility"]["missing"]
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     slr = [

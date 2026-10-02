@@ -61,7 +61,10 @@ RELEASE_NEUTRAL_FILES = {
 RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/failure-replay/schema-v1.json",
     "validation/policies/validation-aec-transition-development.json",
+    "validation/policies/validation-s003-dechorate-artifact-exclusion.json",
     "validation/tools/build_aec_transition_corpus.py",
+    "validation/tools/build_dechorate_artifact_exclusion_corpus.py",
+    "validation/tools/cross_source_artifact_exclusion.py",
     "validation/tools/build_stage_interaction_corpus.py",
     "validation/tools/build_system_robustness_corpus.py",
     "validation/tools/stage_interaction_attribution.py",

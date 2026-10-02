@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-ns-state-decomposition-v1",
+  "phase": "S003_AEC_ECHO_PATH_NS_STATE_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_INTERNAL_STATE_OBSERVATION_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-echo-path-res-ns-recovery-extension-confirmation-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_SINGLE_HYPOTHESIS_CONFIRMED"
+  },
+  "architecture_fact": {
+    "prefix_res_path": "AEC -> standalone time-domain ap_res_process; NS disabled",
+    "prefix_ns_path": "AEC -> ap_ns_process with frequency-RES enabled; standalone ap_res_process skipped",
+    "implication": "The confirmed RES-to-NS extension compares two different residual-suppression paths. State attribution must separate frequency-RES state from NS noise-tracker/synthesis state and must not treat the boundary as pure additive NS latency."
+  },
+  "corpus": {
+    "base_generator": "validation/tools/aec_echo_path_res_ns_confirmation.py",
+    "fresh_seeds": [
+      13507,
+      13607,
+      13707,
+      13807
+    ],
+    "seconds": 6,
+    "case_id": "echo-path-change",
+    "recovery_profiles": [
+      "prefix-res",
+      "prefix-ns"
+    ],
+    "cases_per_seed": 3
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "probe": {
+    "source": "tests/validation/s003_aec_echo_path_ns_state_probe.c",
+    "mode": "test-only prefix-ns internal-state observation",
+    "required_output_equivalence": "bitwise identical PCM to tests/validation/stage_prefix_process_pcm.c prefix-ns on every fresh seed",
+    "public_api_change_allowed": false,
+    "shipping_source_change_allowed": false
+  },
+  "state_observables": {
+    "pipeline_metrics": [
+      "far_end_active",
+      "double_talk_active",
+      "aec_converged",
+      "erle_valid",
+      "erle_db",
+      "estimated_delay_ms",
+      "delay_error_samples",
+      "frequency_res_active",
+      "residual_echo_gain",
+      "noise_rms_dbfs"
+    ],
+    "ns_state": [
+      "noise_tracker_frame",
+      "noise_tracker_frame_mod8",
+      "speech_probability",
+      "noise_estimate_mean_before",
+      "noise_estimate_mean_after",
+      "noise_estimate_signed_delta_mean",
+      "noise_estimate_abs_delta_mean",
+      "noise_estimate_abs_update_fraction_of_previous_sum",
+      "residual_gain_mean_before",
+      "residual_gain_mean_after",
+      "residual_gain_min_after",
+      "residual_gain_max_after",
+      "residual_gain_signed_delta_mean",
+      "residual_gain_abs_delta_mean",
+      "overlap_rms_before",
+      "overlap_rms_after",
+      "previous_rms_after"
+    ],
+    "note": "Default build uses EMA noise tracking; no MCRA minimum state is assumed."
+  },
+  "aligned_observation_points": [
+    "transition_frame_after_processing",
+    "res_recovery_boundary",
+    "ns_recovery_boundary",
+    "res_to_ns_extension_frames",
+    "300ms_after_ns_recovery"
+  ],
+  "preregistered_rules": {
+    "require_res_recovery_non_censored": true,
+    "require_ns_recovery_non_censored": true,
+    "require_confirmed_extension_on_every_seed": true,
+    "require_probe_output_bitwise_equivalence": true,
+    "retain_full_per_frame_state_trace": true,
+    "no_state_threshold_fitting": true,
+    "no_state_family_ranking": true,
+    "no_root_cause_selection": true,
+    "no_ns_parameter_search": true,
+    "no_res_parameter_search": true,
+    "no_aec_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_select_ns_parameter": false,
+    "may_change_frequency_res_release": false,
+    "may_change_noise_tracker_update": false,
+    "may_change_ola_synthesis": false,
+    "may_claim_ns_root_cause": false,
+    "may_open_s004": false
+  },
+  "outputs": [
+    "per-seed recovery-boundary receipt",
+    "per-seed full NS-state JSONL trace",
+    "cross-seed state-boundary summary",
+    "probe-equivalence receipt",
+    "SHA256SUMS"
+  ],
+  "success_definition": "complete non-perturbing NS internal-state trajectories aligned to the confirmed RES-to-NS recovery extension, without causal attribution or parameter selection"
+}

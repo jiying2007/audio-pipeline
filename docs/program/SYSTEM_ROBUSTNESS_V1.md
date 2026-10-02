@@ -142,3 +142,10 @@ The next authorized work is candidate-zero window-geometry decomposition on exac
 On fresh seeds 11907–12207, recovery was measured on the same output under exactly three preregistered geometries. At fixed 100 ms integration length, changing stride from 100 to 50 ms reduced cross-seed recovery range in 9/15 case/profile pairs, increased it in 1/15, and left 5/15 unchanged; total range fell from 1000 ms to 600 ms. At fixed 50 ms stride, shortening integration from 100 to 50 ms reduced range in only 1/15 pairs, increased it in 3/15, left 11/15 unchanged, and introduced one censored observation.
 
 This does not change the research measurement default yet. It authorizes a single independent confirmation of `100w-50s` versus `100w-100s` on fresh seeds 12307–12607. Confirmation requires at least 13/15 case/profile ranges to be non-worse, strictly lower summed cross-seed range, and zero censoring under both geometries. Confirmation grants research-measurement-method authority only; it does not authorize DSP tuning, a product recovery requirement, or S004 admission.
+
+
+## S003 confirmed AEC recovery research geometry
+
+Independent fresh confirmation on seeds 12307–12607 establishes `100w-50s`—100 ms integration with 50 ms stride—as the preferred **research** recovery measurement geometry for future S003 AEC diagnostics. It was non-worse than `100w-100s` in 14/15 case/profile pairs, reduced summed cross-seed recovery range from 1000 ms to 600 ms, and introduced no censoring.
+
+This is a measurement-method authority only. It does not define a product recovery requirement, does not select or modify a DSP candidate, does not alter shipping source/API, and does not open S004. The next authorized phase is to rebaseline retained recovery/variability evidence under `100w-50s`, preserving rejected hypotheses as rejected and admitting only phenomena that survive the confirmed measurement-method change.

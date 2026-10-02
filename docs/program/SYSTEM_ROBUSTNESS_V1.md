@@ -184,3 +184,14 @@ The neutral seed is mechanically a **RES-side delay**: RES recovery moved from t
 This localizes the remaining sign variability to RES/AEC-side recovery timing, but does not prove an RES root cause or a recovery-threshold artifact. No NS/RES/AEC parameter search, state-family ranking, threshold fitting, shipping change, or S004 admission is authorized.
 
 The next phase is `S003_AEC_ECHO_PATH_RES_SIDE_RECOVERY_VARIABILITY_V1`: observe AEC→RES→NS recovery together with test-only standalone RES gain state and existing AEC telemetry on fresh seeds.
+
+
+## S003 echo-path RES-side recovery checkpoint
+
+Fresh seeds 14707–15407 were observed on AEC / RES / NS / full under the confirmed `100w-50s` research geometry with a bitwise-equivalent test-only standalone RES-state probe. The non-positive RES→NS signs were seeds 14807, 14907, and 15107.
+
+The two contraction seeds are mechanically `AEC 250 ms → RES 300 ms → NS 250 ms`; the neutral seed is `AEC/RES/NS/full = 300 ms`. Thus every non-positive sign on this fresh set already has late AEC-side recovery, while the contraction seeds add a further +50 ms AEC→RES delay. This is **not** evidence that AEC or RES is a root cause.
+
+The standalone RES gain trajectory is not a sufficient single-state explanation. By 200 ms all eight seeds have converged tightly to approximately 0.100–0.101 gain even though their measured recovery branches differ. No gain threshold, RES alpha, AEC parameter, or recovery-threshold search is authorized.
+
+The next authorized phase is `S003_AEC_ECHO_PATH_RES_GAIN_CONTRIBUTION_DECOMPOSITION_V1`: analysis-only decomposition of the RES recovery curve into the AEC residual trajectory plus exact scalar RES-gain contribution, including a counterfactual recovery calculation with the gain contribution removed/frozen to its preregistered pre-transition reference. Candidate budget remains zero and shipping execution is unchanged.

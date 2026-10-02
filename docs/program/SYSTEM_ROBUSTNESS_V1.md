@@ -68,3 +68,9 @@ S004 remains closed. The mic-mismatch line still requires independently sufficie
 For `FR-S003-MIC-GAIN-DELAY-MISMATCH-V1` → `severe-near-reference-degradation`, the independent SLR31 source-domain oracle passed 8/8 fixed utterances on fresh seeds 9507 and 9607 without invoking the audio pipeline or consuming `near_si_sdr_improvement_db`. The measurement-domain/reference-construction artifact blocker is therefore closed for this narrow sub-signature.
 
 S004 remains closed. The next authorized work is candidate-zero downstream-transfer artifact exclusion; bounded candidate resource fit remains after that. No DSP tuning, validation-grade/blind feedback, or root-cause claim is authorized by this checkpoint.
+
+## S003 downstream-transfer checkpoint
+
+For the mic-gain/delay-mismatch `severe-near-reference-degradation` sub-signature, two independent public families reproduce the symptom at the test-only `prefix-capture` observation. That prefix is source-bound to `AP_STAGE_HPF` only; BF, NS, AGC, VAD and final/full-pipeline processing have not yet occurred. Therefore those downstream stages are not necessary for the symptom to become observable. This does **not** prove HPF is causal.
+
+The scoped S004 prerequisites now have only one unresolved item: `bounded_candidate_resource_fit`. S004 remains closed until a candidate-independent conservative resource envelope is qualified. No parameter search or candidate design is authorized by this checkpoint alone.

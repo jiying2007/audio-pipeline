@@ -197,6 +197,17 @@ def main() -> int:
     assert rebaseline["authority_boundary"]["may_claim_causal_stage"] is False
     assert rebaseline["authority_boundary"]["may_open_s004"] is False
 
+    echo_confirm = json.loads((ITER / "S003-aec-echo-path-res-ns-recovery-extension-confirmation-v1.json").read_text())
+    assert echo_confirm["authority"] == "CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION"
+    assert echo_confirm["candidate_limit"] == 0 and echo_confirm["confirmation_limit"] == 0
+    assert echo_confirm["corpus"]["fresh_seeds"] == [13107, 13207, 13307, 13407]
+    assert echo_confirm["hypothesis"]["gate"] == "ns_recovery_time_ms - res_recovery_time_ms >= 50"
+    assert echo_confirm["measurement"]["geometry_id"] == "100w-50s"
+    assert echo_confirm["preregistered_rules"]["either_outcome_is_valid_evidence"] is True
+    assert echo_confirm["preregistered_rules"]["no_ns_internal_parameter_search"] is True
+    assert echo_confirm["authority_boundary"]["may_claim_ns_root_cause"] is False
+    assert echo_confirm["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

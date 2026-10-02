@@ -57,6 +57,17 @@ def main() -> int:
     assert oracle["preregistered_evidence_rules"]["no_near_si_sdr_improvement_in_gate"] is True
     assert oracle["authority_boundary"]["may_open_s004"] is False
 
+    downstream = json.loads((ITER / "S003-mic-mismatch-downstream-transfer-exclusion-v1.json").read_text())
+    assert downstream["authority"] == "CANDIDATE_ZERO_EVIDENCE_SYNTHESIS_ONLY"
+    assert downstream["candidate_limit"] == 0 and downstream["confirmation_limit"] == 0
+    assert downstream["promotion_allowed"] is False and downstream["shipping_change_allowed"] is False
+    assert downstream["scoped_failure"] == "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1"
+    assert downstream["scoped_subsignature"] == "severe-near-reference-degradation"
+    assert downstream["stage_semantics"]["capture_prefix_required_mask"] == "AP_STAGE_HPF"
+    assert downstream["authority_boundary"]["may_claim_hpf_root_cause"] is False
+    assert downstream["authority_boundary"]["may_claim_bf_root_cause"] is False
+    assert downstream["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

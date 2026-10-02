@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-res-side-recovery-variability-v1",
+  "phase": "S003_AEC_ECHO_PATH_RES_SIDE_RECOVERY_VARIABILITY_V1",
+  "authority": "CANDIDATE_ZERO_RES_SIDE_OBSERVATION_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-echo-path-recovery-sign-variability-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_SIGN_VARIABILITY_MAPPED_RES_SIDE_VARIATION_RETAINED"
+  },
+  "corpus": {
+    "fresh_seeds": [
+      14707,
+      14807,
+      14907,
+      15007,
+      15107,
+      15207,
+      15307,
+      15407
+    ],
+    "seconds": 6,
+    "case_id": "echo-path-change",
+    "profiles": [
+      "prefix-aec",
+      "prefix-res",
+      "prefix-ns",
+      "default"
+    ],
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES",
+      "prefix-ns": "NS",
+      "default": "full"
+    },
+    "cases_per_seed": 4
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "res_probe": {
+    "source": "tests/validation/s003_aec_echo_path_res_state_probe.c",
+    "mode": "test-only prefix-res internal-state observation",
+    "required_output_equivalence": "bitwise identical PCM to tests/validation/stage_prefix_process_pcm.c prefix-res on every fresh seed",
+    "fixed_transition_relative_snapshots_ms": [
+      0,
+      50,
+      100,
+      150,
+      200,
+      250,
+      300,
+      400
+    ],
+    "retain_full_trace": true,
+    "public_api_change_allowed": false,
+    "shipping_source_change_allowed": false
+  },
+  "observables": {
+    "recovery": [
+      "aec_recovery_time_ms",
+      "res_recovery_time_ms",
+      "ns_recovery_time_ms",
+      "full_recovery_time_ms",
+      "aec_to_res_ms",
+      "res_to_ns_ms",
+      "res_previous_window_margin_db",
+      "res_recovery_start_margin_db",
+      "res_recovery_hold_max_margin_db"
+    ],
+    "res_state": [
+      "res_gain",
+      "res_gain_delta_from_previous_frame"
+    ],
+    "pipeline_telemetry": [
+      "far_end_active",
+      "double_talk_active",
+      "aec_converged",
+      "erle_valid",
+      "erle_db",
+      "estimated_delay_ms",
+      "delay_error_samples",
+      "residual_echo_gain",
+      "input_rms_dbfs",
+      "output_rms_dbfs"
+    ]
+  },
+  "preregistered_rules": {
+    "require_exact_profile_set": true,
+    "require_probe_output_bitwise_equivalence": true,
+    "retain_all_fresh_seeds": true,
+    "require_all_fixed_time_snapshots": true,
+    "non_positive_res_to_ns_is_valid_evidence": true,
+    "no_sign_bucket_selection_for_candidate": true,
+    "no_res_gain_threshold_fitting": true,
+    "no_root_cause_selection": true,
+    "no_state_family_ranking": true,
+    "no_recovery_threshold_search": true,
+    "no_res_alpha_or_gain_search": true,
+    "no_aec_mu_tap_or_stride_search": true,
+    "no_ns_parameter_search": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_change_res_gain": false,
+    "may_change_res_release_alpha": false,
+    "may_change_aec_parameters": false,
+    "may_change_ns_parameters": false,
+    "may_change_recovery_threshold": false,
+    "may_claim_res_root_cause": false,
+    "may_claim_aec_root_cause": false,
+    "may_open_s004": false
+  },
+  "outputs": [
+    "per-seed AEC/RES/NS/full recovery receipt",
+    "per-seed full RES-state JSONL trace",
+    "cross-seed recovery-source summary",
+    "fixed-time RES gain and AEC telemetry table",
+    "probe-equivalence receipt",
+    "SHA256SUMS"
+  ],
+  "success_definition": "complete fresh-seed AEC-to-RES-to-NS recovery and non-perturbing RES-state/telemetry map without parameter search, state ranking, causal attribution, or S004 admission"
+}

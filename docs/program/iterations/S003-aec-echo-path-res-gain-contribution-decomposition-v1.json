@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-echo-path-res-gain-contribution-decomposition-v1",
+  "phase": "S003_AEC_ECHO_PATH_RES_GAIN_CONTRIBUTION_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_COUNTERFACTUAL_ANALYSIS_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-echo-path-res-side-recovery-variability-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_RES_SIDE_VARIABILITY_MAPPED_AEC_LATE_RECOVERY_RETAINED"
+  },
+  "corpus": {
+    "fresh_seeds": [
+      15507,
+      15607,
+      15707,
+      15807,
+      15907,
+      16007,
+      16107,
+      16207
+    ],
+    "seconds": 6,
+    "case_id": "echo-path-change",
+    "profiles": [
+      "prefix-aec",
+      "prefix-res"
+    ],
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES"
+    },
+    "cases_per_seed": 2
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "shipping_res_formula": {
+    "source": "src/enhance/ap_res.c",
+    "mode": "AP_ENHANCE_FULL",
+    "floor_gain": 0.1,
+    "echo_weight": 0.8,
+    "epsilon": 1e-12,
+    "attack_when_target_below_gain": {
+      "previous_weight": 0.45,
+      "target_weight": 0.55
+    },
+    "normal_release_alpha": 0.08,
+    "double_talk_release_alpha": 0.2,
+    "target_when_far_end_inactive_or_double_talk": 1
+  },
+  "probe": {
+    "source": "tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c",
+    "mode": "test-only prefix-res formula observation",
+    "required_output_equivalence": "bitwise identical PCM to tests/validation/stage_prefix_process_pcm.c prefix-res on every fresh seed",
+    "per_frame_formula_validation": {
+      "metric": "abs(expected_gain_after - actual_gain_after)",
+      "max_abs_error": 0.00001,
+      "interpretation": "mechanical reconstruction tolerance only; not an acoustic-performance threshold"
+    },
+    "retain_full_trace": true,
+    "public_api_change_allowed": false,
+    "shipping_source_change_allowed": false
+  },
+  "counterfactuals": {
+    "actual_smoothed": {
+      "description": "actual observed RES gain_after applied to recovered pre-RES AEC residual energy",
+      "authority": "mechanical reconstruction"
+    },
+    "instantaneous_target": {
+      "description": "shipping target_gain applied immediately per frame; removes RES smoothing/history while preserving AEC residual and echo-estimate driven target",
+      "authority": "analysis-only counterfactual"
+    },
+    "frozen_pre_gain": {
+      "description": "fixed median actual gain_after over preregistered pre-baseline interval [-1000,-200] ms applied after transition; removes post-transition RES gain variation",
+      "authority": "analysis-only counterfactual"
+    }
+  },
+  "validity_gates": {
+    "require_probe_output_bitwise_equivalence": true,
+    "require_formula_error_within_tolerance_all_frames": true,
+    "require_actual_analytic_recovery_matches_standard_res_recovery_all_seeds": true,
+    "require_frozen_pre_gain_recovery_matches_standard_aec_recovery_all_seeds": true,
+    "either_counterfactual_outcome_is_valid_evidence": true
+  },
+  "outputs": [
+    "per-seed AEC/RES standard recovery receipt",
+    "per-seed gain formula trace",
+    "per-seed actual/instantaneous-target/frozen-pre-gain recovery curves",
+    "cross-seed contribution summary",
+    "probe-equivalence and formula-validity receipt",
+    "SHA256SUMS"
+  ],
+  "preregistered_rules": {
+    "no_gain_or_alpha_search": true,
+    "no_aec_mu_tap_or_stride_search": true,
+    "no_recovery_threshold_search": true,
+    "no_counterfactual_parameter_sweep": true,
+    "no_candidate_selection": true,
+    "no_root_cause_selection": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_change_res_gain": false,
+    "may_change_res_release_alpha": false,
+    "may_change_aec_parameters": false,
+    "may_change_recovery_threshold": false,
+    "may_select_candidate": false,
+    "may_claim_res_root_cause": false,
+    "may_claim_aec_root_cause": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "valid mechanical decomposition of standard RES recovery into AEC residual trajectory, instantaneous target contribution, and smoothing/history contribution; no DSP parameter recommendation or causal verdict"
+}

@@ -238,9 +238,11 @@ jobs:
       - name: Build exact conservative and effect-first AArch32 profiles
         run: |
           set -euo pipefail
-          cmake --preset ssc305-cortex-a32-low
+          cmake --preset ssc305-cortex-a32-low \
+            -DAP_BUILD_SOURCE_REVISION='${{ github.sha }}'
           cmake --build build/ssc305-cortex-a32-low --parallel
-          cmake --preset cortex-a32-neon
+          cmake --preset cortex-a32-neon \
+            -DAP_BUILD_SOURCE_REVISION='${{ github.sha }}'
           cmake --build build/cortex-a32-neon --parallel
 
       - name: Collect exact AArch32 resource evidence

@@ -46,3 +46,15 @@ Hosted/QEMU evidence gates deterministic AArch32 build identity, pipeline/runtim
 ## Runner baseline
 
 New system-robustness qualification jobs pin `ubuntu-24.04`. Existing workflows are migrated independently; the immutable I025-I040 evidence surfaces are not edited merely to change runner labels.
+
+
+## S003 public cross-source checkpoint
+
+The first public measured-RIR review is terminal and diagnostic-only. Frozen dEchorate evidence on fresh seeds 8307/8407 showed that both durable S003 failures transfer only partially:
+
+- `severe-near-reference-degradation` reproduced in all 11 fixed rooms for both seeds;
+- the original `noise-amplification` component reproduced in 0/11 rooms;
+- therefore the original composite durable signatures did not reproduce exactly cross-source;
+- raw-prefix watch-clear is retained only as a sanity observation because the watched metrics are input-to-output deltas and raw bypass is structurally near-neutral.
+
+This does not open S004. Only one public dataset family has been exercised, measurement-domain artifact exclusion is not independently closed, the complete downstream-transfer condition is not closed, and no bounded candidate exists for resource-fit qualification. The next authorized work remains S003 evidence expansion on a second independent public-development dataset family, with candidate budget zero.

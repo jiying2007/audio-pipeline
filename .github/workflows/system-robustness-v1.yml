@@ -1,0 +1,193 @@
+name: System Robustness v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/SYSTEM_ROBUSTNESS_V1.md'
+      - 'docs/program/iterations/S00*.json'
+      - 'validation/failure-replay/**'
+      - 'validation/tools/build_system_robustness_corpus.py'
+      - 'validation/tools/system_robustness_attribution.py'
+      - 'ci/ssc305-resource-profiles.json'
+      - 'tests/validation/test_system_robustness_v1.py'
+      - '.github/workflows/system-robustness-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/program/SYSTEM_ROBUSTNESS_V1.md'
+      - 'docs/program/iterations/S00*.json'
+      - 'validation/failure-replay/**'
+      - 'validation/tools/build_system_robustness_corpus.py'
+      - 'validation/tools/system_robustness_attribution.py'
+      - 'ci/ssc305-resource-profiles.json'
+      - 'tests/validation/test_system_robustness_v1.py'
+      - '.github/workflows/system-robustness-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-robustness-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Freeze terminal NS lineage and candidate-zero authority
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            validation/tools/build_system_robustness_corpus.py \
+            validation/tools/system_robustness_attribution.py \
+            tests/validation/test_system_robustness_v1.py
+          python3 tests/validation/test_system_robustness_v1.py
+          python3 validation/tools/build_system_robustness_corpus.py --self-test
+          for f in docs/program/iterations/S001.json docs/program/iterations/S002.json \
+                   docs/program/iterations/S003.json validation/failure-replay/schema-v1.json \
+                   ci/ssc305-resource-profiles.json; do
+            python3 -m json.tool "$f" >/dev/null
+          done
+
+  s001-perturbation-map:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [5107, 5207]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: system-robustness-s001-${{ matrix.seed }}
+      - name: Build fixed shipping processor
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-s001 -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s001 --target ap_process_pcm --parallel
+      - name: Run candidate-zero perturbation map
+        run: |
+          set -euo pipefail
+          root="/tmp/s001-${{ matrix.seed }}"
+          out="system-robustness-out/s001-${{ matrix.seed }}"
+          mkdir -p "$out"
+          python3 validation/tools/build_system_robustness_corpus.py \
+            --output "$root" --seed '${{ matrix.seed }}' --seconds 5
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ github.sha }}' \
+            --corpus "$root/corpus.json" \
+            --policy validation/policies/validation-smoke.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor build-s001/ap_process_pcm \
+            --output "$out/report.json" \
+            --evidence-manifest "$out/evidence-manifest.json"
+          python3 validation/tools/system_robustness_attribution.py \
+            --corpus "$root/corpus.json" --report "$out/report.json" --output-dir "$out"
+          cp "$root/corpus.json" "$out/corpus.json"
+          find "$out" -type f -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+      - name: Publish S001 summary
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          seed='${{ matrix.seed }}'
+          root=Path(f'system-robustness-out/s001-{seed}')
+          report=json.loads((root/'report.json').read_text())
+          heat=json.loads((root/'failure-heatmap.json').read_text())
+          replay=json.loads((root/'failure-replay-index.json').read_text())
+          print(f"## S001 seed {seed}")
+          print("- Authority: candidate-zero / regression-only / non-shipping")
+          print(f"- Validation result: {report['validation_result']}")
+          print(f"- Failure replay entries: {len(replay['failures'])}")
+          print(f"- Families: {len(heat['families'])}")
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: system-robustness-s001-${{ matrix.seed }}-${{ github.run_id }}
+          path: system-robustness-out/s001-${{ matrix.seed }}/
+          if-no-files-found: error
+          retention-days: 30
+
+  s002-aec-transition:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: system-robustness-s002
+      - name: Reuse canonical AEC motion authority without tuning
+        run: |
+          set -euo pipefail
+          python3 validation/tools/build_aec_motion_corpus.py --self-test
+          cmake -S . -B build-s002 -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s002 --target ap_process_pcm --parallel
+          root=/tmp/s002-aec
+          out=system-robustness-out/s002
+          mkdir -p "$out"
+          python3 validation/tools/build_aec_motion_corpus.py --output "$root" --seed 6107 --seconds 8
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ github.sha }}' \
+            --corpus "$root/corpus.json" \
+            --policy validation/policies/validation-aec-motion-development.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor build-s002/ap_process_pcm \
+            --output "$out/report.json" \
+            --evidence-manifest "$out/evidence-manifest.json"
+          cp "$root/corpus.json" "$out/corpus.json"
+          find "$out" -type f -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: system-robustness-s002-${{ github.run_id }}
+          path: system-robustness-out/s002/
+          if-no-files-found: error
+          retention-days: 30
+
+  s003-stage-attribution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: system-robustness-s003
+      - name: Run isolated stage replay baseline
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-s003 -DCMAKE_BUILD_TYPE=Release -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s003 --target ap_process_pcm --parallel
+          root=/tmp/s003-stage
+          out=system-robustness-out/s003
+          mkdir -p "$out"
+          python3 validation/tools/build_stage_validation_corpus.py --output "$root" --seed 7107
+          python3 validation/tools/run_validation.py \
+            --source-revision '${{ github.sha }}' \
+            --corpus "$root/corpus.json" \
+            --policy validation/policies/validation-smoke.json \
+            --dataset-lock validation/datasets.lock.json \
+            --processor build-s003/ap_process_pcm \
+            --output "$out/report.json" \
+            --evidence-manifest "$out/evidence-manifest.json"
+          python3 validation/tools/system_robustness_attribution.py \
+            --corpus "$root/corpus.json" --report "$out/report.json" --output-dir "$out"
+          cp "$root/corpus.json" "$out/corpus.json"
+          find "$out" -type f -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: system-robustness-s003-${{ github.run_id }}
+          path: system-robustness-out/s003/
+          if-no-files-found: error
+          retention-days: 30

@@ -7,7 +7,7 @@ on:
       - 'docs/program/iterations/S003-aec-recovery-measurement-resolution-v1.json'
       - 'docs/program/iterations/S003-aec-recovery-measurement-resolution-v1-result.json'
       - 'tests/validation/data/s003-aec-recovery-measurement-resolution-consumed-workflow.yml'
-      - 'tests/validation/test_s003_aec_recovery_measurement_resolution_retirement.py'
+      - 'tests/validation/test_s003_aec_recovery_resolution_retirement.py'
       - '.github/workflows/research-s003-aec-recovery-measurement-resolution-v1.yml'
 
 permissions:
@@ -26,5 +26,5 @@ jobs:
           set -euo pipefail
           python3 -m json.tool             docs/program/iterations/S003-aec-recovery-measurement-resolution-v1.json >/dev/null
           python3 -m json.tool             docs/program/iterations/S003-aec-recovery-measurement-resolution-v1-result.json >/dev/null
-          python3 -m py_compile             tests/validation/test_s003_aec_recovery_measurement_resolution_retirement.py
-          python3 tests/validation/test_s003_aec_recovery_measurement_resolution_retirement.py
+          python3 -m py_compile             tests/validation/test_s003_aec_recovery_resolution_retirement.py
+          python3 tests/validation/test_s003_aec_recovery_resolution_retirement.py

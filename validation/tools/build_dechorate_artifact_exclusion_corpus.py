@@ -282,6 +282,33 @@ def build(
             })
 
     require(len(cases) == 11 * (5 + 6), f"unexpected case count: {len(cases)}")
+    selected_objects = [
+        item
+        for item in qualification["inventory_protocol"]["expected_selected_objects"]
+        if item["name"].endswith(".sofa")
+    ]
+    source_manifest = {
+        "schema_version": 1,
+        "dataset_id": "dechorate-measured-rir",
+        "license": qualification["source"]["license"],
+        "qualification_manifest": str(qualification_manifest),
+        "qualification_manifest_sha256": sha256_bytes(qualification_manifest.read_bytes()),
+        "selected_fingerprint_sha256": qualification["inventory_protocol"][
+            "expected_selected_fingerprint_sha256"
+        ],
+        "objects": [
+            {
+                "name": item["name"],
+                "size_bytes": int(item["size_bytes"]),
+                "sha256": item["sha256"],
+            }
+            for item in selected_objects
+        ],
+    }
+    source_manifest_path = output / "source-manifest.json"
+    source_manifest_path.write_text(
+        json.dumps(source_manifest, indent=2, sort_keys=True) + "\\n", encoding="utf-8"
+    )
     corpus = {
         "schema_version": 1,
         "corpus_id": f"s003-dechorate-artifact-exclusion-seed-{seed}",
@@ -294,6 +321,7 @@ def build(
         },
         "sources": ["dechorate-measured-rir"],
         "sealed_data": True,
+        "source_manifest_sha256": sha256_bytes(source_manifest_path.read_bytes()),
         "candidate_limit": 0,
         "confirmation_limit": 0,
         "promotion_allowed": False,
@@ -356,6 +384,7 @@ def main() -> int:
         "rooms": len(corpus["room_manifest"]),
         "seed": args.seed,
         "global_gain": corpus["level_calibration"]["global_gain"],
+        "source_manifest": str(args.output / "source-manifest.json"),
     }, sort_keys=True))
     return 0
 

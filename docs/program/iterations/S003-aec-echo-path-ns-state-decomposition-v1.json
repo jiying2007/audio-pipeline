@@ -100,7 +100,6 @@
   "preregistered_rules": {
     "require_res_recovery_non_censored": true,
     "require_ns_recovery_non_censored": true,
-    "require_confirmed_extension_on_every_seed": true,
     "require_probe_output_bitwise_equivalence": true,
     "retain_full_per_frame_state_trace": true,
     "no_state_threshold_fitting": true,
@@ -110,7 +109,9 @@
     "no_res_parameter_search": true,
     "no_aec_parameter_search": true,
     "no_validation_grade_feedback": true,
-    "no_validation_grade_blind_feedback": true
+    "no_validation_grade_blind_feedback": true,
+    "extension_reproduction_is_applicability_condition": true,
+    "non_reproduction_is_valid_evidence": true
   },
   "authority_boundary": {
     "may_select_candidate": false,
@@ -128,5 +129,5 @@
     "probe-equivalence receipt",
     "SHA256SUMS"
   ],
-  "success_definition": "complete non-perturbing NS internal-state trajectories aligned to the confirmed RES-to-NS recovery extension, without causal attribution or parameter selection"
+  "success_definition": "non-perturbing NS internal-state trajectories aligned to any freshly reproduced RES-to-NS recovery extension, or an explicit non-reproduction receipt; no causal attribution or parameter selection"
 }

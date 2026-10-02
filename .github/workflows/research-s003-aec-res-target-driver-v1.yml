@@ -1,0 +1,165 @@
+name: Research S003 AEC RES Target Driver Decomposition v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-aec-res-target-driver-decomposition-v1.json'
+      - 'docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1-result.json'
+      - 'validation/tools/aec_res_target_driver_decomposition.py'
+      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c'
+      - '.github/workflows/research-s003-aec-res-target-driver-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/program/iterations/S003-aec-res-target-driver-decomposition-v1.json'
+      - 'docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1-result.json'
+      - 'validation/tools/aec_res_target_driver_decomposition.py'
+      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c'
+      - '.github/workflows/research-s003-aec-res-target-driver-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: s003-aec-res-target-driver-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: s003-aec-res-target-driver
+
+      - name: Validate candidate-zero target-driver contract
+        run: |
+          set -euo pipefail
+          python3 -m json.tool docs/program/iterations/S003-aec-res-target-driver-decomposition-v1.json >/dev/null
+          python3 -m py_compile validation/tools/aec_res_target_driver_decomposition.py
+          PYTHONPATH=validation/tools python3 validation/tools/aec_res_target_driver_decomposition.py self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('docs/program/iterations/S003-aec-res-target-driver-decomposition-v1.json').read_text())
+          p=json.loads(Path('docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1-result.json').read_text())
+          assert c['authority']=='CANDIDATE_ZERO_TARGET_DRIVER_COUNTERFACTUAL_ONLY'
+          assert c['candidate_limit']==0 and c['confirmation_limit']==0
+          assert c['corpus']['fresh_seeds']==[16307,16407,16507,16607,16707,16807,16907,17007]
+          assert c['corpus']['profiles']==['prefix-aec','prefix-res']
+          assert c['measurement']['geometry_id']=='100w-50s'
+          assert c['shipping_target_formula']['echo_weight']==0.8
+          assert c['shipping_target_formula']['floor_gain']==0.1
+          assert c['pre_transition_references']['statistic']=='median per-frame energy'
+          assert c['validity_gates']['either_counterfactual_outcome_is_valid_evidence'] is True
+          assert c['preregistered_rules']['no_echo_weight_search'] is True
+          assert c['preregistered_rules']['no_floor_gain_search'] is True
+          assert c['preregistered_rules']['no_residual_scale_search'] is True
+          assert c['preregistered_rules']['no_echo_scale_search'] is True
+          assert c['preregistered_rules']['no_counterfactual_parameter_sweep'] is True
+          assert c['authority_boundary']['may_open_s004'] is False
+          assert p['status']==c['predecessor']['required_status']
+          assert p['reviewed_validity']['smoothing_history_is_primary_recovery_delay_source'] is False
+          assert p['reviewed_validity']['instantaneous_target_trajectory_remains_candidate_relevant_mechanical_driver'] is True
+          print('S003 RES target-driver authority: PASS')
+          PY
+
+      - name: Build fixed processor and validated contribution probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-s003-target-driver             -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-s003-target-driver --target audio_pipeline --parallel
+
+          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-target-driver/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-target-driver/libaudio_pipeline.a -lm             -o build-s003-target-driver/stage_prefix_process_pcm
+
+          python3 - <<'PY' > /tmp/s003-target-driver-defs.txt
+          import json,shlex
+          from pathlib import Path
+          db=json.loads(Path('build-s003-target-driver/compile_commands.json').read_text())
+          matches=[row for row in db if 'audio_pipeline.dir' in row.get('command','') or 'audio_pipeline.dir' in ' '.join(row.get('arguments',[]))]
+          if not matches: raise SystemExit('audio_pipeline compile command not found')
+          row=matches[0]; args=row.get('arguments') or shlex.split(row['command'])
+          defs=[]
+          for arg in args:
+              if arg.startswith('-D') and arg not in defs: defs.append(arg)
+          for item in ['AP_BUILD_STAGE_AEC=1','AP_BUILD_STAGE_RES=1','AP_BUILD_STAGE_SYNC=1']:
+              if item not in ' '.join(defs): raise SystemExit(f'missing required compile define: {item}')
+          print('\n'.join(defs))
+          PY
+          mapfile -t AP_DEFS < /tmp/s003-target-driver-defs.txt
+          cc -std=c11 -Wall -Wextra -Werror "${AP_DEFS[@]}"             -Iinclude -Isrc -Ibuild-s003-target-driver/generated             tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c             build-s003-target-driver/libaudio_pipeline.a -lm             -o build-s003-target-driver/s003_aec_echo_path_res_gain_contribution_probe
+
+      - name: Run fresh target-driver counterfactuals
+        run: |
+          set -euo pipefail
+          out=s003-target-driver-out
+          mkdir -p "$out"
+          contract=docs/program/iterations/S003-aec-res-target-driver-decomposition-v1.json
+
+          for seed in 16307 16407 16507 16607 16707 16807 16907 17007; do
+            corpus="/tmp/s003-target-driver-$seed"
+            seed_out="$out/$seed"
+            mkdir -p "$seed_out"
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_res_gain_contribution_decomposition.py build                 --output "$corpus" --seed "$seed" --seconds 6
+
+            PYTHONPATH=validation/tools               python3 validation/tools/stage_interaction_run.py                 --source-revision '${{ github.sha }}'                 --corpus "$corpus/corpus.json"                 --policy validation/policies/validation-s003-res-gain-contribution.json                 --dataset-lock validation/datasets.lock.json                 --processor build-s003-target-driver/stage_prefix_process_pcm                 --output "$seed_out/canonical-report.json"                 --evidence-manifest "$seed_out/evidence-manifest.json"                 --enforce
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_res_target_driver_decomposition.py run                 --corpus "$corpus/corpus.json"                 --report "$seed_out/canonical-report.json"                 --processor build-s003-target-driver/stage_prefix_process_pcm                 --probe build-s003-target-driver/s003_aec_echo_path_res_gain_contribution_probe                 --contract "$contract"                 --trace-output "$seed_out/target-driver-trace.jsonl"                 --output "$seed_out/target-driver-receipt.json"
+
+            cp "$corpus/corpus.json" "$seed_out/corpus.json"
+          done
+
+          PYTHONPATH=validation/tools             python3 validation/tools/aec_res_target_driver_decomposition.py aggregate               --contract "$contract"               --input "$out/16307/target-driver-receipt.json"               --input "$out/16407/target-driver-receipt.json"               --input "$out/16507/target-driver-receipt.json"               --input "$out/16607/target-driver-receipt.json"               --input "$out/16707/target-driver-receipt.json"               --input "$out/16807/target-driver-receipt.json"               --input "$out/16907/target-driver-receipt.json"               --input "$out/17007/target-driver-receipt.json"               --output "$out/cross-seed-target-driver-summary.json"
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('s003-target-driver-out/cross-seed-target-driver-summary.json').read_text())
+          assert r['mechanical_validity']['evidence_accepted'] is True
+          print({
+              'actual_target_delay_vs_aec_ms':r['actual_target_delay_vs_aec_ms'],
+              'counterfactual_driver_summary':r['counterfactual_driver_summary'],
+          })
+          PY
+
+          cp "$contract" "$out/contract.json"
+          git rev-parse HEAD > "$out/source-sha.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish target-driver evidence
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r=json.loads(Path('s003-target-driver-out/cross-seed-target-driver-summary.json').read_text())
+          print('## S003 RES target-driver decomposition')
+          print('')
+          print('- Authority: **candidate-zero target-driver counterfactual only**')
+          print(f"- Mechanical validity: `{r['mechanical_validity']}`")
+          print(f"- Actual target delay vs AEC: `{r['actual_target_delay_vs_aec_ms']}`")
+          for name,item in r['counterfactual_driver_summary'].items():
+              print(f"- `{name}`: delay=`{item['target_delay_vs_aec_ms']}`, eliminated-seeds=`{item['eliminates_positive_actual_target_delay_seeds']}`")
+          print('- Driver root-cause attribution: **NOT_AUTHORIZED**')
+          print('- Candidate authority: **none**')
+          PY
+
+      - name: Upload hash-bound target-driver evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: s003-aec-res-target-driver-${{ github.run_id }}
+          path: s003-target-driver-out/
+          if-no-files-found: error
+          retention-days: 30

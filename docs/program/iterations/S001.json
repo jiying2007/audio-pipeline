@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "S001",
+  "phase": "system-robustness-v1",
+  "title": "End-to-end audio frontend perturbation map v1",
+  "status": "ACTIVE_DIAGNOSTIC",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "pipeline_scope": [
+    "AEC",
+    "NS",
+    "VAD",
+    "AGC"
+  ],
+  "perturbations": [
+    "snr",
+    "tapped_room_proxy",
+    "double_talk",
+    "echo_path_change",
+    "mic_gain_mismatch",
+    "mic_delay_mismatch",
+    "clipping",
+    "dc_offset",
+    "sample_slip_clock_drift_proxy",
+    "frame_drop",
+    "frame_duplicate",
+    "robot_harmonic_noise",
+    "robot_start_stop_transient"
+  ],
+  "outputs": [
+    "failure-heatmap.json",
+    "attribution.json",
+    "failure-replay-index.json"
+  ],
+  "success_definition": "repeatable failure map and replayable taxonomy, not best parameters"
+}

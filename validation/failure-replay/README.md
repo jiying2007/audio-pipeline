@@ -39,3 +39,7 @@ HIL authority, or product certification.
 ## Public cross-source review
 
 A durable replay may reproduce exactly on its deterministic synthetic seeds yet transfer only partially to a public source family. Such evidence is stored as a supplemental review, not by rewriting the original replay truth. A stable sub-signature does not make the broader composite signature cross-source. Raw-prefix checks are sanity evidence only when the watched metric is itself an input-to-output delta; they do not independently prove measurement-domain validity. S004 remains closed until all explicit blockers are independently satisfied.
+
+## Multiple public-family evidence
+
+A blocker may be closed for a narrowly identified sub-signature without closing it for every failure in the bank. The current second-family SLR31 review closes the multiple-public-dataset repetition prerequisite only for `FR-S003-MIC-GAIN-DELAY-MISMATCH-V1` → `severe-near-reference-degradation`. Capture clipping did not reproduce that sub-signature on SLR31 and remains independently blocked. This evidence never grants root-cause, candidate, release, HIL, or product-certification authority.

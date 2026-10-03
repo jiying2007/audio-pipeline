@@ -159,8 +159,9 @@ class RetirementTests(unittest.TestCase):
         contract = yaml_data((ROOT / '.github/workflows/i015-evidence-finalization-contract.yml').read_bytes())
         for event in ('pull_request', 'push'):
             paths = contract['on'][event]['paths']
-            for path in (WORKFLOW, HISTORY, SELF, LEGACY_TEST):
+            for path in (RETIREMENT, HISTORY, SELF, LEGACY_TEST):
                 self.assertIn(path, paths)
+            self.assertNotIn(WORKFLOW, paths)
         scripts = '\n'.join(s.get('run', '') for s in contract['jobs']['contract']['steps'])
         self.assertIn(CHECK + '\n', scripts)
         self.assertEqual(contract['permissions'], {'contents': 'read'})

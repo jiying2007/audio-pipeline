@@ -331,6 +331,23 @@ def main() -> int:
     assert raw_coords["preregistered_rules"]["no_root_cause_selection"] is True
     assert raw_coords["authority_boundary"]["may_open_s004"] is False
 
+    scale_geom = json.loads((ITER / "S003-aec-residual-scale-geometry-decomposition-v1.json").read_text())
+    assert scale_geom["authority"] == "CANDIDATE_ZERO_SCALE_GEOMETRY_ANALYSIS_ONLY"
+    assert scale_geom["candidate_limit"] == 0 and scale_geom["confirmation_limit"] == 0
+    assert scale_geom["promotion_allowed"] is False and scale_geom["shipping_change_allowed"] is False
+    assert scale_geom["corpus"]["fresh_seeds"] == [19507, 19607, 19707, 19807, 19907, 20007, 20107, 20207]
+    assert scale_geom["corpus"]["analysis_profile"] == "prefix-aec"
+    assert scale_geom["measurement"]["geometry_id"] == "100w-50s"
+    assert scale_geom["factorization"]["equation"] == "R = M * G"
+    assert set(scale_geom["counterfactuals"]) == {"actual", "freeze_geometry", "freeze_scale"}
+    assert scale_geom["factorization"]["invalid_values_clamped"] is False
+    assert scale_geom["preregistered_rules"]["no_scale_factor_sweep"] is True
+    assert scale_geom["preregistered_rules"]["no_geometry_factor_sweep"] is True
+    assert scale_geom["preregistered_rules"]["no_filter_weight_inspection"] is True
+    assert scale_geom["preregistered_rules"]["no_tap_inspection"] is True
+    assert scale_geom["preregistered_rules"]["no_aec_mu_search"] is True
+    assert scale_geom["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

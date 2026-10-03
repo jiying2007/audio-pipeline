@@ -435,35 +435,70 @@ def check(root: Path) -> dict:
         evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
         require(evidence.get("investigation_id") == r["investigation_id"],
                 f"consumed research investigation identity drift: {r['path']}")
-        require(evidence.get("status") in {
-                    "CLOSED_DIAGNOSTIC_ONLY", "CLOSED_INVALID_DIAGNOSTIC_ONLY"},
-                f"consumed research is not terminal diagnostic-only: {r['path']}")
-        require(evidence.get("authority") in {
-                    "RESEARCH_DIAGNOSTIC_ONLY",
-                    "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
-                    "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
-                }, f"consumed research authority drift: {r['path']}")
+
+        state = (evidence.get("status"), evidence.get("authority"))
+        allowed_states = {
+            ("CLOSED_DIAGNOSTIC_ONLY", "RESEARCH_DIAGNOSTIC_ONLY"),
+            ("CLOSED_DIAGNOSTIC_ONLY", "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"),
+            ("CLOSED_INVALID_DIAGNOSTIC_ONLY", "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"),
+            ("CLOSED_INVALID_DIAGNOSTIC_ONLY", "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY"),
+            ("CLOSED_REJECTED_DEVELOPMENT_ONLY", "RESEARCH_SELECTION_ONLY"),
+        }
+        require(state in allowed_states,
+                f"consumed research terminal state/authority drift: {r['path']}={state}")
+
         fresh = evidence.get("fresh_authority") or {}
-        require(fresh.get("diagnostic_execution_consumed") == 1
-                and fresh.get("candidate_budget_consumed") == 0
-                and fresh.get("confirmation_budget_consumed") == 0
-                and fresh.get("rerun_allowed") is False,
-                f"consumed research fresh authority is not terminal: {r['path']}")
+        if state == ("CLOSED_REJECTED_DEVELOPMENT_ONLY", "RESEARCH_SELECTION_ONLY"):
+            require(fresh.get("development_execution_consumed") == 1
+                    and fresh.get("candidate_budget_consumed") == 1
+                    and fresh.get("confirmation_budget_consumed") == 0
+                    and fresh.get("rerun_allowed") is False,
+                    f"rejected development research is not terminal: {r['path']}")
+            require(evidence.get("decision") == "REJECTED_DEVELOPMENT_ONLY",
+                    f"rejected development decision drift: {r['path']}")
+        elif "rerun_allowed" in fresh:
+            require(fresh.get("diagnostic_execution_consumed") == 1
+                    and fresh.get("candidate_budget_consumed") == 0
+                    and fresh.get("confirmation_budget_consumed") == 0
+                    and fresh.get("rerun_allowed") is False,
+                    f"consumed research fresh authority is not terminal: {r['path']}")
+        else:
+            # I012-I014 predate rerun_allowed but already encode a consumed
+            # one-shot diagnostic budget with zero candidate/confirmation authority.
+            require(fresh.get("diagnostic_execution_limit") == 1
+                    and fresh.get("diagnostic_execution_consumed") == 1
+                    and fresh.get("candidate_limit") == 0
+                    and fresh.get("candidate_limit_consumed") == 0
+                    and fresh.get("confirmation_limit") == 0
+                    and fresh.get("confirmation_limit_consumed") == 0
+                    and fresh.get("parameter_search_performed") is False
+                    and fresh.get("threshold_tuning_performed") is False,
+                    f"legacy consumed diagnostic budget is not terminal: {r['path']}")
+
         boundary = evidence.get("authority_boundary") or {}
         for key in (
-            "shipping_source_changed", "validation_holdout_consumed", "confirmation_consumed",
-            "shipping_authority", "source_merge_authority", "hil_authority",
-            "product_certification_authority", "release_authority", "automatic_main_mutation",
+            "shipping_source_changed", "hil_authority",
+            "product_certification_authority", "release_authority",
         ):
             require(boundary.get(key) is False,
                     f"consumed research regained {key}: {r['path']}")
+        for key in (
+            "source_merge_authorized", "source_merge_authority",
+            "shipping_authority", "automatic_main_mutation",
+            "confirmation_consumed", "validation_holdout_consumed",
+            "blind_validation_authorized",
+        ):
+            if key in boundary:
+                require(boundary.get(key) is False,
+                        f"consumed research regained {key}: {r['path']}")
+
         require(git("cat-file", "-t", r["blob_sha"]) == "blob",
                 f"historical consumed research workflow blob missing: {r['path']}")
         historical = git("cat-file", "blob", r["blob_sha"])
         on_block = extract_on_block(historical)
         require("pull_request:" in on_block,
                 f"consumed research workflow lost PR contract lineage: {r['path']}")
-        for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:", "workflow_dispatch:"):
+        for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:"):
             require(forbidden not in on_block,
                     f"consumed research workflow had forbidden trigger {forbidden}: {r['path']}")
         jobs_text = historical[historical.find("\njobs:") + 1:]

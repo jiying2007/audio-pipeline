@@ -322,6 +322,13 @@
   ],
   "consumed_research_workflows": [
     {
+      "path": ".github/workflows/research-algorithm-parameter-optimization.yml",
+      "blob_sha": "313035647822289a0d6d04668e0b2c8f7c363527",
+      "investigation_id": "call-hierarchical-algorithm-parameter-v1",
+      "evidence": ".github/research/continuous-optimization/algorithm-space-v1-closure.json",
+      "reason": "consumed contract-only research workflow; terminal evidence forbids further execution or retains baseline with no candidate/promotion authority; exact historical blob and durable evidence remain retained"
+    },
+    {
       "path": ".github/workflows/research-i012-ns-spectral-post-snr-v2.yml",
       "blob_sha": "b1bdb224a1cab1fd5eef2fe4972978601735dc5f",
       "investigation_id": "i012-ns-spectral-post-snr-v2",
@@ -516,6 +523,20 @@
       "investigation_id": "i040-ns-synthesis-overlap-add-transfer-decomposition-v1",
       "evidence": ".github/research/continuous-optimization/development-v4/i040-ns-synthesis-overlap-add-transfer-decomposition-v1-result.json",
       "reason": "consumed contract-only research workflow; terminal diagnostic-only evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-vad-calibrated-local-snr-v1.yml",
+      "blob_sha": "be7ef2b3a1a1a386577bee93cb43b8a2b09426c3",
+      "investigation_id": "vad-calibrated-local-snr-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal evidence forbids further execution or retains baseline with no candidate/promotion authority; exact historical blob and durable evidence remain retained"
+    },
+    {
+      "path": ".github/workflows/research-vad-domain-state-divergence-v1.yml",
+      "blob_sha": "40d6b25f98caef9d7c361614ea3d69f4a602561a",
+      "investigation_id": "vad-domain-state-divergence-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal evidence forbids further execution or retains baseline with no candidate/promotion authority; exact historical blob and durable evidence remain retained"
     }
   ]
 }

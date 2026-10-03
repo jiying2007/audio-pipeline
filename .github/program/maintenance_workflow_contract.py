@@ -85,12 +85,9 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/pcr02-aec-real-tail-confirmation.yml'),
     Path('.github/workflows/pcr02-dsp-counterfactuals.yml'),
     Path('.github/workflows/research-optimization.yml'),
-    Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
     Path('.github/workflows/research-candidate-blind-qualification.yml'),
     Path('.github/workflows/research-source-authority-v2-qualification.yml'),
     Path('.github/workflows/research-i011-ns-noise-reference-scale.yml'),
-    Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
-    Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
 
 )
@@ -103,28 +100,11 @@ PR_CONTRACT_MANUAL_REPLAY_WORKFLOWS = (
 )
 
 CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
-    Path('.github/workflows/research-algorithm-parameter-optimization.yml'),
-    Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'),
-    Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
-    Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
-        Path('.github/research/continuous-optimization/algorithm-space-v1.json'),
-        Path('.github/research/continuous-optimization/algorithm-space-v1-closure.json'),
-        Path('.github/research/continuous-optimization/development-v3/aec-boundary-refinement-v6-origin.json'),
-        Path('.github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5-closure.json'),
-    ),
-    Path('.github/workflows/research-vad-domain-state-divergence-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/vad-domain-state-divergence-v1-result.json'),
-    ),
-    Path('.github/workflows/research-vad-calibrated-local-snr-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/vad-calibrated-local-snr-v1-result.json'),
-    ),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'): (
         Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1.json'),
         Path('.github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-result.json'),

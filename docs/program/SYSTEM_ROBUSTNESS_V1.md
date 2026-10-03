@@ -213,3 +213,12 @@ Fresh-main counterfactual analysis on seeds 16307–17007 isolated the two exist
 This establishes `residual_energy` variation as a necessary **mechanical driver** of the retained target delay under the preregistered counterfactual; it does not establish an AEC root cause and authorizes no RES target/formula or AEC parameter change.
 
 The next authorized phase is `S003_AEC_RESIDUAL_ENERGY_TRAJECTORY_DECOMPOSITION_V1`: observe the far-end-only AEC residual before RES using the exact identity between AEC input, echo estimate, their cross term, and residual energy. Start with normalized estimate/input power ratio and similarity; do not inspect/tune filter taps unless this bounded decomposition fails to explain the trajectory.
+
+
+## S003 AEC residual-geometry checkpoint
+
+Fresh-main evidence on seeds 17107–17807 validates the frame identity and normalized residual geometry after correcting a test-only observation bug caused by the pipeline's intentional `mono/processed` buffer alias. The AEC subtraction input is reconstructed as `m = aec_out + echo_estimate`; probe PCM remains bitwise-equivalent and no shipping/public API surface changes.
+
+Under the confirmed `100w-50s` research geometry, freezing both normalized coordinates `q=E/M` and `rho=C/sqrt(ME)` to their preregistered pre-transition medians yields **50 ms recovery on all eight fresh seeds**. Freezing q or rho individually has seed-dependent effects and is not directionally invariant.
+
+Therefore the retained observation is **joint q/rho residual-geometry variation**, not a q-only or rho-only root cause. No q/rho scaling, filter-weight/tap inspection, AEC parameter search, recovery-threshold change, candidate selection, shipping change, or S004 admission is authorized. The next phase is an independent fresh-seed confirmation of the joint-geometry observation.

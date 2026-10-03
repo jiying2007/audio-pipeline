@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-joint-geometry-confirmation-v1",
+  "phase": "S003_AEC_JOINT_GEOMETRY_CONFIRMATION_V1",
+  "authority": "CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 1,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_JOINT_Q_RHO_GEOMETRY_RETAINED_SINGLE_FACTOR_NOT_INVARIANT"
+  },
+  "corpus": {
+    "builder": "validation/tools/aec_res_gain_contribution_decomposition.py",
+    "fresh_seeds": [
+      17907,
+      18007,
+      18107,
+      18207,
+      18307,
+      18407,
+      18507,
+      18607
+    ],
+    "seconds": 6,
+    "canonical_profiles": [
+      "prefix-aec",
+      "prefix-res"
+    ],
+    "analysis_profile": "prefix-aec"
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "hypothesis": {
+    "statement": "Freezing both q=E/M and rho=C/sqrt(ME) to preregistered pre-transition medians yields 50 ms recovery on every independent fresh seed.",
+    "required_fresh_seed_count": 8,
+    "required_freeze_both_recovery_ms": 50,
+    "require_all_seeds": true,
+    "single_factor_freeze_roles": "descriptive only; no q-only or rho-only confirmation gate"
+  },
+  "validity_gates": {
+    "require_probe_output_bitwise_equivalence": true,
+    "require_identity_valid_all_seeds": true,
+    "require_normalized_reconstruction_valid_all_seeds": true,
+    "require_actual_observed_recovery_matches_standard_aec": true,
+    "either_confirmation_outcome_is_valid_evidence": true
+  },
+  "preregistered_rules": {
+    "no_q_scale_search": true,
+    "no_rho_scale_search": true,
+    "no_filter_weight_inspection": true,
+    "no_tap_inspection": true,
+    "no_aec_mu_search": true,
+    "no_aec_tap_search": true,
+    "no_aec_stride_search": true,
+    "no_recovery_threshold_search": true,
+    "no_counterfactual_parameter_sweep": true,
+    "no_candidate_selection": true,
+    "no_root_cause_selection": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_claim_q_root_cause": false,
+    "may_claim_rho_root_cause": false,
+    "may_claim_joint_geometry_root_cause": false,
+    "may_change_aec_parameters": false,
+    "may_change_recovery_threshold": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "mechanically valid independent fresh confirmation or rejection of the single freeze-both(q,rho)->50 ms hypothesis; single-factor freezes remain descriptive"
+}

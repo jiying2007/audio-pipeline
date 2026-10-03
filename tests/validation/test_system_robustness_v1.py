@@ -301,6 +301,20 @@ def main() -> int:
     assert residual_geometry["preregistered_rules"]["no_counterfactual_parameter_sweep"] is True
     assert residual_geometry["authority_boundary"]["may_open_s004"] is False
 
+    joint_confirm = json.loads((ITER / "S003-aec-joint-geometry-confirmation-v1.json").read_text())
+    assert joint_confirm["authority"] == "CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION_ONLY"
+    assert joint_confirm["candidate_limit"] == 0 and joint_confirm["confirmation_limit"] == 1
+    assert joint_confirm["promotion_allowed"] is False and joint_confirm["shipping_change_allowed"] is False
+    assert joint_confirm["corpus"]["fresh_seeds"] == [17907, 18007, 18107, 18207, 18307, 18407, 18507, 18607]
+    assert joint_confirm["hypothesis"]["required_freeze_both_recovery_ms"] == 50
+    assert joint_confirm["hypothesis"]["require_all_seeds"] is True
+    assert joint_confirm["hypothesis"]["single_factor_freeze_roles"].startswith("descriptive only")
+    assert joint_confirm["preregistered_rules"]["no_q_scale_search"] is True
+    assert joint_confirm["preregistered_rules"]["no_rho_scale_search"] is True
+    assert joint_confirm["preregistered_rules"]["no_filter_weight_inspection"] is True
+    assert joint_confirm["preregistered_rules"]["no_aec_mu_search"] is True
+    assert joint_confirm["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

@@ -151,8 +151,11 @@ def validate_manifest(data: dict) -> None:
         require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
         require(isinstance(investigation, str) and investigation,
                 f"consumed research investigation id missing: {path}")
-        require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
-                f"consumed research evidence path invalid: {path}")
+        require(
+            isinstance(evidence, str)
+            and evidence.startswith((".github/research/", "docs/program/iterations/")),
+            f"consumed research evidence path invalid: {path}",
+        )
         require(isinstance(r["reason"], str) and r["reason"],
                 f"missing consumed research reason: {path}")
         seen_paths.add(path)
@@ -443,7 +446,21 @@ def check(root: Path) -> dict:
 
         status = evidence.get("status")
         authority = evidence.get("authority")
-        if status == "CLOSED_KEEP_BASELINE":
+        if evidence.get("investigation_terminal") is True:
+            require(isinstance(status, str) and status.startswith("CLOSED_"),
+                    f"terminal system-robustness status drift: {r['path']}={status}")
+            require(evidence.get("rerun_required") is False,
+                    f"terminal system-robustness workflow regained rerun authority: {r['path']}")
+            require(evidence.get("shipping_change_authority") is False,
+                    f"terminal system-robustness workflow regained shipping authority: {r['path']}")
+            for key in (
+                "candidate_authority", "s004_open", "product_release_authority",
+                "root_cause_claim_authority",
+            ):
+                if key in evidence:
+                    require(evidence.get(key) is False,
+                            f"terminal system-robustness workflow regained {key}: {r['path']}")
+        elif status == "CLOSED_KEEP_BASELINE":
             require(evidence.get("execution_authorized") is False,
                     f"closed algorithm space regained execution authority: {r['path']}")
             predecessor = evidence.get("predecessor") or {}
@@ -524,6 +541,9 @@ def check(root: Path) -> dict:
         on_block = extract_on_block(historical)
         require("pull_request:" in on_block,
                 f"consumed research workflow lost PR contract lineage: {r['path']}")
+        if evidence.get("investigation_terminal") is True:
+            require("workflow_dispatch:" not in on_block,
+                    f"terminal system-robustness workflow regained manual execution: {r['path']}")
         for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:"):
             require(forbidden not in on_block,
                     f"consumed research workflow had forbidden trigger {forbidden}: {r['path']}")

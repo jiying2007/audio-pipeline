@@ -525,6 +525,181 @@
       "reason": "consumed contract-only research workflow; terminal diagnostic-only evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
     },
     {
+      "path": ".github/workflows/research-s003-aec-100w50s-geometry-confirmation-v1.yml",
+      "blob_sha": "79e051a1e64016fc71ba193516f7187e05e21148",
+      "investigation_id": "S003-aec-recovery-100w50s-geometry-confirmation-v1",
+      "evidence": "docs/program/iterations/S003-aec-recovery-100w50s-geometry-confirmation-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-echo-path-ns-state-v1.yml",
+      "blob_sha": "84de5a78a4428de9e67221e155833233e1fe9997",
+      "investigation_id": "S003-aec-echo-path-ns-state-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-echo-path-ns-state-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-echo-path-recovery-sign-variability-v1.yml",
+      "blob_sha": "01610d949ca61fa10f946ef201cd932649262c0e",
+      "investigation_id": "S003-aec-echo-path-recovery-sign-variability-v1",
+      "evidence": "docs/program/iterations/S003-aec-echo-path-recovery-sign-variability-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-echo-path-res-ns-confirm-v1.yml",
+      "blob_sha": "267fee6f591c5db973e9a4d48fcbc130675e5d7b",
+      "investigation_id": "S003-aec-echo-path-res-ns-recovery-extension-confirmation-v1",
+      "evidence": "docs/program/iterations/S003-aec-echo-path-res-ns-recovery-extension-confirmation-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-echo-path-res-side-recovery-v1.yml",
+      "blob_sha": "89024be3bc3b8dd7ee975d1941ba55b3497035ee",
+      "investigation_id": "S003-aec-echo-path-res-side-recovery-variability-v1",
+      "evidence": "docs/program/iterations/S003-aec-echo-path-res-side-recovery-variability-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-geometry-freeze-confirmation-v1.yml",
+      "blob_sha": "a899ef2911851594a8666ab08b85a958c6b3da5d",
+      "investigation_id": "S003-aec-geometry-freeze-confirmation-v1",
+      "evidence": "docs/program/iterations/S003-aec-geometry-freeze-confirmation-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-joint-geometry-confirmation-v1.yml",
+      "blob_sha": "20507cfcc4c0f76503cafb0a675f1c9425e0b2ab",
+      "investigation_id": "S003-aec-joint-geometry-confirmation-v1",
+      "evidence": "docs/program/iterations/S003-aec-joint-geometry-confirmation-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-metric-safe-evidence-v1.yml",
+      "blob_sha": "5c03cfa59558acc930ba9c5b3b79d55c5fd38dcc",
+      "investigation_id": "S003-aec-metric-safe-evidence-v1",
+      "evidence": "docs/program/iterations/S003-aec-metric-safe-evidence-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-raw-residual-coordinates-v1.yml",
+      "blob_sha": "19d57de49f2c0f6e65c54acb7bc679b28cacf6da",
+      "investigation_id": "S003-aec-residual-geometry-raw-coordinate-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-residual-geometry-raw-coordinate-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-recovery-measurement-resolution-v1.yml",
+      "blob_sha": "199aef6569301bbb33a5e2df8210cf23fd6c8d4a",
+      "investigation_id": "S003-aec-recovery-measurement-resolution-v1",
+      "evidence": "docs/program/iterations/S003-aec-recovery-measurement-resolution-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-recovery-rebaseline-100w50s-v1.yml",
+      "blob_sha": "b7a1edfa6e1f8dfaae444942db9dbb5dd0e84a1e",
+      "investigation_id": "S003-aec-recovery-rebaseline-100w50s-v1",
+      "evidence": "docs/program/iterations/S003-aec-recovery-rebaseline-100w50s-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-recovery-variability-v1.yml",
+      "blob_sha": "4d913e937b66023b5e9d2a085221a4108282d256",
+      "investigation_id": "S003-aec-recovery-variability-source-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-recovery-variability-source-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-recovery-window-geometry-v1.yml",
+      "blob_sha": "f60a480682822af17064d2f75875eaadde21c384",
+      "investigation_id": "S003-aec-recovery-window-geometry-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-res-gain-contribution-v1.yml",
+      "blob_sha": "a3c91b5ba8aa2ae1a7e2ae57689e0c2cbca84e6a",
+      "investigation_id": "S003-aec-echo-path-res-gain-contribution-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-res-target-driver-v1.yml",
+      "blob_sha": "0710a654305515b8d20c7e67adba00ce4c9d8ab4",
+      "investigation_id": "S003-aec-res-target-driver-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-res-target-driver-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-residual-energy-trajectory-v1.yml",
+      "blob_sha": "f0d73b887d6c467cc0587fdc16134512f61b08f2",
+      "investigation_id": "S003-aec-residual-energy-trajectory-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-residual-scale-geometry-v1.yml",
+      "blob_sha": "cc11a16236652df422d21fd2f741c1ba9171ae53",
+      "investigation_id": "S003-aec-residual-scale-geometry-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-residual-scale-geometry-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-stage-recovery-decomposition-v1.yml",
+      "blob_sha": "bf8ef89b59ed58505317255e7d0ecb5dde28256f",
+      "investigation_id": "S003-aec-transition-stage-recovery-decomposition-v1",
+      "evidence": "docs/program/iterations/S003-aec-transition-stage-recovery-decomposition-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-aec-transition-recovery-latency-v1.yml",
+      "blob_sha": "593e6a62ccd84cf8979b7fc9879932d59c8136ce",
+      "investigation_id": "S003-aec-transition-recovery-latency-v1",
+      "evidence": "docs/program/iterations/S003-aec-transition-recovery-latency-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-cross-source-artifact-exclusion-v1.yml",
+      "blob_sha": "9e41b45a0784e332dd400cf977d0087c8f904516",
+      "investigation_id": "S003-cross-source-artifact-exclusion-v1",
+      "evidence": "docs/program/iterations/S003-cross-source-artifact-exclusion-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-hpf-aware-reference-oracle-v1.yml",
+      "blob_sha": "dbe168abe505d568be82dfddda602273913a5a8f",
+      "investigation_id": "S003-mic-mismatch-hpf-aware-reference-oracle-v1",
+      "evidence": "docs/program/iterations/S003-mic-mismatch-hpf-aware-reference-oracle-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-mic-mismatch-downstream-transfer-v1.yml",
+      "blob_sha": "f68314b503164e82a183166bf923e593ca978d54",
+      "investigation_id": "S003-mic-mismatch-downstream-transfer-exclusion-v1",
+      "evidence": "docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-mic-mismatch-measurement-oracle-v1.yml",
+      "blob_sha": "10a782292799c773bb42ccbaa6ba582a21f51067",
+      "investigation_id": "S003-mic-mismatch-measurement-domain-oracle-v1",
+      "evidence": "docs/program/iterations/S003-mic-mismatch-measurement-domain-oracle-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-slr31-subsig-transfer-v1.yml",
+      "blob_sha": "789f67de8daa8dae9abac662184bcb8e7fdf2686",
+      "investigation_id": "S003-public-clean-speech-subsig-transfer-v1",
+      "evidence": "docs/program/iterations/S003-public-clean-speech-subsig-transfer-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
+      "path": ".github/workflows/research-s003-speaker-gain-ns-recovery-confirmation-v1.yml",
+      "blob_sha": "de960b0961c1b560c8a7c436ed0e5cd7bed8b914",
+      "investigation_id": "S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1",
+      "evidence": "docs/program/iterations/S003-aec-speaker-gain-ns-recovery-extension-confirmation-v1-result.json",
+      "reason": "terminal system-robustness one-shot diagnostic contract; investigation is closed, rerun/shipping/candidate authority is absent, while durable result, consumed fixture and replay/regression assets remain retained"
+    },
+    {
       "path": ".github/workflows/research-vad-calibrated-local-snr-v1.yml",
       "blob_sha": "be7ef2b3a1a1a386577bee93cb43b8a2b09426c3",
       "investigation_id": "vad-calibrated-local-snr-v1",

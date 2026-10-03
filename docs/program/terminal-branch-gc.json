@@ -27,8 +27,15 @@
     "release/",
     "validation/"
   ],
-  "allowed_exact_names": [],
-  "branches": [],
+  "allowed_exact_names": [
+    "cleanup/retire-i020-frozen-surfaces"
+  ],
+  "branches": [
+    {
+      "name": "cleanup/retire-i020-frozen-surfaces",
+      "expected_sha": "b6d43a2305a3922f0ec81a90fc00a3efc551dc95"
+    }
+  ],
   "authority_boundary": {
     "hardware_test_executed": false,
     "hardware_collection_performed": false,

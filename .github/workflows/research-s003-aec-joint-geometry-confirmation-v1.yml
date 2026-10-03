@@ -5,165 +5,26 @@ on:
     branches: [main]
     paths:
       - 'docs/program/iterations/S003-aec-joint-geometry-confirmation-v1.json'
-      - 'docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1.json'
-      - 'docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1-result.json'
-      - 'validation/tools/aec_joint_geometry_confirmation.py'
-      - 'validation/tools/aec_residual_energy_trajectory.py'
-      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
-      - 'validation/policies/validation-s003-res-gain-contribution.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
-      - 'tests/validation/s003_aec_residual_geometry_probe.c'
+      - 'docs/program/iterations/S003-aec-joint-geometry-confirmation-v1-result.json'
+      - 'tests/validation/data/s003-aec-joint-geometry-confirmation-consumed-workflow.yml'
+      - 'tests/validation/test_s003_aec_joint_geometry_confirmation_retirement.py'
       - '.github/workflows/research-s003-aec-joint-geometry-confirmation-v1.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'docs/program/iterations/S003-aec-joint-geometry-confirmation-v1.json'
-      - 'docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1.json'
-      - 'docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1-result.json'
-      - 'validation/tools/aec_joint_geometry_confirmation.py'
-      - 'validation/tools/aec_residual_energy_trajectory.py'
-      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
-      - 'validation/policies/validation-s003-res-gain-contribution.json'
-      - 'tests/validation/stage_prefix_process_pcm.c'
-      - 'tests/validation/s003_aec_residual_geometry_probe.c'
-      - '.github/workflows/research-s003-aec-joint-geometry-confirmation-v1.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: s003-aec-joint-geometry-confirmation-v1-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  confirm:
+  contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: s003-aec-joint-geometry-confirm
-
-      - name: Validate single-hypothesis confirmation contract
+      - name: Validate reviewed terminal evidence
         run: |
           set -euo pipefail
           python3 -m json.tool docs/program/iterations/S003-aec-joint-geometry-confirmation-v1.json >/dev/null
-          python3 -m py_compile             validation/tools/aec_joint_geometry_confirmation.py             validation/tools/aec_residual_energy_trajectory.py             validation/tools/aec_res_gain_contribution_decomposition.py
-          PYTHONPATH=validation/tools python3 validation/tools/aec_joint_geometry_confirmation.py --self-test
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          c=json.loads(Path('docs/program/iterations/S003-aec-joint-geometry-confirmation-v1.json').read_text())
-          p=json.loads(Path('docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1-result.json').read_text())
-          assert c['authority']=='CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION_ONLY'
-          assert c['candidate_limit']==0 and c['confirmation_limit']==1
-          assert c['corpus']['fresh_seeds']==[17907,18007,18107,18207,18307,18407,18507,18607]
-          assert c['hypothesis']['required_freeze_both_recovery_ms']==50
-          assert c['hypothesis']['require_all_seeds'] is True
-          assert c['hypothesis']['single_factor_freeze_roles'].startswith('descriptive only')
-          assert c['preregistered_rules']['no_q_scale_search'] is True
-          assert c['preregistered_rules']['no_rho_scale_search'] is True
-          assert c['preregistered_rules']['no_filter_weight_inspection'] is True
-          assert c['preregistered_rules']['no_aec_mu_search'] is True
-          assert c['authority_boundary']['may_open_s004'] is False
-          assert p['status']==c['predecessor']['required_status']
-          assert p['reviewed_validity']['joint_q_rho_transition_variation_is_repeatable_mechanical_contributor'] is True
-          assert p['reviewed_validity']['single_q_freeze_is_cross_seed_invariant'] is False
-          assert p['reviewed_validity']['single_rho_freeze_is_cross_seed_invariant'] is False
-          print('S003 joint geometry confirmation authority: PASS')
-          PY
-
-      - name: Build fixed processor and corrected residual-geometry probe
-        run: |
-          set -euo pipefail
-          cmake -S . -B build-s003-joint-confirm             -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
-          cmake --build build-s003-joint-confirm --target audio_pipeline --parallel
-
-          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-s003-joint-confirm/generated             tests/validation/stage_prefix_process_pcm.c             build-s003-joint-confirm/libaudio_pipeline.a -lm             -o build-s003-joint-confirm/stage_prefix_process_pcm
-
-          python3 - <<'PY' > /tmp/s003-joint-confirm-defs.txt
-          import json,shlex
-          from pathlib import Path
-          db=json.loads(Path('build-s003-joint-confirm/compile_commands.json').read_text())
-          matches=[row for row in db if 'audio_pipeline.dir' in row.get('command','') or 'audio_pipeline.dir' in ' '.join(row.get('arguments',[]))]
-          if not matches: raise SystemExit('audio_pipeline compile command not found')
-          row=matches[0]; args=row.get('arguments') or shlex.split(row['command'])
-          defs=[]
-          for arg in args:
-              if arg.startswith('-D') and arg not in defs: defs.append(arg)
-          for item in ['AP_BUILD_STAGE_AEC=1','AP_BUILD_STAGE_SYNC=1']:
-              if item not in ' '.join(defs): raise SystemExit(f'missing required compile define: {item}')
-          print('\n'.join(defs))
-          PY
-          mapfile -t AP_DEFS < /tmp/s003-joint-confirm-defs.txt
-          cc -std=c11 -Wall -Wextra -Werror "${AP_DEFS[@]}"             -Iinclude -Isrc -Ibuild-s003-joint-confirm/generated             tests/validation/s003_aec_residual_geometry_probe.c             build-s003-joint-confirm/libaudio_pipeline.a -lm             -o build-s003-joint-confirm/s003_aec_residual_geometry_probe
-
-      - name: Run independent fresh confirmation receipts
-        run: |
-          set -euo pipefail
-          out=s003-joint-confirm-out
-          mkdir -p "$out"
-          analysis_contract=docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1.json
-          confirm_contract=docs/program/iterations/S003-aec-joint-geometry-confirmation-v1.json
-
-          for seed in 17907 18007 18107 18207 18307 18407 18507 18607; do
-            corpus="/tmp/s003-joint-confirm-$seed"
-            seed_out="$out/$seed"
-            mkdir -p "$seed_out"
-
-            PYTHONPATH=validation/tools               python3 validation/tools/aec_res_gain_contribution_decomposition.py build                 --output "$corpus" --seed "$seed" --seconds 6
-
-            PYTHONPATH=validation/tools               python3 validation/tools/stage_interaction_run.py                 --source-revision '${{ github.sha }}'                 --corpus "$corpus/corpus.json"                 --policy validation/policies/validation-s003-res-gain-contribution.json                 --dataset-lock validation/datasets.lock.json                 --processor build-s003-joint-confirm/stage_prefix_process_pcm                 --output "$seed_out/canonical-report.json"                 --evidence-manifest "$seed_out/evidence-manifest.json"                 --enforce
-
-            PYTHONPATH=validation/tools               python3 validation/tools/aec_residual_energy_trajectory.py run                 --corpus "$corpus/corpus.json"                 --report "$seed_out/canonical-report.json"                 --processor build-s003-joint-confirm/stage_prefix_process_pcm                 --probe build-s003-joint-confirm/s003_aec_residual_geometry_probe                 --contract "$analysis_contract"                 --trace-output "$seed_out/residual-geometry-trace.jsonl"                 --output "$seed_out/residual-geometry-receipt.json"
-
-            cp "$corpus/corpus.json" "$seed_out/corpus.json"
-          done
-
-          PYTHONPATH=validation/tools             python3 validation/tools/aec_joint_geometry_confirmation.py               --contract "$confirm_contract"               --receipt "$out/17907/residual-geometry-receipt.json"               --receipt "$out/18007/residual-geometry-receipt.json"               --receipt "$out/18107/residual-geometry-receipt.json"               --receipt "$out/18207/residual-geometry-receipt.json"               --receipt "$out/18307/residual-geometry-receipt.json"               --receipt "$out/18407/residual-geometry-receipt.json"               --receipt "$out/18507/residual-geometry-receipt.json"               --receipt "$out/18607/residual-geometry-receipt.json"               --output "$out/joint-geometry-confirmation.json"
-
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          r=json.loads(Path('s003-joint-confirm-out/joint-geometry-confirmation.json').read_text())
-          assert r['mechanical_validity']['evidence_accepted'] is True
-          print({
-              'outcome':r['outcome'],
-              'confirmed_seed_count':r['confirmed_seed_count'],
-              'total_seed_count':r['total_seed_count'],
-              'per_seed':r['per_seed'],
-          })
-          PY
-
-          cp "$confirm_contract" "$out/contract.json"
-          git rev-parse HEAD > "$out/source-sha.txt"
-          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$out/SHA256SUMS"
-
-      - name: Publish confirmation outcome
-        run: |
-          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json
-          from pathlib import Path
-          r=json.loads(Path('s003-joint-confirm-out/joint-geometry-confirmation.json').read_text())
-          print('## S003 joint q/rho geometry confirmation')
-          print('')
-          print('- Authority: **single candidate-zero confirmation only**')
-          print(f"- Outcome: **{r['outcome']}**")
-          print(f"- Confirmed seeds: `{r['confirmed_seed_count']}/{r['total_seed_count']}`")
-          print(f"- Per-seed freeze-both receipts: `{r['per_seed']}`")
-          print('- q-only / rho-only receipts: **descriptive only**')
-          print('- Root-cause attribution: **NOT_AUTHORIZED**')
-          print('- Candidate authority: **none**')
-          PY
-
-      - name: Upload hash-bound confirmation evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: s003-aec-joint-geometry-confirmation-${{ github.run_id }}
-          path: s003-joint-confirm-out/
-          if-no-files-found: error
-          retention-days: 30
+          python3 -m json.tool docs/program/iterations/S003-aec-joint-geometry-confirmation-v1-result.json >/dev/null
+          python3 -m py_compile tests/validation/test_s003_aec_joint_geometry_confirmation_retirement.py
+          python3 tests/validation/test_s003_aec_joint_geometry_confirmation_retirement.py

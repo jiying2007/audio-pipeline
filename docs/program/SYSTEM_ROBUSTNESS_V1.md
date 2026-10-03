@@ -204,3 +204,12 @@ The shipping scalar RES formula was reconstructed exactly on fresh seeds 15507�
 However, smoothing/history is not the delay source: the actual-smoothed path and instantaneous-target path recover at the same time on six seeds, while on 15807 and 16207 the smoothed path recovers **100–150 ms earlier** than the instantaneous target. Therefore release-alpha/history tuning is not authorized by this evidence.
 
 The only retained bounded question is the instantaneous target trajectory itself, driven by existing `residual_energy` and `echo_energy`. The next authorized phase is `S003_AEC_RES_TARGET_DRIVER_DECOMPOSITION_V1`, candidate-zero counterfactual analysis only. No gain/alpha search, formula change, root-cause claim, shipping change, or S004 admission is authorized.
+
+
+## S003 RES instantaneous-target driver checkpoint
+
+Fresh-main counterfactual analysis on seeds 16307–17007 isolated the two existing inputs to the RES instantaneous target. Positive target-induced recovery delay occurred on five seeds. Freezing post-transition `residual_energy` variation removed the positive delay on **5/5** applicable seeds, while freezing `echo_energy` variation removed it on **0/5** and sometimes increased the measured delay. Freezing both drivers removed all target delay.
+
+This establishes `residual_energy` variation as a necessary **mechanical driver** of the retained target delay under the preregistered counterfactual; it does not establish an AEC root cause and authorizes no RES target/formula or AEC parameter change.
+
+The next authorized phase is `S003_AEC_RESIDUAL_ENERGY_TRAJECTORY_DECOMPOSITION_V1`: observe the far-end-only AEC residual before RES using the exact identity between AEC input, echo estimate, their cross term, and residual energy. Start with normalized estimate/input power ratio and similarity; do not inspect/tune filter taps unless this bounded decomposition fails to explain the trajectory.

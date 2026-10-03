@@ -10,6 +10,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = '.github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml'
+RETIREMENT = 'docs/program/terminal-workflow-retirement.json'
 HISTORY = 'tests/validation/data/i015-consumed-workflow.yml'
 HISTORY_BLOB = '1bf5717bf4bb02f3847606a6d7cba7c61bde70f1'
 CLOSURE = ('.github/research/continuous-optimization/development-v4/'
@@ -64,10 +65,22 @@ class RetirementTests(unittest.TestCase):
         if blob(raw) != HISTORY_BLOB:
             raise ValueError('consumed workflow fixture drift')
         cls.history = yaml_data(raw)
-        cls.live = yaml_data((ROOT / WORKFLOW).read_bytes())
+        retirement = json.loads((ROOT / RETIREMENT).read_text(encoding='utf-8'))
+        records = [
+            item for item in retirement.get('consumed_research_workflows', [])
+            if item.get('path') == WORKFLOW
+        ]
+        if len(records) != 1:
+            raise ValueError('I015 consumed-research retirement record missing/duplicated')
+        cls.retired_record = records[0]
 
-    def test_live_is_contract_only(self):
-        validate(self.live, self.history)
+    def test_active_workflow_is_absent(self):
+        self.assertFalse((ROOT / WORKFLOW).exists())
+
+    def test_retired_manifest_binds_exact_contract_blob(self):
+        self.assertEqual(self.retired_record['blob_sha'],
+                         'c94314c22443301bd072b6d0552a7c4f98f33a1c')
+        self.assertEqual(self.retired_record['evidence'], CLOSURE)
 
     def test_original_execution_surface_rejected(self):
         with self.assertRaises(ValueError):
@@ -132,9 +145,14 @@ class RetirementTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         workflow = Path(WORKFLOW)
-        self.assertIn(workflow, module.CONTRACT_ONLY_RESEARCH_WORKFLOWS)
-        self.assertIn(Path(CLOSURE), module.CONTRACT_ONLY_RESEARCH_EVIDENCE[workflow])
-        # Exercises the existing owner rather than inventing a second path rule.
+        self.assertNotIn(workflow, module.CONTRACT_ONLY_RESEARCH_WORKFLOWS)
+        self.assertEqual(self.retired_record['investigation_id'],
+                         'i015-vad-upstream-consumption-decomposition-v1')
+        self.assertEqual(self.retired_record['evidence'], CLOSURE)
+        self.assertEqual(self.retired_record['blob_sha'],
+                         'c94314c22443301bd072b6d0552a7c4f98f33a1c')
+        # Exercises the canonical archive/retirement owner rather than keeping
+        # a second active compatibility registry just for I015.
         module.validate_program_archive_trigger_boundaries(ROOT)
 
     def test_independent_pr_and_main_contract_cover_retirement(self):

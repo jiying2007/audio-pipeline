@@ -322,6 +322,62 @@
   ],
   "consumed_research_workflows": [
     {
+      "path": ".github/workflows/research-i012-ns-spectral-post-snr-v2.yml",
+      "blob_sha": "b1bdb224a1cab1fd5eef2fe4972978601735dc5f",
+      "investigation_id": "i012-ns-spectral-post-snr-v2",
+      "evidence": ".github/research/continuous-optimization/development-v4/i012-ns-spectral-post-snr-v2-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i013-ns-excess-concentration-v1.yml",
+      "blob_sha": "f21512d712a19148360b4ec542f9c8faa8014b22",
+      "investigation_id": "i013-ns-excess-concentration-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i013-ns-excess-concentration-v1-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i014-ns-upstream-component-decomposition-v1.yml",
+      "blob_sha": "4de4f2f2a1af5db6d0a9a6e38bc90712a79c4902",
+      "investigation_id": "i014-ns-upstream-component-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i014-ns-upstream-component-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i015-vad-upstream-consumption-decomposition-v1.yml",
+      "blob_sha": "c94314c22443301bd072b6d0552a7c4f98f33a1c",
+      "investigation_id": "i015-vad-upstream-consumption-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i015-vad-upstream-consumption-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i016-vad-local-evidence-gated-blend-v1.yml",
+      "blob_sha": "e6f198d770fa3a77beb590789ee34a765c71c951",
+      "investigation_id": "i016-vad-local-evidence-gated-blend-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i016-vad-local-evidence-gated-blend-v1-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i017-vad-state-persistence-decomposition-v1.yml",
+      "blob_sha": "b0c1f115771837a670bedc4b4e8860f9a071bc1f",
+      "investigation_id": "i017-vad-state-persistence-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i017-vad-state-persistence-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml",
+      "blob_sha": "5f118216e8b62c1db4f3ff0b86e7a4f7ceef882b",
+      "investigation_id": "i018-vad-weak-refresh-extension-only-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i018-vad-weak-refresh-extension-only-v1-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml",
+      "blob_sha": "ac88fcb2fce024dce1829bf7be66a1f79afc2baa",
+      "investigation_id": "i019-vad-weak-start-evidence-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i019-vad-weak-start-evidence-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; one-shot authority is exhausted or the development candidate is terminally rejected; exact historical blob and durable result remain retained"
+    },
+    {
       "path": ".github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml",
       "blob_sha": "fed3f9751b42586b1be181e18050bbcd31416175",
       "investigation_id": "i021-vad-public-development-transfer-gap-v1",

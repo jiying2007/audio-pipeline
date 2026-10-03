@@ -130,7 +130,7 @@ def counterfactual_curve(
 ) -> list[float]:
     out = []
     for row in rows:
-        m = float(row["mono_energy"])
+        m = float(row["subtraction_input_energy"])
         q = float(row["q_estimate_to_input_power_ratio"])
         rho = float(row["rho_input_estimate_similarity"])
         if not int(row["normalized_valid"]):
@@ -218,7 +218,20 @@ def analyze_seed(
         corpus_path, case, len(rows)
     )
     curves = {}
-    for mode in ("actual", "freeze_q", "freeze_rho", "freeze_both"):
+    actual_energy = [float(row["residual_energy"]) for row in rows]
+    actual_measured = contrib.measure_curve(
+        actual_energy,
+        echo_energy,
+        transition_frame,
+        contract,
+    )
+    curves["actual"] = {
+        "recovery_time_ms": actual_measured["recovery_time_ms"],
+        "censored": bool(actual_measured["censored"]),
+        "pre_baseline_db": actual_measured["pre_baseline_db"],
+        "recovery_limit_db": actual_measured["recovery_limit_db"],
+    }
+    for mode in ("freeze_q", "freeze_rho", "freeze_both"):
         measured = contrib.measure_curve(
             counterfactual_curve(rows, q_ref, rho_ref, mode),
             echo_energy,
@@ -260,7 +273,7 @@ def analyze_seed(
         },
         "standard_aec_recovery_ms": standard_ms,
         "counterfactual_recovery": curves,
-        "actual_reconstruction_matches_standard_aec": actual_matches,
+        "actual_observed_recovery_matches_standard_aec": actual_matches,
         "driver_receipts": receipts,
         "candidate_authority": False,
         "root_cause_claim_authority": False,
@@ -282,7 +295,7 @@ def aggregate(items: list[dict], contract: dict) -> dict:
         by_seed[seed]["normalized_reconstruction_valid"] for seed in expected
     )
     actual_matches = all(
-        by_seed[seed]["actual_reconstruction_matches_standard_aec"]
+        by_seed[seed]["actual_observed_recovery_matches_standard_aec"]
         for seed in expected
     )
     accepted = equivalent and identity_ok and normalized_ok and actual_matches
@@ -310,7 +323,7 @@ def aggregate(items: list[dict], contract: dict) -> dict:
             "probe_output_bitwise_equivalent_all_seeds": equivalent,
             "identity_valid_all_seeds": identity_ok,
             "normalized_reconstruction_valid_all_seeds": normalized_ok,
-            "actual_reconstruction_matches_standard_aec_all_seeds": actual_matches,
+            "actual_observed_recovery_matches_standard_aec_all_seeds": actual_matches,
             "max_identity_relative_error": max(
                 by_seed[s]["identity_max_relative_error"] for s in expected
             ),

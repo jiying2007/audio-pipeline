@@ -47,6 +47,8 @@ HOSTED_REAL_PR_REQUIRED_PATHS = {
         'validation/tools/run_validation*.py',
         'validation/tools/render_corr_exact.*',
         'validation/tools/stage_profile_support.py',
+        'validation/tools/hosted_validation_compact_evidence.py',
+        'validation/tools/hosted_validation_compact_evidence.py',
         'validation/tools/build_hosted_real_corpus.py',
         'validation/hosted_real.datasets.lock.json',
         'validation/policies/validation-hosted-real-smoke.json',

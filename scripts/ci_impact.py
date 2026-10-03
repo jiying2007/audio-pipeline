@@ -91,6 +91,7 @@ RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/tools/aec_residual_raw_coordinate_decomposition.py",
     "validation/tools/aec_residual_scale_geometry_decomposition.py",
     "validation/tools/aec_geometry_freeze_confirmation.py",
+    "validation/tools/aec_geometry_signature_replay.py",
     "validation/policies/validation-s003-echo-path-res-ns-confirm.json",
     "validation/policies/validation-s003-res-gain-contribution.json",
     "validation/policies/validation-s003-speaker-gain-ns-recovery-confirm.json",

@@ -2,18 +2,15 @@
 from __future__ import annotations
 import json,re
 from pathlib import Path
+from retired_workflow_contract import assert_contract_or_retired
 ROOT=Path(__file__).resolve().parents[2]
 LIVE=ROOT/".github/workflows/research-s003-aec-res-target-driver-v1.yml"
 CONSUMED=ROOT/"tests/validation/data/s003-aec-res-target-driver-consumed-workflow.yml"
 RESULT=ROOT/"docs/program/iterations/S003-aec-res-target-driver-decomposition-v1-result.json"
 
 def main():
-    live=LIVE.read_text(); consumed=CONSUMED.read_text(); r=json.loads(RESULT.read_text())
-    assert "\n  pull_request:\n" in live
-    assert "\n  push:\n" not in live and "\n  workflow_dispatch:\n" not in live
-    jobs=re.findall(r"(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$",live[live.index("\njobs:")+1:])
-    assert jobs==["contract"],jobs
-    assert "test_s003_aec_res_target_driver_retirement.py" in live
+    assert_contract_or_retired(ROOT, LIVE, Path(__file__).name)
+    consumed=CONSUMED.read_text(); r=json.loads(RESULT.read_text())
     assert "\n  push:\n" in consumed and "\n  workflow_dispatch:\n" in consumed
     assert "Run fresh target-driver counterfactuals" in consumed
     assert "16307 16407 16507 16607 16707 16807 16907 17007" in consumed

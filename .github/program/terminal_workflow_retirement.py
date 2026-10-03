@@ -435,11 +435,14 @@ def check(root: Path) -> dict:
         evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
         require(evidence.get("investigation_id") == r["investigation_id"],
                 f"consumed research investigation identity drift: {r['path']}")
-        require(evidence.get("status") == "CLOSED_DIAGNOSTIC_ONLY",
-                f"consumed research is not closed diagnostic-only: {r['path']}")
+        require(evidence.get("status") in {
+                    "CLOSED_DIAGNOSTIC_ONLY", "CLOSED_INVALID_DIAGNOSTIC_ONLY"},
+                f"consumed research is not terminal diagnostic-only: {r['path']}")
         require(evidence.get("authority") in {
-                    "RESEARCH_DIAGNOSTIC_ONLY", "CANDIDATE_ZERO_DIAGNOSTIC_ONLY"},
-                f"consumed research authority drift: {r['path']}")
+                    "RESEARCH_DIAGNOSTIC_ONLY",
+                    "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+                    "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+                }, f"consumed research authority drift: {r['path']}")
         fresh = evidence.get("fresh_authority") or {}
         require(fresh.get("diagnostic_execution_consumed") == 1
                 and fresh.get("candidate_budget_consumed") == 0

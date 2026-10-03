@@ -3,7 +3,7 @@
   "id": "maintenance-branch-cleanup-v1",
   "authority": "BRANCH_LIFECYCLE_EVIDENCE_ONLY",
   "status": "CLOSED_REVIEWED_STALE_BRANCH_DISPOSITIONS",
-  "reviewed_main_sha": "f72594924be93923ca078f5eb3a59e643f008db4",
+  "reviewed_main_sha": "d53bade3548f1755177fb41d6e349836b7704cea",
   "deletion_policy": "Only terminal-branch-gc may mutate refs; this file records exact reviewed heads and does not promote branch content.",
   "records": [
     {
@@ -126,6 +126,12 @@
     "hardware_test_executed": false,
     "product_qualification": "DEFERRED_BY_SCOPE"
   },
-  "queue_compacted_at_main_sha": "5ad0e11a51c20e8d384182c5b780b13e3d1a14f1",
-  "queue_compaction_rule": "All terminal-branch-gc records had reached DELETED or ALREADY_DELETED; active queue is reset to empty while exact reviewed history remains in this evidence."
+  "queue_compacted_at_main_sha": "d53bade3548f1755177fb41d6e349836b7704cea",
+  "queue_compaction_rule": "All terminal-branch-gc records reached DELETED or ALREADY_DELETED; active terminal queue is empty while exact reviewed history remains in this evidence.",
+  "research_gc_compacted_at_main_sha": "d53bade3548f1755177fb41d6e349836b7704cea",
+  "research_gc_compacted_record_count": 69,
+  "research_gc_compaction_rule": "All terminal research refs are absent; exact status, head SHA and evidence remain in the registry, while auto_gc is false until a future live terminal ref explicitly enters the pending-deletion queue.",
+  "branch_surface_after_compaction": [
+    "main"
+  ]
 }

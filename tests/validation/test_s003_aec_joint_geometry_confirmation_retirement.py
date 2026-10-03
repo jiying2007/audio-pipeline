@@ -31,7 +31,8 @@ def main():
     assert set(m["freeze_both_recovery_ms"].values())=={50}
     assert set(m["freeze_rho_shift_vs_actual_ms"].values())=={0}
     assert sum(v!=0 for v in m["freeze_q_shift_vs_actual_ms"].values())==2
-    assert set(v for v in m["freeze_q_shift_vs_actual_ms"].values() if v)!= {-999}
+    nonzero_q=[v for v in m["freeze_q_shift_vs_actual_ms"].values() if v != 0]
+    assert sorted(nonzero_q)==[-50,50]
     assert m["probe_output_bitwise_equivalent_all_seeds"] is True
     assert m["identity_valid_all_seeds"] is True
     assert m["normalized_geometry_valid_all_seeds"] is True

@@ -22,6 +22,8 @@ on:
       - '.github/research/continuous-optimization/development-v3/same-guid-farend-doubletalk-paired-v1.json'
       - '.github/workflows/research-same-guid-farend-doubletalk-paired-v1.yml'
       - '.github/program/maintenance_workflow_contract.py'
+      - '.github/workflows/transient-branch-gc.yml'
+      - '.github/workflows/transient-branch-gc.yml'
       - '.github/workflows/research-s003-*.yml'
       - '.github/research/continuous-optimization/algorithm-space-v1.json'
       - '.github/research/continuous-optimization/algorithm-space-v1-closure.json'

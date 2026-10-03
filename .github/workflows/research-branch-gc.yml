@@ -60,6 +60,8 @@ jobs:
           )
           if [ "$EVENT_NAME" = push ]; then
             args+=(--apply --auto-only --confirmation DELETE_GC_ELIGIBLE_REFS)
+          elif [ "$EVENT_NAME" = pull_request ]; then
+            args+=(--auto-only)
           elif [ "$MODE" = apply ]; then
             args+=(--apply --confirmation "$CONFIRMATION")
           fi

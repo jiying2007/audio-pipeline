@@ -54,6 +54,7 @@ SOURCE_CANDIDATE_AUTHORITY_FALSE_KEYS = (
 RETIREMENT_COLLECTION_KEYS = {
     "workflows",
     "research_workflows",
+    "consumed_research_workflows",
     "source_candidate_workflows",
     "selection_workflows",
     "source_candidate_rounds",
@@ -130,6 +131,30 @@ def validate_manifest(data: dict) -> None:
         require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
                 f"research evidence path invalid: {path}")
         require(isinstance(r["reason"], str) and r["reason"], f"missing research reason: {path}")
+        seen_paths.add(path)
+        seen_blobs.add(blob)
+
+    consumed_records = data.get("consumed_research_workflows", [])
+    require(isinstance(consumed_records, list), "consumed_research_workflows must be a list")
+    for r in consumed_records:
+        require(set(r) == {"path", "blob_sha", "investigation_id", "evidence", "reason"},
+                f"consumed research retirement fields drift: {r.get('path')}")
+        path = str(r["path"])
+        blob = str(r["blob_sha"])
+        investigation = r["investigation_id"]
+        evidence = r["evidence"]
+        require(path.startswith(".github/workflows/"),
+                f"invalid consumed research workflow path: {path}")
+        require(path not in seen_paths, f"duplicate retired workflow path: {path}")
+        require(SHA_RE.fullmatch(blob) is not None,
+                f"invalid consumed research workflow blob SHA: {path}")
+        require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
+        require(isinstance(investigation, str) and investigation,
+                f"consumed research investigation id missing: {path}")
+        require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
+                f"consumed research evidence path invalid: {path}")
+        require(isinstance(r["reason"], str) and r["reason"],
+                f"missing consumed research reason: {path}")
         seen_paths.add(path)
         seen_blobs.add(blob)
 
@@ -397,6 +422,57 @@ def check(root: Path) -> dict:
             "blob_sha": r["blob_sha"],
             "investigation_id": r["investigation_id"],
             "evidence": r["evidence"],
+        })
+
+    consumed_research_checked = []
+    for r in data.get("consumed_research_workflows", []):
+        path = root / r["path"]
+        require(not path.exists(),
+                f"retired consumed research workflow was reintroduced: {r['path']}")
+        evidence_path = root / r["evidence"]
+        require(evidence_path.is_file(),
+                f"consumed research terminal evidence missing: {r['evidence']}")
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        require(evidence.get("investigation_id") == r["investigation_id"],
+                f"consumed research investigation identity drift: {r['path']}")
+        require(evidence.get("status") in {
+                    "CLOSED_DIAGNOSTIC_ONLY", "CLOSED_INVALID_DIAGNOSTIC_ONLY"},
+                f"consumed research is not terminal diagnostic-only: {r['path']}")
+        require(evidence.get("authority") in {
+                    "RESEARCH_DIAGNOSTIC_ONLY",
+                    "CANDIDATE_ZERO_DIAGNOSTIC_ONLY",
+                    "CANDIDATE_ZERO_CAUSAL_DIAGNOSTIC_ONLY",
+                }, f"consumed research authority drift: {r['path']}")
+        fresh = evidence.get("fresh_authority") or {}
+        require(fresh.get("diagnostic_execution_consumed") == 1
+                and fresh.get("candidate_budget_consumed") == 0
+                and fresh.get("confirmation_budget_consumed") == 0
+                and fresh.get("rerun_allowed") is False,
+                f"consumed research fresh authority is not terminal: {r['path']}")
+        boundary = evidence.get("authority_boundary") or {}
+        for key in (
+            "shipping_source_changed", "validation_holdout_consumed", "confirmation_consumed",
+            "shipping_authority", "source_merge_authority", "hil_authority",
+            "product_certification_authority", "release_authority", "automatic_main_mutation",
+        ):
+            require(boundary.get(key) is False,
+                    f"consumed research regained {key}: {r['path']}")
+        require(git("cat-file", "-t", r["blob_sha"]) == "blob",
+                f"historical consumed research workflow blob missing: {r['path']}")
+        historical = git("cat-file", "blob", r["blob_sha"])
+        on_block = extract_on_block(historical)
+        require("pull_request:" in on_block,
+                f"consumed research workflow lost PR contract lineage: {r['path']}")
+        for forbidden in ("push:", "schedule:", "workflow_call:", "workflow_run:", "workflow_dispatch:"):
+            require(forbidden not in on_block,
+                    f"consumed research workflow had forbidden trigger {forbidden}: {r['path']}")
+        jobs_text = historical[historical.find("\njobs:") + 1:]
+        job_names = re.findall(r"(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$", jobs_text)
+        require(job_names == ["contract"],
+                f"consumed research workflow was not contract-only: {r['path']}={job_names}")
+        consumed_research_checked.append({
+            "path": r["path"], "blob_sha": r["blob_sha"],
+            "investigation_id": r["investigation_id"], "evidence": r["evidence"],
         })
 
     source_candidate_checked = []
@@ -957,6 +1033,7 @@ def check(root: Path) -> dict:
         "result": "TERMINAL_WORKFLOW_RETIREMENT_PASS",
         "retired_workflows": len(checked),
         "retired_research_workflows": len(research_checked),
+        "retired_consumed_research_workflows": len(consumed_research_checked),
         "retired_source_candidate_workflows": len(source_candidate_checked),
         "retired_selection_workflows": len(selection_checked),
         "retired_source_candidate_rounds": len(source_candidate_round_checked),
@@ -964,6 +1041,7 @@ def check(root: Path) -> dict:
         "retired_historical_replay_workflows": len(historical_replay_checked),
         "tasks": sorted(EXPECTED_TASKS),
         "research_investigations": sorted(item["investigation_id"] for item in research_checked),
+        "consumed_research_investigations": sorted(item["investigation_id"] for item in consumed_research_checked),
         "source_candidates": sorted(item["candidate_id"] for item in source_candidate_checked),
         "selection_ids": sorted(item["selection_id"] for item in selection_checked),
         "source_candidate_rounds": sorted(item["round_id"] for item in source_candidate_round_checked),
@@ -1009,6 +1087,7 @@ def self_test() -> None:
             for index, (p, t) in enumerate(pairs)
         ],
         "research_workflows": [],
+        "consumed_research_workflows": [],
         "source_candidate_workflows": [],
         "selection_workflows": [],
         "source_candidate_rounds": [],
@@ -1033,6 +1112,15 @@ def self_test() -> None:
         "reason": "terminal research diagnostic",
     }]
     validate_manifest(research_sample)
+    consumed_sample = json.loads(json.dumps(sample))
+    consumed_sample["consumed_research_workflows"] = [{
+        "path": ".github/workflows/research-consumed-example.yml",
+        "blob_sha": "7" * 40,
+        "investigation_id": "research-consumed-example-v1",
+        "evidence": ".github/research/consumed-example-result.json",
+        "reason": "consumed contract-only research",
+    }]
+    validate_manifest(consumed_sample)
     source_sample = json.loads(json.dumps(sample))
     source_sample["source_candidate_workflows"] = [{
         "path": ".github/workflows/research-source-candidate-example.yml",

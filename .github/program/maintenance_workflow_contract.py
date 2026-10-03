@@ -100,13 +100,6 @@ PR_MANUAL_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i018-vad-weak-refresh-extension-only-v1.yml'),
     Path('.github/workflows/research-i019-vad-weak-start-evidence-decomposition-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
-    Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'),
-    Path('.github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml'),
-    Path('.github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml'),
-    Path('.github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml'),
-    Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'),
-    Path('.github/workflows/research-i039-ns-suppression-transfer-path-decomposition-v1.yml'),
-    Path('.github/workflows/research-i040-ns-synthesis-overlap-add-transfer-decomposition-v1.yml'),
 
 )
 
@@ -132,26 +125,6 @@ CONTRACT_ONLY_RESEARCH_WORKFLOWS = (
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-v1.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind.yml'),
     Path('.github/workflows/research-i020-vad-weak-start-requires-blend-blind-resume.yml'),
-    Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'),
-    Path('.github/workflows/research-i022-vad-low-local-evidence-disagreement-decomposition-v1.yml'),
-    Path('.github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml'),
-    Path('.github/workflows/research-i024-vad-disagreement-feature-separability-v1.yml'),
-    Path('.github/workflows/research-i025-ns-upstream-disagreement-noise-source-decomposition-v1.yml'),
-    Path('.github/workflows/research-i026-ns-upstream-matched-component-counterfactual-v1.yml'),
-    Path('.github/workflows/research-i027-ns-upstream-reference-ready-component-counterfactual-v1.yml'),
-    Path('.github/workflows/research-i028-ns-upstream-reference-readiness-temporal-decomposition-v1.yml'),
-    Path('.github/workflows/research-i029-ns-upstream-independent-donor-reference-feasibility-v1.yml'),
-    Path('.github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml'),
-    Path('.github/workflows/research-i031-ns-upstream-joint-coherent-donor-aggregation-v1.yml'),
-    Path('.github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml'),
-    Path('.github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml'),
-    Path('.github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml'),
-    Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'),
-    Path('.github/workflows/research-i036-ns-noise-estimate-aggregation-domain-decomposition-v1.yml'),
-    Path('.github/workflows/research-i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.yml'),
-    Path('.github/workflows/research-i038-ns-post-ns-matched-domain-transfer-decomposition-v1.yml'),
-    Path('.github/workflows/research-i039-ns-suppression-transfer-path-decomposition-v1.yml'),
-    Path('.github/workflows/research-i040-ns-synthesis-overlap-add-transfer-decomposition-v1.yml'),
 )
 CONTRACT_ONLY_RESEARCH_EVIDENCE = {
     Path('.github/workflows/research-algorithm-parameter-optimization.yml'): (
@@ -274,149 +247,7 @@ CONTRACT_ONLY_RESEARCH_EVIDENCE = {
         Path('validation/research/evidence/i020-blind-baseline-invalid-36304120808-36324803945/resume-partition-receipt.json'),
         Path('validation/research/evidence/i020-blind-baseline-invalid-36304120808-36324803945/source-qualification-summary.json'),
     ),
-    Path('.github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1-recovery.json'),
-        Path('tests/validation/data/i021-consumed-workflow.yml'),
-        Path('tests/validation/test_i021_one_shot_guard.py'),
-        Path('tests/validation/test_i021_recovery_contract.py'),
-        Path('tests/validation/test_i021_retirement.py'),
-        Path('.github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1-result.json'),
-        Path('tests/validation/data/i021-consumed-recovery-workflow.yml'),
-    ),
-    Path('.github/workflows/research-i022-vad-low-local-evidence-disagreement-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1-result.json'),
-        Path('tests/validation/data/i022-consumed-workflow.yml'),
-        Path('tests/validation/test_i022_one_shot_guard.py'),
-        Path('tests/validation/test_i022_retirement.py'),
-    ),
-    Path('.github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i023-vad-upstream-local-disagreement-risk-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i023-vad-upstream-local-disagreement-risk-v1-result.json'),
-        Path('tests/validation/data/i023-consumed-workflow.yml'),
-        Path('tests/validation/test_i023_one_shot_guard.py'),
-        Path('tests/validation/test_i023_retirement.py'),
-    ),
-    Path('.github/workflows/research-i024-vad-disagreement-feature-separability-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i024-vad-disagreement-feature-separability-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i024-vad-disagreement-feature-separability-v1-result.json'),
-        Path('tests/validation/data/i024-consumed-workflow.yml'),
-        Path('tests/validation/test_i024_one_shot_guard.py'),
-        Path('tests/validation/test_i024_retirement.py'),
-    ),
-    Path('.github/workflows/research-i025-ns-upstream-disagreement-noise-source-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i025-ns-upstream-disagreement-noise-source-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i025-ns-upstream-disagreement-noise-source-decomposition-v1-result.json'),
-        Path('tests/validation/data/i025-consumed-workflow.yml'),
-        Path('tests/validation/test_i025_one_shot_guard.py'),
-        Path('tests/validation/test_i025_retirement.py'),
-    ),
-    Path('.github/workflows/research-i026-ns-upstream-matched-component-counterfactual-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i026-ns-upstream-matched-component-counterfactual-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i026-ns-upstream-matched-component-counterfactual-v1-result.json'),
-        Path('tests/validation/data/i026-consumed-workflow.yml'),
-        Path('tests/validation/test_i026_one_shot_guard.py'),
-        Path('tests/validation/test_i026_retirement.py'),
-    ),    Path('.github/workflows/research-i027-ns-upstream-reference-ready-component-counterfactual-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i027-ns-upstream-reference-ready-component-counterfactual-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i027-ns-upstream-reference-ready-component-counterfactual-v1-result.json'),
-        Path('tests/validation/data/i027-consumed-workflow.yml'),
-        Path('tests/validation/test_i027_one_shot_guard.py'),
-        Path('tests/validation/test_i027_retirement.py'),
-    ),
-    Path('.github/workflows/research-i028-ns-upstream-reference-readiness-temporal-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i028-ns-upstream-reference-readiness-temporal-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i028-ns-upstream-reference-readiness-temporal-decomposition-v1-result.json'),
-        Path('tests/validation/data/i028-consumed-workflow.yml'),
-        Path('tests/validation/test_i028_one_shot_guard.py'),
-        Path('tests/validation/test_i028_retirement.py'),
-    ),
-    Path('.github/workflows/research-i029-ns-upstream-independent-donor-reference-feasibility-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i029-ns-upstream-independent-donor-reference-feasibility-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i029-ns-upstream-independent-donor-reference-feasibility-v1-result.json'),
-        Path('tests/validation/data/i029-consumed-workflow.yml'),
-        Path('tests/validation/test_i029_one_shot_guard.py'),
-        Path('tests/validation/test_i029_retirement.py'),
-    ),
-    Path('.github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1-result.json'),
-        Path('tests/validation/data/i030-consumed-workflow.yml'),
-        Path('tests/validation/test_i030_one_shot_guard.py'),
-        Path('tests/validation/test_i030_retirement.py'),
-    ),
-    Path('.github/workflows/research-i031-ns-upstream-joint-coherent-donor-aggregation-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i031-ns-upstream-joint-coherent-donor-aggregation-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i031-ns-upstream-joint-coherent-donor-aggregation-v1-result.json'),
-        Path('tests/validation/data/i031-consumed-workflow.yml'),
-        Path('tests/validation/test_i031_one_shot_guard.py'),
-        Path('tests/validation/test_i031_retirement.py'),
-    ),
 
-    Path('.github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1-result.json'),
-        Path('tests/validation/data/i032-consumed-workflow.yml'),
-        Path('tests/validation/test_i032_one_shot_guard.py'),
-        Path('tests/validation/test_i032_retirement.py'),
-    ),
-    Path('.github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i033-ns-vad-causal-noise-delta-alignment-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i033-ns-vad-causal-noise-delta-alignment-v1-result.json'),
-        Path('tests/validation/data/i033-consumed-workflow.yml'),
-        Path('tests/validation/test_i033_one_shot_guard.py'),
-        Path('tests/validation/test_i033_retirement.py'),
-    ),
-    Path('.github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i034-ns-vad-noise-state-temporal-response-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i034-ns-vad-noise-state-temporal-response-decomposition-v1-result.json'),
-        Path('tests/validation/data/i034-consumed-workflow.yml'),
-        Path('tests/validation/test_i034_one_shot_guard.py'),
-        Path('tests/validation/test_i034_retirement.py'),
-    ),
-    Path('.github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i035-ns-noise-tracker-update-regime-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i035-ns-noise-tracker-update-regime-decomposition-v1-result.json'),
-        Path('tests/validation/data/i035-consumed-workflow.yml'),
-        Path('tests/validation/test_i035_one_shot_guard.py'),
-        Path('tests/validation/test_i035_retirement.py'),
-    ),
-    Path('.github/workflows/research-i036-ns-noise-estimate-aggregation-domain-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1-result.json'),
-        Path('tests/validation/data/i036-consumed-workflow.yml'),
-        Path('tests/validation/test_i036_one_shot_guard.py'),
-        Path('tests/validation/test_i036_retirement.py'),
-    ),
-    Path('.github/workflows/research-i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i037-ns-noise-estimate-aggregation-exact-order-recovery-v1-result.json'),
-        Path('tests/validation/data/i037-consumed-workflow.yml'),
-        Path('tests/validation/test_i037_one_shot_guard.py'),
-        Path('tests/validation/test_i037_retirement.py'),
-    ),
-    Path('.github/workflows/research-i038-ns-post-ns-matched-domain-transfer-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i038-ns-post-ns-matched-domain-transfer-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i038-ns-post-ns-matched-domain-transfer-decomposition-v1-result.json'),
-        Path('tests/validation/data/i038-consumed-workflow.yml'),
-        Path('tests/validation/test_i038_one_shot_guard.py'),
-        Path('tests/validation/test_i038_retirement.py'),
-    ),
-    Path('.github/workflows/research-i039-ns-suppression-transfer-path-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i039-ns-suppression-transfer-path-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i039-ns-suppression-transfer-path-decomposition-v1-result.json'),
-        Path('tests/validation/data/i039-consumed-workflow.yml'),
-        Path('tests/validation/test_i039_one_shot_guard.py'),
-        Path('tests/validation/test_i039_retirement.py'),
-    ),
-    Path('.github/workflows/research-i040-ns-synthesis-overlap-add-transfer-decomposition-v1.yml'): (
-        Path('.github/research/continuous-optimization/development-v4/i040-ns-synthesis-overlap-add-transfer-decomposition-v1.json'),
-        Path('.github/research/continuous-optimization/development-v4/i040-ns-synthesis-overlap-add-transfer-decomposition-v1-result.json'),
-        Path('tests/validation/data/i040-consumed-workflow.yml'),
-        Path('tests/validation/test_i040_one_shot_guard.py'),
-        Path('tests/validation/test_i040_retirement.py'),
-    ),
 
 }
 
@@ -449,6 +280,7 @@ LEGACY_SEMANTICS_GLOBS = (
 TERMINAL_RETIREMENT_COLLECTION_KEYS = {
     "workflows",
     "research_workflows",
+    "consumed_research_workflows",
     "source_candidate_workflows",
     "selection_workflows",
     "source_candidate_rounds",
@@ -572,6 +404,8 @@ def _terminal_retirement_required_paths(root: Path) -> set[str]:
     for record in data.get('workflows', []):
         required.update((record['path'], record['terminal_evidence']))
     for record in data.get('research_workflows', []):
+        required.update((record['path'], record['evidence']))
+    for record in data.get('consumed_research_workflows', []):
         required.update((record['path'], record['evidence']))
     for record in data.get('source_candidate_workflows', []):
         required.update((record['path'], record['evidence']))

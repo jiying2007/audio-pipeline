@@ -315,6 +315,22 @@ def main() -> int:
     assert joint_confirm["preregistered_rules"]["no_aec_mu_search"] is True
     assert joint_confirm["authority_boundary"]["may_open_s004"] is False
 
+    raw_coords = json.loads((ITER / "S003-aec-residual-geometry-raw-coordinate-decomposition-v1.json").read_text())
+    assert raw_coords["authority"] == "CANDIDATE_ZERO_RAW_COORDINATE_ANALYSIS_ONLY"
+    assert raw_coords["candidate_limit"] == 0 and raw_coords["confirmation_limit"] == 0
+    assert raw_coords["promotion_allowed"] is False and raw_coords["shipping_change_allowed"] is False
+    assert raw_coords["corpus"]["fresh_seeds"] == [18707, 18807, 18907, 19007, 19107, 19207, 19307, 19407]
+    assert raw_coords["corpus"]["analysis_profile"] == "prefix-aec"
+    assert raw_coords["measurement"]["geometry_id"] == "100w-50s"
+    assert set(raw_coords["counterfactuals"]) == {"freeze_M", "freeze_E", "freeze_C"}
+    assert raw_coords["physical_validity"]["required_for_counterfactual_interpretation"] is True
+    assert raw_coords["preregistered_rules"]["no_reference_adjustment_after_results"] is True
+    assert raw_coords["preregistered_rules"]["no_coordinate_scale_search"] is True
+    assert raw_coords["preregistered_rules"]["no_invalid_value_clamping_except_roundoff_within_declared_tolerance"] is True
+    assert raw_coords["preregistered_rules"]["no_filter_weight_inspection"] is True
+    assert raw_coords["preregistered_rules"]["no_root_cause_selection"] is True
+    assert raw_coords["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

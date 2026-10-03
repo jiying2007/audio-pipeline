@@ -34,6 +34,7 @@ on:
       - 'validation/tools/aec_res_target_driver_decomposition.py'
       - 'validation/tools/aec_residual_energy_trajectory.py'
       - 'validation/tools/aec_joint_geometry_confirmation.py'
+      - 'validation/tools/aec_residual_raw_coordinate_decomposition.py'
       - 'tests/validation/s003_aec_residual_geometry_probe.c'
       - 'tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c'
       - 'tests/validation/s003_aec_echo_path_res_state_probe.c'
@@ -87,6 +88,7 @@ on:
       - 'validation/tools/aec_res_target_driver_decomposition.py'
       - 'validation/tools/aec_residual_energy_trajectory.py'
       - 'validation/tools/aec_joint_geometry_confirmation.py'
+      - 'validation/tools/aec_residual_raw_coordinate_decomposition.py'
       - 'tests/validation/s003_aec_residual_geometry_probe.c'
       - 'tests/validation/s003_aec_echo_path_res_gain_contribution_probe.c'
       - 'tests/validation/s003_aec_echo_path_res_state_probe.c'
@@ -154,6 +156,7 @@ jobs:
             validation/tools/aec_res_target_driver_decomposition.py \
             validation/tools/aec_residual_energy_trajectory.py \
             validation/tools/aec_joint_geometry_confirmation.py \
+            validation/tools/aec_residual_raw_coordinate_decomposition.py \
             validation/tools/mic_mismatch_downstream_transfer_review.py \
             validation/tools/build_stage_interaction_corpus.py \
             validation/tools/stage_interaction_attribution.py \
@@ -187,6 +190,7 @@ jobs:
           PYTHONPATH=validation/tools python3 validation/tools/aec_res_target_driver_decomposition.py self-test
           PYTHONPATH=validation/tools python3 validation/tools/aec_residual_energy_trajectory.py self-test
           PYTHONPATH=validation/tools python3 validation/tools/aec_joint_geometry_confirmation.py --self-test
+          PYTHONPATH=validation/tools python3 validation/tools/aec_residual_raw_coordinate_decomposition.py self-test
           python3 validation/tools/mic_mismatch_downstream_transfer_review.py --self-test
           python3 validation/tools/build_stage_interaction_corpus.py --self-test
           for f in docs/program/iterations/S001.json docs/program/iterations/S002.json \
@@ -212,6 +216,7 @@ jobs:
                    docs/program/iterations/S003-aec-res-target-driver-decomposition-v1.json \
                    docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1.json \
                    docs/program/iterations/S003-aec-joint-geometry-confirmation-v1.json \
+                   docs/program/iterations/S003-aec-residual-geometry-raw-coordinate-decomposition-v1.json \
                    docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json \
                    validation/failure-replay/schema-v1.json \
                    validation/policies/validation-s003-dechorate-artifact-exclusion.json \

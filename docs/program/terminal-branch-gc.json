@@ -27,8 +27,19 @@
     "release/",
     "validation/"
   ],
-  "allowed_exact_names": [],
-  "branches": [],
+  "allowed_exact_names": [
+    "cleanup/retire-s003-recovery-contracts-1"
+  ],
+  "branches": [
+    {
+      "name": "cleanup/retire-s003-recovery-contracts-1",
+      "expected_sha": "916c91ada5f7120221f439c66985b302f8a40c67"
+    },
+    {
+      "name": "validation/close-ns-floor-lowering-lane",
+      "expected_sha": "0db5806513d0a538bab696cf2761e1839af334cc"
+    }
+  ],
   "authority_boundary": {
     "hardware_test_executed": false,
     "hardware_collection_performed": false,

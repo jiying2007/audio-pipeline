@@ -83,5 +83,19 @@
       "candidate_relevant_subsignature_valid": false,
       "s004_candidate_authority": false
     }
+  ],
+  "supplemental_replays": [
+    {
+      "replay_id": "SR-S003-AEC-ECHO-PATH-GEOMETRY-V1",
+      "contract_path": "supplemental/aec-echo-path-geometry-v1.json",
+      "workflow": ".github/workflows/failure-replay-aec-geometry-v1.yml",
+      "authority": "supplemental-replay-only",
+      "lifecycle_status": "OPEN_DIAGNOSTIC",
+      "mechanism_coordinate": "G=R/M",
+      "first_observable_stage": "AEC",
+      "candidate_authority": false,
+      "release_acceptance_authority": false,
+      "s004_candidate_authority": false
+    }
   ]
 }

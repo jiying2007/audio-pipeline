@@ -55,3 +55,19 @@ A stage-prefix review may prove that later stages are not necessary for a diagno
 ## Metric/reference-domain rejection
 
 Source-domain validity is necessary but not sufficient when a diagnostic metric compares outputs after an intentional stage transform against a raw reference. The mic gain/delay mismatch line is a concrete example: the raw-clean SI-SDR improvement watch remained severe at an HPF-only prefix, but the severe score disappeared when the clean reference was passed through the same HPF; changing only the right mismatch channel had no bitwise effect at that prefix. The candidate line is therefore terminally rejected as a metric/reference-target artifact. Historical replay evidence remains reproducible, but it no longer grants a path toward S004 candidate design.
+
+
+## Supplemental mechanism-signature replays
+
+Some durable diagnostic signatures do not share the same source generator or
+stage-attribution authority as the core replay entries. They are registered in
+`catalog.json -> supplemental_replays` and validated by dedicated replay
+workflows while remaining under the same replay-only authority boundary.
+
+The first supplemental replay,
+`SR-S003-AEC-ECHO-PATH-GEOMETRY-V1`, captures the terminal AEC echo-path
+diagnostic mechanism at stage AEC: deterministic seeds reproduce the current
+100w-50s recovery timing and a physically admissible `G=R/M` freeze returns
+recovery to 0 ms. It exists to detect shipping drift and trigger explicit
+lifecycle review. It does not reopen the retired internal mechanism search,
+grant release acceptance, or authorize a candidate.

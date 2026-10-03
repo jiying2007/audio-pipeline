@@ -1,0 +1,184 @@
+name: AEC Geometry Signature Replay v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json'
+      - 'validation/failure-replay/catalog.json'
+      - 'validation/tools/aec_geometry_signature_replay.py'
+      - 'validation/tools/aec_residual_energy_trajectory.py'
+      - 'validation/tools/aec_residual_scale_geometry_decomposition.py'
+      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_residual_geometry_probe.c'
+      - 'docs/program/iterations/S003-aec-geometry-freeze-confirmation-v1-result.json'
+      - '.github/workflows/failure-replay-aec-geometry-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json'
+      - 'validation/failure-replay/catalog.json'
+      - 'validation/tools/aec_geometry_signature_replay.py'
+      - 'validation/tools/aec_residual_energy_trajectory.py'
+      - 'validation/tools/aec_residual_scale_geometry_decomposition.py'
+      - 'validation/tools/aec_res_gain_contribution_decomposition.py'
+      - 'validation/policies/validation-s003-res-gain-contribution.json'
+      - 'tests/validation/stage_prefix_process_pcm.c'
+      - 'tests/validation/s003_aec_residual_geometry_probe.c'
+      - 'docs/program/iterations/S003-aec-geometry-freeze-confirmation-v1-result.json'
+      - '.github/workflows/failure-replay-aec-geometry-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aec-geometry-signature-replay-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ccache
+        with:
+          namespace: aec-geometry-signature-replay-v1
+
+      - name: Validate durable replay authority
+        run: |
+          set -euo pipefail
+          python3 -m json.tool             validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json >/dev/null
+          python3 -m py_compile             validation/tools/aec_geometry_signature_replay.py             validation/tools/aec_residual_energy_trajectory.py             validation/tools/aec_residual_scale_geometry_decomposition.py             validation/tools/aec_res_gain_contribution_decomposition.py
+          PYTHONPATH=validation/tools             python3 validation/tools/aec_geometry_signature_replay.py --self-test
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json').read_text())
+          r=json.loads(Path('docs/program/iterations/S003-aec-geometry-freeze-confirmation-v1-result.json').read_text())
+          assert c['authority']=='supplemental-replay-only'
+          assert c['lifecycle_status']=='OPEN_DIAGNOSTIC'
+          assert c['source_identity']['seeds']==[20307,20507]
+          assert c['measurement']['geometry_id']=='100w-50s'
+          assert c['expected_replay']['standard_aec_recovery_ms']=={'20307':100,'20507':150}
+          assert c['expected_replay']['freeze_geometry_recovery_ms']=={'20307':0,'20507':0}
+          assert c['mechanism_lineage']['first_observable_stage']=='AEC'
+          assert c['mechanism_lineage']['mechanism_coordinate']=='G=R/M'
+          assert c['authority_boundary']['may_reopen_internal_mechanism_search'] is False
+          assert r['status']=='CLOSED_DIAGNOSTIC_NORMALIZED_GEOMETRY_CONFIRMED_MECHANISM_LINE_TERMINAL'
+          assert r['mechanism_line_closeout']['terminal'] is True
+          print('AEC geometry supplemental replay authority: PASS')
+          PY
+
+      - name: Build fixed processor and validated residual probe
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-geometry-replay             -DCMAKE_BUILD_TYPE=Release             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON             -DAP_BUILD_BENCH=OFF -DAP_STRICT_WARNINGS=ON
+          cmake --build build-geometry-replay --target audio_pipeline --parallel
+
+          cc -std=c11 -Wall -Wextra -Werror             -Iinclude -Ibuild-geometry-replay/generated             tests/validation/stage_prefix_process_pcm.c             build-geometry-replay/libaudio_pipeline.a -lm             -o build-geometry-replay/stage_prefix_process_pcm
+
+          python3 - <<'PY' > /tmp/geometry-replay-defs.txt
+          import json,shlex
+          from pathlib import Path
+          db=json.loads(Path('build-geometry-replay/compile_commands.json').read_text())
+          rows=[
+              row for row in db
+              if 'audio_pipeline.dir' in row.get('command','')
+              or 'audio_pipeline.dir' in ' '.join(row.get('arguments',[]))
+          ]
+          if not rows:
+              raise SystemExit('audio_pipeline compile command not found')
+          row=rows[0]
+          args=row.get('arguments') or shlex.split(row['command'])
+          defs=[]
+          for arg in args:
+              if arg.startswith('-D') and arg not in defs:
+                  defs.append(arg)
+          for item in ['AP_BUILD_STAGE_AEC=1','AP_BUILD_STAGE_SYNC=1']:
+              if item not in ' '.join(defs):
+                  raise SystemExit(f'missing required compile define: {item}')
+          print('\n'.join(defs))
+          PY
+          mapfile -t AP_DEFS < /tmp/geometry-replay-defs.txt
+          cc -std=c11 -Wall -Wextra -Werror             "${AP_DEFS[@]}"             -Iinclude -Isrc -Ibuild-geometry-replay/generated             tests/validation/s003_aec_residual_geometry_probe.c             build-geometry-replay/libaudio_pipeline.a -lm             -o build-geometry-replay/s003_aec_residual_geometry_probe
+
+      - name: Regenerate geometry replay
+        run: |
+          set -euo pipefail
+          out=aec-geometry-replay-out
+          mkdir -p "$out"
+          geometry_contract=docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1.json
+          scale_contract=docs/program/iterations/S003-aec-residual-scale-geometry-decomposition-v1.json
+          replay_contract=validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json
+
+          for seed in 20307 20507; do
+            corpus="/tmp/aec-geometry-replay-$seed"
+            seed_out="$out/$seed"
+            mkdir -p "$seed_out"
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_res_gain_contribution_decomposition.py build                 --output "$corpus" --seed "$seed" --seconds 6
+
+            PYTHONPATH=validation/tools               python3 validation/tools/stage_interaction_run.py                 --source-revision '${{ github.sha }}'                 --corpus "$corpus/corpus.json"                 --policy validation/policies/validation-s003-res-gain-contribution.json                 --dataset-lock validation/datasets.lock.json                 --processor build-geometry-replay/stage_prefix_process_pcm                 --output "$seed_out/canonical-report.json"                 --evidence-manifest "$seed_out/evidence-manifest.json"                 --enforce
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_residual_energy_trajectory.py run                 --corpus "$corpus/corpus.json"                 --report "$seed_out/canonical-report.json"                 --processor build-geometry-replay/stage_prefix_process_pcm                 --probe build-geometry-replay/s003_aec_residual_geometry_probe                 --contract "$geometry_contract"                 --trace-output "$seed_out/residual-geometry-trace.jsonl"                 --output "$seed_out/residual-geometry-receipt.json"
+
+            PYTHONPATH=validation/tools               python3 validation/tools/aec_residual_scale_geometry_decomposition.py run                 --corpus "$corpus/corpus.json"                 --receipt "$seed_out/residual-geometry-receipt.json"                 --trace "$seed_out/residual-geometry-trace.jsonl"                 --contract "$scale_contract"                 --output "$seed_out/scale-geometry-receipt.json"
+
+            python3 - <<PY
+          import json
+          from pathlib import Path
+          root=Path("$seed_out")
+          residual=json.loads((root/'residual-geometry-receipt.json').read_text())
+          scale=json.loads((root/'scale-geometry-receipt.json').read_text())
+          combined={'seed':$seed,'residual_geometry':residual,'scale_geometry':scale}
+          (root/'replay-receipt.json').write_text(
+              json.dumps(combined,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+          done
+
+          PYTHONPATH=validation/tools             python3 validation/tools/aec_geometry_signature_replay.py               --contract "$replay_contract"               --receipt "$out/20307/replay-receipt.json"               --receipt "$out/20507/replay-receipt.json"               --output "$out/replay-validation.json"
+
+          cp "$replay_contract" "$out/replay-contract.json"
+          git rev-parse HEAD > "$out/source-sha.txt"
+          find "$out" -type f ! -name SHA256SUMS -print0 | sort -z |             xargs -0 sha256sum > "$out/SHA256SUMS"
+
+      - name: Publish replay signature
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          r=json.loads(Path('aec-geometry-replay-out/replay-validation.json').read_text())
+          print('## AEC Geometry Signature Replay v1')
+          print(f"- Status: **{r['status']}**")
+          print(f"- Seeds: `{r['seeds']}`")
+          print(f"- First observable stage: `{r['first_observable_stage']}`")
+          print(f"- Mechanism coordinate: `{r['mechanism_coordinate']}`")
+          for item in r['per_seed']:
+              print(
+                  f"- seed `{item['seed']}`: actual `{item['standard_aec_recovery_ms']} ms`, "
+                  f"freeze-G `{item['freeze_geometry_recovery_ms']} ms`, "
+                  f"status `{item['status']}`"
+              )
+          print('- Candidate authority: **none**')
+          print('- Release acceptance authority: **none**')
+          PY
+
+      - name: Upload durable replay evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: aec-geometry-signature-replay-${{ github.run_id }}
+          path: aec-geometry-replay-out/
+          if-no-files-found: error
+          retention-days: 30

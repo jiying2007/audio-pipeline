@@ -284,6 +284,23 @@ def main() -> int:
     assert target_driver["authority_boundary"]["may_claim_driver_root_cause"] is False
     assert target_driver["authority_boundary"]["may_open_s004"] is False
 
+    residual_geometry = json.loads((ITER / "S003-aec-residual-energy-trajectory-decomposition-v1.json").read_text())
+    assert residual_geometry["authority"] == "CANDIDATE_ZERO_AEC_RESIDUAL_GEOMETRY_ANALYSIS_ONLY"
+    assert residual_geometry["candidate_limit"] == 0 and residual_geometry["confirmation_limit"] == 0
+    assert residual_geometry["promotion_allowed"] is False and residual_geometry["shipping_change_allowed"] is False
+    assert residual_geometry["corpus"]["fresh_seeds"] == [17107, 17207, 17307, 17407, 17507, 17607, 17707, 17807]
+    assert residual_geometry["corpus"]["analysis_profile"] == "prefix-aec"
+    assert residual_geometry["measurement"]["geometry_id"] == "100w-50s"
+    assert residual_geometry["identity"]["equation"] == "R = M + E - 2*C"
+    assert residual_geometry["identity"]["normalized_equation"] == "R/M = 1 + q - 2*rho*sqrt(q)"
+    assert residual_geometry["probe"]["filter_weight_or_tap_access"] is False
+    assert residual_geometry["preregistered_rules"]["no_filter_weight_inspection"] is True
+    assert residual_geometry["preregistered_rules"]["no_tap_inspection"] is True
+    assert residual_geometry["preregistered_rules"]["no_aec_mu_search"] is True
+    assert residual_geometry["preregistered_rules"]["no_aec_tap_search"] is True
+    assert residual_geometry["preregistered_rules"]["no_counterfactual_parameter_sweep"] is True
+    assert residual_geometry["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "id": "system-robustness-v1-result",
+  "phase": "system-robustness-v1",
+  "status": "CLOSED_CANDIDATE_ZERO_FOUNDATION_ACTIVE_REGRESSION",
+  "authority": "PHASE_GOVERNANCE_ONLY_NO_CANDIDATE_RELEASE_OR_SHIPPING_AUTHORITY",
+  "authoritative_main": {
+    "sha": "41614296a4b2541ca7cd81d38e4995038ef2f592",
+    "qualification": {
+      "system_robustness_run_id": 37098108857,
+      "system_robustness_conclusion": "success",
+      "failure_replay_bank_run_id": 37098108899,
+      "failure_replay_bank_conclusion": "success",
+      "aec_geometry_replay_run_id": 37098108841,
+      "aec_geometry_replay_conclusion": "success",
+      "hosted_real_audio_run_id": 37098108835,
+      "hosted_real_audio_conclusion": "success",
+      "hosted_real_aec_run_id": 37098108878,
+      "hosted_real_aec_conclusion": "success",
+      "verify_run_id": 37098109071,
+      "verify_conclusion": "success",
+      "verify_summary_jobs": 50,
+      "release_run_id": 37098278722,
+      "release_conclusion": "success",
+      "i015_contract_run_id": 37098108917,
+      "i015_contract_conclusion": "success",
+      "i015_finalization_run_id": 37098278669,
+      "i015_finalization_conclusion": "success"
+    }
+  },
+  "phase_model": {
+    "research_progression_closed": true,
+    "regression_qualification_active": true,
+    "s001_s002_s003_workflows_retained": true,
+    "candidate_authority": false,
+    "promotion_authority": false,
+    "shipping_change_authority": false,
+    "release_acceptance_authority": false,
+    "s004_open": false
+  },
+  "immutable_predecessor_lineage": {
+    "ns_response_mismatch": "I025-I040 terminal/immutable; regression coverage only",
+    "no_i041_parameter_search": true,
+    "aec_internal_mechanism_terminal_result": "docs/program/iterations/S003-aec-geometry-freeze-confirmation-v1-result.json",
+    "aec_internal_mechanism_reopen_authorized": false
+  },
+  "milestones": {
+    "S001": {
+      "contract": "docs/program/iterations/S001.json",
+      "lifecycle": "ACTIVE_REGRESSION_DIAGNOSTIC",
+      "candidate_limit": 0,
+      "purpose": "deterministic end-to-end perturbation/failure map with replay-only diagnostic watch",
+      "retained_outputs": [
+        "failure heatmap",
+        "diagnostic attribution",
+        "failure replay index"
+      ]
+    },
+    "S002": {
+      "contract": "docs/program/iterations/S002.json",
+      "lifecycle": "ACTIVE_REGRESSION_DIAGNOSTIC",
+      "candidate_limit": 0,
+      "purpose": "AEC talk-state/echo-path/nonlinear/motion transition decomposition with stage-appropriate metrics",
+      "internal_mechanism_search_terminal": true
+    },
+    "S003": {
+      "contract": "docs/program/iterations/S003.json",
+      "lifecycle": "ACTIVE_REGRESSION_DIAGNOSTIC",
+      "candidate_limit": 0,
+      "purpose": "stage-prefix first-observable attribution and durable replay evidence",
+      "causal_root_cause_authority": false
+    }
+  },
+  "durable_assets": {
+    "failure_replay_bank": {
+      "catalog": "validation/failure-replay/catalog.json",
+      "authority": "diagnostic-regression-only-not-release-or-candidate-authority",
+      "core_entries": [
+        "FR-S003-CAPTURE-CLIPPING-V1",
+        "FR-S003-MIC-GAIN-DELAY-MISMATCH-V1"
+      ],
+      "supplemental_replays": [
+        "SR-S003-AEC-ECHO-PATH-GEOMETRY-V1"
+      ],
+      "lifecycle_review_required_on_drift": true
+    },
+    "aec_geometry_signature": {
+      "replay_contract": "validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json",
+      "first_observable_stage": "AEC",
+      "mechanism_coordinate": "G=R/M",
+      "measurement_geometry": "100w-50s",
+      "replay_seeds": [
+        20307,
+        20507
+      ],
+      "expected_standard_recovery_ms": {
+        "20307": 100,
+        "20507": 150
+      },
+      "expected_freeze_geometry_recovery_ms": {
+        "20307": 0,
+        "20507": 0
+      },
+      "internal_mechanism_search_reopen_authorized": false
+    },
+    "resources": {
+      "contract": "ci/ssc305-resource-profiles.json",
+      "profiles": [
+        "conservative",
+        "effect-first"
+      ],
+      "authority": "build-and-resource-qualification-not-silicon-performance",
+      "silicon_calibration_still_required": true,
+      "hosted_or_qemu_must_not_be_relabelled_as_silicon_timing": true
+    },
+    "runner_baseline": {
+      "new_and_active_system_robustness_qualification": "ubuntu-24.04",
+      "migration_policy": "explicit qualification runner baseline; do not depend on ubuntu-latest drift"
+    }
+  },
+  "reviewed_outcomes": {
+    "mic_gain_delay_candidate_line": "TERMINAL_REJECTED_METRIC_REFERENCE_ARTIFACT",
+    "aec_echo_path_mechanism_line": "TERMINAL_DIAGNOSTIC_EXPLANATION_CONVERTED_TO_REPLAY",
+    "algorithm_performance_verdict": "NOT_AUTHORIZED",
+    "product_release_verdict": "NOT_AUTHORIZED"
+  },
+  "s004_admission": {
+    "open": false,
+    "candidate_selected": false,
+    "rule": "S004 requires a separate reviewed admission for a bounded candidate; diagnostic/replay evidence alone never opens S004",
+    "current_reason": "No active candidate has independently satisfied the complete S004 admission contract. The mic-mismatch line was terminally rejected and the AEC geometry line is a diagnostic mechanism/replay asset, not a candidate."
+  },
+  "next_authorized_triggers": [
+    {
+      "trigger": "durable replay drift",
+      "action": "explicit lifecycle review; do not silently update expected signatures"
+    },
+    {
+      "trigger": "new independent public-development or HIL/silicon failure not explained by existing replay taxonomy",
+      "action": "open a new candidate-zero bounded diagnosis with source identity and authority separation"
+    },
+    {
+      "trigger": "SSC305 silicon measurements become available",
+      "action": "calibrate CPU/frame latency/RSS/stack/warmup/transition/thermal/power against existing conservative/effect-first build profiles"
+    },
+    {
+      "trigger": "separately reviewed bounded candidate satisfies all S004 preconditions",
+      "action": "open S004 explicitly; until then candidate authority remains zero"
+    }
+  ],
+  "forbidden_automatic_continuations": [
+    "reopen I025-I040 NS parameter search",
+    "continue AEC q/rho/G/M/E/C/filter-weight/tap micro-mechanism descent",
+    "tune NLMS step size, DTD threshold, RES/NS/AGC parameters without a separately admitted candidate",
+    "use validation-grade or blind data as optimizer feedback",
+    "convert hosted/QEMU timing into claimed SSC305 silicon performance",
+    "silently rewrite replay expectations when a regression drifts"
+  ],
+  "closeout_definition": "The candidate-zero system-robustness foundation is complete and research progression for this phase is closed. Its regression, replay, resource and qualification workflows intentionally remain active."
+}

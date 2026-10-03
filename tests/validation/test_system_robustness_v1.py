@@ -361,6 +361,16 @@ def main() -> int:
     assert geom_confirm["preregistered_rules"]["no_aec_mu_search"] is True
     assert geom_confirm["authority_boundary"]["may_open_s004"] is False
 
+    replay = json.loads((ROOT / "validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json").read_text())
+    assert replay["authority"] == "supplemental-replay-only"
+    assert replay["lifecycle_status"] == "OPEN_DIAGNOSTIC"
+    assert replay["source_identity"]["seeds"] == [20307, 20507]
+    assert replay["mechanism_lineage"]["first_observable_stage"] == "AEC"
+    assert replay["mechanism_lineage"]["mechanism_coordinate"] == "G=R/M"
+    assert replay["expected_replay"]["standard_aec_recovery_ms"] == {"20307": 100, "20507": 150}
+    assert replay["expected_replay"]["freeze_geometry_recovery_ms"] == {"20307": 0, "20507": 0}
+    assert replay["authority_boundary"]["may_reopen_internal_mechanism_search"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

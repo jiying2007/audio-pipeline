@@ -231,3 +231,14 @@ Independent fresh confirmation on seeds 17907–18607 reproduced the joint resid
 Single-factor freezes did not provide a stable explanation: freezing `rho` alone changed recovery on 0/8 seeds; freezing `q` alone changed only 2/8 seeds and the shifts were in opposite directions (+50 ms and -50 ms). The retained result is therefore **joint geometry change as a repeatable mechanical contributor**, not a q-only, rho-only, or interaction root-cause claim.
 
 The next authorized phase is `S003_AEC_RESIDUAL_GEOMETRY_RAW_COORDINATE_DECOMPOSITION_V1`: stay above filter weights/taps and decompose the joint q/rho change into observed subtraction-input energy `M`, predicted-echo energy `E`, and cross term `C`. Counterfactuals remain analysis-only and use preregistered pre-transition references; no scale sweep, AEC/RES parameter search, filter coefficient inspection, recovery-threshold change, shipping change, or S004 admission is authorized.
+
+
+## S003 raw residual-coordinate admissibility checkpoint
+
+Fresh seeds 18707–19407 were used to test whether the observed second-order coordinates `M` (AEC subtraction-input energy), `E` (predicted-echo energy), and `C` (cross term) can be independently frozen to preregistered pre-transition medians while the other two remain actual.
+
+They cannot. `freeze_M`, `freeze_E`, and `freeze_C` were each physically inadmissible on **8/8 seeds** because the resulting coordinate triples violated the Cauchy constraint `C² <= M*E`. No invalid value was clamped and no reference was adjusted after observing the result, so no fabricated recovery values exist for these modes.
+
+This closes independent raw-coordinate manipulation as an attribution method. It does not invalidate the confirmed joint q/rho geometry result; instead it demonstrates that the raw coordinates are coupled.
+
+The next authorized phase is `S003_AEC_RESIDUAL_SCALE_GEOMETRY_DECOMPOSITION_V1`, using the exact physically valid factorization `R=M*G`, `G=R/M=1+q-2*rho*sqrt(q)`. Only two analysis-only counterfactuals are authorized: actual M with preregistered pre-transition G, and preregistered pre-transition M with actual G. No return to independent M/E/C freezes, pairwise/scale sweeps, filter inspection, DSP parameter tuning, shipping change, or S004 admission is authorized.

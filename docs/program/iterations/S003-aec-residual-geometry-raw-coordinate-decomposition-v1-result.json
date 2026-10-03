@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-residual-geometry-raw-coordinate-decomposition-v1-result",
+  "investigation_id": "S003-aec-residual-geometry-raw-coordinate-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_INDEPENDENT_RAW_COORDINATES_PHYSICALLY_INADMISSIBLE",
+  "authority": "DIAGNOSTIC_ONLY_NO_RAW_COORDINATE_ROOT_CAUSE_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37092345054,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "63788cc9b244e3d2ae681e0583d442ff958cc55c",
+    "artifact_id": 11262686324,
+    "artifact_name": "s003-aec-raw-residual-coordinates-37092345054",
+    "artifact_zip_sha256": "6662ddf06eaece6c5504c30b30c12cfdc2442c33f66474a24004194b113b93ce",
+    "artifact_zip_bytes": 760575
+  },
+  "qualification": {
+    "verify_run_id": 37092345220,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37092345053,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37092345044,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37092345083,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37092345072,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37092345060,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37092649591,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37092649545,
+    "i015_finalization_conclusion": "success"
+  },
+  "fresh_seeds": [
+    18707,
+    18807,
+    18907,
+    19007,
+    19107,
+    19207,
+    19307,
+    19407
+  ],
+  "standard_aec_recovery_ms": {
+    "18707": 100,
+    "18807": 150,
+    "18907": 100,
+    "19007": 100,
+    "19107": 150,
+    "19207": 100,
+    "19307": 100,
+    "19407": 100
+  },
+  "mechanical_result": {
+    "freeze_M": {
+      "physically_admissible_seed_count": 0,
+      "physically_inadmissible_seed_count": 8,
+      "invalid_reason": "cauchy_violation",
+      "invalid_frame_count_range": [
+        289,
+        292
+      ],
+      "recovery_results_reported": false
+    },
+    "freeze_E": {
+      "physically_admissible_seed_count": 0,
+      "physically_inadmissible_seed_count": 8,
+      "invalid_reason": "cauchy_violation",
+      "invalid_frame_count_range": [
+        285,
+        288
+      ],
+      "recovery_results_reported": false
+    },
+    "freeze_C": {
+      "physically_admissible_seed_count": 0,
+      "physically_inadmissible_seed_count": 8,
+      "invalid_reason": "cauchy_violation",
+      "invalid_frame_count_range": [
+        59,
+        62
+      ],
+      "recovery_results_reported": false
+    },
+    "any_independent_raw_coordinate_counterfactual_physically_admissible": false,
+    "invalid_values_clamped": false,
+    "references_adjusted_after_results": false
+  },
+  "reviewed_validity": {
+    "independent_M_freeze_interpretable": false,
+    "independent_E_freeze_interpretable": false,
+    "independent_C_freeze_interpretable": false,
+    "raw_M_E_C_are_independently_manipulable_coordinates_for_this_signal_geometry": false,
+    "cauchy_coupling_is_material": true,
+    "raw_coordinate_root_cause_selection_authorized": false,
+    "pairwise_or_scale_sweep_authorized": false,
+    "prior_joint_q_rho_result_invalidated": false,
+    "interpretation": "Every one-coordinate M/E/C freeze violated the Cauchy geometry constraint on every fresh seed before a recovery result could be interpreted. The experiment therefore closes independent raw-coordinate manipulation as a valid attribution method. This does not invalidate the confirmed joint q/rho result; instead it shows that the raw second-order coordinates are strongly coupled and should not be independently frozen."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RESIDUAL_SCALE_GEOMETRY_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Use the exact physically valid factorization R=M*G with G=R/M=1+q-2*rho*sqrt(q). On new fresh seeds, compare two analysis-only counterfactuals: actual M with pre-transition G, and pre-transition M with actual G. Require M/G nonnegativity and exact reconstruction; do not return to independent M/E/C freezes, q/rho scaling, filter inspection, parameter search, or candidate selection."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

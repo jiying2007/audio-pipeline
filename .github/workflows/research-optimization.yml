@@ -44,20 +44,14 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile validation/tools/*.py .github/research/continuous-optimization/*.py
-          python3 -m py_compile .github/research/continuous-optimization/development-v2/*.py
           python3 -m py_compile .github/research/continuous-optimization/development-data-v3/*.py
-          python3 .github/research/continuous-optimization/development-v2/prepare.py --self-test
-          python3 .github/research/continuous-optimization/development-v2/build_corpus.py --self-test
           python3 .github/research/continuous-optimization/development-data-v3/prepare.py --self-test
           python3 .github/research/continuous-optimization/development-data-v3/build_corpus.py --self-test
           python3 .github/research/continuous-optimization/development-data-v3/prepare.py \
             --lock .github/research/continuous-optimization/development-data-v3/development.lock.json --check
           python3 validation/tools/build_aec_motion_corpus.py --self-test
-          python3 -m json.tool .github/research/continuous-optimization/development-v2/development.lock.json >/dev/null
-          python3 -m json.tool .github/research/continuous-optimization/development-v2/policy.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-data-v3/development.lock.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-data-v3/policy.json >/dev/null
-          python3 -m json.tool .github/research/continuous-optimization/development-v2/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/search-space.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/fine-aec-v4.json >/dev/null
           python3 -m json.tool .github/research/continuous-optimization/development-v3/doubletalk-case-guard-v5.json >/dev/null
@@ -83,6 +77,31 @@ jobs:
           python3 .github/research/continuous-optimization/research_optimizer.py --self-test
           python3 .github/research/continuous-optimization/research_optimizer_v3.py --self-test
           python3 .github/research/continuous-optimization/research_optimizer_v5.py --self-test
+      - name: Enforce retired v2 development lineage boundary
+        run: |
+          set -euo pipefail
+          test -f .github/research/continuous-optimization/development-v2/development.lock.json
+          test -f .github/research/continuous-optimization/development-v2/policy.json
+          test -f .github/research/continuous-optimization/development-v2/search-space.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          lock = json.loads(Path(
+              '.github/research/continuous-optimization/development-v2/development.lock.json'
+          ).read_text())
+          policy = json.loads(Path(
+              '.github/research/continuous-optimization/development-v2/policy.json'
+          ).read_text())
+          space = json.loads(Path(
+              '.github/research/continuous-optimization/development-v2/search-space.json'
+          ).read_text())
+          assert lock['catalog_id'] == 'audio-pipeline-public-development-v2'
+          assert policy['policy_id'] == 'research-development-diverse-v2'
+          assert space['search_space_id'] == 'call-multidataset-runtime-safe-v2'
+          assert lock['catalog_id'] != 'audio-pipeline-public-development-v3'
+          print('development-v2 retained as immutable historical lineage; no active self-test authority')
+          PY
+
       - name: Enforce blocker-aware v3 contract
         run: |
           set -euo pipefail

@@ -12,6 +12,7 @@ on:
       - 'validation/*.schema.json'
       - 'validation/tools/authority.py'
       - 'validation/tools/run_validation*.py'
+      - 'validation/tools/hosted_validation_compact_evidence.py'
       - 'validation/tools/render_corr_exact.*'
       - 'validation/tools/stage_profile_support.py'
       - 'validation/tools/build_hosted_real_corpus.py'
@@ -49,6 +50,7 @@ jobs:
           python3 validation/tools/build_hosted_real_corpus.py validate \
             --lock validation/hosted_real.datasets.lock.json
           python3 validation/tools/run_validation.py --self-test
+          python3 validation/tools/hosted_validation_compact_evidence.py --self-test
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -109,6 +111,19 @@ jobs:
               'corpus_id': report['corpus_id'],
           }, sort_keys=True))
           PY
+
+      - name: Compact reproducible hosted-real evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f hosted-real-out/corpus/corpus.json ] && [ -f hosted-real-out/corpus/source-manifest.json ]; then
+            python3 validation/tools/hosted_validation_compact_evidence.py \
+              --root hosted-real-out \
+              --builder validation/tools/build_hosted_real_corpus.py \
+              --dataset-lock validation/hosted_real.datasets.lock.json \
+              --repository-revision "$GITHUB_SHA"
+          fi
 
       - name: Seal hosted-real evidence bundle
         if: always()

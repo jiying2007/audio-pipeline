@@ -120,7 +120,8 @@ jobs:
             python3 validation/tools/run_validation_compact_evidence.py \
               --root hosted-real-out \
               --builder validation/tools/build_hosted_real_corpus.py \
-              --dataset-lock validation/hosted_real.datasets.lock.json
+              --dataset-lock validation/hosted_real.datasets.lock.json \
+              --repository-revision "$GITHUB_SHA"
           fi
 
       - name: Seal hosted-real evidence bundle

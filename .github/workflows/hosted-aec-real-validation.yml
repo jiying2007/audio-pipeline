@@ -199,7 +199,8 @@ jobs:
             python3 validation/tools/run_validation_compact_evidence.py \
               --root hosted-aec-out \
               --builder validation/tools/build_hosted_aec_corpus.py \
-              --dataset-lock validation/hosted_aec.datasets.lock.json
+              --dataset-lock validation/hosted_aec.datasets.lock.json \
+              --repository-revision "$SOURCE_REVISION"
           fi
 
       - name: Seal hosted AEC evidence bundle

@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "id": "maintenance-branch-cleanup-v1",
+  "authority": "BRANCH_LIFECYCLE_EVIDENCE_ONLY",
+  "status": "CLOSED_REVIEWED_STALE_BRANCH_DISPOSITIONS",
+  "reviewed_main_sha": "cf5730b1b589ddb650fd9ef594823977edc12cf4",
+  "deletion_policy": "Only terminal-branch-gc may mutate refs; this file records exact reviewed heads and does not promote branch content.",
+  "records": [
+    {
+      "branch": "ci/raise-validation-smoke-candidate-parallelism",
+      "head_sha": "2e80094a0cc758221837cefd11e6d33d12e74ce3",
+      "pr": 363,
+      "pr_disposition": "CLOSED_UNMERGED_NOT_RETAINED",
+      "reviewed_outcome": "MEASURED_AB_REJECTED",
+      "rationale": "candidate_jobs=3 did not improve attributable development-search throughput; candidate_jobs=2 retained"
+    },
+    {
+      "branch": "ci/lab-user-mode-targeted-permissions",
+      "head_sha": "fc80eaf78f4221c62566c42c42c05809c8176ceb",
+      "pr": 364,
+      "pr_disposition": "CLOSED_UNMERGED_NOT_RETAINED",
+      "reviewed_outcome": "MEASURED_AB_REJECTED",
+      "rationale": "targeted permission change did not improve ordinary-user wall time; recursive permission traversal was not the stable bottleneck"
+    },
+    {
+      "branch": "ci/lab-no-install-recommends",
+      "head_sha": "70f3853195a7bf6acb6ebd5561830854746f95b8",
+      "pr": 365,
+      "pr_disposition": "CLOSED_UNMERGED_NOT_RETAINED",
+      "reviewed_outcome": "MEASURED_AB_REJECTED",
+      "rationale": "reduced package count but materially worsened wall time; existing apt behavior retained"
+    },
+    {
+      "branch": "ci/lab-install-missing-prerequisites",
+      "head_sha": "85047e440b89d18f22c190c4aedd4741e4b29eab",
+      "pr": 367,
+      "pr_disposition": "CLOSED_UNMERGED_NOT_RETAINED",
+      "reviewed_outcome": "MEASURED_AB_REJECTED",
+      "rationale": "missing-only prerequisite fast path materially worsened hosted-runner prerequisite and total time"
+    },
+    {
+      "branch": "ci/parallelize-lab-prerequisite-setup",
+      "head_sha": "70f800b30f5ebd2ce27f625a9a392c1429620764",
+      "pr": 370,
+      "pr_disposition": "CLOSED_UNMERGED_NOT_RETAINED",
+      "reviewed_outcome": "MEASURED_AB_REJECTED",
+      "rationale": "parallel controller/fixture setup did not shorten the critical path; retained role-lane parallelism instead"
+    },
+    {
+      "branch": "fix/i021-consumed-evidence-recovery",
+      "head_sha": "7d72ee6e69b26bcd924b6c0f965865d0e463660c",
+      "pr": 450,
+      "pr_disposition": "CLOSED_UNMERGED_SUPERSEDED",
+      "reviewed_outcome": "SUPERSEDED_BY_PR_449",
+      "canonical_successor": {
+        "pr": 449,
+        "main_sha": "7fd6d754330ab937b068f6fd6778dbf0b8187a48",
+        "note": "PR #450 states #449 already merged the same partial-frame repair, recovery authority, retirement and Program Archive coverage"
+      }
+    },
+    {
+      "branch": "validation/terminalize-ns-floor-007-public-relative",
+      "head_sha": "518b6dba6c35fb157ce951b4ca0b92c0e6c87284",
+      "pr": 379,
+      "pr_disposition": "CLOSED_UNMERGED_CANONICAL_EVIDENCE_PRESERVED",
+      "reviewed_outcome": "PUBLIC_RELATIVE_REJECTED_NON_SHIPPING",
+      "canonical_main_evidence": {
+        "registry": ".github/program/acoustic_terminal_registry.json",
+        "candidate_id": "0d5f52491863",
+        "source_revision": "f19d7ac928aa9db6c23b122faa63e4fcfe52e1a1",
+        "terminal": "docs/program/evidence/acoustic-candidate-0d5f52491863/public-relative-run-35815591807/terminal.json"
+      }
+    }
+  ],
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "research_candidate_promoted": false,
+    "validation_policy_relaxed": false,
+    "hardware_test_executed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

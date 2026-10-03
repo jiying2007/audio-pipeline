@@ -28,6 +28,11 @@
     "validation/"
   ],
   "allowed_exact_names": [
+    "ci/lab-install-missing-prerequisites",
+    "ci/lab-no-install-recommends",
+    "ci/lab-user-mode-targeted-permissions",
+    "ci/parallelize-lab-prerequisite-setup",
+    "ci/raise-validation-smoke-candidate-parallelism",
     "cleanup/retire-s003-recovery-contracts-1"
   ],
   "branches": [
@@ -36,12 +41,40 @@
       "expected_sha": "5ebe7f75a2da3a937e970e655af516cf37e7d993"
     },
     {
+      "name": "ci/lab-install-missing-prerequisites",
+      "expected_sha": "85047e440b89d18f22c190c4aedd4741e4b29eab"
+    },
+    {
+      "name": "ci/lab-no-install-recommends",
+      "expected_sha": "70f3853195a7bf6acb6ebd5561830854746f95b8"
+    },
+    {
+      "name": "ci/lab-user-mode-targeted-permissions",
+      "expected_sha": "fc80eaf78f4221c62566c42c42c05809c8176ceb"
+    },
+    {
+      "name": "ci/parallelize-lab-prerequisite-setup",
+      "expected_sha": "70f800b30f5ebd2ce27f625a9a392c1429620764"
+    },
+    {
+      "name": "ci/raise-validation-smoke-candidate-parallelism",
+      "expected_sha": "2e80094a0cc758221837cefd11e6d33d12e74ce3"
+    },
+    {
       "name": "cleanup/retire-s003-recovery-contracts-1",
       "expected_sha": "916c91ada5f7120221f439c66985b302f8a40c67"
     },
     {
+      "name": "fix/i021-consumed-evidence-recovery",
+      "expected_sha": "7d72ee6e69b26bcd924b6c0f965865d0e463660c"
+    },
+    {
       "name": "validation/close-ns-floor-lowering-lane",
       "expected_sha": "0db5806513d0a538bab696cf2761e1839af334cc"
+    },
+    {
+      "name": "validation/terminalize-ns-floor-007-public-relative",
+      "expected_sha": "518b6dba6c35fb157ce951b4ca0b92c0e6c87284"
     }
   ],
   "authority_boundary": {

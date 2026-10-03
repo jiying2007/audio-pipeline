@@ -189,6 +189,55 @@ jobs:
           }, sort_keys=True))
           PY
 
+      - name: Compact reproducible hosted AEC evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f hosted-aec-out/corpus/corpus.json ] && [ -f hosted-aec-out/corpus/source-manifest.json ]; then
+            sha256sum validation/tools/build_hosted_aec_corpus.py > hosted-aec-out/corpus-builder.sha256
+            python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          root = Path('hosted-aec-out')
+          corpus = root / 'corpus' / 'corpus.json'
+          source_manifest = root / 'corpus' / 'source-manifest.json'
+          builder = Path('validation/tools/build_hosted_aec_corpus.py')
+
+          def sha256(path: Path) -> str:
+              h = hashlib.sha256()
+              with path.open('rb') as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                      h.update(chunk)
+              return h.hexdigest()
+
+          source = json.loads(source_manifest.read_text(encoding='utf-8'))
+          policy = {
+              'schema_version': 1,
+              'artifact_scope': 'hash-bound-manifest-only',
+              'materialized_audio_retained': False,
+              'reason': 'real AEC WAVs are exact-revision/path/size/SHA-256 pinned and reproducible from the public source',
+              'repository_revision': os.environ['GITHUB_SHA'],
+              'source_repository': source['source_repository'],
+              'source_revision': source['source_revision'],
+              'corpus_sha256': sha256(corpus),
+              'source_manifest_sha256': sha256(source_manifest),
+              'builder_sha256': sha256(builder),
+              'rebuild': {
+                  'builder': 'validation/tools/build_hosted_aec_corpus.py',
+                  'dataset_lock': 'validation/hosted_aec.datasets.lock.json',
+                  'requires_exact_external_source_revision': True,
+              },
+          }
+          (root / 'artifact-policy.json').write_text(
+              json.dumps(policy, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          PY
+            rm -rf hosted-aec-out/corpus/cases
+          fi
+
       - name: Seal hosted AEC evidence bundle
         if: always()
         shell: bash

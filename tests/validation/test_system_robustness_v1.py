@@ -348,6 +348,19 @@ def main() -> int:
     assert scale_geom["preregistered_rules"]["no_aec_mu_search"] is True
     assert scale_geom["authority_boundary"]["may_open_s004"] is False
 
+    geom_confirm = json.loads((ITER / "S003-aec-geometry-freeze-confirmation-v1.json").read_text())
+    assert geom_confirm["authority"] == "CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION_ONLY"
+    assert geom_confirm["candidate_limit"] == 0 and geom_confirm["confirmation_limit"] == 1
+    assert geom_confirm["promotion_allowed"] is False and geom_confirm["shipping_change_allowed"] is False
+    assert geom_confirm["corpus"]["fresh_seeds"] == [20307, 20407, 20507, 20607, 20707, 20807, 20907, 21007]
+    assert geom_confirm["hypothesis"]["mode"] == "freeze_geometry"
+    assert geom_confirm["hypothesis"]["required_recovery_time_ms"] == 0
+    assert geom_confirm["hypothesis"]["require_all_seeds"] is True
+    assert geom_confirm["preregistered_rules"]["no_G_scale_search"] is True
+    assert geom_confirm["preregistered_rules"]["no_filter_weight_inspection"] is True
+    assert geom_confirm["preregistered_rules"]["no_aec_mu_search"] is True
+    assert geom_confirm["authority_boundary"]["may_open_s004"] is False
+
     s003 = items["S003"]
     assert s003["fresh_seeds"] == [7307, 7407]
     assert s003["watch_contract"] == "docs/program/iterations/S001.json"

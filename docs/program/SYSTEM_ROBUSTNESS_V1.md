@@ -242,3 +242,14 @@ They cannot. `freeze_M`, `freeze_E`, and `freeze_C` were each physically inadmis
 This closes independent raw-coordinate manipulation as an attribution method. It does not invalidate the confirmed joint q/rho geometry result; instead it demonstrates that the raw coordinates are coupled.
 
 The next authorized phase is `S003_AEC_RESIDUAL_SCALE_GEOMETRY_DECOMPOSITION_V1`, using the exact physically valid factorization `R=M*G`, `G=R/M=1+q-2*rho*sqrt(q)`. Only two analysis-only counterfactuals are authorized: actual M with preregistered pre-transition G, and preregistered pre-transition M with actual G. No return to independent M/E/C freezes, pairwise/scale sweeps, filter inspection, DSP parameter tuning, shipping change, or S004 admission is authorized.
+
+
+## S003 residual scale-versus-geometry checkpoint
+
+Fresh-main analysis on seeds 19507–20207 used the exact physically valid factorization `R=M*G`, with `G=R/M=1+q-2*rho*sqrt(q)`. Both authorized counterfactuals were physically admissible on 8/8 seeds.
+
+Holding normalized geometry `G` at its preregistered pre-transition median while preserving actual subtraction-input scale `M` made recovery **0 ms on all eight seeds**. Holding `M` fixed while preserving actual `G` improved recovery on only 5/8 seeds and was unchanged on 3/8.
+
+This retains post-transition normalized geometry variation as the stronger repeatable mechanical contributor and scale variation as secondary/seed-dependent. It does **not** establish `G`, `q`, or `rho` as a tunable root-cause parameter and authorizes no factor scaling, filter inspection, AEC/RES tuning, recovery-threshold change, shipping change, or S004 admission.
+
+The next authorized phase is `S003_AEC_GEOMETRY_FREEZE_CONFIRMATION_V1`: one independent fresh-seed confirmation of the single hypothesis that the physically valid `freeze_geometry` counterfactual yields 0 ms recovery on every seed. `freeze_scale` remains descriptive only.

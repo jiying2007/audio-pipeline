@@ -264,3 +264,30 @@ This confirms post-transition normalized residual geometry change as a repeatabl
 The internal mechanism line therefore stops here. Further filter-weight/tap inspection, q/rho/G scale sweeps, AEC/RES parameter search, or recovery-threshold optimization are outside current authority.
 
 The next authorized phase returns to the system-robustness objective: `S003_AEC_GEOMETRY_SIGNATURE_REPLAY_V1`. The validated geometry trajectory is to be captured as candidate-zero diagnostic telemetry/replay evidence for existing S002/S003 echo-path transition failures, with source identity, measurement geometry, first-observable stage, and regression assertions. No shipping DSP change or S004 admission is implied.
+
+
+## System Robustness v1 phase closeout
+
+The candidate-zero foundation is now **closed for research progression and active for regression qualification**.
+
+Authoritative checkpoint: main `41614296a4b2541ca7cd81d38e4995038ef2f592`. On that exact main:
+- System Robustness v1 passed;
+- the core Failure Replay Bank passed;
+- AEC Geometry Signature Replay v1 passed;
+- Hosted Real Audio and Hosted Real AEC passed;
+- canonical Verify completed all 50 jobs with summary success;
+- Release and I015 finalization passed.
+
+S001, S002, and S003 intentionally remain active diagnostic/regression workflows with candidate budget zero. Their purpose is now to detect drift, replay known failures, and attribute new failures—not to continue automatic micro-mechanism research.
+
+The NS I025–I040 lineage remains terminal/immutable. The AEC echo-path internal mechanism line is also terminal at the validated diagnostic coordinate `G=R/M`; its result has been converted into durable supplemental replay `SR-S003-AEC-ECHO-PATH-GEOMETRY-V1`. Neither line may be reopened by routine optimization.
+
+**S004 remains closed.** No active candidate has a complete, separately reviewed S004 admission. The mic gain/delay candidate line was rejected as a metric/reference artifact; the AEC geometry line is diagnostic/replay evidence, not a candidate.
+
+The next work is event-driven rather than automatic:
+- replay drift → explicit lifecycle review;
+- new independent public-development, HIL, or silicon failure not covered by the taxonomy → new candidate-zero diagnosis;
+- SSC305 silicon data → calibrate CPU/latency/RSS/stack/warmup/transition/thermal/power against the existing conservative/effect-first build profiles;
+- only a separately reviewed bounded candidate that satisfies all S004 preconditions may open S004.
+
+The active regression workflows, replay bank, resource qualification, and Ubuntu 24.04 qualification baseline are retained as long-lived system assets.

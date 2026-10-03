@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-res-target-driver-decomposition-v1-result",
+  "investigation_id": "S003-aec-res-target-driver-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_RESIDUAL_DRIVER_NECESSARY_ECHO_DRIVER_NOT_NECESSARY",
+  "authority": "DIAGNOSTIC_COUNTERFACTUAL_ONLY_NO_ROOT_CAUSE_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37079992608,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "4f042dc01cb99b26cc3e7ec5d10f32adc966fb31",
+    "artifact_id": 11258018897,
+    "artifact_name": "s003-aec-res-target-driver-37079992608",
+    "artifact_zip_sha256": "63dfcf5179502ea7e6723758d9e5afe69598622feb50edd11874566dd02dd273",
+    "aggregate_member": "cross-seed-target-driver-summary.json",
+    "aggregate_member_sha256": "98cc7adac256b192245365a2da4a21baaea81ae8be97943766b478360842dc55"
+  },
+  "qualification": {
+    "verify_run_id": 37079992795,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37079992574,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37079992506,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37079992529,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37079992501,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37079992604,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37080321366,
+    "release_conclusion": "success"
+  },
+  "fresh_seeds": [
+    16307,
+    16407,
+    16507,
+    16607,
+    16707,
+    16807,
+    16907,
+    17007
+  ],
+  "mechanical_validity": {
+    "probe_output_bitwise_equivalent_all_seeds": true,
+    "target_formula_reconstruction_valid": true,
+    "target_formula_max_abs_error": 5.016564508242283e-8,
+    "evidence_accepted": true
+  },
+  "actual_target_delay_vs_aec_ms": {
+    "16307": 50,
+    "16407": 0,
+    "16507": 50,
+    "16607": 0,
+    "16707": 0,
+    "16807": 50,
+    "16907": 200,
+    "17007": 50
+  },
+  "counterfactual_result": {
+    "positive_actual_delay_seeds": [
+      16307,
+      16507,
+      16807,
+      16907,
+      17007
+    ],
+    "freeze_residual": {
+      "eliminates_positive_actual_target_delay_seed_count": 5,
+      "applicable_positive_seed_count": 5,
+      "eliminated_seeds": [
+        16307,
+        16507,
+        16807,
+        16907,
+        17007
+      ],
+      "target_delay_vs_aec_ms": {
+        "16307": 0,
+        "16407": -50,
+        "16507": 0,
+        "16607": 0,
+        "16707": 0,
+        "16807": 0,
+        "16907": 0,
+        "17007": 0
+      }
+    },
+    "freeze_echo": {
+      "eliminates_positive_actual_target_delay_seed_count": 0,
+      "applicable_positive_seed_count": 5,
+      "eliminated_seeds": [],
+      "target_delay_vs_aec_ms": {
+        "16307": 200,
+        "16407": 0,
+        "16507": 200,
+        "16607": 150,
+        "16707": 50,
+        "16807": 50,
+        "16907": 200,
+        "17007": 50
+      }
+    },
+    "freeze_both": {
+      "eliminates_positive_actual_target_delay_seed_count": 5,
+      "target_delay_vs_aec_ms": {
+        "16307": 0,
+        "16407": 0,
+        "16507": 0,
+        "16607": 0,
+        "16707": 0,
+        "16807": 0,
+        "16907": 0,
+        "17007": 0
+      }
+    }
+  },
+  "reviewed_validity": {
+    "residual_energy_variation_mechanically_necessary_for_positive_target_delay": true,
+    "residual_driver_elimination_rate": "5/5 positive-delay fresh seeds",
+    "echo_energy_variation_mechanically_necessary_for_positive_target_delay": false,
+    "echo_driver_elimination_rate": "0/5 positive-delay fresh seeds",
+    "freezing_echo_can_worsen_target_delay": true,
+    "target_formula_parameter_change_authorized": false,
+    "residual_scale_search_authorized": false,
+    "echo_scale_search_authorized": false,
+    "driver_root_cause_proven": false,
+    "interpretation": "Within the preregistered target-only counterfactual, every positive instantaneous-target delay disappears when residual_energy variation is removed, while freezing echo_energy never removes a positive delay and can increase it. This establishes residual-energy variation as a necessary mechanical driver of the retained target delay for this seed set, but does not identify why the AEC residual-energy trajectory varies."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RESIDUAL_ENERGY_TRAJECTORY_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Decompose far-end-only AEC residual energy before RES using test-only observations of AEC input mono, echo_estimate, and their cross term. Validate the identity residual = mono + estimate - 2*cross, then express residual behavior through estimate/input power ratio and normalized similarity. No tap inspection or AEC parameter search in v1."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

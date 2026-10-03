@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "replay_id": "SR-S003-AEC-ECHO-PATH-GEOMETRY-V1",
+  "lifecycle_status": "OPEN_DIAGNOSTIC",
+  "authority": "supplemental-replay-only",
+  "source_identity": {
+    "source_family": "s002-aec-transition-deterministic",
+    "generator": "validation/tools/aec_res_gain_contribution_decomposition.py",
+    "base_generator": "validation/tools/build_aec_transition_corpus.py",
+    "case_id": "echo-path-change",
+    "analysis_profile": "prefix-aec",
+    "seeds": [
+      20307,
+      20507
+    ]
+  },
+  "mechanism_lineage": {
+    "terminal_result": "docs/program/iterations/S003-aec-geometry-freeze-confirmation-v1-result.json",
+    "terminal_main_sha": "86ad81234e2516f0120b8b89a5ac261023e696d0",
+    "mechanism_coordinate": "G=R/M",
+    "first_observable_stage": "AEC",
+    "root_cause_claim_authority": false
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "expected_replay": {
+    "standard_aec_recovery_ms": {
+      "20307": 100,
+      "20507": 150
+    },
+    "freeze_geometry_recovery_ms": {
+      "20307": 0,
+      "20507": 0
+    },
+    "freeze_geometry_physically_admissible": true,
+    "probe_output_bitwise_equivalent": true,
+    "identity_valid": true,
+    "actual_observed_recovery_matches_standard_aec": true
+  },
+  "prior_evidence": {
+    "workflow_run_id": 37095656070,
+    "artifact_id": 11263937198,
+    "artifact_zip_sha256": "3c7d2e14bb4e4d28ed2eb834f3c74f260f96067400440af3dd8efcf8bbc55620",
+    "execution_head_sha": "59b2d02c2d64f8b53d538c2e1ad0b65b6d463c7c",
+    "terminal_main_sha": "86ad81234e2516f0120b8b89a5ac261023e696d0"
+  },
+  "replay_pipeline": {
+    "residual_probe": "tests/validation/s003_aec_residual_geometry_probe.c",
+    "residual_geometry_tool": "validation/tools/aec_residual_energy_trajectory.py",
+    "scale_geometry_tool": "validation/tools/aec_residual_scale_geometry_decomposition.py",
+    "residual_geometry_contract": "docs/program/iterations/S003-aec-residual-energy-trajectory-decomposition-v1.json",
+    "scale_geometry_contract": "docs/program/iterations/S003-aec-residual-scale-geometry-decomposition-v1.json",
+    "validation_policy": "validation/policies/validation-s003-res-gain-contribution.json"
+  },
+  "regression_assertion": {
+    "open_diagnostic": "current code must reproduce the frozen AEC-stage geometry/recovery signature on both seeds; any disappearance or timing/signature change requires explicit lifecycle review",
+    "fixed_regression": null
+  },
+  "authority_boundary": {
+    "release_acceptance_authority": false,
+    "candidate_authority": false,
+    "s004_candidate_authority": false,
+    "may_change_dsp_parameters": false,
+    "may_change_recovery_threshold": false,
+    "may_reopen_internal_mechanism_search": false
+  }
+}

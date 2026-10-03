@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-residual-geometry-raw-coordinate-decomposition-v1",
+  "phase": "S003_AEC_RESIDUAL_GEOMETRY_RAW_COORDINATE_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_RAW_COORDINATE_ANALYSIS_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-joint-geometry-confirmation-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_JOINT_GEOMETRY_CONFIRMED"
+  },
+  "corpus": {
+    "builder": "validation/tools/aec_res_gain_contribution_decomposition.py",
+    "fresh_seeds": [
+      18707,
+      18807,
+      18907,
+      19007,
+      19107,
+      19207,
+      19307,
+      19407
+    ],
+    "seconds": 6,
+    "canonical_profiles": [
+      "prefix-aec",
+      "prefix-res"
+    ],
+    "analysis_profile": "prefix-aec"
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "raw_coordinates": {
+    "M": "AEC subtraction-input frame energy reconstructed from aec_out + echo_estimate",
+    "E": "predicted echo frame energy",
+    "C": "frame mean cross product between subtraction input and predicted echo",
+    "R": "observed AEC residual frame energy",
+    "identity": "R = M + E - 2*C"
+  },
+  "pre_transition_references": {
+    "interval_ms": [
+      -1000,
+      -200
+    ],
+    "statistic": "independent median of M, E, and C over the preregistered interval",
+    "M_reference": "median M",
+    "E_reference": "median E",
+    "C_reference": "median C"
+  },
+  "counterfactuals": {
+    "freeze_M": {
+      "coordinates": [
+        "pre-transition median M",
+        "actual E",
+        "actual C"
+      ]
+    },
+    "freeze_E": {
+      "coordinates": [
+        "actual M",
+        "pre-transition median E",
+        "actual C"
+      ]
+    },
+    "freeze_C": {
+      "coordinates": [
+        "actual M",
+        "actual E",
+        "pre-transition median C"
+      ]
+    }
+  },
+  "physical_validity": {
+    "required_for_counterfactual_interpretation": true,
+    "cauchy_constraint": "C^2 <= M*E within numerical tolerance",
+    "residual_nonnegative_constraint": "M + E - 2*C >= 0 within numerical tolerance",
+    "relative_numerical_tolerance": 1e-9,
+    "absolute_numerical_tolerance": 1e-18,
+    "required_interval_ms": [
+      -1000,
+      2500
+    ],
+    "invalid_policy": "counterfactual is marked physically_inadmissible for that seed; no clamp, reference adjustment, scale search, or recovery result is reported"
+  },
+  "validity_gates": {
+    "require_existing_probe_output_bitwise_equivalence": true,
+    "require_existing_identity_validity": true,
+    "require_actual_observed_recovery_matches_standard_aec": true,
+    "either_physical_admissibility_outcome_is_valid_evidence": true,
+    "either_recovery_shift_direction_is_valid_evidence": true
+  },
+  "descriptive_outputs": [
+    "standard/actual AEC recovery",
+    "per-seed pre-transition M/E/C references",
+    "per-mode physical admissibility and invalid-frame count",
+    "per-mode recovery time and shift only when physically admissible",
+    "first invalid transition-relative frame when inadmissible",
+    "cross-seed admissibility and recovery-shift summary"
+  ],
+  "preregistered_rules": {
+    "no_reference_adjustment_after_results": true,
+    "no_coordinate_scale_search": true,
+    "no_counterfactual_parameter_sweep": true,
+    "no_invalid_value_clamping_except_roundoff_within_declared_tolerance": true,
+    "no_filter_weight_inspection": true,
+    "no_tap_inspection": true,
+    "no_aec_mu_search": true,
+    "no_aec_tap_search": true,
+    "no_aec_stride_search": true,
+    "no_recovery_threshold_search": true,
+    "no_candidate_selection": true,
+    "no_root_cause_selection": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_select_candidate": false,
+    "may_claim_M_root_cause": false,
+    "may_claim_E_root_cause": false,
+    "may_claim_C_root_cause": false,
+    "may_change_aec_parameters": false,
+    "may_change_res_parameters": false,
+    "may_change_recovery_threshold": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "mechanically valid fresh-seed raw-coordinate counterfactual receipts, including explicit physical inadmissibility when independent coordinate freezing violates signal geometry; no coordinate ranking or causal attribution"
+}

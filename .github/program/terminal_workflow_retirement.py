@@ -151,8 +151,11 @@ def validate_manifest(data: dict) -> None:
         require(blob not in seen_blobs, f"retired workflow blob SHA reused: {path}")
         require(isinstance(investigation, str) and investigation,
                 f"consumed research investigation id missing: {path}")
-        require(isinstance(evidence, str) and evidence.startswith(".github/research/"),
-                f"consumed research evidence path invalid: {path}")
+        require(
+            isinstance(evidence, str)
+            and evidence.startswith((".github/research/", "docs/program/iterations/")),
+            f"consumed research evidence path invalid: {path}",
+        )
         require(isinstance(r["reason"], str) and r["reason"],
                 f"missing consumed research reason: {path}")
         seen_paths.add(path)

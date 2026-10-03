@@ -3,7 +3,7 @@
   "id": "maintenance-branch-cleanup-v1",
   "authority": "BRANCH_LIFECYCLE_EVIDENCE_ONLY",
   "status": "CLOSED_REVIEWED_STALE_BRANCH_DISPOSITIONS",
-  "reviewed_main_sha": "cf5730b1b589ddb650fd9ef594823977edc12cf4",
+  "reviewed_main_sha": "f72594924be93923ca078f5eb3a59e643f008db4",
   "deletion_policy": "Only terminal-branch-gc may mutate refs; this file records exact reviewed heads and does not promote branch content.",
   "records": [
     {
@@ -102,6 +102,21 @@
         "pr": 384,
         "main_sha": "0db5806513d0a538bab696cf2761e1839af334cc"
       }
+    },
+    {
+      "branch": "cleanup/retire-i020-frozen-surfaces",
+      "head_sha": "b6d43a2305a3922f0ec81a90fc00a3efc551dc95",
+      "pr_disposition": "NO_PR_NOT_RETAINED_PREMATURE_RETIREMENT",
+      "reviewed_outcome": "REJECT_PREMATURE_I020_RETIREMENT",
+      "canonical_main_evidence": {
+        "development_result": ".github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-result.json",
+        "development_status": "FROZEN_RESEARCH_CANDIDATE",
+        "blind_review": ".github/research/continuous-optimization/development-v4/i020-vad-weak-start-requires-blend-v1-blind-review.json",
+        "blind_status": "BLIND_BASELINE_INVALID_REVIEW_REQUIRED",
+        "terminal_candidate": false,
+        "durable_archive": ".github/research/continuous-optimization/development-v4/i020-blind-baseline-invalid-durable-evidence-v1.json"
+      },
+      "rationale": "branch prematurely retires the three I020 contract-only surfaces even though current canonical blind review is nonterminal; retain I020 contracts on main and retire only this rejected cleanup ref"
     }
   ],
   "authority_boundary": {

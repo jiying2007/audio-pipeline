@@ -253,3 +253,14 @@ Holding normalized geometry `G` at its preregistered pre-transition median while
 This retains post-transition normalized geometry variation as the stronger repeatable mechanical contributor and scale variation as secondary/seed-dependent. It does **not** establish `G`, `q`, or `rho` as a tunable root-cause parameter and authorizes no factor scaling, filter inspection, AEC/RES tuning, recovery-threshold change, shipping change, or S004 admission.
 
 The next authorized phase is `S003_AEC_GEOMETRY_FREEZE_CONFIRMATION_V1`: one independent fresh-seed confirmation of the single hypothesis that the physically valid `freeze_geometry` counterfactual yields 0 ms recovery on every seed. `freeze_scale` remains descriptive only.
+
+
+## S003 AEC residual-geometry mechanism closeout
+
+The echo-path transition mechanism line is now terminal at a repeatable, physically valid diagnostic coordinate. On independent fresh seeds 20307–21007, holding normalized residual geometry `G=R/M` at the preregistered pre-transition reference while preserving actual subtraction-input scale `M` produced **0 ms** measured recovery on **8/8** seeds. Standard AEC recovery remained 100–150 ms. Holding scale `M` fixed was not cross-seed invariant.
+
+This confirms post-transition normalized residual geometry change as a repeatable mechanical contributor to the measured recovery trajectory. It does **not** make `G`, `q`, `rho`, filter coefficients, or taps tunable root-cause parameters.
+
+The internal mechanism line therefore stops here. Further filter-weight/tap inspection, q/rho/G scale sweeps, AEC/RES parameter search, or recovery-threshold optimization are outside current authority.
+
+The next authorized phase returns to the system-robustness objective: `S003_AEC_GEOMETRY_SIGNATURE_REPLAY_V1`. The validated geometry trajectory is to be captured as candidate-zero diagnostic telemetry/replay evidence for existing S002/S003 echo-path transition failures, with source identity, measurement geometry, first-observable stage, and regression assertions. No shipping DSP change or S004 admission is implied.

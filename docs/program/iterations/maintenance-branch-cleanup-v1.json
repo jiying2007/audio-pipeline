@@ -70,6 +70,38 @@
         "source_revision": "f19d7ac928aa9db6c23b122faa63e4fcfe52e1a1",
         "terminal": "docs/program/evidence/acoustic-candidate-0d5f52491863/public-relative-run-35815591807/terminal.json"
       }
+    },
+    {
+      "branch": "automation/i020-durable-evidence-36304120808-36324803945",
+      "head_sha": "5ebe7f75a2da3a937e970e655af516cf37e7d993",
+      "pr": 445,
+      "pr_disposition": "CLOSED_UNMERGED_REDUNDANT",
+      "reviewed_outcome": "BRANCH_DELTA_SUBSUMED_BY_MAIN",
+      "canonical_successor": {
+        "pr": 443,
+        "main_sha": "251d1cec1f0cdbd65a10610d4e02acb2acd6775e",
+        "note": "PR #445 records the branch as redundant because merged #443 contains the same 11 frozen evidence blobs and stronger CI/retirement bindings"
+      }
+    },
+    {
+      "branch": "cleanup/retire-s003-recovery-contracts-1",
+      "head_sha": "916c91ada5f7120221f439c66985b302f8a40c67",
+      "pr_disposition": "NO_BRANCH_PR_MAIN_HISTORY_PRESERVED",
+      "reviewed_outcome": "MAIN_HISTORY",
+      "canonical_successor": {
+        "pr": 621,
+        "main_sha": "916c91ada5f7120221f439c66985b302f8a40c67"
+      }
+    },
+    {
+      "branch": "validation/close-ns-floor-lowering-lane",
+      "head_sha": "0db5806513d0a538bab696cf2761e1839af334cc",
+      "pr_disposition": "NO_BRANCH_PR_MAIN_HISTORY_PRESERVED",
+      "reviewed_outcome": "MAIN_HISTORY",
+      "canonical_successor": {
+        "pr": 384,
+        "main_sha": "0db5806513d0a538bab696cf2761e1839af334cc"
+      }
     }
   ],
   "authority_boundary": {
@@ -78,5 +110,7 @@
     "validation_policy_relaxed": false,
     "hardware_test_executed": false,
     "product_qualification": "DEFERRED_BY_SCOPE"
-  }
+  },
+  "queue_compacted_at_main_sha": "5ad0e11a51c20e8d384182c5b780b13e3d1a14f1",
+  "queue_compaction_rule": "All terminal-branch-gc records had reached DELETED or ALREADY_DELETED; active queue is reset to empty while exact reviewed history remains in this evidence."
 }

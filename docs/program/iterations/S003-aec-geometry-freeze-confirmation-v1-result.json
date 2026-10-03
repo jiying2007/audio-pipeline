@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-geometry-freeze-confirmation-v1-result",
+  "investigation_id": "S003-aec-geometry-freeze-confirmation-v1",
+  "status": "CLOSED_DIAGNOSTIC_NORMALIZED_GEOMETRY_CONFIRMED_MECHANISM_LINE_TERMINAL",
+  "authority": "DIAGNOSTIC_ONLY_NO_PARAMETER_CANDIDATE_OR_FILTER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37095656070,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "59b2d02c2d64f8b53d538c2e1ad0b65b6d463c7c",
+    "artifact_id": 11263937198,
+    "artifact_name": "s003-aec-geometry-freeze-confirmation-37095656070",
+    "artifact_zip_sha256": "3c7d2e14bb4e4d28ed2eb834f3c74f260f96067400440af3dd8efcf8bbc55620",
+    "artifact_zip_bytes": 758912
+  },
+  "qualification": {
+    "verify_run_id": 37095656298,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37095656083,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37095656073,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37095656113,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37095656221,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37095656207,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37095856102,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37095856038,
+    "i015_finalization_conclusion": "success"
+  },
+  "hypothesis": {
+    "statement": "Holding normalized residual geometry G=R/M at the preregistered pre-transition median while preserving actual subtraction-input scale M yields immediate measured recovery under the confirmed 100w-50s research geometry.",
+    "fresh_seeds": [
+      20307,
+      20407,
+      20507,
+      20607,
+      20707,
+      20807,
+      20907,
+      21007
+    ],
+    "required_recovery_time_ms": 0
+  },
+  "mechanical_result": {
+    "outcome": "CONFIRMED",
+    "confirmed_seed_count": 8,
+    "total_seed_count": 8,
+    "standard_aec_recovery_ms": {
+      "20307": 100,
+      "20407": 100,
+      "20507": 150,
+      "20607": 100,
+      "20707": 100,
+      "20807": 150,
+      "20907": 100,
+      "21007": 100
+    },
+    "freeze_geometry_recovery_ms": {
+      "20307": 0,
+      "20407": 0,
+      "20507": 0,
+      "20607": 0,
+      "20707": 0,
+      "20807": 0,
+      "20907": 0,
+      "21007": 0
+    },
+    "freeze_geometry_physically_admissible_all_seeds": true,
+    "freeze_scale_recovery_ms": {
+      "20307": 100,
+      "20407": 100,
+      "20507": 100,
+      "20607": 50,
+      "20707": 100,
+      "20807": 100,
+      "20907": 100,
+      "21007": 100
+    },
+    "freeze_scale_cross_seed_invariant": false
+  },
+  "reviewed_validity": {
+    "normalized_geometry_transition_is_independently_repeatable_mechanical_contributor": true,
+    "subtraction_input_scale_is_secondary_non_invariant_contributor": true,
+    "geometry_root_cause_proven": false,
+    "scale_root_cause_proven": false,
+    "q_root_cause_proven": false,
+    "rho_root_cause_proven": false,
+    "filter_weight_or_tap_inspection_authorized": false,
+    "geometry_scale_search_authorized": false,
+    "q_or_rho_search_authorized": false,
+    "aec_or_res_parameter_search_authorized": false,
+    "recovery_threshold_search_authorized": false,
+    "interpretation": "Across a second independent fresh set, the physically admissible freeze-G counterfactual yields 0 ms recovery on all eight seeds while preserving actual M. The evidence is sufficient to retain post-transition normalized residual geometry change as a repeatable mechanical explanation of measured recovery latency. It remains an analytic diagnostic coordinate, not a tunable root-cause parameter."
+  },
+  "mechanism_line_closeout": {
+    "terminal": true,
+    "reason": "The internal mechanism chain has reached a repeatable, physically valid diagnostic coordinate. Further descent into filter weights/taps or parameter sweeps would leave the candidate-zero system-robustness objective and has not been authorized by evidence.",
+    "prohibited_followups": [
+      "AEC filter-weight inspection",
+      "AEC tap inspection",
+      "mu/tap/stride sweep",
+      "q/rho/G scale sweep",
+      "RES gain/floor/alpha sweep",
+      "recovery-threshold optimization"
+    ]
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_GEOMETRY_SIGNATURE_REPLAY_V1",
+    "candidate_limit": 0,
+    "description": "Return to system-level evidence. Convert the validated normalized residual geometry trajectory into a candidate-zero diagnostic signature/replay observable for the existing S002/S003 echo-path transition cases. Bind source identity, 100w-50s measurement geometry, G trajectory/recovery receipts, and first-observable stage; do not change DSP or select a candidate."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

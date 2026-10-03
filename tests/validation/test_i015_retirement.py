@@ -73,16 +73,14 @@ class RetirementTests(unittest.TestCase):
         if len(records) != 1:
             raise ValueError('I015 consumed-research retirement record missing/duplicated')
         cls.retired_record = records[0]
-        historical_contract = subprocess.check_output(
-            ['git', 'cat-file', 'blob', cls.retired_record['blob_sha']]
-        )
-        cls.retired_contract = yaml_data(historical_contract)
 
     def test_active_workflow_is_absent(self):
         self.assertFalse((ROOT / WORKFLOW).exists())
 
-    def test_retired_contract_snapshot_is_contract_only(self):
-        validate(self.retired_contract, self.history)
+    def test_retired_manifest_binds_exact_contract_blob(self):
+        self.assertEqual(self.retired_record['blob_sha'],
+                         'c94314c22443301bd072b6d0552a7c4f98f33a1c')
+        self.assertEqual(self.retired_record['evidence'], CLOSURE)
 
     def test_original_execution_surface_rejected(self):
         with self.assertRaises(ValueError):

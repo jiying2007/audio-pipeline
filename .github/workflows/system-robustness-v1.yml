@@ -58,6 +58,8 @@ on:
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
       - 'tests/validation/test_system_robustness_v1.py'
+      - 'tests/validation/test_system_robustness_v1_closeout.py'
+      - 'docs/program/iterations/system-robustness-v1-result.json'
       - '.github/workflows/system-robustness-v1.yml'
   push:
     branches: [main]
@@ -116,6 +118,8 @@ on:
       - 'validation/tools/system_robustness_attribution.py'
       - 'ci/ssc305-resource-profiles.json'
       - 'tests/validation/test_system_robustness_v1.py'
+      - 'tests/validation/test_system_robustness_v1_closeout.py'
+      - 'docs/program/iterations/system-robustness-v1-result.json'
       - '.github/workflows/system-robustness-v1.yml'
   workflow_dispatch:
 
@@ -174,8 +178,10 @@ jobs:
             validation/tools/stage_interaction_consistency.py \
             validation/tools/stage_interaction_run.py \
             validation/tools/system_robustness_attribution.py \
-            tests/validation/test_system_robustness_v1.py
+            tests/validation/test_system_robustness_v1.py \
+            tests/validation/test_system_robustness_v1_closeout.py
           python3 tests/validation/test_system_robustness_v1.py
+          python3 tests/validation/test_system_robustness_v1_closeout.py
           python3 validation/tools/build_system_robustness_corpus.py --self-test
           python3 validation/tools/build_aec_transition_corpus.py --self-test
           python3 validation/tools/cross_source_artifact_exclusion.py --self-test
@@ -233,6 +239,7 @@ jobs:
                    docs/program/iterations/S003-aec-residual-geometry-raw-coordinate-decomposition-v1.json \
                    docs/program/iterations/S003-aec-residual-scale-geometry-decomposition-v1.json \
                    docs/program/iterations/S003-aec-geometry-freeze-confirmation-v1.json \
+                   docs/program/iterations/system-robustness-v1-result.json \
                    validation/failure-replay/supplemental/aec-echo-path-geometry-v1.json \
                    docs/program/iterations/S003-mic-mismatch-downstream-transfer-exclusion-v1.json \
                    validation/failure-replay/schema-v1.json \

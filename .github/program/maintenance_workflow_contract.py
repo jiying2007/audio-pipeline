@@ -18,6 +18,9 @@ EXTENDED_REAL_AUTOMATION_WORKFLOW = Path('.github/workflows/extended-real-automa
 HIL_SOAK_WORKFLOW = Path('.github/workflows/hil-soak.yml')
 PROGRAM_ARCHIVE_WORKFLOW = Path('.github/workflows/program-iteration.yml')
 TERMINAL_RETIREMENT_MANIFEST = Path('docs/program/terminal-workflow-retirement.json')
+TRANSIENT_BRANCH_GC_WORKFLOW = Path('.github/workflows/transient-branch-gc.yml')
+TRANSIENT_BRANCH_GC_CONTRACT = Path('docs/program/transient-branch-gc.json')
+TRANSIENT_BRANCH_GC_WORKFLOW_BLOB = '7685cc13fd2bf7ffb54e6d5d5e911406150ca0f6'
 
 # The generic tuner has no PR-regression role and is therefore manual-only after
 # the terminal software program. PR/manual non-shipping workflows keep their PR
@@ -338,6 +341,7 @@ def program_archive_required_paths(root: Path) -> list[str]:
         str(PROGRAM_PLAN),
         str(I002_CONTRACT),
         str(TERMINAL_RETIREMENT_MANIFEST),
+        str(TRANSIENT_BRANCH_GC_CONTRACT),
         'scripts/program.py',
         '.github/program/promotion_governance.py',
         '.github/program/terminal_workflow_retirement.py',
@@ -438,8 +442,54 @@ def validate_deferred_external_schedule_boundaries(root: Path) -> None:
     )
 
 
+
+def validate_retired_transient_branch_gc(root: Path) -> None:
+    workflow = root / TRANSIENT_BRANCH_GC_WORKFLOW
+    assert not workflow.exists(), (
+        f'retired transient GC workflow was reintroduced: {TRANSIENT_BRANCH_GC_WORKFLOW}'
+    )
+    contract_path = root / TRANSIENT_BRANCH_GC_CONTRACT
+    assert contract_path.is_file(), (
+        f'missing retired transient GC contract: {TRANSIENT_BRANCH_GC_CONTRACT}'
+    )
+    contract = json.loads(contract_path.read_text(encoding='utf-8'))
+    assert contract['schema_version'] == 1
+    assert contract['policy'] == 'exact-transient-branch-gc'
+    assert contract['workflow_retired'] is True
+    assert contract['retired_workflow_blob_sha'] == TRANSIENT_BRANCH_GC_WORKFLOW_BLOB
+    assert re.fullmatch(r'[0-9a-f]{40}', contract['retired_workflow_blob_sha'])
+    assert isinstance(contract['retirement_reason'], str) and contract['retirement_reason']
+    assert contract['mutation_on_pull_request'] is False
+    assert contract['require_exact_live_sha'] is True
+    assert contract['require_no_open_pull_request'] is True
+    assert contract['require_head_ancestor_of_main'] is True
+    assert contract['unlisted_branch_deletion_allowed'] is False
+
+    records = contract['branches']
+    expected_names = {
+        'tmp-i007-rebase-anchor',
+        'tmp-i007-rebase-anchor-2',
+        'tmp-i007-rebase-anchor-3',
+    }
+    assert len(records) == 3
+    assert {item['name'] for item in records} == expected_names
+    for item in records:
+        assert item['expected_sha'] == 'dd15a956e52e9bc04fe103c62163c6cfa870b57b'
+        assert isinstance(item['reason'], str) and item['reason']
+
+    assert contract['authority_boundary'] == {
+        'research_or_candidate_prefixes_affected': False,
+        'governance_or_release_prefixes_affected': False,
+        'shipping_source_changed': False,
+        'release_changed': False,
+        'product_qualification': 'DEFERRED_BY_SCOPE',
+    }
+
+
+
 def validate(root: Path = REPOSITORY_ROOT) -> None:
     validate_program_archive_trigger_boundaries(root)
+    validate_retired_transient_branch_gc(root)
     validate_no_legacy_semantics_consumers(root)
     for relative in MANUAL_ONLY_RESEARCH_WORKFLOWS:
         path = root / relative
@@ -690,6 +740,47 @@ def _write_i002_terminal_fixture(root: Path) -> None:
     )
 
 
+
+def _write_retired_transient_branch_gc_fixture(root: Path) -> None:
+    contract = root / TRANSIENT_BRANCH_GC_CONTRACT
+    contract.parent.mkdir(parents=True, exist_ok=True)
+    contract.write_text(
+        json.dumps({
+            'schema_version': 1,
+            'policy': 'exact-transient-branch-gc',
+            'workflow_retired': True,
+            'retired_workflow_blob_sha': TRANSIENT_BRANCH_GC_WORKFLOW_BLOB,
+            'retirement_reason': 'fixture terminal transient branch cleanup',
+            'mutation_on_pull_request': False,
+            'require_exact_live_sha': True,
+            'require_no_open_pull_request': True,
+            'require_head_ancestor_of_main': True,
+            'unlisted_branch_deletion_allowed': False,
+            'branches': [
+                {
+                    'name': name,
+                    'expected_sha': 'dd15a956e52e9bc04fe103c62163c6cfa870b57b',
+                    'reason': 'fixture',
+                }
+                for name in (
+                    'tmp-i007-rebase-anchor',
+                    'tmp-i007-rebase-anchor-2',
+                    'tmp-i007-rebase-anchor-3',
+                )
+            ],
+            'authority_boundary': {
+                'research_or_candidate_prefixes_affected': False,
+                'governance_or_release_prefixes_affected': False,
+                'shipping_source_changed': False,
+                'release_changed': False,
+                'product_qualification': 'DEFERRED_BY_SCOPE',
+            },
+        }) + '\n',
+        encoding='utf-8',
+    )
+
+
+
 def self_test() -> None:
     import tempfile
 
@@ -717,6 +808,7 @@ def self_test() -> None:
             raise AssertionError('missing retirement collection bypassed archive coverage')
 
         _write_i002_terminal_fixture(root)
+        _write_retired_transient_branch_gc_fixture(root)
         _write_program_archive_fixture(root)
         generic = root / MANUAL_ONLY_RESEARCH_WORKFLOWS[0]
         generic.parent.mkdir(parents=True, exist_ok=True)
@@ -975,6 +1067,17 @@ def self_test() -> None:
             'name: reusable\n\non:\n  workflow_call:\n',
             encoding='utf-8',
         )
+
+        transient = root / TRANSIENT_BRANCH_GC_WORKFLOW
+        transient.parent.mkdir(parents=True, exist_ok=True)
+        transient.write_text('name: forbidden-reintroduced-transient-gc\n', encoding='utf-8')
+        try:
+            validate(root)
+        except AssertionError as exc:
+            assert 'retired transient GC workflow was reintroduced' in str(exc)
+        else:
+            raise AssertionError('retired transient GC workflow was reintroduced')
+        transient.unlink()
 
         legacy = root / '.github/research/continuous-optimization/legacy_semantics_probe.py'
         legacy.parent.mkdir(parents=True, exist_ok=True)

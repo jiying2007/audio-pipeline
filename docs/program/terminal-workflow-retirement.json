@@ -319,5 +319,147 @@
       "evidence": ".github/research/continuous-optimization/development-v3/bf-hard-mic-fault-base-replay-v1.json",
       "reason": "the exact old-base replay was a consumed diagnostic attribution for the first failed BF confirmation; final v2.3.11 differential confirmation is durable and current BF discovery/confirmation workflows retain current-source regression coverage"
     }
+  ],
+  "consumed_research_workflows": [
+    {
+      "path": ".github/workflows/research-i021-vad-public-development-transfer-gap-v1.yml",
+      "blob_sha": "fed3f9751b42586b1be181e18050bbcd31416175",
+      "investigation_id": "i021-vad-public-development-transfer-gap-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i021-vad-public-development-transfer-gap-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i022-vad-low-local-evidence-disagreement-decomposition-v1.yml",
+      "blob_sha": "1aa2f3b0591b6de7d781e53905db810f45208077",
+      "investigation_id": "i022-vad-low-local-evidence-disagreement-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i022-vad-low-local-evidence-disagreement-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i023-vad-upstream-local-disagreement-risk-v1.yml",
+      "blob_sha": "96b577e0af937a209ffc5c5089110ef5ac0735c0",
+      "investigation_id": "i023-vad-upstream-local-disagreement-risk-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i023-vad-upstream-local-disagreement-risk-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i024-vad-disagreement-feature-separability-v1.yml",
+      "blob_sha": "44df24b20c9d0effaee7a8eea7bcd1377d98ea6e",
+      "investigation_id": "i024-vad-disagreement-feature-separability-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i024-vad-disagreement-feature-separability-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i025-ns-upstream-disagreement-noise-source-decomposition-v1.yml",
+      "blob_sha": "41a011de46e348044df668a1e2cb41e8b678fba3",
+      "investigation_id": "i025-ns-upstream-disagreement-noise-source-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i025-ns-upstream-disagreement-noise-source-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i026-ns-upstream-matched-component-counterfactual-v1.yml",
+      "blob_sha": "5eb2bcb0ec395b542353a5b3b45a33bf162fec1c",
+      "investigation_id": "i026-ns-upstream-matched-component-counterfactual-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i026-ns-upstream-matched-component-counterfactual-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i027-ns-upstream-reference-ready-component-counterfactual-v1.yml",
+      "blob_sha": "d440e79b373ecda56c29f255c8e873b4d473110f",
+      "investigation_id": "i027-ns-upstream-reference-ready-component-counterfactual-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i027-ns-upstream-reference-ready-component-counterfactual-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i028-ns-upstream-reference-readiness-temporal-decomposition-v1.yml",
+      "blob_sha": "1652592eff2e4d10382e95b5b97a63efc9e01b70",
+      "investigation_id": "i028-ns-upstream-reference-readiness-temporal-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i028-ns-upstream-reference-readiness-temporal-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i029-ns-upstream-independent-donor-reference-feasibility-v1.yml",
+      "blob_sha": "0092d17393c94c6689b02306953388e6c84f10a3",
+      "investigation_id": "i029-ns-upstream-independent-donor-reference-feasibility-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i029-ns-upstream-independent-donor-reference-feasibility-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i030-ns-upstream-donor-joint-residual-stability-decomposition-v1.yml",
+      "blob_sha": "f9a171cea4e8e70eab31b70e3adaedab809123c3",
+      "investigation_id": "i030-ns-upstream-donor-joint-residual-stability-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i030-ns-upstream-donor-joint-residual-stability-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i031-ns-upstream-joint-coherent-donor-aggregation-v1.yml",
+      "blob_sha": "dce3d9002e58b19cdfa1aeeabfa674405c5502cc",
+      "investigation_id": "i031-ns-upstream-joint-coherent-donor-aggregation-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i031-ns-upstream-joint-coherent-donor-aggregation-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i032-ns-upstream-target-causal-noise-scale-observability-v1.yml",
+      "blob_sha": "24ea6268852cc8e3257facb44057460abe8c8871",
+      "investigation_id": "i032-ns-upstream-target-causal-noise-scale-observability-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i032-ns-upstream-target-causal-noise-scale-observability-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i033-ns-vad-causal-noise-delta-alignment-v1.yml",
+      "blob_sha": "4aca27e4075844d64e4bc9f0b5b1d53b05d293a0",
+      "investigation_id": "i033-ns-vad-causal-noise-delta-alignment-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i033-ns-vad-causal-noise-delta-alignment-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i034-ns-vad-noise-state-temporal-response-decomposition-v1.yml",
+      "blob_sha": "df16e1aa3568b89f6132423a2bb43b6ee6ec4c18",
+      "investigation_id": "i034-ns-vad-noise-state-temporal-response-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i034-ns-vad-noise-state-temporal-response-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i035-ns-noise-tracker-update-regime-decomposition-v1.yml",
+      "blob_sha": "1242cc5ca5e6e1f5656ae4456f56b6edf91bc6cb",
+      "investigation_id": "i035-ns-noise-tracker-update-regime-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i035-ns-noise-tracker-update-regime-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i036-ns-noise-estimate-aggregation-domain-decomposition-v1.yml",
+      "blob_sha": "ca17bb1ac3d60554055596b368b68ca483c62a18",
+      "investigation_id": "i036-ns-noise-estimate-aggregation-domain-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i036-ns-noise-estimate-aggregation-domain-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i037-ns-noise-estimate-aggregation-exact-order-recovery-v1.yml",
+      "blob_sha": "4416a1292b09eec014e43509d67dade19b57e7dc",
+      "investigation_id": "i037-ns-noise-estimate-aggregation-exact-order-recovery-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i037-ns-noise-estimate-aggregation-exact-order-recovery-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i038-ns-post-ns-matched-domain-transfer-decomposition-v1.yml",
+      "blob_sha": "1122c6aa3d36d00bc079b530e03583bc46349de4",
+      "investigation_id": "i038-ns-post-ns-matched-domain-transfer-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i038-ns-post-ns-matched-domain-transfer-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i039-ns-suppression-transfer-path-decomposition-v1.yml",
+      "blob_sha": "0d310db05119cd900b14bb8e2c5f68744db5cb57",
+      "investigation_id": "i039-ns-suppression-transfer-path-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i039-ns-suppression-transfer-path-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    },
+    {
+      "path": ".github/workflows/research-i040-ns-synthesis-overlap-add-transfer-decomposition-v1.yml",
+      "blob_sha": "f65702c2a89d71279b687eb8f050c6cff3f30cdc",
+      "investigation_id": "i040-ns-synthesis-overlap-add-transfer-decomposition-v1",
+      "evidence": ".github/research/continuous-optimization/development-v4/i040-ns-synthesis-overlap-add-transfer-decomposition-v1-result.json",
+      "reason": "consumed contract-only research workflow; terminal CLOSED_DIAGNOSTIC_ONLY evidence forbids rerun/candidate/confirmation authority; exact historical blob and durable result remain retained"
+    }
   ]
 }

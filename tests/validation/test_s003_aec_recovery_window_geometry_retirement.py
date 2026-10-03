@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from retired_workflow_contract import assert_contract_or_retired
 
 ROOT=Path(__file__).resolve().parents[2]
 LIVE=ROOT/".github/workflows/research-s003-aec-recovery-window-geometry-v1.yml"
@@ -13,16 +14,9 @@ CONSUMED=ROOT/"tests/validation/data/s003-aec-recovery-window-geometry-consumed-
 RESULT=ROOT/"docs/program/iterations/S003-aec-recovery-window-geometry-decomposition-v1-result.json"
 
 def main()->int:
-    live=LIVE.read_text(encoding="utf-8")
+    assert_contract_or_retired(ROOT, LIVE, Path(__file__).name)
     consumed=CONSUMED.read_text(encoding="utf-8")
     result=json.loads(RESULT.read_text(encoding="utf-8"))
-
-    assert "\n  pull_request:\n" in live
-    assert "\n  workflow_dispatch:\n" not in live
-    assert "\n  push:\n" not in live
-    jobs=re.findall(r"(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$",live[live.index("\njobs:")+1:])
-    assert jobs==["contract"],jobs
-    assert "test_s003_aec_recovery_window_geometry_retirement.py" in live
 
     assert "\n  workflow_dispatch:\n" in consumed
     assert "\n  push:\n" in consumed

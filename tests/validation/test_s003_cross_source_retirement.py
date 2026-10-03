@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from retired_workflow_contract import assert_contract_or_retired
 
 ROOT = Path(__file__).resolve().parents[2]
 LIVE = ROOT / ".github/workflows/research-s003-cross-source-artifact-exclusion-v1.yml"
@@ -19,20 +20,9 @@ ENTRIES = [
 
 
 def main() -> int:
-    live = LIVE.read_text(encoding="utf-8")
+    assert_contract_or_retired(ROOT, LIVE, Path(__file__).name)
     consumed = CONSUMED.read_text(encoding="utf-8")
     result = json.loads(RESULT.read_text(encoding="utf-8"))
-
-    assert "\n  pull_request:\n" in live
-    assert "\n  workflow_dispatch:\n" not in live
-    assert "\n  push:\n" not in live
-    assert "\n  schedule:\n" not in live
-    jobs = re.findall(
-        r"(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$",
-        live[live.index("\njobs:") + 1 :],
-    )
-    assert jobs == ["contract"], jobs
-    assert "test_s003_cross_source_retirement.py" in live
 
     assert "\n  workflow_dispatch:\n" in consumed
     assert "\n  push:\n" in consumed

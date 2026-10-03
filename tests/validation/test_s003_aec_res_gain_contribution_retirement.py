@@ -2,18 +2,15 @@
 from __future__ import annotations
 import json,re
 from pathlib import Path
+from retired_workflow_contract import assert_contract_or_retired
 ROOT=Path(__file__).resolve().parents[2]
 LIVE=ROOT/".github/workflows/research-s003-aec-res-gain-contribution-v1.yml"
 CONSUMED=ROOT/"tests/validation/data/s003-aec-res-gain-contribution-consumed-workflow.yml"
 RESULT=ROOT/"docs/program/iterations/S003-aec-echo-path-res-gain-contribution-decomposition-v1-result.json"
 
 def main():
-    live=LIVE.read_text(); consumed=CONSUMED.read_text(); r=json.loads(RESULT.read_text())
-    assert "\n  pull_request:\n" in live
-    assert "\n  workflow_dispatch:\n" not in live and "\n  push:\n" not in live
-    jobs=re.findall(r"(?m)^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$",live[live.index("\njobs:")+1:])
-    assert jobs==["contract"],jobs
-    assert "test_s003_aec_res_gain_contribution_retirement.py" in live
+    assert_contract_or_retired(ROOT, LIVE, Path(__file__).name)
+    consumed=CONSUMED.read_text(); r=json.loads(RESULT.read_text())
     assert "\n  workflow_dispatch:\n" in consumed and "\n  push:\n" in consumed
     assert "Run fresh contribution decomposition" in consumed
     assert "15507 15607 15707 15807 15907 16007 16107 16207" in consumed

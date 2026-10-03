@@ -1,3 +1,9 @@
+# 2.3.51
+
+- Compact daily Hosted Real AEC and Microsoft P.808 validation artifacts only after validation completes. Exact external source revision/path/hash identities, corpus/source manifests, validation report/evidence, builder hash, dataset-lock hash and rebuild provenance remain retained, while reproducible materialized audio copies are omitted from the uploaded artifact.
+- Centralize hosted artifact compaction in a fail-closed self-tested helper and bind each artifact policy to the actual checked-out repository revision. Measured PR artifacts drop from about 15.1 MB to 10 KB for Hosted Real AEC and from about 1.16 MB to 10 KB for Hosted Real Audio.
+- Validation inputs, acoustic policies and gates, 30-day retention, DSP behavior, public API/ABI, shipping defaults, HIL and Product Qualification authority are unchanged.
+
 # 2.3.50
 
 - Restore the release governance preflight to the dedicated `REPOSITORY_GOVERNANCE_TOKEN` with repository `Administration(read)`, which GitHub requires to read the current immutable-releases setting.

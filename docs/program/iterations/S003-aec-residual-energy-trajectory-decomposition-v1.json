@@ -28,7 +28,11 @@
       "prefix-aec",
       "prefix-res"
     ],
-    "analysis_profile": "prefix-aec"
+    "analysis_profile": "prefix-aec",
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES"
+    }
   },
   "measurement": {
     "geometry_id": "100w-50s",

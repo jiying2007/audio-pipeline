@@ -74,7 +74,7 @@ class RetirementTests(unittest.TestCase):
             raise ValueError('I015 consumed-research retirement record missing/duplicated')
         cls.retired_record = records[0]
         historical_contract = subprocess.check_output(
-            ['git', 'cat-file', 'blob', cls.retired_record['blob_sha'])
+            ['git', 'cat-file', 'blob', cls.retired_record['blob_sha']]
         )
         cls.retired_contract = yaml_data(historical_contract)
 

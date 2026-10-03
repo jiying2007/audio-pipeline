@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-residual-energy-trajectory-decomposition-v1-result",
+  "investigation_id": "S003-aec-residual-energy-trajectory-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_JOINT_Q_RHO_GEOMETRY_RETAINED_SINGLE_FACTOR_NOT_INVARIANT",
+  "authority": "DIAGNOSTIC_ONLY_NO_Q_RHO_ROOT_CAUSE_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37083012742,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "caca41bd855e8d6e3b4de97a0a6cce9675c09833",
+    "artifact_id": 11258859727,
+    "artifact_name": "s003-aec-residual-energy-37083012742",
+    "artifact_zip_sha256": "843bd8e1be6c57a5d65c35100adabd5a8ff6c6a4acd5970a2aaeeef961a2d080",
+    "aggregate_member": "cross-seed-residual-geometry-summary.json",
+    "aggregate_member_sha256": "53bc972eae82b492bb4a5e5c66514cb82dc1e24fd854cb7b20e026c4614907ab"
+  },
+  "qualification": {
+    "verify_run_id": 37083012916,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37083012585,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37083012595,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37083012565,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37083012815,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37083012681,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37083241245,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37083241247,
+    "i015_finalization_conclusion": "success"
+  },
+  "probe_validity": {
+    "test_only_probe": true,
+    "probe_output_bitwise_equivalent_all_seeds": true,
+    "shipping_source_changed": false,
+    "public_api_changed": false,
+    "filter_weight_or_tap_access": false,
+    "subtraction_input_reconstruction": "m = aec_out + echo_estimate because mono aliases processed and is overwritten before the public process call returns",
+    "identity_valid_all_seeds": true,
+    "normalized_reconstruction_valid_all_seeds": true,
+    "max_identity_relative_error": 1.2162692232356188e-15,
+    "max_normalized_relative_error": 1.23918404422047e-15,
+    "actual_observed_recovery_matches_standard_aec_all_seeds": true
+  },
+  "fresh_seeds": [
+    17107,
+    17207,
+    17307,
+    17407,
+    17507,
+    17607,
+    17707,
+    17807
+  ],
+  "standard_aec_recovery_ms": {
+    "17107": 100,
+    "17207": 150,
+    "17307": 100,
+    "17407": 150,
+    "17507": 150,
+    "17607": 300,
+    "17707": 100,
+    "17807": 100
+  },
+  "counterfactual_result": {
+    "freeze_both": {
+      "recovery_time_ms": {
+        "17107": 50,
+        "17207": 50,
+        "17307": 50,
+        "17407": 50,
+        "17507": 50,
+        "17607": 50,
+        "17707": 50,
+        "17807": 50
+      },
+      "recovery_shift_vs_actual_ms": {
+        "17107": -50,
+        "17207": -100,
+        "17307": -50,
+        "17407": -100,
+        "17507": -100,
+        "17607": -250,
+        "17707": -50,
+        "17807": -50
+      },
+      "all_seeds_earlier_than_actual": true,
+      "all_seeds_equal_50ms": true
+    },
+    "freeze_q": {
+      "recovery_shift_vs_actual_ms": {
+        "17107": 50,
+        "17207": -50,
+        "17307": 0,
+        "17407": 100,
+        "17507": 0,
+        "17607": 0,
+        "17707": 150,
+        "17807": 0
+      },
+      "directionally_invariant": false
+    },
+    "freeze_rho": {
+      "recovery_shift_vs_actual_ms": {
+        "17107": 0,
+        "17207": -50,
+        "17307": 0,
+        "17407": 0,
+        "17507": -50,
+        "17607": -150,
+        "17707": 0,
+        "17807": 0
+      },
+      "directionally_invariant": false,
+      "earlier_seed_count": 3,
+      "unchanged_seed_count": 5
+    }
+  },
+  "reviewed_validity": {
+    "joint_q_rho_transition_variation_is_repeatable_mechanical_contributor": true,
+    "single_q_freeze_is_cross_seed_invariant": false,
+    "single_rho_freeze_is_cross_seed_invariant": false,
+    "q_root_cause_proven": false,
+    "rho_root_cause_proven": false,
+    "q_or_rho_parameter_search_authorized": false,
+    "filter_weight_or_tap_inspection_authorized": false,
+    "interpretation": "Holding both normalized geometry coordinates at their preregistered pre-transition medians collapses recovery to 50 ms on all eight fresh seeds. Holding q or rho alone has seed-dependent effects. The retained phenomenon is therefore joint residual geometry variation, not an independently established q-only or rho-only root cause."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_JOINT_GEOMETRY_CONFIRMATION_V1",
+    "candidate_limit": 0,
+    "description": "Independently confirm on a new fresh seed set that freeze-both(q,rho) yields 50 ms recovery on every seed while neither single-factor freeze is required to be directionally invariant. Reuse the same 100w-50s geometry and test-only reconstructed subtraction input. No q/rho scaling, filter inspection, AEC parameter search, threshold change, or candidate selection."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

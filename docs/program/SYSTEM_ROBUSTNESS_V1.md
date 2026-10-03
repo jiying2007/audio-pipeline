@@ -222,3 +222,12 @@ Fresh-main evidence on seeds 17107–17807 validates the frame identity and norm
 Under the confirmed `100w-50s` research geometry, freezing both normalized coordinates `q=E/M` and `rho=C/sqrt(ME)` to their preregistered pre-transition medians yields **50 ms recovery on all eight fresh seeds**. Freezing q or rho individually has seed-dependent effects and is not directionally invariant.
 
 Therefore the retained observation is **joint q/rho residual-geometry variation**, not a q-only or rho-only root cause. No q/rho scaling, filter-weight/tap inspection, AEC parameter search, recovery-threshold change, candidate selection, shipping change, or S004 admission is authorized. The next phase is an independent fresh-seed confirmation of the joint-geometry observation.
+
+
+## S003 confirmed joint q-rho residual geometry
+
+Independent fresh confirmation on seeds 17907–18607 reproduced the joint residual-geometry counterfactual on **8/8** seeds. Freezing both normalized coordinates `q=E/M` and `rho=C/sqrt(ME)` to their preregistered pre-transition geometry yielded **50 ms** recovery on every seed, while standard AEC recovery was 100–150 ms.
+
+Single-factor freezes did not provide a stable explanation: freezing `rho` alone changed recovery on 0/8 seeds; freezing `q` alone changed only 2/8 seeds and the shifts were in opposite directions (+50 ms and -50 ms). The retained result is therefore **joint geometry change as a repeatable mechanical contributor**, not a q-only, rho-only, or interaction root-cause claim.
+
+The next authorized phase is `S003_AEC_RESIDUAL_GEOMETRY_RAW_COORDINATE_DECOMPOSITION_V1`: stay above filter weights/taps and decompose the joint q/rho change into observed subtraction-input energy `M`, predicted-echo energy `E`, and cross term `C`. Counterfactuals remain analysis-only and use preregistered pre-transition references; no scale sweep, AEC/RES parameter search, filter coefficient inspection, recovery-threshold change, shipping change, or S004 admission is authorized.

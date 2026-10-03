@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-joint-geometry-confirmation-v1-result",
+  "investigation_id": "S003-aec-joint-geometry-confirmation-v1",
+  "status": "CLOSED_DIAGNOSTIC_JOINT_GEOMETRY_CONFIRMED",
+  "authority": "DIAGNOSTIC_ONLY_NO_SINGLE_FACTOR_ROOT_CAUSE_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37084140802,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "5c3033ba7691f7f59c5e116f007f0a04110b800a",
+    "artifact_id": 11259736745,
+    "artifact_name": "s003-aec-joint-geometry-confirmation-37084140802",
+    "artifact_zip_sha256": "3c8105e3e57edff37c9fa9eae117eccab2c2a9a44ca591ebea5460caa3e4d9f6",
+    "artifact_zip_bytes": 753246
+  },
+  "qualification": {
+    "verify_run_id": 37084141027,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37084140820,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37084140738,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37084140780,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37084140743,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37084140742,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37084402358,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37084402290,
+    "i015_finalization_conclusion": "success"
+  },
+  "hypothesis": {
+    "statement": "On independent fresh seeds, freezing the joint pre-transition q/rho geometry makes AEC residual recovery equal 50 ms on every seed.",
+    "fresh_seeds": [
+      17907,
+      18007,
+      18107,
+      18207,
+      18307,
+      18407,
+      18507,
+      18607
+    ],
+    "required_freeze_both_recovery_ms": 50
+  },
+  "mechanical_result": {
+    "outcome": "CONFIRMED",
+    "confirmed_seed_count": 8,
+    "total_seed_count": 8,
+    "standard_aec_recovery_ms": {
+      "17907": 100,
+      "18007": 100,
+      "18107": 100,
+      "18207": 100,
+      "18307": 150,
+      "18407": 100,
+      "18507": 100,
+      "18607": 100
+    },
+    "freeze_both_recovery_ms": {
+      "17907": 50,
+      "18007": 50,
+      "18107": 50,
+      "18207": 50,
+      "18307": 50,
+      "18407": 50,
+      "18507": 50,
+      "18607": 50
+    },
+    "freeze_q_shift_vs_actual_ms": {
+      "17907": 0,
+      "18007": 50,
+      "18107": 0,
+      "18207": 0,
+      "18307": -50,
+      "18407": 0,
+      "18507": 0,
+      "18607": 0
+    },
+    "freeze_rho_shift_vs_actual_ms": {
+      "17907": 0,
+      "18007": 0,
+      "18107": 0,
+      "18207": 0,
+      "18307": 0,
+      "18407": 0,
+      "18507": 0,
+      "18607": 0
+    },
+    "probe_output_bitwise_equivalent_all_seeds": true,
+    "identity_valid_all_seeds": true,
+    "normalized_geometry_valid_all_seeds": true
+  },
+  "reviewed_validity": {
+    "joint_q_rho_freeze_effect_repeatable": true,
+    "joint_geometry_change_is_repeatable_mechanical_contributor": true,
+    "q_alone_is_cross_seed_sufficient_explanation": false,
+    "rho_alone_is_cross_seed_sufficient_explanation": false,
+    "q_root_cause_proven": false,
+    "rho_root_cause_proven": false,
+    "q_rho_interaction_root_cause_proven": false,
+    "q_or_rho_scale_search_authorized": false,
+    "filter_weight_or_tap_inspection_authorized": false,
+    "aec_parameter_search_authorized": false,
+    "recovery_threshold_search_authorized": false,
+    "interpretation": "Independent fresh confirmation reproduces the joint q/rho counterfactual on 8/8 seeds: freezing both coordinates to the preregistered pre-transition geometry yields 50 ms recovery. Freezing rho alone leaves recovery unchanged on all eight seeds, while freezing q alone changes only two seeds and in opposite directions. The evidence therefore retains the joint geometry transition as a repeatable mechanical contributor but does not authorize selecting q, rho, or an interaction term as a causal root cause."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_RESIDUAL_GEOMETRY_RAW_COORDINATE_DECOMPOSITION_V1",
+    "candidate_limit": 0,
+    "description": "Stay above filter weights/taps and decompose the confirmed joint q/rho geometry change into the underlying observed M/E/C frame coordinates (subtraction-input energy, predicted-echo energy, and cross term). Use preregistered analysis-only counterfactuals that freeze one raw coordinate at a time while preserving the others. Do not sweep scales, inspect filter coefficients, tune AEC/RES parameters, or select a candidate."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

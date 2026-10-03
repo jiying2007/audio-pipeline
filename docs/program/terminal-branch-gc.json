@@ -32,6 +32,10 @@
   ],
   "branches": [
     {
+      "name": "automation/i020-durable-evidence-36304120808-36324803945",
+      "expected_sha": "5ebe7f75a2da3a937e970e655af516cf37e7d993"
+    },
+    {
       "name": "cleanup/retire-s003-recovery-contracts-1",
       "expected_sha": "916c91ada5f7120221f439c66985b302f8a40c67"
     },

@@ -52,7 +52,7 @@ static int emit_geometry(FILE *stream,
                          uint32_t frame_samples) {
     const struct ap_pipeline *p = (const struct ap_pipeline *)pipeline;
     ap_metrics_t metrics;
-    double mono_energy = 0.0;
+    double subtraction_input_energy = 0.0;
     double estimate_energy = 0.0;
     double cross = 0.0;
     double residual_energy = 0.0;
@@ -70,34 +70,41 @@ static int emit_geometry(FILE *stream,
 
     ap_pipeline_get_metrics(pipeline, &metrics);
     for (i = 0u; i < frame_samples; ++i) {
-        const double m = p->mono[i];
         const double e = p->echo_estimate[i];
         const double r = p->aec_out[i];
-        mono_energy += m * m;
+        /*
+         * pipeline->mono aliases pipeline->processed and is overwritten with
+         * aec_out before ap_pipeline_process_capture() returns. Reconstruct
+         * the exact subtraction input from the two live AEC outputs instead:
+         *     r = m - e  =>  m = r + e.
+         */
+        const double m = r + e;
+        subtraction_input_energy += m * m;
         estimate_energy += e * e;
         cross += m * e;
         residual_energy += r * r;
     }
-    mono_energy /= (double)frame_samples;
+    subtraction_input_energy /= (double)frame_samples;
     estimate_energy /= (double)frame_samples;
     cross /= (double)frame_samples;
     residual_energy /= (double)frame_samples;
 
-    reconstructed = mono_energy + estimate_energy - 2.0 * cross;
+    reconstructed = subtraction_input_energy + estimate_energy - 2.0 * cross;
     identity_abs_error = fabs(reconstructed - residual_energy);
     identity_rel_error = identity_abs_error /
-        fmax(fabs(residual_energy), S003_NORM_EPS);
+        fmax(subtraction_input_energy + estimate_energy + 2.0 * fabs(cross),
+             S003_NORM_EPS);
 
-    if (mono_energy > S003_NORM_EPS && estimate_energy > S003_NORM_EPS) {
-        q = estimate_energy / mono_energy;
-        rho = cross / sqrt(mono_energy * estimate_energy);
-        normalized_observed = residual_energy / mono_energy;
+    if (subtraction_input_energy > S003_NORM_EPS && estimate_energy > S003_NORM_EPS) {
+        q = estimate_energy / subtraction_input_energy;
+        rho = cross / sqrt(subtraction_input_energy * estimate_energy);
+        normalized_observed = residual_energy / subtraction_input_energy;
         normalized_reconstructed =
             1.0 + q - 2.0 * rho * sqrt(q);
         normalized_abs_error =
             fabs(normalized_reconstructed - normalized_observed);
         normalized_rel_error = normalized_abs_error /
-            fmax(fabs(normalized_observed), S003_NORM_EPS);
+            fmax(1.0 + q + 2.0 * fabs(rho) * sqrt(q), S003_NORM_EPS);
         normalized_valid = 1;
     }
 
@@ -113,7 +120,7 @@ static int emit_geometry(FILE *stream,
         "\"erle_db\":%.17g,"
         "\"estimated_delay_ms\":%u,"
         "\"delay_error_samples\":%d,"
-        "\"mono_energy\":%.17g,"
+        "\"subtraction_input_energy\":%.17g,"
         "\"echo_estimate_energy\":%.17g,"
         "\"cross_energy\":%.17g,"
         "\"residual_energy\":%.17g,"
@@ -137,7 +144,7 @@ static int emit_geometry(FILE *stream,
         (double)metrics.erle_db,
         metrics.estimated_delay_ms,
         metrics.delay_error_samples,
-        mono_energy,
+        subtraction_input_energy,
         estimate_energy,
         cross,
         residual_energy,

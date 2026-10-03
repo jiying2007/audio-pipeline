@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-residual-scale-geometry-decomposition-v1-result",
+  "investigation_id": "S003-aec-residual-scale-geometry-decomposition-v1",
+  "status": "CLOSED_DIAGNOSTIC_GEOMETRY_CONTRIBUTION_REPEATABLE_SCALE_SECONDARY",
+  "authority": "DIAGNOSTIC_ONLY_NO_GEOMETRY_ROOT_CAUSE_OR_PARAMETER_AUTHORITY",
+  "authoritative_execution": {
+    "workflow_run_id": 37094470698,
+    "run_attempt": 1,
+    "event": "push",
+    "branch": "main",
+    "head_sha": "595c81c245eec2cfe87700980ed30664354e8262",
+    "artifact_id": 11263739143,
+    "artifact_name": "s003-aec-residual-scale-geometry-37094470698",
+    "artifact_zip_sha256": "3da6abeb56a01a21bfe9799c0eaaf33d6f90e386212c3406c252874ebe86247c",
+    "artifact_zip_bytes": 759662,
+    "aggregate_member": "cross-seed-scale-geometry-summary.json",
+    "aggregate_member_sha256": "0cfb5cdc1aae69664122a20f6a561cc3a995d1ec7d2f284c2c6f658c6cbe0148"
+  },
+  "qualification": {
+    "verify_run_id": 37094470857,
+    "verify_conclusion": "success",
+    "system_robustness_run_id": 37094470696,
+    "system_robustness_conclusion": "success",
+    "hosted_real_audio_run_id": 37094470695,
+    "hosted_real_audio_conclusion": "success",
+    "hosted_real_aec_run_id": 37094470670,
+    "hosted_real_aec_conclusion": "success",
+    "program_archive_run_id": 37094470658,
+    "program_archive_conclusion": "success",
+    "i015_contract_run_id": 37094470668,
+    "i015_contract_conclusion": "success",
+    "release_run_id": 37094657110,
+    "release_conclusion": "success",
+    "i015_finalization_run_id": 37094657117,
+    "i015_finalization_conclusion": "success"
+  },
+  "factorization": {
+    "equation": "R = M * G",
+    "G": "R/M = 1 + q - 2*rho*sqrt(q)",
+    "physical_admissibility_preserved_all_modes_all_seeds": true,
+    "invalid_values_clamped": false
+  },
+  "fresh_seeds": [
+    19507,
+    19607,
+    19707,
+    19807,
+    19907,
+    20007,
+    20107,
+    20207
+  ],
+  "standard_aec_recovery_ms": {
+    "19507": 300,
+    "19607": 100,
+    "19707": 100,
+    "19807": 100,
+    "19907": 150,
+    "20007": 100,
+    "20107": 100,
+    "20207": 100
+  },
+  "mechanical_result": {
+    "freeze_geometry": {
+      "physically_admissible_seed_count": 8,
+      "physically_inadmissible_seed_count": 0,
+      "recovery_time_ms": {
+        "19507": 0,
+        "19607": 0,
+        "19707": 0,
+        "19807": 0,
+        "19907": 0,
+        "20007": 0,
+        "20107": 0,
+        "20207": 0
+      },
+      "recovery_shift_vs_actual_ms": {
+        "19507": -300,
+        "19607": -100,
+        "19707": -100,
+        "19807": -100,
+        "19907": -150,
+        "20007": -100,
+        "20107": -100,
+        "20207": -100
+      },
+      "earlier_seed_count": 8,
+      "unchanged_seed_count": 0,
+      "later_seed_count": 0
+    },
+    "freeze_scale": {
+      "physically_admissible_seed_count": 8,
+      "physically_inadmissible_seed_count": 0,
+      "recovery_time_ms": {
+        "19507": 100,
+        "19607": 100,
+        "19707": 100,
+        "19807": 50,
+        "19907": 100,
+        "20007": 50,
+        "20107": 100,
+        "20207": 50
+      },
+      "recovery_shift_vs_actual_ms": {
+        "19507": -200,
+        "19607": 0,
+        "19707": 0,
+        "19807": -50,
+        "19907": -50,
+        "20007": -50,
+        "20107": 0,
+        "20207": -50
+      },
+      "earlier_seed_count": 5,
+      "unchanged_seed_count": 3,
+      "later_seed_count": 0
+    }
+  },
+  "reviewed_validity": {
+    "normalized_geometry_transition_is_cross_seed_repeatable_mechanical_contributor": true,
+    "subtraction_input_scale_transition_is_cross_seed_invariant_contributor": false,
+    "freeze_geometry_zero_ms_result_requires_independent_confirmation": true,
+    "geometry_root_cause_proven": false,
+    "scale_root_cause_proven": false,
+    "q_or_rho_root_cause_proven": false,
+    "factor_scale_search_authorized": false,
+    "filter_weight_or_tap_inspection_authorized": false,
+    "aec_or_res_parameter_search_authorized": false,
+    "recovery_threshold_search_authorized": false,
+    "interpretation": "The physically valid factorization separates residual scale M from normalized geometry G. Holding G at its preregistered pre-transition median makes recovery immediate (0 ms) on every fresh seed, while holding M fixed only helps a subset. This retains post-transition G variation as the stronger repeatable mechanical contributor, but G is an analytic residual-geometry coordinate rather than a tunable root-cause parameter."
+  },
+  "next_authorized_step": {
+    "phase": "S003_AEC_GEOMETRY_FREEZE_CONFIRMATION_V1",
+    "candidate_limit": 0,
+    "confirmation_limit": 1,
+    "description": "Independently confirm on fresh seeds 20307-21007 that the physically valid freeze_geometry counterfactual (actual M times preregistered pre-transition G) yields 0 ms recovery on every seed. Freeze_scale remains descriptive only. No G/q/rho scaling, filter inspection, DSP parameter search, threshold change, candidate selection, shipping change, or S004 admission."
+  },
+  "investigation_terminal": true,
+  "rerun_required": false,
+  "shipping_change_authority": false,
+  "candidate_authority": false,
+  "root_cause_claim_authority": false,
+  "product_release_authority": false,
+  "s004_open": false
+}

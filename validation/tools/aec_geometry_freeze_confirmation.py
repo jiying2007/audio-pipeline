@@ -59,7 +59,7 @@ def evaluate(receipts: list[dict], c: dict) -> dict:
     }
 
 def self_test() -> None:
-    c={"authority":"CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION_ONLY","candidate_limit":0,"confirmation_limit":1,
+    c={"id":"self-test","authority":"CANDIDATE_ZERO_SINGLE_HYPOTHESIS_CONFIRMATION_ONLY","candidate_limit":0,"confirmation_limit":1,
        "corpus":{"fresh_seeds":[1,2]},"hypothesis":{"mode":"freeze_geometry","required_recovery_time_ms":0},
        "preregistered_rules":{"no_parameter_search":True}}
     receipts=[]

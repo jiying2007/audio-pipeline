@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "id": "S003-aec-residual-energy-trajectory-decomposition-v1",
+  "phase": "S003_AEC_RESIDUAL_ENERGY_TRAJECTORY_DECOMPOSITION_V1",
+  "authority": "CANDIDATE_ZERO_AEC_RESIDUAL_GEOMETRY_ANALYSIS_ONLY",
+  "candidate_limit": 0,
+  "confirmation_limit": 0,
+  "promotion_allowed": false,
+  "shipping_change_allowed": false,
+  "predecessor": {
+    "reviewed_result": "docs/program/iterations/S003-aec-res-target-driver-decomposition-v1-result.json",
+    "required_status": "CLOSED_DIAGNOSTIC_RESIDUAL_DRIVER_NECESSARY_ECHO_DRIVER_NOT_NECESSARY"
+  },
+  "corpus": {
+    "builder": "validation/tools/aec_res_gain_contribution_decomposition.py",
+    "fresh_seeds": [
+      17107,
+      17207,
+      17307,
+      17407,
+      17507,
+      17607,
+      17707,
+      17807
+    ],
+    "seconds": 6,
+    "canonical_profiles": [
+      "prefix-aec",
+      "prefix-res"
+    ],
+    "analysis_profile": "prefix-aec",
+    "stage_labels": {
+      "prefix-aec": "AEC",
+      "prefix-res": "RES"
+    }
+  },
+  "measurement": {
+    "geometry_id": "100w-50s",
+    "post_window_ms": 100,
+    "post_stride_ms": 50,
+    "pre_baseline_window_ms": 100,
+    "pre_baseline_ms": [
+      -1000,
+      -200
+    ],
+    "recovery_excess_db": 3.01029995664,
+    "continuous_hold_ms": 300,
+    "required_windows_for_300ms_coverage": 5,
+    "search_ms": [
+      0,
+      2500
+    ]
+  },
+  "identity": {
+    "subtraction_input_energy_symbol": "M",
+    "subtraction_input_definition": "per-sample m = aec_out + echo_estimate, reconstructed after processing because pipeline mono shares storage with processed and is overwritten before the public process call returns",
+    "echo_estimate_energy_symbol": "E",
+    "cross_symbol": "C",
+    "residual_energy_symbol": "R",
+    "equation": "R = M + E - 2*C",
+    "q_definition": "q = E/M",
+    "rho_definition": "rho = C/sqrt(M*E)",
+    "normalized_equation": "R/M = 1 + q - 2*rho*sqrt(q)",
+    "minimum_energy_for_normalized_geometry": 1e-12,
+    "identity_error_normalization": "abs(R_reconstructed-R) / max(M + E + 2*abs(C), epsilon)",
+    "normalized_error_normalization": "abs((R/M)_reconstructed-(R/M)_observed) / max(1 + q + 2*abs(rho)*sqrt(q), epsilon)",
+    "max_relative_identity_error": 0.00001,
+    "max_relative_normalized_reconstruction_error": 0.00001
+  },
+  "pre_transition_references": {
+    "interval_ms": [
+      -1000,
+      -200
+    ],
+    "statistic": "median over valid per-frame normalized observations",
+    "q_reference": "median q",
+    "rho_reference": "median rho"
+  },
+  "counterfactuals": {
+    "actual": {
+      "residual_energy": "actual observed aec_out energy",
+      "geometry_inputs": [
+        "actual q",
+        "actual rho"
+      ],
+      "subtraction_input_energy": "actual reconstructed M",
+      "authority": "observed baseline; q/rho reconstruction is validated separately but does not define actual recovery"
+    },
+    "freeze_q": {
+      "geometry_inputs": [
+        "pre-transition median q",
+        "actual rho"
+      ],
+      "subtraction_input_energy": "actual reconstructed M"
+    },
+    "freeze_rho": {
+      "geometry_inputs": [
+        "actual q",
+        "pre-transition median rho"
+      ],
+      "subtraction_input_energy": "actual reconstructed M"
+    },
+    "freeze_both": {
+      "geometry_inputs": [
+        "pre-transition median q",
+        "pre-transition median rho"
+      ],
+      "subtraction_input_energy": "actual reconstructed M"
+    }
+  },
+  "probe": {
+    "source": "tests/validation/s003_aec_residual_geometry_probe.c",
+    "profile": "prefix-aec",
+    "required_output_equivalence": "bitwise identical PCM to tests/validation/stage_prefix_process_pcm.c prefix-aec",
+    "observes_existing_buffers": [
+      "aec_out",
+      "echo_estimate"
+    ],
+    "filter_weight_or_tap_access": false,
+    "public_api_change_allowed": false,
+    "shipping_source_change_allowed": false,
+    "reconstructed_observation": "AEC subtraction input m = aec_out + echo_estimate"
+  },
+  "validity_gates": {
+    "require_probe_output_bitwise_equivalence": true,
+    "require_identity_on_all_frames": true,
+    "require_normalized_reconstruction_on_valid_frames": true,
+    "either_counterfactual_outcome_is_valid_evidence": true,
+    "require_actual_observed_recovery_matches_standard_aec": true
+  },
+  "descriptive_outputs": [
+    "standard AEC recovery",
+    "actual observed aec_out residual recovery",
+    "freeze-q recovery",
+    "freeze-rho recovery",
+    "freeze-both recovery",
+    "per-seed q/rho pre-transition references",
+    "per-seed delay changes relative to actual observed residual recovery",
+    "full per-frame reconstructed-M/E/C/R/q/rho trace"
+  ],
+  "preregistered_rules": {
+    "no_filter_weight_inspection": true,
+    "no_tap_inspection": true,
+    "no_aec_mu_search": true,
+    "no_aec_tap_search": true,
+    "no_aec_stride_search": true,
+    "no_q_scale_search": true,
+    "no_rho_scale_search": true,
+    "no_counterfactual_parameter_sweep": true,
+    "no_recovery_threshold_search": true,
+    "no_candidate_selection": true,
+    "no_root_cause_selection": true,
+    "no_validation_grade_feedback": true,
+    "no_validation_grade_blind_feedback": true
+  },
+  "authority_boundary": {
+    "may_inspect_filter_weights": false,
+    "may_inspect_filter_taps": false,
+    "may_change_aec_parameters": false,
+    "may_change_res_parameters": false,
+    "may_change_recovery_threshold": false,
+    "may_select_candidate": false,
+    "may_claim_q_or_rho_root_cause": false,
+    "may_change_shipping_source": false,
+    "may_open_s004": false
+  },
+  "success_definition": "mechanically valid reconstructed AEC subtraction identity plus normalized-geometry counterfactual recovery receipts on all fresh seeds; actual recovery remains defined by observed aec_out energy, with descriptive driver isolation only"
+}

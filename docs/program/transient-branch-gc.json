@@ -29,5 +29,8 @@
     "shipping_source_changed": false,
     "release_changed": false,
     "product_qualification": "DEFERRED_BY_SCOPE"
-  }
+  },
+  "workflow_retired": true,
+  "retired_workflow_blob_sha": "7685cc13fd2bf7ffb54e6d5d5e911406150ca0f6",
+  "retirement_reason": "all three exact tmp-i007-rebase-anchor refs are already absent; the one-shot cleanup entry is consumed while the exact branch contract remains as historical audit evidence"
 }

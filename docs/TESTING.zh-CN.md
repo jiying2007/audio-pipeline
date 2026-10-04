@@ -100,7 +100,7 @@ Hosted x86、generated regression、cross-build、QEMU 只属于 software correc
 
 ## Hosted 真实音频 smoke
 
-每个 PR 与 `main` Verify 都在 GitHub-hosted Linux 上处理 4 个 SHA 固定的 CC-BY-4.0 Microsoft P.808 clip，验证上游字节、WAV 几何、materialization、processor identity、clipping/DC/RMS safety 与 hash-bound evidence。该 gate 是 required `summary` 的一部分，但不能替代 Extended Real、DUT HIL 或 Product Certification。
+每个非纯文档 PR 与所有 `main` Verify 都在 GitHub-hosted Linux 上处理 4 个 SHA 固定的 CC-BY-4.0 Microsoft P.808 clip，验证上游字节、WAV 几何、materialization、processor identity、clipping/DC/RMS safety 与 hash-bound evidence。该 gate 是 required `summary` 的一部分，但不能替代 Extended Real、DUT HIL 或 Product Certification。
 
 ## Validation authority qualification
 
@@ -108,3 +108,8 @@ Validation authority 候选可通过 `Validation Authority Qualification` 对精
 40 位 source SHA 执行 canonical Hosted Real AEC one-way holdout。该入口复用
 `hosted-aec-real-validation.yml`，不再需要 qualification-only Draft PR，且
 holdout 细节不能作为优化反馈；普通 PR 与 main push 的 Hosted Real AEC 行为保持不变。
+
+## 保守档交付与工程长稳
+
+参考 ARMHF SDK、配置绑定的 81 用例回归及 200 万帧非真机工程长稳见
+[SSC305 交付契约](SSC305_DELIVERY.zh-CN.md)。这些证据不替代正式 BSP 或 Product Certification。

@@ -1,3 +1,9 @@
+# 2.3.55
+
+- Add exact-preset reference armhf SDK delivery with configuration-bound acoustic replay and resource evidence; do not claim shipping BSP or silicon qualification.
+- Separate resource-probe byte-repeat identity from PCM determinism and enforce the conservative combined arena budget.
+- Add bounded non-DUT engineering endurance using existing runtime contracts; synchronize deployment and docs-only gate guidance.
+
 # 2.3.54
 
 - Fix release-governance auditing to use the dedicated Administration(read) token for rulesets/immutable-release controls while reading ordinary repository metadata with the workflow GitHub token.

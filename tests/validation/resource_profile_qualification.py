@@ -13,7 +13,6 @@ import hashlib
 import json
 import re
 import subprocess
-import tempfile
 from pathlib import Path
 
 ALLOCATOR = re.compile(r"(?:^|\s)(malloc|calloc|realloc|free)$")
@@ -58,16 +57,10 @@ def unresolved_allocator_refs(nm_tool: str, libraries: list[Path]) -> list[str]:
     return sorted(refs)
 
 
-def canonical_json_bytes(value: dict) -> bytes:
-    return json.dumps(
-        value, sort_keys=True, separators=(",", ":"), allow_nan=False
-    ).encode("utf-8")
-
-
 def collect(args: argparse.Namespace) -> dict:
     first = load_json(args.probe)
-    second = load_json(args.probe_repeat)
-    deterministic = canonical_json_bytes(first) == canonical_json_bytes(second)
+    load_json(args.probe_repeat)  # Validate both outputs before comparing raw bytes.
+    deterministic = args.probe.read_bytes() == args.probe_repeat.read_bytes()
     sections = section_sizes(args.size_tool, args.elf)
     rodata = sum(
         size for name, size in sections.items()
@@ -77,13 +70,13 @@ def collect(args: argparse.Namespace) -> dict:
     allocator_refs = unresolved_allocator_refs(args.nm_tool, args.library)
     elf_bytes = args.elf.stat().st_size
     result = {
-        "schema_version": 1,
+        "schema_version": 2,
         "profile_id": args.profile_id,
         "preset": args.preset,
         "probe": first,
-        "qemu_deterministic_execution": deterministic,
-        "qemu_repeat_sha256": hashlib.sha256(
-            canonical_json_bytes(second)
+        "qemu_probe_repeat_identical": deterministic,
+        "qemu_probe_repeat_sha256": hashlib.sha256(
+            args.probe_repeat.read_bytes()
         ).hexdigest(),
         "rom": {
             "text_bytes": text_bytes,
@@ -105,6 +98,8 @@ def validate_profile(
     source_revision: str,
 ) -> list[str]:
     errors: list[str] = []
+    if measured.get("schema_version") != 2:
+        errors.append("measured schema_version must be 2")
     if measured.get("profile_id") != profile_id:
         errors.append("profile_id mismatch")
     if measured.get("preset") != profile_spec["preset"]:
@@ -128,6 +123,11 @@ def validate_profile(
         errors.append("target_triple is not Arm/AArch32")
 
     ceilings = profile_spec["ceilings"]
+    sizes = [probe.get("pipeline_state_bytes"), probe.get("runtime_state_bytes")]
+    if any(type(size) is not int or size <= 0 for size in sizes):
+        errors.append("state sizes must be positive integers")
+    elif sum(sizes) > ceilings["caller_owned_state_bytes"]:
+        errors.append("caller_owned_state_bytes ceiling exceeded")
     if int(probe.get("pipeline_state_bytes", 1 << 60)) > ceilings["pipeline_state_bytes"]:
         errors.append("pipeline_state_bytes ceiling exceeded")
     if int(probe.get("runtime_state_bytes", 1 << 60)) > ceilings["runtime_state_bytes"]:
@@ -138,16 +138,16 @@ def validate_profile(
         errors.append("rom_text_rodata_bytes ceiling exceeded")
     if measured.get("direct_heap_allocator_symbol_references") != []:
         errors.append("direct heap allocator symbol reference present")
-    if measured.get("qemu_deterministic_execution") is not True:
-        errors.append("QEMU profile probe was not deterministic")
+    if measured.get("qemu_probe_repeat_identical") is not True:
+        errors.append("QEMU resource-probe stdout bytes differ")
     if int(probe.get("algorithmic_latency_frames", -1)) < 0:
         errors.append("invalid algorithmic_latency_frames")
     return errors
 
 
 def qualify(spec: dict, metrics: dict[str, dict], source_revision: str) -> dict:
-    if spec.get("schema_version") != 2:
-        raise ValueError("resource profile spec schema_version must be 2")
+    if spec.get("schema_version") != 3:
+        raise ValueError("resource profile spec schema_version must be 3")
     expected_profiles = set(spec["profiles"])
     if set(metrics) != expected_profiles:
         raise ValueError(
@@ -180,8 +180,8 @@ def qualify(spec: dict, metrics: dict[str, dict], source_revision: str) -> dict:
         for metric in spec["silicon_calibration_required"]
     }
     return {
-        "schema_version": 1,
-        "qualification_id": "ssc305-delivery-profiles-v1",
+        "schema_version": 2,
+        "qualification_id": "ssc305-delivery-profiles-v2",
         "source_revision": source_revision,
         "status": "PASS" if not all_errors else "FAIL",
         "errors": all_errors,
@@ -197,7 +197,7 @@ def qualify(spec: dict, metrics: dict[str, dict], source_revision: str) -> dict:
 
 def self_test() -> None:
     spec = {
-        "schema_version": 2,
+        "schema_version": 3,
         "authority": "build-only",
         "profiles": {
             "conservative": {
@@ -212,6 +212,7 @@ def self_test() -> None:
                     "pipeline_state_bytes": 80000,
                     "runtime_state_bytes": 65536,
                     "rom_text_rodata_bytes": 40960,
+                    "caller_owned_state_bytes": 65000,
                 },
             },
             "effect-first": {
@@ -226,6 +227,7 @@ def self_test() -> None:
                     "pipeline_state_bytes": 80000,
                     "runtime_state_bytes": 65536,
                     "rom_text_rodata_bytes": 40960,
+                    "caller_owned_state_bytes": 65000,
                 },
             },
         },
@@ -236,7 +238,7 @@ def self_test() -> None:
 
     def metric(profile: str, preset: str, rate: int) -> dict:
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "profile_id": profile,
             "preset": preset,
             "probe": {
@@ -249,7 +251,7 @@ def self_test() -> None:
                 "runtime_state_bytes": 20000,
                 "algorithmic_latency_frames": 1,
             },
-            "qemu_deterministic_execution": True,
+            "qemu_probe_repeat_identical": True,
             "rom": {"text_rodata_bytes": 30000},
             "direct_heap_allocator_symbol_references": [],
         }
@@ -279,6 +281,33 @@ def self_test() -> None:
         "conservative", spec["profiles"]["conservative"], revision_bad, "abc"
     )
     assert any("source_revision mismatch" in item for item in errors)
+    import copy
+    for key, value, fragment in (
+        ("schema_version", 1, "schema_version"),
+        ("qemu_probe_repeat_identical", False, "stdout"),
+    ):
+        broken = metric("conservative", "low", 16000)
+        broken[key] = value
+        assert any(fragment in error for error in validate_profile(
+            "conservative", spec["profiles"]["conservative"], broken, "abc"))
+    over_budget = metric("conservative", "low", 16000)
+    over_budget["probe"]["pipeline_state_bytes"] = 50001
+    assert any("caller_owned_state_bytes" in error for error in validate_profile(
+        "conservative", spec["profiles"]["conservative"], over_budget, "abc"))
+    # Individual public ceilings pass, aggregate SKU budget must still fail.
+    for value in (0, -1, True):
+        broken = metric("conservative", "low", 16000)
+        broken["probe"]["pipeline_state_bytes"] = value
+        assert any("positive integers" in error for error in validate_profile(
+            "conservative", spec["profiles"]["conservative"], broken, "abc"))
+    old_spec = copy.deepcopy(spec)
+    old_spec["schema_version"] = 2
+    try:
+        qualify(old_spec, {}, "abc")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("old spec must not be silently accepted")
     print("resource profile qualification self-test: OK")
 
 
@@ -322,7 +351,7 @@ def main() -> int:
             "runtime_state_bytes": value["probe"]["runtime_state_bytes"],
             "rom_text_rodata_bytes": value["rom"]["text_rodata_bytes"],
             "heap_allocator_refs": value["direct_heap_allocator_symbol_references"],
-            "qemu_deterministic": value["qemu_deterministic_execution"],
+            "qemu_probe_repeat_identical": value["qemu_probe_repeat_identical"],
         }, sort_keys=True))
         return 0
 

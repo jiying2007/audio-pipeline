@@ -70,7 +70,7 @@ Repository CI has two explicit Cortex-A32 delivery profiles:
 - `conservative`: exact `ssc305-cortex-a32-low` preset; shipping-default build contract, low-resource/stability first.
 - `effect-first`: exact `cortex-a32-neon` full graph; research-only envelope for determining whether extra resources later buy repeatable acoustic benefit.
 
-The resource gate produces a machine-readable qualification artifact for both profiles. It proves exact AArch32 build identity, pipeline/runtime caller-owned state sizes, linked `.text/.rodata`, final ELF size, absence of direct `malloc/calloc/realloc/free` references from the linked core/runtime libraries, algorithmic latency, and byte-identical repeated QEMU probe output.
+The resource gate produces a machine-readable qualification artifact for both profiles. It proves exact AArch32 build identity, pipeline/runtime caller-owned state sizes, linked `.text/.rodata`, final ELF size, absence of direct `malloc/calloc/realloc/free` references from the linked core/runtime libraries, algorithmic latency, and byte-identical repeated QEMU resource-probe stdout (`qemu_probe_repeat_identical`). This probe does not process PCM; audio replay has a separate exact-build evidence record.
 
 That evidence is deliberately **not** SSC305 silicon performance evidence. CPU ms/audio-second, frame p50/p95/p99, peak RSS, whole-thread stack upper bound, adaptive warm-up/convergence, transition worst-case timing, thermal and power remain `CALIBRATION_REQUIRED` until real target evidence is available. Hosted/QEMU timing must never fill those fields.
 
@@ -160,3 +160,17 @@ Algorithm escalation is corpus-driven. A passing shipping corpus is evidence to 
 `certification/record.schema.json` and `certification/validate_record.py` accept schema v4 only. A `product-certified` record requires an approved shipping SKU policy, exact shipping toolchain identity, build/deployed/executed binary SHA-256 equality, target performance evidence, real corpus results, thermal/power evidence, a policy-duration passing route soak, artifacts/checksums and deployment provenance.
 
 The certification bundle is attested and final acceptance requires an immutable `product-lifecycle` archive receipt. A hosted CI release can never manufacture these target-board measurements.
+
+## Conservative integration budget and delivery
+
+`ci/ssc305-resource-profiles.json` owns the conservative combined pipeline/runtime
+arena ceiling of **50,000 bytes**. This is not a whole-process RSS budget. Budget
+thread stacks, application/ALSA PCM buffering and optional Flight Recorder memory
+separately. Effect-first remains research-only; passing its resource envelope
+never establishes a quality improvement.
+
+The governed release additionally publishes an explicitly named **reference armhf
+SDK**, built with the pinned CI cross-toolchain and exact conservative preset.
+It is not the SigmaStar BSP/sysroot SDK and cannot substitute for actual BSP
+link/loader compatibility or silicon performance qualification. See
+[`SSC305_DELIVERY.md`](SSC305_DELIVERY.md) for identity and evidence semantics.

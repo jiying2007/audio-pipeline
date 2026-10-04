@@ -58,6 +58,8 @@ RESOURCE_LITERALS = (
 )
 
 STALE_PHRASES = (
+    "Every PR and `main` Verify runs four",
+    "每个 PR 与 `main` Verify",
     "pre-1.0",
     "repository is pre-1.0",
     "passing >=8 h soak",
@@ -638,6 +640,11 @@ def self_test() -> None:
             require_lifecycle=False
         )
         assert any("resource literal" in item for item in errors)
+        for phrase in ("Every PR and `main` Verify runs four", "每个 PR 与 `main` Verify"):
+            (root / "docs/TESTING.md").write_text(fixture + phrase, encoding="utf-8")
+            errors = validate(root, require_lab=False, require_validation=False,
+                              require_supply_chain=False, require_lifecycle=False)
+            assert any("stale phrase" in error for error in errors)
     print("documentation consistency self-test: OK")
 
 

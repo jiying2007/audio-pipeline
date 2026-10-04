@@ -1,6 +1,8 @@
 name: Research Branch GC
 
 on:
+  schedule:
+    - cron: '17 3 * * *'
   pull_request:
     paths:
       - '.github/research/evidence-index.json'
@@ -62,8 +64,13 @@ jobs:
             args+=(--apply --auto-only --confirmation DELETE_GC_ELIGIBLE_REFS)
           elif [ "$EVENT_NAME" = pull_request ]; then
             args+=(--auto-only)
-          elif [ "$MODE" = apply ]; then
-            args+=(--apply --confirmation "$CONFIRMATION")
+          elif [ "$EVENT_NAME" = schedule ]; then
+            args+=(--auto-only --audit-live-inventory)
+          else
+            args+=(--audit-live-inventory)
+            if [ "$MODE" = apply ]; then
+              args+=(--apply --confirmation "$CONFIRMATION")
+            fi
           fi
           python3 scripts/research_registry.py "${args[@]}"
       - name: Publish GC summary

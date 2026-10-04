@@ -21,6 +21,9 @@ jobs:
   release:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      release_sha: ${{ steps.release_identity.outputs.release_sha }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -264,6 +267,23 @@ jobs:
             exit 1
           fi
           echo "immutable_release=$TAG"
+
+      - name: Resolve immutable release identity for convergence
+        id: release_identity
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          release_sha=$(git rev-list -n1 "$TAG")
+          [[ "$release_sha" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "invalid immutable release SHA for $TAG: $release_sha" >&2
+            exit 1
+          }
+          git merge-base --is-ancestor "$release_sha" "$VERIFIED_SHA"
+          echo "release_sha=$release_sha" >> "$GITHUB_OUTPUT"
+          echo "release_identity=$TAG@$release_sha"
       - name: Trigger exact-SHA post-release HIL
         if: steps.existing.outputs.release != 'true' && vars.HIL_ENABLED == 'true'
         env:
@@ -288,15 +308,24 @@ jobs:
             -f event_type=extended-real-post-release \
             -f "client_payload[release_ref]=$VERIFIED_SHA" \
             -f "client_payload[tag]=$TAG"
+  convergence:
+    needs: release
+    if: needs.release.result == 'success'
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger post-release qualification convergence
-        if: steps.existing.outputs.release != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
-          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TAG: ${{ needs.release.outputs.tag }}
+          RELEASE_SHA: ${{ needs.release.outputs.release_sha }}
         run: |
           set -euo pipefail
+          test -n "$TAG"
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
           gh workflow run post-release-qualification-summary.yml \
             --ref main \
-            -f "source_sha=$VERIFIED_SHA" \
+            -f "source_sha=$RELEASE_SHA" \
             -f "tag=$TAG"

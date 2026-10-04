@@ -2,10 +2,8 @@ name: I015 Evidence Finalization
 run-name: i015-finalize / ${{ github.event_name }} / ${{ github.ref_name }}
 
 on:
-  workflow_run:
-    workflows: [Verify, Program Archive Contract, Research Optimization, I015 Evidence Finalization Contract]
-    types: [completed]
-    branches: [main]
+  # I015 is terminal and its archive is committed. Keep only an explicit
+  # manual audit entry; automatic workflow_run reconciliation is retired.
   workflow_dispatch:
 
 permissions:
@@ -22,11 +20,8 @@ jobs:
   reconcile:
     if: >-
       github.repository == 'jiying2007/audio-pipeline' &&
-      github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
-      (github.event_name != 'workflow_run' ||
-       (github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_repository.full_name == github.repository &&
-        github.event.workflow_run.head_branch == 'main'))
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:

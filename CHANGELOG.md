@@ -1,3 +1,9 @@
+# 2.3.52
+
+- Extend reproducible validation-artifact compaction with an explicit deterministic-generator mode that binds exact repository revision, generator/model SHA-256, seed, duration, corpus hash and per-file source-manifest hashes before removing generated payloads.
+- Compact the twice-weekly three-seed AEC motion regression artifacts only after validation completes. The regression remains development-only with candidate/confirmation budgets fixed at zero and promotion disabled; synthetic PCM/ground-truth payloads are omitted from uploads because the generator is deterministic and self-tested.
+- Existing Hosted Real Audio/AEC external-source compaction remains backward-compatible. DSP behavior, validation thresholds, shipping defaults, HIL and Product Qualification authority are unchanged.
+
 # 2.3.51
 
 - Compact daily Hosted Real AEC and Microsoft P.808 validation artifacts only after validation completes. Exact external source revision/path/hash identities, corpus/source manifests, validation report/evidence, builder hash, dataset-lock hash and rebuild provenance remain retained, while reproducible materialized audio copies are omitted from the uploaded artifact.

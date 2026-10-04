@@ -15,12 +15,13 @@ The active branch ruleset must:
 - block branch deletion;
 - block non-fast-forward/force updates;
 - have no bypass actors for the shipping path.
+- enable repository `delete_branch_on_merge=true` so ordinary same-repository merged PR heads are removed by GitHub itself rather than a redundant post-merge Actions job.
 
 Squash merge is the canonical merge method for feature/productization work. Unresolved review conversations should block merge when reviews are used.
 
 The active tag ruleset must target `refs/tags/v*`, block deletion and non-fast-forward updates, and have no bypass actors. Shipping release tags are exact-SHA annotated tags created by the Release workflow.
 
-`scripts/github_governance.py` encodes the machine-readable live audit for these rules plus repository immutable-release state. An audit is PASS only when all three controls are active: main ruleset, `v*` tag ruleset and immutable releases.
+`scripts/github_governance.py` encodes the machine-readable live audit for these rules plus repository immutable-release state and merged-branch cleanup. An audit is PASS only when the main ruleset, `v*` tag ruleset, immutable releases, and `delete_branch_on_merge=true` are all active.
 
 ## Defense in depth for direct pushes
 

@@ -143,75 +143,9 @@ jobs:
           fi
           ccache --show-stats
 
-  ssc305-commercial-profile:
-    runs-on: ubuntu-24.04
-    defaults:
-      run:
-        shell: bash
-    container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: ./.github/actions/setup-ccache
-        with:
-          namespace: ssc305-commercial-profile
-      - name: Configure and build exact SSC305 LOW preset
-        run: |
-          set -euo pipefail
-          cmake --preset ssc305-cortex-a32-low
-          cmake --build build/ssc305-cortex-a32-low --parallel
-      - name: Enforce generated SSC305 product envelope and backend identity
-        run: |
-          set -euo pipefail
-          h=build/ssc305-cortex-a32-low/generated/audio_pipeline/audio_pipeline_build.h
-          grep -Fx '#define AP_BUILD_MAX_IO_RATE_HZ 16000' "$h"
-          grep -Fx '#define AP_BUILD_MAX_INTERNAL_RATE_HZ 16000' "$h"
-          grep -Fx '#define AP_BUILD_MAX_MIC_CHANNELS 2' "$h"
-          grep -Fx '#define AP_BUILD_MAX_DELAY_MS 60' "$h"
-          grep -Fx '#define AP_BUILD_MAX_AEC_TAIL_MS 64' "$h"
-          grep -Fx '#define AP_BUILD_RUNTIME_QUEUE_DEPTH 4' "$h"
-          grep -Fx '#define AP_BUILD_BF_DIRECTION_TRACKING 0' "$h"
-          grep -Fx '#define AP_HAVE_LINUX_RUNTIME 1' "$h"
-          grep -Fx '#define AP_BUILD_AEC_BACKEND_NAME "MDF"' "$h"
-          grep -Fx '#define AP_BUILD_SIMD_BACKEND_NAME "NEON"' "$h"
-          grep -Fx '#define AP_BUILD_RESAMPLER_MODE_NAME "BANDLIMITED"' "$h"
-          grep -Fx '#define AP_BUILD_FAST_MATH 0' "$h"
-      - name: Install exact SSC305 SDK
-        run: |
-          set -euo pipefail
-          prefix="$PWD/stage/ssc305-cortex-a32-low"
-          cmake --install build/ssc305-cortex-a32-low --prefix "$prefix"
-          test -f "$prefix/lib/libaudio_pipeline.a"
-          test -f "$prefix/lib/libaudio_pipeline_runtime.a"
-          test -f "$prefix/include/audio_pipeline/audio_pipeline.h"
-          test -f "$prefix/include/audio_pipeline/audio_runtime.h"
-          test -f "$prefix/include/audio_pipeline/audio_pipeline_build.h"
-      - name: Link and execute installed SSC305 build-info and SDK consumers
-        run: |
-          set -euo pipefail
-          prefix="$PWD/stage/ssc305-cortex-a32-low"
-          cflags='-O2 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard'
-          # shellcheck disable=SC2086
-          arm-linux-gnueabihf-gcc $cflags -I"$prefix/include" tests/test_build_info.c \
-            "$prefix/lib/libaudio_pipeline.a" -lm -o /tmp/ssc305-build-info
-          # shellcheck disable=SC2086
-          arm-linux-gnueabihf-gcc $cflags -I"$prefix/include" tests/consumer/consumer.c \
-            "$prefix/lib/libaudio_pipeline.a" -lm -o /tmp/ssc305-core-consumer
-          # shellcheck disable=SC2086
-          arm-linux-gnueabihf-gcc $cflags -I"$prefix/include" tests/consumer/runtime_main.c \
-            "$prefix/lib/libaudio_pipeline_runtime.a" "$prefix/lib/libaudio_pipeline.a" \
-            -lm -pthread -o /tmp/ssc305-runtime-consumer
-          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-build-info
-          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-core-consumer
-          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/ssc305-runtime-consumer
-          ccache --show-stats
-
-
   ssc305-delivery-profiles:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     defaults:
       run:
         shell: bash
@@ -234,6 +168,7 @@ jobs:
           python3 -m json.tool ci/ssc305-resource-profiles.json >/dev/null
           python3 -m py_compile tests/validation/resource_profile_qualification.py
           python3 tests/validation/resource_profile_qualification.py self-test
+          python3 scripts/ssc305_delivery.py self-test
 
       - name: Build exact conservative and effect-first AArch32 profiles
         run: |
@@ -320,7 +255,7 @@ jobs:
                   f"ELF={rom['linked_elf_file_bytes']} B, "
                   f"latency={p['algorithmic_latency_ms']} ms, "
                   f"heap-refs={len(m['direct_heap_allocator_symbol_references'])}, "
-                  f"QEMU-deterministic={m['qemu_deterministic_execution']}"
+                  f"QEMU-probe-repeat-identical={m['qemu_probe_repeat_identical']}"
               )
           print(
               f"- Silicon metrics still calibration-required: "
@@ -333,10 +268,81 @@ jobs:
           find resource-profile-out -type f ! -name SHA256SUMS -print0 | sort -z | \
             xargs -0 sha256sum > resource-profile-out/SHA256SUMS
 
+      - name: Package and qualify installed conservative SDK with canonical acoustic replay
+        run: |
+          set -euo pipefail
+          python3 scripts/ssc305_delivery.py reference \
+            --source-revision '${{ github.sha }}' \
+            --build build/ssc305-cortex-a32-low \
+            --resource-qualification resource-profile-out/qualification.json \
+            --output resource-profile-out/reference \
+            --toolchain-image 'ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c'
+          (cd resource-profile-out && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+
       - name: Upload delivery-profile evidence
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ssc305-delivery-profiles-${{ github.run_id }}
           path: resource-profile-out/
+          if-no-files-found: error
+          retention-days: 30
+
+
+  non-dut-engineering-endurance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build native conservative-envelope engineering test with sanitizers
+        run: |
+          set -euo pipefail
+          python3 scripts/ssc305_delivery.py configure-endurance \
+            --build build/engineering-endurance --output engineering-endurance-out \
+            --source-revision '${{ github.sha }}'
+          cmake --build build/engineering-endurance --parallel 4
+      - name: Exercise two million frames, lifecycle and existing fault contracts
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          set -euo pipefail
+          # This SKU caps delay at 60 ms; generic 100 ms route fixtures stay in normal full CI.
+          ctest --test-dir build/engineering-endurance --output-on-failure \
+            -R '^ap_(runtime(_extended)?|realtime|pipeline_control|build_info)_tests$' > engineering-endurance-out/ctest.txt 2>&1
+          binary=build/engineering-endurance/ap_runtime_extended_tests
+          for invalid in '0 64' '2000000 0' '2049 2' '2000000 129' 'abc 64'; do
+            read -r frames cycles <<< "$invalid"
+            set +e
+            "$binary" --endurance "$frames" "$cycles" >/dev/null 2>&1
+            status=$?
+            set -e
+            test "$status" -eq 2
+          done
+          "$binary" --endurance 2000000 64 > engineering-endurance-out/result.json 2> engineering-endurance-out/sanitizer.log
+          cp "$binary" engineering-endurance-out/runtime-extended-tests
+          cp build/engineering-endurance/generated/audio_pipeline/audio_pipeline_build.h engineering-endurance-out/
+          ldd "$binary" > engineering-endurance-out/linked-libraries.txt
+          grep -q libasan engineering-endurance-out/linked-libraries.txt
+          grep -q libubsan engineering-endurance-out/linked-libraries.txt
+          python3 scripts/ssc305_delivery.py seal-endurance \
+            --output engineering-endurance-out --source-revision '${{ github.sha }}'
+          cat engineering-endurance-out/result.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve engineering evidence and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: non-dut-engineering-endurance-${{ github.run_id }}
+          path: engineering-endurance-out/
           if-no-files-found: error
           retention-days: 30

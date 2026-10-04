@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "authority": "build-and-resource-qualification-not-silicon-performance",
   "profiles": {
     "conservative": {
@@ -21,7 +21,8 @@
       "ceilings": {
         "pipeline_state_bytes": 80000,
         "runtime_state_bytes": 65536,
-        "rom_text_rodata_bytes": 40960
+        "rom_text_rodata_bytes": 40960,
+        "caller_owned_state_bytes": 50000
       }
     },
     "effect-first": {
@@ -43,7 +44,8 @@
       "ceilings": {
         "pipeline_state_bytes": 80000,
         "runtime_state_bytes": 65536,
-        "rom_text_rodata_bytes": 40960
+        "rom_text_rodata_bytes": 40960,
+        "caller_owned_state_bytes": 145536
       }
     }
   },
@@ -51,6 +53,7 @@
     "aarch32_build_identity",
     "pipeline_state_bytes",
     "runtime_state_bytes",
+    "caller_owned_state_bytes",
     "rom_text_bytes",
     "rom_rodata_bytes",
     "rom_text_rodata_bytes",
@@ -58,7 +61,7 @@
     "direct_heap_allocator_symbol_references",
     "algorithmic_latency_ms",
     "algorithmic_latency_frames",
-    "qemu_deterministic_execution"
+    "qemu_probe_repeat_identical"
   ],
   "silicon_calibration_required": [
     "cpu_ms_per_audio_second",
@@ -76,6 +79,8 @@
     "hosted or QEMU timing must not be relabeled as SSC305 silicon timing",
     "direct allocator symbol absence proves no direct malloc/calloc/realloc/free dependency in the linked pipeline/runtime libraries; it is not a whole-process libc allocation count",
     "algorithmic latency is not the same as adaptive warmup or convergence time",
-    "effect-first remains research-only until an acoustic benefit and all S004 evidence gates are independently satisfied"
+    "effect-first remains research-only until an acoustic benefit and all S004 evidence gates are independently satisfied",
+    "caller_owned_state_bytes is pipeline plus runtime arenas only; exclude thread stacks, external PCM queues, libc/application state and optional Flight Recorder memory from this measurement, not from product budgeting",
+    "qemu_probe_repeat_identical compares raw resource-probe stdout bytes only; it does not prove processed PCM determinism"
   ]
 }

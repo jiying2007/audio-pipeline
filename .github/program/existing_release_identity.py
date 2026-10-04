@@ -32,6 +32,18 @@ def expected_names(tag: str) -> tuple[set[str], set[str], set[str]]:
         f"audio-pipeline-{tag}-validation-smoke.json",
         f"audio-pipeline-{tag}-validation-smoke-evidence.json",
     }
+    match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", tag)
+    if match is None:
+        raise ValueError("release tag must be exact SemVer")
+    # Historical immutable releases retain their original asset contract.
+    # New releases may not silently fall back to the pre-reference-SDK set.
+    if tuple(map(int, match.groups())) >= (2, 3, 55):
+        payload.update({
+            f"audio-pipeline-{tag}-reference-armhf-sdk.tar.gz",
+            f"audio-pipeline-{tag}-reference-armhf.spdx.json",
+            f"audio-pipeline-{tag}-reference-armhf-evidence.tar.gz",
+            f"audio-pipeline-{tag}-engineering-endurance.tar.gz",
+        })
     manifest = f"audio-pipeline-{tag}-release-manifest.json"
     sums = "SHA256SUMS"
     return payload, payload | {manifest}, payload | {manifest, sums}
@@ -148,6 +160,8 @@ def validate(*, release: dict, manifest: dict, sums_path: Path, manifest_path: P
 
 
 def self_test() -> None:
+    assert len(expected_names("v2.3.54")[2]) == 8
+    assert len(expected_names("v2.3.55")[2]) == 12
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         tag, version = "v9.8.7", "9.8.7"

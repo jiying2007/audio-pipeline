@@ -1,6 +1,10 @@
 #define _POSIX_C_SOURCE 200809L
 #include "audio_pipeline/audio_runtime.h"
 #include <assert.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <sched.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -783,7 +787,168 @@ static void test_runtime_tuning_resyncs_caller_owned_pipeline(void) {
     assert(tuning.limiter_dbfs == -1.05f);
 }
 
-int main(void) {
+
+/* Opt-in accelerated engineering endurance. No wall-clock soak or target timing
+ * claim: the ordinary CTest invocation stays short and retains all contracts. */
+static uint64_t engineering_now_ns(void) {
+    struct timespec ts;
+    assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+    return (uint64_t)ts.tv_sec * UINT64_C(1000000000) + (uint64_t)ts.tv_nsec;
+}
+
+static void engineering_receive(ap_runtime_t *runtime, int16_t *output) {
+    const uint64_t deadline = engineering_now_ns() + UINT64_C(5000000000);
+    unsigned spins = 0u;
+    for (;;) {
+        ap_status_t status = ap_runtime_receive(runtime, output, NULL);
+        if (status == AP_OK) return;
+        assert(status == AP_EEMPTY);
+        if ((++spins & 255u) == 0u) {
+            assert(engineering_now_ns() < deadline);
+            (void)sched_yield();
+        }
+    }
+}
+
+static int engineering_count(const char *text, uint32_t *value) {
+    char *end = NULL;
+    unsigned long parsed;
+    errno = 0;
+    if (!text[0] || text[0] < '0' || text[0] > '9') return 0;
+    parsed = strtoul(text, &end, 10);
+    if (errno || !end || *end || parsed > 10000000ul) return 0;
+    *value = (uint32_t)parsed;
+    return *value > 0u;
+}
+
+static void test_engineering_endurance(uint32_t frames, uint32_t cycles) {
+    const uint32_t per_cycle = frames / cycles;
+    const uint64_t started = engineering_now_ns();
+    uint64_t first_hash = 0u;
+    uint64_t metadata_faults = 0u, missing_render = 0u, path_commands = 0u;
+    uint32_t cycle;
+    assert(per_cycle >= 1024u);
+    for (cycle = 0u; cycle < cycles; ++cycle) {
+        ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+        ap_runtime_config_t rcfg = ap_runtime_config_default();
+        ap_pipeline_t *pipeline = NULL;
+        ap_runtime_t *runtime;
+        uint64_t hash = UINT64_C(14695981039346656037);
+        uint64_t last_processed = 0u;
+        int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+        int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+        int16_t output[AP_MAX_IO_FRAME_SAMPLES];
+        uint32_t frame, i;
+        /* Reuse the existing saturation, metadata, event/backpressure and
+         * reset contracts rather than introducing alternate fault semantics. */
+        test_command_validation_and_queue_pressure();
+        test_metadata_event_drop_and_output_backpressure();
+        assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg,
+                                &pipeline) == AP_OK);
+        rcfg.overload_us = UINT32_MAX; /* host scheduling is not DSP policy */
+        rcfg.recover_frames = UINT32_MAX;
+        runtime = open_default(pipeline, &rcfg);
+        /* Deterministic input saturation before worker ownership. */
+        for (i = 0u; i < AP_BUILD_RUNTIME_QUEUE_DEPTH; ++i)
+            assert(ap_runtime_submit_frame(runtime, mic, render, NULL) == AP_OK);
+        assert(ap_runtime_submit_frame(runtime, mic, render, NULL) == AP_EFULL);
+        assert(metrics(runtime).input_full_events == 1u);
+        ap_runtime_deinit(runtime);
+        runtime = open_default(pipeline, &rcfg);
+        assert(ap_runtime_start(runtime) == AP_OK);
+        for (frame = 0u; frame < per_cycle; ++frame) {
+            ap_frame_metadata_t md;
+            const int no_render = frame % 997u == 0u;
+            const uint32_t samples = pcfg.io_sample_rate_hz / 100u;
+            memset(&md, 0, sizeof(md));
+            md.struct_size = sizeof(md);
+            md.api_version = AP_RUNTIME_API_VERSION;
+            md.stream_sequence = frame;
+            md.flags = AP_FRAME_CAPTURE_TIMESTAMP_VALID | AP_FRAME_RENDER_TIMESTAMP_VALID;
+            md.capture_timestamp_ns = UINT64_C(1000000000) +
+                                      (uint64_t)frame * UINT64_C(10000000);
+            md.render_timestamp_ns = md.capture_timestamp_ns - UINT64_C(40000000);
+            if (frame % 1021u == 0u) {
+                md.flags |= AP_FRAME_CAPTURE_DISCONTINUITY | AP_FRAME_RENDER_DISCONTINUITY |
+                            AP_FRAME_CLOCK_RESET | AP_FRAME_XRUN | AP_FRAME_CODEC_REOPEN;
+                md.lost_capture_frames = 2u;
+                md.lost_render_frames = 3u;
+                md.capture_timestamp_ns += UINT64_C(200000000);
+                md.render_timestamp_ns += UINT64_C(200000000);
+                metadata_faults++;
+            }
+            if (frame % 4093u == 0u) {
+                ap_runtime_command_t cmd;
+                memset(&cmd, 0, sizeof(cmd));
+                cmd.struct_size = sizeof(cmd);
+                cmd.api_version = AP_RUNTIME_API_VERSION;
+                cmd.kind = AP_RUNTIME_COMMAND_ECHO_PATH_CHANGE;
+                assert(ap_runtime_command(runtime, &cmd) == AP_OK);
+                path_commands++;
+            }
+            for (i = 0u; i < samples; ++i) {
+                const uint32_t x = (frame * samples + i) * 1664525u + 1013904223u;
+                const int32_t noise = (int32_t)(x >> 16u) - 32768;
+                uint32_t ch;
+                render[i] = (int16_t)(noise / 8);
+                for (ch = 0u; ch < pcfg.mic_channels; ++ch)
+                    mic[i * pcfg.mic_channels + ch] = (int16_t)(noise / (12 + (int32_t)ch));
+            }
+            assert(ap_runtime_submit_frame(runtime, mic, no_render ? NULL : render, &md) == AP_OK);
+            if (no_render) missing_render++;
+            engineering_receive(runtime, output);
+            for (i = 0u; i < samples; ++i) {
+                const uint16_t sample = (uint16_t)output[i];
+                hash = (hash ^ (uint8_t)sample) * UINT64_C(1099511628211);
+                hash = (hash ^ (uint8_t)(sample >> 8u)) * UINT64_C(1099511628211);
+            }
+            if (frame % 1024u == 0u) {
+                const ap_runtime_metrics_t rm = metrics(runtime);
+                assert(rm.processed_frames >= last_processed);
+                assert(rm.failed_frames == 0u);
+                last_processed = rm.processed_frames;
+            }
+        }
+        {
+            const ap_runtime_metrics_t rm = metrics(runtime);
+            assert(rm.submitted_frames == per_cycle);
+            assert(rm.processed_frames == per_cycle);
+            assert(rm.failed_frames == 0u);
+            assert(rm.input_full_events == 0u && rm.output_drop_events == 0u);
+            assert(rm.capture_gap_frames >= 2u && rm.render_gap_frames >= 3u);
+            assert(rm.timestamp_frames == per_cycle);
+        }
+        ap_runtime_stop(runtime);
+        ap_runtime_deinit(runtime);
+        if (cycle == 0u) first_hash = hash;
+        else assert(hash == first_hash);
+    }
+    printf("{\"schema_version\":1,\"status\":\"PASS\","
+           "\"authority\":\"host-engineering-not-product-soak\","
+           "\"source_revision\":\"%s\",\"config_digest\":\"%s\","
+           "\"frames\":%u,\"cycles\":%u,\"frames_per_cycle\":%u,"
+           "\"processed_audio_seconds\":%.2f,\"host_wall_seconds\":%.6f,"
+           "\"metadata_faults\":%" PRIu64 ",\"missing_render_frames\":%" PRIu64 ","
+           "\"echo_path_commands\":%" PRIu64 ",\"fault_contract_cycles\":%u,"
+           "\"repeated_output_fnv1a64\":\"%016" PRIx64 "\","
+           "\"product_certification_authority\":false}\n",
+           ap_build_info()->source_revision, ap_build_info()->config_digest,
+           frames, cycles, per_cycle, (double)frames / 100.0,
+           (double)(engineering_now_ns() - started) / 1.0e9,
+           metadata_faults, missing_render, path_commands, cycles, first_hash);
+}
+
+int main(int argc, char **argv) {
+    if (argc != 1) {
+        uint32_t frames, cycles;
+        if (argc != 4 || strcmp(argv[1], "--endurance") != 0 ||
+            !engineering_count(argv[2], &frames) ||
+            !engineering_count(argv[3], &cycles) || cycles > 128u ||
+            frames % cycles != 0u || frames / cycles < 1024u) return 2;
+        test_engineering_endurance(frames, cycles);
+        return 0;
+    }
+
     test_open_start_and_argument_failures();
     test_runtime_tuning_matches_pipeline();
     test_runtime_tuning_projects_pending_commands();

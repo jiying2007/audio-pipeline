@@ -34,6 +34,10 @@ REUSABLE_GOVERNANCE_WORKFLOWS = (
     Path('.github/workflows/research-source-candidate-v2-preflight.yml'),
 )
 
+# Hosted Real Audio intentionally overlaps Verify hosted-real-smoke on impact PR/main paths.
+# Verify owns the required summary gate; the standalone workflow owns an independent
+# hash-bound evidence surface plus daily hosted-environment regression. Keep both unless
+# an explicit authority migration replaces the standalone evidence contract.
 HOSTED_REAL_PR_REQUIRED_PATHS = {
     Path('.github/workflows/hosted-real-validation.yml'): {
         'src/**',

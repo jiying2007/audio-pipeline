@@ -48,10 +48,10 @@ jobs:
           arm-linux-gnueabihf-gcc -print-sysroot > reference-sdk-out/compiler-sysroot.txt
           dpkg-query -W libc6-armhf-cross > reference-sdk-out/reference-libc.txt
           arm-linux-gnueabihf-readelf -h reference-sdk-out/runtime-consumer > reference-sdk-out/elf-header.txt
-          epoch=$(git show -s --format=%ct HEAD)
+          epoch=$(git -c safe.directory="$PWD" show -s --format=%ct HEAD)
           tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
             -C "$prefix" -cf - . | gzip -n > reference-sdk-out/audio-pipeline-reference-armhf-sdk.tar.gz
-          git archive --format=tar HEAD | gzip -n > reference-sdk-out/audio-pipeline-source.tar.gz
+          git -c safe.directory="$PWD" archive --format=tar HEAD | gzip -n > reference-sdk-out/audio-pipeline-source.tar.gz
           python3 - <<'PY'
           import hashlib, json, os
           from pathlib import Path

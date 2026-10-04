@@ -22,6 +22,24 @@ on:
       - '.github/workflows/hosted-aec-real-validation.yml'
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'examples/process_pcm.c'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'validation/authority.json'
+      - 'validation/*.schema.json'
+      - 'validation/tools/authority.py'
+      - 'validation/tools/run_validation*.py'
+      - 'validation/tools/hosted_validation_compact_evidence.py'
+      - 'validation/tools/render_corr_exact.*'
+      - 'validation/tools/stage_profile_support.py'
+      - 'validation/tools/build_hosted_aec_corpus.py'
+      - 'validation/hosted_aec.datasets.lock.json'
+      - 'validation/policies/validation-hosted-aec-smoke.json'
+      - '.github/actions/setup-ccache/**'
+      - '.github/workflows/hosted-aec-real-validation.yml'
   schedule:
     - cron: '23 18 * * *'
   workflow_dispatch:

@@ -197,7 +197,10 @@ jobs:
 
   hosted-real-smoke:
     needs: [impact, fast-gate]
-    if: always() && needs.fast-gate.result == 'success'
+    if: >-
+      always() &&
+      needs.fast-gate.result == 'success' &&
+      needs.impact.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -324,6 +327,7 @@ jobs:
       - name: Enforce impact-aware aggregate verification
         shell: bash
         env:
+          DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
           FAST_RESULT: ${{ needs.fast-gate.result }}
           HOSTED_REAL_RESULT: ${{ needs.hosted-real-smoke.result }}
           LAB_RESULT: ${{ needs.lab-user-mode.result }}
@@ -349,7 +353,17 @@ jobs:
             fi
           }
           test "$FAST_RESULT" = success
-          test "$HOSTED_REAL_RESULT" = success
+          if [ "$DOCS_ONLY" = true ]; then
+            [ "$HOSTED_REAL_RESULT" = skipped ] || {
+              echo "hosted-real-smoke expected skipped for docs-only PR, got $HOSTED_REAL_RESULT" >&2
+              exit 1
+            }
+          else
+            [ "$HOSTED_REAL_RESULT" = success ] || {
+              echo "hosted-real-smoke expected success, got $HOSTED_REAL_RESULT" >&2
+              exit 1
+            }
+          fi
           check "$EXPECT_LAB" "$LAB_RESULT" lab-user-mode
           check "$EXPECT_CI" "$CI_RESULT" ci
           check "$EXPECT_QUALITY" "$QUALITY_RESULT" quality

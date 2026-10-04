@@ -326,6 +326,13 @@ jobs:
           set -euo pipefail
           test -n "$TAG"
           [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          artifact="post-release-qualification-$TAG"
+          finalized=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | length')
+          if [ "$finalized" != 0 ]; then
+            echo "post-release qualification already finalized: $TAG"
+            exit 0
+          fi
           gh workflow run post-release-qualification-summary.yml \
             --repo "$GITHUB_REPOSITORY" \
             --ref main \

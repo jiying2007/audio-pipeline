@@ -57,7 +57,8 @@ jobs:
           while IFS= read -r tag; do
             [ -n "$tag" ] || continue
             artifact="post-release-qualification-$tag"
-            count=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact&per_page=1" --jq '.total_count')
+            count=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$artifact&per_page=100" \
+              --jq '[.artifacts[] | select(.expired == false)] | length')
             if [ "$count" != 0 ]; then
               echo "post-release qualification already finalized: $tag"
               continue

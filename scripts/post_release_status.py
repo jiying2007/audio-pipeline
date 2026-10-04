@@ -128,11 +128,22 @@ def resolve_runs(source_sha: str, tag: str, hil_enabled: str,
 
     hil_is_enabled = hil_enabled.strip().lower() == "true"
     ext_is_enabled = extended_enabled.strip().lower() == "true"
-    ready = _terminal(hil)
-    hil_conclusion = str(hil.get("conclusion") or "") if hil else ""
 
-    if ready and not hil_is_enabled and hil_conclusion == "success":
-        raise ValueError("disabled HIL post-release gate unexpectedly succeeded")
+    hil_conclusion = str(hil.get("conclusion") or "") if hil else ""
+    if hil_is_enabled:
+        ready = _terminal(hil)
+        hil_view = _compact(hil, "hil-tiered-soak")
+    else:
+        if hil is not None and not _terminal(hil):
+            ready = False
+            hil_view = _compact(hil, "hil-tiered-soak-disabled-gate")
+        else:
+            ready = True
+            if hil_conclusion == "success":
+                raise ValueError("disabled HIL post-release gate unexpectedly succeeded")
+            hil_view = _compact(hil, "hil-tiered-soak-disabled-gate")
+            if hil is None:
+                hil_view["status"] = "disabled"
 
     ext_authority = "extended-real-automation-disabled-gate"
     ext_run = ext_auto
@@ -148,19 +159,23 @@ def resolve_runs(source_sha: str, tag: str, hil_enabled: str,
             ext_authority = "extended-real-validation-pending"
             ext_run = ext_validation or ext_auto
     else:
-        if not _terminal(ext_auto):
+        if ext_auto is not None and not _terminal(ext_auto):
             ready = False
-        elif str(ext_auto.get("conclusion") or "") == "success":
+        elif ext_auto is not None and str(ext_auto.get("conclusion") or "") == "success":
             raise ValueError("disabled Extended Real post-release gate unexpectedly succeeded")
 
     ext_conclusion = str(ext_run.get("conclusion") or "") if ext_run else ""
+    ext_view = _compact(ext_run, ext_authority)
+    if not ext_is_enabled and ext_run is None:
+        ext_view["status"] = "disabled"
+
     return {
         "schema_version": 1,
         "source_sha": source_sha,
         "tag": tag,
         "ready": ready,
-        "hil": _compact(hil, "hil-tiered-soak"),
-        "extended_real": _compact(ext_run, ext_authority),
+        "hil": hil_view,
+        "extended_real": ext_view,
         "hil_conclusion": hil_conclusion,
         "extended_real_conclusion": ext_conclusion,
     }
@@ -196,6 +211,15 @@ def self_test() -> None:
     assert resolved["ready"] is True
     assert resolved["hil"]["run_id"] == 1
     assert resolved["extended_real"]["authority"] == "extended-real-automation-disabled-gate"
+
+    disabled_without_runs = resolve_runs(sha, tag, "", "", empty, empty, empty)
+    assert disabled_without_runs["ready"] is True
+    assert disabled_without_runs["hil"]["run_id"] is None
+    assert disabled_without_runs["hil"]["status"] == "disabled"
+    assert disabled_without_runs["hil"]["authority"] == "hil-tiered-soak-disabled-gate"
+    assert disabled_without_runs["extended_real"]["run_id"] is None
+    assert disabled_without_runs["extended_real"]["status"] == "disabled"
+    assert disabled_without_runs["extended_real"]["authority"] == "extended-real-automation-disabled-gate"
 
     current_hil = {"workflow_runs": [_fake_run(3, f"hil-post-release {tag}", sha, "completed", "success", "repository_dispatch")]}
     current_auto = {"workflow_runs": [_fake_run(4, f"extended-real-post-release {tag}", sha, "completed", "success", "repository_dispatch")]}

@@ -264,7 +264,7 @@ jobs:
           fi
           echo "immutable_release=$TAG"
       - name: Trigger exact-SHA post-release HIL
-        if: steps.existing.outputs.release != 'true'
+        if: steps.existing.outputs.release != 'true' && vars.HIL_ENABLED == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
@@ -276,7 +276,7 @@ jobs:
             -f "client_payload[release_ref]=$VERIFIED_SHA" \
             -f "client_payload[tag]=$TAG"
       - name: Trigger exact-SHA post-release Extended Real validation
-        if: steps.existing.outputs.release != 'true'
+        if: steps.existing.outputs.release != 'true' && vars.EXTENDED_REAL_ENABLED == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
@@ -287,3 +287,15 @@ jobs:
             -f event_type=extended-real-post-release \
             -f "client_payload[release_ref]=$VERIFIED_SHA" \
             -f "client_payload[tag]=$TAG"
+      - name: Trigger post-release qualification convergence
+        if: steps.existing.outputs.release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          gh workflow run post-release-qualification-summary.yml \
+            --ref main \
+            -f "source_sha=$VERIFIED_SHA" \
+            -f "tag=$TAG"

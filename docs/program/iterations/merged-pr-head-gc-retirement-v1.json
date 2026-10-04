@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "id": "merged-pr-head-gc-retirement-v1",
+  "authority": "REPOSITORY_GOVERNANCE_RETIREMENT_ONLY",
+  "status": "CLOSED_REDUNDANT_NATIVE_CONTROL_AUTHORITATIVE",
+  "reviewed_main_sha": "45e077ced0c7d64ae1eb4c644fa597030cfdb79a",
+  "retired": {
+    "workflow": {
+      "path": ".github/workflows/merged-pr-head-gc.yml",
+      "blob_sha": "044da13fa7a3eb763c58dee80378fb137413fe5c"
+    },
+    "implementation": {
+      "path": ".github/program/merged_pr_head_gc.py",
+      "blob_sha": "4fec330a8355c0ab769cc881aa54e92cde5adfb1"
+    }
+  },
+  "replacement_control": {
+    "repository_setting": "delete_branch_on_merge",
+    "required_value": true,
+    "live_audit": "scripts/github_governance.py",
+    "fallback_for_nonstandard_refs": [
+      ".github/workflows/research-branch-gc.yml",
+      ".github/workflows/terminal-branch-gc.yml"
+    ]
+  },
+  "recent_observations": [
+    {
+      "run_id": 37183415732,
+      "action": "ALREADY_DELETED",
+      "branch": "fix/release-convergence-explicit-repo"
+    },
+    {
+      "run_id": 37182922394,
+      "action": "ALREADY_DELETED",
+      "branch": "fix/release-convergence-dispatch-permission"
+    },
+    {
+      "run_id": 37177977900,
+      "action": "ALREADY_DELETED",
+      "branch": "cleanup/compact-aec-motion-artifacts"
+    },
+    {
+      "run_id": 37171135699,
+      "action": "ALREADY_DELETED",
+      "branch": "cleanup/i015-manual-only-finalization"
+    }
+  ],
+  "rationale": "GitHub repository auto-delete already removes ordinary merged PR heads before the workflow runs; four recent main-push observations were all ALREADY_DELETED. Native cleanup is now release-gated by live repository governance, while research/terminal GC remains for nonstandard stale refs.",
+  "authority_boundary": {
+    "shipping_source_changed": false,
+    "release_identity_changed": false,
+    "research_authority_changed": false,
+    "product_qualification": "DEFERRED_BY_SCOPE"
+  }
+}

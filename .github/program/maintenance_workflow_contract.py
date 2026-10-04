@@ -251,23 +251,32 @@ def validate_hosted_real_trigger_boundaries(root: Path) -> None:
         path = root / relative
         assert path.is_file(), f'missing hosted-real workflow: {relative}'
         text = path.read_text(encoding='utf-8')
+
         pull_request = trigger_block(text, 'pull_request')
-        actual_paths = set(
+        pr_paths = set(
             re.findall(r"(?m)^      - ['\"]([^'\"]+)['\"]\s*$", pull_request)
         )
-        assert actual_paths, f'{relative} pull_request must be path-scoped'
-        missing = sorted(required_paths - actual_paths)
-        assert not missing, f'{relative} lost required PR impact path(s): {missing}'
+        assert pr_paths, f'{relative} pull_request must be path-scoped'
+        missing_pr = sorted(required_paths - pr_paths)
+        assert not missing_pr, f'{relative} lost required PR impact path(s): {missing_pr}'
 
         push = trigger_block(text, 'push')
         assert re.search(r'(?m)^    branches:\s*\[main\]\s*$', push), (
-            f'{relative} must retain unconditional main push coverage'
+            f'{relative} must retain main push coverage'
         )
+        push_paths = set(
+            re.findall(r"(?m)^      - ['\"]([^'\"]+)['\"]\s*$", push)
+        )
+        assert push_paths, f'{relative} main push must be path-scoped'
+        missing_push = sorted(required_paths - push_paths)
+        assert not missing_push, (
+            f'{relative} lost required main-push impact path(s): {missing_push}'
+        )
+
         trigger_block(text, 'workflow_dispatch')
 
     aec = root / Path('.github/workflows/hosted-aec-real-validation.yml')
     trigger_block(aec.read_text(encoding='utf-8'), 'workflow_call')
-
 
 def validate_aec_motion_maintenance_boundary(root: Path) -> None:
     """Prove the recurring motion job is regression maintenance, not reopened I002 research."""
@@ -631,7 +640,7 @@ def _write_hosted_real_fixture(root: Path, relative: Path,
                                crons: tuple[str, ...]) -> None:
     path = root / relative
     path.parent.mkdir(parents=True, exist_ok=True)
-    pr_paths = ''.join(f"      - '{item}'\n" for item in sorted(required_paths))
+    impact_paths = ''.join(f"      - '{item}'\n" for item in sorted(required_paths))
     schedule = ''.join(f"    - cron: '{cron}'\n" for cron in crons)
     reusable = (
         '  workflow_call:\n'
@@ -641,14 +650,14 @@ def _write_hosted_real_fixture(root: Path, relative: Path,
     path.write_text(
         'name: hosted-real\n\non:\n'
         '  pull_request:\n'
-        '    paths:\n' + pr_paths +
+        '    paths:\n' + impact_paths +
         '  push:\n'
         '    branches: [main]\n'
+        '    paths:\n' + impact_paths +
         '  schedule:\n' + schedule +
         '  workflow_dispatch:\n' + reusable,
         encoding='utf-8',
     )
-
 
 def _write_deferred_external_schedule_fixtures(root: Path) -> None:
     extended = root / EXTENDED_REAL_AUTOMATION_WORKFLOW

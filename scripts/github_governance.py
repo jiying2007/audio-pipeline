@@ -35,7 +35,7 @@ def _rule(ruleset: dict, kind: str) -> dict | None:
     return None
 
 
-def audit(rulesets: list[dict], immutable: dict | None) -> dict:
+def audit(rulesets: list[dict], immutable: dict | None, repository: dict | None) -> dict:
     active = [r for r in rulesets if r.get("enforcement") == "active"]
     main_candidates = [
         r for r in active
@@ -113,6 +113,12 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
     elif not immutable_enabled:
         findings.append("immutable releases are not enabled")
 
+    delete_branch_on_merge = bool(
+        repository is not None and repository.get("delete_branch_on_merge") is True
+    )
+    if not delete_branch_on_merge:
+        findings.append("repository delete_branch_on_merge must be enabled")
+
     return {
         "schema_version": 1,
         "result": "PASS" if not findings else "FAIL",
@@ -122,6 +128,7 @@ def audit(rulesets: list[dict], immutable: dict | None) -> dict:
         "immutable_releases_enabled": immutable_enabled,
         "immutable_releases_http_status":
             immutable.get("_http_status") if isinstance(immutable, dict) else None,
+        "delete_branch_on_merge_enabled": delete_branch_on_merge,
         "findings": findings,
     }
 
@@ -155,7 +162,7 @@ def _gh_json(args: list[str]) -> object:
     return json.loads(process.stdout)
 
 
-def fetch_live(repository: str) -> tuple[list[dict], dict | None]:
+def fetch_live(repository: str) -> tuple[list[dict], dict | None, dict | None]:
     summaries = _gh_json([f"repos/{repository}/rulesets"])
     if not isinstance(summaries, list):
         raise RuntimeError("GitHub rulesets response is not an array")
@@ -183,7 +190,14 @@ def fetch_live(repository: str) -> tuple[list[dict], dict | None]:
             }
         else:
             raise
-    return details, immutable if isinstance(immutable, dict) else None
+    repository_settings = _gh_json([f"repos/{repository}"])
+    if not isinstance(repository_settings, dict):
+        raise RuntimeError("GitHub repository response is not an object")
+    return (
+        details,
+        immutable if isinstance(immutable, dict) else None,
+        repository_settings,
+    )
 
 
 def self_test() -> None:
@@ -220,18 +234,20 @@ def self_test() -> None:
         "conditions": {"ref_name": {"include": ["refs/tags/v*"], "exclude": []}},
         "rules": [{"type": "deletion"}, {"type": "non_fast_forward"}],
     }
-    assert audit([main, tags], {"enabled": True})["result"] == "PASS"
+    repository = {"delete_branch_on_merge": True}
+    assert audit([main, tags], {"enabled": True}, repository)["result"] == "PASS"
     main["rules"][0]["parameters"]["allowed_merge_methods"] = ["merge", "squash"]
-    assert audit([main, tags], {"enabled": True})["result"] == "FAIL"
+    assert audit([main, tags], {"enabled": True}, repository)["result"] == "FAIL"
     main["rules"][0]["parameters"]["allowed_merge_methods"] = ["squash"]
     main["bypass_actors"] = [{"actor_type": "RepositoryRole", "actor_id": 5}]
-    failed = audit([main, tags], {"enabled": False})
+    failed = audit([main, tags], {"enabled": False}, repository)
     assert failed["result"] == "FAIL"
     assert not failed["main_ruleset_enforced"]
     main["bypass_actors"] = []
     unreadable = audit(
         [main, tags],
         {"enabled":None,"_readable":False,"_http_status":403},
+        repository,
     )
     assert unreadable["result"] == "FAIL"
     assert unreadable["main_ruleset_enforced"]
@@ -242,6 +258,14 @@ def self_test() -> None:
         "Administration(read)" in finding
         for finding in unreadable["findings"]
     )
+    no_auto_delete = audit(
+        [main, tags],
+        {"enabled": True},
+        {"delete_branch_on_merge": False},
+    )
+    assert no_auto_delete["result"] == "FAIL"
+    assert no_auto_delete["delete_branch_on_merge_enabled"] is False
+    assert "repository delete_branch_on_merge must be enabled" in no_auto_delete["findings"]
     print("github governance self-test: OK")
 
 
@@ -256,8 +280,8 @@ def main() -> int:
         return 0
     if not args.repository or not args.output:
         parser.error("--repository and --output are required")
-    rulesets, immutable = fetch_live(args.repository)
-    result = audit(rulesets, immutable)
+    rulesets, immutable, repository_settings = fetch_live(args.repository)
+    result = audit(rulesets, immutable, repository_settings)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(result, sort_keys=True))

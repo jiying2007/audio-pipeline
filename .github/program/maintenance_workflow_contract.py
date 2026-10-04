@@ -173,6 +173,7 @@ ALLOWED_SCHEDULED_WORKFLOWS = {
     Path('.github/workflows/lab-acquisition-smoke.yml'): ('23 3 * * 3',),
     Path('.github/workflows/nightly.yml'): ('17 19 * * *',),
     Path('.github/workflows/post-release-qualification-summary.yml'): ('23 19 * * *',),
+    Path('.github/workflows/research-branch-gc.yml'): ('17 3 * * *',),
 }
 CRON_RE = re.compile(r"^    - cron:\s*['\"]([^'\"]+)['\"]\s*$", re.MULTILINE)
 MAINTENANCE_CONTRACT_TRIGGER_PATH = ".github/program/maintenance_workflow_contract.py"

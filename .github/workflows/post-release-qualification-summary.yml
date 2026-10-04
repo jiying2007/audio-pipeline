@@ -5,7 +5,7 @@ on:
   repository_dispatch:
     types: [hil-post-release, extended-real-post-release]
   schedule:
-    - cron: '23 * * * *'
+    - cron: '23 */6 * * *'
   workflow_dispatch:
     inputs:
       source_sha:
@@ -156,7 +156,7 @@ jobs:
           print('extended_real_conclusion=' + str(data['extended_real_conclusion']))
           PY
           else
-            echo 'Post-release qualification is still PENDING; the hourly convergence scheduler will retry every incomplete immutable release.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Post-release qualification is still PENDING; the periodic convergence scheduler will retry every incomplete immutable release.' >> "$GITHUB_STEP_SUMMARY"
             echo '```json' >> "$GITHUB_STEP_SUMMARY"
             cat post-release-qualification-sources.json >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"

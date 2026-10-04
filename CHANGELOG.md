@@ -1,3 +1,9 @@
+# 2.3.54
+
+- Fix release-governance auditing to use the dedicated Administration(read) token for rulesets/immutable-release controls while reading ordinary repository metadata with the workflow GitHub token.
+- Keep `delete_branch_on_merge=true` as a fail-closed release requirement without increasing Release job administration permissions or weakening main/tag governance.
+- Release/governance infrastructure only: DSP behavior, acoustic policy, public API/ABI, research authority, HIL and Product Qualification semantics are unchanged.
+
 # 2.3.53
 
 - Make GitHub-native merged-branch cleanup authoritative by requiring repository `delete_branch_on_merge=true` in the live release-governance audit.

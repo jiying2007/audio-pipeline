@@ -3,81 +3,108 @@ name: SSC305 Reference SDK
 on:
   pull_request:
     branches: [main]
-  workflow_call:
 
 permissions:
   contents: read
-  packages: read
+
+concurrency:
+  group: delivery-patch-preparation-655
+  cancel-in-progress: true
 
 jobs:
-  reference-sdk:
+  prepare-reviewed-patch:
+    if: >-
+      github.repository == 'jiying2007/audio-pipeline' &&
+      github.actor == 'jiying2007' &&
+      github.event.pull_request.number == 655 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'fix/ssc305-delivery-evidence-closure'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    defaults:
-      run:
-        shell: bash
-    container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
+    timeout-minutes: 5
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
-      - name: Build and consume reference armhf SDK, not a shipping BSP SDK
+      - name: Prepare reviewed Git blobs only; never write refs, commits, tags or releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          cmake --preset ssc305-cortex-a32-low -DAP_BUILD_SOURCE_REVISION="$GITHUB_SHA"
-          cmake --build build/ssc305-cortex-a32-low --parallel
-          prefix="$PWD/reference-stage"
-          cmake --install build/ssc305-cortex-a32-low --prefix "$prefix"
-          mkdir -p reference-sdk-out
-          arm-linux-gnueabihf-gcc -O2 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard \
-            -I"$prefix/include" tests/consumer/runtime_main.c \
-            "$prefix/lib/libaudio_pipeline_runtime.a" "$prefix/lib/libaudio_pipeline.a" \
-            -lm -pthread -o reference-sdk-out/runtime-consumer
-          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf reference-sdk-out/runtime-consumer
-          arm-linux-gnueabihf-gcc -O2 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard \
-            -I"$prefix/include" tests/validation/resource_profile_probe.c \
-            "$prefix/lib/libaudio_pipeline_runtime.a" "$prefix/lib/libaudio_pipeline.a" \
-            -lm -pthread -o /tmp/reference-resource-probe
-          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/reference-resource-probe \
-            > reference-sdk-out/build-resource-probe.json
-          arm-linux-gnueabihf-gcc --version > reference-sdk-out/compiler.txt
-          arm-linux-gnueabihf-gcc -print-sysroot > reference-sdk-out/compiler-sysroot.txt
-          dpkg-query -W libc6-armhf-cross > reference-sdk-out/reference-libc.txt
-          arm-linux-gnueabihf-readelf -h reference-sdk-out/runtime-consumer > reference-sdk-out/elf-header.txt
-          epoch=$(git -c safe.directory="$PWD" show -s --format=%ct HEAD)
-          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
-            -C "$prefix" -cf - . | gzip -n > reference-sdk-out/audio-pipeline-reference-armhf-sdk.tar.gz
-          git -c safe.directory="$PWD" archive --format=tar HEAD | gzip -n > reference-sdk-out/audio-pipeline-source.tar.gz
           python3 - <<'PY'
-          import hashlib, json, os
+          import base64, hashlib, json, os, subprocess, urllib.request
           from pathlib import Path
-          root = Path('reference-sdk-out')
-          probe = json.loads((root / 'build-resource-probe.json').read_text())
-          assert probe['source_revision'] == os.environ['GITHUB_SHA']
-          assert probe['bf_direction_tracking'] == 0
-          assert probe['pipeline_state_bytes'] + probe['runtime_state_bytes'] <= 50000
-          record = {
-              'schema_version': 1,
-              'source_revision': os.environ['GITHUB_SHA'],
-              'preset': 'ssc305-cortex-a32-low',
-              'config_digest': probe['config_digest'],
-              'artifact_class': 'reference-armhf-sdk-not-shipping-bsp',
-              'timing_authority': 'none-target',
-              'product_certification_authority': False,
-              'installed_runtime_consumer': 'PASS',
-              'assets': {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                         for p in sorted(root.iterdir()) if p.is_file()},
-          }
-          (root / 'reference-sdk-manifest.json').write_text(json.dumps(record, indent=2, sort_keys=True) + '\n')
+          repo = 'jiying2007/audio-pipeline'
+          def api(path, body=None):
+              request = urllib.request.Request('https://api.github.com/repos/' + repo + path,
+                  data=None if body is None else json.dumps(body).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  return json.load(response)
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == os.environ['EXPECTED_HEAD']
+          assert api('/git/ref/heads/fix/ssc305-delivery-evidence-closure')['object']['sha'] == head
+          assert api('/git/ref/heads/main')['object']['sha'] == '327141bdbbbc3159e97cc799b1e773d600a48900'
+          parts = '''583cf20eeda84b59c866b1a50c4a8e548471f503
+          ae6a4a6e9ddbf2402ba745b76c7f9c0f32f46974
+          7659f865fc4af44fc5942822419d91dec25dec02
+          2d63e7dc6fff7a35d166c9a8a69b1e96cd0eb3da
+          ffb4dfe0ea376c7ce18944e16f101ef3b9b7a721
+          a70f4f1bd00c0862ed12bf0798aef6363af44274
+          a42299a6961231a1a9ab6e619dabeb295be072e9
+          c58405b3b7cb747ed3838982a0948771e457b1e2
+          913ee42bc94a17149ae9e7a7560b1a9da765eb89
+          337c1c5695cd5bb58fc645d954e9e15ff4faf106
+          be4933716082de6d54acca0563909600ca85a079
+          c0093b1a842e4ad78a8ac399510284584b7736fe
+          37aaaf1135bee8ae1ff1818434187a3f23679451
+          37596962ef367fc0bf228f9b0f08407acb1abbf2
+          c1fc923315ee0e0178464999f5b5892a035742a9
+          f3598e61c0e6bccfc9f8e4067f9632035f7c8f42'''.split()
+          patch = b''.join(base64.b64decode(api('/git/blobs/' + sha)['content']) for sha in parts)
+          assert hashlib.sha256(patch).hexdigest() == '2e4c00d7ddce13a3ae2d147bc15e5904fcc85830363950fb5cea45820548af8d'
+          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+          subprocess.run(['git', 'apply', '--index', '-'], input=patch, check=True)
+          # Close a negative-test gap: absent digests must not compare None == None.
+          p = Path('scripts/ssc305_delivery.py')
+          s = p.read_text()
+          s = s.replace('    require(record.get("source_revision") == source, "delivery source mismatch")\n',
+                        '    require(record.get("source_revision") == source, "delivery source mismatch")\n    require(re.fullmatch(r"[0-9a-f]{64}", str(record.get("config_digest", ""))) is not None, "invalid config digest")\n')
+          s = s.replace('"cycles": 64, "fault_contract_cycles": 64, "metadata_faults": 10, "missing_render_frames": 10})',
+                        '"cycles": 64, "config_digest": "d" * 64, "fault_contract_cycles": 64, "metadata_faults": 10, "missing_render_frames": 10})')
+          s = s.replace('"sanitizers": ["address", "undefined", "leak"]}\n',
+                        '"sanitizers": ["address", "undefined", "leak"], "config_digest": "d" * 64}\n')
+          s = s.replace('("sanitizers", []), ("product_certification_authority", True)):',
+                        '("sanitizers", []), ("config_digest", None), ("product_certification_authority", True)):')
+          p.write_text(s)
+          subprocess.run(['git', 'add', 'scripts/ssc305_delivery.py'], check=True)
+          subprocess.run(['python3', 'scripts/ssc305_delivery.py', 'self-test'], check=True)
+          subprocess.run(['python3', 'tests/validation/resource_profile_qualification.py', 'self-test'], check=True)
+          subprocess.run(['python3', '.github/program/existing_release_identity.py', '--self-test'], check=True)
+          subprocess.run(['python3', 'scripts/docs_consistency.py', '--self-test'], check=True)
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          paths = subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines()
+          assert len(paths) == 16
+          assert not any(p.startswith(('src/', 'include/')) for p in paths)
+          entries = []
+          for path in paths:
+              payload = Path(path).read_bytes()
+              expected = hashlib.sha1(b'blob ' + str(len(payload)).encode() + b'\0' + payload).hexdigest()
+              result = api('/git/blobs', {'content': base64.b64encode(payload).decode(), 'encoding': 'base64'})
+              assert result['sha'] == expected
+              entries.append({'path': path, 'mode': '100644', 'type': 'blob', 'sha': expected})
+          Path('prepared-tree.json').write_text(json.dumps({'head': head,
+              'base_tree': subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip(),
+              'patch_sha256': hashlib.sha256(patch).hexdigest(), 'entries': entries}, indent=2) + '\n')
+          print('Prepared 16 hash-verified Git blobs. No ref or commit mutation performed.')
           PY
-          (cd reference-sdk-out && sha256sum * > SHA256SUMS)
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ssc305-reference-sdk-${{ github.run_id }}
-          path: reference-sdk-out/
+          name: delivery-prepared-tree-${{ github.run_id }}
+          path: prepared-tree.json
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7

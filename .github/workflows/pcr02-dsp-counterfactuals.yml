@@ -80,8 +80,36 @@ jobs:
           if [ "${{ github.event_name }}" = pull_request ]; then
             git fetch --no-tags origin "${{ github.base_ref }}"
             changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
-            if ! grep -Eq '^(tests/validation/pcr02_aec_tail_summary\.py|\.github/workflows/pcr02-dsp-counterfactuals\.yml)$' <<<"$changed"; then
-              run_real_aec=false
+            run_real_aec=false
+            if grep -Eq '^(tests/validation/pcr02_aec_tail_summary\.py|\.github/workflows/pcr02-aec-real-tail-confirmation\.yml)$' <<<"$changed"; then
+              run_real_aec=true
+            elif grep -Fxq '.github/workflows/pcr02-dsp-counterfactuals.yml' <<<"$changed"; then
+              run_real_aec="$(python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          path = '.github/workflows/pcr02-dsp-counterfactuals.yml'
+          base = subprocess.check_output(
+              ['git', 'show', 'origin/${{ github.base_ref }}:' + path],
+              text=True,
+          )
+          head = Path(path).read_text(encoding='utf-8')
+
+          def job_block(text: str, name: str) -> str:
+              pattern = re.compile(
+                  rf'(?ms)^  {re.escape(name)}:\n.*?(?=^  [A-Za-z_][A-Za-z0-9_-]*:\n|\Z)'
+              )
+              match = pattern.search(text)
+              if match is None:
+                  raise SystemExit(f'missing PCR02 job block: {name}')
+              return match.group(0)
+
+          watched = ('aec-tail', 'real-aec-tail-confirmation')
+          changed = any(job_block(base, name) != job_block(head, name) for name in watched)
+          print('true' if changed else 'false')
+          PY
+              )"
             fi
           fi
           echo "run_real_aec=$run_real_aec" >> "$GITHUB_OUTPUT"

@@ -9,7 +9,6 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
-from urllib.parse import quote
 
 SCHEMA_VERSION = 1
 STATUSES = {"ACTIVE", "ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED", "UNCLASSIFIED"}
@@ -96,15 +95,38 @@ def gh_json(endpoint: str, *extra: str) -> object:
     return json.loads(completed.stdout or "null")
 
 
-def branch_sha(repository: str, branch: str) -> str | None:
-    endpoint = f"repos/{repository}/git/ref/heads/{quote(branch, safe='/')}"
-    completed = subprocess.run(["gh", "api", endpoint], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def live_branch_heads(repository: str) -> dict[str, str]:
+    """Return all live branch heads with one paginated GitHub query."""
+    completed = subprocess.run(
+        [
+            "gh", "api", "--paginate",
+            f"repos/{repository}/branches?per_page=100",
+            "--jq", ".[] | [.name, .commit.sha] | @tsv",
+        ],
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
     if completed.returncode != 0:
-        if "HTTP 404" in completed.stderr or "Not Found" in completed.stderr:
-            return None
         raise RuntimeError((completed.stderr or completed.stdout).strip())
-    payload = json.loads(completed.stdout)
-    return str(payload["object"]["sha"])
+    heads: dict[str, str] = {}
+    for raw in completed.stdout.splitlines():
+        if not raw.strip():
+            continue
+        name, sha = raw.split("\t", 1)
+        if name in heads:
+            raise RuntimeError(f"duplicate live branch from GitHub pagination: {name}")
+        if SHA_RE.fullmatch(sha) is None:
+            raise RuntimeError(f"invalid live branch SHA from GitHub: {name}={sha}")
+        heads[name] = sha
+    return heads
+
+
+def unregistered_lifecycle_refs(data: dict, live_heads: dict[str, str]) -> list[tuple[str, str]]:
+    registered = {record["branch"] for record in data["records"]}
+    return sorted(
+        (branch, sha)
+        for branch, sha in live_heads.items()
+        if branch.startswith(GC_PREFIXES) and branch not in registered
+    )
 
 
 def open_prs(repository: str, branch: str) -> list[dict]:
@@ -136,9 +158,34 @@ def delete_branch(repository: str, branch: str) -> None:
         raise RuntimeError((completed.stderr or completed.stdout).strip())
 
 
-def plan(data: dict, repository: str, *, auto_only: bool = False, apply: bool = False) -> dict:
+def plan(
+    data: dict,
+    repository: str,
+    *,
+    auto_only: bool = False,
+    apply: bool = False,
+    audit_live_inventory: bool = False,
+) -> dict:
+    live_heads = live_branch_heads(repository)
     actions: list[dict] = []
     deletable: list[tuple[dict, str]] = []
+
+    if audit_live_inventory:
+        for branch, current in unregistered_lifecycle_refs(data, live_heads):
+            prs = open_prs(repository, branch)
+            item = {
+                "branch": branch,
+                "expected_head_sha": None,
+                "current_head_sha": current,
+                "registry_record": False,
+            }
+            if prs:
+                item["action"] = "RETAIN_OPEN_PR_UNREGISTERED"
+                item["open_prs"] = [int(pr["number"]) for pr in prs]
+            else:
+                item["action"] = "BLOCK_UNREGISTERED_LIVE_REF"
+            actions.append(item)
+
     for record in data["records"]:
         if not record.get("gc_eligible"):
             continue
@@ -146,8 +193,13 @@ def plan(data: dict, repository: str, *, auto_only: bool = False, apply: bool = 
             continue
         branch = record["branch"]
         expected = record["head_sha"]
-        current = branch_sha(repository, branch)
-        item = {"branch": branch, "expected_head_sha": expected, "current_head_sha": current}
+        current = live_heads.get(branch)
+        item = {
+            "branch": branch,
+            "expected_head_sha": expected,
+            "current_head_sha": current,
+            "registry_record": True,
+        }
         if current is None:
             item["action"] = "ALREADY_DELETED"
         elif current != expected:
@@ -166,6 +218,7 @@ def plan(data: dict, repository: str, *, auto_only: bool = False, apply: bool = 
                     item["action"] = "DELETE_DRY_RUN"
                     deletable.append((item, branch))
         actions.append(item)
+
     blocked = [item for item in actions if item["action"].startswith("BLOCK_")]
     if apply and not blocked:
         for item, branch in deletable:
@@ -174,11 +227,14 @@ def plan(data: dict, repository: str, *, auto_only: bool = False, apply: bool = 
     elif apply and blocked:
         for item, _branch in deletable:
             item["action"] = "ABORT_BLOCKED"
+
     return {
         "schema_version": 1,
         "repository": repository,
         "mode": "apply" if apply else "dry-run",
         "auto_only": auto_only,
+        "audit_live_inventory": audit_live_inventory,
+        "live_branch_count": len(live_heads),
         "actions": actions,
         "blocked": len(blocked),
         "deletions": sum(item["action"] == "DELETED" for item in actions),
@@ -203,6 +259,16 @@ def self_test() -> None:
     }]
     validate_registry(active)
     assert active_dependency_reasons(active, "research/example-v1", "a" * 40) == ["program:P002-fixture"]
+    live_fixture = {
+        "main": "f" * 40,
+        "research/example-v1": "a" * 40,
+        "research/active-v2": "b" * 40,
+        "research/unregistered-v3": "c" * 40,
+        "cleanup/unmanaged": "d" * 40,
+    }
+    assert unregistered_lifecycle_refs(good, live_fixture) == [
+        ("research/unregistered-v3", "c" * 40)
+    ]
     for mutation in (
         lambda d: d["records"].append(dict(d["records"][0])),
         lambda d: d["records"][0].update(status="ACTIVE"),
@@ -231,6 +297,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--auto-only", action="store_true")
+    parser.add_argument("--audit-live-inventory", action="store_true")
     parser.add_argument("--confirmation", default="")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
@@ -242,7 +309,13 @@ def main() -> int:
         parser.error("--repository is required unless --self-test is used")
     if args.apply and args.confirmation != CONFIRMATION:
         raise SystemExit(f"apply requires --confirmation {CONFIRMATION}")
-    result = plan(data, args.repository, auto_only=args.auto_only, apply=args.apply)
+    result = plan(
+        data,
+        args.repository,
+        auto_only=args.auto_only,
+        apply=args.apply,
+        audit_live_inventory=args.audit_live_inventory,
+    )
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.write_text(rendered, encoding="utf-8")

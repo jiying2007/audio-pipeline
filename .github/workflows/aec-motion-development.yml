@@ -5,6 +5,7 @@ on:
     paths:
       - 'validation/tools/build_aec_motion_corpus.py'
       - 'validation/tools/build_aec_motion_bundle.py'
+      - 'validation/tools/hosted_validation_compact_evidence.py'
       - 'validation/policies/validation-aec-motion-development.json'
       - 'tests/validation/aec_motion_model_qualification.py'
       - 'docs/program/iterations/I002.json'
@@ -48,6 +49,7 @@ jobs:
             tests/validation/aec_motion_model_qualification.py
           python3 validation/tools/build_aec_motion_corpus.py --self-test
           python3 validation/tools/build_aec_motion_bundle.py --self-test
+          python3 validation/tools/hosted_validation_compact_evidence.py --self-test
           python3 tests/validation/aec_motion_model_qualification.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 - <<'PY'
@@ -91,7 +93,27 @@ jobs:
           build-motion/ap_build_info_dump > "$root/build-info.txt"
           sha256sum build-motion/ap_process_pcm > "$root/processor.sha256"
           cp validation/policies/validation-aec-motion-development.json "$root/"
-          find "$root" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$root/SHA256SUMS"
+
+      - name: Compact reproducible motion evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="motion-${{ matrix.seed }}"
+          python3 validation/tools/hosted_validation_compact_evidence.py \
+            --mode deterministic-generator \
+            --root "$root" \
+            --builder validation/tools/build_aec_motion_corpus.py \
+            --dataset-lock validation/datasets.lock.json \
+            --repository-revision "$GITHUB_SHA" \
+            --source-repository "$GITHUB_REPOSITORY"
+
+      - name: Seal compact motion evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="motion-${{ matrix.seed }}"
+          find "$root" -type f ! -name SHA256SUMS -print0 | sort -z | \
+            xargs -0 sha256sum > "$root/SHA256SUMS"
 
       - name: Publish development summary
         shell: bash

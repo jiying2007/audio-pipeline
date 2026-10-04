@@ -36,6 +36,7 @@ jobs:
       - name: Require live repository governance before release
         env:
           GH_TOKEN: ${{ secrets.REPOSITORY_GOVERNANCE_TOKEN }}
+          REPOSITORY_METADATA_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           test -n "$GH_TOKEN" || {

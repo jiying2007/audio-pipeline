@@ -142,16 +142,19 @@ class GitHubAPIError(RuntimeError):
         self.stderr=stderr
 
 
-def _gh_json(args: list[str]) -> object:
+def _gh_json(args: list[str], *, token: str | None = None) -> object:
     command = [
         "gh", "api",
         "-H", "Accept: application/vnd.github+json",
         "-H", f"X-GitHub-Api-Version: {API_VERSION}",
         *args,
     ]
+    env = os.environ.copy()
+    if token is not None:
+        env["GH_TOKEN"] = token
     process=subprocess.run(
         command,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-        check=False,
+        check=False,env=env,
     )
     if process.returncode:
         match=re.search(r"\(HTTP ([1-5][0-9]{2})\)",process.stderr)
@@ -162,7 +165,9 @@ def _gh_json(args: list[str]) -> object:
     return json.loads(process.stdout)
 
 
-def fetch_live(repository: str) -> tuple[list[dict], dict | None, dict | None]:
+def fetch_live(
+    repository: str, *, repository_metadata_token: str | None = None
+) -> tuple[list[dict], dict | None, dict | None]:
     summaries = _gh_json([f"repos/{repository}/rulesets"])
     if not isinstance(summaries, list):
         raise RuntimeError("GitHub rulesets response is not an array")
@@ -190,7 +195,9 @@ def fetch_live(repository: str) -> tuple[list[dict], dict | None, dict | None]:
             }
         else:
             raise
-    repository_settings = _gh_json([f"repos/{repository}"])
+    repository_settings = _gh_json(
+        [f"repos/{repository}"], token=repository_metadata_token
+    )
     if not isinstance(repository_settings, dict):
         raise RuntimeError("GitHub repository response is not an object")
     return (
@@ -258,6 +265,11 @@ def self_test() -> None:
         "Administration(read)" in finding
         for finding in unreadable["findings"]
     )
+    assert audit(
+        [main, tags],
+        {"enabled": True},
+        {"delete_branch_on_merge": True},
+    )["delete_branch_on_merge_enabled"] is True
     no_auto_delete = audit(
         [main, tags],
         {"enabled": True},
@@ -280,7 +292,10 @@ def main() -> int:
         return 0
     if not args.repository or not args.output:
         parser.error("--repository and --output are required")
-    rulesets, immutable, repository_settings = fetch_live(args.repository)
+    rulesets, immutable, repository_settings = fetch_live(
+        args.repository,
+        repository_metadata_token=os.environ.get("REPOSITORY_METADATA_TOKEN"),
+    )
     result = audit(rulesets, immutable, repository_settings)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows: [Verify]
     types: [completed]
+    branches: [main]
 
 permissions:
   contents: write

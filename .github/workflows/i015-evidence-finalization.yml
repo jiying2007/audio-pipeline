@@ -12,6 +12,7 @@ on:
   workflow_run:
     workflows: [Verify, Program Archive Contract, Research Optimization, Research Algorithm Parameter Optimization, I015 Evidence Finalization Contract]
     types: [completed]
+    branches: [main, automation/i015-evidence-35994848668]
   workflow_dispatch:
 
 permissions:

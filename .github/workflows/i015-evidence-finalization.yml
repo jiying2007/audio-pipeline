@@ -2,13 +2,6 @@ name: I015 Evidence Finalization
 run-name: i015-finalize / ${{ github.event_name }} / ${{ github.ref_name }}
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/program/i015-finalization.json'
-      - '.github/program/i015_finalize.py'
-      - '.github/program/i015_archive_recovery.py'
-      - '.github/workflows/i015-evidence-finalization.yml'
   workflow_run:
     workflows: [Verify, Program Archive Contract, Research Optimization, Research Algorithm Parameter Optimization, I015 Evidence Finalization Contract]
     types: [completed]

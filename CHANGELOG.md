@@ -4,6 +4,7 @@
 - Retire the redundant post-merge branch-GC workflow and dedicated implementation after repeated main-push evidence showed merged heads were already deleted by the platform; preserve exact historical blob SHAs and retirement evidence.
 - Keep research/terminal stale-ref GC for nonstandard lifecycle branches. Main/tag rulesets, immutable-release enforcement, DSP behavior, public API/ABI, HIL and Product Qualification authority are unchanged.
 - Decouple PCR02 DSP counterfactual contracts from terminal-branch GC governance, and allow only a SemVer-only `CMakeLists.txt` diff through the PCR02 measurement-only boundary; all other product build-surface changes remain rejected.
+- Make PCR02 real-AEC confirmation impact semantic: parent workflow edits trigger the expensive real-corpus gate only when the `aec-tail` or reusable-confirmation job block actually changes; contract/trigger-only maintenance no longer causes a contradictory mixed-scope confirmation run.
 
 # 2.3.52
 

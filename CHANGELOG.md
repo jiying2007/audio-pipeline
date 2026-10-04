@@ -1,3 +1,9 @@
+# 2.3.53
+
+- Make GitHub-native merged-branch cleanup authoritative by requiring repository `delete_branch_on_merge=true` in the live release-governance audit.
+- Retire the redundant post-merge branch-GC workflow and dedicated implementation after repeated main-push evidence showed merged heads were already deleted by the platform; preserve exact historical blob SHAs and retirement evidence.
+- Keep research/terminal stale-ref GC for nonstandard lifecycle branches. Main/tag rulesets, immutable-release enforcement, DSP behavior, public API/ABI, HIL and Product Qualification authority are unchanged.
+
 # 2.3.52
 
 - Extend reproducible validation-artifact compaction with an explicit deterministic-generator mode that binds exact repository revision, generator/model SHA-256, seed, duration, corpus hash and per-file source-manifest hashes before removing generated payloads.

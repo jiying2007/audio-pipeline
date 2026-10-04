@@ -5,7 +5,7 @@ on:
   repository_dispatch:
     types: [hil-post-release, extended-real-post-release]
   schedule:
-    - cron: '23 */6 * * *'
+    - cron: '23 19 * * *'
   workflow_dispatch:
     inputs:
       source_sha:

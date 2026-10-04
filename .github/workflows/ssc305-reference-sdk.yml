@@ -1,0 +1,83 @@
+name: SSC305 Reference SDK
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  reference-sdk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build and consume reference armhf SDK, not a shipping BSP SDK
+        run: |
+          set -euo pipefail
+          cmake --preset ssc305-cortex-a32-low -DAP_BUILD_SOURCE_REVISION="$GITHUB_SHA"
+          cmake --build build/ssc305-cortex-a32-low --parallel
+          prefix="$PWD/reference-stage"
+          cmake --install build/ssc305-cortex-a32-low --prefix "$prefix"
+          mkdir -p reference-sdk-out
+          arm-linux-gnueabihf-gcc -O2 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard \
+            -I"$prefix/include" tests/consumer/runtime_main.c \
+            "$prefix/lib/libaudio_pipeline_runtime.a" "$prefix/lib/libaudio_pipeline.a" \
+            -lm -pthread -o reference-sdk-out/runtime-consumer
+          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf reference-sdk-out/runtime-consumer
+          arm-linux-gnueabihf-gcc -O2 -mcpu=cortex-a32 -mfpu=neon-fp-armv8 -mfloat-abi=hard \
+            -I"$prefix/include" tests/validation/resource_profile_probe.c \
+            "$prefix/lib/libaudio_pipeline_runtime.a" "$prefix/lib/libaudio_pipeline.a" \
+            -lm -pthread -o /tmp/reference-resource-probe
+          qemu-arm -cpu max -L /usr/arm-linux-gnueabihf /tmp/reference-resource-probe \
+            > reference-sdk-out/build-resource-probe.json
+          arm-linux-gnueabihf-gcc --version > reference-sdk-out/compiler.txt
+          arm-linux-gnueabihf-gcc -print-sysroot > reference-sdk-out/compiler-sysroot.txt
+          dpkg-query -W libc6-armhf-cross > reference-sdk-out/reference-libc.txt
+          arm-linux-gnueabihf-readelf -h reference-sdk-out/runtime-consumer > reference-sdk-out/elf-header.txt
+          epoch=$(git show -s --format=%ct HEAD)
+          tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
+            -C "$prefix" -cf - . | gzip -n > reference-sdk-out/audio-pipeline-reference-armhf-sdk.tar.gz
+          git archive --format=tar HEAD | gzip -n > reference-sdk-out/audio-pipeline-source.tar.gz
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path('reference-sdk-out')
+          probe = json.loads((root / 'build-resource-probe.json').read_text())
+          assert probe['source_revision'] == os.environ['GITHUB_SHA']
+          assert probe['bf_direction_tracking'] == 0
+          assert probe['pipeline_state_bytes'] + probe['runtime_state_bytes'] <= 50000
+          record = {
+              'schema_version': 1,
+              'source_revision': os.environ['GITHUB_SHA'],
+              'preset': 'ssc305-cortex-a32-low',
+              'config_digest': probe['config_digest'],
+              'artifact_class': 'reference-armhf-sdk-not-shipping-bsp',
+              'timing_authority': 'none-target',
+              'product_certification_authority': False,
+              'installed_runtime_consumer': 'PASS',
+              'assets': {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                         for p in sorted(root.iterdir()) if p.is_file()},
+          }
+          (root / 'reference-sdk-manifest.json').write_text(json.dumps(record, indent=2, sort_keys=True) + '\n')
+          PY
+          (cd reference-sdk-out && sha256sum * > SHA256SUMS)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ssc305-reference-sdk-${{ github.run_id }}
+          path: reference-sdk-out/
+          if-no-files-found: error
+          retention-days: 30

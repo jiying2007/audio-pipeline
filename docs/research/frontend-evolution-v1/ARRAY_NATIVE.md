@@ -79,7 +79,10 @@ An empty mask is invalid. Continuing histories survive; newly enabled channels
 start with zero history. Mask changes are explicit fault control, NOT automatic
 health detection or click-free steering. The caller must account for transition
 and re-warm-up effects. Reset clears histories/counters but preserves geometry,
-mask, mode and calibration. There is no live direction-update API in this tranche.
+mask, mode and calibration. The initial tranche had no live direction-update API;
+[FE03 controlled steering](ARRAY_STEERING.md) now adds the explicitly bounded
+shared-history transition and optional observation controller. Its reset cancels
+an in-flight transition and keeps the last committed direction.
 
 The offline runner accepts a fixed text geometry, raw S16LE input and emits F32LE
 plus JSON. It rejects empty/partial 10 ms PCM and existing output files. Conversion

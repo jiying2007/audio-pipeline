@@ -16,6 +16,12 @@ struct fe_array {
     float gain[FE_ARRAY_MAX_MICS];
     double compensation[FE_ARRAY_MAX_MICS];
     uint64_t samples;
+    double relative[FE_ARRAY_MAX_MICS][3], calibration_latency[FE_ARRAY_MAX_MICS];
+    double direction[3], target_direction[3], target_compensation[FE_ARRAY_MAX_MICS];
+    uint32_t next_offset[FE_ARRAY_MAX_MICS][4];
+    float next_weight[FE_ARRAY_MAX_MICS][4];
+    uint32_t transition_total, transition_done;
+    uint64_t steering_accepted, steering_completed, steering_cancelled;
     float history[];
 };
 
@@ -112,6 +118,11 @@ fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config 
         s->channel[i] = c->microphones[i].input_channel;
         s->gain[i] = (float)c->microphones[i].gain;
         s->compensation[i] = d[i];
+        s->target_compensation[i] = d[i];
+        s->calibration_latency[i] = c->microphones[i].latency_samples;
+        for (k = 0u; k < 3u; ++k)
+            s->relative[i][k] = c->microphones[i].position_m[k] -
+                               c->microphones[c->reference_mic].position_m[k];
         if (c->interpolation == FE_ARRAY_LINEAR) {
             s->offset[i][0] = m; s->offset[i][1] = m + 1u;
             s->weight[i][0] = (float)(1.0 - f); s->weight[i][1] = (float)f;
@@ -123,6 +134,8 @@ fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config 
             s->weight[i][3] = (float)(-(1.0+f) * f * (1.0-f) / 6.0);
         }
     }
+    memcpy(s->direction, c->direction, sizeof(s->direction));
+    memcpy(s->target_direction, c->direction, sizeof(s->target_direction));
     *out = s;
     return FE_ARRAY_OK;
 }
@@ -135,19 +148,85 @@ fe_array_status fe_array_get_info(const fe_array *s, fe_array_info *out) {
     out->sample_rate_hz = s->rate; out->mic_count = s->count; out->active_mask = s->mask;
     out->common_delay_samples = s->delay; out->interpolation = s->interpolation;
     out->state_bytes = fe_array_state_bytes(s->count); out->samples_processed = s->samples;
+    memcpy(out->direction, s->direction, sizeof(out->direction));
+    memcpy(out->target_direction, s->target_direction, sizeof(out->target_direction));
+    out->transition_total_samples = s->transition_total;
+    out->transition_done_samples = s->transition_done;
+    out->steering_accepted = s->steering_accepted;
+    out->steering_completed = s->steering_completed;
+    out->steering_cancelled = s->steering_cancelled;
     for (i = 0u; i < s->count; ++i) out->compensation_samples[i] = s->compensation[i];
     return FE_ARRAY_OK;
 }
+
+static void cancel_steering(fe_array *s) {
+    if (s->transition_total != 0u) ++s->steering_cancelled;
+    s->transition_total = 0u; s->transition_done = 0u;
+    memcpy(s->target_direction, s->direction, sizeof(s->direction));
+    memcpy(s->target_compensation, s->compensation, sizeof(s->compensation));
+    memset(s->next_offset, 0, sizeof(s->next_offset));
+    memset(s->next_weight, 0, sizeof(s->next_weight));
+}
+
+fe_array_status fe_array_request_steer(fe_array *s, const double direction[3], uint32_t total) {
+    double norm = 0.0, delays[FE_ARRAY_MAX_MICS] = {0.0};
+    uint32_t offsets[FE_ARRAY_MAX_MICS][4] = {{0u}};
+    float weights[FE_ARRAY_MAX_MICS][4] = {{0.0f}};
+    uint32_t i, k;
+    if (!valid(s)) return FE_ARRAY_ESTATE;
+    if (!direction || overlaps(s, fe_array_state_bytes(s->count), direction, 3u * sizeof(double)) ||
+        total < 2u || total > s->rate / 10u) return FE_ARRAY_EINVAL;
+    for (k = 0u; k < 3u; ++k) {
+        if (!isfinite(direction[k]) || fabs(direction[k]) > 1.0) return FE_ARRAY_EINVAL;
+        norm += direction[k] * direction[k];
+    }
+    if (fabs(norm - 1.0) > 1.0e-6) return FE_ARRAY_EINVAL;
+    if (s->transition_total != 0u) return FE_ARRAY_EBUSY;
+    for (i = 0u; i < s->count; ++i) {
+        double projection = 0.0, f;
+        uint32_t m;
+        for (k = 0u; k < 3u; ++k) projection += s->relative[i][k] * direction[k];
+        delays[i] = projection * (double)s->rate / 343.0 - s->calibration_latency[i];
+        delays[i] += (double)s->delay;
+        if (delays[i] < 1.0 || delays[i] > (double)(FE_ARRAY_HISTORY - 3u)) return FE_ARRAY_EINVAL;
+        m = (uint32_t)floor(delays[i]); f = delays[i] - floor(delays[i]);
+        if (s->interpolation == FE_ARRAY_LINEAR) {
+            offsets[i][0] = m; offsets[i][1] = m + 1u;
+            weights[i][0] = (float)(1.0 - f); weights[i][1] = (float)f;
+        } else {
+            for (k = 0u; k < 4u; ++k) offsets[i][k] = m - 1u + k;
+            weights[i][0] = (float)(-f * (1.0-f) * (2.0-f) / 6.0);
+            weights[i][1] = (float)((1.0+f) * (1.0-f) * (2.0-f) / 2.0);
+            weights[i][2] = (float)((1.0+f) * f * (2.0-f) / 2.0);
+            weights[i][3] = (float)(-(1.0+f) * f * (1.0-f) / 6.0);
+        }
+    }
+    if (direction[0] == s->direction[0] && direction[1] == s->direction[1] &&
+        direction[2] == s->direction[2]) return FE_ARRAY_OK;
+    if (s->steering_accepted == UINT64_MAX) return FE_ARRAY_EINVAL;
+    memcpy(s->next_offset, offsets, sizeof(offsets));
+    memcpy(s->next_weight, weights, sizeof(weights));
+    memcpy(s->target_direction, direction, sizeof(s->target_direction));
+    memcpy(s->target_compensation, delays, sizeof(delays));
+    s->transition_total = total; s->transition_done = 0u;
+    ++s->steering_accepted;
+    return FE_ARRAY_OK;
+}
+
 fe_array_status fe_array_reset(fe_array *s) {
     if (!valid(s)) return FE_ARRAY_ESTATE;
     memset(s->history, 0, (size_t)s->count * FE_ARRAY_HISTORY * sizeof(float));
     s->samples = 0u; s->cursor = 0u;
+    cancel_steering(s);
+    s->steering_accepted = 0u; s->steering_completed = 0u; s->steering_cancelled = 0u;
     return FE_ARRAY_OK;
 }
 fe_array_status fe_array_set_active_mask(fe_array *s, uint32_t mask) {
     uint32_t i;
     if (!valid(s)) return FE_ARRAY_ESTATE;
     if (!mask_ok(s->count, mask)) return FE_ARRAY_EINVAL;
+    if (mask == s->mask) return FE_ARRAY_OK;
+    cancel_steering(s);
     for (i = 0u; i < s->count; ++i)
         if (((s->mask ^ mask) & (1u << i)) != 0u)
             memset(s->history + i * FE_ARRAY_HISTORY, 0, FE_ARRAY_HISTORY * sizeof(float));
@@ -189,6 +268,36 @@ fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, flo
             sum += s->gain[i] * value;
         }
         output[t] = sum / (float)active;
+        if (s->transition_total != 0u) {
+            float next_sum = 0.0f, next;
+            /* No second history and no cold-starting target beam. */
+            for (i = 0u; i < s->count; ++i) {
+                float value = 0.0f;
+                const float *h = s->history + i * FE_ARRAY_HISTORY;
+                uint32_t k;
+                if (!(s->mask & (1u << i))) continue;
+                for (k = 0u; k < taps; ++k) {
+                    const uint32_t at = (s->cursor + FE_ARRAY_HISTORY - s->next_offset[i][k]) % FE_ARRAY_HISTORY;
+                    value += s->next_weight[i][k] * h[at];
+                }
+                next_sum += s->gain[i] * value;
+            }
+            next = next_sum / (float)active;
+            if (s->transition_done + 1u == s->transition_total) output[t] = next;
+            else if (s->transition_done != 0u) {
+                const float alpha = (float)s->transition_done / (float)(s->transition_total - 1u);
+                output[t] = (1.0f - alpha) * output[t] + alpha * next;
+            }
+            ++s->transition_done;
+            if (s->transition_done == s->transition_total) {
+                memcpy(s->offset, s->next_offset, sizeof(s->offset));
+                memcpy(s->weight, s->next_weight, sizeof(s->weight));
+                memcpy(s->compensation, s->target_compensation, sizeof(s->compensation));
+                memcpy(s->direction, s->target_direction, sizeof(s->direction));
+                s->transition_total = 0u; s->transition_done = 0u;
+                ++s->steering_completed;
+            }
+        }
         s->cursor = (s->cursor + 1u) % FE_ARRAY_HISTORY;
     }
     s->samples += frames;

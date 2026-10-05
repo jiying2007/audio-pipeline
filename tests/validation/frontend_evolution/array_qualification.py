@@ -25,7 +25,8 @@ from libfvad_reference import write_json, seal_output, process_env, run_logged
 HERE = Path(__file__).resolve().parent
 PLAN = ROOT / '.github/research/frontend-evolution-v1/array-native-v1.json'
 SOURCES = ('array_native.h', 'array_native.c', 'array_native_test.c', 'array_runner.c',
-           'array_qualification.py', 'contracts.py', 'libfvad_reference.py')
+           'array_qualification.py', 'contracts.py', 'libfvad_reference.py',
+           'array_direction_control.h', 'array_direction_control.c', 'array_steering_test.c', 'array_steering_checks.py')
 FLAGS = ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-Wconversion', '-Wshadow',
          '-pedantic', '-ffp-contract=off']
 
@@ -151,7 +152,12 @@ def qualify(output: Path, revision: str, require_arm: bool) -> dict:
               ['cc',*FLAGS,'-O1','-g','-fsanitize=address,undefined','-fno-omit-frame-pointer','-fno-pie','-no-pie',
                str(HERE/'array_native.c'),str(HERE/'array_native_test.c'),'-lm','-o',str(sanitized)],
               ['cc',*FLAGS,'-fstack-usage','-c',str(HERE/'array_native.c'),'-o',str(output/'array-native.o')]]
+    steering_sources=[str(HERE/name) for name in ('array_native.c','array_direction_control.c','array_steering_test.c')]
+    commands.extend([['cc',*FLAGS,*steering_sources,'-lm','-o',str(output/'steering-unit-native')],
+                     ['cc',*FLAGS,'-O1','-g','-fsanitize=address,undefined','-fno-omit-frame-pointer','-fno-pie','-no-pie',
+                      *steering_sources,'-lm','-o',str(output/'steering-unit-sanitized')]])
     for i,command in enumerate(commands):run_logged(command,output/f'build-{i}.log')
+    for arch in ('native','sanitized'):run_logged([output/f'steering-unit-{arch}'],output/f'steering-unit-{arch}.json')
     run_logged(['cc','--version'],output/'compiler-native.txt')
     run_logged([unit],output/'unit-native.json'); run_logged([sanitized],output/'unit-sanitized.json')
     run_logged(['nm','-u',output/'array-native.o'],output/'undefined-symbols.txt')
@@ -171,9 +177,12 @@ def qualify(output: Path, revision: str, require_arm: bool) -> dict:
         run_logged(['qemu-arm','--version'],output/'qemu.txt')
         run_logged(['arm-linux-gnueabihf-readelf','-h',arm],output/'arm-elf.txt')
         run_logged([*prefix,au],output/'unit-arm.json',timeout=180)
+        command=[*armflags,*steering_sources,'-lm','-o',str(output/'steering-unit-arm')]
+        commands.append(command);run_logged(command,output/'build-steering-arm.log')
+        run_logged([*prefix,output/'steering-unit-arm'],output/'steering-unit-arm.json',timeout=180)
         targets.append(('arm',arm,prefix))
     write_json(output/'build-commands.json',{'commands':commands})
-    report={'schema_version':1,'experiment_id':plan['experiment_id'],'execution_source_revision':revision,
+    report={'schema_version':2,'experiment_id':plan['experiment_id'],'execution_source_revision':revision,
             'status':'NATIVE_ARRAY_ENGINEERING_PASS','shipping_authority':False,'acoustic_improvement_proved':False,
             'arm_qualified':bool(has_arm),'cases':[],'frequency_response':frequency_response(plan),
             'processors':{arch:sha256(binary.read_bytes()) for arch,binary,_ in targets}}
@@ -199,6 +208,8 @@ def qualify(output: Path, revision: str, require_arm: bool) -> dict:
                 require(alternate.with_suffix('.f32').read_bytes()[:plan['prefix_frames']*4]==
                         dest.with_suffix('.f32').read_bytes()[:plan['prefix_frames']*4],'future leakage')
             report['cases'].append(row)
+    import array_steering_checks
+    report['steering']=array_steering_checks.run(output,targets)
     neg=output/'negative';neg.mkdir();report['negative_cli']=probe_negative_cli(runner,neg)
     write_json(output/'result.json',report); seal_output(output,report)
     return verify(output,revision)
@@ -218,6 +229,7 @@ def verify(root: Path, revision: str | None=None, require_arm: bool=False) -> di
     plan=load_json(root/'experiment.json'); require(plan==load_json(PLAN),'experiment changed')
     for name in SOURCES:require((root/'source'/name).read_bytes()==(HERE/name).read_bytes(),'stale source file '+name)
     report=load_json(root/'result.json')
+    require(report['schema_version']==2,'unsupported array result schema')
     require(report['status']=='NATIVE_ARRAY_ENGINEERING_PASS' and report['shipping_authority'] is False
             and report['acoustic_improvement_proved'] is False,'invalid result authority')
     require(report['experiment_id']==manifest['experiment_id']==plan['experiment_id'],'experiment identity')
@@ -269,7 +281,9 @@ def verify(root: Path, revision: str | None=None, require_arm: bool=False) -> di
                 alt=(d/f'{arch}-future.f32').read_bytes()
                 require(len(alt)==len(blob) and alt[:prefix*4]==blob[:prefix*4],'future prefix changed')
                 require(all(math.isfinite(v[0]) for v in struct.iter_unpack('<f',alt)),'non-finite future result')
-    return {'status':'VERIFIED','cases':len(rows),'files':len(actual),'targets':targets,
+    import array_steering_checks
+    steering_cases=array_steering_checks.verify(root,report['steering'],targets)
+    return {'status':'VERIFIED','steering_cases':steering_cases,'cases':len(rows),'files':len(actual),'targets':targets,
             'execution_source_revision':report['execution_source_revision'],'shipping_authority':False}
 
 
@@ -310,7 +324,10 @@ def _mutate_evidence(root: Path, revision: str) -> dict:
                ('fake-promotion',lambda r:r.update(shipping_authority=True)),
                ('stale-sha',lambda r:r.update(execution_source_revision='0'*40)),
                ('wrong-metric',lambda r:r['cases'][0].update(maximum_absolute_oracle_error=1.0)),
-               ('wrong-frequency',lambda r:r['frequency_response'][0].update(magnitude_db=5.0))]
+               ('wrong-frequency',lambda r:r['frequency_response'][0].update(magnitude_db=5.0)),
+               ('missing-steering-case',lambda r:r['steering']['cases'].pop()),
+               ('fake-doa',lambda r:r['steering'].update(automatic_doa=True)),
+               ('fake-aec-recovery',lambda r:r['steering'].update(aec_recovery_proved=True))]
     for name,change in mutations:
         changed=copy.deepcopy(report);change(changed);write_json(root/'result.json',changed);seal_output(root,changed)
         try:verify(root,revision)
@@ -321,6 +338,15 @@ def _mutate_evidence(root: Path, revision: str) -> dict:
                            ('truncated-pcm',root/'cases'/key/'native.f32',b'\0'*4),
                            ('wrong-mask',root/'cases'/key/'geometry.txt',b'fake\n'),
                            ('missing-trace',root/'unit-native.json',b'{"status":"FAIL"}\n')]:
+        original=path.read_bytes();path.write_bytes(data);seal_output(root,report)
+        try:verify(root,revision)
+        except (ValueError,KeyError):failures.append(name)
+        else:raise ValueError('semantic mutation accepted: '+name)
+        finally:path.write_bytes(original)
+    steering_key=report['steering']['cases'][0]['case_id']
+    for name,path,data in [('steering-command',root/'steering'/steering_key/'commands.txt',b'FORGED\n'),
+                           ('steering-unit',root/'steering-unit-native.json',b'{"status":"FAIL"}\n'),
+                           ('steering-chunk',root/'steering'/steering_key/'native-chunk.f32',b'\0'*4)]:
         original=path.read_bytes();path.write_bytes(data);seal_output(root,report)
         try:verify(root,revision)
         except (ValueError,KeyError):failures.append(name)
@@ -344,7 +370,10 @@ def main() -> int:
     p.add_argument('--require-arm',action='store_true');p.add_argument('--negative-evidence',action='store_true')
     a=p.parse_args()
     if a.self_test:
-        return 0 if unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(OracleTests)).wasSuccessful() else 1
+        import array_steering_checks
+        suite=unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(OracleTests),
+                                 unittest.defaultTestLoader.loadTestsFromTestCase(array_steering_checks.SteeringOracleTests)])
+        return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
     require(a.output is not None and hex_digest(a.execution_source,40),'output and exact execution source required')
     root=a.output.resolve()
     if a.negative_evidence:result=negative_evidence(root,a.execution_source)

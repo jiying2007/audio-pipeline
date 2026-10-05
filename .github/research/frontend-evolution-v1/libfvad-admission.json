@@ -1,0 +1,52 @@
+{
+  "admission": {
+    "artifact_zip_sha256": "512cf976ab486692903b939a6c5acf2d336da0af089c20b13f34d1e78292b236",
+    "decision": "EXECUTION_ADMITTED_MINIMAL_REFERENCE_ONLY",
+    "preflight_artifact_id": 11322109320,
+    "preflight_run_id": 37255892266,
+    "review_date": "2026-10-05",
+    "scope": "offline research, explicit C source list, no upstream build scripts, examples, models or shipping dependency",
+    "verification": "24 compile-input/notice bytes independently rehashed; upstream Git blobs and SHA256 manifest agree"
+  },
+  "files_sha256": {
+    "AUTHORS": "cd9bea3aacbdb2a25763835e029f0ea34198dfc35687616a6ce29e7db1b6114a",
+    "LICENSE": "78b16d4e803975e0c5d826339c607d0676192a40e2c510c10b2cb4ab4cde416a",
+    "PATENTS": "01462e2068d1a04c2274f3389773014c14ed9bc3446b28303543bd3e3c064145",
+    "include/fvad.h": "a7ed028c3f685396bf65da7fc81a753cb0f94eec7a494072bec587725d53862e",
+    "src/common.h": "9d5a991e13bf73bd93a7e2e101db719da9e14086e5f1b1bbf63b082e524daee3",
+    "src/fvad.c": "9732d0060d4aa1219a8c2465ac983b1f6bc719ece0827b36fb1ebb6730f3c095",
+    "src/signal_processing/division_operations.c": "fb57461a7bcbfffecc3e4a8c641c4183e2ab427685cb3b3ad7d737dda3cb6d56",
+    "src/signal_processing/energy.c": "fef67abfc5708274799f5a3fdb3df4fa91a950dd6a98ffdaf9738b32fccfef1a",
+    "src/signal_processing/get_scaling_square.c": "edbd3619857bc3aa9ddfcbf1201a6c907a61bece038fce41afe3589c1a4bc277",
+    "src/signal_processing/resample_48khz.c": "65f9c0333bfa40c197486a4e63c9d444be8f0089d6e041b6d42d3fcbb6390f5c",
+    "src/signal_processing/resample_by_2_internal.c": "f7ab177a112a5f4093abde5b483973da5338a0913b7347bcff10eb5c731503ac",
+    "src/signal_processing/resample_by_2_internal.h": "1b4b66058aa8a64601a0beb01bf8fc112387b3c6a2db9ec1e9fadc37096b982b",
+    "src/signal_processing/resample_fractional.c": "ed4ac3498d41e3ad466f25cf291f23a57a29a5c4c248ccc9312407f32eff26be",
+    "src/signal_processing/signal_processing_library.h": "806fc377bf6486bca6f9df366f68421801d377d025c87af13348d2a383b9ecbd",
+    "src/signal_processing/spl_inl.c": "6f17afe654639115b46197ffc03f30af5e8297701025039e5b3623f2e3608835",
+    "src/signal_processing/spl_inl.h": "56125f099bf55b2bb64a6fc2182936c6d897a6ffc6926134db9033ae061e5acd",
+    "src/vad/vad_core.c": "5556689c9acd6e68b4b8c67b3271a72e2a3b136d77f2ee87ad6a6364e75dd800",
+    "src/vad/vad_core.h": "6dd5d59939033333822cb60bcd6adeb86e7e6e8afa60643894ea9ed424f7965d",
+    "src/vad/vad_filterbank.c": "c44eb10c2a70810cef6720a7846ea3638e933cf1ed85affaac2dba0e6927210d",
+    "src/vad/vad_filterbank.h": "3c0704f9d917fabd927a228175edefd4934351ab8229292969b54217a30ab793",
+    "src/vad/vad_gmm.c": "f45eeafdbea7491301e7eb57a7cbb2a720dc43f9e256e3f8fa944f0d3f0e6067",
+    "src/vad/vad_gmm.h": "a9c51c01dae8eed13b17507b9f2e1a6ec248297f4372124f0b59ace88f46d16f",
+    "src/vad/vad_sp.c": "9b7718a283c04c13caeb1c4174d63cc6de9a7c02dad05c65d2cbc5df2686a059",
+    "src/vad/vad_sp.h": "5de6fc001a838f8cd9acab67c082695a8ed37c8f905bf3abac122c5edb17f041"
+  },
+  "materialized_source_sha256": "c60c6193a171ac08862ed998854a33b1fed53de41c5aa01b38d29d599bf4a566",
+  "rights_review": {
+    "code": "BSD-3-Clause; preserve LICENSE, PATENTS, AUTHORS",
+    "data": "NOT_APPLICABLE",
+    "dependencies": "C standard library; explicit source list only; no libsndfile example",
+    "redistribution": "Retain upstream notices with research source and binary evidence; no shipping dependency introduced",
+    "weights": "NOT_APPLICABLE"
+  },
+  "schema_version": 1,
+  "scope": "minimal-core-only-no-upstream-build-scripts-examples-models-or-data",
+  "shipping_authority": false,
+  "source_commit": "532ab666c20d3cfda38bca63abbb0f152706c369",
+  "source_id": "libfvad",
+  "source_lock_sha256": "91267eb0227359f9fd982b9b5ec5d6d45d822cb1f91e0f21f56502022ac587fd",
+  "status": "SOURCE_BYTES_VERIFIED_NOT_EXECUTED"
+}

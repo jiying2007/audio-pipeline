@@ -1,0 +1,22 @@
+{
+  "authority": "terminal-ref-preservation-only-not-an-acoustic-result",
+  "branch": "research/fe-libfvad-reference",
+  "closed_pr": 658,
+  "gc_boundary": "Existing exact-SHA/no-open-PR terminal branch GC only; do not delete successor or unlisted refs.",
+  "head_sha": "ae98d8aaf75ca7cdda1d865180e6b8196a1f9066",
+  "preserved_evidence": {
+    "artifact_id": 11322109320,
+    "artifact_zip_sha256": "512cf976ab486692903b939a6c5acf2d336da0af089c20b13f34d1e78292b236",
+    "committed_admission": ".github/research/frontend-evolution-v1/libfvad-admission.json",
+    "preflight_run_id": 37255892266,
+    "preregistration_comment_id": 5987162204
+  },
+  "product_qualification": "DEFERRED_BY_SCOPE",
+  "reason": "Initial source-preflight branch superseded by its exact tested descendant after connector ref-update argument binding failure. No algorithm rejection or evidence rewrite.",
+  "schema_version": 1,
+  "shipping_source_changed": false,
+  "stage": "frontend-evolution-v1",
+  "status": "SUPERSEDED",
+  "successor_commit": "fc1650cc84e24736be88b3d16d979d12a8dac1eb",
+  "successor_pr": 659
+}

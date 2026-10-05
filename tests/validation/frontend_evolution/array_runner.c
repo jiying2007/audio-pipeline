@@ -46,6 +46,25 @@ static int read_config(const char *path, fe_array_config *c) {
     if(fclose(f)!=0)ok=0;
     return ok;
 }
+
+/* Optional offline steering schedule, not a data-plane parser. */
+typedef struct { uint32_t sample, duration; double direction[3]; } steer_command;
+static int read_commands(const char *path, steer_command commands[64], uint32_t *count) {
+    FILE *f=fopen(path,"rb"); char version[96], extra[96];
+    uint32_t i,k; int ok;
+    if(!f)return 0;
+    ok=word(f,version) && strcmp(version,"FE_STEERING_V1")==0 &&
+       uint_value(f,count) && *count>0u && *count<=64u;
+    for(i=0u;ok && i<*count;++i) {
+        ok=uint_value(f,&commands[i].sample) && uint_value(f,&commands[i].duration) &&
+           (i==0u || commands[i].sample>commands[i-1u].sample);
+        for(k=0u;ok && k<3u;++k)ok=real_value(f,&commands[i].direction[k]);
+    }
+    ok=ok && !word(f,extra) && !ferror(f);
+    if(fclose(f)!=0)ok=0;
+    return ok;
+}
+
 int main(int argc,char **argv) {
     _Alignas(FE_ARRAY_ALIGNMENT) unsigned char memory[4096];
     unsigned char raw[3840], encoded[1920];
@@ -57,14 +76,26 @@ int main(int argc,char **argv) {
     long length;
     size_t bytes,hop,count,i;
     int result=2;
-    if(argc!=5) { fprintf(stderr,"usage: array-runner GEOMETRY INPUT.s16le OUTPUT.f32le INFO.json\n"); return 2; }
+    steer_command commands[64];
+    uint32_t command_count=0u, command_index=0u, chunk_limit=480u;
+    uint64_t position=0u;
+    if(argc<5 || argc>7) { fprintf(stderr,"usage: array-runner GEOMETRY INPUT.s16le OUTPUT.f32le INFO.json [COMMANDS [MAX_CHUNK_SAMPLES]]\n"); return 2; }
     if(!read_config(argv[1],&c) || fe_array_init(memory,sizeof(memory),&c,&state)!=FE_ARRAY_OK) {
         fprintf(stderr,"invalid array geometry\n"); return 2;
+    }
+    if(argc>=6 && !read_commands(argv[5],commands,&command_count))return 2;
+    if(argc==7) {
+        char *end; unsigned long v;
+        errno=0; v=strtoul(argv[6],&end,10);
+        if(errno || argv[6][0]<'1' || argv[6][0]>'9' || *end || !v || v>480u)return 2;
+        chunk_limit=(uint32_t)v;
     }
     in=fopen(argv[2],"rb");
     if(!in || fseek(in,0,SEEK_END)!=0 || (length=ftell(in))<=0 || fseek(in,0,SEEK_SET)!=0)goto done;
     hop=c.sample_rate_hz/100u; bytes=hop*c.mic_count*2u;
     if((unsigned long)length%bytes!=0u) { fprintf(stderr,"partial or empty PCM\n"); goto done; }
+    if(command_count && (uint64_t)commands[command_count-1u].sample>=
+       (uint64_t)((unsigned long)length/(c.mic_count*2u)))goto done;
     out=fopen(argv[3],"wbx");
     if(!out) { fprintf(stderr,"output already exists or is not writable\n"); goto done; }
     meta=fopen(argv[4],"wbx");
@@ -76,7 +107,23 @@ int main(int argc,char **argv) {
             const int signed_value=u>=32768u ? (int)u-65536 : (int)u;
             input[i]=(float)signed_value/32768.0f;
         }
-        if(fe_array_process(state,input,hop*c.mic_count,output,hop)!=FE_ARRAY_OK)goto done;
+        {
+            size_t offset=0u;
+            while(offset<hop) {
+                size_t batch=hop-offset;
+                if(command_index<command_count && position==commands[command_index].sample) {
+                    if(fe_array_request_steer(state,commands[command_index].direction,
+                       commands[command_index].duration)!=FE_ARRAY_OK)goto done;
+                    ++command_index;
+                }
+                if(batch>chunk_limit)batch=chunk_limit;
+                if(command_index<command_count && (uint64_t)batch>commands[command_index].sample-position)
+                    batch=(size_t)(commands[command_index].sample-position);
+                if(!batch || fe_array_process(state,input+offset*c.mic_count,batch*c.mic_count,
+                   output+offset,batch)!=FE_ARRAY_OK)goto done;
+                offset+=batch; position+=batch;
+            }
+        }
         for(i=0u;i<hop;++i) {
             uint32_t bits;
             if(!isfinite(output[i]))goto done;
@@ -88,14 +135,18 @@ int main(int argc,char **argv) {
         }
         if(fwrite(encoded,4u,hop,out)!=hop)goto done;
     }
-    if(ferror(in) || fe_array_get_info(state,&info)!=FE_ARRAY_OK)goto done;
+    if(ferror(in) || command_index!=command_count || fe_array_get_info(state,&info)!=FE_ARRAY_OK)goto done;
     if(fclose(out)!=0) { out=NULL; goto done; } out=NULL;
     if(info.samples_processed!=(uint64_t)((unsigned long)length/(c.mic_count*2u)))goto done;
     if(fprintf(meta,"{\"status\":\"PASS\",\"mic_count\":%u,\"sample_rate_hz\":%u,\"active_mask\":%u,\"interpolation\":%u,\"common_delay_samples\":%u,\"state_bytes\":%zu,\"samples_processed\":%llu,\"compensation_samples\":[",
         info.mic_count,info.sample_rate_hz,info.active_mask,(unsigned)info.interpolation,
         info.common_delay_samples,info.state_bytes,(unsigned long long)info.samples_processed)<0)goto done;
     for(i=0u;i<c.mic_count;++i)if(fprintf(meta,"%s%.17g",i?",":"",info.compensation_samples[i])<0)goto done;
-    if(fprintf(meta,"],\"output_encoding\":\"f32le-unclipped\",\"shipping_authority\":false}\n")<0)goto done;
+    if(fprintf(meta,"],\"steering_accepted\":%llu,\"steering_completed\":%llu,\"steering_cancelled\":%llu,\"transition_remaining_samples\":%u,\"direction\":[%.17g,%.17g,%.17g]",
+        (unsigned long long)info.steering_accepted,(unsigned long long)info.steering_completed,
+        (unsigned long long)info.steering_cancelled,info.transition_total_samples-info.transition_done_samples,
+        info.direction[0],info.direction[1],info.direction[2])<0)goto done;
+    if(fprintf(meta,",\"output_encoding\":\"f32le-unclipped\",\"shipping_authority\":false}\n")<0)goto done;
     if(fclose(meta)!=0) { meta=NULL; goto done; } meta=NULL;
     result=0;
 done:

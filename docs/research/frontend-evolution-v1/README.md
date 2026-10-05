@@ -64,3 +64,11 @@ analytic answers on native/sanitized and AArch32/QEMU builds. It is not installe
 in the 2.x SDK. DOA, smooth live steering, BF/AEC integration, independent speech
 quality and the final C4 delivery remain open in #657; no new product claim is
 inferred from the engineering checks.
+
+## Controlled live steering continuation
+
+[FE03 controlled steering](ARRAY_STEERING.md) extends the same native research
+core with a shared-history two-bank crossfade and a small timestamp/confidence
+controller. The existing array qualification retains static tests and adds
+transition known answers. This is not recorded-speech or AEC quality validation,
+automatic DOA, a C4 SDK, or completion of the full research program.

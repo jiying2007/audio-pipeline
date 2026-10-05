@@ -20,7 +20,8 @@ typedef enum {
     FE_ARRAY_OK = 0,
     FE_ARRAY_EINVAL = -1,
     FE_ARRAY_ENOMEM = -2,
-    FE_ARRAY_ESTATE = -3
+    FE_ARRAY_ESTATE = -3,
+    FE_ARRAY_EBUSY = -4
 } fe_array_status;
 
 typedef enum {
@@ -54,7 +55,10 @@ typedef struct {
     fe_array_interpolation interpolation;
     size_t state_bytes; /* Header and per-channel delay histories, no heap. */
     uint64_t samples_processed; /* Per-channel sample frames, not interleaved values. */
-    double compensation_samples[FE_ARRAY_MAX_MICS];
+    double compensation_samples[FE_ARRAY_MAX_MICS]; /* Last committed bank. */
+    double direction[3], target_direction[3];
+    uint32_t transition_total_samples, transition_done_samples;
+    uint64_t steering_accepted, steering_completed, steering_cancelled;
 } fe_array_info;
 
 /* Returns zero for unsupported channel capacity. State physically scales by N. */
@@ -68,10 +72,24 @@ size_t fe_array_state_bytes(uint32_t mic_count);
 fe_array_status fe_array_init(void *memory, size_t bytes,
                               const fe_array_config *cfg, fe_array **out);
 fe_array_status fe_array_get_info(const fe_array *state, fe_array_info *out);
+/* Reset cancels an in-flight transition, retaining the last committed direction,
+ * and clears histories, sample/steering counters. Reset an associated controller too.
+ */
 fe_array_status fe_array_reset(fe_array *state);
+/* Caller-serialized, before a process call. Unit direction must not alias state.
+ * T is 2..sample_rate/10 samples. Sample k uses alpha=k/(T-1); first/last
+ * outputs are exactly old/new bank. Both banks use the same channel histories.
+ * Common delay, sample counter, gains/mapping/mask are unchanged. Rejected calls
+ * are atomic; overlapping requests return EBUSY (no queue). Same direction is a
+ * no-op when idle. This is not a DOA estimator, angle slew or click-free guarantee.
+ */
+fe_array_status fe_array_request_steer(fe_array *state, const double direction[3],
+                                      uint32_t transition_samples);
 /* At a process-call boundary only. Re-enabled channels start with zero history;
  * continuing channels keep history. This is explicit fault control, not detection
- * or a click-free transition. The common delay never changes with active mask.
+ * or a click-free transition. An actual mask change cancels pending steering,
+ * retaining its last committed bank; a same-mask call is a no-op.
+ * The common delay never changes with active mask.
  */
 fe_array_status fe_array_set_active_mask(fe_array *state, uint32_t mask);
 /* Interleaved normalized float input; 1 sample frame through 10ms per call.

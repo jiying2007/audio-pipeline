@@ -1,0 +1,43 @@
+{
+  "authority": "REGRESSION_ADAPTER_QUALIFICATION_NO_PROMOTION",
+  "b0_profile": "vad-isolated",
+  "baseline_source": "37a1792861a89c815bec462f819f3deac7d29b09",
+  "baseline_tree": "5ce9b907c9e915284a4c99da3f20b81e9df9ef3e",
+  "calibration_seed": 1307,
+  "canonical_metric": "validation/tools/run_validation_engine.py:vad_stats",
+  "case_ids": [
+    "ns-stationary",
+    "vad-nearend",
+    "stress-ns-nonstationary",
+    "stress-ns-quiet-speech",
+    "stress-ns-impulsive"
+  ],
+  "dataset_role": "D0-historical-synthetic-regression-not-independent-development-or-holdout",
+  "evaluation_policy": "only-frozen-selected-mode-versus-B0; no-evaluation-reselection",
+  "evaluation_seeds": [
+    2307,
+    3307
+  ],
+  "evidence_limits": [
+    "not-public-speech-quality",
+    "not-KWS-FAR-per-hour",
+    "not-target-CPU",
+    "not-four-mic-DSP"
+  ],
+  "experiment_id": "FE01-LIBFVAD-REFERENCE-V1",
+  "hop_samples": 160,
+  "input": "same-mono-s16le-raw-capture",
+  "modes": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "recall_floor": "measured-B0-calibration-micro-recall-no-tolerance",
+  "sample_rate_hz": 16000,
+  "schema_version": 1,
+  "selection": "minimum-calibration-FPR-among-modes-at-or-above-recall-floor-then-lowest-mode",
+  "shipping_authority": false,
+  "source_id": "libfvad",
+  "unmatched": "NO_RECALL_MATCH_NO_SELECTION"
+}

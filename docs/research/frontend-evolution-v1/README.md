@@ -46,3 +46,12 @@ The existing `.github/scripts/verify-docs-gate.sh` executes these tests for docs
 当前已经实现授权/来源登记、帧契约、有界重组、逐例输出检查和有限因果负例。尚未完成上游最小适配器、实际效果对照、原生四麦 DSP、NN 流式/量化和端侧候选资格。四麦输入契约测试不等于 C SDK 已支持线性或环形四麦；25 项基础测试不等于 25 项音质实验。
 
 下一步先完成首批来源/依赖审查及 B0、WebRTC、SpeexDSP、libfvad、Athena 的最小可复现对照，再推进 FE02/03 的几何、分数延时和固定滤波。经典增强与神经研究各自复用同一评估入口。最多三个研究通道，不新增大量一次性工作流，不用独立验证或 blind 数据调参。改 shipping 默认或公共 ABI 时另行执行版本与资格门禁。
+
+## First executed external reference
+
+See [libfvad reference qualification](LIBFVAD_REFERENCE.md) for the first actual
+source-byte admission, C adapter, frozen D0 paired VAD replay and evidence checks.
+Only the minimal libfvad core is admitted in the catalog; other entries retain
+their prior pending/review-only status. FE00/FE01 and the full #657 program remain
+in progress. The initial-tranche description above is historical, not a claim
+that no later reference can be admitted. No shipping VAD default is changed.

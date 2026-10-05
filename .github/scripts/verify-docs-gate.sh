@@ -24,3 +24,4 @@ python3 .github/research/continuous-optimization/source_candidate_execution_v2_c
 python3 -m json.tool .github/research/evidence-index.json >/dev/null
 python3 -m json.tool .github/research/qualification-policy.json >/dev/null
 python3 scripts/docs_consistency.py
+python3 tests/validation/frontend_evolution/test_libfvad_reference.py

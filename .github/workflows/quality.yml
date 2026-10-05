@@ -252,6 +252,11 @@ jobs:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -263,15 +268,19 @@ jobs:
           ref: 532ab666c20d3cfda38bca63abbb0f152706c369
           path: .fe-libfvad
           persist-credentials: false
-      - name: Verify pinned source bytes before any upstream execution
+      - name: Qualify actual pinned VAD reference without shipping promotion
+        shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/libfvad_reference.py preflight \
-            --source .fe-libfvad --output fe-reference
-          git archive HEAD | gzip -n > fe-reference/execution-source.tar.gz
-          git archive 37a1792861a89c815bec462f819f3deac7d29b09 | gzip -n > fe-reference/baseline-source.tar.gz
-          git rev-parse HEAD > fe-reference/execution-source.sha
-          (cd fe-reference && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+          python3 tests/validation/frontend_evolution/test_libfvad_reference.py
+          baseline="$RUNNER_TEMP/fe-b0-${{ github.run_id }}"
+          mkdir "$baseline"
+          git -c safe.directory="$PWD" archive 37a1792861a89c815bec462f819f3deac7d29b09 | tar -x -C "$baseline"
+          python3 tests/validation/frontend_evolution/libfvad_reference.py compare \
+            --source .fe-libfvad --baseline "$baseline" --output fe-reference --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/libfvad_reference.py verify \
+            --output fe-reference --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/test_libfvad_reference.py --evidence fe-reference
       - name: Preserve reference evidence and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

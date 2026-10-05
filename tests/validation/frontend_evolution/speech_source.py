@@ -31,7 +31,7 @@ def flac_info(data: bytes) -> tuple[int, int, int, int]:
     return rate, channels, bits, frames
 
 
-def select_members(names: list[str]) -> list[tuple[int, list[str]]]:
+def select_members(names: list[str], offset: int = 0) -> list[tuple[int, list[str]]]:
     require(len(names) == len(set(names)), 'duplicate archive paths')
     speakers: dict[int, list[tuple[int, int, str]]] = {}
     for name in names:
@@ -42,7 +42,8 @@ def select_members(names: list[str]) -> list[tuple[int, list[str]]]:
             sp, chapter, sp2, chapter2, utterance = map(int, match.groups())
             require((sp, chapter) == (sp2, chapter2), 'member identity mismatch')
             speakers.setdefault(sp, []).append((chapter, utterance, name))
-    selected = sorted(speakers)[:8]
+    require(type(offset) is int and offset in (0, 8), 'unregistered speaker offset')
+    selected = sorted(speakers)[offset:offset+8]
     require(len(selected) == 8, 'need eight distinct speakers')
     result = []
     for sp in selected:
@@ -52,7 +53,9 @@ def select_members(names: list[str]) -> list[tuple[int, list[str]]]:
     return result
 
 
-def acquire(archive: Path, output: Path, decoder: str = 'ffmpeg') -> dict:
+def acquire(archive: Path, output: Path, decoder: str = 'ffmpeg', *, offset: int = 0) -> dict:
+    require(type(offset) is int and offset in (0, 8), 'unregistered speaker offset')
+    plan_path = PLAN if offset == 0 else ROOT / '.github/research/frontend-evolution-v1/spatial-weights-v1.json'
     require(not output.exists(), 'source output must be fresh')
     require(archive.is_file() and not archive.is_symlink() and archive.stat().st_size <= MAX_ARCHIVE, 'invalid archive')
     md5, sha = hashlib.md5(), hashlib.sha256()
@@ -68,7 +71,7 @@ def acquire(archive: Path, output: Path, decoder: str = 'ffmpeg') -> dict:
         members = tf.getmembers()
         require(len(members) <= 10000, 'archive member bound')
         require(all(m.isdir() or m.isreg() for m in members), 'links/special members forbidden')
-        chosen = select_members([m.name for m in members])
+        chosen = select_members([m.name for m in members], offset)
         by_name = {m.name: m for m in members}
         require(all(n in by_name for n in NOTICES), 'corpus notices absent')
         output.mkdir(parents=True)
@@ -98,7 +101,8 @@ def acquire(archive: Path, output: Path, decoder: str = 'ffmpeg') -> dict:
             path = output / f'speaker-{speaker}.s16'
             path.write_bytes(window)
             rows.append({'speaker': speaker, 'pair_index': ordinal // 2, 'position': 'target' if ordinal % 2 == 0 else 'interferer',
-                         'role': 'development-diagnostic' if ordinal < 4 else 'speaker-disjoint-confirmation-diagnostic',
+                         'role': (('development-diagnostic' if ordinal < 4 else 'speaker-disjoint-confirmation-diagnostic') if offset == 0
+                                  else ('fresh-fixed-development' if ordinal < 4 else 'fresh-fixed-confirmation')),
                          'originals': original, 'window_file': path.name, 'window_frames': 64000, 'window_sha256': sha256(window)})
     attribution = ('LibriSpeech, Vassil Panayotov, Daniel Povey, Guoguo Chen and Sanjeev Khudanpur; '
                    'recordings derived from LibriVox. Source: https://www.openslr.org/12/\n'
@@ -109,9 +113,9 @@ def acquire(archive: Path, output: Path, decoder: str = 'ffmpeg') -> dict:
     (output / 'ATTRIBUTION.txt').write_text(attribution)
     (output / 'decoder-version.txt').write_text(version)
     files = {p.relative_to(output).as_posix(): sha256(p.read_bytes()) for p in sorted(output.rglob('*')) if p.is_file()}
-    record = {'schema_version': 1, 'source_id': 'librispeech-dev-clean-fe03', 'url': URL,
+    record = {'schema_version': 1, 'source_id': ('librispeech-dev-clean-fe03' if offset == 0 else 'librispeech-dev-clean-spatial-v1'), 'url': URL,
               'archive_md5': md5.hexdigest(), 'archive_sha256': sha.hexdigest(), 'archive_bytes': archive.stat().st_size,
-              'plan_sha256': sha256(PLAN.read_bytes()), 'decoder_path': executable,
+              'plan_sha256': sha256(plan_path.read_bytes()), 'decoder_path': executable,
               'decoder_sha256': sha256(Path(executable).read_bytes()), 'speaker_selection': rows,
               'files_sha256': files, 'status': 'SOURCE_ONLY_NOT_ACOUSTIC_EVIDENCE', 'shipping_authority': False}
     write_json(output / 'source-receipt.json', record)
@@ -138,15 +142,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--archive', type=Path)
+    parser.add_argument('--speaker-offset', type=int, choices=(0,8), default=0)
     args = parser.parse_args()
     existed = args.output.exists()
     try:
         require(not existed, 'source output must be fresh')
         if args.archive:
-            result = acquire(args.archive, args.output)
+            result = acquire(args.archive, args.output, offset=args.speaker_offset)
         else:
             with tempfile.TemporaryDirectory(prefix='fe-speech-source-') as tmp:
-                path = Path(tmp) / 'dev-clean.tar.gz'; download(path); result = acquire(path, args.output)
+                path = Path(tmp) / 'dev-clean.tar.gz'; download(path); result = acquire(path, args.output, offset=args.speaker_offset)
         print(json.dumps({'status': result['status'], 'archive_sha256': result['archive_sha256'],
                           'speakers': [r['speaker'] for r in result['speaker_selection']]}))
     except Exception as error:

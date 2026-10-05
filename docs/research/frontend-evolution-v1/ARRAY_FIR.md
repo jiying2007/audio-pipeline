@@ -134,3 +134,10 @@ raw recordings may be reused only with their admitted source identity unchanged.
 全部已披露录音只作结构诊断，原“确认组”不再作为新实验的独立留出集。结果不论
 正负都完整保留，不用旧确认数据挑参数。后续固定空间滤波／多波束、真实房间与
 独立语音、BF/AEC 联调及最终 C2/C4 交付仍由 #657 跟踪，产品默认与 E001 不变。
+
+## Spatial-weight continuation
+
+[Fixed diffuse-field spatial weights](SPATIAL_WEIGHTS.md) separately evaluates
+joint weights on new speakers. It reuses this FIR/history core, but must report
+target coloration and modeled WNG alongside spatial SIR; it is not a further
+interpolation-length sweep or an automatic promotion of these disclosed results.

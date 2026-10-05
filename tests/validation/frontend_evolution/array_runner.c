@@ -24,7 +24,7 @@ static int real_value(FILE *f, double *value) {
     errno=0; *value=strtod(s,&end);
     return !errno && !*end && isfinite(*value);
 }
-static int read_config(const char *path, fe_array_config *c) {
+static int read_config(const char *path, fe_array_config *c, float bank[132]) {
     char version[96], extra[96];
     FILE *f=fopen(path,"rb");
     uint32_t mode=0u,i,k;
@@ -33,7 +33,7 @@ static int read_config(const char *path, fe_array_config *c) {
     memset(c,0,sizeof(*c));
     ok=word(f,version) && strcmp(version,"FE_ARRAY_V1")==0 &&
        uint_value(f,&c->sample_rate_hz) && uint_value(f,&c->mic_count) &&
-       uint_value(f,&mode) && mode<=3u && uint_value(f,&c->active_mask) &&
+       uint_value(f,&mode) && mode<=4u && uint_value(f,&c->active_mask) &&
        uint_value(f,&c->reference_mic) && c->mic_count<=4u;
     c->interpolation=(fe_array_interpolation)mode;
     for(k=0u;ok && k<3u;++k)ok=real_value(f,&c->direction[k]);
@@ -42,6 +42,11 @@ static int read_config(const char *path, fe_array_config *c) {
         ok=ok && real_value(f,&c->microphones[i].gain) &&
             real_value(f,&c->microphones[i].latency_samples) && uint_value(f,&c->microphones[i].input_channel);
     }
+    if (mode == (uint32_t)FE_ARRAY_SPATIAL33)
+        for (i=0u; ok && i<c->mic_count*33u; ++i) {
+            double v; ok=real_value(f,&v) && fabs(v)<=16.0;
+            if (ok) bank[i]=(float)v;
+        }
     ok=ok && !word(f,extra) && !ferror(f);
     if(fclose(f)!=0)ok=0;
     return ok;
@@ -70,6 +75,7 @@ int main(int argc,char **argv) {
     unsigned char raw[3840], encoded[1920];
     float input[1920], output[480];
     fe_array_config c;
+    float bank[132] = {0.0f};
     fe_array_info info;
     fe_array *state=NULL;
     FILE *in=NULL,*out=NULL,*meta=NULL;
@@ -80,7 +86,9 @@ int main(int argc,char **argv) {
     uint32_t command_count=0u, command_index=0u, chunk_limit=480u;
     uint64_t position=0u;
     if(argc<5 || argc>7) { fprintf(stderr,"usage: array-runner GEOMETRY INPUT.s16le OUTPUT.f32le INFO.json [COMMANDS [MAX_CHUNK_SAMPLES]]\n"); return 2; }
-    if(!read_config(argv[1],&c) || fe_array_init(memory,sizeof(memory),&c,&state)!=FE_ARRAY_OK) {
+    if(!read_config(argv[1],&c,bank) ||
+        (c.interpolation==FE_ARRAY_SPATIAL33 ? fe_array_init_spatial33(memory,sizeof(memory),&c,bank,(size_t)c.mic_count*33u,&state)
+         : fe_array_init(memory,sizeof(memory),&c,&state))!=FE_ARRAY_OK) {
         fprintf(stderr,"invalid array geometry\n"); return 2;
     }
     if(argc>=6 && !read_commands(argv[5],commands,&command_count))return 2;

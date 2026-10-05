@@ -28,7 +28,8 @@ typedef enum {
     FE_ARRAY_LINEAR = 0,
     FE_ARRAY_LAGRANGE3 = 1,
     FE_ARRAY_FIR17_HANN = 2,
-    FE_ARRAY_FIR33_HANN = 3
+    FE_ARRAY_FIR33_HANN = 3,
+    FE_ARRAY_SPATIAL33 = 4
 } fe_array_interpolation;
 
 typedef struct {
@@ -83,6 +84,25 @@ size_t fe_array_state_bytes_for_mode(uint32_t mic_count, fe_array_interpolation 
  */
 fe_array_status fe_array_init(void *memory, size_t bytes,
                               const fe_array_config *cfg, fe_array **out);
+/* Explicit fixed spatial FIRs: flattened [physical_mic][33], direct SUM of
+ * calibrated filtered channels (weights already include spatial scaling).
+ * Common delay is the geometry FIR33 delay; tap zero starts common-16.
+ * All physical microphones must be active. Direction-only steering and actual
+ * mask changes are rejected: they cannot regenerate a joint spatial design.
+ * Coefficients: finite, |tap|<=16, total L1<=64, aggregate DC within1e-3 of1.
+ * These are safety/identity bounds, NOT a WNG or speech-quality certificate.
+ * Caller must bind bank to geometry/rate/direction/calibration; no hidden design.
+ * Inputs/coefficients/cfg/out/state must not alias as documented by legacy init.
+ */
+fe_array_status fe_array_init_spatial33(void *memory, size_t bytes,
+    const fe_array_config *cfg, const float *coefficients, size_t coefficient_count,
+    fe_array **out);
+/* Same-history transition to an EXPLICIT replacement bank; T obeys legacy limits.
+ * Atomic rejection; busy has no queue. Same direction with different coefficients
+ * is a real transition. A fully identical bank+direction is an idle no-op.
+ */
+fe_array_status fe_array_request_spatial33(fe_array *state, const double direction[3],
+    const float *coefficients, size_t coefficient_count, uint32_t transition_samples);
 fe_array_status fe_array_get_info(const fe_array *state, fe_array_info *out);
 /* Reset cancels an in-flight transition, retaining the last committed direction,
  * and clears histories, sample/steering counters. Reset an associated controller too.

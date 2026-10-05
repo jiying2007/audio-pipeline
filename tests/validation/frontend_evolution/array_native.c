@@ -33,7 +33,7 @@ static int mask_ok(uint32_t n, uint32_t mask) {
     return mask != 0u && (mask & ~((1u << n) - 1u)) == 0u;
 }
 static uint32_t fir_radius(fe_array_interpolation mode) {
-    return mode == FE_ARRAY_FIR17_HANN ? 8u : (mode == FE_ARRAY_FIR33_HANN ? 16u : 0u);
+    return mode == FE_ARRAY_FIR17_HANN ? 8u : ((mode == FE_ARRAY_FIR33_HANN || mode == FE_ARRAY_SPATIAL33) ? 16u : 0u);
 }
 static int mode_ok(fe_array_interpolation mode) {
     return mode == FE_ARRAY_LINEAR || mode == FE_ARRAY_LAGRANGE3 || fir_radius(mode) != 0u;
@@ -82,6 +82,16 @@ static int design_fir(double delay, uint32_t radius, float weights[33], uint32_t
     if (!isfinite(sum) || sum < 0.5 || sum > 1.5) return 0;
     for (k = 0u; k < taps; ++k) weights[k] = (float)(raw[k]/sum);
     return 1;
+}
+static int spatial_bank_ok(const float *bank, size_t count, uint32_t microphones) {
+    double sum = 0.0, absolute = 0.0;
+    size_t k;
+    if (!bank || count != (size_t)microphones * 33u) return 0;
+    for (k = 0u; k < count; ++k) {
+        if (!isfinite(bank[k]) || fabsf(bank[k]) > 16.0f) return 0;
+        sum += (double)bank[k]; absolute += fabs((double)bank[k]);
+    }
+    return fabs(sum - 1.0) <= 1.0e-3 && absolute <= 64.0;
 }
 static int delay_ok(double d, uint32_t radius) {
     return radius ? d >= (double)radius && d <= (double)(FE_ARRAY_HISTORY-1u-radius)
@@ -140,7 +150,8 @@ static int geometry(const fe_array_config *c, double delays[4], uint32_t *common
     return 1;
 }
 
-fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config *c, fe_array **out) {
+static fe_array_status init_impl(void *memory, size_t bytes, const fe_array_config *c,
+    const float *bank, size_t bank_count, int require_spatial, fe_array **out) {
     double d[4] = {0.0, 0.0, 0.0, 0.0};
     uint32_t common = 0u, i;
     uint32_t starts[4] = {0u};
@@ -149,11 +160,23 @@ fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config 
     fe_array *s;
     if (!out || (memory && overlaps(memory, bytes, out, sizeof(*out))) ||
         (c && overlaps(c, sizeof(*c), out, sizeof(*out)))) return FE_ARRAY_EINVAL;
+    if (bank && (bank_count > 132u || overlaps(bank, bank_count*sizeof(float), out, sizeof(*out)))) return FE_ARRAY_EINVAL;
     *out = NULL;
+    if (require_spatial && (!c || c->interpolation != FE_ARRAY_SPATIAL33)) return FE_ARRAY_EINVAL;
     if (!memory || !c || (uintptr_t)memory % FE_ARRAY_ALIGNMENT ||
         overlaps(memory, bytes, c, sizeof(*c)) || !geometry(c, d, &common)) return FE_ARRAY_EINVAL;
     wanted = fe_array_state_bytes_for_mode(c->mic_count, c->interpolation);
-    if (fir_radius(c->interpolation))
+    if (c->interpolation == FE_ARRAY_SPATIAL33) {
+        if (!bank || c->active_mask != (1u << c->mic_count)-1u || common < 16u || common+16u >= FE_ARRAY_HISTORY ||
+            !spatial_bank_ok(bank, bank_count, c->mic_count) ||
+            overlaps(memory, bytes, bank, bank_count*sizeof(float)) ||
+            overlaps(c, sizeof(*c), bank, bank_count*sizeof(float))) return FE_ARRAY_EINVAL;
+        for (i = 0u; i < c->mic_count; ++i) {
+            starts[i] = common-16u;
+            memcpy(coefficients[i], bank+(size_t)i*33u, 33u*sizeof(float));
+        }
+    } else if (bank || bank_count != 0u) return FE_ARRAY_EINVAL;
+    else if (fir_radius(c->interpolation))
         for (i = 0u; i < c->mic_count; ++i)
             if (!design_fir(d[i], fir_radius(c->interpolation), coefficients[i], &starts[i])) return FE_ARRAY_EINVAL;
     if (bytes < wanted) return FE_ARRAY_ENOMEM;
@@ -193,6 +216,15 @@ fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config 
     return FE_ARRAY_OK;
 }
 
+fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config *c, fe_array **out) {
+    return init_impl(memory, bytes, c, NULL, 0u, 0, out);
+}
+fe_array_status fe_array_init_spatial33(void *memory, size_t bytes,
+    const fe_array_config *c, const float *bank, size_t count, fe_array **out) {
+    /* Reject wrong-mode calls without ever initializing a delay-only bank. */
+    return init_impl(memory, bytes, c, bank, count, 1, out);
+}
+
 fe_array_status fe_array_get_info(const fe_array *s, fe_array_info *out) {
     uint32_t i;
     if (!valid(s)) return FE_ARRAY_ESTATE;
@@ -228,6 +260,7 @@ fe_array_status fe_array_request_steer(fe_array *s, const double direction[3], u
     float coefficients[FE_ARRAY_MAX_MICS][33] = {{0.0f}};
     uint32_t i, k;
     if (!valid(s)) return FE_ARRAY_ESTATE;
+    if (s->interpolation == FE_ARRAY_SPATIAL33) return FE_ARRAY_EINVAL;
     if (!direction || overlaps(s, storage_bytes(s), direction, 3u * sizeof(double)) ||
         total < 2u || total > s->rate / 10u) return FE_ARRAY_EINVAL;
     for (k = 0u; k < 3u; ++k) {
@@ -272,6 +305,41 @@ fe_array_status fe_array_request_steer(fe_array *s, const double direction[3], u
     return FE_ARRAY_OK;
 }
 
+fe_array_status fe_array_request_spatial33(fe_array *s, const double direction[3],
+    const float *bank, size_t count, uint32_t total) {
+    double norm = 0.0;
+    uint32_t i, k;
+    int identical = 1;
+    if (!valid(s)) return FE_ARRAY_ESTATE;
+    if (s->interpolation != FE_ARRAY_SPATIAL33 || !direction || count != (size_t)s->count*33u ||
+        !bank || total < 2u || total > s->rate/10u ||
+        overlaps(s, storage_bytes(s), direction, 3u*sizeof(double)) ||
+        overlaps(s, storage_bytes(s), bank, count*sizeof(float)) ||
+        overlaps(direction, 3u*sizeof(double), bank, count*sizeof(float)) ||
+        !spatial_bank_ok(bank, count, s->count)) return FE_ARRAY_EINVAL;
+    for (k = 0u; k < 3u; ++k) {
+        if (!isfinite(direction[k]) || fabs(direction[k]) > 1.0) return FE_ARRAY_EINVAL;
+        norm += direction[k]*direction[k];
+        if (direction[k] != s->direction[k]) identical = 0;
+    }
+    if (fabs(norm-1.0) > 1.0e-6) return FE_ARRAY_EINVAL;
+    if (s->transition_total != 0u) return FE_ARRAY_EBUSY;
+    for (i = 0u; i < s->count; ++i)
+        if (memcmp(fir_bank(s,0u,i), bank+(size_t)i*33u, 33u*sizeof(float)) != 0) identical = 0;
+    if (identical) return FE_ARRAY_OK;
+    if (s->steering_accepted == UINT64_MAX) return FE_ARRAY_EINVAL;
+    for (i = 0u; i < s->count; ++i) {
+        double projection = 0.0;
+        for (k = 0u; k < 3u; ++k) projection += s->relative[i][k]*direction[k];
+        s->target_compensation[i] = (double)s->delay + projection*(double)s->rate/343.0 - s->calibration_latency[i];
+        s->next_offset[i][0] = s->delay-16u;
+        memcpy(fir_bank(s,1u,i), bank+(size_t)i*33u, 33u*sizeof(float));
+    }
+    memcpy(s->target_direction, direction, sizeof(s->target_direction));
+    s->transition_total = total; s->transition_done = 0u; ++s->steering_accepted;
+    return FE_ARRAY_OK;
+}
+
 fe_array_status fe_array_reset(fe_array *s) {
     if (!valid(s)) return FE_ARRAY_ESTATE;
     memset(s->history, 0, (size_t)s->count * FE_ARRAY_HISTORY * sizeof(float));
@@ -285,6 +353,7 @@ fe_array_status fe_array_set_active_mask(fe_array *s, uint32_t mask) {
     if (!valid(s)) return FE_ARRAY_ESTATE;
     if (!mask_ok(s->count, mask)) return FE_ARRAY_EINVAL;
     if (mask == s->mask) return FE_ARRAY_OK;
+    if (s->interpolation == FE_ARRAY_SPATIAL33) return FE_ARRAY_EINVAL;
     cancel_steering(s);
     for (i = 0u; i < s->count; ++i)
         if (((s->mask ^ mask) & (1u << i)) != 0u)
@@ -329,7 +398,7 @@ fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, flo
             }
             sum += s->gain[i] * value;
         }
-        output[t] = sum / (float)active;
+        output[t] = s->interpolation == FE_ARRAY_SPATIAL33 ? sum : sum / (float)active;
         if (s->transition_total != 0u) {
             float next_sum = 0.0f, next;
             /* No second history and no cold-starting target beam. */
@@ -346,7 +415,7 @@ fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, flo
                 }
                 next_sum += s->gain[i] * value;
             }
-            next = next_sum / (float)active;
+            next = s->interpolation == FE_ARRAY_SPATIAL33 ? next_sum : next_sum / (float)active;
             if (s->transition_done + 1u == s->transition_total) output[t] = next;
             else if (s->transition_done != 0u) {
                 const float alpha = (float)s->transition_done / (float)(s->transition_total - 1u);

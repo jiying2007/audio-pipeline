@@ -361,13 +361,22 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - name: Source-only next-speaker preflight before spatial scoring
+      - name: Qualify fixed spatial weights on admitted new speakers
         run: |
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
+          python3 tests/validation/frontend_evolution/speech_spatial_weights.py --self-test
           python3 tests/validation/frontend_evolution/speech_source.py --speaker-offset 8 --output fe-spatial/source
-      - name: Preserve source bytes and acquisition failures
+          python3 tests/validation/frontend_evolution/speech_spatial_weights.py \
+            --source fe-spatial/source --output fe-spatial/effects --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/speech_spatial_weights.py \
+            --output fe-spatial/effects --execution-source "$GITHUB_SHA" --verify
+          python3 tests/validation/frontend_evolution/speech_spatial_weights.py \
+            --output fe-spatial/effects --execution-source "$GITHUB_SHA" --negative-evidence
+          # Complete sealed evidence already retains source bytes and notices.
+          rm -rf -- fe-spatial/source
+      - name: Preserve spatial speech, coefficients and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

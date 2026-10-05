@@ -24,12 +24,17 @@
     "validation/"
   ],
   "allowed_exact_names": [
-    "research/frontend-evolution-foundation"
+    "research/frontend-evolution-foundation",
+    "research/fe-libfvad-reference"
   ],
   "branches": [
     {
       "name": "research/frontend-evolution-foundation",
       "expected_sha": "37a1792861a89c815bec462f819f3deac7d29b09"
+    },
+    {
+      "name": "research/fe-libfvad-reference",
+      "expected_sha": "ae98d8aaf75ca7cdda1d865180e6b8196a1f9066"
     }
   ],
   "authority_boundary": {

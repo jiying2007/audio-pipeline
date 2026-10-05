@@ -66,8 +66,8 @@ calibration bounds, supported sample rate and ring capacity before any state
 mutation. Failed initialization nulls a disjoint output handle; aliasing handle or
 configuration storage is rejected without overwriting it.
 
-Processing accepts normalized interleaved float input in 1..10 ms chunks; output
-has exactly one float per input sample frame. Active input must be finite and
+Processing accepts normalized interleaved float input from one sample frame up
+to 10 ms per call; output has exactly one float per input sample frame. Active input must be finite and
 within [-1,1]. Input, output and state must not overlap. Validation of the entire
 submitted chunk precedes mutation. Inactive channel slots are ignored/zero-stored
 so a masked NaN does not poison future state. Output is **unclipped float** and may

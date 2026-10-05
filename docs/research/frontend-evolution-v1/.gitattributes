@@ -1,0 +1,4 @@
+# This exact immutable source contains four Markdown hard breaks (two spaces).
+# contracts.check_archive() enforces its original SHA256 byte-for-byte.
+# All other files retain the repository-wide whitespace policy.
+PLAN.zh-CN.md whitespace=-blank-at-eol

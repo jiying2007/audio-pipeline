@@ -365,7 +365,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          sudo apt-get install -y --no-install-recommends ffmpeg gcc-arm-linux-gnueabihf qemu-user
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py --self-test
           python3 tests/validation/frontend_evolution/speech_source.py --speaker-offset 8 --output fe-spatial/source
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py \
@@ -374,6 +374,13 @@ jobs:
             --output fe-spatial/effects --execution-source "$GITHUB_SHA" --verify
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py \
             --output fe-spatial/effects --execution-source "$GITHUB_SHA" --negative-evidence
+          python3 tests/validation/frontend_evolution/bf_aec_order.py --self-test
+          python3 tests/validation/frontend_evolution/bf_aec_order.py \
+            --source fe-spatial/effects/data --output fe-spatial/order --execution-source "$GITHUB_SHA" --require-arm
+          python3 tests/validation/frontend_evolution/bf_aec_order.py \
+            --output fe-spatial/order --execution-source "$GITHUB_SHA" --verify --require-arm
+          python3 tests/validation/frontend_evolution/bf_aec_order.py \
+            --output fe-spatial/order --execution-source "$GITHUB_SHA" --negative-evidence
           # Complete sealed evidence already retains source bytes and notices.
           rm -rf -- fe-spatial/source
       - name: Preserve spatial speech, coefficients and failures

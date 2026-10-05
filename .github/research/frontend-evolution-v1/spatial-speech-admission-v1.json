@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE03-FIXED-SPATIAL-V1",
+  "decision": "ADMITTED_NEW_SPEAKERS_BEFORE_SCORING",
+  "source_id": "librispeech-dev-clean-spatial-v1",
+  "bound_source_sha256": "f77a897bf9681af2c09f57515b99fb2d7ca072dc93371d438e872579e39f801e",
+  "speakers": [
+    1673,
+    1919,
+    1988,
+    1993,
+    2035,
+    2078,
+    2086,
+    2277
+  ],
+  "excluded_prior_speakers": [
+    84,
+    174,
+    251,
+    422,
+    652,
+    777,
+    1272,
+    1462
+  ],
+  "preflight_run_id": 37337539976,
+  "preflight_artifact_id": 11357177181,
+  "preflight_zip_sha256": "eb780ba093e19b21f2753048018c05ef0467ba6ebbe6c03d4372fd3ed0e0c8e1",
+  "rights": "CC-BY-4.0; retain original notices and derivative attribution; no endorsement",
+  "verification": "Original ZIP and all member hashes verified; independently decoded 32 retained FLACs and eight windows. Full upstream archive digest is runner-measured, not independently re-downloaded. No spatial scores observed.",
+  "shipping_authority": false
+}

@@ -1,0 +1,42 @@
+{
+  "authority": "ENGINEERING_KNOWN_ANSWER_NO_PROMOTION",
+  "base_source": "712013b9415a53c50a0ac003b42f944f9a9d59f5",
+  "common_delay": "ceil(max-radius-from-reference*fs/343 + max-absolute-calibration-latency)+1",
+  "data_role": "first-party-analytic-fixtures-not-speech-quality-or-independent-validation",
+  "experiment_id": "FE02-03-NATIVE-ARRAY-V1",
+  "frames_per_case": 1600,
+  "input_encoding": "s16le-interleaved",
+  "interpolations": [
+    "linear",
+    "lagrange3"
+  ],
+  "maximum_absolute_oracle_error": 2e-06,
+  "maximum_state_bytes": 4096,
+  "output_encoding": "f32le-unclipped",
+  "patterns": [
+    "impulse",
+    "polynomial",
+    "multisine"
+  ],
+  "prefix_frames": 640,
+  "repeat_cases": [
+    "ula4-offaxis-multisine-lagrange3",
+    "uca4-offaxis-multisine-lagrange3"
+  ],
+  "schema_version": 1,
+  "shipping_authority": false,
+  "source_direction": "array-to-source",
+  "speed_of_sound_m_per_s": 343.0,
+  "geometries": [
+    {"active_mask":1,"channel_map":[0],"direction":[0.6,0.8,0.0],"gains":[1.0],"id":"mono","latency_samples":[0.0],"positions_m":[[0.0,0.0,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":3,"channel_map":[0,1],"direction":[0.6,0.8,0.0],"gains":[1.0,1.0],"id":"dual35","latency_samples":[0.0,0.0],"positions_m":[[0.0,0.0,0.0],[0.035,0.0,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":15,"channel_map":[0,1,2,3],"direction":[0.0,1.0,0.0],"gains":[1.0,1.0,1.0,1.0],"id":"ula4-broadside","latency_samples":[0.0,0.0,0.0,0.0],"positions_m":[[0.0,0.0,0.0],[0.035,0.0,0.0],[0.07,0.0,0.0],[0.10500000000000001,0.0,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":15,"channel_map":[0,1,2,3],"direction":[0.6,0.8,0.0],"gains":[1.0,1.0,1.0,1.0],"id":"ula4-offaxis","latency_samples":[0.0,0.0,0.0,0.0],"positions_m":[[0.0,0.0,0.0],[0.035,0.0,0.0],[0.07,0.0,0.0],[0.10500000000000001,0.0,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":15,"channel_map":[0,1,2,3],"direction":[0.6,0.8,0.0],"gains":[1.0,1.0,1.0,1.0],"id":"uca4-offaxis","latency_samples":[0.0,0.0,0.0,0.0],"positions_m":[[0.035,0.0,0.0],[0.0,0.035,0.0],[-0.035,0.0,0.0],[0.0,-0.035,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":15,"channel_map":[0,1,2,3],"direction":[0.3333333333333333,0.6666666666666666,0.6666666666666666],"gains":[1.0,1.0,1.0,1.0],"id":"xyz4","latency_samples":[0.0,0.0,0.0,0.0],"positions_m":[[0.0,0.0,0.0],[0.035,0.0,0.0],[0.0,0.025,0.0],[0.01,0.01,0.02]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":7,"channel_map":[0,1,2,3],"direction":[0.6,0.8,0.0],"gains":[1.0,1.0,1.0,1.0],"id":"ula4-mask3","latency_samples":[0.0,0.0,0.0,0.0],"positions_m":[[0.0,0.0,0.0],[0.035,0.0,0.0],[0.07,0.0,0.0],[0.10500000000000001,0.0,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":14,"channel_map":[0,1,2,3],"direction":[0.6,0.8,0.0],"gains":[1.0,1.0,1.0,1.0],"id":"uca4-mask3","latency_samples":[0.0,0.0,0.0,0.0],"positions_m":[[0.035,0.0,0.0],[0.0,0.035,0.0],[-0.035,0.0,0.0],[0.0,-0.035,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":15,"channel_map":[3,1,0,2],"direction":[0.6,0.8,0.0],"gains":[1.0,-2.0,2.0,1.0],"id":"ula4-calibrated","latency_samples":[0.0,0.25,-0.5,0.75],"positions_m":[[0.0,0.0,0.0],[0.035,0.0,0.0],[0.07,0.0,0.0],[0.10500000000000001,0.0,0.0]],"reference_mic":0,"sample_rate_hz":16000},
+    {"active_mask":8,"channel_map":[0,1,2,3],"direction":[0.6,0.8,0.0],"gains":[1.0,1.0,1.0,1.0],"id":"ula4-singleactive","latency_samples":[0.0,0.0,0.0,0.0],"positions_m":[[0.0,0.0,0.0],[0.035,0.0,0.0],[0.07,0.0,0.0],[0.10500000000000001,0.0,0.0]],"reference_mic":0,"sample_rate_hz":16000}
+  ]
+}

@@ -55,3 +55,12 @@ Only the minimal libfvad core is admitted in the catalog; other entries retain
 their prior pending/review-only status. FE00/FE01 and the full #657 program remain
 in progress. The initial-tranche description above is historical, not a claim
 that no later reference can be admitted. No shipping VAD default is changed.
+
+## Native array research prototype
+
+[Native 1/2/4-mic geometry and fractional-delay BF](ARRAY_NATIVE.md) is the next
+FE02/03 executable tranche. It processes actual multichannel PCM in C and checks
+analytic answers on native/sanitized and AArch32/QEMU builds. It is not installed
+in the 2.x SDK. DOA, smooth live steering, BF/AEC integration, independent speech
+quality and the final C4 delivery remain open in #657; no new product claim is
+inferred from the engineering checks.

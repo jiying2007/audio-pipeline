@@ -2,11 +2,13 @@
 
 [简体中文](AGENTS.zh-CN.md)
 
-The repository is currently in a **software-commercial-ready maintenance state**. The software/public-data program has no READY task; E001 remains external/deferred and the remaining Product Qualification work is real-lab/physical evidence tracked by the live external-evidence issue/tracker.
+The published SDK remains a **software-commercial-ready maintenance baseline**. The historical software/public-data program has no READY task; E001 remains external/deferred and the remaining Product Qualification work is real-lab/physical evidence tracked by the live external-evidence issue/tracker.
+
+A separate, explicitly user-authorized **frontend-evolution-v1** research/integration stage is active. Read `docs/research/frontend-evolution-v1/README.md` and its immutable approved plan, then the live implementation tracker #657. It permits bounded structural algorithm experiments, training/finetuning, 1/2/4-mic prototypes and resource/numerical optimization under new FE experiment identities. The archived proposal is not execution evidence. Do not apply the historical candidate-zero restriction to this newly authorized stage, or rewrite I025-I040 and other historical outcomes. Third-party rights, independent data roles, shipping-default/API qualification and E001 identity remain separate boundaries.
 
 Before acting, re-read live `main`, open PRs/issues and current GitHub checks/artifacts. Do not infer current state from chat history. Start from `docs/README.zh-CN.md` for the Chinese operator map or the task-specific canonical documents (`docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`, `validation/authority.json`, `docs/PRODUCT_ASSURANCE.md`, `docs/TRUSTED_RUNNERS.md`). Read `docs/program/*` when historical software-research evidence is actually relevant; it is no longer the default source of a new task.
 
-Do not create software work merely to make the repository look more complete. Open a change only for a concrete defect, regression, integration requirement, measured resource/performance issue, documentation/contract drift, or a verified failure exposed when real external infrastructure is brought online. If the only missing evidence is physical, preserve the external/deferred truth and stop changing software.
+Do not create software work merely to make the repository look more complete. Open a change only for a concrete defect, regression, integration requirement, explicitly approved research task, measured resource/performance issue, documentation/contract drift, or a verified failure exposed when real external infrastructure is brought online. If the only missing evidence is physical, preserve the external/deferred truth and stop changing software.
 
 For a software or algorithm change, freeze the exact base, hypothesis/root cause, measurement contract, acceptance rules, budgets and data roles before search. Work on one causal change at a time. A measurement change and a shipping algorithm change must not approve each other in one experiment. Never change acceptance thresholds, timeouts or evidence requirements merely to obtain green CI. Preserve failures.
 
@@ -20,4 +22,4 @@ Documentation is part of the commercial integration surface. Changes to API/life
 
 Never mock or synthesize runner availability, DUT routes, sensors, licensed/real corpora, shipping toolchain identity, soak duration, archive receipts, HIL/PQ results or Product Certification evidence. E001 readiness is infrastructure readiness only. The real product path remains: trusted runners -> real Extended Real/HIL -> E001 activation -> HIL history -> >=72 h Product Certification -> immutable product-lifecycle receipt.
 
-When main gates are green, no software task/PR is open, and only real external evidence remains, stop generating software changes until a new verified input or failure exists.
+When main gates are green, no software/research task or PR is open, and only real external evidence remains, stop generating software changes until a new verified input, explicit research/integration requirement or failure exists.

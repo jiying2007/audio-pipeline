@@ -318,7 +318,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Acquire fixed public speech without acoustic scoring
-        run: python3 tests/validation/frontend_evolution/speech_source.py --output fe-speech-source
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          python3 tests/validation/frontend_evolution/speech_source.py --output fe-speech-source
       - name: Preserve recorded speech provenance and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

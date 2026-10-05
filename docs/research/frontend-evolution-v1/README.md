@@ -72,3 +72,12 @@ core with a shared-history two-bank crossfade and a small timestamp/confidence
 controller. The existing array qualification retains static tests and adds
 transition known answers. This is not recorded-speech or AEC quality validation,
 automatic DOA, a C4 SDK, or completion of the full research program.
+
+## Recorded-speech spatial diagnostics
+
+[FE03 recorded-speech probe](SPEECH_SPATIAL.md) admits fixed LibriSpeech bytes and
+runs the unchanged native BF against actual speech in explicitly synthetic
+free-field scenes. Reference/mean/linear/cubic arms, speaker roles and source
+selection are fixed before scores. Component transfer and canonical SI-SDR are
+reported together, with co-located negative controls and no automatic promotion.
+This is not a room recording, DOA/AEC test, installed C4 SDK or full FE closure.

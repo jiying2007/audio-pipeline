@@ -7,12 +7,11 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 import shutil
-import struct
 import subprocess
 import tarfile
 import tempfile
 import urllib.request
-from contracts import ROOT, load_json, require, sha256
+from contracts import ROOT, require, sha256
 from libfvad_reference import write_json
 
 PLAN = ROOT / '.github/research/frontend-evolution-v1/speech-spatial-v1.json'
@@ -140,10 +139,19 @@ if __name__ == '__main__':
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--archive', type=Path)
     args = parser.parse_args()
-    if args.archive:
-        result = acquire(args.archive, args.output)
-    else:
-        with tempfile.TemporaryDirectory(prefix='fe-speech-source-') as tmp:
-            path = Path(tmp) / 'dev-clean.tar.gz'; download(path); result = acquire(path, args.output)
-    print(json.dumps({'status': result['status'], 'archive_sha256': result['archive_sha256'],
-                      'speakers': [r['speaker'] for r in result['speaker_selection']]}))
+    existed = args.output.exists()
+    try:
+        require(not existed, 'source output must be fresh')
+        if args.archive:
+            result = acquire(args.archive, args.output)
+        else:
+            with tempfile.TemporaryDirectory(prefix='fe-speech-source-') as tmp:
+                path = Path(tmp) / 'dev-clean.tar.gz'; download(path); result = acquire(path, args.output)
+        print(json.dumps({'status': result['status'], 'archive_sha256': result['archive_sha256'],
+                          'speakers': [r['speaker'] for r in result['speaker_selection']]}))
+    except Exception as error:
+        if not existed:
+            args.output.mkdir(parents=True, exist_ok=True)
+            write_json(args.output / 'source-failure.json', {'status': 'DATA_OR_INFRASTRUCTURE_FAILURE',
+                       'error': str(error), 'shipping_authority': False})
+        raise

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE03-FIXED-SPATIAL-V1",
+  "implementation_base": "2179e94a4f7f690c743024e386f3148836368267",
+  "preregistration_comment_id": 5998029964,
+  "source_selection": "numeric-speakers-ordinals-9-through-16-first-four-utterances-first4s",
+  "archive_sha256": "76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3",
+  "sample_rate_hz": 16000,
+  "sample_frames": 64000,
+  "geometries": [
+    "dual70",
+    "ula4-70",
+    "uca4-70"
+  ],
+  "scenes_look_target_interferer": [
+    [0, 0, 90],
+    [60, 60, 150],
+    [90, 90, 90],
+    [30, 45, 120]
+  ],
+  "arms": ["fir33", "diffuse-0.1", "diffuse-1.0"],
+  "diagonal_loads": [0.1, 1.0],
+  "nfft": 256,
+  "taps": 33,
+  "window": "Hann",
+  "dc_normalization": "aggregate-coefficients-only",
+  "common_delay_samples": 21,
+  "oracle_error_bound": 2e-6,
+  "source_positions": "synthetic-free-field-plane-wave",
+  "roles": [
+    "fresh-fixed-development",
+    "fresh-fixed-development",
+    "fresh-fixed-confirmation",
+    "fresh-fixed-confirmation"
+  ],
+  "decision": "FIXED_SPATIAL_REFERENCE_NO_PROMOTION",
+  "shipping_authority": false,
+  "limits": ["not-real-room-array-or-RIR", "not-automatic-DOA-or-AEC", "not-C4-SDK-or-target-timing"]
+}

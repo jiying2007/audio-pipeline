@@ -365,7 +365,28 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ffmpeg gcc-arm-linux-gnueabihf qemu-user
+          sudo apt-get install -y --no-install-recommends ffmpeg gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
+          # -no-install-recommends does not install the Arm libc headers/startup objects.
+          # Prove real linking and execution before downloading or scoring any speech.
+          mkdir -p fe-spatial/toolchain
+          cat > fe-spatial/toolchain/arm-preflight.c <<'C'
+          #include <math.h>
+          #include <stdlib.h>
+          int main(void) {
+              volatile double x = 0.5;
+              double y = sin(x);
+              return isfinite(y) && y > 0.0 && y < 1.0 ? EXIT_SUCCESS : EXIT_FAILURE;
+          }
+          C
+          dpkg-query -W gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user > fe-spatial/toolchain/packages.txt
+          arm-linux-gnueabihf-gcc --version > fe-spatial/toolchain/compiler.txt
+          arm-linux-gnueabihf-gcc -std=c11 -O2 -Wall -Wextra -Werror \
+            fe-spatial/toolchain/arm-preflight.c -lm -o fe-spatial/toolchain/arm-preflight \
+            > fe-spatial/toolchain/link.log 2>&1
+          arm-linux-gnueabihf-readelf -h fe-spatial/toolchain/arm-preflight > fe-spatial/toolchain/elf-header.txt
+          qemu-arm -L /usr/arm-linux-gnueabihf fe-spatial/toolchain/arm-preflight \
+            > fe-spatial/toolchain/execution.log 2>&1
+          echo 'ARM_LINK_AND_QEMU_PASS' >> fe-spatial/toolchain/execution.log
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py --self-test
           python3 tests/validation/frontend_evolution/speech_source.py --speaker-offset 8 --output fe-spatial/source
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py \

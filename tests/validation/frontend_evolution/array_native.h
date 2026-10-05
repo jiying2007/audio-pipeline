@@ -62,7 +62,7 @@ size_t fe_array_state_bytes(uint32_t mic_count);
 /* Every failed init leaves storage unchanged and sets a non-overlapping *out=NULL.
  * memory must be aligned to FE_ARRAY_ALIGNMENT; cfg/out must not alias memory.
  * The fixed common delay is ceil(max_i ||r_i-r_ref|| fs/343 + max_i |latency_i|)+1.
- * Per-channel delay is common + dot(r_i-r_ref,u) fs/343 - latency_i.
+ * Per-channel delay is common + dot(ri-r_ref,u) fs/343 - latency_i.
  * Both interpolators use the same common latency. No lookahead/steering estimator.
  */
 fe_array_status fe_array_init(void *memory, size_t bytes,
@@ -74,8 +74,8 @@ fe_array_status fe_array_reset(fe_array *state);
  * or a click-free transition. The common delay never changes with active mask.
  */
 fe_array_status fe_array_set_active_mask(fe_array *state, uint32_t mask);
-/* Interleaved normalized float input; 1..10ms per call. input_count is the number
- * of float values; output_count must equal input_count/mic_count exactly.
+/* Interleaved normalized float input; 1 sample frame through 10ms per call.
+ * input_count counts float values; output_count=input_count/mic_count exactly.
  * Active samples must be finite and |x|<=1. Inactive slots are ignored/zero-stored.
  * Output is unclipped float: gain correction and interpolation may exceed unity.
  * Input, output and state must be disjoint. Validate all input before mutation.

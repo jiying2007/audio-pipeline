@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "source_id": "libfvad",
+  "upstream_commit": "532ab666c20d3cfda38bca63abbb0f152706c369",
+  "scope": "minimal-core-only-no-upstream-build-scripts-examples-models-or-data",
+  "execution_authority": "source-preflight-only-until-sha256-admission",
+  "rights_review": {
+    "code": "BSD-3-Clause; preserve LICENSE, PATENTS, AUTHORS",
+    "dependencies": "C standard library; explicit source list only; no libsndfile example",
+    "weights": "NOT_APPLICABLE",
+    "data": "NOT_APPLICABLE",
+    "redistribution": "Retain upstream notices with research source and binary evidence; no shipping dependency introduced"
+  },
+  "git_blob_sha1": {
+    "LICENSE": "c7fdbae0125db0a7d2df471be92fa4c0e39a8fbe",
+    "PATENTS": "190607ac2619bcb28f5c3af61a2fda3953364f7c",
+    "AUTHORS": "755536743a07cba40d8e06241c3e2065b2d2e378",
+    "include/fvad.h": "d410d287999ab9b74d347ab468950f54154a6db3",
+    "src/common.h": "f9d6f0f7198f42ed09594fc6f554c15eed8250f0",
+    "src/fvad.c": "3bb532ea12859b717759222624a7c49877d73eee",
+    "src/signal_processing/division_operations.c": "29504dd6c84c54a1bf8f8cddfc9e04a3f3194c1c",
+    "src/signal_processing/energy.c": "2c477304a5bea95943440f0c3d424e8467f16d6c",
+    "src/signal_processing/get_scaling_square.c": "18031315032b8117696ddc42196e17469a74dc4b",
+    "src/signal_processing/resample_48khz.c": "2f016809189fc0d66713f71e8cd3b0b634f18abf",
+    "src/signal_processing/resample_by_2_internal.c": "473cc2674a4c47a59bfe5bcd0b0ba8f58410cd00",
+    "src/signal_processing/resample_by_2_internal.h": "205ac0913dd6a4906e5f2016fface81d5962422f",
+    "src/signal_processing/resample_fractional.c": "642ca25a8f868dcfb56a13210fe89c829d719086",
+    "src/signal_processing/signal_processing_library.h": "5cee30b91893ae1f2bb30375e1368a8fcda8b8f4",
+    "src/signal_processing/spl_inl.c": "6d1702353f88bc6d33b0dfa1af9215762e467b45",
+    "src/signal_processing/spl_inl.h": "ded1e93671344e28403df2867d82a3161e436a9d",
+    "src/vad/vad_core.c": "44e6b1715cb4418c43e2dbc886f748cb0ff610fb",
+    "src/vad/vad_core.h": "c350310d24f7fb9c7e59dbd2f3ef700fbf8dd8aa",
+    "src/vad/vad_filterbank.c": "5e31cd8d7ed10298c8fc9aecefb0d4a183c80517",
+    "src/vad/vad_filterbank.h": "2701608a17081ff3ba8498cd6f4e2a058a745ea3",
+    "src/vad/vad_gmm.c": "fbf21b8eb1f370a52acfb23c33bed0a6083a3e5e",
+    "src/vad/vad_gmm.h": "5b4609edafba04dcbf954657c7d309b00cd7fbf9",
+    "src/vad/vad_sp.c": "802ca08ae0822be282208d854232afa7d70f8b8b",
+    "src/vad/vad_sp.h": "55319ec44680510a5db2faf8488db48160e62792"
+  }
+}

@@ -247,3 +247,36 @@ jobs:
           python3 validation/tools/authority.py --self-test
           python3 validation/tools/run_validation.py --self-test
           python3 validation/tools/tuning_iteration.py --self-test
+
+  frontend-reference:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: dpirch/libfvad
+          ref: 532ab666c20d3cfda38bca63abbb0f152706c369
+          path: .fe-libfvad
+          persist-credentials: false
+      - name: Verify pinned source bytes before any upstream execution
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/libfvad_reference.py preflight \
+            --source .fe-libfvad --output fe-reference
+          git archive HEAD | gzip -n > fe-reference/execution-source.tar.gz
+          git archive 37a1792861a89c815bec462f819f3deac7d29b09 | gzip -n > fe-reference/baseline-source.tar.gz
+          git rev-parse HEAD > fe-reference/execution-source.sha
+          (cd fe-reference && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+      - name: Preserve reference evidence and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-reference-${{ github.run_id }}
+          path: fe-reference/
+          if-no-files-found: error
+          retention-days: 30

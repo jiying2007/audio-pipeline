@@ -2,7 +2,7 @@
 
 [简体中文](AGENTS.zh-CN.md)
 
-The published SDK remains a **software-commercial-ready maintenance baseline**. The historical software/public-data program has no READY task; E001 remains external/deferred and the remaining Product Qualification work is real-lab/physical evidence tracked by the live external-evidence issue/tracker.
+The published SDK remains in a **software-commercial-ready maintenance state** as the reference baseline. The historical software/public-data program has no READY task; E001 remains external/deferred and the remaining Product Qualification work is real-lab/physical evidence tracked by the live external-evidence issue/tracker.
 
 A separate, explicitly user-authorized **frontend-evolution-v1** research/integration stage is active. Read `docs/research/frontend-evolution-v1/README.md` and its immutable approved plan, then the live implementation tracker #657. It permits bounded structural algorithm experiments, training/finetuning, 1/2/4-mic prototypes and resource/numerical optimization under new FE experiment identities. The archived proposal is not execution evidence. Do not apply the historical candidate-zero restriction to this newly authorized stage, or rewrite I025-I040 and other historical outcomes. Third-party rights, independent data roles, shipping-default/API qualification and E001 identity remain separate boundaries.
 

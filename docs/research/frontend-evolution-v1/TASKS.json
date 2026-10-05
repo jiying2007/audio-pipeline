@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "plan_id": "frontend-evolution-v1",
+  "issued_date": "2026-10-05",
+  "timezone": "Asia/Singapore",
+  "status": "PLAN_ONLY_NOT_EXECUTED",
+  "baseline_source": "37a1792861a89c815bec462f819f3deac7d29b09",
+  "earbuds_reviewed_source": "561cd5975e93bae036b3f14060650a208d1b3573",
+  "max_parallel_research_lanes": 3,
+  "proposed_per_family_budget": {
+    "structures_per_round": 4,
+    "configs_per_structure": 3,
+    "development_rounds": 2
+  },
+  "budget_note": "Research screening proposal, not measured performance or a permanent prohibition on new hypotheses.",
+  "tasks": [
+    {
+      "id": "FE00",
+      "title": "新授权与来源资格",
+      "depends_on": [],
+      "status": "PLANNED",
+      "deliverables": [
+        "研究/发布边界",
+        "完整source/model/data许可与版本锁",
+        "B0基线封存"
+      ]
+    },
+    {
+      "id": "FE01",
+      "title": "统一适配与效果测量",
+      "depends_on": [
+        "FE00"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "帧/标度/时基/延迟契约",
+        "裁判负例",
+        "原生与适配成绩分离"
+      ]
+    },
+    {
+      "id": "FE02",
+      "title": "原生1/2/4麦契约",
+      "depends_on": [
+        "FE01"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "坐标与通道映射",
+        "ULA4/UCA4",
+        "有效麦掩码与输入完整性"
+      ]
+    },
+    {
+      "id": "FE03",
+      "title": "BF/DOA/受控转向",
+      "depends_on": [
+        "FE02"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "分数延时",
+        "固定滤波与有限波束库",
+        "在线自适应对照",
+        "目标保护"
+      ]
+    },
+    {
+      "id": "FE04",
+      "title": "SYNC/AEC/RES联合拓扑",
+      "depends_on": [
+        "FE01"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "两种主要拓扑",
+        "参考时基与双讲",
+        "回声路径/转向恢复",
+        "四麦联调追加FE03"
+      ]
+    },
+    {
+      "id": "FE05",
+      "title": "NS/VAD/AGC语音保护",
+      "depends_on": [
+        "FE01"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "经典外部基准",
+        "先验SNR/语音概率",
+        "同召回VAD",
+        "输出噪声增益约束"
+      ]
+    },
+    {
+      "id": "FE06",
+      "title": "机器人噪声和坏麦降级",
+      "depends_on": [
+        "FE02"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "相关/非平稳噪声",
+        "多证据坏麦检测",
+        "受控降级",
+        "可选真实/合成遥测分离"
+      ]
+    },
+    {
+      "id": "FE07",
+      "title": "神经与混合增强",
+      "depends_on": [
+        "FE01"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "固定模型对照",
+        "H-GTCRN变体身份",
+        "完整因果验证",
+        "流式/量化独立验收"
+      ]
+    },
+    {
+      "id": "FE08",
+      "title": "性能数值与资源工程",
+      "depends_on": [
+        "FE03",
+        "FE04",
+        "FE05"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "热点profile",
+        "scratch生存期",
+        "FP32/NEON/定点对照",
+        "NN候选工程化追加FE07"
+      ]
+    },
+    {
+      "id": "FE09",
+      "title": "独立确认和交付收口",
+      "depends_on": [
+        "FE03",
+        "FE04",
+        "FE05",
+        "FE06",
+        "FE07",
+        "FE08"
+      ],
+      "status": "PLANNED",
+      "deliverables": [
+        "独立场景与统计",
+        "固定KWS/ASR",
+        "C2/C4选择",
+        "条件性效果档",
+        "reference SDK/evidence/未测清单"
+      ]
+    }
+  ],
+  "non_goals": [
+    "不伪造DUT/商业许可/产品资格",
+    "不自动迁移E001身份",
+    "不修改旧研究结论",
+    "不把所有外部后端装入默认SDK"
+  ]
+}

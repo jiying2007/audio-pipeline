@@ -1,0 +1,26 @@
+{
+  "archive_bytes": 337926286,
+  "archive_md5": "42e2234ba48799c1f50f24a7926300a1",
+  "archive_sha256": "76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3",
+  "bound_source_sha256": "7c4d711d4cb69121ccbbcb9a596d7ea26ca141a325add2dc8f5ff7421b9154c1",
+  "decision": "ADMITTED_RECORDED_SPEECH_FIXED_DIAGNOSTICS",
+  "preflight_artifact_id": 11334094375,
+  "preflight_run_id": 37285389869,
+  "preflight_zip_sha256": "6f49b250da722ade78b037bdb203a0282e1c02a4fa1494503dcc609ca101929d",
+  "rights": "CC-BY-4.0; retain corpus notices and attribution; identify cropped and synthetic derivatives; no endorsement",
+  "schema_version": 1,
+  "scope": "fixed recorded speech / synthetic free-field diagnostics; no shipping or independent-room qualification",
+  "shipping_authority": false,
+  "source_id": "librispeech-dev-clean-fe03",
+  "speakers": [
+    84,
+    174,
+    251,
+    422,
+    652,
+    777,
+    1272,
+    1462
+  ],
+  "verification": "Downloaded original ZIP hash; all selected data/notice hashes; local independent lossless decode of 32 FLAC members reproduces full decoded hashes and eight cropped windows. Complete official archive digest is runner-measured, not independently re-downloaded locally."
+}

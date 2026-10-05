@@ -32,8 +32,14 @@ static int rate_ok(uint32_t r) {
 static int mask_ok(uint32_t n, uint32_t mask) {
     return mask != 0u && (mask & ~((1u << n) - 1u)) == 0u;
 }
+static uint32_t fir_radius(fe_array_interpolation mode) {
+    return mode == FE_ARRAY_FIR17_HANN ? 8u : (mode == FE_ARRAY_FIR33_HANN ? 16u : 0u);
+}
+static int mode_ok(fe_array_interpolation mode) {
+    return mode == FE_ARRAY_LINEAR || mode == FE_ARRAY_LAGRANGE3 || fir_radius(mode) != 0u;
+}
 static int valid(const fe_array *s) {
-    return s && s->magic == FE_ARRAY_MAGIC && count_ok(s->count);
+    return s && s->magic == FE_ARRAY_MAGIC && count_ok(s->count) && mode_ok(s->interpolation);
 }
 static int overlaps(const void *p, size_t n, const void *q, size_t m) {
     const uintptr_t a = (uintptr_t)p, b = (uintptr_t)q;
@@ -44,12 +50,50 @@ size_t fe_array_state_bytes(uint32_t n) {
     return count_ok(n) ? sizeof(fe_array) + (size_t)n * FE_ARRAY_HISTORY * sizeof(float) : 0u;
 }
 
+size_t fe_array_state_bytes_for_mode(uint32_t n, fe_array_interpolation mode) {
+    const uint32_t radius = fir_radius(mode);
+    if (!count_ok(n) || !mode_ok(mode)) return 0u;
+    return fe_array_state_bytes(n) + (radius ? 2u * (size_t)n * (2u * radius + 1u) * sizeof(float) : 0u);
+}
+static size_t storage_bytes(const fe_array *s) {
+    return fe_array_state_bytes_for_mode(s->count, s->interpolation);
+}
+static float *fir_bank(fe_array *s, uint32_t bank, uint32_t mic) {
+    const uint32_t taps = 2u * fir_radius(s->interpolation) + 1u;
+    return s->history + (size_t)s->count * FE_ARRAY_HISTORY + ((size_t)bank * s->count + mic) * taps;
+}
+/* Inputs have already passed bounded geometry validation. Still compute all
+ * coefficients into temporaries before any state mutation (atomic controls).
+ */
+static int design_fir(double delay, uint32_t radius, float weights[33], uint32_t *start) {
+    const double pi = 3.14159265358979323846264338327950288;
+    const double integer = floor(delay), fraction = delay - integer;
+    double raw[33], sum = 0.0;
+    uint32_t k, taps = 2u * radius + 1u;
+    if (integer < (double)radius || integer + (double)radius >= FE_ARRAY_HISTORY) return 0;
+    *start = (uint32_t)integer - radius;
+    for (k = 0u; k < taps; ++k) {
+        const double at = (double)k - (double)radius;
+        const double x = at - fraction;
+        if (fraction == 0.0) raw[k] = k == radius ? 1.0 : 0.0;
+        else raw[k] = sin(pi*x)/(pi*x) * (0.5 + 0.5*cos(pi*at/(double)radius));
+        sum += raw[k];
+    }
+    if (!isfinite(sum) || sum < 0.5 || sum > 1.5) return 0;
+    for (k = 0u; k < taps; ++k) weights[k] = (float)(raw[k]/sum);
+    return 1;
+}
+static int delay_ok(double d, uint32_t radius) {
+    return radius ? d >= (double)radius && d <= (double)(FE_ARRAY_HISTORY-1u-radius)
+                  : d >= 1.0 && d <= (double)(FE_ARRAY_HISTORY-3u);
+}
+
 static int geometry(const fe_array_config *c, double delays[4], uint32_t *common) {
     double norm = 0.0, radius = 0.0, calibration = 0.0;
     uint32_t i, j, k, seen = 0u;
     if (!c || !count_ok(c->mic_count) || !rate_ok(c->sample_rate_hz) ||
         c->reference_mic >= c->mic_count || !mask_ok(c->mic_count, c->active_mask) ||
-        (c->interpolation != FE_ARRAY_LINEAR && c->interpolation != FE_ARRAY_LAGRANGE3)) return 0;
+        !mode_ok(c->interpolation)) return 0;
     for (k = 0u; k < 3u; ++k) {
         if (!isfinite(c->direction[k]) || fabs(c->direction[k]) > 1.0) return 0;
         norm += c->direction[k] * c->direction[k];
@@ -86,11 +130,12 @@ static int geometry(const fe_array_config *c, double delays[4], uint32_t *common
         }
     }
     norm = ceil(radius * (double)c->sample_rate_hz / 343.0 + calibration) + 1.0;
+    norm += (double)fir_radius(c->interpolation);
     if (norm > (double)(FE_ARRAY_HISTORY - 3u)) return 0;
     *common = (uint32_t)norm;
     for (i = 0u; i < c->mic_count; ++i) {
         delays[i] += norm;
-        if (delays[i] < 1.0 || delays[i] > (double)(FE_ARRAY_HISTORY - 3u)) return 0;
+        if (!delay_ok(delays[i], fir_radius(c->interpolation))) return 0;
     }
     return 1;
 }
@@ -98,6 +143,8 @@ static int geometry(const fe_array_config *c, double delays[4], uint32_t *common
 fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config *c, fe_array **out) {
     double d[4] = {0.0, 0.0, 0.0, 0.0};
     uint32_t common = 0u, i;
+    uint32_t starts[4] = {0u};
+    float coefficients[4][33] = {{0.0f}};
     size_t wanted;
     fe_array *s;
     if (!out || (memory && overlaps(memory, bytes, out, sizeof(*out))) ||
@@ -105,7 +152,10 @@ fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config 
     *out = NULL;
     if (!memory || !c || (uintptr_t)memory % FE_ARRAY_ALIGNMENT ||
         overlaps(memory, bytes, c, sizeof(*c)) || !geometry(c, d, &common)) return FE_ARRAY_EINVAL;
-    wanted = fe_array_state_bytes(c->mic_count);
+    wanted = fe_array_state_bytes_for_mode(c->mic_count, c->interpolation);
+    if (fir_radius(c->interpolation))
+        for (i = 0u; i < c->mic_count; ++i)
+            if (!design_fir(d[i], fir_radius(c->interpolation), coefficients[i], &starts[i])) return FE_ARRAY_EINVAL;
     if (bytes < wanted) return FE_ARRAY_ENOMEM;
     s = (fe_array *)memory;
     memset(s, 0, wanted);
@@ -123,7 +173,10 @@ fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config 
         for (k = 0u; k < 3u; ++k)
             s->relative[i][k] = c->microphones[i].position_m[k] -
                                c->microphones[c->reference_mic].position_m[k];
-        if (c->interpolation == FE_ARRAY_LINEAR) {
+        if (fir_radius(c->interpolation)) {
+            s->offset[i][0] = starts[i];
+            memcpy(fir_bank(s, 0u, i), coefficients[i], (2u*fir_radius(c->interpolation)+1u)*sizeof(float));
+        } else if (c->interpolation == FE_ARRAY_LINEAR) {
             s->offset[i][0] = m; s->offset[i][1] = m + 1u;
             s->weight[i][0] = (float)(1.0 - f); s->weight[i][1] = (float)f;
         } else {
@@ -143,11 +196,11 @@ fe_array_status fe_array_init(void *memory, size_t bytes, const fe_array_config 
 fe_array_status fe_array_get_info(const fe_array *s, fe_array_info *out) {
     uint32_t i;
     if (!valid(s)) return FE_ARRAY_ESTATE;
-    if (!out || overlaps(s, fe_array_state_bytes(s->count), out, sizeof(*out))) return FE_ARRAY_EINVAL;
+    if (!out || overlaps(s, storage_bytes(s), out, sizeof(*out))) return FE_ARRAY_EINVAL;
     memset(out, 0, sizeof(*out));
     out->sample_rate_hz = s->rate; out->mic_count = s->count; out->active_mask = s->mask;
     out->common_delay_samples = s->delay; out->interpolation = s->interpolation;
-    out->state_bytes = fe_array_state_bytes(s->count); out->samples_processed = s->samples;
+    out->state_bytes = storage_bytes(s); out->samples_processed = s->samples;
     memcpy(out->direction, s->direction, sizeof(out->direction));
     memcpy(out->target_direction, s->target_direction, sizeof(out->target_direction));
     out->transition_total_samples = s->transition_total;
@@ -172,9 +225,10 @@ fe_array_status fe_array_request_steer(fe_array *s, const double direction[3], u
     double norm = 0.0, delays[FE_ARRAY_MAX_MICS] = {0.0};
     uint32_t offsets[FE_ARRAY_MAX_MICS][4] = {{0u}};
     float weights[FE_ARRAY_MAX_MICS][4] = {{0.0f}};
+    float coefficients[FE_ARRAY_MAX_MICS][33] = {{0.0f}};
     uint32_t i, k;
     if (!valid(s)) return FE_ARRAY_ESTATE;
-    if (!direction || overlaps(s, fe_array_state_bytes(s->count), direction, 3u * sizeof(double)) ||
+    if (!direction || overlaps(s, storage_bytes(s), direction, 3u * sizeof(double)) ||
         total < 2u || total > s->rate / 10u) return FE_ARRAY_EINVAL;
     for (k = 0u; k < 3u; ++k) {
         if (!isfinite(direction[k]) || fabs(direction[k]) > 1.0) return FE_ARRAY_EINVAL;
@@ -188,9 +242,11 @@ fe_array_status fe_array_request_steer(fe_array *s, const double direction[3], u
         for (k = 0u; k < 3u; ++k) projection += s->relative[i][k] * direction[k];
         delays[i] = projection * (double)s->rate / 343.0 - s->calibration_latency[i];
         delays[i] += (double)s->delay;
-        if (delays[i] < 1.0 || delays[i] > (double)(FE_ARRAY_HISTORY - 3u)) return FE_ARRAY_EINVAL;
+        if (!delay_ok(delays[i], fir_radius(s->interpolation))) return FE_ARRAY_EINVAL;
         m = (uint32_t)floor(delays[i]); f = delays[i] - floor(delays[i]);
-        if (s->interpolation == FE_ARRAY_LINEAR) {
+        if (fir_radius(s->interpolation)) {
+            if (!design_fir(delays[i], fir_radius(s->interpolation), coefficients[i], &offsets[i][0])) return FE_ARRAY_EINVAL;
+        } else if (s->interpolation == FE_ARRAY_LINEAR) {
             offsets[i][0] = m; offsets[i][1] = m + 1u;
             weights[i][0] = (float)(1.0 - f); weights[i][1] = (float)f;
         } else {
@@ -204,6 +260,9 @@ fe_array_status fe_array_request_steer(fe_array *s, const double direction[3], u
     if (direction[0] == s->direction[0] && direction[1] == s->direction[1] &&
         direction[2] == s->direction[2]) return FE_ARRAY_OK;
     if (s->steering_accepted == UINT64_MAX) return FE_ARRAY_EINVAL;
+    if (fir_radius(s->interpolation))
+        for (i = 0u; i < s->count; ++i)
+            memcpy(fir_bank(s, 1u, i), coefficients[i], (2u*fir_radius(s->interpolation)+1u)*sizeof(float));
     memcpy(s->next_offset, offsets, sizeof(offsets));
     memcpy(s->next_weight, weights, sizeof(weights));
     memcpy(s->target_direction, direction, sizeof(s->target_direction));
@@ -234,13 +293,13 @@ fe_array_status fe_array_set_active_mask(fe_array *s, uint32_t mask) {
     return FE_ARRAY_OK;
 }
 fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, float *output, size_t no) {
-    uint32_t i, active = 0u, taps;
+    uint32_t i, active = 0u, taps, radius;
     size_t t, frames, bytes;
     if (!valid(s)) return FE_ARRAY_ESTATE;
     if (!input || !output || ni == 0u || ni % s->count) return FE_ARRAY_EINVAL;
     frames = ni / s->count;
     if (frames > s->rate / 100u || no != frames || s->samples > UINT64_MAX - frames) return FE_ARRAY_EINVAL;
-    bytes = fe_array_state_bytes(s->count);
+    bytes = storage_bytes(s);
     if (overlaps(input, ni * sizeof(float), output, no * sizeof(float)) ||
         overlaps(s, bytes, input, ni * sizeof(float)) ||
         overlaps(s, bytes, output, no * sizeof(float))) return FE_ARRAY_EINVAL;
@@ -252,7 +311,8 @@ fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, flo
             if (!isfinite(x) || fabsf(x) > 1.0f) return FE_ARRAY_EINVAL;
         }
     }
-    taps = s->interpolation == FE_ARRAY_LINEAR ? 2u : 4u;
+    radius = fir_radius(s->interpolation);
+    taps = radius ? 2u*radius+1u : (s->interpolation == FE_ARRAY_LINEAR ? 2u : 4u);
     for (t = 0u; t < frames; ++t) {
         float sum = 0.0f;
         for (i = 0u; i < s->count; ++i) {
@@ -262,8 +322,10 @@ fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, flo
             if (!(s->mask & (1u << i))) { h[s->cursor] = 0.0f; continue; }
             h[s->cursor] = input[t * s->count + s->channel[i]];
             for (k = 0u; k < taps; ++k) {
-                const uint32_t at = (s->cursor + FE_ARRAY_HISTORY - s->offset[i][k]) % FE_ARRAY_HISTORY;
-                value += s->weight[i][k] * h[at];
+                const uint32_t offset = radius ? s->offset[i][0]+k : s->offset[i][k];
+                const float weight = radius ? fir_bank(s, 0u, i)[k] : s->weight[i][k];
+                const uint32_t at = (s->cursor + FE_ARRAY_HISTORY - offset) % FE_ARRAY_HISTORY;
+                value += weight * h[at];
             }
             sum += s->gain[i] * value;
         }
@@ -277,8 +339,10 @@ fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, flo
                 uint32_t k;
                 if (!(s->mask & (1u << i))) continue;
                 for (k = 0u; k < taps; ++k) {
-                    const uint32_t at = (s->cursor + FE_ARRAY_HISTORY - s->next_offset[i][k]) % FE_ARRAY_HISTORY;
-                    value += s->next_weight[i][k] * h[at];
+                    const uint32_t offset = radius ? s->next_offset[i][0]+k : s->next_offset[i][k];
+                    const float weight = radius ? fir_bank(s, 1u, i)[k] : s->next_weight[i][k];
+                    const uint32_t at = (s->cursor + FE_ARRAY_HISTORY - offset) % FE_ARRAY_HISTORY;
+                    value += weight * h[at];
                 }
                 next_sum += s->gain[i] * value;
             }
@@ -290,6 +354,9 @@ fe_array_status fe_array_process(fe_array *s, const float *input, size_t ni, flo
             }
             ++s->transition_done;
             if (s->transition_done == s->transition_total) {
+                if (radius)
+                    for (i = 0u; i < s->count; ++i)
+                        memcpy(fir_bank(s, 0u, i), fir_bank(s, 1u, i), taps*sizeof(float));
                 memcpy(s->offset, s->next_offset, sizeof(s->offset));
                 memcpy(s->weight, s->next_weight, sizeof(s->weight));
                 memcpy(s->compensation, s->target_compensation, sizeof(s->compensation));

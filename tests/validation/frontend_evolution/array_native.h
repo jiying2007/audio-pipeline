@@ -26,7 +26,9 @@ typedef enum {
 
 typedef enum {
     FE_ARRAY_LINEAR = 0,
-    FE_ARRAY_LAGRANGE3 = 1
+    FE_ARRAY_LAGRANGE3 = 1,
+    FE_ARRAY_FIR17_HANN = 2,
+    FE_ARRAY_FIR33_HANN = 3
 } fe_array_interpolation;
 
 typedef struct {
@@ -63,11 +65,21 @@ typedef struct {
 
 /* Returns zero for unsupported channel capacity. State physically scales by N. */
 size_t fe_array_state_bytes(uint32_t mic_count);
+/* Mode-aware research allocation. Legacy query above covers only linear/cubic.
+ * FIR modes append two N*taps coefficient banks after the unchanged histories.
+ * All coefficients are generated in init/control, never per audio sample.
+ */
+size_t fe_array_state_bytes_for_mode(uint32_t mic_count, fe_array_interpolation mode);
 /* Every failed init leaves storage unchanged and sets a non-overlapping *out=NULL.
  * memory must be aligned to FE_ARRAY_ALIGNMENT; cfg/out must not alias memory.
  * The fixed common delay is ceil(max_i ||r_i-r_ref|| fs/343 + max_i |latency_i|)+1.
  * Per-channel delay is common + dot(ri-r_ref,u) fs/343 - latency_i.
- * Both interpolators use the same common latency. No lookahead/steering estimator.
+ * Linear/cubic retain that common latency. FIR17/FIR33 add 8/16 samples
+ * respectively, to make every tap causal. The complete tap range must fit the
+ * 128-sample history; unsupported geometry is rejected, not clamped.
+ * FIR coefficients: sinc(k-f)*Hann(k/R), k=-R..R, divided by their sum
+ * (unit DC coefficient normalization, not signal-level normalization).
+ * No lookahead/steering estimator. FIRs are research modes, not a shipping API.
  */
 fe_array_status fe_array_init(void *memory, size_t bytes,
                               const fe_array_config *cfg, fe_array **out);

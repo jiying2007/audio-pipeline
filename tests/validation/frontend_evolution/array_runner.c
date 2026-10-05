@@ -33,7 +33,7 @@ static int read_config(const char *path, fe_array_config *c) {
     memset(c,0,sizeof(*c));
     ok=word(f,version) && strcmp(version,"FE_ARRAY_V1")==0 &&
        uint_value(f,&c->sample_rate_hz) && uint_value(f,&c->mic_count) &&
-       uint_value(f,&mode) && mode<=1u && uint_value(f,&c->active_mask) &&
+       uint_value(f,&mode) && mode<=3u && uint_value(f,&c->active_mask) &&
        uint_value(f,&c->reference_mic) && c->mic_count<=4u;
     c->interpolation=(fe_array_interpolation)mode;
     for(k=0u;ok && k<3u;++k)ok=real_value(f,&c->direction[k]);

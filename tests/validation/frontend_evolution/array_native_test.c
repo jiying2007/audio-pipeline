@@ -53,7 +53,7 @@ static int init_errors(void) {
         case 14: bad.microphones[1].gain = NAN; break;
         case 15: bad.microphones[1].latency_samples = INFINITY; break;
         case 16: bad.microphones[1].latency_samples = 9.0; break;
-        case 17: bad.interpolation = (fe_array_interpolation)3; break;
+        case 17: bad.interpolation = (fe_array_interpolation)99; break;
         case 18: bad.sample_rate_hz = 48000u; bad.microphones[1].position_m[0] = 1.0; break;
         default: bad.direction[1] = 0.0; break;
         }

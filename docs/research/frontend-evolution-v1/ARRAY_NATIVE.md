@@ -141,3 +141,9 @@ the real receipt. A green engineering result cannot authorize shipping promotion
 的证明。方向估计/平滑转向、更多 FIR、BF/AEC 联调、独立语音场景与最终
 C4 SDK 仍由 #657 跟踪。其他上游适配器和独立数据工作继续推进，不能把本轮
 第一方原型当作 Athena、SOF 或任何第三方原版复现。
+
+## Fixed FIR extension
+
+[ARRAY_FIR.md](ARRAY_FIR.md) documents the subsequent FE03 17/33-tap FIR modes,
+mode-aware allocation and separately declared added delay. The original
+linear/cubic geometry, allocation and output contracts above remain unchanged.

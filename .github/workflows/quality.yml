@@ -333,6 +333,16 @@ jobs:
           # Source bytes are already sealed inside the complete effect receipt.
           # Retain the first copy only on a failure before that complete receipt.
           rm -rf -- fe-speech/source
+      - name: Compare fixed FIR structures on disclosed speech without promotion
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/speech_fir.py --self-test
+          python3 tests/validation/frontend_evolution/speech_fir.py \
+            --base-evidence fe-speech/effects --output fe-speech/fir --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/speech_fir.py \
+            --base-evidence fe-speech/effects --output fe-speech/fir --execution-source "$GITHUB_SHA" --verify
+          python3 tests/validation/frontend_evolution/speech_fir.py \
+            --base-evidence fe-speech/effects --output fe-speech/fir --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve recorded speech provenance and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

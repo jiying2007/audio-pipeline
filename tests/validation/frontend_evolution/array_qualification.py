@@ -26,7 +26,7 @@ HERE = Path(__file__).resolve().parent
 PLAN = ROOT / '.github/research/frontend-evolution-v1/array-native-v1.json'
 SOURCES = ('array_native.h', 'array_native.c', 'array_native_test.c', 'array_runner.c',
            'array_qualification.py', 'contracts.py', 'libfvad_reference.py',
-           'array_direction_control.h', 'array_direction_control.c', 'array_steering_test.c', 'array_steering_checks.py')
+           'array_direction_control.h', 'array_direction_control.c', 'array_steering_test.c', 'array_steering_checks.py', 'array_fir_checks.py', 'array_fir_test.c')
 FLAGS = ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-Wconversion', '-Wshadow',
          '-pedantic', '-ffp-contract=off']
 
@@ -210,6 +210,8 @@ def qualify(output: Path, revision: str, require_arm: bool) -> dict:
             report['cases'].append(row)
     import array_steering_checks
     report['steering']=array_steering_checks.run(output,targets)
+    import array_fir_checks
+    report['fir']=array_fir_checks.run(output,targets)
     neg=output/'negative';neg.mkdir();report['negative_cli']=probe_negative_cli(runner,neg)
     write_json(output/'result.json',report); seal_output(output,report)
     return verify(output,revision)
@@ -283,7 +285,9 @@ def verify(root: Path, revision: str | None=None, require_arm: bool=False) -> di
                 require(all(math.isfinite(v[0]) for v in struct.iter_unpack('<f',alt)),'non-finite future result')
     import array_steering_checks
     steering_cases=array_steering_checks.verify(root,report['steering'],targets)
-    return {'status':'VERIFIED','steering_cases':steering_cases,'cases':len(rows),'files':len(actual),'targets':targets,
+    import array_fir_checks
+    fir_cases=array_fir_checks.verify(root,report['fir'],targets)
+    return {'status':'VERIFIED','fir_cases':fir_cases,'steering_cases':steering_cases,'cases':len(rows),'files':len(actual),'targets':targets,
             'execution_source_revision':report['execution_source_revision'],'shipping_authority':False}
 
 
@@ -320,7 +324,11 @@ def _mutate_evidence(root: Path, revision: str) -> dict:
     """Re-seal semantic mutations; checksum correctness alone must not admit them."""
     report=load_json(root/'result.json'); key=report['cases'][0]['case_id']
     failures=[]
-    mutations=[('missing-case',lambda r:r['cases'].pop()),
+    mutations=[('missing-fir-case',lambda r:r['fir']['cases'].pop()),
+               ('fir-false-promotion',lambda r:r['fir'].update(shipping_authority=True)),
+               ('fir-latency',lambda r:r['fir']['cases'][0].update(delay_samples=0)),
+               ('fir-frequency',lambda r:r['fir']['responses'][0]['response'][0].update(magnitude_db=99.0)),
+               ('missing-case',lambda r:r['cases'].pop()),
                ('fake-promotion',lambda r:r.update(shipping_authority=True)),
                ('stale-sha',lambda r:r.update(execution_source_revision='0'*40)),
                ('wrong-metric',lambda r:r['cases'][0].update(maximum_absolute_oracle_error=1.0)),
@@ -371,8 +379,10 @@ def main() -> int:
     a=p.parse_args()
     if a.self_test:
         import array_steering_checks
+        import array_fir_checks
         suite=unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(OracleTests),
-                                 unittest.defaultTestLoader.loadTestsFromTestCase(array_steering_checks.SteeringOracleTests)])
+                                 unittest.defaultTestLoader.loadTestsFromTestCase(array_steering_checks.SteeringOracleTests),
+                                 unittest.defaultTestLoader.loadTestsFromTestCase(array_fir_checks.FIROracleTests)])
         return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
     require(a.output is not None and hex_digest(a.execution_source,40),'output and exact execution source required')
     root=a.output.resolve()

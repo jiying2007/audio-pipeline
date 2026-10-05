@@ -3,6 +3,7 @@
 # I010 is terminal: validate the current registry, never require retired live inputs.
 set -eu
 
+python3 tests/validation/frontend_evolution/test_contracts.py
 python3 scripts/ci_impact.py --self-test
 python3 scripts/github_governance.py --self-test
 python3 scripts/resource_baseline.py --self-test

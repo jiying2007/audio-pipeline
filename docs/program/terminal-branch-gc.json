@@ -23,8 +23,15 @@
     "release/",
     "validation/"
   ],
-  "allowed_exact_names": [],
-  "branches": [],
+  "allowed_exact_names": [
+    "research/frontend-evolution-foundation"
+  ],
+  "branches": [
+    {
+      "name": "research/frontend-evolution-foundation",
+      "expected_sha": "37a1792861a89c815bec462f819f3deac7d29b09"
+    }
+  ],
   "authority_boundary": {
     "hardware_test_executed": false,
     "hardware_collection_performed": false,

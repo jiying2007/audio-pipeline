@@ -11,6 +11,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if AP_HAVE_MODULE_ACTIVITY && defined(FE04_CORRELATION_GUARD)
+#include "correlation_guard.h"
+#endif
 
 #define HOP 160u
 #define RATE 16000u
@@ -86,16 +89,24 @@ int main(int argc,char **argv) {
 #if AP_HAVE_MODULE_ACTIVITY
     ap_activity_module_t *activity=NULL;
 #endif
+#if AP_HAVE_MODULE_ACTIVITY && defined(FE04_CORRELATION_GUARD)
+    fe_correlation_guard *guard=NULL;
+    FILE *observed=NULL;
+#endif
     double maximum_additivity=0,maximum_commutation=0,peak=0;unsigned outside=0;
     size_t frame_bytes;unsigned n;fe_array_info info;
     const unsigned marker=1;
     if((argc!=5 && argc!=7) || *(const unsigned char *)&marker!=1) {
-        fputs("usage: bf-aec-order CONFIG INPUT.f32le OUTPUT.f32le META.json [--measured-activity|--monitor-activity TRACE.csv] (little endian)\n",stderr);return 2;
+        fputs("usage: bf-aec-order CONFIG INPUT.f32le OUTPUT.f32le META.json [MODE TRACE.csv] (little endian)\n",stderr);return 2;
     }
     if(argc==7) {
 #if AP_HAVE_MODULE_ACTIVITY
         if(!strcmp(argv[5],"--measured-activity"))gate_mode=1;
         else if(!strcmp(argv[5],"--monitor-activity"))gate_mode=2;
+#if defined(FE04_CORRELATION_GUARD)
+        else if(!strcmp(argv[5],"--guard-correlation"))gate_mode=3;
+        else if(!strcmp(argv[5],"--monitor-correlation"))gate_mode=4;
+#endif
         else {fputs("invalid activity mode\n",stderr);return 2;}
 #else
         fputs("Activity module is not compiled; no oracle fallback\n",stderr);return 2;
@@ -117,9 +128,23 @@ int main(int argc,char **argv) {
         activity_memory=aligned_alloc(16,(bytes+15u)&~(size_t)15u);
         if(!activity_memory || ap_module_activity_init(activity_memory,bytes,&ac,&activity)!=AP_OK)goto done;
         trace=fopen(argv[6],"wbx");if(!trace)goto done;
-        if(fputs("frame,mic_energy,reference_energy,oracle_far,oracle_dt,detected_far,detected_dt,used_far,used_dt\n",trace)==EOF)goto done;
+        if(fputs("frame,mic_energy,reference_energy,oracle_far,oracle_dt,detected_far,detected_dt,used_far,used_dt",trace)==EOF)goto done;
+#if defined(FE04_CORRELATION_GUARD)
+        if(gate_mode>=3) {
+            guard=malloc(sizeof(*guard));if(!guard)goto done;
+            fe_correlation_reset(guard);
+            if(fputs(",correlation_score,correlation_lag,correlation_warm,correlation_blocked",trace)==EOF)goto done;
+            if(gate_mode==3) {
+                char path[4096];int len=snprintf(path,sizeof(path),"%s.observed.f32",argv[6]);
+                if(len<0 || (size_t)len>=sizeof(path))goto done;
+                observed=fopen(path,"wbx");if(!observed)goto done;
+            }
+            fprintf(stderr,"CORRELATION_GUARD_V1 state_bytes=%zu window=320 history=1344 step=4 low=0.55 high=0.65 release=3\n",sizeof(*guard));
+        }
+#endif
+        if(fputc('\n',trace)==EOF)goto done;
         fprintf(stderr,"ACTIVITY_TRACE_V1 mode=%s state_bytes=%zu threshold=1e-7 ratio=1.5 hold=3\n",
-            gate_mode==1?"measured":"monitor-only",bytes);
+            gate_mode==1?"measured":gate_mode==2?"monitor-only":gate_mode==3?"guarded":"guard-monitor",bytes);
     }
 #else
     (void)gate_mode;
@@ -157,16 +182,34 @@ int main(int argc,char **argv) {
         if(gate_mode) {
             float mic_energy=1.0e-12f,reference_energy=1.0e-12f;
             ap_module_activity_result_t ar;int oracle_far=far,oracle_dt=dt;
+#if defined(FE04_CORRELATION_GUARD)
+            fe_correlation_result cr={0};
+#endif
             for(unsigned k=0;k<HOP;++k) {
                 mic_energy+=bf_mix[k]*bf_mix[k];
                 reference_energy+=ref[k]*ref[k];
             }
             mic_energy/=HOP;reference_energy/=HOP;
             if(ap_module_activity_process(activity,mic_energy,reference_energy,&ar)!=AP_OK)goto done;
-            if(gate_mode==1) {far=ar.far_end_active;dt=ar.double_talk_active;}
-            if(fprintf(trace,"%u,%.9g,%.9g,%d,%d,%u,%u,%d,%d\n",frames,
+            if(gate_mode!=2) {far=ar.far_end_active;dt=ar.double_talk_active;}
+#if defined(FE04_CORRELATION_GUARD)
+            if(gate_mode>=3) {
+                if(!fe_correlation_process(guard,bf_mix,ref,HOP,far,&cr))goto done;
+                if(gate_mode==3) {
+                    float values[HOP*2];
+                    dt=far && (dt || cr.blocked);
+                    for(unsigned k=0;k<HOP;++k){values[2*k]=bf_mix[k];values[2*k+1]=ref[k];}
+                    if(fwrite(values,sizeof(float),HOP*2,observed)!=HOP*2)goto done;
+                }
+            }
+#endif
+            if(fprintf(trace,"%u,%.9g,%.9g,%d,%d,%u,%u,%d,%d",frames,
                 (double)mic_energy,(double)reference_energy,oracle_far,oracle_dt,
                 (unsigned)ar.far_end_active,(unsigned)ar.double_talk_active,far,dt)<0)goto done;
+#if defined(FE04_CORRELATION_GUARD)
+            if(gate_mode>=3 && fprintf(trace,",%.17g,%u,%u,%u",cr.score,cr.lag,cr.warm,cr.blocked)<0)goto done;
+#endif
+            if(fputc('\n',trace)==EOF)goto done;
         }
 #endif
         if(!aec(&post[0],bf_mix,ref,output[2],far,dt) || !aec(&post[1],output[1],ref,output[3],far,dt))goto done;
@@ -211,6 +254,10 @@ int main(int argc,char **argv) {
     for(unsigned j=0;j<2;++j)free(post[j].memory);
     for(unsigned j=0;j<8;++j)free(pre[j].memory);
     free(activity_memory);
+#if AP_HAVE_MODULE_ACTIVITY && defined(FE04_CORRELATION_GUARD)
+    free(guard);
+    if(observed && fclose(observed))rc=2;
+#endif
     if(input && fclose(input))rc=2;
     if(out && fclose(out))rc=2;
     if(meta && fclose(meta))rc=2;

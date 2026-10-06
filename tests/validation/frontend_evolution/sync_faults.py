@@ -224,8 +224,11 @@ def run(base,correlation,root,revision):
       'route_jump_resets_aec':False,'timestamp_assistance':False,'res_enabled':False}
     write_json(root/'result.json',report);seal_output(root,report);return report
 
-def verify(base,correlation,root,revision):
-    verify_seal(root);activity.verify(base/'order',base/'activity',revision);guard.verify(base,correlation,revision)
+def verify(base,correlation,root,revision,predecessors_verified=False):
+    verify_seal(root)
+    if not predecessors_verified:
+        activity.verify(base/'order',base/'activity',revision)
+        guard.verify(base,correlation,revision)
     r=load_json(root/'result.json');p=load_json(PLAN)
     require((root/'experiment.json').read_bytes()==PLAN.read_bytes(),'plan drift')
     require(r['decision']==DECISION and r['shipping_authority'] is False and r['data_role']==ROLE and r['case_count']==6 and r['arms']==3,'authority/matrix')
@@ -265,6 +268,10 @@ def verify(base,correlation,root,revision):
 
 def negatives(base,correlation,root,revision):
     kinds=('promotion','predecessor','missing-case','metric','input','output','trace','binary');rejected=[]
+    # Immutable predecessor evidence is outside each temporary candidate copy. Validate it once
+    # for this negative-evidence batch, then keep every candidate mutation/reseal/verify below.
+    activity.verify(base/'order',base/'activity',revision)
+    guard.verify(base,correlation,revision)
     with tempfile.TemporaryDirectory(prefix='sync-neg-') as temp:
         copy=Path(temp)/'copy';shutil.copytree(root,copy);keep={p:p.read_bytes() for p in (copy/'result.json',copy/'manifest.json',copy/'SHA256SUMS')}
         for kind in kinds:
@@ -277,7 +284,7 @@ def negatives(base,correlation,root,revision):
                 case=rr['cases'][0]['case_id'];pth=copy/'inputs/p0.f32' if kind=='input' else copy/'cases'/case/'sync.f32' if kind=='output' else copy/'cases'/case/'sync.csv' if kind=='trace' else copy/'sync-fault-native'
                 blob=pth.read_bytes();changed.append((pth,blob));pth.write_bytes(blob+b'changed')
             write_json(copy/'result.json',rr);seal_output(copy,rr)
-            try:verify(base,correlation,copy,revision)
+            try:verify(base,correlation,copy,revision,predecessors_verified=True)
             except (ValueError,KeyError,IndexError,AssertionError,RuntimeError):rejected.append(kind)
             else:raise AssertionError('resealed negative accepted '+kind)
             for pth,blob in changed:pth.write_bytes(blob)

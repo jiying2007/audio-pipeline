@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE04-SYNC-FAULTS-V1",
+  "implementation_base": "8993505a940534d6de22bd81f54576e6934bf01d",
+  "preregistration_comment_ids": [6010010528, 6010120012],
+  "decision": "SYNC_FAULTS_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "sample_rate_hz": 16000,
+  "hop_samples": 160,
+  "cases": {"pairs": [0,1], "geometry": "ula4-70", "bank": "fir33", "source_event": "none"},
+  "faults": {
+    "static-lead": 320,
+    "route-jump": [320, 800, 128000],
+    "drift-plus-ppm": 250
+  },
+  "arms": ["oracle", "raw", "public-sync"],
+  "public_sync": {
+    "initial_delay_samples": 0,
+    "max_delay_ms": 120,
+    "delay_tracking": true,
+    "clock_drift_compensation": true,
+    "timestamp_assistance": false,
+    "route_jump_resets_aec": false
+  },
+  "activity": {"far_end_threshold": 1e-7, "double_talk_ratio": 1.5, "hangover_frames": 3},
+  "aec": {"backend": "MDF", "filter_ms": 64, "adapt_stride": 1, "mu": 0.2},
+  "primary_effects": ["actual_far_only_residual", "complete_output_si_sdr", "relative_delay_change", "route_confirmation", "sample_slips", "underruns"],
+  "absolute_sync_delay_is_transport_truth": false,
+  "res_ns_agc_enabled": false,
+  "timing_authority": "NONE_TARGET",
+  "limits": ["disclosed-speech", "synthetic-linear-echo", "standalone-sync-no-pipeline-route-reset", "no-timestamps", "no-res", "no-dut", "no-shipping-promotion"]
+}

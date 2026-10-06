@@ -11,7 +11,7 @@
 #define HOP 160u
 #define COLS 4u
 
-enum arm_kind { ARM_ORACLE=1, ARM_RAW=2, ARM_SYNC=3 };
+enum arm_kind { ARM_ORACLE=1, ARM_RAW=2, ARM_SYNC=3, ARM_SYNC_RESET=4 };
 enum fault_kind { FAULT_STATIC=1, FAULT_ROUTE=2, FAULT_DRIFT=3 };
 
 static size_t round16(size_t n) { return (n + 15u) & ~(size_t)15u; }
@@ -39,11 +39,22 @@ int main(int argc, char **argv) {
     const ap_module_aec_config_t ec={RATE,64u,1u,0.2f};
     float mic[HOP],reference[HOP],render_chunk[HOP],aec_out[HOP],echo_est[HOP],packed[HOP*2u];
     uint64_t render_cursor=0u;
-    unsigned underruns=0u,route_jumps=0u,slips=0u,delay_observations=0u,far_frames=0u,dt_frames=0u;
+    unsigned underruns=0u,route_jumps=0u,slips=0u,delay_observations=0u,far_frames=0u,dt_frames=0u,aec_resets=0u;
     ap_module_sync_status_t final_sync={0}; ap_module_aec_result_t final_aec={0};
-    if(argc!=7){fputs("usage: sync-fault oracle|raw|sync static|route|drift INPUT.f32 OUTPUT.f32 META.json TRACE.csv\n",stderr);return 2;}
-    if(!strcmp(argv[1],"oracle"))arm=ARM_ORACLE;else if(!strcmp(argv[1],"raw"))arm=ARM_RAW;else if(!strcmp(argv[1],"sync"))arm=ARM_SYNC;else{fputs("invalid arm\n",stderr);return 2;}
-    if(!strcmp(argv[2],"static"))fault=FAULT_STATIC;else if(!strcmp(argv[2],"route"))fault=FAULT_ROUTE;else if(!strcmp(argv[2],"drift"))fault=FAULT_DRIFT;else{fputs("invalid fault\n",stderr);return 2;}
+    int sync_enabled;
+
+    if(argc!=7){fputs("usage: sync-fault oracle|raw|sync|sync-reset static|route|drift INPUT.f32 OUTPUT.f32 META.json TRACE.csv\n",stderr);return 2;}
+    if(!strcmp(argv[1],"oracle"))arm=ARM_ORACLE;
+    else if(!strcmp(argv[1],"raw"))arm=ARM_RAW;
+    else if(!strcmp(argv[1],"sync"))arm=ARM_SYNC;
+    else if(!strcmp(argv[1],"sync-reset"))arm=ARM_SYNC_RESET;
+    else{fputs("invalid arm\n",stderr);return 2;}
+    if(!strcmp(argv[2],"static"))fault=FAULT_STATIC;
+    else if(!strcmp(argv[2],"route"))fault=FAULT_ROUTE;
+    else if(!strcmp(argv[2],"drift"))fault=FAULT_DRIFT;
+    else{fputs("invalid fault\n",stderr);return 2;}
+    sync_enabled=(arm==ARM_SYNC || arm==ARM_SYNC_RESET);
+
     in=fopen(argv[3],"rb");if(!in)goto done;
     if (fseek(in, 0, SEEK_END)) goto done;
     bytes_long = ftell(in);
@@ -60,7 +71,7 @@ int main(int argc, char **argv) {
     if(!activity_mem || !aec_mem ||
        ap_module_activity_init(activity_mem,ap_module_activity_state_size(),&ac,&activity)!=AP_OK ||
        ap_module_aec_init(aec_mem,ap_module_aec_state_size(),&ec,&aec)!=AP_OK)goto done;
-    if(arm==ARM_SYNC){
+    if(sync_enabled){
         sync_mem=aligned_alloc(16,round16(ap_module_sync_state_size()));
         if(!sync_mem || ap_module_sync_init(sync_mem,ap_module_sync_state_size(),0u,&sync)!=AP_OK)goto done;
     }
@@ -83,7 +94,7 @@ int main(int argc, char **argv) {
             const uint64_t remain=desired-render_cursor;
             const size_t chunk=remain>HOP?HOP:(size_t)remain;
             for(size_t k=0;k<chunk;++k)render_chunk[k]=physical_ref(data,samples,render_cursor+k);
-            if(arm==ARM_SYNC && ap_module_sync_push_render(sync,render_chunk,chunk,frame)!=AP_OK)goto done;
+            if(sync_enabled && ap_module_sync_push_render(sync,render_chunk,chunk,frame)!=AP_OK)goto done;
             render_cursor+=chunk;
         }
         if(arm==ARM_ORACLE){
@@ -92,8 +103,12 @@ int main(int argc, char **argv) {
             const uint64_t start=desired-HOP;
             for(unsigned k=0;k<HOP;++k)reference[k]=physical_ref(data,samples,start+k);
         }else{
-            if(ap_module_sync_track(sync,mic,HOP,RATE,120u,1,1,&event)!=AP_OK ||
-               ap_module_sync_get_reference(sync,HOP,reference,&underrun)!=AP_OK)goto done;
+            if(ap_module_sync_track(sync,mic,HOP,RATE,120u,1,1,&event)!=AP_OK)goto done;
+            if(arm==ARM_SYNC_RESET && event.route_jump){
+                ap_module_aec_reset(aec);
+                ++aec_resets;
+            }
+            if(ap_module_sync_get_reference(sync,HOP,reference,&underrun)!=AP_OK)goto done;
             ap_module_sync_get_status(sync,&status);
             if(event.delay_observed)++delay_observations;
             if(event.route_jump)++route_jumps;
@@ -109,27 +124,28 @@ int main(int argc, char **argv) {
         if(fwrite(packed,sizeof(float),HOP*2u,out)!=HOP*2u)goto done;
         if(fprintf(trace,"%u,%u,%llu,%u,%d,%.9g,%u,%u,%u,%u,%.9g,%.9g,%u,%u\n",
              frame,lead,(unsigned long long)(render_cursor-before),
-             arm==ARM_SYNC?status.delay_samples:0u,arm==ARM_SYNC?event.delay_error_samples:0,
-             arm==ARM_SYNC?(double)status.estimated_drift_ppm:0.0,
-             arm==ARM_SYNC?event.reference_sample_slips:0u,
-             arm==ARM_SYNC?(unsigned)event.delay_observed:0u,
-             arm==ARM_SYNC?(unsigned)event.route_jump:0u,(unsigned)(underrun!=0),
+             sync_enabled?status.delay_samples:0u,sync_enabled?event.delay_error_samples:0,
+             sync_enabled?(double)status.estimated_drift_ppm:0.0,
+             sync_enabled?event.reference_sample_slips:0u,
+             sync_enabled?(unsigned)event.delay_observed:0u,
+             sync_enabled?(unsigned)event.route_jump:0u,(unsigned)(underrun!=0),
              (double)me,(double)re,(unsigned)ar.far_end_active,(unsigned)ar.double_talk_active)<0)goto done;
-        if(arm==ARM_SYNC)final_sync=status;
+        if(sync_enabled)final_sync=status;
     }
 
     if(fprintf(meta,
       "{\"status\":\"PASS\",\"arm\":\"%s\",\"fault\":\"%s\",\"frames\":%u,\"samples\":%zu,"
       "\"sample_rate_hz\":16000,\"frame_samples\":160,\"initial_sync_delay_samples\":0,\"max_delay_ms\":120,"
-      "\"delay_tracking\":true,\"drift_compensation\":true,\"route_jump_resets_aec\":false,"
+      "\"delay_tracking\":true,\"drift_compensation\":true,\"route_jump_resets_aec\":%s,\"aec_resets\":%u,"
       "\"sync_state_bytes\":%zu,\"activity_state_bytes\":%zu,\"aec_state_bytes\":%zu,"
       "\"aec_active_taps\":%u,\"aec_block_samples\":%u,\"render_samples_pushed\":%llu,"
       "\"underruns\":%u,\"route_jumps\":%u,\"reference_sample_slips\":%u,\"delay_observations\":%u,"
       "\"final_sync_delay_samples\":%u,\"final_estimated_drift_ppm\":%.9g,"
       "\"used_far_frames\":%u,\"used_dt_frames\":%u,\"shipping_authority\":false,\"source_revision\":\"%s\"}\n",
-      arm==ARM_ORACLE?"oracle":arm==ARM_RAW?"raw":"public-sync",
+      arm==ARM_ORACLE?"oracle":arm==ARM_RAW?"raw":arm==ARM_SYNC?"public-sync":"public-sync-reset",
       fault==FAULT_STATIC?"static-lead":fault==FAULT_ROUTE?"route-jump":"drift-plus-250ppm",
-      frames,samples,arm==ARM_SYNC?ap_module_sync_state_size():0u,ap_module_activity_state_size(),ap_module_aec_state_size(),
+      frames,samples,arm==ARM_SYNC_RESET?"true":"false",aec_resets,
+      sync_enabled?ap_module_sync_state_size():0u,ap_module_activity_state_size(),ap_module_aec_state_size(),
       final_aec.active_taps,final_aec.block_samples,(unsigned long long)render_cursor,underruns,route_jumps,slips,delay_observations,
       final_sync.delay_samples,(double)final_sync.estimated_drift_ppm,far_frames,dt_frames,AP_BUILD_SOURCE_REVISION)<0)goto done;
     rc=0;

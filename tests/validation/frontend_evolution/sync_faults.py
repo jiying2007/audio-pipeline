@@ -134,7 +134,14 @@ def build(root,revision,label):
     binary=root/('sync-fault-'+label)
     cmd=[cc,*CFLAGS,*(['-O1','-g','-fsanitize=address,undefined','-fno-omit-frame-pointer'] if san else []),
       '-I'+str(ROOT/'include'),'-I'+str(b/'generated'),RUNNER,b/'libaudio_pipeline.a','-lm','-o',binary]
-    run_logged(cmd,root/(label+'-link.log'));run_logged([cc,'--version'],root/(label+'-compiler.txt'))
+    link_log=root/(label+'-link.log')
+    try:
+        run_logged(cmd,link_log)
+    except ValueError:
+        if link_log.exists():
+            print(link_log.read_text(errors='replace'),file=sys.stderr)
+        raise
+    run_logged([cc,'--version'],root/(label+'-compiler.txt'))
     shutil.copyfile(b/'generated/audio_pipeline/audio_pipeline_build.h',root/(label+'-build.h'))
     shutil.copyfile(b/'libaudio_pipeline.a',root/(label+'-library.a'))
     if arm:run_logged(['arm-linux-gnueabihf-readelf','-h',binary],root/'arm-elf.txt')

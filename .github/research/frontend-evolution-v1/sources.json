@@ -78,13 +78,13 @@
       "id": "speexdsp",
       "url": "https://github.com/xiph/speexdsp",
       "commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
-      "status": "PINNED_SOURCE_PREFLIGHT_NOT_EXECUTION_ADMITTED",
+      "status": "PINNED_PENDING_REVIEW",
       "rights": {
-        "code": "REVIEWED_BSD_STYLE",
-        "dependencies": "MINIMAL_CORE_REVIEW_PENDING_EXECUTION",
+        "code": "ALLOWED",
+        "dependencies": "PENDING",
         "weights": "NOT_APPLICABLE",
         "data": "NOT_APPLICABLE",
-        "redistribution": "RETAIN_UPSTREAM_NOTICES"
+        "redistribution": "ALLOWED"
       },
       "scope": "minimal-floating-point-aec-core-source-preflight"
     },

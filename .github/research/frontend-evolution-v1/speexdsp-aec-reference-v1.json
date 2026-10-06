@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE04-SPEEXDSP-AEC-REFERENCE-V1",
+  "implementation_base": "8b75b95a0a3496e5df2233c223476d20eff56818",
+  "preregistration_comment_id": 6009185210,
+  "decision": "SPEEXDSP_AEC_REFERENCE_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "source_id": "speexdsp",
+  "source_commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
+  "source_tree": "234a15ae4271403465237879b8670601af95bf0f",
+  "comparison": "whole-implementation-post-BF-AEC-not-DTD-causal-isolation",
+  "geometry": "ula4-70",
+  "beamformer": "fir33",
+  "speaker_pairs": [0, 1],
+  "events": ["none", "steer", "path"],
+  "case_count": 6,
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "requested_filter_samples": 1024,
+  "common_boundary": "saturating-s16le",
+  "rounding": "nearest-ties-away-from-zero-after-x32768-with-int16-saturation",
+  "control": {
+    "backend": "current-public-ACTIVITY-plus-MDF",
+    "far_end_threshold": 1e-7,
+    "double_talk_ratio": 1.5,
+    "hangover_frames": 3,
+    "filter_ms": 64,
+    "adapt_stride": 1,
+    "mu": 0.2
+  },
+  "reference": {
+    "api": "speex_echo_cancellation-direct",
+    "floating_point_internal": true,
+    "fft_backend": "smallft",
+    "activity_or_oracle_gates_grafted": false,
+    "preprocess_res_ns_agc": false,
+    "playback_capture_api": false
+  },
+  "metrics": [
+    "actual-far-only-output-residual",
+    "final-far-ratio-db",
+    "full-output-si-sdr-relative-to-quantized-bf-near-target",
+    "fixed-relative-recovery-with-nulls"
+  ],
+  "native_sanitizer_arm_engineering_required": true,
+  "independent_confirmation": false,
+  "timing_authority": "NONE_TARGET",
+  "limits": [
+    "disclosed-development-speech",
+    "synthetic-linear-echo-paths",
+    "exact-reference-sync",
+    "supplied-BF-direction",
+    "whole-implementation-differences-not-DTD-isolation",
+    "no-DUT",
+    "no-RES-NS-AGC",
+    "no-shipping-promotion"
+  ]
+}

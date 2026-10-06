@@ -78,15 +78,18 @@
       "id": "speexdsp",
       "url": "https://github.com/xiph/speexdsp",
       "commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
-      "status": "PINNED_PENDING_REVIEW",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
         "code": "ALLOWED",
-        "dependencies": "PENDING",
+        "dependencies": "ALLOWED",
         "weights": "NOT_APPLICABLE",
         "data": "NOT_APPLICABLE",
         "redistribution": "ALLOWED"
       },
-      "scope": "minimal-floating-point-aec-core-source-preflight"
+      "scope": "minimal-floating-point-aec-core-offline-reference-no-shipping-dependency",
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/speexdsp-admission.json",
+      "admission_receipt_sha256": "5492019a3a9ff85e3cbe185632793feb5bbdf9d526c8bbc3ba408bcb5405e508",
+      "materialized_source_sha256": "e47937c12b4c8a2232a3a52670e2a6719aa2257a9d11d2647e48d88a3b2ab2f3"
     },
     {
       "id": "odas",

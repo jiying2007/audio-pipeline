@@ -1,0 +1,46 @@
+{
+  "admission": {
+    "artifact_zip_sha256": "bb4d39ed346e0fccc87ee0bc05e064837f94b4f2d37aa071b7d0084ec1af6bd2",
+    "decision": "EXECUTION_ADMITTED_MINIMAL_AEC_REFERENCE_ONLY",
+    "preflight_artifact_id": 11389769210,
+    "preflight_run_id": 37413140795,
+    "review_date": "2026-10-06",
+    "scope": "offline research; explicit mdf.c + fftwrap.c + smallft.c; direct echo API only; no upstream build scripts/preprocess/RES/NS/AGC/resampler/jitter/data",
+    "verification": "16 locked upstream Git blobs, exact commit/tree, generated stdint config and materialized SHA256 verified by exact-head CI; artifact digest is GitHub/upload-reported, not an independent local rehash"
+  },
+  "files_sha256": {
+    "AUTHORS": "ff0999cefe4e45d6ee07eb8b967de0e05b35e7936571ee15dd6a828873d06fe2",
+    "COPYING": "2654a4264b2bfe298dedc508748d140111840c315cc8eb646a3a68c13fa75b01",
+    "configure.ac": "7d4157466c17cd3bd2c74362c4fd16e05d73e7338f0081b993063a977c5d682b",
+    "include/speex/speex_echo.h": "ab18db97564a241c9e06d723351c2155bf04a23ac30e0c27a3d86dcc04de3426",
+    "include/speex/speexdsp_config_types.h.in": "52e5b3ba5f00b4f2729f04ab6ef8ad3d26dbe16a65e998e231de6b1e316e92e1",
+    "include/speex/speexdsp_types.h": "4f97187c057fd8493c787f2526752859cf57007d50fef8d2e03c9b79b2fed490",
+    "libspeexdsp/Makefile.am": "34ec7f5104ca9f7b6840d2d49a49d9f827e91bf497020d9ebc13952796e591cc",
+    "libspeexdsp/arch.h": "102f6a14a95f8ae0bcfc69270f3a9e3fbba08b63bba688ca524f71e3faa48c23",
+    "libspeexdsp/fftwrap.c": "a59ec583e5660207da9cf3c1ddd6a7ff1ed91382eb40df2a4e77d5cddfe14c52",
+    "libspeexdsp/fftwrap.h": "fd289dcc47b9ddb2b33039c1990c4644bb279c9413ede6e74fdb2742c3888ee5",
+    "libspeexdsp/math_approx.h": "a024693b0d29dc4e904021a1b442908c1fa726b18f5d31b0935e38646f2701ff",
+    "libspeexdsp/mdf.c": "a096297873dfd0a07509028d2cdd02d12edf8f1d03319fcecedda003d18d22a8",
+    "libspeexdsp/os_support.h": "5ab9c979e8ac1f72c7441d24e39e7840828dd9356aac49a31eabeddb808bf1d3",
+    "libspeexdsp/pseudofloat.h": "0bd544dbed0096e02da2fd800d673bafb19bd97f56e268b98402ad641726daae",
+    "libspeexdsp/smallft.c": "2ec5013e40843407c32a22de9eedd92fae202e97315321131dc13c04584f4b74",
+    "libspeexdsp/smallft.h": "715352e7efe55cb671f37fa341610ce7df893016625506e22175d9f1b1b817e9"
+  },
+  "generated_config_sha256": "d40c230cb7bda714f38e91467e27ec71a9e8e3b38eb96531f6013aec95360152",
+  "materialized_source_sha256": "e47937c12b4c8a2232a3a52670e2a6719aa2257a9d11d2647e48d88a3b2ab2f3",
+  "rights_review": {
+    "code": "BSD-style permissive terms in COPYING and per-file notices; preserve notices",
+    "data": "NOT_APPLICABLE",
+    "dependencies": "C standard library and libm; explicit mdf.c + fftwrap.c + smallft.c source list",
+    "redistribution": "Retain COPYING and AUTHORS with research source/binary evidence; no shipping dependency introduced",
+    "weights": "NOT_APPLICABLE"
+  },
+  "schema_version": 1,
+  "scope": "minimal-floating-point-aec-core-only-no-upstream-build-scripts-preprocess-res-ns-agc-resampler-jitter-or-data",
+  "shipping_authority": false,
+  "source_commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
+  "source_id": "speexdsp",
+  "source_lock_sha256": "096f79076a5852a6adc04a57de0eebb19b12bad4c6227b4abf7091786378001e",
+  "source_tree": "234a15ae4271403465237879b8670601af95bf0f",
+  "status": "SOURCE_BYTES_VERIFIED_NOT_EXECUTED"
+}

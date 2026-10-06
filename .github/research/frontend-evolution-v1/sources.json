@@ -5,31 +5,351 @@
   "inventory_date": "2026-10-05",
   "authority": "inventory-not-execution-or-license-grant",
   "sources": [
-    {"id":"athena-signal","url":"https://github.com/athena-team/athena-signal","commit":"fdf89deaa507c819378a1837053f529b9c35145e","status":"PINNED_PENDING_REVIEW","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"admission_receipt_path":".github/research/frontend-evolution-v1/libfvad-admission.json","admission_receipt_sha256":"3ffa160b08240799413365790825a0731278ace53edfc058edda83b0ed549a11","commit":"532ab666c20d3cfda38bca63abbb0f152706c369","id":"libfvad","materialized_source_sha256":"c60c6193a171ac08862ed998854a33b1fed53de41c5aa01b38d29d599bf4a566","rights":{"code":"ALLOWED","data":"NOT_APPLICABLE","dependencies":"ALLOWED","redistribution":"ALLOWED","weights":"NOT_APPLICABLE"},"scope":"minimal-core-offline-reference-no-shipping-dependency","status":"EXECUTION_ADMITTED","url":"https://github.com/dpirch/libfvad"},
-    {"id":"aispeech-earbuds","url":"https://github.com/jensen199105/aispeech-earbuds","commit":"561cd5975e93bae036b3f14060650a208d1b3573","status":"REFERENCE_REVIEW_ONLY","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"webrtc","url":"https://webrtc.googlesource.com/src","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"sof","url":"https://github.com/thesofproject/sof","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"speexdsp","url":"https://github.com/xiph/speexdsp","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"odas","url":"https://github.com/introlab/odas","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"pyroomacoustics","url":"https://github.com/LCAV/pyroomacoustics","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"rnnoise","url":"https://gitlab.xiph.org/xiph/rnnoise","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"gtcrn","url":"https://github.com/Xiaobin-Rong/gtcrn","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"ul-unas","url":"https://github.com/Xiaobin-Rong/ul-unas","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"h-gtcrn-noisy","url":"https://github.com/Max1Wz/H-GTCRN","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"h-gtcrn-iva","url":"https://github.com/Max1Wz/H-GTCRN","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"silero-vad","url":"https://github.com/snakers4/silero-vad","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"deepfilternet","url":"https://github.com/Rikorose/DeepFilterNet","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"dtln","url":"https://github.com/breizhn/DTLN","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"dtln-aec","url":"https://github.com/breizhn/DTLN-aec","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"nara-wpe","url":"https://github.com/fgnt/nara_wpe","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"pffft","url":"https://github.com/marton78/pffft","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"kissfft","url":"https://github.com/mborgerding/kissfft","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"xmos-lib-voice","url":"https://github.com/xmos/lib_voice","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"esp-sr","url":"https://github.com/espressif/esp-sr","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"realman","url":"https://github.com/Audio-WestlakeU/RealMAN","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"pyramic","url":"https://github.com/fakufaku/pyramic-dataset","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"aec-challenge","url":"https://github.com/microsoft/AEC-Challenge","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}},
-    {"id":"dns-challenge","url":"https://github.com/microsoft/DNS-Challenge","commit":null,"status":"PLANNED","rights":{"code":"PENDING","dependencies":"PENDING","weights":"PENDING","data":"PENDING","redistribution":"PENDING"}}
+    {
+      "id": "athena-signal",
+      "url": "https://github.com/athena-team/athena-signal",
+      "commit": "fdf89deaa507c819378a1837053f529b9c35145e",
+      "status": "PINNED_PENDING_REVIEW",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/libfvad-admission.json",
+      "admission_receipt_sha256": "3ffa160b08240799413365790825a0731278ace53edfc058edda83b0ed549a11",
+      "commit": "532ab666c20d3cfda38bca63abbb0f152706c369",
+      "id": "libfvad",
+      "materialized_source_sha256": "c60c6193a171ac08862ed998854a33b1fed53de41c5aa01b38d29d599bf4a566",
+      "rights": {
+        "code": "ALLOWED",
+        "data": "NOT_APPLICABLE",
+        "dependencies": "ALLOWED",
+        "redistribution": "ALLOWED",
+        "weights": "NOT_APPLICABLE"
+      },
+      "scope": "minimal-core-offline-reference-no-shipping-dependency",
+      "status": "EXECUTION_ADMITTED",
+      "url": "https://github.com/dpirch/libfvad"
+    },
+    {
+      "id": "aispeech-earbuds",
+      "url": "https://github.com/jensen199105/aispeech-earbuds",
+      "commit": "561cd5975e93bae036b3f14060650a208d1b3573",
+      "status": "REFERENCE_REVIEW_ONLY",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "webrtc",
+      "url": "https://webrtc.googlesource.com/src",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "sof",
+      "url": "https://github.com/thesofproject/sof",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "speexdsp",
+      "url": "https://github.com/xiph/speexdsp",
+      "commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
+      "status": "EXECUTION_ADMITTED",
+      "rights": {
+        "code": "ALLOWED",
+        "dependencies": "ALLOWED",
+        "weights": "NOT_APPLICABLE",
+        "data": "NOT_APPLICABLE",
+        "redistribution": "ALLOWED"
+      },
+      "scope": "minimal-floating-point-aec-core-offline-reference-no-shipping-dependency",
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/speexdsp-admission.json",
+      "admission_receipt_sha256": "5492019a3a9ff85e3cbe185632793feb5bbdf9d526c8bbc3ba408bcb5405e508",
+      "materialized_source_sha256": "e47937c12b4c8a2232a3a52670e2a6719aa2257a9d11d2647e48d88a3b2ab2f3"
+    },
+    {
+      "id": "odas",
+      "url": "https://github.com/introlab/odas",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "pyroomacoustics",
+      "url": "https://github.com/LCAV/pyroomacoustics",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "rnnoise",
+      "url": "https://gitlab.xiph.org/xiph/rnnoise",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "gtcrn",
+      "url": "https://github.com/Xiaobin-Rong/gtcrn",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "ul-unas",
+      "url": "https://github.com/Xiaobin-Rong/ul-unas",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "h-gtcrn-noisy",
+      "url": "https://github.com/Max1Wz/H-GTCRN",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "h-gtcrn-iva",
+      "url": "https://github.com/Max1Wz/H-GTCRN",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "silero-vad",
+      "url": "https://github.com/snakers4/silero-vad",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "deepfilternet",
+      "url": "https://github.com/Rikorose/DeepFilterNet",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "dtln",
+      "url": "https://github.com/breizhn/DTLN",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "dtln-aec",
+      "url": "https://github.com/breizhn/DTLN-aec",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "nara-wpe",
+      "url": "https://github.com/fgnt/nara_wpe",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "pffft",
+      "url": "https://github.com/marton78/pffft",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "kissfft",
+      "url": "https://github.com/mborgerding/kissfft",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "xmos-lib-voice",
+      "url": "https://github.com/xmos/lib_voice",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "esp-sr",
+      "url": "https://github.com/espressif/esp-sr",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "realman",
+      "url": "https://github.com/Audio-WestlakeU/RealMAN",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "pyramic",
+      "url": "https://github.com/fakufaku/pyramic-dataset",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "aec-challenge",
+      "url": "https://github.com/microsoft/AEC-Challenge",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "dns-challenge",
+      "url": "https://github.com/microsoft/DNS-Challenge",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    }
   ]
 }

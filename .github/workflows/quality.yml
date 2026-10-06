@@ -264,6 +264,30 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          repository: xiph/speexdsp
+          ref: 7a158783df74efe7c2d1c6ee8363c1e695c71226
+          path: .fe-speexdsp
+          persist-credentials: false
+      - name: Verify pristine SpeexDSP source bytes without executing them
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/speexdsp_source.py \
+            --source .fe-speexdsp --output fe-speex-source
+          python3 tests/validation/frontend_evolution/speexdsp_source.py \
+            --output fe-speex-source --verify
+          python3 tests/validation/frontend_evolution/speexdsp_source.py \
+            --output fe-speex-source --negative-evidence
+      - name: Preserve SpeexDSP source-preflight bytes and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-speex-source-${{ github.run_id }}
+          path: fe-speex-source/
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
           repository: dpirch/libfvad
           ref: 532ab666c20d3cfda38bca63abbb0f152706c369
           path: .fe-libfvad

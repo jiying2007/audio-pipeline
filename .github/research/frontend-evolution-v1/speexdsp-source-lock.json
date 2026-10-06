@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source_id": "speexdsp",
+  "upstream_commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
+  "upstream_tree": "234a15ae4271403465237879b8670601af95bf0f",
+  "scope": "minimal-floating-point-aec-core-only-no-upstream-build-scripts-preprocess-res-ns-agc-resampler-jitter-or-data",
+  "execution_authority": "source-preflight-only-until-separate-admission",
+  "rights_review": {
+    "code": "BSD-style permissive terms in COPYING and per-file notices; preserve notices",
+    "dependencies": "C standard library and libm; explicit mdf.c + fftwrap.c + smallft.c source list",
+    "weights": "NOT_APPLICABLE",
+    "data": "NOT_APPLICABLE",
+    "redistribution": "Retain COPYING and AUTHORS with research source/binary evidence; no shipping dependency introduced"
+  },
+  "generated_build_input": {
+    "path": "include/speex/speexdsp_config_types.h",
+    "derivation": "stdint.h typedefs for int16_t/uint16_t/int32_t/uint32_t from upstream template; generated locally, never claimed as upstream bytes"
+  },
+  "git_blob_sha1": {
+    "AUTHORS": "6ae4754ef93502c228437aefd37d6ca55bb15a47",
+    "COPYING": "7d6dc4aabd38f6e184028ff871744ac6b71b63ae",
+    "configure.ac": "413f71da101d5c43d8799c946a6c6b848b3e4107",
+    "include/speex/speex_echo.h": "4c1aa5a5f2a43e5aa0eee7148b7bff21cb79d14c",
+    "include/speex/speexdsp_config_types.h.in": "5ea7b556126afa05590304f598a6a8dffb87d4aa",
+    "include/speex/speexdsp_types.h": "4b4a76a474af7f6fdd2f175815529edf951abe74",
+    "libspeexdsp/Makefile.am": "b2ab1875275b0efd56405643805d9da08e0814cd",
+    "libspeexdsp/arch.h": "1cac3d9c89f3c6321e2c7fd26a659023eea65572",
+    "libspeexdsp/fftwrap.c": "4573479d006ce63be67f50e8cfc474380b257388",
+    "libspeexdsp/fftwrap.h": "2c0742559c11f9ab686654a2dc6cacf54bb58dc1",
+    "libspeexdsp/math_approx.h": "596dfdc1b7a51722d379fe74342daf7da704be61",
+    "libspeexdsp/mdf.c": "7b367f9a8803a8273fa98963e93e12721ee15405",
+    "libspeexdsp/os_support.h": "0db31a61df1b497de71585f7ff3df80f6926c841",
+    "libspeexdsp/pseudofloat.h": "ed5ab14b05f44050b755d94dcee31d24a941f221",
+    "libspeexdsp/smallft.c": "37c1acfd7685a7acd8d568ce24c3a567fd5a3193",
+    "libspeexdsp/smallft.h": "446e2f65b198462122fa39085f64a4ebf93af90b"
+  }
+}

@@ -45,10 +45,12 @@ int main(int argc, char **argv) {
     if(!strcmp(argv[1],"oracle"))arm=ARM_ORACLE;else if(!strcmp(argv[1],"raw"))arm=ARM_RAW;else if(!strcmp(argv[1],"sync"))arm=ARM_SYNC;else{fputs("invalid arm\n",stderr);return 2;}
     if(!strcmp(argv[2],"static"))fault=FAULT_STATIC;else if(!strcmp(argv[2],"route"))fault=FAULT_ROUTE;else if(!strcmp(argv[2],"drift"))fault=FAULT_DRIFT;else{fputs("invalid fault\n",stderr);return 2;}
     in=fopen(argv[3],"rb");if(!in)goto done;
-    if(fseek(in,0,SEEK_END))goto done;bytes_long=ftell(in);
+    if (fseek(in, 0, SEEK_END)) goto done;
+    bytes_long = ftell(in);
     if(bytes_long<=0 || (unsigned long)bytes_long%(COLS*sizeof(float)) || fseek(in,0,SEEK_SET))goto done;
     bytes=(size_t)bytes_long;samples=bytes/(COLS*sizeof(float));
-    if(samples%HOP || samples/HOP>2000u)goto done;frames=(uint32_t)(samples/HOP);
+    if (samples % HOP || samples / HOP > 2000u) goto done;
+    frames = (uint32_t)(samples / HOP);
     data=(float*)malloc(bytes);if(!data || fread(data,1,bytes,in)!=bytes)goto done;
     for(size_t i=0;i<samples*COLS;++i)if(!isfinite(data[i]))goto done;
     if(fclose(in)){in=NULL;goto done;}in=NULL;
@@ -133,7 +135,10 @@ int main(int argc, char **argv) {
     rc=0;
 done:
     free(data);free(sync_mem);free(activity_mem);free(aec_mem);
-    if(in && fclose(in))rc=2;if(out && fclose(out))rc=2;if(meta && fclose(meta))rc=2;if(trace && fclose(trace))rc=2;
+    if (in && fclose(in)) rc = 2;
+    if (out && fclose(out)) rc = 2;
+    if (meta && fclose(meta)) rc = 2;
+    if (trace && fclose(trace)) rc = 2;
     if(rc)fputs("FE04 SYNC fault diagnostic failed; partial files are not evidence\n",stderr);
     return rc;
 }

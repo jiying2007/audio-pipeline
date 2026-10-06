@@ -224,8 +224,20 @@ def run(base,correlation,root,revision):
       'route_jump_resets_aec':False,'timestamp_assistance':False,'res_enabled':False}
     write_json(root/'result.json',report);seal_output(root,report);return report
 
-def verify(base,correlation,root,revision):
-    verify_seal(root);activity.verify(base/'order',base/'activity',revision);guard.verify(base,correlation,revision)
+def build_input_expectations(base,correlation):
+    expected={}
+    for old in selected(base):
+        pair=old['pair']
+        with tempfile.TemporaryDirectory(prefix='sync-input-expect-') as tmp:
+            pth=Path(tmp)/'x.f32';rec=make_input(base,correlation,old,pth)
+            expected[pair]={'bytes':pth.read_bytes(),'receipt':rec}
+    return expected
+
+def verify(base,correlation,root,revision,*,verify_predecessors=True,expected_inputs=None):
+    verify_seal(root)
+    if verify_predecessors:
+        activity.verify(base/'order',base/'activity',revision)
+        guard.verify(base,correlation,revision)
     r=load_json(root/'result.json');p=load_json(PLAN)
     require((root/'experiment.json').read_bytes()==PLAN.read_bytes(),'plan drift')
     require(r['decision']==DECISION and r['shipping_authority'] is False and r['data_role']==ROLE and r['case_count']==6 and r['arms']==3,'authority/matrix')
@@ -237,13 +249,13 @@ def verify(base,correlation,root,revision):
     require(p['faults']=={'static-lead':320,'route-jump':[320,800,128000],'drift-plus-ppm':250},'frozen fault contract')
     for name in ('sync_fault_runner.c','sync_faults.py'):require((root/'source'/name).read_bytes()==(HERE/name).read_bytes(),'source drift '+name)
     expected={(x['pair'],f) for x in selected(base) for f in FAULTS};require({(x['pair'],x['fault']) for x in r['cases']}==expected,'case set')
+    if expected_inputs is None:
+        expected_inputs=build_input_expectations(base,correlation)
     inputs={}
     for old in selected(base):
-        pair=old['pair']
-        with tempfile.TemporaryDirectory(prefix='sync-input-') as tmp:
-            pth=Path(tmp)/'x.f32';rec=make_input(base,correlation,old,pth)
-            real=root/'inputs'/f'p{pair}.f32';require(real.read_bytes()==pth.read_bytes() and rec==load_json(real.with_suffix('.json')),'input regeneration')
-        inputs[pair]=floats(root/'inputs'/f'p{pair}.f32',N*4)
+        pair=old['pair'];expected=expected_inputs[pair];real=root/'inputs'/f'p{pair}.f32'
+        require(real.read_bytes()==expected['bytes'] and expected['receipt']==load_json(real.with_suffix('.json')),'input regeneration')
+        inputs[pair]=floats(real,N*4)
     for case in r['cases']:
         d=root/'cases'/case['case_id'];source=inputs[case['pair']];target=list(source[1::4]);echo=list(source[2::4])
         require(case['input']==f"inputs/p{case['pair']}.f32" and case['input_receipt']==load_json((root/case['input']).with_suffix('.json')),'input receipt')
@@ -265,6 +277,11 @@ def verify(base,correlation,root,revision):
 
 def negatives(base,correlation,root,revision):
     kinds=('promotion','predecessor','missing-case','metric','input','output','trace','binary');rejected=[]
+    expected_inputs=build_input_expectations(base,correlation)
+    # Fail closed once against the complete predecessor chain. Resealed negatives
+    # then re-check every candidate semantic without re-hashing hundreds of MiB
+    # of immutable predecessor evidence eight times.
+    verify(base,correlation,root,revision,verify_predecessors=True,expected_inputs=expected_inputs)
     with tempfile.TemporaryDirectory(prefix='sync-neg-') as temp:
         copy=Path(temp)/'copy';shutil.copytree(root,copy);keep={p:p.read_bytes() for p in (copy/'result.json',copy/'manifest.json',copy/'SHA256SUMS')}
         for kind in kinds:
@@ -277,7 +294,7 @@ def negatives(base,correlation,root,revision):
                 case=rr['cases'][0]['case_id'];pth=copy/'inputs/p0.f32' if kind=='input' else copy/'cases'/case/'sync.f32' if kind=='output' else copy/'cases'/case/'sync.csv' if kind=='trace' else copy/'sync-fault-native'
                 blob=pth.read_bytes();changed.append((pth,blob));pth.write_bytes(blob+b'changed')
             write_json(copy/'result.json',rr);seal_output(copy,rr)
-            try:verify(base,correlation,copy,revision)
+            try:verify(base,correlation,copy,revision,verify_predecessors=False,expected_inputs=expected_inputs)
             except (ValueError,KeyError,IndexError,AssertionError,RuntimeError):rejected.append(kind)
             else:raise AssertionError('resealed negative accepted '+kind)
             for pth,blob in changed:pth.write_bytes(blob)

@@ -1,6 +1,7 @@
-/* FE04 offline paired-order probe. Uses the unchanged PUBLIC AEC module and
- * the existing research BF. No new AEC algorithm or production API. Shadows use
- * exactly the same externally specified adaptation gates, not independent DTD.
+/* FE04 offline paired-order probe. Uses unchanged PUBLIC AEC and optional
+ * Activity modules and the existing research BF. Default gates are supplied.
+ * Measured gates can adapt during near speech: shadows then are instrumentation,
+ * NOT an isolated near/echo decomposition. No production API/algorithm change.
  */
 #include "audio_pipeline/audio_modules.h"
 #include "array_native.h"
@@ -80,12 +81,25 @@ int main(int argc,char **argv) {
     fe_array_config c;array_owner b[5]={{0}};aec_owner post[2]={{0}},pre[8]={{0}};
     float banks[2][132]={{0}},packet[HOP*11],near[HOP*4],echo[HOP*4],mix[HOP*4],ref[HOP];
     float residual[2][HOP*4],bf_mix[HOP],output[OUTPUTS][HOP],interleaved[HOP*OUTPUTS];
-    FILE *input=NULL,*out=NULL,*meta=NULL;unsigned event=0,frames=0;int rc=2;
+    FILE *input=NULL,*out=NULL,*meta=NULL,*trace=NULL;unsigned event=0,frames=0;int rc=2,gate_mode=0;
+    void *activity_memory=NULL;
+#if AP_HAVE_MODULE_ACTIVITY
+    ap_activity_module_t *activity=NULL;
+#endif
     double maximum_additivity=0,maximum_commutation=0,peak=0;unsigned outside=0;
     size_t frame_bytes;unsigned n;fe_array_info info;
     const unsigned marker=1;
-    if(argc!=5 || *(const unsigned char *)&marker!=1) {
-        fputs("usage: bf-aec-order CONFIG INPUT.f32le OUTPUT.f32le META.json (little endian)\n",stderr);return 2;
+    if((argc!=5 && argc!=7) || *(const unsigned char *)&marker!=1) {
+        fputs("usage: bf-aec-order CONFIG INPUT.f32le OUTPUT.f32le META.json [--measured-activity|--monitor-activity TRACE.csv] (little endian)\n",stderr);return 2;
+    }
+    if(argc==7) {
+#if AP_HAVE_MODULE_ACTIVITY
+        if(!strcmp(argv[5],"--measured-activity"))gate_mode=1;
+        else if(!strcmp(argv[5],"--monitor-activity"))gate_mode=2;
+        else {fputs("invalid activity mode\n",stderr);return 2;}
+#else
+        fputs("Activity module is not compiled; no oracle fallback\n",stderr);return 2;
+#endif
     }
     if(!config(argv[1],&c,banks,&event)) {fputs("invalid config\n",stderr);return 2;}
     n=c.mic_count;frame_bytes=HOP*(2u*n+3u)*sizeof(float);
@@ -96,6 +110,20 @@ int main(int argc,char **argv) {
     /* Exclusive creation: never overwrite an earlier successful or failed run. */
     out=fopen(argv[3],"wbx");if(!out)goto done;
     meta=fopen(argv[4],"wbx");if(!meta)goto done;
+#if AP_HAVE_MODULE_ACTIVITY
+    if(gate_mode) {
+        const ap_module_activity_config_t ac={1.0e-7f,1.5f,3u};
+        size_t bytes=ap_module_activity_state_size();
+        activity_memory=aligned_alloc(16,(bytes+15u)&~(size_t)15u);
+        if(!activity_memory || ap_module_activity_init(activity_memory,bytes,&ac,&activity)!=AP_OK)goto done;
+        trace=fopen(argv[6],"wbx");if(!trace)goto done;
+        if(fputs("frame,mic_energy,reference_energy,oracle_far,oracle_dt,detected_far,detected_dt,used_far,used_dt\n",trace)==EOF)goto done;
+        fprintf(stderr,"ACTIVITY_TRACE_V1 mode=%s state_bytes=%zu threshold=1e-7 ratio=1.5 hold=3\n",
+            gate_mode==1?"measured":"monitor-only",bytes);
+    }
+#else
+    (void)gate_mode;
+#endif
     for(unsigned j=0;j<5;++j)if(!array_init(&b[j],&c,banks[0]))goto done;
     for(unsigned j=0;j<2;++j)if(!aec_init(&post[j]))goto done;
     for(unsigned j=0;j<2*n;++j)if(!aec_init(&pre[j]))goto done;
@@ -124,8 +152,24 @@ int main(int argc,char **argv) {
                 if(status!=FE_ARRAY_OK)goto done;
             }
         }
-        if(!beam(&b[0],mix,n,bf_mix) || !beam(&b[1],near,n,output[0]) || !beam(&b[2],echo,n,output[1]) ||
-           !aec(&post[0],bf_mix,ref,output[2],far,dt) || !aec(&post[1],output[1],ref,output[3],far,dt))goto done;
+        if(!beam(&b[0],mix,n,bf_mix) || !beam(&b[1],near,n,output[0]) || !beam(&b[2],echo,n,output[1]))goto done;
+#if AP_HAVE_MODULE_ACTIVITY
+        if(gate_mode) {
+            float mic_energy=1.0e-12f,reference_energy=1.0e-12f;
+            ap_module_activity_result_t ar;int oracle_far=far,oracle_dt=dt;
+            for(unsigned k=0;k<HOP;++k) {
+                mic_energy+=bf_mix[k]*bf_mix[k];
+                reference_energy+=ref[k]*ref[k];
+            }
+            mic_energy/=HOP;reference_energy/=HOP;
+            if(ap_module_activity_process(activity,mic_energy,reference_energy,&ar)!=AP_OK)goto done;
+            if(gate_mode==1) {far=ar.far_end_active;dt=ar.double_talk_active;}
+            if(fprintf(trace,"%u,%.9g,%.9g,%d,%d,%u,%u,%d,%d\n",frames,
+                (double)mic_energy,(double)reference_energy,oracle_far,oracle_dt,
+                (unsigned)ar.far_end_active,(unsigned)ar.double_talk_active,far,dt)<0)goto done;
+        }
+#endif
+        if(!aec(&post[0],bf_mix,ref,output[2],far,dt) || !aec(&post[1],output[1],ref,output[3],far,dt))goto done;
         for(unsigned m=0;m<n;++m) {
             float x[HOP],e[HOP],r[HOP],s[HOP];
             for(unsigned k=0;k<HOP;++k){x[k]=mix[k*n+m];e[k]=echo[k*n+m];}
@@ -166,9 +210,11 @@ int main(int argc,char **argv) {
     for(unsigned j=0;j<5;++j)free(b[j].memory);
     for(unsigned j=0;j<2;++j)free(post[j].memory);
     for(unsigned j=0;j<8;++j)free(pre[j].memory);
+    free(activity_memory);
     if(input && fclose(input))rc=2;
     if(out && fclose(out))rc=2;
     if(meta && fclose(meta))rc=2;
+    if(trace && fclose(trace))rc=2;
     if(rc)fputs("FE04 failed; partial files are not evidence of success\n",stderr);
     return rc;
 }

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE04-SYNC-ROUTE-RESET-V1",
+  "implementation_base": "fe93fc76dc8ff6456c55a4fd0e27eb6c044949ca",
+  "preregistration_comment_id": 6019393409,
+  "predecessor_experiment": "FE04-SYNC-FAULTS-V1",
+  "predecessor_decision": "SYNC_FAULTS_DIAGNOSTIC_NO_PROMOTION",
+  "decision": "SYNC_ROUTE_RESET_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "pairs": [0, 1],
+  "faults": ["static", "route", "drift"],
+  "case_count": 6,
+  "control": "predecessor-public-sync-no-aec-reset",
+  "candidate": "public-sync-plus-production-aec-reset-on-route-jump",
+  "reset_timing": "after-sync-track-before-get-reference-and-current-frame-activity-aec",
+  "activity_reset": false,
+  "sync_reset": false,
+  "res_enabled": false,
+  "ns_enabled": false,
+  "agc_enabled": false,
+  "timestamp_assistance": false,
+  "native_full_matrix": true,
+  "sanitizer_arm_fixed_case": "p0-route",
+  "causal_guards": [
+    "candidate-sync-trace-byte-identical-to-predecessor-sync-trace",
+    "candidate-reset-count-equals-predecessor-route-jump-events",
+    "zero-route-event-output-byte-identical-to-predecessor-sync-output"
+  ],
+  "limits": [
+    "disclosed-development-speech",
+    "synthetic-linear-echo-paths",
+    "research-BF-input",
+    "research-Activity-AEC-constants",
+    "no-RES-NS-AGC",
+    "no-DUT",
+    "no-shipping-promotion"
+  ]
+}

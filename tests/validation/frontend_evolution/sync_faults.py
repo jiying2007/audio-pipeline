@@ -54,7 +54,7 @@ def trace_rows(path,fault,arm,frames):
             lead=expected_lead(fault,index,frames);desired=(index+1)*HOP+lead;pushed=desired-cursor;cursor=desired
             require(item['known_lead_samples']==lead and item['pushed_samples']==pushed,'transport schedule drift')
             require(item['used_far'] in (0,1) and item['used_dt'] in (0,1),'gate flag')
-            if arm!='sync':
+            if arm not in ('sync','sync-reset'):
                 require(all(item[k]==0 for k in ('sync_delay_samples','delay_error_samples','reference_sample_slips',
                     'delay_observed','route_jump','underrun')) and item['estimated_drift_ppm']==0.0,'non-sync fabricated state')
             else:

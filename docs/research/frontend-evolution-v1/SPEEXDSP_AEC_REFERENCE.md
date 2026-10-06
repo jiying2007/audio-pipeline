@@ -19,7 +19,7 @@ it never uses the playback/capture API with its two-frame playback buffer.
 
 ## Fixed comparison
 
-Both arms consume the exact same post-BF microphone and render after one deterministic
+Both arms consume the exact post-BF microphone/render observation retained by #667, then one deterministic
 S16 boundary. BF near target and known BF echo are quantized by the same saturating
 nearest/ties-away-from-zero rule and retained. The current control dequantizes that S16
 to the unchanged public Activity + MDF AEC. Speex receives the same S16 directly and

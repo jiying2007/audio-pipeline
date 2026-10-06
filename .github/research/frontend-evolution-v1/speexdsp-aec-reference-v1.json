@@ -12,8 +12,15 @@
   "comparison": "whole-implementation-post-BF-AEC-not-DTD-causal-isolation",
   "geometry": "ula4-70",
   "beamformer": "fir33",
-  "speaker_pairs": [0, 1],
-  "events": ["none", "steer", "path"],
+  "speaker_pairs": [
+    0,
+    1
+  ],
+  "events": [
+    "none",
+    "steer",
+    "path"
+  ],
   "case_count": 6,
   "sample_rate_hz": 16000,
   "frame_samples": 160,
@@ -55,5 +62,6 @@
     "no-DUT",
     "no-RES-NS-AGC",
     "no-shipping-promotion"
-  ]
+  ],
+  "input_authority": "exact-post-BF-mic-render-from-FE04-correlation-observation"
 }

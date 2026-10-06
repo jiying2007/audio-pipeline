@@ -67,6 +67,14 @@ def admission(source):
     require(verified['status']=='VERIFIED_SOURCE_BYTES_NOT_EXECUTED','preflight status')
     return receipt
 
+def correlation_binding(base,correlation,revision):
+    verify_seal(correlation);r=load_json(correlation/'result.json')
+    require(r['execution_source_revision']==revision,'correlation source revision')
+    require(r['activity_manifest_sha256']==sha256((base/'activity/manifest.json').read_bytes())
+      and r['order_manifest_sha256']==sha256((base/'order/manifest.json').read_bytes()),'correlation predecessor binding')
+    require(r['shipping_authority'] is False and r['case_count']==36,'correlation evidence authority/count')
+    return r
+
 def build(root,source,revision,label):
     arm=label=='arm';san=label=='sanitized';cc='arm-linux-gnueabihf-gcc' if arm else 'cc'
     opt=['-O1','-g','-fsanitize=address,undefined','-fno-omit-frame-pointer'] if san else ['-O2']
@@ -164,10 +172,12 @@ def metrics(target,echo,actual):
     final=10*math.log10(ee/max(rr,1e-30)) if ee/19>1e-12 else None
     return {'phases_si_sdr_relative_to_quantized_bf_target_db':phases,'far_only_windows':w,'final_far_ratio_db':final,**rec}
 
-def make_case(base,row,dest):
-    raw=order.floats(base/'order/cases'/row['case_id']/'output.f32',N*6);inp=order.floats(base/'order'/row['input']);n=4
-    target=list(raw[0::6]);echo=list(raw[1::6]);mic=[target[k]+echo[k] for k in range(N)]
-    ref=[inp[k*(2*n+3)+2*n] for k in range(N)]
+def make_case(base,correlation,row,dest):
+    raw=order.floats(base/'order/cases'/row['case_id']/'output.f32',N*6)
+    observed=order.floats(correlation/'cases'/row['case_id']/'guard.csv.observed.f32',N*2)
+    target=list(raw[0::6]);echo=list(raw[1::6]);mic=list(observed[0::2]);ref=list(observed[1::2])
+    require(max(abs(mic[k]-float(target[k])-float(echo[k])) for k in range(N))<=5e-6,
+            'exact BF observation/component disagreement')
     qm,cm=quantize(mic);qr,cr=quantize(ref);qt,ct=quantize(target);qe,ce=quantize(echo)
     dest.mkdir(parents=True)
     (dest/'input.s16').write_bytes(i16_bytes([v for ab in zip(qm,qr) for v in ab]))
@@ -182,9 +192,9 @@ def selected(base):
     require(len(rows)==6 and {(x['pair'],x['event']) for x in rows}=={(p,e) for p in range(2) for e in EVENTS},'fixed six-case selection')
     return sorted(rows,key=lambda x:(x['pair'],EVENTS.index(x['event'])))
 
-def run(base,source,root,revision):
+def run(base,source,correlation,root,revision):
     require(not root.exists() and hex_digest(revision,40),'fresh output/exact revision')
-    activity.verify(base/'order',base/'activity',revision);receipt=admission(source)
+    activity.verify(base/'order',base/'activity',revision);receipt=admission(source);correlation_binding(base,correlation,revision)
     root.mkdir(parents=True);shutil.copyfile(PLAN,root/'experiment.json');shutil.copyfile(ADMISSION,root/'admission.json')
     shutil.copyfile(source/'source-receipt.json',root/'source-receipt.json');(root/'source').mkdir()
     for p in (RUNNER,Path(__file__)):shutil.copyfile(p,root/'source'/p.name)
@@ -193,7 +203,7 @@ def run(base,source,root,revision):
         bins[label]=build(root,source,revision,label);tests[label]=engineering(root/('engineering-'+label),bins[label],label)
     rows=[];started=time.monotonic()
     for old in selected(base):
-        key=old['case_id'];d=root/'cases'/key;quant=make_case(base,old,d)
+        key=old['case_id'];d=root/'cases'/key;quant=make_case(base,correlation,old,d)
         target=f16(i16_values(d/'target.s16',N));echo=f16(i16_values(d/'echo.s16',N));result={}
         for mode in BACKENDS:
             execute(bins['native'],mode,d/'input.s16',d/mode);execute(bins['native'],mode,d/'input.s16',d/(mode+'-repeat'))
@@ -207,19 +217,20 @@ def run(base,source,root,revision):
     report={'schema_version':1,'experiment_id':'FE04-SPEEXDSP-AEC-REFERENCE-V1','decision':DECISION,
       'shipping_authority':False,'data_role':ROLE,'execution_source_revision':revision,'case_count':6,
       'source_materialized_sha256':receipt['materialized_source_sha256'],'source_receipt_sha256':sha256((source/'source-receipt.json').read_bytes()),
-      'admission_sha256':sha256(ADMISSION.read_bytes()),'engineering':tests,'cases':rows,
+      'admission_sha256':sha256(ADMISSION.read_bytes()),'correlation_manifest_sha256':sha256((correlation/'manifest.json').read_bytes()),'engineering':tests,'cases':rows,
       'host_complete_matrix_elapsed_seconds':time.monotonic()-started,'timing_authority':'NONE_TARGET',
       'comparison':'whole-implementation-post-BF-AEC-not-DTD-causal-isolation','common_boundary':'saturating-s16le'}
     write_json(root/'result.json',report);seal_output(root,report);return report
 
-def verify(base,source,root,revision):
-    verify_seal(root);activity.verify(base/'order',base/'activity',revision);receipt=admission(source)
+def verify(base,source,correlation,root,revision):
+    verify_seal(root);activity.verify(base/'order',base/'activity',revision);receipt=admission(source);correlation_binding(base,correlation,revision)
     r=load_json(root/'result.json');p=load_json(PLAN)
     require((root/'experiment.json').read_bytes()==PLAN.read_bytes() and (root/'admission.json').read_bytes()==ADMISSION.read_bytes(),'plan/admission drift')
     require((root/'source-receipt.json').read_bytes()==(source/'source-receipt.json').read_bytes(),'source receipt drift')
     require(r['decision']==DECISION and r['shipping_authority'] is False and r['data_role']==ROLE and r['case_count']==6,'authority/matrix')
     require(r['execution_source_revision']==revision and r['source_materialized_sha256']==receipt['materialized_source_sha256']
-      and r['source_receipt_sha256']==sha256((source/'source-receipt.json').read_bytes()) and r['admission_sha256']==sha256(ADMISSION.read_bytes()),'identity binding')
+      and r['source_receipt_sha256']==sha256((source/'source-receipt.json').read_bytes()) and r['admission_sha256']==sha256(ADMISSION.read_bytes())
+      and r['correlation_manifest_sha256']==sha256((correlation/'manifest.json').read_bytes()),'identity binding')
     require(r['comparison']==p['comparison'] and r['common_boundary']==p['common_boundary'] and r['timing_authority']=='NONE_TARGET','mechanism claim')
     for name in ('speexdsp_aec_runner.c','speexdsp_aec_reference.py'):require((root/'source'/name).read_bytes()==(HERE/name).read_bytes(),'source drift '+name)
     expected={x['case_id']:x for x in selected(base)}
@@ -228,7 +239,7 @@ def verify(base,source,root,revision):
         old=expected[row['case_id']];d=root/'cases'/row['case_id'];require(row['pair']==old['pair'] and row['event']==old['event'],'case identity')
         require(load_json(d/'quantization.json')==row['quantization'],'quantization receipt file')
         with tempfile.TemporaryDirectory(prefix='speex-q-') as temp:
-            fresh=Path(temp)/'case';q=make_case(base,old,fresh);require(q==row['quantization'],'quantization receipt drift')
+            fresh=Path(temp)/'case';q=make_case(base,correlation,old,fresh);require(q==row['quantization'],'quantization receipt drift')
             for name in ('input.s16','target.s16','echo.s16'):require((fresh/name).read_bytes()==(d/name).read_bytes(),'quantized bytes drift '+name)
         target=f16(i16_values(d/'target.s16',N));echo=f16(i16_values(d/'echo.s16',N))
         for mode in BACKENDS:
@@ -250,7 +261,7 @@ def verify(base,source,root,revision):
     require('ARM' in (root/'arm-elf.txt').read_text() and 'ELF32' in (root/'arm-elf.txt').read_text(),'Arm ELF')
     return {'status':'VERIFIED_SPEEXDSP_AEC_REFERENCE','cases':6,'backends':2,'files':len(load_json(root/'manifest.json')['files']),'decision':DECISION}
 
-def negatives(base,source,root,revision):
+def negatives(base,source,correlation,root,revision):
     kinds=('promotion','source-binding','missing-case','metric','input','output','binary','admission');rejected=[]
     with tempfile.TemporaryDirectory(prefix='speex-aec-neg-') as temp:
         copy=Path(temp)/'copy';shutil.copytree(root,copy);keep={p:p.read_bytes() for p in (copy/'result.json',copy/'manifest.json',copy/'SHA256SUMS')}
@@ -264,7 +275,7 @@ def negatives(base,source,root,revision):
                 pth=copy/'cases'/rr['cases'][0]['case_id']/'input.s16' if kind=='input' else copy/'cases'/rr['cases'][0]['case_id']/'speex.s16' if kind=='output' else copy/'speex-ref-native' if kind=='binary' else copy/'admission.json'
                 blob=pth.read_bytes();changed.append((pth,blob));pth.write_bytes(blob+b'changed')
             write_json(copy/'result.json',rr);seal_output(copy,rr)
-            try:verify(base,source,copy,revision)
+            try:verify(base,source,correlation,copy,revision)
             except (ValueError,KeyError,IndexError,AssertionError,RuntimeError):rejected.append(kind)
             else:raise AssertionError('resealed negative accepted '+kind)
             for pth,blob in changed:pth.write_bytes(blob)
@@ -284,12 +295,12 @@ def summary(r):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--base-evidence',type=Path,required=True);p.add_argument('--source-evidence',type=Path,required=True)
-    p.add_argument('--output',type=Path,required=True);p.add_argument('--execution-source',required=True);p.add_argument('--verify',action='store_true');p.add_argument('--negative-evidence',action='store_true')
+    p.add_argument('--correlation-evidence',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--execution-source',required=True);p.add_argument('--verify',action='store_true');p.add_argument('--negative-evidence',action='store_true')
     a=p.parse_args();require(hex_digest(a.execution_source,40),'revision')
-    if a.negative_evidence:r=negatives(a.base_evidence,a.source_evidence,a.output,a.execution_source)
-    elif a.verify:r=verify(a.base_evidence,a.source_evidence,a.output,a.execution_source)
+    if a.negative_evidence:r=negatives(a.base_evidence,a.source_evidence,a.correlation_evidence,a.output,a.execution_source)
+    elif a.verify:r=verify(a.base_evidence,a.source_evidence,a.correlation_evidence,a.output,a.execution_source)
     else:
-        r=run(a.base_evidence,a.source_evidence,a.output,a.execution_source);print('SPEEXDSP_AEC_EFFECTS '+json.dumps(summary(r),sort_keys=True,allow_nan=False))
+        r=run(a.base_evidence,a.source_evidence,a.correlation_evidence,a.output,a.execution_source);print('SPEEXDSP_AEC_EFFECTS '+json.dumps(summary(r),sort_keys=True,allow_nan=False))
         r={'status':'EXECUTED_SPEEXDSP_AEC_REFERENCE','cases':6,'decision':DECISION}
     print(json.dumps(r,sort_keys=True,allow_nan=False));return 0
 if __name__=='__main__':raise SystemExit(main())

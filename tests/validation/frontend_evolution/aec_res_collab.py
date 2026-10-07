@@ -195,8 +195,8 @@ def engineering(root:Path,binaries:dict,sync_root:Path,exact_root:Path,revision:
     for k in range(N):z[4*k+3]=0.0
     if sys.byteorder!='little':z.byteswap()
     zero=root/'zero-render.f32';zero.write_bytes(z.tobytes())
-    execute(binaries['native'],'static',zero,root/'zero-render')
-    zr=trace_rows(root/'zero-render.csv','static')
+    execute(binaries['native'],'static',zero,root/'zero-render-output')
+    zr=trace_rows(root/'zero-render-output.csv','static')
     require(all(x['res_gain']==1.0 for x in zr),'RES attenuated zero-render control')
     bad=root/'partial.f32';bad.write_bytes(b'\0')
     p=subprocess.run(list(map(str,command(binaries['native'],'static',bad,root/'bad'))),capture_output=True)

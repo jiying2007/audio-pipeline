@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exact timestamp authority versus acoustic-correlation SYNC on frozen FE04 faults."""
 from __future__ import annotations
-import argparse, array, csv, json, math, shutil, subprocess, sys, tempfile
+import argparse, array, csv, json, math, shutil, struct, subprocess, sys, tempfile
 from pathlib import Path
 import sync_faults as sync
 import sync_route_reset as route_reset
@@ -105,6 +105,52 @@ def metrics(inp:Path,out:Path,fault:str)->dict:
 def reference_values(out:Path)->list[float]:
     return list(sync.floats(out,N*2)[1::2])
 
+def oracle_lane_identity(candidate:Path,oracle:Path)->dict:
+    c=candidate.read_bytes();o=oracle.read_bytes()
+    require(len(c)==len(o)==N*2*4,'oracle packed length')
+    output_bit_mismatches=0
+    reference_bit_mismatches=0
+    reference_numeric_mismatches=0
+    reference_signed_zero_bit_mismatches=0
+    reference_nonzero_bit_mismatches=0
+    first_output_mismatch=None
+    first_reference_mismatch=None
+    for sample in range(N):
+        out_off=(2*sample)*4
+        ref_off=(2*sample+1)*4
+        cbits=int.from_bytes(c[out_off:out_off+4],'little')
+        obits=int.from_bytes(o[out_off:out_off+4],'little')
+        if cbits!=obits:
+            output_bit_mismatches+=1
+            if first_output_mismatch is None:first_output_mismatch=sample
+        crbits=int.from_bytes(c[ref_off:ref_off+4],'little')
+        orbits=int.from_bytes(o[ref_off:ref_off+4],'little')
+        if crbits!=orbits:
+            reference_bit_mismatches+=1
+            if first_reference_mismatch is None:first_reference_mismatch=sample
+            cv=struct.unpack_from('<f',c,ref_off)[0]
+            ov=struct.unpack_from('<f',o,ref_off)[0]
+            if cv==0.0 and ov==0.0 and {crbits,orbits}<={0x00000000,0x80000000}:
+                reference_signed_zero_bit_mismatches+=1
+            elif cv!=ov:
+                reference_numeric_mismatches+=1
+            else:
+                reference_nonzero_bit_mismatches+=1
+    require(output_bit_mismatches==0,'timestamp AEC output differs from oracle')
+    require(reference_numeric_mismatches==0,'timestamp reference differs numerically from oracle')
+    require(reference_nonzero_bit_mismatches==0,'timestamp reference nonzero bit representation differs')
+    require(reference_bit_mismatches==reference_signed_zero_bit_mismatches,
+            'timestamp reference mismatch exceeds signed-zero representation')
+    return {'whole_file_byte_identity':c==o,
+      'aec_output_bit_identity':output_bit_mismatches==0,
+      'aec_output_bit_mismatches':output_bit_mismatches,
+      'reference_numeric_identity':reference_numeric_mismatches==0,
+      'reference_bit_mismatches':reference_bit_mismatches,
+      'reference_signed_zero_bit_mismatches':reference_signed_zero_bit_mismatches,
+      'reference_nonzero_bit_mismatches':reference_nonzero_bit_mismatches,
+      'first_output_mismatch_sample':first_output_mismatch,
+      'first_reference_mismatch_sample':first_reference_mismatch}
+
 def run_case(binary:Path,label:str,inp:Path,fault:str,dest:Path)->dict:
     under_arm=label=='arm'
     execute(binary,'timestamp',fault,inp,dest/'timestamp',under_arm)
@@ -171,7 +217,7 @@ def run(sync_root:Path,reset_root:Path,root:Path,revision:str)->dict:
         pc=sm[case_id];rc=rm[case_id];fault=pc['fault'];inp=sync_root/pc['input'];d=root/'cases'/case_id;d.mkdir(parents=True)
         rec=run_case(binaries['native'],'native',inp,fault,d)
         oracle=sync_root/'cases'/case_id/'oracle.f32';acoustic=reset_root/'cases'/case_id/'reset.f32'
-        require((d/'timestamp.f32').read_bytes()==oracle.read_bytes(),'timestamp no-reset not oracle-identical')
+        representation=oracle_lane_identity(d/'timestamp.f32',oracle)
         require(reference_values(d/'timestamp.f32')==physical(inp),'timestamp reference not physical render')
         if fault!='route':require((d/'timestamp.f32').read_bytes()==(d/'timestamp-reset.f32').read_bytes(),'zero-event reset changed output')
         tm=metrics(inp,d/'timestamp.f32',fault);trm=metrics(inp,d/'timestamp-reset.f32',fault)
@@ -181,7 +227,7 @@ def run(sync_root:Path,reset_root:Path,root:Path,revision:str)->dict:
         cases.append({'case_id':case_id,'pair':pc['pair'],'fault':fault,
           'expected_timestamp_route_events':1 if fault=='route' else 0,
           'timestamp_route_events':rec['timestamp_meta']['route_jumps'],'timestamp_reset_count':rec['reset_meta']['aec_resets'],
-          'timestamp_reset_frames':reset_frames,'timestamp_no_reset_oracle_byte_identity':True,
+          'timestamp_reset_frames':reset_frames,'oracle_representation':representation,
           'zero_event_reset_output_identity':(d/'timestamp.f32').read_bytes()==(d/'timestamp-reset.f32').read_bytes(),
           'oracle_metrics':om,'acoustic_reset_metrics':arm,'timestamp_no_reset_metrics':tm,'timestamp_reset_metrics':trm,
           'timestamp_output_sha256':sha256((d/'timestamp.f32').read_bytes()),
@@ -219,7 +265,8 @@ def verify(sync_root:Path,reset_root:Path,root:Path,revision:str,predecessors_ve
         require(c['timestamp_route_events']==expected==c['expected_timestamp_route_events'] and c['timestamp_reset_count']==expected,'timestamp event contract')
         require(c['timestamp_reset_frames']==([800] if fault=='route' else []),'timestamp reset frame')
         oracle=sync_root/'cases'/c['case_id']/'oracle.f32';acoustic=reset_root/'cases'/c['case_id']/'reset.f32'
-        require((d/'timestamp.f32').read_bytes()==oracle.read_bytes() and c['timestamp_no_reset_oracle_byte_identity'] is True,'oracle byte identity')
+        representation=oracle_lane_identity(d/'timestamp.f32',oracle)
+        require(c['oracle_representation']==representation,'oracle representation receipt')
         require(reference_values(d/'timestamp.f32')==physical(inp),'physical reference identity')
         zero=(d/'timestamp.f32').read_bytes()==(d/'timestamp-reset.f32').read_bytes()
         require(c['zero_event_reset_output_identity']==zero and (zero if fault!='route' else True),'zero-event reset identity')
@@ -272,7 +319,8 @@ def summary(r:dict)->dict:
           'timestamp_reset_mean_final_far_db':mean('timestamp_reset_metrics'),
           'timestamp_route_events':[x['timestamp_route_events'] for x in rows],
           'timestamp_reset_counts':[x['timestamp_reset_count'] for x in rows],
-          'oracle_byte_identity':[x['timestamp_no_reset_oracle_byte_identity'] for x in rows]})
+          'whole_file_byte_identity':[x['oracle_representation']['whole_file_byte_identity'] for x in rows],
+          'reference_signed_zero_bit_mismatches':[x['oracle_representation']['reference_signed_zero_bit_mismatches'] for x in rows]})
     return {'decision':DECISION,'descriptive_only':True,'groups':groups}
 
 def main()->int:

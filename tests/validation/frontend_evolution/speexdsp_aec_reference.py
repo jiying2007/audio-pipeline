@@ -222,8 +222,14 @@ def run(base,source,correlation,root,revision):
       'comparison':'whole-implementation-post-BF-AEC-not-DTD-causal-isolation','common_boundary':'saturating-s16le'}
     write_json(root/'result.json',report);seal_output(root,report);return report
 
-def verify(base,source,correlation,root,revision):
-    verify_seal(root);activity.verify(base/'order',base/'activity',revision);receipt=admission(source);correlation_binding(base,correlation,revision)
+def verify(base,source,correlation,root,revision,predecessors_verified=False):
+    verify_seal(root)
+    if predecessors_verified:
+        receipt=load_json(source/'source-receipt.json')
+    else:
+        activity.verify(base/'order',base/'activity',revision)
+        receipt=admission(source)
+        correlation_binding(base,correlation,revision)
     r=load_json(root/'result.json');p=load_json(PLAN)
     require((root/'experiment.json').read_bytes()==PLAN.read_bytes() and (root/'admission.json').read_bytes()==ADMISSION.read_bytes(),'plan/admission drift')
     require((root/'source-receipt.json').read_bytes()==(source/'source-receipt.json').read_bytes(),'source receipt drift')
@@ -263,6 +269,12 @@ def verify(base,source,correlation,root,revision):
 
 def negatives(base,source,correlation,root,revision):
     kinds=('promotion','source-binding','missing-case','metric','input','output','binary','admission');rejected=[]
+    # Immutable predecessor/source evidence is outside each temporary candidate copy.
+    # Validate it once for this negative-evidence batch; each mutation below is still
+    # resealed and passed through the same candidate verifier.
+    activity.verify(base/'order',base/'activity',revision)
+    admission(source)
+    correlation_binding(base,correlation,revision)
     with tempfile.TemporaryDirectory(prefix='speex-aec-neg-') as temp:
         copy=Path(temp)/'copy';shutil.copytree(root,copy);keep={p:p.read_bytes() for p in (copy/'result.json',copy/'manifest.json',copy/'SHA256SUMS')}
         for kind in kinds:
@@ -275,7 +287,7 @@ def negatives(base,source,correlation,root,revision):
                 pth=copy/'cases'/rr['cases'][0]['case_id']/'input.s16' if kind=='input' else copy/'cases'/rr['cases'][0]['case_id']/'speex.s16' if kind=='output' else copy/'speex-ref-native' if kind=='binary' else copy/'admission.json'
                 blob=pth.read_bytes();changed.append((pth,blob));pth.write_bytes(blob+b'changed')
             write_json(copy/'result.json',rr);seal_output(copy,rr)
-            try:verify(base,source,correlation,copy,revision)
+            try:verify(base,source,correlation,copy,revision,predecessors_verified=True)
             except (ValueError,KeyError,IndexError,AssertionError,RuntimeError):rejected.append(kind)
             else:raise AssertionError('resealed negative accepted '+kind)
             for pth,blob in changed:pth.write_bytes(blob)

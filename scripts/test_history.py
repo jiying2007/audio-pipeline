@@ -190,7 +190,7 @@ def self_test() -> None:
     # must not be promoted from diagnostic noise into a regression.
     bucket_history = [
         {"metrics": {"active_p99_us": x}}
-        for x in ([49.0] * 5 + [59.0] * 20 + [69.0] * 5)
+        for x in ([49.0] * 10 + [59.0] * 10 + [69.0] * 10)
     ]
     current["metrics"]["active_p99_us"] = 69.0
     bucket_step = evaluate(current, bucket_history, 5, 30, 4.0, 15.0)

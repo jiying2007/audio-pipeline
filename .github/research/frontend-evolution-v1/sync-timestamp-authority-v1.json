@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE04-SYNC-TIMESTAMP-AUTHORITY-V1",
+  "implementation_base": "efdb99353d3b7646a1b1e69925176fc2d9fdbe5b",
+  "preregistration_comment_id": 6029517460,
+  "predecessors": [
+    "FE04-SYNC-FAULTS-V1",
+    "FE04-SYNC-ROUTE-RESET-V1"
+  ],
+  "decision": "SYNC_TIMESTAMP_AUTHORITY_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "nanoseconds_per_sample": 62500,
+  "max_delay_ms": 120,
+  "faults": {
+    "static": "320 samples for all frames",
+    "route": "320 samples then 800 samples from frame 800",
+    "drift": "320 + floor(frame_end_samples*250/1000000)"
+  },
+  "arms": [
+    "acoustic-reset-predecessor",
+    "timestamp-no-reset",
+    "timestamp-reset"
+  ],
+  "timestamp_policy": "capture frame-end monotonic timestamp; render timestamp equals capture minus exact known transport lead",
+  "acoustic_tracking_in_timestamp_arms": false,
+  "expected_timestamp_route_events": {
+    "static": 0,
+    "route": 1,
+    "drift": 0
+  },
+  "expected_route_frame": 800,
+  "causal_guards": [
+    "timestamp-AEC-output-lane-bitwise-identical-to-predecessor-oracle",
+    "timestamp-reference-numerically-identical-to-physical-render-and-oracle",
+    "timestamp-reference-bit-differences-if-any-are-signed-zero-only",
+    "timestamp-no-reset-and-reset-traces-identical-except-aec_reset",
+    "zero-timestamp-route-event-no-reset-and-reset-outputs-byte-identical",
+    "timestamp-reset-count-equals-timestamp-route-events"
+  ],
+  "limits": [
+    "exact-synthetic-timestamps-not-DUT-jitter",
+    "disclosed-development-speech",
+    "synthetic-linear-echo-path",
+    "research-BF-Activity-AEC-constants",
+    "no-RES-NS-AGC",
+    "no-shipping-promotion"
+  ],
+  "execution_amendment": {
+    "comment_id": 6030529584,
+    "first_failed_run_id": 37561900331,
+    "rejected_original_guard": "whole-interleaved-output-byte-identity",
+    "replacement_guard": "AEC output lane bitwise identical; reference lane numerically identical; any reference bit differences must be signed-zero-only"
+  }
+}

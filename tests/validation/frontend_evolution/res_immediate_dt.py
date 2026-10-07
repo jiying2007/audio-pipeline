@@ -165,8 +165,9 @@ def reacquisition(candidate:list[dict],predecessor:list[dict])->list[dict]:
             offset=frame-end
             if ge099 is None and candidate[frame]['res_gain']<0.99:ge099=offset
             if ge095 is None and candidate[frame]['res_gain']<0.95:ge095=offset
-            if within is None and candidate[frame]['post_output_energy'] <=
-               predecessor[frame]['post_output_energy']*ENVELOPE_RATIO:
+            if (within is None and
+                    candidate[frame]['post_output_energy'] <=
+                    predecessor[frame]['post_output_energy']*ENVELOPE_RATIO):
                 within=offset
         out.append({'start_frame':start,'end_frame_exclusive':end,
           'first_gain_lt_0_99_offset_frames':ge099,

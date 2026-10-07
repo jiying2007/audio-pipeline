@@ -377,7 +377,7 @@ jobs:
           retention-days: 30
 
 
-  frontend-spatial:
+  frontend-spatial-effects:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -385,13 +385,14 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - name: Qualify fixed spatial weights on admitted new speakers
+      - name: Qualify admitted speech and fixed spatial weights
         run: |
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
-          # -no-install-recommends does not install the Arm libc headers/startup objects.
-          # Prove real linking and execution before downloading or scoring any speech.
+          # Keep source acquisition + fixed spatial-weight evidence in its own
+          # bounded job so hosted-runner/network variance cannot consume the
+          # BF/AEC-order + Activity validation budget.
           mkdir -p fe-spatial/toolchain
           cat > fe-spatial/toolchain/arm-preflight.c <<'C'
           #include <math.h>
@@ -419,6 +420,37 @@ jobs:
             --output fe-spatial/effects --execution-source "$GITHUB_SHA" --verify
           python3 tests/validation/frontend_evolution/speech_spatial_weights.py \
             --output fe-spatial/effects --execution-source "$GITHUB_SHA" --negative-evidence
+          # Sealed spatial evidence retains the admitted source bytes/notices.
+          rm -rf -- fe-spatial/source
+      - name: Preserve spatial-effect predecessor and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-spatial-effects-${{ github.run_id }}
+          path: |
+            fe-spatial/effects/
+            fe-spatial/toolchain/
+          if-no-files-found: error
+          retention-days: 30
+
+  frontend-spatial:
+    if: inputs.run_extended
+    needs: frontend-spatial-effects
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend-spatial-effects-${{ github.run_id }}
+          path: fe-spatial
+      - name: Qualify BF/AEC order from exact-run spatial evidence
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/bf_aec_order.py --self-test
           python3 tests/validation/frontend_evolution/bf_aec_order.py \
             --source fe-spatial/effects/data --output fe-spatial/order --execution-source "$GITHUB_SHA" --require-arm
@@ -426,8 +458,6 @@ jobs:
             --output fe-spatial/order --execution-source "$GITHUB_SHA" --verify --require-arm
           python3 tests/validation/frontend_evolution/bf_aec_order.py \
             --output fe-spatial/order --execution-source "$GITHUB_SHA" --negative-evidence
-          # Complete sealed evidence already retains source bytes and notices.
-          rm -rf -- fe-spatial/source
       - name: Compare actual Activity gates without shadow decomposition
         run: |
           set -euo pipefail

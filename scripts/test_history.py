@@ -99,15 +99,15 @@ def evaluate(current: dict, history: list[dict], min_samples: int, maturity_samp
         raw_pct_trigger = bad_direction and abs(pct) > pct_limit
         z_trigger = bad_direction and z is not None and abs(z) > z_limit
 
-        # Before the historical baseline is mature, a finite robust-z estimate
-        # is the authoritative regression signal. A percentage-only excursion
-        # on a young hosted-runner history is retained as diagnostic evidence
-        # so ordinary runner/image variance can enter the success-only baseline
-        # instead of deadlocking Nightly. Once mature, either gate is strict.
-        # Zero-MAD histories keep the percentage gate fail-closed because there
-        # is no dispersion estimate to corroborate or dismiss the step.
+        # A finite robust-z estimate already accounts for the observed historical
+        # dispersion, so it remains the authoritative regression signal even
+        # after the history reaches maturity. Percentage-only excursions stay
+        # diagnostic: otherwise a single hosted-runner timing bucket or max-frame
+        # spike can fail Nightly despite remaining well inside the established
+        # distribution. The percentage gate stays fail-closed only when MAD is
+        # zero and no dispersion estimate exists to corroborate or dismiss a step.
         pct_trigger = raw_pct_trigger and (
-            mature or z_state == "zero_mad" or z_trigger
+            z_state == "zero_mad" or z_trigger
         )
 
         if z_state == "zero_mad" or (raw_pct_trigger and not pct_trigger and not z_trigger):
@@ -174,13 +174,32 @@ def self_test() -> None:
     assert warming_pct_only["findings"] == []
     assert warming_pct_only["diagnostics"][0]["robust_z_state"] == "finite"
 
-    # Once mature, the existing percentage envelope becomes independently
-    # authoritative again even when robust-z stays below its limit.
+    # Maturity changes the evidence status, not the statistical authority.
+    # With finite dispersion, a percentage-only step inside the historical
+    # distribution remains diagnostic instead of becoming a hard failure.
     broad_mature_history = broad_history * 5
     mature_pct_only = evaluate(current, broad_mature_history, 5, 30, 4.0, 15.0)
-    assert mature_pct_only["result"] == "FAIL"
+    assert mature_pct_only["result"] == "PASS"
     assert mature_pct_only["maturity_status"] == "MATURE"
-    assert mature_pct_only["findings"][0]["triggers"] == ["pct_limit"]
+    assert mature_pct_only["findings"] == []
+    assert mature_pct_only["diagnostics"][0]["metric"] == "active_p99_us"
+    assert mature_pct_only["diagnostics"][0]["robust_z_state"] == "finite"
+
+    # Reproduce the Nightly false positive shape: one 10 us p99 histogram-bin
+    # movement is >15 percent at a ~59 us baseline, but only 0.67 robust-z and
+    # must not be promoted from diagnostic noise into a regression.
+    bucket_history = [
+        {"metrics": {"active_p99_us": x}}
+        for x in ([49.0] * 5 + [59.0] * 20 + [69.0] * 5)
+    ]
+    current["metrics"]["active_p99_us"] = 69.0
+    bucket_step = evaluate(current, bucket_history, 5, 30, 4.0, 15.0)
+    assert bucket_step["result"] == "PASS"
+    assert bucket_step["maturity_status"] == "MATURE"
+    assert bucket_step["findings"] == []
+    assert bucket_step["diagnostics"][0]["delta_pct"] > 15.0
+    assert bucket_step["diagnostics"][0]["robust_z"] is not None
+    assert abs(bucket_step["diagnostics"][0]["robust_z"]) < 4.0
 
     # With no historical dispersion, a small deterministic step is diagnostic
     # evidence but cannot manufacture an infinite z-score regression.

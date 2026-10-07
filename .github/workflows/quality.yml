@@ -597,3 +597,43 @@ jobs:
           path: fe-sync-route-reset/
           if-no-files-found: error
           retention-days: 30
+
+  frontend-sync-timestamp-authority:
+    if: inputs.run_extended
+    needs: frontend-sync-route-reset
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend-sync-faults-${{ github.run_id }}
+          path: fe-sync-faults
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend-sync-route-reset-${{ github.run_id }}
+          path: fe-sync-route-reset
+      - name: Compare exact timestamp authority with acoustic SYNC
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
+          python3 tests/validation/frontend_evolution/sync_timestamp_authority.py \
+            --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
+            --output fe-sync-timestamp --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/sync_timestamp_authority.py \
+            --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
+            --output fe-sync-timestamp --execution-source "$GITHUB_SHA" --verify
+          python3 tests/validation/frontend_evolution/sync_timestamp_authority.py \
+            --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
+            --output fe-sync-timestamp --execution-source "$GITHUB_SHA" --negative-evidence
+      - name: Preserve timestamp-authority effects and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-sync-timestamp-${{ github.run_id }}
+          path: fe-sync-timestamp/
+          if-no-files-found: error
+          retention-days: 30

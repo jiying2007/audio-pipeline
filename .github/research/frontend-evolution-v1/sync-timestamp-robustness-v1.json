@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE04-SYNC-TIMESTAMP-ROBUSTNESS-V1",
+  "implementation_base": "d408be21f2efc8999e83c6a684d85b5f68877de8",
+  "preregistration_comment_id": 6031148427,
+  "predecessor_experiment": "FE04-SYNC-TIMESTAMP-AUTHORITY-V1",
+  "decision": "SYNC_TIMESTAMP_ROBUSTNESS_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "max_delay_ms": 120,
+  "profiles": {
+    "jitter": {
+      "label": "jitter-1s-reset",
+      "timestamp_jitter_samples_pattern": [0, 1, 0, -1],
+      "dropout_rule": "none",
+      "expected_observations": 1600
+    },
+    "dropout": {
+      "label": "dropout-5pct-reset",
+      "timestamp_jitter_samples_pattern": [0],
+      "dropout_rule": "skip every positive frame divisible by 20",
+      "expected_observations": 1521
+    },
+    "combined": {
+      "label": "jitter-1s-dropout-5pct-reset",
+      "timestamp_jitter_samples_pattern": [0, 1, 0, -1],
+      "dropout_rule": "skip every positive frame divisible by 20",
+      "expected_observations": 1521
+    }
+  },
+  "faults": ["static", "route", "drift"],
+  "pairs": [0, 1],
+  "native_case_count": 18,
+  "expected_route_frame": {
+    "jitter": 800,
+    "dropout": 801,
+    "combined": 801
+  },
+  "expected_route_events": {
+    "static": 0,
+    "route": 1,
+    "drift": 0
+  },
+  "causal_guards": [
+    "true-transport-render-push-schedule-unchanged",
+    "timestamp-observation-and-dropout-schedule-exact",
+    "status-delay-equals-last-observed-timestamp-lead",
+    "route-event-frame-and-count-exact",
+    "reset-count-equals-route-event-count",
+    "zero-route-faults-never-reset",
+    "no-reference-underruns",
+    "reference-error-recomputed-against-physical-render",
+    "metrics-recomputed-from-raw-output",
+    "exact-reset-predecessor-immutable"
+  ],
+  "engineering": {
+    "native_full_matrix": true,
+    "sanitizer_fixed": ["p0-route:jitter", "p0-route:combined"],
+    "arm_fixed": ["p0-route:jitter", "p0-route:combined"],
+    "semantic_negatives": 8
+  },
+  "limits": [
+    "synthetic-deterministic-jitter-not-device-distribution",
+    "synthetic-deterministic-dropout-not-device-rate-proof",
+    "disclosed-development-speech",
+    "synthetic-linear-echo-path",
+    "research-BF-Activity-AEC-constants",
+    "no-RES-NS-AGC",
+    "no-DUT",
+    "no-shipping-promotion"
+  ]
+}

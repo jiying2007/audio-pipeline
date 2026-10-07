@@ -15,10 +15,16 @@ Two new arms are run:
 - timestamp-no-reset: timestamp observation every frame, no acoustic tracking and no AEC reset;
 - timestamp-reset: the same timestamp path plus the existing AEC reset on timestamp route_jump.
 
-The strongest causal guard is byte identity: timestamp-no-reset must be byte-identical to the
-predecessor oracle arm because both use the same physical render reference. Timestamp references
-must also exactly match the retained physical-render input column. Static/drift have no timestamp
-route event, so reset/no-reset outputs must remain byte-identical.
+The first exact-head execution rejected the original whole-interleaved-file byte-identity guard.
+The public reference accessor evaluates current + frac*(previous-current), and exact timestamp
+observation drives frac to zero; IEEE signed-zero representation can therefore differ from a direct
+oracle copy without changing numerical audio. That failure is retained rather than rewritten.
+
+The amended causal guard separates lanes: the AEC output lane must remain bitwise identical to the
+predecessor oracle; the reference lane must be numerically identical sample-by-sample, and every
+reference bit mismatch must be signed-zero-only. Any nonzero numerical difference or any AEC output
+bit difference fails. Raw evidence is not normalized. Static/drift still have no timestamp route
+event, so reset/no-reset packed outputs must remain byte-identical.
 
 Exact synthetic timestamps are not a DUT timing qualification. No shipping API, preset, version,
 E001 authority, RES/NS/AGC behavior or product default is changed. The fixed decision is

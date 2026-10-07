@@ -133,7 +133,7 @@ jobs:
           sh .github/scripts/verify-docs-gate.sh
           python3 scripts/public_surface_contract.py --self-test
           python3 scripts/public_surface_contract.py
-          python3 -m py_compile scripts/*.py tools/*.py certification/*.py validation/tools/*.py
+          python3 -m py_compile scripts/*.py tools/*.py certification/*.py validation/tools/*.py tests/validation/frontend_evolution/*.py
           python3 scripts/ci_failure.py --self-test
           python3 scripts/flaky_guard.py --self-test
           python3 scripts/test_history.py --self-test

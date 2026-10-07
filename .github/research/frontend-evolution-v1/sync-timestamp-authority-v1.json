@@ -33,8 +33,9 @@
   },
   "expected_route_frame": 800,
   "causal_guards": [
-    "timestamp-no-reset-output-byte-identical-to-predecessor-oracle",
-    "timestamp-reference-exactly-equals-physical-render-column",
+    "timestamp-AEC-output-lane-bitwise-identical-to-predecessor-oracle",
+    "timestamp-reference-numerically-identical-to-physical-render-and-oracle",
+    "timestamp-reference-bit-differences-if-any-are-signed-zero-only",
     "timestamp-no-reset-and-reset-traces-identical-except-aec_reset",
     "zero-timestamp-route-event-no-reset-and-reset-outputs-byte-identical",
     "timestamp-reset-count-equals-timestamp-route-events"
@@ -46,5 +47,11 @@
     "research-BF-Activity-AEC-constants",
     "no-RES-NS-AGC",
     "no-shipping-promotion"
-  ]
+  ],
+  "execution_amendment": {
+    "comment_id": 6030529584,
+    "first_failed_run_id": 37561900331,
+    "rejected_original_guard": "whole-interleaved-output-byte-identity",
+    "replacement_guard": "AEC output lane bitwise identical; reference lane numerically identical; any reference bit differences must be signed-zero-only"
+  }
 }

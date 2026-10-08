@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE04-RES-ORACLE-NEAR-BOUND-V1",
+  "implementation_base": "99b047b9bdb0a4021d00263f779558de22c71f2b",
+  "preregistration_comment_id": 6050532891,
+  "decision": "RES_ORACLE_NEAR_BOUND_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "predecessor_experiment": "FE04-RES-IMMEDIATE-DT-PROTECTION-V1",
+  "candidate_build_override": "AP_RES_NEAR_PROTECTION_RELEASE_ALPHA=1.0f",
+  "oracle_near_schedule": [
+    "frame < 204",
+    "600 <= frame < 1004",
+    "frame >= 1400"
+  ],
+  "stable_windows": {
+    "scheduled_double": [[610, 990]],
+    "scheduled_far_only": [[210, 590], [1010, 1390]],
+    "scheduled_near_only": [[10, 190], [1410, 1590]]
+  },
+  "case_count": 6,
+  "pairs": [0, 1],
+  "faults": ["static", "route", "drift"],
+  "arms": ["measured-replay", "oracle-near"],
+  "single_variable": "RES double_talk_active control only",
+  "aec_activity_sync_immutable": true,
+  "causal_guards": [
+    "measured-replay-packed-output-byte-identical-to-immediate-DT-predecessor",
+    "measured-replay-per-frame-gain-identical-to-predecessor",
+    "oracle-near-pre-RES-lane-bitwise-identical-to-predecessor",
+    "oracle-near-reference-lane-bitwise-identical-to-predecessor",
+    "every-oracle-near-frame-gain-exactly-one",
+    "every-oracle-near-frame-post-RES-bitwise-identical-to-pre-RES",
+    "predecessor-files-immutable"
+  ],
+  "engineering": {
+    "native_full_matrix": true,
+    "sanitizer_fixed_case": "p0-route",
+    "arm_fixed_case": "p0-route",
+    "semantic_negatives": 8
+  },
+  "limits": [
+    "oracle-upper-bound-not-detector-candidate",
+    "disclosed-development-speech",
+    "synthetic-linear-echo-path",
+    "exact-synthetic-timestamp-not-DUT",
+    "AEC-measured-Activity-trajectory-unchanged",
+    "no-NS-frequency-RES-AGC-VAD",
+    "no-shipping-promotion"
+  ]
+}

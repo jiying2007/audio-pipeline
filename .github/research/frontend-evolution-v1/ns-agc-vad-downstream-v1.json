@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE05-NS-AGC-VAD-DOWNSTREAM-V1",
+  "implementation_base": "97945199789f6ef3885013e0806cd274955bd50b",
+  "preregistration_comment_id": 6055563096,
+  "decision": "NS_AGC_VAD_DOWNSTREAM_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "predecessor": "FE05-NS-FREQUENCY-RES-V1",
+  "arms": {
+    "control": "ns-only -> controlled AGC -> VAD",
+    "candidate": "ns-frequency-res -> controlled AGC -> VAD"
+  },
+  "assistant_agc": {
+    "target_dbfs": -18.0,
+    "limiter_dbfs": -2.0
+  },
+  "agc_control": "allow_gain_increase = !(far_end_active && !double_talk_active)",
+  "vad": {
+    "use_upstream_probability": true,
+    "same_upstream_probability_both_arms": true
+  },
+  "pairs": [0, 1],
+  "faults": ["static", "route", "drift"],
+  "case_count": 6,
+  "oracle_near_schedule": [
+    [0, 204],
+    [600, 1004],
+    [1400, 1600]
+  ],
+  "stable_audit_windows": [
+    [10, 190],
+    [210, 590],
+    [610, 990],
+    [1010, 1390],
+    [1410, 1590]
+  ],
+  "causal_guards": [
+    "pre-agc-control-and-candidate-bit-identical-to-sealed-ns-predecessor-lanes",
+    "same-upstream-ns-speech-probability-both-vad-arms",
+    "same-allow-gain-increase-flag-both-agc-arms",
+    "identical-pre-agc-frame-plus-identical-agc-state-implies-identical-post-agc-frame",
+    "identical-post-agc-frame-plus-identical-vad-state-implies-identical-vad-result",
+    "no-hidden-normalization",
+    "metrics-recomputed-from-raw-output"
+  ],
+  "engineering": {
+    "native_full_matrix": true,
+    "sanitizer_fixed_case": "p0-route",
+    "arm_fixed_case": "p0-route",
+    "semantic_negatives": 8
+  },
+  "limits": [
+    "disclosed-development-speech",
+    "synthetic-linear-echo-path",
+    "exact-synthetic-timestamp-not-DUT",
+    "measured-Activity-not-oracle-DTD",
+    "oracle-near-only-audit-label",
+    "no-AGC-or-VAD-policy-tuning",
+    "no-KWS-ASR-claim",
+    "no-shipping-promotion"
+  ]
+}

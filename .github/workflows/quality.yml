@@ -909,3 +909,43 @@ jobs:
           path: fe-ns-frequency-res/
           if-no-files-found: error
           retention-days: 30
+
+  frontend-ns-agc-vad-downstream:
+    if: inputs.run_extended
+    needs: frontend-ns-frequency-res
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend-ns-frequency-res-${{ github.run_id }}
+          path: fe-ns-frequency-res
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend-sync-faults-${{ github.run_id }}
+          path: fe-sync-faults
+      - name: Propagate NS frequency-RES through controlled AGC and VAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
+          python3 tests/validation/frontend_evolution/ns_agc_vad_downstream.py \
+            --ns-predecessor fe-ns-frequency-res --sync-predecessor fe-sync-faults \
+            --output fe-ns-agc-vad --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/ns_agc_vad_downstream.py \
+            --ns-predecessor fe-ns-frequency-res --sync-predecessor fe-sync-faults \
+            --output fe-ns-agc-vad --execution-source "$GITHUB_SHA" --verify
+          python3 tests/validation/frontend_evolution/ns_agc_vad_downstream.py \
+            --ns-predecessor fe-ns-frequency-res --sync-predecessor fe-sync-faults \
+            --output fe-ns-agc-vad --execution-source "$GITHUB_SHA" --negative-evidence
+      - name: Preserve NS/AGC/VAD downstream effects and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-ns-agc-vad-${{ github.run_id }}
+          path: fe-ns-agc-vad/
+          if-no-files-found: error
+          retention-days: 30

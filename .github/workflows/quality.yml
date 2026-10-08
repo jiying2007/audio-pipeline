@@ -429,6 +429,16 @@ jobs:
             --output fe-spatial/order --execution-source "$GITHUB_SHA" --verify --require-arm
           python3 tests/validation/frontend_evolution/bf_aec_order.py \
             --output fe-spatial/order --execution-source "$GITHUB_SHA" --negative-evidence
+          # Activity also builds/runs its AArch32 controls. Execute it while the
+          # same Arm/QEMU toolchain is already available, then seal it for the
+          # downstream lightweight verification job.
+          python3 tests/validation/frontend_evolution/activity_gates.py --self-test
+          python3 tests/validation/frontend_evolution/activity_gates.py \
+            --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/activity_gates.py \
+            --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA" --verify
+          python3 tests/validation/frontend_evolution/activity_gates.py \
+            --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA" --negative-evidence
           # Sealed spatial evidence retains the admitted source bytes/notices.
           rm -rf -- fe-spatial/source
       - name: Preserve spatial-effect predecessor and failures
@@ -439,6 +449,7 @@ jobs:
           path: |
             fe-spatial/effects/
             fe-spatial/order/
+            fe-spatial/activity/
             fe-spatial/toolchain/
           if-no-files-found: error
           retention-days: 30
@@ -456,21 +467,13 @@ jobs:
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
           path: fe-spatial
-      - name: Verify exact-run BF/AEC order predecessor
+      - name: Verify exact-run BF/AEC order and Activity predecessors
         run: |
           set -euo pipefail
           python3 tests/validation/frontend_evolution/bf_aec_order.py \
             --output fe-spatial/order --execution-source "$GITHUB_SHA" --verify --require-arm
-      - name: Compare actual Activity gates without shadow decomposition
-        run: |
-          set -euo pipefail
-          python3 tests/validation/frontend_evolution/activity_gates.py --self-test
-          python3 tests/validation/frontend_evolution/activity_gates.py \
-            --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/activity_gates.py \
             --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA" --verify
-          python3 tests/validation/frontend_evolution/activity_gates.py \
-            --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA" --negative-evidence
       - name: Preserve spatial speech, coefficients and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE04-RES-IMMEDIATE-DT-PROTECTION-V1",
+  "implementation_base": "c13ab58d6c3dc8a4668851eda374dec7810af510",
+  "preregistration_comment_id": 6040419034,
+  "decision": "RES_IMMEDIATE_DT_PROTECTION_DIAGNOSTIC_NO_PROMOTION",
+  "shipping_authority": false,
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "predecessor_experiment": "FE04-AEC-RES-COLLAB-V1",
+  "candidate_build_override": "AP_RES_NEAR_PROTECTION_RELEASE_ALPHA=1.0f",
+  "predecessor_near_protection_release_alpha": 0.20,
+  "candidate_near_protection_release_alpha": 1.0,
+  "normal_release_alpha_unchanged": 0.08,
+  "floor_attack_and_activity_unchanged": true,
+  "case_count": 6,
+  "pairs": [0, 1],
+  "faults": ["static", "route", "drift"],
+  "transport": "EXACT_SYNTHETIC_TIMESTAMP_NOT_DUT",
+  "res_mode": "TIME_DOMAIN_FULL_NO_NS",
+  "metric_clarification_committed_before_execution": {
+    "post_dt_predecessor_envelope_db": 1.0,
+    "definition": "from first non-DT frame after each contiguous detected-DT run, candidate post_output_energy <= predecessor same-frame post_output_energy * 10^(1/10), before next DT run; report first offset or null",
+    "gain_reacquisition": ["first frame gain < 0.99", "first frame gain < 0.95"],
+    "promotion_authority": false
+  },
+  "causal_guards": [
+    "candidate-pre-RES-AEC-lane-bitwise-identical-to-current-RES-predecessor",
+    "candidate-reference-lane-bitwise-identical-to-current-RES-predecessor",
+    "candidate-non-RES-trace-fields-identical-to-current-RES-predecessor",
+    "candidate-post-output-before-first-detected-DT-bitwise-identical-to-current-RES-predecessor",
+    "candidate-gain-exactly-1-on-every-detected-DT-frame",
+    "candidate-post-output-bitwise-identical-to-pre-RES-AEC-on-every-detected-DT-frame",
+    "route-reset-Activity-trace-unchanged"
+  ],
+  "engineering": {
+    "native_full_matrix": true,
+    "sanitizer_fixed_case": "p0-route",
+    "arm_fixed_case": "p0-route",
+    "semantic_negatives": 8
+  },
+  "limits": [
+    "existing-Activity-false-negative-positive-behavior-unchanged",
+    "disclosed-development-speech",
+    "synthetic-linear-echo-path",
+    "no-frequency-domain-RES-NS-AGC-VAD",
+    "no-DUT",
+    "no-shipping-promotion"
+  ]
+}

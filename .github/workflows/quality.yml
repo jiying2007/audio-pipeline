@@ -492,6 +492,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -539,6 +542,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -576,6 +582,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -619,6 +628,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -655,6 +667,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -698,6 +713,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -748,6 +766,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -798,6 +819,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -852,6 +876,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -895,6 +922,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -949,6 +979,9 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5

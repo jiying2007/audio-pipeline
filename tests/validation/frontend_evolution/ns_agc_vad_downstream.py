@@ -125,6 +125,7 @@ def build(root:Path,revision:str,label:str)->Path:
     run_logged(opts,root/(label+'-configure.log'));run_logged(['cmake','--build',b,'--parallel','2'],root/(label+'-build.log'))
     binary=root/('ns-agc-vad-'+label)
     cmd=[cc,*CFLAGS,*(['-O1','-g','-fsanitize=address,undefined','-fno-omit-frame-pointer'] if san else []),
+      '-DAP_BUILD_STAGE_AGC=1','-DAP_BUILD_STAGE_VAD=1',
       '-I'+str(ROOT/'include'),'-I'+str(ROOT/'src'),'-I'+str(b/'generated'),RUNNER,b/'libaudio_pipeline.a','-lm','-o',binary]
     run_logged(cmd,root/(label+'-link.log'));run_logged([cc,'--version'],root/(label+'-compiler.txt'))
     shutil.copyfile(b/'generated/audio_pipeline/audio_pipeline_build.h',root/(label+'-build.h'))

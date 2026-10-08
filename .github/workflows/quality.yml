@@ -487,6 +487,11 @@ jobs:
     if: inputs.run_extended
     needs: [frontend-reference, frontend-gate-guard]
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -507,8 +512,6 @@ jobs:
       - name: Execute admitted pristine SpeexDSP AEC reference
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/speexdsp_aec_reference.py \
             --base-evidence fe-spatial --source-evidence fe-speex-source --correlation-evidence fe-correlation \
             --output fe-speex-aec --execution-source "$GITHUB_SHA"
@@ -531,6 +534,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-spatial
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -543,8 +551,6 @@ jobs:
       - name: Execute one frozen correlation guard against exact-run evidence
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/correlation_guard.py \
             --base-evidence fe-spatial --output fe-correlation --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/correlation_guard.py \
@@ -565,6 +571,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-gate-guard
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -581,8 +592,6 @@ jobs:
       - name: Execute fixed public-SYNC transport faults without RES
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/sync_faults.py \
             --base-evidence fe-spatial --correlation-evidence fe-correlation \
             --output fe-sync-faults --execution-source "$GITHUB_SHA"
@@ -605,6 +614,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-sync-faults
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -617,8 +631,6 @@ jobs:
       - name: Compare production-style route-jump AEC reset
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/sync_route_reset.py \
             --predecessor fe-sync-faults --output fe-sync-route-reset --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/sync_route_reset.py \
@@ -638,6 +650,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-sync-route-reset
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -654,8 +671,6 @@ jobs:
       - name: Compare exact timestamp authority with acoustic SYNC
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/sync_timestamp_authority.py \
             --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
             --output fe-sync-timestamp --execution-source "$GITHUB_SHA"
@@ -678,6 +693,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -698,8 +718,6 @@ jobs:
       - name: Stress timestamp authority with fixed jitter and dropout
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/sync_timestamp_robustness.py \
             --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
             --exact-predecessor fe-sync-timestamp \
@@ -725,6 +743,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -745,8 +768,6 @@ jobs:
       - name: Compare exact-timestamp AEC with time-domain RES
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/aec_res_collab.py \
             --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
             --exact-predecessor fe-sync-timestamp \
@@ -772,6 +793,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-aec-res-collab
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -796,8 +822,6 @@ jobs:
       - name: Compare immediate detected-double-talk RES protection
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/res_immediate_dt.py \
             --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
             --exact-predecessor fe-sync-timestamp --res-predecessor fe-aec-res \
@@ -823,6 +847,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-res-immediate-dt
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -839,8 +868,6 @@ jobs:
       - name: Bound remaining RES attenuation with frozen oracle near-presence
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/res_oracle_near.py \
             --sync-predecessor fe-sync-faults --res-predecessor fe-res-immediate-dt \
             --output fe-res-oracle-near --execution-source "$GITHUB_SHA"
@@ -863,6 +890,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-res-oracle-near-bound
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -887,8 +919,6 @@ jobs:
       - name: Isolate NS frequency-domain residual-echo suppression
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/ns_frequency_res.py \
             --sync-predecessor fe-sync-faults --reset-predecessor fe-sync-route-reset \
             --exact-predecessor fe-sync-timestamp --aec-res-predecessor fe-aec-res \
@@ -914,6 +944,11 @@ jobs:
     if: inputs.run_extended
     needs: frontend-ns-frequency-res
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -930,8 +965,6 @@ jobs:
       - name: Propagate NS frequency-RES through controlled AGC and VAD
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
           python3 tests/validation/frontend_evolution/ns_agc_vad_downstream.py \
             --ns-predecessor fe-ns-frequency-res --sync-predecessor fe-sync-faults \
             --output fe-ns-agc-vad --execution-source "$GITHUB_SHA"

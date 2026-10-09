@@ -28,3 +28,4 @@ python3 tests/validation/frontend_evolution/test_libfvad_reference.py
 python3 tests/validation/frontend_evolution/array_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_speech_spatial.py
 python3 tests/validation/frontend_evolution/doa_observability_a0.py --self-test
+python3 tests/validation/frontend_evolution/doa_gccphat_a1.py --self-test

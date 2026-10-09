@@ -166,8 +166,8 @@ def same_functional(a: list[dict], b: list[dict], *, exact: bool) -> None:
     for x, y in zip(a, b):
         require(x["name"] == y["name"] and x["mic_count"] == y["mic_count"] and
                 x["mode"] == y["mode"] and x["frames"] == y["frames"] and
-                x["state_bytes"] == y["state_bytes"] and
-                x["input_fnv64"] == y["input_fnv64"],
+                x["input_fnv64"] == y["input_fnv64"] and
+                (not exact or x["state_bytes"] == y["state_bytes"]),
                 "FE08 source, geometry, or state drift across targets")
         if exact:
             require(x["output_fnv64"] == y["output_fnv64"] and

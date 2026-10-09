@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE03-DOA-GEOMETRY-OBSERVABILITY-A0",
+  "stage": "frontend-evolution-v1",
+  "status": "PREREGISTERED_ANALYTIC_ENGINEERING",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/657#issuecomment-6077581740",
+  "decision": "FE03_DOA_GEOMETRY_OBSERVABILITY_A0_NO_PROMOTION",
+  "source_role": "first-party-analytic",
+  "data_role": "ideal-plane-wave-geometry-only",
+  "shipping_authority": false,
+  "product_qualification": false,
+  "sample_rate_hz": 16000,
+  "speed_of_sound_m_per_s": 343.0,
+  "source_direction": "array-to-source",
+  "reference_rule": "first-active-physical-microphone",
+  "rank_space": "xy-baseline",
+  "geometries": [
+    {
+      "id": "ULA4",
+      "fe02_geometry_id": "ula4-broadside",
+      "positions_m": [[0.0, 0.0, 0.0], [0.035, 0.0, 0.0], [0.070, 0.0, 0.0], [0.105, 0.0, 0.0]]
+    },
+    {
+      "id": "UCA4",
+      "fe02_geometry_id": "uca4-offaxis",
+      "positions_m": [[0.035, 0.0, 0.0], [0.0, 0.035, 0.0], [-0.035, 0.0, 0.0], [0.0, -0.035, 0.0]]
+    }
+  ],
+  "rank_cases": [
+    {"id": "ula4-all", "geometry": "ULA4", "active_mask": 15, "expected_rank_xy": 1},
+    {"id": "uca4-all", "geometry": "UCA4", "active_mask": 15, "expected_rank_xy": 2},
+    {"id": "uca4-three", "geometry": "UCA4", "active_mask": 14, "expected_rank_xy": 2},
+    {"id": "uca4-opposite-pair", "geometry": "UCA4", "active_mask": 5, "expected_rank_xy": 1},
+    {"id": "uca4-single", "geometry": "UCA4", "active_mask": 1, "expected_rank_xy": 0},
+    {"id": "ula4-three", "geometry": "ULA4", "active_mask": 7, "expected_rank_xy": 1}
+  ],
+  "contrast_cases": [
+    {
+      "id": "ula4-azimuth-mirror",
+      "geometry": "ULA4",
+      "active_mask": 15,
+      "a_deg": [30.0, 0.0],
+      "b_deg": [-30.0, 0.0],
+      "relation": "same",
+      "max_difference_samples": 1e-12
+    },
+    {
+      "id": "uca4-azimuth-mirror",
+      "geometry": "UCA4",
+      "active_mask": 15,
+      "a_deg": [30.0, 0.0],
+      "b_deg": [-30.0, 0.0],
+      "relation": "distinct",
+      "min_difference_samples": 0.25
+    },
+    {
+      "id": "uca4-elevation-mirror",
+      "geometry": "UCA4",
+      "active_mask": 15,
+      "a_deg": [30.0, 20.0],
+      "b_deg": [30.0, -20.0],
+      "relation": "same",
+      "max_difference_samples": 1e-12
+    }
+  ],
+  "no_doa_estimator": true,
+  "no_acoustic_score": true,
+  "no_new_sdk_api": true
+}

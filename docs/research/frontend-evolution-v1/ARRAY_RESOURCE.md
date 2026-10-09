@@ -35,6 +35,17 @@ The seven resealed semantic negatives reject false promotion, changed result
 identity, missing profile, breached state ceiling, malformed time ordering,
 missing Arm and modified ELF evidence.
 
+The first exact-head execution FAILED its stack parser, preserving unaltered
+GCC -fstack-usage receipts. On native/sanitizer, fe_array_init and
+fe_array_init_spatial33 are 32-byte dynamic,bounded initialization wrappers,
+while on Arm they are static. The per-audio-frame fe_array_process is static
+on Native (144 bytes), Sanitizer (288 bytes), and Arm (88 bytes). A separate
+post-failure adjudication explicitly accepts only these two named init wrappers
+as dynamic,bounded (each <=64 bytes); every other function must remain static,
+and any unbounded/nonstatic data-plane annotation still fails closed. This
+does not retroactively approve the original failed run; a new exact-head
+required summary and fresh-main proof remain mandatory.
+
 The component **state arena safety bound of 16 KiB** checks only this array
 object; it explicitly excludes BF adaptation, capture/rate adapter, AEC, RES,
 NS, AGC, VAD, Linux runtime queues/threads/stacks, ALSA buffers, allocator,

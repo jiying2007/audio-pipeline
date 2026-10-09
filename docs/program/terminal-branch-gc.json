@@ -35,6 +35,10 @@
     {
       "name": "research/fe-libfvad-reference",
       "expected_sha": "ae98d8aaf75ca7cdda1d865180e6b8196a1f9066"
+    },
+    {
+      "name": "fix/fe-sync-negative-runtime",
+      "expected_sha": "97945199789f6ef3885013e0806cd274955bd50b"
     }
   ],
   "authority_boundary": {

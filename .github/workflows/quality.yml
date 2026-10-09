@@ -324,6 +324,24 @@ jobs:
           path: fe-array/
           if-no-files-found: error
           retention-days: 30
+      - name: Qualify FE06 fixed synthetic four-mic hard-fault suggestions
+        id: fe06
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/mic_fault_control.py --self-test
+          python3 tests/validation/frontend_evolution/mic_fault_control.py \
+            --output fe-mic-fault --execution-source "$GITHUB_SHA" --require-arm
+          python3 tests/validation/frontend_evolution/mic_fault_control.py \
+            --output fe-mic-fault --execution-source "$GITHUB_SHA" --verify --require-arm
+      - name: Preserve FE06 non-shipping engineering evidence and failures
+        if: always() && (steps.fe06.outcome == 'success' || steps.fe06.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-mic-fault-${{ github.run_id }}
+          path: fe-mic-fault/
+          if-no-files-found: error
+          retention-days: 30
       - name: Preserve reference evidence and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

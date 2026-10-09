@@ -333,7 +333,7 @@ jobs:
           python3 tests/validation/frontend_evolution/mic_fault_control.py \
             --output fe-mic-fault --execution-source "$GITHUB_SHA" --require-arm
           python3 tests/validation/frontend_evolution/mic_fault_control.py \
-            --output fe-mic-fault --execution-source "$GITHUB_SHA" --verify --require-arm
+            --output fe-mic-fault --execution-source "$GITHUB_SHA" --verify --require-arm --replay
       - name: Preserve FE06 non-shipping engineering evidence and failures
         if: always() && (steps.fe06.outcome == 'success' || steps.fe06.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

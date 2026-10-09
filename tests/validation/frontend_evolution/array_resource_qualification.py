@@ -67,17 +67,26 @@ def parse_size(output: str) -> dict:
 
 
 def parse_stack(path: Path) -> dict:
-    values = []
+    """Keep frame-processing stack static; permit ONLY known bounded init wrappers."""
+    entries, seen = [], set()
+    init_wrappers = {"fe_array_init", "fe_array_init_spatial33"}
     for line in path.read_text().splitlines():
         parts = line.split("\t")
         require(len(parts) == 3 and parts[1].isdigit(), "FE08 malformed stack usage")
-        require(parts[2] == "static", f"FE08 non-static data-plane stack: {parts[0]} size={parts[1]} kind={parts[2]}")
-        values.append({"function": parts[0].rsplit(":", 1)[-1],
-                       "bytes": int(parts[1]), "kind": parts[2]})
-    require(values, "FE08 missing static stack evidence")
-    return {"max_single_function_bytes": max(x["bytes"] for x in values),
-            "functions": values}
-
+        function, size, kind = parts[0].rsplit(":", 1)[-1], int(parts[1]), parts[2]
+        require(function not in seen, "FE08 duplicate stack function: " + function)
+        seen.add(function)
+        if kind != "static":
+            require(function in init_wrappers and kind == "dynamic,bounded" and size <= 64,
+                    f"FE08 unbounded/unapproved stack: {function} size={size} kind={kind}")
+        require(size <= 16 * 1024, "FE08 unreasonable compiler stack bound")
+        entries.append({"function": function, "bytes": size, "kind": kind})
+    require("fe_array_process" in seen and
+            next(x for x in entries if x["function"] == "fe_array_process")["kind"] == "static",
+            "FE08 frame DSP must have compiler-static stack")
+    require(init_wrappers.issubset(seen), "FE08 missing init wrappers")
+    return {"max_single_function_bytes": max(x["bytes"] for x in entries),
+            "functions": entries}
 
 def profile_record(run: dict, timed: bool) -> list[dict]:
     p = check_plan()
@@ -361,6 +370,27 @@ def main() -> int:
         check_plan()
         require(parse_size(".text 100 0\n.rodata 16 0\n") ==
                 {"text_bytes":100,"rodata_bytes":16}, "FE08 size parser test")
+        with tempfile.TemporaryDirectory(prefix="fe08-stack-test-") as tmp:
+            path = Path(tmp) / "core.su"
+            baseline = ("unit.c:1:1:fe_array_process\t88\tstatic\n"
+                        "unit.c:2:1:fe_array_init\t32\tdynamic,bounded\n"
+                        "unit.c:3:1:fe_array_init_spatial33\t32\tstatic\n")
+            path.write_text(baseline)
+            require(len(parse_stack(path)["functions"]) == 3,
+                    "FE08 allowed bounded initialization classification broken")
+            for old, new in (
+                ("fe_array_process\t88\tstatic", "fe_array_process\t88\tdynamic,bounded"),
+                ("fe_array_init\t32\tdynamic,bounded", "fe_array_init\t32\tdynamic"),
+                ("fe_array_init\t32\tdynamic,bounded", "fe_array_init\t65\tdynamic,bounded"),
+            ):
+                path.write_text(baseline.replace(old, new))
+                try:
+                    parse_stack(path)
+                except ValueError as exc:
+                    require("unbounded/unapproved stack" in str(exc),
+                            "FE08 stack negative rejected for wrong reason")
+                else:
+                    raise AssertionError("unapproved dynamic/stack-bound negative passed")
         print("FE08 fixed resource contract: PASS")
         return 0
     require(a.output is not None,"--output required")

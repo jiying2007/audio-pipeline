@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "study": "FE06-MIC-FAULT-CONTROL-D0-EVIDENCE-HARDENING",
+  "authority": "POST_INITIAL_D0_EVIDENCE_EXTENSION_NOT_INDEPENDENT_CONFIRMATION",
+  "original_preregistration": "https://github.com/jiying2007/audio-pipeline/issues/657#issuecomment-6064106017",
+  "source_contract": ".github/research/frontend-evolution-v1/mic-fault-control-d0.json",
+  "purpose": "Retain exact all-case input/output/mask SHA-256 and verify same-prefix/different-future causal replay without retuning any hard-fault decision or BF parameter.",
+  "variant": "future-native-only",
+  "future_first_changed_frame": 1200,
+  "frame_samples": 160,
+  "frame_count": 1600,
+  "microphone_channels": 4,
+  "selected_raw_capture_cases": [
+    "ULA4-coherent",
+    "ULA4-hard-zero",
+    "UCA4-diffuse",
+    "UCA4-sequential"
+  ],
+  "captured_variants": [
+    "native",
+    "future-native"
+  ],
+  "complete_digest_targets": [
+    "native",
+    "sanitized",
+    "arm",
+    "future-native"
+  ],
+  "replay_all_cases": true,
+  "no_shipment": true,
+  "no_data_selection": true
+}

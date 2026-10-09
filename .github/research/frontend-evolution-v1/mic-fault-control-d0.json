@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE06-MIC-FAULT-CONTROL-D0",
+  "stage": "frontend-evolution-v1",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/657#issuecomment-6064106017",
+  "baseline_source": "37a1792861a89c815bec462f819f3deac7d29b09",
+  "source_role": "first-party-research",
+  "dataset_role": "regression",
+  "shipping_authority": false,
+  "auto_promote": false,
+  "decision": "MIC_FAULT_HARD_SIGNATURE_D0_NO_PROMOTION",
+  "sample_rate_hz": 16000,
+  "outer_frame_samples": 160,
+  "frames_per_case": 1600,
+  "geometry": [
+    "ULA4",
+    "UCA4"
+  ],
+  "negative_scenes": [
+    "quiet",
+    "coherent",
+    "weak-side",
+    "diffuse",
+    "motor-tone",
+    "clipped"
+  ],
+  "positive_scenes": [
+    "hard-zero",
+    "rail-plus",
+    "rail-minus",
+    "sequential",
+    "recovery"
+  ],
+  "hard_signatures": {
+    "complete_consecutive_frames": 3,
+    "other_channels_required": 2,
+    "zero_requires_other_rms_at_least": 0.01,
+    "zero_requires_other_variance_nonzero": true,
+    "rail": "entire frame exactly +1 or -1; at least two others not rail-stuck",
+    "suggested_mask_only": true,
+    "automatic_muting": false
+  },
+  "expected": {
+    "initial_active_mask": 15,
+    "first_fault_start_frame": 400,
+    "first_suggestion_frame": 402,
+    "first_proposed_mask": 14,
+    "second_fault_start_frame": 800,
+    "second_suggestion_frame": 802,
+    "second_proposed_mask": 10,
+    "recovery_end_frame_exclusive": 1000,
+    "explicit_reenable_frame": 1020
+  },
+  "matrix_cases": 22,
+  "native_sanitizer_arm_required_for_ci": true,
+  "quality_metrics_authority": false,
+  "product_qualification": false
+}

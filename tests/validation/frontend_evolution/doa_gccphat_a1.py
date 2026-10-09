@@ -69,8 +69,7 @@ def encode(value: dict) -> bytes:
                        separators=(",", ":")) + "\n").encode("ascii")
 
 
-def plan() -> dict:
-    p = read_json(PLAN)
+def validate_contract(p: dict) -> dict:
     require(p.get("schema_version") == 1 and type(p["schema_version"]) is int
             and p.get("experiment_id") == EXPERIMENT
             and p.get("stage") == "frontend-evolution-v1"
@@ -86,12 +85,7 @@ def plan() -> dict:
             and all(p.get(x) is False for x in
                     ("shipping_authority", "product_qualification",
                      "acoustic_accuracy_claim", "doa_shipping_admission",
-                     "clipping_allowed", "no_new_public_api")) is False
-            and p.get("shipping_authority") is False
-            and p.get("product_qualification") is False
-            and p.get("acoustic_accuracy_claim") is False
-            and p.get("doa_shipping_admission") is False
-            and p.get("clipping_allowed") is False
+                     "clipping_allowed"))
             and all(p.get(x) is True for x in
                     ("no_new_public_api", "no_new_workflow",
                      "no_external_code", "no_candidate_promotion",
@@ -151,6 +145,10 @@ def plan() -> dict:
     require(sha256(A0.read_bytes()) == A0_SHA, "immutable A0 source digest changed")
     a0_plan()
     return p
+
+
+def plan() -> dict:
+    return validate_contract(read_json(PLAN))
 
 
 def xorshift(state: int) -> int:
@@ -513,19 +511,13 @@ def self_test() -> None:
     for change in mutations:
         mutant=copy.deepcopy(p)
         change(mutant)
-        with tempfile.TemporaryDirectory(prefix="fe03-a1-plan-") as tmp:
-            # Compare the deliberate mutation against the locked plan validator
-            original_text=PLAN.read_bytes()
-            # No source plan is overwritten in this test.
-            require(mutant!=p and original_text==PLAN.read_bytes(),
-                    "negative must not modify authoritative contract")
-            # Use the same check by exact plan fields on the mutated snapshot:
-            require(mutant.get("decision")!=DECISION or
-                    mutant.get("shipping_authority") or
-                    mutant.get("scenes")!=p["scenes"] or
-                    mutant.get("source_seed_primary")!=p["source_seed_primary"] or
-                    mutant.get("fft_size")!=p["fft_size"],
-                    "mutant unexpectedly identical")
+        require(mutant != p, "invalid negative control")
+        try:
+            validate_contract(mutant)
+        except (ValueError, KeyError, TypeError):
+            pass
+        else:
+            raise AssertionError("mutated research authority/scene was admitted")
     with tempfile.TemporaryDirectory(prefix="fe03-a1-receipt-") as tmp:
         output=Path(tmp)/"a1.json"
         first=run(output,"a"*40)

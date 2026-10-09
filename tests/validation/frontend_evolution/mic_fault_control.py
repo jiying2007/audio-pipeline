@@ -411,37 +411,104 @@ def verify(root: Path, revision: str | None = None, require_arm: bool = False,
 
 
 def resealed_negatives(root: Path, revision: str) -> list[str]:
-    kinds = ("promotion", "decision", "source", "missing-case", "latency", "mask",
-             "binary", "output-fingerprint")
-    for kind in kinds:
-        with tempfile.TemporaryDirectory(prefix="fe06-negative-") as name:
+    # Hardlinks avoid copying retained raw waveforms a dozen times. Every
+    # mutation first unlinks its target, so the source artifact is untouched.
+    # Scratch directories are siblings on the same filesystem.
+    expected_messages = {
+        "promotion": "FE06 claim/policy drift",
+        "decision": "FE06 claim/policy drift",
+        "source": "FE06 execution source mismatch",
+        "missing-case": "FE06 incomplete/duplicate matrix",
+        "latency": "FE06 hard signature latency",
+        "mask": "FE06 hard signature latency",
+        "binary": "FE06 binary mismatch",
+        "output-fingerprint": "FE06 captured stream does not match C measurement",
+        "output-samples": "FE06 captured raw stream SHA drift",
+        "future-prefix": "FE06 captured causality boundary leaked",
+        "mask-trace": "FE06 captured raw stream SHA drift",
+        "trace-receipt": "FE06 stable-prefix capture mismatch",
+    }
+
+    def replace_file(path: Path, data: bytes) -> None:
+        path.unlink()  # break the hardlink BEFORE writing mutated content
+        path.write_bytes(data)
+
+    def replace_json(path: Path, payload: dict) -> None:
+        path.unlink()
+        write_json(path, payload)
+
+    for kind in POST_D0_NEGATIVES:
+        with tempfile.TemporaryDirectory(prefix="fe06-negative-", dir=root.parent) as name:
             scratch = Path(name) / "evidence"
-            shutil.copytree(root, scratch)
+            shutil.copytree(root, scratch, copy_function=os.link)
             report = load_json(scratch / "result.json")
             run = load_json(scratch / "run-native.json")
-            if kind == "promotion": report["shipping_authority"] = True
-            elif kind == "decision": report["decision"] = "PROMOTE_SHIPPING"
-            elif kind == "source": report["execution_source_revision"] = "a"*40
-            elif kind == "missing-case": run["cases"].pop()
-            elif kind == "latency": run["cases"][6]["first_frame"] = 400
-            elif kind == "mask": run["cases"][6]["final_mask"] = 15
+            receipt = load_json(scratch / "trace-receipt.json")
+            if kind == "promotion":
+                report["shipping_authority"] = True
+            elif kind == "decision":
+                report["decision"] = "PROMOTE_SHIPPING"
+            elif kind == "source":
+                report["execution_source_revision"] = "a"*40
+            elif kind == "missing-case":
+                run["cases"].pop()
+            elif kind == "latency":
+                run["cases"][6]["first_frame"] = 400
+            elif kind == "mask":
+                run["cases"][6]["final_mask"] = 15
             elif kind == "binary":
-                binary = scratch / "bin/native"
-                data = binary.read_bytes()
-                binary.write_bytes(data[:-1] + bytes([data[-1] ^ 1]))
-            elif kind == "output-fingerprint": run["cases"][6]["output_fnv64"] = "f"*16
+                path = scratch / "bin/native"
+                data = path.read_bytes()
+                replace_file(path, data[:-1] + bytes([data[-1] ^ 1]))
+            elif kind == "output-fingerprint":
+                run["cases"][6]["output_fnv64"] = "f"*16
+            elif kind in ("output-samples", "future-prefix", "mask-trace"):
+                if kind == "output-samples":
+                    path = scratch / "captures/native/ULA4-hard-zero.output.f32le"
+                elif kind == "future-prefix":
+                    path = scratch / "captures/future-native/ULA4-coherent.input.f32le"
+                else:
+                    path = scratch / "captures/native/ULA4-hard-zero.mask.u32le"
+                data = bytearray(path.read_bytes())
+                data[0 if kind == "future-prefix" else -1] ^= 1
+                replace_file(path, bytes(data))
+                if kind == "future-prefix":
+                    # Keep the independently resealed stream digest and
+                    # C raw-input fingerprint consistent; causality still
+                    # rejects the changed *common* input prefix.
+                    future = load_json(scratch / "run-future-native.json")
+                    case = next(row for row in future["cases"] if row["case_id"] == "ULA4-coherent")
+                    case["input_fnv64"] = fnv64(bytes(data))
+                    replace_json(scratch / "run-future-native.json", future)
+                    report["runs"]["future-native"] = sha256(
+                        (scratch / "run-future-native.json").read_bytes())
+                    receipt["runs"]["future-native"]["ULA4-coherent"]["input"]["sha256"] = sha256(bytes(data))
+                    replace_json(scratch / "trace-receipt.json", receipt)
+                    report["trace_receipt_sha256"] = sha256(
+                        (scratch / "trace-receipt.json").read_bytes())
+            elif kind == "trace-receipt":
+                receipt["causality"]["ULA4-coherent"]["output_prefix_sha256"] = "e"*64
+                replace_json(scratch / "trace-receipt.json", receipt)
+                report["trace_receipt_sha256"] = sha256(
+                    (scratch / "trace-receipt.json").read_bytes())
+            else:
+                raise AssertionError("unsupported FE06 negative " + kind)
+
             if kind in {"missing-case", "latency", "mask", "output-fingerprint"}:
-                write_json(scratch / "run-native.json", run)
+                replace_json(scratch / "run-native.json", run)
                 report["runs"]["native"] = sha256((scratch / "run-native.json").read_bytes())
-            write_json(scratch / "result.json", report)
-            seal_output(scratch, report)  # integrity alone must NOT approve changed semantics
+            replace_json(scratch / "result.json", report)
+            (scratch / "manifest.json").unlink()
+            (scratch / "SHA256SUMS").unlink()
+            seal_output(scratch, report)  # checksum reseal is intentionally insufficient
             try:
-                verify(scratch, revision, check_negatives=False)
+                verify(scratch, revision, check_negatives=False, replay=False)
             except (ValueError, KeyError, AssertionError) as exc:
-                require(str(exc), "FE06 negative rejection lacked cause")
+                require(expected_messages[kind] in str(exc),
+                        f"FE06 negative {kind} rejected for the wrong reason: {exc}")
             else:
                 raise ValueError("resealed FE06 negative accepted: " + kind)
-    return list(kinds)
+    return list(POST_D0_NEGATIVES)
 
 
 def qualify(root: Path, revision: str, require_arm: bool) -> dict:

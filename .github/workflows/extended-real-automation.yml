@@ -34,12 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$EXTENDED_REAL_ENABLED" != true ]; then
-            if [ "$EVENT_NAME" = schedule ]; then
-              echo 'run=false' >> "$GITHUB_OUTPUT"
-              echo 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED: scheduled maintenance is inactive until EXTENDED_REAL_ENABLED=true.'
-              exit 0
-            fi
-            echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED: enable only after audio-validation runner and materialized cache are genuinely ready.' >&2
+            echo "EXTENDED_REAL_REQUIRED_BUT_DISABLED: event=$EVENT_NAME; enable only after audio-validation runner and materialized cache are genuinely ready." >&2
             exit 1
           fi
           echo 'run=true' >> "$GITHUB_OUTPUT"

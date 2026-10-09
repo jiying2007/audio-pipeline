@@ -26,7 +26,7 @@
 
 定时 main 运行成功，只能作为其记录源码的回归证据，不能自动计入另一个获准 Release 的 HIL/Extended Real 资格历史。固定版本取证应使用已审核的 exact-source 入口，并核验结果中的源码和输入。Extended Real 的手动自动化入口不是固定版本选择器；canonical `validation-extended-real.yml` 接受显式 `source_sha`。不得为了检查基础设施重跑已消费的 blind 或研究验证。
 
-`HIL_ENABLED` 或 `EXTENDED_REAL_ENABLED` 不为 `true` 时，对应定时工作流会输出 `HIL_SCHEDULE_SKIPPED_DISABLED` 或 `EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED` 并正常退出，不执行实机工作；必需的发布后事件仍会报错停止。HIL 手动入口允许在开关启用前进行已审核的 exact-SHA 接入验证，但仍需要真实 target 和 preflight；Extended Real 手动自动化在未启用时仍被阻止。控制器绿色跳过或已有发布后汇总，不代表 `READY`、HIL 或 Product Certification 通过。
+`HIL_ENABLED` 或 `EXTENDED_REAL_ENABLED` 不为 `true` 时，对应**定时可用性控制器必须显式失败**，分别报告 `HIL_REQUIRED_BUT_DISABLED` 或 `EXTENDED_REAL_REQUIRED_BUT_DISABLED`；不得把尚未执行的实机/真实数据工作伪装为绿色跳过，也不允许占用 target runner。必需的发布后事件仍会 fail-closed。HIL 手动入口允许在开关启用前进行已审核的 exact-SHA 接入验证，但仍需真实 target 和 preflight；Extended Real 手动自动化在未启用时仍被阻止。禁用造成的控制器失败仅表示基础设施尚未就绪，不是声学算法失败；只有真实 target/validation 产物才能作为 HIL/Extended Real 或 Product Certification 证据。
 
 ## 角色
 

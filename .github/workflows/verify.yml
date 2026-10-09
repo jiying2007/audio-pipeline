@@ -54,7 +54,7 @@ jobs:
           set -euo pipefail
           python3 scripts/program.py --self-test
           python3 scripts/program.py check
-          python3 scripts/test_deferred_schedules.py
+          python3 .github/program/test_deferred_schedules.py
           python3 .github/program/promotion_governance.py --self-test
           python3 .github/program/terminal_workflow_retirement.py --self-test --check
           python3 .github/program/maintenance_workflow_contract.py --self-test --check

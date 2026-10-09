@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE08-ARRAY-RESOURCE-CHARACTERIZATION-V1",
+  "stage": "frontend-evolution-v1",
+  "status": "PREREGISTERED_ENGINEERING_CHARACTERIZATION",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/657#issuecomment-6074892584",
+  "base_sha": "6855aa23d7fbb18bd85e60241fbbbd615d90b346",
+  "decision": "FE08_ARRAY_RESOURCE_CHARACTERIZATION_NO_PROMOTION",
+  "dataset_role": "regression",
+  "product_qualification": false,
+  "shipping_authority": false,
+  "component_only": true,
+  "sample_rate_hz": 16000,
+  "frame_samples": 160,
+  "frames_per_profile": 2000,
+  "geometry": "fixed ULA 0, 0.035, 0.070, 0.105 meters; broadside",
+  "profiles": [
+    {
+      "name": "C1_LINEAR",
+      "mic_count": 1,
+      "mode": 0
+    },
+    {
+      "name": "C2_LINEAR",
+      "mic_count": 2,
+      "mode": 0
+    },
+    {
+      "name": "C2_FIR33",
+      "mic_count": 2,
+      "mode": 3
+    },
+    {
+      "name": "C4_FIR33",
+      "mic_count": 4,
+      "mode": 3
+    },
+    {
+      "name": "C4_SPATIAL33",
+      "mic_count": 4,
+      "mode": 4
+    }
+  ],
+  "component_arena_safety_bound_bytes": 16384,
+  "native_repeats": 3,
+  "sanitizer_functional_required": true,
+  "arm_aarch32_functional_required": true,
+  "timing_clock": "CLOCK_THREAD_CPUTIME_ID",
+  "timing_scope": "native Linux CPU time for ap fe_array_process only, exclusive of input generation/output hashes",
+  "timing_metrics": [
+    "cpu_ms_per_audio_second",
+    "frame_p50_ns",
+    "frame_p95_ns",
+    "frame_p99_ns",
+    "frame_max_ns"
+  ],
+  "timing_gate": "descriptive-no-hosted-threshold",
+  "static_metrics": [
+    "state_bytes",
+    "ELF text",
+    "ELF rodata",
+    "data-plane function GCC stack-usage"
+  ],
+  "resource_claim": "component only; excluded SDK/runtime/ALSA/queues/threads/system libraries/DUT",
+  "no_algorithm_search": true,
+  "no_new_public_api": true,
+  "no_software_release": true
+}

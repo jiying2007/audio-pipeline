@@ -204,7 +204,8 @@ def verify_trace_receipt(root: Path, receipt: dict, targets: list[str]) -> None:
             for kind in PART_SUFFIX:
                 path = part_path(saved_root / variant, case, kind)
                 data = path.read_bytes()
-                assert len(data) == receipt["runs"][variant][case][kind]["bytes"]
+                require(len(data) == receipt["runs"][variant][case][kind]["bytes"],
+                        "FE06 captured stream length mismatch")
                 require(sha256(data) == receipt["runs"][variant][case][kind]["sha256"],
                         "FE06 captured raw stream SHA drift")
                 require(fnv64(data) == case_records[case][kind + "_fnv64"],
@@ -243,8 +244,11 @@ def replay_exact_streams(root: Path, receipt: dict, targets: list[str]) -> None:
             prefix = (["qemu-arm", "-cpu", "max", "-L", "/usr/arm-linux-gnueabihf"]
                       if target == "arm" else [])
             out = scratch / f"run-{variant}.json"
-            run_logged([*prefix, binary, trace_dir,
-                        "future" if variant == "future-native" else "base"], out, timeout=360)
+            command = [*prefix, binary, trace_dir,
+                       "future" if variant == "future-native" else "base"]
+            if variant not in ("native", "future-native"):
+                command.append(scratch / "traces" / "native")
+            run_logged(command, out, timeout=360)
             require(load_json(out) == load_json(root / f"run-{variant}.json"),
                     "FE06 independent replay changed C outcome")
         computed = build_trace_receipt(scratch, targets)
@@ -326,7 +330,7 @@ def inspect(raw: dict) -> None:
 
 
 def verify(root: Path, revision: str | None = None, require_arm: bool = False,
-           check_negatives: bool = True) -> dict:
+           check_negatives: bool = True, replay: bool = False) -> dict:
     require(not (root / "failure.json").exists(), "failed engineering execution")
     require(all(not p.is_symlink() for p in root.rglob("*")), "symlink evidence")
     manifest = load_json(root / "manifest.json")
@@ -343,13 +347,16 @@ def verify(root: Path, revision: str | None = None, require_arm: bool = False,
             "FE06 digest set drift")
     require((root / "experiment.json").read_bytes() == PLAN.read_bytes(),
             "changed FE06 experiment")
+    require((root / "evidence-contract.json").read_bytes() == EVIDENCE_PLAN.read_bytes(),
+            "changed FE06 evidence extension")
+    require(not (root / "traces").exists(), "unbounded scratch traces retained")
     for name in SOURCES:
         require((root / "source" / name).read_bytes() == (HERE / name).read_bytes(),
                 "FE06 source bytes drift: " + name)
     report = load_json(root / "result.json")
     require(set(report) == {"schema_version", "experiment_id", "execution_source_revision",
                             "decision", "shipping_authority", "dataset_role", "arm_qualified",
-                            "executables", "runs", "repeated_native"},
+                            "executables", "runs", "repeated_native", "trace_receipt_sha256"},
             "FE06 result schema drift")
     require(report["schema_version"] == 1 and report["experiment_id"] == policy()["experiment_id"]
             and report["decision"] == DECISION and report["shipping_authority"] is False
@@ -361,8 +368,14 @@ def verify(root: Path, revision: str | None = None, require_arm: bool = False,
             and (revision is None or report["execution_source_revision"] == revision),
             "FE06 execution source mismatch")
     targets = ["native", "sanitized"] + (["arm"] if report["arm_qualified"] else [])
-    require(set(report["runs"]) == set(targets) and set(report["executables"]) == set(targets),
+    require(set(report["runs"]) == set([*targets, "future-native"]) and
+            set(report["executables"]) == set(targets),
             "FE06 target coverage incomplete")
+    trace_path = verified_file(root, "trace-receipt.json")
+    require(sha256(trace_path.read_bytes()) == report["trace_receipt_sha256"],
+            "FE06 digest receipt identity mismatch")
+    receipt = load_json(trace_path)
+    verify_trace_receipt(root, receipt, targets)
     for target in targets:
         binary = verified_file(root, "bin/" + target)
         require(sha256(binary.read_bytes()) == report["executables"][target]
@@ -375,6 +388,10 @@ def verify(root: Path, revision: str | None = None, require_arm: bool = False,
         require(sha256(raw_path.read_bytes()) == report["runs"][target],
                 "FE06 execution receipt mismatch")
         inspect(load_json(raw_path))
+    future_path = verified_file(root, "run-future-native.json")
+    require(sha256(future_path.read_bytes()) == report["runs"]["future-native"],
+            "FE06 future execution receipt mismatch")
+    inspect(load_json(future_path))
     repeat_path = verified_file(root, "run-native-repeat.json")
     require(sha256(repeat_path.read_bytes()) == report["repeated_native"],
             "FE06 repeated execution receipt mismatch")
@@ -384,9 +401,10 @@ def verify(root: Path, revision: str | None = None, require_arm: bool = False,
     if check_negatives:
         negatives = load_json(root / "negative-evidence.json")
         require(set(negatives) == {"status", "kinds"} and negatives["status"] == "PASS"
-                and negatives["kinds"] == ["promotion", "decision", "source", "missing-case",
-                                           "latency", "mask", "binary", "output-fingerprint"],
+                and negatives["kinds"] == list(POST_D0_NEGATIVES),
                 "FE06 resealed semantic negatives absent")
+    if replay:
+        replay_exact_streams(root, receipt, targets)
     return {"status": "MIC_FAULT_HARD_SIGNATURE_D0_ENGINEERING_PASS",
             "cases_per_target": 22, "targets": targets,
             "shipping_authority": False, "decision": DECISION}
@@ -430,8 +448,10 @@ def qualify(root: Path, revision: str, require_arm: bool) -> dict:
     require(hex_digest(revision, 40) and not root.exists(), "FE06 exact head/new output required")
     root.mkdir(parents=True)
     shutil.copyfile(PLAN, root / "experiment.json")
+    shutil.copyfile(EVIDENCE_PLAN, root / "evidence-contract.json")
     (root / "source").mkdir()
     (root / "bin").mkdir()
+    (root / "traces").mkdir()
     for name in SOURCES:
         shutil.copyfile(HERE / name, root / "source" / name)
     native = [str(HERE / x) for x in ("array_native.c", "mic_fault_control.c",
@@ -445,7 +465,12 @@ def qualify(root: Path, revision: str, require_arm: bool) -> dict:
         command = [*prefix, *native, "-lm", "-o", str(root / "bin" / target)]
         commands.append(command)
         run_logged(command, root / ("build-" + target + ".log"))
-        run_logged([root / "bin" / target], root / ("run-" + target + ".json"), timeout=360)
+        directory = root / "traces" / target
+        directory.mkdir()
+        execution = [root / "bin" / target, directory, "base"]
+        if target != "native":
+            execution.append(root / "traces" / "native")
+        run_logged(execution, root / ("run-" + target + ".json"), timeout=360)
         inspect(load_json(root / ("run-" + target + ".json")))
     run_logged([root / "bin/native"], root / "run-native-repeat.json", timeout=360)
     require(load_json(root / "run-native-repeat.json") == load_json(root / "run-native.json"),
@@ -458,19 +483,32 @@ def qualify(root: Path, revision: str, require_arm: bool) -> dict:
                    *native, "-lm", "-o", str(root / "bin/arm")]
         commands.append(command)
         run_logged(command, root / "build-arm.log")
+        (root / "traces" / "arm").mkdir()
         run_logged(["qemu-arm", "-cpu", "max", "-L", "/usr/arm-linux-gnueabihf",
-                    root / "bin/arm"], root / "run-arm.json", timeout=360)
+                    root / "bin/arm", root / "traces" / "arm", "base",
+                    root / "traces" / "native"], root / "run-arm.json", timeout=360)
         inspect(load_json(root / "run-arm.json"))
+    (root / "traces" / "future-native").mkdir()
+    run_logged([root / "bin" / "native", root / "traces" / "future-native", "future"],
+               root / "run-future-native.json", timeout=360)
+    inspect(load_json(root / "run-future-native.json"))
     write_json(root / "build-commands.json", {"commands": commands})
     targets = ["native", "sanitized"] + (["arm"] if has_arm else [])
+    trace_receipt = build_trace_receipt(root, targets)
+    write_json(root / "trace-receipt.json", trace_receipt)
+    # Avoid duplicating hundreds of MB in retained artifacts. Exact per-case
+    # SHA-256 remains independently reproducible from retained ELF + inputs.
+    shutil.rmtree(root / "traces")
     report = {
         "schema_version": 1, "experiment_id": policy()["experiment_id"],
         "execution_source_revision": revision, "decision": DECISION,
         "shipping_authority": False, "dataset_role": "regression",
         "arm_qualified": bool(has_arm),
         "executables": {x: sha256((root / "bin" / x).read_bytes()) for x in targets},
-        "runs": {x: sha256((root / ("run-" + x + ".json")).read_bytes()) for x in targets},
+        "runs": {x: sha256((root / ("run-" + x + ".json")).read_bytes())
+                 for x in [*targets, "future-native"]},
         "repeated_native": sha256((root / "run-native-repeat.json").read_bytes()),
+        "trace_receipt_sha256": sha256((root / "trace-receipt.json").read_bytes()),
     }
     write_json(root / "result.json", report)
     seal_output(root, report)
@@ -487,15 +525,18 @@ def main() -> int:
     parser.add_argument("--execution-source")
     parser.add_argument("--require-arm", action="store_true")
     parser.add_argument("--verify", action="store_true")
+    parser.add_argument("--replay", action="store_true")
     args = parser.parse_args()
     if args.self_test:
         p = policy()
+        evidence_policy()
         require(len(expected_ids()) == p["matrix_cases"], "FE06 matrix not fixed")
         print("FE06 fixed synthetic contract: PASS")
         return 0
     require(args.output is not None, "--output required")
     if args.verify:
-        result = verify(args.output, args.execution_source, args.require_arm)
+        result = verify(args.output, args.execution_source, args.require_arm,
+                        replay=args.replay)
     else:
         require(args.execution_source is not None, "execution source required")
         result = qualify(args.output, args.execution_source, args.require_arm)

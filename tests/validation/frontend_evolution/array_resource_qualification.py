@@ -66,6 +66,12 @@ def parse_size(output: str) -> dict:
     return {"text_bytes": sections[".text"], "rodata_bytes": sections[".rodata"]}
 
 
+def read_size_receipt(root: Path, target: str) -> dict:
+    """Resolve the sealed ELF receipt under the evidence root, not Path + str."""
+    require(target in ("native", "sanitized", "arm"), "FE08 unexpected binary target")
+    return parse_size((root / f"size-{target}.txt").read_text())
+
+
 def parse_stack(path: Path) -> dict:
     """Keep frame-processing stack static; permit ONLY known bounded init wrappers."""
     entries, seen = [], set()
@@ -225,8 +231,7 @@ def verify(root: Path, revision: str | None = None, negatives: bool = True) -> d
         stack = parse_stack(root/"obj"/target/"array_native.su")
         require(stack == report["data_plane_stack"][target],
                 "FE08 altered data-plane stack evidence")
-        data = (root/"size-"+target+".txt").read_text()
-        require(parse_size(data) == report["elf_sections"][target],
+        require(read_size_receipt(root, target) == report["elf_sections"][target],
                 "FE08 changed ELF section evidence")
     rows = {}
     for name in report["runs"]:
@@ -345,7 +350,7 @@ def run(root: Path, revision: str) -> dict:
         "runs":{name:sha256((root/("run-"+name+".json")).read_bytes())
                 for name in ("native-0","native-1","native-2","sanitized","arm")},
         "executables":{t:sha256((root/"bin"/t).read_bytes()) for t in ("native","sanitized","arm")},
-        "elf_sections":{t:parse_size((root/("size-"+t+".txt")).read_text())
+        "elf_sections":{t:read_size_receipt(root, t)
                         for t in ("native","sanitized","arm")},
         "data_plane_stack":{t:parse_stack(root/"obj"/t/"array_native.su")
                             for t in ("native","sanitized","arm")},
@@ -370,6 +375,12 @@ def main() -> int:
         check_plan()
         require(parse_size(".text 100 0\n.rodata 16 0\n") ==
                 {"text_bytes":100,"rodata_bytes":16}, "FE08 size parser test")
+        with tempfile.TemporaryDirectory(prefix="fe08-size-test-") as tmp:
+            root = Path(tmp)
+            (root / "size-native.txt").write_text(".text 100 0\n.rodata 16 0\n")
+            require(read_size_receipt(root, "native") ==
+                    {"text_bytes":100,"rodata_bytes":16},
+                    "FE08 exact-root size receipt self-test")
         with tempfile.TemporaryDirectory(prefix="fe08-stack-test-") as tmp:
             path = Path(tmp) / "core.su"
             baseline = ("unit.c:1:1:fe_array_process\t88\tstatic\n"

@@ -360,6 +360,32 @@ jobs:
           path: fe-array-resource/
           if-no-files-found: error
           retention-days: 30
+      - name: Generate and verify FE03 A1 exact-source numerical receipt
+        id: fe03_a1
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir fe-doa-a1
+          python3 tests/validation/frontend_evolution/doa_gccphat_a1.py \
+            --output fe-doa-a1/result.json --execution-source "$GITHUB_SHA" \
+            > fe-doa-a1/execute.log 2>&1
+          python3 tests/validation/frontend_evolution/doa_gccphat_a1.py \
+            --verify --output fe-doa-a1/result.json --execution-source "$GITHUB_SHA" \
+            > fe-doa-a1/verify.log 2>&1
+          (
+            cd fe-doa-a1
+            sha256sum result.json execute.log verify.log > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+      - name: Preserve FE03 A1 result, logs and failed evidence
+        if: always() && (steps.fe03_a1.outcome == 'success' || steps.fe03_a1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-doa-a1-${{ github.run_id }}
+          path: fe-doa-a1/
+          if-no-files-found: error
+          retention-days: 30
       - name: Preserve reference evidence and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

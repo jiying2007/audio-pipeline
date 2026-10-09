@@ -312,8 +312,14 @@ def estimate(pcm: bytes, positions: tuple, mask: int, p: dict, count: int) -> di
     pairs = []
     for mic in active[1:]:
         corr, ok = correlation(data[reference], data[mic], p)
-        if ok:
-            pairs.append((mic,corr))
+        if not ok:
+            # Caller marked this channel active: do not silently ignore it
+            # and manufacture a direction from a smaller undeclared array.
+            return {"valid": False, "reason": "active-pair-without-spectrum",
+                    "reference_mic": reference, "rank_xy": rank,
+                    "bearing_deg": None, "peak_score": None, "peak_gap": None,
+                    "scores": None}
+        pairs.append((mic,corr))
     if not pairs:
         return {"valid": False, "reason": "no-cross-spectral-evidence",
                 "reference_mic": reference, "rank_xy": rank,
@@ -423,6 +429,11 @@ def analyze_cases(p: dict) -> list[dict]:
             "no_product_accuracy_gate":True,
         })
     require(len(rows)==8,"missing fixed A1 scene")
+    require(rows[0]["input_sha256"] == rows[1]["input_sha256"] and
+            rows[0]["score_sha256"] == rows[1]["score_sha256"],
+            "ULA mirror equivalence broken by input or estimated scores")
+    require(rows[2]["input_sha256"] != rows[3]["input_sha256"],
+            "UCA signed bearing geometry disappeared from actual PCM")
     return rows
 
 
@@ -483,6 +494,14 @@ def self_test() -> None:
     require(not silent["valid"] and silent["bearing_deg"] is None and
             not one["valid"] and one["reason"]=="insufficient-active-microphones",
             "false direction for silence/single mic")
+    partial=[0.0]*(512*4)
+    partial[128*4+0]=0.5
+    partial[122*4+1]=0.5
+    raw_partial=struct.pack("<"+"f"*len(partial),*partial)
+    missing=estimate(raw_partial,geo["UCA4"],15,p,512)
+    require(not missing["valid"] and
+            missing["reason"]=="active-pair-without-spectrum",
+            "silent declared-active mic was silently excluded from GCC pairs")
     for invalid in (0,16,-1,1.1,True):
         try:
             estimate(bytes(512*16),geo["UCA4"],invalid,p,512)

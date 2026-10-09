@@ -886,7 +886,7 @@ def self_test() -> None:
         extended_text = extended_path.read_text(encoding='utf-8')
         for updated in (
             extended_text.replace('EXTENDED_REAL_REQUIRED_BUT_DISABLED', 'EXTENDED_REAL_DISABLED'),
-            extended_text.replace("            exit 1\\n", "            exit 0\\n"),
+            extended_text.replace("            exit 1\n", "            exit 0\n"),
         ):
             extended_path.write_text(updated, encoding='utf-8')
             try:
@@ -902,8 +902,8 @@ def self_test() -> None:
         for updated in (
             hil_text.replace('HIL_REQUIRED_BUT_DISABLED', 'HIL_DISABLED'),
             hil_text.replace(
-                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\\n            exit 1",
-                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\\n            exit 0",
+                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n            exit 1",
+                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n            exit 0",
             ),
         ):
             hil_path.write_text(updated, encoding='utf-8')

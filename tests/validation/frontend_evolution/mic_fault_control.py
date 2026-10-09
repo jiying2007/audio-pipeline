@@ -472,9 +472,16 @@ def qualify(root: Path, revision: str, require_arm: bool) -> dict:
             execution.append(root / "traces" / "native")
         run_logged(execution, root / ("run-" + target + ".json"), timeout=360)
         inspect(load_json(root / ("run-" + target + ".json")))
-    run_logged([root / "bin/native"], root / "run-native-repeat.json", timeout=360)
+    (root / "traces" / "native-repeat").mkdir()
+    run_logged([root / "bin/native", root / "traces" / "native-repeat", "base"],
+               root / "run-native-repeat.json", timeout=360)
     require(load_json(root / "run-native-repeat.json") == load_json(root / "run-native.json"),
             "nondeterministic FE06 native run")
+    for case in expected_ids():
+        require(trace_row(root / "traces" / "native-repeat", case) ==
+                trace_row(root / "traces" / "native", case),
+                "FE06 repeated complete PCM/output/mask bytes differ")
+    shutil.rmtree(root / "traces" / "native-repeat")
     has_arm = shutil.which("arm-linux-gnueabihf-gcc") and shutil.which("qemu-arm")
     require(bool(has_arm) or not require_arm, "FE06 Arm/QEMU required but unavailable")
     if has_arm:

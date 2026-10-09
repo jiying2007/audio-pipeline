@@ -414,21 +414,21 @@ def validate_no_legacy_semantics_consumers(root: Path) -> None:
 
 
 def validate_deferred_external_schedule_boundaries(root: Path) -> None:
+    # A disabled scheduled controller must be RED, not a green "no-op". This
+    # availability guard never substitutes for real runner/DUT/data evidence.
     extended_text = (root / EXTENDED_REAL_AUTOMATION_WORKFLOW).read_text(encoding='utf-8')
     extended_job = job_block(extended_text, 'dispatch')
-    extended_skip = 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED'
     extended_required = 'EXTENDED_REAL_REQUIRED_BUT_DISABLED'
-    assert extended_skip in extended_job, (
-        'Extended Real disabled schedule must cleanly skip instead of failing'
+    assert 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED' not in extended_job, (
+        'Extended Real disabled scheduled success/skip is forbidden'
     )
-    assert extended_required in extended_job, (
-        'Extended Real required/manual events must remain fail-closed when disabled'
+    assert 'if [ "$EXTENDED_REAL_ENABLED" != true ]; then' in extended_job, (
+        'Extended Real disabled availability guard missing'
     )
-    assert extended_job.index(extended_skip) < extended_job.index(extended_required), (
-        'Extended Real scheduled skip must be resolved before required-event failure'
-    )
-    assert 'if [ "$EVENT_NAME" = schedule ]; then' in extended_job, (
-        'Extended Real disabled clean skip must remain schedule-only'
+    enabled_block = extended_job.split('if [ "$EXTENDED_REAL_ENABLED" != true ]; then', 1)[1]
+    disabled = enabled_block.split('\n          fi', 1)[0]
+    assert extended_required in disabled and 'exit 1' in disabled and 'exit 0' not in disabled, (
+        'Extended Real disabled schedule must fail visibly instead of skipping'
     )
     assert "if: steps.request.outputs.run == 'true'" in extended_job, (
         'Extended Real dispatch must remain gated by the resolved run decision'
@@ -436,19 +436,17 @@ def validate_deferred_external_schedule_boundaries(root: Path) -> None:
 
     hil_text = (root / HIL_SOAK_WORKFLOW).read_text(encoding='utf-8')
     availability = job_block(hil_text, 'availability')
-    hil_skip = 'HIL_SCHEDULE_SKIPPED_DISABLED'
     hil_required = 'HIL_REQUIRED_BUT_DISABLED'
-    assert hil_skip in availability, (
-        'HIL disabled schedule must cleanly skip instead of failing'
+    assert 'HIL_SCHEDULE_SKIPPED_DISABLED' not in availability, (
+        'HIL disabled scheduled success/skip is forbidden'
     )
-    assert hil_required in availability, (
-        'HIL post-release required event must remain fail-closed when disabled'
+    assert 'if [ "$HIL_ENABLED" != true ]; then' in availability, (
+        'HIL disabled availability guard missing'
     )
-    assert availability.index(hil_skip) < availability.index(hil_required), (
-        'HIL scheduled skip must be resolved before required-event failure'
-    )
-    assert 'if [ "$EVENT_NAME" = schedule ]; then' in availability, (
-        'HIL disabled clean skip must remain schedule-only'
+    hil_block = availability.split('if [ "$HIL_ENABLED" != true ]; then', 1)[1]
+    disabled = hil_block.split('\n          fi', 1)[0]
+    assert hil_required in disabled and 'exit 1' in disabled and 'exit 0' not in disabled, (
+        'HIL disabled schedule must fail visibly instead of skipping'
     )
     assert 'if [ "$EVENT_NAME" = repository_dispatch ]; then' in availability, (
         'HIL post-release dispatch validation must remain explicit'
@@ -456,6 +454,9 @@ def validate_deferred_external_schedule_boundaries(root: Path) -> None:
     assert 'if [ "$EVENT_NAME" = workflow_dispatch ]; then' in availability, (
         'HIL explicit manual execution path must remain available'
     )
+    assert availability.index('if [ "$EVENT_NAME" = workflow_dispatch ]; then') < (
+        availability.index('if [ "$HIL_ENABLED" != true ]; then')
+    ), 'HIL reviewed manual bring-up cannot be gated as an ordinary disabled schedule'
 
 
 
@@ -679,11 +680,6 @@ def _write_deferred_external_schedule_fixtures(root: Path) -> None:
         "        id: request\n"
         "        run: |\n"
         "          if [ \"$EXTENDED_REAL_ENABLED\" != true ]; then\n"
-        "            if [ \"$EVENT_NAME\" = schedule ]; then\n"
-        "              echo 'run=false' >> \"$GITHUB_OUTPUT\"\n"
-        "              echo 'EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED'\n"
-        "              exit 0\n"
-        "            fi\n"
         "            echo 'EXTENDED_REAL_REQUIRED_BUT_DISABLED' >&2\n"
         "            exit 1\n"
         "          fi\n"
@@ -717,10 +713,6 @@ def _write_deferred_external_schedule_fixtures(root: Path) -> None:
         "          fi\n"
         "          if [ \"$HIL_ENABLED\" != true ]; then\n"
         "            echo 'run=false' >> \"$GITHUB_OUTPUT\"\n"
-        "            if [ \"$EVENT_NAME\" = schedule ]; then\n"
-        "              echo 'HIL_SCHEDULE_SKIPPED_DISABLED'\n"
-        "              exit 0\n"
-        "            fi\n"
         "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\n"
         "            exit 1\n"
         "          fi\n"
@@ -892,30 +884,35 @@ def self_test() -> None:
 
         extended_path = root / EXTENDED_REAL_AUTOMATION_WORKFLOW
         extended_text = extended_path.read_text(encoding='utf-8')
-        extended_path.write_text(
-            extended_text.replace('EXTENDED_REAL_SCHEDULE_SKIPPED_DISABLED', 'EXTENDED_REAL_DISABLED'),
-            encoding='utf-8',
-        )
-        try:
-            validate(root)
-        except AssertionError as exc:
-            assert 'disabled schedule must cleanly skip' in str(exc)
-        else:
-            raise AssertionError('Extended Real scheduled-disabled failure policy drift was accepted')
+        for updated in (
+            extended_text.replace('EXTENDED_REAL_REQUIRED_BUT_DISABLED', 'EXTENDED_REAL_DISABLED'),
+            extended_text.replace("            exit 1\\n", "            exit 0\\n"),
+        ):
+            extended_path.write_text(updated, encoding='utf-8')
+            try:
+                validate(root)
+            except AssertionError as exc:
+                assert 'disabled schedule must fail visibly' in str(exc)
+            else:
+                raise AssertionError('Extended Real false-green disabled policy was accepted')
         extended_path.write_text(extended_text, encoding='utf-8')
 
         hil_path = root / HIL_SOAK_WORKFLOW
         hil_text = hil_path.read_text(encoding='utf-8')
-        hil_path.write_text(
+        for updated in (
             hil_text.replace('HIL_REQUIRED_BUT_DISABLED', 'HIL_DISABLED'),
-            encoding='utf-8',
-        )
-        try:
-            validate(root)
-        except AssertionError as exc:
-            assert 'post-release required event must remain fail-closed' in str(exc)
-        else:
-            raise AssertionError('HIL post-release disabled fail-closed policy drift was accepted')
+            hil_text.replace(
+                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\\n            exit 1",
+                "            echo 'HIL_REQUIRED_BUT_DISABLED' >&2\\n            exit 0",
+            ),
+        ):
+            hil_path.write_text(updated, encoding='utf-8')
+            try:
+                validate(root)
+            except AssertionError as exc:
+                assert 'disabled schedule must fail visibly' in str(exc)
+            else:
+                raise AssertionError('HIL false-green disabled policy was accepted')
         hil_path.write_text(hil_text, encoding='utf-8')
 
         _write_program_archive_fixture(root, duplicate=True)

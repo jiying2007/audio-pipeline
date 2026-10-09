@@ -114,3 +114,38 @@ KWS FAR, ASR WER, a shipped C4 SDK or E001 physical qualification.
 Next: independently preregister recorded-speech direction diagnostics and
 separate known-direction BF upper bounds from estimated-bearing candidates.
 A1 does not close FE03, FE07–FE09, or physical issue #58.
+
+## Retained exact-source numerical evidence / 完整数值证据留存
+
+The existing Quality `frontend-reference` job now runs the **unchanged**
+`doa_gccphat_a1.py` twice: first with `--output fe-doa-a1/result.json
+--execution-source "$GITHUB_SHA"`, then `--verify` on that exact result and
+source. The step asserts that the checked-out `git rev-parse HEAD` equals
+`$GITHUB_SHA` before generating any receipt. On a pull request,
+`GITHUB_SHA` can identify GitHub's synthetic PR merge commit rather than the
+PR source-branch head. The JSON records the **actually checked-out execution
+source** and must not be relabeled as the head branch or a later release.
+
+A single existing pinned `actions/upload-artifact` action preserves
+`frontend-doa-a1-${{ github.run_id }}` for **30 days**, including:
+- `result.json`: all eight disclosed scene results and full 72-bin candidate
+  scores, PCM/score/plan/oracle digests, rank and no-promotion fields;
+- `execute.log` and `verify.log`: distinct execution and verification output;
+- `SHA256SUMS`: SHA-256 digests of exactly those three files, checked with
+  `sha256sum -c` before upload.
+
+The producer/verification step fails on missing or changed evidence; an
+available failed execution/verification log is also uploaded without converting
+a red check to green. Empty/missing artifact files are a CI error. No new
+workflow, evaluator, runner, DSP algorithm, source model, data scene, numerical
+threshold or public API was added by this evidence-only continuation.
+
+**Artifact retention is finite.** A successful GitHub Actions result is not
+an immutable archival service: after 30 days, reproduce the receipt from the
+exact repository commit, frozen A1 contract and the available first-party
+Python standard-library implementation using the commands above. For scientific
+comparison distinguish PR synthetic-merge receipts, exact main source receipts,
+and future independent recorded-data experiments. Output hashes and repeatability
+are **disclosed synthetic regression evidence only**; they do not establish
+live DOA accuracy, streaming 10 ms latency, SSC305 resource timing, four-mic
+shipping qualification, or E001 Product Certification.

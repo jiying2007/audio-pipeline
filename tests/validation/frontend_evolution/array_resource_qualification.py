@@ -71,7 +71,7 @@ def parse_stack(path: Path) -> dict:
     for line in path.read_text().splitlines():
         parts = line.split("\t")
         require(len(parts) == 3 and parts[1].isdigit(), "FE08 malformed stack usage")
-        require(parts[2] == "static", "FE08 unbounded/dynamic data-plane stack")
+        require(parts[2] == "static", f"FE08 non-static data-plane stack: {parts[0]} size={parts[1]} kind={parts[2]}")
         values.append({"function": parts[0].rsplit(":", 1)[-1],
                        "bytes": int(parts[1]), "kind": parts[2]})
     require(values, "FE08 missing static stack evidence")

@@ -77,7 +77,20 @@ static uint64_t checksum(uint64_t h, const void *data, size_t size) {
     return h;
 }
 
-static int run_scene(unsigned circle, enum scene which, unsigned index) {
+/* Only this research runner writes evidence. Detector/BF data planes remain I/O-free. */
+static FILE *trace_open(const char *root, unsigned circle, enum scene which,
+                        const char *suffix) {
+    char path[1024];
+    int size;
+    if (!root) return NULL;
+    size = snprintf(path, sizeof(path), "%s/%s-%s.%s",
+                    root, circle ? "UCA4" : "ULA4", SCENE_NAMES[which], suffix);
+    if (size < 0 || (size_t)size >= sizeof(path)) return NULL;
+    return fopen(path, "wbx"); /* Never overwrite pre-existing evidence. */
+}
+
+static int run_scene(unsigned circle, enum scene which, unsigned index,
+                     const char *trace_root, int alternate_future) {
     _Alignas(FE_ARRAY_ALIGNMENT) unsigned char arena[8192], split_arena[8192], healthy_arena[8192];
     unsigned char saved[8192];
     fe_array *array = NULL, *split = NULL, *baseline = NULL;
@@ -92,8 +105,15 @@ static int run_scene(unsigned circle, enum scene which, unsigned index) {
     uint64_t input_hash = FNV_OFFSET, output_hash = FNV_OFFSET, mask_hash = FNV_OFFSET;
     double rms_delta_energy = 0.0, maximum_discontinuity = 0.0;
     float prev = 0.0f;
+    FILE *input_file = NULL, *output_file = NULL, *mask_file = NULL;
     size_t t;
 
+    if (trace_root) {
+        input_file = trace_open(trace_root, circle, which, "input.f32le");
+        output_file = trace_open(trace_root, circle, which, "output.f32le");
+        mask_file = trace_open(trace_root, circle, which, "mask.u32le");
+        CHECK(input_file && output_file && mask_file);
+    }
     CHECK(bytes <= sizeof(arena));
     CHECK(fe_array_init(arena,bytes,&cfg,&array)==FE_ARRAY_OK);
     CHECK(fe_array_init(split_arena,bytes,&cfg,&split)==FE_ARRAY_OK);
@@ -103,7 +123,29 @@ static int run_scene(unsigned circle, enum scene which, unsigned index) {
 
     for (frame = 0u; frame < D0_FRAMES; ++frame) {
         make_frame(which,circle,frame,pcm,healthy);
+        if (alternate_future && frame >= 1200u) {
+            uint32_t channel;
+            /* Fixed prefix (frames 0..1199) remains bit-identical.
+             * Perturb only healthy/remaining live signals; preserve exact
+             * injected zero/rail faults and their fixed detection schedule.
+             */
+            for (t = 0u; t < D0_SAMPLES; ++t)
+                for (channel = 0u; channel < 4u; ++channel) {
+                    const unsigned stuck_zero = channel == 0u && frame >= 400u &&
+                        (which == HARD_ZERO || which == SEQUENTIAL ||
+                         (which == RECOVERY && frame < 1000u));
+                    const unsigned stuck_rail = frame >= 400u &&
+                        ((channel == 0u && (which == RAIL_PLUS || which == RAIL_MINUS)) ||
+                         (channel == 2u && which == SEQUENTIAL && frame >= 800u));
+                    const size_t at = t*4u + channel;
+                    if (!stuck_zero && !stuck_rail) {
+                        pcm[at] = pcm[at] == 0.0f ? 0.02f : -pcm[at];
+                        healthy[at] = healthy[at] == 0.0f ? 0.02f : -healthy[at];
+                    }
+                }
+        }
         input_hash = checksum(input_hash,pcm,sizeof(pcm));
+        if (input_file) CHECK(fwrite(pcm,sizeof(float),D0_SAMPLES*4u,input_file)==D0_SAMPLES*4u);
         if (frame == 250u) {
             /* Invalid/noisy observations cannot advance counters or mutate outputs. */
             float saved_value;
@@ -159,6 +201,8 @@ static int run_scene(unsigned circle, enum scene which, unsigned index) {
         CHECK(fe_array_process(baseline,healthy,640u,base,160u)==FE_ARRAY_OK);
         mask_hash = checksum(mask_hash,&mask,sizeof(mask));
         output_hash = checksum(output_hash,out,sizeof(out));
+        if (output_file) CHECK(fwrite(out,sizeof(float),D0_SAMPLES,output_file)==D0_SAMPLES);
+        if (mask_file) CHECK(fwrite(&mask,sizeof(mask),1u,mask_file)==1u);
         for (t = 0u; t < D0_SAMPLES; ++t) {
             const double error = (double)out[t]-(double)base[t];
             const double jump = fabs((double)out[t]-(double)prev);
@@ -175,6 +219,9 @@ static int run_scene(unsigned circle, enum scene which, unsigned index) {
     else CHECK(suggestions==1u && first==402u &&
                mask==(which==RECOVERY?15u:14u));
     CHECK(recoveries==(which==RECOVERY?1u:0u));
+    if (input_file) CHECK(fclose(input_file)==0);
+    if (output_file) CHECK(fclose(output_file)==0);
+    if (mask_file) CHECK(fclose(mask_file)==0);
     printf("%s{\"case_id\":\"%s-%s\",\"geometry\":\"%s\","
            "\"scene\":\"%s\",\"frames\":1600,"
            "\"suggestions\":%u,\"first_frame\":%u,"
@@ -213,15 +260,24 @@ static int spatial_reject_and_single_active(void) {
     return 0;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
     unsigned geo,scene,index=0u;
+    const char *trace_root = NULL;
+    int alternate_future = 0;
+    if (argc != 1 && argc != 3) return 2;
+    if (argc == 3) {
+        trace_root = argv[1];
+        if (strcmp(argv[2], "base") == 0) alternate_future = 0;
+        else if (strcmp(argv[2], "future") == 0) alternate_future = 1;
+        else return 2;
+    }
     CHECK(spatial_reject_and_single_active()==0);
     printf("{\"schema_version\":1,\"experiment_id\":\"FE06-MIC-FAULT-CONTROL-D0\","
            "\"shipping_authority\":false,\"decision\":\"MIC_FAULT_HARD_SIGNATURE_D0_NO_PROMOTION\","
            "\"cases\":[");
     for (geo=0u;geo<2u;++geo)
         for (scene=0u;scene<D0_CASES;++scene) {
-            CHECK(run_scene(geo,(enum scene)scene,index)==0);
+            CHECK(run_scene(geo,(enum scene)scene,index,trace_root,alternate_future)==0);
             ++index;
         }
     printf("],\"case_count\":%u,\"assertions\":%u}\n",index,assertions);

@@ -365,11 +365,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           mkdir fe-doa-a1
+          git -c safe.directory="$GITHUB_WORKSPACE" rev-parse HEAD \
+            > fe-doa-a1/execute.log 2>&1
+          test "$(head -n 1 fe-doa-a1/execute.log)" = "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/doa_gccphat_a1.py \
             --output fe-doa-a1/result.json --execution-source "$GITHUB_SHA" \
-            > fe-doa-a1/execute.log 2>&1
+            >> fe-doa-a1/execute.log 2>&1
           python3 tests/validation/frontend_evolution/doa_gccphat_a1.py \
             --verify --output fe-doa-a1/result.json --execution-source "$GITHUB_SHA" \
             > fe-doa-a1/verify.log 2>&1

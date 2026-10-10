@@ -65,6 +65,10 @@ the units and origin of audio/video timing fields and the sign of
 the coordinate system. The source label fields include filename,
 angle(°), distance, ele, real_st, real_ed, video_st and video_ed.
 The presence of nominal 10-Hz values is **not** clock alignment proof.
+The per-row SHA-256 binds the original text of every semantic CSV field,
+including real/video start and end clocks: a metadata timing change must
+not retain the same semantic receipt. This row hash does not replace the
+full raw CSV SHA-256 or establish timestamp unit/alignment correctness.
 
 Before looking at performance, select the lexically lowest eligible
 shared scene and then lowest complete static and moving utterances.

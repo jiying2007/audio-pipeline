@@ -255,6 +255,117 @@ def unadmitted_distance_diagnostics(raw):
     except (UnicodeError, csv.Error):
         return {"diagnostic_error": "UNPARSABLE_STRUCTURE"}
 
+def d1q_preview(raw_static, raw_moving, synthetic=False):
+    """New #699 score-blind, whole-scene *diagnostic*, never original D1 PASS."""
+    if not synthetic:
+        require(len(raw_static) == 667203 and
+                sha(raw_static) ==
+                "1f0be80d4ab1cc023e7599bf7e564f84acaf36ccad73fd59c992cc9e853f1233",
+                "D1Q_SOURCE_IDENTITY_MISMATCH")
+        require(len(raw_moving) == 2458884 and
+                sha(raw_moving) ==
+                "542f04d011c2b6fbdd49bfa51c423942fe854e7e0615fb1f67954c762ad20bf5",
+                "D1Q_SOURCE_IDENTITY_MISMATCH")
+    quarantine = "Car-Electric"
+    expected_invalid = 1 if synthetic else 544
+    result = {
+        "decision": "REALMAN_D1Q_SCENE_QUARANTINE_METADATA_DIAGNOSTIC_ONLY",
+        "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/699",
+        "source_role": "disclosed-development-only",
+        "excluded_whole_scene": quarantine,
+        "original_static_sha256": sha(raw_static),
+        "original_moving_sha256": sha(raw_moving),
+        "audio_bytes_admitted": False,
+        "original_d1_source_admitted": False,
+        "doa_scores_reported": False,
+        "shipping_authority": False,
+    }
+    scene_sets = {}
+    for family, raw in (("static", raw_static), ("moving", raw_moving)):
+        reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""))
+        fields = reader.fieldnames or []
+        require(len(fields) == len(set(fields)) and
+                set(d0.REQUIRED_CSV).issubset(fields) and
+                all(x in d0.REQUIRED_CSV or x.startswith("Unnamed:") for x in fields),
+                "D1Q_SOURCE_SCHEMA_DRIFT")
+        kept, excluded, seen_names = [], [], set()
+        for row in reader:
+            require(None not in row and all(isinstance(x, str) for x in row.values()),
+                    "D1Q_SOURCE_SCHEMA_DRIFT")
+            name = row.get("filename", "")
+            parts = name.split("/")
+            require(len(parts) == 6 and parts[:2] == ["val", "ma_noisy_speech"]
+                    and parts[3] == family and
+                    bool(re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", parts[2])) and
+                    name.endswith(".flac") and name not in seen_names,
+                    "D1Q_INVALID_ROW_IDENTITY")
+            seen_names.add(name)
+            if parts[2] == quarantine:
+                excluded.append(row)
+            else:
+                kept.append(row)
+        require(len(kept) > 0 and len(seen_names) == len(kept) + len(excluded),
+                "D1Q_EMPTY_OR_DUPLICATE_SOURCE")
+        stream = io.StringIO(newline="")
+        writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(kept)
+        # Frozen D0 independently qualifies every retained row, no field edits.
+        parsed = d0.parse_labels(stream.getvalue().encode("utf-8"),
+                                 family, d0.authoritative_contract())
+        scene_sets[family] = {item["scene"] for item in parsed}
+        evidence = "".join(
+            item["filename"] + "\t" + item["row_sha256"] + "\n"
+            for item in sorted(parsed, key=lambda r: r["filename"])
+        ).encode("utf-8")
+        result[family] = {
+            "original_row_count": len(seen_names),
+            "quarantined_whole_scene_rows": len(excluded),
+            "retained_row_count": len(parsed),
+            "retained_scene_count": len(scene_sets[family]),
+            "retained_semantic_rows_sha256": sha(evidence),
+            "retained_scenes": sorted(scene_sets[family]),
+        }
+        if family == "static":
+            bad = 0
+            for row in kept + excluded:
+                cell = row.get("distance", "")
+                try:
+                    values = [float(v.strip()) for v in cell.split(",")]
+                except ValueError as err:
+                    raise AdmissionError("D1Q_INVALID_DISTANCE_REPRESENTATION") from err
+                require(len(values) == 1 and all(math.isfinite(v) for v in values),
+                        "D1Q_INVALID_DISTANCE_REPRESENTATION")
+                scene = row["filename"].split("/")[2]
+                if values[0] <= 0:
+                    require(scene == quarantine and values[0] == -10000,
+                            "D1Q_UNEXPECTED_NONPOSITIVE_DISTANCE")
+                    bad += 1
+            require(bad == expected_invalid,
+                    "D1Q_UNEXPECTED_SENTINEL_COUNT")
+            result["static"]["disclosed_invalid_distance_rows"] = bad
+    require("Car-Electric" not in scene_sets["static"] and
+            "Car-Electric" not in scene_sets["moving"],
+            "D1Q_QUARANTINE_LEAK")
+    result["common_retained_label_scenes"] = sorted(
+        scene_sets["static"] & scene_sets["moving"])
+    return result
+
+
+def d1q_result(raw_static, raw_moving, synthetic=False):
+    try:
+        return d1q_preview(raw_static, raw_moving, synthetic=synthetic)
+    except (ValueError, csv.Error, UnicodeError) as err:
+        return {
+            "decision": "REALMAN_D1Q_REJECTED",
+            "failure_code": err.code if isinstance(err, AdmissionError)
+                            else "D1Q_SOURCE_PARSE_REJECTED",
+            "original_d1_source_admitted": False,
+            "audio_bytes_admitted": False,
+            "doa_scores_reported": False,
+            "shipping_authority": False,
+        }
+
 def admit(work, output):
     result = authority(exact_source())
     scenes, failures = {}, []
@@ -284,6 +395,11 @@ def admit(work, output):
                 entry["parse_failure_reason"] = parser_reason(err)
                 failures.append({"family": family, "failure_code": classify(err),
                                  "parse_failure_reason": parser_reason(err)})
+        if len(result["files"]) == 2:
+            # Newly preregistered #699, never overrides D1 strict failure.
+            result["d1q_preview"] = d1q_result(
+                (work / "static.csv").read_bytes(),
+                (work / "moving.csv").read_bytes())
         if failures:
             result["decision"] = BLOCKED
             result["csv_bytes_verified"] = False
@@ -362,6 +478,13 @@ def verify_payload(work, receipt, expected):
         else:
             require(item == dict(core, **metrics))
             scenes[family] = member_scenes
+    d1q_exists = len(items) == 2
+    if d1q_exists:
+        expected_d1q = d1q_result((work / "static.csv").read_bytes(),
+                                  (work / "moving.csv").read_bytes())
+        require(receipt.get("d1q_preview") == expected_d1q)
+    else:
+        require("d1q_preview" not in receipt)
     if errors:
         require(receipt.get("decision") == BLOCKED and
                 receipt.get("csv_bytes_verified") is False and
@@ -370,7 +493,8 @@ def verify_payload(work, receipt, expected):
                 "common_label_scenes" not in receipt and
                 "common_label_scene_count" not in receipt)
         require(set(receipt) == set(expected) |
-                {"decision", "csv_bytes_verified", "failure_code", "blocked_sources"})
+                {"decision", "csv_bytes_verified", "failure_code", "blocked_sources"} |
+                ({"d1q_preview"} if d1q_exists else set()))
     else:
         require(receipt.get("decision") == PASS and
                 receipt.get("csv_bytes_verified") is True and
@@ -381,7 +505,7 @@ def verify_payload(work, receipt, expected):
                 receipt.get("common_label_scene_count") == len(common))
         require(set(receipt) == set(expected) |
                 {"decision", "csv_bytes_verified", "common_label_scenes",
-                 "common_label_scene_count"})
+                 "common_label_scene_count", "d1q_preview"})
 
 
 def verify(work, path):
@@ -497,6 +621,31 @@ def self_test():
                 pass
             else:
                 raise AssertionError("mutated blocked D1 receipt accepted")
+    row_reader = csv.DictReader(io.StringIO(example(False).decode()))
+    record_good = next(row_reader)
+    record_bad = dict(record_good)
+    record_bad["filename"] = (
+        "val/ma_noisy_speech/Car-Electric/static/P0001/"
+        "VAL_S_CARE_P0001_0002.flac")
+    record_bad["distance"] = "-10000"
+    stream = io.StringIO(newline="")
+    writer = csv.DictWriter(stream, fieldnames=list(d0.REQUIRED_CSV),
+                            lineterminator="\n")
+    writer.writeheader()
+    writer.writerows([record_good, record_bad])
+    synthetic_static = stream.getvalue().encode()
+    probe = d1q_result(synthetic_static, example(True), synthetic=True)
+    assert probe["decision"] == (
+        "REALMAN_D1Q_SCENE_QUARANTINE_METADATA_DIAGNOSTIC_ONLY")
+    assert probe["static"]["original_row_count"] == 2
+    assert probe["static"]["quarantined_whole_scene_rows"] == 1
+    assert probe["static"]["retained_row_count"] == 1
+    assert probe["static"]["disclosed_invalid_distance_rows"] == 1
+    assert probe["common_retained_label_scenes"] == ["Gym"]
+    # Additional unexpected negative must not be silently ignored.
+    extra_bad = example(False).replace(b"1.3", b"-2")
+    rejected = d1q_result(extra_bad, example(True), synthetic=True)
+    assert rejected["decision"] == "REALMAN_D1Q_REJECTED"
     class Oversized:
         headers = {"Content-Length": str(CAP + 1)}
     try:

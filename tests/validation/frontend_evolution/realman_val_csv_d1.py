@@ -592,6 +592,7 @@ def self_test():
         }
         receipt.update({
             "files": [entry_static, entry_moving],
+            "d1q_preview": d1q_result(bstatic, bmoving),
             "decision": BLOCKED,
             "csv_bytes_verified": False,
             "failure_code": "CSV_SCHEMA_MISMATCH",
@@ -604,6 +605,7 @@ def self_test():
         mutations = [
             lambda r: r["files"][0]["unadmitted_distance_diagnostics"].update(
                 negative_distance_rows=0),
+            lambda r: r["d1q_preview"].update(decision="UNAUTHORIZED_PROMOTION"),
             lambda r: r["files"][0].update(sha256="0" * 64),
             lambda r: r["files"][0].update(parse_failure_reason="accepted"),
             lambda r: r["blocked_sources"][0].update(

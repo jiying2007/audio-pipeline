@@ -547,7 +547,7 @@ def self_test():
             else:
                 raise AssertionError("invalid flac header passed")
         recs = [
-            {"role": role, "channel": ch, "streaminfo": fields}
+            {"role": role, "channel": ch, "streaminfo": dict(fields)}
             for role in ROLES for ch in CHS
         ]
         assert format_group(recs)["native_48khz_all"]

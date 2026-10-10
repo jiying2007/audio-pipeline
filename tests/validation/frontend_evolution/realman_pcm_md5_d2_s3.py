@@ -154,27 +154,55 @@ def load_anchor():
 
 
 def exact_decoder():
-    found = shutil.which("flac")
+    """Choose preinstalled FLAC, otherwise preinstalled FFmpeg without installation.
+
+    This choice is PRE-DECLARED as an equivalent native format CLI in #707.
+    Not a recording/scene/threshold fallback. Real STREAMINFO PCM-MD5
+    remains an exact hard gate for all eight raw streams.
+    """
+    kind = "flac" if shutil.which("flac") else "ffmpeg"
+    found = shutil.which(kind)
     require(found is not None, "S3_PREINSTALLED_DECODER_MISSING")
     path = Path(found).resolve()
-    require(str(path).startswith(("/usr/bin/", "/bin/"))
+    require(str(path).startswith(("/usr/bin/", "/bin/", "/usr/local/bin/"))
             and path.is_file(), "S3_DECODER_NOT_SYSTEM")
     length, digest = s1.file_hash(path, cap=64*1024*1024)
     require(0 < length <= 64*1024*1024, "S3_DECODER_BINARY_OVERSIZED")
     try:
-        proc = subprocess.run([str(path), "--version"], stdin=subprocess.DEVNULL,
+        proc = subprocess.run([str(path), "--version" if kind == "flac"
+                               else "-version"], stdin=subprocess.DEVNULL,
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               timeout=5, check=False)
     except (OSError, subprocess.SubprocessError):
         raise Reject("S3_DECODER_VERSION_UNAVAILABLE") from None
-    version = proc.stdout.decode("ascii", "replace").strip()
-    require(proc.returncode == 0 and bool(re.fullmatch(r"flac 1\.[0-9]+\.[0-9]+", version)),
-            "S3_DECODER_VERSION_UNSUPPORTED")
+    version = proc.stdout.decode("ascii", "replace").splitlines()[0].strip() \
+        if proc.stdout else ""
+    if kind == "flac":
+        require(proc.returncode == 0
+                and bool(re.fullmatch(r"flac 1\.[0-9]+\.[0-9]+", version)),
+                "S3_DECODER_VERSION_UNSUPPORTED")
+        flags = list(DECODE_FLAGS)
+    else:
+        require(proc.returncode == 0 and version.startswith("ffmpeg version ")
+                and len(version) <= 256, "S3_DECODER_VERSION_UNSUPPORTED")
+        flags = ["-hide_banner", "-loglevel", "error", "-nostdin",
+                 "-i", "<original-FLAC>", "-map", "0:a:0",
+                 "-c:a", "pcm_s16le", "-f", "s16le", "pipe:1"]
     return str(path), {
-        "binary_sha256": digest, "version": version,
+        "program": kind, "binary_sha256": digest, "version": version,
         "raw_mode": "signed-S16LE-mono-48000Hz-unmodified",
-        "argv_flags": list(DECODE_FLAGS),
+        "argv_flags": flags,
     }
+
+
+def decoder_args(tool, decoder_id, flat):
+    """Never pass -ar/-ac/-af/-filter/-ss/-t: no resample, mix, DSP or trim."""
+    if decoder_id["program"] == "flac":
+        return [tool, *DECODE_FLAGS, str(flat)]
+    require(decoder_id["program"] == "ffmpeg", "S3_DECODER_IDENTITY_UNSUPPORTED")
+    return [tool, "-hide_banner", "-loglevel", "error", "-nostdin",
+            "-i", str(flat), "-map", "0:a:0", "-c:a", "pcm_s16le",
+            "-f", "s16le", "pipe:1"]
 
 
 class PCMHasher:
@@ -206,12 +234,12 @@ class PCMHasher:
                 "streaminfo_md5_matches": True}
 
 
-def decode_original(tool, flat, samples, expected_md5, overall_deadline):
+def decode_original(tool, decoder_id, flat, samples, expected_md5, overall_deadline):
     """No WAV header, no PCM file, no resampler. Only bounded pipe hashing."""
     expected_bytes = 2 * samples
     hasher = PCMHasher(expected_bytes)
     require(time.monotonic() < overall_deadline, "S3_PCM_TOTAL_TIMEOUT")
-    argv = [tool, *DECODE_FLAGS, str(flat)]
+    argv = decoder_args(tool, decoder_id, flat)
     proc = None
     try:
         proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
@@ -280,7 +308,7 @@ def eight_originals(work, anchor, *, extract):
                 "S3_ORIGINAL_FLAC_REHASH_MISMATCH")
         info = s2.flac_streaminfo(flat)
         require(info == original["streaminfo"], "S3_ORIGINAL_STREAMINFO_DRIFT")
-        pcm = decode_original(decoder, flat, info["total_samples"],
+        pcm = decode_original(decoder, decoder_id, flat, info["total_samples"],
                               info["streaminfo_pcm_md5_hex"], pcm_deadline)
         rows.append({
             "role": x["role"], "channel": x["channel"],

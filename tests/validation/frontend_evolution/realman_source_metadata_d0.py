@@ -211,6 +211,8 @@ def parse_labels(data: bytes, family: str, p: dict) -> list[dict]:
     require("\x00" not in decoded, "NUL label data")
     reader = csv.DictReader(io.StringIO(decoded, newline=""))
     headers = reader.fieldnames or []
+    require(all(isinstance(h, str) and bool(h) for h in headers),
+            "nonstring/blank CSV header")
     require(len(headers) == len(set(headers)), "duplicate CSV header")
     require(set(REQUIRED_CSV).issubset(headers), "missing real-label fields")
     require(all(h in REQUIRED_CSV or h.startswith(p["csv_optional_index_prefix"])
@@ -253,8 +255,10 @@ def parse_labels(data: bytes, family: str, p: dict) -> list[dict]:
                      "family": family, "label_count": len(az),
                      "real_bounds": [stamps["real_st"], stamps["real_ed"]],
                      "video_bounds": [stamps["video_st"], stamps["video_ed"]],
-                     "row_sha256": sha256((name + "\x00" + row["angle(°)"] + "\x00" +
-                                           row["distance"] + "\x00" + row["ele"]).encode("utf-8"))})
+                     "row_sha256": sha256(json.dumps(
+                         {k: row[k] for k in REQUIRED_CSV},
+                         ensure_ascii=False, sort_keys=True,
+                         separators=(",", ":")).encode("utf-8"))})
     require(bool(rows), "empty static/moving source label set")
     return rows
 
@@ -311,6 +315,15 @@ def self_test() -> None:
     moving = csv_bytes([fixture(mname, "30,35", "1.3,1.4", "0,0")])
     ss = parse_labels(static, "static", p)
     mm = parse_labels(moving, "moving", p)
+    # A label receipt must bind all semantic metadata, including source
+    # and video timestamps, not only the angle/distance/elevation fields.
+    for field, edited in (("real_st", "4801"), ("video_st", "5001"),
+                          ("angle(°)", "31")):
+        changed = fixture(sname, "30", "1.3", "0")
+        changed[field] = edited
+        observed = parse_labels(csv_bytes([changed]), "static", p)
+        require(observed[0]["row_sha256"] != ss[0]["row_sha256"],
+                "semantic label or source-clock tamper retained original digest")
     inventory = list(physical_flac_paths(sname,p) + physical_flac_paths(mname,p))
     chosen = preselect(ss, mm, inventory, p)
     require(chosen["scene"] == "Gym" and chosen["static_file"] == sname

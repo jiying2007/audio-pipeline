@@ -33,3 +33,4 @@ python3 tests/validation/frontend_evolution/realman_source_metadata_d0.py --self
 python3 tests/validation/frontend_evolution/realman_val_csv_d1.py self-test
 python3 tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py self-test
 python3 tests/validation/frontend_evolution/realman_single_archive_d2_s1.py self-test
+python3 tests/validation/frontend_evolution/realman_flac_quartets_d2_s2.py self-test

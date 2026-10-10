@@ -8,6 +8,8 @@ on:
       - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-source-vetting-receipt.json'
       - 'tests/validation/frontend_evolution/realman_val_csv_d1.py'
       - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
+      - 'tests/validation/frontend_evolution/realman_single_archive_d2_s1.py'
+      - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
       - '.github/workflows/research-development-dataset-source-vetting.yml'
@@ -15,6 +17,8 @@ on:
   push:
     branches: [main]
     paths:
+      - 'tests/validation/frontend_evolution/realman_single_archive_d2_s1.py'
+      - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
       - 'tests/validation/frontend_evolution/realman_val_csv_d1.py'
@@ -325,5 +329,81 @@ jobs:
         with:
           name: realman-scene-archive-d2-s0-${{ github.run_id }}
           path: realman-d2-s0-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+  realman-one-archive-d2-s1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Scope byte feasibility to one new research file set
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_single_archive_d2_s1\.py|docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1\.md|\.github/workflows/research-development-dataset-source-vetting\.yml)$' <<< "$changed"; then
+            echo 'd2s1=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'd2s1=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Offline immutable URL, budget, digest, and receipt tamper tests
+        if: steps.scope.outputs.d2s1 == 'true'
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py self-test
+          python3 tests/validation/frontend_evolution/realman_single_archive_d2_s1.py self-test
+
+      - name: Stream exactly one pinned Gym RAR into runner ephemeral storage
+        id: collect
+        if: steps.scope.outputs.d2s1 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d2-s1-evidence "$RUNNER_TEMP/realman-d2-s1"
+          python3 tests/validation/frontend_evolution/realman_single_archive_d2_s1.py collect \
+            --workspace "$RUNNER_TEMP/realman-d2-s1" \
+            --receipt realman-d2-s1-evidence/receipt.json > realman-d2-s1-evidence/collect.log 2>&1
+
+      - name: Independently rehash exact archive bytes and audit receipt
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_single_archive_d2_s1.py verify \
+            --workspace "$RUNNER_TEMP/realman-d2-s1" \
+            --receipt realman-d2-s1-evidence/receipt.json > realman-d2-s1-evidence/verify.log 2>&1
+
+      - name: Destroy ephemeral RAR bytes before evidence upload
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RUNNER_TEMP"
+          rm -f "$RUNNER_TEMP/realman-d2-s1/Gym.rar"
+          test ! -f "$RUNNER_TEMP/realman-d2-s1/Gym.rar"
+
+      - name: Seal two independent logs and source-hash receipt
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d2-s1-evidence
+          sha256sum receipt.json collect.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Retain metadata and bounded negative evidence; never RAR or FLAC
+        if: always() && steps.collect.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-one-archive-d2-s1-${{ github.run_id }}
+          path: realman-d2-s1-evidence/
           retention-days: 30
           if-no-files-found: error

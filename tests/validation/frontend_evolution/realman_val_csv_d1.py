@@ -6,6 +6,7 @@ import csv
 import hashlib
 import io
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -192,6 +193,38 @@ def source_headers(raw):
         pass
     return []
 
+def unadmitted_distance_diagnostics(raw):
+    # Purely structural, aggregate diagnostics of unadmitted official labels.
+    # These counts never filter rows or change the frozen D0 validator.
+    try:
+        stream = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""))
+        counts = {"unadmitted_structural_rows": 0,
+                  "nonpositive_distance_rows": 0,
+                  "zero_distance_rows": 0,
+                  "negative_distance_rows": 0,
+                  "nonfinite_distance_rows": 0,
+                  "nonnumeric_distance_rows": 0}
+        for row in stream:
+            counts["unadmitted_structural_rows"] += 1
+            if counts["unadmitted_structural_rows"] > 100000:
+                return {"diagnostic_error": "STRUCTURAL_ROW_BOUND_EXCEEDED"}
+            raw_cell = row.get("distance")
+            if not isinstance(raw_cell, str):
+                counts["nonnumeric_distance_rows"] += 1
+                continue
+            try:
+                values = [float(x.strip()) for x in raw_cell.split(",")]
+            except ValueError:
+                counts["nonnumeric_distance_rows"] += 1
+                continue
+            counts["zero_distance_rows"] += int(any(x == 0 for x in values))
+            counts["negative_distance_rows"] += int(any(x < 0 for x in values))
+            counts["nonfinite_distance_rows"] += int(any(not math.isfinite(x) for x in values))
+            counts["nonpositive_distance_rows"] += int(any(x <= 0 for x in values))
+        return counts
+    except (UnicodeError, csv.Error):
+        return {"diagnostic_error": "UNPARSABLE_STRUCTURE"}
+
 def admit(work, output):
     result = authority(exact_source())
     scenes, failures = {}, []
@@ -217,6 +250,7 @@ def admit(work, output):
                 scenes[family] = scene_names
             except Exception as err:
                 entry["unadmitted_raw_headers"] = source_headers(raw)
+                entry["unadmitted_distance_diagnostics"] = unadmitted_distance_diagnostics(raw)
                 entry["parse_failure_reason"] = parser_reason(err)
                 failures.append({"family": family, "failure_code": classify(err),
                                  "parse_failure_reason": parser_reason(err)})
@@ -316,6 +350,11 @@ def self_test():
             pass
         else:
             raise AssertionError("invalid source CSV accepted")
+    diagnostic = unadmitted_distance_diagnostics(
+        example(False).replace(b"1.3", b"0"))
+    assert diagnostic["unadmitted_structural_rows"] == 1
+    assert diagnostic["zero_distance_rows"] == 1
+    assert diagnostic["nonpositive_distance_rows"] == 1
     class Oversized:
         headers = {"Content-Length": str(CAP + 1)}
     try:

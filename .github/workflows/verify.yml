@@ -241,7 +241,7 @@ jobs:
           sha256sum build-hosted-real/ap_process_pcm > "$root/processor.sha256"
           find "$root" -maxdepth 1 -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$root/SHA256SUMS"
       - name: Upload hosted real-data evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: hosted-real-smoke-${{ github.run_id }}
           path: |
@@ -373,7 +373,7 @@ jobs:
           check "$EXPECT_CODEQL" "$CODEQL_RESULT" codeql
       - name: Upload failure classification
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verification-failure-${{ github.run_id }}
           path: /tmp/verification-summary.json

@@ -10,7 +10,9 @@ on:
       - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
       - 'tests/validation/frontend_evolution/realman_single_archive_d2_s1.py'
       - 'tests/validation/frontend_evolution/realman_flac_quartets_d2_s2.py'
+      - 'tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2.md'
+      - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
@@ -21,7 +23,9 @@ on:
     paths:
       - 'tests/validation/frontend_evolution/realman_single_archive_d2_s1.py'
       - 'tests/validation/frontend_evolution/realman_flac_quartets_d2_s2.py'
+      - 'tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2.md'
+      - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
@@ -354,7 +358,7 @@ jobs:
           changed="$(git diff --name-only HEAD^1 HEAD)"
           # S2 reuses S1's exact hash-checked downloader, so on a S2-only
           # change it executes one source transfer, not two concurrent 447MB pulls.
-          if grep -Eq '^(tests/validation/frontend_evolution/realman_flac_quartets_d2_s2\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2\.md)$' <<< "$changed" &&
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_flac_quartets_d2_s2\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2\.md|tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0\.md)$' <<< "$changed" &&
              ! grep -Eq '^(tests/validation/frontend_evolution/realman_single_archive_d2_s1\.py|docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1\.md)$' <<< "$changed"; then
             echo 'd2s1=false' >> "$GITHUB_OUTPUT"
           elif grep -Eq '^(tests/validation/frontend_evolution/realman_single_archive_d2_s1\.py|docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1\.md|\.github/workflows/research-development-dataset-source-vetting\.yml)$' <<< "$changed"; then
@@ -496,5 +500,92 @@ jobs:
         with:
           name: realman-flac-quartets-d2-s2-${{ github.run_id }}
           path: realman-d2-s2-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+
+  realman-flac-toolchain-d2-t0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Scope official FLAC synthetic toolchain qualification to T0
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0\.md)$' <<< "$changed"; then
+            echo 't0=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 't0=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Offline synthetic contract / fixed official SHA negatives
+        if: steps.scope.outputs.t0 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py self-test
+
+      - name: Build only pinned official reference flacapp and perform synthetic PCM proof
+        id: collect
+        if: steps.scope.outputs.t0 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d2-t0-evidence
+          python3 tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py collect \
+            --workspace "$RUNNER_TEMP/realman-d2-t0" \
+            --receipt realman-d2-t0-evidence/receipt.json > realman-d2-t0-evidence/collect.log 2>&1
+
+      - name: Independently reread official source binary and recompute synthetic PCM equality
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py verify \
+            --workspace "$RUNNER_TEMP/realman-d2-t0" \
+            --receipt realman-d2-t0-evidence/receipt.json > realman-d2-t0-evidence/verify.log 2>&1
+
+      - name: Delete ephemeral upstream source binary and all synthetic FLAC PCM
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RUNNER_TEMP"
+          case "$RUNNER_TEMP" in
+            /*) ;;
+            *) exit 1 ;;
+          esac
+          if test -e "$RUNNER_TEMP/realman-d2-t0"; then
+            test -d "$RUNNER_TEMP/realman-d2-t0"
+            rm -rf -- "$RUNNER_TEMP/realman-d2-t0"
+          fi
+          test ! -e "$RUNNER_TEMP/realman-d2-t0"
+          if test -d realman-d2-t0-evidence; then
+            test "$(find realman-d2-t0-evidence -type f ! -name receipt.json ! -name collect.log ! -name verify.log ! -name SHA256SUMS | wc -l)" -eq 0
+          fi
+
+      - name: Seal research-only source toolchain synthetic evidence
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d2-t0-evidence
+          sha256sum receipt.json collect.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Retain only metadata logs and synthetic digests without binaries or PCM
+        if: always() && steps.collect.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-flac-toolchain-d2-t0-${{ github.run_id }}
+          path: realman-d2-t0-evidence/
           retention-days: 30
           if-no-files-found: error

@@ -7,12 +7,16 @@ on:
       - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json'
       - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-source-vetting-receipt.json'
       - 'tests/validation/frontend_evolution/realman_val_csv_d1.py'
+      - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
+      - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
       - '.github/workflows/research-development-dataset-source-vetting.yml'
 
   push:
     branches: [main]
     paths:
+      - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
+      - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
       - 'tests/validation/frontend_evolution/realman_val_csv_d1.py'
       - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
       - '.github/workflows/research-development-dataset-source-vetting.yml'
@@ -255,5 +259,71 @@ jobs:
         with:
           name: realman-val-csv-d1q-${{ github.run_id }}
           path: realman-d1-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+  realman-scene-archive-d2-s0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Scope pinned directory research to D2-S0 source paths
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_scene_tree_d2_s0\.py|docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0\.md|\.github/workflows/research-development-dataset-source-vetting\.yml)$' <<< "$changed"; then
+            echo 'd2=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'd2=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Offline tree-URL, parser, source and receipt negatives
+        if: steps.scope.outputs.d2 == 'true'
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py self-test
+
+      - name: Read only exact-revision scene RAR tree JSON metadata
+        id: collect
+        if: steps.scope.outputs.d2 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d2-s0-evidence "$RUNNER_TEMP/realman-d2-s0"
+          python3 tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py collect \
+            --workspace "$RUNNER_TEMP/realman-d2-s0" \
+            --receipt realman-d2-s0-evidence/receipt.json > realman-d2-s0-evidence/collect.log 2>&1
+
+      - name: Independently verify raw provider JSON and canonical receipt
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py verify \
+            --workspace "$RUNNER_TEMP/realman-d2-s0" \
+            --receipt realman-d2-s0-evidence/receipt.json > realman-d2-s0-evidence/verify.log 2>&1
+
+      - name: Seal source metadata receipt and two independent logs
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d2-s0-evidence
+          sha256sum receipt.json collect.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Retain pinned tree source metadata and failure evidence only
+        if: always() && steps.collect.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-scene-archive-d2-s0-${{ github.run_id }}
+          path: realman-d2-s0-evidence/
           retention-days: 30
           if-no-files-found: error

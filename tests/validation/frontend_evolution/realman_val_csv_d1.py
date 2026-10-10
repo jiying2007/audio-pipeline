@@ -2,6 +2,8 @@
 """FE03 A2 D1: bounded RealMAN val CSV source vetting; no audio or DOA scores."""
 from __future__ import annotations
 import argparse
+from collections import Counter
+import copy
 import csv
 import hashlib
 import io
@@ -11,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import tempfile
 import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit
@@ -194,8 +197,7 @@ def source_headers(raw):
     return []
 
 def unadmitted_distance_diagnostics(raw):
-    # Purely structural, aggregate diagnostics of unadmitted official labels.
-    # These counts never filter rows or change the frozen D0 validator.
+    # Source-only structural evidence, never a valid-distance admission.
     try:
         stream = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""))
         counts = {"unadmitted_structural_rows": 0,
@@ -204,6 +206,8 @@ def unadmitted_distance_diagnostics(raw):
                   "negative_distance_rows": 0,
                   "nonfinite_distance_rows": 0,
                   "nonnumeric_distance_rows": 0}
+        modes, by_scene = Counter(), Counter()
+        min_negative, max_negative = None, None
         for row in stream:
             counts["unadmitted_structural_rows"] += 1
             if counts["unadmitted_structural_rows"] > 100000:
@@ -217,10 +221,36 @@ def unadmitted_distance_diagnostics(raw):
             except ValueError:
                 counts["nonnumeric_distance_rows"] += 1
                 continue
+            negative = [v for v in values if v < 0]
             counts["zero_distance_rows"] += int(any(x == 0 for x in values))
-            counts["negative_distance_rows"] += int(any(x < 0 for x in values))
+            counts["negative_distance_rows"] += int(bool(negative))
             counts["nonfinite_distance_rows"] += int(any(not math.isfinite(x) for x in values))
             counts["nonpositive_distance_rows"] += int(any(x <= 0 for x in values))
+            if negative:
+                name = row.get("filename", "")
+                parts = name.split("/") if isinstance(name, str) else []
+                scene = (parts[2] if len(parts) == 6 and
+                         parts[:2] == ["val", "ma_noisy_speech"] and
+                         re.fullmatch(r"[A-Za-z0-9_.-]{1,60}", parts[2]) else
+                         "UNCLASSIFIED")
+                by_scene[scene] += 1
+                if len(by_scene) > 64:
+                    return {"diagnostic_error": "TOO_MANY_SCENES"}
+                for v in negative:
+                    key = format(v, ".12g")
+                    modes[key] += 1
+                    min_negative = v if min_negative is None else min(v, min_negative)
+                    max_negative = v if max_negative is None else max(v, max_negative)
+        counts["negative_value_mode_top8"] = [
+            {"value": value, "occurrences": n} for value, n in
+            sorted(modes.items(), key=lambda item: (-item[1], item[0]))[:8]
+        ]
+        counts["negative_rows_by_scene"] = [
+            {"scene": scene, "rows": n} for scene, n in sorted(by_scene.items())
+        ]
+        counts["negative_distance_min"] = min_negative
+        counts["negative_distance_max"] = max_negative
+        counts["distinct_negative_values"] = len(modes)
         return counts
     except (UnicodeError, csv.Error):
         return {"diagnostic_error": "UNPARSABLE_STRUCTURE"}
@@ -277,37 +307,86 @@ def admit(work, output):
           + " failure_code=" + result.get("failure_code", "NONE"), flush=True)
     return code
 
-def verify(work, path):
-    receipt = d0.read_json(path)
-    expected = authority(exact_source())
+def verify_payload(work, receipt, expected):
+    # Rehash real raw bytes and reconstruct every semantic receipt claim.
     for key, value in expected.items():
         if key != "files":
             require(receipt.get(key) == value)
-    files = receipt.get("files")
-    require(isinstance(files, list) and len(files) <= 2)
-    seen = {}
-    for n, item in enumerate(files):
-        family, filename = SOURCES[n]
-        require(item.get("family") == family and item.get("path") == filename)
-        raw = (work / (family + ".csv")).read_bytes()
-        require(0 < len(raw) <= CAP and item.get("bytes") == len(raw)
-                and item.get("sha256") == sha(raw))
-        if receipt.get("decision") == PASS:
-            values, scene_names = inspect(raw, family)
-            require(item == dict({"family": family, "path": filename,
-                                  "bytes": len(raw), "sha256": sha(raw)}, **values))
-            seen[family] = scene_names
-    if receipt.get("decision") == PASS:
-        require(len(files) == 2 and receipt.get("csv_bytes_verified") is True
-                and "failure_code" not in receipt)
-        common = sorted(seen["static"] & seen["moving"])
-        require(receipt.get("common_label_scenes") == common
-                and receipt.get("common_label_scene_count") == len(common))
+    source_files = receipt.get("files")
+    require(isinstance(source_files, list) and len(source_files) <= 2)
+    source_index = {family: i for i, (family, _) in enumerate(SOURCES)}
+    items = {}
+    last_index = -1
+    for item in source_files:
+        require(isinstance(item, dict))
+        family = item.get("family")
+        require(family in source_index and source_index[family] > last_index)
+        last_index = source_index[family]
+        items[family] = item
+    errors, scenes = [], {}
+    for family, path in SOURCES:
+        item = items.get(family)
+        if item is None:
+            blocked_sources = receipt.get("blocked_sources", [])
+            matching = [entry for entry in blocked_sources
+                        if isinstance(entry, dict) and entry.get("family") == family]
+            require(len(matching) == 1 and
+                    matching[0].get("failure_code") in
+                    {"REMOTE_METADATA_INACCESSIBLE", "SOURCE_BYTES_TOO_LARGE",
+                     "SOURCE_REDIRECT_NOT_ADMITTED", "SOURCE_TRANSFER_INCOMPLETE",
+                     "SOURCE_CONTENT_NOT_CSV"})
+            errors.append({"family": family,
+                           "failure_code": matching[0]["failure_code"]})
+            continue
+        require(item.get("path") == path)
+        data = (work / (family + ".csv")).read_bytes()
+        core = {"family": family, "path": path,
+                "bytes": len(data), "sha256": sha(data)}
+        require(0 < len(data) <= CAP and
+                item.get("bytes") == len(data) and
+                item.get("sha256") == sha(data))
+        try:
+            metrics, member_scenes = inspect(data, family)
+        except (ValueError, csv.Error, UnicodeError) as err:
+            observed = {
+                **core,
+                "unadmitted_raw_headers": source_headers(data),
+                "unadmitted_distance_diagnostics": unadmitted_distance_diagnostics(data),
+                "parse_failure_reason": parser_reason(err),
+            }
+            require(item == observed)
+            errors.append({
+                "family": family, "failure_code": classify(err),
+                "parse_failure_reason": parser_reason(err),
+            })
+        else:
+            require(item == dict(core, **metrics))
+            scenes[family] = member_scenes
+    if errors:
+        require(receipt.get("decision") == BLOCKED and
+                receipt.get("csv_bytes_verified") is False and
+                receipt.get("blocked_sources") == errors and
+                receipt.get("failure_code") == errors[0]["failure_code"] and
+                "common_label_scenes" not in receipt and
+                "common_label_scene_count" not in receipt)
+        require(set(receipt) == set(expected) |
+                {"decision", "csv_bytes_verified", "failure_code", "blocked_sources"})
     else:
-        require(receipt.get("decision") == BLOCKED
-                and receipt.get("csv_bytes_verified") is False
-                and receipt.get("failure_code") in BLOCKERS
-                and "common_label_scenes" not in receipt)
+        require(receipt.get("decision") == PASS and
+                receipt.get("csv_bytes_verified") is True and
+                len(source_files) == 2 and "failure_code" not in receipt and
+                "blocked_sources" not in receipt)
+        common = sorted(scenes["static"] & scenes["moving"])
+        require(receipt.get("common_label_scenes") == common and
+                receipt.get("common_label_scene_count") == len(common))
+        require(set(receipt) == set(expected) |
+                {"decision", "csv_bytes_verified", "common_label_scenes",
+                 "common_label_scene_count"})
+
+
+def verify(work, path):
+    receipt = d0.read_json(path)
+    verify_payload(work, receipt, authority(exact_source()))
     print("receipt_consistent=true decision=" + receipt["decision"])
 
 def self_test():
@@ -355,6 +434,69 @@ def self_test():
     assert diagnostic["unadmitted_structural_rows"] == 1
     assert diagnostic["zero_distance_rows"] == 1
     assert diagnostic["nonpositive_distance_rows"] == 1
+    diagnostic_negative = unadmitted_distance_diagnostics(
+        example(False).replace(b"1.3", b"-1"))
+    assert diagnostic_negative["negative_distance_rows"] == 1
+    assert diagnostic_negative["distinct_negative_values"] == 1
+    assert diagnostic_negative["negative_value_mode_top8"] == [
+        {"value": "-1", "occurrences": 1}]
+    assert diagnostic_negative["negative_rows_by_scene"] == [
+        {"scene": "Gym", "rows": 1}]
+    assert diagnostic_negative["negative_distance_min"] == -1
+    assert diagnostic_negative["negative_distance_max"] == -1
+    assert diagnostic_negative["nonpositive_distance_rows"] == 1
+    with tempfile.TemporaryDirectory(prefix="realman-d1-receipt-") as workdir:
+        work = Path(workdir)
+        commit = "0" * 40
+        receipt = authority(commit)
+        bstatic = example(False).replace(b"1.3", b"-1")
+        bmoving = example(True)
+        (work / "static.csv").write_bytes(bstatic)
+        (work / "moving.csv").write_bytes(bmoving)
+        entry_static = {
+            "family": "static", "path": SOURCES[0][1],
+            "bytes": len(bstatic), "sha256": sha(bstatic),
+            "unadmitted_raw_headers": source_headers(bstatic),
+            "unadmitted_distance_diagnostics": unadmitted_distance_diagnostics(bstatic),
+            "parse_failure_reason": "nonpositive source distance",
+        }
+        metrics_moving, _ = inspect(bmoving, "moving")
+        entry_moving = {
+            "family": "moving", "path": SOURCES[1][1],
+            "bytes": len(bmoving), "sha256": sha(bmoving),
+            **metrics_moving,
+        }
+        receipt.update({
+            "files": [entry_static, entry_moving],
+            "decision": BLOCKED,
+            "csv_bytes_verified": False,
+            "failure_code": "CSV_SCHEMA_MISMATCH",
+            "blocked_sources": [
+                {"family": "static", "failure_code": "CSV_SCHEMA_MISMATCH",
+                 "parse_failure_reason": "nonpositive source distance"},
+            ],
+        })
+        verify_payload(work, receipt, authority(commit))
+        mutations = [
+            lambda r: r["files"][0]["unadmitted_distance_diagnostics"].update(
+                negative_distance_rows=0),
+            lambda r: r["files"][0].update(sha256="0" * 64),
+            lambda r: r["files"][0].update(parse_failure_reason="accepted"),
+            lambda r: r["blocked_sources"][0].update(
+                failure_code="REMOTE_METADATA_INACCESSIBLE"),
+            lambda r: r.update(decision=PASS),
+            lambda r: r.update(csv_bytes_verified=True),
+            lambda r: r.update(common_label_scenes=["Gym"]),
+        ]
+        for mutate in mutations:
+            changed = copy.deepcopy(receipt)
+            mutate(changed)
+            try:
+                verify_payload(work, changed, authority(commit))
+            except (ValueError, KeyError):
+                pass
+            else:
+                raise AssertionError("mutated blocked D1 receipt accepted")
     class Oversized:
         headers = {"Content-Length": str(CAP + 1)}
     try:

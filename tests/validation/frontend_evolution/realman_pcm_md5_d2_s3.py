@@ -362,10 +362,14 @@ def collect(work, receipt):
     result = identity(s2.source_sha(), anchor)
     result["retrieved_at_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
+        # Probe trusted preinstalled decoder BEFORE the 447 MB download.
+        # Absence is an intentional, cheap, auditable fail-closed admission.
+        _, decoder_preflight = exact_decoder()
         work.mkdir(parents=True, exist_ok=True)
         upstream = s1.download(work)
         s1.verify_archive(work / "Gym.rar", upstream, s1.EXPECTED_BYTES, s1.EXPECTED_SHA)
         rows, decoder_id, inventory = eight_originals(work, anchor, extract=True)
+        require(decoder_id == decoder_preflight, "S3_DECODER_CHANGED_DURING_RUN")
         result.update({
             "archive": upstream, "decoder": decoder_id, "inventory": inventory,
             "members": rows, "decoded_pcm_count": 8, "decision": PASS

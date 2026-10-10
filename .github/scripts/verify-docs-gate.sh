@@ -30,3 +30,4 @@ python3 tests/validation/frontend_evolution/test_speech_spatial.py
 python3 tests/validation/frontend_evolution/doa_observability_a0.py --self-test
 python3 tests/validation/frontend_evolution/doa_gccphat_a1.py --self-test
 python3 tests/validation/frontend_evolution/realman_source_metadata_d0.py --self-test
+python3 tests/validation/frontend_evolution/realman_val_csv_d1.py self-test

@@ -6,6 +6,15 @@ on:
     paths:
       - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-candidate.json'
       - '.github/research/continuous-optimization/development-v3/demand-domain-expansion-v3-source-vetting-receipt.json'
+      - 'tests/validation/frontend_evolution/realman_val_csv_d1.py'
+      - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
+      - '.github/workflows/research-development-dataset-source-vetting.yml'
+
+  push:
+    branches: [main]
+    paths:
+      - 'tests/validation/frontend_evolution/realman_val_csv_d1.py'
+      - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
       - '.github/workflows/research-development-dataset-source-vetting.yml'
 
 permissions:
@@ -142,5 +151,72 @@ jobs:
         with:
           name: demand-domain-expansion-v3-source-vetting-${{ github.run_id }}
           path: demand-v3-vetting/
+          retention-days: 30
+          if-no-files-found: error
+
+  realman-val-csv-d1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Limit D1 execution to changed source research paths
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_val_csv_d1\.py|docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1\.md|\.github/workflows/research-development-dataset-source-vetting\.yml)$' <<< "$changed"; then
+            echo 'd1=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'd1=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: D1 offline parser, origin and budget negatives
+        if: steps.scope.outputs.d1 == 'true'
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_source_metadata_d0.py --check
+          python3 tests/validation/frontend_evolution/realman_val_csv_d1.py self-test
+
+      - name: Acquire and inspect two exact pinned val CSV streams
+        id: intake
+        if: steps.scope.outputs.d1 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d1-evidence "$RUNNER_TEMP/realman-val-d1"
+          python3 tests/validation/frontend_evolution/realman_val_csv_d1.py admit \
+            --workspace "$RUNNER_TEMP/realman-val-d1" \
+            --receipt realman-d1-evidence/receipt.json > realman-d1-evidence/fetch.log 2>&1
+
+      - name: Independently rehash and reparse ephemeral CSV evidence
+        if: always() && steps.intake.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_val_csv_d1.py verify \
+            --workspace "$RUNNER_TEMP/realman-val-d1" \
+            --receipt realman-d1-evidence/receipt.json > realman-d1-evidence/verify.log 2>&1
+
+      - name: Seal source receipt and two logs with SHA256SUMS
+        if: always() && steps.intake.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d1-evidence
+          sha256sum receipt.json fetch.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Retain verified or fail-closed D1 evidence
+        if: always() && steps.intake.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-val-csv-d1-${{ github.run_id }}
+          path: realman-d1-evidence/
           retention-days: 30
           if-no-files-found: error

@@ -160,7 +160,9 @@ def exact_decoder():
     Not a recording/scene/threshold fallback. Real STREAMINFO PCM-MD5
     remains an exact hard gate for all eight raw streams.
     """
-    kind = "flac" if shutil.which("flac") else "ffmpeg"
+    kind = next((name for name in ("flac", "ffmpeg", "sox")
+                 if shutil.which(name)), None)
+    require(kind is not None, "S3_PREINSTALLED_DECODER_MISSING")
     found = shutil.which(kind)
     require(found is not None, "S3_PREINSTALLED_DECODER_MISSING")
     path = Path(found).resolve()
@@ -169,7 +171,7 @@ def exact_decoder():
     length, digest = s1.file_hash(path, cap=64*1024*1024)
     require(0 < length <= 64*1024*1024, "S3_DECODER_BINARY_OVERSIZED")
     try:
-        proc = subprocess.run([str(path), "--version" if kind == "flac"
+        proc = subprocess.run([str(path), "--version" if kind in ("flac", "sox")
                                else "-version"], stdin=subprocess.DEVNULL,
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               timeout=5, check=False)
@@ -182,12 +184,20 @@ def exact_decoder():
                 and bool(re.fullmatch(r"flac 1\.[0-9]+\.[0-9]+", version)),
                 "S3_DECODER_VERSION_UNSUPPORTED")
         flags = list(DECODE_FLAGS)
-    else:
+    elif kind == "ffmpeg":
         require(proc.returncode == 0 and version.startswith("ffmpeg version ")
                 and len(version) <= 256, "S3_DECODER_VERSION_UNSUPPORTED")
         flags = ["-hide_banner", "-loglevel", "error", "-nostdin",
                  "-i", "<original-FLAC>", "-map", "0:a:0",
                  "-c:a", "pcm_s16le", "-f", "s16le", "pipe:1"]
+    else:
+        require(kind == "sox" and proc.returncode == 0
+                and "SoX v" in version and len(version) <= 256,
+                "S3_DECODER_VERSION_UNSUPPORTED")
+        # Never specify output sample-rate or channel count; preserve input.
+        # Signed S16LE output is EXACTLY checked against FLAC original MD5.
+        flags = ["-D", "<original-FLAC>", "-t", "raw",
+                 "-e", "signed-integer", "-b", "16", "-L", "-"]
     return str(path), {
         "program": kind, "binary_sha256": digest, "version": version,
         "raw_mode": "signed-S16LE-mono-48000Hz-unmodified",
@@ -199,10 +209,13 @@ def decoder_args(tool, decoder_id, flat):
     """Never pass -ar/-ac/-af/-filter/-ss/-t: no resample, mix, DSP or trim."""
     if decoder_id["program"] == "flac":
         return [tool, *DECODE_FLAGS, str(flat)]
-    require(decoder_id["program"] == "ffmpeg", "S3_DECODER_IDENTITY_UNSUPPORTED")
-    return [tool, "-hide_banner", "-loglevel", "error", "-nostdin",
-            "-i", str(flat), "-map", "0:a:0", "-c:a", "pcm_s16le",
-            "-f", "s16le", "pipe:1"]
+    if decoder_id["program"] == "ffmpeg":
+        return [tool, "-hide_banner", "-loglevel", "error", "-nostdin",
+                "-i", str(flat), "-map", "0:a:0", "-c:a", "pcm_s16le",
+                "-f", "s16le", "pipe:1"]
+    require(decoder_id["program"] == "sox", "S3_DECODER_IDENTITY_UNSUPPORTED")
+    return [tool, "-D", str(flat), "-t", "raw",
+            "-e", "signed-integer", "-b", "16", "-L", "-"]
 
 
 class PCMHasher:

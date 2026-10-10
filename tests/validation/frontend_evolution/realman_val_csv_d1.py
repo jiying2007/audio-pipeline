@@ -174,28 +174,65 @@ def record(path, value):
                     encoding="utf-8")
     temp.replace(path)
 
+def parser_reason(err):
+    # Only fixed first-party D0 error labels are safe to publish; no CSV rows.
+    message = str(err)
+    prefix = "FE03 A2 metadata: "
+    if message.startswith(prefix):
+        return message[len(prefix):][:100]
+    return type(err).__name__
+
+def source_headers(raw):
+    try:
+        decoded = raw.decode("utf-8-sig")
+        header = next(csv.reader(io.StringIO(decoded, newline="")))
+        if len(header) <= 64 and all(len(x) <= 150 for x in header):
+            return header
+    except (UnicodeError, csv.Error, StopIteration):
+        pass
+    return []
+
 def admit(work, output):
     result = authority(exact_source())
-    scenes = {}
+    scenes, failures = {}, []
     try:
         work.mkdir(parents=True, exist_ok=True)
+        # Independently collect both exact raw CSV identities, even when
+        # one D0 semantic parser rejects the official source schema.
         for family, filename in SOURCES:
-            raw = download(filename)
-            (work / (family + ".csv")).write_bytes(raw)
-            entry = {"family": family, "path": filename,
-                     "bytes": len(raw), "sha256": sha(raw)}
-            result["files"].append(entry)
-            values, scene_names = inspect(raw, family)
-            entry.update(values)
-            scenes[family] = scene_names
-            print("source=" + family + " bytes=" + str(len(raw))
-                  + " sha256=" + entry["sha256"], flush=True)
-        common = sorted(scenes["static"] & scenes["moving"])
-        result["common_label_scenes"] = common
-        result["common_label_scene_count"] = len(common)
-        result["decision"] = PASS
-        result["csv_bytes_verified"] = True
-        code = 0
+            try:
+                raw = download(filename)
+                (work / (family + ".csv")).write_bytes(raw)
+                entry = {"family": family, "path": filename,
+                         "bytes": len(raw), "sha256": sha(raw)}
+                result["files"].append(entry)
+                print("source=" + family + " bytes=" + str(len(raw))
+                      + " sha256=" + entry["sha256"], flush=True)
+            except Exception as err:
+                failures.append({"family": family, "failure_code": classify(err)})
+                continue
+            try:
+                values, scene_names = inspect(raw, family)
+                entry.update(values)
+                scenes[family] = scene_names
+            except Exception as err:
+                entry["unadmitted_raw_headers"] = source_headers(raw)
+                entry["parse_failure_reason"] = parser_reason(err)
+                failures.append({"family": family, "failure_code": classify(err),
+                                 "parse_failure_reason": parser_reason(err)})
+        if failures:
+            result["decision"] = BLOCKED
+            result["csv_bytes_verified"] = False
+            result["failure_code"] = failures[0]["failure_code"]
+            result["blocked_sources"] = failures
+            code = 1
+        else:
+            common = sorted(scenes["static"] & scenes["moving"])
+            result["common_label_scenes"] = common
+            result["common_label_scene_count"] = len(common)
+            result["decision"] = PASS
+            result["csv_bytes_verified"] = True
+            code = 0
     except Exception as err:
         result["decision"] = BLOCKED
         result["csv_bytes_verified"] = False

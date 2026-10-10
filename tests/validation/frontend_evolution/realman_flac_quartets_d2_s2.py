@@ -442,8 +442,19 @@ def verify_receipt(work, receipt, expected):
         r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", timestamp)),
         "S2_RECEIPT_TAMPER")
     if receipt.get("decision") == PASS:
+        # A forged PASS lacking complete admitted fields fails *before*
+        # touching any original RAR or FLAC file.
+        require(set(receipt) == set(expected) |
+                {"retrieved_at_utc", "archive", "inventory",
+                 "preselected_member_path_sha256s", "members",
+                 "format_summary", "decision"},
+                "S2_RECEIPT_TAMPER")
+        require(isinstance(receipt.get("archive"), dict) and
+                isinstance(receipt.get("members"), list) and
+                isinstance(receipt.get("inventory"), dict),
+                "S2_RECEIPT_TAMPER")
         archive = work / "Gym.rar"
-        upstream = receipt.get("archive", {})
+        upstream = receipt["archive"]
         # S1's verify_archive independently re-reads and rehashes the entire
         # original RAR; do not cause a redundant, third full archive pass.
         s1.verify_archive(archive, upstream, s1.EXPECTED_BYTES, s1.EXPECTED_SHA)

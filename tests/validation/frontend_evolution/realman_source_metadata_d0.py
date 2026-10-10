@@ -225,10 +225,12 @@ def parse_labels(data: bytes, family: str, p: dict) -> list[dict]:
                 and ":" not in name and not name.startswith("/"),
                 "unsafe source file identity")
         path = PurePosixPath(name)
-        require(".." not in path.parts and path.suffix.lower() == ".flac"
-                and len(path.parts) >= 6
+        expected_prefix = "VAL_S_" if family == "static" else "VAL_M_"
+        require(name == path.as_posix() and ".." not in path.parts
+                and path.suffix == ".flac" and len(path.parts) == 6
                 and tuple(path.parts[:2]) == tuple(p["recording_parent"].split("/"))
                 and path.parts[3] == family
+                and path.name.startswith(expected_prefix)
                 and re.fullmatch(r"[A-Za-z0-9_.-]+", path.name) is not None
                 and "_CH" not in path.stem, "wrong source partition/family/file")
         require(name not in seen, "duplicate source identity")
@@ -346,6 +348,11 @@ def self_test() -> None:
         csv_bytes([fixture(sname,"30","1.3","0")],headers=head + ["surprise"]),
         csv_bytes([fixture(sname,"30","1.3","0")],headers=head + ["filename"]),
         csv_bytes([fixture(sname.replace("/Gym/","/../"),"30","1.3","0")]),
+        csv_bytes([fixture(sname.replace("VAL_S_GYM","VAL_M_GYM"),"30","1.3","0")]),
+        csv_bytes([fixture(sname.replace("/Gym/static/","/Gym/static/./"),"30","1.3","0")]),
+        csv_bytes([fixture(sname.replace("/Gym/static/","/Gym/static//"),"30","1.3","0")]),
+        csv_bytes([fixture(sname.replace("/P0001/","/P0001/extra/"),"30","1.3","0")]),
+        csv_bytes([fixture(sname.replace(".flac",".FLAC"),"30","1.3","0")]),
     )
     for payload in invalid_csv:
         try:

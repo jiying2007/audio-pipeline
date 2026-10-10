@@ -156,6 +156,11 @@ def safe_name(name):
     return (name == path.as_posix() and ".." not in path.parts
             and all(0 < len(part) < 130 for part in path.parts))
 
+def first_lister_version(raw):
+    lines = raw.decode("utf-8", "replace").splitlines()
+    values = [re.sub(r"[^\x20-\x7E]", "", line).strip()[:180] for line in lines]
+    return next((value for value in values if value), None)
+
 def bounded_listing(path):
     """Attempt read-only preinstalled listers; no extraction or package install."""
     choices = (
@@ -180,8 +185,9 @@ def bounded_listing(path):
             version = subprocess.run([exe, *versionargs], stdout=subprocess.PIPE,
                                      stderr=subprocess.DEVNULL, timeout=5,
                                      check=False)
-            line = version.stdout.decode("utf-8", "replace").splitlines()
-            ver = re.sub(r"[^\x20-\x7E]", "", line[0])[:180] if line else "unknown"
+            ver = first_lister_version(version.stdout)
+            if not ver:
+                continue
             process = subprocess.Popen([exe, *options, str(path)],
                                        stdin=subprocess.DEVNULL,
                                        stdout=subprocess.PIPE,
@@ -367,6 +373,8 @@ def verify(work, receipt, expected):
           receipt["decision"], flush=True)
 
 def self_test():
+    assert first_lister_version(b"\n7-Zip 24.09 (x64)\n\nCopyright\n") == "7-Zip 24.09 (x64)"
+    assert first_lister_version(b"\n\n") is None
     assert approved_url(URL)
     assert not approved_url("https://evil.example/Gym.rar")
     assert not approved_url(URL.replace("https:", "http:"))

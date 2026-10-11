@@ -284,6 +284,16 @@ def validate_observations(observations):
                 require(v["status"]!="OUT_OF_SEARCH_WINDOW_UNKNOWN" or
                         abs(v["lag_samples"])==16,
                         "S6_BOUNDARY_LAG_FALSELY_CLASSIFIED")
+                require(v["status"]!="OBSERVED_DIAGNOSTIC_ONLY" or
+                        abs(v["lag_samples"])<16,
+                        "S6_BOUNDARY_LAG_FALSELY_ADMITTED")
+                require(v["status"] not in {"UNDETERMINED_SIGNAL",
+                            "UNDETERMINED_PEAK","UNDETERMINED_NUMERIC"} or
+                        v["lag_samples"] is None,
+                        "S6_UNDETERMINED_WITH_FORGED_LAG")
+                require(v["separation_proxy"] is None or
+                        v["separation_proxy"]<=1.000000001,
+                        "S6_SEPARATION_PROXY_OUT_OF_RANGE")
                 i+=1
 
 def decode_pcm(native_cli, path, baseline):
@@ -507,6 +517,20 @@ def self_test():
         file=Path(d)/"duplicate.json"
         file.write_text('{"decision":1,"decision":2}',encoding="utf-8")
         expect_reject(lambda:strict_json(file))
+        # Test contract source-identity and false clock-promotion forgery.
+        pristine=FROZEN
+        try:
+            for modified in (
+                dict(c,dataset_revision="forged"),
+                dict(c,original_gym_sample_zero_verified=True),
+                dict(c,source_selection_sha256="0"*64),
+            ):
+                tampered=Path(d)/"tampered.json"
+                tampered.write_text(json.dumps(modified),encoding="utf-8")
+                globals()["FROZEN"]=tampered
+                expect_reject(lambda:contract())
+        finally:
+            globals()["FROZEN"]=pristine
     print("REALMAN_D2_S6_OFFLINE_DIAGNOSTIC_NEGATIVES_PASS_NO_ORIGINAL_AUDIO")
 
 def main():

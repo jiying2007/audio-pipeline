@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE03-A2-D2-S5R-PINNED-PYPDF-PUBLISHER-CLOCK-DESIGN",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/720",
+  "prerequisite_closed_issue": 718,
+  "prerequisite_protected_main": "d3f89e54beed483fcc0f8ce59e74b28533ed19b5",
+  "prerequisite_source_run": 38110668124,
+  "prerequisite_verify_run": 38110668384,
+  "prerequisite_release_run": 38112340555,
+  "prerequisite_artifact": 11691277965,
+  "prerequisite_artifact_zip_sha256": "d4071e579fc3d45d8f47df3892c053a78a6745baad73979b0f1dc54e2db37be1",
+  "original_failed_issue": 716,
+  "original_failed_draft_pr": 717,
+  "original_failed_decision": "S5_PREINSTALLED_PDF_TEXT_TOOL_MISSING",
+  "original_failed_source_run": 38106174694,
+  "original_failed_artifact": 11690216460,
+  "original_failed_artifact_zip_sha256": "96644eb6cb4c9211f328a159fd7950138e91718c7e4e1a0ba08b36707b5d7c2b",
+  "paper": {
+    "official_url": "https://proceedings.neurips.cc/paper_files/paper/2024/file/bf8f6f5b017dc60d0c4e28a7a9a4ee7b-Paper-Datasets_and_Benchmarks_Track.pdf",
+    "doi": "10.52202/079017-3363",
+    "expected_pdf_pages": 23,
+    "title_pdf_page_1_based": 1,
+    "recording_system_pdf_page_1_based": 4,
+    "source_annotation_pdf_page_1_based": 7,
+    "max_bytes": 16777216,
+    "transfer_timeout_seconds": 90,
+    "max_page_text_bytes": 131072,
+    "two_independent_downloads_required": true,
+    "same_runner_only": true,
+    "source_pdf_redistribution_authorized": false
+  },
+  "parser": {
+    "official_git_url": "https://github.com/py-pdf/pypdf.git",
+    "tag": "5.4.0",
+    "commit": "f20954f2241640feb484800e191373f8fbdfa44b",
+    "tree": "291be0904e532421cbc6e209e5a7875fdd610fb6",
+    "annotated_tag_object_sha": "6e3ae92515aefb7add4dae40fc840ad77274ba57",
+    "synthetic_preflight_required_before_original_pdf": true,
+    "parser_binary_install_authorized": false,
+    "different_parser_fallback_authorized": false
+  },
+  "expected_claims": [
+    "PAPER_REPORTS_CLOCK_SYNCHRONIZED_4X8_AUDIO_FRONTEND",
+    "PAPER_REPORTS_FISHEYE_CAMERA_AUDIO_SYNC",
+    "PAPER_REPORTS_100MS_SOURCE_ANNOTATION_INTERVAL"
+  ],
+  "unresolved_gym_clock_authorities": [
+    "exact_Gym_s3r_channel_sample_zero",
+    "measured_interchannel_capture_skew_and_drift",
+    "measured_microphone_polarity_and_frequency_response",
+    "original_video_to_audio_numeric_timestamp_offset",
+    "exact_original_Gym_stem_to_CSV_row_and_clock_join"
+  ],
+  "positive_decision": "REALMAN_D2_S5R_PUBLISHED_SHARED_CLOCK_DESIGN_COHORT_TIMEBASE_UNRESOLVED",
+  "negative_decision": "REALMAN_D2_S5R_PUBLISHER_SOURCE_OR_DESIGN_NOT_ADMITTED",
+  "publisher_pdf_binary_sha_preregistered": false,
+  "hypothesis_informed_not_blinded": true,
+  "original_audio_download_authorized": false,
+  "original_csv_download_authorized": false,
+  "acoustic_quality_scoring_authorized": false,
+  "shipping_authority": false,
+  "commercial_authority": false
+}

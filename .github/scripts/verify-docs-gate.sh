@@ -38,3 +38,4 @@ python3 tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0
 python3 tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py self-test
 python3 tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py self-test
 python3 tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.py self-test
+python3 tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5r.py self-test

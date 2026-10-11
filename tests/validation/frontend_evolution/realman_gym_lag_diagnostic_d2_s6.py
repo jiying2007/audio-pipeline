@@ -38,6 +38,17 @@ AMBIGUOUS = 1e-6
 ROLES = ("static", "moving")
 CHANNELS = (1, 3, 5, 7)
 PAIRS = ((1, 3), (1, 5), (1, 7), (3, 5), (3, 7), (5, 7))
+# Eight original PCM identities independently sealed in S3R Artifact 11687520995.
+EXPECTED_PCM_SHA256 = (
+    "74f299a6030b86c27fd2d55e97156543017750c5da5c8486d045dd5ac4ef005b",
+    "c1d871fb2be20820421d31e07e0ea757b87b0baa81ee43d6f99d06bef8fb6a5a",
+    "41ef3171991bf6bdf2252bd734d26921a71f7687d1e3d498c7af97456c19e560",
+    "aade8e366ca877d2f95ddbd7a13f03562a59a3ac3d5d8c0eab5bac3379dcf6c6",
+    "28be8e42e32ea9732790e956c865f08bade270df389c241e67079f66d57d9c3e",
+    "30e5f03723d9185e02e826602904984a5c7538b362d72f2572f41e39f2fec2ec",
+    "91604ef143f8fb427a862e793e2e48a6f8decfec3f92a2c8405c9eca61633ab7",
+    "d7b6e1580321a5f459a268343c8ae5abab0a0d8938da7db5e3ce4016b93c1ef5",
+)
 FALSE_FIELDS = (
     "original_gym_sample_zero_verified",
     "original_gym_residual_clock_skew_or_drift_measured",
@@ -146,7 +157,7 @@ def contract():
     require(sum(x.get("samples", 0)*2 for x in streams
                 if isinstance(x, dict)) < z["max_decoded_pcm_bytes"],
             "S6_DECODED_PCM_TOTAL_BUDGET_INVALID")
-    for record, original in zip(streams, anchor["members"]):
+    for index, (record, original) in enumerate(zip(streams, anchor["members"])):
         require(isinstance(record, dict) and set(record) ==
                 {"role", "channel", "samples", "md5", "sha256"},
                 "S6_PCM_ANCHOR_RECORD_SHAPE")
@@ -154,6 +165,7 @@ def contract():
                 record["channel"] == original["channel"] and
                 record["samples"] == original["streaminfo"]["total_samples"] and
                 record["md5"] == original["streaminfo"]["streaminfo_pcm_md5_hex"] and
+                record["sha256"] == EXPECTED_PCM_SHA256[index] and
                 isinstance(record["sha256"], str) and
                 bool(re.fullmatch(r"[0-9a-f]{64}",record["sha256"])),
                 "S6_ORIGINAL_PCM_IDENTITY_DRIFT")

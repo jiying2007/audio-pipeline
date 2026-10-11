@@ -774,3 +774,90 @@ jobs:
           path: realman-d2-s4-evidence/
           retention-days: 30
           if-no-files-found: error
+
+  realman-paper-clock-design-d2-s5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Scope paper-only S5 observation to three preregistered research paths
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5\.py|tests/validation/frontend_evolution/realman_paper_clock_source_anchor_d2_s5\.json|docs/research/frontend-evolution-v1/REALMAN_PAPER_CLOCK_DESIGN_D2_S5\.md)$' <<< "$changed"; then
+            echo 's5=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 's5=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Offline published paper clock-design and false original-timebase negatives
+        if: steps.scope.outputs.s5 == 'true'
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_source_metadata_d0.py --check
+          python3 tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5.py self-test
+
+      - name: Fetch bounded official NeurIPS paper and qualify published author statements
+        id: collect
+        if: steps.scope.outputs.s5 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d2-s5-evidence
+          python3 tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5.py collect \
+            --workspace "$RUNNER_TEMP/realman-d2-s5-publisher" \
+            --receipt realman-d2-s5-evidence/receipt.json > realman-d2-s5-evidence/collect.log 2>&1
+
+      - name: Independently download and rehash official PDF and re-evaluate author statements
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5.py verify \
+            --workspace "$RUNNER_TEMP/realman-d2-s5-publisher" \
+            --receipt realman-d2-s5-evidence/receipt.json > realman-d2-s5-evidence/verify.log 2>&1
+
+      - name: Destroy ephemeral publisher PDF and paper text before public Artifact
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RUNNER_TEMP"
+          case "$RUNNER_TEMP" in
+            /*) ;;
+            *) exit 1 ;;
+          esac
+          if test -e "$RUNNER_TEMP/realman-d2-s5-publisher"; then
+            test -d "$RUNNER_TEMP/realman-d2-s5-publisher"
+            rm -rf -- "$RUNNER_TEMP/realman-d2-s5-publisher"
+          fi
+          test ! -e "$RUNNER_TEMP/realman-d2-s5-publisher"
+          if test -d realman-d2-s5-evidence; then
+            test "$(find realman-d2-s5-evidence -type f ! -name receipt.json ! -name collect.log ! -name verify.log ! -name SHA256SUMS | wc -l)" -eq 0
+            test "$(du -sb realman-d2-s5-evidence | awk '{print $1}')" -lt 131072
+          fi
+
+      - name: Seal only canonical publication-source audit metadata hashes
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d2-s5-evidence
+          sha256sum receipt.json collect.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Retain paper-level clock-design attribution and no-promote evidence
+        if: always() && steps.collect.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-paper-clock-design-d2-s5-${{ github.run_id }}
+          path: realman-d2-s5-evidence/
+          retention-days: 30
+          if-no-files-found: error

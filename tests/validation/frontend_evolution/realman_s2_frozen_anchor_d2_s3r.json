@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "authority": "FROZEN_D2_S2_FRESH_MAIN_SOURCE_RECEIPT_NOT_AUDIO_SCORES",
+  "source_role": "disclosed-development-only",
+  "research_rights": "NONCOMMERCIAL_ATTRIBUTION_ONLY",
+  "s2_issue_url": "https://github.com/jiying2007/audio-pipeline/issues/705",
+  "s2_main_commit": "cc887b0ced20a828ed7148b9ac949f639a1e2868",
+  "s2_source_run_id": 38050714903,
+  "s2_artifact_id": 11669252369,
+  "s2_artifact_zip_sha256": "298432f0d6b8ceb69d48d62c0d2bdf8f42dee6383534b48109d4a80f7719870a",
+  "s2_original_receipt_sha256": "16e690a4b32f0aeb9f011900af55f83f302a6f29662f2bb1601c058257ae3190",
+  "s2_script_sha256": "cf55f033c77fea2c01d9cd7649986ff6ef4158df246a5013484264ac530282a5",
+  "s1_script_sha256": "8621a1f083abb767f0bb62bfafb1b81b1614c759841fb98405da33c6cd1b7e0b",
+  "s2_selected_path_sha256": "7b6458adc4d335c6c1897f98e51501f897585623359ef147494d7635d4d9be37",
+  "s2_regular_names_sha256": "e8b0802d26449e8b52c0253dd015aa689787e43d38ca6971f568a61663ffba7c",
+  "dataset": "AISHELL/RealMAN",
+  "dataset_revision": "fea47505cae8041f4b652b0954ba61c77d2b6df1",
+  "archive_path": "val/ma_noisy_speech/Gym.rar",
+  "archive_bytes": 447127176,
+  "archive_sha256": "8175dad412a752a34bdf2722f7e9b5ee671b62e67dfe5179f7a769d63912b2ea",
+  "selection_policy": "LEX_FIRST_COMPLETE_STATIC_AND_MOVING_QUARTETS_BY_MEMBER_NAME",
+  "members": [
+    {
+      "role": "static",
+      "channel": 1,
+      "member_path_sha256": "b1551228a9c58e12c8e8578263c63a7422b54152b6adf3d1188911eb2b1e2920",
+      "stem_sha256": "a52c90b65dc4887b78b64b6d36c0f3f0b1986cae950568217c43ea5aab0cadfb",
+      "listed_uncompressed_bytes": 185444,
+      "listed_packed_bytes": 185444,
+      "original_flac_bytes": 185444,
+      "original_flac_sha256": "0dfb1eda362cc70f7cab103fc058c08fe7ecf1b3e022df24b7c6ac9a4bb2e5c3",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "7b80ec650d11d374da66964fc45ba99d",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 238895
+      }
+    },
+    {
+      "role": "static",
+      "channel": 3,
+      "member_path_sha256": "50423d18ac5896a3e2da13144450d2fd11184c402332b41f1836d15d968dcbd3",
+      "stem_sha256": "a52c90b65dc4887b78b64b6d36c0f3f0b1986cae950568217c43ea5aab0cadfb",
+      "listed_uncompressed_bytes": 190388,
+      "listed_packed_bytes": 190388,
+      "original_flac_bytes": 190388,
+      "original_flac_sha256": "e69d07de2f6455e2703dd9f381dcb8df4e29874eed49154d332100c6df9cdf31",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "3bda90a2a23380f104346cbba7687d55",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 238895
+      }
+    },
+    {
+      "role": "static",
+      "channel": 5,
+      "member_path_sha256": "756eb80b6d5ce5608699e2c9fa17e7604b44e30c898d95ee2a330c3a8c73b0dc",
+      "stem_sha256": "a52c90b65dc4887b78b64b6d36c0f3f0b1986cae950568217c43ea5aab0cadfb",
+      "listed_uncompressed_bytes": 196809,
+      "listed_packed_bytes": 196809,
+      "original_flac_bytes": 196809,
+      "original_flac_sha256": "d5a325880dad393a217c6cd8e18c626ce5c99b182c2f4a6e63695fc7c295e2af",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "f436d423b1d91910b0109b74ed1ad901",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 238895
+      }
+    },
+    {
+      "role": "static",
+      "channel": 7,
+      "member_path_sha256": "6943e9c9e80992950d8b581699635ffd26790df3131100e30bf5f6ca4d8a08b8",
+      "stem_sha256": "a52c90b65dc4887b78b64b6d36c0f3f0b1986cae950568217c43ea5aab0cadfb",
+      "listed_uncompressed_bytes": 193919,
+      "listed_packed_bytes": 193919,
+      "original_flac_bytes": 193919,
+      "original_flac_sha256": "ea38462268d27dfe8a41d4908cc0531de56c18673b93d16d8460c11e970e8e0e",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "60d382b8bb848f2ce33b554c8edebf9a",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 238895
+      }
+    },
+    {
+      "role": "moving",
+      "channel": 1,
+      "member_path_sha256": "bf8553c955fa202cbc667009ce5d02bf05a888902d1a47ea00a22238ddaa6d0c",
+      "stem_sha256": "46ff4eae757df4fef1e644b2b0c59e3ffdfc24e264637aaba9ec59190ba0e87c",
+      "listed_uncompressed_bytes": 177447,
+      "listed_packed_bytes": 177447,
+      "original_flac_bytes": 177447,
+      "original_flac_sha256": "5b744a0d1461a9cfcd41c9d0028acefbdb95307225dc529132598545866a9b62",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "6124b1fabc383e825fa253fa650e3ad9",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 237071
+      }
+    },
+    {
+      "role": "moving",
+      "channel": 3,
+      "member_path_sha256": "23cb0ce9b2e79e881e2ae461a39c592cd60c5e83ab05cf90f3f09ef42a0a1b79",
+      "stem_sha256": "46ff4eae757df4fef1e644b2b0c59e3ffdfc24e264637aaba9ec59190ba0e87c",
+      "listed_uncompressed_bytes": 178092,
+      "listed_packed_bytes": 178092,
+      "original_flac_bytes": 178092,
+      "original_flac_sha256": "85b97889bd6ac301b7822db05fe0b772737d57259f32d9b53a50c55c30c7f62a",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "bbef9e3094916712838bd5408fdbac3d",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 237071
+      }
+    },
+    {
+      "role": "moving",
+      "channel": 5,
+      "member_path_sha256": "649b8e2c15c50436b0407c34c61c6262ef40c4ab26e3a5873212e9c7255e9c3d",
+      "stem_sha256": "46ff4eae757df4fef1e644b2b0c59e3ffdfc24e264637aaba9ec59190ba0e87c",
+      "listed_uncompressed_bytes": 188210,
+      "listed_packed_bytes": 188210,
+      "original_flac_bytes": 188210,
+      "original_flac_sha256": "16a33b5337c1e55b1314ca0effe025c7474bbf2b76111539cbb612743e105fdb",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "a3d93de2df57f62f287b853ddef146d8",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 237071
+      }
+    },
+    {
+      "role": "moving",
+      "channel": 7,
+      "member_path_sha256": "7bd1bd7ac0a95d97990375ae2afc8f2fb6308d6e75c5506959d8eb22983e1fc4",
+      "stem_sha256": "46ff4eae757df4fef1e644b2b0c59e3ffdfc24e264637aaba9ec59190ba0e87c",
+      "listed_uncompressed_bytes": 184410,
+      "listed_packed_bytes": 184410,
+      "original_flac_bytes": 184410,
+      "original_flac_sha256": "71f78cc4468a57f3cada29a8287a8c077b0ea5beaf46ba6efb0d5fdd130c509c",
+      "streaminfo": {
+        "bits_per_sample": 16,
+        "decoded_pcm_verified": false,
+        "flac_encoded_channels": 1,
+        "max_block_size": 4096,
+        "min_block_size": 4096,
+        "native_sample_rate_hz": 48000,
+        "streaminfo_pcm_md5_hex": "faa8ff1b359e27c6d962ca78b58bc521",
+        "streaminfo_pcm_md5_present": true,
+        "total_samples": 237071
+      }
+    }
+  ]
+}

@@ -247,7 +247,7 @@ def design_proof(page4, page7):
         ),
         DESIGN[1]: (
             bool(re.search(r"fisheye camera",page4,re.I)) and
-            bool(re.search(r"camera records.{0,160}\\bsynchronized with the microphone recording",
+            bool(re.search(r"camera records.{0,160}\bsynchronized with the microphone recording",
                            page4,re.I))
         ),
         DESIGN[2]: (

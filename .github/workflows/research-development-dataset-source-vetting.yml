@@ -13,12 +13,15 @@ on:
       - 'tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py'
       - 'tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py'
       - 'tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py'
+      - 'tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.py'
+      - 'tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.json'
       - 'tests/validation/frontend_evolution/realman_timebase_d2_s4_source_anchor.json'
       - 'tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r.json'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_TIMEBASE_AUTHORITY_D2_S4.md'
+      - 'docs/research/frontend-evolution-v1/REALMAN_PYPDF_SYNTHETIC_D2_S5_T0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
@@ -32,12 +35,15 @@ on:
       - 'tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py'
       - 'tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py'
       - 'tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py'
+      - 'tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.py'
+      - 'tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.json'
       - 'tests/validation/frontend_evolution/realman_timebase_d2_s4_source_anchor.json'
       - 'tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r.json'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_TIMEBASE_AUTHORITY_D2_S4.md'
+      - 'docs/research/frontend-evolution-v1/REALMAN_PYPDF_SYNTHETIC_D2_S5_T0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
@@ -198,7 +204,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           changed="$(git diff --name-only HEAD^1 HEAD)"
-          if grep -Eq '^(tests/validation/frontend_evolution/realman_timebase_authority_d2_s4\.py|tests/validation/frontend_evolution/realman_timebase_d2_s4_source_anchor\.json|docs/research/frontend-evolution-v1/REALMAN_TIMEBASE_AUTHORITY_D2_S4\.md)$' <<< "$changed" &&
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_timebase_authority_d2_s4\.py|tests/validation/frontend_evolution/realman_timebase_d2_s4_source_anchor\.json|docs/research/frontend-evolution-v1/REALMAN_TIMEBASE_AUTHORITY_D2_S4\.md|tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0\.py|tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0\.json|docs/research/frontend-evolution-v1/REALMAN_PYPDF_SYNTHETIC_D2_S5_T0\.md)$' <<< "$changed" &&
              ! grep -Eq '^(tests/validation/frontend_evolution/realman_val_csv_d1\.py|docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1\.md)$' <<< "$changed"; then
             echo 'd1=false' >> "$GITHUB_OUTPUT"
           elif grep -Eq '^(tests/validation/frontend_evolution/realman_val_csv_d1\.py|docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1\.md|\.github/workflows/research-development-dataset-source-vetting\.yml)$' <<< "$changed"; then
@@ -373,7 +379,7 @@ jobs:
           changed="$(git diff --name-only HEAD^1 HEAD)"
           # S2 reuses S1's exact hash-checked downloader, so on a S2-only
           # change it executes one source transfer, not two concurrent 447MB pulls.
-          if grep -Eq '^(tests/validation/frontend_evolution/realman_flac_quartets_d2_s2\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2\.md|tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0\.md|tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r\.py|tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r\.json|docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R\.md|tests/validation/frontend_evolution/realman_timebase_authority_d2_s4\.py|tests/validation/frontend_evolution/realman_timebase_d2_s4_source_anchor\.json|docs/research/frontend-evolution-v1/REALMAN_TIMEBASE_AUTHORITY_D2_S4\.md)$' <<< "$changed" &&
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_flac_quartets_d2_s2\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2\.md|tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0\.md|tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r\.py|tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r\.json|docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R\.md|tests/validation/frontend_evolution/realman_timebase_authority_d2_s4\.py|tests/validation/frontend_evolution/realman_timebase_d2_s4_source_anchor\.json|docs/research/frontend-evolution-v1/REALMAN_TIMEBASE_AUTHORITY_D2_S4\.md|tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0\.py|tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0\.json|docs/research/frontend-evolution-v1/REALMAN_PYPDF_SYNTHETIC_D2_S5_T0\.md)$' <<< "$changed" &&
              ! grep -Eq '^(tests/validation/frontend_evolution/realman_single_archive_d2_s1\.py|docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1\.md)$' <<< "$changed"; then
             echo 'd2s1=false' >> "$GITHUB_OUTPUT"
           elif grep -Eq '^(tests/validation/frontend_evolution/realman_single_archive_d2_s1\.py|docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1\.md|\.github/workflows/research-development-dataset-source-vetting\.yml)$' <<< "$changed"; then
@@ -766,5 +772,91 @@ jobs:
         with:
           name: realman-capture-timebase-d2-s4-${{ github.run_id }}
           path: realman-d2-s4-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+  realman-pypdf-toolchain-d2-s5-t0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Scope pinned synthetic PDF parser research to S5-T0 files
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0\.py|tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0\.json|docs/research/frontend-evolution-v1/REALMAN_PYPDF_SYNTHETIC_D2_S5_T0\.md)$' <<< "$changed"; then
+            echo 't0=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 't0=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Offline fixed BSD upstream and synthetic PDF negative fixtures
+        if: steps.scope.outputs.t0 == 'true'
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.py self-test
+
+      - name: Clone pinned pure Python pypdf source and qualify synthetic parser
+        id: collect
+        if: steps.scope.outputs.t0 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d2-s5-t0-evidence
+          python3 tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.py collect \
+            --workspace "$RUNNER_TEMP/realman-d2-s5-t0" \
+            --receipt realman-d2-s5-t0-evidence/receipt.json > realman-d2-s5-t0-evidence/collect.log 2>&1
+
+      - name: Reread frozen upstream source and independent synthetic Python process
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.py verify \
+            --workspace "$RUNNER_TEMP/realman-d2-s5-t0" \
+            --receipt realman-d2-s5-t0-evidence/receipt.json > realman-d2-s5-t0-evidence/verify.log 2>&1
+
+      - name: Delete upstream BSD source synthetic PDFs and temporary parser
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RUNNER_TEMP"
+          case "$RUNNER_TEMP" in
+            /*) ;;
+            *) exit 1 ;;
+          esac
+          if test -e "$RUNNER_TEMP/realman-d2-s5-t0"; then
+            test -d "$RUNNER_TEMP/realman-d2-s5-t0"
+            rm -rf -- "$RUNNER_TEMP/realman-d2-s5-t0"
+          fi
+          test ! -e "$RUNNER_TEMP/realman-d2-s5-t0"
+          if test -d realman-d2-s5-t0-evidence; then
+            test "$(find realman-d2-s5-t0-evidence -type f ! -name receipt.json ! -name collect.log ! -name verify.log ! -name SHA256SUMS | wc -l)" -eq 0
+            test "$(du -sb realman-d2-s5-t0-evidence | awk '{print $1}')" -lt 131072
+          fi
+
+      - name: Seal metadata-only synthetic-source qualification
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d2-s5-t0-evidence
+          sha256sum receipt.json collect.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Publish only parser SHA and synthetic digest metadata for 30 days
+        if: always() && steps.collect.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-pypdf-toolchain-d2-s5-t0-${{ github.run_id }}
+          path: realman-d2-s5-t0-evidence/
           retention-days: 30
           if-no-files-found: error

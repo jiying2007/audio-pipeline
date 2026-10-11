@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE03-A2-D2-S5-OFFICIAL-REALMAN-PAPER-SYSTEM-CLOCK",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/716",
+  "source_role": "disclosed-development-primary-publication-metadata-only",
+  "source_document_scope": "one official publisher PDF only, originally read during study design, not blind",
+  "paper": {
+    "title": "RealMAN: A Real-Recorded and Annotated Microphone Array Dataset for Dynamic Speech Enhancement and Localization",
+    "doi": "10.52202/079017-3363",
+    "publisher": "NeurIPS 2024 Datasets and Benchmarks",
+    "url": "https://proceedings.neurips.cc/paper_files/paper/2024/file/bf8f6f5b017dc60d0c4e28a7a9a4ee7b-Paper-Datasets_and_Benchmarks_Track.pdf",
+    "file_sha256_preregistered": false,
+    "bytes_sha256_rule": "first actual source capture independently repeated; both identical; no claim preobserved binary sha",
+    "expected_page_count": 23,
+    "recording_system_pdf_page_1_based": 4,
+    "annotation_pdf_page_1_based": 7,
+    "max_bytes": 16777216,
+    "transfer_timeout_sec": 90,
+    "pdf_text_extractor": "preinstalled pdftotext only, no apt/pip/sudo",
+    "source_publication_license_scope": "research-only paraphrased metadata, never redistribute full PDF"
+  },
+  "prerequisite_closed_issue": 713,
+  "prerequisite_protected_main": "373008e89f2ebaabc298d2c9613420b1d4811c78",
+  "prerequisite_verify_run": 38104075774,
+  "prerequisite_release_run": 38105765036,
+  "prerequisite_source_vetting_run": 38104075673,
+  "prerequisite_metadata_artifact": 11688862857,
+  "prerequisite_metadata_artifact_zip_sha256": "cf0b7993c8a3b6cf795a5809d3eb4ff44bbef984c1004e54ddc95a5ef9776a3d",
+  "prior_s4_scoped_decision": "REALMAN_D2_S4_CAPTURE_TIMEBASE_UNRESOLVED",
+  "dataset": "AISHELL/RealMAN",
+  "dataset_revision": "fea47505cae8041f4b652b0954ba61c77d2b6df1",
+  "original_archive_path": "val/ma_noisy_speech/Gym.rar",
+  "original_archive_bytes": 447127176,
+  "original_archive_sha256": "8175dad412a752a34bdf2722f7e9b5ee671b62e67dfe5179f7a769d63912b2ea",
+  "original_frozen_selection_sha256": "7b6458adc4d335c6c1897f98e51501f897585623359ef147494d7635d4d9be37",
+  "original_mics": [
+    1,
+    3,
+    5,
+    7
+  ],
+  "original_roles": [
+    "static",
+    "moving"
+  ],
+  "expected_published_design_findings": [
+    "four_clock_synchronized_eight_channel_preamps_author_statement",
+    "fisheye_camera_audio_synchronized_recording_author_statement",
+    "camera_source_location_annotation_interval_100ms_author_statement"
+  ],
+  "unproven_record_specific_authorities": [
+    "exact_Gym_s3r_channel_sample_zero",
+    "measured_interchannel_capture_skew_and_drift",
+    "measured_microphone_polarity_and_frequency_response",
+    "original_video_to_audio_numeric_timestamp_offset",
+    "exact_original_Gym_stem_to_CSV_row_and_clock_join"
+  ],
+  "expected_decision": "REALMAN_D2_S5_PUBLISHED_SHARED_CLOCK_DESIGN_COHORT_TIMEBASE_UNRESOLVED",
+  "failed_decision": "REALMAN_D2_S5_PAPER_SOURCE_OR_CLAIMS_NOT_ADMITTED",
+  "source_audio_download_authorized": false,
+  "csv_original_rows_download_authorized": false,
+  "sampled_audio_doa_or_bf_evaluation_authorized": false,
+  "original_s4_decision_mutation_authorized": false,
+  "shipping_authority": false,
+  "commercial_authority": false,
+  "publication_excerpt_redistribution_authorized": false
+}

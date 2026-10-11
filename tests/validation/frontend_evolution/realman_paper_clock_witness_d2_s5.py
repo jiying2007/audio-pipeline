@@ -247,7 +247,7 @@ def design_proof(page4, page7):
         ),
         DESIGN[1]: (
             bool(re.search(r"fisheye camera",page4,re.I)) and
-            bool(re.search(r"camera records.{0,160}synchronized with the microphone recording",
+            bool(re.search(r"camera records.{0,160}\\bsynchronized with the microphone recording",
                            page4,re.I))
         ),
         DESIGN[2]: (
@@ -285,7 +285,17 @@ def design_proof(page4, page7):
 
 
 def validate_nonpromotion(x):
-    require(isinstance(x,dict) and
+    allowed = {
+        "scope", "observed_author_claims", "record_specific_clock_authorities",
+        "publisher_pdf_binary_sha_preregistered", "source_role",
+        "original_s4_unresolved_preserved", "original_d1_csv_admission_blocked",
+        "original_pcm_redownloaded", "original_csv_rows_downloaded",
+        "new_audio_acoustic_scores_measured",
+        "synchronized_Gym_four_pcm_sample_zero_verified",
+        "mic_polarity_calibrated", "camera_audio_numeric_timestamp_proven",
+        "shipping_authority", "commercial_authority",
+    }
+    require(isinstance(x,dict) and set(x)==allowed and
             x.get("scope") ==
             "official_author_statement_only_not_independent_capture_measurement"
             and x.get("publisher_pdf_binary_sha_preregistered") is False
@@ -313,6 +323,11 @@ def observe(work):
     tool,tool_meta=pdftotext_tool()
     pdf_path = work / "official-paper.pdf"
     data = read_paper(pdf_path)
+    cover=pdf_page_text(tool,pdf_path,1)
+    require("RealMAN: A Real-Recorded and Annotated" in cover and
+            "Microphone Array Dataset for Dynamic Speech" in cover and
+            "Enhancement and Localization" in cover,
+            "S5_PUBLISHER_PAPER_TITLE_MISMATCH")
     p4=pdf_page_text(tool,pdf_path,4)
     p7=pdf_page_text(tool,pdf_path,7)
     proof=design_proof(p4,p7)
@@ -440,8 +455,7 @@ def self_test():
         except Reject:
             pass
         else:
-            if field in good:
-                raise AssertionError("S5 false clip-level synchronization admitted")
+            raise AssertionError("S5 false clip-level synchronization admitted")
     require(PDF_URL.endswith(".pdf") and len(UNKNOWN)==5)
     with tempfile.TemporaryDirectory(prefix="s5-test-") as path:
         file=Path(path)/"frozen.json"

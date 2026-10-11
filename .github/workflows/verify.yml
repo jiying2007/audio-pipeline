@@ -49,6 +49,8 @@ jobs:
         run: |
           set -euo pipefail
           ruby -e 'require "yaml"; ARGV.each { |path| abort("invalid workflow YAML: #{path}") unless Psych.parse_file(path) }' .github/workflows/*.yml
+          ruby scripts/workflow_shell_syntax.rb --self-test
+          ruby scripts/workflow_shell_syntax.rb .github/workflows/*.yml
       - name: Validate committed program contracts
         run: |
           set -euo pipefail

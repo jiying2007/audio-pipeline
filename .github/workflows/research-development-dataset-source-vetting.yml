@@ -11,8 +11,11 @@ on:
       - 'tests/validation/frontend_evolution/realman_single_archive_d2_s1.py'
       - 'tests/validation/frontend_evolution/realman_flac_quartets_d2_s2.py'
       - 'tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py'
+      - 'tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py'
+      - 'tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r.json'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0.md'
+      - 'docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_VAL_CSV_D1.md'
@@ -24,8 +27,11 @@ on:
       - 'tests/validation/frontend_evolution/realman_single_archive_d2_s1.py'
       - 'tests/validation/frontend_evolution/realman_flac_quartets_d2_s2.py'
       - 'tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py'
+      - 'tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py'
+      - 'tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r.json'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0.md'
+      - 'docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R.md'
       - 'docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1.md'
       - 'tests/validation/frontend_evolution/realman_scene_tree_d2_s0.py'
       - 'docs/research/frontend-evolution-v1/REALMAN_SCENE_ARCHIVE_D2_S0.md'
@@ -358,7 +364,7 @@ jobs:
           changed="$(git diff --name-only HEAD^1 HEAD)"
           # S2 reuses S1's exact hash-checked downloader, so on a S2-only
           # change it executes one source transfer, not two concurrent 447MB pulls.
-          if grep -Eq '^(tests/validation/frontend_evolution/realman_flac_quartets_d2_s2\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2\.md|tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0\.md)$' <<< "$changed" &&
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_flac_quartets_d2_s2\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_QUARTETS_D2_S2\.md|tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0\.py|docs/research/frontend-evolution-v1/REALMAN_FLAC_DECODER_D2_T0\.md|tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r\.py|tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r\.json|docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R\.md)$' <<< "$changed" &&
              ! grep -Eq '^(tests/validation/frontend_evolution/realman_single_archive_d2_s1\.py|docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1\.md)$' <<< "$changed"; then
             echo 'd2s1=false' >> "$GITHUB_OUTPUT"
           elif grep -Eq '^(tests/validation/frontend_evolution/realman_single_archive_d2_s1\.py|docs/research/frontend-evolution-v1/REALMAN_ARCHIVE_D2_S1\.md|\.github/workflows/research-development-dataset-source-vetting\.yml)$' <<< "$changed"; then

@@ -386,7 +386,7 @@ def collect(work,receipt):
 
 
 def verify(work,receipt_path):
-    r=json_load(receipt_path,cap=32768)
+    r=json_load(receipt_path,size=32768)
     require(isinstance(r,dict),"S5_RECEIPT_INVALID")
     expected=identity()
     for k,v in expected.items():

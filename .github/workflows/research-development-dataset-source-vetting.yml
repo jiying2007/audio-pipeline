@@ -595,3 +595,91 @@ jobs:
           path: realman-d2-t0-evidence/
           retention-days: 30
           if-no-files-found: error
+
+  realman-pcm-reference-d2-s3r:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Scope eight original PCM study to S3R research paths
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r\.py|tests/validation/frontend_evolution/realman_s2_frozen_anchor_d2_s3r\.json|docs/research/frontend-evolution-v1/REALMAN_PCM_REFERENCE_D2_S3R\.md)$' <<< "$changed"; then
+            echo 's3r=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 's3r=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Offline original data toolchain and negative regressions
+        if: steps.scope.outputs.s3r == 'true'
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_single_archive_d2_s1.py self-test
+          python3 tests/validation/frontend_evolution/realman_flac_quartets_d2_s2.py self-test
+          python3 tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py self-test
+          python3 tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py self-test
+
+      - name: Independently build reference and verify eight original PCM MD5
+        id: collect
+        if: steps.scope.outputs.s3r == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d2-s3r-evidence
+          python3 tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py collect \
+            --workspace "$RUNNER_TEMP/realman-d2-s3r" \
+            --receipt realman-d2-s3r-evidence/receipt.json > realman-d2-s3r-evidence/collect.log 2>&1
+
+      - name: Independently rehash original archive and decode eight PCM again
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py verify \
+            --workspace "$RUNNER_TEMP/realman-d2-s3r" \
+            --receipt realman-d2-s3r-evidence/receipt.json > realman-d2-s3r-evidence/verify.log 2>&1
+
+      - name: Erase temporary source binaries and original audio before upload
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RUNNER_TEMP"
+          case "$RUNNER_TEMP" in
+            /*) ;;
+            *) exit 1 ;;
+          esac
+          if test -e "$RUNNER_TEMP/realman-d2-s3r"; then
+            test -d "$RUNNER_TEMP/realman-d2-s3r"
+            rm -rf -- "$RUNNER_TEMP/realman-d2-s3r"
+          fi
+          test ! -e "$RUNNER_TEMP/realman-d2-s3r"
+          if test -d realman-d2-s3r-evidence; then
+            test "$(find realman-d2-s3r-evidence -type f ! -name receipt.json ! -name collect.log ! -name verify.log ! -name SHA256SUMS | wc -l)" -eq 0
+          fi
+
+      - name: Seal metadata-only receipt collect and independent verify logs
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d2-s3r-evidence
+          sha256sum receipt.json collect.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Retain only metadata source-integrity evidence for 30 days
+        if: always() && steps.collect.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-pcm-reference-d2-s3r-${{ github.run_id }}
+          path: realman-d2-s3r-evidence/
+          retention-days: 30
+          if-no-files-found: error

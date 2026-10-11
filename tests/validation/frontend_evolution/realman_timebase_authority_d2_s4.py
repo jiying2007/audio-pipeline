@@ -160,11 +160,13 @@ def inspect_three_sources(raw):
     return {
         "README.md": {
             "git_blob_sha1": SOURCE_HASHES["README.md"],
+            "source_sha256": sha(raw["README.md"]),
             "array_statement_line": source_line(readme, "32-channel microphone array"),
             "fisheye_camera_annotation_line": source_line(readme, "fisheye camera"),
         },
         "baselines/SSL/RecordData.py": {
             "git_blob_sha1": SOURCE_HASHES["baselines/SSL/RecordData.py"],
+            "source_sha256": sha(raw["baselines/SSL/RecordData.py"]),
             "channel_load_line": source_line(loader, "def load_signals(self, sig_path, use_mic_id):"),
             "filename_suffix_line": source_line(loader, "sig_path.replace('.flac',f'_CH{i}.flac')"),
             "stack_line": source_line(loader, "np.stack(channels, axis=-1)"),
@@ -173,6 +175,7 @@ def inspect_three_sources(raw):
         },
         "baselines/SSL/utils_.py": {
             "git_blob_sha1": SOURCE_HASHES["baselines/SSL/utils_.py"],
+            "source_sha256": sha(raw["baselines/SSL/utils_.py"]),
             "geometry_definition_line": source_line(geom, "def audiowu_high_array_geometry()"),
             "central_radius_line": source_line(geom, "R = 0.03"),
             "inner_ring_line": source_line(geom, "pos_rcv[1:9, :]"),
@@ -207,6 +210,7 @@ def frozen_authority():
             and a.get("expected_conservative_decision") == UNKNOWN,
             "S4_FROZEN_PROTOCOL_DRIFT")
     require(a.get("required_authorities") == list(REQUIRED)
+            and a.get("allowed_decisions") == [PASS, UNKNOWN, BLOCKED]
             and a.get("frozen_original_channel_ids") == [1, 3, 5, 7]
             and a.get("native_sampling_hz") == 48000
             and a.get("native_bits_per_sample") == 16
@@ -270,6 +274,21 @@ def frozen_authority():
     return a
 
 
+def validate_nonpromotion(outcome):
+    require(outcome.get("decision") == UNKNOWN and
+            isinstance(outcome.get("required_authority_evidence"), dict) and
+            set(outcome["required_authority_evidence"]) == set(REQUIRED) and
+            all(x.get("status") == "unsupported" for x in
+                outcome["required_authority_evidence"].values()) and
+            all(outcome.get(flag) is False for flag in (
+                "sample_zero_documented", "shared_adc_clock_documented",
+                "per_mic_phase_calibrated", "audio_video_time_origin_documented",
+                "original_full_csv_admitted", "original_realman_audio_downloaded",
+                "original_csv_rows_downloaded", "original_PCM_decoded",
+                "doa_or_bf_scores_calculated", "shipping_authority")),
+            "S4_UNSUPPORTED_CAPTURE_TIMEBASE_PROMOTED")
+
+
 def interpretation(manifest, source_readback):
     require(set(source_readback) == set(SOURCE_HASHES)
             and all(source_readback[k]["git_blob_sha1"] == v
@@ -283,7 +302,7 @@ def interpretation(manifest, source_readback):
     } for name in REQUIRED}
     require(all(v["status"] == "unsupported" for v in findings.values()),
             "S4_UNSUPPORTED_CAPTURE_TIMEBASE_PROMOTED")
-    return {
+    outcome = {
         "decision": UNKNOWN,
         "required_authority_evidence": findings,
         "documented_native_32_mic_geometry": True,
@@ -303,6 +322,8 @@ def interpretation(manifest, source_readback):
         "doa_or_bf_scores_calculated": False,
         "shipping_authority": False,
     }
+    validate_nonpromotion(outcome)
+    return outcome
 
 
 def exact_checkout():
@@ -384,6 +405,7 @@ def verify(receipt_path):
         independent = inspect_three_sources({
             path: read_official(path) for path in SOURCE_HASHES
         })
+        validate_nonpromotion(result.get("audit", {}))
         require(result.get("official_sources") == independent
                 and result.get("audit") == interpretation(frozen, independent),
                 "S4_INDEPENDENT_SOURCE_READBACK_MISMATCH")
@@ -416,10 +438,7 @@ def self_test():
         require(git_blob_sha1(modified) != SOURCE_HASHES["README.md"])
     readings = {k: {"git_blob_sha1": v} for k, v in SOURCE_HASHES.items()}
     outcome = interpretation(a, readings)
-    require(outcome["decision"] == UNKNOWN
-            and not outcome["captured_four_mic_sync_verified"] if
-            "captured_four_mic_sync_verified" in outcome else
-            outcome["decision"] == UNKNOWN, "S4_TIMING_TRUTH_DRIFT")
+    validate_nonpromotion(outcome)
     for mutation in [
         {"sample_zero_documented": True},
         {"shared_adc_clock_documented": True},
@@ -428,7 +447,12 @@ def self_test():
         {"decision": PASS},
     ]:
         false_claim = dict(outcome, **mutation)
-        require(false_claim != outcome, "S4_SELFTEST_TAMPER_NOT_DETECTED")
+        try:
+            validate_nonpromotion(false_claim)
+        except Reject:
+            pass
+        else:
+            raise AssertionError("false original capture-clock authority accepted")
     bad_readback = copy.deepcopy(readings)
     bad_readback["README.md"]["git_blob_sha1"] = "0" * 40
     try:

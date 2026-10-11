@@ -36,3 +36,4 @@ python3 tests/validation/frontend_evolution/realman_single_archive_d2_s1.py self
 python3 tests/validation/frontend_evolution/realman_flac_quartets_d2_s2.py self-test
 python3 tests/validation/frontend_evolution/realman_flac_decoder_toolchain_d2_t0.py self-test
 python3 tests/validation/frontend_evolution/realman_pcm_reference_d2_s3r.py self-test
+python3 tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py self-test

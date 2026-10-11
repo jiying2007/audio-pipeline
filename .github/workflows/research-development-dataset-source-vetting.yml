@@ -692,3 +692,79 @@ jobs:
           path: realman-d2-s3r-evidence/
           retention-days: 30
           if-no-files-found: error
+
+  realman-capture-timebase-d2-s4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Scope pinned RealMAN four-channel clock metadata to S4 source paths
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          if grep -Eq '^(tests/validation/frontend_evolution/realman_timebase_authority_d2_s4\.py|tests/validation/frontend_evolution/realman_timebase_d2_s4_source_anchor\.json|docs/research/frontend-evolution-v1/REALMAN_TIMEBASE_AUTHORITY_D2_S4\.md)$' <<< "$changed"; then
+            echo 's4=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 's4=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Offline frozen geometry source integrity and false clock negatives
+        if: steps.scope.outputs.s4 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_source_metadata_d0.py --check
+          python3 tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py self-test
+
+      - name: Fetch three exact official Git blobs only and classify clock evidence
+        id: collect
+        if: steps.scope.outputs.s4 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p realman-d2-s4-evidence
+          python3 tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py collect \
+            --receipt realman-d2-s4-evidence/receipt.json > realman-d2-s4-evidence/collect.log 2>&1
+
+      - name: Independently reread source blobs and verify conservative timebase result
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py verify \
+            --receipt realman-d2-s4-evidence/receipt.json > realman-d2-s4-evidence/verify.log 2>&1
+
+      - name: Reject raw audio CSV bundles and unnecessary binary attachments
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -d realman-d2-s4-evidence; then
+            test "$(find realman-d2-s4-evidence -type f ! -name receipt.json ! -name collect.log ! -name verify.log ! -name SHA256SUMS | wc -l)" -eq 0
+            test "$(du -sb realman-d2-s4-evidence | awk '{print $1}')" -lt 131072
+          fi
+
+      - name: Seal canonical source-timebase receipt and independent logs
+        if: always() && steps.collect.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd realman-d2-s4-evidence
+          sha256sum receipt.json collect.log verify.log > SHA256SUMS
+          sha256sum -c SHA256SUMS
+
+      - name: Retain only metadata and fail-closed capture clock authority result
+        if: always() && steps.collect.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realman-capture-timebase-d2-s4-${{ github.run_id }}
+          path: realman-d2-s4-evidence/
+          retention-days: 30
+          if-no-files-found: error

@@ -205,6 +205,11 @@ static int run_case(const r0_case *selected, r0_result *result, int timed) {
                     ap_pipeline_notify_stream_discontinuity(
                         pipeline, AP_DISCONTINUITY_CAPTURE_GAP, 1u) != AP_OK)
                     return 0;
+                /* Exactly one lost synthetic 10-ms capture block. Render
+                 * continues independently; no fabricated shared epoch. */
+                for (sample = 0u; sample < R0_FRAME; ++sample)
+                    for (mic = 0u; mic < selected->channels; ++mic)
+                        rng = 1664525u * rng + 1013904223u;
             }
             for (sample = 0u; sample < R0_FRAME; ++sample) {
                 const int32_t t = (int32_t)(frame*R0_FRAME + sample);

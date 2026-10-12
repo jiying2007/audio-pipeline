@@ -40,3 +40,5 @@ python3 tests/validation/frontend_evolution/realman_timebase_authority_d2_s4.py 
 python3 tests/validation/frontend_evolution/realman_pypdf_toolchain_d2_s5_t0.py self-test
 python3 tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5r.py self-test
 python3 tests/validation/frontend_evolution/realman_gym_lag_diagnostic_d2_s6.py self-test
+python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --self-test
+python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --check

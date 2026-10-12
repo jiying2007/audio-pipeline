@@ -132,6 +132,13 @@ static int check_negatives(const fe_array_config *input, ap_config_t mono,
     if (fe_array_init(canary, sizeof(canary), &malformed, &out) != FE_ARRAY_EINVAL ||
         out != NULL || memcmp(canary, before_memory, sizeof(canary)) != 0) return 0;
     ++*count;
+    /* An out-of-range physical-to-input slot is distinct from a duplicate. */
+    malformed = *input;
+    malformed.microphones[1].input_channel = input->mic_count;
+    out = state;
+    if (fe_array_init(canary, sizeof(canary), &malformed, &out) != FE_ARRAY_EINVAL ||
+        out != NULL || memcmp(canary, before_memory, sizeof(canary)) != 0) return 0;
+    ++*count;
     out = state;
     if (fe_array_init(canary, state_bytes - 1u, input, &out) != FE_ARRAY_ENOMEM ||
         out != NULL || memcmp(canary, before_memory, sizeof(canary)) != 0) return 0;
@@ -189,6 +196,16 @@ static int run_case(const r0_case *selected, r0_result *result, int timed) {
         !array || !pipeline) return 0;
     if (!check_negatives(&geometry, config, array, need,
                          &result->negative_count)) return 0;
+    {
+        /* Invalid discontinuity controls must leave every public pipeline
+         * state byte untouched, not merely preserve the frame counter. */
+        const size_t state_bytes = ap_pipeline_state_size();
+        unsigned char snapshot[AP_PIPELINE_STATE_MAX_BYTES];
+        memcpy(snapshot, pipeline_memory, state_bytes);
+        if (ap_pipeline_notify_stream_discontinuity(pipeline, 0u, 1u) != AP_EINVAL ||
+            memcmp(snapshot, pipeline_memory, state_bytes) != 0) return 0;
+        ++result->negative_count;
+    }
     if (ap_pipeline_process_capture(pipeline, capture, R0_FRAME-1u,
                                     output) != AP_EINVAL) return 0;
     ++result->negative_count;

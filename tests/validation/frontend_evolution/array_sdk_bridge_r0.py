@@ -153,7 +153,7 @@ def validate_payload(data: dict, expected_source: str) -> None:
                 entry["mono_frame_bytes"] == 320 and
                 entry["frames_per_repeat"] == 100 and
                 entry["capture_gap_at_frame"] == 50 and
-                entry["negative_checks"] == 11 and
+                entry["negative_checks"] == 13 and
                 type(entry["clipped_samples"]) is int and
                 0 <= entry["clipped_samples"] <= 16000,
                 "FROZEN_FRAME_GEOMETRY_OR_NEGATIVE_GATE")
@@ -311,7 +311,7 @@ def self_test() -> None:
             "array_state_bytes": bytes_, "sdk_mono_state_bytes": 12345,
             "capture_frame_bytes": 320*mic, "mono_frame_bytes": 320,
             "frames_per_repeat": 100, "capture_gap_at_frame": 50,
-            "negative_checks": 11, "clipped_samples": 0,
+            "negative_checks": 13, "clipped_samples": 0,
             "input_fnv64": "1234567890abcdef",
             "bridge_fnv64": "1234567890abcdef",
             "sdk_fnv64": "1234567890abcdef",

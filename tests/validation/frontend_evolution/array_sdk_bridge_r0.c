@@ -90,7 +90,7 @@ static ap_config_t mono_config(void) {
     c.io_sample_rate_hz = 16000u;
     c.internal_sample_rate_hz = 16000u;
     c.mic_channels = 1u;
-    c.stages &= ~AP_STAGE_BF;
+    c.stages &= ~(ap_stage_mask_t)AP_STAGE_BF;
     return c;
 }
 static int check_negatives(const fe_array_config *input, ap_config_t mono,

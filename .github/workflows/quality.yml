@@ -360,6 +360,24 @@ jobs:
           path: fe-array-resource/
           if-no-files-found: error
           retention-days: 30
+      - name: Qualify FE09 research C2/C4 bridge against real 2.x mono SDK
+        id: fe09_r0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/array_sdk_bridge_r0.py --self-test
+          python3 tests/validation/frontend_evolution/array_sdk_bridge_r0.py \
+            --collect --output fe09-bridge --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/array_sdk_bridge_r0.py \
+            --verify --output fe09-bridge --execution-source "$GITHUB_SHA"
+      - name: Retain FE09 C2/C4 to mono SDK research-only metadata
+        if: always() && (steps.fe09_r0.outcome == 'success' || steps.fe09_r0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-sdk-bridge-${{ github.run_id }}
+          path: fe09-bridge/
+          if-no-files-found: error
+          retention-days: 30
       - name: Generate and verify FE03 A1 exact-source numerical receipt
         id: fe03_a1
         shell: bash

@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE09-R1-PUBLIC-ARRAY-ABI-ARCHITECTURE-V1",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/728",
+  "predecessor_issue": 726,
+  "predecessor_main_sha": "c1b91e5086b0f8a3e82dc35506de4bcc1be58942",
+  "predecessor_verify_run": 38207813048,
+  "predecessor_release_run": 38209605747,
+  "predecessor_fe09_artifact_id": 11727908969,
+  "predecessor_fe09_artifact_zip_sha256": "829ea522bce9e45b281b752808b2eac79cce620d6e67fc10cbd630d809eee315",
+  "predecessor_decision": "FE09_R0_C2_C4_MONO_SDK_BRIDGE_RESEARCH_ONLY_NO_PROMOTION",
+  "decision": "FE09_R1_PUBLIC_ARRAY_ABI_ARCHITECTURE_REVIEWED_NO_PRODUCT_PROMOTION",
+  "decision_status": "PROVISIONAL_DESIGN_ONLY",
+  "selected_architecture": "B_NEXT_MAJOR_SINGLE_PRIVATE_ARRAY_CORE",
+  "alternative_A_status": "RETAIN_AS_BOUNDED_R0_REFERENCE_NOT_PRODUCT_DEFAULT",
+  "public_c4_enabled": false,
+  "release_3x_published": false,
+  "shipping_authority": false,
+  "device_qualification": false,
+  "realman_sample_clock_qualified": false,
+  "scientific_bf_gain_qualified": false,
+  "current_public_2x": {
+    "public_mic_max": 2,
+    "build_mic_max": 2,
+    "beamformer_active_mics": 2,
+    "resampler_input_stream_count": 3,
+    "flight_recorder_mic_max": 2,
+    "frame_duration_ms": 10
+  },
+  "proposed_future_contract": {
+    "physical_mic_counts": [
+      1,
+      2,
+      4
+    ],
+    "render_reference_channels": [
+      0,
+      1
+    ],
+    "capture_layout": "EXPLICIT_S16_INTERLEAVED_BY_PHYSICAL_SLOT",
+    "internal_processing": "EXPLICIT_NORMALIZED_FLOAT",
+    "future_abi_status": "UNIMPLEMENTED_UNFROZEN",
+    "audio_clock_provenance": "UNKNOWN_UNTIL_ORIGINAL_SOURCE_AUDIT",
+    "source_calibration_provenance": "UNKNOWN_UNTIL_ORIGINAL_SOURCE_AUDIT",
+    "bf_aec_order": "MEASURE_BOTH_BEFORE_SELECTION",
+    "buffer_lifetime": "CALLER_OWNED_WITH_ATOMIC_REJECTION",
+    "selected_sdk_release": "NONE",
+    "ssc305_cpu_p99": "NOT_MEASURED",
+    "target_C4_budget_KiB": 192,
+    "full_C4_budget_qualified": false
+  },
+  "r0_measurement_boundary": {
+    "c2_bf_state_bytes": 2152,
+    "c4_bf_state_bytes": 3704,
+    "mono_sdk_state_bytes": 78192,
+    "c4_component_plus_mono_sdk_state_bytes": 81896,
+    "full_runtime_ram_qualified": false,
+    "real_c4_dut_audio_qualified": false,
+    "hosted_timing_dut_authority": false
+  },
+  "independent_blockers": [
+    "R2_PUBLIC_3X_ABI_AND_SDK_IMPLEMENTATION_UNBUILT",
+    "ORIGINAL_ADC_SAMPLE_ZERO_AND_CLOCK_DRIFT_UNKNOWN",
+    "TRUE_C2_VS_C4_ACOUSTIC_GAIN_NOT_PROVED",
+    "FULL_DUPLEX_BF_AEC_TOPOLOGY_NOT_ADMITTED",
+    "FULL_C4_192KIB_MEMORY_CPU_AND_RUNTIME_NOT_MEASURED",
+    "SSC305_BSP_P99_THERMAL_POWER_HIL_E001_NOT_QUALIFIED"
+  ],
+  "source_trace": [
+    {
+      "id": "PUBLIC_CAP_TWO",
+      "path": "include/audio_pipeline/audio_types.h"
+    },
+    {
+      "id": "FRAME_TEN_MS",
+      "path": "include/audio_pipeline/audio_types.h"
+    },
+    {
+      "id": "PUBLIC_SOURCE_IDENTITY",
+      "path": "include/audio_pipeline/audio_types.h"
+    },
+    {
+      "id": "CMAKE_CAP_TWO",
+      "path": "CMakeLists.txt"
+    },
+    {
+      "id": "CMAKE_CAP_REJECTS_THREE_PLUS",
+      "path": "CMakeLists.txt"
+    },
+    {
+      "id": "CMAKE_CURRENT_MAJOR_TWO",
+      "path": "CMakeLists.txt"
+    },
+    {
+      "id": "COMPOSED_BF_REQUIRES_TWO",
+      "path": "src/core/ap_pipeline.c"
+    },
+    {
+      "id": "PUBLIC_FLOAT_BF_PAIR",
+      "path": "include/audio_pipeline/audio_modules.h"
+    },
+    {
+      "id": "FRONTEND_BF_HISTORY_PAIR",
+      "path": "src/frontend/ap_frontend.h"
+    },
+    {
+      "id": "RESAMPLER_TWO_MICS_PLUS_RENDER",
+      "path": "src/frontend/ap_resampler.h"
+    },
+    {
+      "id": "PIPELINE_MIC0_MIC1_MONO_SCRATCH",
+      "path": "src/core/ap_pipeline_internal.h"
+    },
+    {
+      "id": "RUNTIME_CAPTURE_COMPILED_CAP",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "FLIGHT_RECORDER_TWO",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "CAPTURE_FRAME_CHANNELS",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "PUBLIC_CAPTURE_PROCESS",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_DISCONTINUITY_CONTROL",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "RESEARCH_ARRAY_MAX_FOUR",
+      "path": "tests/validation/frontend_evolution/array_native.h"
+    },
+    {
+      "id": "CURRENT_TWO_X_ABI_CONTRACT",
+      "path": "docs/API_CONTRACT.md"
+    },
+    {
+      "id": "PRESERVED_R0_THIRTEEN_NEGATIVES",
+      "path": "tests/validation/frontend_evolution/array_sdk_bridge_r0.py"
+    }
+  ]
+}

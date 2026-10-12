@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
     unsigned i;
     if (argc == 2 && strcmp(argv[1], "--timing") == 0) timed = 1;
     else if (argc != 1) return 2;
-    if (!info || !info->config_digest ||
+    if (!info || !info->config_digest || !info->source_revision ||
         AP_MAX_MIC_CHANNELS != 2u || info->max_mic_channels != 2u)
         return 3;
     for (i = 0u; i < R0_SCENES; ++i)
@@ -290,8 +290,9 @@ int main(int argc, char **argv) {
            "\"product_qualification\":false,"
            "\"geometry_count\":3,\"run_repeats\":2,"
            "\"sdk_build_info\":{\"major\":%u,\"max_mic_channels\":%u,"
-           "\"config_digest\":\"%s\"},\"profiles\":[",
-           info->version_major, info->max_mic_channels, info->config_digest);
+           "\"config_digest\":\"%s\",\"source_revision\":\"%s\"},\"profiles\":[",
+           info->version_major, info->max_mic_channels,
+           info->config_digest, info->source_revision);
     for (i = 0u; i < R0_SCENES; ++i) {
         const r0_result *r = &results[i];
         printf("%s{\"name\":\"%s\",\"mic_count\":%u,"

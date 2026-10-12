@@ -211,10 +211,11 @@ def collect(output: Path, source: str) -> None:
             timing = strict_json(
                 run_cmd([str(binary), "--timing"], timeout=45, log=commands))
             assert "profiles" in timing
+            timed_profiles = {}
             for p in timing["profiles"]:
-                require(type(p.get("combined_host_thread_cpu_ns_two_repeats"))
-                        is int and p["combined_host_thread_cpu_ns_two_repeats"] > 0,
-                        "HOST_TIMING_MISSING")
+                value = p.get("combined_host_thread_cpu_ns_two_repeats")
+                require(type(value) is int and value > 0, "HOST_TIMING_MISSING")
+                timed_profiles[p["name"]] = value
                 del p["combined_host_thread_cpu_ns_two_repeats"]
             require(timing == first, "HOST_TIMED_PROFILE_CHANGED")
             data.update({
@@ -223,14 +224,7 @@ def collect(output: Path, source: str) -> None:
                 "sdk_generated_header_sha256": hash_file(generated),
                 "harness_elf_sha256": hash_file(binary, 32 * 1024 * 1024),
                 "profile_results": first,
-                "host_timing_two_repeats_ns": {
-                    name: elapsed["combined_host_thread_cpu_ns_two_repeats"]
-                    for name, elapsed in (
-                        (t["name"], t) for t in strict_json(
-                            run_cmd([str(binary), "--timing"], timeout=45,
-                                    log=commands))["profiles"]
-                    )
-                },
+                "host_timing_two_repeats_ns": timed_profiles,
                 "total_physical_input_frames_per_repeat": 300,
                 "total_mono_output_frames_per_repeat": 300,
                 "decision_scope": "software-bridge-only-no-public-c4",

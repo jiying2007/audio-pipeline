@@ -64,7 +64,8 @@ def strict_json(raw: str) -> dict:
 
 def repo_head() -> str:
     result = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, timeout=15, text=True
+        ["git", "-c", "safe.directory=" + str(ROOT), "rev-parse", "HEAD"],
+        cwd=ROOT, timeout=15, text=True
     ).strip()
     require(bool(re.fullmatch(r"[0-9a-f]{40}", result)), "GIT_COMMIT_IDENTITY")
     return result

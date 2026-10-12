@@ -1,7 +1,7 @@
 # FE09-R1 — Public C1/C2/C4 array API/ABI architecture decision / 四麦公开 SDK 架构决策
 
-**Stage:** Design qualification only, no shipping/public C4 implementation.  
-**Pre-registration:** [#728](https://github.com/jiying2007/audio-pipeline/issues/728); independent predecessor [FE09-R0 #726](https://github.com/jiying2007/audio-pipeline/issues/726) is CLOSED completed.  
+**Stage:** Design qualification only, no shipping/public C4 implementation.
+**Pre-registration:** [#728](https://github.com/jiying2007/audio-pipeline/issues/728); independent predecessor [FE09-R0 #726](https://github.com/jiying2007/audio-pipeline/issues/726) is CLOSED completed.
 **Frozen evidence base:** protected `main=c1b91e5086b0f8a3e82dc35506de4bcc1be58942`, [Verify 38207813048](https://github.com/jiying2007/audio-pipeline/actions/runs/38207813048) success (64 passed + one expected skip, required summary success), same-source [Release 38209605747](https://github.com/jiying2007/audio-pipeline/actions/runs/38209605747) release/convergence success. R0 metadata [Artifact 11727908969](https://github.com/jiying2007/audio-pipeline/actions/runs/38207813048/artifacts/11727908969) ZIP SHA256 `829ea522bce9e45b281b752808b2eac79cce620d6e67fc10cbd630d809eee315` independently verified.
 
 **Architectural decision (provisional):** `B_NEXT_MAJOR_SINGLE_PRIVATE_ARRAY_CORE`. The *only admissible R1 outcome* is `FE09_R1_PUBLIC_ARRAY_ABI_ARCHITECTURE_REVIEWED_NO_PRODUCT_PROMOTION` after exact-head and fresh-main governance. This is a **design review conclusion, not an executed public ABI change, 3.x SDK, qualification or release**. 中文：此阶段选择后续统一四麦架构的设计方向，**不是已落地的产品四麦**。
@@ -66,7 +66,7 @@ Required later independent gates:
 2. **Real acoustic selection:** rights-audited aligned actual source, separate BF functionality vs benefit, far-field near+echo/double-talk, moving speaker/robot motor/noise, target transfer/ESTOI/SIR/WNG, loss/negative and uncertainty intervals; no known-direction oracle promoted as a DOA tracker. Preserve room/geometry data lineage.
 3. **Real SSC305 qualification:** vendor BSP/compiler/sysroot ABI, CPU/p95/p99/10ms hard deadline, scheduler/thermal/power/RSS/stack/I/O, full duplex AEC and HIL; separately migrate E001 qualification. Original FE03 D1/S3/S5 failed source admission and D2-S6 no-clock-authority stay explicitly negative.
 
-**No implemented public C4 ABI. No published 3.x SDK. No source-clock or BF/DOA quality claims.**  
+**No implemented public C4 ABI. No published 3.x SDK. No source-clock or BF/DOA quality claims.**
 **未完成：正式四麦 SDK、真实阵列效果及 SSC305 量产验收。**
 
 ## Deterministic offline gate / 防漂移门禁

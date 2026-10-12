@@ -114,7 +114,7 @@ def identity(source: str) -> dict:
     }
 
 
-def validate_payload(data: dict) -> None:
+def validate_payload(data: dict, expected_source: str) -> None:
     require(data.get("schema_version") == 1 and
             data.get("decision") == DECISION and
             data.get("source_role") == "first-party-deterministic-synthetic" and
@@ -126,7 +126,9 @@ def validate_payload(data: dict) -> None:
     build = data.get("sdk_build_info")
     require(isinstance(build, dict) and build.get("major") == 2 and
             build.get("max_mic_channels") == 2 and
-            re.fullmatch(r"[0-9a-f]{64}", str(build.get("config_digest", ""))),
+            re.fullmatch(r"[0-9a-f]{64}", str(build.get("config_digest", ""))) and
+            bool(re.fullmatch(r"[0-9a-f]{40}", str(build.get("source_revision", "")))) and
+            build["source_revision"] == expected_source,
             "BUILT_PUBLIC_2X_SDK_IDENTITY")
     items = data.get("profiles")
     require(isinstance(items, list) and len(items) == len(PROFILE),
@@ -187,6 +189,7 @@ def collect(output: Path, source: str) -> None:
                 "-DAP_ENABLE_LINUX_RUNTIME=OFF",
                 "-DAP_BUILD_MAX_MIC_CHANNELS=2",
                 "-DAP_ENABLE_FAST_MATH=OFF",
+                "-DAP_BUILD_SOURCE_REVISION=" + source,
             ]
             run_cmd(cmake, timeout=120, log=commands)
             run_cmd(["cmake", "--build", str(build), "--target",
@@ -208,7 +211,7 @@ def collect(output: Path, source: str) -> None:
             first = strict_json(run_cmd([str(binary)], timeout=45, log=commands))
             second = strict_json(run_cmd([str(binary)], timeout=45, log=commands))
             require(first == second, "DOUBLE_RUN_OUTPUT_FINGERPRINT_MISMATCH")
-            validate_payload(first)
+            validate_payload(first, source)
             timing = strict_json(
                 run_cmd([str(binary), "--timing"], timeout=45, log=commands))
             assert "profiles" in timing
@@ -281,7 +284,7 @@ def verify(output: Path, source: str) -> None:
                 "harness_elf_sha256"):
         require(bool(re.fullmatch(r"[0-9a-f]{64}", str(data.get(key, "")))),
                 "SDK_BINARY_IDENTITY_MISSING")
-    validate_payload(data["profile_results"])
+    validate_payload(data["profile_results"], source)
     timings = data.get("host_timing_two_repeats_ns")
     require(isinstance(timings, dict) and
             set(timings) == {x[0] for x in PROFILE} and
@@ -300,7 +303,8 @@ def self_test() -> None:
         "shipping_authority": False, "product_qualification": False,
         "geometry_count": 3, "run_repeats": 2,
         "sdk_build_info": {
-            "major": 2, "max_mic_channels": 2, "config_digest": "a"*64
+            "major": 2, "max_mic_channels": 2, "config_digest": "a"*64,
+            "source_revision": "a"*40
         },
         "profiles": [{
             "name": name, "mic_count": mic, "fir33_common_delay_samples": delay,
@@ -313,15 +317,16 @@ def self_test() -> None:
             "sdk_fnv64": "1234567890abcdef",
         } for name, mic, delay, bytes_ in PROFILE]
     }
-    validate_payload(fake)
+    validate_payload(fake, "a"*40)
     for tampered in (
         {"decision": "SHIPPING_QUALIFIED"},
         {"installed_public_c4_supported": True},
         {"geometry_count": 4},
+        {"sdk_build_info": dict(fake["sdk_build_info"], source_revision="b"*40)},
     ):
         invalid = dict(fake, **tampered)
         try:
-            validate_payload(invalid)
+            validate_payload(invalid, "a"*40)
         except Rejected:
             pass
         else:

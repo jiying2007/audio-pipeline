@@ -32,6 +32,10 @@ PROFILE = (
     ("C4_UCA_RADIUS35MM", 4, 1, 21, 3704),
 )
 TARGETS = ("native", "sanitized", "arm")
+# C11 research adapter contains pointer-bearing private state. Keep the actual
+# pinned 64-bit and AArch32 layout individually constrained, never demand
+# identical sizeof(private_header) across ABIs or infer any shipping SDK ABI.
+EXPECTED_ADAPTER_HEADER_BYTES = {"native": 96, "sanitized": 96, "arm": 80}
 CAP = 4 * 1024 * 1024
 
 
@@ -161,6 +165,30 @@ def check_result(result: dict) -> None:
                     "NONDETERMINISTIC_FINGERPRINT_FORMAT")
 
 
+def check_target_contract(suites: dict) -> None:
+    require(type(suites) is dict and set(suites) == set(TARGETS),
+            "MISSING_TARGET_EVIDENCE")
+    for target in TARGETS:
+        check_result(suites[target])
+        rows = suites[target]["profiles"]
+        overhead = EXPECTED_ADAPTER_HEADER_BYTES[target]
+        for row in rows:
+            require(row["state_bytes"] == row["native_fir33_bytes"] + overhead,
+                    "ABI_SPECIFIC_ADAPTER_STATE_SIZE_MISMATCH_" + target)
+    # Same source/fixture controls must agree, but pointer-layout sizeof
+    # differs (64-bit host header=96 B, AArch32 header=80 B). DSP output
+    # hashes are intentionally NOT required bit-identical across targets.
+    for key in ("native_fir33_bytes", "common_delay_samples",
+                "capture_frame_bytes", "render_frame_bytes", "frames_per_repeat",
+                "negative_checks", "capture_epoch", "render_epoch",
+                "clipped_samples"):
+        for index in range(len(PROFILE)):
+            baseline = suites["native"]["profiles"][index][key]
+            require(all(suites[target]["profiles"][index][key] == baseline
+                        for target in TARGETS),
+                    "ARCHITECTURE_CONTRACT_MISMATCH_" + key)
+
+
 def self_test() -> None:
     a = {
         "schema_version": 1, "decision": DECISION,
@@ -180,6 +208,22 @@ def self_test() -> None:
         } for name, n, render, delay, state in PROFILE]
     }
     check_result(a)
+    valid_targets = {
+        target: json.loads(json.dumps(a)) for target in TARGETS
+    }
+    for row in valid_targets["arm"]["profiles"]:
+        row["state_bytes"] -= 16
+    check_target_contract(valid_targets)
+    # Both a false AArch32 64-bit layout and native/sanitized drift must fail.
+    for target, delta in (("arm", 16), ("sanitized", 16)):
+        wrong_target = json.loads(json.dumps(valid_targets))
+        wrong_target[target]["profiles"][0]["state_bytes"] += delta
+        try:
+            check_target_contract(wrong_target)
+        except GateFailure:
+            pass
+        else:
+            raise GateFailure("CROSS_ARCH_PRIVATE_ABI_LAYOUT_FALSE_ACCEPT")
     for k, val in (
         ("decision", "PUBLIC_3X_RELEASED"), ("shipping_authority", True),
         ("actual_adc_clock_qualified", True), ("profile_count", 3),
@@ -237,16 +281,7 @@ def verify_artifact(output: Path, sha: str) -> None:
     suites = data.get("target_results")
     require(type(suites) is dict and set(suites) == set(TARGETS),
             "MISSING_TARGET_EVIDENCE")
-    for target in TARGETS:
-        check_result(suites[target])
-    # Float compiler/ABI backends are compared for engineering contract,
-    # not falsely required to match float bitwise across CPU architectures.
-    for key in ("state_bytes", "native_fir33_bytes", "common_delay_samples",
-                "capture_frame_bytes", "render_frame_bytes", "frames_per_repeat",
-                "negative_checks", "capture_epoch", "render_epoch", "clipped_samples"):
-        for i in range(len(PROFILE)):
-            assert all(suites[t]["profiles"][i][key] == suites["native"]["profiles"][i][key]
-                       for t in TARGETS), "ARCHITECTURE_CONTRACT_MISMATCH_" + key
+    check_target_contract(suites)
     observations = data.get("host_process_cpu_ns_two_repeats")
     require(type(observations) is dict and
             set(observations) == {x[0] for x in PROFILE} and
@@ -301,6 +336,9 @@ def collect(output: Path, sha: str) -> None:
                 require(first == second, "TARGET_REPEAT_NOT_BITWISE_" + target)
                 check_result(first)
                 results[target] = first
+            # Evaluate cross-target architecture boundaries BEFORE sealing any
+            # positive receipt; a failed gate must retain a FAILED decision.
+            check_target_contract(results)
             timed = strict_json(run([str(tempdir / "test-native"), "--timing"],
                                     log, timeout=60))
             cpu = {}

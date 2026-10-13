@@ -44,3 +44,4 @@ python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --self
 python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --check
 python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py --self-test
 python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py --check
+python3 tests/validation/frontend_evolution/fe09_b1a_ingress_qualification.py --self-test

@@ -81,11 +81,34 @@ def authorized_line(old: str, new: str) -> tuple[str, str, str] | None:
     return a["action"], a["sha"], b["sha"]
 
 
+def _yaml_literal_line_numbers(lines: list[str]) -> set[int]:
+    """Reject pin-looking text nested inside run:/env: block scalar payloads.
+
+    This is intentionally conservative lexical screening. Not a complete YAML
+    parser and never permits promoting science without independent guards.
+    """
+    blocked: set[int] = set()
+    scalar_indent: int | None = None
+    for index, line in enumerate(lines):
+        indent = len(line) - len(line.lstrip(" "))
+        stripped = line.strip()
+        if scalar_indent is not None:
+            if not stripped or indent > scalar_indent:
+                blocked.add(index)
+                continue
+            scalar_indent = None
+        if re.fullmatch(r".*?:[ \\t]*[|>][+-]?[ \\t]*(?:#.*)?", line.rstrip("\r\n")):
+            scalar_indent = indent
+    return blocked
+
+
 def classify_text(before: str, after: str) -> list[dict] | None:
     if before == after or not before or not after:
         return None
     old_lines = before.splitlines(keepends=True)
     new_lines = after.splitlines(keepends=True)
+    old_block = _yaml_literal_line_numbers(old_lines)
+    new_block = _yaml_literal_line_numbers(new_lines)
     edits: list[dict] = []
     for op, i, i2, j, j2 in difflib.SequenceMatcher(
         None, old_lines, new_lines, autojunk=False
@@ -94,7 +117,11 @@ def classify_text(before: str, after: str) -> list[dict] | None:
             continue
         if op != "replace" or i2 - i != j2 - j or i2 == i:
             return None
-        for line_before, line_after in zip(old_lines[i:i2], new_lines[j:j2]):
+        for old_index, new_index in zip(range(i, i2), range(j, j2)):
+            if old_index in old_block or new_index in new_block:
+                return None  # A changed script/string payload is not a step uses.
+            line_before = old_lines[old_index]
+            line_after = new_lines[new_index]
             pin = authorized_line(line_before, line_after)
             if pin is None:
                 return None
@@ -135,6 +162,7 @@ def classify_repo(base: str, head: str) -> dict:
     common = command(["git", "merge-base", before, after],
                      max_bytes=1024).decode("ascii").strip()
     require(SHA.fullmatch(common) is not None, "INVALID_MERGE_BASE")
+    require(common == before, "BASE_NOT_HEAD_ANCESTOR")
     range_spec = before + "..." + after
     names = command(["git", "diff", "--no-renames", "--name-status",
                      "-z", range_spec], max_bytes=100_000).decode("utf-8")
@@ -228,6 +256,15 @@ def self_test() -> None:
     require(classify_text(before, after.replace(
         "run: echo harmless", "run: rm -rf /")) is None,
             "MIXED_EXECUTABLE_DIFF_ACCEPTED")
+    in_script_old = ("jobs:\n  a:\n    steps:\n"
+                     "      - run: |\n          uses: actions/upload-artifact@" + old_pin + "\n")
+    in_script_new = in_script_old.replace(old_pin, new_pin)
+    require(classify_text(in_script_old, in_script_new) is None,
+            "RUN_BLOCK_USES_NOT_ACTUAL_ACTION_ACCEPTED")
+    in_env_old = ("jobs:\n  a:\n    env:\n      NOTE: >\n"
+                  "        uses: actions/upload-artifact@" + old_pin + "\n")
+    require(classify_text(in_env_old, in_env_old.replace(old_pin, new_pin)) is None,
+            "YAML_LITERAL_USES_AS_ACTION_ACCEPTED")
     require(PATH.fullmatch(".github/workflows/x.yml") is not None and
             PATH.fullmatch("src/audio.c") is None and
             PATH.fullmatch(".github/workflows/x.yml/../../bad") is None,
@@ -236,7 +273,7 @@ def self_test() -> None:
             SHA.fullmatch("v7.0.2") is None,
             "PIN_MUST_BE_FULL_SHA")
     print("WORKFLOW_PIN_ONLY_CLASSIFIER_SELF_TEST_PASS negatives=" +
-          str(len(mutations) + 3))
+          str(len(mutations) + 5))
 
 
 def main() -> None:

@@ -10,7 +10,7 @@ Protected main 2c2ff18c5c5c7957ad48e45c523c28c6242c7aed, [Verify 38408813450](ht
 
 The source remains exclusively https://www.openslr.org/resources/12/dev-clean.tar.gz; original frozen MD5 42e2234ba48799c1f50f24a7926300a1, archive size bound 400,000,000, source/license notices, speaker offset selection 0/8, tar path/size, native FLAC and FFmpeg checks remain UNCHANGED.
 
-Only explicit transient socket timeout/reset, incomplete HTTP read, remote disconnect or unexpected SSL EOF may retry, including an urllib URLError with such a transport cause. **At most three entire fresh attempts** with the same original URL, 60-second socket timeout and deletion of all partial local bytes each time. No alternate source, mirror, insecure TLS, partial resume, fabricated PCM, source sample clock or test-score threshold changes.
+Only explicit transient socket timeout/reset, incomplete HTTP read, remote disconnect or unexpected SSL EOF may retry, including an urllib URLError with such a transport cause. **At most three entire fresh attempts** with the same original URL, 60-second socket timeout and deletion of all partial local bytes each time. Both existing source-acquisition quality jobs have a fixed **20-minute** maximum runtime (previously 15 minutes); no unbounded retry loop or alternate source is allowed. No alternate source, mirror, insecure TLS, partial resume, fabricated PCM, source sample clock or test-score threshold changes.
 
 HTTP 403/404/500, unexpected HTTP status or redirect, certificate verification error, oversize data or source hash/format mismatch must FAIL CLOSED immediately. Original source acquisition retains DATA_OR_INFRASTRUCTURE_FAILURE as a non-acoustic verdict when all retries fail.
 

@@ -3,13 +3,16 @@
 from __future__ import annotations
 import argparse
 import hashlib
+import http.client
 import json
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import ssl
 import subprocess
 import tarfile
 import tempfile
+import urllib.error
 import urllib.request
 from contracts import ROOT, require, sha256
 from libfvad_reference import write_json
@@ -18,6 +21,7 @@ PLAN = ROOT / '.github/research/frontend-evolution-v1/speech-spatial-v1.json'
 URL = 'https://www.openslr.org/resources/12/dev-clean.tar.gz'
 MD5 = '42e2234ba48799c1f50f24a7926300a1'
 MAX_ARCHIVE = 400_000_000
+MAX_TRANSPORT_ATTEMPTS = 3  # Same URL; finite retry; no source substitution.
 PATTERN = re.compile(r'LibriSpeech/dev-clean/(\d+)/(\d+)/(\d+)-(\d+)-(\d+)\.flac')
 NOTICES = ('LibriSpeech/LICENSE.TXT', 'LibriSpeech/README.TXT', 'LibriSpeech/SPEAKERS.TXT')
 
@@ -122,20 +126,41 @@ def acquire(archive: Path, output: Path, decoder: str = 'ffmpeg', *, offset: int
     return record
 
 
+def _retryable_transport(error: BaseException) -> bool:
+    """Retry only transient read/connection failures, never policy/source errors."""
+    if isinstance(error, urllib.error.HTTPError):
+        return False  # 403/404/500 are not source bytes; no alternate endpoint.
+    if isinstance(error, urllib.error.URLError):
+        return (isinstance(error.reason, BaseException) and
+                _retryable_transport(error.reason))
+    return isinstance(error, (
+        TimeoutError, ConnectionResetError, ConnectionAbortedError,
+        BrokenPipeError, http.client.IncompleteRead,
+        http.client.RemoteDisconnected, ssl.SSLEOFError,
+    ))
+
+
 def download(archive: Path) -> None:
+    """Same pinned URL, <=3 full fresh attempts, no partial-file reuse."""
     require(not archive.exists(), 'download destination exists')
-    try:
-        with urllib.request.urlopen(URL, timeout=60) as response, archive.open('xb') as stream:
-            require(response.status == 200 and response.url == URL, 'unexpected source redirect/status')
-            count = 0
-            while True:
-                block = response.read(1 << 20)
-                if not block: break
-                count += len(block); require(count <= MAX_ARCHIVE, 'archive download bound')
-                stream.write(block)
-    except Exception:
-        archive.unlink(missing_ok=True)
-        raise
+    for attempt in range(MAX_TRANSPORT_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(URL, timeout=60) as response, archive.open('xb') as stream:
+                require(response.status == 200 and response.url == URL,
+                        'unexpected source redirect/status')
+                count = 0
+                while True:
+                    block = response.read(1 << 20)
+                    if not block:
+                        break
+                    count += len(block)
+                    require(count <= MAX_ARCHIVE, 'archive download bound')
+                    stream.write(block)
+            return
+        except Exception as error:
+            archive.unlink(missing_ok=True)
+            if not _retryable_transport(error) or attempt + 1 == MAX_TRANSPORT_ATTEMPTS:
+                raise
 
 
 if __name__ == '__main__':

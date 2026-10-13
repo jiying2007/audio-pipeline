@@ -46,3 +46,4 @@ python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.
 python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py --check
 python3 tests/validation/frontend_evolution/fe09_b1a_ingress_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b1b0_src_qualification.py --self-test
+python3 .github/program/workflow_pin_only_scope.py --self-test

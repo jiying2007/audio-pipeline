@@ -236,8 +236,11 @@ def self_test() -> None:
     else:
         raise B1B0Failure("ARM_SOURCE_DRIFT_ACCEPTED")
     altered = {t: copy.deepcopy(example) for t in TARGETS}
-    altered["arm"]["profiles"][0]["state_bytes"] += 16
-    check_targets(altered)  # pointer layout private and architecture dependent
+    # Architecture-private state layout may differ, but all THREE input rates
+    # must have the same layout for a fixed physical/render configuration.
+    for rate_index in range(len(RATES)):
+        altered["arm"]["profiles"][4 * rate_index]["state_bytes"] += 16
+    check_targets(altered)  # private ARM layout differs; rate geometry does not
     try:
         strict_json('{"schema_version":1,"schema_version":2}')
     except tools.GateFailure:

@@ -9,6 +9,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 SCHEMA_VERSION = 1
 STATUSES = {"ACTIVE", "ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED", "UNCLASSIFIED"}
@@ -148,8 +149,18 @@ def active_dependency_reasons(data: dict, branch: str, head_sha: str) -> list[st
     return reasons
 
 
-def delete_branch(repository: str, branch: str) -> None:
+def delete_branch(repository: str, branch: str, expected_sha: str) -> None:
     endpoint = f"repos/{repository}/git/refs/heads/{quote(branch, safe='/')}"
+    # Revalidate SHA and PR custody immediately before the destructive call.
+    # A stale prior inventory is never sufficient to authorize deletion.
+    actual = gh_json(f"repos/{repository}/git/ref/heads/{quote(branch, safe='/')}")
+    if (not isinstance(actual, dict) or
+            actual.get("ref") != f"refs/heads/{branch}" or
+            not isinstance(actual.get("object"), dict) or
+            actual["object"].get("sha") != expected_sha):
+        raise RuntimeError(f"branch changed before deletion: {branch}")
+    if open_prs(repository, branch):
+        raise RuntimeError(f"PR opened before deletion: {branch}")
     completed = subprocess.run(
         ["gh", "api", "--method", "DELETE", endpoint],
         text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -222,7 +233,7 @@ def plan(
     blocked = [item for item in actions if item["action"].startswith("BLOCK_")]
     if apply and not blocked:
         for item, branch in deletable:
-            delete_branch(repository, branch)
+            delete_branch(repository, branch, item["expected_head_sha"])
             item["action"] = "DELETED"
     elif apply and blocked:
         for item, _branch in deletable:
@@ -242,6 +253,8 @@ def plan(
 
 
 def self_test() -> None:
+    # A missing url-quote import previously broke the live delete path.
+    assert quote("research/space name", safe="/") == "research/space%20name"
     good = {
         "schema_version": 1,
         "active_dependencies": [],

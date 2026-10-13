@@ -3,7 +3,10 @@
 from __future__ import annotations
 import argparse
 import hashlib
+import http.client
 import json
+import sys
+import urllib.error
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -122,20 +125,45 @@ def acquire(archive: Path, output: Path, decoder: str = 'ffmpeg', *, offset: int
     return record
 
 
+def transient_transport_error(exc: Exception) -> bool:
+    """Retry only interrupted transport, never HTTP rejection/source mismatch."""
+    retryable = (TimeoutError, ConnectionResetError, ConnectionAbortedError,
+                 BrokenPipeError, http.client.IncompleteRead)
+    if isinstance(exc, retryable):
+        return True
+    return (isinstance(exc, urllib.error.URLError) and
+            not isinstance(exc, urllib.error.HTTPError) and
+            isinstance(exc.reason, retryable))
+
+
 def download(archive: Path) -> None:
     require(not archive.exists(), 'download destination exists')
-    try:
-        with urllib.request.urlopen(URL, timeout=60) as response, archive.open('xb') as stream:
-            require(response.status == 200 and response.url == URL, 'unexpected source redirect/status')
-            count = 0
-            while True:
-                block = response.read(1 << 20)
-                if not block: break
-                count += len(block); require(count <= MAX_ARCHIVE, 'archive download bound')
-                stream.write(block)
-    except Exception:
-        archive.unlink(missing_ok=True)
-        raise
+    # Exactly two full attempts at the SAME frozen official URL. A transport
+    # failure unlinks all partial bytes before reopening. The existing archive
+    # MD5, member/format and source-selection gates in acquire() remain the
+    # only admission authority. Never retry HTTP 403/404 or source mismatches.
+    for attempt in (1, 2):
+        try:
+            with urllib.request.urlopen(URL, timeout=60) as response, archive.open('xb') as stream:
+                require(response.status == 200 and response.url == URL,
+                        'unexpected source redirect/status')
+                count = 0
+                while True:
+                    block = response.read(1 << 20)
+                    if not block:
+                        break
+                    count += len(block)
+                    require(count <= MAX_ARCHIVE, 'archive download bound')
+                    stream.write(block)
+            return
+        except Exception as exc:
+            archive.unlink(missing_ok=True)
+            if attempt == 2 or not transient_transport_error(exc):
+                raise
+            print('SPEECH_SOURCE_TRANSIENT_RETRY attempt=1/2; '
+                  'discarded partial official-source archive',
+                  file=sys.stderr)
+    raise AssertionError('unreachable retry state')
 
 
 if __name__ == '__main__':

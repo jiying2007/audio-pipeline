@@ -37,6 +37,22 @@ typedef struct {
     fe_b1a_info info;
 } proof_t;
 
+/* Byte-level test-only prefix mirrors the private B1A state layout.
+ * memcpy through unsigned char is well-defined; never alias a live C struct
+ * through an incompatible type. This is NOT a public ABI or installed shim.
+ */
+typedef struct {
+    uint32_t magic, physical_mics, render_channels, active_mic_mask;
+    uint32_t slots[FE_B1A_MAX_MICS];
+    size_t requested_bytes;
+    uint64_t accepted_frames;
+    uint64_t capture_epoch;
+    uint64_t render_epoch;
+    uint64_t clock_epoch;
+    uint64_t capture_frames_in_epoch;
+    uint64_t render_frames_in_epoch;
+} b1a_test_prefix;
+
 static uint64_t hash_s16(uint64_t h, int16_t value) {
     const uint16_t word = (uint16_t)value;
     h = (h ^ (uint8_t)(word & UINT16_C(255))) * FNV_PRIME;
@@ -235,6 +251,35 @@ static int negatives(const profile_t *p, unsigned char *arena, size_t need,
         REJECT(fe_b1a_notify_gap(state, FE_B1A_RENDER_GAP), FE_B1A_EINVAL);
     REJECT(fe_b1a_get_info(state, NULL), FE_B1A_EINVAL);
     REJECT(fe_b1a_get_info(state, (fe_b1a_info *)(void *)arena), FE_B1A_EINVAL);
+    /* Preregistered UINT64 counter-overflow cases: snapshot AFTER placing
+     * MAX into the caller-owned test arena; rejected operations must not
+     * write any source, output or state byte. Restore before the next case.
+     * Byte copying avoids strict-aliasing UB and runs on 32/64-bit ABIs.
+     */
+#define COUNTER_OVERFLOW(field, operation) do { \
+    const size_t at = offsetof(b1a_test_prefix, field); \
+    uint64_t original, limit = UINT64_MAX; \
+    if (at + sizeof(limit) > need) return 0; \
+    memcpy(&original, arena + at, sizeof(original)); \
+    memcpy(arena + at, &limit, sizeof(limit)); \
+    REJECT((operation), FE_B1A_EINVAL); \
+    memcpy(arena + at, &original, sizeof(original)); \
+} while (0)
+    COUNTER_OVERFLOW(accepted_frames,
+                     PROC(capture, cap, r, ren, mic, cap, ro, ren));
+    COUNTER_OVERFLOW(capture_frames_in_epoch,
+                     PROC(capture, cap, r, ren, mic, cap, ro, ren));
+    if (p->render)
+        COUNTER_OVERFLOW(render_frames_in_epoch,
+                         PROC(capture, cap, r, ren, mic, cap, ro, ren));
+    COUNTER_OVERFLOW(capture_epoch,
+                     fe_b1a_notify_gap(state, FE_B1A_CAPTURE_GAP));
+    if (p->render)
+        COUNTER_OVERFLOW(render_epoch,
+                         fe_b1a_notify_gap(state, FE_B1A_RENDER_GAP));
+    COUNTER_OVERFLOW(clock_epoch,
+                     fe_b1a_notify_gap(state, FE_B1A_CLOCK_RESET));
+#undef COUNTER_OVERFLOW
 #undef PROC
 #undef REJECT
     if (fe_b1a_process(NULL, capture, cap, r, ren, mic, cap, ro, ren) !=

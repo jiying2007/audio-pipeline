@@ -1,0 +1,300 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE09-R2B0-MAJOR-MIGRATION-PREFLIGHT-V1",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/733",
+  "parent_issue": 730,
+  "stage": "READ_ONLY_SOURCE_PREFLIGHT",
+  "decision": "FE09_R2B0_MAJOR_MIGRATION_PREFLIGHT_RESEARCH_ONLY_NO_PUBLIC_ABI",
+  "decision_status": "PROPOSED_NONSHIPPING_PREQUALIFICATION",
+  "selected_architecture": "B_NEXT_MAJOR_SINGLE_PRIVATE_ARRAY_CORE",
+  "predecessors": {
+    "r2a_main_sha": "36944fa85e180bdadbac5800bd7fe3cf35d6a619",
+    "r2a_verify_run": 38325347248,
+    "r2a_release_run": 38327722158,
+    "r2a_artifact_id": 11780358590,
+    "r2a_artifact_zip_sha256": "c15d83903a572ec51a07d2130c8e198d8628e25d9b55330ac51190acabb5f801",
+    "r2a_decision": "FE09_R2A_UNIFIED_ARRAY_SDK_PROTOTYPE_RESEARCH_ONLY_NO_RELEASE",
+    "b0_base_main_sha": "6fcb74f5f498dc68fab6127d8bf9bf35411f7d61",
+    "b0_base_verify_run": 38330235032,
+    "b0_base_release_run": 38333092634,
+    "b0_base_research_gc_run": 38330234686,
+    "b0_base_terminal_gc_run": 38330234666
+  },
+  "legacy_public_2x": {
+    "frame_ms": 10,
+    "max_physical_microphones": 2,
+    "installed_major": 2,
+    "state_arena_ceiling_bytes": 80000,
+    "control_api_version": 2,
+    "src_histories_total": 3,
+    "flight_recorder_max_mics": 2,
+    "dump_format_version": 1,
+    "config_struct_is_version_tagged": false,
+    "metrics_struct_is_version_tagged": false,
+    "state_query_is_config_specific": false
+  },
+  "proposed_major": {
+    "mic_counts": [
+      1,
+      2,
+      4
+    ],
+    "render_reference_channels": [
+      0,
+      1
+    ],
+    "r2a_only_admitted_io_hz": 16000,
+    "additional_io_rates_not_qualified": [
+      8000,
+      24000,
+      32000,
+      48000
+    ],
+    "capture_clock_authority": "UNKNOWN",
+    "calibration_authority": "UNKNOWN",
+    "two_x_abi_can_be_silently_widened": false,
+    "public_major3_abi_status": "UNIMPLEMENTED_UNFROZEN",
+    "bf_aec_order": "PAIRED_EVIDENCE_NOT_ADMITTED",
+    "config_specific_state_size": "NOT_IMPLEMENTED",
+    "target_C4_full_budget_KiB": 192,
+    "full_C4_system_budget_qualified": false,
+    "c4_r0_array_plus_mono_state_bytes": 81896,
+    "c4_r0_sum_is_full_runtime_budget": false
+  },
+  "claims": {
+    "public_c4_enabled": false,
+    "release_3x_published": false,
+    "shipping_authority": false,
+    "ssc305_dut_qualified": false,
+    "realman_capture_clock_qualified": false,
+    "real_c4_acoustic_gain_qualified": false,
+    "hardened_full_duplex_admitted": false,
+    "e001_product_certified": false
+  },
+  "phases": {
+    "R2B0": "READ_ONLY_PREFLIGHT_ONLY",
+    "R2B1": "BLOCKED_INDEPENDENT_ADMISSION_REQUIRED",
+    "R2B2": "BLOCKED_INDEPENDENT_ADMISSION_REQUIRED",
+    "R2B3": "BLOCKED_INDEPENDENT_ADMISSION_REQUIRED",
+    "R2B4": "BLOCKED_REAL_DEVICE_EVIDENCE"
+  },
+  "workstreams": [
+    {
+      "id": "PUBLIC_ABI",
+      "source": "include/audio_pipeline/audio_pipeline.h",
+      "stage": "R2B2",
+      "reason": "no by-value 2.x struct extension",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "PRIVATE_ARRAY_CORE",
+      "source": "tests/validation/frontend_evolution/fe09_array_sdk_draft_r2a.h",
+      "stage": "R2B1",
+      "reason": "one first-party FIR33 core, C1/C2/C4",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "MULTI_SRC_AND_RENDER",
+      "source": "src/frontend/ap_resampler.h",
+      "stage": "R2B1",
+      "reason": "N physical histories plus independent mono render",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "PIPELINE_LIFECYCLE",
+      "source": "src/core/ap_pipeline.c",
+      "stage": "R2B1",
+      "reason": "caller-owned per-config arena and epochs",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "LINUX_QUEUE",
+      "source": "src/platform/linux/ap_runtime.c",
+      "stage": "R2B2",
+      "reason": "capture queues, API and thread ownership",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "FLIGHT_RECORDER",
+      "source": "include/audio_pipeline/audio_diag.h",
+      "stage": "R2B2",
+      "reason": "versioned dump format/readers and stride",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "BF_AEC_TOPOLOGY",
+      "source": "src/core/ap_pipeline.c",
+      "stage": "R2B3",
+      "reason": "BF->AEC versus AEC->BF paired evidence",
+      "status": "NOT_IMPLEMENTED"
+    },
+    {
+      "id": "DUT_RESOURCE",
+      "source": "docs/API_CONTRACT.md",
+      "stage": "R2B4",
+      "reason": "SSC305 CPU p99 RAM thermal and E001 not qualified",
+      "status": "NOT_IMPLEMENTED"
+    }
+  ],
+  "blockers": [
+    "N_MIC_PLUS_RENDER_SRC_NOT_QUALIFIED",
+    "PUBLIC_V3_ABI_AND_CONSUMER_MIGRATION_UNBUILT",
+    "LINUX_RUNTIME_FLIGHT_RECORDER_V3_NOT_QUALIFIED",
+    "BF_AEC_ORDER_AND_REAL_SPEECH_GAIN_NOT_QUALIFIED",
+    "REALMAN_ADC_SAMPLE_ZERO_CLOCK_AND_CALIBRATION_UNKNOWN",
+    "FULL_C4_192KIB_SYSTEM_RAM_CPU_NOT_MEASURED",
+    "SSC305_10MS_P99_THERMAL_POWER_HIL_E001_NOT_QUALIFIED"
+  ],
+  "source_trace": [
+    {
+      "id": "CMAKE_MAJOR_TWO",
+      "path": "CMakeLists.txt"
+    },
+    {
+      "id": "CMAKE_DEFAULT_C2",
+      "path": "CMakeLists.txt"
+    },
+    {
+      "id": "CMAKE_REJECT_C4",
+      "path": "CMakeLists.txt"
+    },
+    {
+      "id": "PUBLIC_MAX_C2",
+      "path": "include/audio_pipeline/audio_types.h"
+    },
+    {
+      "id": "PUBLIC_10MS",
+      "path": "include/audio_pipeline/audio_types.h"
+    },
+    {
+      "id": "PUBLIC_ARENA_80000",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_CTRL_V2",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_CONFIG_VALUE_STRUCT",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_CONFIG_STRUCT_END",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_METRICS_VALUE_STRUCT",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_METRICS_END",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_GLOBAL_STATE_QUERY",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_CAPTURE_INGRESS",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "PUBLIC_SEPARATE_RENDER",
+      "path": "include/audio_pipeline/audio_pipeline.h"
+    },
+    {
+      "id": "CORE_BF_C2_ONLY",
+      "path": "src/core/ap_pipeline.c"
+    },
+    {
+      "id": "CORE_FIXED_STATE",
+      "path": "src/core/ap_pipeline.c"
+    },
+    {
+      "id": "SRC_THREE_STREAMS",
+      "path": "src/frontend/ap_resampler.h"
+    },
+    {
+      "id": "SRC_HISTORY_LAYOUT",
+      "path": "src/frontend/ap_resampler.h"
+    },
+    {
+      "id": "SRC_UNCHECKED_VOID_API",
+      "path": "src/frontend/ap_resampler.h"
+    },
+    {
+      "id": "SRC_DIRECT_INDEX",
+      "path": "src/frontend/ap_resampler.c"
+    },
+    {
+      "id": "RUNTIME_C2_QUEUE",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "RECORDER_REJECT_C4",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "RECORDER_MIC_STRIDE",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "DUMP_FORMAT_FIELD",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "DUMP_STRIDE_FIELD",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "DUMP_ENDIAN_TAG",
+      "path": "src/platform/linux/ap_runtime.c"
+    },
+    {
+      "id": "DIAG_DUMP_V1",
+      "path": "include/audio_pipeline/audio_diag.h"
+    },
+    {
+      "id": "RUNTIME_SUBMIT_C2",
+      "path": "include/audio_pipeline/audio_runtime.h"
+    },
+    {
+      "id": "RUNTIME_CAPTURE_CLOCK_FIELD",
+      "path": "include/audio_pipeline/audio_runtime.h"
+    },
+    {
+      "id": "R2A_PRIVATE_RATE",
+      "path": "tests/validation/frontend_evolution/fe09_array_sdk_draft_r2a.h"
+    },
+    {
+      "id": "R2A_DRAFT_ONLY",
+      "path": "tests/validation/frontend_evolution/fe09_array_sdk_draft_r2a.h"
+    },
+    {
+      "id": "R2A_UNQUALIFIED_ADC",
+      "path": "tests/validation/frontend_evolution/fe09_array_sdk_draft_r2a.h"
+    },
+    {
+      "id": "PUBLIC_2X_LINE",
+      "path": "docs/API_CONTRACT.md"
+    },
+    {
+      "id": "R1_PROVISIONAL_B",
+      "path": "docs/research/frontend-evolution-v1/FE09_R1_ARRAY_ABI_ADR.md"
+    }
+  ],
+  "source_blobs_sha1": {
+    "CMakeLists.txt": "2c7ac085e04ab8f3b9682698001a50b8a2a0cf75",
+    "include/audio_pipeline/audio_types.h": "f7bc9819d51770d919e0020193205908ad9dcd88",
+    "include/audio_pipeline/audio_pipeline.h": "8df6d78b41610f191de1a3e90704507b58ee4d9d",
+    "src/core/ap_pipeline.c": "7fc79076224fd306dacdf9770f30609cfad27fd3",
+    "src/frontend/ap_resampler.h": "f502b794cdab261d2f57991b54aae44f3703121a",
+    "src/frontend/ap_resampler.c": "24b979221adef7d099cb73ec9b986f17a64d63d7",
+    "src/platform/linux/ap_runtime.c": "9a0013f1983f8e2dc807fd9b8493837f7d53ef83",
+    "include/audio_pipeline/audio_diag.h": "1eff3abd18bcf99f325c2e1370e795a81735344e",
+    "include/audio_pipeline/audio_runtime.h": "57488eb20164cbe78a7b030e33b2fb3b4ef94103",
+    "tests/validation/frontend_evolution/fe09_array_sdk_draft_r2a.h": "656d736eb2ac69933ccfc0cb125189c98fee62da",
+    "docs/API_CONTRACT.md": "bd7be016153ed09c83194bf7d20816e9788a4356",
+    "docs/research/frontend-evolution-v1/FE09_R1_ARRAY_ABI_ADR.md": "f9d1a18263c9be2d98218caca14d6751ac4844b7"
+  }
+}

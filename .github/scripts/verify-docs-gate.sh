@@ -42,3 +42,5 @@ python3 tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5r.p
 python3 tests/validation/frontend_evolution/realman_gym_lag_diagnostic_d2_s6.py self-test
 python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --self-test
 python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --check
+python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py --self-test
+python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py --check

@@ -472,7 +472,8 @@ jobs:
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # Bounded fixed-source network acquisition may need one transient retry.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -521,7 +522,8 @@ jobs:
   frontend-spatial-effects:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # Bounded fixed-source network acquisition may need one transient retry.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:

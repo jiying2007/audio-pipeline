@@ -149,8 +149,17 @@ def classify_repo(base: str, head: str) -> dict:
             "EMPTY_OR_OVERSIZED_DIFF")
     files: list[dict] = []
     for status, path in records:
-        require(status == "M" and PATH.fullmatch(path) is not None,
-                "NON_WORKFLOW_OR_NONMODIFICATION_DIFF")
+        if status != "M" or PATH.fullmatch(path) is None:
+            # Not pure dependency maintenance: existing science/source guards
+            # MUST execute, not be short-circuited by this classifier.
+            return {
+                "schema_version": 1,
+                "base": before, "head": after, "merge_base": common,
+                "pin_only": False,
+                "decision": "NOT_PIN_ONLY_SCIENCE_GUARDS_REMAIN_ACTIVE",
+                "reason": "NON_WORKFLOW_OR_NONMODIFICATION_DIFF",
+                "files_checked": len(records), "replacements": 0,
+            }
         old = command(["git", "show", before + ":" + path],
                       max_bytes=MAX_BYTES_PER_FILE).decode("utf-8")
         new = command(["git", "show", after + ":" + path],

@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "stage": "FE09_R2B2_S0_RUNTIME_RECORDER_PREFLIGHT",
+  "authority": "READ_ONLY_SOURCE_MAP_NONINSTALLED",
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/749",
+  "protected_source_baseline": "e30c1e5e0619f02554077ed81dac312245aa4a31",
+  "source_git_blobs": {
+    "src/platform/linux/ap_runtime.c": "9a0013f1983f8e2dc807fd9b8493837f7d53ef83",
+    "src/core/ap_pipeline_internal.h": "170374e5dd4c98224d71eb53dcfcc4018decbc56",
+    "src/frontend/ap_resampler.c": "24b979221adef7d099cb73ec9b986f17a64d63d7",
+    "src/frontend/ap_beamformer.c": "864ae044e1e1aad3901874401577bb7a3fe9aeed",
+    "include/audio_pipeline/audio_runtime.h": "57488eb20164cbe78a7b030e33b2fb3b4ef94103",
+    "include/audio_pipeline/audio_diag.h": "1eff3abd18bcf99f325c2e1370e795a81735344e",
+    "include/audio_pipeline/audio_pipeline.h": "8df6d78b41610f191de1a3e90704507b58ee4d9d",
+    "tools/apdump.py": "ef141b4eb061c50214dfc4f16d9260dc4f2be1a4",
+    "tools/apreplay.py": "8df2c7bc97d24b2f5f7b79d8e20f0a9c9a167ccc",
+    "tests/diagnostics/generate_fault_dump.c": "72e0435de12a72527677a73d52f3fbbf32caa148",
+    "tests/validation/frontend_evolution/array_native.h": "43982655da027870323024fda88290d5a31055c0",
+    "tests/validation/frontend_evolution/fe09_b1b0_src.c": "6d195d7eb36726f6d4a33410d4df97ad392ec15f",
+    "tests/validation/frontend_evolution/fe09_b1b1_single_bf.c": "0d7579e7b92e788832c55fa95aec821e56b1681e"
+  },
+  "legacy_dump": {
+    "magic": "0x32445041",
+    "format_version": 1,
+    "endian_tag": "0x01020304",
+    "allowed_mics": [
+      1,
+      2
+    ],
+    "header_struct": "<12I24s12s12s12s16s",
+    "record_header_struct": "<QQQII",
+    "recorder_api_version": 1,
+    "runtime_api_version": 1
+  },
+  "future_private_contract": {
+    "candidate_version": "PRIVATE_NEXT_MAJOR_EXPERIMENTAL_NOT_INSTALLED",
+    "physical_mics": [
+      1,
+      2,
+      4
+    ],
+    "render_channels": [
+      0,
+      1
+    ],
+    "ingress_hz": [
+      16000,
+      32000,
+      48000
+    ],
+    "internal_hz": 16000,
+    "frame_ms": 10,
+    "proposed_new_dump_version": 2,
+    "clock_source_authority": "UNKNOWN",
+    "source_epochs_separate": true,
+    "caller_owned_arena": true
+  },
+  "admissions": {
+    "public_sdk_3x_installed": false,
+    "existing_2x_abi_changed": false,
+    "shipping_src_changed": false,
+    "full_c4_192kib_budget_qualified": false,
+    "ssc305_hil_qualified": false,
+    "measured_bf_gain_qualified": false,
+    "real_adc_clock_qualified": false,
+    "aec_qualified": false
+  },
+  "decision": "FE09_R2B2_S0_RUNTIME_RECORDER_PREFLIGHT_RESEARCH_ONLY_NO_PUBLIC_ABI"
+}

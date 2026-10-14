@@ -64,7 +64,7 @@ def git(args: list[str], *, cwd: Path = ROOT, cap: int = MAX_BYTES) -> bytes:
          "GIT_ARGUMENT_BOUND")
     try:
         done = subprocess.run(
-            ["git", *args], cwd=cwd, stdout=subprocess.PIPE,
+            ["git", "-c", "safe.directory=" + str(cwd), *args], cwd=cwd, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, check=False, timeout=45)
     except (OSError, subprocess.TimeoutExpired):
         raise AdmissionDenied("GIT_IO_OR_TIMEOUT") from None
@@ -210,6 +210,22 @@ def receipt(decision: str, reason: str, *, current_main: str = "",
     return result
 
 
+@contextlib.contextmanager
+def t0_exact_checkout_trust():
+    """Limit subprocess Git safe.directory to THIS checkout, never globally."""
+    names = ("GIT_CONFIG_COUNT", "GIT_CONFIG_KEY_0", "GIT_CONFIG_VALUE_0")
+    need(all(not os.environ.get(x) for x in names),
+         "EXTERNAL_GIT_CONFIG_ENV_NOT_TRUSTED")
+    try:
+        os.environ["GIT_CONFIG_COUNT"] = "1"
+        os.environ["GIT_CONFIG_KEY_0"] = "safe.directory"
+        os.environ["GIT_CONFIG_VALUE_0"] = str(ROOT)
+        yield
+    finally:
+        for x in names:
+            os.environ.pop(x, None)
+
+
 def live_probe() -> dict:
     """Do not trust, check out or run the bot's code; its Git objects are DATA."""
     current_main = bot_base = bot_head = ""
@@ -236,7 +252,8 @@ def live_probe() -> dict:
              "FETCHED_BOT_GIT_OBJECT_MISMATCH")
         base_tree = git_sha(["rev-parse", base + "^{tree}"])
         head_tree = git_sha(["rev-parse", head + "^{tree}"])
-        result = t0.classify_repo(base, head)
+        with t0_exact_checkout_trust():
+            result = t0.classify_repo(base, head)
         need(result.get("pin_only") is True and result.get("files_checked") == 55 and
              result.get("replacements") == 108 and
              result.get("decision") ==

@@ -102,6 +102,45 @@ def _yaml_literal_line_numbers(lines: list[str]) -> set[int]:
     return blocked
 
 
+def _actual_step_uses_line_numbers(lines: list[str]) -> set[int]:
+    """Allow only real step-level uses keys in conventional Actions jobs.
+
+    Deliberately fail closed for nonstandard YAML indentation, env/with maps,
+    inline snippets and synthetic string payloads. This is not a YAML parser.
+    The reviewed workflow set uses two-space job/step nesting.
+    """
+    allowed: set[int] = set()
+    seen_jobs = False
+    inside_steps = False
+    inside_step = False
+    for index, raw in enumerate(lines):
+        line = raw.rstrip("\r\n")
+        if re.fullmatch(r"jobs:[ ]*(?:#.*)?", line):
+            seen_jobs = True
+            inside_steps = False
+            inside_step = False
+            continue
+        if not seen_jobs or not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if inside_steps and indent <= 4:
+            inside_steps = False
+            inside_step = False
+        if re.fullmatch(r" {4}steps:[ ]*(?:#.*)?", line):
+            inside_steps = True
+            inside_step = False
+            continue
+        if not inside_steps:
+            continue
+        if re.match(r" {6}-[ ]+", line):
+            inside_step = True
+            if re.match(r" {6}-[ ]+uses:", line):
+                allowed.add(index)
+        elif inside_step and re.match(r" {8}uses:", line):
+            allowed.add(index)
+    return allowed
+
+
 def classify_text(before: str, after: str) -> list[dict] | None:
     if before == after or not before or not after:
         return None
@@ -109,6 +148,8 @@ def classify_text(before: str, after: str) -> list[dict] | None:
     new_lines = after.splitlines(keepends=True)
     old_block = _yaml_literal_line_numbers(old_lines)
     new_block = _yaml_literal_line_numbers(new_lines)
+    old_steps = _actual_step_uses_line_numbers(old_lines)
+    new_steps = _actual_step_uses_line_numbers(new_lines)
     edits: list[dict] = []
     for op, i, i2, j, j2 in difflib.SequenceMatcher(
         None, old_lines, new_lines, autojunk=False
@@ -118,7 +159,8 @@ def classify_text(before: str, after: str) -> list[dict] | None:
         if op != "replace" or i2 - i != j2 - j or i2 == i:
             return None
         for old_index, new_index in zip(range(i, i2), range(j, j2)):
-            if old_index in old_block or new_index in new_block:
+            if (old_index in old_block or new_index in new_block or
+                    old_index not in old_steps or new_index not in new_steps):
                 return None  # A changed script/string payload is not a step uses.
             line_before = old_lines[old_index]
             line_after = new_lines[new_index]
@@ -232,8 +274,10 @@ def self_test() -> None:
         "# v7.0.1", "# v7.0.2").replace(old_codeql, new_codeql)
     edits = classify_text(before, after)
     require(edits is not None and len(edits) == 2, "VALID_PIN_DIFF_REJECTED")
-    plain_old = "        uses: actions/upload-artifact@" + old_pin + "\n"
-    plain_new = "        uses: actions/upload-artifact@" + new_pin + "\n"
+    plain_old = ("jobs:\n  unit:\n    steps:\n"
+                 "      - name: Upload\n"
+                 "        uses: actions/upload-artifact@" + old_pin + "\n")
+    plain_new = plain_old.replace(old_pin, new_pin)
     require(classify_text(plain_old, plain_new) is not None,
             "MISSING_COMMENT_VARIANT_REJECTED")
 
@@ -265,6 +309,24 @@ def self_test() -> None:
                   "        uses: actions/upload-artifact@" + old_pin + "\n")
     require(classify_text(in_env_old, in_env_old.replace(old_pin, new_pin)) is None,
             "YAML_LITERAL_USES_AS_ACTION_ACCEPTED")
+    # A pin-looking env/with/root uses is NOT a GitHub Actions executable step.
+    # A future T1 science skip must not trust non-step YAML strings.
+    nonstep_sources = (
+        ("jobs:\n  x:\n    env:\n"
+         "      uses: actions/upload-artifact@" + old_pin + "\n"),
+        ("jobs:\n  x:\n    steps:\n"
+         "      - name: Task\n"
+         "        with:\n"
+         "          uses: actions/upload-artifact@" + old_pin + "\n"),
+        ("uses: actions/upload-artifact@" + old_pin + "\n"),
+        ("jobs:\n  x:\n    steps:\n"
+         "      - run: echo safe\n"
+         "        env:\n"
+         "          uses: actions/upload-artifact@" + old_pin + "\n"),
+    )
+    for i, source in enumerate(nonstep_sources):
+        require(classify_text(source, source.replace(old_pin, new_pin)) is None,
+                "NONSTEP_YAML_FALSE_ADMISSION_" + str(i))
     require(PATH.fullmatch(".github/workflows/x.yml") is not None and
             PATH.fullmatch("src/audio.c") is None and
             PATH.fullmatch(".github/workflows/x.yml/../../bad") is None,
@@ -273,7 +335,7 @@ def self_test() -> None:
             SHA.fullmatch("v7.0.2") is None,
             "PIN_MUST_BE_FULL_SHA")
     print("WORKFLOW_PIN_ONLY_CLASSIFIER_SELF_TEST_PASS negatives=" +
-          str(len(mutations) + 5))
+          str(len(mutations) + 5 + len(nonstep_sources)))
 
 
 def main() -> None:

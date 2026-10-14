@@ -23,10 +23,10 @@ ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 PROPOSAL = HERE / "workflow_pin_only_bot714_exact_t1.json"
 CLASSIFIER = HERE / "workflow_pin_only_scope.py"
-SOURCE_HEAD = "df106b877334b8584bfc887f6388c34bb1591418"
+SOURCE_HEAD = "3e29c6cc81000741844ecc47962ba43e18e7e502"
 SOURCE_PR = 714
 FILES = 55
-REPLACEMENTS = 107
+REPLACEMENTS = 108
 SHA = re.compile(r"[0-9a-f]{40}")
 PIN_PATH = re.compile(r"\.github/workflows/[A-Za-z0-9_.-]+\.yml")
 READ_CAP = 100_000
@@ -108,7 +108,7 @@ def validate_proposal(data: dict, t0: object) -> None:
             actions[admission[0]] += 1
         total += len(pairs)
     demand(total == REPLACEMENTS and
-           actions == {"actions/upload-artifact": 105,
+           actions == {"actions/upload-artifact": 106,
                        "github/codeql-action/init": 1,
                        "github/codeql-action/analyze": 1},
            "CANDIDATE_COUNTS_CHANGED")
@@ -160,7 +160,7 @@ def replay(t0: object, manifest: dict, receipt_sha: str) -> dict:
             path.write_bytes(current)
             touched.append(entry["path"])
         git(sandbox, "add", ".github/workflows")
-        git(sandbox, "commit", "-qm", "Exact 714 55-workflow 107-pin replay")
+        git(sandbox, "commit", "-qm", "Exact 714 55-workflow 108-pin replay")
         good_head = git(sandbox, "rev-parse", "HEAD")
         os.chdir(sandbox)
         try:

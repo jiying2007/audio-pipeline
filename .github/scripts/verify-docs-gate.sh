@@ -49,3 +49,4 @@ python3 tests/validation/frontend_evolution/fe09_b1b0_src_qualification.py --sel
 python3 tests/validation/frontend_evolution/fe09_b1b1_single_bf_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
+python3 .github/program/workflow_pin_only_replay_t1.py --self-test

@@ -55,7 +55,15 @@ python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
 # in a PR. Avoid an external network dependency for unrelated Verify runs.
 if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then
   test "${GITHUB_BASE_REF:-}" = main
-  changed_t1m1=$(git diff --name-only origin/main...HEAD -- \
+  # A pull_request checkout may expose only refs/pull/<n>/merge, not origin/main.
+  # Its first immutable parent is the checked-out protected PR base tree.
+  set -- $(git rev-list --parents -n 1 HEAD)
+  test "$#" -eq 3
+  case "$2" in
+    *[!0123456789abcdef]*|'') echo 'M1_PR_BASE_OID_MALFORMED' >&2; exit 1 ;;
+  esac
+  test "${#2}" -eq 40
+  changed_t1m1=$(git diff --name-only "$2...HEAD" -- \
     .github/program/workflow_pin_only_actual_tree_t1m1.py)
   if [ "$changed_t1m1" = .github/program/workflow_pin_only_actual_tree_t1m1.py ]; then
     python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --probe-real

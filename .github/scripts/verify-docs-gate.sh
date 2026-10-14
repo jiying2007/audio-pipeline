@@ -47,6 +47,8 @@ python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.
 python3 tests/validation/frontend_evolution/fe09_b1a_ingress_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b1b0_src_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b1b1_single_bf_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_r2b2_runtime_recorder_preflight_s0.py --self-test
+python3 tests/validation/frontend_evolution/fe09_r2b2_runtime_recorder_preflight_s0.py --check
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test

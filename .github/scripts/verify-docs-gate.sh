@@ -52,3 +52,22 @@ python3 tests/validation/frontend_evolution/fe09_r2b2_runtime_recorder_preflight
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
+python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
+# Live GitHub bot Git-object probe only when this very qualifier is modified
+# in a PR. Avoid an external network dependency for unrelated Verify runs.
+if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then
+  test "${GITHUB_BASE_REF:-}" = main
+  # A pull_request checkout may expose only refs/pull/<n>/merge, not origin/main.
+  # Its first immutable parent is the checked-out protected PR base tree.
+  set -- $(git -c "safe.directory=$PWD" rev-list --parents -n 1 HEAD)
+  test "$#" -eq 3
+  case "$2" in
+    *[!0123456789abcdef]*|'') echo 'M1_PR_BASE_OID_MALFORMED' >&2; exit 1 ;;
+  esac
+  test "${#2}" -eq 40
+  changed_t1m1=$(git -c "safe.directory=$PWD" diff --name-only "$2...HEAD" -- \
+    .github/program/workflow_pin_only_actual_tree_t1m1.py)
+  if [ "$changed_t1m1" = .github/program/workflow_pin_only_actual_tree_t1m1.py ]; then
+    python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --probe-real
+  fi
+fi

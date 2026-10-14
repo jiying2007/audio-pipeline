@@ -197,6 +197,18 @@ def commit_sha(revision: str) -> str:
     return sha
 
 
+def plain_workflow_tree_entry_ok(line: str, path: str) -> bool:
+    # A content-only classifier must not admit a mixed executable-bit change.
+    return re.fullmatch(r"100644 blob [0-9a-f]{40}\t" +
+                        re.escape(path) + r"\n", line) is not None
+
+
+def plain_workflow_blob(revision: str, path: str) -> bool:
+    tree = command(["git", "ls-tree", revision, "--", path],
+                   max_bytes=1024).decode("utf-8")
+    return plain_workflow_tree_entry_ok(tree, path)
+
+
 def classify_repo(base: str, head: str) -> dict:
     before = commit_sha(base)
     after = commit_sha(head)
@@ -228,6 +240,16 @@ def classify_repo(base: str, head: str) -> dict:
                 "pin_only": False,
                 "decision": "NOT_PIN_ONLY_SCIENCE_GUARDS_REMAIN_ACTIVE",
                 "reason": "NON_WORKFLOW_OR_NONMODIFICATION_DIFF",
+                "files_checked": len(records), "replacements": 0,
+            }
+        if not (plain_workflow_blob(before, path) and
+                plain_workflow_blob(after, path)):
+            return {
+                "schema_version": 1,
+                "base": before, "head": after, "merge_base": common,
+                "pin_only": False,
+                "decision": "NOT_PIN_ONLY_SCIENCE_GUARDS_REMAIN_ACTIVE",
+                "reason": "WORKFLOW_BLOB_TYPE_OR_MODE_DRIFT",
                 "files_checked": len(records), "replacements": 0,
             }
         old = command(["git", "show", before + ":" + path],
@@ -334,8 +356,18 @@ def self_test() -> None:
     require(SHA.fullmatch(old_pin) is not None and
             SHA.fullmatch("v7.0.2") is None,
             "PIN_MUST_BE_FULL_SHA")
+    sample_path = ".github/workflows/example.yml"
+    valid_entry = "100644 blob " + old_pin + "\t" + sample_path + "\n"
+    require(plain_workflow_tree_entry_ok(valid_entry, sample_path) and
+            not plain_workflow_tree_entry_ok(
+                valid_entry.replace("100644", "100755"), sample_path) and
+            not plain_workflow_tree_entry_ok(
+                valid_entry.replace("100644", "120000"), sample_path) and
+            not plain_workflow_tree_entry_ok(
+                valid_entry.replace(" blob ", " tree "), sample_path),
+            "WORKFLOW_GIT_OBJECT_MODE_NOT_ENFORCED")
     print("WORKFLOW_PIN_ONLY_CLASSIFIER_SELF_TEST_PASS negatives=" +
-          str(len(mutations) + 5 + len(nonstep_sources)))
+          str(len(mutations) + 8 + len(nonstep_sources)))
 
 
 def main() -> None:

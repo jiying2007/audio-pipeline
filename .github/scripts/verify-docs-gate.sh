@@ -50,3 +50,14 @@ python3 tests/validation/frontend_evolution/fe09_b1b1_single_bf_qualification.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
+python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
+# Live GitHub bot Git-object probe only when this very qualifier is modified
+# in a PR. Avoid an external network dependency for unrelated Verify runs.
+if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then
+  test "${GITHUB_BASE_REF:-}" = main
+  changed_t1m1=$(git diff --name-only origin/main...HEAD -- \
+    .github/program/workflow_pin_only_actual_tree_t1m1.py)
+  if [ "$changed_t1m1" = .github/program/workflow_pin_only_actual_tree_t1m1.py ]; then
+    python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --probe-real
+  fi
+fi

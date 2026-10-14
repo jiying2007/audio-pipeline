@@ -294,6 +294,17 @@ def live_probe() -> dict:
             bot_base=bot_base, bot_head=bot_head)
 
 
+@contextlib.contextmanager
+def temporary_current_directory(where: Path):
+    """Python 3.10-compatible, exception-safe Git fixture isolation."""
+    previous = Path.cwd()
+    try:
+        os.chdir(where)
+        yield
+    finally:
+        os.chdir(previous)
+
+
 def fake_bot(base: str, head: str) -> dict:
     return {
         "number": BOT_PR, "state": "open", "draft": False,
@@ -376,7 +387,7 @@ def self_test() -> None:
         git(["add", "."], cwd=area)
         git(["commit", "-qm", "pin only"], cwd=area)
         end = git_sha(["rev-parse", "HEAD"], cwd=area)
-        with contextlib.chdir(area):
+        with temporary_current_directory(area):
             good = t0.classify_repo(start, end)
             need(good.get("pin_only") is True and good.get("files_checked") == 1
                  and good.get("replacements") == 1, "REAL_GIT_VALID_PIN_REJECTED")

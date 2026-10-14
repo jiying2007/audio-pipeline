@@ -191,6 +191,46 @@ def trusted_files(current_main: str) -> tuple[object, dict, dict]:
     return module, expected, hashes
 
 
+def canonical_witness_digest(t0: object, witness: dict) -> str:
+    """Freeze approved workflow+pin content, independent of bot Git ref rebases.
+
+    Every pair must be a previously reviewed first-party T0 action update.
+    No PR HEAD code or unbounded ref revision is accepted as authority.
+    """
+    files = witness.get("files")
+    need(type(files) is list and len(files) == 55, "WITNESS_FILE_COUNT_DRIFT")
+    records: list[dict] = []
+    seen: set[str] = set()
+    count = 0
+    for entry in files:
+        need(type(entry) is dict and set(entry) == {"path", "pairs"},
+             "WITNESS_ENTRY_SCHEMA_DRIFT")
+        path = entry["path"]
+        need(type(path) is str and
+             re.fullmatch(r"\.github/workflows/[A-Za-z0-9_.-]+\.yml", path)
+             is not None and path not in seen, "WITNESS_PATH_OR_DUPLICATE")
+        seen.add(path)
+        pairs = entry["pairs"]
+        need(type(pairs) is list and 0 < len(pairs) <= 70,
+             "WITNESS_PAIR_COUNT_DRIFT")
+        edits = []
+        for pair in pairs:
+            need(type(pair) is list and len(pair) == 2 and
+                 all(type(line) is str and 0 < len(line) < 300
+                     for line in pair), "WITNESS_UNTRUSTED_LINE_PAIR")
+            pin = t0.authorized_line(pair[0] + "\n", pair[1] + "\n")
+            need(pin is not None, "WITNESS_UNAPPROVED_ACTION_PIN")
+            action, old_pin, new_pin = pin
+            edits.append({"action": action, "old": old_pin, "new": new_pin})
+            count += 1
+        records.append({"path": path, "edits": edits})
+    need(count == 108, "WITNESS_PIN_REPLACEMENT_COUNT_DRIFT")
+    records.sort(key=lambda r: r["path"])
+    return hashlib.sha256(
+        json.dumps(records, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
 def receipt(decision: str, reason: str, *, current_main: str = "",
             bot_base: str = "", bot_head: str = "",
             actual_tree_checked: bool = False, extra: dict | None = None) -> dict:
@@ -236,11 +276,10 @@ def live_probe() -> dict:
         base, head = snapshot_metadata(before, current_main, bot_head)
         bot_base = base
         t0, witness, hashes = trusted_files(current_main)
-        # M0 is immutable evidence for an exact *old* proposal. When the bot
-        # rebases, a new witness has to be independently preregistered.
-        need(witness["source_observed_main_sha"] == base and
-             witness["source_bot_head_sha"] == head,
-             "CURRENT_BOT_TREE_NOT_FROZEN_WITNESS")
+        # M0 freezes approved *source content*. Benign bot rebase may move
+        # commit OIDs but must preserve every reviewed action/path/pin edit.
+        # The current protected-main ref and bot ref are always checked twice.
+        frozen_digest = canonical_witness_digest(t0, witness)
         # Fetch *only* exact sha objects from a hardcoded same-repo URL.
         # No remote executable is sourced, imported, checked out or run.
         git(["fetch", "--no-tags", "--no-write-fetch-head",
@@ -260,6 +299,8 @@ def live_probe() -> dict:
              "SCIENCE_NOT_EXECUTED_NON_MEASUREMENT_MAINTENANCE" and
              HEX64.fullmatch(result.get("pin_diff_sha256", "")) is not None,
              "BOT_ACTUAL_GIT_DIFF_NOT_PIN_ONLY")
+        need(result["pin_diff_sha256"] == frozen_digest,
+             "BOT_PIN_DIFF_NOT_EXACT_AUDITED_CONTENT")
         # Read both PR metadata and canonical public branch refs again after
         # parsing the bot OIDs. An in-flight rebase *must* invalidate result.
         after = fetch_public_bot_pr()
@@ -278,6 +319,7 @@ def live_probe() -> dict:
                 "file_count": result["files_checked"],
                 "pin_replacements": result["replacements"],
                 "pin_diff_sha256": result["pin_diff_sha256"],
+                "frozen_witness_content_diff_sha256": frozen_digest,
                 "bot_patch_witness_sha256": hashes["bot_patch_witness_sha256"],
                 "trusted_classifier_sha256": hashes["trusted_classifier_sha256"],
                 "trusted_classifier_git_blob": hashes["trusted_classifier_git_blob"],
@@ -361,6 +403,47 @@ def self_test() -> None:
     else:
         raise AdmissionDenied("DUPLICATE_JSON_ADMITTED")
 
+    # Positive and negative tests of the frozen, old-ref-independent digest.
+    # It must be exactly the unchanged reviewed 55-workflow/108-pin content.
+    raw = (HERE / "workflow_pin_only_bot714_exact_t1.json").read_bytes()
+    frozen = json.loads(raw.decode("utf-8"), object_pairs_hook=strict_pairs)
+    cls_spec = importlib.util.spec_from_file_location(
+        "frozen_m1_witness_t0", HERE / "workflow_pin_only_scope.py")
+    need(cls_spec is not None and cls_spec.loader is not None,
+         "T0_WITNESS_CLASSIFIER_LOADER_UNAVAILABLE")
+    orig = importlib.util.module_from_spec(cls_spec)
+    cls_spec.loader.exec_module(orig)
+    digest = canonical_witness_digest(orig, frozen)
+    need(HEX64.fullmatch(digest) is not None,
+         "FROZEN_DIFF_DIGEST_INVALID")
+    for key, payload in (
+        ("unknown_action", "uses: attacker/not-a-trusted-action@" + "f" * 40),
+        ("floating_tag", "uses: actions/upload-artifact@v7.0.2"),
+        ("fake_pin", "uses: actions/upload-artifact@" + "f" * 40),
+    ):
+        altered = copy.deepcopy(frozen)
+        altered["files"][0]["pairs"][0][1] = payload
+        try:
+            canonical_witness_digest(orig, altered)
+        except AdmissionDenied:
+            pass
+        else:
+            raise AdmissionDenied("FALSE_WITNESS_CONTENT_ADMISSION_" + key)
+    for kind in ("duplicate_path", "wrong_path", "wrong_pair_count"):
+        altered = copy.deepcopy(frozen)
+        if kind == "duplicate_path":
+            altered["files"][1]["path"] = altered["files"][0]["path"]
+        elif kind == "wrong_path":
+            altered["files"][0]["path"] = "src/shipping.c"
+        else:
+            altered["files"][0]["pairs"] = []
+        try:
+            canonical_witness_digest(orig, altered)
+        except AdmissionDenied:
+            pass
+        else:
+            raise AdmissionDenied("FALSE_WITNESS_SHAPE_ADMISSION_" + kind)
+
     # Execute the *original* first-party T0 against actual Git objects in an
     # isolated tiny local repository; never need to fetch untrusted bot code.
     classifier = HERE / "workflow_pin_only_scope.py"
@@ -403,7 +486,8 @@ def self_test() -> None:
          negative["actual_bot_git_tree_checked"] is False,
          "NEGATIVE_RECEIPT_PROMOTED")
     print("T1_M1_ACTUAL_GIT_TREE_SELF_TEST_PASS metadata_negatives=" +
-          str(len(mutants) + 1) + " real_git_mode_negatives=1")
+          str(len(mutants) + 1) + " real_git_mode_negatives=1 " +
+          "witness_diff_negatives=6")
 
 
 def main() -> None:

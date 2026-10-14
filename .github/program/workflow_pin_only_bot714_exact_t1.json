@@ -2,8 +2,8 @@
   "schema_version": 1,
   "source_pr": 714,
   "source_pr_url": "https://github.com/jiying2007/audio-pipeline/pull/714",
-  "source_bot_head_sha": "df106b877334b8584bfc887f6388c34bb1591418",
-  "source_observed_main_sha": "65f8589e708b9a2708699a9514f0c414ad4258ab",
+  "source_bot_head_sha": "3e29c6cc81000741844ecc47962ba43e18e7e502",
+  "source_observed_main_sha": "626fd6a9d29ad5d5f61bc4b643c983f9546327d1",
   "decision": "EXACT_BOT_PROPOSAL_REPLAY_RESEARCH_ONLY_NOT_ADMITTED",
   "files": [
     {
@@ -432,6 +432,10 @@
         [
           "        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
           "        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2"
+        ],
+        [
+          "        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
+          "        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2"
         ]
       ]
     },
@@ -711,5 +715,5 @@
     }
   ],
   "workflow_count": 55,
-  "pin_replacements": 107
+  "pin_replacements": 108
 }

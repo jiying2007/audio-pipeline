@@ -70,7 +70,7 @@ fe_s3_t1_status fe_s3_t1_capture_submit(
     if (!a || !a->bridge || !a->bridge->queue || !pcm ||
         a->depth < 2u || a->depth > FE_S3_T1_MAX_DEPTH ||
         a->mics == 0u || a->mics > 4u ||
-        a->rate != 16000u && a->rate != 32000u && a->rate != 48000u)
+        (a->rate != 16000u && a->rate != 32000u && a->rate != 48000u))
         return FE_T1_EINVAL;
     if (!seq || seq <= a->cap_last || !valid_flags(0, flags) ||
         count != (size_t)(a->rate/100u) * a->mics ||
@@ -108,7 +108,7 @@ fe_s3_t1_status fe_s3_t1_render_submit(
     size_t bytes;
     if (!a || !a->bridge || !a->bridge->queue || !a->render || !pcm ||
         a->depth < 2u || a->depth > FE_S3_T1_MAX_DEPTH ||
-        a->rate != 16000u && a->rate != 32000u && a->rate != 48000u)
+        (a->rate != 16000u && a->rate != 32000u && a->rate != 48000u))
         return FE_T1_EINVAL;
     if (!seq || seq <= a->ref_last || !valid_flags(1,flags) ||
         count != (size_t)(a->rate/100u) ||

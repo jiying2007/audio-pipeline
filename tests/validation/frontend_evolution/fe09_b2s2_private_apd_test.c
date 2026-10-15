@@ -365,6 +365,25 @@ static unsigned mutations(uint8_t *b, size_t total,
          memcmp(&stream, &before, sizeof(before)) == 0, "appended_accepted");
     ++n;
     negative_writer(cfg, seed, &n);
+    /* A successful replay must never overwrite any bytes of the original
+     * APX3 stream via a caller-supplied, overlapping result pointer.
+     * Align the interior pointer explicitly for native/ASan/ARM32.
+     */
+    {
+        const size_t alignment = _Alignof(fe_s2_stream);
+        const size_t offset =
+            (size_t)((alignment - ((uintptr_t)b % alignment)) % alignment);
+        fe_s2_stream *overlap;
+        need(offset + sizeof(fe_s2_stream) <= total,
+             "replay_alias_fixture_not_bounded");
+        overlap = (fe_s2_stream *)(void *)(b + offset);
+        memcpy(SNAP, b, total);
+        need(fe_s2_replay(b, total, visit, NULL, overlap) == FE_S2_EINVAL,
+             "replay_alias_admitted");
+        need(memcmp(SNAP, b, total) == 0,
+             "replay_alias_modified_original_bytes");
+        ++n;
+    }
     need(fe_s2_decode(b, total, &stream) == FE_S2_OK, "mutations_left_damage");
     return n;
 }

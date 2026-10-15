@@ -27,7 +27,7 @@ typedef struct {
 struct fe_b2s1_queue {
     uint32_t magic, depth, rate, mic_count, has_render, input_samples;
     uint32_t source_slots[4];
-    size_t allocated, core_offset, core_bytes, core_work_bytes;
+    size_t allocated, core_offset, core_bytes, core_work_bytes, total_work_bytes;
     fe_b1b1 *core;
     atomic_uint capture_head, capture_tail, render_head, render_tail;
     atomic_uint capture_high_water, render_high_water;
@@ -136,6 +136,7 @@ fe_b2s1_status fe_b2s1_init(void *memory, size_t bytes,
     q->core_offset = offset;
     q->core_bytes = core_bytes;
     q->core_work_bytes = core_work;
+    q->total_work_bytes = fe_b2s1_work_bytes(cfg);
     q->core = core;
     for (i = 0u; i < q->mic_count; ++i)
         q->source_slots[i] = cfg->pipeline.ingress.physical_to_capture_slot[i];
@@ -155,9 +156,14 @@ static int state_ok(const fe_b2s1_queue *q) {
         q->has_render > 1u || q->input_samples != q->rate / 100u ||
         (q->rate != 16000u && q->rate != 32000u && q->rate != 48000u) ||
         q->core_offset != align16(sizeof(*q)) ||
+        q->allocated > B2S1_MAX_STATE ||
+        q->core_offset > q->allocated ||
+        q->core_bytes > q->allocated - q->core_offset ||
         q->allocated != align16(q->core_offset + q->core_bytes) ||
-        q->allocated > B2S1_MAX_STATE || q->core_bytes == 0u ||
-        q->core_work_bytes == 0u ||
+        q->core_bytes == 0u || q->core_work_bytes == 0u ||
+        q->total_work_bytes > B2S1_MAX_WORK ||
+        q->total_work_bytes != align16(align16(q->core_bytes) +
+             q->core_work_bytes + (size_t)320u * sizeof(float)) ||
         q->core != (const void *)((const unsigned char *)q + q->core_offset))
         return 0;
     return 1;
@@ -228,35 +234,75 @@ fe_b2s1_status fe_b2s1_process_one(fe_b2s1_queue *q,
     uint32_t h, t, rh = 0u, rt = 0u, flags = 0u;
     const capture_slot_t *cap;
     const render_slot_t *ref = NULL;
-    size_t core_aligned, needed;
-    unsigned char *scratch;
+    size_t core_aligned;
+    unsigned char *backup, *bf_work;
     float *beam_tmp, *ref_tmp;
     if (!state_ok(q)) return FE_B2S1_ESTATE;
     if (!beam || beam_count != 160u ||
         (q->has_render ? (!reference || reference_count != 160u) :
                          (reference || reference_count)) ||
         !work || ((uintptr_t)work % FE_B2S1_ALIGNMENT) ||
-        work_bytes < (needed = fe_b2s1_work_bytes(&(fe_b2s1_config){
-            .pipeline = { .ingress = {
-                .struct_size = 0u /* Query is not usable without full cfg */
-            } }
-        })) ) {
-        /* The real validated runtime query is implemented below instead. */
+        work_bytes < q->total_work_bytes || work_bytes > B2S1_MAX_WORK ||
+        !disjoint(q, q->allocated, work, work_bytes) ||
+        !disjoint(q, q->allocated, beam, beam_count * sizeof(float)) ||
+        !disjoint(work, work_bytes, beam, beam_count * sizeof(float)) ||
+        !disjoint(q, q->allocated, reference,
+                  reference_count * sizeof(float)) ||
+        !disjoint(work, work_bytes, reference,
+                  reference_count * sizeof(float)) ||
+        !disjoint(beam, beam_count * sizeof(float), reference,
+                  reference_count * sizeof(float)) ||
+        q->processed == UINT64_MAX)
         return FE_B2S1_EINVAL;
+    h = atomic_load_explicit(&q->capture_head, memory_order_acquire);
+    t = atomic_load_explicit(&q->capture_tail, memory_order_relaxed);
+    if (h == t) return FE_B2S1_EEMPTY;
+    if (h - t > q->depth) return FE_B2S1_ESTATE;
+    cap = &q->capture[t % q->depth];
+    if (q->has_render) {
+        rh = atomic_load_explicit(&q->render_head, memory_order_acquire);
+        rt = atomic_load_explicit(&q->render_tail, memory_order_relaxed);
+        if (rh == rt) return FE_B2S1_EEMPTY;
+        if (rh - rt > q->depth) return FE_B2S1_ESTATE;
+        ref = &q->render[rt % q->depth];
+        if (ref->sequence != cap->sequence ||
+            !!(ref->flags & FE_B1B0_CLOCK_RESET) !=
+            !!(cap->flags & FE_B1B0_CLOCK_RESET))
+            return FE_B2S1_EINVAL;
+        if (ref->flags & (FE_B1B0_RENDER_GAP | FE_B2S1_XRUN))
+            flags |= FE_B1B0_RENDER_GAP;
     }
-    (void)needed;
-    (void)h;
-    (void)t;
-    (void)rh;
-    (void)rt;
-    (void)flags;
-    (void)cap;
-    (void)ref;
-    (void)core_aligned;
-    (void)scratch;
-    (void)beam_tmp;
-    (void)ref_tmp;
-    return FE_B2S1_ESTATE;
+    if (cap->flags & (FE_B1B0_CAPTURE_GAP | FE_B2S1_XRUN))
+        flags |= FE_B1B0_CAPTURE_GAP;
+    if (cap->flags & FE_B1B0_CLOCK_RESET)
+        flags = FE_B1B0_CLOCK_RESET;
+    core_aligned = align16(q->core_bytes);
+    backup = (unsigned char *)work;
+    bf_work = backup + core_aligned;
+    beam_tmp = (float *)(void *)(bf_work + q->core_work_bytes);
+    ref_tmp = beam_tmp + 160u;
+    /* Include all first-party SRC+FIR33 state in the transactional snapshot.
+     * Work, outputs and q state have already been checked for any alias.
+     */
+    memcpy(backup, q->core, q->core_bytes);
+    if ((flags && fe_b1b1_notify_gap(q->core, flags) != FE_B1B1_OK) ||
+        fe_b1b1_process(q->core, cap->samples,
+                        (size_t)q->input_samples * q->mic_count,
+                        ref ? ref->samples : NULL,
+                        (size_t)q->input_samples * q->has_render,
+                        beam_tmp, 160u, q->has_render ? ref_tmp : NULL,
+                        (size_t)160u * q->has_render, bf_work,
+                        q->core_work_bytes) != FE_B1B1_OK) {
+        memcpy(q->core, backup, q->core_bytes);
+        return FE_B2S1_ESTATE;
+    }
+    memcpy(beam, beam_tmp, 160u * sizeof(float));
+    if (q->has_render) memcpy(reference, ref_tmp, 160u * sizeof(float));
+    ++q->processed;
+    atomic_store_explicit(&q->capture_tail, t + 1u, memory_order_release);
+    if (q->has_render)
+        atomic_store_explicit(&q->render_tail, rt + 1u, memory_order_release);
+    return FE_B2S1_OK;
 }
 
 fe_b2s1_status fe_b2s1_get_info(const fe_b2s1_queue *q,
@@ -277,8 +323,7 @@ fe_b2s1_status fe_b2s1_get_info(const fe_b2s1_queue *q,
     out->state_bytes = q->allocated;
     out->bf_state_bytes = q->core_bytes;
     out->bf_work_bytes = q->core_work_bytes;
-    out->work_bytes = align16(align16(q->core_bytes) + q->core_work_bytes
-                             + (size_t)320u * sizeof(float));
+    out->work_bytes = q->total_work_bytes;
     out->depth = q->depth;
     out->physical_mics = q->mic_count;
     out->render_channels = q->has_render;

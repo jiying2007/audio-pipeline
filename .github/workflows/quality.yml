@@ -538,6 +538,101 @@ jobs:
           need((root / 'verify.log').read_text(encoding='utf-8') == 'FE09_B2S1_SOURCE_AND_QUEUE_RECEIPT_VERIFIED\n', 'RETAINED_VERIFY_MARKER_DRIFT')
           print('FE09_B2S1_RETAINED_ARTIFACT_INDEPENDENT_READBACK_PASS', os.environ['GITHUB_SHA'])
           PY
+      - name: Qualify FE09 B2-S2 private APX3 C1/C2/C4 on native sanitized and ARM32
+        id: fe09_b2s2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+            --collect --output fe09-b2s2 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+            --verify --output fe09-b2s2 --execution-source "$GITHUB_SHA"
+      - name: Retain FE09 B2-S2 private APX3 evidence including failure records
+        if: always() && (steps.fe09_b2s2.outcome == 'success' || steps.fe09_b2s2.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b2s2-private-apd-${{ github.run_id }}
+          path: fe09-b2s2/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Download this exact B2-S2 four-member artifact from storage
+        if: steps.fe09_b2s2.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-b2s2-private-apd-${{ github.run_id }}
+          path: fe09-b2s2-readback
+      - name: Independently verify retained B2-S2 APX3 source and synthetic-only verdict
+        if: steps.fe09_b2s2.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(test, why):
+              if not test:
+                  raise SystemExit(why)
+          root = Path('fe09-b2s2-readback')
+          expect = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *expect},
+               'B2S2_ARTIFACT_MEMBER_SET_DRIFT')
+          for name, cap in (('SHA256SUMS', 2048), ('receipt.json', 65536),
+                            ('collect.log', 1048576), ('verify.log', 256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap, 'B2S2_MEMBER_BOUNDS_' + name)
+          lines = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
+          need(len(lines) == 3, 'B2S2_SHA_MANIFEST_COUNT')
+          for name, line in zip(expect, lines):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(line == f'{digest}  {name}', 'B2S2_INNER_SHA256_' + name)
+          rec = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
+          need(type(rec) is dict and
+               rec.get('source_commit') == os.environ['GITHUB_SHA'] and
+               rec.get('decision') ==
+               'FE09_R2B2_S2_PRIVATE_APD_V2_READ_WRITE_REPLAY_RESEARCH_ONLY_NO_PUBLIC_ABI',
+               'B2S2_EXACT_SOURCE_OR_DECISION_DRIFT')
+          need(rec.get('target_order') == ['native', 'sanitized', 'arm'] and
+               rec.get('old_reader_reject_new_magic') is True and
+               rec.get('new_reader_reject_old_magic') is True and
+               rec.get('source_role') == 'first-party-synthetic',
+               'B2S2_FORMAT_OR_TARGET_AUTHORITY_DRIFT')
+          targets = rec.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native', 'sanitized', 'arm'},
+               'B2S2_TARGET_MEMBERS_DRIFT')
+          for target in ('native', 'sanitized', 'arm'):
+              data = targets[target]
+              need(type(data) is dict and
+                   data.get('source_role') == 'first-party-synthetic' and
+                   data.get('decision') == rec['decision'] and
+                   data.get('profile_count') == 12 and
+                   data.get('replay_subcases') == 24 and
+                   type(data.get('total_negatives')) is int and
+                   data['total_negatives'] >= 1440,
+                   'B2S2_UNQUALIFIED_TARGET_' + target)
+              for key in ('public_sdk_installed', 'actual_device_clock_qualified',
+                          'legacy_apd2_modified', 'ssc305_dut_qualified'):
+                  need(data.get(key) is False,
+                       'B2S2_INVALID_TARGET_AUTHORITY_' + target + '_' + key)
+          for key in ('public_api_installed', 'publication_permission',
+                      'real_clock_measured', 'ssc305_dut_qualified',
+                      'physical_four_mic_acoustic_gain_measured',
+                      'concurrent_spsc_tsan_qualified',
+                      'hosted_perf_is_device_budget'):
+              need(rec.get(key) is False, 'B2S2_INVALID_AUTHORITY_' + key)
+          need((root / 'verify.log').read_text(encoding='utf-8') ==
+               'FE09_B2S2_SOURCE_AND_APX3_RECEIPT_VERIFIED\n',
+               'B2S2_VERIFY_MARKER_DRIFT')
+          print('FE09_B2S2_RETAINED_APX3_ARTIFACT_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
       - name: Generate and verify FE03 A1 exact-source numerical receipt
         id: fe03_a1
         shell: bash

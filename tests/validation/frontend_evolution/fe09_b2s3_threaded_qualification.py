@@ -69,7 +69,8 @@ def file_sha(path: Path) -> str:
 
 
 def old_sources() -> dict:
-    need(s2.BASE == BASE, "S2_QUALIFIED_SOURCE_SHA_DRIFT")
+    need(s2.BASE == "580d2b565f62fc9b29ef9237b498898c89e51b05",
+         "S2_QUALIFIED_PREDECESSOR_SHA_DRIFT")
     upstream = s2.frozen_source_identity()
     pins = {}
     for rel in PRIOR_SOURCE_PATHS:

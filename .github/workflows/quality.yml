@@ -489,20 +489,29 @@ jobs:
 
           root = Path('fe09-b2s1-readback')
           expected = ('receipt.json', 'collect.log', 'verify.log')
-          actual = {f.name for f in root.iterdir() if f.is_file()}
-          assert actual == {'SHA256SUMS', *expected}, 'ARTIFACT_MEMBER_SET_DRIFT'
+          def need(condition, code):
+              if not condition:
+                  raise SystemExit(code)
+          # The artifact is externally downloaded into its own directory.
+          # Check all entries, not just files; -O cannot bypass these gates.
+          actual = {item.name for item in root.iterdir()}
+          need(actual == {'SHA256SUMS', *expected}, 'ARTIFACT_MEMBER_SET_DRIFT')
+          for name, limit in (('SHA256SUMS', 1024), ('receipt.json', 65536),
+                              ('collect.log', 1048576), ('verify.log', 256)):
+              need((root / name).is_file() and (root / name).stat().st_size <= limit,
+                   'RETAINED_MEMBER_SIZE_OR_TYPE_DRIFT_' + name)
           manifest = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
-          assert len(manifest) == len(expected), 'ARTIFACT_MANIFEST_SHAPE_DRIFT'
+          need(len(manifest) == len(expected), 'ARTIFACT_MANIFEST_SHAPE_DRIFT')
           for line, name in zip(manifest, expected):
               digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
-              assert line == f'{digest}  {name}', 'RETAINED_MEMBER_SHA256_MISMATCH_' + name
+              need(line == f'{digest}  {name}', 'RETAINED_MEMBER_SHA256_MISMATCH_' + name)
           receipt = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
-          assert receipt['source_commit'] == os.environ['GITHUB_SHA'], 'RETAINED_SOURCE_SHA_DRIFT'
-          assert receipt['decision'] == 'FE09_R2B2_S1_PRIVATE_LINUX_QUEUE_RUNTIME_RESEARCH_ONLY_NO_PUBLIC_ABI', 'RETAINED_VERDICT_DRIFT'
-          assert receipt['source_role'] == 'first-party-synthetic', 'RETAINED_SOURCE_ROLE_DRIFT'
+          need(receipt['source_commit'] == os.environ['GITHUB_SHA'], 'RETAINED_SOURCE_SHA_DRIFT')
+          need(receipt['decision'] == 'FE09_R2B2_S1_PRIVATE_LINUX_QUEUE_RUNTIME_RESEARCH_ONLY_NO_PUBLIC_ABI', 'RETAINED_VERDICT_DRIFT')
+          need(receipt['source_role'] == 'first-party-synthetic', 'RETAINED_SOURCE_ROLE_DRIFT')
           for key in ('public_sdk_installed', 'publication_permission', 'hosted_cpu_p99_is_device_budget'):
-              assert receipt[key] is False, 'RETAINED_NONPROMOTION_DRIFT_' + key
-          assert (root / 'verify.log').read_text(encoding='utf-8') == 'FE09_B2S1_SOURCE_AND_QUEUE_RECEIPT_VERIFIED\n', 'RETAINED_VERIFY_MARKER_DRIFT'
+              need(receipt[key] is False, 'RETAINED_NONPROMOTION_DRIFT_' + key)
+          need((root / 'verify.log').read_text(encoding='utf-8') == 'FE09_B2S1_SOURCE_AND_QUEUE_RECEIPT_VERIFIED\n', 'RETAINED_VERIFY_MARKER_DRIFT')
           print('FE09_B2S1_RETAINED_ARTIFACT_INDEPENDENT_READBACK_PASS', os.environ['GITHUB_SHA'])
           PY
       - name: Generate and verify FE03 A1 exact-source numerical receipt

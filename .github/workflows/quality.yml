@@ -508,9 +508,33 @@ jobs:
           receipt = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
           need(receipt['source_commit'] == os.environ['GITHUB_SHA'], 'RETAINED_SOURCE_SHA_DRIFT')
           need(receipt['decision'] == 'FE09_R2B2_S1_PRIVATE_LINUX_QUEUE_RUNTIME_RESEARCH_ONLY_NO_PUBLIC_ABI', 'RETAINED_VERDICT_DRIFT')
-          need(receipt['source_role'] == 'first-party-synthetic', 'RETAINED_SOURCE_ROLE_DRIFT')
-          for key in ('public_sdk_installed', 'publication_permission', 'hosted_cpu_p99_is_device_budget'):
-              need(receipt[key] is False, 'RETAINED_NONPROMOTION_DRIFT_' + key)
+          # Receipt-level authority and per-target C-execution verdicts are
+          # separate schemas. Do not accept a top-level substitute for the
+          # source_role/public_sdk_installed fields emitted by each target.
+          need(receipt.get('target_order') == ['native', 'sanitized', 'arm'],
+               'RETAINED_TARGET_ORDER_DRIFT')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native', 'sanitized', 'arm'},
+               'RETAINED_TARGET_SET_DRIFT')
+          for target in ('native', 'sanitized', 'arm'):
+              row = targets[target]
+              need(type(row) is dict, 'RETAINED_TARGET_SCHEMA_DRIFT_' + target)
+              need(row.get('source_role') == 'first-party-synthetic',
+                   'RETAINED_SOURCE_ROLE_DRIFT_' + target)
+              for key in ('public_sdk_installed', 'actual_apd_v2_writer',
+                          'real_adc_clock_qualified', 'ssc305_dut_qualified',
+                          'full_c4_system_budget_qualified'):
+                  need(row.get(key) is False,
+                       'RETAINED_TARGET_NONPROMOTION_DRIFT_' + target + '_' + key)
+          for key in ('shipping_src_changed', 'public_sdk_3x_installed',
+                      'new_apd_v2_writer_installed', 'new_apd_v2_parser_installed',
+                      'measured_real_bf_gain', 'real_adc_clock_qualified',
+                      'ssc305_device_qualified', 'complete_c4_192kib_qualified',
+                      'aec_qualified', 'untrusted_audio_downloaded',
+                      'publication_permission', 'hosted_cpu_p99_is_device_budget'):
+              need(receipt.get(key) is False,
+                   'RETAINED_NONPROMOTION_DRIFT_' + key)
           need((root / 'verify.log').read_text(encoding='utf-8') == 'FE09_B2S1_SOURCE_AND_QUEUE_RECEIPT_VERIFIED\n', 'RETAINED_VERIFY_MARKER_DRIFT')
           print('FE09_B2S1_RETAINED_ARTIFACT_INDEPENDENT_READBACK_PASS', os.environ['GITHUB_SHA'])
           PY

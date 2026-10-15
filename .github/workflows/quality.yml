@@ -451,6 +451,25 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Qualify FE09 R2B2-S1 private C1/C2/C4 SPSC ingress plus first-party SRC/BF
+        id: fe09_b2s1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+            --collect --output fe09-b2s1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+            --verify --output fe09-b2s1 --execution-source "$GITHUB_SHA"
+      - name: Retain FE09 R2B2-S1 private queue+first-party BF evidence and failures
+        if: always() && (steps.fe09_b2s1.outcome == 'success' || steps.fe09_b2s1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b2s1-private-queue-${{ github.run_id }}
+          path: fe09-b2s1/
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Generate and verify FE03 A1 exact-source numerical receipt
         id: fe03_a1
         shell: bash

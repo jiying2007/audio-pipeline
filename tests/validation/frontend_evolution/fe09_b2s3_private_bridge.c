@@ -112,6 +112,13 @@ fe_s3_status fe_s3_bridge_step(fe_s3_bridge *b,
         !disjoint(b->shadow, b->shadow_bytes, reference,
                   reference_count * sizeof(float)))
         return FE_S3_EINVAL;
+    /* Check final commit bounds BEFORE consuming the S1 source queues.
+     * There must be no fallible checks after successful first-party BF.
+     */
+    off = FE_S2_HEADER_BYTES + (size_t)b->processed * b->record_stride;
+    if (off > b->record_bytes ||
+        b->record_stride > b->record_bytes - off)
+        return FE_S3_EINVAL;
     /* Transaction preflight on full caller-owned private shadow bytes.
      * S2 writes a deterministic record slot, never the retained file.
      */
@@ -129,9 +136,6 @@ fe_s3_status fe_s3_bridge_step(fe_s3_bridge *b,
         if (status == FE_B2S1_EINVAL) return FE_S3_EMISMATCH;
         return FE_S3_ECORE;
     }
-    off = FE_S2_HEADER_BYTES + (size_t)b->processed * b->record_stride;
-    if (off > b->record_bytes || b->record_stride > b->record_bytes - off)
-        return FE_S3_ECORE; /* unreachable after verified begin/bounds */
     memcpy(b->writer->output + off, b->shadow + off, b->record_stride);
     b->writer->appended = shadow_writer.appended;
     b->writer->last_sequence = shadow_writer.last_sequence;

@@ -470,6 +470,41 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Download retained B2-S1 evidence from this exact Actions run
+        if: steps.fe09_b2s1.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-b2s1-private-queue-${{ github.run_id }}
+          path: fe09-b2s1-readback
+      - name: Independently rehash uploaded B2-S1 members and source-only verdict
+        if: steps.fe09_b2s1.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path('fe09-b2s1-readback')
+          expected = ('receipt.json', 'collect.log', 'verify.log')
+          actual = {f.name for f in root.iterdir() if f.is_file()}
+          assert actual == {'SHA256SUMS', *expected}, 'ARTIFACT_MEMBER_SET_DRIFT'
+          manifest = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
+          assert len(manifest) == len(expected), 'ARTIFACT_MANIFEST_SHAPE_DRIFT'
+          for line, name in zip(manifest, expected):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              assert line == f'{digest}  {name}', 'RETAINED_MEMBER_SHA256_MISMATCH_' + name
+          receipt = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
+          assert receipt['source_commit'] == os.environ['GITHUB_SHA'], 'RETAINED_SOURCE_SHA_DRIFT'
+          assert receipt['decision'] == 'FE09_R2B2_S1_PRIVATE_LINUX_QUEUE_RUNTIME_RESEARCH_ONLY_NO_PUBLIC_ABI', 'RETAINED_VERDICT_DRIFT'
+          assert receipt['source_role'] == 'first-party-synthetic', 'RETAINED_SOURCE_ROLE_DRIFT'
+          for key in ('public_sdk_installed', 'publication_permission', 'hosted_cpu_p99_is_device_budget'):
+              assert receipt[key] is False, 'RETAINED_NONPROMOTION_DRIFT_' + key
+          assert (root / 'verify.log').read_text(encoding='utf-8') == 'FE09_B2S1_SOURCE_AND_QUEUE_RECEIPT_VERIFIED\n', 'RETAINED_VERIFY_MARKER_DRIFT'
+          print('FE09_B2S1_RETAINED_ARTIFACT_INDEPENDENT_READBACK_PASS', os.environ['GITHUB_SHA'])
+          PY
       - name: Generate and verify FE03 A1 exact-source numerical receipt
         id: fe03_a1
         shell: bash

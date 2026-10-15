@@ -227,8 +227,10 @@ static int reject_unchanged(fe_b2s1_queue *q, size_t bytes,
 }
 #define REJECT(q,need,expr,status) do { \
     memcpy(SNAPSHOT, STATE, (need)); \
-    if (reject_unchanged((q),(need),(expr),(status)) != 0) \
-        return -1; ++negatives; \
+    if (reject_unchanged((q),(need),(expr),(status)) != 0) { \
+        return -1; \
+    } \
+    ++negatives; \
 } while (0)
 
 static int negatives_profile(const scene_t *sc, uint32_t rate,

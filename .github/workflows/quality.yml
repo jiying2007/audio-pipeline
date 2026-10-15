@@ -627,7 +627,7 @@ jobs:
                       'hosted_perf_is_device_budget'):
               need(rec.get(key) is False, 'B2S2_INVALID_AUTHORITY_' + key)
           need((root / 'verify.log').read_text(encoding='utf-8') ==
-               'FE09_B2S2_SOURCE_AND_APX3_RECEIPT_VERIFIED\\n',
+               'FE09_B2S2_SOURCE_AND_APX3_RECEIPT_VERIFIED\n',
                'B2S2_VERIFY_MARKER_DRIFT')
           print('FE09_B2S2_RETAINED_APX3_ARTIFACT_READBACK_PASS',
                 os.environ['GITHUB_SHA'])

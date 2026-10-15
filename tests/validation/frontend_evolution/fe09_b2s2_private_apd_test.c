@@ -319,6 +319,8 @@ static unsigned mutations(uint8_t *b, size_t total,
     }
     for (i = 0u; i < 20u; ++i)
         negative_parse(b, total, (size_t)i * 4u, 0, 0u, 0u, &n);
+    /* New parser must explicitly reject the unchanged legacy APD2/v1 magic. */
+    negative_set32(b, total, 0u, UINT32_C(0x32445041), 0, stride, &n);
     negative_set32(b, total, 0u, FE_S2_MAGIC + 1u, 0, stride, &n);
     negative_set32(b, total, 4u, 3u, 0, stride, &n);
     negative_set32(b, total, 8u, UINT32_C(0x04030201), 0, stride, &n);

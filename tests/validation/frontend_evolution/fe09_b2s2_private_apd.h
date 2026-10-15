@@ -75,6 +75,8 @@ typedef struct {
 /* Callback only runs after the complete immutable stream validates.
  * PCM is little-endian bytes, NOT host-aligned int16_t*. A visitor error
  * may have caller-side effects, so such effects belong to the caller.
+ * If non-NULL, the decoded output result must be disjoint from the entire
+ * input file. An overlapping result fails before any visitor invocation.
  */
 typedef int (*fe_s2_visitor)(
     const fe_s2_stream *stream, uint32_t index, uint64_t sequence,

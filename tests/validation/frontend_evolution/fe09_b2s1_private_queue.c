@@ -276,7 +276,16 @@ fe_b2s1_status fe_b2s1_process_one(fe_b2s1_queue *q,
         flags |= FE_B1B0_CAPTURE_GAP;
     if (cap->flags & FE_B1B0_CLOCK_RESET)
         flags = FE_B1B0_CLOCK_RESET;
+    /* Trust-bound the exact snapshot bytes at this call site as well as in
+     * state_ok(); strict GCC fortify must see a finite memcpy object bound. */
+    if (q->core_bytes == 0u || q->core_bytes > B2S1_MAX_STATE ||
+        q->core_bytes > work_bytes ||
+        q->total_work_bytes < q->core_bytes)
+        return FE_B2S1_ESTATE;
     core_aligned = align16(q->core_bytes);
+    if (!core_aligned || core_aligned > work_bytes ||
+        q->core_work_bytes > work_bytes - core_aligned)
+        return FE_B2S1_ESTATE;
     backup = (unsigned char *)work;
     bf_work = backup + core_aligned;
     beam_tmp = (float *)(void *)(bf_work + q->core_work_bytes);

@@ -364,6 +364,16 @@ def collect(out: Path, source: str) -> None:
         receipt["decision"] = FAILURE
         receipt["failure_type"] = type(exc).__name__
         receipt["failure_code"] = str(exc)[:200]
+        # Tool.run captures failed compiler/fixture output in collect.log.
+        # Emit only a bounded tail so the exact failing line is actionable
+        # without downloading a ZIP or suppressing failure.
+        import sys
+        diagnostic = "\\n".join(logs[-5:])[-4500:]
+        print("FE09_B2S3_T1_FAILED_EXECUTION_DIAGNOSTIC_BEGIN",
+              file=sys.stderr)
+        print(diagnostic, file=sys.stderr)
+        print("FE09_B2S3_T1_FAILED_EXECUTION_DIAGNOSTIC_END",
+              file=sys.stderr)
         raise
     finally:
         (out / "receipt.json").write_text(

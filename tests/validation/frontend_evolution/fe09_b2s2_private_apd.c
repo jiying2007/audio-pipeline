@@ -322,6 +322,12 @@ fe_s2_status fe_s2_replay(const uint8_t *bytes, size_t byte_count,
     fe_s2_visitor visitor, void *context, fe_s2_stream *out) {
     fe_s2_stream stream;
     size_t ncap, nrender, k;
+    /* The source bytes must remain immutable even after replay succeeds.
+     * Decode uses a private result, so additionally reject a caller result
+     * that aliases any byte of the original APX3 file before callbacks run.
+     */
+    if (out && !disjoint(out, sizeof(*out), bytes, byte_count))
+        return FE_S2_EINVAL;
     if (!visitor || fe_s2_decode(bytes, byte_count, &stream) != FE_S2_OK)
         return FE_S2_EFORMAT;
     ncap = (size_t)(stream.config.rate_hz / 100u) *

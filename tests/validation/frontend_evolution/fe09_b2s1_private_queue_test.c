@@ -354,7 +354,6 @@ static int negatives_profile(const scene_t *sc, uint32_t rate,
         REJECT(q,state_bytes,fe_b2s1_process_one(q,beam,160u,ref,0u,WORK,work_bytes),
                FE_B2S1_EINVAL);
     }
-    MUST(memcmp(beam,(unsigned char[sizeof(beam)]){0},0u)==0); /* no-op */
     MUST(fe_b2s1_get_info(q,&info)==FE_B2S1_OK && info.capture_queued==1u);
     if (sc->render) MUST(info.render_queued==1u);
     /* Invalid future sequence and ordering: exact byte-level rejection. */

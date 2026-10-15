@@ -179,11 +179,11 @@ static unsigned t1_negative_source(void) {
         switch(i%8u) {
         case 0u:
             bits=(uint16_t)T.capture[0][i%original.capture_count];
-            T.capture[0][i%original.capture_count]^=(int16_t)1;
+            T.capture[0][i%original.capture_count]=(int16_t)(T.capture[0][i%original.capture_count]^1);
             break;
         case 1u:
             bits=(uint16_t)T.reference[0][i%original.render_count];
-            T.reference[0][i%original.render_count]^=(int16_t)1;
+            T.reference[0][i%original.render_count]=(int16_t)(T.reference[0][i%original.render_count]^1);
             break;
         case 2u: altered.sequence+=(uint64_t)i+1u; break;
         case 3u: altered.capture_flags=FE_B1B0_CAPTURE_GAP; break;
@@ -275,7 +275,7 @@ int main(int argc,char **argv) {
         return 2;
     }
     must(sizeof(unsigned int)==4u,"ATOMIC_UINT_IS_NOT_UINT32");
-    printf("{\"schema_version\":1,\"decision\":\"FE09_R2B2_S3_T1_EXACT_SOURCE_WRAP_RESEARCH_ONLY_NO_PUBLIC_ABI\",\"source_role\":\"first-party-synthetic\",\"public_sdk_installed\":false,\"physical_clock_qualified\":false,\"ssc305_dut_qualified\":false,\"actual_tsan_fixture\":true,\"profiles\":[");
+    printf("{\"schema_version\":1,\"decision\":\"FE09_R2B2_S3_T1_EXACT_SOURCE_WRAP_RESEARCH_ONLY_NO_PUBLIC_ABI\",\"source_role\":\"first-party-synthetic\",\"public_sdk_installed\":false,\"physical_clock_qualified\":false,\"ssc305_dut_qualified\":false,\"actual_threaded_fixture\":true,\"profiles\":[");
     for(s=0u;s<4u;++s)for(r=0u;r<3u;++r)
         for(render=0u;render<2u;++render)
             for(depth=2u;depth<=4u;depth+=2u) {

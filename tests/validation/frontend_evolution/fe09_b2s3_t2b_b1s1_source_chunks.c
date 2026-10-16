@@ -245,7 +245,10 @@ fe_b1s1_status fe_b1s1_append_one(fe_b1s1_store *s,
     s->chunk_bytes[s->committed]=(uint32_t)finished;
     memcpy(s->manifest[s->committed],row,FE_B1S1_ROW_BYTES);
     ++s->committed;
-    s->last_global_capture=cap->sequence;
+    /* SPSC source slot is reusable after process_one released its tail;
+     * never dereference cap/ref after that point. Worker-only q.processed
+     * is the exact committed global sequence. */
+    s->last_global_capture=q->processed;
     return FE_B1S1_OK;
 }
 typedef struct {

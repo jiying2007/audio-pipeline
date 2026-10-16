@@ -301,7 +301,15 @@ static uint64_t one_profile(const scene_t *sc,uint32_t rate,
     must(memcmp(A.q_snapshot,A.qstate,state_size)==0 &&
          memcmp(A.snapshot,A.record,A.recorder.total_bytes)==0,
          "T2A_OLD_APX3_MODIFIED_BY_NEW_SESSION");
-    digest=hash(digest,&R,sizeof(R));
+    digest=hash(digest,&R.schema_version,sizeof(R.schema_version));
+    digest=hash(digest,&R.reason,sizeof(R.reason));
+    digest=hash(digest,&R.owner_acks,sizeof(R.owner_acks));
+    digest=hash(digest,&R.old_capture_source_id,sizeof(R.old_capture_source_id));
+    digest=hash(digest,&R.new_capture_source_id,sizeof(R.new_capture_source_id));
+    digest=hash(digest,&R.old_recorder_committed,sizeof(R.old_recorder_committed));
+    digest=hash(digest,&R.old_generation,sizeof(R.old_generation));
+    digest=hash(digest,&R.new_generation,sizeof(R.new_generation));
+    digest=hash(digest,&R.old_processed,sizeof(R.old_processed));
     digest=hash(digest,&rate,sizeof(rate));
     digest=hash(digest,&render,sizeof(render));
     digest=hash(digest,&depth,sizeof(depth));

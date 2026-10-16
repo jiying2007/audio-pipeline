@@ -156,6 +156,7 @@ fe_b1s1_status fe_b1s1_append_one(fe_b1s1_store *s,
     fe_s2_config scfg;
     fe_s2_frame f;
     fe_s2_writer w;
+    fe_s2_stream decoded_precommit;
     uint8_t scratch[FE_B1S1_MAX_CHUNK_BYTES],row[FE_B1S1_ROW_BYTES];
     uint8_t chunk_digest[FE_B1S1_SHA256_BYTES];
     if(!prepared(s)||s->committed>=FE_B1S1_MAX_CHUNKS||
@@ -228,9 +229,20 @@ fe_b1s1_status fe_b1s1_append_one(fe_b1s1_store *s,
     f.capture_count=nc;
     f.render=scfg.render_channels?ref->pcm:NULL;
     f.render_count=scfg.render_channels?nr:0u;
+    /* Entire ORIGINAL first-party APX3 header, record and CRC must
+     * validate *before* the real SPSC worker can release source tails/BF.
+     * Postcommit verification alone cannot provide atomic rollback.
+     */
     if(fe_s2_writer_append(&w,&f)!=FE_S2_OK||
        fe_s2_writer_finish(&w,&finished)!=FE_S2_OK||
        finished!=expected_total||
+       fe_s2_decode(scratch,finished,&decoded_precommit)!=FE_S2_OK||
+       decoded_precommit.frames!=1u||
+       decoded_precommit.total_bytes!=finished||
+       decoded_precommit.config.capture_source_id!=
+            q->cfg.capture_source_id||
+       decoded_precommit.config.render_channels!=scfg.render_channels||
+       decoded_precommit.config.render_source_id!=scfg.render_source_id||
        fe_b1s1_sha256(scratch,finished,chunk_digest)!=0)
         return FE_B1S1_ORIGINAL_CODEC;
     if(make_row(row,s,cap,ref,event,finished,chunk_digest)!=0||

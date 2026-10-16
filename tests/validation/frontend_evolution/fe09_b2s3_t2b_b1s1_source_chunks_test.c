@@ -325,6 +325,18 @@ static void negative_replay_matrix(void) {
     must(fe_b1s1_verify(&STORE,&verified)==FE_B1S1_REJECT,
          "B1S1_MISSING_LAST_CHUNK_ACCEPTED");
     STORE.committed=old_count;++NEGATIVES;
+    /* Adversarial coordinated rollback of BOTH sidecar high-water fields
+     * must not make the source's already committed 24th BF/PCM disappear.
+     */
+    STORE.committed=old_count-1u;
+    STORE.last_global_capture=old_seq-1u;
+    verified=UINT32_C(0x89abcdef);
+    must(fe_b1s1_verify(&STORE,&verified)==FE_B1S1_REJECT &&
+         verified==UINT32_C(0x89abcdef),
+         "B1S1_COORDINATED_ROLLBACK_FALSE_COMPLETE");
+    STORE.committed=old_count;
+    STORE.last_global_capture=old_seq;
+    ++NEGATIVES;
     must(fe_b1s1_verify(&STORE,&verified)==FE_B1S1_OK &&
          verified==old_count,
          "B1S1_TAMPER_RECOVERY_NO_ORIGINAL_REPLAY");

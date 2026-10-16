@@ -17,6 +17,17 @@
 static fe_b1s1_store STORE;
 static uint32_t NEGATIVES;
 static uint64_t CONTROL,FIR_HASH;
+static uint8_t SOURCE_SAMPLE[FE_B1S1_MAX_CHUNK_BYTES];
+static uint8_t MANIFEST_SAMPLE[FE_B1S1_ROW_BYTES];
+static size_t SOURCE_SAMPLE_BYTES;
+static void print_hex(const uint8_t *p,size_t n) {
+    static const char *digits="0123456789abcdef";
+    size_t i;
+    for(i=0u;i<n;++i) {
+        putchar(digits[p[i]>>4u]);
+        putchar(digits[p[i]&15u]);
+    }
+}
 
 static void must_sha_vector(const uint8_t *bytes,size_t count,
                             const uint8_t expected[32]) {
@@ -312,6 +323,16 @@ int main(void) {
       for(d=2u;d<=4u;d+=2u)for(r=0u;r<2u;++r) {
         uint64_t bh=0u;
         uint64_t one_hash=one(&SCENES[i],RATES[j],d,r,&bh);
+        if(i==3u&&j==2u&&d==4u&&r==1u) {
+            SOURCE_SAMPLE_BYTES=STORE.chunk_bytes[B1_FRAMES-1u];
+            must(SOURCE_SAMPLE_BYTES>0u&&
+                 SOURCE_SAMPLE_BYTES<=FE_B1S1_MAX_CHUNK_BYTES,
+                 "B1S1_SAMPLE_BOUNDS");
+            memcpy(SOURCE_SAMPLE,STORE.chunks[B1_FRAMES-1u],
+                   SOURCE_SAMPLE_BYTES);
+            memcpy(MANIFEST_SAMPLE,STORE.manifest[B1_FRAMES-1u],
+                   FE_B1S1_ROW_BYTES);
+        }
         if(profiles) putchar(',');
         digest=(digest^one_hash)*FNV_PRIME;
         printf("{\"scene\":\"%s\",\"rate\":%u,\"render_enabled\":%u,\"depth\":%u,\"frames\":%u,\"chunk_count\":%u,\"control_hash\":\"%016" PRIx64 "\",\"bf_hash\":\"%016" PRIx64 "\"}",
@@ -321,7 +342,12 @@ int main(void) {
       }
     must(profiles==48u&&NEGATIVES>=720u,
          "B1S1_REAL_CODEC_REPLAY_NEGATIVE_MATRIX_NOT_COMPLETE");
-    printf("],\"profile_count\":%u,\"negative_checks\":%u,\"control_digest\":\"%016" PRIx64 "\"}\n",
+    must(SOURCE_SAMPLE_BYTES>0u,"B1S1_C_SAMPLE_NOT_CAPTURED");
+    printf("],\"profile_count\":%u,\"negative_checks\":%u,\"control_digest\":\"%016" PRIx64 "\",\"source_chunk_hex\":\"",
            profiles,NEGATIVES,digest);
+    print_hex(SOURCE_SAMPLE,SOURCE_SAMPLE_BYTES);
+    printf("\",\"source_manifest_hex\":\"");
+    print_hex(MANIFEST_SAMPLE,FE_B1S1_ROW_BYTES);
+    printf("\"}\n");
     return 0;
 }

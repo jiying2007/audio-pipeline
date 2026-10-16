@@ -96,7 +96,6 @@ def identity(commit: str) -> dict:
         "source_role": "first-party-synthetic",
         "own_sha256": {str(p.relative_to(ROOT)): file_sha(p) for p in OWN},
         "frozen_predecessor_sha256": frozen(),
-        "capture_bf_continuity_software_qualified": True,
         "real_source_attestation_qualified": False,
         "render_optional_recorder_qualified": False,
         "spsc_liveness_qualified": False,
@@ -261,6 +260,7 @@ def verify_output(output: Path, commit: str) -> None:
     for key, value in identity(commit).items():
         need(rec.get(key) == value, "SOURCE_OR_FROZEN_ID_CHANGED_" + key)
     need(rec.get("decision") == DECISION and
+         rec.get("capture_bf_continuity_software_qualified") is True and
          rec.get("target_order") == list(TARGETS) and
          rec.get("actual_first_party_src_and_fir33") is True and
          rec.get("paired_oracle_counterfactual_only") is True and
@@ -290,6 +290,9 @@ def collect(output: Path, commit: str) -> None:
     need(tools.source_head() == commit, "WRONG_RUNNING_HEAD")
     receipt = identity(commit)
     receipt["decision"] = FAILURE
+    # A failed compiler/test/sanitizer job must not carry a true acceptance
+    # flag in the retained failure Artifact, even if preregistration is valid.
+    receipt["capture_bf_continuity_software_qualified"] = False
     logs: list[str] = []
     output.mkdir(parents=True)
     try:
@@ -367,6 +370,7 @@ def collect(output: Path, commit: str) -> None:
         check_targets(targets)
         receipt.update({
             "decision": DECISION,
+            "capture_bf_continuity_software_qualified": True,
             "target_order": list(TARGETS),
             "target_results": targets,
             "compiler_versions": versions,

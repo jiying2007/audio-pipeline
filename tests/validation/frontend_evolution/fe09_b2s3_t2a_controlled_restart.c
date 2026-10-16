@@ -18,6 +18,7 @@ static int source_view(fe_s3_t1_source_witness *w,
                        fe_b2s1_info *q) {
     fe_s3_bridge *b;
     fe_s2_writer *writer;
+    size_t total = 0u, stride = 0u;
     if (!w || !q || !(b = w->bridge) || !b->queue ||
         !(writer = b->writer) || !writer->output || !b->shadow ||
         w->mics == 0u || w->mics > 4u || w->render > 1u ||
@@ -32,6 +33,8 @@ static int source_view(fe_s3_t1_source_witness *w,
         writer->config.physical_mics != w->mics ||
         writer->config.render_channels != w->render ||
         writer->config.rate_hz != w->rate ||
+        b->capture_source_id != writer->config.capture_source_id ||
+        b->render_source_id != writer->config.render_source_id ||
         writer->config.capture_source_id == 0u ||
         ((writer->config.render_source_id == 0u) != (w->render == 0u)) ||
         (w->render && writer->config.render_source_id ==
@@ -42,6 +45,11 @@ static int source_view(fe_s3_t1_source_witness *w,
         writer->config.capture_epoch == 0u ||
         writer->config.render_epoch != (w->render ? 1u : 0u) ||
         b->processed != writer->appended ||
+        writer->target_frames == 0u ||
+        writer->target_frames > FE_S2_MAX_FRAMES ||
+        fe_s2_layout(&writer->config, writer->target_frames,
+                     &total, &stride) != FE_S2_OK ||
+        writer->total_bytes != total || writer->record_stride != stride ||
         writer->appended > writer->target_frames ||
         writer->capacity == 0u || writer->capacity > FE_S2_MAX_BYTES ||
         b->shadow_bytes == 0u || b->shadow_bytes > FE_S2_MAX_BYTES ||
@@ -173,7 +181,7 @@ fe_t2a_status fe_t2a_restart(fe_t2a_gate *g,
     fe_s2_writer *ow, *nw;
     fe_b2s1_info qi, ni;
     fe_t2a_receipt entry;
-    uint32_t old_cap, old_ref, new_cap, new_ref, i;
+    uint32_t old_cap, old_ref, new_cap, new_ref, max_old_source, i;
     if (!g || !receipt || !expected_generation ||
         expected_generation == UINT64_MAX ||
         atomic_load_explicit(&g->phase, memory_order_acquire) !=
@@ -193,11 +201,12 @@ fe_t2a_status fe_t2a_restart(fe_t2a_gate *g,
     old_ref = ow->config.render_source_id;
     new_cap = nw->config.capture_source_id;
     new_ref = nw->config.render_source_id;
+    max_old_source = old_cap > old_ref ? old_cap : old_ref;
     if (qi.depth != ni.depth || qi.physical_mics != ni.physical_mics ||
         qi.render_channels != ni.render_channels || qi.input_hz != ni.input_hz ||
         !memory_separate(old, &qi, next, &ni, g, receipt) ||
-        new_cap <= old_cap || new_cap == old_ref ||
-        (next->render && (new_ref <= old_ref || new_ref == old_cap ||
+        new_cap <= max_old_source ||
+        (next->render && (new_ref <= max_old_source ||
                           new_ref == new_cap)) ||
         (next->render == 0u && new_ref != 0u) ||
         ni.processed != 0u || ni.capture_submitted != 0u ||

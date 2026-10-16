@@ -108,7 +108,7 @@ fe_b1s1_status fe_b1s1_init(fe_b1s1_store *s,
     for(i=0u;i<4u;++i)s->physical_to_slot[i]=slots[i];
     return prepared(s)?FE_B1S1_OK:FE_B1S1_REJECT;
 }
-static void make_row(uint8_t row[FE_B1S1_ROW_BYTES],
+static int make_row(uint8_t row[FE_B1S1_ROW_BYTES],
      const fe_b1s1_store *s,const fe_b1s0_capture_slot *cap,
      const fe_b1s0_render_slot *ref,uint32_t event,size_t bytes,
      const uint8_t sha[32]) {
@@ -136,10 +136,14 @@ static void make_row(uint8_t row[FE_B1S1_ROW_BYTES],
     for(i=0u;i<4u;++i)
         p32(row+88u+4u*i,s->physical_to_slot[i]);
     memcpy(row+104u,sha,32u);
-    if(s->committed)
-        memcpy(row+136u,s->manifest[s->committed-1u]+
-               FE_B1S1_ROW_DIGEST_OFFSET,32u);
-    /* Caller digests canonical row prefix [0..168) before publication. */
+    if(s->committed &&
+       fe_b1s1_sha256(s->manifest[s->committed-1u],
+                       FE_B1S1_ROW_BYTES,row+136u)!=0)
+        return -1;
+    /* Manifest prev link attests FULL previous canonical 200-byte row;
+     * caller digests this row's canonical [0..168) before publication.
+     */
+    return 0;
 }
 fe_b1s1_status fe_b1s1_append_one(fe_b1s1_store *s,
     float *beam,size_t bcount,float *render_ref,size_t rcount,
@@ -229,8 +233,8 @@ fe_b1s1_status fe_b1s1_append_one(fe_b1s1_store *s,
        finished!=expected_total||
        fe_b1s1_sha256(scratch,finished,chunk_digest)!=0)
         return FE_B1S1_ORIGINAL_CODEC;
-    make_row(row,s,cap,ref,event,finished,chunk_digest);
-    if(fe_b1s1_sha256(row,FE_B1S1_ROW_DIGEST_OFFSET,
+    if(make_row(row,s,cap,ref,event,finished,chunk_digest)!=0||
+       fe_b1s1_sha256(row,FE_B1S1_ROW_DIGEST_OFFSET,
                       row+FE_B1S1_ROW_DIGEST_OFFSET)!=0)
         return FE_B1S1_ORIGINAL_CODEC;
     /* LAST FALLIBLE operation is the frozen source-authorized B1-S0
@@ -351,7 +355,8 @@ fe_b1s1_status fe_b1s1_verify(const fe_b1s1_store *s,
         if(fe_s2_replay(chunk,n,replay,&ctx,NULL)!=FE_S2_OK||
            ctx.visited!=1u)
             return FE_B1S1_TAMPER;
-        memcpy(prior,row+FE_B1S1_ROW_DIGEST_OFFSET,32u);
+        if(fe_b1s1_sha256(row,FE_B1S1_ROW_BYTES,prior)!=0)
+            return FE_B1S1_TAMPER;
     }
     *checked=s->committed;
     return FE_B1S1_OK;

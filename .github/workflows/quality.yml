@@ -1215,6 +1215,118 @@ jobs:
                 os.environ['GITHUB_SHA'])
           PY
 
+  frontend-s3-t2b-b1s0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute FE09 T2-B B1-S0 actual Capture/Render source-owner pthread SPSC
+        id: fe09_b1s0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py \
+            --collect --output fe09-b1s0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py \
+            --verify --output fe09-b1s0 --execution-source "$GITHUB_SHA"
+      - name: Retain T2B_B1S0 real owner SPSC source identity and failure evidence
+        if: always() && (steps.fe09_b1s0.outcome == 'success' || steps.fe09_b1s0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t2b-b1s0-owner-spsc-${{ github.run_id }}
+          path: fe09-b1s0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Independently download exact T2B_B1S0 four-member Artifact
+        if: steps.fe09_b1s0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t2b-b1s0-owner-spsc-${{ github.run_id }}
+          path: fe09-b1s0-readback
+      - name: Check external T2B_B1S0 owner SPSC verdict and rehash
+        if: steps.fe09_b1s0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(cond, code):
+              if not cond:
+                  raise SystemExit(code)
+          root = Path('fe09-b1s0-readback')
+          parts = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *parts},
+               'T2B_B1S0_ARTIFACT_MEMBERS_DRIFT')
+          for name, cap in (('SHA256SUMS',1024),('receipt.json',262144),
+                            ('collect.log',2097152),('verify.log',256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap,
+                   'T2B_B1S0_ARTIFACT_MEMBER_SIZE_' + name)
+          rows = (root / 'SHA256SUMS').read_text('ascii').splitlines()
+          need(len(rows) == 3, 'T2B_B1S0_ARTIFACT_SHA_ROWS')
+          for name, row in zip(parts, rows):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(row == f'{digest}  {name}',
+                   'T2B_B1S0_INNER_SHA_DRIFT_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text('utf-8'))
+          verdict = 'FE09_T2B_B1S0_OWNER_WITNESS_SPSC_CAPTURE_BF_NO_RECORDER'
+          need(type(receipt) is dict and
+               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
+               receipt.get('decision') == verdict and
+               receipt.get('qualified_after_actual_four_target_execution') is True and
+               receipt.get('source_role') == 'first-party-synthetic' and
+               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
+               receipt.get('no_cryptographic_source_auth') is True and
+               receipt.get('physical_absence_or_clock_qualified') is False and
+               receipt.get('apx3_recorder_qualified') is False,
+               'T2B_B1S0_FALSE_CONTINUITY')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native','sanitized','arm','tsan'},
+               'T2B_B1S0_UNQUALIFIED_TARGETS')
+          for target in ('native','sanitized','arm','tsan'):
+              value = targets[target]
+              need(type(value) is dict and
+                   value.get('decision') == verdict and
+                   value.get('real_pthread_source_owners') is True and
+                   value.get('capture_bf_continuity_software') is True and
+                   value.get('apx3_recording_qualified') is False and
+                   value.get('profile_count') == 48 and
+                   type(value.get('negative_checks')) is int and
+                   value['negative_checks'] >= 600 and
+                   value.get('device_qualified') is False and
+                   value.get('source_absence_physical_verified') is False and
+                   value.get('public_sdk_installed') is False,
+                   'T2B_B1S0_TARGET_FAKE_LIVENESS_' + target)
+          for key in ('physical_absence_or_clock_qualified',
+                      'apx3_recorder_qualified',
+                      'ssc305_device_qualified','public_sdk_installed',
+                      'shipping_dsp_modified','legacy_apd2_modified'):
+              need(receipt.get(key) is False,
+                   'T2B_B1S0_FALSE_PRODUCT_AUTHORITY_' + key)
+          need((root / 'verify.log').read_text('ascii') ==
+               'FE09_T2B_B1S0_FIRST_PARTY_SOURCE_QUALIFIED\n',
+               'T2B_B1S0_VERIFY_LOG_NOT_EXACT')
+          print('FE09_T2B_B1S0_OWNER_SPSC_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

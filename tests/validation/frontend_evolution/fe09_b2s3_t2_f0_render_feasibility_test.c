@@ -56,6 +56,21 @@ static void source_pair_concurrently(fe_b2s1_queue *q,
     must(cap.outcome == FE_B2S1_OK && ref.outcome == FE_B2S1_OK,
          "F0_REAL_SOURCE_SUBMISSIONS");
 }
+
+static void reject_undocumented_capture_skip(
+    fe_b2s1_queue *q, uint64_t next_seq,
+    const int16_t *capture, size_t count, unsigned *violations) {
+    size_t bytes = T.queue ? fe_b2s1_state_bytes(&T.config) : 0u;
+    must(bytes > 0u && bytes <= sizeof(T.q_snapshot),
+         "F0_NO_GAP_STATE_CAPACITY");
+    memcpy(T.q_snapshot, T.qstate, bytes);
+    must(fe_b2s1_submit_capture(q, next_seq, 0u,
+                                capture, count) == FE_B2S1_EINVAL,
+         "F0_MISSING_CAPTURE_GAP_WAS_ACCEPTED");
+    must(memcmp(T.q_snapshot, T.qstate, bytes) == 0,
+         "F0_MISSING_CAPTURE_GAP_MODIFIED_SOURCE");
+    ++*violations;
+}
 static uint64_t bounded_negative(const scene_t *scene, uint32_t rate,
                                  uint32_t depth, uint32_t mode,
                                  unsigned *violations) {
@@ -95,14 +110,18 @@ static uint64_t bounded_negative(const scene_t *scene, uint32_t rate,
                                  fe_b2s1_work_bytes(&T.config)) == FE_B2S1_OK,
              "F0_INITIAL_MATCHED_PROCESS");
         produce_pcm(scene, rate, 3u, capture_samples, reference_samples);
+        reject_undocumented_capture_skip(T.queue, 3u, capture_samples,
+                                          cap_count, violations);
         source_pair_concurrently(
             T.queue, capture_samples, cap_count, 3u, FE_B1B0_CAPTURE_GAP,
             reference_samples, ref_count, 2u, 0u);
     } else if (mode == 1u) {
         /* Render behind capture: the source continuity obligation was
          * already broken (first capture 2 explicitly CAPTURE_GAP).
-         * Therefore BF histories cannot be claimed preserved.
+         * Prove a false clean seq-2 is rejected before admitting it.
          */
+        reject_undocumented_capture_skip(T.queue, 2u, capture_samples,
+                                          cap_count, violations);
         source_pair_concurrently(
             T.queue, capture_samples, cap_count, 2u, FE_B1B0_CAPTURE_GAP,
             reference_samples, ref_count, 1u, 0u);

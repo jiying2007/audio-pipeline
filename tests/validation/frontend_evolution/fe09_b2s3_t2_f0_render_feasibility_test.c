@@ -69,7 +69,7 @@ static uint64_t bounded_negative(const scene_t *scene, uint32_t rate,
     fe_s2_writer writer_prior;
     fe_b2s1_status got;
     fe_s3_status bridge_status;
-    int16_t cap_pcm[1920], ref_pcm[480];
+    int16_t capture_samples[1920], reference_samples[480];
     float out[160], ref_out[160];
     uint8_t saved_out[sizeof(out)], saved_ref[sizeof(ref_out)];
     unsigned round;
@@ -78,43 +78,43 @@ static uint64_t bounded_negative(const scene_t *scene, uint32_t rate,
     real_bytes = fe_b2s1_state_bytes(&T.config);
     must(real_bytes > 0u && real_bytes <= sizeof(T.q_snapshot),
          "F0_QUEUE_CAPACITY");
-    produce_pcm(scene, rate, 1u, cap_pcm, ref_pcm);
+    produce_pcm(scene, rate, 1u, capture_samples, reference_samples);
     if (mode == 2u) {
         /* One real matched frame has been consumed on S1, but S2 is
          * deliberately independent. Subsequent capture skips 2 -> 3
          * only under explicit CAPTURE_GAP; reference queues real seq 2.
          */
         must(fe_b2s1_submit_capture(T.queue, 1u, 0u,
-                                   cap_pcm, cap_count) == FE_B2S1_OK,
+                                   capture_samples, cap_count) == FE_B2S1_OK,
              "F0_INITIAL_CAPTURE");
         must(fe_b2s1_submit_render(T.queue, 1u, 0u,
-                                  ref_pcm, ref_count) == FE_B2S1_OK,
+                                  reference_samples, ref_count) == FE_B2S1_OK,
              "F0_INITIAL_RENDER");
         must(fe_b2s1_process_one(T.queue, out, 160u,
                                  ref_out, 160u, T.work,
                                  fe_b2s1_work_bytes(&T.config)) == FE_B2S1_OK,
              "F0_INITIAL_MATCHED_PROCESS");
-        produce_pcm(scene, rate, 3u, cap_pcm, ref_pcm);
+        produce_pcm(scene, rate, 3u, capture_samples, reference_samples);
         source_pair_concurrently(
-            T.queue, cap_pcm, cap_count, 3u, FE_B1B0_CAPTURE_GAP,
-            ref_pcm, ref_count, 2u, 0u);
+            T.queue, capture_samples, cap_count, 3u, FE_B1B0_CAPTURE_GAP,
+            reference_samples, ref_count, 2u, 0u);
     } else if (mode == 1u) {
         /* Render behind capture: the source continuity obligation was
          * already broken (first capture 2 explicitly CAPTURE_GAP).
          * Therefore BF histories cannot be claimed preserved.
          */
         source_pair_concurrently(
-            T.queue, cap_pcm, cap_count, 2u, FE_B1B0_CAPTURE_GAP,
-            ref_pcm, ref_count, 1u, 0u);
+            T.queue, capture_samples, cap_count, 2u, FE_B1B0_CAPTURE_GAP,
+            reference_samples, ref_count, 1u, 0u);
     } else if (mode == 0u) {
         /* Render ahead: missing render 1 cannot be synthesized. */
         source_pair_concurrently(
-            T.queue, cap_pcm, cap_count, 1u, 0u,
-            ref_pcm, ref_count, 2u, FE_B1B0_RENDER_GAP);
+            T.queue, capture_samples, cap_count, 1u, 0u,
+            reference_samples, ref_count, 2u, FE_B1B0_RENDER_GAP);
     } else {
         /* Explicitly missing Render => EEMPTY, never fabricate silence. */
         must(fe_b2s1_submit_capture(T.queue, 1u, 0u,
-                                   cap_pcm, cap_count) == FE_B2S1_OK,
+                                   capture_samples, cap_count) == FE_B2S1_OK,
              "F0_CAPTURE_WITHOUT_RENDER");
     }
     must(fe_b2s1_get_info(T.queue, &previous) == FE_B2S1_OK,
@@ -158,9 +158,9 @@ static uint64_t bounded_negative(const scene_t *scene, uint32_t rate,
         fe_s2_frame frame;
         memset(&frame, 0, sizeof(frame));
         frame.sequence = 1u;
-        frame.capture = cap_pcm;
+        frame.capture = capture_samples;
         frame.capture_count = cap_count;
-        frame.render = ref_pcm;
+        frame.render = reference_samples;
         frame.render_count = ref_count;
         frame.capture_epoch = 1u;
         frame.render_epoch = 1u;

@@ -161,11 +161,6 @@ static fe_b1s0_status ref_submit(fe_b1s0_state *q,
         if(epoch!=1u || flag) return FE_B1S0_REJECT;
     } else {
         if(kind==FE_B1S0_RENDER_PRESENT &&
-           (flag==FE_B1S0_RENDER_GAP) !=
-           (q->producer_prior_absent!=0u && flag==FE_B1S0_RENDER_GAP ||
-            q->producer_prior_absent==0u && flag==FE_B1S0_RENDER_GAP))
-            return FE_B1S0_REJECT;
-        if(kind==FE_B1S0_RENDER_PRESENT &&
            q->producer_prior_absent && flag!=FE_B1S0_RENDER_GAP)
             return FE_B1S0_REJECT;
         if(flag && expected_epoch==UINT32_MAX) return FE_B1S0_REJECT;
@@ -230,6 +225,14 @@ fe_b1s0_status fe_b1s0_process_one(fe_b1s0_state *q,
        !separate(q->core,sizeof(*q->core),beam,beam_count*sizeof(float)) ||
        !separate(q->core,sizeof(*q->core),refout,ref_count*sizeof(float)) ||
        !separate(q->core,sizeof(*q->core),receipt,sizeof(*receipt)) ||
+       !separate(q->core->capture_bf,q->core->capture_state_bytes,
+                 beam,beam_count*sizeof(float)) ||
+       !separate(q->core->capture_bf,q->core->capture_state_bytes,
+                 refout,ref_count*sizeof(float)) ||
+       !separate(q->core->capture_bf,q->core->capture_state_bytes,
+                 work,work_bytes) ||
+       !separate(q->core->capture_bf,q->core->capture_state_bytes,
+                 receipt,sizeof(*receipt)) ||
        !separate(receipt,sizeof(*receipt),work,work_bytes) ||
        !separate(receipt,sizeof(*receipt),beam,beam_count*sizeof(float)) ||
        !separate(receipt,sizeof(*receipt),refout,ref_count*sizeof(float)) ||

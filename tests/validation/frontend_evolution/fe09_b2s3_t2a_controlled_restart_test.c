@@ -24,6 +24,7 @@ typedef struct {
     fe_t2a_gate *g;
     uint64_t generation;
     atomic_uint first_done, second_start, second_done, processed, mismatch;
+    atomic_uint allow_worker_ack;
     uint32_t render, negative_checks;
 } context_t;
 static context_t C;
@@ -112,6 +113,8 @@ static void *worker_owner(void *opaque) {
          "T2A_MISMATCH_FALSELY_CONSUMED");
     atomic_store_explicit(&c->mismatch,1u,memory_order_release);
     wait_stopping(c->g);
+    /* Hold the last required ACK until supervisor tests early restart. */
+    wait_u32(&c->allow_worker_ack,1u,"T2A_WORKER_ACK_RELEASE");
     o->ack=fe_t2a_ack_stopped(c->g,c->generation,FE_T2A_WORKER_OWNER);
     return NULL;
 }
@@ -193,6 +196,7 @@ static uint64_t one_profile(const scene_t *sc,uint32_t rate,
     atomic_init(&C.second_done,0u);
     atomic_init(&C.processed,0u);
     atomic_init(&C.mismatch,0u);
+    atomic_init(&C.allow_worker_ack,0u);
     produce_pcm(sc,rate,1u,A.capture[0],render?A.reference[0]:NULL);
     produce_pcm(sc,rate,2u,A.capture[1],render?A.reference[1]:NULL);
     must(pthread_create(&ct,NULL,source_owner,&cap)==0,"T2A_CAPTURE_THREAD");
@@ -220,6 +224,10 @@ static uint64_t one_profile(const scene_t *sc,uint32_t rate,
     ++*negative_checks;
     must(fe_t2a_request_stop(&G,1u,FE_T2A_REASON_XRUN)==FE_T2A_DENIED,
          "T2A_DOUBLE_STOP"); ++*negative_checks;
+    /* Worker still has not acknowledged; no cutover may occur. */
+    must(fe_t2a_restart(&G,1u,&WB,&R)==FE_T2A_DENIED,
+         "T2A_PREMATURE_CUTOVER"); ++*negative_checks;
+    atomic_store_explicit(&C.allow_worker_ack,1u,memory_order_release);
     must(pthread_join(ct,NULL)==0,"T2A_CAPTURE_JOIN");
     if(render) must(pthread_join(rt,NULL)==0,"T2A_RENDER_JOIN");
     must(pthread_join(wt,NULL)==0,"T2A_WORKER_JOIN");
@@ -249,6 +257,25 @@ static uint64_t one_profile(const scene_t *sc,uint32_t rate,
     must(fe_t2a_restart(&G,1u,&WB,&R)==FE_T2A_DENIED,
          "T2A_SOURCE_ID_REUSE"); ++*negative_checks;
     B.recorder.config.capture_source_id=config.capture_source_id;
+    if(render) {
+        /* Greater than old Capture but below old Render: would permit
+         * cross-domain source ID recycling without a GLOBAL monotone floor. */
+        B.recorder.config.capture_source_id=
+            A.recorder.config.render_source_id-1u;
+        B.bridge.capture_source_id=B.recorder.config.capture_source_id;
+        must(fe_t2a_restart(&G,1u,&WB,&R)==FE_T2A_DENIED,
+             "T2A_CROSS_DOMAIN_SOURCE_ID_REUSE"); ++*negative_checks;
+        B.recorder.config.capture_source_id=config.capture_source_id;
+        B.bridge.capture_source_id=config.capture_source_id;
+    }
+    B.bridge.capture_source_id=0u;
+    must(fe_t2a_restart(&G,1u,&WB,&R)==FE_T2A_DENIED,
+         "T2A_BRIDGE_SOURCE_AUTHORITY_DRIFT"); ++*negative_checks;
+    B.bridge.capture_source_id=config.capture_source_id;
+    B.recorder.target_frames=0u;
+    must(fe_t2a_restart(&G,1u,&WB,&R)==FE_T2A_DENIED,
+         "T2A_ZERO_RECORDING_TARGET"); ++*negative_checks;
+    B.recorder.target_frames=2u;
     WB.cap_last=2u;
     must(fe_t2a_restart(&G,1u,&WB,&R)==FE_T2A_DENIED,
          "T2A_NONFRESH_WITNESS"); ++*negative_checks;

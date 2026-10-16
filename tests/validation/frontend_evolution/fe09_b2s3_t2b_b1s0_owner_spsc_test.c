@@ -406,9 +406,59 @@ static uint64_t profile(const scene_t *sc,uint32_t rate,
     *negatives+=P.negative;
     return id;
 }
+/* Force an actual post-Render, pre-Capture DSP validation failure.
+ * A successful temporary reference resample must NOT leak into the adapter,
+ * queue, BF core, user beam/ref or receipt when Capture fails atomically.
+ * Corruption is injected ONLY in this noninstalled test before worker call.
+ */
+static uint32_t render_then_capture_core_failure_negative(void) {
+    int16_t cap[1920],refpcm[480];
+    fe_b1s0_receipt receipt, prior_receipt;
+    fe_b1s0_state prior_queue;
+    fe_t2b_b0 prior_adapter;
+    uint8_t prior_bf[B1_STATE];
+    float beam[160],ref[160],prior_beam[160],prior_ref[160];
+    _Alignas(16) uint8_t work[B1_WORK];
+    uint32_t k;
+    memset(&P,0,sizeof(P));
+    first_party_oracle_init(&SCENES[1],16000u,2u,1u);
+    produce_pcm(P.scene,P.rate,1u,cap,refpcm);
+    must(fe_b1s0_capture_submit(&P.q,P.cfg.capture_source_id,
+        P.cfg.source_generation,1u,cap,320u)==FE_B1S0_OK &&
+         fe_b1s0_render_present(&P.q,P.cfg.render_source_id,
+        P.cfg.source_generation,1u,1u,0u,refpcm,160u)==FE_B1S0_OK,
+         "B1_FAULT_FIXTURE_REAL_SOURCE_SUBMISSION");
+    prior_queue=P.q;
+    prior_adapter=P.adapter;
+    for(k=0u;k<160u;++k) { beam[k]=-55.0f;ref[k]=-66.0f; }
+    memset(&receipt,0x96,sizeof(receipt));
+    memcpy(prior_beam,beam,sizeof(beam));
+    memcpy(prior_ref,ref,sizeof(ref));
+    memcpy(&prior_receipt,&receipt,sizeof(receipt));
+    P.core_state[0]^=(uint8_t)0x49u;
+    memcpy(prior_bf,P.core_state,sizeof(prior_bf));
+    must(fe_b1s0_process_one(&P.q,beam,160u,ref,160u,
+             work,sizeof(work),&receipt)==FE_B1S0_CORE &&
+         memcmp(&prior_queue,&P.q,sizeof(P.q))==0 &&
+         memcmp(&prior_adapter,&P.adapter,sizeof(P.adapter))==0 &&
+         memcmp(prior_bf,P.core_state,sizeof(prior_bf))==0 &&
+         memcmp(prior_beam,beam,sizeof(beam))==0 &&
+         memcmp(prior_ref,ref,sizeof(ref))==0 &&
+         memcmp(&prior_receipt,&receipt,sizeof(receipt))==0,
+         "B1_POST_RENDER_DSP_FAILURE_NOT_ATOMIC");
+    P.core_state[0]^=(uint8_t)0x49u;
+    must(fe_b1s0_process_one(&P.q,beam,160u,ref,160u,
+             work,sizeof(work),&receipt)==FE_B1S0_OK &&
+         receipt.capture_sequence==1u &&
+         receipt.reference_actual_pcm==1u &&
+         P.q.processed==1u && P.q.actual_render_frames==1u,
+         "B1_SOURCE_RECOVERY_AFTER_REJECT");
+    return 1u;
+}
 int main(void) {
     uint32_t i,j,d,r,profiles=0u,negatives=0u;
     uint64_t digest=FNV0;
+    negatives+=render_then_capture_core_failure_negative();
     printf("{\"schema_version\":1,\"decision\":\"FE09_T2B_B1S0_OWNER_WITNESS_SPSC_CAPTURE_BF_NO_RECORDER\",\"source_role\":\"first-party-synthetic\",\"real_pthread_source_owners\":true,\"capture_bf_continuity_software\":true,\"source_absence_physical_verified\":false,\"apx3_recording_qualified\":false,\"device_qualified\":false,\"public_sdk_installed\":false,\"profiles\":[");
     for(i=0u;i<4u;++i) for(j=0u;j<3u;++j)
       for(d=2u;d<=4u;d+=2u) for(r=0u;r<2u;++r) {

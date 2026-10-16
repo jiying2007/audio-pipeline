@@ -157,7 +157,22 @@ fe_s3_t1_status fe_s3_t1_step(
         (!nref&&f->render) || f->capture_timestamp_valid ||
         f->render_timestamp_valid ||
         !disjoint(a,sizeof(*a),f->capture,ncap*sizeof(int16_t)) ||
-        !disjoint(a,sizeof(*a),f->render,nref*sizeof(int16_t)))
+        !disjoint(a,sizeof(*a),f->render,nref*sizeof(int16_t)) ||
+        beam_count != 160u || !beam ||
+        (a->render ? (!render_ref || ref_count != 160u) :
+                     (render_ref || ref_count)) ||
+        !work || work_bytes == 0u || work_bytes > 65536u ||
+        !disjoint(a,sizeof(*a),beam,beam_count*sizeof(float)) ||
+        !disjoint(a,sizeof(*a),render_ref,ref_count*sizeof(float)) ||
+        !disjoint(a,sizeof(*a),work,work_bytes) ||
+        !disjoint(f->capture,ncap*sizeof(int16_t),
+                  f->render,nref*sizeof(int16_t)) ||
+        !disjoint(f->capture,ncap*sizeof(int16_t),
+                  beam,beam_count*sizeof(float)) ||
+        !disjoint(f->render,nref*sizeof(int16_t),
+                  render_ref,ref_count*sizeof(float)) ||
+        !disjoint(f->capture,ncap*sizeof(int16_t),work,work_bytes) ||
+        !disjoint(f->render,nref*sizeof(int16_t),work,work_bytes))
         return FE_T1_EINVAL;
     head=atomic_load_explicit(&a->cap_head,memory_order_acquire);
     tail=atomic_load_explicit(&a->cap_tail,memory_order_relaxed);

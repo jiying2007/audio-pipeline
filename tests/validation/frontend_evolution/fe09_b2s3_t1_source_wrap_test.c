@@ -3,6 +3,9 @@
  * only for the near-UINT32_MAX test. No installed S1 ABI/control extension.
  * Reuse frozen T0 deterministic C1/C2/C4 direct BF and APX3 oracle fixture.
  */
+/* Set glibc feature flags BEFORE including any frozen source/header. T0's
+ * own _POSIX_C_SOURCE declaration would otherwise come after stdint.h. */
+#define _POSIX_C_SOURCE 200809L
 #include "fe09_b2s1_private_queue.c"
 #define main fe_s3_t0_unused_entry
 #include "fe09_b2s3_threaded_bridge_test.c"

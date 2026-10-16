@@ -301,6 +301,11 @@ fe_b1s1_status fe_b1s1_verify(const fe_b1s1_store *s,
     replay_witness ctx;
     if(!prepared(s)||!checked||s->committed==0u||
        s->last_global_capture!=s->committed ||
+       /* A truncated manifest must not be accepted by moving BOTH its
+        * retained count and last sequence backwards. The worker-owned
+        * frozen source commit count is the independent checkpoint.
+        */
+       s->source->processed!=s->last_global_capture ||
        !apart(s,sizeof(*s),checked,sizeof(*checked)))
         return FE_B1S1_REJECT;
     for(i=0u;i<s->committed;++i) {

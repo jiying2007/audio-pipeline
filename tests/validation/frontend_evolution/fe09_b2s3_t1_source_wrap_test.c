@@ -176,6 +176,21 @@ static unsigned t1_negative_source(void) {
     memset(reference,0x45,sizeof(reference));
     memcpy(before_beam,beam,sizeof(beam));
     memcpy(before_ref,reference,sizeof(reference));
+    /* A malicious output buffer inside the immutable witness must be
+     * rejected before BF can overwrite source identity bytes.
+     */
+    must(fe_s3_t1_step(&T1,&original,
+            (float *)(void *)T1.cap[0].witness,160u,
+            reference,160u,T.work,
+            fe_b2s1_work_bytes(&T.config))==FE_T1_EINVAL,
+         "T1_OUTPUT_ALIAS_WITNESS_ADMITTED");
+    must(memcmp(T.q_snapshot,T.qstate,qbytes)==0 &&
+         memcmp(T.snapshot,T.record,recbytes)==0 &&
+         memcmp(&prior,&T.recorder,sizeof(prior))==0 &&
+         memcmp(T1.cap[0].witness,original.capture,
+                original.capture_count*sizeof(int16_t))==0,
+         "T1_OUTPUT_ALIAS_CORRUPTED_SOURCE");
+    ++count;
     for(i=0u;i<128u;++i) {
         altered=original;
         bits=0u;

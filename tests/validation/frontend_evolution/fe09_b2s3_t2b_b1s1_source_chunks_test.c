@@ -5,14 +5,147 @@
  */
 #define _POSIX_C_SOURCE 200809L
 #include "fe09_b2s3_t2b_b1s1_source_chunks.h"
-#define main fe_b1s0_frozen_main_unused
-#include "fe09_b2s3_t2b_b1s0_owner_spsc_test.c"
+/* Include only the frozen S3 test geometry/oracle utilities. The
+ * predecessor B1-S0 test includes nested #undef main and has a separate
+ * complete main(); including that test would define main twice. We reuse
+ * the exact frozen *test-only* owner fixture and helper logic below,
+ * not any duplicated shipping resampler/BF/codec implementation.
+ */
+#define main fe_s3_t0_reference_main_unused
+#include "fe09_b2s3_threaded_bridge_test.c"
 #undef main
 
 #include <inttypes.h>
+#include <sched.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#define B1_FRAMES 24u
+#define B1_STATE 16384u
+#define B1_WORK 32768u
+#define B1_WAIT 10000000u
+
+typedef struct {
+    fe_b1s0_state q;
+    fe_b1s0_config cfg;
+    fe_t2b_b0 adapter;
+    fe_b1b1 *core, *oracle;
+    const scene_t *scene;
+    uint32_t rate, depth, render, negative;
+    _Alignas(16) uint8_t core_state[B1_STATE], core_work[B1_WORK];
+    _Alignas(16) uint8_t oracle_state[B1_STATE], oracle_work[B1_WORK];
+    atomic_uint cap_full, ref_full, failed, processed;
+    uint64_t control_hash, beam_hash;
+    ap_resampler_state_t expected_reference;
+    uint64_t actual_reference_ordinal;
+} b1_fixture;
+static b1_fixture P;
+
+static uint64_t expected_pcm_hash(const int16_t *pcm,size_t count) {
+    size_t i;
+    uint64_t h=FNV0;
+    for(i=0u;i<count;++i) {
+        uint16_t bits=(uint16_t)pcm[i];
+        h=(h^(uint8_t)bits)*FNV_PRIME;
+        h=(h^(uint8_t)(bits>>8u))*FNV_PRIME;
+    }
+    return h;
+}
+static uint32_t absent_at(uint32_t k) {
+    return k%8u==3u || k%8u==4u;
+}
+static void wait_counter(const atomic_uint *value, uint32_t min,
+                         const char *error) {
+    uint32_t i;
+    for(i=0u;i<B1_WAIT;++i) {
+        if(atomic_load_explicit(value,memory_order_acquire)>=min) return;
+        if(atomic_load_explicit(&P.failed,memory_order_acquire))
+            must(0,"B1_THREAD_FAILURE");
+        sched_yield();
+    }
+    must(0,error);
+}
+static void first_party_oracle_init(const scene_t *sc,uint32_t rate,
+                                    uint32_t depth,uint32_t render) {
+    fe_b1b1_config cfg=config_for(sc,rate,0u,depth).pipeline;
+    size_t state=fe_b1b1_state_bytes(&cfg);
+    size_t work=fe_b1b1_work_bytes(&cfg);
+    P.rate=rate;P.depth=depth;P.render=render;P.scene=sc;
+    must(state>0u&&state<=B1_STATE&&work>0u&&work<=B1_WORK,
+         "B1_MIC_BF_ALLOCATION_BOUND");
+    must(fe_b1b1_init(P.core_state,state,&cfg,&P.core)==FE_B1B1_OK &&
+         fe_b1b1_init(P.oracle_state,state,&cfg,&P.oracle)==FE_B1B1_OK &&
+         P.core && P.oracle && P.core!=P.oracle,
+         "B1_REAL_FIRST_PARTY_BF_INIT");
+    must(fe_t2b_b0_bind(&P.adapter,P.core,rate,sc->mics)==FE_T2B_B0_OK,
+         "B1_FROZEN_B0_BIND");
+    memset(&P.cfg,0,sizeof(P.cfg));
+    P.cfg.depth=depth;P.cfg.input_hz=rate;
+    P.cfg.physical_mics=sc->mics;P.cfg.render_enabled=render;
+    P.cfg.capture_source_id=101u+sc->mics;
+    P.cfg.render_source_id=render?201u+sc->mics:0u;
+    P.cfg.source_generation=UINT64_C(900001);
+    must(fe_b1s0_init(&P.q,&P.cfg,&P.adapter)==FE_B1S0_OK,
+         "B1_SOURCE_OWNER_BIND");
+    must(fe_b1s0_seed_wrap_before_start(&P.q,UINT32_MAX-2u)==FE_B1S0_OK,
+         "B1_ACTUAL_UINT32_NEAR_WRAP_INIT");
+    ap_resampler_init(&P.expected_reference);
+    atomic_init(&P.cap_full,0u);
+    atomic_init(&P.ref_full,0u);
+    atomic_init(&P.failed,0u);
+    atomic_init(&P.processed,0u);
+    P.control_hash=FNV0;
+    P.beam_hash=FNV0;
+}
+typedef struct {uint32_t render;} owner_arg;
+static void *source_thread(void *ctx) {
+    owner_arg *arg=(owner_arg *)ctx;
+    uint32_t k,prior_absent=0u,epoch=1u;
+    for(k=1u;k<=B1_FRAMES;++k) {
+        uint32_t attempts;
+        fe_b1s0_status rc=FE_B1S0_FULL;
+        int16_t cap[1920],ref[480];
+        produce_pcm(P.scene,P.rate,k,cap,ref);
+        if(arg->render && k>1u && prior_absent && !absent_at(k))
+            ++epoch;
+        for(attempts=0u;attempts<B1_WAIT;++attempts) {
+            if(arg->render) {
+                if(absent_at(k))
+                    rc=fe_b1s0_render_absent(&P.q,P.cfg.render_source_id,
+                        P.cfg.source_generation,k,epoch,
+                        FE_B1S0_ABSENT_SOURCE_REPORTED);
+                else
+                    rc=fe_b1s0_render_present(&P.q,P.cfg.render_source_id,
+                        P.cfg.source_generation,k,epoch,
+                        prior_absent?FE_B1S0_RENDER_GAP:0u,
+                        ref,(size_t)P.rate/100u);
+            } else {
+                rc=fe_b1s0_capture_submit(&P.q,P.cfg.capture_source_id,
+                    P.cfg.source_generation,k,cap,
+                    (size_t)(P.rate/100u)*P.scene->mics);
+            }
+            if(rc==FE_B1S0_OK) break;
+            if(rc!=FE_B1S0_FULL) {
+                atomic_store_explicit(&P.failed,1u,memory_order_release);
+                return NULL;
+            }
+            atomic_fetch_add_explicit(arg->render?&P.ref_full:&P.cap_full,
+                                      1u,memory_order_relaxed);
+            if(atomic_load_explicit(&P.failed,memory_order_acquire))
+                return NULL;
+            sched_yield();
+        }
+        if(attempts==B1_WAIT || rc!=FE_B1S0_OK) {
+            atomic_store_explicit(&P.failed,2u,memory_order_release);
+            return NULL;
+        }
+        if(arg->render)
+            prior_absent=absent_at(k);
+    }
+    return NULL;
+}
 
 static fe_b1s1_store STORE;
 static uint32_t NEGATIVES;

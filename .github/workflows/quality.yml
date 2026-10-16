@@ -848,6 +848,7 @@ jobs:
           need(type(receipt) is dict and
                receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
                receipt.get('decision') == verdict and
+               receipt.get('capture_bf_continuity_software_qualified') is True and
                receipt.get('source_role') == 'first-party-synthetic' and
                receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
                receipt.get('exclusive_facade_owner_tested') is True and

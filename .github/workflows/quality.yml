@@ -1106,8 +1106,9 @@ jobs:
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    # A bounded same-source retry may need one additional full transfer.
-    timeout-minutes: 20
+    # Independent stage deadline=30m: reserve 15m for strict science and
+    # durable evidence upload even if official source read stalls.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -1116,10 +1117,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 tests/validation/frontend_evolution/test_speech_spatial.py
+          python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
           mkdir fe-speech
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
-          python3 tests/validation/frontend_evolution/speech_source.py --output fe-speech/source
+          python3 tests/validation/frontend_evolution/speech_source_stage_budget.py \
+            --output fe-speech/source --stage-budget-seconds 1800
           python3 tests/validation/frontend_evolution/speech_spatial.py \
             --source fe-speech/source --output fe-speech/effects --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/speech_spatial.py \

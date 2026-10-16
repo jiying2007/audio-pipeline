@@ -296,8 +296,10 @@ fe_b1s1_status fe_b1s1_verify(const fe_b1s1_store *s,
            g32(row)!=FE_B1S1_MANIFEST_MAGIC||
            g32(row+4u)!=FE_B1S1_MANIFEST_VERSION||
            event>FE_B1S0_RENDER_ABSENT||
-           event==FE_B1S0_RENDER_DISABLED && s->source->cfg.render_enabled||
-           event!=FE_B1S0_RENDER_DISABLED && !s->source->cfg.render_enabled||
+           (event==FE_B1S0_RENDER_DISABLED &&
+            s->source->cfg.render_enabled)||
+           (event!=FE_B1S0_RENDER_DISABLED &&
+            !s->source->cfg.render_enabled)||
            g32(row+12u)!=s->source->cfg.input_hz||
            g32(row+16u)!=s->source->cfg.physical_mics||
            g64(row+20u)!=s->source->cfg.source_generation||

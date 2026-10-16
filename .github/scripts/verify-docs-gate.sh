@@ -53,6 +53,7 @@ python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualificatio
 python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test

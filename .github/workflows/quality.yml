@@ -776,6 +776,117 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  frontend-s3-t1:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Qualify T1 exclusive exact-S1 PCM witness and real UINT32 rollover under pthread Native ARM TSan
+        id: fe09_t1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+            --collect --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+            --verify --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run T1 source PCM and wrap witness or failed qualification
+        if: always() && (steps.fe09_t1.outcome == 'success' || steps.fe09_t1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-s3-t1-source-wrap-${{ github.run_id }}
+          path: fe09-b2s3-t1/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Download exact T1 four-member artifact from GitHub Actions storage
+        if: steps.fe09_t1.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-s3-t1-source-wrap-${{ github.run_id }}
+          path: fe09-b2s3-t1-readback
+      - name: Independently hash and refuse unbound T1 source witness or false device promotion
+        if: steps.fe09_t1.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(value, code):
+              if not value:
+                  raise SystemExit(code)
+          root = Path('fe09-b2s3-t1-readback')
+          members = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *members},
+               'T1_RETAINED_MEMBER_SET_DRIFT')
+          for name, cap in (('SHA256SUMS', 1024), ('receipt.json', 65536),
+                            ('collect.log', 1048576), ('verify.log', 256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap, 'T1_MEMBER_BOUNDS_' + name)
+          rows = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
+          need(len(rows) == 3, 'T1_MANIFEST_SHAPE_DRIFT')
+          for name, row in zip(members, rows):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(row == f'{digest}  {name}', 'T1_INNER_SHA256_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
+          verdict = 'FE09_R2B2_S3_T1_EXACT_SOURCE_WRAP_RESEARCH_ONLY_NO_PUBLIC_ABI'
+          need(type(receipt) is dict and
+               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
+               receipt.get('decision') == verdict and
+               receipt.get('source_role') == 'first-party-synthetic' and
+               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
+               receipt.get('exclusive_facade_owner_tested') is True and
+               receipt.get('actual_uint32_wrap_exercised') is True and
+               receipt.get('real_timestamp_witness_qualified') is False,
+               'T1_FALSE_SOURCE_OR_TARGET_AUTHORITY')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native','sanitized','arm','tsan'},
+               'T1_MISSING_TRUE_EXECUTABLE_TARGETS')
+          for target in ('native','sanitized','arm','tsan'):
+              value = targets[target]
+              need(type(value) is dict and
+                   value.get('decision') == verdict and
+                   value.get('source_role') == 'first-party-synthetic' and
+                   value.get('actual_threaded_fixture') is True and
+                   value.get('profile_count') == 48 and
+                   value.get('wrap_profile_count') == 48 and
+                   value.get('total_frames') == 9600 and
+                   type(value.get('negative_cases')) is int and
+                   value['negative_cases'] >= 130,
+                   'T1_TARGET_EXECUTION_OR_WRAP_UNQUALIFIED_' + target)
+              for key in ('public_sdk_installed','physical_clock_qualified',
+                          'ssc305_dut_qualified'):
+                  need(value.get(key) is False,
+                       'T1_FALSE_TARGET_DEVICE_AUTHORITY_' + target + '_' + key)
+          for key in ('public_sdk_installed','physical_clock_qualified',
+                      'ssc305_dut_qualified','complete_c4_192kib_qualified',
+                      'render_only_liveness_qualified','device_10ms_qualified',
+                      'real_four_mic_acoustic_gain'):
+              need(receipt.get(key) is False,
+                   'T1_FALSE_PRODUCT_PROMOTION_' + key)
+          need((root / 'verify.log').read_text(encoding='ascii') ==
+               'FE09_B2S3_T1_SOURCE_AND_WRAP_RECEIPT_VERIFIED\n',
+               'T1_RETAINED_VERIFY_MARKER_DRIFT')
+          print('FE09_B2S3_T1_EXACT_SOURCE_WRAP_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

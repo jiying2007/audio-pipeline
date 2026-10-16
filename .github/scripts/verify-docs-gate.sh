@@ -55,6 +55,7 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py 
 python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
 python3 .github/program/workflow_pin_only_scope.py --self-test

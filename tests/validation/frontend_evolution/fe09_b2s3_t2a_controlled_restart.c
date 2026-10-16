@@ -22,7 +22,7 @@ static int source_view(fe_s3_t1_source_witness *w,
         !(writer = b->writer) || !writer->output || !b->shadow ||
         w->mics == 0u || w->mics > 4u || w->render > 1u ||
         (w->depth != 2u && w->depth != 4u) ||
-        w->rate != 16000u && w->rate != 32000u && w->rate != 48000u)
+        (w->rate != 16000u && w->rate != 32000u && w->rate != 48000u))
         return 0;
     if (fe_b2s1_get_info(b->queue, q) != FE_B2S1_OK ||
         q->state_bytes == 0u || q->state_bytes > 65536u ||
@@ -33,7 +33,7 @@ static int source_view(fe_s3_t1_source_witness *w,
         writer->config.render_channels != w->render ||
         writer->config.rate_hz != w->rate ||
         writer->config.capture_source_id == 0u ||
-        writer->config.render_source_id == 0u != (w->render == 0u) ||
+        ((writer->config.render_source_id == 0u) != (w->render == 0u)) ||
         (w->render && writer->config.render_source_id ==
                        writer->config.capture_source_id) ||
         writer->config.clock_authority != 0u ||

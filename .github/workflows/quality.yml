@@ -1240,6 +1240,7 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py \
             --verify --output fe09-b1s0 --execution-source "$GITHUB_SHA"
       - name: Retain T2B_B1S0 real owner SPSC source identity and failure evidence
+        id: fe09_b1s0_upload
         if: always() && (steps.fe09_b1s0.outcome == 'success' || steps.fe09_b1s0.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -1247,6 +1248,18 @@ jobs:
           path: fe09-b1s0/
           retention-days: 30
           if-no-files-found: error
+      - name: Wait for exact upload-ID visibility before pinned B1-S0 Artifact download
+        if: steps.fe09_b1s0.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_b1s0_upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_ID"
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t2b-b1s0-owner-spsc-$GITHUB_RUN_ID"
       - name: Independently download exact T2B_B1S0 four-member Artifact
         if: steps.fe09_b1s0.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -1326,7 +1339,6 @@ jobs:
           print('FE09_T2B_B1S0_OWNER_SPSC_READBACK_PASS',
                 os.environ['GITHUB_SHA'])
           PY
-
 
   frontend-s3-t2b-b1s1:
     if: inputs.run_extended

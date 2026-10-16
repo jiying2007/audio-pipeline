@@ -1023,7 +1023,7 @@ jobs:
         if: always() && (steps.fe09_t2a.outcome == 'success' || steps.fe09_t2a.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: frontend-fe09-s3-t2-f0-controlled-restart-${{ github.run_id }}
+          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
           path: fe09-t2a/
           retention-days: 30
           if-no-files-found: error
@@ -1031,7 +1031,7 @@ jobs:
         if: steps.fe09_t2a.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-s3-t2-f0-controlled-restart-${{ github.run_id }}
+          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
           path: fe09-t2a-readback
       - name: Check external T2A control-only verdict and source-linked rehash
         if: steps.fe09_t2a.outcome == 'success'

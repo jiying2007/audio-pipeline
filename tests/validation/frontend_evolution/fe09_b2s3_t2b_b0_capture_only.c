@@ -58,9 +58,11 @@ fe_t2b_b0_status fe_t2b_b0_bind(fe_t2b_b0 *a,
 fe_t2b_b0_status fe_t2b_b0_capture(fe_t2b_b0 *a,
     uint64_t seq, const int16_t *pcm, size_t samples,
     float *beam, size_t beam_count, void *work, size_t work_bytes) {
-    const size_t frame_count = a && rate_ok(a->input_hz) ?
-        (size_t)(a->input_hz / 100u) * a->physical_mics : 0u;
-    if (!adapter_ok(a) || !seq || a->capture_sequence == UINT64_MAX ||
+    size_t frame_count;
+    if (!adapter_ok(a)) return FE_T2B_B0_REJECT;
+    /* Validate physical mic count BEFORE arithmetic on 32-bit size_t. */
+    frame_count = (size_t)(a->input_hz / 100u) * a->physical_mics;
+    if (!seq || a->capture_sequence == UINT64_MAX ||
         seq != a->capture_sequence + UINT64_C(1) ||
         a->accepted_capture == UINT64_MAX ||
         !pcm || samples != frame_count ||
@@ -87,10 +89,11 @@ fe_t2b_b0_status fe_t2b_b0_capture(fe_t2b_b0 *a,
 fe_t2b_b0_status fe_t2b_b0_render(fe_t2b_b0 *a,
     uint64_t seq, uint32_t flags, const int16_t *pcm, size_t samples,
     float *reference, size_t reference_count) {
-    const size_t frame_count = a && rate_ok(a->input_hz) ?
-        (size_t)(a->input_hz / 100u) : 0u;
+    size_t frame_count;
     const int gap = flags == FE_T2B_B0_RENDER_GAP;
-    if (!adapter_ok(a) || (flags != 0u && !gap) ||
+    if (!adapter_ok(a)) return FE_T2B_B0_REJECT;
+    frame_count = (size_t)(a->input_hz / 100u);
+    if ((flags != 0u && !gap) ||
         !seq || a->render_sequence == UINT64_MAX ||
         a->accepted_render == UINT64_MAX ||
         (a->render_sequence == 0u ?

@@ -28,7 +28,6 @@ static t2c0_fixture OLD, FRESH;
 static fe_t2c0_gate GATE;
 static uint32_t BAD_CASES;
 static _Alignas(16) uint8_t ORACLE_STATE[B1_STATE], ORACLE_WORK[B1_WORK];
-static uint64_t CONTROL_DIGEST = FNV0;
 
 static void build(t2c0_fixture *f, const scene_t *sc, uint32_t rate,
                   uint32_t depth, uint32_t render, uint64_t generation,

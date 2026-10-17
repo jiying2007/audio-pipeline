@@ -487,14 +487,17 @@ static void one_profile(const scene_t *sc,uint32_t rate,
            ",\"render\":%" PRIu32 ",\"slots\":%" PRIu32
            ",\"source_depth\":%" PRIu32
            ",\"control_bytes\":%zu,\"slot_bytes\":%zu"
-           ",\"stage_owned_bytes\":%zu,\"stack_scratch_min\":%u"
+           ",\"stage_owned_bytes\":%zu,\"dual_stage_owned_bytes\":%zu"
+           ",\"outboard_accounted_bytes\":%zu,\"stack_scratch_min\":%u"
            ",\"apx3_one_frame\":%zu"
            ",\"source_processed\":%" PRIu64
            ",\"negative_checks\":%" PRIu32 "}",
            sc->name,rate,render,slots,P.depth,
            sizeof(P.ring),sizeof(fe_t3s1_slot),
            sizeof(P.ring)+P.ring.slot_allocation_bytes,
-           FE_T3S1_CHUNK_BYTES,one,P.ring.last_global_capture,
+           2u*(sizeof(P.ring)+P.ring.slot_allocation_bytes),
+           P.actually_outboard_bytes,FE_T3S1_CHUNK_BYTES,
+           one,P.ring.last_global_capture,
            NEGATIVES-neg0);
     free(P.physical_storage);
     P.physical_storage=NULL;

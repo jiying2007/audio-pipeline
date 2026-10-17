@@ -402,6 +402,14 @@ static void one_profile(const scene_t *sc,uint32_t rate,
               "STALE_OR_REBOUND_SOURCE_GENERATION_ADMITTED");
         P.source.cfg.source_generation=old_id;
     }
+    {
+        uint32_t old_id=P.source.cfg.capture_source_id;
+        P.source.cfg.capture_source_id=old_id+1000u;
+        reject(fe_t3s1_step(&P.ring,beam,160u,render?ref:NULL,
+              render?160u:0u,P.work,sizeof(P.work),&wr)==FE_T3S1_REJECT,
+              "SOURCE_CAPTURE_ID_CHANGED_AFTER_BIND");
+        P.source.cfg.capture_source_id=old_id;
+    }
     reject(beam[0]==321.0f&&P.source.processed==0u,
            "INVALID_OR_PENDING_MUTATED_OUTPUT");
     run_threads();
@@ -429,6 +437,26 @@ static void one_profile(const scene_t *sc,uint32_t rate,
     reject(fe_t3s1_drain_one(&P.ring,outboard,&P,&dr)==FE_T3S1_TAMPER,
            "CANONICAL_FILE_SHA_TAMPER_ADMITTED");
     P.physical_storage[tail%slots].canonical_row[104u]^=1u;
+    {
+        fe_t3s1_slot *record=&P.physical_storage[tail%slots];
+        uint8_t original_row[FE_T3S1_ROW_BYTES],digest[32];
+        uint32_t bytes=record->apx3_bytes;
+        must(bytes>FE_S2_HEADER_BYTES&&bytes<=FE_T3S1_CHUNK_BYTES,
+             "REAL_ORIGINAL_APX3_CRC_NEGATIVE_BYTE_COUNT");
+        memcpy(original_row,record->canonical_row,sizeof(original_row));
+        record->apx3[bytes-1u]^=1u; /* Original S2 final CRC byte. */
+        must(fe_b1s1_sha256(record->apx3,bytes,digest)==0,
+             "REAL_APX3_HASH_RECALC_NEGATIVE");
+        memcpy(record->canonical_row+104u,digest,sizeof(digest));
+        must(fe_b1s1_sha256(record->canonical_row,
+             FE_B1S1_ROW_DIGEST_OFFSET,
+             record->canonical_row+FE_B1S1_ROW_DIGEST_OFFSET)==0,
+             "REAL_FBS1_CANONICAL_DIGEST_NEGATIVE");
+        reject(fe_t3s1_drain_one(&P.ring,outboard,&P,&dr)==FE_T3S1_TAMPER,
+               "ORIGINAL_S2_CRC_CORRUPTION_WITH_VALID_ROW_SHA_ACCEPTED");
+        record->apx3[bytes-1u]^=1u;
+        memcpy(record->canonical_row,original_row,sizeof(original_row));
+    }
     reject(fe_t3s1_drain_one(&P.ring,torn_sink,&P,&dr)==
            FE_T3S1_REJECT,"UNBOUND_OUTBOARD_CALLBACK_ACCEPTED");
     reject(fe_t3s1_drain_one(&P.ring,short_ack,&P,&dr)==

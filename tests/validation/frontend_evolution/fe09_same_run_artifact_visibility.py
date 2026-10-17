@@ -46,7 +46,7 @@ def checked_args(repo: str, run_id: int, artifact_id: int,
          type(run_id) is int and 0 < run_id < 2 ** 63 and
          type(artifact_id) is int and 0 < artifact_id < 2 ** 63 and
          type(artifact_name) is str and
-         re.fullmatch(r"frontend-fe09-t2b-b1s0-owner-spsc-[0-9]+",
+         re.fullmatch(r"(?:frontend-fe09-t2b-b1s0-owner-spsc|frontend-fe09-t2b-b1s1-source-apx3)-[0-9]+",
                       artifact_name) is not None and
          artifact_name.endswith("-" + str(run_id)) and
          type(token) is str and 0 < len(token) <= 2048,

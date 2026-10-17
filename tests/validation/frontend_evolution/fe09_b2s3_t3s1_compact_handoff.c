@@ -89,8 +89,10 @@ static uint64_t g64(const uint8_t *p) {
     return x;
 }
 static int pinned(const fe_t3s1_ring *s) {
-    return s && valid_cfg(&s->pinned_cfg) &&
+    return s && valid_cfg(&s->pinned_cfg) && s->slot &&
         (s->slot_count==1u || s->slot_count==2u) &&
+        s->slot_allocation_bytes==s->slot_count*sizeof(fe_t3s1_slot) &&
+        apart(s,sizeof(*s),s->slot,s->slot_allocation_bytes) &&
         valid_slots(s->pinned_cfg.physical_mics,s->physical_to_slot);
 }
 static int worker_ok(const fe_t3s1_ring *s) {
@@ -100,6 +102,10 @@ static int worker_ok(const fe_t3s1_ring *s) {
         memcmp(&s->pinned_cfg,&q->cfg,sizeof(q->cfg))!=0 ||
         q->processed!=s->last_global_capture ||
         !apart(s,sizeof(*s),q,sizeof(*q)) ||
+        !apart(s->slot,s->slot_allocation_bytes,q,sizeof(*q)) ||
+        !apart(s->slot,s->slot_allocation_bytes,q->core,sizeof(*q->core)) ||
+        !apart(s->slot,s->slot_allocation_bytes,q->core->capture_bf,
+               q->core->capture_state_bytes) ||
         !apart(s,sizeof(*s),q->core,sizeof(*q->core)) ||
         !apart(s,sizeof(*s),q->core->capture_bf,
                q->core->capture_state_bytes))
@@ -107,12 +113,15 @@ static int worker_ok(const fe_t3s1_ring *s) {
     return 1;
 }
 fe_t3s1_status fe_t3s1_init(fe_t3s1_ring *s,fe_b1s0_state *q,
-    const uint32_t slots[4],uint32_t physical_slots) {
+    const uint32_t slots[4],fe_t3s1_slot *storage,
+    size_t storage_bytes,uint32_t physical_slots) {
     fe_b1b1_info info;
     fe_s2_config sc;
     size_t n, stride;
     uint32_t i;
-    if (!s||!q||!slots || (physical_slots!=1u&&physical_slots!=2u) ||
+    if (!s||!q||!slots||!storage ||
+        (physical_slots!=1u&&physical_slots!=2u) ||
+        storage_bytes != physical_slots*sizeof(fe_t3s1_slot) ||
         !valid_cfg(&q->cfg)||
         !valid_slots(q->cfg.physical_mics,slots) ||
         !q->core || !q->core->capture_bf ||
@@ -124,6 +133,12 @@ fe_t3s1_status fe_t3s1_init(fe_t3s1_ring *s,fe_b1s0_state *q,
         q->core->capture_sequence || q->core->accepted_capture ||
         !apart(s,sizeof(*s),q,sizeof(*q)) ||
         !apart(s,sizeof(*s),slots,4u*sizeof(uint32_t)) ||
+        !apart(s,sizeof(*s),storage,storage_bytes) ||
+        !apart(storage,storage_bytes,slots,4u*sizeof(uint32_t)) ||
+        !apart(storage,storage_bytes,q,sizeof(*q)) ||
+        !apart(storage,storage_bytes,q->core,sizeof(*q->core)) ||
+        !apart(storage,storage_bytes,q->core->capture_bf,
+               q->core->capture_state_bytes) ||
         !apart(s,sizeof(*s),q->core,sizeof(*q->core)) ||
         !apart(s,sizeof(*s),q->core->capture_bf,
                q->core->capture_state_bytes) ||
@@ -145,6 +160,9 @@ fe_t3s1_status fe_t3s1_init(fe_t3s1_ring *s,fe_b1s0_state *q,
         n>FE_T3S1_CHUNK_BYTES || stride==0u)
         return FE_T3S1_REJECT;
     memset(s,0,sizeof(*s));
+    memset(storage,0,storage_bytes);
+    s->slot=storage;
+    s->slot_allocation_bytes=storage_bytes;
     s->source=q;
     s->pinned_cfg=q->cfg;
     s->slot_count=physical_slots;

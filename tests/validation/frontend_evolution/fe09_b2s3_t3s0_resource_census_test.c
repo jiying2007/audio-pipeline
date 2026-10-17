@@ -165,9 +165,9 @@ static void one_profile(const geom_t *g, uint32_t rate,
     must(session.source->cfg.depth == depth &&
          session.archive->source == &QUEUE &&
          session.archive->committed == 0u &&
-         fe_b1s1_verify(&STORE, &verified) == FE_B1S1_OK &&
+         fe_b1s1_verify(&STORE, &verified) == FE_B1S1_REJECT &&
          verified == 0u,
-         "FIRST_PARTY_EMPTY_STORE_SOURCE_DRIFT");
+         "FROZEN_S2_EMPTY_ARCHIVE_MUST_NOT_REPLAY_AS_SUCCESS");
 
     must(fe_s2_layout(&sc, 1u, &file, &stride) == FE_S2_OK &&
          file >= FE_S2_HEADER_BYTES + FE_S2_RECORD_META_BYTES &&

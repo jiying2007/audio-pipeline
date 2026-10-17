@@ -30,9 +30,16 @@ typedef struct {
     uint32_t apx3_bytes;
 } fe_t3s1_slot;
 
+typedef int (*fe_t3s1_outboard_sink)(
+    const uint8_t *apx3, size_t apx3_bytes,
+    const uint8_t *canonical_row, size_t canonical_row_bytes,
+    void *context, size_t *actually_accounted_bytes);
+
 typedef struct {
     fe_b1s0_state *source;       /* immutable binding, worker-owned access */
     fe_b1s0_config pinned_cfg;  /* immutable, readable by both owners */
+    fe_t3s1_outboard_sink pinned_sink; /* exact bound callback identity */
+    void *pinned_sink_context;    /* immutable owner context binding */
     uint32_t physical_to_slot[4];
     uint32_t slot_count;        /* physical slots=1 or 2, not logical depth */
     atomic_uint head, tail;     /* uint32 wrap; one producer, one consumer */
@@ -57,17 +64,13 @@ typedef struct {
  * Returning error / short ack withholds ring tail. Callbacks must not
  * mutate ring/source buffers; retries need sink-side idempotent identity.
  */
-typedef int (*fe_t3s1_outboard_sink)(
-    const uint8_t *apx3, size_t apx3_bytes,
-    const uint8_t *canonical_row, size_t canonical_row_bytes,
-    void *context, size_t *actually_accounted_bytes);
-
 /* Must initialize BEFORE spawning any source, worker or sink threads.
  * Source is a fresh, bound original B1S0; producer/consumer never rebind.
  */
 fe_t3s1_status fe_t3s1_init(fe_t3s1_ring *ring,
     fe_b1s0_state *source, const uint32_t slots[4],
-    fe_t3s1_slot *storage, size_t storage_bytes, uint32_t physical_slots);
+    fe_t3s1_slot *storage, size_t storage_bytes, uint32_t physical_slots,
+    fe_t3s1_outboard_sink outboard_sink, void *outboard_context);
 
 /* Worker: reserve a free physical slot FIRST. Preflight exact original S2
  * writer+decode+SHA and canonical FBS1 prev-row chain using stack scratch.

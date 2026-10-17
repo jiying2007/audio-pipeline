@@ -1430,6 +1430,82 @@ jobs:
                 os.environ['GITHUB_SHA'])
           PY
 
+  frontend-s3-t2c0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute real first-party source BF/APX3 with T2-C0 ACK gated cutover
+        id: fe09_t2c0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
+            --collect --output fe09-t2c0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
+            --verify --output fe09-t2c0 --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run T2-C0 logical owner ACK positives and negatives
+        if: always() && (steps.fe09_t2c0.outcome == 'success' || steps.fe09_t2c0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          path: fe09-t2c0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact current-run T2-C0 four-member Artifact
+        if: steps.fe09_t2c0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          path: fe09-t2c0-readback
+      - name: Independently rehash T2-C0 four members and enforce no-physical-source boundary
+        if: steps.fe09_t2c0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
+            --verify --output fe09-t2c0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root = Path("fe09-t2c0-readback")
+          names = ("receipt.json", "collect.log", "verify.log")
+          assert root.is_dir()
+          assert {p.name for p in root.iterdir()} == {"SHA256SUMS", *names}
+          manifest = "".join(
+              f"{hashlib.sha256((root / name).read_bytes()).hexdigest()}  {name}\n"
+              for name in names)
+          assert (root / "SHA256SUMS").read_text("ascii") == manifest
+          receipt = json.loads((root / "receipt.json").read_text("utf-8"))
+          assert receipt["source_commit"] == os.environ["GITHUB_SHA"]
+          assert receipt["decision"] == (
+              "FE09_T2C0_LOGICAL_OWNER_ACK_NONSEAMLESS_FALLBACK_NO_PHYSICAL_AUTHORITY")
+          assert receipt["first_party_target_execution_complete"] is True
+          assert receipt["target_order"] == ["native", "sanitized", "arm", "tsan"]
+          assert receipt["physical_owner_stop_verified"] is False
+          assert receipt["capture_bf_history_preserved"] is False
+          assert receipt["durable_archive_qualified"] is False
+          assert receipt["ssc305_device_qualified"] is False
+          assert receipt["public_sdk_installed"] is False
+          assert all(value["profile_count"] == 48 and
+                     value["negative_checks"] >= 624
+                     for value in receipt["target_results"].values())
+          print("FE09_T2C0_EXACT_SOURCE_LOGICAL_ACK_READBACK_PASS",
+                os.environ["GITHUB_SHA"])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

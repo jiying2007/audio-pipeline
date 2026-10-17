@@ -3,8 +3,8 @@
  */
 #define _POSIX_C_SOURCE 200809L
 #include "fe09_b2s3_t2c0_quiescent_fallback.h"
-#define main fe_t2c0_frozen_b1s1_main_unused
-#include "fe09_b2s3_t2b_b1s1_source_chunks_test.c"
+#define main fe_s3_t0_reference_main_unused
+#include "fe09_b2s3_threaded_bridge_test.c"
 #undef main
 
 #include <inttypes.h>
@@ -13,6 +13,21 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#define B1_STATE 16384u
+#define B1_WORK 32768u
+
+/* Test-only independently calculated LE PCM source witness. */
+static uint64_t expected_pcm_hash(const int16_t *pcm, size_t samples) {
+    uint64_t out = UINT64_C(14695981039346656037);
+    size_t i;
+    for (i = 0u; i < samples; ++i) {
+        uint16_t bits = (uint16_t)pcm[i];
+        out = (out ^ (uint8_t)bits) * UINT64_C(1099511628211);
+        out = (out ^ (uint8_t)(bits >> 8u)) * UINT64_C(1099511628211);
+    }
+    return out;
+}
 
 typedef struct {
     fe_b1s0_state q;
@@ -200,8 +215,8 @@ static uint64_t one(const scene_t *sc, uint32_t rate,
     must_denied(fe_t2c0_restart(&GATE, generation, &FRESH.session, &rec),
                 "T2C0_DIRTY_NEXT_SOURCE");
     FRESH.q.cap_last = 0u;
-    must(fe_b1s1_sha256(&OLD.q, sizeof(OLD.q), oldq) == 0 &&
-         fe_b1s1_sha256(&OLD.archive, sizeof(OLD.archive), oldstore) == 0 &&
+    must(fe_b1s1_sha256((const uint8_t *)&OLD.q, sizeof(OLD.q), oldq) == 0 &&
+         fe_b1s1_sha256((const uint8_t *)&OLD.archive, sizeof(OLD.archive), oldstore) == 0 &&
          fe_b1s1_sha256(OLD.core_state, sizeof(OLD.core_state), oldbf) == 0,
          "T2C0_OLD_SOURCE_HASH_BEFORE_COMMIT");
     must(fe_t2c0_restart(&GATE, generation,
@@ -233,9 +248,9 @@ static uint64_t one(const scene_t *sc, uint32_t rate,
          "T2C0_ATOMIC_NEW_GENERATION_PUBLICATION");
     must_denied(fe_t2c0_ack(&GATE, generation, FE_T2C0_CAPTURE_OWNER),
                 "T2C0_OLD_GENERATION_ACK_CANNOT_RESUME");
-    must(fe_b1s1_sha256(&OLD.q, sizeof(OLD.q), now) == 0 &&
+    must(fe_b1s1_sha256((const uint8_t *)&OLD.q, sizeof(OLD.q), now) == 0 &&
          memcmp(now,oldq,32u)==0 &&
-         fe_b1s1_sha256(&OLD.archive, sizeof(OLD.archive), now)==0 &&
+         fe_b1s1_sha256((const uint8_t *)&OLD.archive, sizeof(OLD.archive), now)==0 &&
          memcmp(now,oldstore,32u)==0 &&
          fe_b1s1_sha256(OLD.core_state,sizeof(OLD.core_state),now)==0 &&
          memcmp(now,oldbf,32u)==0,

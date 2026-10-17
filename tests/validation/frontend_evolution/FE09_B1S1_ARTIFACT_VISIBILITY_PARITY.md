@@ -1,7 +1,7 @@
 # FE09 B1-S1 CI Artifact visibility parity / B1-S1 同运行证据可见性保护
 
-**Independent registration:** [#782](https://github.com/jiying2007/audio-pipeline/issues/782).  
-**Immutable base:** `e7b3a3c0331ed8241dc1c34ea657aae4555cc522`.  
+**Independent registration:** [#782](https://github.com/jiying2007/audio-pipeline/issues/782).
+**Immutable base:** `e7b3a3c0331ed8241dc1c34ea657aae4555cc522`.
 **Protected predecessor:** [B1-S1 #778](https://github.com/jiying2007/audio-pipeline/issues/778), [PR #780](https://github.com/jiying2007/audio-pipeline/pull/780), pushed-main [Verify 38997717739](https://github.com/jiying2007/audio-pipeline/actions/runs/38997717739) exact `summary=success`, same-SHA [Release 38999746084](https://github.com/jiying2007/audio-pipeline/actions/runs/38999746084) `release+convergence=success`, verified four-member [Artifact 12087427801](https://github.com/jiying2007/audio-pipeline/actions/runs/38997717739/artifacts/12087427801).
 
 ## Root behavior and narrow mitigation / 根因边界与最小改动

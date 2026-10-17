@@ -90,6 +90,7 @@ static uint64_t g64(const uint8_t *p) {
 }
 static int pinned(const fe_t3s1_ring *s) {
     return s && valid_cfg(&s->pinned_cfg) && s->slot &&
+        s->pinned_sink &&
         (s->slot_count==1u || s->slot_count==2u) &&
         s->slot_allocation_bytes==s->slot_count*sizeof(fe_t3s1_slot) &&
         apart(s,sizeof(*s),s->slot,s->slot_allocation_bytes) &&
@@ -114,12 +115,13 @@ static int worker_ok(const fe_t3s1_ring *s) {
 }
 fe_t3s1_status fe_t3s1_init(fe_t3s1_ring *s,fe_b1s0_state *q,
     const uint32_t slots[4],fe_t3s1_slot *storage,
-    size_t storage_bytes,uint32_t physical_slots) {
+    size_t storage_bytes,uint32_t physical_slots,
+    fe_t3s1_outboard_sink outboard_sink,void *outboard_context) {
     fe_b1b1_info info;
     fe_s2_config sc;
     size_t n, stride;
     uint32_t i;
-    if (!s||!q||!slots||!storage ||
+    if (!s||!q||!slots||!storage||!outboard_sink ||
         (physical_slots!=1u&&physical_slots!=2u) ||
         storage_bytes != physical_slots*sizeof(fe_t3s1_slot) ||
         !valid_cfg(&q->cfg)||
@@ -165,6 +167,8 @@ fe_t3s1_status fe_t3s1_init(fe_t3s1_ring *s,fe_b1s0_state *q,
     s->slot_allocation_bytes=storage_bytes;
     s->source=q;
     s->pinned_cfg=q->cfg;
+    s->pinned_sink=outboard_sink;
+    s->pinned_sink_context=outboard_context;
     s->slot_count=physical_slots;
     for (i=0u;i<4u;++i) s->physical_to_slot[i]=slots[i];
     atomic_init(&s->head,0u);
@@ -374,6 +378,7 @@ fe_t3s1_status fe_t3s1_drain_one(fe_t3s1_ring *s,
     size_t accounted=0u;
     uint32_t with_render;
     if(!pinned(s) || !sink || !receipt ||
+       sink!=s->pinned_sink || context!=s->pinned_sink_context ||
        !apart(s,sizeof(*s),receipt,sizeof(*receipt)) ||
        !apart(s->slot,s->slot_allocation_bytes,receipt,sizeof(*receipt)))
         return FE_T3S1_REJECT;

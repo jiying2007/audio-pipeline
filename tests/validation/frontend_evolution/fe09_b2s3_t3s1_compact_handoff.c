@@ -245,6 +245,10 @@ fe_t3s1_status fe_t3s1_step(fe_t3s1_ring *s,
         !apart(s,sizeof(*s),render_ref,rcount*sizeof(float)) ||
         !apart(s,sizeof(*s),work,wbytes) ||
         !apart(s,sizeof(*s),result,sizeof(*result)) ||
+        !apart(s->slot,s->slot_allocation_bytes,beam,bcount*sizeof(float)) ||
+        !apart(s->slot,s->slot_allocation_bytes,render_ref,rcount*sizeof(float)) ||
+        !apart(s->slot,s->slot_allocation_bytes,work,wbytes) ||
+        !apart(s->slot,s->slot_allocation_bytes,result,sizeof(*result)) ||
         !apart(result,sizeof(*result),beam,bcount*sizeof(float)) ||
         !apart(result,sizeof(*result),render_ref,rcount*sizeof(float)) ||
         !apart(result,sizeof(*result),work,wbytes))
@@ -370,7 +374,8 @@ fe_t3s1_status fe_t3s1_drain_one(fe_t3s1_ring *s,
     size_t accounted=0u;
     uint32_t with_render;
     if(!pinned(s) || !sink || !receipt ||
-       !apart(s,sizeof(*s),receipt,sizeof(*receipt)))
+       !apart(s,sizeof(*s),receipt,sizeof(*receipt)) ||
+       !apart(s->slot,s->slot_allocation_bytes,receipt,sizeof(*receipt)))
         return FE_T3S1_REJECT;
     tail=atomic_load_explicit(&s->tail,memory_order_relaxed);
     head=atomic_load_explicit(&s->head,memory_order_acquire);

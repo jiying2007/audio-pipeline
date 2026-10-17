@@ -37,7 +37,8 @@ FALSE = ("complete_device_memory_qualified", "physical_ssc305_qualified",
          "archive_power_loss_safe")
 SCENES = ("C1_BASELINE", "C2_ULA", "C4_ULA", "C4_UCA")
 KEYS = ("scene", "rate", "render", "slots", "source_depth", "control_bytes",
-        "slot_bytes", "stage_owned_bytes", "stack_scratch_min",
+        "slot_bytes", "stage_owned_bytes", "dual_stage_owned_bytes",
+        "outboard_accounted_bytes", "stack_scratch_min",
         "apx3_one_frame", "source_processed", "negative_checks")
 
 class NotAdmitted(ValueError):
@@ -99,6 +100,8 @@ def verify_result(obj: dict) -> None:
              100 <= row["control_bytes"] <= 2048 and
              row["stage_owned_bytes"] ==
                row["control_bytes"] + slots*row["slot_bytes"] and
+             row["dual_stage_owned_bytes"] == 2*row["stage_owned_bytes"] and
+             row["outboard_accounted_bytes"] > 0 and
              row["stack_scratch_min"] == 5120 and
              160 < row["apx3_one_frame"] <= 5120 and
              row["source_processed"] == 8+slots and
@@ -145,6 +148,8 @@ def self_test() -> None:
                          slots=slots, source_depth=2 if slots == 1 else 4,
                          control_bytes=176, slot_bytes=5324,
                          stage_owned_bytes=176+slots*5324,
+                         dual_stage_owned_bytes=2*(176+slots*5324),
+                         outboard_accounted_bytes=20000,
                          stack_scratch_min=5120, apx3_one_frame=500,
                          source_processed=8+slots, negative_checks=20))
     good = {"schema_version": 1, "decision": DECISION,
@@ -168,6 +173,8 @@ def self_test() -> None:
     for key, bad in (("scene", "C3"), ("rate", 24000),
                      ("render", 2), ("slots", 24), ("slot_bytes", 999),
                      ("control_bytes", 0), ("stage_owned_bytes", 1),
+                     ("dual_stage_owned_bytes", 1),
+                     ("outboard_accounted_bytes", 0),
                      ("source_depth", 4), ("stack_scratch_min", 0),
                      ("source_processed", 0), ("apx3_one_frame", 6000),
                      ("negative_checks", 0)):
@@ -179,7 +186,7 @@ def self_test() -> None:
             failures += 1
         else:
             raise NotAdmitted("FALSE_SLOT_SELFTEST_" + key)
-    need(failures == len(mutations)+12, "NEGATIVE_SELFTEST_SKIPPED")
+    need(failures == len(mutations)+14, "NEGATIVE_SELFTEST_SKIPPED")
     print("FE09_T3S1_SELFTEST_PASS", failures)
 
 def identity(sha: str) -> dict:

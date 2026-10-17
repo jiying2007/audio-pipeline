@@ -13,6 +13,7 @@ REPO = "jiying2007/audio-pipeline"
 RUN = 12345
 ARTIFACT = 98765
 NAME = "frontend-fe09-t2b-b1s0-owner-spsc-12345"
+B1S1_NAME = "frontend-fe09-t2b-b1s1-source-apx3-12345"
 DIGEST = "sha256:" + "a" * 64
 
 
@@ -33,9 +34,9 @@ class FakeResp:
         return self.data
 
 
-def sample():
+def sample(name=NAME):
     return {
-        "id": ARTIFACT, "name": NAME,
+        "id": ARTIFACT, "name": name,
         "expired": False, "size_in_bytes": 5642,
         "digest": DIGEST,
         "workflow_run": {"id": RUN},
@@ -48,7 +49,7 @@ def http_error(code: int):
 
 
 class SameRunReadbackPolicyTests(unittest.TestCase):
-    def check(self, values, *, attempts=8):
+    def check(self, values, *, artifact_name=NAME, attempts=8):
         values = iter(values)
         opened, paused = [], []
         def opener(request, timeout):
@@ -58,7 +59,7 @@ class SameRunReadbackPolicyTests(unittest.TestCase):
                 raise value
             return value
         got = policy.check_visibility(
-            REPO, RUN, ARTIFACT, NAME, "fake-test-only-token",
+            REPO, RUN, ARTIFACT, artifact_name, "fake-test-only-token",
             opener=opener, pause=paused.append,
             attempts=attempts, delay_seconds=0
         )
@@ -154,6 +155,62 @@ class SameRunReadbackPolicyTests(unittest.TestCase):
                 REPO, RUN, ARTIFACT, NAME, "token",
                 attempts=9,
                 opener=Mock(side_effect=AssertionError("network")))
+
+    def test_b1s1_exact_identity_visible_immediately_and_after_404(self):
+        observed = sample(B1S1_NAME)
+        (attempt, digest), opened, paused = self.check(
+            [FakeResp(observed)], artifact_name=B1S1_NAME)
+        self.assertEqual((attempt, digest), (1, DIGEST))
+        self.assertEqual(len(opened), 1)
+        self.assertEqual(paused, [])
+        (attempt, digest), opened, paused = self.check(
+            [http_error(404), http_error(503), FakeResp(observed)],
+            artifact_name=B1S1_NAME)
+        self.assertEqual((attempt, digest), (3, DIGEST))
+        self.assertEqual(len(opened), 3)
+        self.assertEqual(paused, [0, 0])
+
+    def test_b1s1_rejects_other_run_wrong_source_or_bad_digest(self):
+        for field, altered in (
+            ("id", ARTIFACT + 2),
+            ("name", NAME),  # B1-S0 is not a B1-S1 run Artifact.
+            ("name", B1S1_NAME + "-spoof"),
+            ("digest", "sha256:bad"),
+            ("expired", True),
+            ("size_in_bytes", 0),
+        ):
+            with self.subTest(field=field, altered=altered):
+                metadata = sample(B1S1_NAME)
+                metadata[field] = altered
+                with self.assertRaises(policy.NotAdmitted):
+                    self.check([FakeResp(metadata)], artifact_name=B1S1_NAME)
+        metadata = sample(B1S1_NAME)
+        metadata["workflow_run"] = {"id": RUN + 1}
+        with self.assertRaises(policy.NotAdmitted):
+            self.check([FakeResp(metadata)], artifact_name=B1S1_NAME)
+        with self.assertRaisesRegex(policy.NotAdmitted, "NOT_VISIBLE"):
+            self.check([http_error(404), http_error(404)],
+                       artifact_name=B1S1_NAME, attempts=2)
+        with self.assertRaisesRegex(policy.NotAdmitted, "HTTP_HARD_FAILURE"):
+            self.check([http_error(403)], artifact_name=B1S1_NAME)
+
+    def test_b1s1_scope_cannot_be_forged_or_unbounded(self):
+        for name in (
+            "frontend-fe09-t2b-b1s1-source-apx3-12346",  # wrong run
+            "frontend-fe09-t2b-b1s1-source-apx3-foo",
+            "frontend-fe09-t2b-b1s0-owner-spsc-12345-extra",
+            "frontend-fe09-other-stage-12345",
+            "../frontend-fe09-t2b-b1s1-source-apx3-12345",
+        ):
+            with self.subTest(name=name):
+                with self.assertRaises(policy.NotAdmitted):
+                    self.check([FakeResp(sample(B1S1_NAME))],
+                               artifact_name=name)
+        with self.assertRaises(policy.NotAdmitted):
+            policy.check_visibility(REPO, RUN, ARTIFACT, B1S1_NAME,
+                "token", attempts=9,
+                opener=Mock(side_effect=AssertionError("network should not run")))
+
 
 
 if __name__ == "__main__":

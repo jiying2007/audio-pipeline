@@ -38,7 +38,7 @@ typedef struct {
     _Alignas(16) uint8_t oracle_state[STATE_CAP],oracle_work[WORK_CAP];
     atomic_uint failed,capture_done,render_done,worker_done,sink_done;
     size_t actually_outboard_bytes;
-    uint32_t external_failure_attempts;
+    uint32_t external_failure_attempts,sink_mode;
     uint64_t beam_hash;
 } fixture;
 static fixture P;
@@ -110,6 +110,11 @@ static int outboard(const uint8_t *apx3,size_t len,
        !len||len>FE_T3S1_CHUNK_BYTES||
        fe_s2_decode(apx3,len,&decoded)!=FE_S2_OK||
        decoded.frames!=1u||decoded.total_bytes!=len) return -1;
+    if(p->sink_mode) {
+        ++p->external_failure_attempts;
+        *accounted=p->sink_mode==1u?len/2u:len;
+        return p->sink_mode==1u?-1:0;
+    }
     p->actually_outboard_bytes+=len+rowlen;
     *accounted=len+rowlen;
     return 0;
@@ -166,22 +171,22 @@ static void setup(const scene_t *sc,uint32_t rate,
                               (size_t)slots,sizeof(fe_t3s1_slot));
     must(P.physical_storage!=NULL,"EXACT_PHYSICAL_SLOT_ALLOCATION");
     reject(fe_t3s1_init(NULL,&P.source,mapping,P.physical_storage,
-            slots*sizeof(fe_t3s1_slot),slots)==FE_T3S1_REJECT,
+            slots*sizeof(fe_t3s1_slot),slots,outboard,&P)==FE_T3S1_REJECT,
            "NULL_RING_ACCEPTED");
     reject(fe_t3s1_init(&P.ring,&P.source,mapping,P.physical_storage,
-            slots*sizeof(fe_t3s1_slot),0u)==FE_T3S1_REJECT,
+            slots*sizeof(fe_t3s1_slot),0u,outboard,&P)==FE_T3S1_REJECT,
            "ZERO_SLOT_BANK_ACCEPTED");
     reject(fe_t3s1_init(&P.ring,&P.source,mapping,P.physical_storage,
-            slots*sizeof(fe_t3s1_slot),3u)==FE_T3S1_REJECT,
+            slots*sizeof(fe_t3s1_slot),3u,outboard,&P)==FE_T3S1_REJECT,
            "THREE_SLOT_BANK_ACCEPTED");
     reject(fe_t3s1_init(&P.ring,&P.source,mapping,P.physical_storage,
-            slots*sizeof(fe_t3s1_slot)-1u,slots)==FE_T3S1_REJECT,
+            slots*sizeof(fe_t3s1_slot)-1u,slots,outboard,&P)==FE_T3S1_REJECT,
            "SHORT_PHYSICAL_ALLOCATION_ACCEPTED");
     reject(fe_t3s1_init(&P.ring,&P.source,badmap,P.physical_storage,
-            slots*sizeof(fe_t3s1_slot),slots)==FE_T3S1_REJECT,
+            slots*sizeof(fe_t3s1_slot),slots,outboard,&P)==FE_T3S1_REJECT,
            "INVALID_CAPTURE_SLOT_BIJECTION_ACCEPTED");
     must(fe_t3s1_init(&P.ring,&P.source,mapping,P.physical_storage,
-           slots*sizeof(fe_t3s1_slot),slots)==FE_T3S1_OK,
+           slots*sizeof(fe_t3s1_slot),slots,outboard,&P)==FE_T3S1_OK,
          "PHYSICALLY_ALLOCATED_ONLY_ONE_TWO_SLOTS");
     must(fe_t3s1_seed_wrap_before_start(&P.ring,UINT32_MAX-2u)==
          FE_T3S1_OK,"REAL_COMPACT_COUNTER_WRAP_INIT");
@@ -383,11 +388,37 @@ static void one_profile(const scene_t *sc,uint32_t rate,
     reject(fe_t3s1_step(&P.ring,beam,160u,render?ref:NULL,
              render?160u:0u,P.work,sizeof(P.work),NULL)==FE_T3S1_REJECT,
            "NULL_SOURCE_RECEIPT_ACCEPTED");
+    reject(fe_t3s1_step(&P.ring,(float *)P.physical_storage,160u,
+             render?ref:NULL,render?160u:0u,P.work,sizeof(P.work),
+             &wr)==FE_T3S1_REJECT,"RING_SLOT_ALIAS_BF_OUTPUT_ACCEPTED");
+    reject(fe_t3s1_drain_one(&P.ring,outboard,&P,
+             (fe_t3s1_drain_receipt *)P.physical_storage)==FE_T3S1_REJECT,
+           "RING_SLOT_ALIAS_DRAIN_RECEIPT_ACCEPTED");
+    {
+        uint64_t old_id=P.source.cfg.source_generation;
+        P.source.cfg.source_generation=old_id+1u;
+        reject(fe_t3s1_step(&P.ring,beam,160u,render?ref:NULL,
+              render?160u:0u,P.work,sizeof(P.work),&wr)==FE_T3S1_REJECT,
+              "STALE_OR_REBOUND_SOURCE_GENERATION_ADMITTED");
+        P.source.cfg.source_generation=old_id;
+    }
     reject(beam[0]==321.0f&&P.source.processed==0u,
            "INVALID_OR_PENDING_MUTATED_OUTPUT");
     run_threads();
     reject(fe_t3s1_seed_wrap_before_start(&P.ring,0u)==FE_T3S1_REJECT,
            "LIVE_RING_RESEED_ACCEPTED");
+    {
+        uint64_t saved=P.source.cap_last;
+        int16_t cap[1920],refpcm[480];
+        pcm_for(P.scene,P.rate,7u,cap,refpcm);
+        P.source.cap_last=UINT64_MAX; /* quiescent test-only state mutation */
+        reject(fe_b1s0_capture_submit(&P.source,
+               P.source.cfg.capture_source_id,
+               P.source.cfg.source_generation,UINT64_MAX,cap,
+               (size_t)P.rate/100u*P.scene->mics)==FE_B1S0_REJECT,
+               "UINT64_SOURCE_SEQUENCE_OVERFLOW_ACCEPTED");
+        P.source.cap_last=saved;
+    }
     enqueue_capture(7u);enqueue_render(7u);
     must(atomic_load_explicit(&P.failed,memory_order_acquire)==0u&&
          fe_t3s1_step(&P.ring,beam,160u,render?ref:NULL,
@@ -399,9 +430,16 @@ static void one_profile(const scene_t *sc,uint32_t rate,
            "CANONICAL_FILE_SHA_TAMPER_ADMITTED");
     P.physical_storage[tail%slots].canonical_row[104u]^=1u;
     reject(fe_t3s1_drain_one(&P.ring,torn_sink,&P,&dr)==
-           FE_T3S1_SINK_NOT_ADMITTED,"TORN_OUTBOARD_ACK_ADMITTED");
+           FE_T3S1_REJECT,"UNBOUND_OUTBOARD_CALLBACK_ACCEPTED");
     reject(fe_t3s1_drain_one(&P.ring,short_ack,&P,&dr)==
+           FE_T3S1_REJECT,"DIFFERENT_OUTBOARD_CALLBACK_ACCEPTED");
+    P.sink_mode=1u;
+    reject(fe_t3s1_drain_one(&P.ring,outboard,&P,&dr)==
+           FE_T3S1_SINK_NOT_ADMITTED,"TORN_OUTBOARD_ACK_ADMITTED");
+    P.sink_mode=2u;
+    reject(fe_t3s1_drain_one(&P.ring,outboard,&P,&dr)==
            FE_T3S1_SINK_NOT_ADMITTED,"SHORT_OUTBOARD_ACK_ADMITTED");
+    P.sink_mode=0u;
     reject(P.ring.drained_global_capture==FRAMES &&
            atomic_load_explicit(&P.ring.tail,memory_order_relaxed)==tail,
            "FAILED_SINK_ADVANCED_CONSUMER_TAIL");

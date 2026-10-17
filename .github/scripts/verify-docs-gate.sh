@@ -60,6 +60,7 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualif
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b2s3_t3s1_compact_handoff_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py

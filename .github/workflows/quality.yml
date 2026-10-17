@@ -1365,6 +1365,7 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py \
             --verify --output fe09-b1s1 --execution-source "$GITHUB_SHA"
       - name: Retain B1-S1 exact-run original APX3 and negative failure evidence
+        id: fe09_b1s1_upload
         if: always() && (steps.fe09_b1s1.outcome == 'success' || steps.fe09_b1s1.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -1372,6 +1373,18 @@ jobs:
           path: fe09-b1s1/
           retention-days: 30
           if-no-files-found: error
+      - name: Wait for exact B1-S1 upload ID before mandatory pinned download
+        if: steps.fe09_b1s1.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_b1s1_upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_ID"
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t2b-b1s1-source-apx3-$GITHUB_RUN_ID"
       - name: Download exact source-linked B1-S1 four-member Artifact
         if: steps.fe09_b1s1.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0

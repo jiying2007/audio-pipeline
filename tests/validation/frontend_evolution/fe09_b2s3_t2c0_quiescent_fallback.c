@@ -130,7 +130,11 @@ fe_t2c0_status fe_t2c0_init(fe_t2c0_gate *g,
         !apart(g, sizeof(*g), initial->source,
                sizeof(*initial->source)) ||
         !apart(g, sizeof(*g), initial->archive,
-               sizeof(*initial->archive)))
+               sizeof(*initial->archive)) ||
+        !apart(g, sizeof(*g), initial->source->core,
+               sizeof(*initial->source->core)) ||
+        !apart(g, sizeof(*g), initial->source->core->capture_bf,
+               initial->source->core->capture_state_bytes))
         return FE_T2C0_DENIED;
     memset(g, 0, sizeof(*g));
     g->required_owners = FE_T2C0_CAPTURE_OWNER | FE_T2C0_WORKER_OWNER |

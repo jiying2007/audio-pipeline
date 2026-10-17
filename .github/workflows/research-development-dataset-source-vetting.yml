@@ -193,7 +193,7 @@ jobs:
           sha256sum demand-v3-vetting/receipt.json > demand-v3-vetting/SHA256SUMS
 
       - name: Upload source-vetting receipt
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: demand-domain-expansion-v3-source-vetting-${{ github.run_id }}
           path: demand-v3-vetting/
@@ -300,7 +300,7 @@ jobs:
 
       - name: Retain original D1 BLOCKED and D1Q diagnostic evidence
         if: always() && steps.intake.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-val-csv-d1q-${{ github.run_id }}
           path: realman-d1-evidence/
@@ -366,7 +366,7 @@ jobs:
 
       - name: Retain pinned tree source metadata and failure evidence only
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-scene-archive-d2-s0-${{ github.run_id }}
           path: realman-d2-s0-evidence/
@@ -447,7 +447,7 @@ jobs:
 
       - name: Retain metadata and bounded negative evidence; never RAR or FLAC
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-one-archive-d2-s1-${{ github.run_id }}
           path: realman-d2-s1-evidence/
@@ -529,7 +529,7 @@ jobs:
 
       - name: Retain research source-only evidence without RAR FLAC PCM CSV
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-flac-quartets-d2-s2-${{ github.run_id }}
           path: realman-d2-s2-evidence/
@@ -616,7 +616,7 @@ jobs:
 
       - name: Retain only metadata logs and synthetic digests without binaries or PCM
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-flac-toolchain-d2-t0-${{ github.run_id }}
           path: realman-d2-t0-evidence/
@@ -704,7 +704,7 @@ jobs:
 
       - name: Retain only metadata source-integrity evidence for 30 days
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-pcm-reference-d2-s3r-${{ github.run_id }}
           path: realman-d2-s3r-evidence/
@@ -780,7 +780,7 @@ jobs:
 
       - name: Retain only metadata and fail-closed capture clock authority result
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-capture-timebase-d2-s4-${{ github.run_id }}
           path: realman-d2-s4-evidence/
@@ -866,7 +866,7 @@ jobs:
 
       - name: Publish only parser SHA and synthetic digest metadata for 30 days
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-pypdf-toolchain-d2-s5-t0-${{ github.run_id }}
           path: realman-d2-s5-t0-evidence/
@@ -953,7 +953,7 @@ jobs:
 
       - name: Retain only audited paper-design SHA/booleans without publisher PDF or source text
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-paper-clock-design-d2-s5r-${{ github.run_id }}
           path: realman-d2-s5r-evidence/
@@ -1040,7 +1040,7 @@ jobs:
 
       - name: Retain research lag and uncertainty metadata only
         if: always() && steps.collect.outcome != 'skipped'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: realman-gym-lag-d2-s6-${{ github.run_id }}
           path: realman-d2-s6-evidence/

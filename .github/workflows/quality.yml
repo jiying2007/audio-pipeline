@@ -1506,6 +1506,85 @@ jobs:
                 os.environ["GITHUB_SHA"])
           PY
 
+  frontend-s3-t3s0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile actual first-party BF/SPSC/APX3 on Native sanitized ARM-QEMU TSan
+        id: fe09_t3s0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py \
+            --collect --output fe09-t3s0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py \
+            --verify --output fe09-t3s0 --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run T3-S0 source/negative memory receipt
+        if: always() && (steps.fe09_t3s0.outcome == 'success' || steps.fe09_t3s0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}
+          path: fe09-t3s0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download immutable current-run T3-S0 four-member Artifact
+        if: steps.fe09_t3s0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}
+          path: fe09-t3s0-readback
+      - name: Independently rehash T3-S0 members and reject false full 192KiB qualification
+        if: steps.fe09_t3s0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py \
+            --verify --output fe09-t3s0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root = Path("fe09-t3s0-readback")
+          names = ("receipt.json", "collect.log", "verify.log")
+          assert root.is_dir()
+          assert {p.name for p in root.iterdir()} == {"SHA256SUMS", *names}
+          manifest = "".join(
+              f"{hashlib.sha256((root / n).read_bytes()).hexdigest()}  {n}\n"
+              for n in names)
+          assert (root / "SHA256SUMS").read_text("ascii") == manifest
+          receipt = json.loads((root / "receipt.json").read_text("utf-8"))
+          assert receipt["source_commit"] == os.environ["GITHUB_SHA"]
+          assert receipt["decision"] == (
+              "FE09_T3S0_COMPILER_AND_FIRST_PARTY_BF_RESOURCE_OVER_BUDGET_NO_DEVICE_AUTHORITY")
+          assert receipt["actual_compiled_targets_complete"] is True
+          assert receipt["target_order"] == ["native", "sanitized", "arm", "tsan"]
+          assert receipt["only_declared_buffers_counted"] is True
+          assert receipt["device_memory_admitted"] is False
+          for result in receipt["target_results"].values():
+              assert result["profile_count"] == 48
+              assert result["negative_checks"] == 720
+              assert result["static_two_archive_arrays"] == 255552
+              assert result["device_budget_bytes"] == 196608
+              assert all(p["dual_owned_min"] > 196608 and
+                         p["dual_exceeds_192kib"] is True and
+                         p["complete_device_memory_qualified"] is False
+                         for p in result["profile_rows"])
+          print("FE09_T3S0_COMPILED_OVER_BUDGET_READBACK_PASS",
+                os.environ["GITHUB_SHA"])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

@@ -1651,6 +1651,8 @@ jobs:
               assert outcome['profile_count'] == 48 and outcome['negative_checks'] >= 500
               assert all(row['slot_bytes'] == 5324 and
                          row['stage_owned_bytes'] == row['control_bytes'] + row['slots'] * 5324 and
+                         row['dual_stage_owned_bytes'] == 2 * row['stage_owned_bytes'] and
+                         row['outboard_accounted_bytes'] > 0 and
                          row['stack_scratch_min'] == 5120 for row in outcome['profile_rows'])
               assert all(outcome[k] is False for k in (
                   'complete_device_memory_qualified', 'physical_ssc305_qualified',

@@ -40,7 +40,8 @@ typedef struct {
     uint64_t drained_global_capture; /* consumer only */
     uint8_t producer_prior_row_sha256[32]; /* worker only */
     uint8_t consumer_prior_row_sha256[32]; /* consumer only */
-    fe_t3s1_slot slot[FE_T3S1_MAX_SLOTS];
+    fe_t3s1_slot *slot;      /* exact externally allocated 1 or 2 slots */
+    size_t slot_allocation_bytes; /* == slot_count * sizeof(fe_t3s1_slot) */
 } fe_t3s1_ring;
 
 typedef struct {
@@ -66,7 +67,7 @@ typedef int (*fe_t3s1_outboard_sink)(
  */
 fe_t3s1_status fe_t3s1_init(fe_t3s1_ring *ring,
     fe_b1s0_state *source, const uint32_t slots[4],
-    uint32_t physical_slots);
+    fe_t3s1_slot *storage, size_t storage_bytes, uint32_t physical_slots);
 
 /* Worker: reserve a free physical slot FIRST. Preflight exact original S2
  * writer+decode+SHA and canonical FBS1 prev-row chain using stack scratch.

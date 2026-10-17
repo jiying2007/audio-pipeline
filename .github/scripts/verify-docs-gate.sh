@@ -58,6 +58,7 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qua
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py

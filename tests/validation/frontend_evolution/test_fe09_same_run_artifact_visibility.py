@@ -6,6 +6,7 @@ import json
 import unittest
 import urllib.error
 from unittest.mock import Mock
+from pathlib import Path
 
 import fe09_same_run_artifact_visibility as policy
 
@@ -210,6 +211,32 @@ class SameRunReadbackPolicyTests(unittest.TestCase):
             policy.check_visibility(REPO, RUN, ARTIFACT, B1S1_NAME,
                 "token", attempts=9,
                 opener=Mock(side_effect=AssertionError("network should not run")))
+
+
+    def test_b1s1_workflow_cannot_skip_mandatory_readback(self):
+        quality = (Path(__file__).resolve().parents[3] /
+                   ".github/workflows/quality.yml").read_text("utf-8")
+        stage = quality.split("  frontend-s3-t2b-b1s1:\n", 1)[1].split(
+            "\n  frontend-speech:", 1)[0]
+        markers = [
+            "id: fe09_b1s1\n",
+            "id: fe09_b1s1_upload\n",
+            "steps.fe09_b1s1_upload.outputs.artifact-id",
+            "--artifact-name \"frontend-fe09-t2b-b1s1-source-apx3-$GITHUB_RUN_ID\"",
+            "uses: actions/download-artifact@",
+            "--verify --output fe09-b1s1-readback",
+            "B1S1_ARTIFACT_FOUR_MEMBERS_DRIFT",
+        ]
+        offsets = [stage.index(marker) for marker in markers]
+        self.assertEqual(offsets, sorted(offsets))
+        self.assertIn("if-no-files-found: error", stage)
+        self.assertIn("retention-days: 30", stage)
+        self.assertNotIn("continue-on-error:", stage)
+        # Original B1-S0 reader must remain separately bound and pinned.
+        previous = quality.split("  frontend-s3-t2b-b1s0:\n", 1)[1].split(
+            "\n  frontend-s3-t2b-b1s1:", 1)[0]
+        self.assertIn("steps.fe09_b1s0_upload.outputs.artifact-id", previous)
+        self.assertIn("uses: actions/download-artifact@", previous)
 
 
 

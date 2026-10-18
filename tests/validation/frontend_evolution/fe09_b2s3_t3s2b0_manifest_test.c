@@ -326,6 +326,32 @@ static void matrix_case(uint32_t scene,uint32_t rate,uint32_t render,
     must(f!=NULL,"ALLOC_ACTUAL_CASE");
     setup(f,scene,rate,render,slots,2u);
     memcpy(map,f->ring.physical_to_slot,sizeof(map));
+    {
+        fe_t3s2a_spool fake=f->storage_owner;
+        fe_t3s2b0_index rejected,untouched;
+        memset(&rejected,0xA5,sizeof(rejected));
+        untouched=rejected;
+        fake.mics=33u; /* MUST NOT perform (1u << source_mics) */
+        reject(fe_t3s2b0_bind(&rejected,&fake,2u)!=0 &&
+               memcmp(&rejected,&untouched,sizeof(rejected))==0,
+               "INVALID_SOURCE_MICS_REJECTED_BEFORE_SHIFT_UB");
+        fake=f->storage_owner;fake.rate_hz=24000u;
+        reject(fe_t3s2b0_bind(&rejected,&fake,2u)!=0,
+               "FOREIGN_SOURCE_RATE_REJECTED_BEFORE_INDEX_BIND");
+        fake=f->storage_owner;fake.render_enabled=2u;
+        reject(fe_t3s2b0_bind(&rejected,&fake,2u)!=0,
+               "INVALID_RENDER_OWNER_FLAG_REJECTED_BEFORE_INDEX_BIND");
+        fake=f->storage_owner;fake.capture_id=0u;
+        reject(fe_t3s2b0_bind(&rejected,&fake,2u)!=0,
+               "ZERO_ORIGINAL_CAPTURE_OWNER_REJECTED_BEFORE_BIND");
+        fake=f->storage_owner;fake.generation=UINT64_MAX;
+        reject(fe_t3s2b0_bind(&rejected,&fake,2u)!=0,
+               "SOURCE_UINT64_EPOCH_WRAP_REJECTED_BEFORE_BIND");
+        fake=f->storage_owner;fake.render_enabled=1u;
+        fake.render_id=fake.capture_id;
+        reject(fe_t3s2b0_bind(&rejected,&fake,2u)!=0,
+               "CAPTURE_RENDER_ID_COLLISION_REJECTED_BEFORE_BIND");
+    }
     reject(fe_t3s2b0_bind(&f->index,&f->storage_owner,0u)!=0,
            "ZERO_MANIFEST_CAPACITY_REJECTED");
     reject(fe_t3s2b0_bind(&f->index,&f->storage_owner,17u)!=0,

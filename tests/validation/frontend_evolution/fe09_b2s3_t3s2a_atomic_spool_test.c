@@ -358,6 +358,95 @@ static void adverse_cases(void) {
          "FULL_OUTBOARD_QUOTA_FAILS_BEFORE_SOURCE_ACK");
     finish(p);free(p);
 }
+/* A separate post-failure bind models losing the in-memory consumer after
+ * the immutable final pathname was linked but BEFORE tail ACK. The new
+ * owner must reconcile the exact same-inode temp, recover source ancestry,
+ * idempotently ACK only identical originals and continue the next frame.
+ * This is a hosted syscall-fault replay, NEVER a real NAND powercut claim.
+ */
+static void crash_recovery_cases(void) {
+    test_t *p=(test_t *)calloc(1,sizeof(*p));
+    fe_t3s2a_spool resumed,post_next,rejected;
+    uint8_t zero[32]={0}, prior[32];
+    char pub[FE_T3S2A_NAME_CAP],tmp[FE_T3S2A_NAME_CAP];
+    struct stat first,second;
+    size_t ack=4321u;
+    must(p!=NULL,"CRASH_RESTART_FIXTURE_ALLOC");
+    setup(p,3u,48000u,1u,1u);
+    prepare(p,1u,1u,zero);
+    must(fe_t3s2a_set_test_fault(&p->spool,FE_T3S2A_FAULT_PUBLISH)==0,
+         "POST_LINK_PRE_ACK_FAULT_SETUP");
+    negative(fe_t3s2a_outboard_sink(p->storage[0].apx3,
+       p->storage[0].apx3_bytes,p->storage[0].canonical_row,
+       FE_T3S1_ROW_BYTES,&p->spool,&ack)!=0 &&
+       ack==0u && p->spool.committed==0u,
+       "CRASH_AFTER_LINK_MUST_WITHHOLD_SOURCE_ACK");
+    must(fe_t3s2a_record_name(1u,pub)==0 &&
+         snprintf(tmp,sizeof(tmp),"fbs1-%016" PRIx64 ".part",UINT64_C(1))>0 &&
+         fstatat(p->fd,pub,&first,AT_SYMLINK_NOFOLLOW)==0 &&
+         fstatat(p->fd,tmp,&second,AT_SYMLINK_NOFOLLOW)==0 &&
+         S_ISREG(first.st_mode) && S_ISREG(second.st_mode) &&
+         first.st_dev==second.st_dev && first.st_ino==second.st_ino &&
+         first.st_nlink==2,
+         "TWO_ORIGINAL_HARDLINKS_REMAIN_AT_INTERRUPTED_PUBLISH");
+    must(fe_t3s2a_bind(&resumed,p->fd,&p->source,p->slots,2u)==0 &&
+         resumed.binding_complete==1u && resumed.committed==1u &&
+         resumed.restart_recovered==1u,
+         "NEW_PROCESS_SOURCE_EXACT_CRASH_RECONCILIATION");
+    negative(fstatat(p->fd,tmp,&second,AT_SYMLINK_NOFOLLOW)!=0,
+         "POST_CRASH_REBIND_REMOVED_ONLY_SAME_INODE_TEMP_LINK");
+    ack=0u;
+    must(fe_t3s2a_outboard_sink(p->storage[0].apx3,
+         p->storage[0].apx3_bytes,p->storage[0].canonical_row,
+         FE_T3S1_ROW_BYTES,&resumed,&ack)==0 &&
+         ack==(size_t)p->storage[0].apx3_bytes+FE_T3S1_ROW_BYTES,
+         "POST_CRASH_ORIGINAL_APX3_EXACT_IDEMPOTENT_ACK");
+    must(fe_b1s1_sha256(p->storage[0].canonical_row,
+         FE_T3S1_ROW_BYTES,prior)==0,"POST_CRASH_PRIOR_FULL_ROW_SHA");
+    prepare(p,2u,0u,prior);
+    ack=0u;
+    must(fe_t3s2a_outboard_sink(p->storage[0].apx3,
+         p->storage[0].apx3_bytes,p->storage[0].canonical_row,
+         FE_T3S1_ROW_BYTES,&resumed,&ack)==0 &&
+         resumed.committed==2u &&
+         ack==(size_t)p->storage[0].apx3_bytes+FE_T3S1_ROW_BYTES,
+         "POST_CRASH_CONTINUE_SECOND_REAL_FIRST_PARTY_APX3_FRAME");
+    must(fe_t3s2a_bind(&post_next,p->fd,&p->source,p->slots,2u)==0 &&
+         post_next.committed==2u && post_next.binding_complete==1u,
+         "SECOND_PROCESS_RESTART_REPLAY_TWO_GLOBAL_CAPTURES");
+    {
+        fe_b1s0_config wrong=p->source;
+        ++wrong.source_generation;
+        negative(fe_t3s2a_bind(&rejected,p->fd,&wrong,p->slots,2u)!=0,
+                 "FOREIGN_SOURCE_GENERATION_REPLAY_REJECTED");
+        ack=999u;
+        negative(fe_t3s2a_outboard_sink(p->storage[0].apx3,
+                 p->storage[0].apx3_bytes,p->storage[0].canonical_row,
+                 FE_T3S1_ROW_BYTES,&rejected,&ack)!=0 && ack==0u,
+                 "REJECTED_GENERATION_BIND_NEVER_ACKS");
+    }
+    finish(p);
+    setup(p,0u,16000u,0u,1u);
+    prepare(p,1u,1u,zero);
+    must(snprintf(tmp,sizeof(tmp),"fbs1-%016" PRIx64 ".part",UINT64_C(1))>0,
+         "TORN_UNPUBLISHED_FILE_NAME");
+    {
+        int fd=openat(p->fd,tmp,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,
+                      0600);
+        must(fd>=0 && write(fd,"TORN",4u)==4 && close(fd)==0,
+             "SYNTHETIC_PROCESS_DIED_BEFORE_ATOMIC_PUBLICATION");
+    }
+    negative(fe_t3s2a_bind(&resumed,p->fd,&p->source,p->slots,2u)!=0,
+         "UNPUBLISHED_PARTIAL_TEMP_QUARANTINED_ON_RESTART");
+    ack=999u;
+    negative(fe_t3s2a_outboard_sink(p->storage[0].apx3,
+       p->storage[0].apx3_bytes,p->storage[0].canonical_row,
+       FE_T3S1_ROW_BYTES,&resumed,&ack)!=0 && ack==0u,
+       "PARTIAL_TEMP_REJECTED_BIND_NOT_ALLOWED_TO_ACK");
+    must(unlinkat(p->fd,tmp,0)==0,"ONLY_TEST_OWNED_TORN_TEMP_CLEANUP");
+    finish(p);
+    free(p);
+}
 int main(void) {
     negative(fe_t3s2a_record_name(0u,(char[FE_T3S2A_NAME_CAP]){0})!=0,
          "ZERO_GLOBAL_SOURCE_FILE_ID");
@@ -370,6 +459,7 @@ int main(void) {
             for(int f=FE_T3S2A_FAULT_CREATE;f<=FE_T3S2A_FAULT_READBACK;++f)
                 matrix_case(sc,RATES[rate],render,k,(fe_t3s2a_fault)f);
     adverse_cases();
+    crash_recovery_cases();
     must(PROFILES==336u&&FAULTS==336u&&NEGATIVES>=680u &&
          RECOVERIES==672u&&COMPLETE>=672u,
          "FAILURE_BOUNDARY_NEGATIVE_EXECUTION_ACCOUNTING");

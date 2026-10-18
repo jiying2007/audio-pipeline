@@ -43,7 +43,7 @@ typedef struct {
     fe_b1s0_config source;
     fe_t3s2a_spool spool;
     fe_t3s1_ring ring;
-    fe_t3s1_slot storage[2];
+    fe_t3s1_slot *storage; /* EXACT physical K=1/2 allocation */
     int16_t capture[1920],render[480];
     int fd;
     char name[96];
@@ -76,6 +76,8 @@ static void setup(test_t *p,uint32_t scene,uint32_t rate,
     must(p->fd>=0,"DEDICATED_NOFOLLOW_DIR");
     must(fe_t3s2a_bind(&p->spool,p->fd,&p->source,p->slots,2u)==0,
          "EXACT_BOUND_ORIGINAL_EMPTY_SOURCE_DIR");
+    p->storage=(fe_t3s1_slot *)calloc((size_t)k,sizeof(fe_t3s1_slot));
+    must(p->storage!=NULL,"ACTUAL_ONE_TWO_PHYSICAL_SLOT_ALLOCATION");
     memset(&p->ring,0,sizeof(p->ring));
     p->ring.pinned_cfg=p->source;
     p->ring.pinned_sink=fe_t3s2a_outboard_sink;
@@ -100,6 +102,7 @@ static void finish(test_t *p) {
     must(close(p->fd)==0,"CLOSE_ORIGINAL_SPOOL");
     p->fd=-1;
     must(rmdir(p->name)==0,"NO_HIDDEN_DISK_RESIDUE");
+    free(p->storage);p->storage=NULL;
 }
 /* Exact ORIGINAL first-party writer, checksum/parser and FBS1 canonical row.
  * No cloned APX3 serializer or CRC. Local APX3 sequence always one.

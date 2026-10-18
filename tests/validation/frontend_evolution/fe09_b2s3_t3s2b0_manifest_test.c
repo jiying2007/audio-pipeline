@@ -259,6 +259,28 @@ static void roundtrip(fixture *f,int mutate) {
          "CANONICAL_ROUNDTRIP_BYTE_IDENTITY");
     ++ROUNDTRIPS;++RECOVERIES;
     if(mutate) {
+        /* These are actual intra-owner/manifest aliases. The public B0
+         * functions must reject before any output or source mutation.
+         * The source/fixture extent is a real bounded allocated object.
+         */
+        {
+            fe_t3s2b0_index frozen=f->index;
+            fe_t3s2a_spool frozen_owner=recovery;
+            size_t out_count=987654u;
+            reject(fe_t3s2b0_encode(&f->index,(uint8_t *)f,
+                   sizeof(*f),&out_count)!=0 &&
+                   out_count==987654u &&
+                   memcmp(&f->index,&frozen,sizeof(frozen))==0,
+                   "OUTER_INDEX_OUTPUT_MUST_NOT_OVERLAP_SOURCE_OR_INDEX");
+            reject(fe_t3s2b0_encode(&f->index,again,sizeof(again),
+                   (size_t *)(void *)&f->index.last_seq)!=0 &&
+                   memcmp(&f->index,&frozen,sizeof(frozen))==0,
+                   "INDEX_SIZE_OUTPUT_MUST_NOT_ALIAS_INDEX");
+            reject(fe_t3s2b0_decode((fe_t3s2b0_index *)(void *)&recovery,
+                   &recovery,bytes,size)!=0 &&
+                   memcmp(&recovery,&frozen_owner,sizeof(recovery))==0,
+                   "INDEX_DECODE_MUST_NOT_OVERWRITE_RECOVERED_S2A_OWNER");
+        }
         const size_t touched[]={
             0u,4u,8u,12u,16u,20u,24u,28u,32u,36u,40u,44u,
             60u,68u,76u,84u,92u,124u,156u,

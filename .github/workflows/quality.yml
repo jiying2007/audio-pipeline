@@ -1661,6 +1661,81 @@ jobs:
                   'archive_power_loss_safe'))
           print('FE09_T3S1_EXACT_SOURCE_AND_OUTBOARD_READBACK_PASS', os.environ['GITHUB_SHA'])
           PY
+  frontend-s3-t3s2a:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile original S1 callback with actual POSIX S2-A file sync/recovery
+        id: fe09_t3s2a
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py \
+            --collect --output fe09-t3s2a --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py \
+            --verify --output fe09-t3s2a --execution-source "$GITHUB_SHA"
+      - name: Retain original S2-A POSIX-hosted fault-negative evidence
+        if: always() && (steps.fe09_t3s2a.outcome == 'success' || steps.fe09_t3s2a.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}
+          path: fe09-t3s2a/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact original current-run S2-A four-member Artifact
+        if: steps.fe09_t3s2a.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}
+          path: fe09-t3s2a-readback
+      - name: Independently rehash original S2-A members, reject fake durable HIL qualification
+        if: steps.fe09_t3s2a.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py \
+            --verify --output fe09-t3s2a-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          d = Path('fe09-t3s2a-readback')
+          names = ('receipt.json', 'collect.log', 'verify.log')
+          assert d.is_dir()
+          assert {x.name for x in d.iterdir()} == set(names) | {'SHA256SUMS'}
+          expected = ''.join(f'{hashlib.sha256((d/n).read_bytes()).hexdigest()}  {n}\n' for n in names)
+          assert (d / 'SHA256SUMS').read_text('ascii') == expected
+          obj = json.loads((d / 'receipt.json').read_text('utf-8'))
+          assert obj['source_commit'] == os.environ['GITHUB_SHA']
+          assert obj['decision'] == 'FE09_T3S2A_ATOMIC_ORIGINAL_SPOOL_RESEARCH_ONLY'
+          assert obj['actual_compiled_targets_complete'] is True
+          assert obj['target_order'] == ['native', 'sanitized', 'arm', 'tsan']
+          for target in obj['target_results'].values():
+              assert target['profiles'] == 336
+              assert target['fault_injections'] == 336
+              assert target['negative_checks'] >= 680
+              assert target['restart_idempotence'] == 672
+              assert target['completed_original_frames'] >= 672
+              assert all(target[key] is False for key in (
+                  'hardware_qualified', 'durable_powerloss_qualified',
+                  'rolling_recorder_qualified',
+                  'complete_ssc305_device_memory_qualified',
+                  'public_sdk_installed'))
+          print('FE09_T3S2A_EXACT_SOURCE_POSIX_READBACK_PASS', os.environ['GITHUB_SHA'])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

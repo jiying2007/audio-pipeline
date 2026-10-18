@@ -254,7 +254,9 @@ int fe_t3s2b0_observe_acked(fe_t3s2b0_index *i,
        i->count>=i->maximum_rows||
        i->source->committed!=(uint64_t)i->count+UINT64_C(1)||
        !disjoint(i,sizeof(*i),slot,sizeof(*slot))||
-       !disjoint(i,sizeof(*i),receipt,sizeof(*receipt)))return -1;
+       !disjoint(i,sizeof(*i),receipt,sizeof(*receipt))||
+       !disjoint(i->source,sizeof(*i->source),slot,sizeof(*slot))||
+       !disjoint(i->source,sizeof(*i->source),receipt,sizeof(*receipt)))return -1;
     seq=(uint64_t)i->count+UINT64_C(1);
     if(receipt->source_sequence!=seq||
        receipt->source_capture_id!=i->capture_id||
@@ -296,6 +298,9 @@ int fe_t3s2b0_encode(const fe_t3s2b0_index *i,
     if(!i||!dest||!written||!integrity(i)||
        i->source->committed!=(uint64_t)i->count||
        !disjoint(i,sizeof(*i),dest,capacity)||
+       !disjoint(i->source,sizeof(*i->source),dest,capacity)||
+       !disjoint(i,sizeof(*i),written,sizeof(*written))||
+       !disjoint(i->source,sizeof(*i->source),written,sizeof(*written))||
        !disjoint(written,sizeof(*written),dest,capacity)||
        !image(i,data,&size)||capacity<size)return -1;
     if(fe_b1s1_sha256(data,size,hash)!=0||
@@ -315,6 +320,7 @@ int fe_t3s2b0_decode(fe_t3s2b0_index *result,
        bytes<FE_T3S2B0_HEADER_BYTES || bytes>FE_T3S2B0_MAX_BYTES||
        !disjoint(result,sizeof(*result),data,bytes)||
        !disjoint(owner,sizeof(*owner),data,bytes)||
+       !disjoint(result,sizeof(*result),owner,sizeof(*owner))||
        g32(data)!=FE_T3S2B0_MAGIC||
        g32(data+4u)!=FE_T3S2B0_VERSION||
        g32(data+8u)!=FE_T3S2B0_HEADER_BYTES ||

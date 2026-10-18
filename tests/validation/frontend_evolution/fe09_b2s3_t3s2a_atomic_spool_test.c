@@ -302,6 +302,7 @@ static void adverse_cases(void) {
     /* A prior bind scans an empty directory. A later bind must rescan
      * from offset ZERO, not inherit the first dirfd stream at EOF. */
     setup(p,0u,16000u,0u,1u);
+    prepare(p,1u,1u,zero);
     {
         int alien=openat(p->fd,"foreign-source.dat",
             O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
@@ -309,6 +310,11 @@ static void adverse_cases(void) {
     }
     negative(fe_t3s2a_bind(&recovered,p->fd,&p->source,p->slots,2u)!=0,
          "REPEATED_DIRECTORY_SCAN_MUST_REJECT_ALIEN_FILE");
+    actual=99u;
+    negative(fe_t3s2a_outboard_sink(p->storage[0].apx3,
+         p->storage[0].apx3_bytes,p->storage[0].canonical_row,
+         FE_T3S1_ROW_BYTES,&recovered,&actual)!=0 && actual==0u,
+         "REJECTED_PARTIAL_BIND_MUST_NOT_ACK_OR_PUBLISH");
     must(unlinkat(p->fd,"foreign-source.dat",0)==0,
          "REMOVE_ONLY_INJECTED_ALIEN_FILE");
     must(fe_t3s2a_bind(&recovered,p->fd,&p->source,p->slots,2u)==0,

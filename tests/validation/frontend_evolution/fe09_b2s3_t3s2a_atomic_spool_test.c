@@ -195,6 +195,8 @@ static void matrix_case(uint32_t scene,uint32_t rate,
     fe_t3s1_drain_receipt out;
     fe_t3s2a_spool resumed;
     uint8_t first_digest[32],previous[32]={0};
+    uint8_t first_row[FE_T3S1_ROW_BYTES],first_apx[FE_T3S1_CHUNK_BYTES];
+    size_t first_apx_bytes;
     size_t actual=999u;
     uint32_t tail;
     must(p!=NULL,"TEST_MEMORY");
@@ -217,7 +219,10 @@ static void matrix_case(uint32_t scene,uint32_t rate,
     published(p,1u,&out);
     must(p->spool.committed==1u && atomic_load(&p->ring.tail)==1u,
          "ACTUAL_FIRST_PARTY_S1_TAIL_COMMIT_AFTER_SYNC");
-    must(fe_b1s1_sha256(p->storage[0].canonical_row,
+    first_apx_bytes=p->storage[0].apx3_bytes;
+    memcpy(first_row,p->storage[0].canonical_row,sizeof(first_row));
+    memcpy(first_apx,p->storage[0].apx3,first_apx_bytes);
+    must(fe_b1s1_sha256(first_row,
            FE_T3S1_ROW_BYTES,first_digest)==0,"FIRST_ROW_FULL_SHA");
     must(fe_t3s2a_bind(&resumed,p->fd,&p->source,p->slots,2u)==0 &&
          resumed.committed==1u && resumed.restart_recovered==1u &&
@@ -238,8 +243,8 @@ static void matrix_case(uint32_t scene,uint32_t rate,
     must(p->spool.committed==2u &&
          atomic_load(&p->ring.head)==atomic_load(&p->ring.tail),
          "COMPLETE_CONTIGUOUS_ORIGINAL_SOURCE_HANDOFF");
-    negative(fe_t3s2a_outboard_sink(p->storage[0].apx3,
-        p->storage[0].apx3_bytes,p->storage[0].canonical_row,
+    negative(fe_t3s2a_outboard_sink(first_apx,
+        first_apx_bytes,first_row,
         FE_T3S1_ROW_BYTES,&p->spool,&actual)!=0,
         "OLD_GLOBAL_SEQUENCE_REPLAY_NOT_CLAIMED");
     finish(p);

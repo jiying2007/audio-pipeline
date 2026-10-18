@@ -299,6 +299,21 @@ static void adverse_cases(void) {
     negative(fe_t3s2a_bind(&recovered,p->fd,&p->source,p->slots,2u)!=0,
          "SYMLINK_OR_FALSE_RECOVERY_REJECT");
     finish(p);
+    /* A prior bind scans an empty directory. A later bind must rescan
+     * from offset ZERO, not inherit the first dirfd stream at EOF. */
+    setup(p,0u,16000u,0u,1u);
+    {
+        int alien=openat(p->fd,"foreign-source.dat",
+            O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
+        must(alien>=0 && close(alien)==0,"INJECT_FOREIGN_SOURCE_FILE");
+    }
+    negative(fe_t3s2a_bind(&recovered,p->fd,&p->source,p->slots,2u)!=0,
+         "REPEATED_DIRECTORY_SCAN_MUST_REJECT_ALIEN_FILE");
+    must(unlinkat(p->fd,"foreign-source.dat",0)==0,
+         "REMOVE_ONLY_INJECTED_ALIEN_FILE");
+    must(fe_t3s2a_bind(&recovered,p->fd,&p->source,p->slots,2u)==0,
+         "INDEPENDENT_FRESH_RESCAN_AFTER_ALIEN_REMOVAL");
+    finish(p);
     setup(p,0u,16000u,0u,1u);
     prepare(p,1u,1u,zero);
     must(fe_t3s2a_bind(&recovered,p->fd,&p->source,p->slots,1u)==0,

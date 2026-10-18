@@ -15,6 +15,7 @@ on:
 permissions:
   contents: read
   packages: read
+  actions: read
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -1663,14 +1664,17 @@ jobs:
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    # Independent stage deadline=30m: reserve 15m for strict science and
-    # durable evidence upload even if official source read stalls.
+    # Recover the exact independently admitted source bytes (<=10m) then
+    # execute *fresh* speech and FIR validation; 45m total is unchanged.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - name: Acquire and measure fixed recorded speech without promotion
+      - name: Revalidate exact protected original speech bytes and evaluate fresh science
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 tests/validation/frontend_evolution/test_speech_spatial.py
@@ -1678,8 +1682,28 @@ jobs:
           mkdir fe-speech
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
-          python3 tests/validation/frontend_evolution/speech_source_stage_budget.py \
-            --output fe-speech/source --stage-budget-seconds 1800
+          python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
+          # Original-only transfer from a successful protected earlier main.
+          # Never use a substitute mirror, new corpus or an old acoustic score.
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/39052067322" \
+            --jq '(.head_sha == "e85a14540f2c49456508387fe3f815a90308c1ba" and .conclusion == "success" and .event == "push")' |
+            grep -Fx true
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410" \
+            --jq '(.id == 12107574410 and .name == "frontend-speech-39052067322" and .size_in_bytes == 204415056 and .digest == "sha256:1dffd4fc4968a0a214658627f1faf8bf54268f119fda86600a48511f897f30d4" and .expired == false and .workflow_run.id == 39052067322)' |
+            grep -Fx true
+          if ! timeout 600s gh api \
+              "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410/zip" \
+              > fe-speech/protected-original-source.zip; then
+            python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
+              --mark-download-failure --output fe-speech/source \
+              --execution-source "$GITHUB_SHA"
+            exit 1
+          fi
+          python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
+            --restore --zip fe-speech/protected-original-source.zip \
+            --output fe-speech/source --transfer fe-speech/source-transfer.json \
+            --execution-source "$GITHUB_SHA"
+          rm -f -- fe-speech/protected-original-source.zip
           python3 tests/validation/frontend_evolution/speech_spatial.py \
             --source fe-speech/source --output fe-speech/effects --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/speech_spatial.py \
@@ -1707,6 +1731,7 @@ jobs:
             fe-speech/effects/
             fe-speech/fir/
             fe-speech/source/source-failure.json
+            fe-speech/source-transfer.json
           if-no-files-found: error
           retention-days: 30
 

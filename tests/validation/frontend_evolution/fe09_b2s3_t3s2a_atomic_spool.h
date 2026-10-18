@@ -39,6 +39,7 @@ typedef struct {
     uint8_t committed_last_row[FE_T3S1_ROW_BYTES];
     fe_t3s2a_fault failpoint; /* test fault injection; consumer-owned */
     uint32_t restart_recovered;
+    uint32_t binding_complete; /* set ONLY after full source/disk inventory passes */
     uint32_t process_crash_faults_rejected;
 } fe_t3s2a_spool;
 

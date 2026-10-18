@@ -39,11 +39,22 @@ static int disjoint(const void *a,size_t na,const void *b,size_t nb) {
     if(x>UINTPTR_MAX-na||y>UINTPTR_MAX-nb)return 0;
     return x+na<=y||y+nb<=x;
 }
+static int valid_original_owner(const fe_t3s2a_spool *s) {
+    return s && s->binding_complete==1u &&
+        (s->mics==1u||s->mics==2u||s->mics==4u) &&
+        (s->rate_hz==16000u||s->rate_hz==32000u||s->rate_hz==48000u) &&
+        s->render_enabled<=1u && s->capture_id!=0u &&
+        s->generation>UINT64_C(0) && s->generation!=UINT64_MAX &&
+        (s->render_enabled ?
+          (s->render_id!=0u && s->render_id!=s->capture_id) :
+          s->render_id==0u) &&
+        s->maximum_files>=1u &&
+        s->maximum_files<=FE_T3S2A_MAX_FILES;
+}
 static int bound(const fe_t3s2b0_index *i) {
     const fe_t3s2a_spool *s;
     uint32_t mask=0u;
-    if(!i||(s=i->source)==NULL||s->binding_complete!=1u||
-       s->maximum_files<1u||s->maximum_files>FE_T3S2A_MAX_FILES||
+    if(!i||(s=i->source)==NULL||!valid_original_owner(s)||
        i->maximum_rows<1u||i->maximum_rows>FE_T3S2B0_MAX_ROWS||
        i->maximum_rows>s->maximum_files||
        i->source_generation!=s->generation||
@@ -122,7 +133,7 @@ static int integrity(const fe_t3s2b0_index *i) {
 int fe_t3s2b0_bind(fe_t3s2b0_index *i,
     const fe_t3s2a_spool *s,uint32_t maximum_rows) {
     fe_t3s2b0_index t;
-    if(!i||!s||!s->binding_complete||
+    if(!i||!valid_original_owner(s)||
        maximum_rows<1u||maximum_rows>FE_T3S2B0_MAX_ROWS||
        maximum_rows>s->maximum_files||
        !disjoint(i,sizeof(*i),s,sizeof(*s)))return -1;

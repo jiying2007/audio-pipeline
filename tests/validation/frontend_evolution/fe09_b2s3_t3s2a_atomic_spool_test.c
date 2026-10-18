@@ -279,6 +279,25 @@ static void adverse_cases(void) {
          &p->spool,&out)==FE_T3S1_TAMPER,
          "VALID_APX3_INVALID_FBS1_APX_HASH_REJECTED");
     p->storage[0].canonical_row[104u]^=0x40u;
+    /* A forged self-consistent FBS1 SHA is not enough: persisted original
+     * APX3 replay PCM must still match the original Capture FNV witness. */
+    {
+        uint8_t saved_witness[8],saved_sha[32];
+        uint8_t *row=p->storage[0].canonical_row;
+        memcpy(saved_witness,row+72u,sizeof(saved_witness));
+        memcpy(saved_sha,row+FE_B1S1_ROW_DIGEST_OFFSET,sizeof(saved_sha));
+        p64(row+72u,UINT64_C(0));
+        must(fe_b1s1_sha256(row,FE_B1S1_ROW_DIGEST_OFFSET,
+                row+FE_B1S1_ROW_DIGEST_OFFSET)==0,
+             "FORGED_BUT_WELL_HASHED_ROW_FOR_REPLAY_NEGATIVE");
+        actual=777u;
+        negative(fe_t3s2a_outboard_sink(p->storage[0].apx3,
+            p->storage[0].apx3_bytes,row,FE_T3S1_ROW_BYTES,
+            &p->spool,&actual)!=0 && actual==0u,
+            "FIRST_PARTY_PCM_REPLAY_REJECTS_FORGED_FNV_WITNESS");
+        memcpy(row+72u,saved_witness,sizeof(saved_witness));
+        memcpy(row+FE_B1S1_ROW_DIGEST_OFFSET,saved_sha,sizeof(saved_sha));
+    }
     published(p,1u,&out);
     must(fe_t3s2a_record_name(1u,name)==0,"EXACT_NAME");
     {

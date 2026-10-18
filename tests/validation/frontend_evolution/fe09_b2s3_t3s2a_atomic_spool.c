@@ -54,10 +54,46 @@ static int valid_map(const fe_t3s2a_spool *s,const uint8_t row[FE_T3S1_ROW_BYTES
     }
     return seen==((1u<<s->mics)-1u);
 }
+/* Reuse the ORIGINAL S2 codec/replay, not a copied APX3 parser/CRC.
+ * Recalculate original FBS1 FNV witness from decoded LE PCM on recovery;
+ * a separately rehashed FBS1 row must not hide an inconsistent payload.
+ */
+typedef struct {
+    uint64_t capture_hash, render_hash;
+    uint32_t mics, render, seen;
+} original_pcm_witness;
+static uint64_t original_le_fnv(const uint8_t *bytes,size_t n) {
+    uint64_t h=UINT64_C(14695981039346656037);
+    for(size_t i=0u;i<n;++i)
+        h=(h^(uint64_t)bytes[i])*UINT64_C(1099511628211);
+    return h;
+}
+static int original_replay_witness(const fe_s2_stream *stream,
+    uint32_t index,uint64_t local_sequence,
+    uint32_t capture_flags,uint32_t render_flags,
+    const uint8_t *capture_le,size_t capture_bytes,
+    const uint8_t *render_le,size_t render_bytes,void *ctx) {
+    original_pcm_witness *w=(original_pcm_witness *)ctx;
+    if(!stream||!w||index||local_sequence!=UINT64_C(1)||
+       capture_flags||render_flags||stream->frames!=1u||
+       stream->config.physical_mics!=w->mics||
+       stream->config.render_channels!=w->render||
+       capture_bytes!=(size_t)stream->config.rate_hz*w->mics/50u||
+       render_bytes!=(size_t)stream->config.rate_hz*w->render/50u||
+       !capture_le||
+       original_le_fnv(capture_le,capture_bytes)!=w->capture_hash||
+       (render_bytes ? (!render_le ||
+            original_le_fnv(render_le,render_bytes)!=w->render_hash) :
+           (render_le!=NULL||w->render_hash!=UINT64_C(0))))
+        return 1;
+    w->seen=1u;
+    return 0;
+}
 static int valid_record(const fe_t3s2a_spool *s,
      const uint8_t *row,const uint8_t *apx,size_t n,uint64_t seq) {
     uint8_t hash[32];
     fe_s2_stream d;
+    original_pcm_witness witness;
     uint32_t event,has_render,i;
     if (!row||!apx||!n||n>FE_T3S1_CHUNK_BYTES ||
         le32(row)!=FE_B1S1_MANIFEST_MAGIC ||
@@ -100,6 +136,13 @@ static int valid_record(const fe_t3s2a_spool *s,
         return 0;
     for(i=0u;i<4u;++i)
         if(d.config.physical_to_capture_slot[i]!=s->slots[i])return 0;
+    memset(&witness,0,sizeof(witness));
+    witness.mics=s->mics;
+    witness.render=has_render;
+    witness.capture_hash=le64(row+72u);
+    witness.render_hash=le64(row+80u);
+    if(fe_s2_replay(apx,n,original_replay_witness,&witness,NULL)!=FE_S2_OK ||
+       witness.seen!=1u)return 0;
     return 1;
 }
 static int read_exact(int fd,uint8_t *p,size_t n) {

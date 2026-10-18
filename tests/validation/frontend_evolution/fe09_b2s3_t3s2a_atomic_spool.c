@@ -24,7 +24,8 @@ static uint64_t le64(const uint8_t *p) {
 }
 static int same_fd(const fe_t3s2a_spool *s) {
     struct stat st;
-    return s && s->dirfd>=0 && fstat(s->dirfd,&st)==0 &&
+    return s && s->binding_complete==1u &&
+        s->dirfd>=0 && fstat(s->dirfd,&st)==0 &&
         S_ISDIR(st.st_mode) && st.st_dev==s->device &&
         st.st_ino==s->inode && st.st_uid==geteuid() &&
         (st.st_mode&0022)==0;
@@ -264,6 +265,9 @@ int fe_t3s2a_bind(fe_t3s2a_spool *s,int fd,
     }
     memcpy(s->prior_row_sha256,prior,32u);
     s->restart_recovered=(uint32_t)(s->committed!=0u);
+    /* No callback or injected fault can treat an incompletely enumerated
+     * directory/source identity as a valid pinned sink authority. */
+    s->binding_complete=1u;
     return 0;
 }
 int fe_t3s2a_set_test_fault(fe_t3s2a_spool *s,fe_t3s2a_fault f) {

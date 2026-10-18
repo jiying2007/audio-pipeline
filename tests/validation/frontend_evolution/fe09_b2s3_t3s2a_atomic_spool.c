@@ -104,6 +104,7 @@ static int valid_record(const fe_t3s2a_spool *s,
 static int read_exact(int fd,uint8_t *p,size_t n) {
     while(n) {
         ssize_t rc=read(fd,p,n);
+        if(rc<0 && errno==EINTR)continue;
         if(rc<=0) return -1;
         p+=(size_t)rc;n-=(size_t)rc;
     }
@@ -183,6 +184,7 @@ int fe_t3s2a_bind(fe_t3s2a_spool *s,int fd,
     uint64_t seq;
     uint32_t i,mask=0u;
     int duplicate_fd,known=0;
+    struct stat enumerated;
     if(!s||!cfg||!slots||fd<0||cap<1u||cap>FE_T3S2A_MAX_FILES||
        (cfg->physical_mics!=1u&&cfg->physical_mics!=2u&&
         cfg->physical_mics!=4u)||
@@ -211,8 +213,16 @@ int fe_t3s2a_bind(fe_t3s2a_spool *s,int fd,
     s->rate_hz=cfg->input_hz;s->mics=cfg->physical_mics;
     s->render_enabled=cfg->render_enabled;s->maximum_files=cap;
     memcpy(s->slots,slots,sizeof(s->slots));
-    duplicate_fd=dup(fd);
+    /* dup(fd) shares a directory stream offset: a second bind could
+     * silently miss alien files after the first fdopendir reached EOF.
+     * Always open an independently offset-owned descriptor to rescan. */
+    duplicate_fd=openat(fd,".",O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
     if(duplicate_fd<0)return -1;
+    if(fstat(duplicate_fd,&enumerated)!=0 ||
+       enumerated.st_dev!=st.st_dev || enumerated.st_ino!=st.st_ino) {
+        (void)close(duplicate_fd);
+        return -1;
+    }
     dir=fdopendir(duplicate_fd);
     if(!dir){close(duplicate_fd);return -1;}
     errno=0;

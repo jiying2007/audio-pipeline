@@ -315,6 +315,9 @@ static int read_inventory(fe_t3s2b1a_root *r,
         if((uint64_t)seq>r->original_source->committed||
            root_bytes(r,seq,names[seq],names_hash[seq],
                       actual,&bytes,&st)!=0)return -1;
+        /* A root with no matching canonical .part must have exactly ONE
+         * link: a foreign hardlink alias must not be admitted as immutable. */
+        if(!parts[seq][0] && st.st_nlink!=1)return -1;
         if(parts[seq][0]){
             char expected[FE_T3S2B1A_FILENAME_BYTES];
             size_t n=strlen(names[seq]);

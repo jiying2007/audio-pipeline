@@ -1878,7 +1878,7 @@ jobs:
               assert case['fault_injections']==336
               assert case['negative_checks']>=2000
               assert case['restart_recoveries']==673
-              assert case['original_frames']==688
+              assert case['original_frames']==690
               assert case['link_retry_cases']==192
               assert case['original_apx3_codec_reused'] is True
               assert case['immutable_root_published'] is True

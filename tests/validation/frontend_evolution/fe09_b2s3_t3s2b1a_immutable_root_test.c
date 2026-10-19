@@ -10,7 +10,9 @@
 #include <dirent.h>
 #include <unistd.h>
 
-static uint32_t CASES,FAULTS,RESTARTS,NEGATIVE,FRAMES,RETRY,ROOT_BYTES;
+/* Original frozen B0 fixture's static FRAMES is incremented by real commit().
+ * Do NOT shadow or double count it in the B1a caller. */
+static uint32_t CASES,FAULTS,RESTARTS,NEGATIVE,RETRY,ROOT_BYTES;
 static void check(int ok,const char *label) {
     if(!ok){fprintf(stderr,"FE09_B1A_NOT_ADMITTED %s\n",label);exit(1);}
 }
@@ -73,7 +75,7 @@ static void one(uint32_t scene,uint32_t hz,uint32_t render,
     deny(fe_t3s2b1a_set_test_fault(&x->root,
          (fe_t3s2b1a_fault)99)!=0,"unknown-fault");
     commit(x->old,UINT64_C(1),1,0);
-    ++FRAMES;
+    /* first-party B0 commit() already accounts this real frame */
     check(fe_t3s2b1a_rebuild_index(&index,&x->root)==0 &&
           index.source==&x->old->storage_owner &&
           memcmp(index.root_sha256,x->old->index.root_sha256,32u)==0,
@@ -101,7 +103,7 @@ static void one(uint32_t scene,uint32_t hz,uint32_t render,
     deny(fe_t3s2b1a_publish(&recovered,&x->old->index)!=0,
          "no-new-original-sequence");
     commit(x->old,UINT64_C(2),0,0);
-    ++FRAMES;
+    /* first-party B0 commit() already accounts this real frame */
     check(fe_t3s2b1a_rebuild_index(&index,&recovered)==0 &&
           index.count==2u,"source-ack-before-root-recovery");
     incorrect=x->old->index;
@@ -131,7 +133,7 @@ static void sixteen(void) {
     begin(x,3u,48000u,1u,1u,16u);
     for(uint64_t n=UINT64_C(1);n<=UINT64_C(16);++n) {
         commit(x->old,n,(int)(n&UINT64_C(1)),0);
-        ++FRAMES;
+        /* first-party B0 commit() already accounts this real frame */
         check(fe_t3s2b1a_publish(&x->root,&x->old->index)==0 &&
               x->root.roots_committed==(uint32_t)n,
               "sixteen-original-root-checkpoints");

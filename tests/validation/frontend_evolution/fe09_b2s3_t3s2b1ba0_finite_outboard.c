@@ -79,7 +79,7 @@ static int same_fd(const fe_t3b1ba0_owner *s) {
        st.st_dev!=s->device||st.st_ino!=s->inode ||
        (flags=fcntl(s->dirfd,F_GETFL))<0)
         return 0;
-    return (flags&O_DIRECTORY)!=0;
+    return (flags&O_DIRECTORY)!=0&&(flags&O_NOFOLLOW)!=0;
 }
 static int read_all(int fd,uint8_t *p,size_t size) {
     while(size) {
@@ -299,7 +299,7 @@ int fe_t3b1ba0_bind(fe_t3b1ba0_owner *result,int fd,
        cap>FE_T3B1BA0_MAX_RECORDS||!source_ok(source,slots)||
        fstat(fd,&st)!=0||!S_ISDIR(st.st_mode)||st.st_uid!=geteuid()||
        (st.st_mode&0022)!=0||(flags=fcntl(fd,F_GETFL))<0||
-       (flags&O_DIRECTORY)==0)
+       (flags&O_DIRECTORY)==0||(flags&O_NOFOLLOW)==0)
         return -1;
     memset(&candidate,0,sizeof(candidate));
     candidate.dirfd=fd;candidate.device=st.st_dev;candidate.inode=st.st_ino;

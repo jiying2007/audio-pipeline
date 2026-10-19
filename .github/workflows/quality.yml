@@ -1812,6 +1812,83 @@ jobs:
           print('FE09_T3S2B0_ORIGINAL_FBS1_INDEX_READBACK_PASS',os.environ['GITHUB_SHA'])
           PY
 
+  frontend-s3-t3s2b1a:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Qualify original APX3 and B0 source FRM1 POSIX immutable root/restart
+        id: fe09_t3s2b1a
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py \
+            --collect --output fe09-t3s2b1a --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py \
+            --verify --output fe09-t3s2b1a --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run immutable FRM1 root original source and negative evidence
+        if: always() && (steps.fe09_t3s2b1a.outcome == 'success' || steps.fe09_t3s2b1a.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          path: fe09-t3s2b1a/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download original same-run four-member root Artifact
+        if: steps.fe09_t3s2b1a.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          path: fe09-t3s2b1a-readback
+      - name: Independently rehash root receipt, reject fake rolling or powerloss authority
+        if: steps.fe09_t3s2b1a.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py \
+            --verify --output fe09-t3s2b1a-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          p=Path('fe09-t3s2b1a-readback')
+          names=('receipt.json','collect.log','verify.log')
+          assert p.is_dir()
+          assert {x.name for x in p.iterdir()}==set(names)|{'SHA256SUMS'}
+          want=''.join(f'{hashlib.sha256((p/n).read_bytes()).hexdigest()}  {n}\n' for n in names)
+          assert (p/'SHA256SUMS').read_text('ascii')==want
+          r=json.loads((p/'receipt.json').read_text('utf-8'))
+          assert r['source_commit']==os.environ['GITHUB_SHA']
+          assert r['decision']=='FE09_T3S2B1A_IMMUTABLE_FRM1_ROOT_RESEARCH_ONLY'
+          assert r['actual_compiled_targets_complete'] is True
+          assert r['target_order']==['native','sanitized','arm','tsan']
+          for case in r['target_results'].values():
+              assert case['profiles']==336
+              assert case['fault_injections']==336
+              assert case['negative_checks']>=2000
+              assert case['restart_recoveries']==673
+              assert case['original_frames']==688
+              assert case['link_retry_cases']==192
+              assert case['original_apx3_codec_reused'] is True
+              assert case['immutable_root_published'] is True
+              assert all(case[name] is False for name in (
+                  'rolling_retention_qualified','original_source_deleted',
+                  'physical_powerloss_qualified','ssc305_hardware_qualified',
+                  'whole_device_memory_qualified','public_sdk_installed'))
+          print('FE09_T3S2B1A_SOURCE_IMMUTABLE_POSIX_READBACK_PASS',os.environ['GITHUB_SHA'])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

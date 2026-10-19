@@ -298,7 +298,7 @@ int main(void) {
            "\"original_root_files_accounted\":%" PRIu64 ","
            "\"original_source_disk_bytes\":%" PRIu64 ","
            "\"immutable_root_disk_bytes\":%" PRIu64 ","
-           "\"global_16_to_17_continuity_proven\":true,"
+           "\"global_16_to_17_source_identity_distinct\":true,"
            "\"source_owner_full_backpressure_proven\":true,"
            "\"real_rolling_retention_qualified\":false,"
            "\"original_source_deleted\":false,"

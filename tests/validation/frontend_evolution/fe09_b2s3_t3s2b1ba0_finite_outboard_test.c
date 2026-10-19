@@ -216,6 +216,50 @@ static void a0_case(uint32_t scene,uint32_t hz,uint32_t render,uint32_t k) {
     a0_clear_private(s);
     ++A0_PROFILES;free(s);
 }
+static void a0_fault_boundary(fe_t3b1ba0_fault fault) {
+    a0_stage *s=(a0_stage *)calloc(1,sizeof(*s));
+    uint8_t zero[32]={0};
+    fe_t3b1ba0_owner recovered;
+    fe_t3s1_drain_receipt ack,sentinel;
+    a0_must(s!=NULL,"ALLOC_FAULT_PROFILE");
+    a0_start(s,0u,0u,0u,1u,17u);
+    a0_must(fe_t3b1ba0_set_test_fault(&s->store,fault)==0,
+            "HOST_ONLY_EXPLICIT_FAULT_BOUNDARY_ARMED");
+    prepare(s->source,1u,0,zero);
+    atomic_store_explicit(&s->source->ring.head,1u,memory_order_release);
+    memset(&sentinel,0xA5,sizeof(sentinel));
+    ack=sentinel;
+    a0_reject(fe_t3s1_drain_one(&s->source->ring,
+        fe_t3b1ba0_outboard_sink,&s->store,&ack)==
+        FE_T3S1_SINK_NOT_ADMITTED&&
+        memcmp(&ack,&sentinel,sizeof(ack))==0&&
+        s->store.committed==0u&&
+        s->source->ring.drained_global_capture==0u&&
+        atomic_load_explicit(&s->source->ring.tail,
+             memory_order_acquire)==0u,
+        "HOST_FAULT_WITHHELD_EXACT_ORIGINAL_SOURCE_ACK");
+    memset(&recovered,0,sizeof(recovered));
+    int status=fe_t3b1ba0_bind(&recovered,s->fd,&s->source->config,
+        s->source->ring.physical_to_slot,s->cap);
+    if(fault==FE_T3B1BA0_FAULT_CREATE) {
+        a0_reject(status==0&&recovered.committed==0u,
+                  "CREATE_FAILED_NO_RECORDED_SOURCE_OR_ACK");
+    } else if(fault<=FE_T3B1BA0_FAULT_UNLINK_TEMP) {
+        a0_reject(status!=0&&recovered.binding_complete==0u,
+                  "ORPHAN_OR_UNPUBLISHED_SOURCE_NOT_ADMITTED");
+    } else {
+        /* A later fully published byte sequence may be validated on host
+         * restart, but S1 tail is NOT retrospectively acknowledged.
+         * The missing directory barrier is NOT power-loss certification.
+         */
+        a0_reject(status==0&&recovered.committed==1u&&
+             recovered.restart_recovered==1u,
+             "HOST_BYTES_ONLY_NOT_S1_ACK_OR_POWERLOSS_CLAIM");
+    }
+    ++A0_FAULTS;
+    a0_clear_private(s);
+    free(s);
+}
 static void a0_name_negative(void) {
     char name[FE_T3B1BA0_NAME_CAP];
     uint8_t sha[32]={0};
@@ -228,6 +272,8 @@ static void a0_name_negative(void) {
 }
 int main(void) {
     a0_name_negative();
+    for(unsigned fault=1u;fault<=8u;++fault)
+        a0_fault_boundary((fe_t3b1ba0_fault)fault);
     for(uint32_t scene=0u;scene<4u;++scene)
         for(uint32_t hz=0u;hz<3u;++hz)
             for(uint32_t render=0u;render<2u;++render)
@@ -237,7 +283,8 @@ int main(void) {
             A0_FRAMES==UINT64_C(1536)&&
             A0_SOURCE_FILES==UINT64_C(1536)&&
             A0_BOUNDARY_NACKS==48u&&A0_RECOVERED>=96u&&
-            A0_NEGATIVES>=200u&&A0_SOURCE_BYTES>2000000u,
+            A0_NEGATIVES>=216u&&A0_FAULTS==8u&&
+            A0_SOURCE_BYTES>2000000u,
             "ORIGINAL_48_PROFILE_FINITE_32_FRAME_EVIDENCE_INCOMPLETE");
     printf("{\"decision\":\"FE09_B1B_A0_ORIGINAL_SEQ17_PLUS_FINITE_NONROLLING_OUTBOARD_HOSTED_ONLY\","
            "\"source_role\":\"first-party-synthetic\","
@@ -247,6 +294,7 @@ int main(void) {
            "\"global_17_to_32_continuity_verified\":true,"
            "\"capacity_plus_one_refused\":%u,\"negative_checks\":%u,"
            "\"restart_verified\":%" PRIu64 ","
+           "\"host_faults_rejected\":%" PRIu64 ","
            "\"original_source_disk_bytes\":%" PRIu64 ","
            "\"real_rolling_retention_qualified\":false,"
            "\"original_source_deleted\":false,"
@@ -255,6 +303,7 @@ int main(void) {
            "\"whole_device_memory_qualified\":false,"
            "\"public_sdk_installed\":false}\n",
            A0_PROFILES,A0_FRAMES,A0_ACKED,A0_SOURCE_FILES,
-           A0_BOUNDARY_NACKS,A0_NEGATIVES,A0_RECOVERED,A0_SOURCE_BYTES);
+           A0_BOUNDARY_NACKS,A0_NEGATIVES,A0_RECOVERED,A0_FAULTS,
+           A0_SOURCE_BYTES);
     return 0;
 }

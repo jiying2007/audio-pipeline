@@ -149,11 +149,19 @@ def historical_fixture_baseline(raw: bytes, pairs: list[list[str]]) -> bytes:
     demand(groups, "FIXTURE_EMPTY_PIN_PROPOSAL")
     for (prior, updated), required in groups.items():
         n_prior, n_updated = lines.count(prior), lines.count(updated)
-        demand((n_prior == required and n_updated == 0) or
-               (n_updated == required and n_prior == 0),
-               "BOT_PROPOSAL_PIN_STATE_MISSING_MIXED_OR_DUPLICATED")
+        # The frozen witness is a subset: modern main has additional, still
+        # unmodified identical Action pins (e.g. 40 vs 24 in quality.yml).
+        # Reject mixed old/new state, but do not reject extra unchanged lines.
+        demand((n_prior >= required and n_updated == 0) or
+               (n_updated >= required and n_prior == 0),
+               "BOT_PROPOSAL_PIN_STATE_MISSING_OR_MIXED")
         if n_updated:
-            lines = [prior if line == updated else line for line in lines]
+            remaining = required
+            for index, line in enumerate(lines):
+                if line == updated and remaining:
+                    lines[index] = prior
+                    remaining -= 1
+            demand(remaining == 0, "HISTORICAL_FIXTURE_REVERSAL_INCOMPLETE")
     return b"".join(lines)
 
 
@@ -170,10 +178,16 @@ def fixture_state_self_test(manifest: dict) -> None:
            header + prior * 2, "REPEATED_OLD_PINS_REJECTED")
     demand(historical_fixture_baseline(header + updated * 2, [pair, pair]) ==
            header + prior * 2, "REPEATED_NEW_PINS_REJECTED")
+    # Unchanged extra identical pins are allowed only in this offline fixture;
+    # an actual PR/head change is always judged by the separate strict T0/M1.
+    demand(historical_fixture_baseline(header + prior * 2, [pair]) ==
+           header + prior * 2, "EXTRA_OLD_PIN_FIXTURE_REJECTED")
+    demand(historical_fixture_baseline(header + updated * 2, [pair]) ==
+           header + prior + updated, "EXTRA_NEW_PIN_FIXTURE_REJECTED")
     for name, source, pairs in (
         ("missing", header, [pair]),
         ("mixed", header + prior + updated, [pair, pair]),
-        ("duplicate", header + prior * 2, [pair]),
+        ("duplicate_conflict", header + prior + updated, [pair]),
         ("unknown_pin", header + prior.replace(b"0", b"f", 1), [pair]),
         ("crlf", header + prior.replace(b"\n", b"\r\n"), [pair]),
         ("truncated", header + prior.rstrip(b"\n"), [pair]),

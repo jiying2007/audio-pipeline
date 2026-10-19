@@ -87,12 +87,12 @@ def verify_result(obj:dict)->None:
          type(obj["restart_recoveries"]) is int and
          obj["restart_recoveries"]==673 and
          type(obj["original_frames"]) is int and
-         obj["original_frames"]==688 and
+         obj["original_frames"]==690 and
          type(obj["link_retry_cases"]) is int and
          obj["link_retry_cases"]==192 and
          type(obj["root_file_bytes_accounted"]) is int and
          obj["root_file_bytes_accounted"]==
-             336*(2*160+3*200)+(16*160+(16*17//2)*200),
+             336*(2*160+3*200)+(16*160+(16*17//2)*200)+2*(160+200),
          "UNOBSERVED_IMMUTABLE_ROOT_RESTART_OR_HOSTED_BYTES")
 
 def identity(sha:str)->dict:
@@ -164,15 +164,15 @@ def self_test()->None:
         decision=DECISION,source_role="first-party-synthetic",
         profiles=336,fault_injections=336,
         negative_checks=2355,restart_recoveries=673,
-        original_frames=688,link_retry_cases=192,
-        root_file_bytes_accounted=336*920+29760,
+        original_frames=690,link_retry_cases=192,
+        root_file_bytes_accounted=336*920+29760+720,
         **{name:False for name in FALSE},
         **{name:True for name in TRUE})
     verify_result(correct)
     cases=[("decision",FAILURE),("source_role","hardware"),
            ("profiles",335),("fault_injections",335),
            ("negative_checks",1),("restart_recoveries",672),
-           ("original_frames",687),("link_retry_cases",191),
+           ("original_frames",689),("link_retry_cases",191),
            ("root_file_bytes_accounted",0),
            *[(n,True) for n in FALSE],
            *[(n,False) for n in TRUE]]

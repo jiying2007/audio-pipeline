@@ -218,15 +218,17 @@ static int load_record(const fe_t3b1ba0_owner *s,const char *name,
     if(fstat(fd,&st)!=0||!S_ISREG(st.st_mode)||st.st_uid!=geteuid()||
        st.st_nlink!=1||st.st_size<=(off_t)FE_T3S1_ROW_BYTES||
        st.st_size>(off_t)(FE_T3S1_ROW_BYTES+FE_T3S1_CHUNK_BYTES)||
-       (st.st_mode&0077)!=0||
+       (st.st_mode&07777)!=0600||
        read_all(fd,row,sizeof(row))!=0) {
         (void)close(fd);return -1;
     }
     n=g32(row+68u);
     if(!n||n>FE_T3S1_CHUNK_BYTES||
        st.st_size!=(off_t)((size_t)n+sizeof(row))||
-       read_all(fd,apx,n)!=0||close(fd)!=0)
-        return -1;
+       read_all(fd,apx,n)!=0) {
+        (void)close(fd);return -1;
+    }
+    if(close(fd)!=0)return -1;
     if(!valid_record(s,row,apx,n,seq,prev)||
        expected_name(s,seq,row,apx,n,derived)!=0||
        strcmp(name,derived)!=0)
@@ -317,8 +319,8 @@ static int temp_name(const char final[FE_T3B1BA0_NAME_CAP],
 }
 int fe_t3b1ba0_set_test_fault(fe_t3b1ba0_owner *s,
     fe_t3b1ba0_fault f) {
-    if(!same_fd(s)||f<FE_T3B1BA0_FAULT_NONE||
-       f>FE_T3B1BA0_FAULT_READBACK)return -1;
+    if(!same_fd(s)||(unsigned)f>(unsigned)FE_T3B1BA0_FAULT_READBACK)
+        return -1;
     s->test_fault=f;return 0;
 }
 int fe_t3b1ba0_outboard_sink(const uint8_t *apx,size_t n,
@@ -329,6 +331,7 @@ int fe_t3b1ba0_outboard_sink(const uint8_t *apx,size_t n,
     char final[FE_T3B1BA0_NAME_CAP],part[FE_T3B1BA0_NAME_CAP];
     int fd;
     uint64_t next;
+    if(actual_ack)*actual_ack=0u;
     if(!actual_ack||!same_fd(s)||!apx||!row||
        row_bytes!=FE_T3S1_ROW_BYTES||!n||n>FE_T3S1_CHUNK_BYTES||
        s->committed>=s->cap||s->committed==UINT64_MAX)
@@ -352,7 +355,10 @@ int fe_t3b1ba0_outboard_sink(const uint8_t *apx,size_t n,
        s->test_fault==FE_T3B1BA0_FAULT_APX3_WRITE||
        write_all(fd,apx,n)!=0||
        s->test_fault==FE_T3B1BA0_FAULT_FILE_SYNC||
-       fsync(fd)!=0||close(fd)!=0)return -1;
+       fsync(fd)!=0) {
+        (void)close(fd);return -1;
+    }
+    if(close(fd)!=0)return -1;
     if(s->test_fault==FE_T3B1BA0_FAULT_PUBLISH||
        linkat(s->dirfd,part,s->dirfd,final,0)!=0)return -1;
     if(s->test_fault==FE_T3B1BA0_FAULT_UNLINK_TEMP||

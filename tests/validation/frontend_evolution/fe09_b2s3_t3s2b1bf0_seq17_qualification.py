@@ -32,7 +32,7 @@ MEMBERS=("SHA256SUMS","receipt.json","collect.log","verify.log")
 TEST=HERE/"fe09_b2s3_t3s2b1bf0_seq17_test.c"
 OWN=(TEST,Path(__file__).resolve())
 FROZEN=tuple(dict.fromkeys((*b1a.FROZEN,*b1a.OWN,
-              HERE/"FE09_T3S2B1BF0_IMMUTABLE_FRM1_ROOT.md")))
+              HERE/"FE09_T3S2B1A_IMMUTABLE_FRM1_ROOT.md")))
 SOURCES=(*b1a.SOURCES[:-1],TEST)
 FALSE=("real_rolling_retention_qualified","original_source_deleted",
        "physical_powerloss_qualified","ssc305_hardware_qualified",

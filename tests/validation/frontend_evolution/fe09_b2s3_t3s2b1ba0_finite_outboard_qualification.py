@@ -75,7 +75,7 @@ def verify_result(obj:dict)->None:
               "bounded_original_source_files",
               "capacity_plus_one_refused",
               "negative_checks","restart_verified",
-              "original_source_disk_bytes",*TRUE,*FALSE}
+              "host_faults_rejected","original_source_disk_bytes",*TRUE,*FALSE}
     need(type(obj) is dict and set(obj)==expected and
          obj["decision"]==DECISION and
          obj["source_role"]=="first-party-synthetic" and
@@ -91,9 +91,11 @@ def verify_result(obj:dict)->None:
          type(obj["capacity_plus_one_refused"]) is int and
          obj["capacity_plus_one_refused"]==48 and
          type(obj["negative_checks"]) is int and
-         obj["negative_checks"]>=200 and
+         obj["negative_checks"]>=216 and
          type(obj["restart_verified"]) is int and
          obj["restart_verified"]>=96 and
+         type(obj["host_faults_rejected"]) is int and
+         obj["host_faults_rejected"]==8 and
          type(obj["original_source_disk_bytes"]) is int and
          2000000<obj["original_source_disk_bytes"]<12000000,
          "INCOMPLETE_OR_FALSE_ORIGINAL_FINITE_A0_HOSTED_FLOOR")
@@ -168,8 +170,9 @@ def self_test()->None:
               actually_acked_original_frames=1536,
               bounded_original_source_files=1536,
               global_17_to_32_continuity_verified=True,
-              capacity_plus_one_refused=48,negative_checks=243,
-              restart_verified=144,original_source_disk_bytes=4000000,
+              capacity_plus_one_refused=48,negative_checks=259,
+              restart_verified=144,host_faults_rejected=8,
+              original_source_disk_bytes=4000000,
               **{key:False for key in FALSE})
     verify_result(good)
     mutants=[("decision",FAILURE),("source_role","real-array"),
@@ -178,7 +181,8 @@ def self_test()->None:
              ("bounded_original_source_files",1535),
              ("global_17_to_32_continuity_verified",False),
              ("capacity_plus_one_refused",47),
-             ("negative_checks",199),("restart_verified",95),
+             ("negative_checks",215),("restart_verified",95),
+             ("host_faults_rejected",7),
              ("original_source_disk_bytes",0),
              *[(key,True) for key in FALSE]]
     for key,value in mutants:

@@ -2036,7 +2036,8 @@ jobs:
               assert case["bounded_original_source_files"]==1536
               assert case["capacity_plus_one_refused"]==48
               assert case["global_17_to_32_continuity_verified"] is True
-              assert case["negative_checks"]>=200
+              assert case["negative_checks"]>=216
+              assert case["host_faults_rejected"]==8
               assert all(case[x] is False for x in (
                   "real_rolling_retention_qualified","original_source_deleted",
                   "physical_powerloss_qualified","ssc305_hardware_qualified",

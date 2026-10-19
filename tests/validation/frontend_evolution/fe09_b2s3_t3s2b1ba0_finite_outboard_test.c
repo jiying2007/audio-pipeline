@@ -87,6 +87,20 @@ static int a0_find(a0_stage *s,uint64_t seq,
     if(closedir(d)!=0||matched!=1u)return -1;
     strcpy(found,search);return 0;
 }
+static void a0_reject_followable_directory_fd(a0_stage *s) {
+    /* Bind must refuse a descriptor that could have followed a symlink.
+     * The trusted owner fd remains pinned and unchanged throughout.
+     */
+    fe_t3b1ba0_owner candidate;
+    int weak_fd=open(s->dir,O_RDONLY|O_DIRECTORY|O_CLOEXEC);
+    a0_must(weak_fd>=0,"OPEN_WEAK_DIRECTORY_NEGATIVE");
+    memset(&candidate,0,sizeof(candidate));
+    a0_reject(fe_t3b1ba0_bind(&candidate,weak_fd,&s->source->config,
+        s->source->ring.physical_to_slot,s->cap)!=0&&
+        candidate.binding_complete==0u,
+        "MISSING_O_NOFOLLOW_DIRECTORY_FD_REJECTED");
+    a0_must(close(weak_fd)==0,"CLOSE_WEAK_DIRECTORY_NEGATIVE");
+}
 static void a0_original_ack(a0_stage *s,uint64_t seq) {
     uint8_t prior[32]={0};
     fe_t3s1_drain_receipt ack;
@@ -207,6 +221,7 @@ static void a0_case(uint32_t scene,uint32_t hz,uint32_t render,uint32_t k) {
     a0_stage *s=(a0_stage *)calloc(1,sizeof(*s));
     a0_must(s!=NULL,"ALLOC_A0_PROFILE");
     a0_start(s,scene,RATES[hz],render,k,32u);
+    a0_reject_followable_directory_fd(s);
     for(uint64_t seq=1u;seq<=32u;++seq)
         a0_original_ack(s,seq);
     a0_inventory_all(s);

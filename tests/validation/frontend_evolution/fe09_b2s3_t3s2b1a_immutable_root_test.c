@@ -148,6 +148,98 @@ static void sixteen(void) {
          "no-implicit-seventeenth-root");
     end(x);free(x);
 }
+/* Root directory and original source are different fixed trusted FDs.
+ * These controls exercise real hosted filesystem state and must reject
+ * any ambiguous restart without declaring successful index publication.
+ */
+static void filesystem_integrity_cases(void) {
+    stage *x=(stage *)calloc(1,sizeof(*x));
+    fe_t3s2b1a_root observed;
+    uint8_t encoded[FE_T3S2B0_MAX_BYTES],hash[32]={0};
+    char name[FE_T3S2B1A_FILENAME_BYTES],other[FE_T3S2B1A_FILENAME_BYTES];
+    size_t length=0u;
+    int fd;
+    check(x!=NULL,"separate-directory-test");
+    begin(x,0u,16000u,0u,1u,2u);
+    commit(x->old,UINT64_C(1),0,0);
+    check(fe_t3s2b1a_publish(&x->root,&x->old->index)==0,
+          "baseline-source-index-root");
+    check(fe_t3s2b0_encode(&x->old->index,encoded,sizeof(encoded),&length)==0 &&
+          fe_b1s1_sha256(encoded,length,hash)==0 &&
+          fe_t3s2b1a_name(x->old->config.source_generation,
+            UINT64_C(1),hash,name)==0,
+          "exact-canonical-real-root-name");
+    ROOT_BYTES+=(uint32_t)length;
+    fd=openat(x->fd,"unrecognized-file.bin",
+              O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
+    check(fd>=0&&close(fd)==0,"test-foreign-file-create");
+    memset(&observed,0,sizeof(observed));
+    deny(fe_t3s2b1a_bind(&observed,x->fd,&x->old->storage_owner)!=0 &&
+         observed.binding_complete==0u,"reject-unknown-root-file");
+    check(unlinkat(x->fd,"unrecognized-file.bin",0)==0,
+          "test-foreign-file-cleanup");
+    hash[0]^=0x73u;
+    check(fe_t3s2b1a_name(x->old->config.source_generation,
+          UINT64_C(1),hash,other)==0,"alternative-same-seq-name");
+    fd=openat(x->fd,other,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
+    check(fd>=0&&write(fd,"not-an-index",12u)==12&&close(fd)==0,
+          "test-second-root-record");
+    memset(&observed,0,sizeof(observed));
+    deny(fe_t3s2b1a_bind(&observed,x->fd,&x->old->storage_owner)!=0 &&
+         observed.binding_complete==0u,"reject-conflicting-same-seq-root");
+    check(unlinkat(x->fd,other,0)==0,"cleanup-second-root");
+    check(fe_t3s2b1a_name(x->old->config.source_generation,
+          UINT64_C(2),hash,other)==0,"later-temporary-root-name");
+    check(strlen(other)+5u<sizeof(other),"temporary-name-bounded");
+    (void)strcat(other,".part");
+    fd=openat(x->fd,other,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
+    check(fd>=0&&write(fd,"short",5u)==5&&close(fd)==0,
+          "incomplete-hosted-temporary-root");
+    memset(&observed,0,sizeof(observed));
+    deny(fe_t3s2b1a_bind(&observed,x->fd,&x->old->storage_owner)!=0 &&
+         observed.binding_complete==0u,"reject-orphan-root-file");
+    check(unlinkat(x->fd,other,0)==0,"cleanup-orphan-root-file");
+    check(linkat(x->fd,name,x->old->fd,"source-root-extra-link",0)==0,
+          "test-root-link-boundary");
+    memset(&observed,0,sizeof(observed));
+    deny(fe_t3s2b1a_bind(&observed,x->fd,&x->old->storage_owner)!=0 &&
+         observed.binding_complete==0u,"reject-unpaired-hardlink-root");
+    check(unlinkat(x->old->fd,"source-root-extra-link",0)==0,
+          "cleanup-only-test-created-link");
+    check(fe_t3s2b1a_name(x->old->config.source_generation,
+          UINT64_C(2),hash,other)==0,"later-root-canonical-path");
+    check(symlinkat("/dev/null",x->fd,other)==0,"test-root-nofollow");
+    memset(&observed,0,sizeof(observed));
+    deny(fe_t3s2b1a_bind(&observed,x->fd,&x->old->storage_owner)!=0 &&
+         observed.binding_complete==0u,"reject-symlink-root");
+    check(unlinkat(x->fd,other,0)==0,"cleanup-only-test-symlink");
+    fd=openat(x->fd,name,O_RDWR|O_NOFOLLOW|O_CLOEXEC);
+    check(fd>=0 && pwrite(fd,"X",1u,0)==1 && close(fd)==0,
+          "simulate-corrupted-hosted-index");
+    memset(&observed,0,sizeof(observed));
+    deny(fe_t3s2b1a_bind(&observed,x->fd,&x->old->storage_owner)!=0 &&
+         observed.binding_complete==0u,"reject-corrupted-full-root");
+    end(x);
+    begin(x,1u,32000u,1u,2u,2u);
+    commit(x->old,UINT64_C(1),1,0);
+    check(fe_t3s2b1a_publish(&x->root,&x->old->index)==0,
+          "new-source-root-before-missing-original-test");
+    check(fe_t3s2b0_encode(&x->old->index,
+          encoded,sizeof(encoded),&length)==0,
+          "second-source-root-size");
+    ROOT_BYTES+=(uint32_t)length;
+    {
+        char original[FE_T3S2A_NAME_CAP];
+        check(fe_t3s2a_record_name(UINT64_C(1),original)==0 &&
+              unlinkat(x->old->fd,original,0)==0,
+              "simulate-lost-original-apx3");
+    }
+    memset(&observed,0,sizeof(observed));
+    deny(fe_t3s2b1a_bind(&observed,x->fd,&x->old->storage_owner)!=0 &&
+         observed.binding_complete==0u,
+         "reject-index-with-missing-original-apx3");
+    end(x);free(x);
+}
 int main(void) {
     uint8_t hash[32]={0};
     char name[FE_T3S2B1A_FILENAME_BYTES];
@@ -165,8 +257,9 @@ int main(void) {
                 fault<=FE_T3S2B1A_FAULT_READBACK;++fault)
                 one(scene,RATES[rate],render,k,(fe_t3s2b1a_fault)fault);
     sixteen();
+    filesystem_integrity_cases();
     check(CASES==336u&&FAULTS==336u&&RESTARTS==673u &&
-          FRAMES==688u&&NEGATIVE>=2000u&&RETRY==192u &&
+          FRAMES==690u&&NEGATIVE>=2000u&&RETRY==192u &&
           ROOT_BYTES>10000u,
           "real-hosted-root-qualification-counts");
     printf("{\"decision\":\"FE09_T3S2B1A_IMMUTABLE_FRM1_ROOT_RESEARCH_ONLY\","

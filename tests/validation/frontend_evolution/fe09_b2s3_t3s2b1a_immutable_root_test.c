@@ -118,8 +118,10 @@ static void one(uint32_t scene,uint32_t hz,uint32_t render,
          "do-not-rebind-live-root");
     check(x->old->storage_owner.committed==UINT64_C(2),
           "original-source-retained");
-    ROOT_BYTES+=(uint32_t)(FE_T3S2B0_HEADER_BYTES+
-                           FE_T3S1_ROW_BYTES*3u);
+    /* Two independently published FRM1 images: header+row1, then
+     * header+row1+row2. Count actual original serialized root bytes. */
+    ROOT_BYTES+=(uint32_t)(2u*FE_T3S2B0_HEADER_BYTES+
+                           3u*FE_T3S1_ROW_BYTES);
     end(x);free(x);++CASES;
 }
 static void sixteen(void) {
@@ -135,6 +137,9 @@ static void sixteen(void) {
               "sixteen-original-root-checkpoints");
     }
     restart(x,&recovered,16u);
+    /* Sum actual immutable root byte lengths for N=1..16. */
+    ROOT_BYTES+=(uint32_t)(16u*FE_T3S2B0_HEADER_BYTES+
+                           (16u*17u/2u)*FE_T3S1_ROW_BYTES);
     deny(!fe_t3s2b0_can_accept(&x->old->index),
          "source-quota-enforced");
     deny(fe_t3s2b1a_publish(&recovered,&x->old->index)!=0,

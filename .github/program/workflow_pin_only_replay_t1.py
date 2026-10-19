@@ -128,6 +128,64 @@ def git(where: Path, *arguments: str) -> str:
     return proc.stdout.decode("utf-8").strip()
 
 
+
+def historical_fixture_baseline(raw: bytes, pairs: list[list[str]]) -> bytes:
+    """Create ONLY a synthetic historical base for the frozen M0 replay.
+
+    The *actual* bot PR Git tree must still be separately qualified by M1.
+    Exact already-approved new pins may be reversed in this temporary
+    fixture; mixed/partial/unknown pin states are intentionally denied.
+    """
+    demand(type(raw) is bytes and 0 < len(raw) < 300_000 and b"\r" not in raw,
+           "WORKFLOW_NEWLINE_DRIFT")
+    lines = raw.splitlines(keepends=True)
+    groups: dict[tuple[bytes, bytes], int] = {}
+    for old, new in pairs:
+        prior, updated = (old + "\n").encode(), (new + "\n").encode()
+        demand(prior != updated and prior.endswith(b"\n") and
+               updated.endswith(b"\n"), "FIXTURE_UNTRUSTED_PIN_PAIR")
+        key = (prior, updated)
+        groups[key] = groups.get(key, 0) + 1
+    demand(groups, "FIXTURE_EMPTY_PIN_PROPOSAL")
+    for (prior, updated), required in groups.items():
+        n_prior, n_updated = lines.count(prior), lines.count(updated)
+        demand((n_prior == required and n_updated == 0) or
+               (n_updated == required and n_prior == 0),
+               "BOT_PROPOSAL_PIN_STATE_MISSING_MIXED_OR_DUPLICATED")
+        if n_updated:
+            lines = [prior if line == updated else line for line in lines]
+    return b"".join(lines)
+
+
+def fixture_state_self_test(manifest: dict) -> None:
+    """Regression: historical M0 replay is valid before/after trusted pins."""
+    pair = manifest["files"][0]["pairs"][0]
+    prior, updated = (pair[0] + "\n").encode(), (pair[1] + "\n").encode()
+    header = b"name: offline synthetic fixture\n"
+    demand(historical_fixture_baseline(header + prior, [pair]) ==
+           header + prior, "OLD_PIN_FIXTURE_REJECTED")
+    demand(historical_fixture_baseline(header + updated, [pair]) ==
+           header + prior, "APPROVED_NEW_PIN_FIXTURE_REJECTED")
+    demand(historical_fixture_baseline(header + prior * 2, [pair, pair]) ==
+           header + prior * 2, "REPEATED_OLD_PINS_REJECTED")
+    demand(historical_fixture_baseline(header + updated * 2, [pair, pair]) ==
+           header + prior * 2, "REPEATED_NEW_PINS_REJECTED")
+    for name, source, pairs in (
+        ("missing", header, [pair]),
+        ("mixed", header + prior + updated, [pair, pair]),
+        ("duplicate", header + prior * 2, [pair]),
+        ("unknown_pin", header + prior.replace(b"0", b"f", 1), [pair]),
+        ("crlf", header + prior.replace(b"\n", b"\r\n"), [pair]),
+        ("truncated", header + prior.rstrip(b"\n"), [pair]),
+    ):
+        try:
+            historical_fixture_baseline(source, pairs)
+        except PreflightFailure:
+            pass
+        else:
+            raise PreflightFailure("FALSE_OFFLINE_PIN_STATE_ADMISSION_" + name)
+
+
 def replay(t0: object, manifest: dict, receipt_sha: str) -> dict:
     cwd = Path.cwd()
     with tempfile.TemporaryDirectory(prefix="fe-t1-exact-pin-proposal-") as d:
@@ -143,7 +201,8 @@ def replay(t0: object, manifest: dict, receipt_sha: str) -> dict:
                    "PROPOSAL_BASE_FILE_UNAVAILABLE")
             target = sandbox / path
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(source.read_bytes())
+            target.write_bytes(historical_fixture_baseline(
+                source.read_bytes(), entry["pairs"]))
         git(sandbox, "add", ".github/workflows")
         git(sandbox, "commit", "-qm", "Fixture base: main unchanged workflows")
         base = git(sandbox, "rev-parse", "HEAD")
@@ -290,6 +349,7 @@ def main() -> None:
         proposal, sha = read_manifest()
         t0 = load_t0()
         validate_proposal(proposal, t0)
+        fixture_state_self_test(proposal)
         result = replay(t0, proposal, sha)
         print(json.dumps(result, sort_keys=True, separators=(",", ":"),
                          allow_nan=False))

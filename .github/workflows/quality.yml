@@ -1968,6 +1968,82 @@ jobs:
           print('FE09_T3S2B1BF0_ORIGINAL_SEQ17_NEGATIVE_READBACK_PASS',os.environ['GITHUB_SHA'])
           PY
 
+  frontend-s3-t3s2b1ba0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Independently qualify original seq17-32 finite no-prune outboard (4 ISAs, twice)
+        id: fe09_t3s2b1ba0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py \
+            --collect --output fe09-t3s2b1ba0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py \
+            --verify --output fe09-t3s2b1ba0 --execution-source "$GITHUB_SHA"
+      - name: Retain first-party finite outboard original source or failure receipt
+        if: always() && (steps.fe09_t3s2b1ba0.outcome == 'success' || steps.fe09_t3s2b1ba0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b1ba0-finite-${{ github.run_id }}
+          path: fe09-t3s2b1ba0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact same-run original finite source Artifact
+        if: steps.fe09_t3s2b1ba0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2b1ba0-finite-${{ github.run_id }}
+          path: fe09-t3s2b1ba0-readback
+      - name: Independently verify A0 member SHA256, no prune and zero HIL authority
+        if: steps.fe09_t3s2b1ba0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py \
+            --verify --output fe09-t3s2b1ba0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          p=Path("fe09-t3s2b1ba0-readback")
+          names=("receipt.json","collect.log","verify.log")
+          assert p.is_dir()
+          assert {x.name for x in p.iterdir()}==set(names)|{"SHA256SUMS"}
+          expected="".join(f"{hashlib.sha256((p/n).read_bytes()).hexdigest()}  {n}\n" for n in names)
+          assert (p/"SHA256SUMS").read_text("ascii")==expected
+          receipt=json.loads((p/"receipt.json").read_text("utf-8"))
+          assert receipt["source_commit"]==os.environ["GITHUB_SHA"]
+          assert receipt["decision"]=="FE09_B1B_A0_ORIGINAL_SEQ17_PLUS_FINITE_NONROLLING_OUTBOARD_HOSTED_ONLY"
+          assert receipt["actual_compiled_targets_complete"] is True
+          assert receipt["target_order"]==["native","sanitized","arm","tsan"]
+          for case in receipt["target_results"].values():
+              assert case["profiles"]==48
+              assert case["actual_original_apx3_frames"]==1536
+              assert case["actually_acked_original_frames"]==1536
+              assert case["bounded_original_source_files"]==1536
+              assert case["capacity_plus_one_refused"]==48
+              assert case["global_17_to_32_continuity_verified"] is True
+              assert case["negative_checks"]>=200
+              assert all(case[x] is False for x in (
+                  "real_rolling_retention_qualified","original_source_deleted",
+                  "physical_powerloss_qualified","ssc305_hardware_qualified",
+                  "whole_device_memory_qualified","public_sdk_installed"))
+          print("FE09_T3S2B1BA0_FINITE_ORIGINAL_SOURCE_READBACK_PASS",os.environ["GITHUB_SHA"])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

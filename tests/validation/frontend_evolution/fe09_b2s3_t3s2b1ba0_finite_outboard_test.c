@@ -206,7 +206,7 @@ static void a0_capacity_nack(a0_stage *s) {
 static void a0_case(uint32_t scene,uint32_t hz,uint32_t render,uint32_t k) {
     a0_stage *s=(a0_stage *)calloc(1,sizeof(*s));
     a0_must(s!=NULL,"ALLOC_A0_PROFILE");
-    a0_start(s,scene,hz,render,k,32u);
+    a0_start(s,scene,RATES[hz],render,k,32u);
     for(uint64_t seq=1u;seq<=32u;++seq)
         a0_original_ack(s,seq);
     a0_inventory_all(s);
@@ -222,7 +222,7 @@ static void a0_fault_boundary(fe_t3b1ba0_fault fault) {
     fe_t3b1ba0_owner recovered;
     fe_t3s1_drain_receipt ack,sentinel;
     a0_must(s!=NULL,"ALLOC_FAULT_PROFILE");
-    a0_start(s,0u,0u,0u,1u,17u);
+    a0_start(s,0u,RATES[0],0u,1u,17u);
     a0_must(fe_t3b1ba0_set_test_fault(&s->store,fault)==0,
             "HOST_ONLY_EXPLICIT_FAULT_BOUNDARY_ARMED");
     prepare(s->source,1u,0,zero);

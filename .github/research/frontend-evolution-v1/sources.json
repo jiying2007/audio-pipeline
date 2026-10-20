@@ -1,21 +1,22 @@
 {
-  "authority": "inventory-not-execution-or-license-grant",
+  "schema_version": 1,
+  "stage": "frontend-evolution-v1",
   "baseline_source": "37a1792861a89c815bec462f819f3deac7d29b09",
   "inventory_date": "2026-10-05",
-  "schema_version": 1,
+  "authority": "inventory-not-execution-or-license-grant",
   "sources": [
     {
-      "commit": "fdf89deaa507c819378a1837053f529b9c35145e",
       "id": "athena-signal",
+      "url": "https://github.com/athena-team/athena-signal",
+      "commit": "fdf89deaa507c819378a1837053f529b9c35145e",
+      "status": "PINNED_PENDING_REVIEW",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PINNED_PENDING_REVIEW",
-      "url": "https://github.com/athena-team/athena-signal"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
       "admission_receipt_path": ".github/research/frontend-evolution-v1/libfvad-admission.json",
@@ -35,110 +36,109 @@
       "url": "https://github.com/dpirch/libfvad"
     },
     {
-      "commit": "561cd5975e93bae036b3f14060650a208d1b3573",
       "id": "aispeech-earbuds",
-      "rights": {
-        "code": "PENDING",
-        "data": "PENDING",
-        "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
+      "url": "https://github.com/jensen199105/aispeech-earbuds",
+      "commit": "561cd5975e93bae036b3f14060650a208d1b3573",
       "status": "REFERENCE_REVIEW_ONLY",
-      "url": "https://github.com/jensen199105/aispeech-earbuds"
-    },
-    {
-      "commit": null,
-      "id": "webrtc",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://webrtc.googlesource.com/src"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
+      "id": "webrtc",
+      "url": "https://webrtc.googlesource.com/src",
+      "commit": null,
+      "status": "PLANNED",
+      "rights": {
+        "code": "PENDING",
+        "dependencies": "PENDING",
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
+    },
+    {
+      "id": "sof",
+      "url": "https://github.com/thesofproject/sof",
+      "commit": "460f18d9bc70729d9479f0645730e61c94a9ca97",
+      "status": "EXECUTION_ADMITTED",
+      "rights": {
+        "code": "ALLOWED",
+        "data": "NOT_APPLICABLE",
+        "dependencies": "ALLOWED",
+        "redistribution": "ALLOWED",
+        "weights": "NOT_APPLICABLE"
+      },
       "admission_receipt_path": ".github/research/frontend-evolution-v1/external-baselines-admission.json",
       "admission_receipt_sha256": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
-      "commit": "460f18d9bc70729d9479f0645730e61c94a9ca97",
-      "id": "sof",
       "materialized_source_sha256": "4228b1be93d1f3fbfd4b882d3bad8374116f3304a6cd3d691c9661ce8fbf1bfb",
-      "rights": {
-        "code": "ALLOWED",
-        "data": "NOT_APPLICABLE",
-        "dependencies": "ALLOWED",
-        "redistribution": "ALLOWED",
-        "weights": "NOT_APPLICABLE"
-      },
-      "scope": "local-fixed-research-only-no-shipping-dependency",
-      "status": "EXECUTION_ADMITTED",
-      "url": "https://github.com/thesofproject/sof"
+      "scope": "local-fixed-research-only-no-shipping-dependency"
     },
     {
-      "admission_receipt_path": ".github/research/frontend-evolution-v1/speexdsp-admission.json",
-      "admission_receipt_sha256": "5492019a3a9ff85e3cbe185632793feb5bbdf9d526c8bbc3ba408bcb5405e508",
-      "commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
       "id": "speexdsp",
-      "materialized_source_sha256": "e47937c12b4c8a2232a3a52670e2a6719aa2257a9d11d2647e48d88a3b2ab2f3",
+      "url": "https://github.com/xiph/speexdsp",
+      "commit": "7a158783df74efe7c2d1c6ee8363c1e695c71226",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
         "code": "ALLOWED",
-        "data": "NOT_APPLICABLE",
         "dependencies": "ALLOWED",
-        "redistribution": "ALLOWED",
-        "weights": "NOT_APPLICABLE"
+        "weights": "NOT_APPLICABLE",
+        "data": "NOT_APPLICABLE",
+        "redistribution": "ALLOWED"
       },
       "scope": "minimal-floating-point-aec-core-offline-reference-no-shipping-dependency",
-      "status": "EXECUTION_ADMITTED",
-      "url": "https://github.com/xiph/speexdsp"
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/speexdsp-admission.json",
+      "admission_receipt_sha256": "5492019a3a9ff85e3cbe185632793feb5bbdf9d526c8bbc3ba408bcb5405e508",
+      "materialized_source_sha256": "e47937c12b4c8a2232a3a52670e2a6719aa2257a9d11d2647e48d88a3b2ab2f3"
     },
     {
-      "commit": null,
       "id": "odas",
+      "url": "https://github.com/introlab/odas",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/introlab/odas"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "pyroomacoustics",
+      "url": "https://github.com/LCAV/pyroomacoustics",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/LCAV/pyroomacoustics"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "rnnoise",
+      "url": "https://gitlab.xiph.org/xiph/rnnoise",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://gitlab.xiph.org/xiph/rnnoise"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "admission_receipt_path": ".github/research/frontend-evolution-v1/external-baselines-admission.json",
-      "admission_receipt_sha256": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
-      "commit": "502ebfab64da7c4a9af78dcb9c6ceef1ebb01c73",
       "id": "gtcrn",
-      "materialized_source_sha256": "f34d43df646d3f208ea7a64d7db150b560caf95d2a92d9117cd0a40a854053e8",
+      "url": "https://github.com/Xiaobin-Rong/gtcrn",
+      "commit": "502ebfab64da7c4a9af78dcb9c6ceef1ebb01c73",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
         "code": "ALLOWED",
         "data": "NOT_APPLICABLE",
@@ -146,16 +146,16 @@
         "redistribution": "ALLOWED",
         "weights": "ALLOWED"
       },
-      "scope": "local-fixed-research-only-no-shipping-dependency",
-      "status": "EXECUTION_ADMITTED",
-      "url": "https://github.com/Xiaobin-Rong/gtcrn"
-    },
-    {
       "admission_receipt_path": ".github/research/frontend-evolution-v1/external-baselines-admission.json",
       "admission_receipt_sha256": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
-      "commit": "00f7c700da43d38347f30a6ccebd86fcbc798e07",
+      "materialized_source_sha256": "f34d43df646d3f208ea7a64d7db150b560caf95d2a92d9117cd0a40a854053e8",
+      "scope": "local-fixed-research-only-no-shipping-dependency"
+    },
+    {
       "id": "ul-unas",
-      "materialized_source_sha256": "35a8447aaf0378c43bcc50b292a7d3f503cfed38a768a3a711e35f808b3525de",
+      "url": "https://github.com/Xiaobin-Rong/ul-unas",
+      "commit": "00f7c700da43d38347f30a6ccebd86fcbc798e07",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
         "code": "ALLOWED",
         "data": "NOT_APPLICABLE",
@@ -163,205 +163,205 @@
         "redistribution": "ALLOWED",
         "weights": "ALLOWED"
       },
-      "scope": "local-fixed-research-only-no-shipping-dependency",
-      "status": "EXECUTION_ADMITTED",
-      "url": "https://github.com/Xiaobin-Rong/ul-unas"
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/external-baselines-admission.json",
+      "admission_receipt_sha256": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
+      "materialized_source_sha256": "35a8447aaf0378c43bcc50b292a7d3f503cfed38a768a3a711e35f808b3525de",
+      "scope": "local-fixed-research-only-no-shipping-dependency"
     },
     {
-      "commit": null,
       "id": "h-gtcrn-noisy",
+      "url": "https://github.com/Max1Wz/H-GTCRN",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/Max1Wz/H-GTCRN"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "h-gtcrn-iva",
+      "url": "https://github.com/Max1Wz/H-GTCRN",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/Max1Wz/H-GTCRN"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "silero-vad",
+      "url": "https://github.com/snakers4/silero-vad",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/snakers4/silero-vad"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "deepfilternet",
+      "url": "https://github.com/Rikorose/DeepFilterNet",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/Rikorose/DeepFilterNet"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "dtln",
+      "url": "https://github.com/breizhn/DTLN",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/breizhn/DTLN"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "dtln-aec",
+      "url": "https://github.com/breizhn/DTLN-aec",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/breizhn/DTLN-aec"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "nara-wpe",
+      "url": "https://github.com/fgnt/nara_wpe",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/fgnt/nara_wpe"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "pffft",
+      "url": "https://github.com/marton78/pffft",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/marton78/pffft"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "kissfft",
+      "url": "https://github.com/mborgerding/kissfft",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/mborgerding/kissfft"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "xmos-lib-voice",
+      "url": "https://github.com/xmos/lib_voice",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/xmos/lib_voice"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "esp-sr",
+      "url": "https://github.com/espressif/esp-sr",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/espressif/esp-sr"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "realman",
+      "url": "https://github.com/Audio-WestlakeU/RealMAN",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/Audio-WestlakeU/RealMAN"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "pyramic",
+      "url": "https://github.com/fakufaku/pyramic-dataset",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/fakufaku/pyramic-dataset"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "aec-challenge",
+      "url": "https://github.com/microsoft/AEC-Challenge",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/microsoft/AEC-Challenge"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     },
     {
-      "commit": null,
       "id": "dns-challenge",
+      "url": "https://github.com/microsoft/DNS-Challenge",
+      "commit": null,
+      "status": "PLANNED",
       "rights": {
         "code": "PENDING",
-        "data": "PENDING",
         "dependencies": "PENDING",
-        "redistribution": "PENDING",
-        "weights": "PENDING"
-      },
-      "status": "PLANNED",
-      "url": "https://github.com/microsoft/DNS-Challenge"
+        "weights": "PENDING",
+        "data": "PENDING",
+        "redistribution": "PENDING"
+      }
     }
-  ],
-  "stage": "frontend-evolution-v1"
+  ]
 }

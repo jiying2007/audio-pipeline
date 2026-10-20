@@ -172,6 +172,22 @@ def engineering(root, bank):
     return {'status': 'PASS', 'modes': results, 'negative_return_codes': failures}
 
 
+def verify_native_receipt(meta, samples, chunk):
+    expected = {'samples': samples, 'sample_rate_hz': 16000, 'mic_count': 4,
+                'taps_per_mic': 64, 'output_count': 1, 'chunk_samples': chunk}
+    require(meta['status'] == 'SUCCESS' and meta['shipping_authority'] is False
+            and all(type(meta.get(key)) is int and meta[key] == value for key, value in expected.items()),
+            'SOF native frame/authority contract')
+    require(type(meta.get('fir_state_coefficient_delay_bytes')) is int
+            and 0 < meta['fir_state_coefficient_delay_bytes'] <= 16384
+            and type(meta.get('clip_count')) is int and 0 <= meta['clip_count'] <= samples,
+            'SOF native resource/output accounting')
+    trace = meta.get('thread_cpu_process_ns')
+    require(isinstance(trace, list) and len(trace) == (samples + chunk - 1) // chunk
+            and all(type(t) is int and 0 <= t < 2**63 for t in trace),
+            'SOF partial/invalid native timing coverage')
+
+
 def verify_engineering(root, bank, report):
     directory = root / 'engineering'
     raw = np.random.default_rng(1709).integers(-4000, 4001, size=(3200, 4), dtype=np.int16)
@@ -186,8 +202,7 @@ def verify_engineering(root, bank, report):
             require(prefix.with_suffix('.s32').read_bytes() == expected, 'SOF engineering oracle bytes')
             require(prefix.with_suffix('.log').read_bytes() == b'', 'SOF engineering diagnostic output')
             meta = load_json(prefix.with_suffix('.json'))
-            require(meta['status'] == 'SUCCESS' and meta['samples'] == 3200 and meta['shipping_authority'] is False,
-                    'SOF engineering execution contract')
+            verify_native_receipt(meta, 3200, 160 if not suffix else 2)
     require(set(report['negative_return_codes']) == {'odd-frames', 'odd-chunk', 'no-clobber', 'partial-coefficients'}
             and all(value != 0 for value in report['negative_return_codes'].values()), 'SOF missing negative execution')
 
@@ -400,8 +415,7 @@ def verify(root):
             for tag in actual:
                 meta = load_json(directory / arm / (tag + '.json'))
                 if arm == 'sof64':
-                    require(meta['status'] == 'SUCCESS' and meta['shipping_authority'] is False and meta['samples'] == 64000
-                            and meta['sample_rate_hz'] == 16000 and meta['fir_state_coefficient_delay_bytes'] <= 16384, 'SOF output contract')
+                    verify_native_receipt(meta, 64000, 160)
                     q31 = np.frombuffer((directory / arm / (tag + '.s32')).read_bytes(), dtype='<i4')
                     require((q31.astype(np.float64)/2147483648).astype('<f4').tobytes()
                             == (directory / arm / (tag + '.f32')).read_bytes(), 'SOF output scale drift')
@@ -484,6 +498,27 @@ def negative(root):
             rejected.append('nonfinite-unscored-tail')
         else:
             raise ValueError('SOF nonfinite unscored output accepted')
+        # Restore the prior negative completely; otherwise it would mask a
+        # missing native timing check and make the next tests pass vacuously.
+        tail_path.write_bytes((root / 'cases' / case['case_id'] / 'fir33/mixture.f32').read_bytes())
+        seal_output(scratch, original)
+        verify(scratch)
+        timing_path = scratch / 'cases' / case['case_id'] / 'sof64/mixture.json'
+        original_timing = load_json(timing_path)
+        for name in ('partial-native-timing', 'wrong-native-chunk'):
+            changed = copy.deepcopy(original_timing)
+            if name == 'partial-native-timing':
+                changed['thread_cpu_process_ns'].pop()
+            else:
+                changed['chunk_samples'] = 2
+            write_json(timing_path, changed)
+            seal_output(scratch, original)
+            try:
+                verify(scratch)
+            except (ValueError, KeyError, AssertionError):
+                rejected.append(name)
+            else:
+                raise ValueError('SOF native timing negative accepted: ' + name)
     return {'status': 'PASS', 'rejected': rejected}
 
 

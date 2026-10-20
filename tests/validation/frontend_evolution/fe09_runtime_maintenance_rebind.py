@@ -130,7 +130,8 @@ def verify(*, historical_self_tests: bool) -> dict:
         "schema_version": 1, "decision": item["decision"],
         "maintenance_version": item["maintenance_version"],
         "execution_source_commit": subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, timeout=20).strip(),
+            ["git", "-c", "safe.directory=" + str(ROOT), "rev-parse", "HEAD"],
+            cwd=ROOT, text=True, timeout=20).strip(),
         "maintenance_checker_sha256": hashlib.sha256(raw_file(Path(__file__))).hexdigest(),
         "current_source_sha256": current_hashes,
         "current_architecture_probes": len(major.PROBES),

@@ -3,7 +3,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <pthread.h>
 #include <sched.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -76,6 +78,76 @@ static ap_metrics_t process_one(ap_runtime_t *runtime,
     assert(!"runtime output timeout");
     memset(&pipeline_metrics, 0, sizeof(pipeline_metrics));
     return pipeline_metrics;
+}
+
+typedef struct control_flood {
+    ap_runtime_t *runtime;
+    atomic_uint finish;
+    atomic_uint accepted;
+    atomic_uint stopped;
+} control_flood_t;
+
+static void *refill_controls(void *arg) {
+    control_flood_t *flood = arg;
+    ap_runtime_command_t command = {0};
+    command.struct_size = sizeof(command);
+    command.api_version = AP_RUNTIME_API_VERSION;
+    command.kind = AP_RUNTIME_COMMAND_RESET;
+    while (!atomic_load_explicit(&flood->finish, memory_order_acquire)) {
+        const ap_status_t status = ap_runtime_command(flood->runtime, &command);
+        assert(status == AP_OK || status == AP_EFULL);
+        if (status == AP_OK)
+            atomic_fetch_add_explicit(&flood->accepted, 1u, memory_order_relaxed);
+        else
+            sched_yield();
+    }
+    return NULL;
+}
+
+static void *stop_during_control_flood(void *arg) {
+    control_flood_t *flood = arg;
+    ap_runtime_stop(flood->runtime);
+    atomic_store_explicit(&flood->stopped, 1u, memory_order_release);
+    return NULL;
+}
+
+static void test_control_flood_progress_and_stop(void) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    control_flood_t flood;
+    pthread_t producer;
+    pthread_t stopper;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    unsigned i;
+    unsigned stopped_while_refilling;
+    rcfg.overload_us = 0u;
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    runtime = open_default(pipeline, &rcfg);
+    flood.runtime = runtime;
+    atomic_init(&flood.finish, 0u);
+    atomic_init(&flood.accepted, 0u);
+    atomic_init(&flood.stopped, 0u);
+    assert(ap_runtime_start(runtime) == AP_OK);
+    assert(pthread_create(&producer, NULL, refill_controls, &flood) == 0);
+    for (i = 0u; i < 2000u && !atomic_load(&flood.accepted); ++i) sleep_ms(1u);
+    assert(atomic_load(&flood.accepted) != 0u);
+    for (i = 0u; i < 16u; ++i) (void)process_one(runtime, mic, render, out);
+    assert(wait_processed(runtime, 16u));
+    assert(pthread_create(&stopper, NULL, stop_during_control_flood, &flood) == 0);
+    /* Host liveness bound, not a target-board latency qualification. Keep the
+     * producer active until the worker has had to observe stop under refill. */
+    for (i = 0u; i < 2000u && !atomic_load(&flood.stopped); ++i) sleep_ms(1u);
+    stopped_while_refilling = atomic_load(&flood.stopped);
+    atomic_store_explicit(&flood.finish, 1u, memory_order_release);
+    assert(pthread_join(producer, NULL) == 0);
+    assert(pthread_join(stopper, NULL) == 0);
+    assert(stopped_while_refilling);
+    assert(metrics(runtime).processed_frames == 16u);
+    ap_runtime_deinit(runtime);
 }
 
 static void test_open_start_and_argument_failures(void) {
@@ -210,6 +282,86 @@ static void test_command_validation_and_queue_pressure(void) {
     ap_runtime_deinit(runtime);
 }
 
+static void check_directional_gap_counts(ap_frame_metadata_flags_t flags,
+                                         uint32_t lost_capture,
+                                         uint32_t lost_render,
+                                         uint64_t expected_capture,
+                                         uint64_t expected_render,
+                                         uint32_t expected_summary,
+                                         unsigned via_command) {
+    ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
+    ap_runtime_config_t rcfg = ap_runtime_config_default();
+    ap_pipeline_t *pipeline = NULL;
+    ap_runtime_t *runtime;
+    ap_frame_metadata_t metadata = {0};
+    ap_metrics_t before;
+    ap_metrics_t after;
+    ap_runtime_metrics_t rm;
+    ap_event_t event;
+    unsigned discontinuity_events = 0u;
+    unsigned has_aec;
+    int16_t mic[AP_MAX_IO_FRAME_SAMPLES * AP_MAX_MIC_CHANNELS] = {0};
+    int16_t render[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    int16_t out[AP_MAX_IO_FRAME_SAMPLES] = {0};
+    rcfg.overload_us = UINT32_MAX; /* Host scheduling is not the assertion. */
+    assert(ap_pipeline_init(pipeline_state, sizeof(pipeline_state), &pcfg, &pipeline) == AP_OK);
+    ap_pipeline_get_metrics(pipeline, &before);
+    has_aec = (ap_pipeline_stages(pipeline) & AP_STAGE_AEC) != 0u;
+    runtime = open_default(pipeline, &rcfg);
+    if (via_command) {
+        ap_runtime_command_t command = {0};
+        command.struct_size = sizeof(command);
+        command.api_version = AP_RUNTIME_API_VERSION;
+        command.kind = AP_RUNTIME_COMMAND_STREAM_DISCONTINUITY;
+        command.data.discontinuity.flags =
+            AP_DISCONTINUITY_CAPTURE_GAP | AP_DISCONTINUITY_RENDER_GAP;
+        command.data.discontinuity.lost_frames = lost_capture;
+        assert(ap_runtime_command(runtime, &command) == AP_OK);
+        assert(ap_runtime_submit_frame(runtime, mic, render, NULL) == AP_OK);
+    } else {
+        metadata.struct_size = sizeof(metadata);
+        metadata.api_version = AP_RUNTIME_API_VERSION;
+        metadata.flags = flags;
+        metadata.lost_capture_frames = lost_capture;
+        metadata.lost_render_frames = lost_render;
+        assert(ap_runtime_submit_frame(runtime, mic, render, &metadata) == AP_OK);
+    }
+    assert(ap_runtime_start(runtime) == AP_OK);
+    assert(wait_processed(runtime, 1u));
+    ap_runtime_stop(runtime);
+    assert(ap_runtime_receive(runtime, out, &after) == AP_OK);
+    rm = metrics(runtime);
+    assert(rm.capture_gap_frames == expected_capture);
+    assert(rm.render_gap_frames == expected_render);
+    assert(rm.stream_discontinuities == 1u);
+    assert(after.aec_resets == before.aec_resets + has_aec);
+    while (ap_runtime_receive_event(runtime, &event) == AP_OK) {
+        if (event.kind == AP_EVENT_STREAM_DISCONTINUITY) {
+            discontinuity_events++;
+            assert((uint32_t)event.arg1 == expected_summary);
+            assert(event.count == 1u);
+        }
+    }
+    assert(discontinuity_events == 1u);
+    ap_runtime_deinit(runtime);
+}
+
+static void test_directional_gap_counts(void) {
+    const ap_frame_metadata_flags_t both =
+        AP_FRAME_CAPTURE_DISCONTINUITY | AP_FRAME_RENDER_DISCONTINUITY;
+    check_directional_gap_counts(both, 2u, 5u, 2u, 5u, 5u, 0u);
+    check_directional_gap_counts(both, 5u, 2u, 5u, 2u, 5u, 0u);
+    check_directional_gap_counts(both, 0u, 5u, 1u, 5u, 5u, 0u);
+    check_directional_gap_counts(both, 5u, 0u, 5u, 1u, 5u, 0u);
+    check_directional_gap_counts(both, 0u, 0u, 1u, 1u, 0u, 0u);
+    check_directional_gap_counts(AP_FRAME_CAPTURE_DISCONTINUITY, 2u, 9u, 2u, 0u, 2u, 0u);
+    check_directional_gap_counts(AP_FRAME_RENDER_DISCONTINUITY, 9u, 5u, 0u, 5u, 5u, 0u);
+    check_directional_gap_counts(AP_FRAME_CLOCK_RESET, 2u, 5u, 0u, 0u, 0u, 0u);
+    /* The explicit control API has one shared count for all flagged routes. */
+    check_directional_gap_counts(both, 7u, 7u, 7u, 7u, 7u, 1u);
+    check_directional_gap_counts(both, 0u, 0u, 1u, 1u, 0u, 1u);
+}
+
 static void test_metadata_event_drop_and_output_backpressure(void) {
     ap_config_t pcfg = ap_config_default(AP_PROFILE_CALL);
     ap_runtime_config_t rcfg = ap_runtime_config_default();
@@ -254,8 +406,8 @@ static void test_metadata_event_drop_and_output_backpressure(void) {
     }
 
     rm = metrics(runtime);
-    assert(rm.capture_gap_frames >= 5u);
-    assert(rm.render_gap_frames >= 5u);
+    assert(rm.capture_gap_frames == 2u);
+    assert(rm.render_gap_frames == 5u);
     assert(rm.timestamp_frames >= 1u);
     assert(rm.output_drop_events >= 4u);
     assert(rm.event_drop_events >= 1u);
@@ -954,6 +1106,8 @@ int main(int argc, char **argv) {
     test_runtime_tuning_projects_pending_commands();
     test_runtime_tuning_resyncs_caller_owned_pipeline();
     test_command_validation_and_queue_pressure();
+    test_control_flood_progress_and_stop();
+    test_directional_gap_counts();
     test_metadata_event_drop_and_output_backpressure();
     test_automatic_quality_degrade_and_recovery();
     test_direct_quality_degradation_event();

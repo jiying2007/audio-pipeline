@@ -31,6 +31,42 @@ ARM/QEMU/ALSA/static-analysis 等重任务使用 immutable digest 固定的 GHCR
 才更新 `ci-latest`。消费者保留原 digest，另行审查的 pin 更新必须绑定已发布 digest 的
 成功执行证据。仿真结果不证明 SSC305 实机、物理时序或 HIL 资格。
 
+### 消费者使用的已发布 digest
+
+本 checkout 的消费者引用为：
+
+```text
+ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+```
+
+这是 [#811](https://github.com/jiying2007/audio-pipeline/issues/811) 跟踪的独立消费者
+采用变更。镜像由 `b80d819a486cb973e6a60b4fdf259803d45ec3f0` 构建，发布证据为
+[CI Toolchain Image run 39380255641 / job 118487510421](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/job/118487510421)。
+[原始 qualified artifact 12245087611](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/artifacts/12245087611)
+是 53,364 字节的 ZIP，SHA256 为
+`036a0307de88ad1b3d78499ff2ef95b7adf0d67425d089962ef9e29c824a2fb0`。
+独立下载核验了全部 57 个 ZIP 成员、两份内部清单覆盖的 52 个文件摘要、已发布引用，
+以及完全相同的发布前与 digest 拉回执行收据。两阶段均在该来源提交上实际执行
+GCC、Clang、ArmHF/QEMU、AArch64/QEMU，每种配置的 CTest 都是 14/14 通过。
+
+固定 `b80d819` 基线的采用清单为 36 处引用：`ci.yml` 2 处、`quality.yml` 29 处、
+`resource-gates.yml` 4 处、`verify.yml` 1 处。其中 35 处是 container image，另 1 处是
+资源交付收据的 `--toolchain-image` 身份参数，必须与实际执行镜像同步。
+镜像发布证据与本消费者采用 PR/main 的 Verify 门禁分别核验；工具链维护不创建
+新的 SDK 版本。
+
+合入其他分支后，重新扫描全部消费者和收据身份：
+
+```sh
+rg -n 'audio-pipeline-ci@sha256:' .github/workflows
+```
+
+当前所有消费者均使用上面的受审 digest。整合
+[A1 PR #815](https://github.com/jiying2007/audio-pipeline/pull/815) 后，固定基线新增了
+一个消费者：当前树共有 37 处引用，其中 `quality.yml` 为 30 处，其余三个工作流
+数量不变。A1 作业也使用同一已发布 digest。消费者使用不可变 digest；
+`ci-latest` 仅用于发布工作流完成拉回验证后的稳定指针更新。
+
 Hosted resource 数字只维护在 `ci/resource-baseline.json`；`docs/generated/RESOURCE_BASELINE.md` 由它生成，Resource Gate 会重新测量并 diff 两者。
 
 ## Deterministic regression 与公共数据验证
@@ -51,6 +87,12 @@ Product Certification 仍是更高一级的真实发货硬件证据。
 
 `scripts/ci_failure.py` 输出稳定机器分类，包括 build、ABI、unit、sanitizer、DSP quality、performance、resource、QEMU、HIL、XRUN、infra、evidence、security。
 
+Verify 使用 `aggregate --enforce` 同时生成门禁结论与失败回执，检查全部九个上游域，
+包括 `impact` 和 `hosted-real-smoke`。应执行的任务必须成功，未选中的任务必须实际
+跳过；选择元数据或任务结果缺失、格式错误时按证据无效处理。JSON 保存期望值、
+实际值与全部违例，先写回执，再按同一结论返回退出码。`--self-test` 覆盖 hosted
+单独失败、错误跳过或执行、取消、无效元数据，以及实际命令行的回执与退出码。
+
 声学 validation 失败时，`scripts/validation_reproducer.py` 保存精确输入、case JSON、metrics/failure 数据和复现入口，避免依赖人工阅读长日志。
 
 ## Flaky 与历史成熟度
@@ -60,6 +102,12 @@ Nightly `flaky-sentinel` 重放确定性测试 100 次，不允许静默 retry �
 ## Metamorphic / Property Contracts
 
 `tests/test_metamorphic.c` 验证 reset 后 deterministic replay、silence 稳定性和拓扑约束，并进入普通 CTest 和适用 sanitizer/build matrix。
+
+`tests/test_runtime_interleavings.c` 进入普通 Linux Runtime CTest，并与基础及扩展
+Runtime 测试共同进入 TSan。它仅在测试翻译单元中包装原始 C11 原子操作，安排
+精确的队列槽位复用、命令补入与快照写入时序，覆盖序号及计数器回绕。安装的
+Runtime 没有测试调度钩子。这些测试验证并发协议，host 调度和 sanitizer 结果
+不代表目标板实时性或弱内存平台的完整资格。
 
 ## Trusted Runner Readiness
 

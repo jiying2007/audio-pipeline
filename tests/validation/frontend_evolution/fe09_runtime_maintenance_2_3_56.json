@@ -1,0 +1,32 @@
+{
+  "base": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+  "decision": "EXACT_RUNTIME_MAINTENANCE_REBIND_HISTORICAL_PREFLIGHT_PRESERVED",
+  "historical_contract_sha256": {
+    ".github/research/frontend-evolution-v1/fe09-r2b0-major-migration-contract.json": "80b494c0512f7761d95780914e05236f27e57b48a67453a79abfa66dfdf63f27",
+    "docs/research/frontend-evolution-v1/FE09_R2B0_MAJOR_MIGRATION_PREFLIGHT.md": "618c0808de07d770197a79cd85941a69cf2753928e49a93ea73367e701792dec",
+    "tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py": "aba72c50742caaa97ebef0470a7811f844ccb2b2c398cbfa7876d604ec4008ad",
+    "tests/validation/frontend_evolution/fe09_r2b2_runtime_recorder_contract_s0.json": "03ce2f77f6227866a4cd0e32c7e7c302bc57fe1d98c9ed4a3a15c029469761d6",
+    "tests/validation/frontend_evolution/fe09_r2b2_runtime_recorder_preflight_s0.py": "ce72fe1aa4e7836fb3a43dee5c4e0731d91855a2a91f7651ed34763a31350478"
+  },
+  "historical_source_is_current_source": false,
+  "issue": "https://github.com/jiying2007/audio-pipeline/issues/810",
+  "maintenance_version": "2.3.56",
+  "patch_sha256": "31ed4a2684c70d2cd9443304247ba2bb1370e0415b6fded30037c5af8cf787eb",
+  "public_c4_enabled": false,
+  "schema_version": 1,
+  "shipping_or_hil_qualification": false,
+  "source_bindings": {
+    "CMakeLists.txt": {
+      "after_blob": "3659b13659baaac99fd6e7e56fcb45cba243955c",
+      "before_blob": "2c7ac085e04ab8f3b9682698001a50b8a2a0cf75"
+    },
+    "docs/API_CONTRACT.md": {
+      "after_blob": "821c07424e420cecc0bf64e67f237c7a9a131502",
+      "before_blob": "bd7be016153ed09c83194bf7d20816e9788a4356"
+    },
+    "src/platform/linux/ap_runtime.c": {
+      "after_blob": "7124a9c04d46f4d907c3d9831b3d4aa35ab8414e",
+      "before_blob": "9a0013f1983f8e2dc807fd9b8493837f7d53ef83"
+    }
+  }
+}

@@ -3,8 +3,9 @@
 
 Repository objects, source bytes/modes, all Action differences and the actual
 M2 evaluator execute locally. Only public metadata/ref retrieval and small ZIP
-transport are explicitly engineering fixtures. The checked-in registry remains
-PENDING. No real archive receipt, corpus or hosted execution is manufactured.
+transport are explicitly engineering fixtures. PENDING cases use isolated copies
+regardless of the checked-in registration stage. No real archive receipt, corpus
+or hosted execution is manufactured; production registration is never rewritten.
 """
 from __future__ import annotations
 
@@ -45,6 +46,26 @@ def git(root, *args):
 def blob(raw):
     return {"mode": "100644", "git_blob": hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest(),
             "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+
+
+def pending_source_fixture(sources):
+    """Build the existing PENDING negative without borrowing production state."""
+    fixture = dict(sources)
+    registry = json.loads(sources[P.REGISTRY])
+    contract = json.loads(sources[P.SOURCE_CONTRACT])
+    registered = contract["preregistered_final_push_source_closure"]["files"]
+    assert registered[P.REGISTRY] == blob(sources[P.REGISTRY])
+    assert registry["m2_qualification"]["status"] in ("PENDING", "COMPLETE")
+    registry["m2_qualification"] = {
+        "status": "PENDING", "protected_main_sha": None,
+        "integration_prs": {workflow: None for workflow in P.WORKFLOWS},
+        "verify": None, "release": None,
+    }
+    raw = (json.dumps(registry, sort_keys=True, indent=2) + "\n").encode()
+    fixture[P.REGISTRY] = raw
+    registered[P.REGISTRY] = blob(raw)
+    fixture[P.SOURCE_CONTRACT] = (json.dumps(contract, sort_keys=True, indent=2) + "\n").encode()
+    return fixture
 
 
 def rules():
@@ -153,8 +174,10 @@ def run_suite():
         git(area, "config", "user.email", "offline@example.invalid")
         git(area, "config", "user.name", "M3 Explicit Offline Fixture")
         git(area, "checkout", "--quiet", "--detach", BASELINE)
-        for path in (P.SELF, P.REGISTRY, P.SOURCE, P.SOURCE_CONTRACT, *P.M2_FILES):
-            (area / path).write_bytes((ROOT / path).read_bytes())
+        sources = {path: (ROOT / path).read_bytes()
+                   for path in (P.SELF, P.REGISTRY, P.SOURCE, P.SOURCE_CONTRACT, *P.M2_FILES)}
+        for path, raw in pending_source_fixture(sources).items():
+            (area / path).write_bytes(raw)
         git(area, "add", "."); git(area, "commit", "--quiet", "-m", "offline pending source")
         pending = git(area, "rev-parse", "HEAD")
         anchor_text = git(area, "show", S.SCIENCE_ANCHOR + ":" + P.WORKFLOW) + "\n"

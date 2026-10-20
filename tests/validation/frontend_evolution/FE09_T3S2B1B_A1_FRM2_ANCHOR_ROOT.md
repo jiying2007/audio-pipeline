@@ -12,6 +12,10 @@ Release/Convergence `39284587954`，原始 A0 Artifact `12197835183`。
 75 个原始输入的完整 Git blob、SHA256 和字节数，包括 A0 的冻结前驱和实际
 编译源的本地头文件闭包。清单 SHA256 为
 `babeac353b527cf2b342fa386f550c6ffcd542c47d32e44bc56b263a6dd10f08`。
+本地预冻结提交是 `716929f683a955ae5a65b6fdbcf54ba334e9b029`，先于本地
+实现检查点 `0d5bacfc2981d0b55613e8a740842bbb0e3af5b3`。远端持久化可能采用
+另一 Git 提交对象；完整输入清单的字节身份及原本地顺序不因此改变，不能把
+内容相同的远端检查点 SHA 冒称为原本地提交或执行 SHA。
 
 假设：A0 的 32 个连续、不可变原始 APX3/FBS1 文件可以支持一个独立、不可覆写的
 逻辑窗口 `17..32` 检查点，其左锚点是 **整个原始 seq16 的 200 字节 FBS1**
@@ -32,6 +36,18 @@ little-endian，固定 224 字节头及 16 个 72 字节成员，共 1376 字节
 high-water、非零 seq16 完整行 SHA、seq32 完整行 SHA、根 SHA 和严格保留字段。
 根 SHA 覆盖整个 envelope，自身 32 字节字段计算时为零。成员按原始全局序号排列，
 包含序号、完整原始行 SHA 和原始 APX3 SHA，不另造 FBS1 或 APX3 编解码器。
+
+| 偏移（字节） | 字段 | 精确约束 |
+| --- | --- | --- |
+| 0..27 | magic/version/header/member/total/count/cap | FRM2 / 2 / 224 / 72 / 1376 / 16 / 32 |
+| 28..71 | capture ID、generation、rate、mics、Render owner/ID、4 slots | 与独立 A0 读取一致 |
+| 72..95 | first、last、original high-water | 三个 u64，17 / 32 / 32 |
+| 96..127 | 左锚点 | SHA256（完整原始 row16，200 字节），必须非零 |
+| 128..159 | 来源末行 | SHA256（完整原始 row32，200 字节） |
+| 160..191 | 根摘要 | 整个 1376 字节的 SHA256；本字段计算时置零 |
+| 192..211 | depth、frame ms、capture epoch、row bytes、physical count | 2 或 4 / 10 / 1 / 200 / 32 |
+| 212..223 | 保留字节 | 必须全部为零 |
+| 224 + i×72 | 成员 i，i=0..15 | u64 原始 seq=17+i、完整行 SHA256、原始 APX3 SHA256 |
 
 根目录使用独立的调用者 `O_DIRECTORY|O_NOFOLLOW` fd，并检查设备/inode、owner
 和权限；拒绝来源目录别名。首次发布遵循 `O_EXCL .part -> 完整有界写 -> file
@@ -70,7 +86,8 @@ Verify summary、Release/Convergence 后，才允许关闭 #809。A2 删除/滚�
 首次严格 Native 编译实际执行了 48 个来源场景、462 个失败拒绝、51 次重启校验、
 10 个独立事务故障。另一个负例用原始 APX3 writer 更改未保留的 row1，重新连接
 全部 32 行且由未修改的 A0 bind 接受；A1 仍因固定的原始 source high-water 行
-变化而拒绝。该次 Native 执行只是本地诊断，四目标资格尚未完成。
+变化而拒绝。本段保存最初实现检查点的 Native 诊断，完整四目标结果由下面的
+实际执行收据另行给出；不能以这段诊断代替当前提交的四目标资格。
 
 新 `collect.log` 使用 JSONL 原始调用记录。独立读回从日志逐条核对每个目标的
 21 个原始 C 编译单元、链接命令、实际 ELF SHA256、两次成功执行的原始 stdout
@@ -82,3 +99,32 @@ Verify summary、Release/Convergence 后，才允许关闭 #809。A2 删除/滚�
 主矩阵沿用 A0 的 `-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard`；QEMU
 执行属于通用 AArch32 用户态仿真。每次收据记录实际命令、版本和工具文件 SHA；
 这些名称或版本本身不构成 Cortex-A32 或 SSC305 目标硬件资格。
+
+## 执行与独立读回
+
+先提交全部六个 A1 输入文件。资格入口要求 `--execution-source` 等于实际 checkout
+HEAD，CI 中还须等于 `GITHUB_SHA`；逐个检查 A1 输入和原始 75 个文件确实属于
+该提交。PR merge checkout 使用其真实 merge SHA，不替换成 PR head 或历史 A0 SHA。
+
+```sh
+python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py --self-test
+a1_execution_source=$(git rev-parse HEAD)
+python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
+  --collect --output /tmp/fe09-a1-new-run --execution-source "$a1_execution_source"
+python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
+  --verify --output /tmp/fe09-a1-new-run --execution-source "$a1_execution_source"
+python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
+  --negative-readback --output /tmp/fe09-a1-new-run --execution-source "$a1_execution_source"
+```
+
+`--self-test` 的明确标记仅代表合成契约负例检查。`--collect` 不复用旧 ELF 或旧结果，
+不覆盖已有输出目录；四种真实目标各运行两次，任何工具、构建或执行失败均返回失败。
+ASan/UBSan/LSan/TSan 的检测正常开启，不通过关闭检测取得成功。
+`--negative-readback` 必须先用同一验证入口通过原始真实四成员 clean control，
+之后只在临时副本篡改 receipt 或 JSONL 并重新封装全部内部 SHA256。删除第二次
+执行、伪造等值散列、混用 ELF、改 sanitizer 参数或提升权限结论均须被拒绝；
+原始四成员的字节在前后保持不变。它不制造另一组目标执行或远程上传证据。
+
+现有 `quality.yml` 增加一个 A1 job，进入同一个 required Verify 汇总。其收集步骤
+始终保留成功或失败的四成员；同运行下载后再次独立校验完整日志、成员 SHA 和
+重封装负例。该下载证明与最终由独立读取方取得原始 ZIP 的核验各自保留。

@@ -395,6 +395,74 @@ def self_test()->None:
     print("FE09_A1_FRM2_CONTRACT_SELF_TEST_ONLY_PASS negatives="+str(count))
 
 
+def negative_readback(output:Path,source:str)->None:
+    """Mutate copies of an already admitted real artifact, resealing all hashes.
+
+    Never construct pretend successful runner evidence. The clean control must
+    pass the same independent entry first; original members remain untouched.
+    """
+    verify_output(output,source)
+    original={name:raw(output/name) for name in MEMBERS}
+    receipt=TOOLS.strict_json(original["receipt.json"].decode("utf-8"))
+    events=[TOOLS.strict_json(line) for line in original["collect.log"].decode("utf-8").splitlines()]
+    count=0
+    with tempfile.TemporaryDirectory(prefix="fe09-a1-resealed-negative-") as directory:
+        candidate=Path(directory)
+        def reject(label:str,mutate)->None:
+            nonlocal count
+            changed_receipt=copy.deepcopy(receipt);changed_events=copy.deepcopy(events)
+            mutate(changed_receipt,changed_events)
+            (candidate/"receipt.json").write_text(json.dumps(changed_receipt,sort_keys=True,separators=(",",":"))+"\n")
+            (candidate/"collect.log").write_text("\n".join(json.dumps(e,separators=(",",":")) for e in changed_events)+"\n")
+            (candidate/"verify.log").write_bytes(original["verify.log"])
+            (candidate/"SHA256SUMS").write_text("".join(f"{digest(candidate/name)}  {name}\n" for name in
+                ("receipt.json","collect.log","verify.log")),encoding="ascii")
+            try:verify_output(candidate,source)
+            except (NotAdmitted,KeyError,IndexError,TypeError):
+                # Malformed JSON/schema is also rejected; no altered copy can
+                # receive a marker from this negative-only test entry.
+                count+=1
+            else:raise NotAdmitted("RESEALED_FALSE_READBACK_ACCEPTED_"+label)
+        for target in TARGETS:
+            reject("missing_target_"+target,lambda r,e,t=target:r["target_results"].pop(t))
+            reject("invented_equal_replays_"+target,
+                   lambda r,e,t=target:r["replay_stdout_sha256"].__setitem__(t,["a"*64]*2))
+            def omit_second(r,e,t=target):
+                indexes=[i for i,v in enumerate(e) if v["kind"]=="invocation" and
+                         v["timeout_seconds"]==540 and Path(v["command"][-1]).name==t+".elf"]
+                need(len(indexes)==2,"CLEAN_CONTROL_MISSING_TWO_REPLAYS")
+                del e[indexes[1]]
+            reject("second_execution_removed_"+target,omit_second)
+        reject("one_elf_relabeled",lambda r,e:r.__setitem__("binary_sha256",{t:r["binary_sha256"]["native"] for t in TARGETS}))
+        reject("source_commit",lambda r,e:r.__setitem__("source_commit","f"*40))
+        reject("compiler_version",lambda r,e:r["compiler_identity"]["arm"].__setitem__("version","unobserved compiler"))
+        reject("qemu_hardware_promotion",lambda r,e:r["qemu_identity"].__setitem__("cpu_scope","SSC305 hardware"))
+        reject("leak_detection_disabled",lambda r,e:r["sanitizer_environment"].__setitem__("ASAN_OPTIONS","detect_leaks=0:halt_on_error=1"))
+        reject("host_attribution_invented",lambda r,e:r["host_attribution"]["native"][0].__setitem__(
+            "max_rss_kib",r["host_attribution"]["native"][0]["max_rss_kib"]+1))
+        for field in ("atomic_root_and_source_ACK_qualified","physical_NAND_UBIFS_powerloss_qualified",
+                      "entire_ssc305_192k_memory_or_10ms_qualified","public_sdk_installed"):
+            reject("authority_"+field,lambda r,e,f=field:r.__setitem__(f,True))
+        def invocation(e,target):
+            return next(v for v in e if v["kind"]=="invocation" and v["timeout_seconds"]==540 and
+                        Path(v["command"][-1]).name==target+".elf")
+        reject("failed_execution",lambda r,e:invocation(e,"tsan").__setitem__("exit_code",66))
+        reject("short_stdout",lambda r,e:invocation(e,"arm").__setitem__("stdout","{}\n"))
+        reject("wrong_sanitized_binary",lambda r,e:invocation(e,"sanitized")["command"].__setitem__(
+            -1,str(Path(invocation(e,"sanitized")["command"][-1]).with_name("native.elf"))))
+        reject("sanitizer_runtime_environment_changed",lambda r,e:invocation(e,"sanitized")["environment"].__setitem__(
+            "ASAN_OPTIONS","detect_leaks=0:halt_on_error=1"))
+        reject("duplicate_target_execution",lambda r,e:e.insert(-1,copy.deepcopy(invocation(e,"native"))))
+        def remove_sanitizer(r,e):
+            value=next(v for v in e if v["kind"]=="invocation" and "-c" in v["command"] and
+                       "-fsanitize=address,undefined" in v["command"])
+            value["command"].remove("-fsanitize=address,undefined")
+        reject("sanitizer_compile_flag_missing",remove_sanitizer)
+        reject("extra_claim",lambda r,e:r.__setitem__("uploaded_or_hardware_qualified",True))
+    need(all(raw(output/name)==data for name,data in original.items()),"NEGATIVE_TEST_CHANGED_ORIGINAL_EVIDENCE")
+    print("FE09_A1_REAL_ARTIFACT_RESEALED_NEGATIVES_PASS clean_control=1 negatives="+str(count))
+
+
 def collect(output:Path,source:str)->None:
     need(not output.exists() and not output.is_symlink(),"REFUSE_OVERWRITE_ORIGINAL_A1_EVIDENCE")
     exact_head(source)
@@ -472,7 +540,7 @@ def collect(output:Path,source:str)->None:
 def main()->None:
     parser=argparse.ArgumentParser(description=__doc__)
     mode=parser.add_mutually_exclusive_group(required=True)
-    for name in ("self-test","collect","verify"):mode.add_argument("--"+name,action="store_true")
+    for name in ("self-test","collect","verify","negative-readback"):mode.add_argument("--"+name,action="store_true")
     parser.add_argument("--output",type=Path)
     parser.add_argument("--execution-source")
     args=parser.parse_args()
@@ -481,6 +549,7 @@ def main()->None:
         need(args.output is not None and args.execution_source is not None,"OUTPUT_AND_EXACT_SOURCE_REQUIRED")
         exact_head(args.execution_source)
         if args.collect:collect(args.output,args.execution_source)
+        elif args.negative_readback:negative_readback(args.output,args.execution_source)
         else:verify_output(args.output,args.execution_source);print(MARKER.strip())
     except (ValueError,OSError,subprocess.CalledProcessError) as error:
         raise SystemExit(FAILURE+": "+str(error)) from None

@@ -1,0 +1,12 @@
+mono_us,event,value
+4399711287,scene_start,0
+4399711298,far_schedule_only,0
+4399711299,near_prompt_only,0
+4402714089,near_prompt_only,1
+4402714099,near_script_prompt,0
+4408717907,near_script_prompt,1
+4414724406,near_script_prompt,2
+4414724482,near_script_complete,3
+4424713635,near_prompt_only,0
+4429721139,scene_end,0
+4429729769,execution_end,0

@@ -33,6 +33,22 @@ TRUSTED = {
         "# v4",
     ),
 }
+# Historical T0/M0 evidence is immutable. A later source review must select its
+# own exact transitions; neither a version tag nor an arbitrary target is policy.
+HISTORICAL_REVIEW = "historical-t0"
+CURRENT_REVIEW = "2026-10-20"
+REVIEWED = {
+    HISTORICAL_REVIEW: TRUSTED,
+    CURRENT_REVIEW: {
+        "actions/upload-artifact": TRUSTED["actions/upload-artifact"],
+        "github/codeql-action/init": (
+            "2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2",
+            "6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee", "# v4"),
+        "github/codeql-action/analyze": (
+            "2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2",
+            "6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee", "# v4"),
+    },
+}
 SHA = re.compile(r"[0-9a-f]{40}")
 PATH = re.compile(r"\.github/workflows/[A-Za-z0-9_.-]+\.yml")
 USES = re.compile(
@@ -54,7 +70,14 @@ def require(condition: bool, code: str) -> None:
         raise ScopeError(code)
 
 
-def authorized_line(old: str, new: str) -> tuple[str, str, str] | None:
+def reviewed_pins(review: str) -> dict:
+    require(type(review) is str and review in REVIEWED, "UNKNOWN_PIN_REVIEW")
+    return REVIEWED[review]
+
+
+def authorized_line(old: str, new: str, *,
+                    review: str = HISTORICAL_REVIEW) -> tuple[str, str, str] | None:
+    policy = reviewed_pins(review)
     if old == new:
         return None
     # No mixed CRLF/LF or trailing whitespace ambiguity in a policy-critical diff.
@@ -66,7 +89,7 @@ def authorized_line(old: str, new: str) -> tuple[str, str, str] | None:
     b = USES.fullmatch(new[:-len(new_eol)])
     if a is None or b is None or a["prefix"] != b["prefix"] or a["action"] != b["action"]:
         return None
-    entry = TRUSTED.get(a["action"])
+    entry = policy.get(a["action"])
     if entry is None or a["sha"] != entry[0] or b["sha"] != entry[1]:
         return None
     old_suffix = a["suffix"].strip()
@@ -141,7 +164,9 @@ def _actual_step_uses_line_numbers(lines: list[str]) -> set[int]:
     return allowed
 
 
-def classify_text(before: str, after: str) -> list[dict] | None:
+def classify_text(before: str, after: str, *,
+                  review: str = HISTORICAL_REVIEW) -> list[dict] | None:
+    reviewed_pins(review)
     if before == after or not before or not after:
         return None
     old_lines = before.splitlines(keepends=True)
@@ -164,7 +189,7 @@ def classify_text(before: str, after: str) -> list[dict] | None:
                 return None  # A changed script/string payload is not a step uses.
             line_before = old_lines[old_index]
             line_after = new_lines[new_index]
-            pin = authorized_line(line_before, line_after)
+            pin = authorized_line(line_before, line_after, review=review)
             if pin is None:
                 return None
             action, old_sha, new_sha = pin
@@ -209,7 +234,9 @@ def plain_workflow_blob(revision: str, path: str) -> bool:
     return plain_workflow_tree_entry_ok(tree, path)
 
 
-def classify_repo(base: str, head: str) -> dict:
+def classify_repo(base: str, head: str, *,
+                  review: str = HISTORICAL_REVIEW) -> dict:
+    reviewed_pins(review)
     before = commit_sha(base)
     after = commit_sha(head)
     require(before != after, "EMPTY_REVISION_RANGE")
@@ -256,7 +283,7 @@ def classify_repo(base: str, head: str) -> dict:
                       max_bytes=MAX_BYTES_PER_FILE).decode("utf-8")
         new = command(["git", "show", after + ":" + path],
                       max_bytes=MAX_BYTES_PER_FILE).decode("utf-8")
-        edits = classify_text(old, new)
+        edits = classify_text(old, new, review=review)
         if edits is None:
             return {
                 "schema_version": 1,
@@ -276,6 +303,67 @@ def classify_repo(base: str, head: str) -> dict:
         "pin_diff_sha256": hashlib.sha256(
             json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest(),
+    }
+
+
+def expected_repo(base: str, *, review: str) -> dict:
+    """Derive the entire reviewed update from the protected base's actual tree.
+
+    This is independent of the bot's diff and historical fixture counts. New
+    approved upload sites on protected main participate automatically, while
+    omissions, partial updates and any extra bot edit fail the later equality
+    check. This function cannot establish that ``base`` is protected main;
+    the M1 caller must establish that provenance before using its result.
+    """
+    policy = reviewed_pins(review)
+    before = commit_sha(base)
+    tree = command(["git", "ls-tree", "-r", "-z", before, "--",
+                    ".github/workflows"], max_bytes=100_000).decode("utf-8")
+    records: list[dict] = []
+    for entry in tree.split("\0"):
+        if not entry:
+            continue
+        fields = entry.split("\t")
+        require(len(fields) == 2, "BASE_WORKFLOW_TREE_FRAMING")
+        mode, path = fields
+        if PATH.fullmatch(path) is None:
+            continue
+        require(re.fullmatch(r"100644 blob [0-9a-f]{40}", mode) is not None,
+                "BASE_WORKFLOW_TYPE_OR_MODE_DRIFT")
+        raw = command(["git", "show", before + ":" + path],
+                      max_bytes=MAX_BYTES_PER_FILE).decode("utf-8")
+        lines = raw.splitlines(keepends=True)
+        steps = _actual_step_uses_line_numbers(lines)
+        blocked = _yaml_literal_line_numbers(lines)
+        edits = []
+        for index, line in enumerate(lines):
+            if index not in steps or index in blocked:
+                continue
+            match = USES.fullmatch(line.rstrip("\r\n"))
+            if match is None or match["action"] not in policy:
+                continue
+            old, new, _ = policy[match["action"]]
+            if match["sha"] != old:
+                continue
+            candidate = line[:match.start("sha")] + new + line[match.end("sha"):]
+            if match["action"] == "actions/upload-artifact":
+                candidate = candidate.replace("# v7.0.1", "# v7.0.2")
+            pin = authorized_line(line, candidate, review=review)
+            require(pin is not None, "PROTECTED_BASE_REVIEWED_PIN_SYNTAX_DRIFT")
+            action, old_pin, new_pin = pin
+            edits.append({"action": action, "old": old_pin, "new": new_pin})
+        require(len(edits) <= MAX_EDITS_PER_FILE, "EXPECTED_PIN_EDIT_BUDGET")
+        if edits:
+            records.append({"path": path, "edits": edits})
+    require(0 < len(records) <= MAX_FILES, "EXPECTED_PIN_FILE_BUDGET")
+    records.sort(key=lambda entry: entry["path"])
+    return {
+        "base": before, "review_id": review,
+        "files_checked": len(records),
+        "replacements": sum(len(row["edits"]) for row in records),
+        "pin_diff_sha256": hashlib.sha256(json.dumps(
+            records, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+        "source": "complete-reviewed-pin-transition-from-protected-base-tree",
     }
 
 
@@ -366,8 +454,23 @@ def self_test() -> None:
             not plain_workflow_tree_entry_ok(
                 valid_entry.replace(" blob ", " tree "), sample_path),
             "WORKFLOW_GIT_OBJECT_MODE_NOT_ENFORCED")
+    current_codeql = REVIEWED[CURRENT_REVIEW]["github/codeql-action/init"][1]
+    current_after = after.replace(new_codeql, current_codeql)
+    require(classify_text(before, current_after) is None and
+            classify_text(before, current_after, review=CURRENT_REVIEW) is not None,
+            "REVIEW_GENERATIONS_CONFUSED")
+    require(classify_text(before, after, review=CURRENT_REVIEW) is None and
+            classify_text(before, current_after.replace(current_codeql, "e" * 40),
+                          review=CURRENT_REVIEW) is None,
+            "UNREVIEWED_CURRENT_PIN_ADMITTED")
+    try:
+        classify_text(before, current_after, review="future-unreviewed")
+    except ScopeError:
+        pass
+    else:
+        raise ScopeError("UNKNOWN_REVIEW_ADMITTED")
     print("WORKFLOW_PIN_ONLY_CLASSIFIER_SELF_TEST_PASS negatives=" +
-          str(len(mutations) + 8 + len(nonstep_sources)))
+          str(len(mutations) + 12 + len(nonstep_sources)))
 
 
 def main() -> None:
@@ -375,6 +478,8 @@ def main() -> None:
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--base")
     parser.add_argument("--head")
+    parser.add_argument("--review", choices=tuple(REVIEWED),
+                        default=HISTORICAL_REVIEW)
     parser.add_argument("--github-output", type=Path)
     args = parser.parse_args()
     try:
@@ -384,7 +489,7 @@ def main() -> None:
             self_test()
             return
         require(args.base and args.head, "BASE_HEAD_REQUIRED")
-        result = classify_repo(args.base, args.head)
+        result = classify_repo(args.base, args.head, review=args.review)
         print(json.dumps(result, sort_keys=True, separators=(",", ":"),
                          allow_nan=False))
         if args.github_output:

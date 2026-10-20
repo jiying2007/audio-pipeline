@@ -129,75 +129,48 @@ def git(where: Path, *arguments: str) -> str:
 
 
 
-def historical_fixture_baseline(raw: bytes, pairs: list[list[str]]) -> bytes:
-    """Create ONLY a synthetic historical base for the frozen M0 replay.
+def historical_fixture_baseline(pairs: list[list[str]]) -> bytes:
+    """Build explicit historical test YAML from frozen line pairs alone.
 
-    The *actual* bot PR Git tree must still be separately qualified by M1.
-    Exact already-approved new pins may be reversed in this temporary
-    fixture; mixed/partial/unknown pin states are intentionally denied.
+    The historical patch fixture is evidence of those reviewed replacements,
+    not a copy of any current or historical executable workflow. Never read
+    today's workflow to infer a historical old/new pin state.
     """
-    demand(type(raw) is bytes and 0 < len(raw) < 300_000 and b"\r" not in raw,
-           "WORKFLOW_NEWLINE_DRIFT")
-    lines = raw.splitlines(keepends=True)
-    groups: dict[tuple[bytes, bytes], int] = {}
-    for old, new in pairs:
-        prior, updated = (old + "\n").encode(), (new + "\n").encode()
-        demand(prior != updated and prior.endswith(b"\n") and
-               updated.endswith(b"\n"), "FIXTURE_UNTRUSTED_PIN_PAIR")
-        key = (prior, updated)
-        groups[key] = groups.get(key, 0) + 1
-    demand(groups, "FIXTURE_EMPTY_PIN_PROPOSAL")
-    for (prior, updated), required in groups.items():
-        n_prior, n_updated = lines.count(prior), lines.count(updated)
-        # The frozen witness is a subset: modern main has additional, still
-        # unmodified identical Action pins (e.g. 40 vs 24 in quality.yml).
-        # Reject mixed old/new state, but do not reject extra unchanged lines.
-        demand((n_prior >= required and n_updated == 0) or
-               (n_updated >= required and n_prior == 0),
-               "BOT_PROPOSAL_PIN_STATE_MISSING_OR_MIXED")
-        if n_updated:
-            remaining = required
-            for index, line in enumerate(lines):
-                if line == updated and remaining:
-                    lines[index] = prior
-                    remaining -= 1
-            demand(remaining == 0, "HISTORICAL_FIXTURE_REVERSAL_INCOMPLETE")
-    return b"".join(lines)
+    demand(type(pairs) is list and 0 < len(pairs) <= 70,
+           "FIXTURE_PAIR_BOUND")
+    lines = ["name: Explicit synthetic historical pin fixture\n",
+             "jobs:\n", "  replay:\n", "    steps:\n"]
+    for index, pair in enumerate(pairs):
+        demand(type(pair) is list and len(pair) == 2 and
+               all(type(line) is str and 0 < len(line) <= 300 and
+                   "\n" not in line and "\r" not in line for line in pair),
+               "FIXTURE_UNTRUSTED_PIN_PAIR")
+        old, new = pair
+        demand(old != new, "FIXTURE_EMPTY_PIN_CHANGE")
+        if old.startswith("        uses: "):
+            lines.append("      - name: Historical pin " + str(index) + "\n")
+        else:
+            demand(old.startswith("      - uses: "),
+                   "FIXTURE_NONSTEP_PIN_LINE")
+        lines.append(old + "\n")
+    return "".join(lines).encode("utf-8")
 
 
 def fixture_state_self_test(manifest: dict) -> None:
-    """Regression: historical M0 replay is valid before/after trusted pins."""
     pair = manifest["files"][0]["pairs"][0]
-    prior, updated = (pair[0] + "\n").encode(), (pair[1] + "\n").encode()
-    header = b"name: offline synthetic fixture\n"
-    demand(historical_fixture_baseline(header + prior, [pair]) ==
-           header + prior, "OLD_PIN_FIXTURE_REJECTED")
-    demand(historical_fixture_baseline(header + updated, [pair]) ==
-           header + prior, "APPROVED_NEW_PIN_FIXTURE_REJECTED")
-    demand(historical_fixture_baseline(header + prior * 2, [pair, pair]) ==
-           header + prior * 2, "REPEATED_OLD_PINS_REJECTED")
-    demand(historical_fixture_baseline(header + updated * 2, [pair, pair]) ==
-           header + prior * 2, "REPEATED_NEW_PINS_REJECTED")
-    # Unchanged extra identical pins are allowed only in this offline fixture;
-    # an actual PR/head change is always judged by the separate strict T0/M1.
-    demand(historical_fixture_baseline(header + prior * 2, [pair]) ==
-           header + prior * 2, "EXTRA_OLD_PIN_FIXTURE_REJECTED")
-    demand(historical_fixture_baseline(header + updated * 2, [pair]) ==
-           header + prior + updated, "EXTRA_NEW_PIN_FIXTURE_REJECTED")
-    for name, source, pairs in (
-        ("missing", header, [pair]),
-        ("mixed", header + prior + updated, [pair, pair]),
-        ("duplicate_conflict", header + prior + updated, [pair]),
-        ("unknown_pin", header + prior.replace(b"0", b"f", 1), [pair]),
-        ("crlf", header + prior.replace(b"\n", b"\r\n"), [pair]),
-        ("truncated", header + prior.rstrip(b"\n"), [pair]),
-    ):
+    raw = historical_fixture_baseline([pair, pair])
+    demand(raw.count((pair[0] + "\n").encode()) == 2 and
+           (pair[1] + "\n").encode() not in raw,
+           "HISTORICAL_FIXTURE_LOST_EXACT_LINES")
+    for bad in ([], [[pair[0], pair[0]]], [[pair[0] + "\r", pair[1]]],
+                [[pair[0] + "\n", pair[1]]], [["uses: unsafe@main", pair[1]]],
+                [[pair[0]]]):
         try:
-            historical_fixture_baseline(source, pairs)
+            historical_fixture_baseline(bad)
         except PreflightFailure:
             pass
         else:
-            raise PreflightFailure("FALSE_OFFLINE_PIN_STATE_ADMISSION_" + name)
+            raise PreflightFailure("FALSE_HISTORICAL_FIXTURE_ADMISSION")
 
 
 def replay(t0: object, manifest: dict, receipt_sha: str) -> dict:
@@ -209,16 +182,11 @@ def replay(t0: object, manifest: dict, receipt_sha: str) -> dict:
         git(sandbox, "config", "user.name", "Qualification Only")
         for entry in manifest["files"]:
             path = entry["path"]
-            source = ROOT / path
-            demand(source.is_file() and not source.is_symlink() and
-                   0 < source.stat().st_size < 300_000,
-                   "PROPOSAL_BASE_FILE_UNAVAILABLE")
             target = sandbox / path
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(historical_fixture_baseline(
-                source.read_bytes(), entry["pairs"]))
+            target.write_bytes(historical_fixture_baseline(entry["pairs"]))
         git(sandbox, "add", ".github/workflows")
-        git(sandbox, "commit", "-qm", "Fixture base: main unchanged workflows")
+        git(sandbox, "commit", "-qm", "Fixture base: explicit historical pin-only YAML")
         base = git(sandbox, "rev-parse", "HEAD")
         touched = []
         for entry in manifest["files"]:
@@ -345,6 +313,7 @@ def replay(t0: object, manifest: dict, receipt_sha: str) -> dict:
                 "bot_patch_fixture_sha256": receipt_sha,
                 "adversarial_negative_cases": rejected,
                 "source_role": "offline-replay-of-exact-GitHub-PR-patch",
+                "fixture_workflow_logic_role": "explicit-synthetic-test-only",
                 "actual_bot_git_tree_checked": False,
                 "actual_scientific_experiment_executed": False,
                 "automated_bypass_enabled": False,

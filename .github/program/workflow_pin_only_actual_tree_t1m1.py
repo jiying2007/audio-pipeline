@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import copy
+from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
@@ -30,11 +31,19 @@ HERE = Path(__file__).resolve().parent
 REPO = "jiying2007/audio-pipeline"
 BOT_PR = 714
 BOT_ACTOR = "dependabot[bot]"
+BOT_ACTOR_ID = 49699333
 BOT_REF = "dependabot/github_actions/actions-non-major-5b90254856"
 GIT_REMOTE = "https://github.com/jiying2007/audio-pipeline.git"
 PR_API = "https://api.github.com/repos/jiying2007/audio-pipeline/pulls/714"
 CLASSIFIER_PATH = ".github/program/workflow_pin_only_scope.py"
 WITNESS_PATH = ".github/program/workflow_pin_only_bot714_exact_t1.json"
+QUALIFIER_PATH = ".github/program/workflow_pin_only_actual_tree_t1m1.py"
+HISTORICAL_REVIEW = "historical-t0"
+CURRENT_REVIEW = "2026-10-20"
+WITNESSES = {
+    HISTORICAL_REVIEW: WITNESS_PATH,
+    CURRENT_REVIEW: ".github/program/workflow_pin_only_bot714_20261020.json",
+}
 SHA = re.compile(r"[0-9a-f]{40}")
 HEX64 = re.compile(r"[0-9a-f]{64}")
 MAX_BYTES = 150_000
@@ -122,7 +131,10 @@ def snapshot_metadata(data: dict, main_sha: str, bot_sha: str) -> tuple[str, str
          type(data.get("number")) is int and data["number"] == BOT_PR and
          data.get("state") == "open" and data.get("draft") is False and
          type(data.get("user")) is dict and
-         data["user"].get("login") == BOT_ACTOR,
+         data["user"].get("login") == BOT_ACTOR and
+         type(data["user"].get("id")) is int and
+         data["user"]["id"] == BOT_ACTOR_ID and
+         data["user"].get("type") == "Bot",
          "WRONG_BOT_PR_IDENTITY")
     base, head = data.get("base"), data.get("head")
     need(type(base) is dict and type(head) is dict, "MISSING_BOT_REF")
@@ -150,15 +162,19 @@ def own_checkout_base_ok(current_main: str) -> None:
     # actual protected-base object, not user-controlled PR code.
     values = git(["rev-list", "--parents", "-n", "1", "HEAD"], cap=1024)
     parents = values.decode("ascii").strip().split()
-    need(len(parents) >= 3 and parents[1] == current_main,
+    need(bool(parents) and (parents[0] == current_main or
+         (len(parents) == 3 and parents[1] == current_main)),
          "OWN_PR_MERGE_BASE_STALE")
 
 
-def trusted_files(current_main: str) -> tuple[object, dict, dict]:
+def trusted_files(current_main: str, *,
+                  review: str = HISTORICAL_REVIEW) -> tuple[object, dict, dict]:
     need(SHA.fullmatch(current_main) is not None, "MAIN_SHA_MALFORMED")
+    need(review in WITNESSES, "UNKNOWN_PIN_REVIEW")
     classifier = ROOT / CLASSIFIER_PATH
-    witness = ROOT / WITNESS_PATH
-    for path in (classifier, witness):
+    qualifier = ROOT / QUALIFIER_PATH
+    witness = ROOT / WITNESSES[review]
+    for path in (classifier, qualifier, witness):
         need(path.is_file() and not path.is_symlink() and
              0 < path.stat().st_size < MAX_BYTES, "TRUSTED_FILE_MISSING")
         name = path.relative_to(ROOT).as_posix()
@@ -168,10 +184,9 @@ def trusted_files(current_main: str) -> tuple[object, dict, dict]:
     raw = witness.read_bytes()
     expected = json.loads(raw.decode("utf-8"), object_pairs_hook=strict_pairs)
     need(type(expected) is dict and
-         expected.get("schema_version") == 1 and
+         expected.get("schema_version") == (1 if review == HISTORICAL_REVIEW else 2) and
          expected.get("source_pr") == BOT_PR and
-         expected.get("workflow_count") == 55 and
-         expected.get("pin_replacements") == 108 and
+         (review == HISTORICAL_REVIEW or expected.get("review_id") == review) and
          type(expected.get("source_observed_main_sha")) is str and
          SHA.fullmatch(expected["source_observed_main_sha"]) is not None and
          type(expected.get("source_bot_head_sha")) is str and
@@ -184,6 +199,7 @@ def trusted_files(current_main: str) -> tuple[object, dict, dict]:
     spec.loader.exec_module(module)
     hashes = {
         "trusted_classifier_sha256": hashlib.sha256(classifier.read_bytes()).hexdigest(),
+        "trusted_qualifier_sha256": hashlib.sha256(qualifier.read_bytes()).hexdigest(),
         "bot_patch_witness_sha256": hashlib.sha256(raw).hexdigest(),
         "trusted_classifier_git_blob": git_sha(
             ["rev-parse", current_main + ":" + CLASSIFIER_PATH]),
@@ -191,14 +207,22 @@ def trusted_files(current_main: str) -> tuple[object, dict, dict]:
     return module, expected, hashes
 
 
-def canonical_witness_digest(t0: object, witness: dict) -> str:
+def canonical_witness_digest(t0: object, witness: dict, *,
+                             review: str = HISTORICAL_REVIEW) -> str:
     """Freeze approved workflow+pin content, independent of bot Git ref rebases.
 
     Every pair must be a previously reviewed first-party T0 action update.
     No PR HEAD code or unbounded ref revision is accepted as authority.
     """
     files = witness.get("files")
-    need(type(files) is list and len(files) == 55, "WITNESS_FILE_COUNT_DRIFT")
+    need(review in WITNESSES, "UNKNOWN_PIN_REVIEW")
+    count_files, count_pins = witness.get("workflow_count"), witness.get("pin_replacements")
+    need(type(count_files) is int and 0 < count_files <= t0.MAX_FILES and
+         type(count_pins) is int and 0 < count_pins <= t0.MAX_FILES * t0.MAX_EDITS_PER_FILE,
+         "WITNESS_COUNT_BOUND")
+    if review == HISTORICAL_REVIEW:
+        need(count_files == 55 and count_pins == 108, "HISTORICAL_WITNESS_COUNT_DRIFT")
+    need(type(files) is list and len(files) == count_files, "WITNESS_FILE_COUNT_DRIFT")
     records: list[dict] = []
     seen: set[str] = set()
     count = 0
@@ -218,13 +242,13 @@ def canonical_witness_digest(t0: object, witness: dict) -> str:
             need(type(pair) is list and len(pair) == 2 and
                  all(type(line) is str and 0 < len(line) < 300
                      for line in pair), "WITNESS_UNTRUSTED_LINE_PAIR")
-            pin = t0.authorized_line(pair[0] + "\n", pair[1] + "\n")
+            pin = t0.authorized_line(pair[0] + "\n", pair[1] + "\n", review=review)
             need(pin is not None, "WITNESS_UNAPPROVED_ACTION_PIN")
             action, old_pin, new_pin = pin
             edits.append({"action": action, "old": old_pin, "new": new_pin})
             count += 1
         records.append({"path": path, "edits": edits})
-    need(count == 108, "WITNESS_PIN_REPLACEMENT_COUNT_DRIFT")
+    need(count == count_pins, "WITNESS_PIN_REPLACEMENT_COUNT_DRIFT")
     records.sort(key=lambda r: r["path"])
     return hashlib.sha256(
         json.dumps(records, sort_keys=True, separators=(",", ":")).encode()
@@ -236,6 +260,7 @@ def receipt(decision: str, reason: str, *, current_main: str = "",
             actual_tree_checked: bool = False, extra: dict | None = None) -> dict:
     result = {
         "schema_version": 1, "decision": decision, "reason": reason,
+        "observed_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "protected_main_sha": current_main, "bot_base_sha": bot_base,
         "bot_head_sha": bot_head,
         "actual_bot_git_tree_checked": actual_tree_checked,
@@ -266,7 +291,19 @@ def t0_exact_checkout_trust():
             os.environ.pop(x, None)
 
 
-def live_probe() -> dict:
+def actual_matches_expected(actual: dict, expected: dict) -> None:
+    need(actual.get("pin_only") is True and
+         actual.get("decision") == "SCIENCE_NOT_EXECUTED_NON_MEASUREMENT_MAINTENANCE" and
+         type(actual.get("files_checked")) is int and
+         type(actual.get("replacements")) is int and
+         HEX64.fullmatch(actual.get("pin_diff_sha256", "")) is not None,
+         "BOT_ACTUAL_GIT_DIFF_NOT_PIN_ONLY")
+    need(all(actual.get(key) == expected.get(key) for key in
+             ("files_checked", "replacements", "pin_diff_sha256")),
+         "BOT_PIN_DIFF_NOT_COMPLETE_REVIEWED_BASE_TRANSITION")
+
+
+def live_probe(*, review: str = HISTORICAL_REVIEW) -> dict:
     """Do not trust, check out or run the bot's code; its Git objects are DATA."""
     current_main = bot_base = bot_head = ""
     try:
@@ -275,11 +312,8 @@ def live_probe() -> dict:
         before = fetch_public_bot_pr()
         base, head = snapshot_metadata(before, current_main, bot_head)
         bot_base = base
-        t0, witness, hashes = trusted_files(current_main)
-        # M0 freezes approved *source content*. Benign bot rebase may move
-        # commit OIDs but must preserve every reviewed action/path/pin edit.
-        # The current protected-main ref and bot ref are always checked twice.
-        frozen_digest = canonical_witness_digest(t0, witness)
+        t0, witness, hashes = trusted_files(current_main, review=review)
+        frozen_digest = canonical_witness_digest(t0, witness, review=review)
         # Fetch *only* exact sha objects from a hardcoded same-repo URL.
         # No remote executable is sourced, imported, checked out or run.
         git(["fetch", "--no-tags", "--no-write-fetch-head",
@@ -291,24 +325,23 @@ def live_probe() -> dict:
              "FETCHED_BOT_GIT_OBJECT_MISMATCH")
         base_tree = git_sha(["rev-parse", base + "^{tree}"])
         head_tree = git_sha(["rev-parse", head + "^{tree}"])
-        with t0_exact_checkout_trust():
-            result = t0.classify_repo(base, head)
-        need(result.get("pin_only") is True and result.get("files_checked") == 55 and
-             result.get("replacements") == 108 and
-             result.get("decision") ==
-             "SCIENCE_NOT_EXECUTED_NON_MEASUREMENT_MAINTENANCE" and
-             HEX64.fullmatch(result.get("pin_diff_sha256", "")) is not None,
-             "BOT_ACTUAL_GIT_DIFF_NOT_PIN_ONLY")
-        need(result["pin_diff_sha256"] == frozen_digest,
-             "BOT_PIN_DIFF_NOT_EXACT_AUDITED_CONTENT")
+        with temporary_current_directory(ROOT), t0_exact_checkout_trust():
+            result = t0.classify_repo(base, head, review=review)
+            if review == HISTORICAL_REVIEW:
+                expected = {"files_checked": witness["workflow_count"],
+                            "replacements": witness["pin_replacements"],
+                            "pin_diff_sha256": frozen_digest}
+            else:
+                # The newly reviewed contract binds every use site in this
+                # exact protected tree, not a historical 55/125 size constant.
+                expected = t0.expected_repo(base, review=review)
+        actual_matches_expected(result, expected)
         # Read both PR metadata and canonical public branch refs again after
         # parsing the bot OIDs. An in-flight rebase *must* invalidate result.
         after = fetch_public_bot_pr()
         newer_main, newer_head = remote_heads()
         need((newer_main, newer_head) == (current_main, bot_head) and
-             after.get("base", {}).get("sha") == base and
-             after.get("head", {}).get("sha") == head and
-             after.get("state") == "open",
+             snapshot_metadata(after, newer_main, newer_head) == (base, head),
              "BOT_REF_RACE_OR_REBASE")
         return receipt(
             ADMITTED, "ACTUAL_TRUSTED_GIT_PIN_SCOPE_ONLY",
@@ -316,12 +349,17 @@ def live_probe() -> dict:
             actual_tree_checked=True,
             extra={
                 "actual_base_tree": base_tree, "actual_bot_tree": head_tree,
+                "actual_merge_base": result["merge_base"],
+                "review_id": review,
                 "file_count": result["files_checked"],
                 "pin_replacements": result["replacements"],
                 "pin_diff_sha256": result["pin_diff_sha256"],
                 "frozen_witness_content_diff_sha256": frozen_digest,
+                "expected_current_base_pin_diff_sha256": expected["pin_diff_sha256"],
+                "historical_witness_matches_current_diff": frozen_digest == result["pin_diff_sha256"],
                 "bot_patch_witness_sha256": hashes["bot_patch_witness_sha256"],
                 "trusted_classifier_sha256": hashes["trusted_classifier_sha256"],
+                "trusted_qualifier_sha256": hashes["trusted_qualifier_sha256"],
                 "trusted_classifier_git_blob": hashes["trusted_classifier_git_blob"],
             })
     except (AdmissionDenied, ValueError, OSError, UnicodeError,
@@ -333,7 +371,7 @@ def live_probe() -> dict:
             code = "MALFORMED_OR_INACCESSIBLE_SOURCE"
         return receipt(
             REJECTED, code, current_main=current_main,
-            bot_base=bot_base, bot_head=bot_head)
+            bot_base=bot_base, bot_head=bot_head, extra={"review_id": review})
 
 
 @contextlib.contextmanager
@@ -350,10 +388,79 @@ def temporary_current_directory(where: Path):
 def fake_bot(base: str, head: str) -> dict:
     return {
         "number": BOT_PR, "state": "open", "draft": False,
-        "user": {"login": BOT_ACTOR},
+        "user": {"login": BOT_ACTOR, "id": BOT_ACTOR_ID, "type": "Bot"},
         "base": {"ref": "main", "sha": base, "repo": {"full_name": REPO}},
         "head": {"ref": BOT_REF, "sha": head, "repo": {"full_name": REPO}},
     }
+
+
+def current_base_transition_self_test(t0: object) -> None:
+    """Actual Git proofs of growing base sites, complete updates and denials."""
+    old_upload, new_upload, _ = t0.REVIEWED[CURRENT_REVIEW]["actions/upload-artifact"]
+    old_codeql, new_codeql, _ = t0.REVIEWED[CURRENT_REVIEW]["github/codeql-action/init"]
+    row = "      - uses: actions/upload-artifact@" + old_upload + " # v7.0.1\n"
+    before = ("jobs:\n  example:\n    steps:\n" + row +
+              "      - uses: github/codeql-action/init@" + old_codeql + " # v4\n")
+
+    def update(source: str) -> str:
+        return source.replace(old_upload, new_upload).replace(
+            "# v7.0.1", "# v7.0.2").replace(old_codeql, new_codeql)
+
+    with tempfile.TemporaryDirectory(prefix="t1-m1-current-base-") as temp:
+        area = Path(temp)
+        git(["init", "-q"], cwd=area)
+        git(["config", "user.email", "offline@example.invalid"], cwd=area)
+        git(["config", "user.name", "Offline Probe"], cwd=area)
+        target = area / ".github/workflows/probe.yml"
+        target.parent.mkdir(parents=True)
+
+        def commit(source: str, message: str) -> str:
+            target.write_text(source, encoding="utf-8")
+            git(["add", "."], cwd=area)
+            git(["commit", "-qm", message], cwd=area)
+            return git_sha(["rev-parse", "HEAD"], cwd=area)
+
+        start = commit(before, "reviewed base with two sites")
+        end = commit(update(before), "complete reviewed update")
+        with temporary_current_directory(area):
+            expected = t0.expected_repo(start, review=CURRENT_REVIEW)
+            actual_matches_expected(t0.classify_repo(start, end, review=CURRENT_REVIEW), expected)
+            need(expected["replacements"] == 2, "CURRENT_TWO_SITE_BASE_INVALID")
+
+            git(["reset", "--hard", start], cwd=area)
+            additional = ("      - name: Newly reviewed base upload site\n"
+                          "        uses: actions/upload-artifact@" + old_upload + " # v7.0.1\n")
+            larger = before + additional
+            larger_base = commit(larger, "protected base adds an upload site")
+            larger_expected = t0.expected_repo(larger_base, review=CURRENT_REVIEW)
+            need(larger_expected["replacements"] == 3 and
+                 larger_expected["pin_diff_sha256"] != expected["pin_diff_sha256"],
+                 "CURRENT_EXPECTATION_DID_NOT_FOLLOW_EXACT_BASE")
+            partial = commit(update(before) + additional, "incomplete bot proposal")
+            pure_but_partial = t0.classify_repo(larger_base, partial, review=CURRENT_REVIEW)
+            need(pure_but_partial["pin_only"] is True, "PARTIAL_FIXTURE_NOT_PIN_ONLY")
+            try:
+                actual_matches_expected(pure_but_partial, larger_expected)
+            except AdmissionDenied:
+                pass
+            else:
+                raise AdmissionDenied("PARTIAL_CURRENT_UPDATE_ADMITTED")
+            complete = commit(update(larger), "complete three site proposal")
+            actual_matches_expected(t0.classify_repo(larger_base, complete, review=CURRENT_REVIEW),
+                                    larger_expected)
+            for name, source in (
+                ("mixed_permissions", "permissions: write-all\n" + update(larger)),
+                ("unknown_target", update(larger).replace(new_codeql, "f" * 40)),
+                ("historical_target", update(larger).replace(new_codeql, t0.TRUSTED["github/codeql-action/init"][1])),
+            ):
+                bad = commit(source, name)
+                try:
+                    actual_matches_expected(t0.classify_repo(larger_base, bad, review=CURRENT_REVIEW),
+                                            larger_expected)
+                except AdmissionDenied:
+                    pass
+                else:
+                    raise AdmissionDenied("CURRENT_REVIEW_FALSE_ADMISSION_" + name)
 
 
 def self_test() -> None:
@@ -371,6 +478,8 @@ def self_test() -> None:
 
     mutated("wrong_pr", lambda p: p.__setitem__("number", 713))
     mutated("wrong_actor", lambda p: p["user"].__setitem__("login", "attacker"))
+    mutated("forged_bot_login", lambda p: p["user"].__setitem__("id", 1))
+    mutated("wrong_actor_type", lambda p: p["user"].__setitem__("type", "User"))
     mutated("draft", lambda p: p.__setitem__("draft", True))
     mutated("closed", lambda p: p.__setitem__("state", "closed"))
     mutated("wrong_base_ref", lambda p: p["base"].__setitem__("ref", "dev"))
@@ -416,6 +525,11 @@ def self_test() -> None:
     digest = canonical_witness_digest(orig, frozen)
     need(HEX64.fullmatch(digest) is not None,
          "FROZEN_DIFF_DIGEST_INVALID")
+    current_witness = json.loads((ROOT / WITNESSES[CURRENT_REVIEW]).read_text(
+        encoding="utf-8"), object_pairs_hook=strict_pairs)
+    current_digest = canonical_witness_digest(orig, current_witness, review=CURRENT_REVIEW)
+    need(HEX64.fullmatch(current_digest) is not None and current_digest != digest,
+         "CURRENT_WITNESS_CONFUSED_WITH_HISTORICAL")
     for key, payload in (
         ("unknown_action", "uses: attacker/not-a-trusted-action@" + "f" * 40),
         ("floating_tag", "uses: actions/upload-artifact@v7.0.2"),
@@ -451,6 +565,7 @@ def self_test() -> None:
     need(spec is not None and spec.loader is not None, "T0_MISSING_IN_TEST")
     t0 = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(t0)
+    current_base_transition_self_test(t0)
     old, new, _ = t0.TRUSTED["actions/upload-artifact"]
     with tempfile.TemporaryDirectory(prefix="t1-m1-offline-") as tmp:
         area = Path(tmp)
@@ -487,7 +602,7 @@ def self_test() -> None:
          "NEGATIVE_RECEIPT_PROMOTED")
     print("T1_M1_ACTUAL_GIT_TREE_SELF_TEST_PASS metadata_negatives=" +
           str(len(mutants) + 1) + " real_git_mode_negatives=1 " +
-          "witness_diff_negatives=6")
+          "witness_diff_negatives=6 current_base_transition_negatives=4")
 
 
 def main() -> None:
@@ -495,12 +610,13 @@ def main() -> None:
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--self-test", action="store_true")
     modes.add_argument("--probe-real", action="store_true")
+    parser.add_argument("--review", choices=tuple(WITNESSES), default=HISTORICAL_REVIEW)
     args = parser.parse_args()
     try:
         if args.self_test:
             self_test()
         else:
-            result = live_probe()
+            result = live_probe(review=args.review)
             print(json.dumps(result, sort_keys=True, separators=(",", ":"),
                              allow_nan=False))
     except (AdmissionDenied, ValueError, TypeError, OSError, UnicodeError) as exc:

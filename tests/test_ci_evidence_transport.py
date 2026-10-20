@@ -18,7 +18,7 @@ import unittest
 from unittest import mock
 import zipfile
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".github" / "scripts"))
 import ci_evidence_transport as transport
 
 SOURCE = "1" * 40

@@ -7,6 +7,8 @@ source is e3672ffe16e4c9d42a100e7712b9bbd3d8338545. No DSP, source selection,
 decoder, role, scientific step, validator, threshold, negative control or job
 deadline changes are permitted by this contract.
 
+The internal CI entry point is `.github/scripts/ci_evidence_transport.py`.
+
 The historical main Artifact API reported 531633408 bytes for spatial evidence.
 Two attempted full historical ZIP downloads did not complete; no historical ZIP
 digest verification is claimed. The current baseline instead replays the exact

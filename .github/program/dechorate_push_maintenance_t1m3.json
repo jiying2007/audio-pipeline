@@ -1,0 +1,55 @@
+{
+  "action_supply_chain_attested": false,
+  "bot_author": {
+    "id": 49699333,
+    "login": "dependabot[bot]",
+    "type": "Bot"
+  },
+  "bot_head_ref": "dependabot/github_actions/actions-non-major-5b90254856",
+  "bot_pull_request": 714,
+  "implementation_stage": "DORMANT_FINAL_PUSH_SOURCE",
+  "m2_qualification": {
+    "integration_prs": {
+      ".github/workflows/pcr02-aec-real-tail-confirmation.yml": null,
+      ".github/workflows/pcr02-dsp-counterfactuals.yml": null,
+      ".github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml": null
+    },
+    "protected_main_sha": null,
+    "release": null,
+    "status": "PENDING",
+    "verify": null
+  },
+  "m2_runtime_source": {
+    ".github/program/workflow_pin_only_actual_tree_t1m1.py": {
+      "bytes": 30095,
+      "git_blob": "7270db96f88673260b6076d9bfa44b9a63372f3b",
+      "mode": "100644",
+      "sha256": "6d080c55e0334b96279f826e1615802cf1a8b58d57c1d9c8900900560d25ffd7"
+    },
+    ".github/program/workflow_pin_only_bot714_20261020.json": {
+      "bytes": 33609,
+      "git_blob": "da3b67aab856e81a7b76e64af1ed0736c63cf6ae",
+      "mode": "100644",
+      "sha256": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb"
+    },
+    ".github/program/workflow_pin_only_scope.py": {
+      "bytes": 22373,
+      "git_blob": "2c3bafe13f9f6cb036bdd01328dd4f12fd336b4e",
+      "mode": "100644",
+      "sha256": "fcce117736d32a2cafd3c95fc93a27f906f40b64f632116cd90e8ba1759d68cb"
+    },
+    ".github/program/workflow_pin_pr_consumer.py": {
+      "bytes": 17822,
+      "git_blob": "3be0bf88aa4ac637531dbf5fa020b5cb540a82da",
+      "mode": "100644",
+      "sha256": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7"
+    }
+  },
+  "qualification_boundary": "Existing M2 protected-main and original-science closure is not completed by this source. Populate only actual independently read records before separate protected source qualification and workflow-only integration.",
+  "repository": "jiying2007/audio-pipeline",
+  "repository_id": 1347377137,
+  "review_id": "2026-10-20",
+  "schema_version": 1,
+  "scientific_experiment_executed": false,
+  "workflow": ".github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml"
+}

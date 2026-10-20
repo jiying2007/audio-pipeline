@@ -43,6 +43,11 @@ BIND_STEP = "Bind diagnostic to exact source and research-only scope"
 UPLOAD_OLD = "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
 UPLOAD_NEW = "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
 M2_PROFILE = "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2"
+M3_PROFILE = "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2_AND_MAIN_PUSH_M3"
+M3_SOURCE_FILES = (
+    ".github/program/dechorate_push_maintenance_t1m3.py",
+    ".github/program/dechorate_push_maintenance_t1m3.json",
+)
 M2_SOURCE_FILES = (
     ".github/program/workflow_pin_pr_consumer.py",
     ".github/program/workflow_pin_only_actual_tree_t1m1.py",
@@ -130,6 +135,56 @@ M2_DIAGNOSTIC_CONDITION = (
     "    if: ${{ !cancelled() && !(needs.maintenance.result == 'success' && "
     "needs.maintenance.outputs.skip_measurement == 'true') }}\n"
 )
+# This fourth complete profile is registered in the dormant final-push source
+# tranche. Source identity still never means that its PENDING M2 registry has
+# closed, that this workflow is connected, or that a push may skip science.
+M3_JOB_TEMPLATE = r'''  maintenance:
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      skip_measurement: ${{ steps.scope.outputs.skip_measurement }}
+    steps:
+      - name: Check out the exact protected event base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.before }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: trusted-policy
+      - name: Qualify direct event maintenance from protected source
+        id: scope
+        working-directory: trusted-policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir ../pin-maintenance
+          case "$GITHUB_EVENT_NAME" in
+            pull_request)
+              python3 .github/program/workflow_pin_pr_consumer.py \
+                --workflow .github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml \
+                --event-file "$GITHUB_EVENT_PATH" \
+                --receipt ../pin-maintenance/maintenance.json \
+                --github-output "$GITHUB_OUTPUT" --summary-file "$GITHUB_STEP_SUMMARY"
+              ;;
+            push)
+              python3 .github/program/dechorate_push_maintenance_t1m3.py \
+                --event-file "$GITHUB_EVENT_PATH" \
+                --receipt ../pin-maintenance/maintenance.json \
+                --github-output "$GITHUB_OUTPUT" --summary-file "$GITHUB_STEP_SUMMARY"
+              ;;
+            *) exit 1 ;;
+          esac
+      - name: Preserve the nonmeasurement decision
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: workflow-pin-maintenance-research-dechorate-ground-truth-diagnostic-v1-${{ github.run_id }}
+          path: pin-maintenance/maintenance.json
+          if-no-files-found: error
+          retention-days: 30
+
+'''
 SCIENTIFIC_STEPS = (
     "Check out exact source",
     "Validate code provenance and diagnostic authority",
@@ -311,7 +366,7 @@ def scientific_step(text: str, name: str) -> bytes:
 
 
 def workflow_templates(anchor: str) -> dict[str, str]:
-    """Six exact bodies: three execution profiles, each old or reviewed new pins.
+    """Eight exact bodies: four execution profiles, each old or reviewed new pins.
 
     The protected registration permits only the complete October 20 upload
     transition. It does not authorize arbitrary uses, partial updates, mutable
@@ -323,8 +378,10 @@ def workflow_templates(anchor: str) -> dict[str, str]:
     repaired = anchor.replace(old_bind, SOURCE_BIND_TEMPLATE + "\n" + SOURCE_RECEIPT_TEMPLATE, 1)
     gated = repaired.replace("jobs:\n  diagnostic:\n",
         "jobs:\n" + M2_JOB_TEMPLATE + "  diagnostic:\n" + M2_DIAGNOSTIC_CONDITION, 1)
+    push_gated = repaired.replace("jobs:\n  diagnostic:\n",
+        "jobs:\n" + M3_JOB_TEMPLATE + "  diagnostic:\n" + M2_DIAGNOSTIC_CONDITION, 1)
     variants = {"ORIGINAL_FROZEN_WORKFLOW": anchor,
-                "EXACT_PROTECTED_SOURCE_BINDING": repaired, M2_PROFILE: gated}
+                "EXACT_PROTECTED_SOURCE_BINDING": repaired, M2_PROFILE: gated, M3_PROFILE: push_gated}
     result = {}
     for profile, text in variants.items():
         need(UPLOAD_OLD in text and UPLOAD_NEW not in text, "ORIGINAL_UPLOAD_PIN_DRIFT")
@@ -372,6 +429,28 @@ def workflow_profile(text: str, variants: dict[str, str]) -> str:
     matches = [name for name, template in variants.items() if body == template]
     need(len(matches) == 1, "WORKFLOW_EXECUTION_TEMPLATE_NOT_PREREGISTERED")
     return matches[0]
+
+
+def protected_push_closure(git: Git, base: str, contract: dict) -> dict:
+    registered = contract.get("preregistered_final_push_source_closure")
+    need(type(registered) is dict and registered.get("source_review_id") == "2026-10-20-final-push-source-v1" and
+         registered.get("actual_m2_qualification_observed_by_this_helper") is False and
+         registered.get("maintenance_push_admitted_by_this_helper") is False and
+         type(registered.get("files")) is dict and set(registered["files"]) == set(M3_SOURCE_FILES),
+         "FINAL_PUSH_SOURCE_PREREGISTRATION_DRIFT")
+    observed = {}
+    for path in M3_SOURCE_FILES:
+        try:
+            blob, raw = git.regular_blob(base, path)
+        except Denied:
+            raise Denied("FINAL_PUSH_SOURCE_NOT_IN_PROTECTED_EVENT_BASE") from None
+        identity = {"mode": "100644", "git_blob": blob, "bytes": len(raw),
+                    "sha256": hashlib.sha256(raw).hexdigest()}
+        need(identity == registered["files"][path], "FINAL_PUSH_PROTECTED_SOURCE_CLOSURE_DRIFT")
+        observed[path] = identity
+    return {"files": observed, "actual_m2_qualification_observed_by_this_helper": False,
+            "maintenance_push_admitted_by_this_helper": False,
+            "independent_workflow_hookup_still_required": True}
 
 
 def frozen_science(git: Git, base: str, head: str, contract: dict) -> dict:
@@ -428,7 +507,9 @@ def frozen_science(git: Git, base: str, head: str, contract: dict) -> dict:
                  scientific_step(text, name) == frozen, "ORIGINAL_SCIENTIFIC_STEP_BODY_DRIFT")
         profiles[revision] = workflow_profile(text, variants)
     m2_source = (protected_m2_closure(git, base, contract) if any(
-        name.startswith(M2_PROFILE + ":") for name in profiles.values()) else None)
+        name.startswith((M2_PROFILE + ":", M3_PROFILE + ":")) for name in profiles.values()) else None)
+    m3_source = (protected_push_closure(git, base, contract) if any(
+        name.startswith(M3_PROFILE + ":") for name in profiles.values()) else None)
     return {"historical_base_sha": FROZEN_BASE, "science_anchor_sha": SCIENCE_ANCHOR,
             "source_qualification_ancestor_sha": QUALIFICATION_BASE, "files": original,
             "predecessor_qualification": manifest["predecessor_qualification"],
@@ -436,7 +517,8 @@ def frozen_science(git: Git, base: str, head: str, contract: dict) -> dict:
             "microset_fingerprint_sha256": contract["microset_fingerprint_sha256"],
             "original_scientific_steps": len(SCIENTIFIC_STEPS),
             "workflow_execution_profiles": {"base": profiles[base], "head": profiles[head]},
-            "protected_m2_source_identity": m2_source}
+            "protected_m2_source_identity": m2_source,
+            "protected_final_push_source_identity": m3_source}
 
 
 def current_scope(git: Git, scope: dict) -> dict:

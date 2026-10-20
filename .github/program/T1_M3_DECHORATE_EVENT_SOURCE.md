@@ -67,6 +67,12 @@ Unicode NEL/U+2028/U+2029 和其他非 ASCII 控制字符不能被当作注释�
 | `ORIGINAL_FROZEN_WORKFLOW` | 原工作流正文，包括原 Bind | 原来源与事件规则仍适用；此模板不修复旧比较本身 |
 | `EXACT_PROTECTED_SOURCE_BINDING` | 唯一固定 Bind 调用，以及固定 `always()` 来源收据上传步骤 | 本来源验证器与机器合同已在精确 protected base，原科学仍完整执行 |
 | `EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2` | 在前项上只加固定 maintenance job、`needs: maintenance` 与一个准确条件 | 原受审 M2 consumer、M1、T0、当前 witness 四文件的模式、Git blob、长度、SHA256 全部已在 protected event base；hookup 之前另须闭合真实 M1/M2 阶段证据 |
+| `EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2_AND_MAIN_PUSH_M3` | 最终独立源码 tranche 新登记的固定 direct-event maintenance job；完整科学 job 与准确条件继续不变 | 另须 final push helper/registry 两个精确普通 blobs 已在 protected base；来源层仍不判定实际 M2 资格或授权 push skip |
+
+第四模板在 [T1_M3_MAIN_PUSH_MAINTENANCE.md](T1_M3_MAIN_PUSH_MAINTENANCE.md)
+的独立 dormant source checkpoint 中登记。共四种完整执行形态、各两种已审 pin
+版本。当前 final push registry 保持 `PENDING`；源码层枚举模板不能把其变成已接通
+工作流或已闭合的真实 M2/push 资格。
 
 固定 Bind 先保留原 EXPECTED_SHA 检查，再只从真实事件提取完整 base OID，在唯一
 RUNNER_TEMP 目录建立该 base 的 worktree，并调用该 worktree 中已受保护的来源

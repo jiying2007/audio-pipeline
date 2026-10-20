@@ -124,6 +124,25 @@
     "release_run": 35197032355,
     "verify_run": 35196657559
   },
+  "preregistered_final_push_source_closure": {
+    "actual_m2_qualification_observed_by_this_helper": false,
+    "files": {
+      ".github/program/dechorate_push_maintenance_t1m3.json": {
+        "bytes": 2223,
+        "git_blob": "286916039f9ffe50a87bed57fe520badf0f79f7b",
+        "mode": "100644",
+        "sha256": "e6e69a595e0f34af3de659806530a776c6bb0c5c2294ef7a73de7edfa08fdc1f"
+      },
+      ".github/program/dechorate_push_maintenance_t1m3.py": {
+        "bytes": 38679,
+        "git_blob": "46566fe3f1359fe10728378ad2524ee40f2f41bb",
+        "mode": "100644",
+        "sha256": "7531934bfd8449b2585f9db5559d682a776d51984506b3fccb7f02917cbc1d4a"
+      }
+    },
+    "maintenance_push_admitted_by_this_helper": false,
+    "source_review_id": "2026-10-20-final-push-source-v1"
+  },
   "preregistered_m2_source_closure": {
     "actual_m1_prerequisite_observed_by_this_helper": false,
     "files": {
@@ -169,6 +188,8 @@
     "EXACT_PROTECTED_SOURCE_BINDING:reviewed-2026-10-20-pins": "37b81866e29a0b1b60b148c87b06a5cfdd6feeb5083a23a90d1aec369a15147d",
     "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2:original-pins": "34bbf6c3e1fa97a2b2ef8e3b003ea062ac100ece686f32718a273dbd0494fb9c",
     "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2:reviewed-2026-10-20-pins": "87e30facaabcc81ecc17c3b739251aff03f83c5c44f482c3166cd2fd559abc95",
+    "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2_AND_MAIN_PUSH_M3:original-pins": "f59ea5d02abad31b8f30aaa22039cd8b2c1ef2e5d8902abbaf78377903629736",
+    "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2_AND_MAIN_PUSH_M3:reviewed-2026-10-20-pins": "a5462335db75273662488d07c01451494438d9c0d0df8dcf902cae274118d413",
     "ORIGINAL_FROZEN_WORKFLOW:original-pins": "cab7e3836a8cac7e7d44aaca4cd16a6faaebf064f2f8f069da2692102a2d44e7",
     "ORIGINAL_FROZEN_WORKFLOW:reviewed-2026-10-20-pins": "cd40d21d7ab38a9ec829fbea9363c650c4a8b33730ff930bb52d71a3cae362f4"
   }

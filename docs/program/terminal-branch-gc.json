@@ -25,7 +25,9 @@
   ],
   "allowed_exact_names": [
     "research/frontend-evolution-foundation",
-    "research/fe-libfvad-reference"
+    "research/fe-libfvad-reference",
+    "ci/adopt-qualified-image-20261020",
+    "ci/lossless-evidence-transport-20261020"
   ],
   "branches": [
     {
@@ -39,6 +41,18 @@
     {
       "name": "fix/fe-sync-negative-runtime",
       "expected_sha": "97945199789f6ef3885013e0806cd274955bd50b"
+    },
+    {
+      "name": "fix/audit-runtime-ci-20261020",
+      "expected_sha": "2e2af551143a0f2bf17d35abc65a1869d52da3ec"
+    },
+    {
+      "name": "ci/adopt-qualified-image-20261020",
+      "expected_sha": "9cb69bb10dea537e6475c303857293c35475fa3d"
+    },
+    {
+      "name": "ci/lossless-evidence-transport-20261020",
+      "expected_sha": "ea14efac945c365676460feae9e63d69e7a42089"
     }
   ],
   "authority_boundary": {

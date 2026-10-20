@@ -24,6 +24,13 @@ baseline 是强制证据而不是可选优化：tag 无法 fetch 或无法 resol
 
 ARM/QEMU/ALSA/static-analysis 等重任务使用 immutable digest 固定的 GHCR toolchain image。`ccache` 只保存编译对象；build 目录、测试结论、secret、认证记录和产品 evidence 不缓存。
 
+镜像 Dockerfile 变更在 PR 中构建实际候选镜像，并通过 `ci/toolchain-smoke.sh`
+执行原生 GCC/Clang 与 Arm32/Arm64 QEMU 的仓库 CTest，保存原始日志、ELF 头、
+二进制哈希和 JUnit 结果。该 PR 任务只有读取权限，不能发布 package。受保护合并后，
+镜像工作流先完成这些执行，再发布 commit tag；按 digest 拉回并重跑四个配置通过后，
+才更新 `ci-latest`。消费者保留原 digest，另行审查的 pin 更新必须绑定已发布 digest 的
+成功执行证据。仿真结果不证明 SSC305 实机、物理时序或 HIL 资格。
+
 Hosted resource 数字只维护在 `ci/resource-baseline.json`；`docs/generated/RESOURCE_BASELINE.md` 由它生成，Resource Gate 会重新测量并 diff 两者。
 
 ## Deterministic regression 与公共数据验证

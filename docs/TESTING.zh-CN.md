@@ -151,6 +151,15 @@ Compact/Full validation 和 HIL 仍会在真实 self-hosted job 内重复 prefli
 
 ## 证据边界
 
+设备端 `app_audio_test` schema-v2 数据可通过
+[设备采集研究入口](research/frontend-evolution-v1/DEVICE_CAPTURE_REPLAY.zh-CN.md) 做离线开发回放。
+该入口严格锁定输入/源码/配置/输出，显式处理128/256/160点帧适配，并进入现有docs/Verify契约测试。
+已查看录音只用于development/regression；固定对照、receipt校验与Host构建不能替代独立声学或设备资格。
+
+[D5本地复验](research/frontend-evolution-v1/DEVICE_CONTINUATION_D5_RESULT.zh-CN.md) 给出已测试的
+Python3.10.20/Git2.43.0环境及完整门禁命令；系统Python/Git版本不能静默沿用CI通过结论。
+主线A2元数据自测保持独立，不能把其通过解释为实际RealMAN音频/DOA资格。
+
 Hosted x86、generated regression、cross-build、QEMU 只属于 software correctness/regression evidence，不能包装成 Cortex-A32 真机性能或产品声学认证。正式 `product-certified` 必须来自真实发货硬件、exact shipping toolchain/deployed binary、真实 route、声学 corpus/result、thermal/power、72 h policy soak、attestation 与 lifecycle archive evidence。
 
 ## Hosted 真实音频 smoke

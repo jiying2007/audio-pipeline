@@ -5,6 +5,7 @@ set -eu
 
 python3 tests/validation/frontend_evolution/test_contracts.py
 python3 scripts/ci_impact.py --self-test
+python3 tests/validation/frontend_evolution/test_device_capture.py
 python3 scripts/github_governance.py --self-test
 python3 scripts/resource_baseline.py --self-test
 python3 scripts/docs_consistency.py --self-test

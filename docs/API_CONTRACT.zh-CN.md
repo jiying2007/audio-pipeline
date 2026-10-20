@@ -66,6 +66,8 @@ ap_runtime_deinit(runtime);
 - `read_metrics` 读取 Runtime-owned telemetry；
 - stop/deinit 后按英文 canonical contract 恢复/结束所有权。
 
+控制队列由单一 producer 提交。Worker 每个边界只处理进入该边界时已入队的命令，最多 `AP_RUNTIME_COMMAND_QUEUE_DEPTH` 条；处理过程中补入的命令留待后续边界。持续补充控制命令不会让单次处理无限延长，阻塞音频帧或 stop 检查。`AP_EFULL` 仍由应用按产品策略重试或合并。
+
 ## 状态码
 
 常见语义：
@@ -99,9 +101,13 @@ Standalone API 复用 stage 实现，不复制算法分叉。
 
 时间戳/断流/XRUN/clock reset/codec reopen/lost frame 是系统事实，不应让 DSP 通过音频波形猜测。Route/path reset 会建立新的收敛 epoch；AEC/同步 telemetry 的解释必须尊重该 epoch。
 
+Metadata 的 capture/render 丢帧数独立计入对应计数；有断流 flag 而丢帧数为零的方向按 1 帧计入，未置 flag 的方向不计入。双向断流仍只对该边界重置一次。断流事件的单个 `arg1` 保持为已置 flag 方向丢帧数的最大值；显式断流 command 的共享 `lost_frames` 分别用于每个已置 flag 的方向。
+
 ## Metrics
 
 Runtime/DSP metrics 用于运行监控和回归，包括 queue pressure、failed frame、scheduler 状态、长期计数以及 DSP latency percentile 等。
+
+Runtime 的每个分拆 64-bit 计数值保持完整，不保证多个 metrics 字段属于同一瞬间。`ap_runtime_get_critical_state()` 在关键事件快照写入中重试，返回同一个完整事件的字段；`total_events` 是独立采样的饱和事件计数。
 
 Hosted/QEMU metrics 不能直接解释成 SSC305 真机性能。
 

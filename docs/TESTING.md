@@ -36,6 +36,46 @@ Consumers keep their existing digest until a separate reviewed pin update binds
 the successful published-digest evidence. Emulation does not qualify SSC305
 silicon, physical timing or HIL.
 
+### Published digest used by consumers
+
+The consumer reference in this checkout is:
+
+```text
+ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+```
+
+This is the separate consumer adoption tracked by
+[#811](https://github.com/jiying2007/audio-pipeline/issues/811). The published
+image was built from `b80d819a486cb973e6a60b4fdf259803d45ec3f0` in
+[CI Toolchain Image run 39380255641, job 118487510421](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/job/118487510421).
+Its [original qualified artifact 12245087611](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/artifacts/12245087611)
+is a 53,364-byte ZIP with SHA256
+`036a0307de88ad1b3d78499ff2ef95b7adf0d67425d089962ef9e29c824a2fb0`.
+Independent download verified all 57 ZIP members, all 52 files covered by the
+two inner hash manifests, the published reference, and equal before-publish
+and digest-readback receipts. Each stage executed GCC, Clang, ArmHF/QEMU and
+AArch64/QEMU with 14/14 CTest cases per profile at that source revision.
+
+The adoption inventory at the frozen `b80d819` baseline is 36 references:
+`ci.yml` 2, `quality.yml` 29, `resource-gates.yml` 4 and `verify.yml` 1.
+These are 35 container images plus the `--toolchain-image` argument that records
+the resource delivery receipt identity; keep that argument aligned with the
+executing image. Publication evidence and the adoption PR/main Verify gates
+are checked separately. This toolchain maintenance does not create an SDK version.
+
+After integrating another branch, rescan every consumer and receipt identity:
+
+```sh
+rg -n 'audio-pipeline-ci@sha256:' .github/workflows
+```
+
+Every current consumer uses the reviewed digest above. Integrating
+[A1 PR #815](https://github.com/jiying2007/audio-pipeline/pull/815) adds one
+consumer to the frozen inventory: this checkout has 37 references, with 30 in
+`quality.yml` and the other three workflow counts unchanged. The A1 job uses
+the same published digest. Use an immutable digest for consumer jobs;
+`ci-latest` belongs to the publisher's verified stable-pointer update.
+
 ## Deterministic regression and public validation
 
 PR/main audio-quality regression uses deterministic generator v3 and seeds `1307`, `2307`, `3307`. Each seed generates 27 cases and must pass 27/27 under the regression policy; deterministic regeneration is hash-compared.
@@ -54,6 +94,15 @@ Product certification remains a still higher trust tier.
 
 `scripts/ci_failure.py` emits stable machine-readable build, ABI, unit, sanitizer, DSP-quality, performance, resource, QEMU, HIL, XRUN, infrastructure, evidence and security categories.
 
+Verify uses `aggregate --enforce` for both its decision and its failure receipt.
+It checks all nine upstream domains, including `impact` and `hosted-real-smoke`,
+against the explicit impact selection. Required jobs must succeed; unselected
+jobs must be skipped. Missing/malformed selection or result values fail closed
+as invalid evidence. The JSON includes expected/actual results and violations,
+and is written before the same decision determines the step's exit status.
+`--self-test` covers hosted-only failures, unexpected skips/executions, cancelled
+jobs, invalid metadata and the actual command-line receipt/exit behavior.
+
 Acoustic validation writes its report before enforcement. On failure, `scripts/validation_reproducer.py` packages exact failed inputs, case JSON, metrics/failure data and executable reproduction instructions.
 
 ## Flaky and historical-regression policy
@@ -65,6 +114,10 @@ Nightly history can begin median/MAD regression detection after enough comparabl
 ## Metamorphic/property contracts
 
 `tests/test_metamorphic.c` validates deterministic reset/replay, stable silence and topology invariants. These participate in normal CTest and applicable sanitizer/build matrices.
+
+`tests/test_runtime_interleavings.c` participates in normal Linux Runtime CTest. It wraps the original C11 atomic operations only in its own translation unit to schedule exact slot-reuse, command-refill and snapshot-writer interleavings, including sequence/counter wraparound. The installed runtime contains no scheduling hooks. These regressions establish protocol behavior; host scheduling and sanitizer results do not establish target-board realtime or weak-memory qualification.
+
+The TSan job executes the base, extended and interleaving Runtime test targets.
 
 ## Resource single source of truth
 

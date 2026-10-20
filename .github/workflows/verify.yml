@@ -123,7 +123,7 @@ jobs:
     if: needs.impact.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -320,19 +320,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Classify aggregate verification
-        run: >-
-          python3 scripts/ci_failure.py --output /tmp/verification-summary.json aggregate
-          --fast '${{ needs.fast-gate.result }}'
-          --lab '${{ needs.lab-user-mode.result }}'
-          --ci '${{ needs.ci.result }}'
-          --quality '${{ needs.quality.result }}'
-          --audio '${{ needs.audio-quality.result }}'
-          --resource '${{ needs.resource-gates.result }}'
-          --codeql '${{ needs.codeql.result }}'
-      - name: Enforce impact-aware aggregate verification
+      - name: Classify and enforce impact-aware aggregate verification
         shell: bash
         env:
+          IMPACT_RESULT: ${{ needs.impact.result }}
           DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
           FAST_RESULT: ${{ needs.fast-gate.result }}
           HOSTED_REAL_RESULT: ${{ needs.hosted-real-smoke.result }}
@@ -350,32 +341,15 @@ jobs:
           EXPECT_CODEQL: ${{ needs.impact.outputs.run_codeql }}
         run: |
           set -euo pipefail
-          check() {
-            expected=$1 result=$2 name=$3
-            if [ "$expected" = true ]; then
-              [ "$result" = success ] || { echo "$name expected success, got $result" >&2; return 1; }
-            else
-              [ "$result" = skipped ] || { echo "$name expected skipped, got $result" >&2; return 1; }
-            fi
-          }
-          test "$FAST_RESULT" = success
-          if [ "$DOCS_ONLY" = true ]; then
-            [ "$HOSTED_REAL_RESULT" = skipped ] || {
-              echo "hosted-real-smoke expected skipped for docs-only PR, got $HOSTED_REAL_RESULT" >&2
-              exit 1
-            }
-          else
-            [ "$HOSTED_REAL_RESULT" = success ] || {
-              echo "hosted-real-smoke expected success, got $HOSTED_REAL_RESULT" >&2
-              exit 1
-            }
-          fi
-          check "$EXPECT_LAB" "$LAB_RESULT" lab-user-mode
-          check "$EXPECT_CI" "$CI_RESULT" ci
-          check "$EXPECT_QUALITY" "$QUALITY_RESULT" quality
-          check "$EXPECT_AUDIO" "$AUDIO_RESULT" audio-quality
-          check "$EXPECT_RESOURCE" "$RESOURCE_RESULT" resource-gates
-          check "$EXPECT_CODEQL" "$CODEQL_RESULT" codeql
+          python3 scripts/ci_failure.py --output /tmp/verification-summary.json aggregate --enforce \
+            --impact "$IMPACT_RESULT" --docs-only "$DOCS_ONLY" \
+            --fast "$FAST_RESULT" --hosted-real "$HOSTED_REAL_RESULT" \
+            --lab "$LAB_RESULT" --expect-lab "$EXPECT_LAB" \
+            --ci "$CI_RESULT" --expect-ci "$EXPECT_CI" \
+            --quality "$QUALITY_RESULT" --expect-quality "$EXPECT_QUALITY" \
+            --audio "$AUDIO_RESULT" --expect-audio "$EXPECT_AUDIO" \
+            --resource "$RESOURCE_RESULT" --expect-resource "$EXPECT_RESOURCE" \
+            --codeql "$CODEQL_RESULT" --expect-codeql "$EXPECT_CODEQL"
       - name: Upload failure classification
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "scope": "Pinned minimal source/model materialization only; no upstream scripts run",
+  "sources": {
+    "gtcrn": {
+      "commit": "502ebfab64da7c4a9af78dcb9c6ceef1ebb01c73",
+      "files": [
+        {
+          "bytes": 1069,
+          "git_blob_sha1": "39f9700cbb8e4e8a26de5f7cb6fafd12ac62d246",
+          "path": "LICENSE",
+          "sha256": "c467165e5860b4a7494ef4a6e2788e4115d95b5b8989bb5f86287089adddf794"
+        },
+        {
+          "bytes": 4419,
+          "git_blob_sha1": "79b1ae08a0041db51c41bfa0e06e54e8f88856af",
+          "path": "README.md",
+          "sha256": "7f890b7a9b1d7b49613733878e104233a3a3019854b3105007be69db37e33413"
+        },
+        {
+          "bytes": 540,
+          "git_blob_sha1": "7970c3e5f86e14aad8e68b0bcfbe3eb24b7462f0",
+          "path": "stream/README.md",
+          "sha256": "059af197379b140721f7c9ae87d608f22616ee47e563deeef4a5445ce1a588b7"
+        },
+        {
+          "bytes": 19428,
+          "git_blob_sha1": "e9f03bc8cb8894135e845284cfddbbd01eaa7bd4",
+          "path": "stream/gtcrn_stream.py",
+          "sha256": "850cb413b4355c0df65113d1f0a623fc813940a8f14578fdd39a1c20ded2d951"
+        },
+        {
+          "bytes": 535190,
+          "git_blob_sha1": "015454eef64bd4328e6ff4946c231d4a4a632e93",
+          "path": "stream/onnx_models/gtcrn_simple.onnx",
+          "sha256": "b4718df6228e7bdf1a8a435cf98f838636eb2fd331acabf86ba87c5192ebcb87"
+        }
+      ],
+      "repo": "Xiaobin-Rong/gtcrn"
+    },
+    "sof": {
+      "commit": "460f18d9bc70729d9479f0645730e61c94a9ca97",
+      "files": [
+        {
+          "bytes": 6482,
+          "git_blob_sha1": "1f72cd21c9df983dfbf89ed10d9e0ab379e90f95",
+          "path": "LICENCE",
+          "sha256": "cb6a9aa5baac3ea573feebcdc298526f701e2b7cd005a22208799778e26f0068"
+        },
+        {
+          "bytes": 3651,
+          "git_blob_sha1": "1787fef919e6e13a58251abb73f3b2a089d4f98a",
+          "path": "src/audio/tdfb/tdfb.h",
+          "sha256": "8f29aec9e1b80bd74330a0d86f03ddefe1357ba905bb7e97ba2673a0fa3f9ccc"
+        },
+        {
+          "bytes": 5257,
+          "git_blob_sha1": "ba4e44c8073f07646fe64ce2d07bdf2c644f7702",
+          "path": "src/audio/tdfb/tdfb_generic.c",
+          "sha256": "73216798217a1fa4012bb4fe90ba7fda091809b6f7580f1d6c05f2e004344909"
+        },
+        {
+          "bytes": 601,
+          "git_blob_sha1": "db9f66809d74c21e17f68689c88ade8527726993",
+          "path": "src/audio/tdfb/tune/sof_bf_array_line.m",
+          "sha256": "93352afffe72b39d7da906b30979bd618bd7b424b9b4e2917b8fc42ed7b7146f"
+        },
+        {
+          "bytes": 2005,
+          "git_blob_sha1": "cf8e8838ed32522992bab81022442573f7bcbaee",
+          "path": "src/audio/tdfb/tune/sof_bf_defaults.m",
+          "sha256": "07297c12736170f60cc3724fa66cf5e1876790f0e8a7de198a119eabb50b9438"
+        },
+        {
+          "bytes": 15102,
+          "git_blob_sha1": "5121ebe6630f5ecaf2fa0d493e2fe93dfc236166",
+          "path": "src/audio/tdfb/tune/sof_bf_design.m",
+          "sha256": "d5c7863bc1088df42231622fb525ecd0344324aecccf3dd1da7afa2debe03cf9"
+        },
+        {
+          "bytes": 2553,
+          "git_blob_sha1": "a90b03e26d29131708bfde9cbe85199154d2d20a",
+          "path": "src/audio/tdfb/tune/sof_bf_line4_two_beams.m",
+          "sha256": "33bb9059d34fa7a07b4f596eabf3aae6ce3ac687aa0f45c4a88ee48219df5031"
+        },
+        {
+          "bytes": 729,
+          "git_blob_sha1": "4818118253f6e39317c663967e77a0e93e56e3b8",
+          "path": "src/include/sof/math/fir_config.h",
+          "sha256": "560d68e1acdf2207264b74e266f86e7172c2829031f76bfbc2f4b6015cf976f7"
+        },
+        {
+          "bytes": 1446,
+          "git_blob_sha1": "7729ee76f1b772f0900231943a63e163db155ca8",
+          "path": "src/include/sof/math/fir_generic.h",
+          "sha256": "7e5e883d4bcd446678af14521cf4ceafa5bda1a66b3d1923d114bcb1ef122a73"
+        },
+        {
+          "bytes": 866,
+          "git_blob_sha1": "4536a469eee0731c0e722db1b3baae0565f52748",
+          "path": "src/include/user/fir.h",
+          "sha256": "907e0e3a9eca81cfe423b3fc585f93d89e51d159185c689b55ce87a3101a65f7"
+        },
+        {
+          "bytes": 5211,
+          "git_blob_sha1": "4d4e64698cba9b66f93e4e5ce0804b4fcaf17be4",
+          "path": "src/math/fir_generic.c",
+          "sha256": "35624978d22abfe19def8c1578374d3812ff50b35ecb7f2e4879d48f8fd7d133"
+        },
+        {
+          "bytes": 8398,
+          "git_blob_sha1": "bf664af09037434051a6514d4047b4370a5d4477",
+          "path": "tools/topology/topology1/m4/tdfb/coef_line4_28mm_pm90deg_16khz.m4",
+          "sha256": "52fb12994667f3591027e5ad934f8bc444e1665cfc09662810e7d2f840690665"
+        }
+      ],
+      "repo": "thesofproject/sof"
+    },
+    "ul-unas": {
+      "commit": "00f7c700da43d38347f30a6ccebd86fcbc798e07",
+      "files": [
+        {
+          "bytes": 1069,
+          "git_blob_sha1": "b347147eec832c3eb8ca23d8b80d4e543f6c0dfd",
+          "path": "LICENSE",
+          "sha256": "94daad6ad643a2f79d4a111015c3415fe20c6f630b908e884edf466923724184"
+        },
+        {
+          "bytes": 2669,
+          "git_blob_sha1": "540ff7e90d29b87d87cb9fd501e952d56c87fe98",
+          "path": "README.md",
+          "sha256": "dda67971606f6611968032dd1b03843b3126c6fff616ccd7ca97b990b1e78034"
+        },
+        {
+          "bytes": 2142,
+          "git_blob_sha1": "eb6a572be2c849ee87b38af331a1f74d991b4bf1",
+          "path": "ulunas_onnx/README.md",
+          "sha256": "e148039b6b1f61240d7ea1113e21b5c48997ad9a6c2bf1257500e16afc48fcb9"
+        },
+        {
+          "bytes": 788967,
+          "git_blob_sha1": "70146cd787c593f6134ed947dc2e9373fd44f37d",
+          "path": "ulunas_onnx/onnx_models/ulunas_stream_simple.onnx",
+          "sha256": "f2e804d54d6a88f4f82f44d86c9f1cf646db2509bfca935cfbfc5fcd8cbfac3b"
+        },
+        {
+          "bytes": 14209,
+          "git_blob_sha1": "7f9c0c9fb4ce81b6a427b522cba17dd951a649e0",
+          "path": "ulunas_onnx/stream/ulunas_stream.py",
+          "sha256": "897f1067fc263e1f3b489ec2bd633bc3e1bcb65c6a2eb3fe371ad95a5c2c69ad"
+        }
+      ],
+      "repo": "Xiaobin-Rong/ul-unas"
+    }
+  }
+}

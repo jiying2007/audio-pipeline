@@ -339,7 +339,7 @@ def workflow_templates(anchor: str) -> dict[str, str]:
 def protected_m2_closure(git: Git, base: str, contract: dict) -> dict:
     registered = contract.get("preregistered_m2_source_closure")
     need(type(registered) is dict and registered.get("review_id") == "2026-10-20" and
-         registered.get("source_review_commit") == "03725c0833a55d71e3ebe888e25277e1b3657096" and
+         registered.get("source_review_commit") == "a42427693484409f9954125dada37d5db6c6f51e" and
          registered.get("actual_m1_prerequisite_observed_by_this_helper") is False and
          registered.get("protected_main_closure_observed_by_this_helper") is False and
          type(registered.get("files")) is dict and set(registered["files"]) == set(M2_SOURCE_FILES),

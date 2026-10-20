@@ -137,17 +137,21 @@ jobs:
           -DCMAKE_C_FLAGS='-fsanitize=thread -fno-omit-frame-pointer -O1'
           -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=thread'
       - name: Build runtime tests
-        run: cmake --build build-tsan --target ap_runtime_tests --parallel
-      - name: Race-check worker/control-plane metrics
+        run: >-
+          cmake --build build-tsan --parallel --target
+          ap_runtime_tests ap_runtime_extended_tests ap_runtime_interleaving_tests
+      - name: Race-check runtime ownership, snapshots and control progress
         env:
           TSAN_OPTIONS: halt_on_error=1
-        run: ./build-tsan/ap_runtime_tests
+        run: >-
+          ctest --test-dir build-tsan --output-on-failure
+          -R '^ap_runtime(_extended|_interleaving)?_tests$'
 
   qemu-exec:
     if: inputs.run_extended
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -197,7 +201,7 @@ jobs:
     if: inputs.run_extended
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -221,7 +225,7 @@ jobs:
   static-analysis:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -254,7 +258,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -457,10 +461,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 \
             --collect --output fe09-b2s1 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 \
             --verify --output fe09-b2s1 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 R2B2-S1 private queue+first-party BF evidence and failures
         if: always() && (steps.fe09_b2s1.outcome == 'success' || steps.fe09_b2s1.outcome == 'failure')
@@ -482,6 +486,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 \
+            --verify --output fe09-b2s1-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -528,7 +534,8 @@ jobs:
                           'full_c4_system_budget_qualified'):
                   need(row.get(key) is False,
                        'RETAINED_TARGET_NONPROMOTION_DRIFT_' + target + '_' + key)
-          for key in ('shipping_src_changed', 'public_sdk_3x_installed',
+          need(receipt.get('shipping_src_changed') is True, 'CURRENT_SHIPPING_MAINTENANCE_HIDDEN')
+          for key in ('public_sdk_3x_installed',
                       'new_apd_v2_writer_installed', 'new_apd_v2_parser_installed',
                       'measured_real_bf_gain', 'real_adc_clock_qualified',
                       'ssc305_device_qualified', 'complete_c4_192kib_qualified',
@@ -544,10 +551,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 \
             --collect --output fe09-b2s2 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 \
             --verify --output fe09-b2s2 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B2-S2 private APX3 evidence including failure records
         if: always() && (steps.fe09_b2s2.outcome == 'success' || steps.fe09_b2s2.outcome == 'failure')
@@ -568,6 +575,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 \
+            --verify --output fe09-b2s2-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -639,10 +648,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
             --collect --output fe09-b2s3 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
             --verify --output fe09-b2s3 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B2-S3 actual concurrent and negative-source evidence
         if: always() && (steps.fe09_b2s3.outcome == 'success' || steps.fe09_b2s3.outcome == 'failure')
@@ -663,6 +672,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
+            --verify --output fe09-b2s3-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -782,7 +793,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -796,10 +807,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 \
             --collect --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 \
             --verify --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T1 source PCM and wrap witness or failed qualification
         if: always() && (steps.fe09_t1.outcome == 'success' || steps.fe09_t1.outcome == 'failure')
@@ -820,6 +831,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 \
+            --verify --output fe09-b2s3-t1-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -893,7 +906,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -907,10 +920,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
             --collect --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
             --verify --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
       - name: Retain T2 F0 exact-run negative feasibility and failure evidence
         if: always() && (steps.fe09_t2_f0.outcome == 'success' || steps.fe09_t2_f0.outcome == 'failure')
@@ -931,6 +944,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
+            --verify --output fe09-t2-f0-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -1001,7 +1016,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1015,10 +1030,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a \
             --collect --output fe09-t2a --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a \
             --verify --output fe09-t2a --execution-source "$GITHUB_SHA"
       - name: Retain T2A exact-run quiescent restart and fail-closed evidence
         if: always() && (steps.fe09_t2a.outcome == 'success' || steps.fe09_t2a.outcome == 'failure')
@@ -1039,6 +1054,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a \
+            --verify --output fe09-t2a-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -1109,7 +1126,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 22
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1221,7 +1238,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1346,7 +1363,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1436,7 +1453,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1512,7 +1529,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1591,7 +1608,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1666,7 +1683,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1741,7 +1758,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1817,7 +1834,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1894,7 +1911,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1973,7 +1990,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2045,11 +2062,82 @@ jobs:
           print("FE09_T3S2B1BA0_FINITE_ORIGINAL_SOURCE_READBACK_PASS",os.environ["GITHUB_SHA"])
           PY
 
+  frontend-s3-t3s2b1ba1:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Qualify original-source FRM2 nonzero left anchor (four targets, twice)
+        id: fe09_t3s2b1ba1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
+            --collect --output fe09-t3s2b1ba1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
+            --verify --output fe09-t3s2b1ba1 --execution-source "$GITHUB_SHA"
+      - name: Retain original A1 four-member evidence including partial target failures
+        if: always() && (steps.fe09_t3s2b1ba1.outcome == 'success' || steps.fe09_t3s2b1ba1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b1ba1-anchor-${{ github.run_id }}
+          path: fe09-t3s2b1ba1/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact same-run original A1 Artifact
+        if: steps.fe09_t3s2b1ba1.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2b1ba1-anchor-${{ github.run_id }}
+          path: fe09-t3s2b1ba1-readback
+      - name: Independently verify current-source original executions and resealed negatives
+        if: steps.fe09_t3s2b1ba1.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
+            --verify --output fe09-t3s2b1ba1-readback --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py \
+            --negative-readback --output fe09-t3s2b1ba1-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          p=Path("fe09-t3s2b1ba1-readback")
+          names=("receipt.json","collect.log","verify.log")
+          assert {x.name for x in p.iterdir()}==set(names)|{"SHA256SUMS"}
+          expected="".join(f"{hashlib.sha256((p/n).read_bytes()).hexdigest()}  {n}\n" for n in names)
+          assert (p/"SHA256SUMS").read_text("ascii")==expected
+          receipt=json.loads((p/"receipt.json").read_text("utf-8"))
+          assert receipt["source_commit"]==os.environ["GITHUB_SHA"]
+          assert receipt["actual_targets_complete"] is True
+          assert receipt["target_order"]==["native","sanitized","arm","tsan"]
+          assert receipt["repetitions_per_target"]==2
+          for target in receipt["target_results"].values():
+              assert target["matrix_original_acks"]==1536
+              assert target["logical_first"]==17 and target["logical_last"]==32
+              assert target["original_ack_created_by_a1"] is False
+              assert target["original_source_deleted"] is False
+              assert target["ssc305_hardware_qualified"] is False
+          print("FE09_A1_SAME_RUN_ORIGINAL_MEMBERS_INDEPENDENT_READBACK_PASS",os.environ["GITHUB_SHA"])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    # Recover the exact independently admitted source bytes (<=10m) then
-    # execute *fresh* speech and FIR validation; 45m total is unchanged.
+    # Try the exact protected cache (<=10m), then the same official archive,
+    # within the original 30m source-stage budget; job total stays 45m.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -2067,27 +2155,13 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
-          # Original-only transfer from a successful protected earlier main.
-          # Never use a substitute mirror, new corpus or an old acoustic score.
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/39052067322" \
-            --jq '(.head_sha == "e85a14540f2c49456508387fe3f815a90308c1ba" and .conclusion == "success" and .event == "push")' |
-            grep -Fx true
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410" \
-            --jq '(.id == 12107574410 and .name == "frontend-speech-39052067322" and .size_in_bytes == 204415056 and .digest == "sha256:1dffd4fc4968a0a214658627f1faf8bf54268f119fda86600a48511f897f30d4" and .expired == false and .workflow_run.id == 39052067322)' |
-            grep -Fx true
-          if ! timeout 600s gh api \
-              "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410/zip" \
-              > fe-speech/protected-original-source.zip; then
-            python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
-              --mark-download-failure --output fe-speech/source \
-              --execution-source "$GITHUB_SHA"
-            exit 1
-          fi
+          # Cache failure is retained separately. Only the original admitted
+          # official archive may recover it; old acoustic scores are never used.
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
-            --restore --zip fe-speech/protected-original-source.zip \
+            --acquire --zip fe-speech/protected-original-source.zip \
             --output fe-speech/source --transfer fe-speech/source-transfer.json \
+            --cache-failure fe-speech/source-cache-failure.json \
             --execution-source "$GITHUB_SHA"
-          rm -f -- fe-speech/protected-original-source.zip
           python3 tests/validation/frontend_evolution/speech_spatial.py \
             --source fe-speech/source --output fe-speech/effects --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/speech_spatial.py \
@@ -2116,6 +2190,7 @@ jobs:
             fe-speech/fir/
             fe-speech/source/source-failure.json
             fe-speech/source-transfer.json
+            fe-speech/source-cache-failure.json
           if-no-files-found: error
           retention-days: 30
 
@@ -2186,17 +2261,20 @@ jobs:
             --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA" --negative-evidence
           # Sealed spatial evidence retains the admitted source bytes/notices.
           rm -rf -- fe-spatial/source
+      - name: Pack byte-identical spatial evidence
+        id: transport
+        run: |
+          python3 .github/scripts/ci_evidence_transport.py pack \
+            --input fe-spatial --output fe-spatial-transport \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID" \
+            --failure-file fe-spatial/transport-failure.json
       - name: Preserve spatial-effect predecessor and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: |
-            fe-spatial/effects/
-            fe-spatial/order/
-            fe-spatial/activity/
-            fe-spatial/toolchain/
-            fe-spatial/source/source-failure.json
+          path: ${{ steps.transport.outcome == 'success' && 'fe-spatial-transport/' || 'fe-spatial/' }}
+          compression-level: ${{ steps.transport.outcome == 'success' && '0' || '6' }}
           if-no-files-found: error
           retention-days: 30
 
@@ -2212,7 +2290,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 .github/scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - name: Verify exact-run BF/AEC order and Activity predecessors
         run: |
           set -euo pipefail
@@ -2229,7 +2312,7 @@ jobs:
     needs: [frontend-reference, frontend-gate-guard]
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2248,7 +2331,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 .github/scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-correlation-${{ github.run_id }}
@@ -2279,7 +2367,7 @@ jobs:
     needs: frontend-spatial
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2294,7 +2382,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 .github/scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - name: Execute one frozen correlation guard against exact-run evidence
         run: |
           set -euo pipefail
@@ -2319,7 +2412,7 @@ jobs:
     needs: frontend-gate-guard
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2334,7 +2427,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 .github/scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-correlation-${{ github.run_id }}
@@ -2365,7 +2463,7 @@ jobs:
     needs: frontend-sync-faults
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2404,7 +2502,7 @@ jobs:
     needs: frontend-sync-route-reset
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2450,7 +2548,7 @@ jobs:
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2503,7 +2601,7 @@ jobs:
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2556,7 +2654,7 @@ jobs:
     needs: frontend-aec-res-collab
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2613,7 +2711,7 @@ jobs:
     needs: frontend-res-immediate-dt
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2659,7 +2757,7 @@ jobs:
     needs: frontend-res-oracle-near-bound
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2716,7 +2814,7 @@ jobs:
     needs: frontend-ns-frequency-res
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

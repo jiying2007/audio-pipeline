@@ -154,7 +154,7 @@
     },
     "protected_main_closure_observed_by_this_helper": false,
     "review_id": "2026-10-20",
-    "source_review_commit": "03725c0833a55d71e3ebe888e25277e1b3657096"
+    "source_review_commit": "a42427693484409f9954125dada37d5db6c6f51e"
   },
   "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/759",
   "registration_amendment_utc": "2026-10-20T06:39:12Z",

@@ -2186,17 +2186,20 @@ jobs:
             --base-evidence fe-spatial/order --output fe-spatial/activity --execution-source "$GITHUB_SHA" --negative-evidence
           # Sealed spatial evidence retains the admitted source bytes/notices.
           rm -rf -- fe-spatial/source
+      - name: Pack byte-identical spatial evidence
+        id: transport
+        run: |
+          python3 scripts/ci_evidence_transport.py pack \
+            --input fe-spatial --output fe-spatial-transport \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID" \
+            --failure-file fe-spatial/transport-failure.json
       - name: Preserve spatial-effect predecessor and failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: |
-            fe-spatial/effects/
-            fe-spatial/order/
-            fe-spatial/activity/
-            fe-spatial/toolchain/
-            fe-spatial/source/source-failure.json
+          path: ${{ steps.transport.outcome == 'success' && 'fe-spatial-transport/' || 'fe-spatial/' }}
+          compression-level: ${{ steps.transport.outcome == 'success' && '0' || '6' }}
           if-no-files-found: error
           retention-days: 30
 
@@ -2212,7 +2215,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - name: Verify exact-run BF/AEC order and Activity predecessors
         run: |
           set -euo pipefail
@@ -2248,7 +2256,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-correlation-${{ github.run_id }}
@@ -2294,7 +2307,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - name: Execute one frozen correlation guard against exact-run evidence
         run: |
           set -euo pipefail
@@ -2334,7 +2352,12 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-spatial-effects-${{ github.run_id }}
-          path: fe-spatial
+          path: fe-spatial-transport
+      - name: Restore exact spatial evidence paths and bytes
+        run: |
+          python3 scripts/ci_evidence_transport.py unpack \
+            --input fe-spatial-transport --output fe-spatial \
+            --execution-source "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: frontend-correlation-${{ github.run_id }}

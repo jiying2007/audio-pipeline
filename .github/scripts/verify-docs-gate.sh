@@ -8,6 +8,7 @@ python3 scripts/ci_impact.py --self-test
 python3 scripts/github_governance.py --self-test
 python3 scripts/resource_baseline.py --self-test
 python3 scripts/docs_consistency.py --self-test
+python3 tests/test_ci_evidence_transport.py
 python3 scripts/research_registry.py --self-test
 python3 scripts/prepare_release.py --self-test
 python3 scripts/release_manifest.py --self-test

@@ -21,7 +21,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  maintenance:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      skip_measurement: ${{ steps.scope.outputs.skip_measurement }}
+    steps:
+      - name: Check out the exact protected PR base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: trusted-policy
+      - name: Qualify direct PR maintenance from protected source
+        id: scope
+        working-directory: trusted-policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir ../pin-maintenance
+          python3 .github/program/workflow_pin_pr_consumer.py \
+            --workflow .github/workflows/pcr02-dsp-counterfactuals.yml \
+            --event-file "$GITHUB_EVENT_PATH" \
+            --receipt ../pin-maintenance/maintenance.json \
+            --github-output "$GITHUB_OUTPUT" --summary-file "$GITHUB_STEP_SUMMARY"
+      - name: Preserve the nonmeasurement decision
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: workflow-pin-maintenance-pcr02-dsp-counterfactuals-${{ github.run_id }}
+          path: pin-maintenance/maintenance.json
+          if-no-files-found: error
+          retention-days: 30
+
   contracts:
+    needs: maintenance
+    if: ${{ !cancelled() && !(needs.maintenance.result == 'success' && needs.maintenance.outputs.skip_measurement == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -135,6 +172,8 @@ jobs:
             --plan tests/validation/pcr02_capture_plan.json
 
   bf-geometry:
+    needs: maintenance
+    if: ${{ !cancelled() && !(needs.maintenance.result == 'success' && needs.maintenance.outputs.skip_measurement == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -204,6 +243,8 @@ jobs:
           retention-days: 30
 
   aec-tail:
+    needs: maintenance
+    if: ${{ !cancelled() && !(needs.maintenance.result == 'success' && needs.maintenance.outputs.skip_measurement == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -278,6 +319,8 @@ jobs:
           retention-days: 30
 
   ns-vad:
+    needs: maintenance
+    if: ${{ !cancelled() && !(needs.maintenance.result == 'success' && needs.maintenance.outputs.skip_measurement == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -355,5 +398,9 @@ jobs:
 
   real-aec-tail-confirmation:
     needs: [contracts, bf-geometry, aec-tail, ns-vad]
-    if: ${{ success() && needs.contracts.outputs.run_real_aec == 'true' }}
+    # A failed/unused maintenance probe must not suppress the original science prerequisites.
+    if: >-
+      ${{ !cancelled() && needs.contracts.result == 'success' &&
+          needs.bf-geometry.result == 'success' && needs.aec-tail.result == 'success' &&
+          needs.ns-vad.result == 'success' && needs.contracts.outputs.run_real_aec == 'true' }}
     uses: ./.github/workflows/pcr02-aec-real-tail-confirmation.yml

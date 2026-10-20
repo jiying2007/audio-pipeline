@@ -15,7 +15,8 @@ from unittest import mock
 import speech_pinned_snapshot as recovery
 
 COMMIT = subprocess.check_output(
-    ["git", "rev-parse", "HEAD"], cwd=recovery.ROOT, text=True).strip()
+    ["git", "-c", "safe.directory=" + str(recovery.ROOT), "rev-parse", "HEAD"],
+    cwd=recovery.ROOT, text=True).strip()
 
 
 class SourceRecoveryTests(unittest.TestCase):

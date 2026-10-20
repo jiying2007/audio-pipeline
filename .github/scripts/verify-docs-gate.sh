@@ -72,6 +72,7 @@ python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-tes
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
+python3 .github/program/workflow_pin_pr_consumer.py --self-test
 # Live GitHub bot Git-object probe only when this very qualifier is modified
 # in a PR. Avoid an external network dependency for unrelated Verify runs.
 if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then

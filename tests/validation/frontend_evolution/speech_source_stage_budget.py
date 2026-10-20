@@ -84,7 +84,8 @@ def _terminate_process_group(proc: subprocess.Popen) -> None:
 
 
 def run_bounded(argv: list[str], output: Path, deadline: float, *,
-                cwd: Path | None = None) -> bool:
+                cwd: Path | None = None,
+                env: dict[str, str] | None = None) -> bool:
     """Execute exact command with bounded wait and fail-closed artifact marker.
 
     argv injection exists only for offline unit testing: CLI calls the
@@ -95,7 +96,7 @@ def run_bounded(argv: list[str], output: Path, deadline: float, *,
     if not 0 < deadline <= 2400:
         raise ValueError("speech source stage deadline outside finite budget")
     started = time.monotonic()
-    proc = subprocess.Popen(argv, cwd=cwd, start_new_session=True)
+    proc = subprocess.Popen(argv, cwd=cwd, env=env, start_new_session=True)
     try:
         code = proc.wait(timeout=deadline)
     except subprocess.TimeoutExpired:

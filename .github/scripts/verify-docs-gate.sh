@@ -8,6 +8,7 @@ python3 scripts/ci_impact.py --self-test
 python3 scripts/github_governance.py --self-test
 python3 scripts/resource_baseline.py --self-test
 python3 scripts/docs_consistency.py --self-test
+python3 tests/test_ci_evidence_transport.py
 python3 scripts/research_registry.py --self-test
 python3 scripts/prepare_release.py --self-test
 python3 scripts/release_manifest.py --self-test
@@ -42,19 +43,15 @@ python3 tests/validation/frontend_evolution/realman_paper_clock_witness_d2_s5r.p
 python3 tests/validation/frontend_evolution/realman_gym_lag_diagnostic_d2_s6.py self-test
 python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --self-test
 python3 tests/validation/frontend_evolution/fe09_array_abi_contract_r1.py --check
-python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py --self-test
-python3 tests/validation/frontend_evolution/fe09_major_migration_preflight_r2b0.py --check
+# Bind the reviewed patch-maintenance bytes, then run both original preflights
+# and their negatives on exact reconstructed historical source copies.
+python3 tests/validation/frontend_evolution/fe09_runtime_maintenance_rebind.py --self-test --check
 python3 tests/validation/frontend_evolution/fe09_b1a_ingress_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b1b0_src_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b1b1_single_bf_qualification.py --self-test
-python3 tests/validation/frontend_evolution/fe09_r2b2_runtime_recorder_preflight_s0.py --self-test
-python3 tests/validation/frontend_evolution/fe09_r2b2_runtime_recorder_preflight_s0.py --check
-python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py --self-test
-python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py --self-test
+# Preserve six original scientific self-tests and verify the versioned
+# historical/current source boundary plus its independent receipt negatives.
+python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py --self-test
@@ -65,9 +62,11 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualifi
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b0_manifest_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1bf0_seq17_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
+python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
 python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test

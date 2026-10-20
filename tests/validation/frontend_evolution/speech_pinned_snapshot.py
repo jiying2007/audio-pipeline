@@ -372,11 +372,8 @@ def preserve_cache_failure(path: Path, error: Exception, commit: str) -> None:
         stream.write("\n")
 
 
-def acquire_source(archive: Path, output: Path, transfer: Path,
-                   cache_failure: Path, commit: str) -> dict:
-    started = time.monotonic()
-    strict_source_commit(commit)
-    original_source_policy()
+def fresh_transport_destinations(archive: Path, output: Path, transfer: Path,
+                                 cache_failure: Path) -> None:
     fresh_destinations(output, transfer)
     for path in (archive, cache_failure):
         need(path.parent.resolve() == output.parent.resolve() and
@@ -385,6 +382,19 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
     need(len({path.resolve() for path in
               (archive, output, transfer, cache_failure)}) == 4,
          "OVERLAPPING_SOURCE_TRANSPORT_DESTINATIONS")
+
+
+def acquire_source_worker(archive: Path, output: Path, transfer: Path,
+                          cache_failure: Path, commit: str) -> dict:
+    """Entire expensive stage, supervised once by acquire_source's parent.
+
+    No nested process-group supervisor: gh and FFmpeg remain in this worker's
+    process group so the parent can terminate cache, decode and verification.
+    """
+    started = time.monotonic()
+    strict_source_commit(commit)
+    original_source_policy()
+    fresh_transport_destinations(archive, output, transfer, cache_failure)
     try:
         return restore_cache(archive, output, transfer, commit)
     except Exception as error:
@@ -393,21 +403,20 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
         fresh_destinations(output, transfer)
     finally:
         archive.unlink(missing_ok=True)
-    remaining = stage_budget.DEADLINE_SECONDS - (time.monotonic() - started)
-    need(remaining > 0, "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
-    environment = os.environ.copy()
-    for key in ("GH_TOKEN", "GITHUB_TOKEN"):
-        environment.pop(key, None)
-    command = [sys.executable, str(Path(__file__).resolve()),
-               "--reacquire-official", "--output", str(output.resolve()),
-               "--transfer", str(transfer.resolve()),
-               "--cache-failure", str(cache_failure.resolve()),
-               "--execution-source", commit]
-    succeeded = stage_budget.run_bounded(
-        command, output, remaining, cwd=ROOT,
-        env=environment)
-    need(succeeded, "OFFICIAL_ORIGINAL_SOURCE_REACQUISITION_FAILED")
-    # A successful process exit alone is not a source or receipt admission.
+    need(time.monotonic() - started < stage_budget.DEADLINE_SECONDS,
+         "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
+    # Only this dedicated worker mutates its environment. Public-source
+    # download and any external decoder must not receive GitHub credentials.
+    removed = {key: os.environ.pop(key, None)
+               for key in ("GH_TOKEN", "GITHUB_TOKEN")}
+    try:
+        reacquire_official(output, transfer, commit,
+                           cache_failure=cache_failure)
+    finally:
+        for key, value in removed.items():
+            if value is not None:
+                os.environ[key] = value
+    # This independent readback is also inside the outer wall-clock deadline.
     source_check(output)
     need(transfer.is_file() and not transfer.is_symlink() and
          0 < transfer.stat().st_size <= 32*1024,
@@ -419,6 +428,55 @@ def acquire_source(archive: Path, output: Path, transfer: Path,
          record.get("cache_failure_receipt_sha256") == sha256_file(cache_failure),
          "OFFICIAL_SOURCE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
     return record
+
+
+def acquire_source(archive: Path, output: Path, transfer: Path,
+                   cache_failure: Path, commit: str) -> dict:
+    """Supervise cache + hash/extraction/readback + official source as one stage."""
+    started = time.monotonic()
+    strict_source_commit(commit)
+    original_source_policy()
+    fresh_transport_destinations(archive, output, transfer, cache_failure)
+    command = [sys.executable, str(Path(__file__).resolve()),
+               "--acquire-worker", "--zip", str(archive.resolve()),
+               "--output", str(output.resolve()),
+               "--transfer", str(transfer.resolve()),
+               "--cache-failure", str(cache_failure.resolve()),
+               "--execution-source", commit]
+    try:
+        remaining = stage_budget.DEADLINE_SECONDS - (time.monotonic() - started)
+        need(remaining > 0, "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
+        succeeded = stage_budget.run_bounded(
+            command, output, remaining, cwd=ROOT, env=os.environ.copy())
+        need(succeeded, "ORIGINAL_SOURCE_ACQUISITION_WORKER_FAILED")
+        # Full independent source checking happened inside the supervised
+        # worker. The parent only reads a bounded completion receipt.
+        need(transfer.is_file() and not transfer.is_symlink() and
+             0 < transfer.stat().st_size <= 32*1024,
+             "SOURCE_TRANSFER_RECEIPT_MISSING")
+        record = json.loads(transfer.read_text("utf-8"))
+        need(type(record) is dict and record.get("source_commit") == commit and
+             record.get("decision") == DECISION and
+             record.get("acquisition_path") in
+                 ("protected-artifact-cache", "official-original-archive"),
+             "SOURCE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
+        if record["acquisition_path"] == "protected-artifact-cache":
+            need(record.get("original_source_artifact_zip_sha256") ==
+                 ORIGIN_ZIP_SHA256, "CACHE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
+        else:
+            need(cache_failure.is_file() and not cache_failure.is_symlink() and
+                 record.get("cache_failure_receipt_sha256") ==
+                 sha256_file(cache_failure),
+                 "OFFICIAL_SOURCE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
+        need(time.monotonic() - started <= stage_budget.DEADLINE_SECONDS,
+             "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
+        return record
+    except Exception as error:
+        preserve_failure(output, error, commit,
+                         reason_code="ORIGINAL_SOURCE_STAGE_REJECTED")
+        raise
+    finally:
+        archive.unlink(missing_ok=True)
 
 
 def preserve_failure(output: Path, error: Exception, commit: str, *,
@@ -508,6 +566,7 @@ def main() -> None:
     mode.add_argument("--self-test", action="store_true")
     mode.add_argument("--restore", action="store_true")
     mode.add_argument("--acquire", action="store_true")
+    mode.add_argument("--acquire-worker", action="store_true", help=argparse.SUPPRESS)
     mode.add_argument("--reacquire-official", action="store_true")
     mode.add_argument("--mark-download-failure", action="store_true")
     p.add_argument("--zip", type=Path)
@@ -538,10 +597,12 @@ def main() -> None:
                 archive=args.original_archive, cache_failure=args.cache_failure)
         else:
             need(args.zip is not None, "SOURCE_ZIP_MISSING")
-            if args.acquire:
+            if args.acquire or args.acquire_worker:
                 need(args.cache_failure is not None, "CACHE_FAILURE_RECEIPT_MISSING")
-                result = acquire_source(args.zip, args.output, args.transfer,
-                                        args.cache_failure, args.execution_source)
+                acquire = (acquire_source_worker if args.acquire_worker else
+                           acquire_source)
+                result = acquire(args.zip, args.output, args.transfer,
+                                 args.cache_failure, args.execution_source)
             else:
                 result = restore(args.zip, args.output, args.transfer,
                                  args.execution_source)
@@ -553,7 +614,7 @@ def main() -> None:
             reason = ("OFFICIAL_ORIGINAL_SOURCE_REACQUISITION_REJECTED"
                       if args.reacquire_official else
                       "PINNED_ORIGINAL_SOURCE_ACQUISITION_REJECTED"
-                      if args.acquire else
+                      if args.acquire or args.acquire_worker else
                       "PINNED_ORIGINAL_SOURCE_ARTIFACT_TRANSFER_REJECTED")
             preserve_failure(args.output, exc, args.execution_source,
                              reason_code=reason)

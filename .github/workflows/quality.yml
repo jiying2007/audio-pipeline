@@ -461,10 +461,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 \
             --collect --output fe09-b2s1 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 \
             --verify --output fe09-b2s1 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 R2B2-S1 private queue+first-party BF evidence and failures
         if: always() && (steps.fe09_b2s1.outcome == 'success' || steps.fe09_b2s1.outcome == 'failure')
@@ -486,6 +486,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s1 \
+            --verify --output fe09-b2s1-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -532,7 +534,8 @@ jobs:
                           'full_c4_system_budget_qualified'):
                   need(row.get(key) is False,
                        'RETAINED_TARGET_NONPROMOTION_DRIFT_' + target + '_' + key)
-          for key in ('shipping_src_changed', 'public_sdk_3x_installed',
+          need(receipt.get('shipping_src_changed') is True, 'CURRENT_SHIPPING_MAINTENANCE_HIDDEN')
+          for key in ('public_sdk_3x_installed',
                       'new_apd_v2_writer_installed', 'new_apd_v2_parser_installed',
                       'measured_real_bf_gain', 'real_adc_clock_qualified',
                       'ssc305_device_qualified', 'complete_c4_192kib_qualified',
@@ -548,10 +551,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 \
             --collect --output fe09-b2s2 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 \
             --verify --output fe09-b2s2 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B2-S2 private APX3 evidence including failure records
         if: always() && (steps.fe09_b2s2.outcome == 'success' || steps.fe09_b2s2.outcome == 'failure')
@@ -572,6 +575,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s2 \
+            --verify --output fe09-b2s2-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -643,10 +648,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
             --collect --output fe09-b2s3 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
             --verify --output fe09-b2s3 --execution-source "$GITHUB_SHA"
       - name: Retain FE09 B2-S3 actual concurrent and negative-source evidence
         if: always() && (steps.fe09_b2s3.outcome == 'success' || steps.fe09_b2s3.outcome == 'failure')
@@ -667,6 +672,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py s3 \
+            --verify --output fe09-b2s3-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -800,10 +807,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 \
             --collect --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 \
             --verify --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T1 source PCM and wrap witness or failed qualification
         if: always() && (steps.fe09_t1.outcome == 'success' || steps.fe09_t1.outcome == 'failure')
@@ -824,6 +831,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t1 \
+            --verify --output fe09-b2s3-t1-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -911,10 +920,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
             --collect --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
             --verify --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
       - name: Retain T2 F0 exact-run negative feasibility and failure evidence
         if: always() && (steps.fe09_t2_f0.outcome == 'success' || steps.fe09_t2_f0.outcome == 'failure')
@@ -935,6 +944,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2f0 \
+            --verify --output fe09-t2-f0-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json
@@ -1019,10 +1030,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py --self-test
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a --self-test
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a \
             --collect --output fe09-t2a --execution-source "$GITHUB_SHA"
-          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py \
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a \
             --verify --output fe09-t2a --execution-source "$GITHUB_SHA"
       - name: Retain T2A exact-run quiescent restart and fail-closed evidence
         if: always() && (steps.fe09_t2a.outcome == 'success' || steps.fe09_t2a.outcome == 'failure')
@@ -1043,6 +1054,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_runtime_source_boundary.py t2a \
+            --verify --output fe09-t2a-readback --execution-source "$GITHUB_SHA"
           python3 - <<'PY'
           import hashlib
           import json

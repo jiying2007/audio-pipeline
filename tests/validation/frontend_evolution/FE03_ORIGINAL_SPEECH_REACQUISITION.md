@@ -65,9 +65,14 @@ full-size, SHA256-checked original archive, not permission for another URL.
 ## Budgets and failure
 
 The protected cache transfer ceiling is 600 seconds. The source-stage budget
-remains 1800 seconds in total: elapsed cache time is deducted before starting
-the original-source worker. They do not receive additive budgets. The original
-45-minute job ceiling and at-most-three transfer attempts remain unchanged.
+remains 1800 seconds in total. One parent supervises a single worker containing
+cache access, ZIP hashing/extraction, independent source readback, and any
+original-archive reacquisition and decoding. Cache success cannot return outside
+this deadline. The worker never recursively starts another budget supervisor;
+gh and FFmpeg stay in its process group for the existing termination policy.
+The parent also rejects a completed receipt received after the total deadline.
+There is no additive original-source budget. The original 45-minute job ceiling
+and at-most-three transfer attempts remain unchanged.
 
 If no source passes the independent contract inside the existing budget, fail
 closed and retain source-failure.json. Keep a prior, more specific source failure;
@@ -79,7 +84,7 @@ state, not acoustic failure or product qualification.
 
 定向测试覆盖缓存命中、过期/缺失、错误 run/artifact 身份、真实错误字节散列、
 解码前拒绝、路径冲突、伪成功、错误源 SHA、授权环境隔离、失败收据保留、
-缓存耗时扣除及总预算耗尽。离线测试中的 transport/verifier double 仅证明控制流，
+单个总预算、缓存命中晚到成功、真实延迟缓存 worker 超时终止及失败收据。离线测试中的 transport/verifier double 仅证明控制流，
 不会被当作真实语音准入或声学成绩。
 
 真实回源必须取得上述相同完整归档，重算固定 selected-source binding，再在当前

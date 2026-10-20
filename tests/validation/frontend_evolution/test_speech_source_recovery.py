@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import select
 from pathlib import Path
 import subprocess
 import sys
@@ -41,16 +42,13 @@ class SourceRecoveryTests(unittest.TestCase):
                 "workflow_run": {"id": recovery.ORIGIN_VERIFY_RUN,
                                  "head_sha": recovery.ORIGIN_MAIN}}
 
-    def fake_worker(self, command, output, deadline, **kwargs):
+    def fake_official(self, output, transfer, commit, *, cache_failure):
         # Control-flow double only. Every such test also patches source_check;
         # these files are not original data and cannot pass the real verifier.
-        self.assertIn("--reacquire-official", command)
-        self.assertNotIn("--original-archive", command)
-        self.assertEqual(command[-1], COMMIT)
-        self.assertGreater(deadline, 0)
-        self.assertLessEqual(deadline, recovery.stage_budget.DEADLINE_SECONDS)
-        self.assertNotIn("GH_TOKEN", kwargs["env"])
-        self.assertNotIn("GITHUB_TOKEN", kwargs["env"])
+        self.assertEqual(commit, COMMIT)
+        self.assertEqual(cache_failure, self.failure)
+        self.assertNotIn("GH_TOKEN", os.environ)
+        self.assertNotIn("GITHUB_TOKEN", os.environ)
         output.mkdir()
         (output / "source-receipt.json").write_text("{}\n")
         record = {"source_commit": COMMIT, "decision": recovery.DECISION,
@@ -61,7 +59,7 @@ class SourceRecoveryTests(unittest.TestCase):
         return True
 
     def acquire(self):
-        return recovery.acquire_source(self.archive, self.output,
+        return recovery.acquire_source_worker(self.archive, self.output,
                                        self.transfer, self.failure, COMMIT)
 
     def test_cache_hit_keeps_original_restore_and_does_not_call_official(self):
@@ -70,7 +68,7 @@ class SourceRecoveryTests(unittest.TestCase):
                                side_effect=[self.run_metadata(),
                                             self.artifact_metadata(), None]) as api, \
              mock.patch.object(recovery, "restore", return_value=expected) as restore, \
-             mock.patch.object(recovery.stage_budget, "run_bounded") as worker:
+             mock.patch.object(recovery, "reacquire_official") as worker:
             self.assertEqual(self.acquire(), expected)
             restore.assert_called_once_with(self.archive, self.output,
                                              self.transfer, COMMIT)
@@ -84,8 +82,8 @@ class SourceRecoveryTests(unittest.TestCase):
         artifact["expired"] = True
         with mock.patch.object(recovery, "cache_api",
                                side_effect=[self.run_metadata(), artifact]), \
-             mock.patch.object(recovery.stage_budget, "run_bounded",
-                               side_effect=self.fake_worker), \
+             mock.patch.object(recovery, "reacquire_official",
+                               side_effect=self.fake_official), \
              mock.patch.object(recovery, "source_check") as check:
             result = self.acquire()
             check.assert_called_once_with(self.output)
@@ -101,8 +99,8 @@ class SourceRecoveryTests(unittest.TestCase):
     def test_unavailable_cache_is_preserved_on_successful_reacquisition(self):
         with mock.patch.object(recovery, "cache_api",
                  side_effect=recovery.CacheFailure("PINNED_CACHE_RUN_UNAVAILABLE")), \
-             mock.patch.object(recovery.stage_budget, "run_bounded",
-                               side_effect=self.fake_worker), \
+             mock.patch.object(recovery, "reacquire_official",
+                               side_effect=self.fake_official), \
              mock.patch.object(recovery, "source_check"):
             result = self.acquire()
         self.assertEqual(json.loads(self.failure.read_text())["reason_code"],
@@ -204,37 +202,117 @@ class SourceRecoveryTests(unittest.TestCase):
                               "SOURCE_TEST_SENTINEL": "preserved"}), \
              mock.patch.object(recovery, "restore_cache",
                  side_effect=recovery.CacheFailure("PINNED_CACHE_RUN_UNAVAILABLE")), \
-             mock.patch.object(recovery.stage_budget, "run_bounded",
-                               side_effect=self.fake_worker) as worker, \
+             mock.patch.object(recovery, "reacquire_official",
+                               side_effect=self.fake_official) as worker, \
              mock.patch.object(recovery, "source_check"):
             self.acquire()
-            self.assertEqual(worker.call_args.kwargs["env"]["SOURCE_TEST_SENTINEL"],
-                             "preserved")
+            worker.assert_called_once()
+            self.assertEqual(os.environ["SOURCE_TEST_SENTINEL"], "preserved")
+            self.assertEqual(os.environ["GH_TOKEN"], "offline-test-only")
 
     def test_successful_worker_exit_without_admitted_source_is_rejected(self):
         with mock.patch.object(recovery, "restore_cache",
                  side_effect=recovery.CacheFailure("PINNED_CACHE_RUN_UNAVAILABLE")), \
-             mock.patch.object(recovery.stage_budget, "run_bounded", return_value=True):
+             mock.patch.object(recovery, "reacquire_official", return_value={}):
             with self.assertRaises((OSError, ValueError)):
                 self.acquire()
         self.assertTrue(self.failure.is_file())
         self.assertFalse(self.transfer.exists())
 
-    def test_cache_elapsed_is_deducted_from_original_stage_budget(self):
-        with mock.patch.object(recovery.time, "monotonic", side_effect=[100.0, 700.0]), \
-             mock.patch.object(recovery, "restore_cache",
-                 side_effect=recovery.CacheFailure("PINNED_CACHE_DOWNLOAD_TIMEOUT")), \
+    def fake_completed_cache_stage(self, command, output, deadline, **kwargs):
+        self.assertIn("--acquire-worker", command)
+        self.assertNotIn("--acquire", command)
+        output.mkdir()
+        (output / "source-receipt.json").write_text("{}\n")
+        self.transfer.write_text(json.dumps({
+            "source_commit": COMMIT, "decision": recovery.DECISION,
+            "acquisition_path": "protected-artifact-cache",
+            "original_source_artifact_zip_sha256": recovery.ORIGIN_ZIP_SHA256,
+        }))
+        return True
+
+    def test_supervisor_deducts_elapsed_before_one_whole_stage(self):
+        with mock.patch.object(recovery.time, "monotonic",
+                               side_effect=[100.0, 700.0, 701.0]), \
              mock.patch.object(recovery.stage_budget, "run_bounded",
-                               side_effect=self.fake_worker) as worker, \
-             mock.patch.object(recovery, "source_check"):
-            self.acquire()
+                               side_effect=self.fake_completed_cache_stage) as worker:
+            result = recovery.acquire_source(self.archive, self.output,
+                                             self.transfer, self.failure, COMMIT)
         self.assertEqual(worker.call_args.args[2], 1200.0)
+        self.assertEqual(result["acquisition_path"], "protected-artifact-cache")
+
+    def test_late_successful_cache_completion_becomes_negative_receipt(self):
+        with mock.patch.object(recovery.time, "monotonic",
+                               side_effect=[100.0, 100.0, 1900.1]), \
+             mock.patch.object(recovery.stage_budget, "run_bounded",
+                               side_effect=self.fake_completed_cache_stage):
+            with self.assertRaisesRegex(recovery.AdmissionError, "WALL_DEADLINE"):
+                recovery.acquire_source(self.archive, self.output,
+                                        self.transfer, self.failure, COMMIT)
+        receipt = json.loads((self.output / "source-failure.json").read_text())
+        self.assertEqual(receipt["reason_code"], "ORIGINAL_SOURCE_STAGE_REJECTED")
+        self.assertIn("WALL_DEADLINE", receipt["reason_detail"])
+        self.assertFalse(receipt["acoustic_validation_qualified"])
+
+    def test_real_delayed_cache_hit_worker_is_terminated_by_total_budget(self):
+        # Wait for explicit IPC readiness before exercising the real supervisor.
+        # Import/startup speed is outside this offline timeout experiment.
+        child = self.root / "delayed-cache-worker.py"
+        entered = self.root / "cache-entered"
+        completed = self.root / "cache-completed"
+        child.write_text(
+            "import sys\nfrom pathlib import Path\n"
+            "sys.path.insert(0," + repr(str(Path(recovery.__file__).parent)) + ")\n"
+            "import speech_pinned_snapshot as r\n"
+            "def cache(*args):\n"
+            "    Path(" + repr(str(entered)) + ").write_text('entered')\n"
+            "    print('CACHE_HIT_READY',flush=True)\n"
+            "    sys.stdin.buffer.read(1)\n"
+            "    Path(" + repr(str(completed)) + ").write_text('completed')\n"
+            "    return {'acquisition_path':'protected-artifact-cache'}\n"
+            "r.restore_cache=cache\n"
+            "r.acquire_source_worker(" + ",".join(
+                "Path(" + repr(str(p)) + ")" for p in
+                (self.archive, self.output, self.transfer, self.failure)) +
+            "," + repr(COMMIT) + ")\n")
+        bounded = recovery.stage_budget.run_bounded
+        def real_delayed(command, output, deadline, **kwargs):
+            self.assertIn("--acquire-worker", command)
+            self.assertLessEqual(deadline, recovery.stage_budget.DEADLINE_SECONDS)
+            proc = subprocess.Popen(
+                [sys.executable, str(child)], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                start_new_session=True, cwd=recovery.ROOT)
+            try:
+                ready, _, _ = select.select([proc.stdout], [], [], 30)
+                self.assertTrue(ready, "test worker did not reach IPC checkpoint")
+                self.assertEqual(proc.stdout.readline(), b"CACHE_HIT_READY\n")
+                self.assertTrue(entered.exists())
+                # Popen substitution only schedules this already-ready real
+                # process. Actual wait, killpg, reap and failure writing execute.
+                with mock.patch.object(recovery.stage_budget.subprocess, "Popen",
+                                       return_value=proc):
+                    return bounded(command, output, 0.05, **kwargs)
+            finally:
+                if proc.poll() is None:
+                    recovery.stage_budget._terminate_process_group(proc)
+                for stream in (proc.stdin, proc.stdout, proc.stderr):
+                    stream.close()
+        with mock.patch.object(recovery.stage_budget, "run_bounded",
+                               side_effect=real_delayed):
+            with self.assertRaisesRegex(recovery.AdmissionError, "WORKER_FAILED"):
+                recovery.acquire_source(self.archive, self.output,
+                                        self.transfer, self.failure, COMMIT)
+        self.assertFalse(completed.exists())
+        receipt = json.loads((self.output / "source-failure.json").read_text())
+        self.assertEqual(receipt["reason_code"], recovery.stage_budget.REASON_TIMEOUT)
+        self.assertFalse(receipt["acoustic_validation_qualified"])
 
     def test_exhausted_total_budget_never_starts_another_worker(self):
         with mock.patch.object(recovery.time, "monotonic", side_effect=[100.0, 1900.0]), \
              mock.patch.object(recovery, "restore_cache",
                  side_effect=recovery.CacheFailure("PINNED_CACHE_DOWNLOAD_TIMEOUT")), \
-             mock.patch.object(recovery.stage_budget, "run_bounded") as worker:
+             mock.patch.object(recovery, "reacquire_official") as worker:
             with self.assertRaisesRegex(recovery.AdmissionError, "WALL_DEADLINE"):
                 self.acquire()
             worker.assert_not_called()

@@ -61,6 +61,20 @@ official-original-archive. It separately records whether the original full
 archive was rehashed and actually downloaded in this run. The explicit
 --reacquire-official --original-archive path is a local replay of the same
 full-size, SHA256-checked original archive, not permission for another URL.
+The public replay command requires an explicit local archive. To request a
+network acquisition, use --acquire and its cache/failure/source-stage contract.
+Local replay also runs in a single supervised worker with the same 1800-second
+total budget, original hashing/decoding and independent source readback. Its
+receipt states that the archive was rehashed, not downloaded by the replay.
+
+The direct replay entry originally called the official worker inline. Independent
+offline review of 64e49e7bda8029a54f5a67b674d65a464e92b366 showed that this
+public entry could bypass the outer budget and pass inherited GitHub tokens to
+the downloader or decoder. This correction closes that command boundary. It
+also removes both tokens at the official callable boundary, including explicit
+local decoding, and restores the caller's environment after completion/failure.
+The hidden worker entry is an internal implementation of the supervisor; it
+does not start another supervisor or grant a new source/download policy.
 
 ## Budgets and failure
 
@@ -86,6 +100,9 @@ state, not acoustic failure or product qualification.
 解码前拒绝、路径冲突、伪成功、错误源 SHA、授权环境隔离、失败收据保留、
 单个总预算、缓存命中晚到成功、真实延迟缓存 worker 超时终止及失败收据。离线测试中的 transport/verifier double 仅证明控制流，
 不会被当作真实语音准入或声学成绩。
+直接 CLI 另覆盖缺少本地 archive 的拒绝、两种官方调用的 token 隔离、单个受监督
+worker、扣除已耗预算、晚到成功拒绝、archive 符号链接拒绝，以及通过 IPC 明确到达
+解码停点后对真实父子进程组的超时终止。该负例不依赖机器导入速度，不放宽生产预算。
 
 真实回源必须取得上述相同完整归档，重算固定 selected-source binding，再在当前
 提交上重跑原 speech/FIR 用例、独立 verify 和重新封存负例。所有原准入、来源、

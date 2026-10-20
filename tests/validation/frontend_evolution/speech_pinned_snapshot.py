@@ -9,6 +9,7 @@ are independent fail-closed authority; this script copies no old scores.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -267,8 +268,10 @@ def reacquire_official(output: Path, transfer: Path, commit: str, *,
              cache_failure.parent.resolve() == output.parent.resolve() and
              0 < cache_failure.stat().st_size <= 4096,
              "CACHE_FAILURE_RECEIPT_NOT_BOUNDED_OR_LOCAL")
-    with tempfile.TemporaryDirectory(prefix=".official-speech-",
-                                     dir=output.parent) as temp:
+    # Enforce this at the callable boundary too: explicit local archive replay
+    # still starts FFmpeg, even though it does not perform a network download.
+    with without_github_auth(), tempfile.TemporaryDirectory(
+            prefix=".official-speech-", dir=output.parent) as temp:
         scratch = Path(temp)
         original = archive if archive is not None else scratch / "dev-clean.tar.gz"
         if archive is None:
@@ -284,6 +287,79 @@ def reacquire_official(output: Path, transfer: Path, commit: str, *,
         return publish_source(data, output, transfer, commit, zip_digest=None,
                               original_downloaded=archive is None,
                               cache_failure=cache_failure)
+
+
+@contextmanager
+def without_github_auth():
+    """Remove GitHub credentials for public-source work and restore the caller."""
+    removed = {key: os.environ.pop(key, None)
+               for key in ("GH_TOKEN", "GITHUB_TOKEN")}
+    try:
+        yield
+    finally:
+        for key, value in removed.items():
+            if value is not None:
+                os.environ[key] = value
+
+
+def replay_official_worker(archive: Path, output: Path, transfer: Path,
+                           commit: str, *, cache_failure: Path | None = None) -> dict:
+    """Local replay and independent readback, inside one supervised process."""
+    result = reacquire_official(output, transfer, commit, archive=archive,
+                                cache_failure=cache_failure)
+    source_check(output)
+    return result
+
+
+def replay_official_archive(archive: Path, output: Path, transfer: Path,
+                            commit: str, *, cache_failure: Path | None = None) -> dict:
+    """Bound the public local-archive replay just like the acquisition stage."""
+    started = time.monotonic()
+    strict_source_commit(commit)
+    original_source_policy()
+    fresh_destinations(output, transfer)
+    need(archive.is_file() and not archive.is_symlink(),
+         "OFFICIAL_ORIGINAL_ARCHIVE_SIZE_OR_FILE_REJECTED")
+    if cache_failure is not None:
+        need(cache_failure.is_file() and not cache_failure.is_symlink() and
+             cache_failure.parent.resolve() == output.parent.resolve() and
+             0 < cache_failure.stat().st_size <= 4096,
+             "CACHE_FAILURE_RECEIPT_NOT_BOUNDED_OR_LOCAL")
+    command = [sys.executable, str(Path(__file__).resolve()),
+               "--replay-official-worker", "--original-archive", str(archive.resolve()),
+               "--output", str(output.resolve()), "--transfer", str(transfer.resolve()),
+               "--execution-source", commit]
+    if cache_failure is not None:
+        command += ["--cache-failure", str(cache_failure.resolve())]
+    # The parent retains any cache authorization. No public-source subprocess,
+    # including the explicitly requested local replay, inherits either token.
+    environment = {key: value for key, value in os.environ.items()
+                   if key not in ("GH_TOKEN", "GITHUB_TOKEN")}
+    try:
+        remaining = stage_budget.DEADLINE_SECONDS - (time.monotonic() - started)
+        need(remaining > 0, "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
+        need(stage_budget.run_bounded(command, output, remaining,
+                                      cwd=ROOT, env=environment),
+             "OFFICIAL_ORIGINAL_REPLAY_WORKER_FAILED")
+        need(transfer.is_file() and not transfer.is_symlink() and
+             0 < transfer.stat().st_size <= 32*1024,
+             "OFFICIAL_SOURCE_TRANSFER_RECEIPT_MISSING")
+        record = json.loads(transfer.read_text("utf-8"))
+        need(type(record) is dict and record.get("source_commit") == commit and
+             record.get("decision") == DECISION and
+             record.get("acquisition_path") == "official-original-archive" and
+             record.get("original_full_archive_redownloaded") is False and
+             record.get("original_full_archive_rehashed_this_run") is True and
+             record.get("cache_failure_receipt_sha256") ==
+                 (sha256_file(cache_failure) if cache_failure else None),
+             "OFFICIAL_SOURCE_TRANSFER_RECEIPT_IDENTITY_REJECTED")
+        need(time.monotonic() - started <= stage_budget.DEADLINE_SECONDS,
+             "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
+        return record
+    except Exception as error:
+        preserve_failure(output, error, commit,
+                         reason_code="OFFICIAL_ORIGINAL_SOURCE_REACQUISITION_REJECTED")
+        raise
 
 
 def cache_api(endpoint: str, deadline: float, kind: str, *, stream=None):
@@ -407,15 +483,9 @@ def acquire_source_worker(archive: Path, output: Path, transfer: Path,
          "ORIGINAL_SOURCE_ACQUISITION_WALL_DEADLINE")
     # Only this dedicated worker mutates its environment. Public-source
     # download and any external decoder must not receive GitHub credentials.
-    removed = {key: os.environ.pop(key, None)
-               for key in ("GH_TOKEN", "GITHUB_TOKEN")}
-    try:
+    with without_github_auth():
         reacquire_official(output, transfer, commit,
                            cache_failure=cache_failure)
-    finally:
-        for key, value in removed.items():
-            if value is not None:
-                os.environ[key] = value
     # This independent readback is also inside the outer wall-clock deadline.
     source_check(output)
     need(transfer.is_file() and not transfer.is_symlink() and
@@ -568,6 +638,7 @@ def main() -> None:
     mode.add_argument("--acquire", action="store_true")
     mode.add_argument("--acquire-worker", action="store_true", help=argparse.SUPPRESS)
     mode.add_argument("--reacquire-official", action="store_true")
+    mode.add_argument("--replay-official-worker", action="store_true", help=argparse.SUPPRESS)
     mode.add_argument("--mark-download-failure", action="store_true")
     p.add_argument("--zip", type=Path)
     p.add_argument("--original-archive", type=Path)
@@ -589,12 +660,16 @@ def main() -> None:
             need(not args.output.exists(), "FAILURE_OUTPUT_MUST_BE_FRESH")
             raise AdmissionError("PINNED_GITHUB_ARTIFACT_DOWNLOAD_FAILED")
         need(args.transfer is not None, "SOURCE_TRANSFER_RECEIPT_MISSING")
-        need(args.original_archive is None or args.reacquire_official,
+        replay = args.reacquire_official or args.replay_official_worker
+        need(args.original_archive is None or replay,
              "LOCAL_ORIGINAL_ARCHIVE_ONLY_FOR_EXPLICIT_ORIGINAL_REPLAY")
-        if args.reacquire_official:
-            result = reacquire_official(
-                args.output, args.transfer, args.execution_source,
-                archive=args.original_archive, cache_failure=args.cache_failure)
+        if replay:
+            need(args.original_archive is not None,
+                 "EXPLICIT_LOCAL_ORIGINAL_ARCHIVE_REQUIRED_USE_ACQUIRE_FOR_NETWORK")
+            execute = (replay_official_worker if args.replay_official_worker else
+                       replay_official_archive)
+            result = execute(args.original_archive, args.output, args.transfer,
+                             args.execution_source, cache_failure=args.cache_failure)
         else:
             need(args.zip is not None, "SOURCE_ZIP_MISSING")
             if args.acquire or args.acquire_worker:
@@ -612,7 +687,7 @@ def main() -> None:
     except Exception as exc:
         if args.output is not None and not preexisting_output:
             reason = ("OFFICIAL_ORIGINAL_SOURCE_REACQUISITION_REJECTED"
-                      if args.reacquire_official else
+                      if args.reacquire_official or args.replay_official_worker else
                       "PINNED_ORIGINAL_SOURCE_ACQUISITION_REJECTED"
                       if args.acquire or args.acquire_worker else
                       "PINNED_ORIGINAL_SOURCE_ARTIFACT_TRANSFER_REJECTED")

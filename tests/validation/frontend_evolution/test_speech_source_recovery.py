@@ -356,6 +356,181 @@ class SourceRecoveryTests(unittest.TestCase):
         self.assertIn("SIZE_OR_FILE_REJECTED", receipt["reason_detail"])
         self.assertFalse(receipt["acoustic_validation_qualified"])
 
+    def test_real_cli_official_replay_requires_explicit_local_archive(self):
+        result = subprocess.run(
+            [sys.executable, str(Path(recovery.__file__).resolve()),
+             "--reacquire-official", "--output", str(self.output),
+             "--transfer", str(self.transfer), "--execution-source", COMMIT],
+            capture_output=True, text=True, check=False, timeout=30)
+        self.assertNotEqual(result.returncode, 0)
+        receipt = json.loads((self.output / "source-failure.json").read_text())
+        self.assertIn("EXPLICIT_LOCAL_ORIGINAL_ARCHIVE_REQUIRED", receipt["reason_detail"])
+        self.assertFalse(self.transfer.exists())
+
+    def test_callable_official_download_strips_tokens_and_restores_on_failure(self):
+        def probe(*args, **kwargs):
+            self.assertNotIn("GH_TOKEN", os.environ)
+            self.assertNotIn("GITHUB_TOKEN", os.environ)
+            self.assertEqual(os.environ["SOURCE_TEST_SENTINEL"], "preserved")
+            raise RuntimeError("OFFLINE_DOWNLOAD_ENTRY_ONLY")
+        with mock.patch.dict(os.environ, {"GH_TOKEN": "offline-test-only",
+                  "GITHUB_TOKEN": "offline-test-only", "SOURCE_TEST_SENTINEL": "preserved"}), \
+             mock.patch.object(recovery.speech_source, "download", side_effect=probe) as download:
+            with self.assertRaisesRegex(RuntimeError, "OFFLINE_DOWNLOAD_ENTRY_ONLY"):
+                recovery.reacquire_official(self.output, self.transfer, COMMIT)
+            download.assert_called_once()
+            self.assertEqual(os.environ["GH_TOKEN"], "offline-test-only")
+            self.assertEqual(os.environ["GITHUB_TOKEN"], "offline-test-only")
+        self.assertFalse(self.output.exists())
+
+    def test_callable_local_replay_decoder_strips_tokens(self):
+        with self.archive.open("wb") as stream:
+            stream.truncate(337926286)
+        def probe(*args, **kwargs):
+            self.assertNotIn("GH_TOKEN", os.environ)
+            self.assertNotIn("GITHUB_TOKEN", os.environ)
+            raise RuntimeError("OFFLINE_DECODER_ENTRY_ONLY")
+        # The hash double reaches only the decoder environment probe; no source
+        # can be published or admitted by this deliberately interrupted test.
+        with mock.patch.dict(os.environ, {"GH_TOKEN": "offline-test-only",
+                                         "GITHUB_TOKEN": "offline-test-only"}), \
+             mock.patch.object(recovery, "sha256_file", return_value=recovery.ORIGIN_ARCHIVE_SHA256), \
+             mock.patch.object(recovery.speech_source, "acquire", side_effect=probe) as decode, \
+             mock.patch.object(recovery.speech_source, "download") as download:
+            with self.assertRaisesRegex(RuntimeError, "OFFLINE_DECODER_ENTRY_ONLY"):
+                recovery.reacquire_official(self.output, self.transfer,
+                                            COMMIT, archive=self.archive)
+            decode.assert_called_once()
+            download.assert_not_called()
+            self.assertEqual(os.environ["GH_TOKEN"], "offline-test-only")
+            self.assertEqual(os.environ["GITHUB_TOKEN"], "offline-test-only")
+        self.assertFalse(self.output.exists())
+
+    def fake_completed_local_replay(self, command, output, deadline, **kwargs):
+        # Control-flow receipt double only; not evidence of admitted bytes.
+        self.assertIn("--replay-official-worker", command)
+        self.assertIn("--original-archive", command)
+        self.assertNotIn("--reacquire-official", command)
+        self.assertNotIn("--acquire-worker", command)
+        self.assertNotIn("GH_TOKEN", kwargs["env"])
+        self.assertNotIn("GITHUB_TOKEN", kwargs["env"])
+        output.mkdir()
+        (output / "source-receipt.json").write_text("{}\n")
+        self.transfer.write_text(json.dumps({
+            "source_commit": COMMIT, "decision": recovery.DECISION,
+            "acquisition_path": "official-original-archive",
+            "original_full_archive_redownloaded": False,
+            "original_full_archive_rehashed_this_run": True,
+            "cache_failure_receipt_sha256": None,
+            "verified_selected_source_member_count": 46,
+        }))
+        return True
+
+    def test_direct_cli_uses_one_supervised_worker_with_clean_environment(self):
+        self.archive.write_bytes(b"offline-control-flow-only")
+        command = [str(Path(recovery.__file__)), "--reacquire-official",
+                   "--original-archive", str(self.archive),
+                   "--output", str(self.output), "--transfer", str(self.transfer),
+                   "--execution-source", COMMIT]
+        with mock.patch.object(sys, "argv", command), \
+             mock.patch.dict(os.environ, {"GH_TOKEN": "offline-test-only",
+                                         "GITHUB_TOKEN": "offline-test-only"}), \
+             mock.patch.object(recovery.stage_budget, "run_bounded",
+                               side_effect=self.fake_completed_local_replay) as worker, \
+             mock.patch.object(recovery, "reacquire_official") as inline:
+            recovery.main()
+            self.assertEqual(worker.call_count, 1)
+            self.assertLessEqual(worker.call_args.args[2], 1800)
+            inline.assert_not_called()
+            self.assertEqual(os.environ["GH_TOKEN"], "offline-test-only")
+
+    def test_local_replay_supervisor_deducts_elapsed_and_rejects_late_success(self):
+        self.archive.write_bytes(b"offline-control-flow-only")
+        with mock.patch.object(recovery.time, "monotonic",
+                               side_effect=[100.0, 700.0, 1900.1]), \
+             mock.patch.object(recovery.stage_budget, "run_bounded",
+                               side_effect=self.fake_completed_local_replay) as worker:
+            with self.assertRaisesRegex(recovery.AdmissionError, "WALL_DEADLINE"):
+                recovery.replay_official_archive(self.archive, self.output,
+                                                  self.transfer, COMMIT)
+        self.assertEqual(worker.call_args.args[2], 1200.0)
+        receipt = json.loads((self.output / "source-failure.json").read_text())
+        self.assertIn("WALL_DEADLINE", receipt["reason_detail"])
+        self.assertFalse(receipt["acoustic_validation_qualified"])
+
+    def test_local_archive_symlink_is_rejected_before_resolving_worker_argument(self):
+        original = self.root / "original.tar.gz"
+        original.write_bytes(b"offline-control-flow-only")
+        self.archive.symlink_to(original)
+        with mock.patch.object(recovery.stage_budget, "run_bounded") as worker:
+            with self.assertRaisesRegex(recovery.AdmissionError, "SIZE_OR_FILE_REJECTED"):
+                recovery.replay_official_archive(self.archive, self.output,
+                                                  self.transfer, COMMIT)
+            worker.assert_not_called()
+
+    def test_local_replay_readback_stays_inside_worker(self):
+        with mock.patch.object(recovery, "reacquire_official", return_value={}) as source, \
+             mock.patch.object(recovery, "source_check") as check, \
+             mock.patch.object(recovery.stage_budget, "run_bounded") as supervisor:
+            recovery.replay_official_worker(self.archive, self.output, self.transfer, COMMIT)
+            source.assert_called_once_with(self.output, self.transfer, COMMIT,
+                                           archive=self.archive, cache_failure=None)
+            check.assert_called_once_with(self.output)
+            supervisor.assert_not_called()
+
+    def test_real_local_replay_decoder_group_is_terminated_by_total_budget(self):
+        with self.archive.open("wb") as stream:
+            stream.truncate(337926286)
+        child = self.root / "delayed-official-worker.py"
+        entered = self.root / "decode-entered"
+        completed = self.root / "decode-completed"
+        decoder = ("import os,sys\nfrom pathlib import Path\n"
+                   "assert 'GH_TOKEN' not in os.environ and 'GITHUB_TOKEN' not in os.environ\n"
+                   "Path(" + repr(str(entered)) + ").write_text('entered')\n"
+                   "print('OFFICIAL_DECODE_READY',flush=True)\n"
+                   "sys.stdin.buffer.read(1)\n"
+                   "Path(" + repr(str(completed)) + ").write_text('completed')\n")
+        child.write_text(
+            "import sys,subprocess\nfrom pathlib import Path\n"
+            "sys.path.insert(0," + repr(str(Path(recovery.__file__).parent)) + ")\n"
+            "import speech_pinned_snapshot as r\n"
+            "r.sha256_file=lambda path:r.ORIGIN_ARCHIVE_SHA256\n"
+            "r.speech_source.acquire=lambda *args,**kwargs:subprocess.run("
+            "[sys.executable,'-c'," + repr(decoder) + "],check=True)\n"
+            "r.replay_official_worker(" + ",".join(
+                "Path(" + repr(str(p)) + ")" for p in
+                (self.archive, self.output, self.transfer)) + "," + repr(COMMIT) + ")\n")
+        bounded = recovery.stage_budget.run_bounded
+        def real_delayed(command, output, deadline, **kwargs):
+            self.assertIn("--replay-official-worker", command)
+            self.assertLessEqual(deadline, 1800)
+            proc = subprocess.Popen([sys.executable, str(child)],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                start_new_session=True, cwd=recovery.ROOT, env=kwargs["env"])
+            try:
+                ready, _, _ = select.select([proc.stdout], [], [], 30)
+                self.assertTrue(ready, "test decoder did not reach IPC checkpoint")
+                self.assertEqual(proc.stdout.readline(), b"OFFICIAL_DECODE_READY\n")
+                self.assertTrue(entered.exists())
+                with mock.patch.object(recovery.stage_budget.subprocess, "Popen",
+                                       return_value=proc):
+                    return bounded(command, output, 0.05, **kwargs)
+            finally:
+                if proc.poll() is None:
+                    recovery.stage_budget._terminate_process_group(proc)
+                for stream in (proc.stdin, proc.stdout, proc.stderr):
+                    stream.close()
+        with mock.patch.dict(os.environ, {"GH_TOKEN": "offline-test-only",
+                                         "GITHUB_TOKEN": "offline-test-only"}), \
+             mock.patch.object(recovery.stage_budget, "run_bounded", side_effect=real_delayed):
+            with self.assertRaisesRegex(recovery.AdmissionError, "WORKER_FAILED"):
+                recovery.replay_official_archive(self.archive, self.output,
+                                                  self.transfer, COMMIT)
+        self.assertFalse(completed.exists())
+        receipt = json.loads((self.output / "source-failure.json").read_text())
+        self.assertEqual(receipt["reason_code"], recovery.stage_budget.REASON_TIMEOUT)
+        self.assertFalse(receipt["acoustic_validation_qualified"])
+
     def test_real_cli_existing_output_is_unchanged(self):
         self.output.mkdir()
         sentinel = self.output / "sentinel"

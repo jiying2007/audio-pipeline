@@ -26,6 +26,16 @@ The baseline is mandatory evidence, not an optional optimization. If the baselin
 
 Heavy ARM/QEMU/ALSA/static-analysis jobs use the reviewed GHCR toolchain image by immutable digest. `ccache` persists compiler objects only. Build directories, test results, credentials, certification records and product evidence are never restored from cache.
 
+Changes to the image Dockerfile run `ci/toolchain-smoke.sh` in the actual proposed
+image on the pull request: native GCC/Clang and Arm32/Arm64 QEMU execute the
+repository's CTest suite and retain original logs, ELF headers, binary hashes and
+JUnit results. This read-only PR job cannot publish packages. After protected
+merge, the image workflow publishes a commit tag only after those executions,
+pulls its digest and repeats all four profiles, then advances `ci-latest`.
+Consumers keep their existing digest until a separate reviewed pin update binds
+the successful published-digest evidence. Emulation does not qualify SSC305
+silicon, physical timing or HIL.
+
 ## Deterministic regression and public validation
 
 PR/main audio-quality regression uses deterministic generator v3 and seeds `1307`, `2307`, `3307`. Each seed generates 27 cases and must pass 27/27 under the regression policy; deterministic regeneration is hash-compared.

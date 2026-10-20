@@ -11,7 +11,7 @@
   "historical_source_is_current_source": false,
   "issue": "https://github.com/jiying2007/audio-pipeline/issues/810",
   "maintenance_version": "2.3.56",
-  "patch_sha256": "a3428894d3f4ba006660d5b0657efff76003ab68110331a945194d3fcd85764a",
+  "patch_sha256": "31ed4a2684c70d2cd9443304247ba2bb1370e0415b6fded30037c5af8cf787eb",
   "public_c4_enabled": false,
   "schema_version": 1,
   "shipping_or_hil_qualification": false,

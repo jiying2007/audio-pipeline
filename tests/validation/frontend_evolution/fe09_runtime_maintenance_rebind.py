@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
 POLICY = HERE / "fe09_runtime_maintenance_2_3_56.json"
 PATCH = HERE / "fe09_runtime_maintenance_2_3_56.patch"
-POLICY_SHA256 = "789943f7ca4da9597399ca40ead271aa725e5d932665e8b7e7cea9ee69511032"
+POLICY_SHA256 = "7de30e6b288f76fdc3f7df5680a40ffb6a1134c43354a6b3e2f6556cb4a35f6c"
 CHANGED = {"CMakeLists.txt", "docs/API_CONTRACT.md", "src/platform/linux/ap_runtime.c"}
 
 
@@ -91,7 +91,8 @@ def reconstruct(destination: Path, src: dict[str, str], item: dict, patch: bytes
         target = destination / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
-    for arguments in (("--reverse", "--check"), ("--reverse",)):
+    for arguments in (("--reverse", "--check", "--unidiff-zero"),
+                      ("--reverse", "--unidiff-zero")):
         completed = subprocess.run(["git", "apply", *arguments, "-"], input=patch,
                                    cwd=destination, capture_output=True, timeout=20,
                                    check=False)

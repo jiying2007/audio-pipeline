@@ -22,6 +22,10 @@ It lists both original and current Git blob identities. The new checker pins
 the complete manifest SHA256; the manifest pins the complete inverse patch
 SHA256 and both original checker/contract identities.
 
+The patch uses zero context so its stored blank lines satisfy the repository's
+ordinary whitespace gate. Reconstruction explicitly uses `--unidiff-zero`;
+the complete before/after blob checks still bind every source byte.
+
 The maintenance checker first requires the actual current files to match those
 reviewed current identities. It independently checks all 34 architecture probes
 against current source, with the explicit new 2.3.56 project declaration, and

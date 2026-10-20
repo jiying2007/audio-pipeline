@@ -137,11 +137,15 @@ jobs:
           -DCMAKE_C_FLAGS='-fsanitize=thread -fno-omit-frame-pointer -O1'
           -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=thread'
       - name: Build runtime tests
-        run: cmake --build build-tsan --target ap_runtime_tests --parallel
-      - name: Race-check worker/control-plane metrics
+        run: >-
+          cmake --build build-tsan --parallel --target
+          ap_runtime_tests ap_runtime_extended_tests ap_runtime_interleaving_tests
+      - name: Race-check runtime ownership, snapshots and control progress
         env:
           TSAN_OPTIONS: halt_on_error=1
-        run: ./build-tsan/ap_runtime_tests
+        run: >-
+          ctest --test-dir build-tsan --output-on-failure
+          -R '^ap_runtime(_extended|_interleaving)?_tests$'
 
   qemu-exec:
     if: inputs.run_extended
@@ -2048,8 +2052,8 @@ jobs:
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    # Recover the exact independently admitted source bytes (<=10m) then
-    # execute *fresh* speech and FIR validation; 45m total is unchanged.
+    # Try the exact protected cache (<=10m), then the same official archive,
+    # within the original 30m source-stage budget; job total stays 45m.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -2067,27 +2071,13 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
-          # Original-only transfer from a successful protected earlier main.
-          # Never use a substitute mirror, new corpus or an old acoustic score.
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/39052067322" \
-            --jq '(.head_sha == "e85a14540f2c49456508387fe3f815a90308c1ba" and .conclusion == "success" and .event == "push")' |
-            grep -Fx true
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410" \
-            --jq '(.id == 12107574410 and .name == "frontend-speech-39052067322" and .size_in_bytes == 204415056 and .digest == "sha256:1dffd4fc4968a0a214658627f1faf8bf54268f119fda86600a48511f897f30d4" and .expired == false and .workflow_run.id == 39052067322)' |
-            grep -Fx true
-          if ! timeout 600s gh api \
-              "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410/zip" \
-              > fe-speech/protected-original-source.zip; then
-            python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
-              --mark-download-failure --output fe-speech/source \
-              --execution-source "$GITHUB_SHA"
-            exit 1
-          fi
+          # Cache failure is retained separately. Only the original admitted
+          # official archive may recover it; old acoustic scores are never used.
           python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
-            --restore --zip fe-speech/protected-original-source.zip \
+            --acquire --zip fe-speech/protected-original-source.zip \
             --output fe-speech/source --transfer fe-speech/source-transfer.json \
+            --cache-failure fe-speech/source-cache-failure.json \
             --execution-source "$GITHUB_SHA"
-          rm -f -- fe-speech/protected-original-source.zip
           python3 tests/validation/frontend_evolution/speech_spatial.py \
             --source fe-speech/source --output fe-speech/effects --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/speech_spatial.py \
@@ -2116,6 +2106,7 @@ jobs:
             fe-speech/fir/
             fe-speech/source/source-failure.json
             fe-speech/source-transfer.json
+            fe-speech/source-cache-failure.json
           if-no-files-found: error
           retention-days: 30
 

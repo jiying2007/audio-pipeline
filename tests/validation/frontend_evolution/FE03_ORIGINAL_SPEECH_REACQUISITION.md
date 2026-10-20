@@ -1,0 +1,89 @@
+# FE03 original speech reacquisition / 同字节原始语音回源
+
+## Frozen cause and scope
+
+Base: e3672ffe16e4c9d42a100e7712b9bbd3d8338545.
+
+The original protected speech Artifact used by #792 has finite retention. Its
+expiry makes the only source path fail even though the independently admitted
+official archive is still the source authority. This is a transport dependency
+defect. Extending retention does not provide a source recovery path.
+
+This contract extends
+[the protected original-source recovery](FE03_PINNED_ORIGINAL_SPEECH_SOURCE_RECOVERY.md).
+Its failed historical runs, source identity and acoustic admission remain
+unchanged. It introduces no new corpus, speaker, role, window, URL, threshold,
+decoder fallback, DSP implementation, shipping default or public API.
+
+## Same-byte authority
+
+- Original URL: https://www.openslr.org/resources/12/dev-clean.tar.gz
+- Original size: 337926286 bytes.
+- Original MD5: 42e2234ba48799c1f50f24a7926300a1.
+- Original archive SHA256:
+  76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3.
+- Original selected-source binding:
+  7c4d711d4cb69121ccbbcb9a596d7ea26ca141a325add2dc8f5ff7421b9154c1.
+- Original offset 0, 32 FLAC members and eight fixed four-second PCM windows.
+
+The unchanged speech-admission-v1.json, speech_source.acquire and
+speech_spatial.source_check remain the independent authority. A transport
+receipt or successful downloader exit cannot replace source admission. The
+offset-8 spatial source has a different selection and role contract and cannot
+be substituted for this offset-0 source.
+
+## Execution and receipts
+
+1. Require the current checkout's exact source SHA and the existing frozen
+   admission. Reject existing, symlink or overlapping destinations.
+2. Try the same protected Artifact cache. Enforce the original repository,
+   main/run/event/conclusion, Artifact ID/name/origin/size/digest and independently
+   hash the ZIP before source extraction. Existing safe ZIP and original
+   selected-byte checks stay in force.
+3. Cache absence, expiry, transport failure or identity rejection writes a
+   compact source-cache-failure.json with a specific negative reason. Keep it
+   even if official reacquisition succeeds. Do not save API bodies, credentials,
+   stderr or redirected signed URLs.
+4. Only the original official URL may recover the cache failure. Use the
+   unchanged at-most-three full-download attempt policy, require original size
+   and SHA256 before decoding, then invoke the original acquisition at offset 0.
+   Do not inherit GitHub tokens in the download/decoder worker.
+5. Independently verify the selected source tree before publishing it into a
+   fresh destination. Keep the source-transfer.json with exact current SHA,
+   original archive identity, acquisition path and selected-file hashes. On the
+   official path, bind the retained cache failure receipt by SHA256.
+6. Execute fresh current-version speech and FIR effects, independent readback
+   and all existing evidence negatives. No old scientific score is reused.
+   Retain new effects, FIR and receipts with the existing always-upload step.
+
+source-transfer.json schema 2 distinguishes protected-artifact-cache from
+official-original-archive. It separately records whether the original full
+archive was rehashed and actually downloaded in this run. The explicit
+--reacquire-official --original-archive path is a local replay of the same
+full-size, SHA256-checked original archive, not permission for another URL.
+
+## Budgets and failure
+
+The protected cache transfer ceiling is 600 seconds. The source-stage budget
+remains 1800 seconds in total: elapsed cache time is deducted before starting
+the original-source worker. They do not receive additive budgets. The original
+45-minute job ceiling and at-most-three transfer attempts remain unchanged.
+
+If no source passes the independent contract inside the existing budget, fail
+closed and retain source-failure.json. Keep a prior, more specific source failure;
+never overwrite preexisting output evidence. Preserve cache failure receipts
+regardless of the later source outcome. Missing/expired cache is infrastructure
+state, not acoustic failure or product qualification.
+
+## Acceptance / 中文验收边界
+
+定向测试覆盖缓存命中、过期/缺失、错误 run/artifact 身份、真实错误字节散列、
+解码前拒绝、路径冲突、伪成功、错误源 SHA、授权环境隔离、失败收据保留、
+缓存耗时扣除及总预算耗尽。离线测试中的 transport/verifier double 仅证明控制流，
+不会被当作真实语音准入或声学成绩。
+
+真实回源必须取得上述相同完整归档，重算固定 selected-source binding，再在当前
+提交上重跑原 speech/FIR 用例、独立 verify 和重新封存负例。所有原准入、来源、
+角色和科学代码保持。候选还必须通过适用的 exact-head Verify/summary；合并后
+独立验证 exact main 和现有 Release 身份链。本契约不制造新 SDK 版本，不取得
+HIL、真实设备、第三方再许可或产品资格。

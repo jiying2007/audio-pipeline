@@ -60,6 +60,12 @@ Nightly `flaky-sentinel` 重放确定性测试 100 次，不允许静默 retry �
 
 `tests/test_metamorphic.c` 验证 reset 后 deterministic replay、silence 稳定性和拓扑约束，并进入普通 CTest 和适用 sanitizer/build matrix。
 
+`tests/test_runtime_interleavings.c` 进入普通 Linux Runtime CTest，并与基础及扩展
+Runtime 测试共同进入 TSan。它仅在测试翻译单元中包装原始 C11 原子操作，安排
+精确的队列槽位复用、命令补入与快照写入时序，覆盖序号及计数器回绕。安装的
+Runtime 没有测试调度钩子。这些测试验证并发协议，host 调度和 sanitizer 结果
+不代表目标板实时性或弱内存平台的完整资格。
+
 ## Trusted Runner Readiness
 
 `tools/runner_preflight.py` 对 `audio-validation`、`audio-builder`、`audio-target`、`certification-archive` 提供 fail-closed readiness。**Trusted Runner Readiness** 针对 exact ref 执行；`READY` 只表示基础设施可用，不是 acoustic/HIL/performance/product PASS。

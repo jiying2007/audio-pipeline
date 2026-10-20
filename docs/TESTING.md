@@ -65,6 +65,10 @@ Nightly history can begin median/MAD regression detection after enough comparabl
 
 `tests/test_metamorphic.c` validates deterministic reset/replay, stable silence and topology invariants. These participate in normal CTest and applicable sanitizer/build matrices.
 
+`tests/test_runtime_interleavings.c` participates in normal Linux Runtime CTest. It wraps the original C11 atomic operations only in its own translation unit to schedule exact slot-reuse, command-refill and snapshot-writer interleavings, including sequence/counter wraparound. The installed runtime contains no scheduling hooks. These regressions establish protocol behavior; host scheduling and sanitizer results do not establish target-board realtime or weak-memory qualification.
+
+The TSan job executes the base, extended and interleaving Runtime test targets.
+
 ## Resource single source of truth
 
 Representative hosted pipeline/runtime state measurements live in [`ci/resource-baseline.json`](../ci/resource-baseline.json) and generated [`docs/generated/RESOURCE_BASELINE.md`](generated/RESOURCE_BASELINE.md). Resource Gate remeasures/regenerates both and fails on drift; current docs do not duplicate the numbers.

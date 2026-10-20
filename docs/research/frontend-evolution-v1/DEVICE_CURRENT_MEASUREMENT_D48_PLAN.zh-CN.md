@@ -1,0 +1,35 @@
+# D48 当前创新测量契约解耦计划
+
+2026-10-13。experiment=FE_DEVICE_CURRENT_MEASUREMENT_D48，kind=measurement-contract-repair，primary=adk-planning-execution-loop。总体目标“全面推进优化迭代”保持。本计划为D47已验证测量失败后的新身份；尚未登记、实施或执行，独立计划审查通过前不进入正式测量。
+
+## 精确问题与唯一变化
+
+D47正式outer回执6bf0c0040b367fafe550445f8b242165a8be99f18426f32583c0948861790bb9记录child exit2，完成16测量案例，第17例monitor-primary-field-case-03-fixed1-shadow的C命令exit0。原D42 observe第213行的旧floor_mean<=D41.floor_mean检查在50帧失败，六项状态全部3008帧一致。D47的新currentJ/P映射不具备这个旧上界。这是测量契约耦合，不是已完成的算法准入失败。D47 RESULT=d5fffe95a58f65121053f7117aa65a5ee116e7a49b42770e4b0b47d8fe4a7ccc；失败snapshot=361463948e6ac2fd872c6040c49d2ae0018da6f6e4a729229016de5f6aad7200；独立失败复审尚待完成，不从本计划自批准。
+
+本轮唯一变化是新的测量适配器，分离通用统计/控制/状态检查与旧映射专有性质。原D42源和原算法裁判文件不改；D47五源、D47原root/intent/receipt/partial工件不改且不重放。算法使用冻结D47 C/NS/header，floor、系数、时序、阈值和资源结构无变更。D48不是新的算法调参实验，不以测量修复批准D47算法。
+
+新适配器需以原observe的逐语句统计、控制、波形和状态检查为基线建立显式副本。保留原六项保护状态投影、范围/warmup/monitor无应用等约束，旧floor上界作为历史性质单独报告，不作为当前映射通用不变量。返回数据不虚称noise_conditioned_floor_monotone=True；所有波形measurement、baseline_differences、VAD/frequency计数、普通NS及inactive控制字段必须保持原含义。禁止monkeypatch、忽略异常或以假返回值绕过原函数。
+
+## 冻结算法与数据
+
+固定D47 C=ca1ba081b344e6554473328510fbaf15c56d9b2657dee06b9ce9b5d7f328b733，NS=8dd2db9027d972aac3f6ea7f75a8bbd84c9e8c2eef6b0ab09b24aa9f7234916a，header=28c0520df7a9c3932fff32e0c9a8f4a0bb6eba08bdbcecd404f05103ae031d59。D47 tool=71b5e2eb0cd0626179b1b459bb02977913f43b11dcd4ba293fff9908af72cd44，test=cb76c720e43fc8503e3c961ee91b5d29ea8e296ef789847f5aecab11198b788b。D47 IMPLEMENTATION=185a31a6615b676055e26c6f1916627fea8542bcbf82d9a271d40881bc142651。
+
+D45 result=0d9dbf01b21510216df648d323c501166a039a5b45d44c93d2699b8eabc4e8de，binding=bb0fbb8b9942e2b9ca5dbecf9a53ac1f13f38d40c7bbb574d5a438506d00cff8，D30原46例和原D18库/flags继续冻结。可调用固定D47 preflight-v2一次取得完整11727锁，再加入新测量源/计划/审查/实施的显式pins；每个冲突SHA拒绝，末尾独立fresh读盘hash，不删除原domain或语义校验。正式输出只使用新 `/tmp/audio-fe-device-current-measurement-d48-20261013`。
+
+数据仍development-and-synthetic-engineering/adaptive reuse；32已查看field、12合成return及repeat/future，repeat不是独立样本，future不评分。80/100为用户确认音量；真人标签、麦克风映射、运动实际条件不足时保持unknown。不得将已看partial结果改称blind，也不得使用partial做参数选择。
+
+## 适配器验收与完整测量
+
+先验证适配器测量契约，再生成新的完整184路/505944帧回放。适配器验收包括：静态差异审查原observe语句，仅允许明确的旧映射性质分离；对D47已通过16例保存输出只读运行原observe与新适配器，所有公共统计/波形/控制字段逐值相同，不重跑DSP；对第17例验证monitor输出与原基线exact、当前floor上界反例被准确报告且通用检查仍通过。负例必须覆盖被篡改六项状态、保护边界/warmup、monitor raised、门控/原NS统计、波形/limiter/坐标等，保证没有因移除旧专有上界而删除通用检查。适配器完成后fresh独立源码/测试审查，冻结新IMPLEMENTATION及排他控制，再唯一执行新root。
+
+保持原monitor四输出与D45 byteexact、候选bypass exact、两模式旧NS/RES/过去模型状态exact，只有冻结D47映射的floor派生值和候选自然下游输出可变。原25列snapshot和21列power合同、七输出repeat、通知前1247帧future-prefix、4future不评分全部保持。
+
+独立审计不import候选测量helper、不DSP，复算960组whole/fixed波形统计、160点OLA alignment、两臂24near误差中位<=-3dB且至少18改善、72no-near固定窗final最大增量<=+1dB和4pure-echo whole最大<=+1dB。调用原development_admission须保持字节和输入measurement含义；新诊断字段不进入评分。RMS容差1e-10dB、float exact、double汇总max(1e-24,1e-12*abs(expected))、expected0严格0保持。新复数H/prediction/J/P/floor及组合gain独立复算，snapshot覆盖单列，完整全帧FFT/EMA/noise重建仍false。
+
+单命令120秒、正式矩阵1800秒、独立全量审计1800秒、scoped22000B、observer26728B、measurement<=65536B且加D30 71224B<=131072B、单工件4MiB/root1536MiB/free>=3GiB保持，不能遇失败放宽。旧成功C定向检查不重跑；新正式编译/自检仅为新结果绑定执行身份，不替代旧证据。
+
+## 结果、边界与流程
+
+D48结果measurement_only=true、shipping_algorithm_changed=false、promotion_allowed=false、shipping_approved=false。完整合同成立时decision=MEASUREMENT_CONTRACT_VERIFIED_NO_PROMOTION，单列原开发准入accepted或rejected作为诊断结果；不能产生算法候选批准。数值/身份/测量失败为MEASUREMENT_INVALID_REPLAN并保留，不在同root重放。独立完整声学验证后的算法选择或集成必须另有获审查的实验/交付身份，不能以本轮measurement修复直接放行。
+
+scope_write只允许新D48 PLAN/PLAN_REVIEW/IMPLEMENTATION/RESULT/REVIEW/HANDOFF/AMENDMENT/CLOSEOUT、tools.codex_assets/device_current_measurement.py及新对应test、新排他/tmp控制和最终README追加。D0–47源/结果/失败/裁判只读，产品默认/API/ABI、设备、运行配置和外部写不授权。D47失败独立回读及Runtime终态处理完成后才登记D48；不得遗失旧任务或冒称旧任务成功。流程：独立计划审查→新任务/CP1→适配器/正反例→fresh实施及writer审查→唯一矩阵→独立审计→整批失败/成功证据审查→封存与本地收口。Provider route unresolved保持NEEDS_REVIEW，无归档成功声明。

@@ -1,0 +1,13 @@
+# D24 执行前观测标签澄清
+
+日期2026-10-11；原冻结合同SHA256 264ddb76bd79096982d7fa1578b549a3fbb7039eccbcd78014d6cc0380adbc92保持原字节。
+发现P2末段“激活前四旁路trace按标签解释”的数量措辞错误：新增四trace包含两个primary和两个shadow。
+正确合同为：primary_echo/primary_residual始终是真实原状态输出；只有shadow_echo/shadow_residual在激活前全0，须结合active0解释。
+primary全量等价D22、shadow激活后等价D23以及选择器规则均不变；没有新效果阈值、参数、窗口或case变化。
+该澄清在首次编译/回放前提出，没有实际执行失败；工具实施与原计划的primary等价条款一致。
+本澄清须独立复审并作为本轮source依赖起止绑定；只修正标签数量，不能把inactive零值当有效残差。
+
+独立实施审查另发现MINOR-1：wrapper先开五个额外输出文件，再委托D22校验完整shape/offset/mode，会使非法参数在exit2前截断已有输出。
+执行前修复为打开任何文件前完整校验冻结参数及组合，正常17例不变；原D22源码保持原字节。
+增加实际完整arity shape/offset/mode/组合四拒绝负例，五预置sentinel逐byte不变、处理计数实际0；作为编译后/正式回放前门禁。
+这是静态审查finding修复，尚无首次工程运行或失败；execution_retry_used=0，review_finding_count=1，必须fresh复审闭合。

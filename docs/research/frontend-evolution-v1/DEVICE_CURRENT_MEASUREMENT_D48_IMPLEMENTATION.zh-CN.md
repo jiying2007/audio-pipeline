@@ -1,0 +1,41 @@
+# D48 测量适配实施与正式执行前证据
+
+2026-10-13。experiment=FE_DEVICE_CURRENT_MEASUREMENT_D48，measurement-contract-repair。冻结D47算法不变，仅修复测量契约。完整新工具已实现，正式184路矩阵及960组独立审计尚未执行；本文本身不批准正式执行、算法候选或产品。
+
+## 源码身份与精确继承
+
+tool `tools/codex_assets/device_current_measurement.py` SHA256=27b5ae3e00d9e74e2cbbc1c8b37a185119d493e295243236ff1b1e936a6c3fed；test `tests/validation/frontend_evolution/test_device_current_measurement.py` SHA256=4f9a5a536bdb699119d72ef62c5b3691611bf91c7b08d0596ac6376010bc5c85。
+
+算法继续使用D47 C=ca1ba081b344e6554473328510fbaf15c56d9b2657dee06b9ce9b5d7f328b733、NS=8dd2db9027d972aac3f6ea7f75a8bbd84c9e8c2eef6b0ab09b24aa9f7234916a、header=28c0520df7a9c3932fff32e0c9a8f4a0bb6eba08bdbcecd404f05103ae031d59。D47 tool71b5e2eb和testcb76c720继续固定身份，原D42裁判a6c5b230保持字节。
+
+适配器旧草稿模块完整字节保存到 `/tmp/audio-device-d48-observe-draft-v1-source.py`，SHA256=aaa135292a42de9818938007f3575661d47535cb62cb71d0b73de8b449d8c18f；原测试保存到 `/tmp/audio-device-d48-observe-draft-v1-test.py`，SHA256=9e7763f1984fe9c800746faa2032ab8b543218688f2325a295139d998168561a。主b4948e/d86c05实际确认byteexact。备份只保留历史身份，不能执行或作为漂移fallback。
+
+独立源码对照dca86a确认当前observe及common_observation与已通过对等/负例的草稿完整函数正文逐字相同。模块新增导入和preflight/run/CLI改变整文件SHA，历史回执仍绑定历史AAA版本，不能说其源SHA等于当前整文件。旧Path导入遗漏是独立静态MAJOR发现，实际return运行前已修复；没有虚构运行NameError。
+
+## 定向与篡改实际结果
+
+原唯一parity回执902ec0a5fc66a47c186e253d7846f8f45035b982c22b9a94d595ddf27e7355f6，47.765931472秒<120，16个D47公共字段与旧observe逐值一致，另一个D45真实保存return-echo合成fixture逐值一致并实际走Path/known-near-error分支。第17例旧拒绝保留，新历史诊断报告50帧、最大均值差0.16372198941990557；237消费输入路径起止一致。独立回读PASS，范围不包含近端非零条件或算法收益。
+
+新隔离negative控制 `/tmp/audio-device-d48-negative-v1.py` SHA256=7f0d454d804ce01d1c1cd35925172e60f81f523514cd476d8a267ec44bfdab9e经独立静态PASS后主唯一执行。session1088 terminal0/chunkc9ec0d，18.086488755秒<120；回执436216ea12a2a62c11ac2bf66de59d15f6b54137fb1247fcae5ba7173b457ce7，intent333355d9551b295a9df0977a9fe2600fdc5860bdaed89eae434cb9bde98050e5。24项保护状态、范围/finite/warmup/monitor、控制gate/普通NS/probability/VAD/gain/finite、bypass/NS/final与limiter、统计坐标篡改均按指定ValueError准确拒绝；不是只检查任意异常。
+
+独立实际回读确认24个夹具只变目标文件，坐标项只改私有case副本且五文件不变，范围差异0。120个fixture文件共148527738B，普通文件/非symlink且单文件及root预算满足，旧输入起止一致，精确worker进程为空。无DSP或原数据写。历史producer不重跑；结果状态只为NEGATIVES_PASS_PENDING_FULL_IMPLEMENTATION。
+
+新增CLI/root/readonly测试后，主533400实际5项exit0/.062秒；独立7ba6ea非仓cwd=/tmp实际5项exit0/.060秒，禁写bytecode。明确拒绝无--run输出、非固定/既有/间接root；默认和--dry-run不能调用run，所有分支全局依赖及原统计AST和公共字段schema保持。没有用窄测试代替正式回放。
+
+## 完整入口与实际预检
+
+新preflight先pin五个D47源，再调用其固定受审preflight，保留完整11727输入域及原PCM/gate/near语义检查；加入15个固定阶段/历史证据pins及当前tool/test，冲突SHA拒绝。正式run末尾仍对每个锁定路径fresh读盘hash，start缓存不用于end。
+
+新run是受审D47执行链显式副本，仅改新root、调用新observe和monitor六公共字段投影、helper命名前缀、新measurement identity/decision。原编译/自检/非法sentinel、调用和资源计数、monitor四输出、candidate bypass、原state/bin/power投影、mode controls、七输出repeat及1247帧future前缀、184/505944覆盖、磁盘/矩阵预算、末尾guard均保持。没有调用旧d42.observe，也没有将旧单调True写入当前结果。
+
+实际非仓help chunkabdb19 exit0。新deepdry控制 `/tmp/audio-device-d48-deepdry-v1.py` SHA256=1dbb3b267921465d1bd0ee8fa96c21d690a8b50d38baa8ae27bef18a3dae0a80经独立静态PASS后唯一执行，session72867 terminal0/chunk6a1d31。63.945382092秒<120，实际46 cases/11744 locks、measurement_only=true、writes/DSP/promotion/shipping均false，childterminal及source起止一致、正式root缺失。回执5c853e8a3a23d47eb7b898355605a21b8b7a73f2682941c49f06da195abe8e67，intent3ca334489902f79abb56a520c1d6eb0480b7bc8620c945012aa44dbb919ac438。本文写入时新deepdry实际独立回读待确认，不从本文自批准。
+
+## 正式门禁、预算和结果边界
+
+固定新root=/tmp/audio-fe-device-current-measurement-d48-20261013，必须不存在且非symlink。本文及新排他正式writer须fresh独立审查并锁source/docs/定向证据，登记verified实施检查点后才唯一执行；已有D47root、失败、source和全部历史回执只读，不重放。
+
+原development_admission函数字节保持，原两臂24near中位<=-3dB且18改善、72no-near最大<=+1dB、4pure-echo whole最大<=+1dB、160点alignment、全部960组统计与数值容差保持。D48只给MEASUREMENT_CONTRACT_VERIFIED_NO_PROMOTION，measurement_only=true、algorithm_basis=D47、integration_changed=false、shipping_algorithm_changed=false、promotion/shipping均false；原accepted/rejected是单独诊断，不批准算法。
+
+单命令120秒、正式矩阵1800秒、独立全量审计1800秒、scoped22000B/observer26728B/measurement<=65536B且加71224B<=131072B、4MiB单文件/1536MiB总量/启动3GiB free保持。完整独立审计不import候选测量helper、不DSP，分别验证960组旧评分和保存snapshot复数H/J/P/floor/postmax/current三诊断及控制传播；不冒称全帧FFT/完整EMA/noise历史重建。新审计草稿在准备，尚未运行或批准。
+
+当前task-fe8e96504fd58d9d71dd496b active/open3/CP2 verified，仍缺result/review/build/repo完成证据；总体native目标active、无预算。Provider route unresolved保持NEEDS_REVIEW，本轮检索provisional llm-agent条目不作音频事实，不声称归档成功；无commit/push/发布/设备写，真人/目标板/HIL/E001/72小时PQ另行验收。

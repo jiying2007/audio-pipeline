@@ -1,0 +1,37 @@
+# D49 正式执行前独立实现与控制审查
+
+2026-10-15；experiment=FE_DEVICE_MAGNITUDE_LOWER_BOUND_D49；claimant=root；verifier=device_capture_independent_review。本记录为执行前审查，正式矩阵尚未运行，尚无正式result/binding或独立960组数值审计，不证明候选效果。
+
+精确双向绑定锚点：
+
+controller_sha256=dc1ec206b1595936e560ef0de4a5cfe3c9358d9867fedd1146f209d5dc7ce456
+
+implementation_sha256=306ab9cda1bf5c42affcc530eaab956187d1232c47753c9433a8ec66a0533247
+
+合同为原PLAN `e8ffa4a9db2165b80f036c4791fdf1af6b7ca5215a7cc2daec47d8e8d2cbb119`、AMENDMENT `9e7ddaa0e82d434f3d2addc631d878562c35719a21bb03e98dcf7a810ec87a65` 和独立PLAN_REVIEW `772cfe8f5328eee065fcb47ccf0d13b19c750c0ca9eb262d68569e8576d0d06d`；原冻结字节未改。
+
+## 实现与实际前置证据
+
+已静态检查D49 header/C/NS与D47的差异。唯一保护结构变化为原J改为幅度下界L，同时用于严格2N门控和归一化；合法负d直接产生正零，原P/J/valid/overshoot及21power/25bins语义保持。NS的状态、noise更新、RES与post-NS位置未引入新反馈。数学下界不等于真实近端真值，未增加跨算法浮点单调硬门禁。
+
+新matrix直接消费冻结D48 observe/common_observation及原D42 development_admission；新baseline_trace要求原current P/J/overshoot逐行exact，保留monitor四输出、candidate bypass、mode状态、七输出repeat/future与全部原窗口。D48真实measurement-only decision及两臂accepted=false得到明确核验。内部13687锁继承原11744语义输入、1884工件和完整13671快照，新增外层实施/执行证据另锁；最终audit/snapshot必须冲突拒绝地合并两层，不能把内层计数冒称全部新阶段闭包。
+
+已独立只读附核以下实际产物，未重跑producer：
+
+- 私有编译/自检/非法参数三child实际0/0/2，terminaltrue且无timeout，receipt `930ff37d927d11862411d8a2739d00611a9c5b1224a0584e8341319d2a916019`、intent `9e0f47e10d0aaefade22d011dad684ce6a38664f9e970be7d8db742c7d9ee538`，来源11项起止一致；runner `053b5201657075098d2814d7559c72b8fbf36b466ae9b9f5a0722d7c313bed1e`。
+- 唯一deepdry实际0、44.30301367864013秒、46cases/13687locks/noDSP/no writes，receipt `cea8c55128a0e53e74047cfed61834935a431dd7724caf1a7f0a6c42946ea2fb`、intent `a36f4017d76c0439e6bd25b55178e714827ebb0cb376cc1e506a528721a9ee48`，来源起止一致、正式根未创建。
+- 唯一14项非法输入验证实际PASS、0.8917173333466053秒，receipt `4acba9868da43e1537bacb36677c48bad4e0413ca5853b033a3bc5e7cb72f9e7`、intent `370c09f7c1eb1d48ad89e82e7475c06bc13544ea6e16810dc6111fad0795023d`。7变体×empty/sentinel，实际命令/预期2或4退出/终态及14目录前后SHA均已核，当前91fixture文件匹配。
+
+主代理报告的新matrix八项单测及非仓help是主代理实际证据；本verifier未独立重跑，不混同独立数值审计。先前执行前发现的子命令异常证据/进程组回收MINOR和deepdry末120秒成功断言MINOR均在实际执行前修复并复审闭合；没有据此制造运行失败。IMPLEMENTATION中negative独立附核待返回属于写入时态，现已由上述实际回读完成。
+
+## 唯一正式控制
+
+已完整静态读取上述controller。当前20项固定pins均实际匹配；本审查SHA作为显式CLI参数加入第21项，文档内两锚点与controller/IMPLEMENTATION互相绑定，避免hash循环。控制要求当前固定thread/task、fresh policy gate_allowed且maintenance=false，以及CP4verified绑定本实施与审查摘要，才写排他intent并启动新正式根。审查时root/intent/receipt均不存在且非symlink，未将尚待登记CP4写成已完成。
+
+外层Popen独立进程组，1795秒观察加总1800内清理，5秒communicate仅观察同child；进度仅来自实际D49_CASE_PASS输出。超时/启动失败保存真实PID/exit/terminal/部分输出，未知不重放。成功还需184/505944、固定metadata、13687输入/1884工件、runner与来源末SHA、总1800成功断言；算法拒绝按原accepted解释保留，不要求绿色效果。终态状态明确pending independent audit，不自批声学。
+
+## 独立结论与剩余边界
+
+**执行前 Spec PASS / Quality PASS / Reviewer Independence PASS；unresolved 0。** 条件放行上述固定controller唯一一次正式矩阵：主代理须先实际完成CP4并绑定本记录精确SHA，再由脚本执行fresh policy及排他守卫。当前不声明矩阵已执行或通过。
+
+真实终态后仍需独立重算全部960组评分、原两臂24/72/4准入、AGC/VAD binary32与snapshot原H/P/J及新L/floor/postmax；完整FFT/全帧bin/EMA/noise历史独立重建仍false。预算、容差和数据角色不变。最终whole/snapshot/本地收口另验；任何开发准入结果均不等于shipping或产品批准，总体native目标保持active，Provider unresolved/NEEDS_REVIEW不构成归档成功。此次仅只读现有证据并新增本记录，未执行测试/DSP/Runtime写入，未修改旧源、README或其他dirty文件。

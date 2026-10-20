@@ -1,0 +1,59 @@
+# D32 独立审查与最终复验
+
+日期2026-10-11；experiment=FE_DEVICE_CAUSAL_GUARD_D32；claimant=root；verifier=device_capture_independent_review。
+primary=adk-planning-execution-loop；supporting=adk-verification-before-completion。
+最终whole-change Spec PASS、Quality PASS、Reviewer Independence=independent、unresolved findings=0。
+实际测量/负结果证据通过；候选CAUSAL_GUARD_DEVELOPMENT_REJECTED，不批准产品晋升，总体native目标active。
+
+## 计划、实现与失败保留
+
+原PLAN SHA256=0e808bd69b2dcbfe443fa8f887d7644ed05eef5a6ec41549160ed2b786f1ea18，计划独立审查通过；冻结一个上一帧primary因果反馈候选，不扫描参数或改裁判。
+AMEND SHA256=70e0ccfe4e1b1338a21ae375eb47919d6c4df241df7b6ebaae0301ad85a70cd1保留三个执行前问题：严格预编译第0次exit1、实施MAJOR-1漏导入f32的独立NameError、原wrapper dry-run exit2。
+严格预编译仅修正声明分行；原C可还原快照SHA256=a3855f79ccc2d1a44fcd0f6e549ef4b9dce5eded7363772db6f7429fbad24b4a。
+f32导入及完整observe解析测试修正后四tests通过；原工具可还原快照SHA256=1dab34a219e4eebbe05e4591bfb9606171fd3c18b9ee26cf121b4b77f0d4e081。
+首次wrapper错传仓根，intake依法拒绝extra/missing集合；canonical119个采集文件集合与全部哈希实际不变。新wrapper只传tests/audio，独立fresh调用审查通过。
+修复后实施与调用fresh PASS才开始主矩阵；原失败回执不覆盖，不称整轮零失败。预编译retry1/2、wrapper参数修正一次；实际主DSP重跑0、独立audit retry0。
+最终tool/C/header/tests SHA256分别为5bf0fccd49746ac367fe9f5bc226ecd6b9c4278a63008ba9c8c4c5ba5d0fa586 / 5000d720e271b8b788841976bb057257e89bff88ed0315670cb74043a92b967f / 6d27ee58da37da63f74ee45c26fbc97a339baf7525d25e5287d6e05a7e15c998 / ddc0d4abb85e3e553f6e29deb943eae7a5349c4e1aef3a9be1f78594617bbdfa。
+
+## 主测量与独立数值审计
+
+接受根=/tmp/audio-fe-device-causal-guard-d32-20261011。
+result/binding SHA256=a9e8d6f1120c420361d10daae103f207679638439da4ff65d01fa621af8b477a / d6a49352c331734bd4015b2c2e56ba3fa0a1f4c36a957b968566ae0d03ce80fe。
+attempt1 wrapper四份真实回执均exit0；非仓help、dry-run、四tests通过，dry根未创建；主compile/self-test通过。
+92次真实C/252972帧；两模式各46例，monitor原12输出全部byteeqD30，repeat各13输出全量byteeq，future各13通知前前缀byteeq且不评分。
+primary/Activity/observer/selector/transition各252972次，shadow89128次、reset60次、mixed177920、switch556；资源71264B，新增guard40B，原B0超限保持。
+独立stdlib audit不import项目helper、不重跑C/DSP，首次真实terminal exit0，elapsed283.153s。
+audit脚本/回执SHA256=50c096cf9d9fcca2c3941f4f10cf8463d2056d9509a4adf30d67a2b062cbf09c / 2b5cd9120eba8c66cc300c53083d16902a8691b18a793f9d712197cc13df81e0。
+6480次起止hash核验、92case/252972frames、736trace/323804160个Float32样本；原480窗及480delta全量重算。
+独立Activity Float32逐运算、previous-primary guard/arming/hold、selector/transition及selected样本核验；guard/selector/transition差异0，代数最大abs2.2351741790771484e-08，score最大abs1.4210854715202004e-14，delta0。
+monitor552个原文件eq、repeat26/future26控制成立；near真值只在事后由near trace重建，8near/4echo/32field角色一致。
+独立重判near coverage、纯echo误保护、原return error三项FAIL；静态near onset与field switch两项PASS；REJECTED保持，不以局部静态收益覆盖ABA恢复退化。
+独立附核四来源disclosure全部连续区间与16抽样状态行。未改变窗口或添加声学资格。
+
+## 输出保护、whole-change与文档修复
+
+root实际执行三类工具输出保护负例均exit2，D30完整679文件及D32完整1364文件manifest实际比较保持；回执SHA256=ddbb2ae3c0ddb7f94d2eef8dc03734c91dc444cd59043fa0ce95de97261d9d24。
+verifier检查负例脚本/回执与计数，不宣称独立重建历史manifest或重跑负例。argc及五非法参数实际拒绝、13sentinel保持、DSP/Activity/observer调用0。
+v1 snapshot SHA256=aaa83f218e465977252c5be13159cb9d912f8af307d6eb0177d83444cf9ebcca，40项当时一致；首whole-change发现MINOR-1，把1200路径返回误称第二次通知，Quality不通过。
+原RESULT可还原base64/hash保留于/tmp/audio-device-d32-result-attempt0-source.json；只修正文案，不改变主工件、算法、评分或验收。
+实际每例唯一notify1000/reset1；1200是路径返回而非第二通知；disclosure历史notification_states字段表示抽样状态行。
+v2 snapshot SHA256=2f56976df38cc1b553e3ad89641563e52df4f56060b5190ef1d13af0e7060f81，46项开始/结束当前字节一致；v1原绑定仅RESULT改变，其他不变。
+原docs self-test/docs/git diff三检查及修正文档后的docs/git diff两检查均真实exit0；无DSP/audit重跑。
+fresh whole-change关闭MINOR-1、Spec/Quality PASS、unresolved0；本REVIEW完成后finalcheck绑定本文件当前hash，再独立附核收口。
+新closeout-v2 wrapper不在46项快照内，已独立附核源码；SHA256=271928e8ae516eb6d50b2b23bee2558a9e80ca54dd56390e4b89303500a7d629，Runtime每回执绑定writer hash。
+原closeout wrapper保留未执行；v2仅选择正确快照并记录writer identity，Runtime仍仅闭合本地D32里程碑。
+
+## Codify Decision与后续边界
+
+delivery_goal=验证多特征因果near保护在保持路径恢复条件下是否可用；结果为完整保留的开发候选拒绝。
+reusable_pattern=原Activity不改、monitor严格复现、previous-primary控制与事后near标签分离、重复/未来控制、独立逐帧与原窗复算。
+affected_asset=独立研究C/header/tool/tests/中文入口，无公共API或产品default改变。
+promotion_candidate=false；do_not_promote_reason=路径变化误保护、near遗漏、恢复error显著增加，缺独立真人/目标资格。
+next_task_friction_reduced=后续无需猜测三特征反馈是否区分路径与near，已有恢复失败、长持续保护与唯一通知身份。
+reduced_by=92次冻结候选执行及独立6480hash/252972帧复算；reduction_evidence=result/binding/audit/disclosure/负例/v1-v2快照与失败保留。
+owner_review=无产品owner批准；rollback_path=停用feedback入口，monitor与原D30保持一致，保留旧库/工件与用户dirty。
+verification_evidence=计划/实施/fresh调用审查、实际92C、负例、独立audit、whole-change文档修复复审及REVIEW后复验。
+下一因果假设须独立冻结路径/适配可信度的失效条件，不能把D32历史armed当路径真值；保持本轮失败，禁止改阈值或裁判追绿。
+double研究观察、局部128KiB预算和Host执行不认证SSC305总RSS/栈、CPU/热/功耗或真人声学。
+AISpeech产品链、完整NS/RES/AGC/VAD/KWS、真人near、HIL/E001/PQ及owner资格分别未闭合；Provider route unresolved/current为空，知识线NEEDS_REVIEW，无正式归档。
+无commit/push/PR/merge/发布/设备写；Runtime final只代表本地conformance，不表示domain/产品放行。总体native优化目标保持active。

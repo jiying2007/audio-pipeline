@@ -1,0 +1,29 @@
+# D41 独立最终审查
+
+2026-10-11，experiment=FE_DEVICE_SPECTRAL_PROTECTION_D41，claimant=root，verifier=device_capture_independent_review。fresh whole-change Spec PASS / Quality PASS，Reviewer Independence=independent，unresolved=0。结论覆盖本轮实施、执行、独立工程测量及拒绝结果披露；Candidate=SPECTRAL_PROTECTION_DEVELOPMENT_REJECTED，promotion_allowed=false，shipping_approved=false。本地Runtime收口另行核验，总体目标“全面推进优化迭代”保持active。
+
+## 冻结契约与实际执行
+
+原PLAN及执行前AMENDMENT保持；原“所有无near窗及其whole”的集合歧义QUESTION1由AMENDMENT明确24near/72no-near fixed及四个全轨迹纯echowhole，独立复审关闭，未改门槛。first-party NS fork只添加过去帧频带创新target下限，新符号编译；D18原库、原AEC/Activity、ordinary NS、AGC/VAD与原frequency gate不变。完整fork差异、C/header/tool/tests、唯一主wrapper及维护控制均分别独立审查通过。
+
+正式主session93203真实terminalexit0，279.56960721872747s，184执行/505944帧。result SHA256=`38d6f5eab2e3c3f6c8d9bea66f267015f7f02cde5ce73e5f3db29d32c1e3ce47`，binding SHA256=`a61625805a15ac877724064c1777bd2681751b1398b4cb86f1d206d35160a35f`。fresh whole review重新核3001来源/依赖锁及1510主工件hash全部相同；compile/self-test exit0，非法argc/frames/mode各exit2、非法gates exit4，保留原sentinel。14项定向测试此前真实通过，不为收口无意义复跑。
+
+## 独立复算证据
+
+独立audit脚本SHA256=`9246e33722ba66e9b4f097dc2ca12a82d157515ff015a86d543473e4a90b332c`，唯一首次session52581真实terminalexit0/PASS，491.47727013379335s，retry0；回执SHA256=`93ee3a4a26426bc65db01802d5b370e23dfd249abe0f77ced4fade56b90200fe`，intent SHA256=`4ac81839b0baa0c82fe2c98eeeae274cedc13ab3a38abf6646c3da3377c4310a`。不import测量helper、不重跑DSP；184执行/505944帧/552PCM/80951040个AGC输出sample，AGC/VAD binary32 exact，960测量组/2880stage/1296已知near/960个D39差值全复算，RMS最大误差0 dB、peak exact。4512合并路径起止锁一致。
+
+92个monitor四原输出D39 byteexact，64个两模式inactive整例控制相同，505944帧普通NS统计exact，保护count/warmup/inactive全帧核验，92个observer配对除raised_bins外exact。五输出repeat和future前缀通过，四个future measurement/differences保持null。NSFFT和实际全部bin EMA未独立重算，回执两字段false；已知答案及trace汇总不能扩大成这部分或声学/设备资格。
+
+独立描述审计真实exit0，0.984058303758502s，80组summary exact、384个near标签按原轨迹核验，回执SHA256=`6257806818f9b8389054da1d007ea5ef5371d654f331af2374dbcc93223c978f`。root实际负例session19895 terminal0，D30/仓库/D41三命令各exit2、完整manifest679/2531/1511起止相同，回执SHA256=`541a5459121e9e9782443256b1ef77b074e04cc393d65b5d40528f4c1b62ceda`；reviewer核回执和历史责任，没有冒称独立重跑。
+
+## 决策与收口边界
+
+独立按实际near波形重判每candidatearm的24/72/4集合及准入，与主结果精确相同：两臂near误差中位约-5.1508 dB、各20/24改善满足，但无near固定窗最大增加16.5907 dB、纯echo整例最大增加2.1732/2.1080 dB超过冻结1 dB门槛，故拒绝。测量PASS不批准候选。静态A纯echo末窗负结果披露；归一化创新缺绝对量和残余来源约束是待研究问题，不声称已证明唯一根因。现场无near真值，能量差值不改写为真人效果。
+
+当前独立核验RESULT SHA256=`751ad73482fb9b2470879b89cc7da6961e808de42dbe9e064c5a3091fece4081`、README SHA256=`4f28e44191554cc503c2cc358a62596e2eb84bddb1daa33628bae2949cc9a274`。旧D40/D39 README快照仅代表历史身份，不覆写；D41 HANDOFF/IMPLEMENTATION的历史绑定保持。
+
+finalchecks.py SHA256=`f4e0ffebb3d889fb9cbde60a75a6fbfcfe914bdc5b9df5f6674a0217b7009285`，freeze.py SHA256=`f3b5627b0ad059b90acf2bbe878d7a20e47acf6360b08b14a83f53cedd931a1c`，closeout.py SHA256=`6080e39a14269ba030ddcf640f66004c5cb0311dec006af5844999d455c900dc`均经独立控制审查；排他intent、异常真实回执、未知结果对账不重发、固定task和revision预期保持。
+
+顺序为本REVIEW读回→实际docs/diff finalchecks→唯一freeze→独立current全部锁readback→唯一14项localcloseout→独立终态对账。后续真实终态另写新CLOSEOUT，不改snapshot内文件。此前长执行后的heartbeat-stale由一次真实heartbeat恢复，未当作测量进展；真正进展由主矩阵和全量审计终态证明。Runtime只证明本地conformance，不代替产品验收。
+
+scoped下游22000 B+D30原71224 B=93224 B满足本轮预算，B0 50000 B仍未满足。Provider route unresolved/知识NEEDS_REVIEW，未声明归档成功；AISpeech固定点/QIVW集成、真人识别、目标CPU/RAM/功耗/HIL、owner和shipping分别待证。

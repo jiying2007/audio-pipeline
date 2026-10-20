@@ -1,0 +1,21 @@
+# D40 独立最终审查
+
+2026-10-11，experiment=FE_DEVICE_FREQUENCY_ABLATION_D40，claimant=root，verifier=device_capture_independent_review。whole-change Spec PASS / Quality PASS，Reviewer Independence=independent，unresolved=0。结论仅覆盖本轮研究执行、独立工程测量与披露；local Runtime 收口另行实际核验，总体“全面推进优化迭代”保持active。
+
+## 实际证据
+
+正式主矩阵 session81803 terminalexit0，138.29805134236813s，92次新执行。result SHA256=`333d6a42b9dfc96f527f76e99ec177ab8a8407389cc1dfad3e02a86127e7d3e6`，binding SHA256=`ea98a23e0cb66d390b0b94a36634a6e1d80937725a5e7b0619613e3f9e6a4f4f`。唯一全帧enable_frequency_res 1→0，D39/D30及D18原库锁定；未改变数据角色、门槛、时间预算、ordinary NS、Activity gates、AGC/VAD或AEC。
+
+首次独立audit session55409真实terminalexit0，retry0，201.74540446605533s；回执SHA256=`7a2f65155692ee2a2ede70181efd7e7b893d14996900e15f84d35dc10d4d2e98`。独立实现不import测量helper、不复跑DSP，覆盖92执行/252972帧/276PCM/40475520个AGC输出sample，AGC/VAD binary32exact；480测量组/1440stage/648已知near/480个D39同坐标差值全部复核，RMS最大误差0dB。2993合并路径起止锁一致，252972帧普通NS两字段exact，32个整例inactive控制四输出exact，repeat/future前缀相同，两个future不评分。NSFFT未独立重算，边界保留。
+
+独立描述审计实际exit0，40组summary exact，192个near标签按真实轨迹核对。已有根负例root实际session13134 terminal0，D30/仓/D40三次exit2及完整manifest equal，由reviewer只读核验，未冒称独立rerun。实现中matrix预算边界MINOR1修复并复审关闭，当前9项定向测试通过；没有未解决发现。不能拿C自测替代完整NS测量。
+
+## 结论审查和收口身份
+
+含near合成固定窗口配对误差中位约-6.1926dB，final对bypass误差中位仍+1.9293dB；无near窗口残余能量中位增加+16.7177dB且72/72退化。现场能量没有near真值，不解释为真人质量收益。全局关闭产品RES不推荐，固定NO_PROMOTION/promotion_allowed=false/shipping_approved=false。
+
+当前独立核验RESULT SHA256=`1a9b1eca0c0df12fb608d6a51b2ea8bc2935abd26d2a34c3df95f5cd6e8419c2`、README SHA256=`e3d0f4d7dff68fc1ecf49079e6866b82f85f2d3494434618817848f500a167ca`。旧D39 README快照条目只代表其历史身份，保持原快照，不覆写。
+
+一次性closeout.py SHA256=`7035b9d1b4d6c42568d6982c897d5f14307a750812d7480cfe921d08e62968c1`；freeze.py SHA256=`33dc459d4c743e2f56cfbab13f13372ddf2ab1e31c109cec40f328b69ae38964`；finalchecks.py SHA256=`97deef4aabff483ecb07319d8d0f50fe24a860cf053db597f33c85b84148da75`。均经独立审查，无阻塞发现：finalchecks绑定本REVIEW；freeze独占记录当前文件；closeout仅固定D40 localtask、核snapshot/REVIEW与实际检查，逐操作排他intent/真实回执，异常保留null exit、禁止重放。
+
+顺序为实际finalchecks→生成一次最终snapshot→独立current全部锁readback→14项localcloseout→独立终态对账；后续终态写新CLOSEOUT，不修改snapshot内文件。Provider仍NEEDS_REVIEW，无归档成功声明。目标板、真人识别、owner、shipping和总体优化完成分别待证。

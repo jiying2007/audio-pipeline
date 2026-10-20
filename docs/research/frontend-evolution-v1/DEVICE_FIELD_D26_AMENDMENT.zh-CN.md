@@ -1,0 +1,9 @@
+# D26 执行前状态测量字段修复
+
+日期2026-10-11；原PLAN SHA256 9bd6b907156b7a10bd9ca5365cc671a69f6fa98d2dff6eb5559712e7182d52ac保持原字节。
+实施独立审查MAJOR-1：Python误导入D19 control的9列FIELDS校验新C实际写出的D22式8列primary state.csv。
+若执行，正确状态文件也会被拒绝；此缺陷在首次编译/DSP前由独立静态审查发现，尚无工程运行或失败工件。
+修复为从冻结device_path导入明确STATE_FIELDS，并把状态读取/范围校验抽成read_state；control仍用原D19 controls校验。
+新增定向已知schema正例及control-schema误用拒绝负例；其余4tests保留，总数5。
+本修复不改变C、输入/参考/gates/事件时间、selector、范围/阈值或验收逐byte要求；AMEND纳入source起止绑定。
+必须fresh实施复审及后续真实工件审计闭合；review_finding_count=1，execution_retry_used=0。

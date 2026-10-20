@@ -1,0 +1,9 @@
+diff --git a/src/sync/ap_sync.c b/src/sync/ap_sync.c
+--- a/src/sync/ap_sync.c
++++ b/src/sync/ap_sync.c
+@@ -276,0 +277,5 @@
++            if (ap_sync_route_history_score(s, sample_rate_hz, frame_samples,
++                                            max_delay, best_delay) < AP_SYNC_MIN_CORRELATION_SQUARED) {
++                event->delay_observed = 0u;
++                return;
++            }

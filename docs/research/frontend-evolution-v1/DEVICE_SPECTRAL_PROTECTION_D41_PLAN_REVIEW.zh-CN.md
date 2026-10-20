@@ -1,0 +1,9 @@
+# D41 计划独立复审
+
+2026-10-11，Spec PASS / Quality PASS，Reviewer Independence=independent，unresolved=0。claimant=root，verifier=device_capture_independent_review。
+
+PLAN SHA256=9a2c4c84f422d0a6cb2e32c06412ada466dca49be0432e33c63051ee5038cb94；AMENDMENT SHA256=a6af0cfae5025aba8fdc92ad4904a232d98b872144d71f49ee0d133f63f25919。初审QUESTION1（纯echo whole准入集合歧义）已由执行前AMENDMENT闭合，原PLAN字节保持。每candidate arm独立24near/72no-near fixed和4枚举纯echo whole；repeat控制、future排除，完整960组测量保持。
+
+新保护读取旧EMA后再更新当前帧，inactive清新增状态；不反馈AEC/Activity，不输入near标签。原noise_tracker使用RES前power，ordinaryNS exact具实际source依据。有限float32 FFT分量转binary64的既定乘积可表达；新增非finite分量/状态须直接拒绝，不能靠clamp掩盖。NSFFT/全bin EMA未独立重算限制不阻止研究实施，也不能声明其全量数值或声学资格。
+
+可开始实施，首次主矩阵前必须fresh独立实施审查。此PASS仅计划合同可执行性，不是DSP运行或效果证据。开发拒绝/候选、measurementinvalid、NO_PROMOTION及目标板/真人/Provider/shipping边界保持。

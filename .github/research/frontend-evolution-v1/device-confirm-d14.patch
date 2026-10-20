@@ -1,0 +1,5 @@
+--- a/src/sync/ap_sync.c
++++ b/src/sync/ap_sync.c
+@@ -272 +272 @@
+-            if (!ap_sync_confirm_route_candidate(s, best_delay, coarse_step)) {
++            if (!ap_sync_confirm_route_candidate(s, best_delay, coarse_step / 2u ? coarse_step / 2u : 1u)) {

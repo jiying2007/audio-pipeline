@@ -1,0 +1,13 @@
+# D47 测量无效终止与后继接力
+
+2026-10-13。D47结果为MEASUREMENT_INVALID_REPLAN；本文件记录失败保全和本地任务终止，不记录实验通过、算法拒绝/接受或总体目标完成。
+
+失败RESULT SHA256=d5fffe95a58f65121053f7117aa65a5ee116e7a49b42770e4b0b47d8fe4a7ccc，独立REVIEW SHA256=c0707a4ddeeddf9e79033ef71e118b9478f1f56620e2b9f35bd8d649f63d950f。独立回读确认214 partial工件和16锁定证据起止一致、23条command/intent链一致、17条C回放成功但只有16测量案例通过、正式childexit2/终态、result/binding缺失、正式匹配进程为空。失败snapshot SHA256=361463948e6ac2fd872c6040c49d2ae0018da6f6e4a729229016de5f6aad7200保持；后续REVIEW与本CLOSEOUT另列文档身份，不追加到该历史snapshot。
+
+Runtime依次实际登记result/review/invalid-snapshot、progress5、CP5绑定失败RESULT verified、heartbeat，随后执行goal abort，全部命令exit0，events775–781。最后task-bfc3481a4f502887da1f244e状态aborted，completed_at=2026-10-13T03:34:57.833199Z，open_items仍3，artifacts为空；没有goal complete，没有伪造成功准入或清零未完成项。2026-10-13T03:35:05.593647Z policy反映goal-aborted/recommended_action=blocked，维护required=false；这是已终止D47任务的本地策略状态，需要获审新身份接续，不能继续原D47执行。native总体“全面推进优化迭代”实际仍active、无预算，不将其标为完成或blocked。
+
+后继计划DEVICE_CURRENT_MEASUREMENT_D48_PLAN.zh-CN.md SHA256=6c751db7cd1832e5aa0db958011f23c8ff5ca3bf4fb56ad0a102bc2ab51724ca已冻结，写入时独立计划审查正在进行，尚无D48任务登记、适配器或正式执行。它只修复测量契约与旧映射性质耦合，保持D47算法及原声学准入/容差/预算，先验适配器公共测量对等及负例，再新root完整矩阵和独立审计；测量修复本身不批准算法。计划失败或未通过时先修订明确的新补充身份，不隐式缩小验收范围。
+
+禁止重放D47正式root/intent/receipt、旧targeted FAIL或已成功C检查；没有存活的正式进程可等待。审计草稿58abbf0a尚未执行自测或正式audit。恢复先核fresh Runtime/Provider/remote与新计划审查，注册新D48只允许基于D47已终止及精确已审source/plan身份；不得从本地blocked推导总体无法推进。
+
+Provider route unresolved保持NEEDS_REVIEW，无成功归档；无commit/push/merge/release/设备写。真人效果、目标板/HIL/E001与至少72小时产品资格仍独立。本轮实质progress包括完整preflight-v2成功、实际正式失败、独立原因确认、失败封存和新测量契约计划；失败不是进度重述，也不是声学完成证明。

@@ -44,6 +44,12 @@ Product Certification 仍是更高一级的真实发货硬件证据。
 
 `scripts/ci_failure.py` 输出稳定机器分类，包括 build、ABI、unit、sanitizer、DSP quality、performance、resource、QEMU、HIL、XRUN、infra、evidence、security。
 
+Verify 使用 `aggregate --enforce` 同时生成门禁结论与失败回执，检查全部九个上游域，
+包括 `impact` 和 `hosted-real-smoke`。应执行的任务必须成功，未选中的任务必须实际
+跳过；选择元数据或任务结果缺失、格式错误时按证据无效处理。JSON 保存期望值、
+实际值与全部违例，先写回执，再按同一结论返回退出码。`--self-test` 覆盖 hosted
+单独失败、错误跳过或执行、取消、无效元数据，以及实际命令行的回执与退出码。
+
 声学 validation 失败时，`scripts/validation_reproducer.py` 保存精确输入、case JSON、metrics/failure 数据和复现入口，避免依赖人工阅读长日志。
 
 ## Flaky 与历史成熟度

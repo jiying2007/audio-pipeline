@@ -44,6 +44,15 @@ Product certification remains a still higher trust tier.
 
 `scripts/ci_failure.py` emits stable machine-readable build, ABI, unit, sanitizer, DSP-quality, performance, resource, QEMU, HIL, XRUN, infrastructure, evidence and security categories.
 
+Verify uses `aggregate --enforce` for both its decision and its failure receipt.
+It checks all nine upstream domains, including `impact` and `hosted-real-smoke`,
+against the explicit impact selection. Required jobs must succeed; unselected
+jobs must be skipped. Missing/malformed selection or result values fail closed
+as invalid evidence. The JSON includes expected/actual results and violations,
+and is written before the same decision determines the step's exit status.
+`--self-test` covers hosted-only failures, unexpected skips/executions, cancelled
+jobs, invalid metadata and the actual command-line receipt/exit behavior.
+
 Acoustic validation writes its report before enforcement. On failure, `scripts/validation_reproducer.py` packages exact failed inputs, case JSON, metrics/failure data and executable reproduction instructions.
 
 ## Flaky and historical-regression policy

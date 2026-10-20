@@ -88,6 +88,6 @@ if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then
   changed_t1m1=$(git -c "safe.directory=$PWD" diff --name-only "$2...HEAD" -- \
     .github/program/workflow_pin_only_actual_tree_t1m1.py)
   if [ "$changed_t1m1" = .github/program/workflow_pin_only_actual_tree_t1m1.py ]; then
-    python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --probe-real
+    python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --probe-real --review 2026-10-20
   fi
 fi

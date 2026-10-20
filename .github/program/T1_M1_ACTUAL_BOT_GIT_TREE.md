@@ -25,3 +25,12 @@ At registration, protected main `e30c1e5e0619f02554077ed81dac312245aa4a31` and #
 The only future positive M1 observation is `T1_ACTUAL_BOT_TREE_CLASSIFIED_NON_MEASUREMENT_ONLY_NO_WORKFLOW_SKIP`, with actual Git base/head/tree digests, diff SHA, current-main source anchors and immutable T0 blob. **This DOES NOT authorize consuming the result from the three PR scientific-scope workflows**, or skipping dEchorate's separate push research gate (M2/M3 independent registration and tests).
 
 **Fail closed:** `T1_ACTUAL_BOT_TREE_NOT_ADMITTED`. Original failed AEC/dEchorate/PCR02 checks for #714 remain failed; #714 must not merge on M1 alone. `src/`, `include/`, CMake, 2.x/3.x SDK, frozen I025–I040, ADC clock, SSC305 HIL, BF/AEC benefit and product release all remain untouched.
+
+## Later reviewed proposal
+
+The historical M1/55-workflow/108-pin contract above remains its original
+evidence identity. [The 2026-10-20 source review](T1_20261020_PIN_REVIEW.md)
+adds a separately selected exact pin policy and a complete current protected-base
+transition. Its 55/125 observation is not a permanent count or permission for
+future candidate code. Use the explicit `--review 2026-10-20` probe only after
+that policy is independently protected-main content.

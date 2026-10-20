@@ -81,3 +81,11 @@ free-field scenes. Reference/mean/linear/cubic arms, speaker roles and source
 selection are fixed before scores. Component transfer and canonical SI-SDR are
 reported together, with co-located negative controls and no automatic promotion.
 This is not a room recording, DOA/AEC test, installed C4 SDK or full FE closure.
+
+## Fixed external baselines
+
+[SOF FIR, GTCRN and UL-UNAS limited comparisons](EXTERNAL_BASELINES.md) records
+three exact-source local research adapters, full PCM boundaries, source/model
+admission and fixed disclosed-input evidence. Recovery and new execution status
+are explicit. These references do not change shipping defaults or complete C4,
+real-robot qualification or the frozen NS research program.

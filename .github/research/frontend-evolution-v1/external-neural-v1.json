@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "experiment_id": "FE07-EXTERNAL-NEURAL-D0",
+  "decision": "FIXED_NEURAL_POST_AEC_DIAGNOSTIC_NO_PROMOTION",
+  "base_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "shipping_authority": false,
+  "pre_registered_before_model_execution": true,
+  "recovery": {
+    "reason": "Prior scratch files were lost. Restore the same fixed recipe and source/input byte identities before this reexecution.",
+    "prior_outcomes_already_disclosed": true,
+    "independent_new_experiment": false,
+    "no_reselection_or_tuning": true,
+    "original_contract_not_byte_recovered": true,
+    "prior_evidence_currently_unreadable": true
+  },
+  "hypothesis": "Measure these two fixed pristine 16 kHz streaming ONNX graphs, wrapped by the declared complete PCM adapter, after the already fixed AP AEC observation; retain only if both unchanged diagnostic rules hold.",
+  "arms": [
+    "passthrough",
+    "gtcrn",
+    "ul-unas"
+  ],
+  "predecessor": {
+    "archive_name": "speex-aec-main-original.zip",
+    "archive_bytes": 10693447,
+    "archive_sha256": "aa4961bae5d7eb0d3861ce04ed4c7c8408518f002b856e1f7f9cffa538bdad12",
+    "manifest_sha256": "f20333b58518549f10631d93d762ebc516c451c54cb015554fde5c6260452f37",
+    "experiment_id": "FE04-SPEEXDSP-AEC-REFERENCE-V1",
+    "execution_source_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+    "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+    "run_id": 39274232480,
+    "artifact_id": 12199497546
+  },
+  "cases": [
+    {
+      "case_id": "p0-ula4-70-fir33-none",
+      "pair": 0,
+      "event": "none",
+      "samples": 256000,
+      "members_sha256": {
+        "ap.s16": "496edf5ae7719cdb7dde6aa79db20ec93f81a8103bd4c933387312b9f29c7292",
+        "echo.s16": "c6885ec0f9a3ff7c8057bbe1599df2e0dacb19a65b3db3f27063e8737e33f2d6",
+        "target.s16": "b037ba05f2605732657ae545b5c4628cae4c59f40cca17acb61d203ec0b558ff"
+      }
+    },
+    {
+      "case_id": "p0-ula4-70-fir33-steer",
+      "pair": 0,
+      "event": "steer",
+      "samples": 256000,
+      "members_sha256": {
+        "ap.s16": "7412e4023fdf7473554bed08fd43b72bdea0f95d7d99ac576a4b4e10a1255f1e",
+        "echo.s16": "d665f291b9be149256af4cc61607d7181f3842e117e79f7944cd45250620ac79",
+        "target.s16": "ef787d82fbc4263c9b797478fae74923aadeabc9dc0a5f9a9cf5b725376b1cbd"
+      }
+    },
+    {
+      "case_id": "p0-ula4-70-fir33-path",
+      "pair": 0,
+      "event": "path",
+      "samples": 256000,
+      "members_sha256": {
+        "ap.s16": "b589dbe47ece85a06296662526f965654f38e0486c26201bcfd4f6b4b19e7b84",
+        "echo.s16": "1164db1db70942fa3201cdef01db5751cec9355297b10650ae5a1fc17bc147dd",
+        "target.s16": "b037ba05f2605732657ae545b5c4628cae4c59f40cca17acb61d203ec0b558ff"
+      }
+    },
+    {
+      "case_id": "p1-ula4-70-fir33-none",
+      "pair": 1,
+      "event": "none",
+      "samples": 256000,
+      "members_sha256": {
+        "ap.s16": "2b47e333c66d1c8217f11c42f82abedcd62f5826042d98550128dbd7648f3863",
+        "echo.s16": "9a9bb66ef0c3368f452f0a5158740b0269aca16ac29bd81f5ffca19aa6030fd9",
+        "target.s16": "983fabcfa721940d89a9e3876a02ef091074d45b63e4df0600707b2f44f6997a"
+      }
+    },
+    {
+      "case_id": "p1-ula4-70-fir33-steer",
+      "pair": 1,
+      "event": "steer",
+      "samples": 256000,
+      "members_sha256": {
+        "ap.s16": "679e797c20253ab845a9b52000e9749b88f4eed7e8838ab5466b12970ca09e22",
+        "echo.s16": "1ffce794859b395681ffc22a8ff763682a3f927f72a4424c5e0b1675bddbfc9a",
+        "target.s16": "6f4e96f982663b53482f18c2eb66a76739d0dfff9a07f8e4e967058492263f59"
+      }
+    },
+    {
+      "case_id": "p1-ula4-70-fir33-path",
+      "pair": 1,
+      "event": "path",
+      "samples": 256000,
+      "members_sha256": {
+        "ap.s16": "7756bb72ccf760b055f4f0c9d045e7a10afee9e229fd56b26d716cf5b4d29f29",
+        "echo.s16": "9456593137f128bcc65780a7ef7ac557cd4e2bd5e795a594692bfa94cd59e4c4",
+        "target.s16": "983fabcfa721940d89a9e3876a02ef091074d45b63e4df0600707b2f44f6997a"
+      }
+    }
+  ],
+  "quality": {
+    "evaluator": "unchanged validation/tools/run_validation_engine.py via speexdsp_aec_reference.metrics",
+    "diagnostic_shortlist_only": {
+      "max_per_case_near_phase_si_sdr_loss_db": 0.5,
+      "min_mean_far_only_extra_attenuation_db": 3
+    },
+    "far_only_final_seconds": [
+      12,
+      13.9
+    ],
+    "near_phase_seconds": [
+      [
+        0.1,
+        1.9
+      ],
+      [
+        6.1,
+        7.9
+      ],
+      [
+        8.1,
+        9.9
+      ],
+      [
+        14.1,
+        15.9
+      ]
+    ],
+    "no_model_or_parameter_search": true,
+    "no_task_metric_or_robot_quality_claim": true,
+    "numerical_ceiling_must_be_disclosed": true
+  },
+  "engineering": {
+    "future_prefix_samples": 128000,
+    "causal_comparison": "Only already emitted complete PCM prefix before different real future; future output must change",
+    "chunk_partitions": [
+      160,
+      37
+    ],
+    "repeat": "Reset model and wrapper; float32 and S16 bit exact",
+    "silence_identity_max_abs": 0.000002,
+    "identity_tail_counts": [
+      1,
+      159,
+      160,
+      161,
+      319,
+      320,
+      64001
+    ],
+    "reject": [
+      "empty input",
+      "NaN",
+      "Inf",
+      "complex samples",
+      "out of range including int64 minimum",
+      "8 kHz",
+      "48 kHz",
+      "push after flush",
+      "double flush",
+      "stale source/model hash",
+      "missing case",
+      "false holdout",
+      "shipping promotion",
+      "changed metric",
+      "partial timing",
+      "partial output availability"
+    ]
+  },
+  "model_contract": {
+    "adapted_variant": true,
+    "pristine_scope": "Bundled ONNX graphs only; no PyTorch/checkpoint or upstream full-file demo equivalence claim",
+    "sample_rate_hz": 16000,
+    "mic_channels": 1,
+    "render_channels": 0,
+    "n_fft": 512,
+    "native_hop_samples": 256,
+    "outer_push_max_samples": 160,
+    "windows": {
+      "gtcrn": "periodic sqrt-Hann",
+      "ul-unas": "periodic Hann"
+    },
+    "input_scale": "S16 / 32768; no per-file normalization",
+    "left_padding_samples": 256,
+    "left_padding": "zero; no torch centered reflect padding",
+    "first_final_output_native_input_samples": 512,
+    "first_final_output_160_schedule_input_samples": 640,
+    "availability": "Output [k*256,(k+1)*256) final after (k+2)*256 real input samples",
+    "fifo_sample_bound": 415,
+    "end_of_stream": "Only explicit flush may zero-pad partial hop, then one zero hop; trim output to original input count",
+    "synthesis": "window-square normalized OLA; discard exact left padding",
+    "output": "Unclipped finite float32 plus round-half-away-from-zero saturating S16 and explicit clipping count",
+    "unsupported_rates": "8/48 kHz rejected; separately qualified SRC and new fixed comparison required",
+    "model_files_sha256": {
+      "gtcrn": "b4718df6228e7bdf1a8a435cf98f838636eb2fd331acabf86ba87c5192ebcb87",
+      "ul-unas": "f2e804d54d6a88f4f82f44d86c9f1cf646db2509bfca935cfbfc5fcd8cbfac3b"
+    }
+  },
+  "runtime": {
+    "onnxruntime": "1.23.2",
+    "execution_provider": "CPUExecutionProvider",
+    "execution_mode": "ORT_SEQUENTIAL",
+    "intra_op_threads": 1,
+    "inter_op_threads": 1
+  },
+  "resources": {
+    "timing_scope": "Host wall clock of each complete PCM push STFT+ORT+ISTFT and flush; excludes model initialization, file I/O and evaluator",
+    "report": [
+      "p50",
+      "p95",
+      "p99",
+      "max",
+      "all 1600 push times per 16-second case",
+      "10ms misses",
+      "RTF",
+      "complete output availability",
+      "cache bytes",
+      "whole-process RSS scope"
+    ],
+    "host_only": true,
+    "ssc305_performance_or_memory_pass": false
+  }
+}

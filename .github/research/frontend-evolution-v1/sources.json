@@ -64,15 +64,19 @@
     {
       "id": "sof",
       "url": "https://github.com/thesofproject/sof",
-      "commit": null,
-      "status": "PLANNED",
+      "commit": "460f18d9bc70729d9479f0645730e61c94a9ca97",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
-        "code": "PENDING",
-        "dependencies": "PENDING",
-        "weights": "PENDING",
-        "data": "PENDING",
-        "redistribution": "PENDING"
-      }
+        "code": "ALLOWED",
+        "data": "NOT_APPLICABLE",
+        "dependencies": "ALLOWED",
+        "redistribution": "ALLOWED",
+        "weights": "NOT_APPLICABLE"
+      },
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/external-baselines-admission.json",
+      "admission_receipt_sha256": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
+      "materialized_source_sha256": "4228b1be93d1f3fbfd4b882d3bad8374116f3304a6cd3d691c9661ce8fbf1bfb",
+      "scope": "local-fixed-research-only-no-shipping-dependency"
     },
     {
       "id": "speexdsp",
@@ -133,28 +137,36 @@
     {
       "id": "gtcrn",
       "url": "https://github.com/Xiaobin-Rong/gtcrn",
-      "commit": null,
-      "status": "PLANNED",
+      "commit": "502ebfab64da7c4a9af78dcb9c6ceef1ebb01c73",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
-        "code": "PENDING",
-        "dependencies": "PENDING",
-        "weights": "PENDING",
-        "data": "PENDING",
-        "redistribution": "PENDING"
-      }
+        "code": "ALLOWED",
+        "data": "NOT_APPLICABLE",
+        "dependencies": "ALLOWED",
+        "redistribution": "ALLOWED",
+        "weights": "ALLOWED"
+      },
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/external-baselines-admission.json",
+      "admission_receipt_sha256": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
+      "materialized_source_sha256": "f34d43df646d3f208ea7a64d7db150b560caf95d2a92d9117cd0a40a854053e8",
+      "scope": "local-fixed-research-only-no-shipping-dependency"
     },
     {
       "id": "ul-unas",
       "url": "https://github.com/Xiaobin-Rong/ul-unas",
-      "commit": null,
-      "status": "PLANNED",
+      "commit": "00f7c700da43d38347f30a6ccebd86fcbc798e07",
+      "status": "EXECUTION_ADMITTED",
       "rights": {
-        "code": "PENDING",
-        "dependencies": "PENDING",
-        "weights": "PENDING",
-        "data": "PENDING",
-        "redistribution": "PENDING"
-      }
+        "code": "ALLOWED",
+        "data": "NOT_APPLICABLE",
+        "dependencies": "ALLOWED",
+        "redistribution": "ALLOWED",
+        "weights": "ALLOWED"
+      },
+      "admission_receipt_path": ".github/research/frontend-evolution-v1/external-baselines-admission.json",
+      "admission_receipt_sha256": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
+      "materialized_source_sha256": "35a8447aaf0378c43bcc50b292a7d3f503cfed38a768a3a711e35f808b3525de",
+      "scope": "local-fixed-research-only-no-shipping-dependency"
     },
     {
       "id": "h-gtcrn-noisy",

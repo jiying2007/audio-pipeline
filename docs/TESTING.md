@@ -36,6 +36,45 @@ Consumers keep their existing digest until a separate reviewed pin update binds
 the successful published-digest evidence. Emulation does not qualify SSC305
 silicon, physical timing or HIL.
 
+### Published digest used by consumers
+
+The consumer reference in this checkout is:
+
+```text
+ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+```
+
+This is the separate consumer adoption tracked by
+[#811](https://github.com/jiying2007/audio-pipeline/issues/811). The published
+image was built from `b80d819a486cb973e6a60b4fdf259803d45ec3f0` in
+[CI Toolchain Image run 39380255641, job 118487510421](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/job/118487510421).
+Its [original qualified artifact 12245087611](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/artifacts/12245087611)
+is a 53,364-byte ZIP with SHA256
+`036a0307de88ad1b3d78499ff2ef95b7adf0d67425d089962ef9e29c824a2fb0`.
+Independent download verified all 57 ZIP members, all 52 files covered by the
+two inner hash manifests, the published reference, and equal before-publish
+and digest-readback receipts. Each stage executed GCC, Clang, ArmHF/QEMU and
+AArch64/QEMU with 14/14 CTest cases per profile at that source revision.
+
+The adoption inventory at the frozen `b80d819` baseline is 36 references:
+`ci.yml` 2, `quality.yml` 29, `resource-gates.yml` 4 and `verify.yml` 1.
+These are 35 container images plus the `--toolchain-image` argument that records
+the resource delivery receipt identity; keep that argument aligned with the
+executing image. Publication evidence and the adoption PR/main Verify gates
+are checked separately. This toolchain maintenance does not create an SDK version.
+
+After integrating another branch, rescan every consumer and receipt identity:
+
+```sh
+rg -n 'audio-pipeline-ci@sha256:' .github/workflows
+```
+
+Every current consumer must use the reviewed digest above. In particular,
+[A1 PR #815](https://github.com/jiying2007/audio-pipeline/pull/815) adds a consumer
+beyond the frozen 36-reference inventory; integrate its pin when that job enters
+the tree. Use an immutable digest for consumer jobs; `ci-latest` belongs to the
+publisher's verified stable-pointer update.
+
 ## Deterministic regression and public validation
 
 PR/main audio-quality regression uses deterministic generator v3 and seeds `1307`, `2307`, `3307`. Each seed generates 27 cases and must pass 27/27 under the regression policy; deterministic regeneration is hash-compared.

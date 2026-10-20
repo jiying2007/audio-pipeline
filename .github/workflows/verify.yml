@@ -121,7 +121,7 @@ jobs:
     if: needs.impact.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

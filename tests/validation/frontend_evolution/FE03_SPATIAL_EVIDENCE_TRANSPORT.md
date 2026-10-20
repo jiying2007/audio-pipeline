@@ -23,8 +23,8 @@ The successful current tree contains 3488 files / 936076535 logical bytes,
 contain 156919205 redundant bytes (16.7635% of logical bytes). An actual ordinary
 ZIP using independent DEFLATE level 6 streams is 531400873 bytes, SHA256
 8147ddefc752bba0270e13066e6c63508701866e6cbd18f8e2e7db34a1430d05.
-The objects-only ZIP probe is 470086444 bytes; the final complete transport must
-be measured separately. Neither number measures GitHub wire traffic or billing.
+The objects-only ZIP probe is 470086444 bytes; the final complete transport is
+measured separately below. Neither number measures GitHub wire traffic or billing.
 
 Two prior Activity outputs were rejected by the unchanged verifier: one retained
 a truncated final CSV row; another contained a final-case file outside the sealed
@@ -32,6 +32,63 @@ manifest. Both failed trees and receipts remain negative evidence. Changing only
 the output directory to a fresh /tmp directory produced a complete original
 run/verify/negative PASS. Workspace synchronization was observed but has not been
 proven to cause the two earlier failures. No failed tree qualifies the transport.
+
+## Limited historical ZIP inventory
+
+On 2026-10-20, two bounded HTTP 206 responses with the same ETag retrieved 405312
+bytes from the original #753 PR artifact
+[11886976787, run 38549257207](https://github.com/jiying2007/audio-pipeline/actions/runs/38549257207).
+The 339755-byte central directory describes 3486 members / 936010640 uncompressed
+bytes. This artifact's API size is 531633473 bytes; it is distinct from the
+historical main artifact and from the current-host replay.
+
+| Historical member group | Members | Uncompressed bytes | Compressed payload bytes |
+| --- | ---: | ---: | ---: |
+| effects | 2472 | 216625253 | 171027177 |
+| order | 556 | 461109210 | 203749297 |
+| activity | 451 | 258266799 | 156174215 |
+| toolchain | 7 | 9378 | 3252 |
+
+Only the central-directory inventory was read. The historical member payloads
+and whole-archive SHA256 were not independently verified; the two earlier full
+downloads remain unsuccessful. This inventory does not prove identical-content
+groups. The SHA256 duplicate measurements and compression comparison use the
+separate current-host tree, including its actual toolchain receipts.
+
+## Complete current-tree roundtrip, 2026-10-20
+
+The byte-identical internal tool at commit
+343174e0f2318f7c4fc89ab0f4fc61349058d655 completed the full pack/unpack path with
+run identity `local-20261020-spatial-audit` and scientific source e3672ffe16e4c9d42a100e7712b9bbd3d8338545.
+The tool SHA256 is
+caef42bc30521fe56fb7020549c5ba30450f37ed7cb49628dd06694cbc1b061b.
+An independent full-tree readback confirmed all 3488 file paths, file bytes,
+file modes and 335 relative directory paths/modes, before and after executing
+all three unchanged original validators on the restored tree.
+
+| Stage | Elapsed seconds | Result |
+| --- | ---: | --- |
+| Pack | 44.758 | PASS; peak RSS 30772 KiB |
+| Unpack | 9.465 | PASS; peak RSS 23376 KiB |
+| Original spatial verification | 22.193 | PASS |
+| Original BF/AEC verification with `--require-arm` | 30.734 | PASS |
+| Original Activity verification | 72.178 | PASS |
+
+The complete `evidence.zip` is 470181719 bytes, SHA256
+81b7dacef0972168f057aa203ae20a29610347fa3e8d871c16056b840215e7f2.
+Its canonical manifest SHA256 is
+4b3059f311d4b5d3daade4468b8e86b827cad53b856848b9b72507ec86ce827c.
+Including the 536-byte sidecar gives 470182255 bytes: 61218618 bytes (11.520233%)
+smaller than the independently constructed ordinary ZIP of these same files.
+The size formula also matched that actual ordinary ZIP exactly. The RSS values
+are Linux per-process `wait4` observations; the enforced 256 MiB limit concerns
+virtual address space. Timing was not a matched CPU-performance experiment.
+
+This proves the local byte roundtrip and continued passage of the original
+validators. Existing protected PR and distinct post-merge CI, all four downstream
+consumers and actual Artifact API/readback remain the required integration gates.
+No historical runner identity, CI wire reduction or billing result follows from
+these local observations.
 
 ## Representation and mandatory readback
 
@@ -41,6 +98,11 @@ permission and directory, and binds the scientific source SHA, run identity and
 first-party transport tool SHA256. Original source, compiler/binary receipts,
 manifests, notices, PCM, results and failure files remain ordinary preserved
 bytes; this manifest does not replace their independent authority.
+
+The permission contract covers relative files and subdirectories. The containing
+root directory's own mode is outside this contract. Ownership, timestamps and
+pre-existing hardlink topology are not preserved. Both roots in the complete
+replay were mode 0755. Duplicate member paths always restore to separate files.
 
 The unpacker verifies the whole ZIP hash, bounded canonical manifest, exact ZIP
 membership, object sizes/hashes, run/source binding, safe relative paths and file

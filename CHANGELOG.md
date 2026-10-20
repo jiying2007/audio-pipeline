@@ -1,3 +1,12 @@
+# 2.3.56
+
+- Fix Linux Runtime output-slot status ownership and bound command draining so control traffic cannot indefinitely postpone frames or stop checks.
+- Correct atomic snapshot publication/read ordering and retry validation without increasing runtime state or changing the 2.x public ABI.
+- Preserve independent capture/render metadata gap counts while resetting the pipeline once per combined boundary.
+- Add deterministic Runtime interleaving regressions and run all Runtime test families under TSan.
+- Reacquire only the same admitted official speech bytes when the historical artifact cache is unavailable, with retained failure evidence and the existing source budget.
+- Use one impact-aware decision for Verify enforcement and its failure receipt, including hosted-real results, required skips, cancellations and invalid metadata.
+
 # 2.3.55
 
 - Add exact-preset reference armhf SDK delivery with configuration-bound acoustic replay and resource evidence; do not claim shipping BSP or silicon qualification.

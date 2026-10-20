@@ -49,6 +49,17 @@ def load_m1():
     return module
 
 
+def run_identity(env: dict) -> dict:
+    result = {}
+    for name, field in (("GITHUB_RUN_ID", "run_id"),
+                        ("GITHUB_RUN_ATTEMPT", "run_attempt")):
+        value = env.get(name)
+        need(type(value) is str and re.fullmatch(r"[1-9][0-9]{0,18}", value) is not None,
+             "CANONICAL_RUN_IDENTITY_REQUIRED")
+        result[field] = int(value)
+    return result
+
+
 def event_binding(event: dict, env: dict, workflow: str, m1) -> tuple[str, str, str]:
     need(os.name == "posix" and sys.platform == "linux", "UNQUALIFIED_PLATFORM")
     need(workflow in WORKFLOWS, "UNREVIEWED_WORKFLOW")
@@ -60,6 +71,7 @@ def event_binding(event: dict, env: dict, workflow: str, m1) -> tuple[str, str, 
     # direct workflow file excludes PCR02's nested AEC workflow_call.
     need(env.get("GITHUB_WORKFLOW_REF") == m1.REPO + "/" + workflow + "@" + expected_ref,
          "REUSABLE_OR_UNEXPECTED_WORKFLOW_CONTEXT")
+    run_identity(env)
     need(type(event) is dict and event.get("action") in ("opened", "reopened", "synchronize") and
          type(event.get("number")) is int and event["number"] == m1.BOT_PR and
          type(event.get("repository")) is dict and
@@ -124,6 +136,7 @@ def evaluate(event: dict, env: dict, workflow: str) -> dict:
     try:
         m1 = load_m1()
         base, head, merge = event_binding(event, env, workflow, m1)
+        result.update(run_identity(env))
         source_hash = verify_consumer_source(base, m1)
         observed = m1.live_probe(review=m1.CURRENT_REVIEW)
         bind_m1(observed, base, head, m1)
@@ -152,6 +165,7 @@ def self_test() -> None:
     env = {"GITHUB_EVENT_NAME": "pull_request", "GITHUB_REPOSITORY": m1.REPO,
            "GITHUB_REF": "refs/pull/714/merge", "GITHUB_BASE_REF": "main",
            "GITHUB_HEAD_REF": m1.BOT_REF, "GITHUB_SHA": merge,
+           "GITHUB_RUN_ID": "7300001", "GITHUB_RUN_ATTEMPT": "2",
            "GITHUB_WORKFLOW_REF": m1.REPO + "/" + role + "@refs/pull/714/merge"}
     need(event_binding(model, env, role, m1) == (base, head, merge), "VALID_DIRECT_PR_EVENT_REJECTED")
     negatives = 0
@@ -167,6 +181,13 @@ def self_test() -> None:
 
     for kind in ("push", "workflow_dispatch", "workflow_call", "repository_dispatch", "", "pull_request_target"):
         deny_event(model, dict(env, GITHUB_EVENT_NAME=kind))
+    for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT"):
+        absent = dict(env)
+        del absent[key]
+        deny_event(model, absent)
+        for value in (None, 0, True, "", "0", "01", "-1", "+1", " 1", "1 ",
+                      "1\n", "1\r\n", "1.0", "1" * 20):
+            deny_event(model, dict(env, **{key: value}))
     for key, value in (("GITHUB_REPOSITORY", "fork/repo"),
                        ("GITHUB_REF", "refs/heads/main"), ("GITHUB_BASE_REF", "dev"),
                        ("GITHUB_HEAD_REF", "attacker"), ("GITHUB_SHA", "short"),
@@ -246,6 +267,29 @@ def self_test() -> None:
         tree = m1.git_sha(["rev-parse", h + "^{tree}"], cwd=area)
         merged = m1.git(["commit-tree", tree, "-p", b, "-p", h, "-m", "synthetic merge"]).decode().strip()
         bind_event_merge(b, h, merged, m1)
+        # Exercise the public positive evaluator with real local Git parents,
+        # tree and protected consumer bytes. Only public metadata is an explicit
+        # offline fixture; this is no GitHub execution/admission receipt.
+        from unittest import mock
+        m1.git(["checkout", "-q", b])
+        fixture_pr = m1.fake_bot(b, h)
+        fixture_m1 = dict(good, protected_main_sha=b, bot_base_sha=b,
+                          bot_head_sha=h, actual_merge_base=b)
+        fixture_event = dict(model, pull_request=fixture_pr)
+        fixture_env = dict(env, GITHUB_SHA=merged)
+        with mock.patch.dict(globals(), ROOT=area, load_m1=lambda: m1), \
+             mock.patch.multiple(m1, live_probe=lambda **kwargs: fixture_m1,
+                                 remote_heads=lambda: (b, h),
+                                 fetch_public_bot_pr=lambda: fixture_pr):
+            current = evaluate(fixture_event, fixture_env, role)
+            repeated = evaluate(fixture_event, dict(fixture_env, GITHUB_RUN_ATTEMPT="3"), role)
+        need(current["decision"] == POSITIVE and current["skip_measurement"] is True and
+             current["run_id"] == 7300001 and type(current["run_id"]) is int and
+             current["run_attempt"] == 2 and type(current["run_attempt"]) is int and
+             repeated["run_id"] == current["run_id"] and repeated["run_attempt"] == 3,
+             "REAL_GIT_POSITIVE_RUN_RECEIPT_BINDING_FAILED")
+        need(json.loads(json.dumps(current))["run_attempt"] != repeated["run_attempt"],
+             "REPEATED_ATTEMPT_RECEIPT_NOT_DISTINCT")
         for wrong in (b, h):
             try:
                 bind_event_merge(b, h, wrong, m1)
@@ -313,4 +357,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

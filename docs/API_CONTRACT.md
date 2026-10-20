@@ -137,6 +137,8 @@ This timestamp authority is unchanged when callers select fixed geometry through
 
 With the Linux runtime, applications must not mutate the owned pipeline concurrently. Supply per-frame timestamps/discontinuities through `ap_frame_metadata_t` to `ap_runtime_submit_frame()`, or enqueue explicit controls through `ap_runtime_command()`.
 
+Capture and render gap metadata update their respective counters independently. A flagged direction with a zero lost-frame count contributes one unknown-length gap frame; a direction without its discontinuity flag contributes none. One metadata boundary resets time-dependent state once, even when both directions have gaps. The discontinuity event's single `arg1` loss summary remains the maximum of the flagged counts. The explicit discontinuity command's shared `lost_frames` applies to each flagged direction.
+
 ## Linux runtime lifecycle
 
 The runtime has one lifecycle and one metric surface:
@@ -170,6 +172,8 @@ After `ap_runtime_start()`, the worker is the sole owner of the supplied pipelin
 
 `AP_EFULL` means the application must retry or coalesce according to product policy. The runtime never creates an unbounded control backlog.
 
+At each worker boundary, the runtime applies only the commands present when that boundary begins, at most `AP_RUNTIME_COMMAND_QUEUE_DEPTH`. Commands accepted while it drains are deferred to a later boundary. Continuous control submission therefore cannot extend one drain indefinitely and prevent the worker from returning to audio work or its stop check.
+
 Tuning admission is checked against the full AGC pair that will exist when the DSP worker applies the command, using a producer-side projection of the target/limiter pair advanced by accepted queued commands. While the worker is stopped, the caller owns the supplied pipeline and may change tuning through `ap_pipeline_apply_tuning()`; before the next tuning admission and before start, the runtime rebuilds its projection from the pipeline's current tuning and replays still-pending tuning commands in FIFO order. If a caller-owned direct change makes an already accepted pending sequence pair-invalid, the next tuning command and `ap_runtime_start()` fail with `AP_ESTATE` until the live pipeline is repaired. While the worker runs, the runtime never re-reads worker-owned pipeline state and continues from the producer projection only.
 
 ## Output backpressure contract
@@ -185,6 +189,8 @@ Input queue overflow remains explicit `AP_EFULL`: a frame that was never accepte
 AEC status exposes the active runtime adaptation stride. Stable far-end-only operation may increase stride; double talk/reference loss restores the configured fast cadence.
 
 `ap_runtime_metrics_t` contains long-running 64-bit counters, failed-frame and pipeline-error state, queue high-water marks, discontinuity/gap/timestamp counters, RT setup failures, render/capture failures, sampled CPU migration, critical-event count, actual scheduler state and fixed-histogram DSP p50/p95/p99 estimates.
+
+Each split 64-bit counter is read as a coherent value; different metric fields need not represent the same instant. `ap_runtime_get_critical_state()` retries while a critical-event snapshot is being written and returns fields from one completed event. Its `total_events` is a separately sampled, saturating event count.
 
 ## Diagnostics contract
 

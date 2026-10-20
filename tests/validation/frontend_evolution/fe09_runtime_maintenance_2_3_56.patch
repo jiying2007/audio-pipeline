@@ -1,0 +1,128 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2c7ac08..3659b13 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -2 +2 @@ cmake_minimum_required(VERSION 3.16)
+-project(audio_pipeline VERSION 2.3.55 LANGUAGES C)
++project(audio_pipeline VERSION 2.3.56 LANGUAGES C)
+@@ -457,0 +458,4 @@ if(AP_BUILD_TESTS)
++        add_executable(ap_runtime_interleaving_tests tests/test_runtime_interleavings.c)
++        target_include_directories(ap_runtime_interleaving_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
++        target_link_libraries(ap_runtime_interleaving_tests PRIVATE audio_pipeline Threads::Threads)
++        add_test(NAME ap_runtime_interleaving_tests COMMAND ap_runtime_interleaving_tests)
+diff --git a/docs/API_CONTRACT.md b/docs/API_CONTRACT.md
+index bd7be01..821c074 100644
+--- a/docs/API_CONTRACT.md
++++ b/docs/API_CONTRACT.md
+@@ -139,0 +140,2 @@ With the Linux runtime, applications must not mutate the owned pipeline concurre
++Capture and render gap metadata update their respective counters independently. A flagged direction with a zero lost-frame count contributes one unknown-length gap frame; a direction without its discontinuity flag contributes none. One metadata boundary resets time-dependent state once, even when both directions have gaps. The discontinuity event's single `arg1` loss summary remains the maximum of the flagged counts. The explicit discontinuity command's shared `lost_frames` applies to each flagged direction.
++
+@@ -172,0 +175,2 @@ After `ap_runtime_start()`, the worker is the sole owner of the supplied pipelin
++At each worker boundary, the runtime applies only the commands present when that boundary begins, at most `AP_RUNTIME_COMMAND_QUEUE_DEPTH`. Commands accepted while it drains are deferred to a later boundary. Continuous control submission therefore cannot extend one drain indefinitely and prevent the worker from returning to audio work or its stop check.
++
+@@ -188,0 +193,2 @@ AEC status exposes the active runtime adaptation stride. Stable far-end-only ope
++Each split 64-bit counter is read as a coherent value; different metric fields need not represent the same instant. `ap_runtime_get_critical_state()` retries while a critical-event snapshot is being written and returns fields from one completed event. Its `total_events` is a separately sampled, saturating event count.
++
+diff --git a/src/platform/linux/ap_runtime.c b/src/platform/linux/ap_runtime.c
+index 9a0013f..7124a9c 100644
+--- a/src/platform/linux/ap_runtime.c
++++ b/src/platform/linux/ap_runtime.c
+@@ -247 +247,6 @@ static void counter64_add(ap_counter64_t *counter, uint64_t delta) {
+-    atomic_fetch_add_explicit(&counter->seq, 1u, memory_order_acq_rel);
++    atomic_fetch_add_explicit(&counter->seq, 1u, memory_order_relaxed);
++    /* The release/acquire fences around atomic payload accesses synchronize
++     * if a reader sees any in-progress write (C11 7.17.4). Its final sequence
++     * load must then see this odd marker or a later value and retry. An acquire
++     * load only after the payload would not provide that read-side ordering. */
++    atomic_thread_fence(memory_order_release);
+@@ -267 +272,2 @@ static uint64_t counter64_read(const ap_counter64_t *counter) {
+-        seq1 = atomic_load_explicit(&counter->seq, memory_order_acquire);
++        atomic_thread_fence(memory_order_acquire);
++        seq1 = atomic_load_explicit(&counter->seq, memory_order_relaxed);
+@@ -711 +717,3 @@ static void runtime_latch_critical(ap_runtime_t *runtime,
+-    atomic_fetch_add_explicit(&runtime->critical_seq, 1u, memory_order_acq_rel);
++    atomic_fetch_add_explicit(&runtime->critical_seq, 1u, memory_order_relaxed);
++    /* Same single-writer atomic snapshot protocol as counter64_add/read. */
++    atomic_thread_fence(memory_order_release);
+@@ -848 +856,5 @@ static void runtime_note_discontinuity(ap_runtime_t *runtime,
+-                                       uint32_t lost) {
++                                       uint32_t lost_capture,
++                                       uint32_t lost_render) {
++    const uint32_t lost = lost_capture > lost_render ? lost_capture : lost_render;
++    /* Reset time-dependent state once for the combined boundary. The event's
++     * single loss field is a summary; per-direction counters retain metadata. */
+@@ -853 +865 @@ static void runtime_note_discontinuity(ap_runtime_t *runtime,
+-        counter64_add(&runtime->capture_gap_frames, lost ? lost : 1u);
++        counter64_add(&runtime->capture_gap_frames, lost_capture ? lost_capture : 1u);
+@@ -855 +867 @@ static void runtime_note_discontinuity(ap_runtime_t *runtime,
+-        counter64_add(&runtime->render_gap_frames, lost ? lost : 1u);
++        counter64_add(&runtime->render_gap_frames, lost_render ? lost_render : 1u);
+@@ -879,0 +892 @@ static void runtime_apply_command(ap_runtime_t *runtime,
++                                   command->data.discontinuity.lost_frames,
+@@ -917,0 +931,4 @@ static void runtime_drain_commands(ap_runtime_t *runtime) {
++    /* Refilled slots belong to the next boundary. A moving producer head would
++     * let control traffic indefinitely postpone input work and the stop check. */
++    const unsigned head =
++        atomic_load_explicit(&runtime->command_head, memory_order_acquire);
+@@ -921,2 +937,0 @@ static void runtime_drain_commands(ap_runtime_t *runtime) {
+-        const unsigned head =
+-            atomic_load_explicit(&runtime->command_head, memory_order_acquire);
+@@ -936 +951,2 @@ static void runtime_apply_metadata(ap_runtime_t *runtime,
+-    uint32_t lost = 0u;
++    uint32_t lost_capture = 0u;
++    uint32_t lost_render = 0u;
+@@ -940 +956 @@ static void runtime_apply_metadata(ap_runtime_t *runtime,
+-        lost = metadata->lost_capture_frames;
++        lost_capture = metadata->lost_capture_frames;
+@@ -944,2 +960 @@ static void runtime_apply_metadata(ap_runtime_t *runtime,
+-        if (metadata->lost_render_frames > lost)
+-            lost = metadata->lost_render_frames;
++        lost_render = metadata->lost_render_frames;
+@@ -953 +968 @@ static void runtime_apply_metadata(ap_runtime_t *runtime,
+-    if (flags) runtime_note_discontinuity(runtime, flags, lost);
++    if (flags) runtime_note_discontinuity(runtime, flags, lost_capture, lost_render);
+@@ -1568,0 +1584 @@ ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
++    ap_status_t status;
+@@ -1577,0 +1594 @@ ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
++    status = src->status;
+@@ -1579 +1596 @@ ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
+-    return src->status;
++    return status;
+@@ -1705,4 +1722,6 @@ ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
+-    unsigned seq0 = 0u;
+-    unsigned seq1 = 0u;
+-    unsigned lo = 0u;
+-    unsigned hi = 0u;
++    unsigned lo;
++    unsigned hi;
++    unsigned kind;
++    unsigned severity;
++    int arg0;
++    int arg1;
+@@ -1712,2 +1731,4 @@ ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
+-    do {
+-        seq0 = atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
++    for (;;) {
++        const unsigned seq0 =
++            atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
++        unsigned seq1;
+@@ -1717,6 +1738,8 @@ ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
+-        state->kind = atomic_load_explicit(&runtime->critical_kind, memory_order_relaxed);
+-        state->severity = (uint8_t)atomic_load_explicit(&runtime->critical_severity, memory_order_relaxed);
+-        state->arg0 = atomic_load_explicit(&runtime->critical_arg0, memory_order_relaxed);
+-        state->arg1 = atomic_load_explicit(&runtime->critical_arg1, memory_order_relaxed);
+-        seq1 = atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
+-    } while (seq0 != seq1);
++        kind = atomic_load_explicit(&runtime->critical_kind, memory_order_relaxed);
++        severity = atomic_load_explicit(&runtime->critical_severity, memory_order_relaxed);
++        arg0 = atomic_load_explicit(&runtime->critical_arg0, memory_order_relaxed);
++        arg1 = atomic_load_explicit(&runtime->critical_arg1, memory_order_relaxed);
++        atomic_thread_fence(memory_order_acquire);
++        seq1 = atomic_load_explicit(&runtime->critical_seq, memory_order_relaxed);
++        if (seq0 == seq1) break; /* Both observations are the same even value. */
++    }
+@@ -1723,0 +1747,4 @@ ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
++    state->kind = kind;
++    state->severity = (uint8_t)severity;
++    state->arg0 = arg0;
++    state->arg1 = arg1;

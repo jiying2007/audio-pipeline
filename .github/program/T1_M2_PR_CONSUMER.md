@@ -47,6 +47,13 @@ Neither layer calls a skipped experiment an acoustic PASS. A negative receipt
 has both outer fields false and leaves all existing science guards active.
 Event contents, authentication data and signed download URLs are never emitted.
 
+Each event-bound receipt also contains integer `run_id` and `run_attempt`, taken
+from strictly canonical nonzero GitHub environment identities. A later consumer
+must compare both to the exact API run/attempt and the original artifact source;
+an artifact name or the mutable `run.pull_requests[]` association cannot replace
+that binding. Missing identities fail closed. A prior attempt's receipt does not
+become evidence of a rerun, and earlier receipts are not rewritten to add fields.
+
 ## Staged integration
 
 This helper commit changes no research workflow. Protect and verify it first.
@@ -85,3 +92,40 @@ These tests are not real GitHub consumer execution or acoustic evidence.
 protected base 全量推导，并绑定真实 bot 和事件 Git 树。M2 仅允许直接 PR 的已审
 依赖维护显示“未执行科学实验”，不扩展到 workflow_call、push 或任何算法变更。
 
+## Actual protected-source M1 prerequisite, 2026-10-20
+
+At 2026-10-20 12:59:55 UTC, the live M1 qualifier executed from clean protected
+main `2f2ca4c283e700b4b89c3ccb293040aa39c81a49` and classified the actual same-repository
+[Dependabot #714](https://github.com/jiying2007/audio-pipeline/pull/714) head
+`8c8f28eaf13dc41a62247ed934f761d85403962b` against that exact base. The complete
+actual and expected diffs agreed on 56 workflow files and 127 reviewed Action
+pin replacements, with diff SHA256
+`2183c40de9dccf5a17330d2f107cec2e890c62d47ae0eacd8760fb13eb21dab9`.
+The earlier frozen 108-pin and 125-pin witnesses remain unchanged.
+
+The exact-main prerequisite [Verify 39385063814](https://github.com/jiying2007/audio-pipeline/actions/runs/39385063814)
+and [Release 39389019184](https://github.com/jiying2007/audio-pipeline/actions/runs/39389019184)
+both completed successfully before this live probe. The Release run preserves
+existing v2.3.55 source `37a1792861a89c815bec462f819f3deac7d29b09`; it does not create
+a new release tag for this CI policy source.
+
+The original stdout is reproduced byte for byte as the single JSON line below,
+including its final newline: 1,539 bytes, SHA256
+`b4550c0f9990713380a6fb143e9b0f3f1d1e2b306ebfba2b03c8e7d5e25c9cd8`.
+This is the M1 nonmeasurement proof for those observed refs. It is not an M2
+workflow positive, permission to skip a scientific job, or evidence about a
+future main/head pair. The preceding negative receipt remains
+`T1_ACTUAL_BOT_TREE_NOT_ADMITTED` / `BOT_PR_READ_UNAVAILABLE`; its three original
+members do not encode an HTTP status, and are retained unchanged.
+
+```json
+{"action_supply_chain_attested":false,"actual_base_tree":"2574383b22513ca1d79ce307ac7fa3531dc75ccd","actual_bot_git_tree_checked":true,"actual_bot_tree":"4d478533f0578db955c9aca75cbc996f1551c687","actual_merge_base":"2f2ca4c283e700b4b89c3ccb293040aa39c81a49","automated_bypass_enabled":false,"bot_base_sha":"2f2ca4c283e700b4b89c3ccb293040aa39c81a49","bot_head_sha":"8c8f28eaf13dc41a62247ed934f761d85403962b","bot_patch_witness_sha256":"47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb","decision":"T1_ACTUAL_BOT_TREE_CLASSIFIED_NON_MEASUREMENT_ONLY_NO_WORKFLOW_SKIP","expected_current_base_pin_diff_sha256":"2183c40de9dccf5a17330d2f107cec2e890c62d47ae0eacd8760fb13eb21dab9","file_count":56,"frozen_witness_content_diff_sha256":"c97935173e7a571f9a6631871c7d176be78679f100f3a67210731aa8d261e7dc","historical_witness_matches_current_diff":false,"observed_at_utc":"2026-10-20T12:59:55+00:00","pin_diff_sha256":"2183c40de9dccf5a17330d2f107cec2e890c62d47ae0eacd8760fb13eb21dab9","pin_replacements":127,"protected_main_sha":"2f2ca4c283e700b4b89c3ccb293040aa39c81a49","public_sdk_3x_admitted":false,"reason":"ACTUAL_TRUSTED_GIT_PIN_SCOPE_ONLY","review_id":"2026-10-20","schema_version":1,"scientific_experiment_executed":false,"ssc305_or_physical_hil_qualified":false,"trusted_classifier_git_blob":"2c3bafe13f9f6cb036bdd01328dd4f12fd336b4e","trusted_classifier_sha256":"fcce117736d32a2cafd3c95fc93a27f906f40b64f632116cd90e8ba1759d68cb","trusted_qualifier_sha256":"6d080c55e0334b96279f826e1615802cf1a8b58d57c1d9c8900900560d25ffd7"}
+```
+
+An independent readback compared the original receipts, real Git trees, T0
+actual/expected results and two current public API snapshots. It confirmed the
+same 56-file/127-pin scope, stable base/head and strict main protection; it did
+not rerun the probe or an experiment. Its 4,940-byte report has SHA256
+`4a498fe2ed9512982bb0a3a819da7bb929b2c53cfbe084c3c89512c14767bb69`.
+All original M1 nonpromotion flags remain false. New protected source and
+workflow integrations still require their own exact-source execution evidence.

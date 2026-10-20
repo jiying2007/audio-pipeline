@@ -1,0 +1,364 @@
+{
+  "arms": [
+    "fir33",
+    "diffuse-0.1",
+    "diffuse-1.0",
+    "sof64"
+  ],
+  "base_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+  "cases": [
+    {
+      "case_id": "p0-t90-i-90",
+      "interferer_degrees": -90,
+      "pair": 0,
+      "target_degrees": 90
+    },
+    {
+      "case_id": "p0-t90-i90",
+      "interferer_degrees": 90,
+      "pair": 0,
+      "target_degrees": 90
+    },
+    {
+      "case_id": "p0-t60-i-90",
+      "interferer_degrees": -90,
+      "pair": 0,
+      "target_degrees": 60
+    },
+    {
+      "case_id": "p1-t90-i-90",
+      "interferer_degrees": -90,
+      "pair": 1,
+      "target_degrees": 90
+    },
+    {
+      "case_id": "p1-t90-i90",
+      "interferer_degrees": 90,
+      "pair": 1,
+      "target_degrees": 90
+    },
+    {
+      "case_id": "p1-t60-i-90",
+      "interferer_degrees": -90,
+      "pair": 1,
+      "target_degrees": 60
+    }
+  ],
+  "coefficients": {
+    "alignment_derivation": "Analytic coefficient group delay in nominal look direction: 33.999759 / 33.999295 / 33.999102 samples at 500 / 1000 / 2000 Hz; freeze 34 before speech metrics, no per-case search",
+    "coefficients_binary_sha256": "8faeac26f7232ddb74ac1148e079cee534edaa3ef64c740ea67593d73a88fdae",
+    "design_script_not_executed": true,
+    "first_party_fixed_alignment_samples": 21,
+    "fixed_alignment_samples": 34,
+    "out_shifts": [
+      1,
+      2,
+      2,
+      1
+    ],
+    "retuning": false,
+    "selected_filter_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "selected_output": 0,
+    "tap_count": 64,
+    "upstream_blob_path": "tools/topology/topology1/m4/tdfb/coef_line4_28mm_pm90deg_16khz.m4",
+    "upstream_file_sha256": "52fb12994667f3591027e5ad934f8bc444e1665cfc09662810e7d2f840690665"
+  },
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "decision": "SOF_INDEPENDENT_REFERENCE_DIAGNOSTIC_NO_PROMOTION",
+  "engineering": {
+    "chunk_sizes": [
+      160,
+      2
+    ],
+    "compare_exact_q31_output": true,
+    "future_prefix_samples": 32000,
+    "integer_convolution_oracle_samples": 3200,
+    "leak_sanitizer": true,
+    "native_and_asan_ubsan": true,
+    "negative_evidence": [
+      "missing case",
+      "wrong base",
+      "false holdout",
+      "shipping promotion",
+      "full SOF firmware claim",
+      "wrong score",
+      "wrong coefficient hash",
+      "missing sanitizer",
+      "changed source-derived PCM",
+      "failed first-party receipt",
+      "nonfinite unscored output tail",
+      "partial native timing coverage",
+      "wrong native chunk size"
+    ],
+    "negative_inputs": [
+      "partial coefficient bytes",
+      "odd PCM frames",
+      "odd chunk",
+      "existing output no-clobber"
+    ],
+    "repeat_and_different_chunk_bytes_equal": true
+  },
+  "experiment_id": "FE03-SOF-FIR-INDEPENDENT-D0",
+  "geometry": {
+    "channel_map": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "geometry_source": "Upstream line4 nominal 28 mm adjacent spacing, 84 mm aperture on Y axis; Q4.12 metadata also retained",
+    "look_degrees": 90,
+    "positions_m": [
+      [
+        0,
+        0.042,
+        0
+      ],
+      [
+        0,
+        0.014,
+        0
+      ],
+      [
+        0,
+        -0.014,
+        0
+      ],
+      [
+        0,
+        -0.042,
+        0
+      ]
+    ],
+    "reference_mic": 0,
+    "shape": "linear4; not ring4"
+  },
+  "hypothesis": "Compare a fixed pristine SOF FIR kernel/64-tap coefficient bank against existing first-party FIR33 and diffuse-loaded SPATIAL33 on a common fixed geometry. Report component separation, target transfer, WNG and synthetic negative controls without promoting either implementation.",
+  "implementation": {
+    "adapted": "First-party host shims, bounded PCM transport and Q5.27 summation; not complete SOF firmware or testbench",
+    "frame_size_samples": 160,
+    "host_only": true,
+    "input": "interleaved S16LE; multiply 65536 to Q1.31",
+    "internal_samples_per_fir_call": 2,
+    "max_fir_state_coefficient_delay_bytes": 16384,
+    "mic_count": 4,
+    "output": "S32 Q1.31 plus finite unclipped Float32 / 2147483648; no per-file normalization",
+    "output_count": 1,
+    "pristine": "src/math/fir_generic.c plus generic/config/user FIR headers and selected upstream coefficient blob",
+    "render_count": 0,
+    "resource_scope": "Only persistent FIR states, coefficients and delay lines; excludes I/O buffers, trace allocation, executable, runtime and process RSS",
+    "sample_rates": "Only fixed upstream 16 kHz bank; 8/48 kHz or another geometry requires a separately qualified bank and fixed comparison",
+    "ssc305_performance_pass": false
+  },
+  "metrics": {
+    "evaluator": "unchanged speech_spatial.metrics and canonical run_validation_engine.si_sdr_span",
+    "frequency_grid_hz": [
+      200,
+      500,
+      1000,
+      2000,
+      3000,
+      4000,
+      6000,
+      7000
+    ],
+    "no_optimizer_or_parameter_search": true,
+    "no_per_case_alignment": true,
+    "primary": [
+      "component_sir_gain_db",
+      "target_gain_db",
+      "target_relative_error_energy",
+      "canonical_si_sdr_db"
+    ],
+    "responses": [
+      "look_gain_db",
+      "white_noise_gain_db",
+      "3D isotropic diffuse_directivity_index_db",
+      "15 degree azimuth grid"
+    ]
+  },
+  "pre_registered_before_dsp_execution": true,
+  "real_robot_or_room_claim": false,
+  "recovery": {
+    "independent_new_experiment": false,
+    "no_reselection_or_tuning": true,
+    "original_contract_not_byte_recovered": true,
+    "prior_evidence_currently_unreadable": true,
+    "prior_outcomes_already_disclosed": true,
+    "verification_amendment": {
+      "acceptance_thresholds_changed": false,
+      "acoustic_recipe_changed": false,
+      "before_second_sof_reexecution": true,
+      "change": "Validate exact native block/rate/channel metadata and every nonnegative integer duration; restore a clean positive control before the new negatives",
+      "root_cause": "Old verifier accepted a resealed 399/400 native timing trace; original v1 output had all 400 entries and was retained"
+    }
+  },
+  "sample_rate_hz": 16000,
+  "samples_per_case": 64000,
+  "schema_version": 1,
+  "shipping_authority": false,
+  "source_admission_sha256": "240c536fd70fee3152996b94fc69718fd8a687fdd30d3696d83a6e6c6a815524",
+  "source_bound_sha256": "f77a897bf9681af2c09f57515b99fb2d7ca072dc93371d438e872579e39f801e",
+  "source_recovery": {
+    "archive_bytes": 5171219,
+    "archive_sha256": "eb780ba093e19b21f2753048018c05ef0467ba6ebbe6c03d4372fd3ed0e0c8e1",
+    "artifact_id": 11357177181,
+    "mode": "existing admitted original source-preflight ZIP; all 32 FLACs independently redecoded and eight fixed windows checked",
+    "new_whole_librispeech_archive_claim": false,
+    "run_id": 37337539976,
+    "source_receipt_preserved": true
+  },
+  "speaker_selection": [
+    {
+      "originals": [
+        {
+          "flac_sha256": "3e04afe2f2ce5cb949db8dfb3750eb758c2ea7ce30cd318df2e80c883d620b3c",
+          "frames": 234800,
+          "member": "LibriSpeech/dev-clean/1673/143396/1673-143396-0000.flac",
+          "pcm_sha256": "9c996823ecd29f9849b2c3acfe7b863855110e48fad7ee5b132817a058ef75de"
+        },
+        {
+          "flac_sha256": "091b5ee61b4d2b5e8eca03750395195525e751813d8582e9d74534c8dbbb5db9",
+          "frames": 224800,
+          "member": "LibriSpeech/dev-clean/1673/143396/1673-143396-0001.flac",
+          "pcm_sha256": "11d79f220dfc361d2eee12382da3bf1782d67c7d0aab1a335a8d6c64dbe11570"
+        },
+        {
+          "flac_sha256": "d6dfc50025e5af2388d576375e589b265295cdfc6408730667c9c8bc8b9a001c",
+          "frames": 125600,
+          "member": "LibriSpeech/dev-clean/1673/143396/1673-143396-0002.flac",
+          "pcm_sha256": "a21c71c980613998840e10e75b0924faa3b71dff280ae8c57d972e8286a6ce42"
+        },
+        {
+          "flac_sha256": "d840d75718bb57838bb0cf0ce9e2a03c8438c5dda444173735bf07307048c0a3",
+          "frames": 181680,
+          "member": "LibriSpeech/dev-clean/1673/143396/1673-143396-0003.flac",
+          "pcm_sha256": "ff6e2279308f43dafd9ab6cd0b52af8551795b6a9ceba633d196661ed822168f"
+        }
+      ],
+      "pair_index": 0,
+      "position": "target",
+      "role": "fresh-fixed-development",
+      "speaker": 1673,
+      "window_file": "speaker-1673.s16",
+      "window_frames": 64000,
+      "window_sha256": "0a31d8351163780c076cf008900cb752d61e1331b495cd7c334aa5b2893ba6c3"
+    },
+    {
+      "originals": [
+        {
+          "flac_sha256": "b205f6505788f8923f549ada5a946f6eaf00a885547ee7edc293cebad2711e37",
+          "frames": 42560,
+          "member": "LibriSpeech/dev-clean/1919/142785/1919-142785-0000.flac",
+          "pcm_sha256": "360e113159278fecc2975b93a1dfe3d6222a5c74b3b3714c9821ecd1df867b32"
+        },
+        {
+          "flac_sha256": "22913e56a206e2090468e54c641f34d7d404535c472b5a57184887762e482714",
+          "frames": 176800,
+          "member": "LibriSpeech/dev-clean/1919/142785/1919-142785-0001.flac",
+          "pcm_sha256": "9330e8eb22aa39d062eba9005d06b65f0278fb6814039e174ce43ac6d31d89a7"
+        },
+        {
+          "flac_sha256": "cb1922ddcc20730473a929e6ea79863f9dbba99890034e906f64c2e76a13e08b",
+          "frames": 164160,
+          "member": "LibriSpeech/dev-clean/1919/142785/1919-142785-0002.flac",
+          "pcm_sha256": "625a4baffa12a4eec01282afc648ad8b7969493b83b2e29418d4ec7194b4f9dc"
+        },
+        {
+          "flac_sha256": "a94224c80d76de097d12c6b2daa6ec9481c86261637afe64887a85ea18221c41",
+          "frames": 86480,
+          "member": "LibriSpeech/dev-clean/1919/142785/1919-142785-0003.flac",
+          "pcm_sha256": "89392dc28ce9d1a02789ee2b13099df55411b11104aaebc750f546fb16ea0a58"
+        }
+      ],
+      "pair_index": 0,
+      "position": "interferer",
+      "role": "fresh-fixed-development",
+      "speaker": 1919,
+      "window_file": "speaker-1919.s16",
+      "window_frames": 64000,
+      "window_sha256": "6b17455c1f95a98c4a3a2e8367dd83ad86cbebb075d3e2860903dc7f34b00877"
+    },
+    {
+      "originals": [
+        {
+          "flac_sha256": "6a15f3242eceb9c42417e5a57575ddf341dcf944474bd9ba9e6d10f514873d52",
+          "frames": 53120,
+          "member": "LibriSpeech/dev-clean/1988/24833/1988-24833-0000.flac",
+          "pcm_sha256": "00a11db0d12a03c075efeb7c84d207317242ffc357a15087793fc3e039bd3d80"
+        },
+        {
+          "flac_sha256": "398a08d40b5acb32981fd1f2e20a60b305c6881d04b69d1e0e87401ba47fb374",
+          "frames": 126320,
+          "member": "LibriSpeech/dev-clean/1988/24833/1988-24833-0001.flac",
+          "pcm_sha256": "36e8db8f152d05f7e6ff9df7937f194bf12ef0061404232d5b255a3195ec1e06"
+        },
+        {
+          "flac_sha256": "3a3c01934be0164f615f1004c36b0cc6ea2f1f664119f44e3c4390e96d9ebfa3",
+          "frames": 72880,
+          "member": "LibriSpeech/dev-clean/1988/24833/1988-24833-0002.flac",
+          "pcm_sha256": "c30b4afd68744ac3dde02150940c9f28cd4835fdc7cb179fe7e95ff580143cc3"
+        },
+        {
+          "flac_sha256": "f4dbb337cc258b39797f104e68f3ef1c110bf48b06aab6de89bc6958737e4da2",
+          "frames": 82560,
+          "member": "LibriSpeech/dev-clean/1988/24833/1988-24833-0003.flac",
+          "pcm_sha256": "5af819c8fa815ed75c7c2b9f1e11e3f1f456fc12abc40ae877ded7940b614651"
+        }
+      ],
+      "pair_index": 1,
+      "position": "target",
+      "role": "fresh-fixed-development",
+      "speaker": 1988,
+      "window_file": "speaker-1988.s16",
+      "window_frames": 64000,
+      "window_sha256": "4474af34396e386218daca165f4a04ce08dc07b8c104647e70135dbde0084d0e"
+    },
+    {
+      "originals": [
+        {
+          "flac_sha256": "bb557af288dd9ea04147b8655e274e0a31a981beab456e75bc53a6e138c5a43c",
+          "frames": 107440,
+          "member": "LibriSpeech/dev-clean/1993/147149/1993-147149-0000.flac",
+          "pcm_sha256": "83d34e09b57e5ba25571eb2da8d185039d7eafb6cca699bfb5fe30f574ef242d"
+        },
+        {
+          "flac_sha256": "d8c5f5d5555e9eb441272cebac5ee97cd6c0b26aa4ce05ff7465bccf840e96ad",
+          "frames": 152560,
+          "member": "LibriSpeech/dev-clean/1993/147149/1993-147149-0001.flac",
+          "pcm_sha256": "432a163a657bb1fee9c42fc6d73276084f618a3df37cff237a51dd6e1840773f"
+        },
+        {
+          "flac_sha256": "399f4683e94123f112caffd903130dcae5d5c735473b612e08f6e576f774c7a4",
+          "frames": 92160,
+          "member": "LibriSpeech/dev-clean/1993/147149/1993-147149-0002.flac",
+          "pcm_sha256": "52811e56fdf724e1e646bde874ed79a620698253a3f94ab277c53cb1b6d87b92"
+        },
+        {
+          "flac_sha256": "553294a48d1f7f672ec8f54be6162aeeefb4d83227097728bbfdc64c162d48f7",
+          "frames": 228800,
+          "member": "LibriSpeech/dev-clean/1993/147149/1993-147149-0003.flac",
+          "pcm_sha256": "0c2b9074218f7a67b0a266bbe69fab94dfc68818123ce680f216147d3ce712b4"
+        }
+      ],
+      "pair_index": 1,
+      "position": "interferer",
+      "role": "fresh-fixed-development",
+      "speaker": 1993,
+      "window_file": "speaker-1993.s16",
+      "window_frames": 64000,
+      "window_sha256": "7f4427fa0934e6eb7fbaac81b8331c742762d7b6ad85e23771bc75dc3f038fa7"
+    }
+  ],
+  "speaker_window_sha256": {
+    "1673": "0a31d8351163780c076cf008900cb752d61e1331b495cd7c334aa5b2893ba6c3",
+    "1919": "6b17455c1f95a98c4a3a2e8367dd83ad86cbebb075d3e2860903dc7f34b00877",
+    "1988": "4474af34396e386218daca165f4a04ce08dc07b8c104647e70135dbde0084d0e",
+    "1993": "7f4427fa0934e6eb7fbaac81b8331c742762d7b6ad85e23771bc75dc3f038fa7"
+  }
+}

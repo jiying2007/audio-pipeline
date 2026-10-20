@@ -244,7 +244,12 @@ static void counter64_add(ap_counter64_t *counter, uint64_t delta) {
     uint32_t lo;
     uint32_t hi;
     uint32_t new_lo;
-    atomic_fetch_add_explicit(&counter->seq, 1u, memory_order_acq_rel);
+    atomic_fetch_add_explicit(&counter->seq, 1u, memory_order_relaxed);
+    /* The release/acquire fences around atomic payload accesses synchronize
+     * if a reader sees any in-progress write (C11 7.17.4). Its final sequence
+     * load must then see this odd marker or a later value and retry. An acquire
+     * load only after the payload would not provide that read-side ordering. */
+    atomic_thread_fence(memory_order_release);
     lo = atomic_load_explicit(&counter->lo, memory_order_relaxed);
     hi = atomic_load_explicit(&counter->hi, memory_order_relaxed);
     new_lo = lo + (uint32_t)delta;
@@ -264,7 +269,8 @@ static uint64_t counter64_read(const ap_counter64_t *counter) {
         if (seq0 & 1u) continue;
         lo = atomic_load_explicit(&counter->lo, memory_order_relaxed);
         hi = atomic_load_explicit(&counter->hi, memory_order_relaxed);
-        seq1 = atomic_load_explicit(&counter->seq, memory_order_acquire);
+        atomic_thread_fence(memory_order_acquire);
+        seq1 = atomic_load_explicit(&counter->seq, memory_order_relaxed);
         if (seq0 == seq1)
             return ((uint64_t)hi << 32u) | (uint64_t)lo;
     }
@@ -708,7 +714,9 @@ static void runtime_latch_critical(ap_runtime_t *runtime,
     if (severity < AP_EVENT_ERROR) return;
     frame = runtime->worker_sequence;
     counter32_inc_sat(&runtime->critical_events);
-    atomic_fetch_add_explicit(&runtime->critical_seq, 1u, memory_order_acq_rel);
+    atomic_fetch_add_explicit(&runtime->critical_seq, 1u, memory_order_relaxed);
+    /* Same single-writer atomic snapshot protocol as counter64_add/read. */
+    atomic_thread_fence(memory_order_release);
     atomic_store_explicit(&runtime->critical_frame_lo, (uint32_t)frame, memory_order_relaxed);
     atomic_store_explicit(&runtime->critical_frame_hi, (uint32_t)(frame >> 32u), memory_order_relaxed);
     atomic_store_explicit(&runtime->critical_kind, (unsigned)kind, memory_order_relaxed);
@@ -845,14 +853,18 @@ static void adjust_quality(ap_runtime_t *runtime, uint64_t elapsed_ns) {
 
 static void runtime_note_discontinuity(ap_runtime_t *runtime,
                                        ap_discontinuity_flags_t flags,
-                                       uint32_t lost) {
+                                       uint32_t lost_capture,
+                                       uint32_t lost_render) {
+    const uint32_t lost = lost_capture > lost_render ? lost_capture : lost_render;
+    /* Reset time-dependent state once for the combined boundary. The event's
+     * single loss field is a summary; per-direction counters retain metadata. */
     if (ap_pipeline_notify_stream_discontinuity(runtime->pipeline, flags, lost) != AP_OK)
         return;
     counter64_add(&runtime->stream_discontinuities, 1u);
     if (flags & AP_DISCONTINUITY_CAPTURE_GAP)
-        counter64_add(&runtime->capture_gap_frames, lost ? lost : 1u);
+        counter64_add(&runtime->capture_gap_frames, lost_capture ? lost_capture : 1u);
     if (flags & AP_DISCONTINUITY_RENDER_GAP)
-        counter64_add(&runtime->render_gap_frames, lost ? lost : 1u);
+        counter64_add(&runtime->render_gap_frames, lost_render ? lost_render : 1u);
     runtime_emit_event(runtime,
                        AP_EVENT_STREAM_DISCONTINUITY,
                        AP_EVENT_WARN,
@@ -877,6 +889,7 @@ static void runtime_apply_command(ap_runtime_t *runtime,
     case AP_RUNTIME_COMMAND_STREAM_DISCONTINUITY:
         runtime_note_discontinuity(runtime,
                                    command->data.discontinuity.flags,
+                                   command->data.discontinuity.lost_frames,
                                    command->data.discontinuity.lost_frames);
         break;
     case AP_RUNTIME_COMMAND_RESET:
@@ -915,11 +928,13 @@ static void runtime_apply_command(ap_runtime_t *runtime,
 }
 
 static void runtime_drain_commands(ap_runtime_t *runtime) {
+    /* Refilled slots belong to the next boundary. A moving producer head would
+     * let control traffic indefinitely postpone input work and the stop check. */
+    const unsigned head =
+        atomic_load_explicit(&runtime->command_head, memory_order_acquire);
     for (;;) {
         const unsigned tail =
             atomic_load_explicit(&runtime->command_tail, memory_order_relaxed);
-        const unsigned head =
-            atomic_load_explicit(&runtime->command_head, memory_order_acquire);
         if (tail == head) break;
         runtime_apply_command(runtime,
                               &runtime->commands[tail & AP_RT_COMMAND_MASK]);
@@ -933,16 +948,16 @@ static void runtime_apply_metadata(ap_runtime_t *runtime,
                                    const ap_rt_input_t *input) {
     const ap_rt_metadata_t *metadata = &input->metadata;
     ap_discontinuity_flags_t flags = 0u;
-    uint32_t lost = 0u;
+    uint32_t lost_capture = 0u;
+    uint32_t lost_render = 0u;
     if (!input->has_metadata) return;
     if (metadata->flags & AP_FRAME_CAPTURE_DISCONTINUITY) {
         flags |= AP_DISCONTINUITY_CAPTURE_GAP;
-        lost = metadata->lost_capture_frames;
+        lost_capture = metadata->lost_capture_frames;
     }
     if (metadata->flags & AP_FRAME_RENDER_DISCONTINUITY) {
         flags |= AP_DISCONTINUITY_RENDER_GAP;
-        if (metadata->lost_render_frames > lost)
-            lost = metadata->lost_render_frames;
+        lost_render = metadata->lost_render_frames;
     }
     if (metadata->flags & AP_FRAME_CLOCK_RESET)
         flags |= AP_DISCONTINUITY_CLOCK_RESET;
@@ -950,7 +965,7 @@ static void runtime_apply_metadata(ap_runtime_t *runtime,
         flags |= AP_DISCONTINUITY_XRUN;
     if (metadata->flags & AP_FRAME_CODEC_REOPEN)
         flags |= AP_DISCONTINUITY_CODEC_REOPEN;
-    if (flags) runtime_note_discontinuity(runtime, flags, lost);
+    if (flags) runtime_note_discontinuity(runtime, flags, lost_capture, lost_render);
     if ((metadata->flags &
          (AP_FRAME_CAPTURE_TIMESTAMP_VALID | AP_FRAME_RENDER_TIMESTAMP_VALID)) ==
         (AP_FRAME_CAPTURE_TIMESTAMP_VALID | AP_FRAME_RENDER_TIMESTAMP_VALID)) {
@@ -1566,6 +1581,7 @@ ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
     unsigned head;
     unsigned tail;
     ap_rt_output_t *src;
+    ap_status_t status;
     if (!runtime || !output) return AP_EINVAL;
     tail = atomic_load_explicit(&runtime->out_tail, memory_order_relaxed);
     head = atomic_load_explicit(&runtime->out_head, memory_order_acquire);
@@ -1575,8 +1591,9 @@ ap_status_t ap_runtime_receive(ap_runtime_t *runtime,
            src->audio,
            (size_t)runtime->io_frames * sizeof(int16_t));
     if (metrics) *metrics = src->metrics;
+    status = src->status;
     atomic_store_explicit(&runtime->out_tail, tail + 1u, memory_order_release);
-    return src->status;
+    return status;
 }
 
 ap_status_t ap_runtime_receive_event(ap_runtime_t *runtime, ap_event_t *event) {
@@ -1702,25 +1719,35 @@ ap_status_t ap_runtime_read_metrics(const ap_runtime_t *runtime,
 }
 ap_status_t ap_runtime_get_critical_state(const ap_runtime_t *runtime,
                                           ap_runtime_critical_state_t *state) {
-    unsigned seq0 = 0u;
-    unsigned seq1 = 0u;
-    unsigned lo = 0u;
-    unsigned hi = 0u;
+    unsigned lo;
+    unsigned hi;
+    unsigned kind;
+    unsigned severity;
+    int arg0;
+    int arg1;
     if (!runtime || !state || state->struct_size < sizeof(*state) ||
         state->api_version != AP_RUNTIME_API_VERSION)
         return AP_EINVAL;
-    do {
-        seq0 = atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
+    for (;;) {
+        const unsigned seq0 =
+            atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
+        unsigned seq1;
         if (seq0 & 1u) continue;
         lo = atomic_load_explicit(&runtime->critical_frame_lo, memory_order_relaxed);
         hi = atomic_load_explicit(&runtime->critical_frame_hi, memory_order_relaxed);
-        state->kind = atomic_load_explicit(&runtime->critical_kind, memory_order_relaxed);
-        state->severity = (uint8_t)atomic_load_explicit(&runtime->critical_severity, memory_order_relaxed);
-        state->arg0 = atomic_load_explicit(&runtime->critical_arg0, memory_order_relaxed);
-        state->arg1 = atomic_load_explicit(&runtime->critical_arg1, memory_order_relaxed);
-        seq1 = atomic_load_explicit(&runtime->critical_seq, memory_order_acquire);
-    } while (seq0 != seq1);
+        kind = atomic_load_explicit(&runtime->critical_kind, memory_order_relaxed);
+        severity = atomic_load_explicit(&runtime->critical_severity, memory_order_relaxed);
+        arg0 = atomic_load_explicit(&runtime->critical_arg0, memory_order_relaxed);
+        arg1 = atomic_load_explicit(&runtime->critical_arg1, memory_order_relaxed);
+        atomic_thread_fence(memory_order_acquire);
+        seq1 = atomic_load_explicit(&runtime->critical_seq, memory_order_relaxed);
+        if (seq0 == seq1) break; /* Both observations are the same even value. */
+    }
     state->frame_sequence = ((uint64_t)hi << 32u) | lo;
+    state->kind = kind;
+    state->severity = (uint8_t)severity;
+    state->arg0 = arg0;
+    state->arg1 = arg1;
     state->total_events = (uint64_t)atomic_load_explicit(&runtime->critical_events, memory_order_acquire);
     return AP_OK;
 }

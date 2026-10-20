@@ -1,0 +1,800 @@
+{
+  "base_revision": "e3672ffe16e4c9d42a100e7712b9bbd3d8338545",
+  "code_execution_commits": {
+    "neural": "f97f77d6377da66cb4b29b992170baf44a58d8fb",
+    "sof_v1": "7d5ca9cb3e03e4a68fb9b03f387a95392def45d3",
+    "sof_v2": "2879436ccc5754bb58f0b0a039a17e90f805094c"
+  },
+  "contract_sha256": {
+    "external-baselines-admission.json": "c367df5a563ea3fde7dd53ff89b35a1ff7f0b3b5028e0bcda529a5f4c4ec9098",
+    "external-baselines-source-lock.json": "087cc0ddf4ee1c5cc1150d57bd356548a706aba3204ea6f86201fb829866112c",
+    "external-neural-v1.json": "779ead953df04b0dc88cabdfb26c2009df862fdc80e3c7c5a20e34dd3d0ffdb1",
+    "sof-fir-reference-v1.json": "6e153845c656604291cd4be0ab3df56a5480d16a83bfa4c36df8f3bf9933217f"
+  },
+  "data_role": "DISCLOSED_DEVELOPMENT_DIAGNOSTIC_NOT_HOLDOUT",
+  "graphs": {
+    "gtcrn": {
+      "external_tensors": [],
+      "input_names": [
+        "mix",
+        "conv_cache",
+        "tra_cache",
+        "inter_cache"
+      ],
+      "nodes": 415,
+      "onnx_checker": "PASS",
+      "opsets": {
+        "": 11
+      },
+      "output_names": [
+        "enh",
+        "conv_cache_out",
+        "tra_cache_out",
+        "inter_cache_out"
+      ],
+      "sha256": "b4718df6228e7bdf1a8a435cf98f838636eb2fd331acabf86ba87c5192ebcb87"
+    },
+    "ul-unas": {
+      "external_tensors": [],
+      "input_names": [
+        "mix",
+        "conv_cache",
+        "tfa_cache",
+        "inter_cache"
+      ],
+      "nodes": 697,
+      "onnx_checker": "PASS",
+      "opsets": {
+        "": 11
+      },
+      "output_names": [
+        "enh",
+        "conv_cache_out",
+        "tfa_cache_out",
+        "inter_cache_out"
+      ],
+      "sha256": "f2e804d54d6a88f4f82f44d86c9f1cf646db2509bfca935cfbfc5fcd8cbfac3b"
+    }
+  },
+  "independent_new_study": false,
+  "limits": [
+    "host timing scopes differ and are not SSC305 qualification",
+    "neural whole-process RSS is not component SRAM",
+    "SOF is pristine FIR kernel and coefficient bank with explicit first-party host adapter, not full firmware",
+    "original source cache receipt retained; this restore is not a claim to have redownloaded the whole LibriSpeech archive",
+    "do not infer public C4, real robot noise quality, holdout performance or shipping authority"
+  ],
+  "neural": {
+    "dependencies": {
+      "packages": {
+        "coloredlogs": {
+          "binary_metadata_notice_sha256": {
+            "coloredlogs-15.0.1.dist-info/LICENSE.txt": "0bef4ffb1855b65570304f2018c6d44e4bab97bd5df8716ecd7800014d717267",
+            "coloredlogs-15.0.1.dist-info/METADATA": "1663baba746f35eefb249d945345d88566cc4f3643863eb31a91258c3cac674c",
+            "coloredlogs-15.0.1.dist-info/RECORD": "f2f3f7348ce82e3d6d12b10f627ce2c7595e61caa4beb9e1d9fa4a57564ef5fd"
+          },
+          "license_classifiers": [
+            "License :: OSI Approved :: MIT License"
+          ],
+          "license_expression": null,
+          "version": "15.0.1"
+        },
+        "flatbuffers": {
+          "binary_metadata_notice_sha256": {
+            "flatbuffers-25.12.19.dist-info/METADATA": "9f38239f96faa21522a6aadab6912e1e560708bbe9c9f696a0679c9403fa089e",
+            "flatbuffers-25.12.19.dist-info/RECORD": "7ced0220c7592df5b72b146f346c83ab7a393f26fb8e32dac348d6f57a6a80aa"
+          },
+          "license_classifiers": [
+            "License :: OSI Approved :: Apache Software License"
+          ],
+          "license_expression": null,
+          "version": "25.12.19"
+        },
+        "humanfriendly": {
+          "binary_metadata_notice_sha256": {
+            "humanfriendly-10.0.dist-info/LICENSE.txt": "4ac48f4117809f2734066150450f120b3bb110ac1d3b32170795e0560dbbc1f5",
+            "humanfriendly-10.0.dist-info/METADATA": "68bb349388cdfeca602acc3455b83a7b2fe3cbe84025e27493bcbe76f3ab6c82",
+            "humanfriendly-10.0.dist-info/RECORD": "f925374b71913cb58f90cdcb99c9447b845e4f7280dc131196f79cc13ea22e19"
+          },
+          "license_classifiers": [
+            "License :: OSI Approved :: MIT License"
+          ],
+          "license_expression": null,
+          "version": "10.0"
+        },
+        "ml_dtypes": {
+          "binary_metadata_notice_sha256": {
+            "ml_dtypes-0.6.0.dist-info/METADATA": "363d582174259be78c619e314216fc8979e5a5ec245337ee236b244945df3f01",
+            "ml_dtypes-0.6.0.dist-info/RECORD": "e5200a81e1df1985e9980d184206a7bdfcd02ebe07ec0c5074f4b11b220865d1",
+            "ml_dtypes-0.6.0.dist-info/licenses/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "ml_dtypes-0.6.0.dist-info/licenses/LICENSE.eigen": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+            "ml_dtypes/_ml_dtypes_ext.cpython-312-x86_64-linux-gnu.so": "c993e0daf62ea45b3270b29bcb6dd590c3a05161a7d572a9c6c41754f725f656"
+          },
+          "license_classifiers": [],
+          "license_expression": "Apache-2.0",
+          "version": "0.6.0"
+        },
+        "mpmath": {
+          "binary_metadata_notice_sha256": {
+            "mpmath-1.3.0.dist-info/LICENSE": "c26cae81da4508e5e249985777a33821f183223ebb74d7f8cfbf90fe7eef2fb7",
+            "mpmath-1.3.0.dist-info/METADATA": "44b66ea444b9c0d19ae94815d356bf047ae6b680c19268b5c265687cd6a81406",
+            "mpmath-1.3.0.dist-info/RECORD": "631ffb63282ac4c1792216f2b0f26f6fd4f3ae58410436a6a7118eeaf62b951a"
+          },
+          "license_classifiers": [
+            "License :: OSI Approved :: BSD License"
+          ],
+          "license_expression": null,
+          "version": "1.3.0"
+        },
+        "numpy": {
+          "binary_metadata_notice_sha256": {
+            "numpy-2.3.5.dist-info/LICENSE.txt": "2046a3130e50b11c01659b3a0d963e6ae0b7436ff8e89cbcfd9e87bc6112d595",
+            "numpy-2.3.5.dist-info/METADATA": "6002f29765e5bc1a3be4a1b92ed56b64968a0fecba73e7f81cd536d0c40f4fa3",
+            "numpy-2.3.5.dist-info/RECORD": "7249833b1164b2596e58be0cefd14c1df1a3db525bab44892485aec2d1ba85e8",
+            "numpy.libs/libgfortran-040039e1-0352e75f.so.5.0.0": "c6090048eccc763522c12ef016f81da6b627cb3a044f55cf0479a839c41c0980",
+            "numpy.libs/libquadmath-96973f99-934c22de.so.0.0.0": "6ed5137f412781ad7863439fb543613f620b43c32b63292a0029246162f5bbc6",
+            "numpy.libs/libscipy_openblas64_-fdde5778.so": "ee2039cf13a45e1e89f04d0cea9585657d93ffaa425594e1935161013fdf4e12",
+            "numpy/_core/_multiarray_tests.cpython-312-x86_64-linux-gnu.so": "fae3aacacf309c276cc4c8cbdc13735117763f1c5f652cb48bb97ecc9c1b9dd8",
+            "numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so": "ba96467ae494babaf7c3458b09cc03c4200c2e10010860d80e452ffb8b01c8cd",
+            "numpy/_core/_operand_flag_tests.cpython-312-x86_64-linux-gnu.so": "2da00a615720d1fc0fb902fcf73f2ad7e1aba50ca469a34ae2426e5d102b983b",
+            "numpy/_core/_rational_tests.cpython-312-x86_64-linux-gnu.so": "2fed2e7ef5e6168b842e958eff52093b2669ee6d448b39c6c064990b79464550",
+            "numpy/_core/_simd.cpython-312-x86_64-linux-gnu.so": "346508d7b24a196ca4175518dd3b09aee32b6c7f9809f78fc031504436c0d3f7",
+            "numpy/_core/_struct_ufunc_tests.cpython-312-x86_64-linux-gnu.so": "53ffdbcd324e449e12d40c77f77635ba2d6fa7036640a273340224202c0afa19",
+            "numpy/_core/_umath_tests.cpython-312-x86_64-linux-gnu.so": "ed0edb6cafa2dba589761083c3edb64e72f30fd816c32a9af771440a5b7933b0",
+            "numpy/_core/include/numpy/random/LICENSE.txt": "fbc539f47d0cf83bc61378080fb873d5c14630126cacbfe754035c3926daa5ec",
+            "numpy/fft/_pocketfft_umath.cpython-312-x86_64-linux-gnu.so": "e849dc89e717b2a315948dd0127786098372c7a2206cfd130fa818b73e69164d",
+            "numpy/linalg/_umath_linalg.cpython-312-x86_64-linux-gnu.so": "64bfb8bb8a1a09ca31f7a6e307a87b4c78a75f3489aaf3c61ed8aa4ffada9845",
+            "numpy/linalg/lapack_lite.cpython-312-x86_64-linux-gnu.so": "93ca06e05991d23cc5fa02e76c757b97cf20b5ef29ec0ef69fb88a2432ddf5d5",
+            "numpy/ma/LICENSE": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6",
+            "numpy/random/LICENSE.md": "103166b62b80443afb9eb3488e052ea06be0cff566b908f199e561fde49af19f",
+            "numpy/random/_bounded_integers.cpython-312-x86_64-linux-gnu.so": "53a8bd2e993d32c304b91020970c8b67fa178e142137f525743ba92755524b84",
+            "numpy/random/_common.cpython-312-x86_64-linux-gnu.so": "e7fb21cc610f6e22f1f40a365b0fe6c573132b6c22199ed21dbe51c0e7c73620",
+            "numpy/random/_generator.cpython-312-x86_64-linux-gnu.so": "d7fed73c3e361b6ff683a9148b74d982f1702b1af3631e496066034cd1cba7ad",
+            "numpy/random/_mt19937.cpython-312-x86_64-linux-gnu.so": "a3a98159adbf86abf95b34b4989840f0f0bfbde3a5c87ad2a3e01ea7c0428d4d",
+            "numpy/random/_pcg64.cpython-312-x86_64-linux-gnu.so": "2b9bc903a5ab4f857e169e93cf59a824564f1361b1fc4ff5bb336a54ece72ba9",
+            "numpy/random/_philox.cpython-312-x86_64-linux-gnu.so": "9fb7e485037c7f00aa3e4aa1056f15f7f9b964aa4f04657952194efaa9174356",
+            "numpy/random/_sfc64.cpython-312-x86_64-linux-gnu.so": "62906d05604056ee4de2ce978cd9d23e0de603c80a769a648ceac74d8ab680b6",
+            "numpy/random/bit_generator.cpython-312-x86_64-linux-gnu.so": "d15c630c101e132de14d924facadf581f5e004b0974b17afa2f0dea1bcf5fe6e",
+            "numpy/random/mtrand.cpython-312-x86_64-linux-gnu.so": "70b2d9942f3d35be9f95c7bc3ba19e78e3db00e2b0a323ca02363cee9c9e128c"
+          },
+          "license_classifiers": [
+            "License :: OSI Approved :: BSD License"
+          ],
+          "license_expression": null,
+          "version": "2.3.5"
+        },
+        "onnx": {
+          "binary_metadata_notice_sha256": {
+            "onnx-1.19.1.dist-info/METADATA": "0587a462aa7064b0f0a75e7c1ee9595b7d2117dbe4422b514e0cdeb32c032563",
+            "onnx-1.19.1.dist-info/RECORD": "20da3eeff0b60b5a9a2441d07b5d04d1ecc5cab699a84d3243f2a5fe02350063",
+            "onnx-1.19.1.dist-info/licenses/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "onnx/onnx_cpp2py_export.cpython-312-x86_64-linux-gnu.so": "42c1fa4e42bae3efdac3f391c3b5014d373129213b973869260a1299104c0cbc"
+          },
+          "license_classifiers": [],
+          "license_expression": null,
+          "version": "1.19.1"
+        },
+        "onnxruntime": {
+          "binary_metadata_notice_sha256": {
+            "onnxruntime-1.23.2.dist-info/METADATA": "0681c4f873cc6fdd4f27591efa63e630b79d09f0a00f4a211a1463b7c4893f23",
+            "onnxruntime-1.23.2.dist-info/RECORD": "13053fd3928851fbb4f048d774c04fd924e7ce6ee6362de753da99e36f476953",
+            "onnxruntime/LICENSE": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+            "onnxruntime/capi/libonnxruntime.so.1.23.2": "718c3fb0785d5ea06061b92c32ce4ad35be1bd4c71ae6192efe06f1ab21f0f8a",
+            "onnxruntime/capi/libonnxruntime_providers_shared.so": "086ec1d5388f64153d9c63470d126693db9a182c8ce236d3a1119068471b8a0d",
+            "onnxruntime/capi/onnxruntime_pybind11_state.cpython-312-x86_64-linux-gnu.so": "0d965a8252784479570654b909e99f94955491450394f013ac391e11a30828de"
+          },
+          "license_classifiers": [
+            "License :: OSI Approved :: MIT License"
+          ],
+          "license_expression": null,
+          "version": "1.23.2"
+        },
+        "packaging": {
+          "binary_metadata_notice_sha256": {
+            "packaging-26.3.dist-info/METADATA": "70fdb89fc4d4a9a043bf7372b8972bcc883fddff34ab55e9cf80d73875384763",
+            "packaging-26.3.dist-info/RECORD": "fd59b791119d91d0602060c81541e41118992995c6a0070e411a5ea3c6b1ebb2",
+            "packaging-26.3.dist-info/licenses/LICENSE": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48",
+            "packaging-26.3.dist-info/licenses/LICENSE.APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+            "packaging-26.3.dist-info/licenses/LICENSE.BSD": "b70e7e9b742f1cc6f948b34c16aa39ffece94196364bc88ff0d2180f0028fac5",
+            "packaging/licenses/__init__.py": "590d12eee73ddbec53b4e9ee5bfc64d9cb3aacb4940e8ebcba260757ce56740b",
+            "packaging/licenses/__pycache__/__init__.cpython-312.pyc": "6f5791e23a68931cb289751d44707f25c734b0aa5a521e985a9553577a9c10b7",
+            "packaging/licenses/__pycache__/_spdx.cpython-312.pyc": "0601a2bd43c733686f193f26ac3cdfc6d9152b3483f30ca1f4359033aa59e631",
+            "packaging/licenses/_spdx.py": "596ec35e2ca0ebcba9fd8343ff0a51625af548786257815f24b41f7e08613314"
+          },
+          "license_classifiers": [],
+          "license_expression": "Apache-2.0 OR BSD-2-Clause",
+          "version": "26.3"
+        },
+        "protobuf": {
+          "binary_metadata_notice_sha256": {
+            "google/_upb/_message.abi3.so": "4ac1622d643ff188f4f355cc89a439f6881c397d766911e1246f9f4a215d051d",
+            "protobuf-7.36.2.dist-info/LICENSE": "6e5e117324afd944dcf67f36cf329843bc1a92229a8cd9bb573d7a83130fea7d",
+            "protobuf-7.36.2.dist-info/METADATA": "445916389cc3a87d5f815d763192372a17a221339d474cb661523157bf07d61c",
+            "protobuf-7.36.2.dist-info/RECORD": "10b05c29eea0b64a77bcbd3d8fbd8ad092465b239b37e37ab921c0b248062fbf"
+          },
+          "license_classifiers": [],
+          "license_expression": null,
+          "version": "7.36.2"
+        },
+        "sympy": {
+          "binary_metadata_notice_sha256": {
+            "sympy-1.14.0.dist-info/METADATA": "b756c2fbfd5be05ac5bdb0ebca61f55618f30f633ed92d88a5687429313a7595",
+            "sympy-1.14.0.dist-info/RECORD": "ba11cf83c22a620ccc18612cfa9bbe85ddf8a4df37fdf4b48ae6876104d35499",
+            "sympy-1.14.0.dist-info/licenses/AUTHORS": "82b1038521b0696c63c90b31ed4a0a2c9c4c16871c648b157b07ca44b6f18f8d",
+            "sympy-1.14.0.dist-info/licenses/LICENSE": "07a5e9819f727b4986ad2829c7a29a6320d42575f720eb24d71b7fef573a0286",
+            "sympy/parsing/latex/LICENSE.txt": "007bc30a58fa40a996e772047120de4eaf31f5110e4f9c3b5f93fcdfbe2eaca1"
+          },
+          "license_classifiers": [
+            "License :: OSI Approved :: BSD License"
+          ],
+          "license_expression": null,
+          "version": "1.14.0"
+        },
+        "typing_extensions": {
+          "binary_metadata_notice_sha256": {
+            "typing_extensions-4.16.0.dist-info/METADATA": "b05084ca1d50879865178d9fff9fabeab61bdfb1f361bfbde95421ffc8f9be46",
+            "typing_extensions-4.16.0.dist-info/RECORD": "9861cb1104df8ec0ce0e5de06999ed8540a156766893cf404a41e9adb275afff",
+            "typing_extensions-4.16.0.dist-info/licenses/LICENSE": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf"
+          },
+          "license_classifiers": [],
+          "license_expression": "PSF-2.0",
+          "version": "4.16.0"
+        }
+      },
+      "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+      "python": "3.12.14",
+      "scope": "actual installed native binaries, wheel metadata/RECORD and notices; no shipping redistribution"
+    },
+    "manifest_sha256": "91ad194062d31b6cef822765c9b66e800285ce97632851b62b4bcf7ffcdfc290",
+    "mean_phases_si_sdr_db": {
+      "gtcrn": {
+        "double-after": 15.213490162899172,
+        "double-before": 17.243348412706627,
+        "near-final": 26.1966709349222,
+        "near-initial": 27.276816486318282
+      },
+      "passthrough": {
+        "double-after": 15.095366981100774,
+        "double-before": 15.702294927684493,
+        "near-final": 118.03996993523958,
+        "near-initial": 123.57087379391328
+      },
+      "ul-unas": {
+        "double-after": 15.913999349146634,
+        "double-before": 17.56167990796096,
+        "near-final": 30.7182662615874,
+        "near-initial": 32.185550734276255
+      }
+    },
+    "pcm_outputs_sha256": {
+      "p0-ula4-70-fir33-none": {
+        "gtcrn": "7c77e3cd1e45365de423c09154c81d7cd70fe79a1ca07f0530960f173caf9ea0",
+        "passthrough": "496edf5ae7719cdb7dde6aa79db20ec93f81a8103bd4c933387312b9f29c7292",
+        "ul-unas": "37d66cd13b78df475d6521751087b07884c567e01fd53017aa00407546101690"
+      },
+      "p0-ula4-70-fir33-path": {
+        "gtcrn": "3fb31c6e8b59a4099e89a0e021f38335b375755a42ea183ca05fb20ba6ac720b",
+        "passthrough": "b589dbe47ece85a06296662526f965654f38e0486c26201bcfd4f6b4b19e7b84",
+        "ul-unas": "44c55f84ffd5c759082fda8764434329c12efae6e9a329de79c5bb7db9ffd5f1"
+      },
+      "p0-ula4-70-fir33-steer": {
+        "gtcrn": "00d997047611d867441c9dc5f08e4a528e382f3b82590dfe50eb7ba14f4912e1",
+        "passthrough": "7412e4023fdf7473554bed08fd43b72bdea0f95d7d99ac576a4b4e10a1255f1e",
+        "ul-unas": "3b03a5c570759b977aef3806e0960d5baa1d76889a24b0a8dd0c2c9b72c5ac37"
+      },
+      "p1-ula4-70-fir33-none": {
+        "gtcrn": "7da0764fb456e42227c8afeb7ec31eff59ef5b5f37058d8e256cf6e050d71438",
+        "passthrough": "2b47e333c66d1c8217f11c42f82abedcd62f5826042d98550128dbd7648f3863",
+        "ul-unas": "1f879100d5e676b3aa4e0b74d90bb38d14bfa4b3c1a094fc152bff3090c7ac05"
+      },
+      "p1-ula4-70-fir33-path": {
+        "gtcrn": "70bf0c2787e7fbf2313b456e917e51d080143869475b873e62c94091aee34439",
+        "passthrough": "7756bb72ccf760b055f4f0c9d045e7a10afee9e229fd56b26d716cf5b4d29f29",
+        "ul-unas": "6cab9fd8a7fd4614b473a7067f94d8f7e48e578c250aa2bc730a0829efece227"
+      },
+      "p1-ula4-70-fir33-steer": {
+        "gtcrn": "e4873c812f49f0a142f9d43c6e889f0427cc9cd876c78a720cf3e15a563916f1",
+        "passthrough": "679e797c20253ab845a9b52000e9749b88f4eed7e8838ab5466b12970ca09e22",
+        "ul-unas": "12c3e2bd899579da045870abd318327820c8dfb2ec50b97c06ad50baa0e73a95"
+      }
+    },
+    "result_sha256": "4de5abc3076904e0908650a58e8648b4eea246c9c3ef1a1379e923072cbc7f8d",
+    "status": "NEW_REEXECUTION_COMPLETED",
+    "timing": {
+      "gtcrn": {
+        "aggregate_rtf_host_only": 0.10700257528125,
+        "decision": {
+          "diagnostic_shortlist_rule_met": false,
+          "disposition": "REJECT_D0_POST_AEC_CONFIGURATION",
+          "mean_far_only_extra_attenuation_db": 4.3861655650332505,
+          "shipping_authority": false,
+          "worst_near_phase_si_sdr_loss_db": 100.91390814751202
+        },
+        "host_10ms_misses": 44,
+        "pcm_push_ms": {
+          "max": 380.542266,
+          "p50": 0.9130785,
+          "p95": 1.9487458499999977,
+          "p99": 5.051490120000005
+        },
+        "pushes": 9600
+      },
+      "ul-unas": {
+        "aggregate_rtf_host_only": 0.12377731582291666,
+        "decision": {
+          "diagnostic_shortlist_rule_met": false,
+          "disposition": "REJECT_D0_POST_AEC_CONFIGURATION",
+          "mean_far_only_extra_attenuation_db": 8.134560269012582,
+          "shipping_authority": false,
+          "worst_near_phase_si_sdr_loss_db": 96.96600020319372
+        },
+        "host_10ms_misses": 55,
+        "pcm_push_ms": {
+          "max": 344.461983,
+          "p50": 1.084746,
+          "p95": 2.222603799999999,
+          "p99": 5.662054960000011
+        },
+        "pushes": 9600
+      }
+    },
+    "whole_process_rss_kib": 143132
+  },
+  "new_effects_reexecuted": true,
+  "original_inputs": {
+    "spatial_source_recovery": {
+      "admission_sha256": "240c536fd70fee3152996b94fc69718fd8a687fdd30d3696d83a6e6c6a815524",
+      "bound_source_sha256": "f77a897bf9681af2c09f57515b99fb2d7ca072dc93371d438e872579e39f801e",
+      "current_whole_librispeech_archive_download_claim": false,
+      "effect_selection": [
+        1673,
+        1919,
+        1988,
+        1993
+      ],
+      "independent_current_decode": {
+        "all_eight_windows_match": true,
+        "all_flac_pcm_hashes_match": true,
+        "decoder_path": "/usr/bin/ffmpeg",
+        "decoder_sha256": "ed16af623947494a72e284b6eb8ff225f2da22b38b5d5069c2fd4b4ba3384e41",
+        "flacs": 32,
+        "version": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers\nbuilt with gcc 13 (Ubuntu 13.2.0-23ubuntu3)\nconfiguration: --prefix=/usr --extra-version=3ubuntu5 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --disable-omx --enable-gnutls --enable-libaom --enable-libass --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-openal --enable-opencl --enable-opengl --disable-sndio --enable-libvpl --disable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-ladspa --enable-libbluray --enable-libjack --enable-libpulse --enable-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared\nlibavutil      58. 29.100 / 58. 29.100\nlibavcodec     60. 31.102 / 60. 31.102\nlibavformat    60. 16.100 / 60. 16.100\nlibavdevice    60.  3.100 / 60.  3.100\nlibavfilter     9. 12.100 /  9. 12.100\nlibswscale      7.  5.100 /  7.  5.100\nlibswresample   4. 12.100 /  4. 12.100\nlibpostproc    57.  3.100 / 57.  3.100\n"
+      },
+      "original_source_receipt_preserved": true,
+      "roles_unchanged": true,
+      "schema_version": 1,
+      "shipping_authority": false,
+      "source_artifact": {
+        "archive_bytes": 5171219,
+        "archive_sha256": "eb780ba093e19b21f2753048018c05ef0467ba6ebbe6c03d4372fd3ed0e0c8e1",
+        "artifact_id": 11357177181,
+        "run_id": 37337539976
+      },
+      "speaker_selection": [
+        1673,
+        1919,
+        1988,
+        1993,
+        2035,
+        2078,
+        2086,
+        2277
+      ],
+      "status": "RESTORED_ORIGINAL_ADMITTED_SOURCE_AND_REDECODED"
+    },
+    "speex_zip": {
+      "artifact_id": 12199497546,
+      "bytes": 10693447,
+      "run_id": 39274232480,
+      "sha256": "aa4961bae5d7eb0d3861ce04ed4c7c8408518f002b856e1f7f9cffa538bdad12"
+    }
+  },
+  "preserved_sof_v1": {
+    "manifest_sha256": "be2f29018ddf5a87fa98666a8c07e240590697738080a5467468088365fbf54d",
+    "original_11_negatives": {
+      "rejected": [
+        "missing-case",
+        "promotion",
+        "wrong-base",
+        "holdout",
+        "full-firmware-claim",
+        "wrong-score",
+        "wrong-coefficients",
+        "missing-sanitizer",
+        "resealed-changed-source-pcm",
+        "failed-first-party-receipt",
+        "nonfinite-unscored-tail"
+      ],
+      "status": "PASS"
+    },
+    "result_sha256": "96348a4674cc2e52b9dc7791a0b36e48e877d9711a8166343a77e50cfd2d40f4",
+    "timing": {
+      "blocks": 2400,
+      "chunk_160_us": {
+        "max": 1237.281,
+        "p50": 17.839,
+        "p95": 38.220149999999975,
+        "p99": 154.67894999999942
+      },
+      "persistent_fir_bytes": [
+        1808
+      ],
+      "rtf_host_only": 0.002538641083333333,
+      "scope": "host CLOCK_THREAD_CPUTIME_ID; SOF FIR+Q5.27 sum+PCM conversions, excludes I/O and scheduling wait"
+    },
+    "timing_verifier_gap_reproduced": {
+      "code_sha256": "d7add59f10c21c9b9b018b73bdc567c4d3d9fd9de6fc819a99799042a4ccf881",
+      "expected_timing_chunks": 400,
+      "mutated_timing_chunks": 399,
+      "original_evidence_is_complete": true,
+      "shipping_authority": false,
+      "status": "ACCEPTED_RESEALED_PARTIAL_TIMING"
+    }
+  },
+  "prior_session_artifacts_unreadable": true,
+  "schema_version": 1,
+  "shipping_authority": false,
+  "sof_v2": {
+    "all_72_component_outputs_equal_recovery_v1": true,
+    "compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "engineering": {
+      "modes": {
+        "native": {
+          "chunk_2_vs_160_exact": true,
+          "integer_oracle_q31_exact": true,
+          "output_sha256": "9e03674853071e2828efbec1aa661faccd7c6a984901a2e6e9f41765648e925d"
+        },
+        "sanitized": {
+          "chunk_2_vs_160_exact": true,
+          "integer_oracle_q31_exact": true,
+          "output_sha256": "9e03674853071e2828efbec1aa661faccd7c6a984901a2e6e9f41765648e925d"
+        }
+      },
+      "negative_return_codes": {
+        "no-clobber": 2,
+        "odd-chunk": 2,
+        "odd-frames": 2,
+        "partial-coefficients": 2
+      },
+      "status": "PASS"
+    },
+    "manifest_sha256": "f3e1bab935983e55a46140541786944ee360bc8e3f9255dfebc7af40b9537a90",
+    "mixture_output_sha256": {
+      "p0-t60-i-90": {
+        "diffuse-0.1": "df4242fa0301292244d52137f4109e3f2933b9a88ab253e54280950264691c0b",
+        "diffuse-1.0": "0993175a9755862fcd0e826431fd995c58b7f9f639a480fb2d953a2d1ac8fa6e",
+        "fir33": "b07e03047ed8b1ce803d7c081270c854733cc15beb41051e434dd8d2dc812c73",
+        "sof64": "9c175369ea8b338e1d032e411d7d1a44e61e7821b8f927d7eca038fd241009cb"
+      },
+      "p0-t90-i-90": {
+        "diffuse-0.1": "cb62ef771637ba0b272623baeb812a6d3fa8ba72f387b004ba1fed03c28444bb",
+        "diffuse-1.0": "c1582da9805065715512c44fc364ba9088fe5cb7d9cac5f5b047b8d4178a7f27",
+        "fir33": "a3ac6b7476f7886173c35cafe701e5ac340562fa73caae14a7d995211713d431",
+        "sof64": "f91899411de41601389966f14ebe41e136d5c9923ac8f6fadf0eeffbe87cd793"
+      },
+      "p0-t90-i90": {
+        "diffuse-0.1": "790238e3b86b58562d1fc35dfc19f9585385b9ce042b25c1a5d338fee23ffe07",
+        "diffuse-1.0": "05c1a45318bddaf6628f88996432f9cf119104e31e8f471e45d23ccc126678b1",
+        "fir33": "76d461ae41a16a8c73a35d8d25e197bcc543e856ac14877eb5bad2d787cea156",
+        "sof64": "06536e387e8b56a2e8b316e4d4b6350f0425a503728a41146cf8cc67cc445abe"
+      },
+      "p1-t60-i-90": {
+        "diffuse-0.1": "74f83e4c89b9a6b75fc3cfe293c3a6fb95402527f5e0f49384e01a8385da4dd6",
+        "diffuse-1.0": "86c68c05b5b9bfcf4cd044758161d8015f60c604a84058794e2a31231f797f74",
+        "fir33": "e9ca53841c0abd0d16711b9c9bb539d03b3d48bf9c31b14a6f424b53969aa1c8",
+        "sof64": "f23efc76b47d81654361bf553e0b454763f7a09c5891023291adebd1c7e7a044"
+      },
+      "p1-t90-i-90": {
+        "diffuse-0.1": "bef3dc445e6ea84f1cd9ea5b26854de2c809d6de133335f33be027d16afaf44d",
+        "diffuse-1.0": "08d2a35efaac5b2f8d0f93c3ff7922f3ca72dd987d8493c01470a3c24dfc4275",
+        "fir33": "b5a77ae7ccdbcb9e2e6a4f95615e543cecf90e56e16eb6d0bf937e672cee451b",
+        "sof64": "7d4637c23c28bce10917736395756bcd50c16e9ad9ade9c301ae97ff2507d192"
+      },
+      "p1-t90-i90": {
+        "diffuse-0.1": "5a3954733427b2c37059ecffc6a3853ea78776d3a29f549ae40713c9b5a43b96",
+        "diffuse-1.0": "98dc9d0966896f55f533feb2c91a95756645275994ae22355f46a04739c82634",
+        "fir33": "1384f5f3e87ce37dec54a4a616d09ed68d46c10e8b69523a82473e5694a7c029",
+        "sof64": "f3e736884fd94640d89b04ace06e87de8b92e1ec7ab2474e30765a280136a0d1"
+      }
+    },
+    "result_sha256": "f50602899e9549f301e8ddfe7a7235d360fa97503a2e7fe40b6ff5d341018d32",
+    "status": "NEW_REEXECUTION_COMPLETED",
+    "summary": {
+      "diffuse-0.1": {
+        "co-located": {
+          "canonical_si_sdr_db": 0.6350387278323855,
+          "component_sir_gain_db": 0.8416175810146139,
+          "target_gain_db": 3.3461694467643914,
+          "target_relative_error_energy": 0.25000126748130563
+        },
+        "look-mismatch": {
+          "canonical_si_sdr_db": 6.226913163216206,
+          "component_sir_gain_db": 6.553966124069471,
+          "target_gain_db": 2.6921132273676145,
+          "target_relative_error_energy": 0.15234897662670896
+        },
+        "separated": {
+          "canonical_si_sdr_db": 6.744000113881977,
+          "component_sir_gain_db": 7.208022343466249,
+          "target_gain_db": 3.3461694467643914,
+          "target_relative_error_energy": 0.25000126748130563
+        }
+      },
+      "diffuse-1.0": {
+        "co-located": {
+          "canonical_si_sdr_db": 0.10345062991573978,
+          "component_sir_gain_db": 0.1619262082130835,
+          "target_gain_db": 0.6184260011627056,
+          "target_relative_error_energy": 0.00710741837557613
+        },
+        "look-mismatch": {
+          "canonical_si_sdr_db": 2.960951314254414,
+          "component_sir_gain_db": 3.0627921733519616,
+          "target_gain_db": 0.37519730391908823,
+          "target_relative_error_energy": 0.0071913838898694125
+        },
+        "separated": {
+          "canonical_si_sdr_db": 3.2476692171282684,
+          "component_sir_gain_db": 3.30602087059558,
+          "target_gain_db": 0.6184260011627056,
+          "target_relative_error_energy": 0.00710741837557613
+        }
+      },
+      "fir33": {
+        "co-located": {
+          "canonical_si_sdr_db": -0.043655900007148724,
+          "component_sir_gain_db": 0.0021888321908471427,
+          "target_gain_db": -0.0003087540336637251,
+          "target_relative_error_energy": 9.719185608203811e-06
+        },
+        "look-mismatch": {
+          "canonical_si_sdr_db": 1.3934521818384764,
+          "component_sir_gain_db": 1.5080383962324122,
+          "target_gain_db": -0.018756715413018994,
+          "target_relative_error_energy": 0.0075737174292138925
+        },
+        "separated": {
+          "canonical_si_sdr_db": 1.4895282062372948,
+          "component_sir_gain_db": 1.5264863576117673,
+          "target_gain_db": -0.0003087540336637251,
+          "target_relative_error_energy": 9.719185608203811e-06
+        }
+      },
+      "sof64": {
+        "co-located": {
+          "canonical_si_sdr_db": -0.02487869783238339,
+          "component_sir_gain_db": 0.02164198990645696,
+          "target_gain_db": 0.03473843325976178,
+          "target_relative_error_energy": 9.940453916283898e-05
+        },
+        "look-mismatch": {
+          "canonical_si_sdr_db": 4.631290399136782,
+          "component_sir_gain_db": 4.804898223547462,
+          "target_gain_db": -0.03891550041492669,
+          "target_relative_error_energy": 0.007626325021985096
+        },
+        "separated": {
+          "canonical_si_sdr_db": 4.833189115770619,
+          "component_sir_gain_db": 4.878552157222151,
+          "target_gain_db": 0.03473843325976178,
+          "target_relative_error_energy": 9.940453916283898e-05
+        }
+      }
+    },
+    "timing": {
+      "blocks": 2400,
+      "chunk_160_us": {
+        "max": 1861.598,
+        "p50": 21.182,
+        "p95": 39.05299999999992,
+        "p99": 187.75264999999962
+      },
+      "persistent_fir_bytes": [
+        1808
+      ],
+      "rtf_host_only": 0.0029261842916666666,
+      "scope": "host CLOCK_THREAD_CPUTIME_ID; SOF FIR+Q5.27 sum+PCM conversions, excludes I/O and scheduling wait"
+    },
+    "wng_db": {
+      "diffuse-0.1": {
+        "1000": 1.70664066194353,
+        "200": 1.6075277775488364,
+        "2000": 2.2381272544606214,
+        "3000": 3.035627230809136,
+        "4000": 3.7753091507891994,
+        "500": 0.4123622159424992,
+        "6000": 6.002090718730994,
+        "7000": 5.915865867942037
+      },
+      "diffuse-1.0": {
+        "1000": 4.708252436358308,
+        "200": 5.52498668059553,
+        "2000": 5.39641371257848,
+        "3000": 5.592410243775618,
+        "4000": 5.699666735547087,
+        "500": 4.7922502961065385,
+        "6000": 6.005739136839614,
+        "7000": 5.97701632761498
+      },
+      "fir33": {
+        "1000": 6.020599913015898,
+        "200": 6.0205999132777155,
+        "2000": 6.0205999117833695,
+        "3000": 6.02059990706233,
+        "4000": 6.020599885033886,
+        "500": 6.020599913219646,
+        "6000": 6.020597719826217,
+        "7000": 6.020446069761174
+      },
+      "sof64": {
+        "1000": -3.283895880586265,
+        "200": -3.205199187062214,
+        "2000": 6.020128296518029,
+        "3000": 5.906581988151719,
+        "4000": 6.019478031980011,
+        "500": -4.881219430472502,
+        "6000": 6.02048600958191,
+        "7000": 6.011926580838737
+      }
+    }
+  },
+  "source_preflight": {
+    "recovery_preexecution_transcription_failure": "p1 none echo hash had one incorrect transcribed hex character; caught before inference; corrected from original ZIP, whose archive/member manifest passed unchanged.",
+    "rejected": [
+      "model-byte-tamper",
+      "extra-file",
+      "symlink"
+    ],
+    "same_model_and_input_identity": true,
+    "source_lock_sha256": "087cc0ddf4ee1c5cc1150d57bd356548a706aba3204ea6f86201fb829866112c",
+    "status": "PASS"
+  },
+  "status": "VERIFIED_LOCAL_DIAGNOSTIC_RECOVERY",
+  "unchanged_acoustic_selection_and_thresholds": true,
+  "verification": {
+    "existing_contract_tests": 25,
+    "neural": {
+      "cases": 6,
+      "conclusions": {
+        "gtcrn": {
+          "diagnostic_shortlist_rule_met": false,
+          "disposition": "REJECT_D0_POST_AEC_CONFIGURATION",
+          "mean_far_only_extra_attenuation_db": 4.3861655650332505,
+          "shipping_authority": false,
+          "worst_near_phase_si_sdr_loss_db": 100.91390814751202
+        },
+        "ul-unas": {
+          "diagnostic_shortlist_rule_met": false,
+          "disposition": "REJECT_D0_POST_AEC_CONFIGURATION",
+          "mean_far_only_extra_attenuation_db": 8.134560269012582,
+          "shipping_authority": false,
+          "worst_near_phase_si_sdr_loss_db": 96.96600020319372
+        }
+      },
+      "decision": "FIXED_NEURAL_POST_AEC_DIAGNOSTIC_NO_PROMOTION",
+      "mixed_arms": 18,
+      "status": "VERIFIED_LOCAL_DIAGNOSTIC"
+    },
+    "neural_semantic_negatives": {
+      "rejected": [
+        "missing-case",
+        "promotion",
+        "holdout-relabel",
+        "wrong-model",
+        "wrong-score",
+        "wrong-conclusion",
+        "missing-engineering",
+        "partial-timing",
+        "partial-availability"
+      ],
+      "status": "PASS"
+    },
+    "pcm_identity_boundary_test_groups": 4,
+    "sof_v2": {
+      "cases": 6,
+      "decision": "SOF_INDEPENDENT_REFERENCE_DIAGNOSTIC_NO_PROMOTION",
+      "mixed_arms": 24,
+      "status": "VERIFIED_LOCAL_DIAGNOSTIC",
+      "summary": {
+        "diffuse-0.1": {
+          "co-located": {
+            "canonical_si_sdr_db": 0.6350387278323855,
+            "component_sir_gain_db": 0.8416175810146139,
+            "target_gain_db": 3.3461694467643914,
+            "target_relative_error_energy": 0.25000126748130563
+          },
+          "look-mismatch": {
+            "canonical_si_sdr_db": 6.226913163216206,
+            "component_sir_gain_db": 6.553966124069471,
+            "target_gain_db": 2.6921132273676145,
+            "target_relative_error_energy": 0.15234897662670896
+          },
+          "separated": {
+            "canonical_si_sdr_db": 6.744000113881977,
+            "component_sir_gain_db": 7.208022343466249,
+            "target_gain_db": 3.3461694467643914,
+            "target_relative_error_energy": 0.25000126748130563
+          }
+        },
+        "diffuse-1.0": {
+          "co-located": {
+            "canonical_si_sdr_db": 0.10345062991573978,
+            "component_sir_gain_db": 0.1619262082130835,
+            "target_gain_db": 0.6184260011627056,
+            "target_relative_error_energy": 0.00710741837557613
+          },
+          "look-mismatch": {
+            "canonical_si_sdr_db": 2.960951314254414,
+            "component_sir_gain_db": 3.0627921733519616,
+            "target_gain_db": 0.37519730391908823,
+            "target_relative_error_energy": 0.0071913838898694125
+          },
+          "separated": {
+            "canonical_si_sdr_db": 3.2476692171282684,
+            "component_sir_gain_db": 3.30602087059558,
+            "target_gain_db": 0.6184260011627056,
+            "target_relative_error_energy": 0.00710741837557613
+          }
+        },
+        "fir33": {
+          "co-located": {
+            "canonical_si_sdr_db": -0.043655900007148724,
+            "component_sir_gain_db": 0.0021888321908471427,
+            "target_gain_db": -0.0003087540336637251,
+            "target_relative_error_energy": 9.719185608203811e-06
+          },
+          "look-mismatch": {
+            "canonical_si_sdr_db": 1.3934521818384764,
+            "component_sir_gain_db": 1.5080383962324122,
+            "target_gain_db": -0.018756715413018994,
+            "target_relative_error_energy": 0.0075737174292138925
+          },
+          "separated": {
+            "canonical_si_sdr_db": 1.4895282062372948,
+            "component_sir_gain_db": 1.5264863576117673,
+            "target_gain_db": -0.0003087540336637251,
+            "target_relative_error_energy": 9.719185608203811e-06
+          }
+        },
+        "sof64": {
+          "co-located": {
+            "canonical_si_sdr_db": -0.02487869783238339,
+            "component_sir_gain_db": 0.02164198990645696,
+            "target_gain_db": 0.03473843325976178,
+            "target_relative_error_energy": 9.940453916283898e-05
+          },
+          "look-mismatch": {
+            "canonical_si_sdr_db": 4.631290399136782,
+            "component_sir_gain_db": 4.804898223547462,
+            "target_gain_db": -0.03891550041492669,
+            "target_relative_error_energy": 0.007626325021985096
+          },
+          "separated": {
+            "canonical_si_sdr_db": 4.833189115770619,
+            "component_sir_gain_db": 4.878552157222151,
+            "target_gain_db": 0.03473843325976178,
+            "target_relative_error_energy": 9.940453916283898e-05
+          }
+        }
+      }
+    },
+    "sof_v2_semantic_negatives": {
+      "rejected": [
+        "missing-case",
+        "promotion",
+        "wrong-base",
+        "holdout",
+        "full-firmware-claim",
+        "wrong-score",
+        "wrong-coefficients",
+        "missing-sanitizer",
+        "resealed-changed-source-pcm",
+        "failed-first-party-receipt",
+        "nonfinite-unscored-tail",
+        "partial-native-timing",
+        "wrong-native-chunk"
+      ],
+      "status": "PASS"
+    }
+  }
+}

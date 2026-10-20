@@ -1,0 +1,26 @@
+# FE03 — exact protected recorded-speech source recovery / 已验证语音原始数据可信恢复
+
+**Scope:** Independent infrastructure child [#792](https://github.com/jiying2007/audio-pipeline/issues/792). Postmerge [Verify 39085155361](https://github.com/jiying2007/audio-pipeline/actions/runs/39085155361) at main 12609ad34e491439e167a9845c6684922c6a3e6c failed twice when original OpenSLR acquisition exhausted its immutable 1,800-second stage deadline. Preserve both historical negative source Artifacts, failed summary, skipped releases. T3-S1 #789 remains OPEN.
+
+## Immutable original source / 可信原始数据与哈希
+
+- Trusted prior protected main: e85a14540f2c49456508387fe3f815a90308c1ba, complete [Verify 39052067322](https://github.com/jiying2007/audio-pipeline/actions/runs/39052067322) required summary success and matching [Release 39054626943](https://github.com/jiying2007/audio-pipeline/actions/runs/39054626943) release+convergence success. Exact original protected [Speech Artifact 12107574410](https://github.com/jiying2007/audio-pipeline/actions/runs/39052067322/artifacts/12107574410), name frontend-speech-39052067322, ZIP SHA256 1dffd4fc4968a0a214658627f1faf8bf54268f119fda86600a48511f897f30d4, archive size 204,415,056 B. It contains the original effects/data tree; it is not a new source or independent microphone recording.
+- The independently frozen speech admission .github/research/frontend-evolution-v1/speech-admission-v1.json binds official OpenSLR-12 LibriSpeech dev-clean original full archive MD5 42e2234ba48799c1f50f24a7926300a1, SHA256 76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3, 337,926,286 B, and selected-source binding digest 7c4d711d4cb69121ccbbcb9a596d7ea26ca141a325add2dc8f5ff7421b9154c1. Original 32 selected FLAC, eight fixed window PCM, source receipt, license/README/SPEAKERS and attribution are retained.
+- A new run does NOT redownload and rehash the original whole 337 MB archive. It independently rehashes the genuine prior protected ZIP and every recovered original selected FLAC/PCM/notice plus source receipt, and reruns current acoustic evaluations. No new physical source/device qualification or expanded scientific authority.
+
+## Exact algorithm / 恢复程序约束
+
+1. Download exactly the pinned original successful protected GitHub Artifact with read-only Actions access and 600-second bounded transfer; independently enforce exact prior run HEAD/conclusion and Artifact ID/name/size/digest. Expired, missing, misbound, malformed or incomplete input is a hard failure, not a request for an alternate URL.
+2. Examine all archive paths for traversal, symlinks, special members, duplicates, pathological sizes and ZIP corruption. Extract ONLY original effects/data source files into a fresh temporary directory; never copy old numerical effects or previous FIR scores.
+3. Invoke the unchanged first-party speech_spatial.source_check() on the temporary source tree. This checks independent admission, source file-set identity, hashes, selected speaker roles, original FLAC stream metadata, fixed PCM windows, licensing notices and explicit nonshipping authority. Publish recovered bytes only after all checks pass, atomically into fresh fe-speech/source.
+4. The separate source-transfer.json records current Git SHA, exact predecessor origin, original ZIP hash, original source-receipt hash and all current selected files SHA256. It explicitly records previous_scientific_score_reused=false, original_full_archive_redownloaded=false, current_acoustic_evaluation_completed=false. A failure instead leaves a compact source-failure.json with no quality admission.
+5. Run the original current-version speech_spatial.py and speech_fir.py afresh under the exact current source SHA, including existing positive/negative science gates. Retain new effects, FIR and source transfer receipts in 30-day current-run evidence. No dataset reselection, source URL substitution, synthetic fallback, threshold change, bypass, paid resources or DSP/public ABI change.
+
+## Strict acceptance / 闭环门禁
+
+- Offline policy self-tests may use toy ZIPs to reject malformed formats, but never treat a toy or network failure as real-source validation success. Real trusted job must download and independently hash the original source snapshot and execute the full science itself.
+- Candidate Draft PR requires latest exact HEAD full Verify required summary=success, zero unresolved reviews, active strict protected Ruleset 21804005 with no bypass, expected-HEAD Squash. Separate new-main Verify required summary success, same-SHA Release+Convergence success, and independently downloaded+rehash-verified new main Artifact are mandatory before #792 completion.
+- The old unsuccessful 12609ad main run remains an immutable failed lineage, never retroactively upgraded. Then separately decide if #789 T3-S1 can close on qualified descendant main. Parent #767, broader #771/#773, future recorder T3-S2 #791 and physical HIL #58 remain OPEN.
+- Current pinned evidence Artifact expires after its original 30-day retention; future expiry fails closed until a separately reviewed durable source custody mechanism uses the exact same original bytes and rights, not a silent replacement.
+
+**Initial decision:** FE03_PINNED_PROTECTED_SPEECH_SOURCE_TRANSFER_CANDIDATE_NOT_ADMITTED.

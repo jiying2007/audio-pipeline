@@ -15,6 +15,7 @@ on:
 permissions:
   contents: read
   packages: read
+  actions: read
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -432,6 +433,313 @@ jobs:
           path: fe09-b1b0/
           if-no-files-found: error
           retention-days: 30
+      - name: Qualify FE09 B1B-S1 single first-party BF behind 16-32-48k N+render SRC
+        id: fe09_b1b1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b1b1_single_bf_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b1b1_single_bf_qualification.py \
+            --collect --output fe09-b1b1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b1b1_single_bf_qualification.py \
+            --verify --output fe09-b1b1 --execution-source "$GITHUB_SHA"
+      - name: Retain FE09 B1B-S1 nonshipping single-array BF evidence and failures
+        if: always() && (steps.fe09_b1b1.outcome == 'success' || steps.fe09_b1b1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b1b1-single-bf-${{ github.run_id }}
+          path: fe09-b1b1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Qualify FE09 R2B2-S1 private C1/C2/C4 SPSC ingress plus first-party SRC/BF
+        id: fe09_b2s1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+            --collect --output fe09-b2s1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s1_private_queue_qualification.py \
+            --verify --output fe09-b2s1 --execution-source "$GITHUB_SHA"
+      - name: Retain FE09 R2B2-S1 private queue+first-party BF evidence and failures
+        if: always() && (steps.fe09_b2s1.outcome == 'success' || steps.fe09_b2s1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b2s1-private-queue-${{ github.run_id }}
+          path: fe09-b2s1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Download retained B2-S1 evidence from this exact Actions run
+        if: steps.fe09_b2s1.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-b2s1-private-queue-${{ github.run_id }}
+          path: fe09-b2s1-readback
+      - name: Independently rehash uploaded B2-S1 members and source-only verdict
+        if: steps.fe09_b2s1.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path('fe09-b2s1-readback')
+          expected = ('receipt.json', 'collect.log', 'verify.log')
+          def need(condition, code):
+              if not condition:
+                  raise SystemExit(code)
+          # The artifact is externally downloaded into its own directory.
+          # Check all entries, not just files; -O cannot bypass these gates.
+          actual = {item.name for item in root.iterdir()}
+          need(actual == {'SHA256SUMS', *expected}, 'ARTIFACT_MEMBER_SET_DRIFT')
+          for name, limit in (('SHA256SUMS', 1024), ('receipt.json', 65536),
+                              ('collect.log', 1048576), ('verify.log', 256)):
+              need((root / name).is_file() and (root / name).stat().st_size <= limit,
+                   'RETAINED_MEMBER_SIZE_OR_TYPE_DRIFT_' + name)
+          manifest = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
+          need(len(manifest) == len(expected), 'ARTIFACT_MANIFEST_SHAPE_DRIFT')
+          for line, name in zip(manifest, expected):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(line == f'{digest}  {name}', 'RETAINED_MEMBER_SHA256_MISMATCH_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
+          need(receipt['source_commit'] == os.environ['GITHUB_SHA'], 'RETAINED_SOURCE_SHA_DRIFT')
+          need(receipt['decision'] == 'FE09_R2B2_S1_PRIVATE_LINUX_QUEUE_RUNTIME_RESEARCH_ONLY_NO_PUBLIC_ABI', 'RETAINED_VERDICT_DRIFT')
+          # Receipt-level authority and per-target C-execution verdicts are
+          # separate schemas. Do not accept a top-level substitute for the
+          # source_role/public_sdk_installed fields emitted by each target.
+          need(receipt.get('target_order') == ['native', 'sanitized', 'arm'],
+               'RETAINED_TARGET_ORDER_DRIFT')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native', 'sanitized', 'arm'},
+               'RETAINED_TARGET_SET_DRIFT')
+          for target in ('native', 'sanitized', 'arm'):
+              row = targets[target]
+              need(type(row) is dict, 'RETAINED_TARGET_SCHEMA_DRIFT_' + target)
+              need(row.get('source_role') == 'first-party-synthetic',
+                   'RETAINED_SOURCE_ROLE_DRIFT_' + target)
+              for key in ('public_sdk_installed', 'actual_apd_v2_writer',
+                          'real_adc_clock_qualified', 'ssc305_dut_qualified',
+                          'full_c4_system_budget_qualified'):
+                  need(row.get(key) is False,
+                       'RETAINED_TARGET_NONPROMOTION_DRIFT_' + target + '_' + key)
+          for key in ('shipping_src_changed', 'public_sdk_3x_installed',
+                      'new_apd_v2_writer_installed', 'new_apd_v2_parser_installed',
+                      'measured_real_bf_gain', 'real_adc_clock_qualified',
+                      'ssc305_device_qualified', 'complete_c4_192kib_qualified',
+                      'aec_qualified', 'untrusted_audio_downloaded',
+                      'publication_permission', 'hosted_cpu_p99_is_device_budget'):
+              need(receipt.get(key) is False,
+                   'RETAINED_NONPROMOTION_DRIFT_' + key)
+          need((root / 'verify.log').read_text(encoding='utf-8') == 'FE09_B2S1_SOURCE_AND_QUEUE_RECEIPT_VERIFIED\n', 'RETAINED_VERIFY_MARKER_DRIFT')
+          print('FE09_B2S1_RETAINED_ARTIFACT_INDEPENDENT_READBACK_PASS', os.environ['GITHUB_SHA'])
+          PY
+      - name: Qualify FE09 B2-S2 private APX3 C1/C2/C4 on native sanitized and ARM32
+        id: fe09_b2s2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+            --collect --output fe09-b2s2 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s2_private_apd_qualification.py \
+            --verify --output fe09-b2s2 --execution-source "$GITHUB_SHA"
+      - name: Retain FE09 B2-S2 private APX3 evidence including failure records
+        if: always() && (steps.fe09_b2s2.outcome == 'success' || steps.fe09_b2s2.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b2s2-private-apd-${{ github.run_id }}
+          path: fe09-b2s2/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Download this exact B2-S2 four-member artifact from storage
+        if: steps.fe09_b2s2.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-b2s2-private-apd-${{ github.run_id }}
+          path: fe09-b2s2-readback
+      - name: Independently verify retained B2-S2 APX3 source and synthetic-only verdict
+        if: steps.fe09_b2s2.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(test, why):
+              if not test:
+                  raise SystemExit(why)
+          root = Path('fe09-b2s2-readback')
+          expect = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *expect},
+               'B2S2_ARTIFACT_MEMBER_SET_DRIFT')
+          for name, cap in (('SHA256SUMS', 2048), ('receipt.json', 65536),
+                            ('collect.log', 1048576), ('verify.log', 256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap, 'B2S2_MEMBER_BOUNDS_' + name)
+          lines = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
+          need(len(lines) == 3, 'B2S2_SHA_MANIFEST_COUNT')
+          for name, line in zip(expect, lines):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(line == f'{digest}  {name}', 'B2S2_INNER_SHA256_' + name)
+          rec = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
+          need(type(rec) is dict and
+               rec.get('source_commit') == os.environ['GITHUB_SHA'] and
+               rec.get('decision') ==
+               'FE09_R2B2_S2_PRIVATE_APD_V2_READ_WRITE_REPLAY_RESEARCH_ONLY_NO_PUBLIC_ABI',
+               'B2S2_EXACT_SOURCE_OR_DECISION_DRIFT')
+          need(rec.get('target_order') == ['native', 'sanitized', 'arm'] and
+               rec.get('old_reader_reject_new_magic') is True and
+               rec.get('new_reader_reject_old_magic') is True and
+               rec.get('source_role') == 'first-party-synthetic',
+               'B2S2_FORMAT_OR_TARGET_AUTHORITY_DRIFT')
+          targets = rec.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native', 'sanitized', 'arm'},
+               'B2S2_TARGET_MEMBERS_DRIFT')
+          for target in ('native', 'sanitized', 'arm'):
+              data = targets[target]
+              need(type(data) is dict and
+                   data.get('source_role') == 'first-party-synthetic' and
+                   data.get('decision') == rec['decision'] and
+                   data.get('profile_count') == 12 and
+                   data.get('replay_subcases') == 24 and
+                   type(data.get('total_negatives')) is int and
+                   data['total_negatives'] >= 1440,
+                   'B2S2_UNQUALIFIED_TARGET_' + target)
+              for key in ('public_sdk_installed', 'actual_device_clock_qualified',
+                          'legacy_apd2_modified', 'ssc305_dut_qualified'):
+                  need(data.get(key) is False,
+                       'B2S2_INVALID_TARGET_AUTHORITY_' + target + '_' + key)
+          for key in ('public_api_installed', 'publication_permission',
+                      'real_clock_measured', 'ssc305_dut_qualified',
+                      'physical_four_mic_acoustic_gain_measured',
+                      'concurrent_spsc_tsan_qualified',
+                      'hosted_perf_is_device_budget'):
+              need(rec.get(key) is False, 'B2S2_INVALID_AUTHORITY_' + key)
+          need((root / 'verify.log').read_text(encoding='utf-8') ==
+               'FE09_B2S2_SOURCE_AND_APX3_RECEIPT_VERIFIED\n',
+               'B2S2_VERIFY_MARKER_DRIFT')
+          print('FE09_B2S2_RETAINED_APX3_ARTIFACT_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
+      - name: Qualify FE09 B2-S3 actual pthread SPSC plus unchanged BF/APX3 with native ASan ARM and TSan
+        id: fe09_b2s3
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py \
+            --collect --output fe09-b2s3 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_threaded_qualification.py \
+            --verify --output fe09-b2s3 --execution-source "$GITHUB_SHA"
+      - name: Retain FE09 B2-S3 actual concurrent and negative-source evidence
+        if: always() && (steps.fe09_b2s3.outcome == 'success' || steps.fe09_b2s3.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b2s3-threaded-${{ github.run_id }}
+          path: fe09-b2s3/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Redownload exact B2-S3 four-member qualification from Actions storage
+        if: steps.fe09_b2s3.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-b2s3-threaded-${{ github.run_id }}
+          path: fe09-b2s3-readback
+      - name: Independently check B2-S3 retained pthread TSan native stress and source-only verdict
+        if: steps.fe09_b2s3.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(cond, code):
+              if not cond:
+                  raise SystemExit(code)
+          root = Path('fe09-b2s3-readback')
+          members = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *members},
+               'B2S3_RETAINED_MEMBER_SET_DRIFT')
+          for name, cap in (('SHA256SUMS', 1024), ('receipt.json', 65536),
+                            ('collect.log', 1048576), ('verify.log', 256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap, 'B2S3_MEMBER_BOUND_' + name)
+          sha_lines = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
+          need(len(sha_lines) == 3, 'B2S3_MANIFEST_SHAPE')
+          for name, line in zip(members, sha_lines):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(line == f'{digest}  {name}', 'B2S3_INNER_SHA256_' + name)
+          rec = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
+          need(type(rec) is dict and
+               rec.get('source_commit') == os.environ['GITHUB_SHA'] and
+               rec.get('decision') ==
+               'FE09_R2B2_S3_PRIVATE_THREADED_BRIDGE_RESEARCH_ONLY_NO_PUBLIC_ABI' and
+               rec.get('source_role') == 'first-party-synthetic' and
+               rec.get('native_100k_hosted_only') is True and
+               rec.get('real_liveness_resynchronization_qualified') is False,
+               'B2S3_EXACT_SOURCE_OR_NONPROMOTION_DRIFT')
+          need(rec.get('target_order') ==
+               ['native', 'sanitized', 'arm', 'tsan'],
+               'B2S3_TARGET_ORDER_DRIFT')
+          rows = rec.get('target_results')
+          need(type(rows) is dict and
+               set(rows) == {'native', 'sanitized', 'arm', 'tsan'},
+               'B2S3_TARGETS_UNQUALIFIED')
+          for target in ('native', 'sanitized', 'arm', 'tsan'):
+              row = rows[target]
+              need(type(row) is dict and
+                   row.get('decision') == rec['decision'] and
+                   row.get('source_role') == 'first-party-synthetic' and
+                   row.get('actual_pthread_producers') is True and
+                   row.get('profile_count') == 48 and
+                   row.get('total_frames') == 4800 and
+                   type(row.get('negative_cases')) is int and
+                   row['negative_cases'] >= 99,
+                   'B2S3_UNQUALIFIED_EXECUTION_' + target)
+              for flag in ('physical_clock_qualified', 'ssc305_dut_qualified',
+                           'public_sdk_installed'):
+                  need(row.get(flag) is False,
+                       'B2S3_UNSUPPORTED_TARGET_AUTHORITY_' + target + '_' + flag)
+          stress = rec.get('native_long_stress')
+          need(type(stress) is dict and
+               stress.get('decision') ==
+               'S3_NATIVE_HOSTED_STRESS_ONLY_NOT_DEVICE' and
+               stress.get('accepted_frames') == 100000 and
+               stress.get('actual_threads') == 3 and
+               stress.get('real_clock_measured') is False,
+               'B2S3_MISSING_REAL_NATIVE_100K')
+          for flag in ('public_sdk_installed', 'ssc305_dut_qualified',
+                       'real_adc_dac_clock_authority',
+                       'full_duplex_aec_qualified', 'physical_c4_acoustic_gain',
+                       'fully_recovered_render_mismatch',
+                       'device_10ms_or_192kib_qualified'):
+              need(rec.get(flag) is False,
+                   'B2S3_UNSUPPORTED_PRODUCT_AUTHORITY_' + flag)
+          need((root / 'verify.log').read_text(encoding='ascii') ==
+               'FE09_B2S3_SOURCE_AND_THREAD_BRIDGE_VERIFIED\n',
+               'B2S3_VERIFY_MARKER_DRIFT')
+          print('FE09_B2S3_RETAINED_THREAD_BRIDGE_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
       - name: Generate and verify FE03 A1 exact-source numerical receipt
         id: fe03_a1
         shell: bash
@@ -469,23 +777,1317 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  frontend-s3-t1:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Qualify T1 exclusive exact-S1 PCM witness and real UINT32 rollover under pthread Native ARM TSan
+        id: fe09_t1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+            --collect --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t1_source_wrap_qualification.py \
+            --verify --output fe09-b2s3-t1 --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run T1 source PCM and wrap witness or failed qualification
+        if: always() && (steps.fe09_t1.outcome == 'success' || steps.fe09_t1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-s3-t1-source-wrap-${{ github.run_id }}
+          path: fe09-b2s3-t1/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Download exact T1 four-member artifact from GitHub Actions storage
+        if: steps.fe09_t1.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-s3-t1-source-wrap-${{ github.run_id }}
+          path: fe09-b2s3-t1-readback
+      - name: Independently hash and refuse unbound T1 source witness or false device promotion
+        if: steps.fe09_t1.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(value, code):
+              if not value:
+                  raise SystemExit(code)
+          root = Path('fe09-b2s3-t1-readback')
+          members = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *members},
+               'T1_RETAINED_MEMBER_SET_DRIFT')
+          for name, cap in (('SHA256SUMS', 1024), ('receipt.json', 65536),
+                            ('collect.log', 1048576), ('verify.log', 256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap, 'T1_MEMBER_BOUNDS_' + name)
+          rows = (root / 'SHA256SUMS').read_text(encoding='ascii').splitlines()
+          need(len(rows) == 3, 'T1_MANIFEST_SHAPE_DRIFT')
+          for name, row in zip(members, rows):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(row == f'{digest}  {name}', 'T1_INNER_SHA256_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text(encoding='utf-8'))
+          verdict = 'FE09_R2B2_S3_T1_EXACT_SOURCE_WRAP_RESEARCH_ONLY_NO_PUBLIC_ABI'
+          need(type(receipt) is dict and
+               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
+               receipt.get('decision') == verdict and
+               receipt.get('source_role') == 'first-party-synthetic' and
+               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
+               receipt.get('exclusive_facade_owner_tested') is True and
+               receipt.get('actual_uint32_wrap_exercised') is True and
+               receipt.get('real_timestamp_witness_qualified') is False,
+               'T1_FALSE_SOURCE_OR_TARGET_AUTHORITY')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native','sanitized','arm','tsan'},
+               'T1_MISSING_TRUE_EXECUTABLE_TARGETS')
+          for target in ('native','sanitized','arm','tsan'):
+              value = targets[target]
+              need(type(value) is dict and
+                   value.get('decision') == verdict and
+                   value.get('source_role') == 'first-party-synthetic' and
+                   value.get('actual_threaded_fixture') is True and
+                   value.get('profile_count') == 48 and
+                   value.get('wrap_profile_count') == 48 and
+                   value.get('total_frames') == 9600 and
+                   type(value.get('negative_cases')) is int and
+                   value['negative_cases'] >= 130,
+                   'T1_TARGET_EXECUTION_OR_WRAP_UNQUALIFIED_' + target)
+              for key in ('public_sdk_installed','physical_clock_qualified',
+                          'ssc305_dut_qualified'):
+                  need(value.get(key) is False,
+                       'T1_FALSE_TARGET_DEVICE_AUTHORITY_' + target + '_' + key)
+          for key in ('public_sdk_installed','physical_clock_qualified',
+                      'ssc305_dut_qualified','complete_c4_192kib_qualified',
+                      'render_only_liveness_qualified','device_10ms_qualified',
+                      'real_four_mic_acoustic_gain'):
+              need(receipt.get(key) is False,
+                   'T1_FALSE_PRODUCT_PROMOTION_' + key)
+          need((root / 'verify.log').read_text(encoding='ascii') ==
+               'FE09_B2S3_T1_SOURCE_AND_WRAP_RECEIPT_VERIFIED\n',
+               'T1_RETAINED_VERIFY_MARKER_DRIFT')
+          print('FE09_B2S3_T1_EXACT_SOURCE_WRAP_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t2-f0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute FE09 T2 F0 frozen-S1 negative render-only liveness feasibility
+        id: fe09_t2_f0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py \
+            --collect --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2_f0_feasibility_qualification.py \
+            --verify --output fe09-t2-f0 --execution-source "$GITHUB_SHA"
+      - name: Retain T2 F0 exact-run negative feasibility and failure evidence
+        if: always() && (steps.fe09_t2_f0.outcome == 'success' || steps.fe09_t2_f0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}
+          path: fe09-t2-f0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Independently download exact T2 F0 four-member Artifact
+        if: steps.fe09_t2_f0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-s3-t2-f0-render-feasibility-${{ github.run_id }}
+          path: fe09-t2-f0-readback
+      - name: Check external T2 F0 negative-only verdict and source-linked rehash
+        if: steps.fe09_t2_f0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(cond, code):
+              if not cond:
+                  raise SystemExit(code)
+          root = Path('fe09-t2-f0-readback')
+          parts = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *parts},
+               'T2F0_ARTIFACT_MEMBERS_DRIFT')
+          for name, cap in (('SHA256SUMS',1024),('receipt.json',65536),
+                            ('collect.log',1048576),('verify.log',256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap,
+                   'T2F0_ARTIFACT_MEMBER_SIZE_' + name)
+          rows = (root / 'SHA256SUMS').read_text('ascii').splitlines()
+          need(len(rows) == 3, 'T2F0_ARTIFACT_SHA_ROWS')
+          for name, row in zip(parts, rows):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(row == f'{digest}  {name}',
+                   'T2F0_INNER_SHA_DRIFT_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text('utf-8'))
+          verdict = 'FE09_S3_T2_F0_FROZEN_S1_RENDER_RECOVERY_INFEASIBLE_WITH_CAPTURE_CONTINUITY'
+          need(type(receipt) is dict and
+               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
+               receipt.get('decision') == verdict and
+               receipt.get('source_role') == 'first-party-synthetic' and
+               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
+               receipt.get('no_progress_witness') is True,
+               'T2F0_FALSE_AUTOMATIC_RECOVERY')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native','sanitized','arm','tsan'},
+               'T2F0_UNQUALIFIED_TARGETS')
+          for target in ('native','sanitized','arm','tsan'):
+              value = targets[target]
+              need(type(value) is dict and
+                   value.get('decision') == verdict and
+                   value.get('stale_with_contiguous_capture') == 0 and
+                   value.get('capture_gap_cases') == 160 and
+                   value.get('profile_count') == 96 and
+                   type(value.get('negative_checks')) is int and
+                   value['negative_checks'] >= 384 and
+                   value.get('automatic_recovery_qualified') is False and
+                   value.get('physical_clock_measured') is False,
+                   'T2F0_TARGET_FAKE_LIVENESS_' + target)
+          for key in ('real_render_recovery_qualified',
+                      'capture_bf_history_preserved_qualified',
+                      'physical_timebase_measured','ssc305_device_qualified',
+                      'public_sdk_installed','shipping_s1_modified',
+                      'legacy_apd2_modified'):
+              need(receipt.get(key) is False,
+                   'T2F0_FALSE_PRODUCT_AUTHORITY_' + key)
+          need((root / 'verify.log').read_text('ascii') ==
+               'FE09_S3_T2_F0_FROZEN_SOURCE_FEASIBILITY_VERIFIED\n',
+               'T2F0_VERIFY_LOG_NOT_EXACT')
+          print('FE09_S3_T2_F0_NEGATIVE_REACHABILITY_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t2a:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute FE09 T2A frozen-S1 nonseamless source-owned epoch cutover control
+        id: fe09_t2a
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py \
+            --collect --output fe09-t2a --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2a_controlled_restart_qualification.py \
+            --verify --output fe09-t2a --execution-source "$GITHUB_SHA"
+      - name: Retain T2A exact-run quiescent restart and fail-closed evidence
+        if: always() && (steps.fe09_t2a.outcome == 'success' || steps.fe09_t2a.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
+          path: fe09-t2a/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Independently download exact T2A four-member Artifact
+        if: steps.fe09_t2a.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-s3-t2a-controlled-restart-${{ github.run_id }}
+          path: fe09-t2a-readback
+      - name: Check external T2A control-only verdict and source-linked rehash
+        if: steps.fe09_t2a.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(cond, code):
+              if not cond:
+                  raise SystemExit(code)
+          root = Path('fe09-t2a-readback')
+          parts = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *parts},
+               'T2A_ARTIFACT_MEMBERS_DRIFT')
+          for name, cap in (('SHA256SUMS',1024),('receipt.json',65536),
+                            ('collect.log',1048576),('verify.log',256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap,
+                   'T2A_ARTIFACT_MEMBER_SIZE_' + name)
+          rows = (root / 'SHA256SUMS').read_text('ascii').splitlines()
+          need(len(rows) == 3, 'T2A_ARTIFACT_SHA_ROWS')
+          for name, row in zip(parts, rows):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(row == f'{digest}  {name}',
+                   'T2A_INNER_SHA_DRIFT_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text('utf-8'))
+          verdict = 'FE09_S3_T2A_NONSEAMLESS_RESTART_CONTROL_ONLY'
+          need(type(receipt) is dict and
+               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
+               receipt.get('decision') == verdict and
+               receipt.get('source_role') == 'first-party-synthetic' and
+               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
+               receipt.get('controlled_restart_verified') is True,
+               'T2A_FALSE_CONTINUITY')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native','sanitized','arm','tsan'},
+               'T2A_UNQUALIFIED_TARGETS')
+          for target in ('native','sanitized','arm','tsan'):
+              value = targets[target]
+              need(type(value) is dict and
+                   value.get('decision') == verdict and
+                   value.get('actual_postrestart_bf') is True and
+                   value.get('bf_continuity_preserved') is False and
+                   value.get('profile_count') == 48 and
+                   type(value.get('negative_checks')) is int and
+                   value['negative_checks'] >= 600 and
+                   value.get('device_qualified') is False and
+                   value.get('public_sdk_admitted') is False,
+                   'T2A_TARGET_FAKE_LIVENESS_' + target)
+          for key in ('real_render_recovery_qualified',
+                      'capture_bf_history_preserved_qualified',
+                      'physical_timebase_measured','ssc305_device_qualified',
+                      'public_sdk_installed','shipping_s1_modified',
+                      'legacy_apd2_modified'):
+              need(receipt.get(key) is False,
+                   'T2A_FALSE_PRODUCT_AUTHORITY_' + key)
+          need((root / 'verify.log').read_text('ascii') ==
+               'FE09_S3_T2A_SOURCE_RESTART_CONTROL_VERIFIED\n',
+               'T2A_VERIFY_LOG_NOT_EXACT')
+          print('FE09_S3_T2A_CONTROL_RESTART_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t2b-b0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute FE09 T2-B B0 actual capture-only FIR33 BF with optional Render
+        id: fe09_t2b_b0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only_qualification.py \
+            --collect --output fe09-t2b-b0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only_qualification.py \
+            --verify --output fe09-t2b-b0 --execution-source "$GITHUB_SHA"
+      - name: Retain T2B_B0 exact-run capture BF provenance and failure evidence
+        if: always() && (steps.fe09_t2b_b0.outcome == 'success' || steps.fe09_t2b_b0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-s3-t2b-b0-capture-only-bf-${{ github.run_id }}
+          path: fe09-t2b-b0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Independently download exact T2B_B0 four-member Artifact
+        if: steps.fe09_t2b_b0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-s3-t2b-b0-capture-only-bf-${{ github.run_id }}
+          path: fe09-t2b-b0-readback
+      - name: Check external T2B_B0 mic BF equivalence verdict and source-linked rehash
+        if: steps.fe09_t2b_b0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(cond, code):
+              if not cond:
+                  raise SystemExit(code)
+          root = Path('fe09-t2b-b0-readback')
+          parts = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *parts},
+               'T2B_B0_ARTIFACT_MEMBERS_DRIFT')
+          for name, cap in (('SHA256SUMS',1024),('receipt.json',262144),
+                            ('collect.log',2097152),('verify.log',256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap,
+                   'T2B_B0_ARTIFACT_MEMBER_SIZE_' + name)
+          rows = (root / 'SHA256SUMS').read_text('ascii').splitlines()
+          need(len(rows) == 3, 'T2B_B0_ARTIFACT_SHA_ROWS')
+          for name, row in zip(parts, rows):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(row == f'{digest}  {name}',
+                   'T2B_B0_INNER_SHA_DRIFT_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text('utf-8'))
+          verdict = 'FE09_S3_T2B_B0_CAPTURE_ONLY_BF_EQUIVALENCE_NO_QUEUE_OR_RECORDER'
+          need(type(receipt) is dict and
+               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
+               receipt.get('decision') == verdict and
+               receipt.get('capture_bf_continuity_software_qualified') is True and
+               receipt.get('source_role') == 'first-party-synthetic' and
+               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
+               receipt.get('actual_first_party_src_and_fir33') is True and
+               receipt.get('paired_oracle_counterfactual_only') is True,
+               'T2B_B0_FALSE_CONTINUITY')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native','sanitized','arm','tsan'},
+               'T2B_B0_UNQUALIFIED_TARGETS')
+          for target in ('native','sanitized','arm','tsan'):
+              value = targets[target]
+              need(type(value) is dict and
+                   value.get('decision') == verdict and
+                   value.get('capture_bf_progress_qualified') is True and
+                   value.get('recorder_qualified') is False and
+                   value.get('profile_count') == 48 and
+                   type(value.get('negative_checks')) is int and
+                   value['negative_checks'] >= 9000 and
+                   value.get('device_qualified') is False and
+                   value.get('spsc_liveness_qualified') is False and
+                   value.get('physical_clock_qualified') is False and
+                   value.get('public_sdk_installed') is False,
+                   'T2B_B0_TARGET_FAKE_LIVENESS_' + target)
+          for key in ('real_source_attestation_qualified',
+                      'render_optional_recorder_qualified',
+                      'spsc_liveness_qualified','physical_clock_measured',
+                      'ssc305_device_qualified','public_sdk_installed',
+                      'shipping_dsp_modified','legacy_apd2_modified'):
+              need(receipt.get(key) is False,
+                   'T2B_B0_FALSE_PRODUCT_AUTHORITY_' + key)
+          need((root / 'verify.log').read_text('ascii') ==
+               'FE09_T2B_B0_CAPTURE_BF_SOURCE_VERIFIED\n',
+               'T2B_B0_VERIFY_LOG_NOT_EXACT')
+          print('FE09_T2B_B0_CAPTURE_ONLY_BF_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t2b-b1s0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute FE09 T2-B B1-S0 actual Capture/Render source-owner pthread SPSC
+        id: fe09_b1s0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py \
+            --collect --output fe09-b1s0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc_qualification.py \
+            --verify --output fe09-b1s0 --execution-source "$GITHUB_SHA"
+      - name: Retain T2B_B1S0 real owner SPSC source identity and failure evidence
+        id: fe09_b1s0_upload
+        if: always() && (steps.fe09_b1s0.outcome == 'success' || steps.fe09_b1s0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t2b-b1s0-owner-spsc-${{ github.run_id }}
+          path: fe09-b1s0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Wait for exact upload-ID visibility before pinned B1-S0 Artifact download
+        if: steps.fe09_b1s0.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_b1s0_upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_ID"
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t2b-b1s0-owner-spsc-$GITHUB_RUN_ID"
+      - name: Independently download exact T2B_B1S0 four-member Artifact
+        if: steps.fe09_b1s0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t2b-b1s0-owner-spsc-${{ github.run_id }}
+          path: fe09-b1s0-readback
+      - name: Check external T2B_B1S0 owner SPSC verdict and rehash
+        if: steps.fe09_b1s0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(cond, code):
+              if not cond:
+                  raise SystemExit(code)
+          root = Path('fe09-b1s0-readback')
+          parts = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *parts},
+               'T2B_B1S0_ARTIFACT_MEMBERS_DRIFT')
+          for name, cap in (('SHA256SUMS',1024),('receipt.json',262144),
+                            ('collect.log',2097152),('verify.log',256)):
+              p = root / name
+              need(p.is_file() and not p.is_symlink() and
+                   0 < p.stat().st_size <= cap,
+                   'T2B_B1S0_ARTIFACT_MEMBER_SIZE_' + name)
+          rows = (root / 'SHA256SUMS').read_text('ascii').splitlines()
+          need(len(rows) == 3, 'T2B_B1S0_ARTIFACT_SHA_ROWS')
+          for name, row in zip(parts, rows):
+              digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(row == f'{digest}  {name}',
+                   'T2B_B1S0_INNER_SHA_DRIFT_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text('utf-8'))
+          verdict = 'FE09_T2B_B1S0_OWNER_WITNESS_SPSC_CAPTURE_BF_NO_RECORDER'
+          need(type(receipt) is dict and
+               receipt.get('source_commit') == os.environ['GITHUB_SHA'] and
+               receipt.get('decision') == verdict and
+               receipt.get('qualified_after_actual_four_target_execution') is True and
+               receipt.get('source_role') == 'first-party-synthetic' and
+               receipt.get('target_order') == ['native','sanitized','arm','tsan'] and
+               receipt.get('no_cryptographic_source_auth') is True and
+               receipt.get('physical_absence_or_clock_qualified') is False and
+               receipt.get('apx3_recorder_qualified') is False,
+               'T2B_B1S0_FALSE_CONTINUITY')
+          targets = receipt.get('target_results')
+          need(type(targets) is dict and
+               set(targets) == {'native','sanitized','arm','tsan'},
+               'T2B_B1S0_UNQUALIFIED_TARGETS')
+          for target in ('native','sanitized','arm','tsan'):
+              value = targets[target]
+              need(type(value) is dict and
+                   value.get('decision') == verdict and
+                   value.get('real_pthread_source_owners') is True and
+                   value.get('capture_bf_continuity_software') is True and
+                   value.get('apx3_recording_qualified') is False and
+                   value.get('profile_count') == 48 and
+                   type(value.get('negative_checks')) is int and
+                   value['negative_checks'] >= 600 and
+                   value.get('device_qualified') is False and
+                   value.get('source_absence_physical_verified') is False and
+                   value.get('public_sdk_installed') is False,
+                   'T2B_B1S0_TARGET_FAKE_LIVENESS_' + target)
+          for key in ('physical_absence_or_clock_qualified',
+                      'apx3_recorder_qualified',
+                      'ssc305_device_qualified','public_sdk_installed',
+                      'shipping_dsp_modified','legacy_apd2_modified'):
+              need(receipt.get(key) is False,
+                   'T2B_B1S0_FALSE_PRODUCT_AUTHORITY_' + key)
+          need((root / 'verify.log').read_text('ascii') ==
+               'FE09_T2B_B1S0_FIRST_PARTY_SOURCE_QUALIFIED\n',
+               'T2B_B1S0_VERIFY_LOG_NOT_EXACT')
+          print('FE09_T2B_B1S0_OWNER_SPSC_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t2b-b1s1:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute actual first-party source-owned APX3 S2 C, replay, SHA256 and four-target qualification
+        id: fe09_b1s1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py \
+            --collect --output fe09-b1s1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py \
+            --verify --output fe09-b1s1 --execution-source "$GITHUB_SHA"
+      - name: Retain B1-S1 exact-run original APX3 and negative failure evidence
+        id: fe09_b1s1_upload
+        if: always() && (steps.fe09_b1s1.outcome == 'success' || steps.fe09_b1s1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t2b-b1s1-source-apx3-${{ github.run_id }}
+          path: fe09-b1s1/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Wait for exact B1-S1 upload ID before mandatory pinned download
+        if: steps.fe09_b1s1.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_b1s1_upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$ARTIFACT_ID"
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t2b-b1s1-source-apx3-$GITHUB_RUN_ID"
+      - name: Download exact source-linked B1-S1 four-member Artifact
+        if: steps.fe09_b1s1.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t2b-b1s1-source-apx3-${{ github.run_id }}
+          path: fe09-b1s1-readback
+      - name: Independently rehash real C-emitted APX3 source, SHA256 row and four Artifact members
+        if: steps.fe09_b1s1.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s1_source_chunks_qualification.py \
+            --verify --output fe09-b1s1-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def need(yes, reason):
+              if not yes:
+                  raise SystemExit(reason)
+          root = Path('fe09-b1s1-readback')
+          names = ('receipt.json', 'collect.log', 'verify.log')
+          need(root.is_dir() and
+               {p.name for p in root.iterdir()} == {'SHA256SUMS', *names},
+               'B1S1_ARTIFACT_FOUR_MEMBERS_DRIFT')
+          for name in names:
+              got = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              need(f'{got}  {name}' in (root / 'SHA256SUMS').read_text('ascii').splitlines(),
+                   'B1S1_EXACT_SOURCE_FILE_HASH_CHANGED_' + name)
+          receipt = json.loads((root / 'receipt.json').read_text('utf8'))
+          need(receipt['source_commit'] == os.environ['GITHUB_SHA'] and
+               receipt['decision'] ==
+               'FE09_T2B_B1S1_SOURCE_EXACT_ONE_FRAME_APX3_CHUNKS_NO_DURABILITY' and
+               receipt['actual_four_target_source_codec_qualified'] is True and
+               receipt['durable_io_qualified'] is False and
+               receipt['ssc305_device_qualified'] is False and
+               receipt['public_sdk_installed'] is False and
+               len(receipt['target_results']) == 4,
+               'B1S1_FALSE_SOURCE_OR_DURABILITY_PROMOTION')
+          print('FE09_B1S1_SOURCE_APX3_ORIGINAL_CODEC_READBACK_PASS',
+                os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t2c0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute real first-party source BF/APX3 with T2-C0 ACK gated cutover
+        id: fe09_t2c0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
+            --collect --output fe09-t2c0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
+            --verify --output fe09-t2c0 --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run T2-C0 logical owner ACK positives and negatives
+        if: always() && (steps.fe09_t2c0.outcome == 'success' || steps.fe09_t2c0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          path: fe09-t2c0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact current-run T2-C0 four-member Artifact
+        if: steps.fe09_t2c0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-s3-t2c0-owner-fallback-${{ github.run_id }}
+          path: fe09-t2c0-readback
+      - name: Independently rehash T2-C0 four members and enforce no-physical-source boundary
+        if: steps.fe09_t2c0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t2c0_quiescent_fallback_qualification.py \
+            --verify --output fe09-t2c0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root = Path("fe09-t2c0-readback")
+          names = ("receipt.json", "collect.log", "verify.log")
+          assert root.is_dir()
+          assert {p.name for p in root.iterdir()} == {"SHA256SUMS", *names}
+          manifest = "".join(
+              f"{hashlib.sha256((root / name).read_bytes()).hexdigest()}  {name}\n"
+              for name in names)
+          assert (root / "SHA256SUMS").read_text("ascii") == manifest
+          receipt = json.loads((root / "receipt.json").read_text("utf-8"))
+          assert receipt["source_commit"] == os.environ["GITHUB_SHA"]
+          assert receipt["decision"] == (
+              "FE09_T2C0_LOGICAL_OWNER_ACK_NONSEAMLESS_FALLBACK_NO_PHYSICAL_AUTHORITY")
+          assert receipt["first_party_target_execution_complete"] is True
+          assert receipt["target_order"] == ["native", "sanitized", "arm", "tsan"]
+          assert receipt["physical_owner_stop_verified"] is False
+          assert receipt["capture_bf_history_preserved"] is False
+          assert receipt["durable_archive_qualified"] is False
+          assert receipt["ssc305_device_qualified"] is False
+          assert receipt["public_sdk_installed"] is False
+          assert all(value["profile_count"] == 48 and
+                     value["negative_checks"] >= 624
+                     for value in receipt["target_results"].values())
+          print("FE09_T2C0_EXACT_SOURCE_LOGICAL_ACK_READBACK_PASS",
+                os.environ["GITHUB_SHA"])
+          PY
+
+  frontend-s3-t3s0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile actual first-party BF/SPSC/APX3 on Native sanitized ARM-QEMU TSan
+        id: fe09_t3s0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py \
+            --collect --output fe09-t3s0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py \
+            --verify --output fe09-t3s0 --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run T3-S0 source/negative memory receipt
+        if: always() && (steps.fe09_t3s0.outcome == 'success' || steps.fe09_t3s0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}
+          path: fe09-t3s0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download immutable current-run T3-S0 four-member Artifact
+        if: steps.fe09_t3s0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s0-compiled-resource-${{ github.run_id }}
+          path: fe09-t3s0-readback
+      - name: Independently rehash T3-S0 members and reject false full 192KiB qualification
+        if: steps.fe09_t3s0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s0_resource_census_qualification.py \
+            --verify --output fe09-t3s0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root = Path("fe09-t3s0-readback")
+          names = ("receipt.json", "collect.log", "verify.log")
+          assert root.is_dir()
+          assert {p.name for p in root.iterdir()} == {"SHA256SUMS", *names}
+          manifest = "".join(
+              f"{hashlib.sha256((root / n).read_bytes()).hexdigest()}  {n}\n"
+              for n in names)
+          assert (root / "SHA256SUMS").read_text("ascii") == manifest
+          receipt = json.loads((root / "receipt.json").read_text("utf-8"))
+          assert receipt["source_commit"] == os.environ["GITHUB_SHA"]
+          assert receipt["decision"] == (
+              "FE09_T3S0_COMPILER_AND_FIRST_PARTY_BF_RESOURCE_OVER_BUDGET_NO_DEVICE_AUTHORITY")
+          assert receipt["actual_compiled_targets_complete"] is True
+          assert receipt["target_order"] == ["native", "sanitized", "arm", "tsan"]
+          assert receipt["only_declared_buffers_counted"] is True
+          assert receipt["device_memory_admitted"] is False
+          for result in receipt["target_results"].values():
+              assert result["profile_count"] == 48
+              assert result["negative_checks"] == 720
+              assert result["static_two_archive_arrays"] == 255552
+              assert result["device_budget_bytes"] == 196608
+              assert all(p["dual_owned_min"] > 196608 and
+                         p["dual_exceeds_192kib"] is True and
+                         p["complete_device_memory_qualified"] is False
+                         for p in result["profile_rows"])
+          print("FE09_T3S0_COMPILED_OVER_BUDGET_READBACK_PASS",
+                os.environ["GITHUB_SHA"])
+          PY
+
+  frontend-s3-t3s1:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile actual first-party BF/SPSC/APX3 on Native sanitized ARM-QEMU TSan
+        id: fe09_t3s1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s1_compact_handoff_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s1_compact_handoff_qualification.py \
+            --collect --output fe09-t3s1 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s1_compact_handoff_qualification.py \
+            --verify --output fe09-t3s1 --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run T3-S1 source/negative handoff receipt
+        if: always() && (steps.fe09_t3s1.outcome == 'success' || steps.fe09_t3s1.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}
+          path: fe09-t3s1/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download immutable current-run T3-S1 four-member Artifact
+        if: steps.fe09_t3s1.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}
+          path: fe09-t3s1-readback
+      - name: Independently rehash T3-S1 members and reject false hardware/durable qualification
+        if: steps.fe09_t3s1.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s1_compact_handoff_qualification.py \
+            --verify --output fe09-t3s1-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root = Path('fe09-t3s1-readback')
+          names = ('receipt.json', 'collect.log', 'verify.log')
+          assert root.is_dir()
+          assert {p.name for p in root.iterdir()} == {'SHA256SUMS', *names}
+          manifest = ''.join(f'{hashlib.sha256((root / n).read_bytes()).hexdigest()}  {n}\n' for n in names)
+          assert (root / 'SHA256SUMS').read_text('ascii') == manifest
+          r = json.loads((root / 'receipt.json').read_text('utf-8'))
+          assert r['source_commit'] == os.environ['GITHUB_SHA']
+          assert r['decision'] == 'FE09_T3S1_TWO_SLOT_SOURCE_BF_HANDOFF_RESEARCH_ONLY'
+          assert r['actual_compiled_targets_complete'] is True
+          assert r['target_order'] == ['native', 'sanitized', 'arm', 'tsan']
+          assert r['device_memory_admitted'] is False
+          for outcome in r['target_results'].values():
+              assert outcome['profile_count'] == 48 and outcome['negative_checks'] >= 500
+              assert all(row['slot_bytes'] == 5324 and
+                         row['stage_owned_bytes'] == row['control_bytes'] + row['slots'] * 5324 and
+                         row['dual_stage_owned_bytes'] == 2 * row['stage_owned_bytes'] and
+                         row['outboard_accounted_bytes'] > 0 and
+                         row['stack_scratch_min'] == 5120 for row in outcome['profile_rows'])
+              assert all(outcome[k] is False for k in (
+                  'complete_device_memory_qualified', 'physical_ssc305_qualified',
+                  'durable_rolling_recorder_qualified', 'public_sdk_installed',
+                  'archive_power_loss_safe'))
+          print('FE09_T3S1_EXACT_SOURCE_AND_OUTBOARD_READBACK_PASS', os.environ['GITHUB_SHA'])
+          PY
+  frontend-s3-t3s2a:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile original S1 callback with actual POSIX S2-A file sync/recovery
+        id: fe09_t3s2a
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py \
+            --collect --output fe09-t3s2a --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py \
+            --verify --output fe09-t3s2a --execution-source "$GITHUB_SHA"
+      - name: Retain original S2-A POSIX-hosted fault-negative evidence
+        if: always() && (steps.fe09_t3s2a.outcome == 'success' || steps.fe09_t3s2a.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}
+          path: fe09-t3s2a/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact original current-run S2-A four-member Artifact
+        if: steps.fe09_t3s2a.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2a-posix-spool-${{ github.run_id }}
+          path: fe09-t3s2a-readback
+      - name: Independently rehash original S2-A members, reject fake durable HIL qualification
+        if: steps.fe09_t3s2a.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2a_atomic_spool_qualification.py \
+            --verify --output fe09-t3s2a-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          d = Path('fe09-t3s2a-readback')
+          names = ('receipt.json', 'collect.log', 'verify.log')
+          assert d.is_dir()
+          assert {x.name for x in d.iterdir()} == set(names) | {'SHA256SUMS'}
+          expected = ''.join(f'{hashlib.sha256((d/n).read_bytes()).hexdigest()}  {n}\n' for n in names)
+          assert (d / 'SHA256SUMS').read_text('ascii') == expected
+          obj = json.loads((d / 'receipt.json').read_text('utf-8'))
+          assert obj['source_commit'] == os.environ['GITHUB_SHA']
+          assert obj['decision'] == 'FE09_T3S2A_ATOMIC_ORIGINAL_SPOOL_RESEARCH_ONLY'
+          assert obj['actual_compiled_targets_complete'] is True
+          assert obj['target_order'] == ['native', 'sanitized', 'arm', 'tsan']
+          for target in obj['target_results'].values():
+              assert target['profiles'] == 336
+              assert target['fault_injections'] == 336
+              assert target['negative_checks'] >= 680
+              assert target['restart_idempotence'] == 672
+              assert target['completed_original_frames'] >= 672
+              assert all(target[key] is False for key in (
+                  'hardware_qualified', 'durable_powerloss_qualified',
+                  'rolling_recorder_qualified',
+                  'complete_ssc305_device_memory_qualified',
+                  'public_sdk_installed'))
+          print('FE09_T3S2A_EXACT_SOURCE_POSIX_READBACK_PASS', os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t3s2b0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Compile real original S2 APX3 S1 S2-A and in-memory FBS1 rolling INDEX B0
+        id: fe09_t3s2b0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b0_manifest_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b0_manifest_qualification.py \
+            --collect --output fe09-t3s2b0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b0_manifest_qualification.py \
+            --verify --output fe09-t3s2b0 --execution-source "$GITHUB_SHA"
+      - name: Retain source-attested original FBS1 index-contract evidence
+        if: always() && (steps.fe09_t3s2b0.outcome == 'success' || steps.fe09_t3s2b0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b0-fbs1-index-${{ github.run_id }}
+          path: fe09-t3s2b0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact original run four-member index Artifact
+        if: steps.fe09_t3s2b0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2b0-fbs1-index-${{ github.run_id }}
+          path: fe09-t3s2b0-readback
+      - name: Independently rehash original B0 members and reject fake rolling HIL
+        if: steps.fe09_t3s2b0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b0_manifest_qualification.py \
+            --verify --output fe09-t3s2b0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root=Path('fe09-t3s2b0-readback')
+          members=('receipt.json','collect.log','verify.log')
+          assert root.is_dir()
+          assert {p.name for p in root.iterdir()} == set(members) | {'SHA256SUMS'}
+          expected=''.join(f'{hashlib.sha256((root/p).read_bytes()).hexdigest()}  {p}\n' for p in members)
+          assert (root/'SHA256SUMS').read_text('ascii')==expected
+          r=json.loads((root/'receipt.json').read_text('utf-8'))
+          assert r['source_commit']==os.environ['GITHUB_SHA']
+          assert r['decision']=='FE09_T3S2B0_ORIGINAL_FBS1_SOURCE_INDEX_RESEARCH_ONLY'
+          assert r['actual_compiled_targets_complete'] is True
+          assert r['target_order']==['native','sanitized','arm','tsan']
+          for x in r['target_results'].values():
+              assert x['profiles']==48
+              assert x['negative_checks']>=1500
+              assert x['roundtrip_checks']==97
+              assert x['original_frames']==112
+              assert x['maximum_rows']==16
+              assert x['physical_one_two_slots'] is True
+              assert x['original_apx3_codec_reused'] is True
+              assert all(x[k] is False for k in (
+                  'on_disk_manifest_published','rolling_retention_qualified',
+                  'durable_powerloss_qualified','ssc305_hardware_qualified',
+                  'whole_device_memory_qualified','public_sdk_installed'))
+          print('FE09_T3S2B0_ORIGINAL_FBS1_INDEX_READBACK_PASS',os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t3s2b1a:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Qualify original APX3 and B0 source FRM1 POSIX immutable root/restart
+        id: fe09_t3s2b1a
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py \
+            --collect --output fe09-t3s2b1a --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py \
+            --verify --output fe09-t3s2b1a --execution-source "$GITHUB_SHA"
+      - name: Retain exact-run immutable FRM1 root original source and negative evidence
+        if: always() && (steps.fe09_t3s2b1a.outcome == 'success' || steps.fe09_t3s2b1a.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          path: fe09-t3s2b1a/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download original same-run four-member root Artifact
+        if: steps.fe09_t3s2b1a.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2b1a-immutable-root-${{ github.run_id }}
+          path: fe09-t3s2b1a-readback
+      - name: Independently rehash root receipt, reject fake rolling or powerloss authority
+        if: steps.fe09_t3s2b1a.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qualification.py \
+            --verify --output fe09-t3s2b1a-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          p=Path('fe09-t3s2b1a-readback')
+          names=('receipt.json','collect.log','verify.log')
+          assert p.is_dir()
+          assert {x.name for x in p.iterdir()}==set(names)|{'SHA256SUMS'}
+          want=''.join(f'{hashlib.sha256((p/n).read_bytes()).hexdigest()}  {n}\n' for n in names)
+          assert (p/'SHA256SUMS').read_text('ascii')==want
+          r=json.loads((p/'receipt.json').read_text('utf-8'))
+          assert r['source_commit']==os.environ['GITHUB_SHA']
+          assert r['decision']=='FE09_T3S2B1A_IMMUTABLE_FRM1_ROOT_RESEARCH_ONLY'
+          assert r['actual_compiled_targets_complete'] is True
+          assert r['target_order']==['native','sanitized','arm','tsan']
+          for case in r['target_results'].values():
+              assert case['profiles']==336
+              assert case['fault_injections']==336
+              assert case['negative_checks']>=2000
+              assert case['restart_recoveries']==673
+              assert case['original_frames']==690
+              assert case['link_retry_cases']==192
+              assert case['original_apx3_codec_reused'] is True
+              assert case['immutable_root_published'] is True
+              assert all(case[name] is False for name in (
+                  'rolling_retention_qualified','original_source_deleted',
+                  'physical_powerloss_qualified','ssc305_hardware_qualified',
+                  'whole_device_memory_qualified','public_sdk_installed'))
+          print('FE09_T3S2B1A_SOURCE_IMMUTABLE_POSIX_READBACK_PASS',os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t3s2b1bf0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Qualify original 17th APX3 and S1/S2A/FRM1 fail-closed FULL boundary
+        id: fe09_t3s2b1bf0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1bf0_seq17_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1bf0_seq17_qualification.py \
+            --collect --output fe09-t3s2b1bf0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1bf0_seq17_qualification.py \
+            --verify --output fe09-t3s2b1bf0 --execution-source "$GITHUB_SHA"
+      - name: Retain original 17th-frame negative first-party source evidence
+        if: always() && (steps.fe09_t3s2b1bf0.outcome == 'success' || steps.fe09_t3s2b1bf0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b1bf0-seq17-${{ github.run_id }}
+          path: fe09-t3s2b1bf0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact same-run F0 original source Artifact
+        if: steps.fe09_t3s2b1bf0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2b1bf0-seq17-${{ github.run_id }}
+          path: fe09-t3s2b1bf0-readback
+      - name: Independently rehash F0 original negative result and forbid rolling promotion
+        if: steps.fe09_t3s2b1bf0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1bf0_seq17_qualification.py \
+            --verify --output fe09-t3s2b1bf0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          p=Path('fe09-t3s2b1bf0-readback')
+          names=('receipt.json','collect.log','verify.log')
+          assert p.is_dir()
+          assert {x.name for x in p.iterdir()}==set(names)|{'SHA256SUMS'}
+          want=''.join(f'{hashlib.sha256((p/n).read_bytes()).hexdigest()}  {n}\n' for n in names)
+          assert (p/'SHA256SUMS').read_text('ascii')==want
+          r=json.loads((p/'receipt.json').read_text('utf-8'))
+          assert r['source_commit']==os.environ['GITHUB_SHA']
+          assert r['decision']=='FE09_T3S2B1BF0_SEQ17_FAIL_CLOSED_RESEARCH_ONLY'
+          assert r['actual_compiled_targets_complete'] is True
+          assert r['target_order']==['native','sanitized','arm','tsan']
+          for case in r['target_results'].values():
+              assert case['profiles']==48
+              assert case['negative_checks']>=500
+              assert case['actual_original_apx3_frames']==816
+              assert case['actually_acked_original_frames']==768
+              assert case['seq17_refused']==48
+              assert case['original_source_files_accounted']==768
+              assert case['original_root_files_accounted']==768
+              assert case['immutable_root_disk_bytes']==1428480
+              assert case['global_16_to_17_source_identity_distinct'] is True
+              assert case['source_owner_full_backpressure_proven'] is True
+              assert all(case[name] is False for name in (
+                  'real_rolling_retention_qualified','original_source_deleted',
+                  'physical_powerloss_qualified','ssc305_hardware_qualified',
+                  'whole_device_memory_qualified','public_sdk_installed'))
+          print('FE09_T3S2B1BF0_ORIGINAL_SEQ17_NEGATIVE_READBACK_PASS',os.environ['GITHUB_SHA'])
+          PY
+
+  frontend-s3-t3s2b1ba0:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:2b36ae460830199972a6f5ba094f7eb9ae7e1bf1e6f87dc04bcd7c915dbc6d3c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Independently qualify original seq17-32 finite no-prune outboard (4 ISAs, twice)
+        id: fe09_t3s2b1ba0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py \
+            --collect --output fe09-t3s2b1ba0 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py \
+            --verify --output fe09-t3s2b1ba0 --execution-source "$GITHUB_SHA"
+      - name: Retain first-party finite outboard original source or failure receipt
+        if: always() && (steps.fe09_t3s2b1ba0.outcome == 'success' || steps.fe09_t3s2b1ba0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b1ba0-finite-${{ github.run_id }}
+          path: fe09-t3s2b1ba0/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Download exact same-run original finite source Artifact
+        if: steps.fe09_t3s2b1ba0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: frontend-fe09-t3s2b1ba0-finite-${{ github.run_id }}
+          path: fe09-t3s2b1ba0-readback
+      - name: Independently verify A0 member SHA256, no prune and zero HIL authority
+        if: steps.fe09_t3s2b1ba0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba0_finite_outboard_qualification.py \
+            --verify --output fe09-t3s2b1ba0-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          p=Path("fe09-t3s2b1ba0-readback")
+          names=("receipt.json","collect.log","verify.log")
+          assert p.is_dir()
+          assert {x.name for x in p.iterdir()}==set(names)|{"SHA256SUMS"}
+          expected="".join(f"{hashlib.sha256((p/n).read_bytes()).hexdigest()}  {n}\n" for n in names)
+          assert (p/"SHA256SUMS").read_text("ascii")==expected
+          receipt=json.loads((p/"receipt.json").read_text("utf-8"))
+          assert receipt["source_commit"]==os.environ["GITHUB_SHA"]
+          assert receipt["decision"]=="FE09_B1B_A0_ORIGINAL_SEQ17_PLUS_FINITE_NONROLLING_OUTBOARD_HOSTED_ONLY"
+          assert receipt["actual_compiled_targets_complete"] is True
+          assert receipt["target_order"]==["native","sanitized","arm","tsan"]
+          for case in receipt["target_results"].values():
+              assert case["profiles"]==48
+              assert case["actual_original_apx3_frames"]==1536
+              assert case["actually_acked_original_frames"]==1536
+              assert case["bounded_original_source_files"]==1536
+              assert case["capacity_plus_one_refused"]==48
+              assert case["global_17_to_32_continuity_verified"] is True
+              assert case["negative_checks"]>=216
+              assert case["host_faults_rejected"]==8
+              assert all(case[x] is False for x in (
+                  "real_rolling_retention_qualified","original_source_deleted",
+                  "physical_powerloss_qualified","ssc305_hardware_qualified",
+                  "whole_device_memory_qualified","public_sdk_installed"))
+          print("FE09_T3S2B1BA0_FINITE_ORIGINAL_SOURCE_READBACK_PASS",os.environ["GITHUB_SHA"])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    # A bounded same-source retry may need one additional full transfer.
-    timeout-minutes: 20
+    # Recover the exact independently admitted source bytes (<=10m) then
+    # execute *fresh* speech and FIR validation; 45m total is unchanged.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-      - name: Acquire and measure fixed recorded speech without promotion
+      - name: Revalidate exact protected original speech bytes and evaluate fresh science
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 tests/validation/frontend_evolution/test_speech_spatial.py
+          python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
           mkdir fe-speech
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
-          python3 tests/validation/frontend_evolution/speech_source.py --output fe-speech/source
+          python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
+          # Original-only transfer from a successful protected earlier main.
+          # Never use a substitute mirror, new corpus or an old acoustic score.
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/39052067322" \
+            --jq '(.head_sha == "e85a14540f2c49456508387fe3f815a90308c1ba" and .conclusion == "success" and .event == "push")' |
+            grep -Fx true
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410" \
+            --jq '(.id == 12107574410 and .name == "frontend-speech-39052067322" and .size_in_bytes == 204415056 and .digest == "sha256:1dffd4fc4968a0a214658627f1faf8bf54268f119fda86600a48511f897f30d4" and .expired == false and .workflow_run.id == 39052067322)' |
+            grep -Fx true
+          if ! timeout 600s gh api \
+              "repos/$GITHUB_REPOSITORY/actions/artifacts/12107574410/zip" \
+              > fe-speech/protected-original-source.zip; then
+            python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
+              --mark-download-failure --output fe-speech/source \
+              --execution-source "$GITHUB_SHA"
+            exit 1
+          fi
+          python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py \
+            --restore --zip fe-speech/protected-original-source.zip \
+            --output fe-speech/source --transfer fe-speech/source-transfer.json \
+            --execution-source "$GITHUB_SHA"
+          rm -f -- fe-speech/protected-original-source.zip
           python3 tests/validation/frontend_evolution/speech_spatial.py \
             --source fe-speech/source --output fe-speech/effects --execution-source "$GITHUB_SHA"
           python3 tests/validation/frontend_evolution/speech_spatial.py \
@@ -513,6 +2115,7 @@ jobs:
             fe-speech/effects/
             fe-speech/fir/
             fe-speech/source/source-failure.json
+            fe-speech/source-transfer.json
           if-no-files-found: error
           retention-days: 30
 
@@ -520,8 +2123,9 @@ jobs:
   frontend-spatial-effects:
     if: inputs.run_extended
     runs-on: ubuntu-24.04
-    # A bounded same-source retry may need one additional full transfer.
-    timeout-minutes: 20
+    # Allow frozen source acquisition, BF/AEC+Activity and negative readback.
+    # Hard ceiling remains finite; no acoustic gates or retry limits change.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:

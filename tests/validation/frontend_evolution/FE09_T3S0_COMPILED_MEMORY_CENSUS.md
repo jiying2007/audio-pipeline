@@ -1,0 +1,30 @@
+# FE09 S3-T3-S0 — compiled first-party memory census / 首方源码编译内存事实
+
+**Independent preregistration:** [#787](https://github.com/jiying2007/audio-pipeline/issues/787); parent [T3 #767](https://github.com/jiying2007/audio-pipeline/issues/767). Hard predecessor T2 [#766](https://github.com/jiying2007/audio-pipeline/issues/766) and T2-C0 [#784](https://github.com/jiying2007/audio-pipeline/issues/784) are completed at protected main `40581c71c07d4a9de8073c2f73a5d0f2293a3e1f`. Its [Verify 39041419374](https://github.com/jiying2007/audio-pipeline/actions/runs/39041419374) has 71 success/1 intentional skip and required `summary=success`; matching [Release 39044613074](https://github.com/jiying2007/audio-pipeline/actions/runs/39044613074) completed release/convergence both success. First-party new-main [Artifact 12103918443](https://github.com/jiying2007/audio-pipeline/actions/runs/39041419374/artifacts/12103918443) downloaded, externally ZIP+all inner SHA/source-verified.
+
+## Why S0 is a *negative* delivery result / 为什么第一阶段必须判超预算
+
+Existing original research S2 is a private APX3 codec with up to 128 frames and a one-MiB whole-file bound. B1-S1 instead retains 24 **independent exact original one-frame S2 APX3 files**, each preallocating a 5,120-byte chunk, a 200-byte external canonical SHA256 sidecar row and a four-byte chunk length. Those three arrays alone are:
+
+[
+24,(5120+200+4)=127776\ 	ext{bytes per store};\qquad
+2\times127776=255552\ 	ext{bytes for old+new cutover}.
+]
+
+The complete nominal SSC305 C4 system limit **192 KiB = 196,608 bytes** is already exceeded by these two raw retained recorder banks alone. This is arithmetic on actual C array dimensions, not measured SSC305 RSS. The real compiled `sizeof(fe_b1s1_store)` adds pointer/counters/alignment overhead; the owned B1-S0 SPSC, B0 render resampler, BF/SRC state, temporary BF/rollback work and C0 supervisor gate/receipt add further memory. It is not legitimate to simply lower `depth=4` to 2 and subtract physical queue fields: **`fe_b1s0_state` is compiled with four PCM slots in both cases**, though their logical fill policies differ.
+
+This stage therefore must return **`FE09_T3S0_COMPILER_AND_FIRST_PARTY_BF_RESOURCE_OVER_BUDGET_NO_DEVICE_AUTHORITY`**, not a positive product resource ticket. It does **not** implement a smaller store, change public API, improve audio output, preserve lost Capture BF history or make data durable. A future compact recorder must remove/transfer the entire 24-chunk retained bank rather than hiding it in another process without counting system memory.
+
+## What the executable test actually measures / 可执行测量范围
+
+For each of C1, C2-ULA, C4-ULA, C4-UCA × 16/32/48 kHz × logical SPSC depth 2/4 × true source Render disabled/enabled = **48 complete configurations**, the noninstalled C test actually links and uses original first-party BF/SRC/B0/B1-S0/S2/B1-S1/C0 source code. It verifies `fe_b1b1_state_bytes`, `fe_b1b1_work_bytes`, aligned `fe_b1b1_init` and `fe_b1b1_get_info`; initializes the **actual** B0 capture-only adapter, SPSC queue and original S2 store; asserts that an empty store is rejected by original `fe_b1s1_verify`; calls original `fe_s2_layout` for exact one-frame original APX3 LE/CRC source geometry. It records compiled `sizeof` for fixed four-slot queue/capture/reference rings, adapter, archive and per-source state/work, and checked one-session versus two-session lower-bound **declared caller-owned** memory. The 720 executed invalid descriptor / overflow / fake-capacity / invalid APX3 tests require consistent fail-closed behavior.
+
+It explicitly **does not measure** Linux process RSS, malloc/heap, all separate worker/pthread and interrupt stacks, scheduler overhead, kernel queues, socket buffers, DMA, NOR/NAND/UBI, capture driver or CPU cache. Since these are excluded, `single_owned_min` and `dual_owned_min` are *lower bounds for explicitly counted buffers*, never a complete firmware memory budget. Native/x86 and actual ARM32/QEMU `sizeof` may differ due to ABI/pointer padding; the gate compares genuine semantic fields, required no-product booleans, and exact S2 one-frame byte layout instead of inventing cross-ISA numeric equality. ASan+UBSan and native TSan are separate true compiled/executed target binaries, not aliases of a Native result. No cross-ISA Float32 BF byte equality asserted here.
+
+## Evidence gates and unqualified claims / 收口条件
+
+The candidate provides a 4-member exact-run `SHA256SUMS / receipt.json / collect.log / verify.log` Artifact (30-day retention), immutable protected predecessor Git-object SHA256 for original S1/S2/B0/B1/C0 and source/compiler/ELF SHA256 for this stage. CI does not accept a metadata-only claim in place of actual C execution; each of four targets is compiled and executed twice with source-bound rows and 720 negatives. Both the original pinned upload and independent pinned download must run; downloaded member SHA/source/negative-authority checks must pass. The original full `Verify` code, resource, audio, Hosted Real, AEC/SYNC and CodeQL checks remain mandatory.
+
+**Hard exclusions:** shipping 2.x `src/`, installed `include/`, public headers/CMake, legacy APD2, frozen I025–I040, licensed product release and SDK 3.x are untouched. No source-authorized physical ADC/DAC clocks, genuine SSC305 192KiB fit, 10ms p99, board memory/thermal/power, HIL/E001/Product Certification [#58](https://github.com/jiying2007/audio-pipeline/issues/58), durable two-phase recorder, crash consistency, or real four-mic acoustic gain. T3 parent #767, B1/T2-B broader issues #771/#773 and HIL #58 remain OPEN after any S0 success.
+
+**Closure policy:** latest exact PR HEAD full required `summary=success`, active strict protected Ruleset 21804005, zero unresolved review threads, expected HEAD Squash, *distinct* new-main full Verify `summary=success`, matching release+convergence 2/2 and independently re-downloaded / rehashed fresh-main original 4-member Artifact before closing only #787. Recheck this negative memory decision; do not turn a compiler-defined lower bound into an SSC305 board qualification.

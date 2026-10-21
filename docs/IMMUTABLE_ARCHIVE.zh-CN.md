@@ -10,6 +10,10 @@ PR #821 首次 Verify 39454312314 的 `git diff --check` 仍为失败：16个原
 Verify继续直接执行原来的 `git diff --check`。政策先经受保护PR合入main，数据PR才能消费该base。
 
 Verify从base提取并执行 `tools/codex_assets/immutable_whitespace.py`。
+普通用户实验室的源码绑定步骤也接收同一精确base/head，确认SHA及祖先关系后，从base提取同一检查器；
+不再以候选的 `HEAD^` 推测导入范围。没有base检查器时，保留该范围的严格检查。
+PR #821合并后的首次main Verify39643364867因这个消费者尚未接入而失败，原失败保留；
+这不是实验室运行测试失败或通过，因为当时尚未执行运行测试。
 完整差异严格检查通过时不需要例外；只有严格检查确实exit2时，才核对base上的
 `.github/research/frontend-evolution-v1/immutable-whitespace-v1.json`。
 申请空白例外的数据PR，其head必须保留政策和检查器的相同字节，不能自授权。

@@ -1,5 +1,23 @@
 # C4 单一核心：尚未取得的软件资格与证据清单
 
+## 2026-10-21 接续状态更正
+
+下方 2026-10-20 盘点保留为原始历史快照；其中“A1 候选 / 资格读回待完成”的时态已被后续收口证据取代。已重新读取 [A1 #809](https://github.com/jiying2007/audio-pipeline/issues/809)、[Runtime #810](https://github.com/jiying2007/audio-pipeline/issues/810)、[证据运输 #754](https://github.com/jiying2007/audio-pipeline/issues/754) 的 completed 状态，以及实际 [合并 PR #818](https://github.com/jiying2007/audio-pipeline/pull/818) 和以下运行元数据。
+
+| 已完成范围 | 精确收口与保留边界 |
+|---|---|
+| A1：私有 FRM2 非零左锚点根 | 已在 `c416a5f8e44b36a6af5be4dc53c71456dd6ba5ef` 完成独立主线资格。逻辑窗口 17..32、物理原文件 1..32 均保留；没有 A2 删除、循环复用或物理掉电资格。 |
+| Runtime R1–R4 与 CI C1–C2 | #810 已随 v2.3.56 收口；不再作为待修复任务重开。历史源码绑定由 [2.3.56 维护说明](RUNTIME_MAINTENANCE_REBIND_2_3_56.md) 保留。 |
+| 无损空间证据运输 | #754 已完成原归档与下游读回资格；没有改变科学执行、来源、阈值或真实设备权限。 |
+
+共同收口证据为该精确 c416 主线的 [Verify 39435091890](https://github.com/jiying2007/audio-pipeline/actions/runs/39435091890)（79 成功、1 预期跳过、required summary 成功），以及同 SHA 的 [Release 39440540096](https://github.com/jiying2007/audio-pipeline/actions/runs/39440540096)（release、convergence 均成功）。这是已完成阶段的来源身份，不代替后续提交自己的 PR/main 检查。
+
+A1 原始 [Artifact 12272245576](https://github.com/jiying2007/audio-pipeline/actions/runs/39435091890/artifacts/12272245576) 为 37,894 字节，ZIP SHA256 `cc2e851af1b7a0edf88c778e4e67e7d93a2f29b6f12daf2b9fb06ab9ab3ec3ef`；本次实时元数据与 #809 登记的原始 ZIP、四成员及三个内部哈希独立读回记录一致。本次状态更正没有重新下载或重做该实验。
+
+因此接续软件范围为 **另行预注册的 A2 源锚定删除/滚动与故障恢复、T3-S3 完整作用域资源归账、B3 有限全双工组合**；这些阶段仍未由 A1 收口完成或自动准入。根计划 #730/#733、滚动留存 #796/#791、资源 #767 保持开放。真实 SSC305、ADC/DAC 时钟、NAND/UBIFS 掉电、HIL/E001 和公共 C4 SDK 仍保留各自资格门禁。
+
+## 2026-10-20 原始盘点（历史快照）
+
 审查日期：2026-10-20 UTC。源码基线为 protected `main=e3672ffe16e4c9d42a100e7712b9bbd3d8338545`；本轮重新读取 main、相关 issue 状态及以下代码/文档。本文是只读盘点，**不新增实验准入、不改变 2.3.56 修复范围、不宣称 public C4**。根计划 [#730](https://github.com/jiying2007/audio-pipeline/issues/730)、[#733](https://github.com/jiying2007/audio-pipeline/issues/733) 仍 OPEN。旧 issue 正文和冻结预注册文档中的 `BLOCKED` 是登记时状态；不能用它覆盖后续已关闭的 children。
 
 ## 已有实现：后续必须复用

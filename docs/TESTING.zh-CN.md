@@ -10,6 +10,9 @@ PR 先经过强制 Fast Gate，再展开高成本矩阵。Fast Gate 执行架构
 
 性能比较基线：PR 使用 `origin/main -> candidate`，main push 使用精确 `github.event.before -> HEAD`。最终 `summary` 是唯一 merge/release 聚合状态。
 
+历史输入字节与格式检查冲突时，仅能使用[不可变归档合同](IMMUTABLE_ARCHIVE.zh-CN.md)：
+先独立注册固定SHA与诊断，再由数据PR消费受保护base的政策及检查器；新告警与其余文件仍严格拒绝。
+
 ## Public API/ABI 门禁
 
 当前 2.x 兼容线只有一套 public API/ABI surface。门禁要求当前 `ap_build_info()`、`ap_runtime_open()`、`ap_runtime_submit_frame()`、`ap_runtime_read_metrics()` 等公开 symbol 存在，持续禁止已退役 public name/exported symbol 复活，并以已发布 `v2.0.0` 作为 required same-major compatibility baseline。

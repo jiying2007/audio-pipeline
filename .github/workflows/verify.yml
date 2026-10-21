@@ -99,7 +99,12 @@ jobs:
           base='${{ steps.refs.outputs.base }}'
           head='${{ steps.refs.outputs.head }}'
           python3 scripts/ci_impact.py --self-test
-          git diff --check "$base...$head"
+          if git cat-file -e "$base:tools/codex_assets/immutable_whitespace.py" 2>/dev/null; then
+            git show "$base:tools/codex_assets/immutable_whitespace.py" > "$RUNNER_TEMP/immutable_whitespace.py"
+            python3 "$RUNNER_TEMP/immutable_whitespace.py" --root "$GITHUB_WORKSPACE" --base "$base" --head "$head"
+          else
+            git diff --check "$base...$head"
+          fi
           args=(--base "$base" --head "$head" --github-output "$GITHUB_OUTPUT")
           if [ '${{ github.event_name }}' != pull_request ]; then args+=(--force-full); fi
           python3 scripts/ci_impact.py "${args[@]}" | tee /tmp/impact.json

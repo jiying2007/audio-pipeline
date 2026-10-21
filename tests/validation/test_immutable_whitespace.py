@@ -2,9 +2,11 @@
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import Mock, patch
 
@@ -68,6 +70,89 @@ class ImmutableWhitespaceTests(unittest.TestCase):
     def test_registered_exact_import(self):
         result = self.check()
         self.assertEqual((result["status"], result["exceptions"], result["warnings"]), ("IMMUTABLE_IMPORT_VERIFIED", 1, 1))
+
+    def run_lab_binding(self, base=None, source=None):
+        workflow = (ROOT / ".github/workflows/lab-user-mode.yml").read_text()
+        step = workflow.split("      - name: Bind runtime gate to exact source\n", 1)[1]
+        script = textwrap.dedent(step.split("        run: |\n", 1)[1].split("\n      - name:", 1)[0])
+        script = script.replace("${{ inputs.base_sha }}", base or self.base)
+        script = script.replace("${{ inputs.source_sha }}", source or self.sha())
+        runner_tmp = self.root / "runner-temp"
+        runner_tmp.mkdir(exist_ok=True)
+        return subprocess.run(
+            ["bash", "-euo", "pipefail", "-c", script], cwd=self.root,
+            env={**os.environ, "RUNNER_TEMP": str(runner_tmp), "GITHUB_WORKSPACE": str(self.root)},
+            capture_output=True, text=True,
+        )
+
+    def test_lab_binding_consumes_protected_base_import(self):
+        result = self.run_lab_binding()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("IMMUTABLE_IMPORT_VERIFIED", result.stdout)
+        self.assertEqual((self.root / "runner-temp/lab-immutable-whitespace.py").read_bytes(),
+                         self.git("show", self.base + ":" + module.HELPER))
+
+    def test_lab_binding_rejects_unknown_whitespace(self):
+        self.put("unknown.txt", b"new \n")
+        self.commit()
+        result = self.run_lab_binding()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unregistered", result.stderr)
+
+    def test_lab_binding_without_base_helper_retains_strict_check(self):
+        result = self.run_lab_binding(self.initial)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("trailing whitespace", result.stdout)
+        self.assertFalse((self.root / "runner-temp/lab-immutable-whitespace.py").exists())
+
+    def test_lab_binding_rejects_invalid_base_identity(self):
+        result = self.run_lab_binding("not-a-commit")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("base_sha must be a 40-character commit SHA", result.stderr)
+        self.assertFalse((self.root / "runner-temp/lab-immutable-whitespace.py").exists())
+
+    def test_lab_binding_rejects_missing_base_object(self):
+        result = self.run_lab_binding("f" * 40)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.root / "runner-temp/lab-immutable-whitespace.py").exists())
+
+    def test_lab_binding_rejects_nonancestor_base(self):
+        source = self.sha()
+        self.git("checkout", "--orphan", "unrelated")
+        self.commit()
+        unrelated = self.sha()
+        self.git("checkout", "--detach", source)
+        result = self.run_lab_binding(unrelated)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.root / "runner-temp/lab-immutable-whitespace.py").exists())
+
+    def test_lab_binding_rejects_source_checkout_mismatch(self):
+        result = self.run_lab_binding(source=self.base)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.root / "runner-temp/lab-immutable-whitespace.py").exists())
+
+    def test_lab_binding_rejects_self_authorizing_head_helper(self):
+        self.put(module.HELPER, b"print('unauthorized head helper')\n")
+        self.commit()
+        result = self.run_lab_binding()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("unauthorized head helper", result.stdout)
+        self.assertEqual((self.root / "runner-temp/lab-immutable-whitespace.py").read_bytes(),
+                         self.git("show", self.base + ":" + module.HELPER))
+
+    def test_lab_binding_rejects_self_authorizing_head_policy(self):
+        self.policy["files"]["archive.txt"]["warnings"] = 2
+        self.put(module.POLICY, json.dumps(self.policy).encode() + b"\n")
+        self.commit()
+        self.assertNotEqual(self.run_lab_binding().returncode, 0)
+
+    def test_lab_binding_without_base_helper_accepts_strict_clean(self):
+        self.git("checkout", "--detach", self.initial)
+        self.put("ordinary.txt", b"strict clean change\n")
+        self.commit()
+        result = self.run_lab_binding(self.initial)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.root / "runner-temp/lab-immutable-whitespace.py").exists())
 
     def test_unregistered_path(self):
         self.put("unknown.txt", b"new \n")

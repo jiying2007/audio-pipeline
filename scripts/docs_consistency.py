@@ -407,6 +407,20 @@ def validate_lab(root: Path, errors: list[str]) -> None:
     readiness = read(root, ".github/workflows/trusted-runner-readiness.yml")
     certification = read(root, ".github/workflows/product-certification.yml")
     lab_user_mode = read(root, ".github/workflows/lab-user-mode.yml")
+    verify_workflow = read(root, ".github/workflows/verify.yml")
+    if "      base_sha: ${{ needs.impact.outputs.base_sha }}" not in verify_workflow:
+        errors.append("lab user-mode caller must pass the exact impact base SHA")
+    for token in (
+        "      base_sha:\n",
+        "git merge-base --is-ancestor",
+        'git show "$base_sha:tools/codex_assets/immutable_whitespace.py"',
+        '--root "$GITHUB_WORKSPACE" --base "$base_sha" --head "$source_sha"',
+        'git diff --check "$base_sha...$source_sha"',
+    ):
+        if token not in lab_user_mode:
+            errors.append(f"lab user-mode missing protected-base verification contract: {token}")
+    if "git diff --check HEAD^" in lab_user_mode:
+        errors.append("lab user-mode must not infer the verification base from HEAD^")
     for forbidden in ("default: /opt/audio-validation-data", "default: /etc/audio-pipeline/board.json"):
         if forbidden in readiness:
             errors.append(f"trusted runner readiness reintroduced stale system-mode default: {forbidden}")

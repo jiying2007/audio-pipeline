@@ -272,6 +272,7 @@ jobs:
     if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_lab == 'true'
     uses: ./.github/workflows/lab-user-mode.yml
     with:
+      base_sha: ${{ needs.impact.outputs.base_sha }}
       source_sha: ${{ needs.impact.outputs.head_sha }}
 
   ci:

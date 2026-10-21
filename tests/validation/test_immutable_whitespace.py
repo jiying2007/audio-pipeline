@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("immutable_whitespace", ROOT / "tools/codex_assets/immutable_whitespace.py")
@@ -141,13 +141,33 @@ class ImmutableWhitespaceTests(unittest.TestCase):
 
     def test_unexpected_git_exit(self):
         proc = subprocess.CompletedProcess([], 128, b"", b"failed")
-        with patch.object(module.subprocess, "run", return_value=proc), self.assertRaises(ValueError):
-            module.diff_check(self.root, "anything")
+        real_run = subprocess.run
+        check_run = Mock(return_value=proc)
+
+        def run(args, *positional, **kwargs):
+            if "--check" in args:
+                return check_run(args, *positional, **kwargs)
+            return real_run(args, *positional, **kwargs)
+
+        with patch.object(module.subprocess, "run", side_effect=run), self.assertRaises(ValueError) as raised:
+            module.diff_check(self.root, self.base + "...HEAD")
+        self.assertEqual(str(raised.exception), "unexpected git diff --check failure: b'failed'")
+        check_run.assert_called_once()
 
     def test_unexpected_git_output(self):
         proc = subprocess.CompletedProcess([], 0, b"surprise", b"")
-        with patch.object(module.subprocess, "run", return_value=proc), self.assertRaises(ValueError):
-            module.diff_check(self.root, "anything")
+        real_run = subprocess.run
+        check_run = Mock(return_value=proc)
+
+        def run(args, *positional, **kwargs):
+            if "--check" in args:
+                return check_run(args, *positional, **kwargs)
+            return real_run(args, *positional, **kwargs)
+
+        with patch.object(module.subprocess, "run", side_effect=run), self.assertRaises(ValueError) as raised:
+            module.diff_check(self.root, self.base + "...HEAD")
+        self.assertEqual(str(raised.exception), "unexpected git diff --check output")
+        check_run.assert_called_once()
 
     def test_policy_rejects_duplicate_keys(self):
         with self.assertRaises(ValueError):

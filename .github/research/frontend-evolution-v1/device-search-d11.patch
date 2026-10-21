@@ -1,0 +1,6 @@
+diff --git a/src/sync/ap_sync.c b/src/sync/ap_sync.c
+--- a/src/sync/ap_sync.c
++++ b/src/sync/ap_sync.c
+@@ -218,1 +218,1 @@
+-    const uint32_t coarse_step = sample_rate_hz / 500u ? sample_rate_hz / 500u : 1u;
++    const uint32_t coarse_step = sample_rate_hz / 1000u ? sample_rate_hz / 1000u : 1u;

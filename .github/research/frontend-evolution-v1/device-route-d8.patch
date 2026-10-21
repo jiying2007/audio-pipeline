@@ -1,0 +1,73 @@
+--- a/src/sync/ap_sync.h
++++ b/src/sync/ap_sync.h
+@@ -5,8 +5,12 @@
+ #include <stdint.h>
+ 
+ #define AP_RENDER_CAP AP_BUILD_RENDER_CAP
++#define AP_SYNC_ROUTE_HISTORY_VALUES 160u
+ 
+ typedef struct ap_sync_state {
++    /* D8 research candidate: stride-four microphone history, per state. */
++    float route_mic_history[AP_SYNC_ROUTE_HISTORY_VALUES];
++    uint64_t route_mic_total;
+     float render_ring[AP_RENDER_CAP];
+     uint64_t render_total;
+     uint64_t last_render_capture_frame;
+--- a/src/sync/ap_sync.c
++++ b/src/sync/ap_sync.c
+@@ -149,6 +149,28 @@
+         xy += x * y;
+         xx += x * x;
+         yy += y * y;
++    }
++    return (xy * xy) / (xx * yy);
++}
++
++static float ap_sync_route_history_score(const ap_sync_state_t *s,
++                                         uint32_t rate, uint32_t frame_samples,
++                                         uint32_t max_delay, uint32_t delay) {
++    const uint32_t window = rate / 25u;
++    float xy = 0.0f, xx = 1.0e-12f, yy = 1.0e-12f;
++    uint32_t i;
++    int64_t start;
++    if ((rate != 8000u && rate != 16000u) || frame_samples != rate / 100u ||
++        s->route_mic_total != s->render_total || s->route_mic_total < window ||
++        s->render_total < (uint64_t)(max_delay + window) ||
++        max_delay + window > AP_RENDER_CAP || (s->route_mic_total % 4u) != 0u)
++        return 0.0f;
++    start = (int64_t)s->render_total - (int64_t)window - (int64_t)delay;
++    for (i = 0u; i < window; i += 4u) {
++        const float x = ap_sync_render_absolute(s, start + (int64_t)i);
++        const uint64_t at = (s->route_mic_total - window + i) / 4u;
++        const float y = s->route_mic_history[at % AP_SYNC_ROUTE_HISTORY_VALUES];
++        xy += x * y; xx += x * x; yy += y * y;
+     }
+     return (xy * xy) / (xx * yy);
+ }
+@@ -199,6 +221,13 @@
+     ap_sync_coarse_peak_t coarse_peaks[AP_SYNC_UNIQUENESS_PEAKS];
+     uint32_t coarse_peak_count = 0u;
+     uint32_t best_delay = s->delay_samples, d;
++    if ((s->route_mic_total % 4u) == 0u && (frame_samples % 4u) == 0u) {
++        for (d = 0u; d < frame_samples; d += 4u) {
++            const uint64_t at = (s->route_mic_total + d) / 4u;
++            s->route_mic_history[at % AP_SYNC_ROUTE_HISTORY_VALUES] = mic[d];
++        }
++    }
++    s->route_mic_total += frame_samples;
+     memset(event, 0, sizeof(*event));
+     if (!enable_delay_tracking ||
+         s->render_total < (uint64_t)(max_delay + frame_samples)) return;
+@@ -234,6 +263,12 @@
+         event->delay_observed = 1u;
+         event->delay_error_samples = (int32_t)best_delay - (int32_t)old;
+         if (raw_jump > sample_rate_hz / 50u) {
++            if (ap_sync_route_history_score(s, sample_rate_hz, frame_samples,
++                                            max_delay, best_delay) < AP_SYNC_MIN_CORRELATION_SQUARED) {
++                s->route_candidate_confirmations = 0u;
++                event->delay_observed = 0u;
++                return;
++            }
+             if (!ap_sync_confirm_route_candidate(s, best_delay, coarse_step)) {
+                 event->delay_observed = 0u;
+                 return;

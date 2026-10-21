@@ -1,0 +1,16 @@
+mono_us,event,value
+2730083353,scene_start,0
+2730083498,far_schedule_only,0
+2730083501,near_prompt_only,0
+2733092667,far_schedule_only,1
+2736084193,near_prompt_only,1
+2736084203,near_script_prompt,0
+2742086363,near_script_prompt,1
+2748088213,near_script_prompt,2
+2748088290,near_script_complete,3
+2755092793,near_prompt_only,0
+2757085494,far_schedule_only,0
+2757276850,play_submitted_bytes,768000
+2757276858,play_stop_returned_unverified,0
+2760088018,scene_end,0
+2760168908,execution_end,0

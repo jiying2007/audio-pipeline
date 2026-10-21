@@ -1,0 +1,1019 @@
+{
+  "schema_version": 1,
+  "dataset": "device-capture-20261009",
+  "data_role": "development",
+  "training_allowed": false,
+  "promotion_allowed": false,
+  "shipping_approved": false,
+  "redistribution_rights": "not_assessed",
+  "local_commit_authorized": true,
+  "original_files": 119,
+  "original_bytes": 114131862,
+  "wav_files": 68,
+  "input_lock_sha256": "c63b37feff15d7eac6932c92c1ddaa99a1a6efa5d338feb0c2ec2d28443fa285",
+  "files": [
+    {
+      "path": "tests/audio/.gitignore",
+      "bytes": 6,
+      "sha256": "116887bd1db109be0c4ce03aaf8bb232064601d0d0ed011dc2f4db1ee5ffd074"
+    },
+    {
+      "path": "tests/audio/100_audio_in.wav",
+      "bytes": 4431872,
+      "sha256": "206fdd8031de4e8ca53adeb9e444e4920d93d57c79dd3c2dec33cea3c298db2b",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 1107957
+      }
+    },
+    {
+      "path": "tests/audio/100_audio_in_echo.wav",
+      "bytes": 4431872,
+      "sha256": "f97061c1f5cadaa83e6670893389282b1f27121d31e272c99f9959a28fc24f7f",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 1107957
+      }
+    },
+    {
+      "path": "tests/audio/80_audio_in.wav",
+      "bytes": 4298284,
+      "sha256": "a29e52176e14541e6c7c7aa40a4b7cf98cca6ab75a602db01679a3b8bcae53b3",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 1074560
+      }
+    },
+    {
+      "path": "tests/audio/80_audio_in_echo.wav",
+      "bytes": 4298284,
+      "sha256": "c5dd9e561c72b06a48be17330f4edd7e25a1bd24dd107831ec490d1396301c13",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 1074560
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2555567782-2421/events.csv",
+      "bytes": 156,
+      "sha256": "476bac9c68dbfde64ac76450a5b322797e5c41dbb2e2715374d8cb21b0719ebc"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2555567782-2421/frames.csv",
+      "bytes": 244363,
+      "sha256": "3f6570836b54a12e169ecf1ecb96b4a43d391e25e7dedb4dc36cb6ec6db920cf"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2555567782-2421/mic.wav",
+      "bytes": 1922604,
+      "sha256": "03c6c60b13e4a60b3de37eabbb7bbff6d1f9e53612c9d0c194bbcaaec7f725e3",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2555567782-2421/output.wav",
+      "bytes": 961068,
+      "sha256": "c8d3a11e66eb77cad260047c27e04434e273944f0c7108cc3502451d34ceadb0",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2555567782-2421/ref_raw.wav",
+      "bytes": 1922604,
+      "sha256": "3fba21e7f433628c76908b83689149af4294434f7ffa90e011e1b4b659ee99df",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2555567782-2421/ref_used.wav",
+      "bytes": 961068,
+      "sha256": "3072812751bb33e9bfc4cf01d8efa2f05b88794b568d8201bb9f0a3424110612",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2555567782-2421/session.json",
+      "bytes": 766,
+      "sha256": "b03b39ac847a9d2f44bf43a3663b3b2427e1d6247c61ebac545b15e3eaf0b5cf"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2615547385-2427/events.csv",
+      "bytes": 346,
+      "sha256": "29a8819f8a71888532b7776829db448084d1416b065b42739f890a5552ab7cc3"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2615547385-2427/frames.csv",
+      "bytes": 244363,
+      "sha256": "e23a5dbe39b6d3dc982915b9782ec4eaf035d7c83094390752856b9e74e3a8e4"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2615547385-2427/mic.wav",
+      "bytes": 1922604,
+      "sha256": "48c4a4a6f756e034ab03bfc0ac911a95c493674230b10a31c89cbb3689ee4566",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2615547385-2427/output.wav",
+      "bytes": 961068,
+      "sha256": "a7fd873f88df4d7a17bc5ee6f8a77d8fc97b6224375a3e8bfc4c84db20725400",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2615547385-2427/ref_raw.wav",
+      "bytes": 1922604,
+      "sha256": "3fba21e7f433628c76908b83689149af4294434f7ffa90e011e1b4b659ee99df",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2615547385-2427/ref_used.wav",
+      "bytes": 961068,
+      "sha256": "3072812751bb33e9bfc4cf01d8efa2f05b88794b568d8201bb9f0a3424110612",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2615547385-2427/session.json",
+      "bytes": 772,
+      "sha256": "f525aa630948478d8ec49d3b4a93e6c93e1b64202271245e6c77fd246660c542"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2675215807-2432/events.csv",
+      "bytes": 300,
+      "sha256": "5b3585f703986a8df9943c5ccc0bae86e49cef5930dc4553e7f590061d53fe41"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2675215807-2432/frames.csv",
+      "bytes": 244715,
+      "sha256": "f380361f9a1c39eb3238d616d0a5de3ba99e90d712eb267ba7f166661bfe36f1"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2675215807-2432/mic.wav",
+      "bytes": 1925164,
+      "sha256": "a7843d2d002fb820f125dc9d5c43d901fdb36d1bc5c5fbcb9c6aad5fd7e8ff78",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2675215807-2432/output.wav",
+      "bytes": 962604,
+      "sha256": "c0448a37d6a4a91935d3aed9c3fb6c797f5a469d06b326fa1e6696798605302e",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2675215807-2432/ref_raw.wav",
+      "bytes": 1925164,
+      "sha256": "717abf31fe19462f2e5097352f4b85d9af505fdd61ea31a2311d14b5d6982c13",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2675215807-2432/ref_used.wav",
+      "bytes": 962604,
+      "sha256": "c4996426ca6fb90fef5490325d50599e061822cba16d65d9bc5fecbdabcdd61d",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2675215807-2432/session.json",
+      "bytes": 832,
+      "sha256": "a5fd86fbc6515ff20ecc30fa79cc7ac9d163b9d143b4fb8b20094fe8bc3adc03"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2729896222-2438/events.csv",
+      "bytes": 490,
+      "sha256": "dcfc517214f40ed1495b692235007abeb7b0bf2d8eadc727708fc5e1a12a61b8"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2729896222-2438/frames.csv",
+      "bytes": 244715,
+      "sha256": "2f81a1d9818e024d76e67fa733910e1554355eafdad31d991d3c35cac6c815d6"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2729896222-2438/mic.wav",
+      "bytes": 1925164,
+      "sha256": "ed7062ece7fb45a28e9549ebd844c2af4ed4b5bd47251dfb2da5958ee49be063",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2729896222-2438/output.wav",
+      "bytes": 962604,
+      "sha256": "09560dfc84327c54effe9b2bd5ca012a3cd2839285e16df8bdb07d7b2c0c4601",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2729896222-2438/ref_raw.wav",
+      "bytes": 1925164,
+      "sha256": "523b7ee54c3fe3ae0f68c343604e909300ab726636be5b723f171f10f39f267c",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2729896222-2438/ref_used.wav",
+      "bytes": 962604,
+      "sha256": "fe51fb79fcb2e76614dba44c415c1e99d1f195150b3f22f1a7c92aab649af15e",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2729896222-2438/session.json",
+      "bytes": 844,
+      "sha256": "2e42e027c2b0701201c52bbfd5b3e5d4a388cbd8fd9dc1c37e163a7dee00cfa9"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2786421739-2445/events.csv",
+      "bytes": 16656,
+      "sha256": "1eee0fe51d1a80feb4c011c4d9d96252144751ad18e3489a191bac69af4f7089"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2786421739-2445/frames.csv",
+      "bytes": 245683,
+      "sha256": "38bef23ecb21a55ccb903d16d6990cc25c6b244bb6a761b67acf06e10d98af77"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2786421739-2445/mic.wav",
+      "bytes": 1932844,
+      "sha256": "e3b834d6124c8f497871f67b1e068d4f79c2db5575afeef9c93fd391dd1ad9b0",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2786421739-2445/output.wav",
+      "bytes": 966188,
+      "sha256": "33999cb90b70a41401902e064b61ece078ef6298e885627f9bc611047f3200d2",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2786421739-2445/ref_raw.wav",
+      "bytes": 1932844,
+      "sha256": "3a949a31c2b1b472be199e71e964348db90910a15f1436ee2006322ac4612b35",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2786421739-2445/ref_used.wav",
+      "bytes": 966188,
+      "sha256": "45981b5d9068fcf94512211d15e68dce1459d8605038b368276693990e44720a",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2786421739-2445/session.json",
+      "bytes": 783,
+      "sha256": "7a18305de6811bab909137156748e41c5b6f3433e897cacb4e7d8386d2c1142a"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2846538195-2455/events.csv",
+      "bytes": 16730,
+      "sha256": "3d5e27a1736c30ce0d05b52db682f5b42ec1428a2d04a333d1d3b984cf868552"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2846538195-2455/frames.csv",
+      "bytes": 245683,
+      "sha256": "b514ff4308773cb0414a193af3a28af881a49ab4c366b881e88c3b4fb8799220"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2846538195-2455/mic.wav",
+      "bytes": 1932844,
+      "sha256": "dd2da7636e29c6962b1694c8fd84388e0b77b06d222a2273c3a951a09b7734a3",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2846538195-2455/output.wav",
+      "bytes": 966188,
+      "sha256": "c614f7af11b97d0170ae2b0aa5c5b630f23a9f51c9fc689e855a5f2805a40f34",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2846538195-2455/ref_raw.wav",
+      "bytes": 1932844,
+      "sha256": "3a949a31c2b1b472be199e71e964348db90910a15f1436ee2006322ac4612b35",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2846538195-2455/ref_used.wav",
+      "bytes": 966188,
+      "sha256": "45981b5d9068fcf94512211d15e68dce1459d8605038b368276693990e44720a",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2846538195-2455/session.json",
+      "bytes": 800,
+      "sha256": "5b3610b03ded31e6d5ba03c7ebdea930db08af726ca17054c884578f76b0abc9"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2908630469-2466/events.csv",
+      "bytes": 16698,
+      "sha256": "6ce1a82936beaafedc169e91b1f1c479295f06632e306c8aeed0c541dbf93280"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2908630469-2466/frames.csv",
+      "bytes": 246035,
+      "sha256": "2c43696fc0e160c07c4a354563be8eadb410947a4482f93eb46ab9298b5998f6"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2908630469-2466/mic.wav",
+      "bytes": 1935404,
+      "sha256": "db2d2f46df70e5fb85413d27c4f0024f0c18d6018bd5a65c43c26f447507f708",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2908630469-2466/output.wav",
+      "bytes": 967724,
+      "sha256": "9c408981f713a62ec6ac658d2755617ff05da9d7300f5d0ceadd881ba273e6dc",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2908630469-2466/ref_raw.wav",
+      "bytes": 1935404,
+      "sha256": "38d1a6e21792f6bf8cacf2a99bea74cfd258b5d2019d70ca476a7cf0474eb49d",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2908630469-2466/ref_used.wav",
+      "bytes": 967724,
+      "sha256": "9ec09a7ba2b3b73a75762a9a7de978183db8f22839dd82527840bc8f74c4466c",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2908630469-2466/session.json",
+      "bytes": 867,
+      "sha256": "c0f9066500e82975f3add639e5129d8f2ae985faaf0f8448337fb042f4f3f100"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2966042313-2478/events.csv",
+      "bytes": 16886,
+      "sha256": "b82e3a402930efde88644befa757150e1ca44702fdb6ec874c39986b1b1d2674"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2966042313-2478/frames.csv",
+      "bytes": 246035,
+      "sha256": "358384320a7ae15ce4bde1cf28e3b8cb41013e3cea658077edf8dbae6f9760df"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2966042313-2478/mic.wav",
+      "bytes": 1935404,
+      "sha256": "2345ee3d8bca6c85aca51480a48c0772d8a576f9f0c15db0dc4de470501d1e6d",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2966042313-2478/output.wav",
+      "bytes": 967724,
+      "sha256": "06ff5868b133bef5e633897a3193859ab6b7f4092bb2eba1d66b0898375344f5",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2966042313-2478/ref_raw.wav",
+      "bytes": 1935404,
+      "sha256": "49dfbe4d0611c1a2542b2e9e4f091177a1a8bac06ae44c0008c7e7cfda593e9d",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2966042313-2478/ref_used.wav",
+      "bytes": 967724,
+      "sha256": "cb1ad252db0d006af9ca0dfa85003029ec75552790d9a9127acca19cd5d915b9",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/runs/run-2966042313-2478/session.json",
+      "bytes": 874,
+      "sha256": "f0984631dfb4783873076e106cd35ecc5c79bdbe19dc4b3a2720d42c28b48b02"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm240/test20261009.md",
+      "bytes": 1228,
+      "sha256": "549070b23aa50b4c491537dc3e956dd85fdfd976bbe483b3fce23c8d319ffbd7"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4331249683-2604/events.csv",
+      "bytes": 156,
+      "sha256": "1fcd9ab33517c62eafd54c3cf5e63d19756f21b52414b2513c91b9c85ae1edc6"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4331249683-2604/frames.csv",
+      "bytes": 244363,
+      "sha256": "22272c0e2e4924199a0a0005272b67827d89f4e95dfd99028b208e5947677c92"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4331249683-2604/mic.wav",
+      "bytes": 1922604,
+      "sha256": "7c827385d4865382a88bc036de712d10aa4115c00147862c328096698e4856bd",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4331249683-2604/output.wav",
+      "bytes": 961068,
+      "sha256": "788637faea085f32a80b8e707778e8e86c3e13d6e912de366ba349fed0cd0701",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4331249683-2604/ref_raw.wav",
+      "bytes": 1922604,
+      "sha256": "3fba21e7f433628c76908b83689149af4294434f7ffa90e011e1b4b659ee99df",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4331249683-2604/ref_used.wav",
+      "bytes": 961068,
+      "sha256": "3072812751bb33e9bfc4cf01d8efa2f05b88794b568d8201bb9f0a3424110612",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4331249683-2604/session.json",
+      "bytes": 766,
+      "sha256": "51d288c7763b571f5e6059f7eebed67c10bc6040dc64cc487af234a2283e4671"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4399583795-2610/events.csv",
+      "bytes": 346,
+      "sha256": "5fd1ccda82831885d78edc0988272f30e57dd0488c4cd29335c6d75c50e5ab6e"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4399583795-2610/frames.csv",
+      "bytes": 244363,
+      "sha256": "48eb199745c6a0d4fd6c1239287c8ebcb7c9caaddcd2fffb81f6ac16fcb8d196"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4399583795-2610/mic.wav",
+      "bytes": 1922604,
+      "sha256": "f8b52fcf97bac3a75d9ef9c0d0ec0bc92ee599bf4bdcaa2574d3dd70ec3d6d4e",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4399583795-2610/output.wav",
+      "bytes": 961068,
+      "sha256": "4a7879ac6ac61418698667d150171f18d49c4d0a5508320cf6c7fa05af2013f9",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4399583795-2610/ref_raw.wav",
+      "bytes": 1922604,
+      "sha256": "3fba21e7f433628c76908b83689149af4294434f7ffa90e011e1b4b659ee99df",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480640
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4399583795-2610/ref_used.wav",
+      "bytes": 961068,
+      "sha256": "3072812751bb33e9bfc4cf01d8efa2f05b88794b568d8201bb9f0a3424110612",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 480512
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4399583795-2610/session.json",
+      "bytes": 772,
+      "sha256": "79d8d6ff146b82fb9c99eabf357bb504cf344646d98426de2bb9f453b83cc8ce"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4474411052-2616/events.csv",
+      "bytes": 300,
+      "sha256": "e8e04b36d4d61a633efaf0a6f6b89bba72541e550a9fe8845f6cec975d832bd4"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4474411052-2616/frames.csv",
+      "bytes": 245023,
+      "sha256": "766fad12641c8962821a04b665a6c17847167ccaa9786a15f929f766c4d74a8d"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4474411052-2616/mic.wav",
+      "bytes": 1927724,
+      "sha256": "6f2108f2069dadf383f9980c986909510734fefb1a25f7050f4eb59f95589b00",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481920
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4474411052-2616/output.wav",
+      "bytes": 963628,
+      "sha256": "3aba837e031cf94018548eae892593b5d94996995a3e8c6db3dc802f4d4f41aa",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481792
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4474411052-2616/ref_raw.wav",
+      "bytes": 1927724,
+      "sha256": "b58dcc09f4f4a582f284f29848129d1542197713960410ff2c6bc1e196d1e265",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481920
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4474411052-2616/ref_used.wav",
+      "bytes": 963628,
+      "sha256": "2b94ac95580daabca32d11dc5fd50c57baa242476ada92619dad149a3330fb0c",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481792
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4474411052-2616/session.json",
+      "bytes": 832,
+      "sha256": "f1878310a87f6d4405b481d74e021969fd1e7efe1ea7d6ff8e7cdb5513ee1688"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4541199236-2622/events.csv",
+      "bytes": 490,
+      "sha256": "a2857a87dde0dd5378e38f635ff1f0a676c64fc309529d37700e282c2f1f14c9"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4541199236-2622/frames.csv",
+      "bytes": 244715,
+      "sha256": "952b62464719b5cae13825990095a05f897c2c691bf49ba933c3d55e73c8702f"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4541199236-2622/mic.wav",
+      "bytes": 1925164,
+      "sha256": "99b1cba7cf3f3e15c03b41c7647779df67f142b8f5094da4fac1a12cb476a3b4",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4541199236-2622/output.wav",
+      "bytes": 962604,
+      "sha256": "a2495a909b3053f374df3a5276fdf8078cf59eddac0941d7878f66c9886f872b",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4541199236-2622/ref_raw.wav",
+      "bytes": 1925164,
+      "sha256": "4a3646ccf5f5c9928822d8fb4411d515f8eef037475ef73b2e573d9c4c900de8",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4541199236-2622/ref_used.wav",
+      "bytes": 962604,
+      "sha256": "ab498c43a6bc52edee21cf10f1c6e750f42ce32ed64475a228b8b08fe678c687",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 481280
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4541199236-2622/session.json",
+      "bytes": 844,
+      "sha256": "bacc063e36d3a69b6fee062b9ee0cbc8ece528599ea32b8bb339591f1159cf0f"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4674505862-2629/events.csv",
+      "bytes": 16647,
+      "sha256": "bb1696ab4dc20b215d72eaec2d2a1a1d58882e7d5f6d01e4303f0e773d57de49"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4674505862-2629/frames.csv",
+      "bytes": 245683,
+      "sha256": "c245c73186d1b58146413372c48601379b3ee8d4fc4b7ca66e8458bb66925d04"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4674505862-2629/mic.wav",
+      "bytes": 1932844,
+      "sha256": "601292d96cf2707e67d6fc17d6fc8724908a4c37b6e5d66f827f30fe57030da4",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4674505862-2629/output.wav",
+      "bytes": 966188,
+      "sha256": "62a78c2ebea40bd078ccd10874d7871535bd717b6d655d561135714950fa246e",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4674505862-2629/ref_raw.wav",
+      "bytes": 1932844,
+      "sha256": "3a949a31c2b1b472be199e71e964348db90910a15f1436ee2006322ac4612b35",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4674505862-2629/ref_used.wav",
+      "bytes": 966188,
+      "sha256": "45981b5d9068fcf94512211d15e68dce1459d8605038b368276693990e44720a",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4674505862-2629/session.json",
+      "bytes": 784,
+      "sha256": "7d9df508ce059c020b1904b7313736221063506fe8a70bd47e8449189886f9a9"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4763773040-2651/events.csv",
+      "bytes": 16762,
+      "sha256": "06a60a587cc2f3db2e8f2818689279f58301a4c54b535086e4b3c07dd4e946fb"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4763773040-2651/frames.csv",
+      "bytes": 245683,
+      "sha256": "7acaff5768e71247be80535045edcf748a57bb3596b8496fca21ba5a53ed327b"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4763773040-2651/mic.wav",
+      "bytes": 1932844,
+      "sha256": "544779469d76892125da6f6246d869431c20f359da36aa73b9bd72bd3bdb3db2",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4763773040-2651/output.wav",
+      "bytes": 966188,
+      "sha256": "a52a96f5c97b2320b7ca2db9b6646bee75a2db2e22595a2f6919612c36b8334c",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4763773040-2651/ref_raw.wav",
+      "bytes": 1932844,
+      "sha256": "3a949a31c2b1b472be199e71e964348db90910a15f1436ee2006322ac4612b35",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483200
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4763773040-2651/ref_used.wav",
+      "bytes": 966188,
+      "sha256": "45981b5d9068fcf94512211d15e68dce1459d8605038b368276693990e44720a",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483072
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4763773040-2651/session.json",
+      "bytes": 800,
+      "sha256": "043586ecded7287364666871fecde4e06dfdbdb0f4bce40634ca0fe8840a1089"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4823498871-2661/events.csv",
+      "bytes": 16686,
+      "sha256": "b91bb80f1aba5d4deefa21774e66608b13587894af02e79f8a17180d70591f04"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4823498871-2661/frames.csv",
+      "bytes": 246035,
+      "sha256": "98e23d142b5134b91819a15e2e673472c3eead94d6f0406e68080b7ada738670"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4823498871-2661/mic.wav",
+      "bytes": 1935404,
+      "sha256": "bf29e79ad42c9ce7d39554db8af034be46dfba16e2826cec59fdb725172cdcb6",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4823498871-2661/output.wav",
+      "bytes": 967724,
+      "sha256": "a056495fc65e6757b672c5e14685878172809685b95d1f2d5240823902ef5e31",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4823498871-2661/ref_raw.wav",
+      "bytes": 1935404,
+      "sha256": "7dd731fdbaf9cced51121cc18575da949d4a148755f97be98c239875b850568a",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4823498871-2661/ref_used.wav",
+      "bytes": 967724,
+      "sha256": "0b812820884b2f43bdb0893afa98ffdf38a2e64e09aa70534981e770244b6c20",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4823498871-2661/session.json",
+      "bytes": 867,
+      "sha256": "ee0496ca0451fffe7f705f211fd3febda7ac2cdec8a37c39ab5a01ec1f179caf"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4874838670-2672/events.csv",
+      "bytes": 16898,
+      "sha256": "8fc1a3f05d49744458bc830596148a22d4f8a79f4a2f7918a72b399460f75334"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4874838670-2672/frames.csv",
+      "bytes": 246035,
+      "sha256": "f5519ed9b26f20ddc0283059aaa9608dad2c38e0d7102e471eaf92ec935a51d9"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4874838670-2672/mic.wav",
+      "bytes": 1935404,
+      "sha256": "ace11d46163943ce132f6cbaa5f1d0492eec877467ea78193a7ef98f0f7d9570",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4874838670-2672/output.wav",
+      "bytes": 967724,
+      "sha256": "a10dd6339f6944a7c9f6c8a46b7346e47c3f5dab8b87457377f12571b31b79a1",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4874838670-2672/ref_raw.wav",
+      "bytes": 1935404,
+      "sha256": "adec6419fef6e22f438b9d5733300cacfa25ff6d988e835734664a6e32ba56e9",
+      "wav": {
+        "channels": 2,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4874838670-2672/ref_used.wav",
+      "bytes": 967724,
+      "sha256": "ef9a309160753bb3095768b297ce7410f29422caa916b866d122cc2ddf4e6411",
+      "wav": {
+        "channels": 1,
+        "sample_rate": 16000,
+        "sample_width_bytes": 2,
+        "frames": 483840
+      }
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/runs/run-4874838670-2672/session.json",
+      "bytes": 874,
+      "sha256": "0704ad9448f3d42819cc9409ac41a93a137454b612ffb1484fe8b01de47fb5fa"
+    },
+    {
+      "path": "tests/audio/vocaltest_rpm480/test20261009.md",
+      "bytes": 1232,
+      "sha256": "bcf92ab22ea44074977b161590a0cc47b693a746ea25329dfbb31573840b47a6"
+    }
+  ]
+}

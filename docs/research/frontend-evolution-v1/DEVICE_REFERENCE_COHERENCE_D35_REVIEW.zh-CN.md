@@ -1,0 +1,70 @@
+# D35 独立审查与最终复验
+
+日期2026-10-11；experiment=FE_DEVICE_REFERENCE_COHERENCE_D35；claimant=root；verifier=device_capture_independent_review。
+primary=adk-planning-execution-loop；supporting=adk-verification-before-completion。
+fresh whole-change Spec PASS、Quality PASS、Reviewer Independence=independent、未闭合finding0。
+decision=REFERENCE_COHERENCE_DIAGNOSTIC_NO_PROMOTION；本地里程碑只收口固定观测诊断，总体native优化目标active。
+
+## 计划、修正与失败保留
+
+原PLAN SHA256=cb8bf6c715e44c2e58cb098dec41e6c997fb7a33f1d688e652e76da6dbd7ab3b，独立计划审查通过。
+唯一新增量为封存D30 reference/未保护primary残差的历史相关性；固定160点、lag0..1535、启动完整历史、double顺序累加、1e-12数值tie，不生成算法候选。
+实施前root核验发现额外D31零延迟锚未完全被旧D34输入锁覆盖，显式补D31 result/binding及全部source/input/artifact锁，保留修复前工具。
+第一次独立实施发现MINOR-1：子命令TimeoutExpired/启动OSError缺少命令回执；mock证明控制流缺口，不是实际DSP超时。
+AMEND SHA256=d6f2530524125811908ca75775cd24650e3e24cd9c66e39b365d5206e9198fca，原工具/测试身份及完整文件保持在/tmp。
+异常先写command/exit_code=null/error_type/elapsed/部分输出，再传播；bytes替换解码、x模式拒绝覆盖。7tests实际通过，fresh实施关闭MINOR-1、unresolved0后才启动主wrapper。
+最终C/tool/tests SHA256分别93e6b60bee38b9925c70ca9db4e96542b901601a992b4e3794fb14fffdf395b8 / 9cdbc57616d77d9fc0ee5edfdf0f579ff167443a866706a469a9f36c08fd4b25 / 60d2dd13e554bfb8796bd4abd0a7405ad79531304b81b1d39c410a7735b01626。
+原PLAN/参数/容差/窗口/数据角色不放宽；两处实施缺口和后续独立验收覆盖缺口均保留，不称整轮零问题。
+
+## 实际测量与独立数值证据
+
+接受根=/tmp/audio-fe-device-reference-coherence-d35-20261011。
+result/binding SHA256=a18f8b4e678410a043dcbb4b5e2d8ebb68df70156f52ec6f18fad02d09cf58dc / a913b140255a0a84b75e3604517536d0644c4895093d071f359fe25b5b76a6ca。
+wrapper四份execution真实exit0：非仓help/deep dry-run/7tests/主测量，dry根未创建；retry0。
+46次standalone observer、126486帧、193907596 tested lag candidates，AEC/DSP重跑0；全部126486零延迟锚在固定1e-12内吻合D31。
+3675项input_files、6项source_files和实际runner起止一致，binding封存104工件；repeat全量字节一致，future只核notify1247之前前缀，future统计为null。
+standalone局部对象20400B、Host46子命令elapsed合计45.5429608822s；不是完整前端/目标CPU/RSS/栈/热/功耗资格，不覆盖D29/D30既有预算超限。
+独立C使用线性历史、反向样本累加，独立Python stdlib不import项目工具/helper，未重AEC；首次真实terminal exit0，elapsed81.235357s，retry0。
+独立C/Python SHA256=7e0db41c5dc859169de1aa971bf1e28dc62928427e8ac83774810cabbebc287c / 30401a830c76b8b049486e1539f703fc12f0828feb117af4cf70a6bbf2cbfef0。
+独立回执SHA256=f33b4ce15d1030f9b035e42d92c194fdd37490fc5c7eb1c86cc21a69dc920d3c。
+全46例/126486帧/193907596延迟/240原窗/126486零延迟锚、旧guard前帧和near/null统计重建，3786项锁起止一致；所有chosen lag整数一致，feature最大绝对误差1.6653345369377348e-15、energy最大相对误差2.7788185565234714e-15。
+root审阅首审C发现零能量和-1 sentinel仍以容差核验，不能单独证明冻结计划的精确零要求。verifier确认覆盖缺口，保留首审全部源码/回执，独立追加精确补充。
+补充script/receipt SHA256=789345d33d5befcaabaa271150ebfd9ce2fa7032e2f867ae19f7d8c6f1a0c5fb / 13192eb784710cf591aade0b3bed6c605f00b06295b70657c75f83612d52bb63。
+补充首次真实terminal exit0，elapsed27.250169s，retry0；全126486帧原Float32与CSV核验，60083个reference零窗口的zero-lag exact -1，59750个all-invalid窗口max/chosen/zero/lag exact -1，原审计/全部输入/源码起止保持。
+实际residual零窗口0，补充的零残差分支未触发；主C self-test明确检查f.rr==0 known-answer，不能称现场实测零残差。两份独立回执结合闭合P3数值验收，未调整容差或追写原审计。
+
+## 支持的结论与限制
+
+纯echo历史max中位约0.422–0.450，而零延迟仅约0.0026–0.0031，支持历史参考提供额外可解释回声信息。
+ABA首near历史max中位约0.189、峰值约0.423；原纯ABAecho误guard前帧min约0.268，分布重叠，不能凭本轮挑阈值或认定完整near/路径辨识。
+ABA首near的chosen lag仍可能落在与纯echo相同的28/32及60/64样本延迟；near存在和可解释echo并存，高相干不证明没有near或已经校准真实物理路径。
+静态/第二near的低相关不能掩盖切换near的重叠；search max存在有限样本偏差，不作显著性概率。
+32个field主例96438帧：37988有效、58450null；16个整例null的reference逐Float32为0，field无near真值，不能把null当检测正确。主例数不等于独立真人或物理设备测试次数。
+原240窗向内取完整160点帧、边界丢弃保留，无新增有利窗；adaptive reuse明确，未引入独立validation/blind、未改声学裁判。
+没有新guard/feedback候选，不重写D32/D33拒绝；本轮不批准声学收益、真人KWS、完整前端或产品default。
+
+## 负例、whole-change与最终复验
+
+C严格编译/self-test实际exit0；五种非法帧数及argc实际exit2、已有sentinel保持；无效参数打开输入/输出前拒绝。
+输出拒绝D34旧根、仓根、已有D35根均实际exit2，完整69/2460/105文件manifest起止一致；negative script/receipt SHA256=60a7e44fe3bfc5cd8c0f5d062ba49bb83edd4ff5d5bbbb0f348bb7265f737882 / 273d1c91a14bd3aaf4ed6174fc51bc36c5e42f7bd308a0a82dde2bd58a44f55d。
+verifier审负例脚本和root实际回执，不冒认独立重跑当时manifest。
+docs self-test/docs consistency/git diff三项实际exit0，snapshot31项SHA256=28f0d04fd374c4a926e9b2194f7b81dcb4630e27e7f51601e3016429b1485866，独立起止全部当前匹配。
+whole-change核RESULT表格/整数null/完整来源锁/主回执/两审计/负例及收口writers，Spec/Quality PASS、unresolved0。
+snapshot/finalcheck/closeout writer SHA256=f9acb70225af0e0ed16f275e57a6b24bca7e69d1bbad84776d0fd65ec2809eab / de47213f5816946ac478b96cbed07a1c39b6bd99b811d8c84e8b0e5a9af2756b / dd8f15fc90caf3234337ae84dd94a58d2306b9b4be1486cc585758ed6372a5ad。
+本REVIEW完成后执行两份finalcheck、独立附核，再运行14份Runtime closeout回执；实际终态以绑定回执为准，不提前声明运行成功。
+Runtime build artifact引用binding，仅本地conformance，不能推导产品制品、声学、HIL或release资格。
+README追加D35使旧D34快照中README条目历史化；旧专属source/input/artifact保持，不冒称旧快照全项仍current。
+
+## Codify Decision与接力
+
+delivery_goal=确定固定历史参考观测是否增加区分路径失配与near的信息，并识别进入下一保护结构前的混淆。
+reusable_pattern=封存波形固定历史搜索、完整启动索引、max/chosen分离、旧guard前帧时间语义、反向累加全量复核与exact-zero单列。
+affected_asset=独立研究测量C/Python/tests/中文入口，无公共API或产品default改变。
+promotion_candidate=false；do_not_promote_reason=切换near与echo分布重叠，最大相关性未构成经独立数据验证的因果保护器。
+next_task_friction_reduced=已证明零延迟忽略可解释回声，也证明高历史相关不能排除混合near，下一结构须处理时间可解释性。
+reduced_by=193907596个lag的实际观测/独立复算与60083零参考窗口精确核验；reduction_evidence=result/binding/两独立回执/三根负例/snapshot及失败前源码。
+owner_review=无产品owner批准；rollback_path=停用D35入口，原库/算法/封存数据/用户dirty保持。
+verification_evidence=独立计划/实施/数值/whole-change、真实主回执/负例/docs及REVIEW后绑定复验。
+下一单因果研究须独立冻结，不从本诊断直接调阈值或批准shipping；总体native目标active。
+AISpeech整链、真人near/KWS、SSC305资源/热/功耗、HIL/E001/PQ、第三方权利及owner分别未闭合。
+Provider route unresolved/current为空，知识线NEEDS_REVIEW，无正式归档；无commit/push/PR/merge/发布/设备写。

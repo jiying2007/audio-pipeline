@@ -1,0 +1,9 @@
+# D39 主执行前的独立审查放行
+
+2026-10-11，device_capture_independent_review独立回读：PLAN+AMEND Spec/QualityPASS，实施初审MINOR-1失败回执缺口修复后fresh Spec/QualityPASS、independent、unresolved0；裁判从/tmp实际复跑7项单测exit0/.004秒。C44af3de9aa77d4f22ebfe375f59d13b3173a6ea8b96457db27522b5d0ca68d18、tool0445c7fb0dcf21914bad74e4eb31d67d4032d722bb4efd5ee82bfc71df96e947、testsbb20b9c40c772d21374a5c81714d19dd3b9030eb2b9c10f0f1a35069fa4c5501；原PLAN/AMEND身份不变。
+
+当前仅放行实施，不代表92次矩阵、资源、完整数值或声学产品资格已通过。canonical维护required期间没有发出主执行。恢复时通过/tmp/audio-device-d39-execute.py运行一次正式矩阵：先核fixed source/hash、新根与既有intent/receipt不存在、fresh当前thread localgoal active且maintenance.required=false，再保存intent；调用异常先保存null/部分输出/elapsed回执，不重启未知操作。该wrapper未执行，主输出根/tmp/audio-fe-device-downstream-d39-20261011尚不存在。
+
+旧D38请求只读对账actual0、新D39宿主维护控制审查Spec/QualityPASS、independent/unresolved0，writer2b15f92c4a1f9b1863fccb3b354af3c6ad8d7b2d2e97a6f5526948c24a13165e；新D39 native-v1唯一请求发送前intent/accepted/compact均不存在。发送后如宿主中断，恢复先核三个回执的摘要字段和实际进程，禁止整份history倾倒或重发--compact。fresh canonical维护解除后直接推进业务，不要求编造completion_verified=true，不将请求受理改判为完成。
+
+HANDOFF已登记checkpoint2，docs consistency与git diff --check先前actual0。后续步骤为92执行→全量独立audit/negative→whole review→REVIEW及文档复验→本地Runtime收口；不能使用本执行前文档充当最终review evidence。总体nativegoalactive。NO_PROMOTION，shipping_approved=false，无产品/设备/发布写入。

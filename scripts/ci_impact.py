@@ -48,6 +48,45 @@ TUNING_SEARCH_WORKFLOW_FILES = {
     "scripts/ci_impact.py",
 }
 RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
+DEVICE_RESEARCH_FILES = {
+    "tools/codex_assets/__init__.py",
+    "tools/codex_assets/device_activity.py",
+    "tools/codex_assets/device_alignment.py",
+    "tools/codex_assets/device_capture.py",
+    "tools/codex_assets/device_causal_guard.py",
+    "tools/codex_assets/device_causal_residual_model.py",
+    "tools/codex_assets/device_causal_residual_model_exact.py",
+    "tools/codex_assets/device_current_innovation.py",
+    "tools/codex_assets/device_current_measurement.py",
+    "tools/codex_assets/device_downstream.py",
+    "tools/codex_assets/device_dwell.py",
+    "tools/codex_assets/device_exact_reference.py",
+    "tools/codex_assets/device_field.py",
+    "tools/codex_assets/device_frequency_ablation.py",
+    "tools/codex_assets/device_guard_feedback.py",
+    "tools/codex_assets/device_guard_invalidation.py",
+    "tools/codex_assets/device_held_lag.py",
+    "tools/codex_assets/device_innovation_noise_gate.py",
+    "tools/codex_assets/device_magnitude_lower_bound.py",
+    "tools/codex_assets/device_magnitude_lower_bound_matrix.py",
+    "tools/codex_assets/device_multipath.py",
+    "tools/codex_assets/device_noise_conditioned_protection.py",
+    "tools/codex_assets/device_observability.py",
+    "tools/codex_assets/device_online.py",
+    "tools/codex_assets/device_path.py",
+    "tools/codex_assets/device_post_ns_protection.py",
+    "tools/codex_assets/device_power_attribution.py",
+    "tools/codex_assets/device_reference_coherence.py",
+    "tools/codex_assets/device_release_path_attribution.py",
+    "tools/codex_assets/device_replay.py",
+    "tools/codex_assets/device_reset.py",
+    "tools/codex_assets/device_return.py",
+    "tools/codex_assets/device_shadow.py",
+    "tools/codex_assets/device_spectral_protection.py",
+    "tools/codex_assets/device_stages.py",
+    "tools/codex_assets/device_timing.py",
+    "tools/codex_assets/device_transition.py",
+}
 RELEASE_NEUTRAL_FILES = {
     "tools/codex_assets/__init__.py", "tools/codex_assets/immutable_whitespace.py",
     ".gitignore", ".gitattributes",
@@ -58,7 +97,7 @@ RELEASE_NEUTRAL_FILES = {
     "scripts/qualification_fingerprint.py", "scripts/program.py",
     "scripts/test_history.py",
     "scripts/compare-runtime-perf.sh",
-}
+} | DEVICE_RESEARCH_FILES
 RELEASE_NEUTRAL_VALIDATION_FILES = {
     "validation/failure-replay/schema-v1.json",
     "validation/policies/validation-aec-transition-development.json",
@@ -778,6 +817,9 @@ def self_test() -> None:
     assert is_release_neutral("scripts/program.py")
     assert is_release_neutral("scripts/test_history.py")
     assert is_release_neutral("scripts/compare-runtime-perf.sh")
+    for path in sorted(DEVICE_RESEARCH_FILES):
+        assert is_release_neutral(path)
+    assert not is_release_neutral("tools/codex_assets/unregistered_backend.py")
     assert is_release_neutral("docs/program/plan.json")
     assert is_release_neutral("docs/program/iterations/I001.json")
     assert not is_release_neutral("scripts/unregistered-program.py")

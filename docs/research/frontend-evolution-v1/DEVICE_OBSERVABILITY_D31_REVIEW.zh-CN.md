@@ -1,0 +1,53 @@
+# D31 独立审查与最终复验
+
+日期2026-10-11；experiment=FE_DEVICE_OBSERVABILITY_D31；claimant=root；verifier=device_capture_independent_review。
+primary=adk-planning-execution-loop；supporting=adk-verification-before-completion。
+Spec PASS、Quality PASS、Reviewer Independence=independent、unresolved finding=0。
+结论范围仅观测实现、证据与负结果披露；总体native goal保持active。
+
+## 计划、实施与偏差
+
+原PLAN SHA256=60e0cb66f15e1e9ad3c559ff68acae1e295e10b356e3d780bc25179c2fe13cd3；计划独立审查通过。
+原实施审查发现MINOR-1：下一case加载时上例数组仍存活，弱引用独立复现峰值12，而合同要求单case六trace。
+attempt0已经在实施审查返回前启动；真实终态exit0，不接受其合同合格声明，不掩盖执行顺序偏差。
+原工具SHA256=e3b1345cf7255943239403f0a75b83a552f0f4107e4bb249264db6ed7d384873；base64可还原源码快照SHA256=751c6565264b7bff05a4fe977485690c53155014ea23254faa5d2bed91944195。
+AMEND SHA256=207d5e3077493681d0c926b179858c7b22bda2b8fc6f124056035c369d95b30f准确保留失败与新执行根；原PLAN、attempt0根和四回执不改。
+修复只释放每case末traces/rows并绑定AMEND；新增真实run三case弱引用测试，峰值6、返回后全部释放，五tests从非仓cwd实际通过。
+fresh实施审查闭合MINOR-1、Spec/Quality PASS之后才启动attempt1，数值公式/窗口不改。
+最终tool SHA256=93fb57afb716801dec4a14a25d2ebe82ec5499b9138da00327eb804e98e3ffb7；tests SHA256=ecb9478aba4e36a257a11882980d1191cbe027e5302633b410f8c1b358b054da。
+测量retry1、独立audit retry0、DSP执行0；不称整轮零失败，不以数值等价追认attempt0合规。
+
+## 实际测量、独立审计与whole-change
+
+接受root=/tmp/audio-fe-device-observability-d31-attempt1-20261011。
+result/binding SHA256=d1465d24fb2b26d378dd2e6590c661f2a67d5e23ca1255ab7f6bd5970961aee2 / 04990be63adfb174d37f6483fa6e1d3e0679276ee6581577eba59baf30cdc506。
+新旧wrapper八份真实回执均exit0；非仓help/dry-run/测试有效，两个dry根均未创建；旧四tests、新五tests分别保留。
+46case/276输入trace/121426560个Float32样本，126486帧/1011888特征单元；主测量生成48工件。
+六对零时延非去均值平方归一化内积加两功率比，特征不读标签；null保持空值，原240区间只向内取完整帧。
+独立stdlib审计不import项目tool/helper、不执行C/DSP；首执行真实exit0，3416次hash起止核验。
+逐帧最大abs误差2.220446049250313e-16；240区间/1920组统计、原near_present、null/nearest-rank全部一致。
+reference相关三列各60083 null，echo相关三列各59857 null，两功率比0 null；零分母不填0。
+repeat全量byteeq，future header+通知前1247帧byteeq且无评分；attempt0/attempt1全部46CSV和result共47文件byteeq。
+audit脚本/回执SHA256=d8ea0d5a7eeb5550f315831ae3c81844ee02b48e4fb970eb6404f4126e0e9ab3 / dc0f0c54181b262d23eb2d6f2ea2a97b6ff14a749370590a40c1bb2a201f43f2。
+独立附核披露12表48中位数及8计数，与RESULT原窗口表相同；没有新窗、检测阈值、分类器或声学评分。
+三项实际输出拒绝均exit2，D30 679文件及新48文件完整manifest保持；negative回执SHA256=474190fd00d4a619659f70ce0f8186a29e1f8b47a4cdd5be89cdf873cc7b1a61。
+whole-change快照SHA256=a7e52d32e55b8ebf45718e9a41f3262936b4cf7eaf253693f292ccd4382142d8；33项起止当前字节全部一致。
+whole-change fresh复审Spec/Quality PASS、unresolved0；三份docs self-test/docs实际/git diff检查均真实exit0。
+本REVIEW后finalcheck绑定当前REVIEW字节；最后追加独立复验与本地Runtime final回执在收口时核验，不借旧head或远端CI批准本轮。
+
+## Codify Decision与交付边界
+
+delivery_goal=为后续near检测器冻结需要面对的路径混淆，不批准D31本身为检测器。
+reusable_pattern=锁定原算法trace、明确零能量null、同帧观测与事后标签分离、原窗完整帧统计、独立全量重算。
+affected_asset=研究观测工具/测试/中文入口；公共API、产品default、原D0-D30字节不变。
+promotion_candidate=false；do_not_promote_reason=近端和路径失配单项特征存在混淆，无新检测器、独立真人、声学或目标资格。
+next_task_friction_reduced=后续不必猜低内积或高残差是否仅由near产生，已有原窗逐帧证据和null合同。
+reduced_by=46例原trace观察、240窗统计及独立重算；reduction_evidence=result/binding/audit/disclosure/快照与失败保留。
+owner_review=无产品owner批准；rollback_path=停用D31入口，保留原D30库/工件和用户dirty。
+verification_evidence=上述计划/实施/修复/主执行/负例/独立审计/whole-change；主观听感不在本轮声明内。
+Python double和单case数组生命周期不是部署Float32、总RSS/栈或SSC305性能；D30局部资源及B0超限保持。
+下一任务须独立冻结因果检测反馈、路径/适配可信度和恢复期对照，不能把本轮特征中位数直接变为已批准阈值。
+Runtime build类型工件绑定本轮实际测量来源/输出，不表示重编C/DSP；Runtime final只闭合本地D31里程碑，不批准domain/产品资格。
+Provider route unresolved/current为空，知识线NEEDS_REVIEW；仓内reviewing candidate，无正式归档。
+AISpeech产品链、完整NS/RES/AGC/VAD/KWS、真人near、SSC305/HIL/E001/PQ和owner各自未闭合。
+无commit/push/PR/merge/发布/设备写；总体native目标继续active。

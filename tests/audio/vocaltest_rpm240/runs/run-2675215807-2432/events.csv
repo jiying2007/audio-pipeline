@@ -1,0 +1,10 @@
+mono_us,event,value
+2675393400,scene_start,0
+2675393549,far_schedule_only,0
+2675393552,near_prompt_only,0
+2678394296,far_schedule_only,1
+2702397508,far_schedule_only,0
+2702578769,play_submitted_bytes,768000
+2702578778,play_stop_returned_unverified,0
+2705400785,scene_end,0
+2705468982,execution_end,0

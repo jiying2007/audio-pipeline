@@ -16,6 +16,8 @@ A1 原始 [Artifact 12272245576](https://github.com/jiying2007/audio-pipeline/ac
 
 因此接续软件范围为 **另行预注册的 A2 源锚定删除/滚动与故障恢复、T3-S3 完整作用域资源归账、B3 有限全双工组合**；这些阶段仍未由 A1 收口完成或自动准入。根计划 #730/#733、滚动留存 #796/#791、资源 #767 保持开放。真实 SSC305、ADC/DAC 时钟、NAND/UBIFS 掉电、HIL/E001 和公共 C4 SDK 仍保留各自资格门禁。
 
+A2 的首个有限实验已通过 [登记 #825](https://github.com/jiying2007/audio-pipeline/issues/825) 和 [预注册 PR #826](https://github.com/jiying2007/audio-pipeline/pull/826) 纳入 protected main `de78006f82dcb5c34218ecdacf4d9c0ffe397df1`，保留四份冻结原件及 ACTIVE 分支登记。A2-F0 只研究独占停源后的 **1..32 → 17..32 固定前缀退休和外部锚定的 hosted 进程恢复**；实现候选仍需自身四目标、原始 Artifact 读回和受保护主线资格，连续滚动及设备权限继续独立。
+
 ## 2026-10-20 原始盘点（历史快照）
 
 审查日期：2026-10-20 UTC。源码基线为 protected `main=e3672ffe16e4c9d42a100e7712b9bbd3d8338545`；本轮重新读取 main、相关 issue 状态及以下代码/文档。本文是只读盘点，**不新增实验准入、不改变 2.3.56 修复范围、不宣称 public C4**。根计划 [#730](https://github.com/jiying2007/audio-pipeline/issues/730)、[#733](https://github.com/jiying2007/audio-pipeline/issues/733) 仍 OPEN。旧 issue 正文和冻结预注册文档中的 `BLOCKED` 是登记时状态；不能用它覆盖后续已关闭的 children。

@@ -88,6 +88,7 @@ DEVICE_RESEARCH_FILES = {
     "tools/codex_assets/device_transition.py",
 }
 RELEASE_NEUTRAL_FILES = {
+    "tools/codex_assets/__init__.py", "tools/codex_assets/immutable_whitespace.py",
     ".gitignore", ".gitattributes",
     "scripts/ci_impact.py", "scripts/docs_consistency.py",
     "scripts/public_surface_contract.py", "scripts/check-abi-contract.sh",

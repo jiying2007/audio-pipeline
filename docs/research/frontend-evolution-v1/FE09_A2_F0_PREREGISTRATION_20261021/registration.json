@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "stage": "FE09_T3_S2_B1B_A2_F0_FINITE_PREFIX_RETIREMENT",
+  "issue": 825,
+  "registered_at_utc": "2026-10-21T14:47:36Z",
+  "state": "PREREGISTERED_BEFORE_IMPLEMENTATION_OR_NEW_EXPERIMENTS",
+  "implementation_baseline": "01479d6b441f54ea1d68588155dc9742eaa96fbc",
+  "baseline_verify": {
+    "run_id": 39612497329,
+    "attempt": 2,
+    "event": "push",
+    "conclusion": "success",
+    "summary_job_id": 119283476974,
+    "required_app_id": 15368,
+    "latest_aggregate": {
+      "success": 79,
+      "skipped": 1
+    },
+    "actual_rerun_job_ids": [
+      119283028059,
+      119283476974
+    ],
+    "first_failure_preserved": true
+  },
+  "baseline_release": {
+    "run_id": 39617923432,
+    "attempt": 1,
+    "event": "workflow_run",
+    "conclusion": "success",
+    "release_job_id": 119283574157,
+    "convergence_job_id": 119283766463,
+    "existing_release": "v2.3.56",
+    "existing_release_commit": "c416a5f8e44b36a6af5be4dc53c71456dd6ba5ef"
+  },
+  "sources_unchanged": 81,
+  "frozen_files": [
+    {
+      "name": "PREREGISTRATION.md",
+      "bytes": 33986,
+      "sha256": "1acb4be8295a9154e50a2f7912e59d47648c5972fc68acc9f8d8f59d06072e0f",
+      "git_blob": "5bfac2a9fb5b4d3165b27275afc03f9081b3df80",
+      "path": "docs/research/frontend-evolution-v1/FE09_A2_F0_PREREGISTRATION_20261021/PREREGISTRATION.md"
+    },
+    {
+      "name": "source-lock.json",
+      "bytes": 21705,
+      "sha256": "df0801d5b32a9629bb54ce5f6db027039ea0f2101600a9ca8a1f7b1752ace73c",
+      "git_blob": "c12946e0648e0f935887d231222207beece39bbe",
+      "path": "docs/research/frontend-evolution-v1/FE09_A2_F0_PREREGISTRATION_20261021/source-lock.json"
+    },
+    {
+      "name": "test-contract.json",
+      "bytes": 585779,
+      "sha256": "a0a957394425a3b2bf9d79c8762204e496867b8c386efe894e7e85a3af6dd67e",
+      "git_blob": "7c12ec2f6e0fe348ade8d4763afb822532a1db93",
+      "path": "docs/research/frontend-evolution-v1/FE09_A2_F0_PREREGISTRATION_20261021/test-contract.json"
+    },
+    {
+      "name": "REVIEW_NOTES.md",
+      "bytes": 9457,
+      "sha256": "a58d69bb28c74708af854a0ecee669c45752ff08297b259d04a7bb96f0936568",
+      "git_blob": "cf4a5b487d2e87700d61ed7763523ca3b66208df",
+      "path": "docs/research/frontend-evolution-v1/FE09_A2_F0_PREREGISTRATION_20261021/REVIEW_NOTES.md"
+    }
+  ],
+  "draft_time_status_note": "The byte-exact reviewed draft records its earlier review-time status. Issue #825 and this registration supersede only draft-time statements about registration, implementation authorization, and baseline gate status; no technical contract, input, threshold, or scope is changed.",
+  "experiments_executed": false,
+  "scientific_success_claimed": false,
+  "parent_issues_remain_open": [
+    796,
+    791,
+    767,
+    733,
+    58
+  ],
+  "planned_implementation_branch": "research/fe09-a2-f0-finite-retirement-20261021",
+  "research_gc_registration_required_before_remote_implementation_branch": true,
+  "allowed_success": "FE09_A2F0_FINITE_PREFIX_RETIREMENT_AND_ANCHORED_HOSTED_PROCESS_RECOVERY_ONLY",
+  "not_admitted": "FE09_A2F0_NOT_ADMITTED",
+  "authority": {
+    "continuous_rolling": false,
+    "cold_system_boot": false,
+    "physical_powerloss": false,
+    "ssc305": false,
+    "public_sdk_3x": false,
+    "whole_device_memory": false,
+    "product_10ms": false
+  }
+}

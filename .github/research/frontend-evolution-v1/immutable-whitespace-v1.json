@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "scope": "immutable-historical-import-only",
+  "files": {
+    ".github/research/frontend-evolution-v1/device-route-d8.patch": {
+      "sha256": "64f85577fa17a94cc16abc538a35be65adc7381f6e31f896308d4bcc1de36943",
+      "mode": "100644",
+      "diagnostics_sha256": "c758b4227a8eadc2358be29a77b909d23f5c2ba7a67a74bf53dfce6a16c15564",
+      "warnings": 2
+    },
+    "docs/research/frontend-evolution-v1/DEVICE_INNOVATION_NOISE_GATE_D44_IMPLEMENTATION.zh-CN.md": {
+      "sha256": "a38afe17b8ab1d264e8d561625555352f711ab937086c970038ccaa146358a9a",
+      "mode": "100644",
+      "diagnostics_sha256": "dc7f894984a3c4650188d847a6ccd9b8197df6fd937ead9ef4cd84dd73326325",
+      "warnings": 1
+    },
+    "tests/audio/vocaltest_rpm240/test20261009.md": {
+      "sha256": "549070b23aa50b4c491537dc3e956dd85fdfd976bbe483b3fce23c8d319ffbd7",
+      "mode": "100755",
+      "diagnostics_sha256": "1c54d677e55b6fe48f1a3d666304dddf3775b8bb60237b3fc78aa6011870f414",
+      "warnings": 13
+    },
+    "tests/audio/vocaltest_rpm480/test20261009.md": {
+      "sha256": "bcf92ab22ea44074977b161590a0cc47b693a746ea25329dfbb31573840b47a6",
+      "mode": "100755",
+      "diagnostics_sha256": "f28e62a165b80ba80f3a5f4ca46d6a6dfbca6239cc1468410d422dde9f52bb02",
+      "warnings": 15
+    },
+    "tests/validation/frontend_evolution/device_guard_invalidation_d33.c": {
+      "sha256": "ae10f8701b8960ba8869392111359f1603bfdab5210a8aa03b167074791d3483",
+      "mode": "100644",
+      "diagnostics_sha256": "aaf371689d1b25c921d3a9bc5995d7fcb9040a9fde1640b25d3995c289917cd7",
+      "warnings": 1
+    },
+    "tests/validation/frontend_evolution/device_guard_invalidation_d33.h": {
+      "sha256": "776795a4babade4cdbbfcd1cfa61d8bbb643f11ee7aa800473c97f6f0a183c7f",
+      "mode": "100644",
+      "diagnostics_sha256": "12f16158e2f8788e03ad6afbda84ac7ec4b9f9f8b801a437e173a0ebe093ca03",
+      "warnings": 1
+    },
+    "tests/validation/frontend_evolution/device_innovation_noise_gate_d44.c": {
+      "sha256": "f80c3ca4388eda6d174b89f24b22ccfc585ed55da68004d8e42ea597fe282261",
+      "mode": "100644",
+      "diagnostics_sha256": "f9b82f306772244b139630a0bfa8b19f51c944c195921dda6c9acd5f7dcec604",
+      "warnings": 1
+    },
+    "tests/validation/frontend_evolution/device_innovation_noise_gate_d44.h": {
+      "sha256": "fbe47e192bf3702cbea4829b10683aa2e2c3d9bcfbcbabdcf4faf495711e263f",
+      "mode": "100644",
+      "diagnostics_sha256": "9e30d73ab06464a8c06e8892790ed86af7254f70ca315874610e766cd5a7b0f7",
+      "warnings": 1
+    },
+    "tests/validation/frontend_evolution/device_innovation_ns_d44.c": {
+      "sha256": "eec670092988145e01d473c55b71d049c9e282ba90c37f755e8c897063aa8045",
+      "mode": "100644",
+      "diagnostics_sha256": "7aa44703180771ce8749275d2305a48303a248ee54db8f393f8f491b27c3d765",
+      "warnings": 1
+    },
+    "tests/validation/frontend_evolution/device_magnitude_lower_bound_d49.h": {
+      "sha256": "727c80d5474ad1d73504a4ae71ac8249ad2e8707d01a8cdd4ec6d25f83d0e4e4",
+      "mode": "100644",
+      "diagnostics_sha256": "84a8c2187e9708513a73f3a5110aaa7542dbf800e5a74ce05966bfdf4dd800fa",
+      "warnings": 1
+    },
+    "tests/validation/frontend_evolution/test_device_guard_invalidation.py": {
+      "sha256": "e80f1e685f42ab9b92ffcc6f15bb2cb659ab6bf7b5779b8a75c2820cd693bd22",
+      "mode": "100644",
+      "diagnostics_sha256": "54b8dee4cd6b8b879fefbd63457ca452f55621a29e0c7e642ce5c98fbe077b68",
+      "warnings": 1
+    },
+    "tests/validation/frontend_evolution/test_device_innovation_noise_gate.py": {
+      "sha256": "299d8dc612fdd74fc5dacf1431bcd3486269b530b3caf137beab06015631c139",
+      "mode": "100644",
+      "diagnostics_sha256": "e19dd49f56928e760eee90aecbaeb8cec3cad5d416ca2515682f173b3461c5fd",
+      "warnings": 1
+    },
+    "tools/codex_assets/device_causal_guard.py": {
+      "sha256": "5bf0fccd49746ac367fe9f5bc226ecd6b9c4278a63008ba9c8c4c5ba5d0fa586",
+      "mode": "100644",
+      "diagnostics_sha256": "0a367b1d1a61e9589524a4af8a5c62e6f18ecc2c3b3532d488945e680598150b",
+      "warnings": 1
+    },
+    "tools/codex_assets/device_guard_invalidation.py": {
+      "sha256": "f44127c0c333c85271764ee3bfe57bc57f8bbf5f864c06d927e2b834266fd23f",
+      "mode": "100644",
+      "diagnostics_sha256": "6fd787ae374bc848eafe5061f51701f6cb08e98405886ab325aa862e4d6c015c",
+      "warnings": 2
+    },
+    "tools/codex_assets/device_innovation_noise_gate.py": {
+      "sha256": "5825c73a0740509f8ea5807ef7e8a7e8d03f12da93c7bd652245d174ac41fbb4",
+      "mode": "100644",
+      "diagnostics_sha256": "8b138d48c11281b194ec8e6ea028dc7db3579a631d803ef6565e81882323004d",
+      "warnings": 1
+    },
+    "tools/codex_assets/device_magnitude_lower_bound_matrix.py": {
+      "sha256": "1d2add266cd1381d7dcb68892e4e60ef240d1654b777f4f8c1656bb87aa7c3bd",
+      "mode": "100644",
+      "diagnostics_sha256": "2bd87b93e9a908ec8de1b2fc607a6493569805d614ebdfe2176d34ae63012ca7",
+      "warnings": 1
+    }
+  }
+}

@@ -49,6 +49,7 @@ TUNING_SEARCH_WORKFLOW_FILES = {
 }
 RELEASE_NEUTRAL_PREFIXES = (".github/", "ci/", "tests/", "fuzz/")
 RELEASE_NEUTRAL_FILES = {
+    "tools/codex_assets/__init__.py", "tools/codex_assets/immutable_whitespace.py",
     ".gitignore", ".gitattributes",
     "scripts/ci_impact.py", "scripts/docs_consistency.py",
     "scripts/public_surface_contract.py", "scripts/check-abi-contract.sh",

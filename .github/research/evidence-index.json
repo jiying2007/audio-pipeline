@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-13T08:05:00+08:00",
+  "updated_at": "2026-10-21T14:52:00Z",
   "policy": {
     "terminal_statuses": ["ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED"],
     "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match", "no active dependency"],
     "unclassified_refs_are_retained": true,
     "auto_gc_true_means_live_deletion_pending": true
   },
-  "active_dependencies": [],
+  "active_dependencies": [{"branch":"research/fe09-a2-f0-finite-retirement-20261021","head_sha":null,"reason":"issue:825 active A2-F0 implementation; preserve candidate history until separately reviewed terminal evidence"}],
   "records": [
     {"branch":"research/aec-corr-exact-native-v1","head_sha":"89a5ba0834afc384d284fe097a2eedd60b058610","status":"ACCEPTED","evidence":["run:33843998920","pr:69","release:v2.3.6"],"supersedes":["research/aec-corr-refined-search-v2"],"gc_eligible":true,"auto_gc":false},
     {"branch":"research/aec-corr-ground-truth-v1","head_sha":"1f300cf4752a2ec52ca437b84ab98b778540aff2","status":"SUPERSEDED","evidence":["run:33836378471","decision:ground-truth-diagnostic-established-sparse-grid-miss"],"superseded_by":"research/aec-corr-exact-native-v1","gc_eligible":true,"auto_gc":false},
@@ -81,6 +81,77 @@
     {"branch":"research/fe03-a2-d2-s3-pcm-md5","head_sha":"9c45aec010457d9ef7b1355fc2a0b22a480cf0e3","status":"REJECTED","evidence":["pr:708","issue:707","run:38061212515","artifact:11673430548","decision:S3_PREINSTALLED_DECODER_MISSING_FAIL_CLOSED","successor:pr712-research-only-different-protocol"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/fe03-a2-d2-s5-paper-clock-witness","head_sha":"79f1f2d4fc27939fbbe70e6e425267d7e0298b33","status":"REJECTED","evidence":["pr:717","issue:716","run:38106259753","artifact:11690016904","decision:S5_PREINSTALLED_PDF_TEXT_TOOL_MISSING_FAIL_CLOSED","successor:pr721-research-only-different-protocol"],"gc_eligible":true,"auto_gc":true},
     {"branch":"research/fe03-a2-realman-val-csv-d1","head_sha":"e8e76c3275660d6b9196d59d81a84c746d65027d","status":"REJECTED","evidence":["pr:698","issue:697","run:38018616730","artifact:11656539339","decision:REALMAN_VAL_CSV_SOURCE_ADMISSION_BLOCKED_544_NEGATIVE_DISTANCE_ROWS"],"gc_eligible":true,"auto_gc":true},
-    {"branch":"research/fe09-r1-public-abi-architecture","head_sha":"2c14bf56d5e463a8569e9777af2c723fcdea813a","status":"SUPERSEDED","evidence":["commit:2c14bf56d5e463a8569e9777af2c723fcdea813a","pr:729","main:dde6e936a159abac1b34f873c6cec19eeb4b81d9","issue:728","decision:old-unmerged-R1-branch-superseded-by-protected-source-trace"],"superseded_by":"pr:729","gc_eligible":true,"auto_gc":true}
+    {"branch":"research/fe09-r1-public-abi-architecture","head_sha":"2c14bf56d5e463a8569e9777af2c723fcdea813a","status":"SUPERSEDED","evidence":["commit:2c14bf56d5e463a8569e9777af2c723fcdea813a","pr:729","main:dde6e936a159abac1b34f873c6cec19eeb4b81d9","issue:728","decision:old-unmerged-R1-branch-superseded-by-protected-source-trace"],"superseded_by":"pr:729","gc_eligible":true,"auto_gc":true},
+    {
+      "branch": "research/audit-scope-20261020",
+      "head_sha": "7173abb1857d983e639b3fd349bcd8733d703254",
+      "status": "ACCEPTED",
+      "evidence": [
+        "commit:7173abb1857d983e639b3fd349bcd8733d703254",
+        "result:docs/research/frontend-evolution-v1/C4_SOFTWARE_GAP_INVENTORY_20261020.md",
+        "preservation-manifest:docs/research/frontend-evolution-v1/C4_AUDIT_SOURCE_PRESERVATION_20261020.json",
+        "preservation-manifest-sha256:683cce4f74e380f328af6efea53364a9adbe0b4eb768cb60b179effc2a65c9ee",
+        "successor-pr:818",
+        "successor-main:c416a5f8e44b36a6af5be4dc53c71456dd6ba5ef",
+        "verify:39435091890",
+        "release:v2.3.56",
+        "release-run:39440540096",
+        "convergence:39440699016",
+        "convergence-original-artifact:12273955616:sha256:17db235f551cdc2aa5f096018eafd8e1eada16a79054ea3f98190e3a72671adf",
+        "preserved-source:pr:812:branch:fix/audit-runtime-ci-20261020:head:2e2af551143a0f2bf17d35abc65a1869d52da3ec",
+        "preserved-source:pr:815:branch:research/fe09-a1-anchor-20261020:head:b5571499dcc7e552ff2ca900b18a849da38268e9",
+        "preserved-source:pr:814:branch:research/external-baselines-20261020:head:d04011350ec5c7c4ecf694bcc60ebec734634616",
+        "preserved-source:pr:816:branch:ci/adopt-qualified-image-20261020:head:9cb69bb10dea537e6475c303857293c35475fa3d",
+        "preserved-source:pr:817:branch:ci/lossless-evidence-transport-20261020:head:ea14efac945c365676460feae9e63d69e7a42089",
+        "decision:audit-inventory-and-five-source-integration-preservation-complete;not-public-C4-or-full-FE-closure"
+      ],
+      "gc_eligible": true,
+      "auto_gc": true
+    },
+    {
+      "branch": "research/external-baselines-20261020",
+      "head_sha": "d04011350ec5c7c4ecf694bcc60ebec734634616",
+      "status": "SUPERSEDED",
+      "evidence": [
+        "pr:814",
+        "commit:d04011350ec5c7c4ecf694bcc60ebec734634616",
+        "preservation-manifest:docs/research/frontend-evolution-v1/C4_AUDIT_SOURCE_PRESERVATION_20261020.json",
+        "preservation-manifest-sha256:683cce4f74e380f328af6efea53364a9adbe0b4eb768cb60b179effc2a65c9ee",
+        "successor-pr:818",
+        "successor-main:c416a5f8e44b36a6af5be4dc53c71456dd6ba5ef",
+        "verify:39435091890",
+        "release:v2.3.56",
+        "release-run:39440540096",
+        "convergence:39440699016",
+        "convergence-original-artifact:12273955616:sha256:17db235f551cdc2aa5f096018eafd8e1eada16a79054ea3f98190e3a72671adf",
+        "decision:source-PR-closed-unmerged-and-superseded-by-exact-protected-integration;original-results-preserved"
+      ],
+      "superseded_by": "pr:818",
+      "gc_eligible": true,
+      "auto_gc": true
+    },
+    {
+      "branch": "research/fe09-a1-anchor-20261020",
+      "head_sha": "b5571499dcc7e552ff2ca900b18a849da38268e9",
+      "status": "SUPERSEDED",
+      "evidence": [
+        "pr:815",
+        "commit:b5571499dcc7e552ff2ca900b18a849da38268e9",
+        "preservation-manifest:docs/research/frontend-evolution-v1/C4_AUDIT_SOURCE_PRESERVATION_20261020.json",
+        "preservation-manifest-sha256:683cce4f74e380f328af6efea53364a9adbe0b4eb768cb60b179effc2a65c9ee",
+        "successor-pr:818",
+        "successor-main:c416a5f8e44b36a6af5be4dc53c71456dd6ba5ef",
+        "verify:39435091890",
+        "release:v2.3.56",
+        "release-run:39440540096",
+        "convergence:39440699016",
+        "convergence-original-artifact:12273955616:sha256:17db235f551cdc2aa5f096018eafd8e1eada16a79054ea3f98190e3a72671adf",
+        "decision:source-PR-closed-unmerged-and-superseded-by-exact-protected-integration;original-results-preserved"
+      ],
+      "superseded_by": "pr:818",
+      "gc_eligible": true,
+      "auto_gc": true
+    },
+    {"branch":"research/fe09-a2-f0-finite-retirement-20261021","head_sha":null,"status":"ACTIVE","evidence":["issue:825","preregistration-commit:f90f6bd73c13c997b0bb85decf1545c632878982","implementation-baseline:01479d6b441f54ea1d68588155dc9742eaa96fbc","preregistration-sha256:1acb4be8295a9154e50a2f7912e59d47648c5972fc68acc9f8d8f59d06072e0f","source-lock-sha256:df0801d5b32a9629bb54ce5f6db027039ea0f2101600a9ca8a1f7b1752ace73c","test-contract-sha256:a0a957394425a3b2bf9d79c8762204e496867b8c386efe894e7e85a3af6dd67e","decision:preregistered-finite-prefix-retirement-only-no-experiment-or-device-admission"],"gc_eligible":false,"auto_gc":false}
   ]
 }

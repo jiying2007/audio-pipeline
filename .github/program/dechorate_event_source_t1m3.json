@@ -1,0 +1,175 @@
+{
+  "allow_current_science_scope_paths": [
+    ".github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml"
+  ],
+  "files": {
+    ".github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py": {
+      "bytes": 10516,
+      "git_blob": "2f83a6135d52d7fd99d0c32da38874e7e6237f55",
+      "mode": "100644",
+      "sha256": "8c7c36cdcbc76b49c7f6e3732271c7ed1f78fb0f0c4253b50fb93b116adbfb01"
+    },
+    ".github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json": {
+      "bytes": 3872,
+      "git_blob": "26287c47d634c911b56ebf93a5cd1800479afbd4",
+      "mode": "100644",
+      "sha256": "8cecb1b589962c9a738a80889355f104b2ea5ba8d129d749f63d2f1940111b9c"
+    },
+    ".github/research/continuous-optimization/development-v3/dechorate-source-qualification-v1.json": {
+      "bytes": 4573,
+      "git_blob": "7fe41f5351435f9dc96936e275ab1015b2be30af",
+      "mode": "100644",
+      "sha256": "fd34472318f8cf47edbbb2e0428a381faca3820864be851ebfb734ec7e53d2c1"
+    }
+  },
+  "frozen_corpus_inventory": [
+    {
+      "name": "dEchorate_room000000_src1_arr1_mics1-5.sofa",
+      "sha256": "26a76bbafb80af0dc29a6838ae9d8fdc4846249c8a4e60a2ef87d13b87496b07",
+      "size_bytes": 1758263
+    },
+    {
+      "name": "dEchorate_room000001_src1_arr1_mics1-5.sofa",
+      "sha256": "53b0807a35cce74ea589e4dd1fe55310c9b13ecd9317ecc78d176119385a3c0d",
+      "size_bytes": 1761123
+    },
+    {
+      "name": "dEchorate_room000010_src1_arr1_mics1-5.sofa",
+      "sha256": "3c0448601991aaf05888523edb999c6660636d3fb50c2fb9d9b489c0339575d5",
+      "size_bytes": 1761078
+    },
+    {
+      "name": "dEchorate_room000100_src1_arr1_mics1-5.sofa",
+      "sha256": "e2d4caa57f9bd2e371e813bac88b63eac2728d9877a327e6ad405669558f1512",
+      "size_bytes": 1764370
+    },
+    {
+      "name": "dEchorate_room001000_src1_arr1_mics1-5.sofa",
+      "sha256": "2d91d0ffb510b74721f08daa935df820806bc4663e8b64e50a97c081403235a3",
+      "size_bytes": 1760643
+    },
+    {
+      "name": "dEchorate_room010000_src1_arr1_mics1-5.sofa",
+      "sha256": "98556f7e9bf4184e2f53876b09298624f31633d9001c6ed5b938c0b4bc28aa07",
+      "size_bytes": 1756243
+    },
+    {
+      "name": "dEchorate_room011000_src1_arr1_mics1-5.sofa",
+      "sha256": "950d3f138c6392100990097dcd8d02011ca7538a3262dfe4e59968fc35b1dd7f",
+      "size_bytes": 1756148
+    },
+    {
+      "name": "dEchorate_room011100_src1_arr1_mics1-5.sofa",
+      "sha256": "aa7673fd2ced185966737f62955aa7cd455ae0822f4ec5f9aa694dedd653bdb7",
+      "size_bytes": 1760499
+    },
+    {
+      "name": "dEchorate_room011110_src1_arr1_mics1-5.sofa",
+      "sha256": "5cde719736359768465df5eb9ee82c38b2ced02cf095ea5d71c0987ed72ce07d",
+      "size_bytes": 1767855
+    },
+    {
+      "name": "dEchorate_room011111_src1_arr1_mics1-5.sofa",
+      "sha256": "ec8a4f2305b4b170e7ec9b5dab4f51695d861b462125e3119e2a33fd20813fa1",
+      "size_bytes": 1767577
+    },
+    {
+      "name": "dEchorate_room020002_src1_arr1_mics1-5.sofa",
+      "sha256": "f3c6da17961e00bcc5b448ddccce3cfb3966c72b51d7894a84a7804941068726",
+      "size_bytes": 1759041
+    },
+    {
+      "name": "dEchorate_annotations.h5",
+      "sha256": "1c2810a2dc3870c75276a4b954c36b884e31b291483190634b2030040061317e",
+      "size_bytes": 30324
+    }
+  ],
+  "historical_base_sha": "cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0",
+  "implementation_stage": "DORMANT_SOURCE_AND_EVENT_RANGE_ONLY",
+  "maintenance_push_admission_enabled": false,
+  "microset_fingerprint_sha256": "7e5077c77e9700699eedd27d76357a820bcae2f14ee5f211a7afdb0ae2620953",
+  "official_code_blobs": {
+    "__init__.py": "53623890e13fe8360463b4acc423a86e6687d286",
+    "main_build_sofa_database.py": "cd03ca06621e64f217599a811e56ac0701b98760",
+    "main_estimate_rirs.py": "38e8be9e17556bf8359fed50ee5423aa73d1aefc",
+    "stimulus.py": "4dd661fa5ba00a23378fd72f56e9b424d674d915"
+  },
+  "official_code_revision": "d3e664f1e7a7d46241d7f7b3b3761448686b9537",
+  "original_scientific_step_sha256": {
+    "Check out exact source": "9038d32d8ca7d18d81aae26dcf3e877e6480734eaec14a4c83754a11b73e551a",
+    "Enforce evidence shape without deriving a boundary": "ede8e7df7eeaf25510c54758ff27f8b6474b33f2a5fa7a55e12a433fe54456c6",
+    "Install pinned schema reader and run self-test": "01cdc821819f83f255c419f6dc0e8d51bc6e6ef896e4af11587217cdd4ad47d1",
+    "Materialize exact frozen SOFA microset": "b9def695466efc05ca15051e5ad902ea7511d405c469fafaae1c73beaf9c04d7",
+    "Run fixed-geometry RIR ground-truth diagnostic": "e04cafcde2f176a4a3db35733d1efd7bd8074e42fd90677bfb300b296f0a9bcc",
+    "Seal research evidence": "fa53604e4f9b3b3db2c43c2f60b3839ac0dddc23d5da4c2ccd41e8a7435abbe8",
+    "Validate code provenance and diagnostic authority": "f0ea5a96822d7246e8827a0cc6fcf14afba59a1a915934118754996af2536c85"
+  },
+  "predecessor_closure": {
+    "closure_run": 35193807050,
+    "hosted_real_aec_run": 35193807197,
+    "hosted_real_audio_run": 35193807108,
+    "investigation": "pure-far-dtd-evidence-closure-v1",
+    "main_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+    "release_run": 35194095674,
+    "state": "CLOSED_DIAGNOSTIC_PLATEAU",
+    "verify_run": 35193807409
+  },
+  "predecessor_qualification": {
+    "fresh_main_closed": true,
+    "hosted_real_aec_run": 35196656909,
+    "hosted_real_audio_run": 35196657032,
+    "investigation": "dechorate-source-qualification-v1",
+    "main_sha": "cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0",
+    "qualification_run": 35196656993,
+    "release_run": 35197032355,
+    "verify_run": 35196657559
+  },
+  "preregistered_m2_source_closure": {
+    "actual_m1_prerequisite_observed_by_this_helper": false,
+    "files": {
+      ".github/program/workflow_pin_only_actual_tree_t1m1.py": {
+        "bytes": 30095,
+        "git_blob": "7270db96f88673260b6076d9bfa44b9a63372f3b",
+        "mode": "100644",
+        "sha256": "6d080c55e0334b96279f826e1615802cf1a8b58d57c1d9c8900900560d25ffd7"
+      },
+      ".github/program/workflow_pin_only_bot714_20261020.json": {
+        "bytes": 33609,
+        "git_blob": "da3b67aab856e81a7b76e64af1ed0736c63cf6ae",
+        "mode": "100644",
+        "sha256": "47ac0756f4989f619403f3689ce3fc305ec82469730da908559937ef03f86abb"
+      },
+      ".github/program/workflow_pin_only_scope.py": {
+        "bytes": 22373,
+        "git_blob": "2c3bafe13f9f6cb036bdd01328dd4f12fd336b4e",
+        "mode": "100644",
+        "sha256": "fcce117736d32a2cafd3c95fc93a27f906f40b64f632116cd90e8ba1759d68cb"
+      },
+      ".github/program/workflow_pin_pr_consumer.py": {
+        "bytes": 17822,
+        "git_blob": "3be0bf88aa4ac637531dbf5fa020b5cb540a82da",
+        "mode": "100644",
+        "sha256": "be63c093dac9125ac7c2603b69ea1c8211705eea1a8d143b110a3f0c01d5dab7"
+      }
+    },
+    "protected_main_closure_observed_by_this_helper": false,
+    "review_id": "2026-10-20",
+    "source_review_commit": "a42427693484409f9954125dada37d5db6c6f51e"
+  },
+  "preregistration": "https://github.com/jiying2007/audio-pipeline/issues/759",
+  "registration_amendment_utc": "2026-10-20T06:39:12Z",
+  "schema_version": 1,
+  "science_anchor_sha": "7e8f26ba6d7330624091291d9e1336e5ff9c09dc",
+  "scientific_experiment_executed": false,
+  "scope_base_sha": "b80d819a486cb973e6a60b4fdf259803d45ec3f0",
+  "source_qualification_ancestor_sha": "b9ea9e5518198f302a457531d1380472a35f3153",
+  "workflow": ".github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml",
+  "workflow_execution_template_sha256": {
+    "EXACT_PROTECTED_SOURCE_BINDING:original-pins": "dc7d14a47b473f66a65a869cef15f8c45689c877a468174aa05ee56a057f9555",
+    "EXACT_PROTECTED_SOURCE_BINDING:reviewed-2026-10-20-pins": "37b81866e29a0b1b60b148c87b06a5cfdd6feeb5083a23a90d1aec369a15147d",
+    "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2:original-pins": "34bbf6c3e1fa97a2b2ef8e3b003ea062ac100ece686f32718a273dbd0494fb9c",
+    "EXACT_SOURCE_BINDING_WITH_DIRECT_PR_M2:reviewed-2026-10-20-pins": "87e30facaabcc81ecc17c3b739251aff03f83c5c44f482c3166cd2fd559abc95",
+    "ORIGINAL_FROZEN_WORKFLOW:original-pins": "cab7e3836a8cac7e7d44aaca4cd16a6faaebf064f2f8f069da2692102a2d44e7",
+    "ORIGINAL_FROZEN_WORKFLOW:reviewed-2026-10-20-pins": "cd40d21d7ab38a9ec829fbea9363c650c4a8b33730ff930bb52d71a3cae362f4"
+  }
+}

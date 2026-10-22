@@ -132,13 +132,24 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retiremen
 `--negative-readback` 在隔离副本上重封装负例，不改变下载的原件。
 人工独立原 ZIP 读回还须绑定实际 run/event/attempt/head、Artifact ID、API digest 和上传日志。
 
-证据传输采用首次完整资格收集前登记的固定 `zlib-rfc1950-base64-v1` 无损编码。
+本实现的固定证据传输采用 `zlib-rfc1950-base64-v1` 无损编码。
 `collect.log` 的每行是连续编号的 `trace_block`，其 payload 包含 codec、原始字节数、
 SHA256 和 zlib level 9 的 base64 数据。解压内容为保序 canonical JSONL 事件：stdout/stderr
 事件的 `raw_b64` 保留实际原字节，父观察事件保留完整 metadata 和 digest 对象。
 普通块的目标大小是 65536 B；单事件和单块展开均不超过 1 MiB，全部展开不超过 256 MiB。
 回读使用有界解压并重算完整 trace，拒绝缺号、重号、乱序、多余压缩流和超量展开，
-不以摘要替代原记录。resource 事件中的 `.su` / `.ci` 原件也使用同样有界的无损 payload。
+不以摘要替代原记录。resource 事件中的 `.su` / `.ci` 保留完整 UTF-8 原文及其原始字节数、
+SHA256；回读严格重新编码并核对原件，不进行内层压缩。包含全部报告、JSON 转义和对象身份的
+整个 resource 事件仍须不超过同一 1 MiB，所有原文自然计入同一 256 MiB 总展开预算。
+`.su` 原始读取继续受 256 KiB 限制；`.ci` 预读以同一 1 MiB 封顶，并由完整事件上限进一步约束。
+不删除 sanitizer 节点或边，不修改原调用图分析与 A2 状态、栈、只读数据验收条件。
+
+PR #829 的首轮 A2 job `119669225692` 在原 Native 两轮完成后，以
+`MISSING_OR_OVERSIZED_sanitized-20.ci` 拒绝；原四成员失败包为 Artifact `12405353437`。
+拒绝发生在新增驱动对整份调用图的 256 KiB 额外读取限制处；本地保留原参数的单 core 诊断
+复现了超出该限制的完整报告，不能将其大小当作未上传的远端报告实测值。
+冻结 #825 原件未规定此单报告上限。
+修正为上述单层传输后，必须对新的完整源码身份重新运行四目标资格，首轮失败不改写为成功。
 
 child 的 stdout/stderr 限额各按未压缩的 64 KiB 计算；实际编码后的 `collect.log` 仍受
 16 MiB 上限约束，四成员 ZIP 的上限也不变。超限后不切换格式、删除既有记录或截断为成功。

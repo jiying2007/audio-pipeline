@@ -133,6 +133,24 @@ def unpacked(value: dict, cap: int) -> bytes:
     return content
 
 
+def compiler_report(data: bytes) -> dict:
+    """Keep every compiler byte inside the outer trace's expansion budget."""
+    return {'encoding': 'utf-8', 'bytes': len(data), 'sha256': sha(data),
+            'text': data.decode('utf-8')}
+
+
+def compiler_report_bytes(value: dict, cap: int) -> bytes:
+    need(type(value) is dict and set(value) == {'encoding', 'bytes', 'sha256', 'text'} and
+         value['encoding'] == 'utf-8' and type(value['bytes']) is int and
+         0 < value['bytes'] <= cap and is_sha(value['sha256']) and
+         type(value['text']) is str and len(value['text']) <= cap,
+         'INVALID_BOUNDED_COMPILER_REPORT')
+    content = value['text'].encode('utf-8')
+    need(len(content) == value['bytes'] and sha(content) == value['sha256'],
+         'COMPILER_REPORT_LENGTH_OR_DIGEST_MISMATCH')
+    return content
+
+
 def raw(path: Path, cap: int = 16 * 1024 * 1024) -> bytes:
     need(path.is_file() and not path.is_symlink() and 0 < path.stat().st_size <= cap,
          'MISSING_OR_OVERSIZED_' + path.name)
@@ -1602,10 +1620,11 @@ def resource_report(payload: dict, size_output: bytes, target: str, execution_ro
          'A2_RESOURCE_OBJECT_IDENTITY_MISMATCH')
     raw_su = payload['stack_usage']
     need(set(raw_su) == {str(index) for index in range(len(SOURCES))}, 'ACTUAL_SOURCE_STACK_CLOSURE_INCOMPLETE')
-    stacks = {index: parse_stack_usage(unpacked(value, 256 * 1024)) for index, value in raw_su.items()}
+    stacks = {index: parse_stack_usage(compiler_report_bytes(value, 256 * 1024))
+              for index, value in raw_su.items()}
     core = stacks[str(SOURCES.index(SOURCE_C))]
     need(all(v['kind'] in ('static', 'dynamic,bounded') for v in core), 'UNBOUNDED_A2_COMPILER_STACK_USAGE')
-    graph = callgraph_bound(unpacked(payload['callgraph'], 256 * 1024), execution_root)
+    graph = callgraph_bound(compiler_report_bytes(payload['callgraph'], TRACE_RECORD_CAP), execution_root)
     sections = section_sizes(size_output)
     ro = sum(value for key, value in sections.items() if
              key.startswith(('.rodata', '.data.rel.ro', '.srodata', '.rdata', '.gnu.linkonce.r')))
@@ -1653,9 +1672,9 @@ def build_target(trace: Trace, target: str, directory: Path, collect_deadline: f
     sizes = tool_run(trace, [size_name, '-A', str(core_object)], target, 'core-size', collect_deadline)
     payload = {'target': target, 'core_index': core_index,
                'core_object': binary_identity(core_object),
-               'stack_usage': {str(index): packed(raw(directory / f'{target}-{index}.su', 256 * 1024))
+               'stack_usage': {str(index): compiler_report(raw(directory / f'{target}-{index}.su', 256 * 1024))
                                for index in range(len(SOURCES))},
-               'callgraph': packed(raw(directory / f'{target}-{core_index}.ci', 256 * 1024))}
+               'callgraph': compiler_report(raw(directory / f'{target}-{core_index}.ci', TRACE_RECORD_CAP))}
     trace.emit('resource_evidence', **payload)
     accounting = resource_report(payload, sizes, target, ROOT)
     result = {'compiler': compiler, 'compiler_version_sha256': sha(version), 'size_tool': size_tool,
@@ -1718,6 +1737,7 @@ def transport_contract() -> dict:
             'maximum_total_plain_trace_bytes': EXPANDED_LOG_CAP,
             'child_uncompressed_stdout_bytes': CHILD_CAP, 'child_uncompressed_stderr_bytes': CHILD_CAP,
             'collect_log_encoded_bytes': LIMITS['collect.log'], 'zlib_level': 9,
+            'compiler_reports': 'complete-raw-utf8-within-outer-trace-budget',
             'ordered_contiguous_block_indices': True, 'trailing_or_concatenated_streams_allowed': False,
             'preserves_every_record_and_raw_child_byte': True}
 
@@ -1883,12 +1903,12 @@ def host_usage() -> dict:
 
 
 def collect(directory: Path, source: str) -> dict:
-    need(not directory.exists(), 'OUTPUT_ALREADY_EXISTS_PRESERVE_ORIGINAL_EVIDENCE')
-    directory.mkdir(parents=True, mode=0o700)
-    trace = Trace(directory / 'collect.log')
     started = time.monotonic_ns()
     deadline_ns = started + COLLECT_SECONDS * 1_000_000_000
     deadline = deadline_ns / 1_000_000_000
+    need(not directory.exists(), 'OUTPUT_ALREADY_EXISTS_PRESERVE_ORIGINAL_EVIDENCE')
+    directory.mkdir(parents=True, mode=0o700)
+    trace = Trace(directory / 'collect.log')
     receipt = {name: False for name in FALSE}
     receipt.update(decision=FAILURE, source_commit=source, actual_targets_complete=False,
                    finite_prefix_retirement_completed=False, builds={}, suite_results={})
@@ -1929,6 +1949,9 @@ def collect(directory: Path, source: str) -> dict:
                 receipt['suite_results'][target].append({**result, 'elapsed_ns': suite_end - suite_start})
         # Re-read exact source bytes after every real child, before admitting a bundle.
         need(identity(source, deadline=deadline) == expected, 'EXECUTION_SOURCE_CHANGED_DURING_COLLECTION')
+        # Successful cleanup is part of the same fixed collection budget.
+        shutil.rmtree(build_directory)
+        build_directory = None
         completed = time.monotonic_ns()
         need(completed <= deadline_ns, 'FIXED_BUDGET_EXCEEDED')
         usage = host_usage()

@@ -2133,6 +2133,104 @@ jobs:
           print("FE09_A1_SAME_RUN_ORIGINAL_MEMBERS_INDEPENDENT_READBACK_PASS",os.environ["GITHUB_SHA"])
           PY
 
+  frontend-s3-t3s2b1ba2:
+    if: inputs.run_extended
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Qualify finite prefix retirement and anchored fresh-process recovery
+        id: fe09_a2f0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py \
+            --collect --output fe09-t3s2b1ba2 --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py \
+            --verify --output fe09-t3s2b1ba2 --execution-source "$GITHUB_SHA"
+      - name: Retain A2 original four-member evidence and bounded partial failures
+        id: fe09_a2f0_upload
+        if: always() && (steps.fe09_a2f0.outcome == 'success' || steps.fe09_a2f0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-t3s2b1ba2-retirement-${{ github.run_id }}
+          path: fe09-t3s2b1ba2/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Require the exact current upload identity
+        if: steps.fe09_a2f0.outcome == 'success'
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ steps.fe09_a2f0_upload.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          value = os.environ["ARTIFACT_ID"]
+          assert re.fullmatch(r"[1-9][0-9]{0,18}", value)
+          assert int(value) < 2 ** 63
+          print("FE09_A2_EXACT_UPLOAD_ID", value)
+          PY
+      - name: Download the exact current A2 Artifact by upload ID
+        if: steps.fe09_a2f0.outcome == 'success'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          artifact-ids: ${{ steps.fe09_a2f0_upload.outputs.artifact-id }}
+          path: fe09-t3s2b1ba2-readback
+      - name: Independently verify A2 raw executions, member hashes and resealed negatives
+        if: steps.fe09_a2f0.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py \
+            --verify --output fe09-t3s2b1ba2-readback --execution-source "$GITHUB_SHA"
+          python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py \
+            --negative-readback --output fe09-t3s2b1ba2-readback --execution-source "$GITHUB_SHA"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          p = Path("fe09-t3s2b1ba2-readback")
+          names = ("receipt.json", "collect.log", "verify.log")
+          assert {x.name for x in p.iterdir()} == set(names) | {"SHA256SUMS"}
+          assert all((p / n).is_file() and not (p / n).is_symlink() for n in (*names, "SHA256SUMS"))
+          expected = "".join(f"{hashlib.sha256((p / n).read_bytes()).hexdigest()}  {n}\n" for n in names)
+          assert (p / "SHA256SUMS").read_text("ascii") == expected
+          def unique(pairs):
+              value = {}
+              for key, item in pairs:
+                  assert key not in value
+                  value[key] = item
+              return value
+          receipt = json.loads((p / "receipt.json").read_text("utf-8"), object_pairs_hook=unique)
+          assert receipt["source_commit"] == os.environ["GITHUB_SHA"]
+          assert receipt["decision"] == "FE09_A2F0_FINITE_PREFIX_RETIREMENT_AND_ANCHORED_HOSTED_PROCESS_RECOVERY_ONLY"
+          assert receipt["actual_targets_complete"] is True
+          assert receipt["target_order"] == ["native", "sanitized", "arm", "tsan"]
+          assert type(receipt["repetitions_per_target"]) is int and receipt["repetitions_per_target"] == 2
+          assert receipt["finite_prefix_retirement_completed"] is True
+          for key in ("retained_original_files", "retired_original_files"):
+              assert type(receipt[key]) is int and receipt[key] == 16
+          for key in ("original_ack_created", "retired_pcm_reverified_after_delete",
+                      "hosted_checkpoint_committed_on_read", "continuous_rolling_qualified",
+                      "cold_system_boot_authority_qualified", "physical_powerloss_qualified",
+                      "ssc305_hardware_qualified", "whole_device_memory_qualified",
+                      "ten_ms_product_qualified", "public_sdk_installed"):
+              assert receipt[key] is False
+          print("FE09_A2_SAME_RUN_ORIGINAL_MEMBERS_INDEPENDENT_READBACK_PASS", os.environ["GITHUB_SHA"])
+          PY
+
   frontend-speech:
     if: inputs.run_extended
     runs-on: ubuntu-24.04

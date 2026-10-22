@@ -21,6 +21,7 @@ MAX_ATTEMPTS = 8
 SLEEP_SECONDS = 2
 API_URL = "https://api.github.com"
 A1_PREFIX = "frontend-fe09-t3s2b1ba1-anchor-"
+T3S1_PREFIX = "frontend-fe09-t3s1-compact-handoff-"
 # A1's new 100-row REST response has its own finite metadata cap. Existing
 # single-entity/run metadata stays at 64 KiB; scientific files are unaffected.
 A1_LIST_RESPONSE_CAP = 256 * 1024
@@ -56,7 +57,7 @@ def checked_args(repo: str, run_id: int, artifact_id: int,
          type(run_id) is int and 0 < run_id < 2 ** 63 and
          type(artifact_id) is int and 0 < artifact_id < 2 ** 63 and
          type(artifact_name) is str and
-         re.fullmatch(r"(?:frontend-fe09-t2b-b1s0-owner-spsc|frontend-fe09-t2b-b1s1-source-apx3|frontend-fe09-t3s2b1ba1-anchor)-[0-9]+",
+         re.fullmatch(r"(?:frontend-fe09-t2b-b1s0-owner-spsc|frontend-fe09-t2b-b1s1-source-apx3|frontend-fe09-t3s2b1ba1-anchor|frontend-fe09-t3s1-compact-handoff)-[0-9]+",
                       artifact_name) is not None and
          artifact_name.endswith("-" + str(run_id)) and
          type(token) is str and 0 < len(token) <= 2048,
@@ -210,10 +211,11 @@ def check_visibility(repo: str, run_id: int, artifact_id: int,
          "UNBOUNDED_VISIBILITY_RETRY")
     if opener is None:
         opener = (urllib.request.build_opener(NoRedirect()).open
-                  if artifact_name.startswith(A1_PREFIX) else urllib.request.urlopen)
+                  if artifact_name.startswith((A1_PREFIX, T3S1_PREFIX)) else urllib.request.urlopen)
     if pause is None:
         pause = time.sleep
-    if artifact_name.startswith(A1_PREFIX):
+    # Only the observed T3-S1 failure joins A1's unchanged REST identity gate.
+    if artifact_name.startswith((A1_PREFIX, T3S1_PREFIX)):
         return check_a1_visibility(
             repo, run_id, artifact_id, artifact_name, token,
             run_attempt=run_attempt, run_head_sha=run_head_sha,
@@ -287,6 +289,9 @@ def main() -> None:
           args.run_id, args.artifact_id, "attempt=" + str(attempt), digest)
     if args.artifact_name.startswith(A1_PREFIX):
         print("FE09_A1_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
+              args.run_attempt, args.run_head_sha, args.execution_source)
+    elif args.artifact_name.startswith(T3S1_PREFIX):
+        print("FE09_T3S1_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND",
               args.run_attempt, args.run_head_sha, args.execution_source)
 
 

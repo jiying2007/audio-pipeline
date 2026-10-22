@@ -1628,6 +1628,7 @@ jobs:
           python3 tests/validation/frontend_evolution/fe09_b2s3_t3s1_compact_handoff_qualification.py \
             --verify --output fe09-t3s1 --execution-source "$GITHUB_SHA"
       - name: Retain exact-run T3-S1 source/negative handoff receipt
+        id: fe09_t3s1_upload
         if: always() && (steps.fe09_t3s1.outcome == 'success' || steps.fe09_t3s1.outcome == 'failure')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -1635,11 +1636,28 @@ jobs:
           path: fe09-t3s1/
           retention-days: 30
           if-no-files-found: error
+      - name: Witness exact T3-S1 upload in the pinned downloader REST list
+        if: steps.fe09_t3s1.outcome == 'success'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}
+          RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_same_run_artifact_visibility.py \
+            --artifact-id "$ARTIFACT_ID" --run-id "$GITHUB_RUN_ID" \
+            --artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA" \
+            --execution-source "$GITHUB_SHA"
       - name: Download immutable current-run T3-S1 four-member Artifact
         if: steps.fe09_t3s1.outcome == 'success'
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: frontend-fe09-t3s1-compact-handoff-${{ github.run_id }}
+          artifact-ids: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
           path: fe09-t3s1-readback
       - name: Independently rehash T3-S1 members and reject false hardware/durable qualification
         if: steps.fe09_t3s1.outcome == 'success'

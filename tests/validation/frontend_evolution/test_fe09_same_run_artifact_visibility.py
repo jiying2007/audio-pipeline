@@ -3,9 +3,10 @@
 from __future__ import annotations
 import io
 import json
+import copy
 import unittest
 import urllib.error
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from pathlib import Path
 
 import fe09_same_run_artifact_visibility as policy
@@ -238,6 +239,217 @@ class SameRunReadbackPolicyTests(unittest.TestCase):
         self.assertIn("steps.fe09_b1s0_upload.outputs.artifact-id", previous)
         self.assertIn("uses: actions/download-artifact@", previous)
 
+class A1RestListVisibilityTests(unittest.TestCase):
+    """Synthetic metadata only; no uploaded or scientific evidence is created."""
+    NAME = "frontend-fe09-t3s2b1ba1-anchor-12345"
+    HEAD = "b" * 40
+    SOURCE = "c" * 40
+    ATTEMPT = 2
+    RUN_URL = f"https://api.github.com/repos/{REPO}/actions/runs/{RUN}/attempts/2"
+    LIST_URL = f"https://api.github.com/repos/{REPO}/actions/runs/{RUN}/artifacts?per_page=100&page="
+
+    def run_record(self):
+        return {"id": RUN, "run_attempt": self.ATTEMPT, "head_sha": self.HEAD,
+                "status": "in_progress", "run_started_at": "2026-10-22T06:00:00Z",
+                "repository": {"full_name": REPO, "id": 100},
+                "head_repository": {"id": 101},
+                "referenced_workflows": [{
+                    "path": f"{REPO}/.github/workflows/quality.yml@{self.SOURCE}",
+                    "sha": self.SOURCE}]}
+
+    def artifact(self):
+        value = sample(self.NAME)
+        value.update(created_at="2026-10-22T06:01:00Z", workflow_run={
+            "id": RUN, "head_sha": self.HEAD,
+            "repository_id": 100, "head_repository_id": 101})
+        return value
+
+    def response(self, payload=None, *, page=None, raw=None, url=None):
+        class Response(FakeResp):
+            def read(self, n):
+                expected = 65537 if page is None else policy.A1_LIST_RESPONSE_CAP + 1
+                assert n == expected
+                return self.data[:n]
+        return Response(payload, raw=raw,
+                        url=url or (self.RUN_URL if page is None else self.LIST_URL + str(page)))
+
+    def listing(self, rows=None, *, total=None, page=1):
+        rows = [self.artifact()] if rows is None else rows
+        return self.response({"total_count": len(rows) if total is None else total,
+                              "artifacts": rows}, page=page)
+
+    def check(self, replies, **changes):
+        replies = iter(replies)
+        self.opened, self.paused = [], []
+        def opener(request, timeout):
+            self.opened.append((request.full_url, timeout))
+            value = next(replies)
+            if isinstance(value, Exception):
+                raise value
+            return value
+        params = dict(run_attempt=self.ATTEMPT, run_head_sha=self.HEAD,
+                      execution_source=self.SOURCE, attempts=8, delay_seconds=2)
+        params.update(changes)
+        return policy.check_visibility(REPO, RUN, ARTIFACT, self.NAME,
+            "fake-test-only-token", opener=opener, pause=self.paused.append, **params)
+
+    def test_exact_attempt_and_actual_public_rest_list(self):
+        result = self.check([self.response(self.run_record()), self.listing()])
+        self.assertEqual(result, (2, DIGEST))
+        self.assertEqual(self.opened, [(self.RUN_URL, 10), (self.LIST_URL + "1", 10)])
+        self.assertEqual(self.paused, [])
+
+    def test_missing_list_then_visible_within_shared_budget(self):
+        result = self.check([http_error(404), self.response(self.run_record()),
+                             self.listing([]), http_error(503), self.listing()])
+        self.assertEqual(result, (5, DIGEST))
+        self.assertEqual(self.paused, [2, 2, 2])
+        self.assertEqual(len(self.opened), 5)
+
+    def test_single_artifact_metadata_is_not_list_visibility(self):
+        with self.assertRaisesRegex(policy.NotAdmitted, "LIST_SCHEMA"):
+            self.check([self.response(self.run_record()),
+                        self.response(self.artifact(), page=1)])
+
+    def test_absence_cannot_use_a_ninth_request_or_pause(self):
+        with self.assertRaisesRegex(policy.NotAdmitted, "NOT_VISIBLE"):
+            self.check([self.response(self.run_record())] + [self.listing([])] * 7)
+        self.assertEqual(len(self.opened), 8)
+        self.assertEqual(self.paused, [2] * 6)
+        with self.assertRaisesRegex(policy.NotAdmitted, "NOT_VISIBLE"):
+            self.check([http_error(404)] * 8)
+        self.assertEqual(len(self.opened), 8)
+        self.assertEqual(self.paused, [2] * 7)
+
+    def test_wrong_run_attempt_source_and_repository_fail_before_enumeration(self):
+        mutations = [
+            lambda x: x.update(id=RUN + 1), lambda x: x.update(run_attempt=1),
+            lambda x: x.update(run_attempt=True), lambda x: x.update(head_sha="d" * 40),
+            lambda x: x.update(status="completed"),
+            lambda x: x["repository"].update(full_name="other/repository"),
+            lambda x: x.update(referenced_workflows=[]),
+            lambda x: x["referenced_workflows"][0].update(sha="d" * 40),
+            lambda x: x["referenced_workflows"].append(copy.deepcopy(x["referenced_workflows"][0])),
+        ]
+        for mutate in mutations:
+            value = self.run_record(); mutate(value)
+            with self.subTest(value=value), self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(value)])
+            self.assertEqual(len(self.opened), 1)
+
+    def test_wrong_id_name_run_head_attempt_expiry_size_or_digest_rejected(self):
+        mutations = [
+            lambda x: x.update(id=ARTIFACT + 1), lambda x: x.update(name=NAME),
+            lambda x: x.update(expired=True), lambda x: x.update(size_in_bytes=0),
+            lambda x: x.update(size_in_bytes=1048577), lambda x: x.update(digest="sha256:bad"),
+            lambda x: x.update(created_at="2026-10-22T05:59:59Z"),
+            lambda x: x["workflow_run"].update(id=RUN - 1),
+            lambda x: x["workflow_run"].update(head_sha="d" * 40),
+            lambda x: x["workflow_run"].update(repository_id=101),
+            lambda x: x["workflow_run"].update(head_repository_id=100),
+        ]
+        for mutate in mutations:
+            value = self.artifact(); mutate(value)
+            with self.subTest(value=value), self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(self.run_record()), self.listing([value])])
+
+    def test_full_100_row_page_above_64k_has_a_separate_bounded_cap(self):
+        rows = [{"id": i + 1, "name": "other-" + str(i), "padding": "x" * 750}
+                for i in range(99)] + [self.artifact()]
+        response = self.listing(rows)
+        self.assertGreater(len(response.data), 65536)
+        self.assertLess(len(response.data), policy.A1_LIST_RESPONSE_CAP)
+        self.assertEqual(self.check([self.response(self.run_record()), response]), (2, DIGEST))
+        for raw in (b"x" * (policy.A1_LIST_RESPONSE_CAP + 1),
+                    b'{"total_count":0,"total_count":0,"artifacts":[]}'):
+            with self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(self.run_record()), self.response(page=1, raw=raw)])
+        with self.assertRaises(policy.NotAdmitted):
+            self.check([self.response(raw=b"x" * 65537)])
+
+    def test_pagination_requires_every_page_and_unique_name_and_id(self):
+        first = [{"id": i + 1, "name": "other-" + str(i)} for i in range(100)]
+        replies = [self.response(self.run_record()), self.listing(first, total=101),
+                   self.listing([self.artifact()], total=101, page=2)]
+        self.assertEqual(self.check(replies), (3, DIGEST))
+        self.assertEqual(self.opened[-1], (self.LIST_URL + "2", 10))
+        first[0] = self.artifact()
+        conflicting = self.artifact(); conflicting["id"] += 1
+        for last in ([conflicting], [self.artifact()], []):
+            with self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(self.run_record()), self.listing(first, total=101),
+                            self.listing(last, total=101, page=2)])
+
+    def test_pagination_never_resets_eight_request_budget(self):
+        replies = [self.response(self.run_record())]
+        for page in range(1, 8):
+            rows = [{"id": 100 * page + i, "name": f"other-{page}-{i}"} for i in range(100)]
+            replies.append(self.listing(rows, total=800, page=page))
+        with self.assertRaisesRegex(policy.NotAdmitted, "NOT_VISIBLE"):
+            self.check(replies)
+        self.assertEqual(len(self.opened), 8)
+        self.assertEqual(self.paused, [])
+
+    def test_bad_list_shape_bounds_and_duplicate_ids_fail_closed(self):
+        for payload in ({"total_count": True, "artifacts": []},
+                        {"total_count": 1001, "artifacts": []},
+                        {"total_count": 1, "artifacts": []},
+                        {"total_count": 2, "artifacts": [self.artifact()] * 2}):
+            with self.subTest(payload=payload), self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(self.run_record()), self.response(payload, page=1)])
+
+    def test_hard_http_network_and_redirect_fail_without_retry(self):
+        for error in (http_error(401), http_error(403), http_error(429),
+                      urllib.error.URLError("synthetic TLS failure"), TimeoutError()):
+            with self.subTest(error=error), self.assertRaises(policy.NotAdmitted):
+                self.check([error])
+            self.assertEqual(len(self.opened), 1)
+            self.assertEqual(self.paused, [])
+        with self.assertRaisesRegex(policy.NotAdmitted, "REDIRECT"):
+            self.check([self.response(self.run_record(), url="https://example.invalid/")])
+
+    def test_a1_default_client_blocks_redirect_before_sending_credentials(self):
+        client = Mock()
+        client.open.side_effect = [self.response(self.run_record()), self.listing()]
+        with patch.object(policy.urllib.request, "build_opener", return_value=client) as build:
+            result = policy.check_visibility(REPO, RUN, ARTIFACT, self.NAME,
+                "fake-test-only-token", run_attempt=2, run_head_sha=self.HEAD,
+                execution_source=self.SOURCE, pause=Mock())
+        self.assertEqual(result, (2, DIGEST))
+        handler = build.call_args.args[0]
+        self.assertIsNone(handler.redirect_request(None, None, 302, None, None,
+                                                   "https://example.invalid/"))
+
+    def test_identity_flags_and_budget_cannot_expand_stage_scope(self):
+        for changed in ({"run_attempt": None}, {"execution_source": None},
+                        {"run_head_sha": "bad"}, {"attempts": 9}, {"delay_seconds": 3}):
+            with self.subTest(changed=changed), self.assertRaises(policy.NotAdmitted):
+                self.check([], **changed)
+            self.assertEqual(self.opened, [])
+        with self.assertRaisesRegex(policy.NotAdmitted, "OTHER_STAGE"):
+            policy.check_visibility(REPO, RUN, ARTIFACT, NAME, "fake-test-only-token",
+                run_attempt=2, opener=Mock(side_effect=AssertionError("network")))
+
+    def test_a1_workflow_keeps_pinned_download_and_scientific_readback(self):
+        quality = (Path(__file__).resolve().parents[3] /
+                   ".github/workflows/quality.yml").read_text("utf-8")
+        stage = quality.split("  frontend-s3-t3s2b1ba1:\n", 1)[1].split(
+            "\n  frontend-s3-t3s2b1ba2:", 1)[0]
+        markers = ["id: fe09_t3s2b1ba1\n", "id: fe09_a1_upload\n",
+                   "Witness exact A1 upload in the pinned downloader REST list",
+                   '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
+                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
+                   "artifact-ids: ${{ steps.fe09_a1_upload.outputs.artifact-id }}",
+                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
+                   "run-id: ${{ github.run_id }}", "--verify --output fe09-t3s2b1ba1-readback",
+                   "--negative-readback --output fe09-t3s2b1ba1-readback",
+                   "FE09_A1_SAME_RUN_ORIGINAL_MEMBERS_INDEPENDENT_READBACK_PASS"]
+        offsets = [stage.index(marker) for marker in markers]
+        self.assertEqual(offsets, sorted(offsets))
+        for required in ("timeout-minutes: 30", "retention-days: 30", "if-no-files-found: error",
+                         "--collect --output fe09-t3s2b1ba1", 'receipt["repetitions_per_target"]==2'):
+            self.assertIn(required, stage)
+        self.assertNotIn("continue-on-error:", stage)
 
 
 if __name__ == "__main__":

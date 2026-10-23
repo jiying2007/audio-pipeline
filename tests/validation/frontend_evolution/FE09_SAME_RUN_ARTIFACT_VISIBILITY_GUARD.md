@@ -23,3 +23,24 @@ New offline no-network unit tests inject 404→200, 503→200, forever 404, imme
 Only latest-head full Verify `summary=success`, strict active protected main Ruleset 21804005, zero unresolved review threads, expected-head Squash, distinct new-main Verify+same-SHA Release/convergence success and complete source-linked Artifact readback can close #779. No shipping 2.x DSP, `src/`, public installed SDK, legacy APD2/CMake or immutable I025–I040 changes. B1-S1 #778, true hardware/SSC305/HIL #58 and durable APX3 remain separately qualified.
 
 One future absence visible after eight attempts **remains a regression**: do not mark a broken GitHub storage service healthy or fabricate a passing source receipt.
+
+## 2026-10-23 A1/T3-S1 scheduling-state correction
+
+On diagnostic PR #832 head `06ff1e59681178b1ef4f11cfb46615a757b77bb4`,
+[Verify 39944956605 / job 120385811422](https://github.com/jiying2007/audio-pipeline/actions/runs/39944956605/job/120385811422)
+completed scientific verification and uploaded Artifact 12497726986, then refused
+the run metadata at `A1_RUN_ATTEMPT_REPOSITORY_OR_HEAD_MISMATCH:STATUS`.
+An earlier exact-attempt response for this same run was `queued`/`null` while
+multiple jobs were already running. The failed response's actual status value
+was not retained; the older main failure's generic reason does not identify its field.
+
+The old `in_progress`-only premise was invalid for workflow-level scheduling.
+The shared A1/T3-S1 witness now permits only string `queued` or `in_progress`
+with an explicitly present JSON-null `conclusion`; all other states, missing
+fields or non-null conclusions refuse immediately, without retry. GitHub's
+[official workflow-runs REST example](https://docs.github.com/en/rest/actions/workflow-runs)
+also includes `queued`/`null`. Scheduling is not artifact identity: exact run,
+attempt, head, repository IDs, actual quality execution source, original upload
+ID/name/digest and creation-time checks remain mandatory, with unchanged request
+budgets, pinned download and scientific readback. Fixed field suffixes reveal no
+response values. The original failed run/artifact remain evidence, not a pass.

@@ -250,7 +250,8 @@ class A1RestListVisibilityTests(unittest.TestCase):
 
     def run_record(self):
         return {"id": RUN, "run_attempt": self.ATTEMPT, "head_sha": self.HEAD,
-                "status": "in_progress", "run_started_at": "2026-10-22T06:00:00Z",
+                "status": "in_progress", "conclusion": None,
+                "run_started_at": "2026-10-22T06:00:00Z",
                 "repository": {"full_name": REPO, "id": 100},
                 "head_repository": {"id": 101},
                 "referenced_workflows": [{
@@ -336,6 +337,141 @@ class A1RestListVisibilityTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(policy.NotAdmitted):
                 self.check([self.response(value)])
             self.assertEqual(len(self.opened), 1)
+
+    def test_run_identity_fixed_fields_preserve_other_legacy_rejections(self):
+        # Independent pre-diagnostic predicate checks unchanged refusals.
+        # Queued/null admission and the new conclusion guard are tested below.
+        # Fixtures are API metadata only, never scientific evidence.
+        def legacy(p):
+            return (type(p) is dict and type(p.get("id")) is int and
+                    p["id"] == RUN and type(p.get("run_attempt")) is int and
+                    p["run_attempt"] == self.ATTEMPT and
+                    p.get("head_sha") == self.HEAD and
+                    p.get("status") == "in_progress" and
+                    type(p.get("repository")) is dict and
+                    p["repository"].get("full_name") == REPO and
+                    type(p["repository"].get("id")) is int and
+                    p["repository"]["id"] > 0 and
+                    type(p.get("head_repository")) is dict and
+                    type(p["head_repository"].get("id")) is int and
+                    p["head_repository"]["id"] > 0)
+
+        cases = []
+        for value in (None, [], "response-value-must-not-leak", 1, True):
+            cases.append((value, "PAYLOAD_TYPE"))
+        fields = (
+            (("id",), (None, True, str(RUN), RUN + 1), "ID"),
+            (("run_attempt",), (None, True, str(self.ATTEMPT), 0), "RUN_ATTEMPT"),
+            (("head_sha",), (None, [], "response-value-must-not-leak"), "HEAD_SHA"),
+            (("status",), (None, "completed", "waiting", []), "STATUS"),
+            (("repository",), (None, [], "response-value-must-not-leak"), "REPOSITORY_TYPE"),
+            (("repository", "full_name"), (None, [], "response-value-must-not-leak"),
+             "REPOSITORY_FULL_NAME"),
+            (("repository", "id"), (None, True, "100", 0, -1), "REPOSITORY_ID"),
+            (("head_repository",), (None, [], "response-value-must-not-leak"),
+             "HEAD_REPOSITORY_TYPE"),
+            (("head_repository", "id"), (None, True, "101", 0, -1),
+             "HEAD_REPOSITORY_ID"),
+        )
+        for path, values, field in fields:
+            for value in values:
+                record = self.run_record()
+                target = record if len(path) == 1 else record[path[0]]
+                target[path[-1]] = value
+                cases.append((record, field))
+            record = self.run_record()
+            target = record if len(path) == 1 else record[path[0]]
+            del target[path[-1]]
+            cases.append((record, field))
+        record = self.run_record()
+        record.update(id=0, status="completed", repository=None)
+        cases.append((record, "ID"))  # First failed field remains deterministic.
+        for record, field in cases:
+            with self.subTest(field=field, record=record):
+                self.assertFalse(legacy(record))
+                with self.assertRaises(policy.NotAdmitted) as caught:
+                    self.check([self.response(record)])
+                self.assertEqual(str(caught.exception),
+                    "A1_RUN_ATTEMPT_REPOSITORY_OR_HEAD_MISMATCH:" + field)
+                self.assertEqual(len(self.opened), 1)
+                self.assertEqual(self.paused, [])
+                if type(record) is dict and field != "STATUS":
+                    queued = copy.deepcopy(record)
+                    queued["status"] = "queued"
+                    with self.assertRaises(policy.NotAdmitted) as caught:
+                        self.check([self.response(queued)])
+                    self.assertEqual(str(caught.exception),
+                        "A1_RUN_ATTEMPT_REPOSITORY_OR_HEAD_MISMATCH:" + field)
+                    self.assertEqual(len(self.opened), 1)
+                    self.assertEqual(self.paused, [])
+        for repo_id, head_id in ((1, 1), (100, 101), (2 ** 64, 2 ** 64)):
+            record = self.run_record()
+            record["repository"]["id"] = repo_id
+            record["head_repository"]["id"] = head_id
+            self.assertTrue(legacy(record))
+            policy.verify_run_identity(record, repo=REPO, run_id=RUN,
+                run_attempt=self.ATTEMPT, run_head_sha=self.HEAD)
+
+    def test_nonterminal_scheduling_with_explicit_null_conclusion(self):
+        for status in ("queued", "in_progress"):
+            with self.subTest(status=status):
+                record = self.run_record()
+                record["status"] = status
+                self.assertEqual(self.check([self.response(record), self.listing()]),
+                                 (2, DIGEST))
+                self.assertEqual(self.opened, [(self.RUN_URL, 10), (self.LIST_URL + "1", 10)])
+                self.assertEqual(self.paused, [])
+                for value in ("success", "failure", "cancelled", "", False, 0, [], {}):
+                    record["conclusion"] = value
+                    with self.subTest(conclusion=value), self.assertRaisesRegex(
+                            policy.NotAdmitted, "MISMATCH:CONCLUSION$"):
+                        self.check([self.response(record)])
+                    self.assertEqual(len(self.opened), 1)
+                    self.assertEqual(self.paused, [])
+                del record["conclusion"]
+                with self.assertRaisesRegex(policy.NotAdmitted, "MISMATCH:CONCLUSION$"):
+                    self.check([self.response(record)])
+                self.assertEqual(len(self.opened), 1)
+                self.assertEqual(self.paused, [])
+        for status in (None, True, 1, [], {}, "", "requested", "waiting", "pending",
+                       "completed", "success", "failure", "cancelled", "unknown"):
+            record = self.run_record()
+            record["status"] = status
+            with self.subTest(status=status), self.assertRaisesRegex(
+                    policy.NotAdmitted, "MISMATCH:STATUS$"):
+                self.check([self.response(record)])
+            self.assertEqual(len(self.opened), 1)
+            self.assertEqual(self.paused, [])
+
+    def test_queued_scheduling_does_not_waive_execution_or_artifact_source(self):
+        for mutate in (
+            lambda x: x.update(referenced_workflows=[]),
+            lambda x: x["referenced_workflows"][0].update(sha="d" * 40),
+            lambda x: x.update(run_started_at="invalid"),
+        ):
+            record = self.run_record()
+            record["status"] = "queued"
+            mutate(record)
+            with self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(record)])
+            self.assertEqual(len(self.opened), 1)
+            self.assertEqual(self.paused, [])
+        for mutate in (
+            lambda x: x.update(id=ARTIFACT + 1),
+            lambda x: x.update(name="wrong-name"),
+            lambda x: x.update(digest="sha256:bad"),
+            lambda x: x.update(created_at="2026-10-22T05:59:59Z"),
+            lambda x: x["workflow_run"].update(head_sha="d" * 40),
+            lambda x: x["workflow_run"].update(repository_id=101),
+            lambda x: x["workflow_run"].update(head_repository_id=100),
+        ):
+            record, artifact = self.run_record(), self.artifact()
+            record["status"] = "queued"
+            mutate(artifact)
+            with self.assertRaises(policy.NotAdmitted):
+                self.check([self.response(record), self.listing([artifact])])
+            self.assertEqual(len(self.opened), 2)
+            self.assertEqual(self.paused, [])
 
     def test_wrong_id_name_run_head_attempt_expiry_size_or_digest_rejected(self):
         mutations = [

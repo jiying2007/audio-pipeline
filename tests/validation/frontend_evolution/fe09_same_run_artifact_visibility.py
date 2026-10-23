@@ -91,6 +91,32 @@ def utc_timestamp(value: object) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def verify_run_identity(payload, *, repo, run_id, run_attempt, run_head_sha):
+    """Preserve the ordered run predicate; emit only fixed refusal fields.
+
+    Do not include response values: this diagnostic must be safe even when a
+    response contains credentials, arbitrary strings or malformed containers.
+    Identity conflicts still fail immediately, without retry or enumeration.
+    """
+    reason = "A1_RUN_ATTEMPT_REPOSITORY_OR_HEAD_MISMATCH:"
+    need(type(payload) is dict, reason + "PAYLOAD_TYPE")
+    need(type(payload.get("id")) is int and payload["id"] == run_id,
+         reason + "ID")
+    need(type(payload.get("run_attempt")) is int and
+         payload["run_attempt"] == run_attempt, reason + "RUN_ATTEMPT")
+    need(payload.get("head_sha") == run_head_sha, reason + "HEAD_SHA")
+    need(payload.get("status") == "in_progress", reason + "STATUS")
+    need(type(payload.get("repository")) is dict, reason + "REPOSITORY_TYPE")
+    need(payload["repository"].get("full_name") == repo,
+         reason + "REPOSITORY_FULL_NAME")
+    need(type(payload["repository"].get("id")) is int and
+         payload["repository"]["id"] > 0, reason + "REPOSITORY_ID")
+    need(type(payload.get("head_repository")) is dict,
+         reason + "HEAD_REPOSITORY_TYPE")
+    need(type(payload["head_repository"].get("id")) is int and
+         payload["head_repository"]["id"] > 0, reason + "HEAD_REPOSITORY_ID")
+
+
 def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
                         run_attempt, run_head_sha, execution_source,
                         opener, pause, attempts, delay_seconds):
@@ -125,19 +151,8 @@ def check_a1_visibility(repo, run_id, artifact_id, artifact_name, token, *,
                 need(0 < len(data) <= cap, "ARTIFACT_METADATA_EMPTY_OR_OVERSIZE")
                 payload = json.loads(data.decode("utf-8"), object_pairs_hook=reject_duplicates)
             if run is None:
-                need(type(payload) is dict and type(payload.get("id")) is int and
-                     payload["id"] == run_id and type(payload.get("run_attempt")) is int and
-                     payload["run_attempt"] == run_attempt and
-                     payload.get("head_sha") == run_head_sha and
-                     payload.get("status") == "in_progress" and
-                     type(payload.get("repository")) is dict and
-                     payload["repository"].get("full_name") == repo and
-                     type(payload["repository"].get("id")) is int and
-                     payload["repository"]["id"] > 0 and
-                     type(payload.get("head_repository")) is dict and
-                     type(payload["head_repository"].get("id")) is int and
-                     payload["head_repository"]["id"] > 0,
-                     "A1_RUN_ATTEMPT_REPOSITORY_OR_HEAD_MISMATCH")
+                verify_run_identity(payload, repo=repo, run_id=run_id,
+                                    run_attempt=run_attempt, run_head_sha=run_head_sha)
                 references = payload.get("referenced_workflows")
                 expected = f"{repo}/.github/workflows/quality.yml@{execution_source}"
                 need(type(references) is list,

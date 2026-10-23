@@ -337,6 +337,70 @@ class A1RestListVisibilityTests(unittest.TestCase):
                 self.check([self.response(value)])
             self.assertEqual(len(self.opened), 1)
 
+    def test_run_identity_fixed_fields_preserve_legacy_predicate(self):
+        # Independent copy of the pre-diagnostic predicate is the acceptance
+        # oracle; fixtures are API metadata only, never scientific evidence.
+        def legacy(p):
+            return (type(p) is dict and type(p.get("id")) is int and
+                    p["id"] == RUN and type(p.get("run_attempt")) is int and
+                    p["run_attempt"] == self.ATTEMPT and
+                    p.get("head_sha") == self.HEAD and
+                    p.get("status") == "in_progress" and
+                    type(p.get("repository")) is dict and
+                    p["repository"].get("full_name") == REPO and
+                    type(p["repository"].get("id")) is int and
+                    p["repository"]["id"] > 0 and
+                    type(p.get("head_repository")) is dict and
+                    type(p["head_repository"].get("id")) is int and
+                    p["head_repository"]["id"] > 0)
+
+        cases = []
+        for value in (None, [], "response-value-must-not-leak", 1, True):
+            cases.append((value, "PAYLOAD_TYPE"))
+        fields = (
+            (("id",), (None, True, str(RUN), RUN + 1), "ID"),
+            (("run_attempt",), (None, True, str(self.ATTEMPT), 0), "RUN_ATTEMPT"),
+            (("head_sha",), (None, [], "response-value-must-not-leak"), "HEAD_SHA"),
+            (("status",), (None, "queued", "completed", "waiting", []), "STATUS"),
+            (("repository",), (None, [], "response-value-must-not-leak"), "REPOSITORY_TYPE"),
+            (("repository", "full_name"), (None, [], "response-value-must-not-leak"),
+             "REPOSITORY_FULL_NAME"),
+            (("repository", "id"), (None, True, "100", 0, -1), "REPOSITORY_ID"),
+            (("head_repository",), (None, [], "response-value-must-not-leak"),
+             "HEAD_REPOSITORY_TYPE"),
+            (("head_repository", "id"), (None, True, "101", 0, -1),
+             "HEAD_REPOSITORY_ID"),
+        )
+        for path, values, field in fields:
+            for value in values:
+                record = self.run_record()
+                target = record if len(path) == 1 else record[path[0]]
+                target[path[-1]] = value
+                cases.append((record, field))
+            record = self.run_record()
+            target = record if len(path) == 1 else record[path[0]]
+            del target[path[-1]]
+            cases.append((record, field))
+        record = self.run_record()
+        record.update(id=0, status="completed", repository=None)
+        cases.append((record, "ID"))  # First failed field remains deterministic.
+        for record, field in cases:
+            with self.subTest(field=field, record=record):
+                self.assertFalse(legacy(record))
+                with self.assertRaises(policy.NotAdmitted) as caught:
+                    self.check([self.response(record)])
+                self.assertEqual(str(caught.exception),
+                    "A1_RUN_ATTEMPT_REPOSITORY_OR_HEAD_MISMATCH:" + field)
+                self.assertEqual(len(self.opened), 1)
+                self.assertEqual(self.paused, [])
+        for repo_id, head_id in ((1, 1), (100, 101), (2 ** 64, 2 ** 64)):
+            record = self.run_record()
+            record["repository"]["id"] = repo_id
+            record["head_repository"]["id"] = head_id
+            self.assertTrue(legacy(record))
+            policy.verify_run_identity(record, repo=REPO, run_id=RUN,
+                run_attempt=self.ATTEMPT, run_head_sha=self.HEAD)
+
     def test_wrong_id_name_run_head_attempt_expiry_size_or_digest_rejected(self):
         mutations = [
             lambda x: x.update(id=ARTIFACT + 1), lambda x: x.update(name=NAME),

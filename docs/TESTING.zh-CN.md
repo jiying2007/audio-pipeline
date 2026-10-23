@@ -15,6 +15,9 @@ FE09 A1/T3-S1 的同次运行制品 REST witness 若拒绝 run 身份，错误�
 `:HEAD_SHA` 或 `:REPOSITORY_FULL_NAME`。字段码只定位第一个失败判定，不输出响应值、
 token 或 URL；身份冲突立即失败，不重试。保留原失败并根据该字段取证，不能放宽校验
 或把手工下载成功替代 required CI 的原件读回。此诊断不改变科学准入或产品资格。
+顶层调度状态仅接纳 `queued` 或 `in_progress`，且 `conclusion` 必须显式为 JSON `null`；
+即使已有作业运行，workflow 顶层仍可能显示 `queued`。其它状态、缺失或非空结论
+立即拒绝（`:STATUS` / `:CONCLUSION`），原 run/attempt/head/repository、执行源及制品校验保持。
 
 历史输入字节与格式检查冲突时，仅能使用[不可变归档合同](IMMUTABLE_ARCHIVE.zh-CN.md)：
 先独立注册固定SHA与诊断，再由数据PR消费受保护base的政策及检查器；新告警与其余文件仍严格拒绝。

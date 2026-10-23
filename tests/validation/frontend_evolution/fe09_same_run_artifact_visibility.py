@@ -92,7 +92,7 @@ def utc_timestamp(value: object) -> datetime:
 
 
 def verify_run_identity(payload, *, repo, run_id, run_attempt, run_head_sha):
-    """Preserve the ordered run predicate; emit only fixed refusal fields.
+    """Check exact identity and nonterminal scheduling; emit fixed fields.
 
     Do not include response values: this diagnostic must be safe even when a
     response contains credentials, arbitrary strings or malformed containers.
@@ -105,7 +105,12 @@ def verify_run_identity(payload, *, repo, run_id, run_attempt, run_head_sha):
     need(type(payload.get("run_attempt")) is int and
          payload["run_attempt"] == run_attempt, reason + "RUN_ATTEMPT")
     need(payload.get("head_sha") == run_head_sha, reason + "HEAD_SHA")
-    need(payload.get("status") == "in_progress", reason + "STATUS")
+    # A workflow may report queued while some of its jobs are already running.
+    # Status is a scheduling hint, not the exact run/artifact identity witness.
+    need(type(payload.get("status")) is str and
+         payload["status"] in ("queued", "in_progress"), reason + "STATUS")
+    need("conclusion" in payload and payload["conclusion"] is None,
+         reason + "CONCLUSION")
     need(type(payload.get("repository")) is dict, reason + "REPOSITORY_TYPE")
     need(payload["repository"].get("full_name") == repo,
          reason + "REPOSITORY_FULL_NAME")

@@ -452,5 +452,84 @@ class A1RestListVisibilityTests(unittest.TestCase):
         self.assertNotIn("continue-on-error:", stage)
 
 
+class T3S1RestListVisibilityTests(A1RestListVisibilityTests):
+    """Replay the same bounded identity/refusal controls for the one new stage.
+
+    Inherited metadata fixtures are synthetic and never qualify science.
+    The original A1/B1 test classes and the shared REST implementation stay intact.
+    """
+    NAME = "frontend-fe09-t3s1-compact-handoff-12345"
+
+    def test_a1_workflow_keeps_pinned_download_and_scientific_readback(self):
+        super().test_a1_workflow_keeps_pinned_download_and_scientific_readback()
+        quality = (Path(__file__).resolve().parents[3] /
+                   ".github/workflows/quality.yml").read_text("utf-8")
+        stage = quality.split("  frontend-s3-t3s1:\n", 1)[1].split(
+            "\n  frontend-s3-t3s2a:", 1)[0]
+        markers = ["id: fe09_t3s1\n", "id: fe09_t3s1_upload\n",
+                   "Witness exact T3-S1 upload in the pinned downloader REST list",
+                   'ARTIFACT_ID: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}',
+                   'RUN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}',
+                   '--artifact-name "frontend-fe09-t3s1-compact-handoff-$GITHUB_RUN_ID"',
+                   '--run-attempt "$GITHUB_RUN_ATTEMPT" --run-head-sha "$RUN_HEAD_SHA"',
+                   '--execution-source "$GITHUB_SHA"',
+                   "uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
+                   "artifact-ids: ${{ steps.fe09_t3s1_upload.outputs.artifact-id }}",
+                   "github-token: ${{ github.token }}", "repository: ${{ github.repository }}",
+                   "run-id: ${{ github.run_id }}", "--verify --output fe09-t3s1-readback",
+                   "FE09_T3S1_EXACT_SOURCE_AND_OUTBOARD_READBACK_PASS"]
+        # execution-source also appears in the unchanged collector; find each
+        # marker after its predecessor so this checks the new transport order.
+        cursor = 0
+        for marker in markers:
+            cursor = stage.index(marker, cursor) + len(marker)
+        for required in ("timeout-minutes: 25", "retention-days: 30", "if-no-files-found: error",
+                         "--collect --output fe09-t3s1", "--verify --output fe09-t3s1",
+                         "{'SHA256SUMS', *names}", "r['device_memory_admitted'] is False"):
+            self.assertIn(required, stage)
+        self.assertEqual(stage.count("if: steps.fe09_t3s1.outcome == 'success'"), 3)
+        self.assertNotIn("continue-on-error:", stage)
+
+    def test_only_exact_new_stage_name_is_admitted(self):
+        for name in ("frontend-fe09-t3s0-resource-census-12345",
+                     "frontend-fe09-t3s2a-12345",
+                     "frontend-fe09-t3s2b1ba2-pending-12345",
+                     "frontend-fe09-t3s1-compact-handoff-extra-12345",
+                     "frontend-fe09-t3s1-compact-handoff-12346"):
+            opener = Mock(side_effect=AssertionError("no API for invalid stage"))
+            with self.subTest(name=name), self.assertRaisesRegex(policy.NotAdmitted, "UNTRUSTED_ARGS"):
+                policy.check_visibility(REPO, RUN, ARTIFACT, name, "fake-test-only-token",
+                    run_attempt=2, run_head_sha=self.HEAD, execution_source=self.SOURCE,
+                    opener=opener, pause=Mock())
+            opener.assert_not_called()
+
+    def test_cli_source_bound_marker_is_stage_specific(self):
+        for name, marker in ((A1RestListVisibilityTests.NAME, "FE09_A1_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND"),
+                             (self.NAME, "FE09_T3S1_REST_LIST_RUN_ATTEMPT_SOURCE_BOUND"),
+                             (NAME, None), (B1S1_NAME, None)):
+            args = ["visibility", "--artifact-id", str(ARTIFACT), "--run-id", str(RUN),
+                    "--artifact-name", name]
+            if marker is not None:
+                args += ["--run-attempt", "2", "--run-head-sha", self.HEAD,
+                         "--execution-source", self.SOURCE]
+            output = io.StringIO()
+            with self.subTest(name=name), patch("sys.argv", args), patch("sys.stdout", output), \
+                 patch.dict(policy.os.environ, {"GITHUB_REPOSITORY": REPO,
+                     "GH_TOKEN": "fake-test-only-token"}, clear=True), \
+                 patch.object(policy, "check_visibility", return_value=(2, DIGEST)) as checked:
+                policy.main()
+            checked.assert_called_once_with(REPO, RUN, ARTIFACT, name, "fake-test-only-token",
+                run_attempt=2 if marker is not None else None,
+                run_head_sha=self.HEAD if marker is not None else None,
+                execution_source=self.SOURCE if marker is not None else None)
+            lines = output.getvalue().splitlines()
+            self.assertIn("attempt=2", lines[0])  # HTTP request count, not the run attempt.
+            self.assertEqual(len(lines), 2 if marker is not None else 1)
+            if marker is not None:
+                self.assertEqual(lines[1], f"{marker} 2 {self.HEAD} {self.SOURCE}")
+            self.assertNotIn("fake-test-only-token", output.getvalue())
+            self.assertNotIn("https://", output.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

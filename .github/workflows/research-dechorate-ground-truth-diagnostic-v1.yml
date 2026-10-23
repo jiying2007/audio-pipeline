@@ -22,7 +22,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  maintenance:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      skip_measurement: ${{ steps.scope.outputs.skip_measurement }}
+    steps:
+      - name: Check out the exact protected PR base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: trusted-policy
+      - name: Qualify direct PR maintenance from protected source
+        id: scope
+        working-directory: trusted-policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir ../pin-maintenance
+          python3 .github/program/workflow_pin_pr_consumer.py \
+            --workflow .github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml \
+            --event-file "$GITHUB_EVENT_PATH" \
+            --receipt ../pin-maintenance/maintenance.json \
+            --github-output "$GITHUB_OUTPUT" --summary-file "$GITHUB_STEP_SUMMARY"
+      - name: Preserve the nonmeasurement decision
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: workflow-pin-maintenance-research-dechorate-ground-truth-diagnostic-v1-${{ github.run_id }}
+          path: pin-maintenance/maintenance.json
+          if-no-files-found: error
+          retention-days: 30
+
   diagnostic:
+    needs: maintenance
+    if: ${{ !cancelled() && !(needs.maintenance.result == 'success' && needs.maintenance.outputs.skip_measurement == 'true') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -37,31 +74,38 @@ jobs:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git -c "safe.directory=$PWD" rev-parse HEAD)" = "$EXPECTED_SHA"
           python3 - <<'PY'
-          import json,subprocess
+          import json,os,re,subprocess,sys
           from pathlib import Path
-          m=json.loads(Path('.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json').read_text())
-          assert m['schema_version']==1 and m['authority']=='DIAGNOSTIC_ONLY' and m['candidate_budget']==0
-          base=m['base_main_sha']
-          assert base=='cb85d2bbffa2e1ac6d6f0a48a66619062b726cc0'
-          subprocess.run(['git','merge-base','--is-ancestor',base,'HEAD'],check=True)
-          changed=subprocess.check_output(['git','diff','--name-only',f'{base}...HEAD'],text=True).splitlines()
-          allowed={
-            '.github/research/continuous-optimization/development-v3/dechorate-ground-truth-diagnostic-v1.json',
-            '.github/research/continuous-optimization/dechorate_ground_truth_diagnostic_v1.py',
-            '.github/workflows/research-dechorate-ground-truth-diagnostic-v1.yml',
-          }
-          assert changed and set(changed)<=allowed,changed
-          p=m['predecessor_qualification']
-          assert p['main_sha']==base and p['fresh_main_closed'] is True
-          assert p['qualification_run']==35196656993
-          assert p['hosted_real_aec_run']==35196656909
-          assert p['hosted_real_audio_run']==35196657032
-          assert p['verify_run']==35196657559
-          assert p['release_run']==35197032355
-          print({'base':base,'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'changed':changed})
+          event_file=Path(os.environ['GITHUB_EVENT_PATH']).resolve()
+          event=json.loads(event_file.read_text())
+          kind=os.environ['GITHUB_EVENT_NAME']
+          assert kind in ('pull_request','push')
+          base=event['pull_request']['base']['sha'] if kind=='pull_request' else event['before']
+          assert type(base) is str and re.fullmatch(r'[0-9a-f]{40}',base) and base!='0'*40
+          run_id=os.environ['GITHUB_RUN_ID']
+          attempt=os.environ['GITHUB_RUN_ATTEMPT']
+          assert re.fullmatch(r'[1-9][0-9]{0,18}',run_id) and re.fullmatch(r'[1-9][0-9]{0,18}',attempt)
+          policy=Path(os.environ['RUNNER_TEMP'])/('dechorate-source-policy-'+run_id+'-'+attempt)
+          assert not policy.exists() and not policy.is_symlink()
+          subprocess.run(['git','-c','safe.directory='+str(Path.cwd()),'-c','core.hooksPath=/dev/null',
+              'worktree','add','--detach',str(policy),base],check=True)
+          receipt=Path.cwd()/'dechorate-ground-truth-v1-out'/'source-range.json'
+          subprocess.run([sys.executable,str(policy/'.github/program/dechorate_event_source_t1m3.py'),
+              '--event-file',str(event_file),'--receipt',str(receipt)],check=True)
           PY
+
+      - name: Preserve the independent source-range decision
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dechorate-event-source-range-${{ github.run_id }}
+          path: |
+            dechorate-ground-truth-v1-out/source-range.json
+            dechorate-ground-truth-v1-out/source-range.json.sha256
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Validate code provenance and diagnostic authority
         run: |

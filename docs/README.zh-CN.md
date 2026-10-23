@@ -4,6 +4,10 @@
 
 > **当前状态边界**：仓库已经达到 `software-commercial-ready`（软件商用集成就绪）。这表示 API/ABI、Runtime、安装 SDK、SSC305 命名产品构建契约、资源/性能回归、数据验证权限、诊断、发布供应链和认证控制面均可由仓库重复验证；**不表示** SSC305 真机 CPU/热/功耗/声学、HIL 历史或 72 小时 Product Certification 已完成。真实物理证据以 live open issue / external-evidence tracker 和实际 workflow evidence 为准。
 
+## 双/四麦研究接续
+
+[C4 软件资格与缺口清单](research/frontend-evolution-v1/C4_SOFTWARE_GAP_INVENTORY_20261020.md) 顶部记录已核实的阶段收口，并保留原始盘点：A1 非零左锚点根、v2.3.56 Runtime/CI 六项修复、无损证据运输，以及 A2-F0 固定前缀退休与外部锚定的 hosted 进程恢复已完成；连续滚动、整机冷启动、完整资源归账、有限全双工组合和公共 C4 SDK 仍须分别推进。当前任务以 [研究总索引 #657](https://github.com/jiying2007/audio-pipeline/issues/657) 及具体子任务的最新收口记录为准；历史预注册的待完成状态不覆盖后续 completed 子任务，也不等于父计划已完成。
+
 ## 按角色阅读
 
 | 角色 | 先看 | 再看 |

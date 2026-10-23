@@ -80,13 +80,17 @@ def audit(rulesets: list[dict], immutable: dict | None, repository: dict | None)
             return False
         if status_params.get("strict_required_status_checks_policy") is not True:
             return False
-        if ruleset.get("bypass_actors"):
+        if type(ruleset.get("bypass_actors")) is not list or ruleset["bypass_actors"] != []:
             return False
         return True
 
     def tag_ok(ruleset: dict) -> bool:
         present = {rule.get("type") for rule in ruleset.get("rules", []) or []}
-        return {"deletion", "non_fast_forward"}.issubset(present) and not ruleset.get("bypass_actors")
+        return (
+            {"deletion", "non_fast_forward"}.issubset(present)
+            and type(ruleset.get("bypass_actors")) is list
+            and ruleset["bypass_actors"] == []
+        )
 
     main_enforced = any(main_ok(r) for r in main_candidates)
     tags_enforced = any(tag_ok(r) for r in tag_candidates)
@@ -242,6 +246,26 @@ def self_test() -> None:
         "rules": [{"type": "deletion"}, {"type": "non_fast_forward"}],
     }
     repository = {"delete_branch_on_merge": True}
+    assert audit([main, tags], {"enabled": True}, repository)["result"] == "PASS"
+    # Public ruleset responses can omit this sensitive field. Only a visible
+    # empty JSON array proves no bypass actors; false-like values prove nothing.
+    missing = object()
+    invalid_bypass = [missing, None, False, True, 0, "", {}, (),
+                      [{"actor_type": "RepositoryRole", "actor_id": 5}]]
+    for target, field, other in (
+        (0, "main_ruleset_enforced", "version_tag_ruleset_enforced"),
+        (1, "version_tag_ruleset_enforced", "main_ruleset_enforced"),
+    ):
+        for value in invalid_bypass:
+            candidates = [dict(main), dict(tags)]
+            if value is missing:
+                candidates[target].pop("bypass_actors")
+            else:
+                candidates[target]["bypass_actors"] = value
+            denied = audit(candidates, {"enabled": True}, repository)
+            assert denied["result"] == "FAIL", (target, value, denied)
+            assert denied[field] is False, (target, value, denied)
+            assert denied[other] is True, (target, value, denied)
     assert audit([main, tags], {"enabled": True}, repository)["result"] == "PASS"
     main["rules"][0]["parameters"]["allowed_merge_methods"] = ["merge", "squash"]
     assert audit([main, tags], {"enabled": True}, repository)["result"] == "FAIL"

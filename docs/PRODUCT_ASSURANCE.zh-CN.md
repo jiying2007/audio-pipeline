@@ -15,6 +15,11 @@
 
 普通 workflow `GITHUB_TOKEN` 不能充当 repository administration state 的证明。
 
+main 与版本 tag Ruleset 的审计都要求实际可见的 `bypass_actors` 字段，且值必须恰为
+空 JSON 数组。GitHub 可能因请求者对 ruleset 的访问权限而省略该敏感字段；仅有
+administration-read 凭据不能证明字段一定可见。字段缺失或类型错误必须使审计失败并
+进入审查，不能解释为“无 bypass”。
+
 ## 2. software-commercial-ready
 
 这是**仓库/集成状态**，不是 Product Qualification 状态。

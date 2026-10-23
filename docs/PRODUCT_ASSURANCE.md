@@ -15,6 +15,12 @@ A software release requires all of the following:
 
 Routine workflow `GITHUB_TOKEN` is not proof of repository administration state. Governance read and bootstrap write credentials stay separate and minimum-scope.
 
+For both main and version-tag Rulesets, the audit requires a visible `bypass_actors`
+field containing exactly an empty JSON array. GitHub may omit this sensitive field
+depending on the requester's ruleset access; an administration-read credential
+alone does not establish its visibility. Missing or malformed fields fail the
+audit and require review; they must not be interpreted as having no bypass actors.
+
 ## Repository-side commercial readiness
 
 `software-commercial-ready` is a repository/integration status, not a Product Qualification status. It may be claimed only when all of the following remain true:

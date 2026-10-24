@@ -11,6 +11,14 @@ on:
         type: boolean
         required: false
         default: true
+      run_f1:
+        type: boolean
+        required: false
+        default: false
+    outputs:
+      f1_disposition:
+        description: Actual F1 receipt disposition; source-only never completes science
+        value: ${{ jobs.frontend-rss-f1.outputs.disposition }}
 
 permissions:
   contents: read
@@ -22,6 +30,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  frontend-rss-f1:
+    if: inputs.run_extended || inputs.run_f1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      issues: read
+      pull-requests: read
+    container:
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    outputs:
+      disposition: ${{ steps.f1_source.outputs.disposition }}
+    steps:
+      - name: Explicit F1 source bootstrap boundary before checkout
+        run: |
+          echo 'SOURCE_METADATA_ONLY: F1 launcher/engineering/DSP/provider execution disabled'
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Actual protected-base source guard
+        run: sh .github/scripts/verify-docs-gate.sh --f1-scope-only
+      - name: Pure offline F1 metadata controls
+        run: python3 tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py
+      - name: Record source-only bootstrap and reject any execution obligation
+        id: f1_source
+        env:
+          F1_REQUIRED: ${{ inputs.run_f1 }}
+        run: |
+          python3 tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py \
+            bootstrap-receipt --root "$GITHUB_WORKSPACE" --f1-required "$F1_REQUIRED" \
+            --output /tmp/frontend-rss-f1/receipt.json --github-output "$GITHUB_OUTPUT"
+      - name: Preserve explicit F1 source-only receipt
+        if: always() && (steps.f1_source.outcome == 'success' || steps.f1_source.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-rss-f1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/frontend-rss-f1/receipt.json
+          if-no-files-found: error
+          retention-days: 30
+
   abi-contract:
     if: inputs.run_abi
     runs-on: ubuntu-latest

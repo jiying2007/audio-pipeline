@@ -33,6 +33,7 @@ jobs:
       run_aec_backend: ${{ steps.impact.outputs.run_aec_backend }}
       run_ns_backend: ${{ steps.impact.outputs.run_ns_backend }}
       run_extended: ${{ steps.impact.outputs.run_extended }}
+      f1_required: ${{ steps.f1_scope.outputs.f1_required }}
       run_abi: ${{ steps.impact.outputs.run_abi }}
       run_lab: ${{ steps.impact.outputs.run_lab }}
       composition_matrix: ${{ steps.impact.outputs.composition_matrix }}
@@ -91,6 +92,9 @@ jobs:
           echo "base=$base" >> "$GITHUB_OUTPUT"
           echo "perf_base=$perf_base" >> "$GITHUB_OUTPUT"
           echo "head=$head" >> "$GITHUB_OUTPUT"
+      - name: F1 protected-base source scope and mandatory routing
+        id: f1_scope
+        run: sh .github/scripts/verify-docs-gate.sh --f1-scope-only
       - name: Select conservative CI impact
         id: impact
         shell: bash
@@ -293,11 +297,18 @@ jobs:
 
   quality:
     needs: [impact, fast-gate]
-    if: always() && needs.fast-gate.result == 'success' && needs.impact.outputs.run_quality == 'true'
+    if: always() && needs.fast-gate.result == 'success' && (needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true')
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      issues: read
+      pull-requests: read
     uses: ./.github/workflows/quality.yml
     with:
       run_abi: ${{ needs.impact.outputs.run_abi == 'true' }}
       run_extended: ${{ needs.impact.outputs.run_extended == 'true' }}
+      run_f1: ${{ needs.impact.outputs.f1_required == 'true' }}
 
   audio-quality:
     needs: [impact, fast-gate]
@@ -341,12 +352,19 @@ jobs:
           CODEQL_RESULT: ${{ needs.codeql.result }}
           EXPECT_LAB: ${{ needs.impact.outputs.run_lab }}
           EXPECT_CI: ${{ needs.impact.outputs.run_ci }}
-          EXPECT_QUALITY: ${{ needs.impact.outputs.run_quality }}
+          EXPECT_QUALITY: ${{ needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true' }}
+          F1_REQUIRED: ${{ needs.impact.outputs.f1_required }}
+          F1_DISPOSITION: ${{ needs.quality.outputs.f1_disposition }}
           EXPECT_AUDIO: ${{ needs.impact.outputs.run_audio }}
           EXPECT_RESOURCE: ${{ needs.impact.outputs.run_resource }}
           EXPECT_CODEQL: ${{ needs.impact.outputs.run_codeql }}
         run: |
           set -euo pipefail
+          case "$F1_REQUIRED" in true|false) ;; *) echo 'F1R1_GUARD_OUTPUT_REQUIRED' >&2; exit 1 ;; esac
+          if [ "$F1_REQUIRED" = true ]; then
+            test "$QUALITY_RESULT" = success
+            test "$F1_DISPOSITION" = FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION
+          fi
           python3 scripts/ci_failure.py --output /tmp/verification-summary.json aggregate --enforce \
             --impact "$IMPACT_RESULT" --docs-only "$DOCS_ONLY" \
             --fast "$FAST_RESULT" --hosted-real "$HOSTED_REAL_RESULT" \

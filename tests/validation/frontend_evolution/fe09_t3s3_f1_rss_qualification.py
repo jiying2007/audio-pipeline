@@ -1,0 +1,505 @@
+#!/usr/bin/env python3
+"""FE09 F1 R1 source bootstrap and bounded, pure metadata validators.
+
+This module does not start the F1 launcher, engineering fixtures or DSP targets.
+Source admission and workflow scheduling are not external execution approval.
+The protected-base copy of this module is the policy oracle for later changes.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+
+
+EXPERIMENT = "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-R1"
+REGISTERED_BRANCH = "research/fe09-t3s3-f1-rss-20261024"
+REPOSITORY = "jiying2007/audio-pipeline"
+REPOSITORY_ID = 1347377137
+D = "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+REG = "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024"
+SOURCE = "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py"
+HERE = "tests/validation/frontend_evolution/"
+IMPLEMENTATION = tuple(HERE + name for name in (
+    "fe09_t3s3_f1_rss_launcher.c", "fe09_t3s3_f1_rss_observer.c",
+    "fe09_t3s3_f1_rss_qualification.py", "fe09_t3s3_f1_build/CMakeLists.txt",
+    "test_fe09_t3s3_f1_rss_qualification.py", "fe09_t3s3_f1_rss_fixture.c"))
+HOOKS = (".github/workflows/verify.yml", ".github/workflows/quality.yml",
+         ".github/scripts/verify-docs-gate.sh")
+DOC_DIGESTS = {
+    "README.md": "a44011a7f105470c959d1009aaa8b1c44d5e1e03412576c1d4fe3d31b8579190",
+    "test-contract.json": "9c5592803292ecf0c42be88a1e8f3afd2256ae24bb3e98c2d515a94b87555d6e",
+    "source-lock.json": "c2e4454f960bcb70e84184effd335f53a2245145d6bced77c0dbb5ed35144575",
+    "EXECUTION_BASELINE.json": "bf01d6a3bd8e2b022dc18eb50173366cba748d6489ea02a0c1f5e3844fa88d9e",
+    "negative-controls.json": "f5b9d27f0492fd4322b3d4cb6df9f7af8e9fbe340d3013edd31621e993e3bfea",
+}
+FIVE_READ = dict.fromkeys(("contents", "packages", "actions", "issues", "pull-requests"), "read")
+SOURCE_ONLY = "SOURCE_METADATA_ONLY"
+OUT_OF_SCOPE = "F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE"
+COMPLETE = "FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION"
+SCIENCE_EXECUTION_ENABLED = False
+METADATA_BYTES = 2 * 1024 * 1024
+GIT_SECONDS = 5
+
+
+class Rejected(ValueError):
+    """A named first violated admission predicate, never an asserted PASS."""
+
+    def __init__(self, reason: str, detail: str = "") -> None:
+        self.reason = reason
+        self.detail = detail
+        super().__init__(reason + (": " + detail if detail else ""))
+
+
+def require(condition: bool, reason: str, detail: str = "") -> None:
+    if not condition:
+        raise Rejected(reason, detail)
+
+
+def sha(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
+
+
+def strict_json(raw: bytes, cap: int = METADATA_BYTES) -> object:
+    require(type(raw) is bytes and len(raw) <= cap, "F1R1_SERIALIZED_BYTES_LIMIT")
+
+    def pairs(items: list[tuple[str, object]]) -> dict:
+        value = {}
+        for key, item in items:
+            require(key not in value, "F1R1_DUPLICATE_JSON_KEY", key)
+            value[key] = item
+        return value
+
+    def bad_constant(value: str) -> object:
+        raise Rejected("F1R1_NONFINITE_NUMBER", value)
+
+    try:
+        return json.loads(raw.decode("utf-8"), object_pairs_hook=pairs,
+                          parse_constant=bad_constant)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise Rejected("F1R1_INVALID_JSON", str(exc)) from exc
+
+
+def integer(value: object, low: int = 0, high: int = (1 << 63) - 1) -> bool:
+    return type(value) is int and low <= value <= high
+
+
+def finite(value: object, low: float = 0) -> bool:
+    return type(value) in (int, float) and math.isfinite(value) and value >= low
+
+
+def oid(value: object) -> bool:
+    return type(value) is str and re.fullmatch("[0-9a-f]{40}", value) is not None and value != "0" * 40
+
+
+def bounded_file(path: Path, cap: int = METADATA_BYTES) -> bytes:
+    require(not path.is_symlink() and path.is_file(), "F1R1_REGULAR_FILE_REQUIRED", str(path))
+    with path.open("rb") as stream:
+        raw = stream.read(cap + 1)
+    require(len(raw) <= cap, "F1R1_SERIALIZED_BYTES_LIMIT", str(path))
+    return raw
+
+
+def git(root: Path, *args: str, cap: int = METADATA_BYTES, allow_missing: bool = False) -> bytes | None:
+    # Only bounded local object/diff reads are used, never fetch or network.
+    try:
+        p = subprocess.run(["git", "-c", f"safe.directory={root}", "-C", str(root), *args],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           timeout=GIT_SECONDS, check=False,
+                           env={k: v for k, v in os.environ.items() if k not in ("GH_TOKEN", "GITHUB_TOKEN")})
+    except subprocess.TimeoutExpired as exc:
+        raise Rejected("F1R1_SOURCE_METADATA_DEADLINE") from exc
+    require(len(p.stdout) <= cap and len(p.stderr) <= 65536, "F1R1_SOURCE_METADATA_BYTES_LIMIT")
+    if p.returncode != 0:
+        if allow_missing and p.returncode == 128:
+            return None
+        raise Rejected("F1R1_SOURCE_GIT_READ_FAILED", " ".join(args[:2]))
+    return p.stdout
+
+
+def object_bytes(root: Path, revision: str, path: str, *, missing: bool = False) -> bytes | None:
+    require(oid(revision), "F1R1_SOURCE_OID_REQUIRED")
+    require(path and not path.startswith("/") and ".." not in Path(path).parts,
+            "F1R1_SOURCE_PATH_ESCAPE")
+    raw = git(root, "show", f"{revision}:{path}", allow_missing=missing)
+    if raw is None:
+        # Distinguish a genuinely missing member from an unreadable revision.
+        git(root, "cat-file", "-e", revision + "^{commit}")
+        listing = git(root, "ls-tree", revision, "--", path)
+        require(listing == b"", "F1R1_SOURCE_GIT_READ_FAILED", path)
+        return None
+    listing = git(root, "ls-tree", revision, "--", path)
+    require(listing is not None and listing.startswith(b"100644 blob "),
+            "F1R1_SOURCE_FILE_MODE", path)
+    return raw
+
+
+def parse_event(event_name: str, event: dict, checkout: str,
+                parents: list[str]) -> dict:
+    """Bind event roles; main merged-PR authority intentionally remains pending."""
+    require(type(event) is dict, "F1R1_EVENT_OBJECT_REQUIRED")
+    repository = event.get("repository", {})
+    require(repository.get("full_name") == REPOSITORY and
+            type(repository.get("id")) is int and repository["id"] == REPOSITORY_ID,
+            "F1R1_SAME_REPOSITORY_SCOPE")
+    require(oid(checkout) and all(oid(x) for x in parents), "F1R1_SOURCE_OID_REQUIRED")
+    if event_name == "pull_request":
+        pr = event.get("pull_request", {})
+        head, base = pr.get("head", {}), pr.get("base", {})
+        require(oid(head.get("sha")) and oid(base.get("sha")), "F1R1_SOURCE_OID_REQUIRED")
+        require(parents == [base["sha"], head["sha"]], "F1R1_EXACT_PR_MERGE_PARENTS")
+        same_repo = all(type(x.get("repo", {}).get("id")) is int and
+                        x["repo"]["id"] == REPOSITORY_ID for x in (head, base))
+        registered = same_repo and head.get("ref") == REGISTERED_BRANCH and base.get("ref") == "main"
+        return {"event": event_name, "B": base["sha"], "C": head["sha"],
+                "checkout": checkout, "registered_candidate": registered,
+                "branch": head.get("ref"), "same_repository": same_repo,
+                "provider_merged_PR_authority": False}
+    if event_name == "push":
+        require(event.get("ref") == "refs/heads/main" and event.get("after") == checkout,
+                "F1R1_MAIN_EVENT_SOURCE")
+        require(parents == [event.get("before")], "F1R1_IMMUTABLE_MAIN_PARENT_B")
+        return {"event": event_name, "B": parents[0], "S": checkout,
+                "checkout": checkout, "registered_candidate": False,
+                "branch": "main", "same_repository": True,
+                "provider_merged_PR_authority": False}
+    require(event_name == "workflow_dispatch", "F1R1_EVENT_SCOPE_NO_SCIENCE")
+    require(len(parents) == 1, "F1R1_SOURCE_RANGE_REQUIRED")
+    return {"event": event_name, "B": parents[0], "checkout": checkout,
+            "registered_candidate": False, "branch": None,
+            "same_repository": True, "provider_merged_PR_authority": False}
+
+
+def evaluate_scope(*, event: dict, changed: set[str], protected: set[str],
+                   base_guard_present: bool, guard_origin: str | None,
+                   execution_ready: bool, originals_match: bool = True) -> dict:
+    """Pure scheduling decision, with no provider/source execution approval."""
+    require(originals_match, "F1R1_FROZEN_F0_SOURCE_CHANGED")
+    touches = sorted(changed & protected)
+    if not base_guard_present:
+        require(guard_origin is None, "F1R1_BOOTSTRAP_METADATA_ONLY")
+        require(not execution_ready, "F1R1_BOOTSTRAP_ZERO_F1_PROCESSES")
+        return {"disposition": SOURCE_ONLY, "f1_required": False,
+                "bootstrap": True, "protected_changes": touches}
+    require(guard_origin == event["B"], "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED")
+    if event["event"] == "pull_request":
+        require(not touches or event["registered_candidate"],
+                "F1_OUT_OF_SCOPE_PROTECTED_CHANGE")
+        required = event["registered_candidate"] and execution_ready
+        if touches and event["registered_candidate"] and not execution_ready:
+            # Source preparation remains explicit, never a completed science run.
+            return {"disposition": SOURCE_ONLY, "f1_required": False,
+                    "bootstrap": False, "protected_changes": touches}
+    elif event["event"] == "push":
+        # Local guard cannot invent the PR association; force the real job when
+        # execution-ready protected inputs change. That job must derive S->PR.
+        require(not touches or execution_ready, "F1_OUT_OF_SCOPE_PROTECTED_CHANGE")
+        required = bool(touches) and execution_ready
+    else:
+        require(not touches, "F1_OUT_OF_SCOPE_PROTECTED_CHANGE")
+        required = False
+    return {"disposition": "F1_PROVIDER_ADMISSION_REQUIRED" if required else OUT_OF_SCOPE,
+            "f1_required": bool(required), "bootstrap": False,
+            "protected_changes": touches}
+
+
+def validate_routing(view: dict) -> None:
+    """Pure, independent expected-policy checks used by metadata controls."""
+    require(view["candidate_protected_paths"] == view["protected_B_paths"],
+            "F1R1_PROTECTED_BASE_POLICY_REQUIRED")
+    for route, reason in (("fast_docs", "F1R1_GUARD_REQUIRED_ON_FAST_DOCS"),
+                          ("fast_code", "F1R1_GUARD_REQUIRED_ON_FAST_CODE")):
+        require(view[route].count("F1_R1_SOURCE_SCOPE_GUARD") == 1, reason)
+    require(view["caller_permissions"] == FIVE_READ, "F1R1_FIVE_READ_CALLER_PERMISSIONS")
+    require(view["child_permissions"] == FIVE_READ, "F1R1_FIVE_READ_CHILD_PERMISSIONS")
+    require(view["top_permissions"] == {k: "read" for k in ("contents", "packages", "actions")},
+            "F1R1_PERMISSION_CHANGE_SCOPE")
+    require(not view["continue_on_error"], "F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION")
+    require(view["guard_source"] == view["B"], "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED")
+    require(view["B_main_closed"], "F1R1_PROTECTED_GUARD_BASE_CLOSURE_REQUIRED")
+    require(view["bootstrap_launchers"] == 0, "F1R1_BOOTSTRAP_ZERO_F1_PROCESSES")
+    if view["docs_only_execution_C"]:
+        require(all(view[k] for k in ("f1_required", "caller_called", "run_f1",
+                                      "child_selected", "summary_expect_quality",
+                                      "summary_checks_disposition")),
+                "F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1")
+
+
+def workflow_projection(raw: bytes, workflow: str) -> bytes:
+    """Conservative exact projection: an unrecognised structure fails closed.
+
+    Existing unrelated job bodies may change. Shared header/impact/fast paths,
+    quality caller, summary and F1 child stay byte-exact for unrelated changes.
+    """
+    text = raw.decode("utf-8")
+    require(text.count("\njobs:\n") == 1, "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED")
+    header, jobs = text.split("\njobs:\n", 1)
+    matches = list(re.finditer(r"^  ([A-Za-z0-9_-]+):\s*$", jobs, re.M))
+    require(matches and matches[0].start() == 0, "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED")
+    names = [m.group(1) for m in matches]
+    require(len(names) == len(set(names)), "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED")
+    selected = {"impact", "fast-docs", "fast-code", "fast-gate", "quality", "summary"} if workflow == "verify" else {"frontend-rss-f1"}
+    require(selected <= set(names), "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED")
+    blocks = []
+    for index, match in enumerate(matches):
+        if match.group(1) in selected:
+            end = matches[index + 1].start() if index + 1 < len(matches) else len(jobs)
+            blocks.append(jobs[match.start():end])
+    return (header + "\njobs:\n" + "".join(blocks)).encode()
+
+
+def yaml_block(text: str, key: str, indent: int) -> str:
+    """Read a canonical plain mapping block, rejecting missing/duplicate keys.
+
+    Only reviewed workflow spelling is admitted at security-relevant locations.
+    This is not a general YAML loader or an alias/merge-key interpreter.
+    """
+    matches = list(re.finditer(r"^" + " " * indent + re.escape(key) + r":\s*$", text, re.M))
+    require(len(matches) == 1, "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED", key)
+    start = text.find("\n", matches[0].start()) + 1
+    rest = text[start:]
+    end = re.search(r"^(?: {0," + str(indent) + r"})[^ #\n]", rest, re.M)
+    return rest[:end.start()] if end else rest
+
+
+def yaml_scalar(text: str, key: str, indent: int) -> str:
+    matches = re.findall(r"^" + " " * indent + re.escape(key) + r": ([^\n]+)$", text, re.M)
+    require(len(matches) == 1, "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED", key)
+    return matches[0]
+
+
+def permission_block(text: str, indent: int) -> dict:
+    block = yaml_block(text, "permissions", indent)
+    result = {}
+    for line in block.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        match = re.fullmatch(" " * (indent + 2) + r"([a-z-]+): (read|write|none)", line)
+        require(match is not None and match[1] not in result,
+                "F1R1_READ_ONLY_PERMISSION_SCOPE")
+        result[match[1]] = match[2]
+    return result
+
+
+def validate_actual_routes(root: Path) -> dict:
+    verify = bounded_file(root / HOOKS[0]).decode("utf-8")
+    quality = bounded_file(root / HOOKS[1]).decode("utf-8")
+    entry = bounded_file(root / HOOKS[2]).decode("utf-8")
+    # Require canonical protected mappings, so apparent tokens in comments or
+    # unrelated jobs do not satisfy the actual caller/child route.
+    caller = yaml_block(verify, "quality", 2)
+    child = yaml_block(quality, "frontend-rss-f1", 2)
+    require(permission_block(verify, 0) == {k: "read" for k in ("contents", "packages", "actions")} and
+            permission_block(quality, 0) == {k: "read" for k in ("contents", "packages", "actions")},
+            "F1R1_PERMISSION_CHANGE_SCOPE")
+    require(permission_block(caller, 4) == FIVE_READ, "F1R1_FIVE_READ_CALLER_PERMISSIONS")
+    require(permission_block(child, 4) == FIVE_READ, "F1R1_FIVE_READ_CHILD_PERMISSIONS")
+    require(yaml_scalar(caller, "needs", 4) == "[impact, fast-gate]" and
+            yaml_scalar(caller, "if", 4) == "always() && needs.fast-gate.result == 'success' && (needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true')",
+            "F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1")
+    calls = yaml_block(caller, "with", 4)
+    require(yaml_scalar(calls, "run_f1", 6) == "${{ needs.impact.outputs.f1_required == 'true' }}" and
+            yaml_scalar(calls, "run_extended", 6) == "${{ needs.impact.outputs.run_extended == 'true' }}",
+            "F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1")
+    require(yaml_scalar(child, "if", 4) == "inputs.run_extended || inputs.run_f1" and
+            not re.search(r"^    continue-on-error:", child, re.M),
+            "F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION")
+    impact = yaml_block(verify, "impact", 2)
+    require(yaml_scalar(yaml_block(impact, "outputs", 4), "f1_required", 6) == "${{ steps.f1_scope.outputs.f1_required }}" and
+            impact.count("        id: f1_scope\n") == 1 and
+            impact.count("        run: sh .github/scripts/verify-docs-gate.sh --f1-scope-only\n") == 1,
+            "F1R1_GUARD_OUTPUT_REQUIRED")
+    for name, reason in (("fast-docs", "F1R1_GUARD_REQUIRED_ON_FAST_DOCS"),
+                         ("fast-code", "F1R1_GUARD_REQUIRED_ON_FAST_CODE")):
+        require(yaml_block(verify, name, 2).count("          sh .github/scripts/verify-docs-gate.sh\n") == 1, reason)
+    require("--guard-origin" in entry and "base + ':' + source" in entry and
+            "F1_R1_SOURCE_SCOPE_GUARD" in entry and "'source-guard'" in entry,
+            "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED")
+    summary = yaml_block(verify, "summary", 2)
+    require(yaml_scalar(summary, "EXPECT_QUALITY", 10) == "${{ needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true' }}" and
+            yaml_scalar(summary, "F1_REQUIRED", 10) == "${{ needs.impact.outputs.f1_required }}" and
+            yaml_scalar(summary, "F1_DISPOSITION", 10) == "${{ needs.quality.outputs.f1_disposition }}" and
+            'test "$F1_DISPOSITION" = ' + COMPLETE in summary,
+            "F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION")
+    call = yaml_block(quality, "workflow_call", 2)
+    input_rule = yaml_block(yaml_block(call, "inputs", 4), "run_f1", 6)
+    require(yaml_scalar(input_rule, "type", 8) == "boolean" and
+            yaml_scalar(input_rule, "default", 8) == "false", "F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1")
+    output_rule = yaml_block(yaml_block(call, "outputs", 4), "f1_disposition", 6)
+    require(yaml_scalar(output_rule, "value", 8) == "${{ jobs.frontend-rss-f1.outputs.disposition }}" and
+            yaml_scalar(yaml_block(child, "outputs", 4), "disposition", 6) == "${{ steps.f1_source.outputs.disposition }}",
+            "F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION")
+    return {"actual_caller_and_child_five_read": True, "actual_docs_only_route_complete": True,
+            "actual_summary_requires_F1_receipt": True,
+            "hook_sha256": {name: sha(bounded_file(root / name)) for name in HOOKS}}
+
+
+def effective_protected_diff(root: Path, base: str, head: str, changed: set[str],
+                             protected: set[str]) -> set[str]:
+    result = set(changed)
+    for name, kind in ((HOOKS[0], "verify"), (HOOKS[1], "quality")):
+        if name in changed:
+            before = object_bytes(root, base, name)
+            after = object_bytes(root, head, name)
+            if workflow_projection(before, kind) == workflow_projection(after, kind):
+                result.remove(name)
+    # The shared shell entry has executable top-level effects; no permissive
+    # line-filter is a proof of its noninterference.
+    return result & protected
+
+
+def source_guard(root: Path, event_name: str, event: dict,
+                 guard_origin: str | None) -> dict:
+    started = time.monotonic_ns()
+    checkout = git(root, "rev-parse", "HEAD").decode().strip()
+    parents = git(root, "show", "-s", "--format=%P", checkout).decode().split()
+    roles = parse_event(event_name, event, checkout, parents)
+    base = roles["B"]
+    head = roles.get("C", checkout)
+    actual_base_guard = object_bytes(root, base, SOURCE, missing=True)
+    present = actual_base_guard is not None
+    require((guard_origin is None and not present) or (guard_origin == base and present),
+            "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED")
+    if present:
+        require(bounded_file(Path(__file__).resolve()) == actual_base_guard,
+                "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED", "executed bytes differ from B")
+    if event_name == "pull_request":
+        require(git(root, "rev-parse", checkout + "^{tree}") == git(root, "rev-parse", head + "^{tree}"),
+                "F1R1_FULL_TREE_EQUALITY")
+    policy_raw = object_bytes(root, base, REG + "/source-lock.json", missing=True)
+    if policy_raw is None:
+        require(not present, "F1R1_PROTECTED_BASE_POLICY_REQUIRED")
+        policy_raw = bounded_file(root / REG / "source-lock.json")
+        require(sha(policy_raw) == DOC_DIGESTS["source-lock.json"], "F1R1_BOOTSTRAP_DESIGN_IDENTITY")
+    policy = strict_json(policy_raw)
+    originals = [r for r in policy["files"] if r["role"].startswith("IMMUTABLE_ORIGINAL")]
+    require(len(originals) == 96 and len({r["path"] for r in originals}) == 96,
+            "F1R1_PROTECTED_BASE_POLICY_REQUIRED")
+    for row in originals:
+        raw = object_bytes(root, head, row["path"])
+        require(len(raw) == row["bytes"] and sha(raw) == row["sha256"],
+                "F1R1_FROZEN_F0_SOURCE_CHANGED", row["path"])
+        require(bounded_file(root / row["path"]) == raw, "F1R1_SOURCE_WORKTREE_DRIFT", row["path"])
+    contract_raw = bounded_file(root / REG / "test-contract.json")
+    contract = strict_json(contract_raw)
+    execution_ready = contract.get("document_state") == "PROTOCOL_REVIEWED_EXTERNAL_COMMENT_REQUIRED_AT_RUNTIME"
+    if not execution_ready:
+        for filename, expected in DOC_DIGESTS.items():
+            require(sha(bounded_file(root / REG / filename)) == expected,
+                    "F1R1_BOOTSTRAP_DESIGN_IDENTITY", filename)
+    require(contract.get("id") == EXPERIMENT, "F1R1_EXPERIMENT_IDENTITY")
+    changed_raw = git(root, "diff", "--name-only", "-z", base, head, "--")
+    changed = {p.decode("utf-8") for p in changed_raw.split(b"\0") if p}
+    protected = {r["path"] for r in policy["files"]} | {REG + "/" + n for n in DOC_DIGESTS} | set(IMPLEMENTATION) | set(HOOKS)
+    if present and not roles["registered_candidate"]:
+        touched = effective_protected_diff(root, base, head, changed, protected)
+        changed = (changed - protected) | touched
+    decision = evaluate_scope(event=roles, changed=changed, protected=protected,
+                              base_guard_present=present, guard_origin=guard_origin,
+                              execution_ready=execution_ready)
+    routes = validate_actual_routes(root)
+    require(time.monotonic_ns() - started <= 60_000_000_000, "F1R1_SOURCE_METADATA_DEADLINE")
+    return {"schema_version": 1, "experiment_id": EXPERIMENT, **decision,
+            "event_source": roles, "protected_B_guard_present": present,
+            "guard_source_commit": guard_origin,
+            "guard_sha256": sha(actual_base_guard) if present else None,
+            "policy_sha256": sha(policy_raw), "immutable_originals_checked": 96,
+            "routing": routes,
+            "execution_authorized": False, "provider_authority_acquired": False,
+            "HTTP_requests": 0, "F1_launcher_processes": 0,
+            "engineering_fixture_processes": 0, "DSP_targets": 0, "DSP_frames": 0,
+            "metadata_elapsed_ns": time.monotonic_ns() - started}
+
+
+def bootstrap_receipt(root: Path, *, f1_required: bool) -> dict:
+    # This explicit, compiled-in admission gate stays false throughout bootstrap.
+    require(not SCIENCE_EXECUTION_ENABLED, "F1R1_BOOTSTRAP_EXECUTION_GATE_CHANGED")
+    require(not f1_required, "F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP")
+    routes = validate_actual_routes(root)
+    for filename, expected in DOC_DIGESTS.items():
+        require(sha(bounded_file(root / REG / filename)) == expected,
+                "F1R1_BOOTSTRAP_DESIGN_IDENTITY", filename)
+    lock = strict_json(bounded_file(root / REG / "source-lock.json"))
+    originals = [row for row in lock["files"] if row["role"].startswith("IMMUTABLE_ORIGINAL")]
+    require(len(originals) == 96, "F1R1_FROZEN_F0_SOURCE_CHANGED")
+    for row in originals:
+        raw = bounded_file(root / row["path"])
+        require(len(raw) == row["bytes"] and sha(raw) == row["sha256"],
+                "F1R1_FROZEN_F0_SOURCE_CHANGED", row["path"])
+    implemented = []
+    for relative in IMPLEMENTATION + HOOKS:
+        path = root / relative
+        if path.exists():
+            raw = bounded_file(path)
+            implemented.append({"path": relative, "bytes": len(raw), "sha256": sha(raw)})
+    return {"schema_version": 1, "experiment_id": EXPERIMENT,
+            "disposition": SOURCE_ONLY, "science_execution_enabled": False,
+            "execution_authorized": False, "HTTP_requests": 0,
+            "F1_launcher_processes": 0, "engineering_fixture_processes": 0,
+            "DSP_targets": 0, "DSP_frames": 0, "immutable_originals_checked": 96,
+            "routing": routes,
+            "implemented_source_bytes": implemented,
+            "registered_negative_controls": 178,
+            "registered_controls_qualification_run": False,
+            "engineering_fixtures_run": False,
+            "remaining": ["complete implementation review", "guarded B own main closure",
+                          "final actual C source lock", "root external freeze", "live PRE/POST"]}
+
+
+def write_result(path: Path, value: dict) -> None:
+    raw = (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
+    require(len(raw) <= METADATA_BYTES, "F1R1_SERIALIZED_BYTES_LIMIT")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=("source-guard", "bootstrap-receipt", "collect"))
+    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--event", type=Path)
+    parser.add_argument("--event-name", choices=("pull_request", "push", "workflow_dispatch"))
+    parser.add_argument("--guard-origin")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--github-output", type=Path)
+    parser.add_argument("--f1-required", choices=("true", "false"), default="false")
+    args = parser.parse_args()
+    try:
+        if args.command == "collect":
+            raise Rejected("F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP")
+        if args.command == "source-guard":
+            require(args.event is not None and args.event_name is not None,
+                    "F1R1_ACTUAL_EVENT_REQUIRED")
+            result = source_guard(args.root.resolve(), args.event_name,
+                                  strict_json(bounded_file(args.event)), args.guard_origin)
+        else:
+            result = bootstrap_receipt(args.root.resolve(), f1_required=args.f1_required == "true")
+        write_result(args.output, result)
+        if args.github_output:
+            with args.github_output.open("a", encoding="utf-8") as stream:
+                stream.write("f1_required=" + str(result.get("f1_required", False)).lower() + "\n")
+                stream.write("disposition=" + result["disposition"] + "\n")
+        print(json.dumps({"disposition": result["disposition"], "execution_authorized": False}))
+        return 0
+    except (Rejected, OSError, ValueError, KeyError, TypeError) as exc:
+        reason = exc.reason if isinstance(exc, Rejected) else "F1R1_METADATA_INPUT_REJECTED"
+        write_result(args.output, {"schema_version": 1, "experiment_id": EXPERIMENT,
+                                  "disposition": "F1_R1_SOURCE_REJECTED", "reason": reason,
+                                  "detail": str(exc), "execution_authorized": False,
+                                  "HTTP_requests": 0, "F1_launcher_processes": 0,
+                                  "engineering_fixture_processes": 0, "DSP_targets": 0,
+                                  "DSP_frames": 0})
+        print(reason, file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -3,6 +3,68 @@
 # I010 is terminal: validate the current registry, never require retired live inputs.
 set -eu
 
+# F1_R1_SOURCE_SCOPE_GUARD: actual protected-B bytes, local Git/event only.
+# This entry decides routing only and never acquires provider execution authority.
+if [ -n "${GITHUB_EVENT_NAME:-}" ]; then
+  python3 - <<'PY'
+import json, os, pathlib, subprocess, sys, tempfile
+root = pathlib.Path.cwd().resolve()
+source = 'tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py'
+event_path = os.environ.get('GITHUB_EVENT_PATH', '')
+if not event_path:
+    raise SystemExit('F1R1_ACTUAL_EVENT_REQUIRED')
+raw = pathlib.Path(event_path).read_bytes()
+if len(raw) > 2097152:
+    raise SystemExit('F1R1_EVENT_BYTES_LIMIT')
+event = json.loads(raw)
+env = {k: v for k, v in os.environ.items() if k not in ('GH_TOKEN', 'GITHUB_TOKEN')}
+def git(*args):
+    return subprocess.check_output(['git', '-c', 'safe.directory=' + str(root), *args], env=env, timeout=5)
+parents = git('show', '-s', '--format=%P', 'HEAD').decode().split()
+kind = os.environ['GITHUB_EVENT_NAME']
+if kind == 'pull_request':
+    base = event['pull_request']['base']['sha']
+elif kind == 'push':
+    base = event['before']
+elif kind == 'workflow_dispatch' and len(parents) == 1:
+    base = parents[0]
+else:
+    raise SystemExit('F1R1_SOURCE_RANGE_REQUIRED')
+if len(base) != 40 or any(c not in '0123456789abcdef' for c in base) or base == '0' * 40:
+    raise SystemExit('F1R1_SOURCE_OID_REQUIRED')
+git('cat-file', '-e', base + '^{commit}')
+member = git('ls-tree', base, '--', source)
+output = pathlib.Path(os.environ.get('FE_F1_SCOPE_RECEIPT', os.environ.get('RUNNER_TEMP', '/tmp') + '/f1-source-scope.json'))
+with tempfile.TemporaryDirectory(prefix='f1-protected-guard-', dir=os.environ.get('RUNNER_TEMP', '/tmp')) as tmp:
+    if member:
+        if not member.startswith(b'100644 blob '):
+            raise SystemExit('F1R1_SOURCE_FILE_MODE')
+        size = int(git('cat-file', '-s', base + ':' + source))
+        if size > 2097152:
+            raise SystemExit('F1R1_SOURCE_METADATA_BYTES_LIMIT')
+        guard = pathlib.Path(tmp) / 'protected_f1_guard.py'
+        guard.write_bytes(git('show', base + ':' + source))
+        origin = ['--guard-origin', base]
+    else:
+        # First introduction has no B guard. Candidate bootstrap code can only
+        # emit zero-process SOURCE_METADATA_ONLY; independent root review owns it.
+        guard = root / source
+        origin = []
+    argv = [sys.executable, str(guard), 'source-guard', '--root', str(root),
+            '--event', event_path, '--event-name', kind, '--output', str(output)] + origin
+    if os.environ.get('GITHUB_OUTPUT'):
+        argv += ['--github-output', os.environ['GITHUB_OUTPUT']]
+    subprocess.run(argv, env=env, check=True, timeout=60)
+PY
+elif [ "${GITHUB_ACTIONS:-false}" = true ]; then
+  echo 'F1R1_ACTUAL_EVENT_REQUIRED' >&2
+  exit 1
+fi
+if [ "${1:-}" = --f1-scope-only ]; then
+  exit 0
+fi
+python3 tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py
+
 python3 tests/validation/frontend_evolution/test_contracts.py
 python3 scripts/ci_impact.py --self-test
 python3 tests/validation/test_immutable_whitespace.py

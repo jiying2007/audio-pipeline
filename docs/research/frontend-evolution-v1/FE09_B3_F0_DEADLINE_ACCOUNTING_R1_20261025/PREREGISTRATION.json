@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "id": "FE09-B3-F0-DEADLINE-ACCOUNTING-R1",
+  "state": "FROZEN_BEFORE_METADATA_CONTROLS_OR_NEW_EXECUTION",
+  "base_commit": "e3c5cc0c9e9d033438a16c29344d9b54409f84ed",
+  "base_tree": "526b86e0e4f28583f035d332faa278f97e55eb15",
+  "base_qualification": "NOT_QUALIFIED: main Verify40142128655 attempt1 has an original B3 failure; no matching successful Release is claimed.",
+  "qualified_predecessor": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+  "original_failure": {
+    "run_id": 40142128655,
+    "run_attempt": 1,
+    "job_id": 121016268890,
+    "artifact_id": 12579416636,
+    "zip_bytes": 3771645,
+    "zip_sha256": "359d4d904701c00569372a7b5d4a04e0a13267ba9485fb1b2c94071789cd41cc",
+    "failure_reason": "RETAINED_FROZEN_WALL_BUDGET",
+    "phase": "final_readback_and_frozen_deadline",
+    "reported_elapsed_seconds": 28.813288861000046,
+    "reported_effective_limit_seconds": 300.00000000000006,
+    "successful_processed_frames": 19800,
+    "complete_admitted_cohorts": 0,
+    "preserve_original_failure_and_artifact": true
+  },
+  "hypothesis": "Computing the retained duration as (monotonic_origin + 300.0) - monotonic_origin can round to nextafter(300.0,+infinity). The unchanged strict retained limit <=300 correctly rejects that record even when actual elapsed work is below300. Keep an explicit duration scalar from admission rather than reconstructing it through absolute-deadline addition and subtraction.",
+  "one_causal_change": "Duration representation and its evidence readback only. No scientific source, input, scheduling, coverage, result selection, target/child/job/artifact cap or acceptance tolerance changes.",
+  "new_collector": "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py",
+  "new_collector_identity": "FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1",
+  "derivation": {
+    "original_collector": "tests/validation/frontend_evolution/fe09_b3_f0_qualification.py",
+    "original_bytes": 67040,
+    "original_sha256": "f782660590731e73f43c2fab638e84d277c11d36119560dfb8878b28e2456f6c",
+    "original_blob": "f6be51a0831ab96ef1284d706a6f1d167b538b51",
+    "preserve_original_collector_exactly": true,
+    "preserve_all_original_B3_registration_and_source_lock_bytes": true,
+    "preserve_all_F0_88_and_F1_96_original_bytes": true,
+    "no_monkeypatch_or_runtime_source_rewrite": true,
+    "allowed_derived_changes": [
+      "explicit new docstring, experiment and verdict identities",
+      "new source identity includes both unchanged original collector and new collector, repair registration and metadata test; require exact old source and registration hashes",
+      "Budget saves effective_limit_seconds=min(300, original_job_deadline_epoch-started_epoch-60) once; local effective_limit_seconds=300",
+      "Budget.remaining computes min(child_cap,effective_limit_seconds-(now_monotonic-started_monotonic)); no reconstructed absolute deadline",
+      "Budget.record retains saved effective_limit_seconds directly",
+      "extract original retained-budget predicates into a pure helper without loosening them; additionally require saved effective limit to equal its original job-derived expression",
+      "metadata self-test label and repair identity checks"
+    ],
+    "unchanged": [
+      "all build, DSP, input, frame, stream, equality, coverage and semantic checks",
+      "original 77-row source lock and 66 compiled source checks",
+      "original qualified predecessor checks",
+      "all 11 trajectories per native/sanitized/arm target",
+      "all 48 actual API rejections and8 semantic metadata controls",
+      "all existing command-budget predicates including their existing fixed bounds",
+      "first failure stops collection; no replacement or stitched cohort"
+    ]
+  },
+  "unchanged_budgets": {
+    "outer_seconds": 300,
+    "native_target_seconds": 120,
+    "sanitized_target_seconds": 180,
+    "arm_target_seconds": 300,
+    "default_command_seconds": 240,
+    "existing_job_seconds": 900,
+    "archive_reserve_seconds": 60,
+    "artifact_bytes": 33554432,
+    "retained_outer_predicate": "0 < elapsed_seconds <= effective_deadline_offset_seconds <=300, without epsilon or relaxed rounding",
+    "automatic_retries": 0
+  },
+  "scope": {
+    "allowed_paths": [
+      "docs/research/frontend-evolution-v1/FE09_B3_F0_DEADLINE_ACCOUNTING_R1_20261025/PREREGISTRATION.json",
+      "docs/research/frontend-evolution-v1/FE09_B3_F0_DEADLINE_ACCOUNTING_R1_20261025/README.md",
+      "tests/validation/frontend_evolution/fe09_b3_f0_deadline_r1_qualification.py",
+      "tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py",
+      ".github/workflows/quality.yml",
+      ".github/scripts/verify-docs-gate.sh"
+    ],
+    "quality_hook": "Only existing B3 self-test/collect entry paths and explicit display label/artifact name change to new identity. Existing job, image, original deadline, dependencies, permissions, upload cap and downstream F0 entry remain.",
+    "docs_hook": "Add one pure metadata regression invocation; preserve all prior checks."
+  },
+  "metadata_controls": {
+    "count": 16,
+    "role": "EXPLICIT_SYNTHETIC_METADATA_ONLY_NOT_RUNNER_OR_DSP_EVIDENCE",
+    "per_batch_seconds": 10,
+    "additional_DSP_frames": 0,
+    "engineering_target_processes": 0,
+    "controls": [
+      "C01 original float counterexample at212.2 reproduces limit>300; new retained duration stays exactly300",
+      "C02 local complete metadata at origin0 retains300",
+      "C03 large monotonic origin2**32+0.125 retains300",
+      "C04 original CI job with ample remaining time retains300",
+      "C05 original CI remaining window40.25 is retained exactly and not rounded upward to300",
+      "C06 exhausted original job window rejects before new work",
+      "C07 child cap10 remains at most10 within original stage",
+      "C08 elapsed above effective limit rejects",
+      "C09 retained nextafter(300,+infinity) limit still rejects",
+      "C10 zero retained elapsed still rejects",
+      "C11 changed original timeout minutes rejects",
+      "C12 changed original archive reserve rejects",
+      "C13 mismatched original run identity rejects",
+      "C14 missing original CI deadline file rejects",
+      "C15 retained command timeout still rejects",
+      "C16 retained command elapsed above original registered bound still rejects"
+    ],
+    "execution_rule": "Run the registered metadata batch after source creation and independent review. Preserve first result; a concrete implementation defect may justify a separately recorded correction and repeated batch, never an automatic retry. No local DSP or process-fixture execution."
+  },
+  "admission_and_closure": {
+    "before_new_DSP": "Independent fixed-source diff and all original-byte locks; registered metadata tests pass; exact new head, real protected base and existing CI gates.",
+    "new_execution": "One existing exact-head PR Verify attempt and, after protected squash, its distinct new-main Verify attempt. Each uses the full unchanged33 trajectories/19800 frames; no old failed cohort is relabeled or stitched into the new result.",
+    "main_failure_remediation_exception": "Because current main's existing gate is concretely defective, only this independently reviewed blocking repair may advance before e3 has its own successful Verify/Release. Preserve e3/a1 as failed and require all exact repair-PR gates before protected expected-head squash. New repaired main must complete Verify, required summary and matching Release/convergence before unrelated merges resume.",
+    "sdk_version_or_shipping_change": false,
+    "hardware_or_acoustic_promotion": false
+  },
+  "preregistration_revision": 2,
+  "preexecution_static_correction": {
+    "previous_revision_archive": "262eb95226a60391232782725ff1139f4595eb14",
+    "previous_revision_sha256": "8e4f73e2726a4d30b64c48050cdffcc3ac9475d35ea3563bf888d3543091fc0e",
+    "initial_registration_preceded_implementation": true,
+    "reason": "Before any registered control or new DSP run, static arithmetic review found the proposed C01 origin nextafter(100.1,-infinity) yields exactly300 rather than the required counterexample. Use the independent original-failure diagnosis example212.2, which yields nextafter(300,+infinity). This example is not claimed as the original runner origin.",
+    "changed_control": "C01 example literal only; all16 meanings and allbudgets remain",
+    "prior_example_result": 300.0,
+    "replacement_example_result": 300.00000000000006,
+    "registered_control_batches_run_before_correction": 0,
+    "DSP_frames_before_correction": 0
+  }
+}

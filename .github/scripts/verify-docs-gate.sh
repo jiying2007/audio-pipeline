@@ -72,6 +72,7 @@ python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
 python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
 python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
+python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test

@@ -710,9 +710,15 @@ def retain_case(destination: Path, case: dict) -> None:
 
 
 def build_target(target: str, temp: Path, output: Path, budget: Budget, cmake: str) -> tuple[Path, dict]:
-    compiler = "arm-linux-gnueabihf-gcc" if target == "arm" else "cc"
-    if shutil.which(compiler) is None or (target == "arm" and shutil.which("qemu-arm") is None):
+    compiler_name = "arm-linux-gnueabihf-gcc" if target == "arm" else "cc"
+    compiler_path = shutil.which(compiler_name)
+    if compiler_path is None or (target == "arm" and shutil.which("qemu-arm") is None):
         raise ExecutionBlocked("REQUIRED_TARGET_TOOL_MISSING:" + target)
+    # The unchanged toolchain types this cache entry as FILEPATH. An untyped
+    # basename from -D is then made relative to cwd before compiler discovery.
+    # Keep the PATH-selected alias (including compiler wrappers) and use its
+    # absolute path for both identity and build, without dereferencing symlinks.
+    compiler = str(Path(compiler_path).absolute())
     build = temp / ("build-" + target)
     logs = output / target / "build"
     logs.mkdir(parents=True)

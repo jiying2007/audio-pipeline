@@ -15,17 +15,23 @@ GITHUB_ACTIONS_APP_ID = 15368
 
 
 def _ref_included(ruleset: dict, ref: str, default_branch: bool = False) -> bool:
-    ref_name = ruleset.get("conditions", {}).get("ref_name", {})
-    includes = ref_name.get("include", []) or []
-    excludes = ref_name.get("exclude", []) or []
+    conditions = ruleset.get("conditions")
+    if type(conditions) is not dict:
+        return False
+    ref_name = conditions.get("ref_name")
+    if type(ref_name) is not dict:
+        return False
+    includes = ref_name.get("include")
+    if type(includes) is not list or not all(type(item) is str for item in includes):
+        return False
+    # Prove full coverage using the bootstrap contract, without approximating
+    # GitHub's pattern semantics. Even apparently unrelated exclusions fail.
+    if type(ref_name.get("exclude")) is not list or ref_name["exclude"] != []:
+        return False
     wanted = {ref}
     if default_branch:
         wanted.add("~DEFAULT_BRANCH")
-    if not any(item in wanted for item in includes):
-        return False
-    if ref in excludes or (default_branch and "~DEFAULT_BRANCH" in excludes):
-        return False
-    return True
+    return any(item in wanted for item in includes)
 
 
 def _rule(ruleset: dict, kind: str) -> dict | None:
@@ -45,8 +51,8 @@ def audit(rulesets: list[dict], immutable: dict | None, repository: dict | None)
         r for r in active
         if r.get("target") == "tag"
         and any(
-            item in {"refs/tags/v*", "refs/tags/v**"}
-            for item in r.get("conditions", {}).get("ref_name", {}).get("include", []) or []
+            _ref_included(r, ref)
+            for ref in ("refs/tags/v*", "refs/tags/v**")
         )
     ]
 
@@ -266,6 +272,54 @@ def self_test() -> None:
             assert denied["result"] == "FAIL", (target, value, denied)
             assert denied[field] is False, (target, value, denied)
             assert denied[other] is True, (target, value, denied)
+    # A recognized include cannot prove coverage when ref exclusions are
+    # missing, malformed or nonempty. Check each scope without masking the other.
+    invalid_nodes = [missing, None, False, True, 0, "", [], (), {}]
+    invalid_exclusions = [
+        ["refs/heads/*"], ["refs/tags/v*"], missing, None, False, True, 0,
+        "", {}, (), ["refs/heads/main"], ["~DEFAULT_BRANCH"], ["~ALL"],
+        ["refs/tags/v**"], ["refs/tags/v1.0.0"], ["refs/heads/dev"], [None], [{}],
+    ]
+    for target, field, other in (
+        (0, "main_ruleset_enforced", "version_tag_ruleset_enforced"),
+        (1, "version_tag_ruleset_enforced", "main_ruleset_enforced"),
+    ):
+        anchor = [main, tags][target]["conditions"]["ref_name"]["include"][0]
+        invalid_includes = invalid_nodes + [
+            ["~ALL"], ["refs/heads/*"], ["refs/tags/release*"],
+            [anchor, None], [anchor, {}],
+        ]
+        for path, values in (
+            (("conditions", "ref_name", "exclude"), invalid_exclusions),
+            (("conditions",), invalid_nodes),
+            (("conditions", "ref_name"), invalid_nodes),
+            (("conditions", "ref_name", "include"), invalid_includes),
+        ):
+            for value in values:
+                candidates = json.loads(json.dumps([main, tags]))
+                node = candidates[target]
+                for key in path[:-1]:
+                    node = node[key]
+                if value is missing:
+                    node.pop(path[-1])
+                else:
+                    node[path[-1]] = value
+                denied = audit(candidates, {"enabled": True}, repository)
+                assert denied["result"] == "FAIL", (target, path, value, denied)
+                assert denied[field] is False, (target, path, value, denied)
+                assert denied[other] is True, (target, path, value, denied)
+    # Retain the four existing anchors and multiple include entries. No new
+    # glob syntax is accepted as a substitute for a recognized coverage anchor.
+    for target, anchors, extra in (
+        (0, ("refs/heads/main", "~DEFAULT_BRANCH"), "refs/heads/dev"),
+        (1, ("refs/tags/v*", "refs/tags/v**"), "refs/tags/preview-*"),
+    ):
+        for anchor in anchors:
+            for includes in ([anchor], [extra, anchor]):
+                candidates = json.loads(json.dumps([main, tags]))
+                candidates[target]["conditions"]["ref_name"]["include"] = includes
+                allowed = audit(candidates, {"enabled": True}, repository)
+                assert allowed["result"] == "PASS", (target, includes, allowed)
     assert audit([main, tags], {"enabled": True}, repository)["result"] == "PASS"
     main["rules"][0]["parameters"]["allowed_merge_methods"] = ["merge", "squash"]
     assert audit([main, tags], {"enabled": True}, repository)["result"] == "FAIL"

@@ -39,10 +39,12 @@ CLASSIFIER_PATH = ".github/program/workflow_pin_only_scope.py"
 WITNESS_PATH = ".github/program/workflow_pin_only_bot714_exact_t1.json"
 QUALIFIER_PATH = ".github/program/workflow_pin_only_actual_tree_t1m1.py"
 HISTORICAL_REVIEW = "historical-t0"
-CURRENT_REVIEW = "2026-10-20"
+PREVIOUS_REVIEW = "2026-10-20"
+CURRENT_REVIEW = "2026-10-24"
 WITNESSES = {
     HISTORICAL_REVIEW: WITNESS_PATH,
-    CURRENT_REVIEW: ".github/program/workflow_pin_only_bot714_20261020.json",
+    PREVIOUS_REVIEW: ".github/program/workflow_pin_only_bot714_20261020.json",
+    CURRENT_REVIEW: ".github/program/workflow_pin_only_bot714_20261024.json",
 }
 SHA = re.compile(r"[0-9a-f]{40}")
 HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -452,6 +454,7 @@ def current_base_transition_self_test(t0: object) -> None:
                 ("mixed_permissions", "permissions: write-all\n" + update(larger)),
                 ("unknown_target", update(larger).replace(new_codeql, "f" * 40)),
                 ("historical_target", update(larger).replace(new_codeql, t0.TRUSTED["github/codeql-action/init"][1])),
+                ("previous_target", update(larger).replace(new_codeql, t0.REVIEWED[PREVIOUS_REVIEW]["github/codeql-action/init"][1])),
             ):
                 bad = commit(source, name)
                 try:
@@ -530,6 +533,20 @@ def self_test() -> None:
     current_digest = canonical_witness_digest(orig, current_witness, review=CURRENT_REVIEW)
     need(HEX64.fullmatch(current_digest) is not None and current_digest != digest,
          "CURRENT_WITNESS_CONFUSED_WITH_HISTORICAL")
+    previous_witness = json.loads((ROOT / WITNESSES[PREVIOUS_REVIEW]).read_text(
+        encoding="utf-8"), object_pairs_hook=strict_pairs)
+    previous_digest = canonical_witness_digest(orig, previous_witness, review=PREVIOUS_REVIEW)
+    need(HEX64.fullmatch(previous_digest) is not None and
+         len({digest, previous_digest, current_digest}) == 3,
+         "PREVIOUS_WITNESS_REVIEW_NOT_INDEPENDENT")
+    for selected, other_witness in ((PREVIOUS_REVIEW, current_witness),
+                                    (CURRENT_REVIEW, previous_witness)):
+        try:
+            canonical_witness_digest(orig, other_witness, review=selected)
+        except AdmissionDenied:
+            pass
+        else:
+            raise AdmissionDenied("CROSS_REVIEW_WITNESS_ADMITTED_" + selected)
     for key, payload in (
         ("unknown_action", "uses: attacker/not-a-trusted-action@" + "f" * 40),
         ("floating_tag", "uses: actions/upload-artifact@v7.0.2"),
@@ -602,7 +619,8 @@ def self_test() -> None:
          "NEGATIVE_RECEIPT_PROMOTED")
     print("T1_M1_ACTUAL_GIT_TREE_SELF_TEST_PASS metadata_negatives=" +
           str(len(mutants) + 1) + " real_git_mode_negatives=1 " +
-          "witness_diff_negatives=6 current_base_transition_negatives=4")
+          "witness_diff_negatives=6 previous_review_cross_negatives=2 "
+          "current_base_transition_negatives=5")
 
 
 def main() -> None:

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "contract_id": "FE09-B3-F0-C4-16K-RENDER-PAP-V1",
+  "status": "FROZEN_BEFORE_FIRST_DSP_EXECUTION",
+  "recorded_at": "2026-10-24T02:31:48.591335+00:00",
+  "origin": "Independent Python literal fixture and source-lock audit; no DSP execution",
+  "test_contract_sha256": "74e7294b1433207d222f9732326b68b33303c1ef63c8b6001283963419117284",
+  "source_lock_sha256": "32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d",
+  "files": [
+    {
+      "path": "input_fixture_audit.py",
+      "bytes": 10702,
+      "sha256": "903f390544ad071af3f238aab07d949907fa015da4e8e9dcfc4a62228c339773"
+    },
+    {
+      "path": "input-fixture-lock.independent.json",
+      "bytes": 3986,
+      "sha256": "9e8cdd3c2889cd071ccfa92e8358de9f15fa371f1e4fc136e6be566ab0765d27"
+    },
+    {
+      "path": "source-lock-gate-selection.json",
+      "bytes": 20637,
+      "sha256": "cca7a798ad09f2b272d73409067cbecc57f6225d90890e492066a1e077dd1dca"
+    },
+    {
+      "path": "all_p_input_control.csv",
+      "bytes": 101423,
+      "sha256": "b822671fbbcde87d3272656b575867b45dadc3ff94886d4462d654c4de0bcf38"
+    },
+    {
+      "path": "pap_input_control.csv",
+      "bytes": 98703,
+      "sha256": "7b5138865908ac9ac94af61f4573948715387bf029bdf1c03d2989f6653dbe3c"
+    }
+  ],
+  "research_executed": false,
+  "fixture_tuning_permitted": false
+}

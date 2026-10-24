@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "id": "FE09-B3-F0-C4-16K-RENDER-PAP-V1",
+  "status": "FROZEN_PREREGISTRATION_NOT_EXECUTION_EVIDENCE",
+  "date_utc": "2026-10-24",
+  "program_issue": 657,
+  "parent_issue": 733,
+  "leaf_issue": 837,
+  "proposed_branch": "research/fe09-b3-f0-render-pap-20261024",
+  "branch_created": false,
+  "baseline_commit": "81ee559848e1e30e3dd2eb4d03b0b479b9bd971e",
+  "hypothesis": "Existing source-owned Capture/Render handoff can compose with unchanged actual mono CALL DSP through a finite Render reference-delivery absence/reentry, preserving independent capture SRC/FIR33 and explicit reject/timing/reset semantics.",
+  "not_algorithm_selection": true,
+  "source_role": "D0_FIRST_PARTY_DISCLOSED_SYNTHETIC_ENGINEERING",
+  "execution_preconditions": [
+    "Root review and explicit freeze of this unique leaf contract/source lock and registry identity.",
+    "Actual distinct current protected baseline Verify required summary success and matching Release/convergence, observed separately; no inherited old-main green run.",
+    "Qualified used predecessor children #726/#743/#776/#778 source identities preserved; broad #730/#733/#771 parents remain open.",
+    "Active strict expected-head protection and no conflicting change to frozen DSP/source contract; implementation/PR gating remains independent."
+  ],
+  "new_private_source_paths_proposed": [
+    "tests/validation/frontend_evolution/fe09_b3_f0_composition.c",
+    "tests/validation/frontend_evolution/fe09_b3_f0_composition.h",
+    "tests/validation/frontend_evolution/fe09_b3_f0_composition_test.c",
+    "tests/validation/frontend_evolution/fe09_b3_f0_observer.c",
+    "tests/validation/frontend_evolution/fe09_b3_f0_qualification.py",
+    "tests/validation/frontend_evolution/fe09_b3_f0_build/CMakeLists.txt"
+  ],
+  "integration_paths_proposed": [
+    ".github/workflows/quality.yml: existing frontend-reference job only",
+    ".github/research/evidence-index.json: new unique ACTIVE record after preregistration freeze",
+    "docs/research/frontend-evolution-v1/FE09_B3_F0_PREREGISTRATION_20261024/"
+  ],
+  "forbidden_changes": [
+    "Existing production src/, installed include/, root CMakeLists.txt or public/default DSP configuration",
+    "Existing first-party SRC/BF/owner/APX3 algorithms or frozen predecessor evidence",
+    "New workflow, public SDK/ABI/version or full recorder/resource system",
+    "Unregistered geometry/rate/search/tuning/model/source/candidate expansion"
+  ],
+  "expected_result_labels": [
+    "FE09_B3_F0_C4_16K_RENDER_PAP_FUNCTIONAL_COMPOSITION_NO_PROMOTION",
+    "FE09_B3_F0_COMPOSITION_REJECTED_WITH_EVIDENCE",
+    "FE09_B3_F0_FIXED_COVERAGE_INCONCLUSIVE",
+    "FE09_B3_F0_EXECUTION_BLOCKED"
+  ],
+  "approval": false,
+  "implemented": false,
+  "executed": false,
+  "contract_review_approved": true,
+  "approval_scope": "Contract review only; no scientific, public SDK, device or shipping qualification."
+}

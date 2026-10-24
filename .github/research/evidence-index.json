@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-21T14:52:00Z",
+  "updated_at": "2026-10-24T02:15:11Z",
   "policy": {
     "terminal_statuses": ["ACCEPTED", "REJECTED", "SUPERSEDED", "ABANDONED"],
     "gc_requires": ["terminal status", "exact head_sha", "sealed evidence", "no open PR", "live ref SHA match", "no active dependency"],
     "unclassified_refs_are_retained": true,
     "auto_gc_true_means_live_deletion_pending": true
   },
-  "active_dependencies": [{"branch":"research/fe09-a2-f0-finite-retirement-20261021","head_sha":null,"reason":"issue:825 active A2-F0 implementation; preserve candidate history until separately reviewed terminal evidence"}],
+  "active_dependencies": [{"branch":"research/fe09-a2-f0-finite-retirement-20261021","head_sha":null,"reason":"issue:825 active A2-F0 implementation; preserve candidate history until separately reviewed terminal evidence"},{"branch":"research/fe09-b3-f0-render-pap-20261024","head_sha":null,"reason":"issue:837 frozen B3-F0 implementation; preserve source and all failed or partial invocations until separate reviewed terminal evidence"}],
   "records": [
     {"branch":"research/aec-corr-exact-native-v1","head_sha":"89a5ba0834afc384d284fe097a2eedd60b058610","status":"ACCEPTED","evidence":["run:33843998920","pr:69","release:v2.3.6"],"supersedes":["research/aec-corr-refined-search-v2"],"gc_eligible":true,"auto_gc":false},
     {"branch":"research/aec-corr-ground-truth-v1","head_sha":"1f300cf4752a2ec52ca437b84ab98b778540aff2","status":"SUPERSEDED","evidence":["run:33836378471","decision:ground-truth-diagnostic-established-sparse-grid-miss"],"superseded_by":"research/aec-corr-exact-native-v1","gc_eligible":true,"auto_gc":false},
@@ -152,6 +152,7 @@
       "gc_eligible": true,
       "auto_gc": true
     },
-    {"branch":"research/fe09-a2-f0-finite-retirement-20261021","head_sha":null,"status":"ACTIVE","evidence":["issue:825","preregistration-commit:f90f6bd73c13c997b0bb85decf1545c632878982","implementation-baseline:01479d6b441f54ea1d68588155dc9742eaa96fbc","preregistration-sha256:1acb4be8295a9154e50a2f7912e59d47648c5972fc68acc9f8d8f59d06072e0f","source-lock-sha256:df0801d5b32a9629bb54ce5f6db027039ea0f2101600a9ca8a1f7b1752ace73c","test-contract-sha256:a0a957394425a3b2bf9d79c8762204e496867b8c386efe894e7e85a3af6dd67e","decision:preregistered-finite-prefix-retirement-only-no-experiment-or-device-admission"],"gc_eligible":false,"auto_gc":false}
+    {"branch":"research/fe09-a2-f0-finite-retirement-20261021","head_sha":null,"status":"ACTIVE","evidence":["issue:825","preregistration-commit:f90f6bd73c13c997b0bb85decf1545c632878982","implementation-baseline:01479d6b441f54ea1d68588155dc9742eaa96fbc","preregistration-sha256:1acb4be8295a9154e50a2f7912e59d47648c5972fc68acc9f8d8f59d06072e0f","source-lock-sha256:df0801d5b32a9629bb54ce5f6db027039ea0f2101600a9ca8a1f7b1752ace73c","test-contract-sha256:a0a957394425a3b2bf9d79c8762204e496867b8c386efe894e7e85a3af6dd67e","decision:preregistered-finite-prefix-retirement-only-no-experiment-or-device-admission"],"gc_eligible":false,"auto_gc":false},
+    {"branch":"research/fe09-b3-f0-render-pap-20261024","head_sha":null,"status":"ACTIVE","evidence":["issue:837","parent-issue:733","preregistration-commit:33e654abce883d263cfab61bc19000e4cdf7e9af","freeze-baseline:81ee559848e1e30e3dd2eb4d03b0b479b9bd971e","test-contract-sha256:74e7294b1433207d222f9732326b68b33303c1ef63c8b6001283963419117284","source-lock-sha256:32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d","input-lock-sha256:9e8cdd3c2889cd071ccfa92e8358de9f15fa371f1e4fc136e6be566ab0765d27","decision:frozen-finite-C4-16k-actual-CALL-composition;no-acoustic-device-or-shipping-qualification"],"gc_eligible":false,"auto_gc":false}
   ]
 }

@@ -1,0 +1,605 @@
+{
+  "schema_version": 1,
+  "id": "FE09-B3-F0-C4-16K-RENDER-PAP-V1",
+  "status": "QUALIFIED_PREDECESSOR_SOURCE_EQUIVALENT_BEFORE_DSP",
+  "recorded_at": "2026-10-24T03:10:25.650516+00:00",
+  "qualification_completed_at": "2026-10-24T03:07:46Z",
+  "freeze_baseline": "81ee559848e1e30e3dd2eb4d03b0b479b9bd971e",
+  "source_lock_sha256": "32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d",
+  "qualified_baseline": "f4301c6e90722a5ec00031e4111833603a4d4c92",
+  "qualified_baseline_tree": "ab3d92839b81091ba20ac2ada61ca2fa74a674ae",
+  "unchanged_compiled_member_count": 66,
+  "source_equivalent": true,
+  "unchanged_compiled_members": [
+    {
+      "path": "CMakeLists.txt",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 25151,
+      "git_blob_sha1": "3659b13659baaac99fd6e7e56fcb45cba243955c",
+      "sha256": "65874f30013dfa0599db8e3699bf86212b9aa8017011ea4f9b944c19ca48da8f"
+    },
+    {
+      "path": "cmake/AudioPipelineConfig.cmake.in",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 219,
+      "git_blob_sha1": "ea3e28caa5c68578d44018209bd5acbf35ccac38",
+      "sha256": "87264a18cc625d2dc0df16e3171dec45bb3f073ed3359f6803b4c3da03b341a8"
+    },
+    {
+      "path": "cmake/audio-pipeline-runtime.pc.in",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 348,
+      "git_blob_sha1": "802d2bcb7e81418072fbd510f4889fdcc051915e",
+      "sha256": "70cd66819a1cf8bf1d76cc6c148f750d2f76fbc1d37d4a86811938fe1454b4a6"
+    },
+    {
+      "path": "cmake/audio-pipeline.pc.in",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 304,
+      "git_blob_sha1": "b59e0a0d22c2ace435a0d9a87495e22afefac0e7",
+      "sha256": "57ca3b1c7821f0ba686a81c406d05901b44e8ff19544dd339aa030f1d757925d"
+    },
+    {
+      "path": "cmake/audio_pipeline_build.h.in",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2156,
+      "git_blob_sha1": "c8e63ea1eb1648823fcc6f1d021242820fd7fea1",
+      "sha256": "af9214bfbdf1f6c0afdba3a7b6dfa9bcd08f276f872a7e57c32a3c4dad9de3bc"
+    },
+    {
+      "path": "cmake/toolchains/aarch64-linux-gnu.cmake",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 270,
+      "git_blob_sha1": "6c3671b5c585746a1239dd6acf44442c3f4616ee",
+      "sha256": "78b5ee1b59f74201f10131f44a72c82ff6f440c2044231aa0f0241fe6810a955"
+    },
+    {
+      "path": "cmake/toolchains/arm-linux-gnueabihf.cmake",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 342,
+      "git_blob_sha1": "e6d070acffc21c857ed1b8465d7041c34bf0c7a6",
+      "sha256": "97a301d411199597a733a803d7329a493eb3859e95f823affd57ebcddfcb37cb"
+    },
+    {
+      "path": "include/audio_pipeline/audio_diag.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 4240,
+      "git_blob_sha1": "1eff3abd18bcf99f325c2e1370e795a81735344e",
+      "sha256": "d0f0b8126b444699d39d3f17872fae05734920a7f7fa48d17bf1d32ea4539549"
+    },
+    {
+      "path": "include/audio_pipeline/audio_modules.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 10817,
+      "git_blob_sha1": "c4456808d281ac51424a113ae2e9bac27492a55d",
+      "sha256": "10370d2f45fbb5e4f4809f3d46d7c69916b924399213af998d0a08a50116ef9f"
+    },
+    {
+      "path": "include/audio_pipeline/audio_pipeline.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 6442,
+      "git_blob_sha1": "8df6d78b41610f191de1a3e90704507b58ee4d9d",
+      "sha256": "45fe8efa9984660957c0a75390d64d93c9a4756a741ef4a0629ed984bedd4a66"
+    },
+    {
+      "path": "include/audio_pipeline/audio_runtime.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 7475,
+      "git_blob_sha1": "57488eb20164cbe78a7b030e33b2fb3b4ef94103",
+      "sha256": "f8be7881af7d23c85fd55a1df7c226b84a1507f85673c01272ca92762a4a6816"
+    },
+    {
+      "path": "include/audio_pipeline/audio_types.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2115,
+      "git_blob_sha1": "f7bc9819d51770d919e0020193205908ad9dcd88",
+      "sha256": "277c3d83dc8254712485dae5bf28033fd4b92ef166b67be6eaa89bff341b4666"
+    },
+    {
+      "path": "src/activity/ap_activity.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2649,
+      "git_blob_sha1": "73956d6c69d0ee07e6fb922f8def1db29d071972",
+      "sha256": "93aefd08d37e175faef1c954a09f038884fb827b2ec0ece1b066b3b942256855"
+    },
+    {
+      "path": "src/activity/ap_activity.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 710,
+      "git_blob_sha1": "e8fe331d1007ff073ebeaab71a09d9401c8613eb",
+      "sha256": "50c7070a09c8a9be4e38b6c9afb8731e56633eb7f6254764ed979ecd1fcd69d2"
+    },
+    {
+      "path": "src/aec/ap_aec.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2318,
+      "git_blob_sha1": "866a6e4d1e43c65c4b95e91d4da31cf0f12377bf",
+      "sha256": "407dfaa993f9644d6b38eaf99556413acd394097deec33bc3a4d9fae28dec555"
+    },
+    {
+      "path": "src/aec/ap_aec_mdf.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 10381,
+      "git_blob_sha1": "6ee3d3c08f9b38522de3bdc1d81f6cbf06431605",
+      "sha256": "b98a9f9b1ff0bd5c2ddb87dde650a7c426a3331eb26c29c6e3057a067c887b48"
+    },
+    {
+      "path": "src/aec/ap_aec_nlms.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 4422,
+      "git_blob_sha1": "3b5568bf927753a1d699100c910518904fd8192c",
+      "sha256": "fd9b3f84163481ef729a68ecd8e5b214a6de494f977350edf2e6d9d81cd9c87e"
+    },
+    {
+      "path": "src/ap_build_info.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1596,
+      "git_blob_sha1": "2bb5a94ee97746acf7778e05003f9c72fb1fa311",
+      "sha256": "c69871911344fa2f5fc755a51da8bf7c55da54b6953a873c665fe407ac6d8bf6"
+    },
+    {
+      "path": "src/ap_limits.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2154,
+      "git_blob_sha1": "7ec4e12325e3bf55a9e482f6ad3695a38ec7c21b",
+      "sha256": "2d81e5b8e25370abc0c2f2d45ddc88ee813f09d1ceba2ab1a2aeb5220138d044"
+    },
+    {
+      "path": "src/ap_numeric.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 902,
+      "git_blob_sha1": "86ef27015168a48138b1327117c80bfeb9dd5dca",
+      "sha256": "9618b16ded6ca6960de8b9c431a2fef5dfb37a0f7529888a15cacecc6409a28e"
+    },
+    {
+      "path": "src/arch/ap_kernels.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 664,
+      "git_blob_sha1": "7248df7424b3a339a5a0df6551e9727b854ad862",
+      "sha256": "f8e4a460f3a54f7114ffdc53bd139a83b3bc458a6bc0f9806bb03cd58553416f"
+    },
+    {
+      "path": "src/arch/arm_neon/ap_kernels_neon.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2737,
+      "git_blob_sha1": "5f5d8f2983eabe505eded47ed87209a4715b69ab",
+      "sha256": "79b0797554d4822bb99bc3384ae0c7f521ab2d3804db560bc7e99ca46700967c"
+    },
+    {
+      "path": "src/arch/scalar/ap_kernels_scalar.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1219,
+      "git_blob_sha1": "9cac41e3ba4cdc7c7211132d1a5a8a83136d6165",
+      "sha256": "94ee574c5343d42591e71a56b568cfc860517497734046a94770ed87a40b3a72"
+    },
+    {
+      "path": "src/core/ap_pipeline.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 28188,
+      "git_blob_sha1": "7fc79076224fd306dacdf9770f30609cfad27fd3",
+      "sha256": "5105124bb31f55c7ceaab491d33f49f21ef1271cb3b7771fba28bbdcbd708228"
+    },
+    {
+      "path": "src/core/ap_pipeline_internal.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2226,
+      "git_blob_sha1": "170374e5dd4c98224d71eb53dcfcc4018decbc56",
+      "sha256": "c540f5db1619757452ad482f91f2eacd65662c91a1ed85bd7053815d0bcf8b3c"
+    },
+    {
+      "path": "src/core/ap_pipeline_query.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 6139,
+      "git_blob_sha1": "221fb9579bec93fb6b05086cd8e76f06fea2a33b",
+      "sha256": "6b7f8746213aa57a242ab74b8cb37b552c34f844ff16baf8100329bb37017387"
+    },
+    {
+      "path": "src/dsp/ap_dsp.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 354,
+      "git_blob_sha1": "8ea4236119c2bb2e0f8525aed0d79735deaf9092",
+      "sha256": "1be20dd26ee1a567e122cf642f69450c0b636ffe345533d6d6d650c7cb89cdad"
+    },
+    {
+      "path": "src/dsp/ap_fft.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 13385,
+      "git_blob_sha1": "410e8b908989398b7bfba842c049dc66891b440e",
+      "sha256": "c87c2b8ecafa14f33eff09d48fbc42d98419a04f14844a6a2e837544a3ff7c73"
+    },
+    {
+      "path": "src/dsp/ap_internal.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 115,
+      "git_blob_sha1": "a534d1168ecc7b6329e41ea520661f4f533bb215",
+      "sha256": "8a2179375d8107a629c2611210ca48013e1f54d2a08ee4d50dad675cd2b6abfd"
+    },
+    {
+      "path": "src/enhance/ap_agc.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1718,
+      "git_blob_sha1": "c11af1db331b416b2ba3f2ff8ccf241b3108bda3",
+      "sha256": "9499f4576b574125506a4ef63fd3eec18c1fc912674c772c34bf887457045066"
+    },
+    {
+      "path": "src/enhance/ap_enhance.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 3416,
+      "git_blob_sha1": "9164da50faea08b958ebdf0d6fb41b2ab9b03578",
+      "sha256": "22e3760204b05c04fbbda3f4fa1df79ccd127dad276c4b10ba3e9ebe1ee55cdf"
+    },
+    {
+      "path": "src/enhance/ap_noise_tracker.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1977,
+      "git_blob_sha1": "991e82e145bdd5600fc56e50d1aae681468e4df5",
+      "sha256": "bbf619e1c6ec1ac31237eda3a8806034f9a07188e0dfc76cae661c9b1c109fd5"
+    },
+    {
+      "path": "src/enhance/ap_noise_tracker.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 944,
+      "git_blob_sha1": "fa42f15cd0a819111112f0b0ea5613b103366a01",
+      "sha256": "4972cc673605865ae5b704b90587ff649e295f9e6d586f460550392b793ce1eb"
+    },
+    {
+      "path": "src/enhance/ap_ns.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 6975,
+      "git_blob_sha1": "6218be60d4a70e769a7ffbf42889a2fc30cf286d",
+      "sha256": "92e35db7f13269d52ae9b01b5b5b830813940e1397b40ca6fdf659fa9dc78e3b"
+    },
+    {
+      "path": "src/enhance/ap_res.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1638,
+      "git_blob_sha1": "52885e946e538d10afd932691b9cbf10ccb0b70c",
+      "sha256": "a868dd4f52dd400dd1aeea6b8526160daa422cbed1bd083b145ae6d7ba7d0bc9"
+    },
+    {
+      "path": "src/enhance/ap_vad.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 4203,
+      "git_blob_sha1": "246a34ae273ad5891cda76d01f71d6cbb8b9beb4",
+      "sha256": "a96423638e286c2c0705d8aea7a114eb8fafd3c96c75322c62fa0b0d14791f73"
+    },
+    {
+      "path": "src/enhance/ap_window.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 4059,
+      "git_blob_sha1": "89cd1ddf1902499ce380d679bfa1dabd1b95aab9",
+      "sha256": "afd9014c235b96febf63a14007bd65b486ab80cc164162c6d64cbb993ca67eff"
+    },
+    {
+      "path": "src/enhance/ap_window.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 293,
+      "git_blob_sha1": "f0c4443c860d56b8aa72a7d8ca9f166a4399b6e8",
+      "sha256": "f387a3dfc09c93feea9461079f8775ff407a5572412cb6eb83c6141af2b817ca"
+    },
+    {
+      "path": "src/frontend/ap_beamformer.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 11386,
+      "git_blob_sha1": "864ae044e1e1aad3901874401577bb7a3fe9aeed",
+      "sha256": "c3f075de0ef6fa9153116f4cd6ab6bc8b1b9f83d9b1835ef07eabb3f33476c75"
+    },
+    {
+      "path": "src/frontend/ap_frontend.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 3340,
+      "git_blob_sha1": "23c3e58685ae0480ed0438d24c54434ed51d597e",
+      "sha256": "84f011943b4c1c7609e6749a167a36e566c3b224ae52cbadd2ddb8341036806e"
+    },
+    {
+      "path": "src/frontend/ap_hpf.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 754,
+      "git_blob_sha1": "aa92ff1e5746167a6a3239289e614ff26e28682d",
+      "sha256": "666ee25f5acf78e8d6fde1e8636b4e4efc7e55f9c3116c08fbe61f92c4fc1e81"
+    },
+    {
+      "path": "src/frontend/ap_resampler.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 9385,
+      "git_blob_sha1": "24b979221adef7d099cb73ec9b986f17a64d63d7",
+      "sha256": "5bf5e725dfdc516d82dce145b93ef881b1348bae17d2bd04130e7feb15834aff"
+    },
+    {
+      "path": "src/frontend/ap_resampler.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1268,
+      "git_blob_sha1": "f502b794cdab261d2f57991b54aae44f3703121a",
+      "sha256": "9ae3569a8cf5b0d2245a8f384da64051153b835c800ecf76269a349fa90a5104"
+    },
+    {
+      "path": "src/modules/ap_activity_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2212,
+      "git_blob_sha1": "c011c10cc5734c31c26951f6038f290040f259fb",
+      "sha256": "fe6cc5ef38c30168b4d71f7fbd3e66757ca97b1d97a5a821fbace64d3c0070bb"
+    },
+    {
+      "path": "src/modules/ap_aec_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2812,
+      "git_blob_sha1": "cbee78a6732bc7dd50bd968342bb7edf3845889c",
+      "sha256": "793510353edb3094ddd529c91a7dc8d81e1e9ea8c8e500fb936d3bc50b25ec6d"
+    },
+    {
+      "path": "src/modules/ap_agc_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1510,
+      "git_blob_sha1": "c2a0ae88b4012c7fc6d37824c910114be09203c6",
+      "sha256": "bfd7360f80644e4909b411a2268977e51727670260ea9e82c865852f54550ee8"
+    },
+    {
+      "path": "src/modules/ap_beamformer_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1968,
+      "git_blob_sha1": "ad73964ba7b0e96eaf844fba47302227d5f17349",
+      "sha256": "f41aeb34b60749388a414f791f49788ef96ff822f472349a20c72ef039568921"
+    },
+    {
+      "path": "src/modules/ap_hpf_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1397,
+      "git_blob_sha1": "98a77be9b825c3549cb6a2ab28d742e2936453f1",
+      "sha256": "1f6031817b44625f2649454f4974f43345b0d2bb08c9988cfb5c2658c06f98aa"
+    },
+    {
+      "path": "src/modules/ap_ns_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2198,
+      "git_blob_sha1": "00b63ce1a0045d2a4a4594c2ad02c1cdbc303a0e",
+      "sha256": "c2306d1a1e47fdfe3027882ed6287f686a8c2fa7d1ad3fe59868b04884eca1a8"
+    },
+    {
+      "path": "src/modules/ap_res_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1414,
+      "git_blob_sha1": "ab56a29ddafc8d2cccf6d9c01b715439c9c7afcf",
+      "sha256": "b710e0344f5258edad987f72ccc8af629c5edb43fb66d77076e70f3d9655760f"
+    },
+    {
+      "path": "src/modules/ap_resampler_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2206,
+      "git_blob_sha1": "935e083c958049f585646d7e62a9783408e72fa0",
+      "sha256": "70103dc4c26fa71c8263bef0cc8d4344e52d621174006337c975ea4ab1de70eb"
+    },
+    {
+      "path": "src/modules/ap_sync_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 4550,
+      "git_blob_sha1": "dcc963d067d89dc207506a1902ce3c1c3f90ab86",
+      "sha256": "fc7182567337b924c2b27bb3e07bf39282a7df7a572c69278bb54211a9a05427"
+    },
+    {
+      "path": "src/modules/ap_vad_module.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 1389,
+      "git_blob_sha1": "26ad2db147e0557539f70e18b540bc517ce5d5d3",
+      "sha256": "6eecd280cdf777ba53218ac32c6cf484a3fdb50e75b93358f798b19b3122f534"
+    },
+    {
+      "path": "src/platform/linux/ap_runtime.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 72890,
+      "git_blob_sha1": "7124a9c04d46f4d907c3d9831b3d4aa35ab8414e",
+      "sha256": "f8df13799c78701befec7d12f3ea555ef681c6b70155828cbaf32c88b4d71c35"
+    },
+    {
+      "path": "src/sync/ap_sync.c",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 12616,
+      "git_blob_sha1": "c5974e566a22e3bed2a96672bafc58620dd6a4ee",
+      "sha256": "0395ccd85959ddd09ced3f1627e017e91ad1cb827a8daaaf305355d2a238178b"
+    },
+    {
+      "path": "src/sync/ap_sync.h",
+      "role": "unchanged_public_build_snapshot_superset",
+      "bytes": 2308,
+      "git_blob_sha1": "24b8b615346a053a1399f8f7d42bd909ff531837",
+      "sha256": "f517b16f234fba9c20ed184ecbe3b92bc07d67251e20662046ec07bb0be4de48"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/array_native.c",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 22134,
+      "git_blob_sha1": "9e2cdfcc26eb93d8d03c53c722801c06981363fc",
+      "sha256": "d6f8e8c56a222d302b247b6973d8416fc5a3ef7bb883eb052648cd6904e1f237"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/array_native.h",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 7007,
+      "git_blob_sha1": "43982655da027870323024fda88290d5a31055c0",
+      "sha256": "9166b35d208068322b8de347f19c4ad6e0a76b2f84d71b08768e40bf5ea74267"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b1b0_src.c",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 11700,
+      "git_blob_sha1": "6d195d7eb36726f6d4a33410d4df97ad392ec15f",
+      "sha256": "9a0ba2643969fdf61c83df582f80dbfd33fde6f396cab299173af52e1a906393"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b1b0_src.h",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 3890,
+      "git_blob_sha1": "8fde1ca281ddae5ab4d4190c8693c41b8bfdc3a7",
+      "sha256": "0465bedaf734ec5be91157743fbd8ff7ab5e9fb0552bfaf9d66810dcc486b9d4"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b1b1_single_bf.c",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 14038,
+      "git_blob_sha1": "0d7579e7b92e788832c55fa95aec821e56b1681e",
+      "sha256": "5208480622e5b834e139cdd7ffc9fcb001aefebe853543569dbd5b440155fc51"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b1b1_single_bf.h",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 3466,
+      "git_blob_sha1": "c8fc6c77d4534cf6a0f1324189ad6b696160d870",
+      "sha256": "cb2c551aa727a4d89394b152e71b69e8275c0f24645e893142259dc5c378b422"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only.c",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 5588,
+      "git_blob_sha1": "beeb8c69100d4cd4b00716549776cf28a0649f8c",
+      "sha256": "703cc934844690d1e141cc109a5723ef7411d753961f16f59cc9cb6ca72b539c"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only.h",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 2519,
+      "git_blob_sha1": "29e0d0df517595c6eee41a4beb36562098e14323",
+      "sha256": "95e8b8c275dd8a7af431219fc86c6113e7a21c9a99bd12f99e34cdf8aac0ee8c"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc.c",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 14677,
+      "git_blob_sha1": "9e7825db86698269ea7cbb30c08c31264ba926ba",
+      "sha256": "3715e015bd98a5331eed2c11f4b7400cae55b066f61c0a58255362bbf06538a5"
+    },
+    {
+      "path": "tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc.h",
+      "role": "unchanged_private_compiled_dependency",
+      "bytes": 4418,
+      "git_blob_sha1": "cd373a3682ea1f318c338d9d3294358323a3b32f",
+      "sha256": "756f682503c555a0f7d540fabe3ebc2fbd7ea8bccbd2b196f0813095dfc2afbd"
+    }
+  ],
+  "verify": {
+    "head_sha": "f4301c6e90722a5ec00031e4111833603a4d4c92",
+    "conclusion": "success",
+    "run_id": 40054533526,
+    "attempt": 1,
+    "event": "push",
+    "summary_job_id": 120762071348,
+    "summary_app_id": 15368,
+    "job_count": 81,
+    "successful_jobs": 80,
+    "skipped_jobs": [
+      "fast-docs"
+    ],
+    "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40054533526"
+  },
+  "release": {
+    "head_sha": "f4301c6e90722a5ec00031e4111833603a4d4c92",
+    "conclusion": "success",
+    "run_id": 40057015476,
+    "attempt": 1,
+    "event": "workflow_run",
+    "job_id": 120762114865,
+    "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40057015476"
+  },
+  "live_governance_audit": "PASS",
+  "live_governance_receipt": {
+    "delete_branch_on_merge_enabled": true,
+    "findings": [],
+    "immutable_releases_enabled": true,
+    "immutable_releases_http_status": null,
+    "immutable_releases_readable": true,
+    "main_ruleset_enforced": true,
+    "result": "PASS",
+    "schema_version": 1,
+    "version_tag_ruleset_enforced": true
+  },
+  "live_governance_job_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40057015476/job/120762114865",
+  "post_release_convergence": {
+    "head_sha": "f4301c6e90722a5ec00031e4111833603a4d4c92",
+    "conclusion": "success",
+    "run_id": 40057015476,
+    "attempt": 1,
+    "job_id": 120762155318,
+    "url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40057015476/job/120762155318",
+    "result": "post-release qualification already finalized: v2.3.56"
+  },
+  "existing_immutable_release": {
+    "asset_count": 12,
+    "checksummed_assets": 11,
+    "immutable": true,
+    "manifest_payload_assets": 10,
+    "release_source_is_ancestor": true,
+    "release_source_sha": "c416a5f8e44b36a6af5be4dc53c71456dd6ba5ef",
+    "result": "EXISTING_RELEASE_IDENTITY_PASS",
+    "schema_version": 1,
+    "tag": "v2.3.56",
+    "verified_main_sha": "f4301c6e90722a5ec00031e4111833603a4d4c92",
+    "version": "2.3.56"
+  },
+  "existing_release_id": 418503344,
+  "existing_tag_object": "2ef1a75680ed8dd20b8e1bafad870b888df9b204",
+  "new_release_or_hil_claimed": false,
+  "original_readback_evidence": [
+    {
+      "name": "mainf430_checks.json",
+      "bytes": 257483,
+      "sha256": "65b78fa6f9aa6f4f03ad9ae47acc9c4d1d9ddd8a67d38e95fc1cac6584641632"
+    },
+    {
+      "name": "mainf430_convergence_joblog.txt",
+      "bytes": 3403,
+      "sha256": "dde78a8946aefc0be87fcb83f03629e7c64d8a1236818a4a8ee39b34558d638d"
+    },
+    {
+      "name": "mainf430_current_main.json",
+      "bytes": 4920,
+      "sha256": "5fe31b84463d41a41ef219323e448a8022801d62717fec1316c3f96e4a9bf564"
+    },
+    {
+      "name": "mainf430_original_tag.json",
+      "bytes": 349,
+      "sha256": "eb726e9e210ddddc9d24b30202c2a63932ecba28f15f3a7fecae66f976d9ae59"
+    },
+    {
+      "name": "mainf430_original_tag_object.json",
+      "bytes": 730,
+      "sha256": "b9873528a043d527f75b1370a4b34835a658b8c1ecc29b3ed19483ed024186df"
+    },
+    {
+      "name": "mainf430_release.json",
+      "bytes": 12623,
+      "sha256": "f39a0a76feaaaa40eefc13c182f745235202e78ea4abc624078f8d44a198e778"
+    },
+    {
+      "name": "mainf430_release_identity.json",
+      "bytes": 35357,
+      "sha256": "8196966559e5373125037c88472092578f69a7bec95b422ed735adb26878263a"
+    },
+    {
+      "name": "mainf430_release_joblog.txt",
+      "bytes": 28050,
+      "sha256": "cae83b43da88d4aa794b5de7ae0e535c7ab1cf73a33aa226b2a4beb8840d3481"
+    },
+    {
+      "name": "mainf430_release_jobs.json",
+      "bytes": 7165,
+      "sha256": "db4ff94276e4129b38e3b40569fe2ec3763c3e818bb396298946c8a91eeca566"
+    },
+    {
+      "name": "mainf430_ruleset.json",
+      "bytes": 1184,
+      "sha256": "516ee6cb3240fbdf61f1c7d353a3d3141a5ec2da560422265215a809bf1486dc"
+    },
+    {
+      "name": "mainf430_verify.json",
+      "bytes": 13779,
+      "sha256": "5bfafc5a4ec73c549c341db94d21b164b4a9127f383a074909d31c7d79bc85ef"
+    },
+    {
+      "name": "mainf430_verify_jobs.json",
+      "bytes": 224197,
+      "sha256": "ed022fd1ab69f8aeecf4c889254dee1cd07244b72d2caf22874bee638a6254e4"
+    }
+  ],
+  "independent_review": "main29c_audit confirmed original logs, summary App and tag/release identity at 2026-10-24T03:09:35Z",
+  "b3_dsp_executed_at_recording": false,
+  "b3_qualification": false,
+  "scope": "This qualified protected predecessor admits the separately committed B3 invocation. It does not qualify the B3 candidate, its PR synthetic merge, its future squash main, Arm execution, device behavior, acoustic benefit, or shipping."
+}

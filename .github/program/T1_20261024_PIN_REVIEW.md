@@ -119,6 +119,23 @@ caller. Existing database upload capability is not new, and a green job alone
 does not prove its optional warning-only upload path succeeded. Source review
 does not substitute for the final actual CodeQL regression or repository gates.
 
+## Real core source identity
+
+The independently reviewed first-stage core is the real repository commit
+`74ac99649916f441d3674602fb4a8aff5c79da00`, tree
+`2655ba19ec43ed89a98a3a9d418cca6585374ad5`, sole parent
+`92a7546a75cfe0d8aca132c7ee5996dcf0005c74`. The remote Git objects and all
+five reviewed file blobs were read back exactly. This is a source commit on the
+review branch, not a protected-main or hosted qualification.
+
+The dormant dEchorate contract now records that commit's exact four-file M2/M1
+closure, including the unchanged M2 consumer and the new 2026-10-24 witness.
+Its former complete registration is retained under
+`historical_m2_source_closures`; it grants no current authority. Both prerequisite
+observation flags remain false. The six original/upload-only workflow templates
+retain their existing bytes and names: their `reviewed-2026-10-20-pins` suffix
+identifies the unchanged upload transition, not the current CodeQL selector.
+
 ## Qualification and failure preservation
 
 The targeted source suite must demonstrate all of the following before a PR:

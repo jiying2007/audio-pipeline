@@ -1,0 +1,2445 @@
+{
+  "schema_version": 1,
+  "id": "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-R1",
+  "document_state": "DRAFT_FOR_REVIEW_NOT_FROZEN",
+  "execution_admitted": false,
+  "current_authorization": {
+    "docs_and_metadata_reconstruction_only": true,
+    "measurement_implementation": false,
+    "test_implementation": false,
+    "F1_static_compilation": false,
+    "F1_launcher_or_engineering_process_execution": false,
+    "DSP_resource_execution": false,
+    "remote_mutation_by_author": false
+  },
+  "recovery": {
+    "kind": "NEW_DOCS_ONLY_RECONSTRUCTION_R1_AFTER_WORKSPACE_RESET",
+    "claims_exact_recovery_of_lost_three_JSON_files": false,
+    "old_document_state": "DRAFT_FOR_REVIEW_NOT_FROZEN",
+    "old_draft_archive_commit": "49ab8e67731d93abdee9cecef853a58eb4b231d7",
+    "old_draft_archive_tree": "e789dc1942a55b2384fd300639a817731bbe5efe",
+    "old_draft_archive_url": "https://github.com/jiying2007/audio-pipeline/tree/49ab8e67731d93abdee9cecef853a58eb4b231d7/docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_DRAFT_20261024",
+    "old_files": [
+      {
+        "file": "README.md",
+        "previously_recorded_bytes": 34311,
+        "previously_recorded_sha256": "e2295c62b4bc526a14f73d55e696492c63a61072dca1d3d45d43d09e6507fecc",
+        "recovery_state": "EXACT_BYTES_RECOVERED_AND_ARCHIVED"
+      },
+      {
+        "file": "test-contract.json",
+        "previously_recorded_bytes": 77737,
+        "previously_recorded_sha256": "fdb97b9f9d35294e590b318890d4e5025031e5662ccbbcd9b492b541cacca72d",
+        "recovery_state": "PREVIOUS_HASH_KNOWN_BYTES_NOT_RECOVERED_NOT_AN_EXECUTABLE_INPUT"
+      },
+      {
+        "file": "source-lock.json",
+        "previously_recorded_bytes": 46104,
+        "previously_recorded_sha256": "7a97009343bf5a10d41c678507421eee036c6113896c937f52ef9bad3b7be8b8",
+        "recovery_state": "PREVIOUS_HASH_KNOWN_BYTES_NOT_RECOVERED_NOT_AN_EXECUTABLE_INPUT"
+      },
+      {
+        "file": "negative-controls.json",
+        "previously_recorded_bytes": 69031,
+        "previously_recorded_sha256": "945d722e4d81143e836029191c3bb67f243503204c52215c6bd2b44f8952904b",
+        "recovery_state": "PREVIOUS_HASH_KNOWN_BYTES_NOT_RECOVERED_NOT_AN_EXECUTABLE_INPUT"
+      },
+      {
+        "file": "EXECUTION_BASELINE.json",
+        "previously_recorded_bytes": 4974,
+        "previously_recorded_sha256": "5f3beb310e9111c09b869e5a7deed6802410dd3e8869a2814ad18415956635de",
+        "recovery_state": "EXACT_BYTES_RECOVERED_AND_ARCHIVED"
+      }
+    ],
+    "R1_basis": "Complete exact recovered README protocol plus independently verified immutable F0/B3 sources, actual D92 provider closure and new original-artifact reread; complete R1 machine rules and negatives are reviewed anew.",
+    "old_139_negative_count_is_R1_quota": false,
+    "source_measurements_or_F0_originals_rewritten": false,
+    "R1_generated_docs_are_new_bytes_with_new_hashes": true,
+    "old_independent_F0_report": {
+      "sha256": "a59ddca71823a338c858e82e8cb2e1869ae700f67860058dd80edf7acc9abc33",
+      "bytes": 29645,
+      "state": "HISTORICAL_OBSERVATION_ORIGINAL_REPORT_BYTES_NOT_RECOVERED"
+    },
+    "new_independent_F0_reread_report": {
+      "sha256": "025a74e9fcaf040466e36373118e90b4b91b68b1d497b0fa21b64394615247e4",
+      "bytes": 30634,
+      "reviewed_at_utc": "2026-10-24T22:45:05.053471+00:00",
+      "decision": "PASS",
+      "no_DSP_or_build": true
+    }
+  },
+  "source_anchor": {
+    "commit_D": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+    "tree_D": "894253393823d842f620be408ec12339a61771d2",
+    "qualified_predecessor": true,
+    "is_final_integration_B_or_C": false
+  },
+  "preregistration_files": {
+    "readme": "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/README.md",
+    "contract": "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/test-contract.json",
+    "source_lock": "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/source-lock.json",
+    "negative_controls": "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/negative-controls.json",
+    "execution_baseline": "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/EXECUTION_BASELINE.json"
+  },
+  "research_question": "Add exact-PID lifetime and bounded current-mm observations after a fresh native launcher exec/ordinary-fork boundary, preserving original actual-CALL behavior; do not optimize DSP or choose favorable RSS.",
+  "data_role": "D0_FIRST_PARTY_DISCLOSED_SYNTHETIC_ENGINEERING",
+  "decisions": {
+    "complete": "FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION",
+    "partial": "FE09_T3S3_F1_R1_PARTIAL_RSS_OBSERVATION_NO_PROMOTION",
+    "failure": "FE09_T3S3_F1_R1_REJECTED_WITH_EVIDENCE",
+    "out_of_scope": "F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE"
+  },
+  "promotion": {
+    "acoustic_superiority": false,
+    "full_device_budget": false,
+    "physical_clock": false,
+    "public_sdk": false,
+    "shipping": false,
+    "ssc305": false
+  },
+  "baseline_requirement": {
+    "qualified_D_required": true,
+    "qualified_D": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+    "final_protected_B_pending": true,
+    "final_reviewed_C_pending": true,
+    "B_must_descend_from_D_and_preserve_all_originals": true,
+    "B_own_applicable_main_gates_required": true,
+    "D_is_not_a_substitute_for_unknown_future_B": true,
+    "required_D_facts": [
+      "actual merged PR and immutable main graph/tree",
+      "exact D own Verify/summary App15368",
+      "matching Release and convergence under existing release identity",
+      "actual source-bound original artifact and independent full reread"
+    ],
+    "pending_baseline_fields_may_be_overridden_by_freeze": false,
+    "candidate_gates_may_qualify_predecessor": false,
+    "B_must_contain_previously_integrated_reviewed_protected_guard": true,
+    "bootstrap_measurement_allowed": false
+  },
+  "frozen_originals": {
+    "source_lock_path": "docs/research/frontend-evolution-v1/FE09_T3S3_F0_RESOURCE_PREREGISTRATION_20261024/source-lock.json",
+    "source_lock_sha256": "16cd84381647bef1015fc8ef338bb9b10dd09ce4669248355ac4f48745d8a4ff",
+    "source_count": 88,
+    "contract_path": "docs/research/frontend-evolution-v1/FE09_T3S3_F0_RESOURCE_PREREGISTRATION_20261024/test-contract.json",
+    "contract_sha256": "42496ab0f6f01d5b36f03d23f670f585a5f57c120ecf9fc0237a27d5aa2f34f2",
+    "first_F0_measurement_source": "87eace16b9cacbf0cb911eab02b91ca941cc6eff",
+    "B3_input_freeze_sha256": "00ec6d1cca8069eaf1cdaffc8a84b020548ab9e7fe548e07ada4a8d270513851",
+    "B3_independent_input_lock_sha256": "9e8cdd3c2889cd071ccfa92e8358de9f15fa371f1e4fc136e6be566ab0765d27",
+    "F0_original_source_inputs_probe_private_build_and_verifier_edited": false,
+    "all_original_failures_retained": true,
+    "F1_private_wrapped_ELFs_are_new_binary_identities": true,
+    "retrospective_F0_RSS_correction": false
+  },
+  "toolchain": {
+    "hosted_image": "ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57",
+    "runner": "ubuntu-24.04",
+    "host_platform": "Linux x86_64",
+    "host_ELF_machine": 62,
+    "ARM_guest_ELF_machine": 40,
+    "guest_sysroot": "/usr/arm-linux-gnueabihf",
+    "local_mode_supplies_hosted_qualification": false,
+    "local_mode_image": null,
+    "actual_required_identity": [
+      "kernel release/architecture/page size/clock resolutions",
+      "Python/CMake/compiler/binutils/QEMU version and executable SHA256",
+      "actual original SDK archive/generated header/ELFs/link recipes",
+      "host launcher and guest-target identities separately"
+    ],
+    "F0_runtime_environment": {
+      "ASAN_OPTIONS": "detect_leaks=1:abort_on_error=1",
+      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+    },
+    "registered_runtime_additions": {
+      "LC_ALL": "C",
+      "TZ": "UTC",
+      "FE_F1_NONCE": "exact per-invocation 64 lowercase hex",
+      "FE_F1_ORDINAL": "registered decimal ordinal",
+      "FE_F1_CONTROL_FD": "registered inherited child-to-launcher fd",
+      "FE_F1_ACK_FD": "registered inherited launcher-to-child fd"
+    },
+    "runtime_allowlist_is_exact": true,
+    "private_credentials_in_any_build_launcher_target_or_fixture_child_environment": false,
+    "build_environment_scrub_names": [
+      "CFLAGS",
+      "CPPFLAGS",
+      "CXXFLAGS",
+      "LDFLAGS",
+      "ARFLAGS",
+      "ASFLAGS",
+      "LIBRARY_PATH",
+      "LD_LIBRARY_PATH",
+      "LD_PRELOAD",
+      "CPATH",
+      "C_INCLUDE_PATH",
+      "CPLUS_INCLUDE_PATH",
+      "OBJC_INCLUDE_PATH",
+      "CMAKE_PREFIX_PATH",
+      "CMAKE_TOOLCHAIN_FILE",
+      "CMAKE_GENERATOR",
+      "CMAKE_ARGS",
+      "CC",
+      "CXX",
+      "AR",
+      "NM",
+      "RANLIB",
+      "SDKROOT",
+      "COMPILER_PATH",
+      "GCC_EXEC_PREFIX"
+    ],
+    "known_private_environment_scrub_names": [
+      "GH_READ_TOKEN",
+      "GITHUB_TOKEN",
+      "GH_TOKEN"
+    ],
+    "private_values_retained": false
+  },
+  "matrix": {
+    "order": [
+      "target",
+      "case",
+      "repeat",
+      "variant"
+    ],
+    "targets": [
+      "native",
+      "sanitized",
+      "arm"
+    ],
+    "cases": [
+      "ALL_P",
+      "PAP"
+    ],
+    "repeats": [
+      1,
+      2,
+      3
+    ],
+    "variants": [
+      "reference",
+      "measured"
+    ],
+    "schedule": [
+      {
+        "ordinal": 1,
+        "target": "native",
+        "case": "ALL_P",
+        "repeat": 1,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 2,
+        "target": "native",
+        "case": "ALL_P",
+        "repeat": 1,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 3,
+        "target": "native",
+        "case": "ALL_P",
+        "repeat": 2,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 4,
+        "target": "native",
+        "case": "ALL_P",
+        "repeat": 2,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 5,
+        "target": "native",
+        "case": "ALL_P",
+        "repeat": 3,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 6,
+        "target": "native",
+        "case": "ALL_P",
+        "repeat": 3,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 7,
+        "target": "native",
+        "case": "PAP",
+        "repeat": 1,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 8,
+        "target": "native",
+        "case": "PAP",
+        "repeat": 1,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 9,
+        "target": "native",
+        "case": "PAP",
+        "repeat": 2,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 10,
+        "target": "native",
+        "case": "PAP",
+        "repeat": 2,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 11,
+        "target": "native",
+        "case": "PAP",
+        "repeat": 3,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 12,
+        "target": "native",
+        "case": "PAP",
+        "repeat": 3,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 13,
+        "target": "sanitized",
+        "case": "ALL_P",
+        "repeat": 1,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 14,
+        "target": "sanitized",
+        "case": "ALL_P",
+        "repeat": 1,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 15,
+        "target": "sanitized",
+        "case": "ALL_P",
+        "repeat": 2,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 16,
+        "target": "sanitized",
+        "case": "ALL_P",
+        "repeat": 2,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 17,
+        "target": "sanitized",
+        "case": "ALL_P",
+        "repeat": 3,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 18,
+        "target": "sanitized",
+        "case": "ALL_P",
+        "repeat": 3,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 19,
+        "target": "sanitized",
+        "case": "PAP",
+        "repeat": 1,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 20,
+        "target": "sanitized",
+        "case": "PAP",
+        "repeat": 1,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 21,
+        "target": "sanitized",
+        "case": "PAP",
+        "repeat": 2,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 22,
+        "target": "sanitized",
+        "case": "PAP",
+        "repeat": 2,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 23,
+        "target": "sanitized",
+        "case": "PAP",
+        "repeat": 3,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 24,
+        "target": "sanitized",
+        "case": "PAP",
+        "repeat": 3,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 25,
+        "target": "arm",
+        "case": "ALL_P",
+        "repeat": 1,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 26,
+        "target": "arm",
+        "case": "ALL_P",
+        "repeat": 1,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 27,
+        "target": "arm",
+        "case": "ALL_P",
+        "repeat": 2,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 28,
+        "target": "arm",
+        "case": "ALL_P",
+        "repeat": 2,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 29,
+        "target": "arm",
+        "case": "ALL_P",
+        "repeat": 3,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 30,
+        "target": "arm",
+        "case": "ALL_P",
+        "repeat": 3,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 31,
+        "target": "arm",
+        "case": "PAP",
+        "repeat": 1,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 32,
+        "target": "arm",
+        "case": "PAP",
+        "repeat": 1,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 33,
+        "target": "arm",
+        "case": "PAP",
+        "repeat": 2,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 34,
+        "target": "arm",
+        "case": "PAP",
+        "repeat": 2,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 35,
+        "target": "arm",
+        "case": "PAP",
+        "repeat": 3,
+        "variant": "reference",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      },
+      {
+        "ordinal": 36,
+        "target": "arm",
+        "case": "PAP",
+        "repeat": 3,
+        "variant": "measured",
+        "frames": 600,
+        "mode": "adapter",
+        "future": 0,
+        "internal_negatives": 0,
+        "observed_B3_variant": false
+      }
+    ],
+    "actual_science_targets": 36,
+    "actual_science_launchers": 36,
+    "registered_direct_science_processes": 72,
+    "frames_per_target": 600,
+    "total_validated_frames_if_complete": 21600,
+    "timed_targets": 18,
+    "timed_frames": 10800,
+    "frames_per_build_target": 7200,
+    "frame_samples": 160,
+    "sample_rate_hz": 16000,
+    "profile": "B3_F0_C4_ULA105_16KHZ_FULL_CALL",
+    "warmup_frames_excluded": 0,
+    "automatic_retry_count": 0,
+    "numeric_selection_or_reordering": false,
+    "partial_cohorts_may_be_stitched": false,
+    "on_first_failure": "Stop new invocations, preserve raw current/earlier attempts and separately count attempted targets, raw executed frames and validated frames. No replacement process or fallback target."
+  },
+  "process_model": {
+    "Python_role": "Own the launcher process only; outer wait4/Popen PID is a supervisory identity, never the actual science target RSS.",
+    "launcher_role": "One separately execed single-threaded native C launcher per science/fixture invocation, bounded setup then exactly one ordinary fork and execve of registered target argv.",
+    "allowed_creation": [
+      "collector creates native launcher",
+      "native launcher ordinary fork",
+      "that child execve exact registered native ELF or pinned host QEMU plus pinned guest ELF"
+    ],
+    "forbidden_creation_alternatives": [
+      "vfork/posix_spawn in native launcher",
+      "shell or PATH search for target",
+      "Python preexec_fn",
+      "LD_PRELOAD wrapper",
+      "subtraction of parent RSS",
+      "resetting Linux RSS counters"
+    ],
+    "wait_owner": "Native launcher wait4(fork-returned child PID,...) through exit; retain returned PID, raw wait status and complete rusage. Python separately reaps the launcher.",
+    "exec_error_channel": "A separate CLOEXEC error pipe reports execve errno; EOF is necessary but not sufficient for target success. ENTRY/RETURN and full output/exit must independently hold.",
+    "process_identity": "Use positive PID plus raw /proc stat start_ticks and namespace vectors; same three checkpoints for one invocation have the identical process key and PPid=launcher. Reused integer PID in another lifetime is not the same process.",
+    "descriptor_boundary": "Only registered protocol read/write descriptors intentionally survive target exec; exec-error descriptor closes on exec. No API/network/credential descriptor is inherited.",
+    "success_requires": [
+      "exact three-phase/six-record protocol",
+      "expected actual image transition and identities",
+      "complete canonical 600 science frames",
+      "normal target exit 0",
+      "normal launcher exit 0",
+      "all invocation/stage/job deadlines and caps",
+      "complete POST freeze/source checks"
+    ],
+    "descendants": {
+      "ordinary_science_extra_descendants_asserted_absent": false,
+      "target_wait4_scope": "Linux target lifetime with any accounted-for waited descendants; neither exclusive main-image peak nor concurrent process-tree sum.",
+      "registered_engineering_descendant_max": 1,
+      "complete_tree_census_claim": false
+    },
+    "threads": "Preserve original /proc Threads observations. ASan/QEMU/runtime threading is included; do not infer absence of all transient threads from checkpoints.",
+    "timeout_cleanup": "Stop launch admission, kill the registered invocation process group, reap owned launcher/child and retain raw statuses. Remaining stage time is not restarted; incomplete or late cleanup/seal cannot produce success."
+  },
+  "protocol": {
+    "phases": [
+      "PREEXEC",
+      "ENTRY",
+      "RETURN"
+    ],
+    "ordered_records": [
+      "PREEXEC",
+      "ACK_PREEXEC",
+      "ENTRY",
+      "ACK_ENTRY",
+      "RETURN",
+      "ACK_RETURN"
+    ],
+    "nonce": {
+      "encoding": "64 lowercase hex",
+      "unique_per_invocation": true,
+      "same_across_all_phase_and_ACK_records": true
+    },
+    "wire": {
+      "encoding": "ASCII subset of UTF-8, compact JSON object plus exactly one LF",
+      "max_serialized_bytes_including_LF": 256,
+      "length_header": false,
+      "CR_BOM_or_embedded_raw_newline_allowed": false,
+      "oversize_rejected_before_JSON_parse": true,
+      "extra_or_duplicate_keys_allowed": false,
+      "per_phase_exact_fields": {
+        "PREEXEC": [
+          "v",
+          "phase",
+          "nonce",
+          "ordinal",
+          "pid",
+          "ppid",
+          "monotonic_ns",
+          "rss_kib"
+        ],
+        "ENTRY": [
+          "v",
+          "phase",
+          "nonce",
+          "ordinal",
+          "pid",
+          "ppid",
+          "monotonic_ns"
+        ],
+        "RETURN": [
+          "v",
+          "phase",
+          "nonce",
+          "ordinal",
+          "pid",
+          "ppid",
+          "monotonic_ns",
+          "return_code"
+        ],
+        "ACK": [
+          "v",
+          "phase",
+          "for_phase",
+          "nonce",
+          "ordinal",
+          "child_pid",
+          "launcher_pid",
+          "monotonic_ns"
+        ]
+      },
+      "v": 1,
+      "ordinal_range": [
+        1,
+        36
+      ],
+      "pid_range": [
+        1,
+        2147483647
+      ],
+      "nonnegative_counter_max": 9223372036854775807,
+      "return_code_signed32": true,
+      "computed_per_phase_maximal_schema_frame_bytes": {
+        "PREEXEC": 214,
+        "ENTRY": 182,
+        "RETURN": 209,
+        "ACK": 216
+      }
+    },
+    "PREEXEC": "Child samples getrusage(RUSAGE_SELF) while still the forked launcher image, then records monotonic_ns, emits PREEXEC and blocks. Parent records full host proc status/stat/exe identity before ACK. Sample interval is bounded by recorded fork-before time and message monotonic_ns, not a claimed instantaneous peak time.",
+    "ENTRY": "Thin private --wrap=main wrapper emits ENTRY and blocks before invoking unchanged __real_main(argc,argv). The parent reads host proc files while child is blocked and ACKs only after capture/validation.",
+    "RETURN": "After unchanged original main returns, wrapper emits RETURN carrying original signed return code, blocks for parent capture/ACK, then returns the same code. Snapshot excludes later wrapper/runtime/destructor/atexit/sanitizer/emulator cleanup.",
+    "ACK": "Bind matching phase, nonce, ordinal, actual child and launcher PIDs; one ACK per phase, no skipped/repeated/out-of-order records.",
+    "parent_observation": "Use launcher host /proc/<actual-child-pid> only. Record capture start/end monotonic_ns, exact raw bytes and actual executable file hash/device/inode.",
+    "QEMU": "Actual /proc exe at ENTRY/RETURN is the pinned host QEMU. The separately hashed guest ELF and exact QEMU -L sysroot argv remain explicit. Guest /proc is not measurement authority.",
+    "observation_window": "Retain both post-exec checkpoints of the same PID/start/namespace/exe history, with source-reviewed no intervening exec; never reset current-mm counters.",
+    "measurement_cost": "Shim, handshakes, proc acquisition and all process memory/wall overhead are retained. Original inner F0 call timers stay in unchanged original main; no timing/RSS overhead subtraction."
+  },
+  "rss": {
+    "raw_wait4_unit": "Linux KiB",
+    "conversion": "ru_maxrss_kib * 1024 exactly",
+    "primary_lifetime_field": "wait4_target_lifetime_rss_bytes",
+    "preexec_field": "preexec_observed_rss_floor_bytes",
+    "current_mm_fields": [
+      "entry_vm_hwm_bytes",
+      "entry_vm_rss_bytes",
+      "return_vm_hwm_bytes",
+      "return_vm_rss_bytes"
+    ],
+    "raw_values_and_records_retained": true,
+    "all_derivatives_recomputed": true,
+    "preexec_zero_permitted_with_original_record": true,
+    "postexec_and_final_values_required_positive": true,
+    "subtract_floor_or_parent_max": false,
+    "floor_is_complete_preexec_upper_bound": false,
+    "VmHWM_accuracy": "Linux proc accounting is approximate; current-mm window is not an exact physical peak, instantaneous working set or a physical-memory upper-bound guarantee.",
+    "RETURN_includes_after_main_exit_cleanup": false,
+    "wait4_includes_exclusive_main_image_only": false,
+    "QEMU_claim": "Host emulator plus guest/harness lifetime and host current-mm observations; never guest-only RSS or ARM-board RAM.",
+    "Sanitized_claim": "Includes original ASan/UBSan/LSan/runtime costs with leak detection preserved. Full frames followed by signal/nonzero exit remain rejected.",
+    "numeric_RSS_acceptance_threshold": null,
+    "allowed_interpretations": {
+      "return_HWM_greater_than_entry": "Only reported current-mm high-water increased after ENTRY within validated same-image history.",
+      "return_HWM_equal_to_final_wait4": "That reported final value is also observed in an after-exec current-mm window; does not locate its first or exclusive origin.",
+      "wait4_greater_than_observed_floor": "Lifetime accounting exceeded an observed floor; this alone cannot locate that increase before/after exec.",
+      "inconsistent_counters": "Preserve as accounting observations; no repair, threshold change or forced equalization."
+    },
+    "forbidden_claims": [
+      "exact working set",
+      "pure DSP RSS",
+      "first/exclusive postexec peak from equality alone",
+      "complete dynamic stack or heap peak",
+      "concurrent process-tree peak",
+      "physical DUT/SSC305 RAM or timing qualification"
+    ]
+  },
+  "scientific_equivalence": {
+    "all_36_cases_and_repeats_required": true,
+    "actual_stream_equality": "Before deleting temporary payloads, compare complete raw output.s16le and beam.f32le across all six same-target/same-case reference/measured repeats; no tolerance, fastest selection or cross-target shortcut.",
+    "public_frame_equality": "Compare every original canonical public frame field, all sequences 1..600 and complete stream witnesses for all six same-target/same-case results.",
+    "original_B3_semantic_validation": "Invoke the unchanged original B3 validate_case/canonical_frame logic and frozen input checks as pure validation; outer F1 deadline remains enforced before/after bounded reads/calls. No mutation of original F0/B3 globals/functions/constants to replace their job/deadline authority.",
+    "retention": "Archive all public frame records plus complete frame/stream/prefix byte-hash witnesses generated after actual raw PCM comparisons; if raw PCM is not archived, independent readback does not claim to rehash absent PCM bytes.",
+    "PAP_render_absent_sequences_inclusive": [
+      201,
+      240
+    ],
+    "PAP_first_resumed_present_sequence": 241,
+    "measurement_timing": {
+      "original_F0_timing_schema_id": "FE09-T3S3-F0-ACTUAL-CALL-RESOURCE-V1",
+      "timed_bind": "fe_b3_f0_bind only; not complete construction or process cold start",
+      "roles": [
+        "capture",
+        "render",
+        "worker",
+        "combined"
+      ],
+      "clocks": [
+        "CLOCK_THREAD_CPUTIME_ID",
+        "CLOCK_MONOTONIC"
+      ],
+      "frames_per_measured_process": 600,
+      "timed_processes": 18,
+      "statistic_groups": 144,
+      "summary": [
+        "count",
+        "sum_ns",
+        "nearest_rank_p50_ns",
+        "nearest_rank_p95_ns",
+        "nearest_rank_p99_ns",
+        "max_ns",
+        "frame201_ns",
+        "frame241_ns",
+        "milliseconds_per_audio_second"
+      ],
+      "nearest_rank_indices_zero_based": {
+        "p50": 299,
+        "p95": 569,
+        "p99": 593
+      },
+      "audio_seconds_per_process": 6,
+      "combined_is_sum_of_disjoint_capture_render_worker": true,
+      "original_four_clock_reads_and_costs_kept": true,
+      "precall_and_postread_storage_scope_preserved": true,
+      "overhead_subtraction": false,
+      "bind_plus_disjoint_CPU_must_fit_actual_child_wait4_CPU": "ceil((ru_utime+ru_stime)*1e9) plus exactly 2000 ns for two timeval microsecond quantizations, not additional work",
+      "bind_plus_disjoint_wall_must_fit_actual_target_invocation_wall": true,
+      "numeric_speed_gate": false
+    }
+  },
+  "build_closure": {
+    "state": "DESIGN_ONLY_IMPLEMENTATION_AND_RECIPE_REVIEW_PENDING",
+    "fresh_build_from_final_reviewed_C_required": true,
+    "prepared_or_other_attempt_build_reuse": false,
+    "original_private_CMake": "tests/validation/frontend_evolution/fe09_t3s3_f0_build/CMakeLists.txt",
+    "original_private_CMake_bytes_unchanged": true,
+    "new_private_CMake": "tests/validation/frontend_evolution/fe09_t3s3_f1_build/CMakeLists.txt",
+    "mechanism": "Include the unchanged F0 private build, attach exactly one new observer translation unit and --wrap=main to each reference/measured target, and add separate native-only launcher/fixture executables. The unbuilt observed-B3 target remains unbuilt.",
+    "exact_source_groups": {
+      "original_library": [
+        "src/ap_build_info.c",
+        "src/core/ap_pipeline.c",
+        "src/core/ap_pipeline_query.c",
+        "src/frontend/ap_resampler.c",
+        "src/frontend/ap_hpf.c",
+        "src/frontend/ap_beamformer.c",
+        "src/sync/ap_sync.c",
+        "src/activity/ap_activity.c",
+        "src/enhance/ap_res.c",
+        "src/enhance/ap_ns.c",
+        "src/enhance/ap_noise_tracker.c",
+        "src/enhance/ap_window.c",
+        "src/enhance/ap_agc.c",
+        "src/enhance/ap_vad.c",
+        "src/aec/ap_aec_mdf.c",
+        "src/arch/scalar/ap_kernels_scalar.c",
+        "src/dsp/ap_fft.c",
+        "src/modules/ap_resampler_module.c",
+        "src/modules/ap_hpf_module.c",
+        "src/modules/ap_beamformer_module.c",
+        "src/modules/ap_sync_module.c",
+        "src/modules/ap_activity_module.c",
+        "src/modules/ap_res_module.c",
+        "src/modules/ap_ns_module.c",
+        "src/modules/ap_agc_module.c",
+        "src/modules/ap_vad_module.c",
+        "src/modules/ap_aec_module.c"
+      ],
+      "original_shared_reference_and_measured": [
+        "tests/validation/frontend_evolution/array_native.c",
+        "tests/validation/frontend_evolution/fe09_b1b0_src.c",
+        "tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only.c",
+        "tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc.c",
+        "tests/validation/frontend_evolution/fe09_b3_f0_composition.c",
+        "tests/validation/frontend_evolution/fe09_b3_f0_observer.c"
+      ],
+      "reference_main": "tests/validation/frontend_evolution/fe09_b3_f0_composition_test.c",
+      "measured_main": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_probe.c",
+      "new_observer_for_each_reference_and_measured": "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_observer.c",
+      "unbuilt_observed_B3": [
+        "tests/validation/frontend_evolution/array_native.c",
+        "tests/validation/frontend_evolution/fe09_b1b0_src.c",
+        "tests/validation/frontend_evolution/fe09_b2s3_t2b_b0_capture_only.c",
+        "tests/validation/frontend_evolution/fe09_b2s3_t2b_b1s0_owner_spsc.c",
+        "tests/validation/frontend_evolution/fe09_b3_f0_composition.c",
+        "tests/validation/frontend_evolution/fe09_b3_f0_observer.c",
+        "tests/validation/frontend_evolution/fe09_b3_f0_composition_test.c"
+      ],
+      "native_launcher_only": [
+        "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_launcher.c"
+      ],
+      "native_fixture_only": [
+        "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_fixture.c"
+      ]
+    },
+    "compile_database_expected_multisets": {
+      "native": {
+        "original_library": 27,
+        "reference_including_observer": 8,
+        "measured_including_observer": 8,
+        "unbuilt_observed_B3": 7,
+        "native_launcher": 1,
+        "native_fixture": 1,
+        "total": 52
+      },
+      "sanitized": {
+        "original_library": 27,
+        "reference_including_observer": 8,
+        "measured_including_observer": 8,
+        "unbuilt_observed_B3": 7,
+        "native_launcher": 0,
+        "native_fixture": 0,
+        "total": 50
+      },
+      "arm": {
+        "original_library": 27,
+        "reference_including_observer": 8,
+        "measured_including_observer": 8,
+        "unbuilt_observed_B3": 7,
+        "native_launcher": 0,
+        "native_fixture": 0,
+        "total": 50
+      },
+      "counts_are_compile_database_rows_not_executed_process_counts": true,
+      "original_source_groups_must_match_exact_independent_sets": true,
+      "same_wrong_source_in_both_variants_is_not_equivalence": true,
+      "all_object_paths_unique_within_build": true
+    },
+    "host_helper_build": "Build launcher and engineering fixture once with the Native host compiler and reviewed Native helper flags; disable those helper targets in Sanitized/ARM build directories. Do not cross-compile or sanitize the actual host launcher.",
+    "original_library_definitions": [
+      "-DAP_BUILD_ACTIVITY=1",
+      "-DAP_BUILD_AEC_MDF=1",
+      "-DAP_BUILD_BF_DIRECTION_TRACKING=1",
+      "-DAP_BUILD_NS_EMA=1",
+      "-DAP_BUILD_RESAMPLER_BANDLIMITED=1",
+      "-DAP_BUILD_STAGE_AEC=1",
+      "-DAP_BUILD_STAGE_AGC=1",
+      "-DAP_BUILD_STAGE_BF=1",
+      "-DAP_BUILD_STAGE_HPF=1",
+      "-DAP_BUILD_STAGE_NS=1",
+      "-DAP_BUILD_STAGE_RES=1",
+      "-DAP_BUILD_STAGE_SYNC=1",
+      "-DAP_BUILD_STAGE_VAD=1"
+    ],
+    "original_compile_flag_rules": {
+      "common": [
+        "-std=c11",
+        "-ffp-contract=off",
+        "-fno-fast-math",
+        "-fno-lto",
+        "-fstack-usage",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic"
+      ],
+      "nonlibrary_addition": [
+        "-Werror"
+      ],
+      "native_and_arm_release": [
+        "-O2",
+        "-DNDEBUG"
+      ],
+      "native_and_arm_target_addition": [
+        "-O2"
+      ],
+      "sanitized_release": [
+        "-O1",
+        "-g",
+        "-DNDEBUG"
+      ],
+      "sanitized_target_addition": [
+        "-O1",
+        "-g",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer"
+      ],
+      "native_host_helper": [
+        "-O2",
+        "-DNDEBUG",
+        "-O2",
+        "-std=c11",
+        "-ffp-contract=off",
+        "-fno-fast-math",
+        "-fno-lto",
+        "-fstack-usage",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror"
+      ],
+      "flag_validation": "Exact token multiset, including repeated -O2 or -O1/-g and order-sensitive override exclusion; no late override, response/plugin/forced-include injection or unregistered flag.",
+      "source_compile_unit_identity": "Each argv compiler token, source, output object, allowed include root and definitions must match independently frozen expected roles, not merely agree between reference/measured."
+    },
+    "link_rules": {
+      "original_common": [
+        "-fno-lto"
+      ],
+      "sanitized_addition": [
+        "-fsanitize=address,undefined"
+      ],
+      "reference_required_wraps": [
+        "main"
+      ],
+      "measured_required_wraps": [
+        "fe_b1s0_capture_submit",
+        "fe_b1s0_render_absent",
+        "fe_b1s0_render_present",
+        "fe_b3_f0_bind",
+        "fe_b3_f0_process_one",
+        "main"
+      ],
+      "exact_original_library_archive_required": true,
+      "allowed_libraries": [
+        "libm",
+        "pthread",
+        "original pinned runtime/toolchain libraries"
+      ],
+      "optional_CMake4_dependency_file": "At most one dependency-file linker option with exactly the expected target-owned path; never arbitrary response content.",
+      "symbol_proof": "Retain actual nm/link recipe/ELF identity proving one __wrap_main and resolution to unchanged original main for both variants. GNU --wrap may resolve __real_main away; do not require that literal residual symbol."
+    },
+    "include_and_import_closure": {
+      "source_lock_required": true,
+      "system_roots": "Only the pinned image compiler/sysroot system roots identified by the recorded compiler; project includes are exactly the original repository include/src/frontend directories plus the private F1 build root.",
+      "generated_original_fixture_header": "Retain original generator identity, input identities, output bytes/hash and compiler dependency reference. A header not in source-lock is admitted only through this explicit deterministic generated-output relationship.",
+      "all_non_system_compiler_dependencies": "Resolve within reviewed source/generated roots; require identity membership and reject symlink escape, missing/unregistered source or header.",
+      "python_imports": "Python standard library plus exact source-locked F0/B3 validator modules through explicit path loading; no arbitrary discovery/plugin/import hook. Original pure validators may not be monkey-patched.",
+      "no_prebuilt_ELF_or_archive_substitution": true,
+      "symlink_or_path_traversal_outside_registered_roots": false
+    },
+    "clean_build_environment": {
+      "scrub_original_inputs": [
+        "CFLAGS",
+        "CPPFLAGS",
+        "CXXFLAGS",
+        "LDFLAGS",
+        "ARFLAGS",
+        "ASFLAGS",
+        "LIBRARY_PATH",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "CPATH",
+        "C_INCLUDE_PATH",
+        "CPLUS_INCLUDE_PATH",
+        "OBJC_INCLUDE_PATH",
+        "CMAKE_PREFIX_PATH",
+        "CMAKE_TOOLCHAIN_FILE",
+        "CMAKE_GENERATOR",
+        "CMAKE_ARGS",
+        "CC",
+        "CXX",
+        "AR",
+        "NM",
+        "RANLIB",
+        "SDKROOT",
+        "COMPILER_PATH",
+        "GCC_EXEC_PREFIX"
+      ],
+      "scrub_private_inputs": [
+        "GH_READ_TOKEN",
+        "GITHUB_TOKEN",
+        "GH_TOKEN"
+      ],
+      "explicit_CMAKE_C_FLAGS_and_linker_static_flags": "",
+      "compiler_and_linker_launchers": "",
+      "DSP_configuration": {
+        "backend": "SCALAR",
+        "aec": "MDF",
+        "resampler": "BANDLIMITED",
+        "noise_estimator": "EMA",
+        "fast_math": false,
+        "linux_runtime": false
+      },
+      "inherit_GITHUB_TOKEN_GH_TOKEN_LD_PRELOAD_or_unregistered_sanitizer_options": false,
+      "credentials_used_for_API_acquisition_only": true
+    },
+    "retained_original_build_evidence": [
+      "CMakeCache.txt",
+      "compile_commands.json",
+      "actual bounded configure/build stdout-stderr",
+      "complete link command files",
+      "generated fixture header bytes",
+      "actual compiler and QEMU identities/versions",
+      "source and dependency inventory",
+      "original static-library bytes",
+      "actual reference/measured ELF bytes",
+      "native launcher/fixture ELF bytes",
+      "ELF headers and sections",
+      "symbol tables",
+      "compiler .su outputs"
+    ],
+    "stack_disclosure": "Compiler .su describes individual static frame estimates and dynamic flags. It is not cumulative stack, concurrent stack or measured peak stack.",
+    "final_recipe_requires_independent_review_before_source_freeze": true
+  },
+  "record_schemas": {
+    "global_strictness": {
+      "encoding": "UTF-8 strict; wire ASCII subset only",
+      "duplicate_JSON_keys": false,
+      "unknown_members": false,
+      "NaN_or_infinity": false,
+      "boolean_as_integer": false,
+      "JSON_numeric_integers": "exact nonnegative integers in declared ranges, no coercion",
+      "all_floating_time_values_finite": true,
+      "case_metadata_complete_sets": "Success requires every registered file and exact schema; failed cases retain bounded partial originals and explicit missing/overflow state without a success label."
+    },
+    "proc_status": {
+      "raw_file": "rss/{PREEXEC|ENTRY|RETURN}.status",
+      "original_bytes_required": true,
+      "complete_file_cap_bytes": 8192,
+      "parsed_required_singleton_fields": [
+        "Pid",
+        "PPid",
+        "NSpid",
+        "VmHWM",
+        "VmRSS",
+        "Threads"
+      ],
+      "additional_status_lines": "Preserve all original kernel lines; do not normalize/drop unknown status fields.",
+      "duplicate_required_keys": false,
+      "RSS_units": "exact Linux kB token, multiply parsed integer by1024",
+      "identity_fields": "Pid/PPid and ordered NSpid vector must match actual forked child, native launcher and same namespace mapping across phases.",
+      "thread_count": "Retained positive integer; no false single-threaded claim for ASan/QEMU target.",
+      "status_missing_counter": "Reject complete observation rather than substitute0 or another process."
+    },
+    "proc_identity": {
+      "file": "rss/{PREEXEC|ENTRY|RETURN}.identity.json",
+      "cap_bytes": 4096,
+      "exact_fields": [
+        "schema_version",
+        "phase",
+        "nonce",
+        "ordinal",
+        "case_binding_sha256",
+        "pid",
+        "ppid",
+        "start_ticks",
+        "namespace_mapping_sha256",
+        "status_sha256",
+        "stat_raw",
+        "stat_sha256",
+        "exe_path",
+        "exe_sha256",
+        "exe_device",
+        "exe_inode",
+        "observation_started_monotonic_ns",
+        "observation_finished_monotonic_ns",
+        "complete_original",
+        "overflow"
+      ],
+      "raw_stat": "Retain full original /proc/PID/stat text at most1536 bytes. Parse field22 starttime after the actual parenthesized comm field; do not naïvely whitespace-split a name containing spaces or parentheses.",
+      "exe_path_cap_bytes": 512,
+      "exe_digest_source": "Open/read the observed /proc/PID/exe file while the child is blocked and record its bounded actual identity against the retained expected ELF. A supplied executable pathname/hash is insufficient.",
+      "namespace_mapping_sha256": "Digest exact parsed ordered NSpid vector from retained raw status, not an independently editable duplicate vector.",
+      "argv_or_environment_copies": false,
+      "success": {
+        "complete_original": true,
+        "overflow": false
+      },
+      "raw_stat_and_exe_identity_match_same_pid_start_ticks": true
+    },
+    "control_transcript": {
+      "files": "rss/control-{1..6}.json",
+      "cap_each_bytes": 1024,
+      "exact_fields": [
+        "schema_version",
+        "sequence",
+        "direction",
+        "phase",
+        "wire_bytes",
+        "wire_sha256",
+        "wire_byte_count",
+        "channel_owner_pid",
+        "peer_pid",
+        "received_or_sent_monotonic_ns",
+        "observation_started_monotonic_ns",
+        "observation_finished_monotonic_ns"
+      ],
+      "wire_storage": "Exact ASCII wire including LF represented as one JSON string; final1024-byte envelope includes escaping. Parsed wire is derived during readback, not a second authority.",
+      "successful_sequence": [
+        "PREEXEC child",
+        "PREEXEC ACK",
+        "ENTRY child",
+        "ENTRY ACK",
+        "RETURN child",
+        "RETURN ACK"
+      ],
+      "interval_rule": "Child send <= parent receive <= proc observation start <= finish <= ACK send <= next child checkpoint; all within owned invocation. Child timestamp and launcher timestamp share host CLOCK_MONOTONIC.",
+      "unused_observation_fields": "null on child records; actual snapshot interval on corresponding ACK record"
+    },
+    "target_wait": {
+      "file": "rss/target-wait.json",
+      "cap_bytes": 4096,
+      "exact_fields": [
+        "schema_version",
+        "nonce",
+        "ordinal",
+        "case_binding_sha256",
+        "launcher_pid",
+        "fork_returned_pid",
+        "pid",
+        "start_ticks",
+        "wait4_requested_pid",
+        "wait4_returned_pid",
+        "raw_wait_status",
+        "decoded_exit_kind",
+        "exit_code",
+        "signal_number",
+        "core_dumped",
+        "rusage",
+        "rusage_origin",
+        "fork_started_monotonic_ns",
+        "fork_returned_monotonic_ns",
+        "wait_started_monotonic_ns",
+        "wait_finished_monotonic_ns",
+        "exec_error",
+        "complete_original"
+      ],
+      "rusage_exact_fields": [
+        "ru_utime_sec",
+        "ru_utime_usec",
+        "ru_stime_sec",
+        "ru_stime_usec",
+        "ru_maxrss",
+        "ru_ixrss",
+        "ru_idrss",
+        "ru_isrss",
+        "ru_minflt",
+        "ru_majflt",
+        "ru_nswap",
+        "ru_inblock",
+        "ru_oublock",
+        "ru_msgsnd",
+        "ru_msgrcv",
+        "ru_nsignals",
+        "ru_nvcsw",
+        "ru_nivcsw"
+      ],
+      "microsecond_ranges": [
+        0,
+        999999
+      ],
+      "rusage_origin": "native launcher wait4 return for exactly fork_returned_pid",
+      "success": "Owned wait4 returned target PID; WIFEXITED and WEXITSTATUS0; RETURN code0; no exec_error; all required checkpoint/science proofs complete.",
+      "signal_or_nonzero_exit_after_frames": "Rejected with raw executed frames preserved and zero validated frames for that failed process."
+    },
+    "supervisor": {
+      "file": "rss/supervisor.json",
+      "cap_bytes": 4096,
+      "exact_fields": [
+        "schema_version",
+        "ordinal",
+        "nonce",
+        "case_binding_sha256",
+        "python_collector_pid",
+        "launcher_pid",
+        "launcher_start_ticks",
+        "launcher_argv",
+        "launcher_exe_sha256",
+        "invocation_started_epoch",
+        "invocation_started_monotonic_ns",
+        "invocation_deadline_monotonic_ns",
+        "finished_monotonic_ns",
+        "wait4_requested_pid",
+        "wait4_returned_pid",
+        "raw_wait_status",
+        "rusage",
+        "role",
+        "complete_original"
+      ],
+      "launcher_argv_serialized_cap_bytes": 3072,
+      "rusage_schema": "same raw fields as target_wait.rusage",
+      "role": "SUPERVISOR_LAUNCHER_ONLY_NEVER_TARGET_RSS",
+      "python_wait4_single_owner": "Do not use Popen.wait/communicate to consume the child before exact wait4; retain owned wait result once and set the subprocess state consistently.",
+      "case_claim": "Python supervisor exit status is necessary orchestration evidence, never substitute for target wait4."
+    },
+    "case_index": {
+      "file": "rss/case-index.json",
+      "cap_bytes": 4096,
+      "exact_fields": [
+        "schema_version",
+        "experiment_id",
+        "ordinal",
+        "target",
+        "case",
+        "repeat",
+        "variant",
+        "nonce",
+        "target_pid",
+        "launcher_pid",
+        "target_start_ticks",
+        "target_argv",
+        "runtime_environment",
+        "output_directory",
+        "launcher_elf_sha256",
+        "target_elf_sha256",
+        "host_executable_sha256",
+        "guest_elf_sha256",
+        "sysroot_identity_sha256",
+        "case_binding_sha256",
+        "status_member_names",
+        "identity_member_names",
+        "transcript_member_names",
+        "outcome"
+      ],
+      "science_argv_serialized_cap_bytes": 2048,
+      "runtime_environment_serialized_cap_bytes": 512,
+      "binding_subset_exact_fields": [
+        "experiment_id",
+        "ordinal",
+        "target",
+        "case",
+        "repeat",
+        "variant",
+        "nonce",
+        "target_argv",
+        "runtime_environment",
+        "output_directory",
+        "launcher_elf_sha256",
+        "target_elf_sha256",
+        "host_executable_sha256",
+        "guest_elf_sha256",
+        "sysroot_identity_sha256"
+      ],
+      "binding_hash_algorithm": "SHA256 of UTF8 sorted-key compact JSON of exactly binding_subset_exact_fields, no ASCII escaping, no newline. It excludes its own digest, PID discovered later, file manifest and case-index bytes.",
+      "guest_fields_for_native_sanitized": null,
+      "exact_target_argv": "[retained target ELF, --case, case, --mode, adapter, --future, 0, --negatives, 0, --output, actual absolute case directory]",
+      "arm_exact_prefix": "[retained actual host qemu-arm, -L, /usr/arm-linux-gnueabihf] before the retained guest ELF and same arguments"
+    },
+    "protocol_log": {
+      "file": "rss/launcher.log",
+      "cap_bytes": 6144,
+      "max_lines": 24,
+      "cap_serialized_line_including_LF_bytes": 256,
+      "format": "Bounded ASCII diagnostic reason/phase/PID/time only; no arbitrary environment, token, raw API or target payload."
+    },
+    "failure_context": {
+      "file": "rss/failure.json",
+      "cap_bytes": 4096,
+      "exact_fields": [
+        "schema_version",
+        "status",
+        "reason",
+        "ordinal",
+        "phase",
+        "member",
+        "observed_bytes",
+        "retained_bytes",
+        "overflow",
+        "complete_original",
+        "attempted_target",
+        "raw_executed_frames",
+        "validated_frames",
+        "owned_child_reaped",
+        "stage_deadline_exceeded",
+        "descendant_lineage"
+      ],
+      "success_record": "status=NONE, reason=null, no overflow, complete_original=true; counters bound to successful case.",
+      "descendant_lineage": "Only registered P07 bounded actual fork-returned descendant PID, parent PID, wait PID/status; null for science/unobserved cases. No inferred descendant absence.",
+      "overflow": "Retain only the already observed bounded prefix and explicit overflow/incomplete identity. Do not continue claiming the source file is complete or increase cap."
+    },
+    "global_ledgers": {
+      "science": "Exactly36 schedule rows; each complete process key=(pid,start_ticks,namespace_mapping) unique for that lifetime, with independent launcher process key. Later integer PID reuse across distinct lifetimes alone is legal.",
+      "engineering": "ExactlyP01..P07 in one fixed batch; zero DSP frames, separate native helper process keys and outcomes.",
+      "commands": "One entry per actual build/tool/API command with original invocation start/deadline/exit/output cap. No subprocess created by metadata negative replay.",
+      "attempts": "One actual provider run/attempt per artifact, no combining another attempt or local cohort."
+    }
+  },
+  "byte_budgets": {
+    "case_metadata_categories": [
+      {
+        "category": "proc_status",
+        "file_pattern": "rss/{phase}.status",
+        "max_count": 3,
+        "max_serialized_bytes_each": 8192,
+        "category_max_bytes": 24576
+      },
+      {
+        "category": "proc_identity",
+        "file_pattern": "rss/{phase}.identity.json",
+        "max_count": 3,
+        "max_serialized_bytes_each": 4096,
+        "category_max_bytes": 12288
+      },
+      {
+        "category": "control_transcript",
+        "file_pattern": "rss/control-{sequence}.json",
+        "max_count": 6,
+        "max_serialized_bytes_each": 1024,
+        "category_max_bytes": 6144
+      },
+      {
+        "category": "target_wait",
+        "file_pattern": "rss/target-wait.json",
+        "max_count": 1,
+        "max_serialized_bytes_each": 4096,
+        "category_max_bytes": 4096
+      },
+      {
+        "category": "supervisor",
+        "file_pattern": "rss/supervisor.json",
+        "max_count": 1,
+        "max_serialized_bytes_each": 4096,
+        "category_max_bytes": 4096
+      },
+      {
+        "category": "protocol_log",
+        "file_pattern": "rss/launcher.log",
+        "max_count": 1,
+        "max_serialized_bytes_each": 6144,
+        "category_max_bytes": 6144
+      },
+      {
+        "category": "case_index",
+        "file_pattern": "rss/case-index.json",
+        "max_count": 1,
+        "max_serialized_bytes_each": 4096,
+        "category_max_bytes": 4096
+      },
+      {
+        "category": "failure_context",
+        "file_pattern": "rss/failure.json",
+        "max_count": 1,
+        "max_serialized_bytes_each": 4096,
+        "category_max_bytes": 4096
+      }
+    ],
+    "new_case_metadata_max_bytes": 65536,
+    "thirty_six_envelopes_max_bytes": 2359296,
+    "other_case_caps": {
+      "combined_target_stdout_stderr_bytes": 1048576,
+      "original_timing_file_bytes": 1048576,
+      "all_temporary_case_files_bytes": 8388608
+    },
+    "complete_uncompressed_artifact_bytes": 33554432,
+    "individual_scalar_caps_bytes": {
+      "raw_stat": 1536,
+      "exe_or_path": 512,
+      "science_argv_serialized": 2048,
+      "launcher_argv_serialized": 3072,
+      "runtime_env_serialized": 512,
+      "wire_including_LF": 256
+    },
+    "category_borrowing_allowed": false,
+    "all_final_serialized_caps_independently_enforced": true,
+    "field_maxima_alone_are_fit_proof": false,
+    "wire_max_schema_envelope_bytes": {
+      "PREEXEC": 214,
+      "ENTRY": 182,
+      "RETURN": 209,
+      "ACK": 216
+    },
+    "first_process_preflight": "Before first science target, validate final serialized templates and actual successful P01 originals against all caps. Overflow rejects; no claim that arbitrary Linux proc files fit.",
+    "measurement_ELFs_build_records_raw_API_logs_all_count_inside_artifact": true,
+    "archive_zip_bomb_or_path_escape": "Independent readback validates file count, member names, uncompressed byte accounting, duplicate names, symlink/absolute/dotdot paths and manifest membership before bounded extraction.",
+    "manifest": "Exact sorted relative file membership and SHA256; no unregistered files, missing files or self-hashed manifest cycle. Preserve raw failure artifacts under the same caps."
+  },
+  "budgets": {
+    "stage_seconds": 180,
+    "science_invocation_seconds": 30,
+    "tool_command_seconds": 60,
+    "checkpoint_seconds": 2,
+    "original_job_seconds": 900,
+    "archive_reserve_seconds": 60,
+    "engineering_invocation_seconds": 1,
+    "engineering_work_seconds": 0.8,
+    "engineering_cleanup_reserve_seconds": 0.2,
+    "engineering_batch_seconds": 10,
+    "effective_stage_formula": "min(180, original_job.deadline_epoch - stage_started_epoch - 60)",
+    "stage_epoch_sample": "One actual wall-clock sample at stage start, paired with monotonic origin. No separate sample to inflate min calculation.",
+    "full_stage_window_required_before_build_or_fixture": true,
+    "insufficient_window_reason": "INSUFFICIENT_F1_STAGE_WINDOW",
+    "precollector_job_budget_max_seconds": 660,
+    "local_original_job": null,
+    "local_stage_limit_seconds": 180,
+    "all_deadlines": "Every nested action uses min(own unchanged limit, remaining original stage/job limit); no deadline reset at fork/exec/ACK/ENTRY/RETURN or retry.",
+    "invocation_clock_origin": "Immediately before starting the native launcher, includes Python launch, launcher setup, fork, exec, handshakes, original body, exit cleanup and owned reap.",
+    "stage_includes": [
+      "PRE provider observation",
+      "fresh compilation and tool metadata",
+      "metadata-only controls",
+      "single seven-fixture batch",
+      "all36 ordered science targets",
+      "original B3 and equality validation",
+      "full timing and RSS recomputation",
+      "POST provider observation",
+      "bounded cleanup",
+      "final manifest and seal"
+    ],
+    "final_success": "Check monotonic and original epoch deadline after final cleanup and final seal; late seal/cleanup cannot be labelled success. Archive reserve belongs to workflow upload after collection, not late POST or measurement.",
+    "automatic_retries": 0,
+    "timeout_policy": "Retain bounded failure evidence, stop new work, terminate only owned process/session boundaries and reap actual owned PIDs; no replacement case or extended limit."
+  },
+  "original_job_binding": {
+    "job_id": "frontend-rss-f1",
+    "exact_allowed_display_names": [
+      "frontend-rss-f1",
+      "quality / frontend-rss-f1"
+    ],
+    "independent_of_F0_selector": true,
+    "first_executable_step_before_checkout": true,
+    "endpoint": "/repos/jiying2007/audio-pipeline/actions/runs/{actual_run_id}/attempts/{actual_run_attempt}/jobs?per_page=100",
+    "complete_response": "0 < len(jobs) == total_count <=100, unique positive job IDs, no next Link, no missing page or cached projection.",
+    "selection": "Exactly one actual in_progress job with registered exact name, matching actual run_id/run_attempt/workflow head. Duplicate eligible names reject.",
+    "actual_PR_job_head": "C, not test-merge M",
+    "actual_main_job_head": "S",
+    "raw_request_record_fields": [
+      "method",
+      "origin",
+      "path",
+      "run_id",
+      "run_attempt",
+      "request_started_epoch",
+      "response_finished_epoch",
+      "http_status",
+      "body_bytes",
+      "body_sha256",
+      "selected_job_id"
+    ],
+    "raw_request_rule": "Actual GET canonicalapi.github.com, status200, request start<=response end, start/run/attempt/head independently provider-bound; no retained credential.",
+    "deadline_record_fields": [
+      "job_id",
+      "job_name",
+      "run_id",
+      "run_attempt",
+      "head_sha",
+      "started_at",
+      "started_epoch",
+      "deadline_epoch",
+      "job_seconds",
+      "archive_reserve_seconds"
+    ],
+    "deadline_derivation": "Parse actual ISO started_at including timezone into epoch; deadline exactly started_epoch+900, reserve exactly60. Recompute selected tuple from original bounded Jobs body before any build/DSP and again in independent readback.",
+    "environment_paths": [
+      "FE_T3S3_F1_JOB_DEADLINE_FILE",
+      "FE_T3S3_F1_JOB_API_OBSERVATION_DIR"
+    ],
+    "hosted_missing_or_partial_API_evidence": "Reject, never pretend local or accept a self-authored deadline alone.",
+    "local_mode": "original_job=null and no hosted characterization; source freeze/root first-execution authority still required for any F1 process."
+  },
+  "external_freeze": {
+    "fixed_repository": {
+      "full_name": "jiying2007/audio-pipeline",
+      "id": 1347377137
+    },
+    "fixed_issue": {
+      "number": 845,
+      "id": 6015285792,
+      "node_id": "I_kwDOUE9X8c8AAAABZon6IA",
+      "created_at": "2026-10-24T16:50:18Z"
+    },
+    "fixed_author": {
+      "login": "jiying2007",
+      "id": 33591504,
+      "type": "User"
+    },
+    "scope": {
+      "head_repository_id": 1347377137,
+      "head_branch": "research/fe09-t3s3-f1-rss-20261024",
+      "base_repository_id": 1347377137,
+      "base_branch": "main",
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "caller_workflow": ".github/workflows/verify.yml",
+      "reusable_workflow": ".github/workflows/quality.yml",
+      "job_id": "frontend-rss-f1"
+    },
+    "body_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "protocol",
+        "experiment_id",
+        "repository",
+        "issue",
+        "author",
+        "scope",
+        "source",
+        "digests",
+        "decision",
+        "review_mode",
+        "reviewed_at_utc"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "protocol": {
+          "const": "FE09_F1_EXTERNAL_SOURCE_FREEZE_R1"
+        },
+        "experiment_id": {
+          "const": "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-R1"
+        },
+        "repository": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "full_name",
+            "id"
+          ],
+          "properties": {
+            "full_name": {
+              "const": "jiying2007/audio-pipeline"
+            },
+            "id": {
+              "const": 1347377137
+            }
+          }
+        },
+        "issue": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "number",
+            "id",
+            "node_id",
+            "created_at"
+          ],
+          "properties": {
+            "number": {
+              "const": 845
+            },
+            "id": {
+              "const": 6015285792
+            },
+            "node_id": {
+              "const": "I_kwDOUE9X8c8AAAABZon6IA"
+            },
+            "created_at": {
+              "const": "2026-10-24T16:50:18Z"
+            }
+          }
+        },
+        "author": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "login",
+            "id",
+            "type"
+          ],
+          "properties": {
+            "login": {
+              "const": "jiying2007"
+            },
+            "id": {
+              "const": 33591504
+            },
+            "type": {
+              "const": "User"
+            }
+          }
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "head_repository_id",
+            "head_branch",
+            "base_repository_id",
+            "base_branch",
+            "events",
+            "caller_workflow",
+            "reusable_workflow",
+            "job_id"
+          ],
+          "properties": {
+            "head_repository_id": {
+              "const": 1347377137
+            },
+            "head_branch": {
+              "const": "research/fe09-t3s3-f1-rss-20261024"
+            },
+            "base_repository_id": {
+              "const": 1347377137
+            },
+            "base_branch": {
+              "const": "main"
+            },
+            "events": {
+              "const": [
+                "pull_request",
+                "push"
+              ]
+            },
+            "caller_workflow": {
+              "const": ".github/workflows/verify.yml"
+            },
+            "reusable_workflow": {
+              "const": ".github/workflows/quality.yml"
+            },
+            "job_id": {
+              "const": "frontend-rss-f1"
+            }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "qualified_F0_D",
+            "qualified_F0_tree_D",
+            "protected_base_B",
+            "protected_base_tree_B",
+            "reviewed_head_C",
+            "reviewed_tree_C"
+          ],
+          "properties": {
+            "qualified_F0_D": {
+              "const": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+            },
+            "qualified_F0_tree_D": {
+              "const": "894253393823d842f620be408ec12339a61771d2"
+            },
+            "protected_base_B": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "protected_base_tree_B": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "reviewed_head_C": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "reviewed_tree_C": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          }
+        },
+        "digests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_lock_sha256",
+            "test_contract_sha256",
+            "execution_baseline_sha256",
+            "negative_controls_sha256"
+          ],
+          "properties": {
+            "source_lock_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "test_contract_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "execution_baseline_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "negative_controls_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "decision": {
+          "const": "F1_R1_APPROVE_EXACT_SOURCE_FOR_REGISTERED_PR_AND_MAIN_FIRST_EXECUTION"
+        },
+        "review_mode": {
+          "const": "ROOT_INDEPENDENT_COMPLETE_SOURCE_AND_PREREQUISITE_REVIEW"
+        },
+        "reviewed_at_utc": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        }
+      }
+    },
+    "comment_body_max_UTF8_bytes": 16384,
+    "JSON_parse": "Exactly one UTF8 JSON object, no markdown wrapper, duplicate keys, unknown fields, non-finite numbers, boolean/integer coercion or trailing data. Enforce actual scalar types also for const-valued numeric identities; validate real calendar UTC, not regex alone.",
+    "authority_candidates": "Only actual provider comments from exact login/id/type AUTHOR. An untrusted copied body/login is never authority. Non-JSON conversation is nonauthoritative. Fixed-author comments whose trimmed body starts with { are reserved protocol records and must strictly decode; malformed reserved records reject, including another-C records.",
+    "source_selection_order": [
+      "bind actual provider run/event and repository",
+      "on PR derive unique actual PR and C/B from provider association and exact Git merge roles",
+      "on main derive actual S then complete associated-PR list then unique matching actual merged PR and C/B from immutable S parent",
+      "only after C/B derivation inspect/select issue845 freeze records"
+    ],
+    "candidate_C_CLI_is_selection_authority": false,
+    "issue_identity_rule": "Both issue reads in each sweep match exact issue REST/node/creation identity, canonical repository URLs and exact creator AUTHOR; issue must not carry pull_request. Title, body and open/closed state are not source authority or implicit revocation.",
+    "complete_comment_list": {
+      "per_page": 100,
+      "page": 1,
+      "since_filter_allowed": false,
+      "max_comments": 100,
+      "exact_count": "issue_before.comments == len(complete_raw_comments_array) == issue_after.comments; strict nonnegative integer counts, unique positive IDs, no next-page Link, no omitted or repeated entries.",
+      "pagination_following": false,
+      "over_limit_or_missing_count": "Reject before selecting a comment; never accept a partial searched page."
+    },
+    "unique_C_record": "Exactly one complete valid trusted-author record for actual derived C; zero rejects and two reject even if identical. Another-C record is neither a substitute nor selected because its tree is the same.",
+    "OID_format_vs_authority": "The schema validates40 lowercase hex syntax. Selection/identity must match actual nonzero provider/Git B/C/tree objects; an all-zero or other-C syntactic string can never approve actual C. N125 changes the only matching record to another syntactic OID and must reach the zero-matching-C predicate rather than be counted as a schema-format test.",
+    "direct_record": "Direct selected-comment GET must match the list record ID/node/author/issue_url/timestamps/body bytes; enforce canonical endpoint and same repository/issue association.",
+    "creation_rules": [
+      "selected.created_at == selected.updated_at",
+      "reviewed_at_utc <= selected.created_at",
+      "selected.created_at < original_actual_Actions_run.created_at",
+      "original run creation is not run_started_at, current attempt start, job start or local time",
+      "equal-second creation/run boundary rejects; activation waits for a later provider second"
+    ],
+    "POST": "Repeat the complete ordered sweep, including both issue count brackets, full list, uniqueness and selected direct record. Require exact PRE/POST selected ID/node/author/issue/timestamps/body bytes/SHA256 and actual source/event tuple stability. A newly duplicated, deleted, edited or unobservable record rejects qualification with original attempted bytes retained.",
+    "independent_root_readback": "Reacquire live complete provider records and bind actual run/attempt/jobs/artifact/source plus freeze. Archived self-consistent bytes alone are not provider attestation.",
+    "noncircularity": "C, its source-lock and locked baseline contain neither C, source-lock own digest nor future approving comment identity. External comment approves C/tree plus final four byte digests. Runtime artifact/additive later records retain actual selected comment identity/body hash.",
+    "change_policy": "Any source/tree/base/method/budget change creates a new independently reviewed C and a new immutable comment; no editing prior comments or filling future IDs into the already approved C. A pending source/baseline field is never waived by comment approval.",
+    "activation_order": "Complete guard bootstrap and actual protected-B main closure, finalize exact C, root independently reviews, publish freeze, wait for a later provider second, then create the PR or synchronize the final C. An already-open PR also needs the new synchronize event after freeze.",
+    "manual_repeat": "No automatic retry. A later attempt needs a separate explicit root decision, keeps its separate cohort, and still requires source freeze predating the original run creation. Source approval alone does not authorize reruns.",
+    "trust_limit": "Checkpoint observations and finite-precision provider timestamps do not prove no transient edit. No cryptographic comment immutability or hostile-runner guarantee. Trusted owner must not edit records; independent root source review and provider readback remain required.",
+    "current_valid_comment_claimed": false
+  },
+  "control_plane_budget": {
+    "max_HTTP_GET_requests": 17,
+    "first_step_Jobs_GET": 1,
+    "main_sweeps": {
+      "PRE": 8,
+      "POST": 8,
+      "total_with_first_Jobs": 17
+    },
+    "PR_sweeps": {
+      "PRE": 7,
+      "POST": 7,
+      "total_with_first_Jobs": 15
+    },
+    "exact_each_sweep_order": [
+      {
+        "order": 1,
+        "name": "repository",
+        "path": "/repos/jiying2007/audio-pipeline",
+        "when": "PR_AND_MAIN"
+      },
+      {
+        "order": 2,
+        "name": "actual_run_attempt",
+        "path": "/repos/jiying2007/audio-pipeline/actions/runs/{actual_run_id}/attempts/{actual_run_attempt}",
+        "when": "PR_AND_MAIN"
+      },
+      {
+        "order": 3,
+        "name": "complete_actual_S_associated_PRs",
+        "path": "/repos/jiying2007/audio-pipeline/commits/{actual_S}/pulls?per_page=100&page=1",
+        "when": "MAIN_ONLY"
+      },
+      {
+        "order": 4,
+        "name": "unique_actual_PR_detail",
+        "path": "/repos/jiying2007/audio-pipeline/pulls/{provider_associated_actual_PR_number}",
+        "when": "PR_AND_MAIN"
+      },
+      {
+        "order": 5,
+        "name": "fixed_issue_before",
+        "path": "/repos/jiying2007/audio-pipeline/issues/845",
+        "when": "PR_AND_MAIN"
+      },
+      {
+        "order": 6,
+        "name": "complete_fixed_issue_comments",
+        "path": "/repos/jiying2007/audio-pipeline/issues/845/comments?per_page=100&page=1",
+        "when": "PR_AND_MAIN"
+      },
+      {
+        "order": 7,
+        "name": "unique_selected_actual_C_comment",
+        "path": "/repos/jiying2007/audio-pipeline/issues/comments/{uniquely_selected_comment_id}",
+        "when": "PR_AND_MAIN"
+      },
+      {
+        "order": 8,
+        "name": "fixed_issue_after",
+        "path": "/repos/jiying2007/audio-pipeline/issues/845",
+        "when": "PR_AND_MAIN"
+      }
+    ],
+    "route_derivation": "PR number comes from actual event/run.pull_requests association before PR detail. On main the actual S association list is fully read before choosing exactly one merged registered PR; no freeze-derived PR/C lookup.",
+    "main_association_completeness": "One full per_page100/page1 array, at most100, unique positive IDs/numbers, no next Link, no filtering/since or first-match shortcut. No reported total_count is invented for an endpoint that has none. Reject truncation/overflow/ambiguous matching PR.",
+    "request_seconds": 5,
+    "aggregate_acquisition_seconds": 60,
+    "retained_control_plane_max_bytes": 8388608,
+    "serialized_categories": [
+      {
+        "category": "original_job_response",
+        "max_count": 1,
+        "max_serialized_bytes_each": 2097152,
+        "category_max_bytes": 2097152
+      },
+      {
+        "category": "original_job_request_record",
+        "max_count": 1,
+        "max_serialized_bytes_each": 65536,
+        "category_max_bytes": 65536
+      },
+      {
+        "category": "repository_responses",
+        "max_count": 2,
+        "max_serialized_bytes_each": 65536,
+        "category_max_bytes": 131072
+      },
+      {
+        "category": "run_attempt_responses",
+        "max_count": 2,
+        "max_serialized_bytes_each": 131072,
+        "category_max_bytes": 262144
+      },
+      {
+        "category": "issue_bracket_responses",
+        "max_count": 4,
+        "max_serialized_bytes_each": 65536,
+        "category_max_bytes": 262144
+      },
+      {
+        "category": "complete_comment_list_responses",
+        "max_count": 2,
+        "max_serialized_bytes_each": 1048576,
+        "category_max_bytes": 2097152
+      },
+      {
+        "category": "selected_comment_responses",
+        "max_count": 2,
+        "max_serialized_bytes_each": 65536,
+        "category_max_bytes": 131072
+      },
+      {
+        "category": "complete_main_PR_association_responses",
+        "max_count": 2,
+        "max_serialized_bytes_each": 1048576,
+        "category_max_bytes": 2097152
+      },
+      {
+        "category": "PR_detail_responses",
+        "max_count": 2,
+        "max_serialized_bytes_each": 262144,
+        "category_max_bytes": 524288
+      },
+      {
+        "category": "all_non_job_request_and_header_records",
+        "max_count": 16,
+        "max_serialized_bytes_each": 8192,
+        "category_max_bytes": 131072
+      }
+    ],
+    "sum_category_maxima_bytes": 7798784,
+    "unallocated_margin_bytes": 589824,
+    "category_borrowing_allowed": false,
+    "original_Job_request_clock": "First executable job step before checkout; charged to the same original900s job and the aggregate60s API budget. Its original raw response/request is revalidated within the collector. It is the only one of17 GETs outside collector180s.",
+    "sweep_clock": "All PRE/POST request work, parsing, metadata tests, cleanup and final seal count inside the same180s stage. Each request receives min(5s, remaining aggregate60s, remaining stage, remaining original job excluding archive reserve).",
+    "whole_request_wallclock": "The owning parent monitors monotonic elapsed time including DNS, connect/TLS, headers, all response reads, bounded encoding and worker cleanup. A socket timeout alone is not the5s whole-request proof. Late cleanup or incomplete reaping rejects; it does not reset a clock.",
+    "bounded_HTTP_workers": {
+      "first_Jobs_worker_max": 1,
+      "collector_PRE_POST_reused_worker_max": 1,
+      "total_extra_metadata_only_helpers_max": 2,
+      "DSP_frames": 0,
+      "science_or_fixture_processes": false,
+      "rule": "Owned Python metadata-only worker with fixed canonical GET protocol; first-step worker exits/reaped before checkout, collector worker reused across all PRE/POST requests and exits/reaped before seal. No per-request respawn or retry after failure. Parent can terminate only its owned worker on timeout; exact PID/start/wait and elapsed time retained in bounded request metadata."
+    },
+    "request_record_fields": [
+      "request_ordinal",
+      "phase",
+      "method",
+      "origin",
+      "path",
+      "started_epoch",
+      "started_monotonic_ns",
+      "finished_epoch",
+      "finished_monotonic_ns",
+      "http_status",
+      "response_final_origin",
+      "headers_without_credentials",
+      "body_bytes",
+      "body_sha256",
+      "body_complete",
+      "overflow",
+      "worker_pid",
+      "worker_start_ticks",
+      "worker_exit_or_final_reap"
+    ],
+    "transport": "Authenticated GET canonical https://api.github.com only; status200 required; reject redirects rather than follow, compression expansion beyond bound, wrong origins/paths, partial body, duplicate JSON keys or invalid UTF8. No retry, pagination search, anonymous fallback, cached snapshot or caller JSON substitute.",
+    "credentials": "Only API owner/worker receives read token. Never retain Authorization/Cookie/private values or pass token/descriptors into compiler, launcher, target or fixture children.",
+    "overflows": "Enforce cap while reading bytes and before decoding. Preserve bounded prefix plus explicit incomplete/overflow failure metadata; never truncate and qualify. Counts fitting100 do not guarantee bytes fit1MiB.",
+    "out_of_scope": "Protected source guard is a bounded local Git/event check without HTTP. Collector may reject a misrouted non-science case after first Jobs and at most repository/run/association/PR binding (at most5 actual GETs); it does not acquire freeze or run build/fixtures/science, and does not claim a full cohort. Every actual GET still charged to17/60s/8MiB."
+  },
+  "event_source_binding": {
+    "registered_scope": {
+      "head_repository_id": 1347377137,
+      "head_branch": "research/fe09-t3s3-f1-rss-20261024",
+      "base_repository_id": 1347377137,
+      "base_branch": "main",
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "caller_workflow": ".github/workflows/verify.yml",
+      "reusable_workflow": ".github/workflows/quality.yml",
+      "job_id": "frontend-rss-f1"
+    },
+    "PR": {
+      "actual_provider_head": "C",
+      "actual_provider_base": "B",
+      "actual_checkout_and_GITHUB_SHA": "M",
+      "run_and_selected_job_head_sha": "C",
+      "M_actual_parents_ordered": [
+        "B",
+        "C"
+      ],
+      "M_full_tree": "tree(C)",
+      "repository_and_branch": "Both actual repo IDs equal1347377137; exact registered head branch and base main. Actual run.pull_requests/event PR association selects exactly one eligible PR and its detail, not a CLI number.",
+      "provider_base_matches_immutable_graph": true
+    },
+    "main": {
+      "actual_event_run_job_checkout": "S",
+      "push_before": "B",
+      "S_actual_parents": [
+        "B"
+      ],
+      "S_full_tree": "tree(C)",
+      "source_derivation_before_freeze": "S -> complete associated-PR response -> exactly one actual merged registered PR with merge_commit_sha S -> its actual head C and immutable S sole parent B -> external freeze for C",
+      "actual_PR_mutable_base_is_B_authority": false,
+      "PR_detail_must_bind": [
+        "same exact head/base repository IDs",
+        "original registered head branch",
+        "base ref main",
+        "merged true and real merged_at",
+        "merge_commit_sha S",
+        "actual head C"
+      ],
+      "ambiguous_or_same_tree_other_commit": "Reject; do not choose first association or search freeze by tree."
+    },
+    "graph_reads": "Use actual immutable Git commit/tree objects from existing full checkout, bounded local reads and explicit diff. Missing graph is failure, not another unbudgeted API call/fetch or candidate receipt substitute.",
+    "PRE_POST_source_stability": "Actual run id/attempt/original creation/event/workflow/head, repository, selected PR number/identity/head/branch/merge association and immutable B/C/M/S/tree roles remain the same. Mutable status not in authority tuple cannot alter fixed source binding.",
+    "nonregistered": "No F1 launcher, engineering fixture or DSP on other PR branches, forks, other main changes or workflow_dispatch. Emit F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE only after actual protected-B source guard proves noninterference.",
+    "registered_missing_authority": "In registered execution phase, absent/bad freeze or pending prerequisite is rejection; never silently relabel in-scope execution as out-of-scope. The separately defined bootstrap has explicit zero-process state and no science result."
+  },
+  "protected_source_guard": {
+    "current_implementation": "PENDING_NOT_IMPLEMENTED_NOT_RUN",
+    "guard_source_path": "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py",
+    "mode": "Standalone bounded source/metadata mode; standard library only, no project-module side effects, compilation, launcher, fixture, DSP or HTTP.",
+    "expected_policy_source": "Actual independently qualified protected base B Git bytes; extract the protected guard and its policy closure from B, never execute a modified C guard as the expected-policy oracle.",
+    "B_source_proof": "Retain B commit/tree and extracted guard byte/blob identities; compare actual event range B->C for PR or B->S for main and validate local provider-event fields without inventing a nonexistent guard.",
+    "protected_paths": [
+      "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_launcher.c",
+      "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_observer.c",
+      "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py",
+      "tests/validation/frontend_evolution/fe09_t3s3_f1_build/CMakeLists.txt",
+      "tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py",
+      "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_fixture.c",
+      "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/README.md",
+      "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/test-contract.json",
+      "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/source-lock.json",
+      "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/negative-controls.json",
+      "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/EXECUTION_BASELINE.json",
+      ".github/scripts/verify-docs-gate.sh"
+    ],
+    "protected_dependency_set": "Also protect all96 immutable originals and the source-locked compile/include/import closure, plus actual workflow F1 invocation, permissions, input/selection, guard routing and summary-result dependencies.",
+    "fast_routes": [
+      "existing fast-docs docs gate",
+      "existing fast-code docs gate"
+    ],
+    "impact_route": "The existing Verify impact job invokes the actual B guard before final scheduling decisions. Expose its strict f1_required boolean as an output; do not let candidate ci_impact.py or docs_only classification suppress it.",
+    "docs_only_final_C": "Even a final execution C changing only baseline/contract/lock/docs invokes the actual B guard on fast-docs and sets f1_required=true. The existing quality caller must run and pass a new narrowly scoped run_f1 boolean into Quality. The F1 job condition is inputs.run_extended OR inputs.run_f1. Preserve all pre-existing run_extended decisions for other jobs. The fast-docs success alone is not F1 execution closure.",
+    "fail_closed_schedule": "Missing/invalid guard output, unavailable B bytes/diff, ambiguous scope or skipped required F1 job fails required Verify summary. A skipped F1 execution obligation cannot be represented as successful source-only work.",
+    "source_out_of_scope": "A protected byte/route change on an unregistered event rejects F1_OUT_OF_SCOPE_PROTECTED_CHANGE or requires a separately reviewed new preregistration. Candidate path removals, branch spelling or self-declared unrelated labels do not waive this.",
+    "shared_hooks": "For actual execution C, all3 whole hook files are source-locked. For later unrelated work, a bounded exact structural comparison may prove unchanged F1 job, five-read blocks, input/selection, impact/fast-docs/fast-code guard invocations and summary route. If noninterference cannot be proved, reject. Unrelated jobs need not freeze the whole repository forever.",
+    "bootstrap": {
+      "state": "SOURCE_METADATA_ONLY",
+      "when": "Actual B does not yet contain the reviewed protected F1 guard/wiring.",
+      "allowed_after_separate_root_docs_freeze": [
+        "source/test editing",
+        "static syntax checks",
+        "static compilation",
+        "pure in-process offline metadata controls"
+      ],
+      "F1_launchers": 0,
+      "engineering_fixture_processes": 0,
+      "DSP_targets": 0,
+      "DSP_frames": 0,
+      "root_review": "Independently review bootstrap source/wiring and the absence of a B guard. A bootstrap candidate or external comment cannot authorize measurement or pretend to execute nonexistent B policy.",
+      "completion_order": [
+        "protected squash of reviewed metadata-only guard/bootstrap source",
+        "its own distinct main Verify/summary and Release/convergence closure",
+        "select resulting actual closed protected B with real guard",
+        "finalize new actual execution C even if docs-only",
+        "independent exact-C source review and external freeze",
+        "later registered PR activation and science cohort"
+      ],
+      "compiled_bootstrap_products_are_execution_evidence": false
+    },
+    "threat_boundary": "This is source-policy provenance plus protected-gate/root review, not a claim that candidate workflow bytes can cryptographically prevent their own removal. Root verifies actual wiring and required outcomes independently."
+  },
+  "workflow_hookup": {
+    "files": [
+      {
+        "path": ".github/workflows/verify.yml",
+        "role": "QUALITY_CALLER_FIVE_READ_PERMISSIONS_ONLY",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true,
+        "source_anchor_identity": {
+          "path": ".github/workflows/verify.yml",
+          "bytes": 17201,
+          "sha256": "9ec8b3f7a5c2cc4f47b006d1d9ce083923a68ab36111dea0bea9b70a9cfa1d9f",
+          "git_blob_sha1": "cff393663ad856cfad012724a74ebbdd9c67df86",
+          "role": "UNMODIFIED_D92_HOOK_BEFORE_IMPLEMENTATION",
+          "source_commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+        }
+      },
+      {
+        "path": ".github/workflows/quality.yml",
+        "role": "NEW_INDEPENDENT_FRONTEND_RSS_F1_JOB_ONLY",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true,
+        "source_anchor_identity": {
+          "path": ".github/workflows/quality.yml",
+          "bytes": 159601,
+          "sha256": "e7bf33e375c6e51066fce263e53a61ec272058dff1977e87600520c34671ec3e",
+          "git_blob_sha1": "f42a781487727bb09d0d99a7840a76dc2768a839",
+          "role": "UNMODIFIED_D92_HOOK_BEFORE_IMPLEMENTATION",
+          "source_commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+        }
+      },
+      {
+        "path": ".github/scripts/verify-docs-gate.sh",
+        "role": "SOURCE_METADATA_SCOPE_GUARD_ON_BOTH_EXISTING_FAST_PATHS",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true,
+        "source_anchor_identity": {
+          "path": ".github/scripts/verify-docs-gate.sh",
+          "bytes": 6961,
+          "sha256": "4de0fdd2574351c6777a010d630692237ed4f9b767e0d770efdf0cca13ca9461",
+          "git_blob_sha1": "82600a89ac39be6f370ad6943d1e1def29a803d9",
+          "role": "UNMODIFIED_D92_HOOK_BEFORE_IMPLEMENTATION",
+          "source_commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+        }
+      }
+    ],
+    "verify_quality_caller_permissions": {
+      "contents": "read",
+      "packages": "read",
+      "actions": "read",
+      "issues": "read",
+      "pull-requests": "read"
+    },
+    "quality_F1_child_permissions": {
+      "contents": "read",
+      "packages": "read",
+      "actions": "read",
+      "issues": "read",
+      "pull-requests": "read"
+    },
+    "existing_top_level_three_read_permissions_preserved": [
+      "contents",
+      "packages",
+      "actions"
+    ],
+    "unrelated_CodeQL_security_events_write_preserved": true,
+    "minimum_schedule_changes": "Within verify.yml only, add protected-B guard impact output f1_required and OR it into the existing quality-call scheduling; pass new boolean run_f1 to Quality. Within quality.yml only, declare default-false run_f1 and select the new F1 job on run_extended OR run_f1. Preserve existing other jobs and run_extended inputs. Both fast paths independently run the B guard through verify-docs-gate.sh.",
+    "exact_scheduling_obligations": {
+      "quality_caller_needs": [
+        "impact",
+        "fast-gate"
+      ],
+      "quality_caller_condition": "always() && needs.fast-gate.result == 'success' && (needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true')",
+      "quality_call_run_f1": "needs.impact.outputs.f1_required == 'true'",
+      "quality_call_run_extended_unchanged": "needs.impact.outputs.run_extended == 'true'",
+      "F1_child_condition": "inputs.run_extended || inputs.run_f1",
+      "summary_EXPECT_QUALITY": "needs.impact.outputs.run_quality == 'true' || needs.impact.outputs.f1_required == 'true'",
+      "summary_required_disposition": "Quality exposes f1_disposition from actual F1 job final validated receipt through explicit job/workflow_call outputs. If f1_required=true, Verify summary additionally requires quality result success and exact complete F1 decision FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION. Empty/skipped/source-only/partial disposition fails; it is not inferred from other Quality jobs.",
+      "fast_gate_rules_unchanged": "docs_only selects fast-docs versus fast-code as before; impact success and the selected fast path success remain required. Protected B guard runs in impact and the selected fast path. A docs-only C can have fast-code skipped and still must reach the required Quality/F1 obligation.",
+      "implementation_review_evidence": "Read actual YAML caller/needs/conditions/inputs/outputs/summary environment and protected B guard; use pure metadata branch cases for both docs-only and code paths. No F1 job execution is necessary to test scheduling decisions during bootstrap."
+    },
+    "job": {
+      "id": "frontend-rss-f1",
+      "runner": "ubuntu-24.04",
+      "image": "ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57",
+      "timeout_minutes": 15,
+      "separate_from_frontend_reference": true,
+      "new_standalone_workflow": false,
+      "scheduled_execution": false,
+      "artifact_prefix": "frontend-rss-f1-{run_id}-{run_attempt}"
+    },
+    "failure_propagation": "Required F1 outcome propagates through existing reusable quality caller and Verify summary; no continue-on-error, skip-to-PASS or fabricated success. Source metadata-only disposition stays distinct from science completion.",
+    "source_only_job": "A bootstrap or independently proven unrelated event records only source/metadata checks, zero F1 processes. It cannot use a pending baseline as executable approval.",
+    "first_step": "Bounded dedicated original Jobs acquisition before checkout; exact F1 names, actual run/attempt/head and original900s job deadline. No F0 selector monkeypatch.",
+    "new_PAT_admin_or_write_scopes": false,
+    "unrelated_permission_changes": false,
+    "future_action_pins_require_source_review": true
+  },
+  "negative_controls": {
+    "path": "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024/negative-controls.json",
+    "registered_count": 178,
+    "initial174_peer_objects_preserved": true,
+    "new_metadata_only_controls": [
+      "F1R1-N175",
+      "F1R1-N176",
+      "F1R1-N177",
+      "F1R1-N178"
+    ],
+    "state": "NOT_IMPLEMENTED_NOT_RUN",
+    "every_control_required_no_silent_skip": true,
+    "current_selectors_are_logical_views_not_existing_functions": true,
+    "mapping_gate": "Before final C/source freeze, future test implementation supplies and independently reviews one-to-one selector/operation/validator/reason mappings. Every positive base first passes the same entrypoint; each one semantic mutation fails its named predicate, not just a transport hash, generic parse error, missing dependency or crash. An unmapped control blocks first execution.",
+    "raw_identity_resealing": "Recompute only enclosing transport/manifest/derived parse views after the one mutation; never change independent expected pins, limits, another raw observation or other repetition to fit.",
+    "zero_extra_execution": "All178 metadata controls are bounded in-process copies; zero added compiler, HTTP, launcher, fixture or DSP calls. Control computation and evidence encoding count inside the180s qualification stage.",
+    "evidence_phases": "Synthetic offline controls first; fresh-build controls only after actual registered build; P01 raw-observation controls after the one7-fixture batch; complete-cohort controls only after the one36-target cohort; source/provider originals remain unchanged.",
+    "logical_view_aliases": {
+      "/identity/{phase}/observation_start_monotonic_ns": "proc_identity.observation_started_monotonic_ns",
+      "/identity/{phase}/observation_end_monotonic_ns": "proc_identity.observation_finished_monotonic_ns",
+      "/identity/{phase}/raw_stat": "proc_identity.stat_raw; parse original field22 after actual parenthesized comm",
+      "/identity/{phase}/raw_status": "original phase.status bytes; parsed pid/ppid/NSpid/RSS fields must derive from those bytes",
+      "/identity/{phase}/exe_identity": "actual opened executable path/hash/device/inode tuple",
+      "fork_returned_child_pid": "target_wait.fork_returned_pid",
+      "/target_wait/ru_maxrss_kib": "target_wait.rusage.ru_maxrss, exact Linux KiB",
+      "/serialized_record/rusage/user_cpu_seconds": "strict derived CPU numeric view from raw ru_utime_sec + ru_utime_usec/1000000; its positive/negative type parser is tested without adding an unknown field to target_wait schema",
+      "runtime_env": "case_index.runtime_environment",
+      "/source_lock/implementation_rows/launcher": "source-lock.files exact native launcher path row",
+      "/baseline/protected_B/applicable_main_verify": "EXECUTION_BASELINE.protected_execution_base_B.applicable_main_gates.verify on finalized real B",
+      "/body/source/reviewed_head_C": "external_freeze.body_schema.source.reviewed_head_C",
+      "/actual_guard_route/executed_guard_source_commit": "actual extracted protected-B guard provenance; independently fixed B is expected, candidate C is not",
+      "/docs_only_execution_C/effective_F1_job_required": "resolved protected-B guard f1_required plus actual Verify/Quality schedule; doc extension alone cannot zero this",
+      "/first_introduction/actual_F1_launcher_processes": "bootstrap admission ledger; exactly0, including engineering launchers"
+    },
+    "timing_template": "Exactly600 increasing1..600ns values; nearest-rankp99=594ns. Owned CPU1s, wall2s, bind0. N095 uses1000002001ns above1s+2000ns; N096 uses2000000001ns above2s. Synthetic values never substitute for science.",
+    "fixture_plan": {
+      "count": 7,
+      "ids": [
+        "F1R1-P01",
+        "F1R1-P02",
+        "F1R1-P03",
+        "F1R1-P04",
+        "F1R1-P05",
+        "F1R1-P06",
+        "F1R1-P07"
+      ],
+      "launcher_processes": 7,
+      "direct_fixture_children": 7,
+      "descendants_max": 1,
+      "total_processes_max": 15,
+      "DSP_frames": 0,
+      "per_invocation_seconds": 1,
+      "work_seconds": 0.8,
+      "cleanup_reserve_seconds": 0.2,
+      "batch_seconds": 10,
+      "same_stage_seconds": 180,
+      "additional_descendant_proc_snapshots": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    "fixture_timing": "Fixed invocation origin immediately before native launcher creation. Work ends at origin+800000000ns; cleanup reserve200000000ns is inside final origin+1000000000ns. P04 reason F1R1_ENGINEERING_INVOCATION_TIMEOUT denotes the800ms work deadline; SIGKILL9/exact owned wait4/evidence encoding must finish within1s. Late cleanup is an additional budget failure and cannot pass an expected-rejection fixture. No deadline restart; require full1s remaining in all enclosing budgets before each fixture.",
+    "fixture_admission": "All7 require closed guarded B, final independently reviewed C and valid live PRE freeze; none may run during bootstrap, static build or docs-only preparation.",
+    "fixture_argv": "For P01/P03/P04/P05/P06/P07, exact child argv is [retained native fixture ELF, --mode, registered engineering_fixtures.mode]. P02 alone uses [absolute registered scratch path engineering/P02/absent-target] after proving the path absent, so real execve returns ENOENT. No shell, PATH search, replacement ELF, fallback invocation or self-reported exec failure.",
+    "fixture_record_namespace": "Store each engineering invocation under engineering/P01..P07; use invocation ordinals1..7 and distinct per-invocation nonces across engineering and science. Reuse the same bounded protocol/status/identity/wait/supervisor schema where observations exist, with explicit target native_engineering_only and zero science frames; absent phase records are explicit expected fixture failures, never complete science records."
+  },
+  "source_closure": {
+    "unchanged_original_files": 96,
+    "original96_composition": "88 exact F0 source-lock rows plus F0 four preregistration docs, original F0 readback document, original F0 private CMake, original F0 measured probe and original F0 collector/verifier.",
+    "new_implementation_rows": [
+      {
+        "path": "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_launcher.c",
+        "role": "NATIVE_ORDINARY_FORK_EXEC_LAUNCHER",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true
+      },
+      {
+        "path": "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_observer.c",
+        "role": "PRIVATE_MAIN_CHECKPOINT_WRAPPER",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true
+      },
+      {
+        "path": "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_qualification.py",
+        "role": "COLLECTOR_AND_READONLY_VERIFIER",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true
+      },
+      {
+        "path": "tests/validation/frontend_evolution/fe09_t3s3_f1_build/CMakeLists.txt",
+        "role": "PRIVATE_BUILD_WITH_ORIGINAL_F0_SOURCES_UNCHANGED",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true
+      },
+      {
+        "path": "tests/validation/frontend_evolution/test_fe09_t3s3_f1_rss_qualification.py",
+        "role": "METADATA_AND_PROTOCOL_CONTROLS",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true
+      },
+      {
+        "path": "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_fixture.c",
+        "role": "FINITE_NATIVE_NON_DSP_ENGINEERING_FIXTURE",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true
+      }
+    ],
+    "pending_hook_rows": [
+      {
+        "path": ".github/workflows/verify.yml",
+        "role": "QUALITY_CALLER_FIVE_READ_PERMISSIONS_ONLY",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true,
+        "source_anchor_identity": {
+          "path": ".github/workflows/verify.yml",
+          "bytes": 17201,
+          "sha256": "9ec8b3f7a5c2cc4f47b006d1d9ce083923a68ab36111dea0bea9b70a9cfa1d9f",
+          "git_blob_sha1": "cff393663ad856cfad012724a74ebbdd9c67df86",
+          "role": "UNMODIFIED_D92_HOOK_BEFORE_IMPLEMENTATION",
+          "source_commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+        }
+      },
+      {
+        "path": ".github/workflows/quality.yml",
+        "role": "NEW_INDEPENDENT_FRONTEND_RSS_F1_JOB_ONLY",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true,
+        "source_anchor_identity": {
+          "path": ".github/workflows/quality.yml",
+          "bytes": 159601,
+          "sha256": "e7bf33e375c6e51066fce263e53a61ec272058dff1977e87600520c34671ec3e",
+          "git_blob_sha1": "f42a781487727bb09d0d99a7840a76dc2768a839",
+          "role": "UNMODIFIED_D92_HOOK_BEFORE_IMPLEMENTATION",
+          "source_commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+        }
+      },
+      {
+        "path": ".github/scripts/verify-docs-gate.sh",
+        "role": "SOURCE_METADATA_SCOPE_GUARD_ON_BOTH_EXISTING_FAST_PATHS",
+        "status": "PENDING_IMPLEMENTATION_AND_INDEPENDENT_REVIEW",
+        "bytes": null,
+        "sha256": null,
+        "git_blob_sha1": null,
+        "required_before_first_execution": true,
+        "source_anchor_identity": {
+          "path": ".github/scripts/verify-docs-gate.sh",
+          "bytes": 6961,
+          "sha256": "4de0fdd2574351c6777a010d630692237ed4f9b767e0d770efdf0cca13ca9461",
+          "git_blob_sha1": "82600a89ac39be6f370ad6943d1e1def29a803d9",
+          "role": "UNMODIFIED_D92_HOOK_BEFORE_IMPLEMENTATION",
+          "source_commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+        }
+      }
+    ],
+    "R1_document_rows_excluding_lock": 4,
+    "total_rows_excluding_lock": 109,
+    "self_hash_or_future_C_or_comment_embedded": false,
+    "C_runtime_requirement": "All96 original rows unchanged from D; all6 implementation+3hook rows final concrete bytes/blob/SHA256; all4 other R1 docs concrete digests; no pending/null fields, no unexpected import/include/compile input and independently reviewed complete tree.",
+    "current_state": "100 concrete rows (96 unchanged originals plus4 new docs) and9 explicit pending rows. No fake empty implementation files.",
+    "bootstrap_finalization": "Bootstrap may contain pending execution B/C and remains source-metadata-only. After guarded B main closure, update actual final baseline/contract/lock in new C and force the F1 job even if that diff is docs-only."
+  }
+}

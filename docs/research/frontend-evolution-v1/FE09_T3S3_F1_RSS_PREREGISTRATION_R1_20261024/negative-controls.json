@@ -1,0 +1,3620 @@
+{
+  "schema_version": 1,
+  "id": "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-R1",
+  "status": "DRAFT_CONTROLS_NOT_IMPLEMENTED_NOT_RUN",
+  "execution_admitted": false,
+  "is_recovery_of_lost_original_negative_controls": false,
+  "drafting_base": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+  "registration_directory": "docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_R1_20261024",
+  "design_inputs": {
+    "exact_recovered_prior_README_sha256": "e2295c62b4bc526a14f73d55e696492c63a61072dca1d3d45d43d09e6507fecc",
+    "prior_README_is_not_R1_execution_authority": true,
+    "unchanged_F0_verifier_path": "tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py",
+    "unchanged_F0_verifier_sha256": "35bffb4801ce6e14e6b0285d93d5252c570ee9e80d76b0973566318172af4a4e",
+    "R1_wire_clarification": "One UTF-8 JSON frame containing registered ASCII keys/values plus exactly one terminal LF. The256-byte cap includes LF; no length header, CR or BOM. Reject an accumulated prefix or full frame above256 bytes before JSON parsing.",
+    "initial_R1_peer_draft": {
+      "bytes": 133573,
+      "sha256": "6250e859348ea2af31885e92a2d4a383587efdc669202cd1085f480017f1ab46",
+      "planned_controls": 174,
+      "all174_control_objects_preserved": true
+    },
+    "four_added_controls": "N175..N178 specify the two-stage protected-B bootstrap and docs-only final-C activation; all are metadata single-mutation controls and add zero execution.",
+    "fixture_timing_clarification": "Before any implementation/run, root review identified P04 would otherwise start cleanup only after its final1s cap. All7 now reserve fixed200ms inside1s, trigger work timeout at800ms, and require cleanup by1s; fixture identities/counts/expected outcomes and10s/180s budgets unchanged."
+  },
+  "registered_negative_count": 178,
+  "negative_controls": [
+    {
+      "id": "F1R1-N001",
+      "category": "schema",
+      "name": "unknown-record-member",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCHEMA_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/record",
+        "operation": "add_member",
+        "value": {
+          "unregistered_override": true
+        }
+      },
+      "expected_rejection": "F1R1_STRICT_SCHEMA",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N002",
+      "category": "schema",
+      "name": "duplicate-JSON-key",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCHEMA_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_record",
+        "operation": "insert_duplicate_member_after_original",
+        "value": {
+          "key": "schema_version",
+          "value": 1
+        }
+      },
+      "expected_rejection": "F1R1_DUPLICATE_JSON_KEY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N003",
+      "category": "schema",
+      "name": "boolean-used-as-positive-PID",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_SCHEMA_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/target_wait/pid",
+        "operation": "replace",
+        "value": true
+      },
+      "expected_rejection": "F1R1_STRICT_INTEGER_PID",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N004",
+      "category": "schema",
+      "name": "nonfinite-rusage-number",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCHEMA_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_record/rusage/user_cpu_seconds",
+        "operation": "replace_JSON_token",
+        "value": "NaN"
+      },
+      "expected_rejection": "F1R1_NONFINITE_NUMBER",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N005",
+      "category": "authority",
+      "name": "pending-predecessor-baseline",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_AUTHORITY_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/baseline/status",
+        "operation": "replace",
+        "value": "PENDING_F0_MAIN_CLOSURE"
+      },
+      "expected_rejection": "F1R1_BASELINE_PENDING",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N006",
+      "category": "authority",
+      "name": "missing-final-implementation-hash",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_AUTHORITY_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/source_lock/implementation_rows/launcher/sha256",
+        "operation": "replace",
+        "value": null
+      },
+      "expected_rejection": "F1R1_INCOMPLETE_SOURCE_LOCK",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N007",
+      "category": "authority",
+      "name": "source-lock-byte-drift",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_AUTHORITY_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/source_lock_bytes",
+        "operation": "append_exact_bytes",
+        "value": "\n"
+      },
+      "expected_rejection": "F1R1_EXTERNAL_SOURCE_DIGEST",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N008",
+      "category": "authority",
+      "name": "candidate-only-expected-pin",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_AUTHORITY_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/authority/expected_pin_origin",
+        "operation": "replace",
+        "value": "CANDIDATE_CLI_SELF_DESCRIPTION"
+      },
+      "expected_rejection": "F1R1_INDEPENDENT_FREEZE_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N009",
+      "category": "authority",
+      "name": "B-gate-receipt-from-another-head",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_AUTHORITY_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/baseline/protected_B/applicable_main_verify/head_sha",
+        "operation": "replace",
+        "value": "0000000000000000000000000000000000000000"
+      },
+      "expected_rejection": "F1R1_PROTECTED_BASE_GATE_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N010",
+      "category": "authority",
+      "name": "baseline-boolean-as-standalone-authority",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_AUTHORITY_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/authority/decision_basis",
+        "operation": "replace",
+        "value": "BASELINE_EXECUTION_AUTHORIZED_BOOLEAN_ONLY"
+      },
+      "expected_rejection": "F1R1_BASELINE_NOT_EXECUTION_AUTHORITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N011",
+      "category": "authority",
+      "name": "future-comment-backfilled-into-locked-C",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_AUTHORITY_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/source_lock/self_reference",
+        "operation": "add_member",
+        "value": {
+          "future_approving_comment_id": 1
+        }
+      },
+      "expected_rejection": "F1R1_SOURCE_FREEZE_CYCLE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N012",
+      "category": "build",
+      "name": "same-original-TU-omitted-from-both-variants",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/compile_commands",
+        "operation": "remove_rows_matching",
+        "value": {
+          "source": "tests/validation/frontend_evolution/fe09_b3_f0_composition.c",
+          "groups": [
+            "reference",
+            "measured"
+          ]
+        }
+      },
+      "expected_rejection": "F1R1_COMPLETE_SOURCE_MULTISET",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N013",
+      "category": "build",
+      "name": "duplicate-translation-unit-row",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/compile_commands",
+        "operation": "append_copy_of_index",
+        "value": 0
+      },
+      "expected_rejection": "F1R1_COMPLETE_SOURCE_MULTISET",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N014",
+      "category": "build",
+      "name": "compiler-token-not-pinned-compiler",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/compile_commands/0/argv/0",
+        "operation": "replace",
+        "value": "/unregistered/compiler"
+      },
+      "expected_rejection": "F1R1_COMPILER_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N015",
+      "category": "build",
+      "name": "injected-forced-include",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/compile_commands/0/argv",
+        "operation": "insert_before_compile_output",
+        "value": [
+          "-include",
+          "/unregistered/injected.h"
+        ]
+      },
+      "expected_rejection": "F1R1_EXACT_EFFECTIVE_COMPILE_RECIPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N016",
+      "category": "build",
+      "name": "late-floating-contraction-override",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/compile_commands/0/argv",
+        "operation": "insert_before_compile_output",
+        "value": [
+          "-ffp-contract=fast"
+        ]
+      },
+      "expected_rejection": "F1R1_EXACT_EFFECTIVE_COMPILE_RECIPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N017",
+      "category": "build",
+      "name": "external-include-root",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/compile_commands/0/argv",
+        "operation": "insert_before_compile_output",
+        "value": [
+          "-I/unregistered/include"
+        ]
+      },
+      "expected_rejection": "F1R1_EXACT_INCLUDE_ROOTS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N018",
+      "category": "build",
+      "name": "unrecorded-response-file",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/compile_commands/0/argv",
+        "operation": "insert_before_compile_output",
+        "value": [
+          "@/unregistered/options.rsp"
+        ]
+      },
+      "expected_rejection": "F1R1_EXACT_EFFECTIVE_COMPILE_RECIPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N019",
+      "category": "build",
+      "name": "missing-main-link-wrapper",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/links/native/reference/argv",
+        "operation": "remove_exactly_one_token",
+        "value": "-Wl,--wrap=main"
+      },
+      "expected_rejection": "F1R1_MAIN_WRAPPER_WIRING",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N020",
+      "category": "build",
+      "name": "missing-real-main-symbol",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/symbols/native/reference",
+        "operation": "remove_exactly_one_registered_symbol_record",
+        "value": "REAL_ORIGINAL_MAIN"
+      },
+      "expected_rejection": "F1R1_MAIN_WRAPPER_WIRING",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N021",
+      "category": "build",
+      "name": "mutated-retained-library-byte",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/retained_library_bytes",
+        "operation": "xor_byte",
+        "value": {
+          "offset": 0,
+          "mask": 1
+        }
+      },
+      "expected_rejection": "F1R1_LIBRARY_BINARY_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N022",
+      "category": "build",
+      "name": "native-ELF-labelled-as-ARM",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/elf/native/reference/machine",
+        "operation": "replace",
+        "value": 40
+      },
+      "expected_rejection": "F1R1_ACTUAL_ELF_ISA",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N023",
+      "category": "build",
+      "name": "wrong-host-QEMU-in-actual-argv",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/invocation/arm/target_argv/0",
+        "operation": "replace",
+        "value": "/unregistered/qemu-arm"
+      },
+      "expected_rejection": "F1R1_HOST_QEMU_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N024",
+      "category": "build",
+      "name": "wrong-ARM-guest-ELF-in-actual-argv",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/invocation/arm/target_argv/3",
+        "operation": "replace",
+        "value": "/unregistered/guest.elf"
+      },
+      "expected_rejection": "F1R1_GUEST_ELF_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N025",
+      "category": "build",
+      "name": "sanitizer-leak-check-disabled",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/invocation/sanitized/runtime_env/ASAN_OPTIONS",
+        "operation": "replace",
+        "value": "detect_leaks=0:abort_on_error=1"
+      },
+      "expected_rejection": "F1R1_SANITIZER_ENVIRONMENT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N026",
+      "category": "build",
+      "name": "preload-in-target-environment",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/invocation/native/runtime_env",
+        "operation": "add_member",
+        "value": {
+          "LD_PRELOAD": "/unregistered/injected.so"
+        }
+      },
+      "expected_rejection": "F1R1_EXECUTION_ENVIRONMENT_CLOSURE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N027",
+      "category": "build",
+      "name": "F0-selector-monkeypatch",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/immutable_sources/tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py",
+        "operation": "append_exact_bytes",
+        "value": "\nTARGETS = [\"native\"]\n"
+      },
+      "expected_rejection": "F1R1_FROZEN_F0_SOURCE_CHANGED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N028",
+      "category": "build",
+      "name": "wrong-case-output-directory",
+      "evidence_basis": "FRESH_BUILD_CLOSURE",
+      "validator_entrypoint": "R1_BUILD_READBACK",
+      "validation_phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "mutation": {
+        "selector": "/invocation/native/target_argv/final_output_value",
+        "operation": "replace",
+        "value": "/unregistered/other-case-output"
+      },
+      "expected_rejection": "F1R1_CASE_INVOCATION_BINDING",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N029",
+      "category": "identity",
+      "name": "launcher-substituted-for-target-PID",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/case_index/target_pid",
+        "operation": "replace_derived",
+        "value": "supervisor.launcher_pid"
+      },
+      "expected_rejection": "F1R1_TARGET_PID_OWNERSHIP",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N030",
+      "category": "identity",
+      "name": "ENTRY-start-ticks-change",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/raw_stat/ENTRY/starttime",
+        "operation": "replace_derived",
+        "value": "original_starttime + 1"
+      },
+      "expected_rejection": "F1R1_PROCESS_START_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N031",
+      "category": "identity",
+      "name": "ENTRY-parent-PID-change",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/raw_status/ENTRY/PPid",
+        "operation": "replace_derived",
+        "value": "launcher_pid + 1"
+      },
+      "expected_rejection": "F1R1_PARENT_PID_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N032",
+      "category": "identity",
+      "name": "ENTRY-namespace-mapping-change",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/raw_status/ENTRY/NSpid/last_integer",
+        "operation": "replace_derived",
+        "value": "original_value + 1"
+      },
+      "expected_rejection": "F1R1_PID_NAMESPACE_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N033",
+      "category": "identity",
+      "name": "ENTRY-still-identifies-launcher-image",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/identity/ENTRY/exe_identity",
+        "operation": "replace_derived",
+        "value": "identity.PREEXEC.exe_identity"
+      },
+      "expected_rejection": "F1R1_EXEC_IMAGE_TRANSITION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N034",
+      "category": "identity",
+      "name": "RETURN-executable-changes",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/identity/RETURN/exe_sha256",
+        "operation": "replace",
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected_rejection": "F1R1_EXEC_IMAGE_CONTINUITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N035",
+      "category": "identity",
+      "name": "snapshot-time-interval-reversed",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/identity/ENTRY/observation_end_monotonic_ns",
+        "operation": "replace_derived",
+        "value": "observation_start_monotonic_ns - 1"
+      },
+      "expected_rejection": "F1R1_OBSERVATION_INTERVAL",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N036",
+      "category": "identity",
+      "name": "missing-VmHWM-in-original-status",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/raw_status/RETURN",
+        "operation": "remove_exactly_one_line_key",
+        "value": "VmHWM"
+      },
+      "expected_rejection": "F1R1_REQUIRED_PROC_FIELDS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N037",
+      "category": "identity",
+      "name": "duplicate-VmRSS-status-key",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/raw_status/ENTRY",
+        "operation": "append_copy_of_line_key",
+        "value": "VmRSS"
+      },
+      "expected_rejection": "F1R1_DUPLICATE_PROC_FIELD",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N038",
+      "category": "identity",
+      "name": "non-kB-proc-unit",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_IDENTITY_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/raw_status/ENTRY/VmHWM/unit",
+        "operation": "replace",
+        "value": "MB"
+      },
+      "expected_rejection": "F1R1_PROC_UNIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N039",
+      "category": "wait",
+      "name": "wait4-returned-another-positive-PID",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WAIT_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/target_wait/wait4_returned_pid",
+        "operation": "replace_derived",
+        "value": "fork_returned_child_pid + 1"
+      },
+      "expected_rejection": "F1R1_WAIT4_EXACT_CHILD",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N040",
+      "category": "wait",
+      "name": "signal-status-labelled-success",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WAIT_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/target_wait/raw_wait_status",
+        "operation": "replace",
+        "value": 6
+      },
+      "expected_rejection": "F1R1_RAW_WAIT_STATUS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N041",
+      "category": "wait",
+      "name": "launcher-rusage-substituted-for-target",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WAIT_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/target_wait/rusage_origin",
+        "operation": "replace",
+        "value": "OUTER_PYTHON_WAIT4_ON_LAUNCHER"
+      },
+      "expected_rejection": "F1R1_TARGET_RUSAGE_ORIGIN",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N042",
+      "category": "wait",
+      "name": "KiB-converted-by-1000",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WAIT_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/derived/wait4_target_lifetime_rss_bytes",
+        "operation": "replace_derived",
+        "value": "target_wait.ru_maxrss_kib * 1000"
+      },
+      "expected_rejection": "F1R1_RSS_KIB_CONVERSION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N043",
+      "category": "wire",
+      "name": "missing-ENTRY-pair",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/transcript",
+        "operation": "remove_records_matching",
+        "value": {
+          "phase": "ENTRY"
+        }
+      },
+      "expected_rejection": "F1R1_CHECKPOINT_COVERAGE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N044",
+      "category": "wire",
+      "name": "missing-RETURN-pair",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/transcript",
+        "operation": "remove_records_matching",
+        "value": {
+          "phase": "RETURN"
+        }
+      },
+      "expected_rejection": "F1R1_CHECKPOINT_COVERAGE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N045",
+      "category": "wire",
+      "name": "RETURN-phase-renamed-ENTRY",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/transcript/RETURN/child/phase",
+        "operation": "replace",
+        "value": "ENTRY"
+      },
+      "expected_rejection": "F1R1_CHECKPOINT_ORDER",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N046",
+      "category": "wire",
+      "name": "ACK-nonce-mismatch",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/transcript/ENTRY/ack/nonce",
+        "operation": "flip_first_hex_nibble_preserving_length",
+        "value": null
+      },
+      "expected_rejection": "F1R1_ACK_BINDING",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N047",
+      "category": "wire",
+      "name": "RETURN-case-ordinal-mismatch",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/transcript/RETURN/child/ordinal",
+        "operation": "replace_derived",
+        "value": "original_case_ordinal + 1"
+      },
+      "expected_rejection": "F1R1_CASE_ORDINAL",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N048",
+      "category": "wire",
+      "name": "ACK-before-observation-finishes",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/transcript/ENTRY/ack_sent_monotonic_ns",
+        "operation": "replace_derived",
+        "value": "identity.ENTRY.observation_end_monotonic_ns - 1"
+      },
+      "expected_rejection": "F1R1_OBSERVATION_BEFORE_ACK",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N049",
+      "category": "wire",
+      "name": "case-binding-digest-mismatch",
+      "evidence_basis": "ENGINEERING_P01_ORIGINAL",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "mutation": {
+        "selector": "/identity/RETURN/case_binding_sha256",
+        "operation": "flip_first_hex_nibble_preserving_length",
+        "value": null
+      },
+      "expected_rejection": "F1R1_CASE_BINDING",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N050",
+      "category": "wire",
+      "name": "exec-pipe-EOF-treated-as-ENTRY",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/case_completion/entry_evidence_kind",
+        "operation": "replace",
+        "value": "EXEC_ERROR_PIPE_EOF_ONLY"
+      },
+      "expected_rejection": "F1R1_ENTRY_REQUIRED_AFTER_EXEC",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N051",
+      "category": "wire",
+      "name": "wire-257-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/wire_frame_bytes",
+        "operation": "make_exact_total_bytes_with_terminal_LF",
+        "value": 257
+      },
+      "expected_rejection": "F1R1_WIRE_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N052",
+      "category": "wire",
+      "name": "wire-CRLF",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/wire_frame_bytes",
+        "operation": "replace_terminal_LF_with_CRLF",
+        "value": null
+      },
+      "expected_rejection": "F1R1_WIRE_ASCII_LF_FRAME",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N053",
+      "category": "wire",
+      "name": "wire-duplicate-nonce-key",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/wire_frame_bytes",
+        "operation": "insert_duplicate_member_before_terminal_LF",
+        "value": {
+          "key": "nonce",
+          "value": "original_nonce"
+        }
+      },
+      "expected_rejection": "F1R1_WIRE_DUPLICATE_JSON_KEY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N054",
+      "category": "wire",
+      "name": "wire-unregistered-member",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_WIRE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/wire_frame_json",
+        "operation": "add_member",
+        "value": {
+          "override": 1
+        }
+      },
+      "expected_rejection": "F1R1_WIRE_FIELD_SET",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N055",
+      "category": "byte_budget",
+      "name": "proc-status-8193-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/raw_status/ENTRY/bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 8193
+      },
+      "expected_rejection": "F1R1_PROC_STATUS_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N056",
+      "category": "byte_budget",
+      "name": "identity-record-4097-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_identity/ENTRY",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 4097
+      },
+      "expected_rejection": "F1R1_IDENTITY_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N057",
+      "category": "byte_budget",
+      "name": "raw-stat-1537-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/identity/ENTRY/raw_stat_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 1537
+      },
+      "expected_rejection": "F1R1_RAW_STAT_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N058",
+      "category": "byte_budget",
+      "name": "exe-path-513-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/identity/ENTRY/exe_path_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 513
+      },
+      "expected_rejection": "F1R1_EXE_PATH_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N059",
+      "category": "byte_budget",
+      "name": "science-argv-2049-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/case_index/serialized_science_argv",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 2049
+      },
+      "expected_rejection": "F1R1_SCIENCE_ARGV_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N060",
+      "category": "byte_budget",
+      "name": "launcher-argv-3073-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/supervisor/serialized_launcher_argv",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 3073
+      },
+      "expected_rejection": "F1R1_LAUNCHER_ARGV_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N061",
+      "category": "byte_budget",
+      "name": "runtime-environment-513-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/case_index/serialized_runtime_environment",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 513
+      },
+      "expected_rejection": "F1R1_RUNTIME_ENV_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N062",
+      "category": "byte_budget",
+      "name": "case-index-4097-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_case_index",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 4097
+      },
+      "expected_rejection": "F1R1_CASE_INDEX_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N063",
+      "category": "byte_budget",
+      "name": "supervisor-record-4097-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_supervisor",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 4097
+      },
+      "expected_rejection": "F1R1_SUPERVISOR_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N064",
+      "category": "byte_budget",
+      "name": "transcript-record-1025-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_transcript/ENTRY/child",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 1025
+      },
+      "expected_rejection": "F1R1_TRANSCRIPT_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N065",
+      "category": "byte_budget",
+      "name": "target-wait-record-4097-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_target_wait",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 4097
+      },
+      "expected_rejection": "F1R1_TARGET_WAIT_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N066",
+      "category": "byte_budget",
+      "name": "failure-record-4097-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/serialized_failure",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 4097
+      },
+      "expected_rejection": "F1R1_FAILURE_RECORD_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N067",
+      "category": "byte_budget",
+      "name": "launcher-log-6145-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/launcher_log_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 6145
+      },
+      "expected_rejection": "F1R1_LAUNCHER_LOG_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N068",
+      "category": "byte_budget",
+      "name": "launcher-log-line-257-bytes",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/launcher_log_line_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 257
+      },
+      "expected_rejection": "F1R1_LAUNCHER_LOG_LINE_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N069",
+      "category": "byte_budget",
+      "name": "combined-target-log-one-MiB-plus-one",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/combined_target_stdout_stderr_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 1048577
+      },
+      "expected_rejection": "F1R1_TARGET_LOG_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N070",
+      "category": "byte_budget",
+      "name": "timing-file-one-MiB-plus-one",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/timing_file_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 1048577
+      },
+      "expected_rejection": "F1R1_TIMING_FILE_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N071",
+      "category": "byte_budget",
+      "name": "temporary-case-eight-MiB-plus-one",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/temporary_case_accounted_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 8388609
+      },
+      "expected_rejection": "F1R1_TEMPORARY_CASE_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N072",
+      "category": "byte_budget",
+      "name": "complete-artifact-32-MiB-plus-one",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/complete_artifact_accounted_bytes",
+        "operation": "make_exact_accounted_or_serialized_bytes",
+        "value": 33554433
+      },
+      "expected_rejection": "F1R1_ARTIFACT_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N073",
+      "category": "byte_budget",
+      "name": "25th-launcher-diagnostic-line",
+      "evidence_basis": "BOUNDED_BYTE_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/launcher_log_lines",
+        "operation": "append_one_1_byte_line_to_valid_24_line_fixture",
+        "value": "\n"
+      },
+      "expected_rejection": "F1R1_LAUNCHER_LOG_LINE_COUNT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N074",
+      "category": "byte_budget",
+      "name": "truncated-proc-prefix-marked-complete",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_BYTE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/overflow_record/complete_original",
+        "operation": "replace",
+        "value": true
+      },
+      "expected_rejection": "F1R1_TRUNCATED_ORIGINAL_NOT_COMPLETE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N075",
+      "category": "scope",
+      "name": "subtract-observed-preexec-floor",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/lifetime_rss_derivation",
+        "operation": "replace",
+        "value": "WAIT4_MINUS_PREEXEC_OBSERVED_FLOOR"
+      },
+      "expected_rejection": "F1R1_NO_FLOOR_SUBTRACTION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N076",
+      "category": "scope",
+      "name": "approximate-VmRSS-labelled-exact-working-set",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/current_mm_precision",
+        "operation": "replace",
+        "value": "EXACT_WORKING_SET"
+      },
+      "expected_rejection": "F1R1_APPROXIMATE_CURRENT_MM_ONLY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N077",
+      "category": "scope",
+      "name": "RETURN-window-extended-through-atexit",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/RETURN_window_end",
+        "operation": "replace",
+        "value": "AFTER_ATEXIT_AND_SANITIZER_EXIT"
+      },
+      "expected_rejection": "F1R1_POST_RETURN_GAP",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N078",
+      "category": "scope",
+      "name": "wait4-labelled-exclusive-main-image",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/target_wait_scope",
+        "operation": "replace",
+        "value": "EXCLUSIVE_MAIN_IMAGE_NO_DESCENDANTS"
+      },
+      "expected_rejection": "F1R1_WAITED_DESCENDANT_SCOPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N079",
+      "category": "scope",
+      "name": "QEMU-host-RSS-labelled-guest-hardware",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/arm_rss_scope",
+        "operation": "replace",
+        "value": "ARM_GUEST_ONLY_SSC305_MEMORY"
+      },
+      "expected_rejection": "F1R1_QEMU_HOST_PROCESS_SCOPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N080",
+      "category": "scope",
+      "name": "post-hoc-RSS-admission-threshold",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation",
+        "operation": "add_member",
+        "value": {
+          "rss_acceptance_ceiling_bytes": 1048576
+        }
+      },
+      "expected_rejection": "F1R1_NO_NUMERICAL_RSS_GATE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N081",
+      "category": "scope",
+      "name": "reported-HWM-equality-claims-first-peak-origin",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/equal_RETURN_HWM_and_wait4_claim",
+        "operation": "replace",
+        "value": "FIRST_AND_EXCLUSIVE_PEAK_ORIGIN_PROVEN"
+      },
+      "expected_rejection": "F1R1_FINITE_PRECISION_INTERPRETATION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N082",
+      "category": "scope",
+      "name": "counter-disagreement-repaired-by-clamping",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/counter_disagreement_policy",
+        "operation": "replace",
+        "value": "CLAMP_TO_EXPECTED_ORDER"
+      },
+      "expected_rejection": "F1R1_ORIGINAL_COUNTERS_UNALTERED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N083",
+      "category": "scope",
+      "name": "static-stack-size-labelled-dynamic-high-water",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_SCOPE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/interpretation/compiler_stack_scope",
+        "operation": "replace",
+        "value": "COMPLETE_DYNAMIC_THREAD_STACK_HIGH_WATER"
+      },
+      "expected_rejection": "F1R1_STATIC_STACK_ONLY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N084",
+      "category": "science",
+      "name": "missing-third-repetition",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_SCIENCE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/ordered_cases",
+        "operation": "remove_case",
+        "value": "arm/PAP/3/measured"
+      },
+      "expected_rejection": "F1R1_EXACT_36_CASE_MATRIX",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N085",
+      "category": "science",
+      "name": "two-case-order-swapped",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_SCIENCE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/ordered_cases",
+        "operation": "swap_indices",
+        "value": [
+          0,
+          1
+        ]
+      },
+      "expected_rejection": "F1R1_FROZEN_CASE_ORDER",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N086",
+      "category": "science",
+      "name": "600th-frame-missing",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_SCIENCE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/native/PAP/1/measured/frames",
+        "operation": "remove_index",
+        "value": 599
+      },
+      "expected_rejection": "F1R1_ALL_600_FRAMES",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N087",
+      "category": "science",
+      "name": "duplicate-frame-sequence",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_SCIENCE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/native/PAP/1/measured/frames/1/seq",
+        "operation": "replace",
+        "value": 1
+      },
+      "expected_rejection": "F1R1_EXACT_FRAME_SEQUENCE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N088",
+      "category": "science",
+      "name": "PAP-frame201-wrong-render-event",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_SCIENCE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/native/PAP/1/measured/timing/frames/200/event",
+        "operation": "replace",
+        "value": 1
+      },
+      "expected_rejection": "F1R1_ORIGINAL_RENDER_COVERAGE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N089",
+      "category": "science",
+      "name": "PCM-stream-witness-mismatch",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_SCIENCE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/native/PAP/1/measured/streams/output/sha256",
+        "operation": "flip_first_hex_nibble_preserving_length",
+        "value": null
+      },
+      "expected_rejection": "F1R1_EXACT_PCM_EQUIVALENCE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N090",
+      "category": "science",
+      "name": "canonical-public-metric-mismatch",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_SCIENCE_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/native/PAP/1/measured/frames/0/metrics/estimated_delay_ms",
+        "operation": "replace",
+        "value": 999
+      },
+      "expected_rejection": "F1R1_EXACT_PUBLIC_METRIC_EQUIVALENCE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N091",
+      "category": "timing",
+      "name": "negative-worker-CPU-time",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_TIMING_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/native/PAP/1/measured/timing/frames/0/worker/cpu_ns",
+        "operation": "replace",
+        "value": -1
+      },
+      "expected_rejection": "F1R1_NONNEGATIVE_INTEGER_DURATION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N092",
+      "category": "timing",
+      "name": "capture-call-missing",
+      "evidence_basis": "SINGLE_COMPLETE_SCIENCE_COHORT",
+      "validator_entrypoint": "R1_TIMING_READBACK",
+      "validation_phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "mutation": {
+        "selector": "/native/PAP/1/measured/timing/frames/0/capture/calls",
+        "operation": "replace",
+        "value": 0
+      },
+      "expected_rejection": "F1R1_ONE_CALL_PER_ROLE_FRAME",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N093",
+      "category": "timing",
+      "name": "p99-uses-595th-instead-of-594th-value",
+      "evidence_basis": "TIMING_ORDER_STATISTIC_TEMPLATE",
+      "validator_entrypoint": "R1_TIMING_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/summary/tested_role/p99_ns",
+        "operation": "replace",
+        "value": 595
+      },
+      "expected_rejection": "F1R1_EXACT_ORDER_STATISTICS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N094",
+      "category": "timing",
+      "name": "warmup-frames-excluded",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_TIMING_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/timing_policy/excluded_warmup_frames",
+        "operation": "replace",
+        "value": 1
+      },
+      "expected_rejection": "F1R1_NO_FRAME_TRIMMING",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N095",
+      "category": "timing",
+      "name": "API-CPU-intervals-exceed-owned-target",
+      "evidence_basis": "TIMING_ORDER_STATISTIC_TEMPLATE",
+      "validator_entrypoint": "R1_TIMING_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/timing/bind/cpu_ns",
+        "operation": "replace",
+        "value": 1000002001
+      },
+      "expected_rejection": "F1R1_INTERVALS_WITHIN_OWNED_TARGET",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N096",
+      "category": "timing",
+      "name": "API-wall-intervals-exceed-owned-target",
+      "evidence_basis": "TIMING_ORDER_STATISTIC_TEMPLATE",
+      "validator_entrypoint": "R1_TIMING_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/timing/bind/wall_ns",
+        "operation": "replace",
+        "value": 2000000001
+      },
+      "expected_rejection": "F1R1_INTERVALS_WITHIN_OWNED_TARGET",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N097",
+      "category": "failure",
+      "name": "nonzero-final-exit-after600frames-labelled-valid",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_FAILURE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/failed_case/validated_frames",
+        "operation": "replace",
+        "value": 600
+      },
+      "expected_rejection": "F1R1_FAILED_EXIT_NOT_VALIDATED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N098",
+      "category": "failure",
+      "name": "600-raw-frames-labelled-zero-executed",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_FAILURE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/failed_case/executed_raw_frames",
+        "operation": "replace",
+        "value": 0
+      },
+      "expected_rejection": "F1R1_RAW_EXECUTION_COUNT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N099",
+      "category": "failure",
+      "name": "later-attempt-replaces-failed-original-case",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_FAILURE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/case/attempt_identity",
+        "operation": "replace_derived",
+        "value": "original_attempt + 1"
+      },
+      "expected_rejection": "F1R1_NO_COHORT_REPLACEMENT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N100",
+      "category": "failure",
+      "name": "local-cohort-labelled-hosted-qualified",
+      "evidence_basis": "STRICT_SCHEMA_TEMPLATE",
+      "validator_entrypoint": "R1_FAILURE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/local_receipt/full_hosted_characterization",
+        "operation": "replace",
+        "value": true
+      },
+      "expected_rejection": "F1R1_LOCAL_NOT_HOSTED_QUALIFICATION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N101",
+      "category": "job",
+      "name": "hosted-original-job-removed",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/budget/original_job",
+        "operation": "replace",
+        "value": null
+      },
+      "expected_rejection": "F1R1_ORIGINAL_JOB_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N102",
+      "category": "job",
+      "name": "incomplete-Jobs-page",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/jobs_response/total_count",
+        "operation": "replace_derived",
+        "value": "len(jobs) + 1"
+      },
+      "expected_rejection": "F1R1_COMPLETE_JOBS_PAGE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N103",
+      "category": "job",
+      "name": "second-job-with-allowed-name",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/jobs_response/jobs/nonselected_job/name",
+        "operation": "replace",
+        "value": "quality / frontend-rss-f1"
+      },
+      "expected_rejection": "F1R1_UNIQUE_ORIGINAL_JOB",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N104",
+      "category": "job",
+      "name": "positive-job-ID-replacement",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/budget/original_job/job_id",
+        "operation": "replace_derived",
+        "value": "actual_original_job_id + 1"
+      },
+      "expected_rejection": "F1R1_RAW_JOB_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N105",
+      "category": "job",
+      "name": "original-job-wrong-attempt",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/budget/original_job/run_attempt",
+        "operation": "replace_derived",
+        "value": "context.run_attempt + 1"
+      },
+      "expected_rejection": "F1R1_ORIGINAL_JOB_CONTEXT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N106",
+      "category": "job",
+      "name": "PR-job-head-M-substituted-for-C",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/jobs_response/jobs/selected/head_sha",
+        "operation": "replace_derived",
+        "value": "actual_test_merge_M"
+      },
+      "expected_rejection": "F1R1_JOB_EVENT_HEAD_ROLE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N107",
+      "category": "job",
+      "name": "F0-job-used-for-F1",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/jobs_response/jobs/selected/name",
+        "operation": "replace",
+        "value": "quality / frontend-reference"
+      },
+      "expected_rejection": "F1R1_DEDICATED_JOB_SELECTOR",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N108",
+      "category": "job",
+      "name": "deadline-901-seconds-after-start",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/budget/original_job/deadline_epoch",
+        "operation": "replace_derived",
+        "value": "actual_job_started_epoch + 901"
+      },
+      "expected_rejection": "F1R1_ORIGINAL_900_SECOND_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N109",
+      "category": "job",
+      "name": "observation-request-after-response",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_JOB_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/original_job_request/request_started_epoch",
+        "operation": "replace_derived",
+        "value": "response_observed_epoch + 1"
+      },
+      "expected_rejection": "F1R1_ORIGINAL_JOB_OBSERVATION_ORDER",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N110",
+      "category": "budget",
+      "name": "less-than-full180s-stage-admission",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/stage/started_epoch",
+        "operation": "replace_derived",
+        "value": "original_job_deadline_epoch - 60 - 179.999"
+      },
+      "expected_rejection": "INSUFFICIENT_F1_STAGE_WINDOW",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N111",
+      "category": "budget",
+      "name": "target-clock-restarted-at-ENTRY",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/target/deadline_origin",
+        "operation": "replace",
+        "value": "ENTRY_ACK"
+      },
+      "expected_rejection": "F1R1_NO_INVOCATION_CLOCK_RESTART",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N112",
+      "category": "budget",
+      "name": "science-invocation-over30s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/target/elapsed_seconds",
+        "operation": "replace",
+        "value": 30.000001
+      },
+      "expected_rejection": "F1R1_TARGET_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N113",
+      "category": "budget",
+      "name": "tool-command-over60s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/tool_command/elapsed_seconds",
+        "operation": "replace",
+        "value": 60.000001
+      },
+      "expected_rejection": "F1R1_TOOL_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N114",
+      "category": "budget",
+      "name": "collection-over180s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/stage/elapsed_seconds",
+        "operation": "replace",
+        "value": 180.000001
+      },
+      "expected_rejection": "F1R1_STAGE_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N115",
+      "category": "budget",
+      "name": "seal-completes-after-stage-deadline",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/seal/finished_monotonic_ns",
+        "operation": "replace_derived",
+        "value": "stage_deadline_monotonic_ns + 1"
+      },
+      "expected_rejection": "F1R1_FINAL_SEAL_WITHIN_STAGE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N116",
+      "category": "budget",
+      "name": "archive-reserve-reduced-to59s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/budget/archive_reserve_seconds",
+        "operation": "replace",
+        "value": 59
+      },
+      "expected_rejection": "F1R1_ARCHIVE_RESERVE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N117",
+      "category": "budget",
+      "name": "engineering-batch-over10s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/engineering_batch/elapsed_seconds",
+        "operation": "replace",
+        "value": 10.000001
+      },
+      "expected_rejection": "F1R1_ENGINEERING_BATCH_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N118",
+      "category": "budget",
+      "name": "engineering-invocation-over1s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/engineering_batch/P01/elapsed_seconds",
+        "operation": "replace",
+        "value": 1.000001
+      },
+      "expected_rejection": "F1R1_ENGINEERING_INVOCATION_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N119",
+      "category": "freeze",
+      "name": "wrong-fixed-issue-ID",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/issue_before/id",
+        "operation": "replace",
+        "value": 6015285793
+      },
+      "expected_rejection": "F1R1_FREEZE_ISSUE_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N120",
+      "category": "freeze",
+      "name": "copied-login-wrong-author-ID",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/user/id",
+        "operation": "replace",
+        "value": 33591505
+      },
+      "expected_rejection": "F1R1_FREEZE_AUTHOR_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N121",
+      "category": "freeze",
+      "name": "fixed-user-ID-labelled-Bot",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/user/type",
+        "operation": "replace",
+        "value": "Bot"
+      },
+      "expected_rejection": "F1R1_FREEZE_AUTHOR_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N122",
+      "category": "freeze",
+      "name": "repository-spelling-with-wrong-ID",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/repository/id",
+        "operation": "replace",
+        "value": 1347377138
+      },
+      "expected_rejection": "F1R1_FREEZE_REPOSITORY_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N123",
+      "category": "freeze",
+      "name": "issue-count-not-complete-page-length",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/issue_after/comments",
+        "operation": "replace_derived",
+        "value": "len(PRE.comments) + 1"
+      },
+      "expected_rejection": "F1R1_COMPLETE_COMMENT_LIST",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N124",
+      "category": "freeze",
+      "name": "comment-list-has-next-page",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/comments_response/headers/Link",
+        "operation": "replace",
+        "value": "<https://api.github.com/repos/jiying2007/audio-pipeline/issues/845/comments?per_page=100&page=2>; rel=\"next\""
+      },
+      "expected_rejection": "F1R1_COMPLETE_COMMENT_LIST",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N125",
+      "category": "freeze",
+      "name": "matching-C-freeze-absent",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/comments/matching_C/body/source/reviewed_head_C",
+        "operation": "replace",
+        "value": "0000000000000000000000000000000000000000"
+      },
+      "expected_rejection": "F1R1_UNIQUE_MATCHING_C_FREEZE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N126",
+      "category": "freeze",
+      "name": "second-matching-C-freeze-in-PRE",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/comments/other_C/body/source/reviewed_head_C",
+        "operation": "replace_derived",
+        "value": "actual_provider_derived_C"
+      },
+      "expected_rejection": "F1R1_DUPLICATE_C_FREEZE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N127",
+      "category": "freeze",
+      "name": "second-matching-C-freeze-only-in-POST",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/POST/comments/other_C/body/source/reviewed_head_C",
+        "operation": "replace_derived",
+        "value": "actual_provider_derived_C"
+      },
+      "expected_rejection": "F1R1_DUPLICATE_C_FREEZE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N128",
+      "category": "freeze",
+      "name": "edited-comment-timestamp",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/updated_at",
+        "operation": "replace_derived",
+        "value": "selected_comment.created_at + 1 second"
+      },
+      "expected_rejection": "F1R1_FREEZE_COMMENT_EDITED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N129",
+      "category": "freeze",
+      "name": "freeze-equal-to-original-run-second",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/run/created_at",
+        "operation": "replace_derived",
+        "value": "selected_comment.created_at"
+      },
+      "expected_rejection": "F1R1_FREEZE_NOT_BEFORE_ORIGINAL_RUN",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N130",
+      "category": "freeze",
+      "name": "freeze-later-than-original-run",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/run/created_at",
+        "operation": "replace_derived",
+        "value": "selected_comment.created_at - 1 second"
+      },
+      "expected_rejection": "F1R1_FREEZE_NOT_BEFORE_ORIGINAL_RUN",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N131",
+      "category": "freeze",
+      "name": "review-time-after-comment",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/reviewed_at_utc",
+        "operation": "replace_derived",
+        "value": "selected_comment.created_at + 1 second"
+      },
+      "expected_rejection": "F1R1_REVIEW_TIMESTAMP",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N132",
+      "category": "freeze",
+      "name": "invalid-UTC-calendar-date",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/reviewed_at_utc",
+        "operation": "replace",
+        "value": "2026-02-30T00:00:00Z"
+      },
+      "expected_rejection": "F1R1_STRICT_UTC_TIMESTAMP",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N133",
+      "category": "freeze",
+      "name": "POST-approved-body-changed-and-resealed",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/POST/selected_comment/body/reviewed_at_utc",
+        "operation": "replace_derived",
+        "value": "original_reviewed_at_utc - 1 second"
+      },
+      "expected_rejection": "F1R1_PRE_POST_FREEZE_STABILITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N134",
+      "category": "freeze",
+      "name": "selected-comment-associated-with-other-issue",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/issue_url",
+        "operation": "replace",
+        "value": "https://api.github.com/repos/jiying2007/audio-pipeline/issues/846"
+      },
+      "expected_rejection": "F1R1_COMMENT_ISSUE_ASSOCIATION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N135",
+      "category": "freeze",
+      "name": "issue-is-a-pull-request",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/issue_before",
+        "operation": "add_member",
+        "value": {
+          "pull_request": {}
+        }
+      },
+      "expected_rejection": "F1R1_FREEZE_ISSUE_NOT_PR",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N136",
+      "category": "freeze",
+      "name": "source-lock-external-digest-drift",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/digests/source_lock_sha256",
+        "operation": "flip_first_hex_nibble_preserving_length",
+        "value": null
+      },
+      "expected_rejection": "F1R1_EXTERNAL_SOURCE_DIGEST",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N137",
+      "category": "freeze",
+      "name": "contract-external-digest-drift",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/digests/test_contract_sha256",
+        "operation": "flip_first_hex_nibble_preserving_length",
+        "value": null
+      },
+      "expected_rejection": "F1R1_EXTERNAL_SOURCE_DIGEST",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N138",
+      "category": "freeze",
+      "name": "baseline-external-digest-drift",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/digests/execution_baseline_sha256",
+        "operation": "flip_first_hex_nibble_preserving_length",
+        "value": null
+      },
+      "expected_rejection": "F1R1_EXTERNAL_SOURCE_DIGEST",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N139",
+      "category": "freeze",
+      "name": "negative-controls-external-digest-drift",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/digests/negative_controls_sha256",
+        "operation": "flip_first_hex_nibble_preserving_length",
+        "value": null
+      },
+      "expected_rejection": "F1R1_EXTERNAL_SOURCE_DIGEST",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N140",
+      "category": "freeze",
+      "name": "unregistered-approval-decision",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/decision",
+        "operation": "replace",
+        "value": "GENERAL_REVIEW_LOOKS_GOOD"
+      },
+      "expected_rejection": "F1R1_EXACT_EXECUTION_DECISION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N141",
+      "category": "freeze",
+      "name": "old-F1-identity-used-for-R1",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body/experiment_id",
+        "operation": "replace",
+        "value": "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-V1"
+      },
+      "expected_rejection": "F1R1_EXACT_EXPERIMENT_IDENTITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N142",
+      "category": "freeze",
+      "name": "POST-direct-comment-unavailable",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/POST/selected_comment_response/status",
+        "operation": "replace",
+        "value": 404
+      },
+      "expected_rejection": "F1R1_POST_AUTHORITY_UNAVAILABLE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N143",
+      "category": "freeze",
+      "name": "cross-host-authenticated-redirect",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment_request/final_origin",
+        "operation": "replace",
+        "value": "https://example.invalid"
+      },
+      "expected_rejection": "F1R1_CANONICAL_API_ORIGIN",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N144",
+      "category": "freeze",
+      "name": "local-JSON-substituted-for-live-acquisition",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/acquisition_kind",
+        "operation": "replace",
+        "value": "CANDIDATE_SUPPLIED_LOCAL_JSON"
+      },
+      "expected_rejection": "F1R1_LIVE_PROVIDER_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N145",
+      "category": "freeze",
+      "name": "comment-body-over16KiB",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/selected_comment/body_utf8_bytes",
+        "operation": "make_exact_serialized_bytes",
+        "value": 16385
+      },
+      "expected_rejection": "F1R1_FREEZE_BODY_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N146",
+      "category": "freeze_budget",
+      "name": "comments-response-over-one-MiB",
+      "evidence_basis": "FREEZE_PROVIDER_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PRE/comments_response/raw_bytes",
+        "operation": "make_exact_serialized_bytes",
+        "value": 1048577
+      },
+      "expected_rejection": "F1R1_API_CATEGORY_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N147",
+      "category": "freeze_budget",
+      "name": "control-plane-accounting-over-eight-MiB",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/control_plane/retained_accounted_bytes",
+        "operation": "replace",
+        "value": 8388609
+      },
+      "expected_rejection": "F1R1_CONTROL_PLANE_BYTES_LIMIT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N148",
+      "category": "freeze_budget",
+      "name": "18th-API-request",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/control_plane/request_count_including_first_job",
+        "operation": "replace",
+        "value": 18
+      },
+      "expected_rejection": "F1R1_API_REQUEST_COUNT",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N149",
+      "category": "freeze_budget",
+      "name": "API-request-over5s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/control_plane/one_request_elapsed_seconds",
+        "operation": "replace",
+        "value": 5.000001
+      },
+      "expected_rejection": "F1R1_API_REQUEST_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N150",
+      "category": "freeze_budget",
+      "name": "API-acquisition-over60s",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/control_plane/aggregate_acquisition_seconds_including_first_job",
+        "operation": "replace",
+        "value": 60.000001
+      },
+      "expected_rejection": "F1R1_API_AGGREGATE_DEADLINE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N151",
+      "category": "freeze_budget",
+      "name": "failed-API-request-retried",
+      "evidence_basis": "BUDGET_AND_JOBS_TEMPLATE",
+      "validator_entrypoint": "R1_FREEZE_BUDGET_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/control_plane/retry_count",
+        "operation": "replace",
+        "value": 1
+      },
+      "expected_rejection": "F1R1_API_RETRY_FORBIDDEN",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N152",
+      "category": "event",
+      "name": "main-association-page-missing-with-CLI-C",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/main/actual_S_associated_PR_response",
+        "operation": "remove_member",
+        "value": null
+      },
+      "expected_rejection": "F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N153",
+      "category": "event",
+      "name": "main-associated-PR-not-merged",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/main/selected_PR/merged",
+        "operation": "replace",
+        "value": false
+      },
+      "expected_rejection": "F1R1_ACTUAL_MERGED_PR_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N154",
+      "category": "event",
+      "name": "ambiguous-main-PR-association",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/main/associated_PRs",
+        "operation": "append_second_unique_matching_merged_PR_template",
+        "value": {
+          "distinct_provider_id_and_number": true,
+          "same_S_and_registered_branch": true
+        }
+      },
+      "expected_rejection": "F1R1_UNIQUE_MAIN_PR_ASSOCIATION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N155",
+      "category": "event",
+      "name": "main-immutable-parent-not-approved-B",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/main/git_S/parents/0",
+        "operation": "replace",
+        "value": "0000000000000000000000000000000000000000"
+      },
+      "expected_rejection": "F1R1_IMMUTABLE_MAIN_PARENT_B",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N156",
+      "category": "event",
+      "name": "PR-test-merge-parents-reversed",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PR/git_M/parents",
+        "operation": "swap_indices",
+        "value": [
+          0,
+          1
+        ]
+      },
+      "expected_rejection": "F1R1_EXACT_PR_MERGE_PARENTS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N157",
+      "category": "event",
+      "name": "PR-test-merge-full-tree-differs-from-C",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PR/git_M/tree",
+        "operation": "replace",
+        "value": "0000000000000000000000000000000000000000"
+      },
+      "expected_rejection": "F1R1_FULL_TREE_EQUALITY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N158",
+      "category": "event",
+      "name": "fork-with-same-registered-branch-spelling",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PR/head/repo/id",
+        "operation": "replace",
+        "value": 1347377138
+      },
+      "expected_rejection": "F1R1_SAME_REPOSITORY_SCOPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N159",
+      "category": "event",
+      "name": "run-bound-to-another-PR",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/PR/run/pull_requests/0/number",
+        "operation": "replace_derived",
+        "value": "actual_PR_number + 1"
+      },
+      "expected_rejection": "F1R1_RUN_PR_ASSOCIATION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N160",
+      "category": "event",
+      "name": "registered-scope-missing-authority-falls-back-to-source-only",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/missing_freeze_registered_case/disposition",
+        "operation": "replace",
+        "value": "F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE"
+      },
+      "expected_rejection": "F1R1_IN_SCOPE_AUTHORITY_FAILURE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N161",
+      "category": "event",
+      "name": "workflow-dispatch-starts-science",
+      "evidence_basis": "EVENT_SCOPE_TEMPLATE",
+      "validator_entrypoint": "R1_EVENT_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/execution/event",
+        "operation": "replace",
+        "value": "workflow_dispatch"
+      },
+      "expected_rejection": "F1R1_EVENT_SCOPE_NO_SCIENCE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N162",
+      "category": "guard",
+      "name": "protected-source-byte-change-called-unrelated",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/out_of_scope_diff/protected_launcher_bytes",
+        "operation": "append_exact_bytes",
+        "value": "\n"
+      },
+      "expected_rejection": "F1R1_OUT_OF_SCOPE_PROTECTED_CHANGE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N163",
+      "category": "guard",
+      "name": "candidate-policy-removes-its-touched-leaf",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/candidate_policy/protected_paths",
+        "operation": "remove_exact_member",
+        "value": "tests/validation/frontend_evolution/fe09_t3s3_f1_rss_launcher.c"
+      },
+      "expected_rejection": "F1R1_PROTECTED_BASE_POLICY_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N164",
+      "category": "guard",
+      "name": "fast-docs-guard-call-removed",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/actual_guard_route/fast_docs/invocations",
+        "operation": "remove_exactly_one_registered_guard_call",
+        "value": "F1_R1_SOURCE_SCOPE_GUARD"
+      },
+      "expected_rejection": "F1R1_GUARD_REQUIRED_ON_FAST_DOCS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N165",
+      "category": "guard",
+      "name": "fast-code-guard-call-removed",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/actual_guard_route/fast_code/invocations",
+        "operation": "remove_exactly_one_registered_guard_call",
+        "value": "F1_R1_SOURCE_SCOPE_GUARD"
+      },
+      "expected_rejection": "F1R1_GUARD_REQUIRED_ON_FAST_CODE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N166",
+      "category": "guard",
+      "name": "unproven-shared-hook-change-labelled-unrelated",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/hook_diff/protected_component_effect_proof",
+        "operation": "replace",
+        "value": "UNKNOWN_BUT_ACCEPTED_AS_UNRELATED"
+      },
+      "expected_rejection": "F1R1_HOOK_NONINTERFERENCE_PROOF_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N167",
+      "category": "guard",
+      "name": "source-only-labelled-science-PASS",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/out_of_scope_receipt/decision",
+        "operation": "replace",
+        "value": "FULL_HOSTED_F1_SCIENCE_PASS"
+      },
+      "expected_rejection": "F1R1_SOURCE_ONLY_NOT_SCIENCE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N168",
+      "category": "guard",
+      "name": "first-introduction-invents-missing-B-guard",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/first_introduction/guard_reference_origin",
+        "operation": "replace",
+        "value": "NONEXISTENT_PROTECTED_B_GUARD_CLAIMED_AS_EXECUTED"
+      },
+      "expected_rejection": "F1R1_BOOTSTRAP_METADATA_ONLY",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N169",
+      "category": "permissions",
+      "name": "caller-issues-read-removed",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_PERMISSIONS_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/verify/jobs/quality/permissions/issues",
+        "operation": "remove_member",
+        "value": null
+      },
+      "expected_rejection": "F1R1_FIVE_READ_CALLER_PERMISSIONS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N170",
+      "category": "permissions",
+      "name": "caller-pull-requests-read-removed",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_PERMISSIONS_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/verify/jobs/quality/permissions/pull-requests",
+        "operation": "remove_member",
+        "value": null
+      },
+      "expected_rejection": "F1R1_FIVE_READ_CALLER_PERMISSIONS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N171",
+      "category": "permissions",
+      "name": "F1-child-actions-read-removed",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_PERMISSIONS_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/quality/jobs/frontend-rss-f1/permissions/actions",
+        "operation": "remove_member",
+        "value": null
+      },
+      "expected_rejection": "F1R1_FIVE_READ_CHILD_PERMISSIONS",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N172",
+      "category": "permissions",
+      "name": "child-write-capability-added",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_PERMISSIONS_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/quality/jobs/frontend-rss-f1/permissions/issues",
+        "operation": "replace",
+        "value": "write"
+      },
+      "expected_rejection": "F1R1_READ_ONLY_PERMISSION_SCOPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N173",
+      "category": "permissions",
+      "name": "unrelated-top-level-permissions-expanded",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_PERMISSIONS_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/verify/permissions",
+        "operation": "add_member",
+        "value": {
+          "issues": "read"
+        }
+      },
+      "expected_rejection": "F1R1_PERMISSION_CHANGE_SCOPE",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N174",
+      "category": "permissions",
+      "name": "F1-failure-ignored",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_PERMISSIONS_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/quality/jobs/frontend-rss-f1/continue-on-error",
+        "operation": "replace",
+        "value": true
+      },
+      "expected_rejection": "F1R1_REQUIRED_QUALITY_RESULT_PROPAGATION",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N175",
+      "category": "guard",
+      "name": "bootstrap-tries-any-F1-launcher",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/first_introduction/actual_F1_launcher_processes",
+        "operation": "replace",
+        "value": 1
+      },
+      "expected_rejection": "F1R1_BOOTSTRAP_ZERO_F1_PROCESSES",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N176",
+      "category": "guard",
+      "name": "docs-only-execution-C-does-not-schedule-F1",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/docs_only_execution_C/effective_F1_job_required",
+        "operation": "replace",
+        "value": false
+      },
+      "expected_rejection": "F1R1_DOCS_ACTIVATION_MUST_SCHEDULE_F1",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N177",
+      "category": "guard",
+      "name": "candidate-guard-substituted-for-actual-B-guard",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/actual_guard_route/executed_guard_source_commit",
+        "operation": "replace",
+        "value": "2222222222222222222222222222222222222222"
+      },
+      "expected_rejection": "F1R1_ACTUAL_PROTECTED_B_GUARD_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    },
+    {
+      "id": "F1R1-N178",
+      "category": "guard",
+      "name": "B-has-guard-but-own-main-chain-not-closed",
+      "evidence_basis": "SOURCE_AND_GUARD_TEMPLATE",
+      "validator_entrypoint": "R1_GUARD_READBACK",
+      "validation_phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "mutation": {
+        "selector": "/scope/prerequisites/protected_B_own_main_chain_closed",
+        "operation": "replace",
+        "value": false
+      },
+      "expected_rejection": "F1R1_PROTECTED_GUARD_BASE_CLOSURE_REQUIRED",
+      "additional_DSP_frames": 0,
+      "additional_processes": 0,
+      "additional_live_API_requests": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN"
+    }
+  ],
+  "metadata_basis_catalog": {
+    "STRICT_SCHEMA_TEMPLATE": {
+      "phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "description": "One strictly valid bounded R1 record in the final registered schema. A synthetic metadata template is never a provider, kernel, process or science observation."
+    },
+    "SOURCE_AND_GUARD_TEMPLATE": {
+      "phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "description": "Reviewed protected-B source/policy bytes, actual bounded diff and a valid source/event authority template; no candidate policy is the expected-policy oracle."
+    },
+    "FRESH_BUILD_CLOSURE": {
+      "phase": "AFTER_REGISTERED_FRESH_BUILD_BEFORE_ENGINEERING_PROCESSES",
+      "description": "Copies of the registered actual build recipes, dependency inventory, source identities and retained original ELF/archive bytes. No compiler, linker or target is rerun by a negative."
+    },
+    "ENGINEERING_P01_ORIGINAL": {
+      "phase": "AFTER_THE_SINGLE_REGISTERED_SEVEN_FIXTURE_BATCH",
+      "description": "Copies of the successful registered P01 original status/stat/exe, six wire records and owned wait/supervisor evidence; no extra launcher or child is started."
+    },
+    "BOUNDED_BYTE_SCHEMA_TEMPLATE": {
+      "phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "description": "Valid compact serialized-record templates with explicit spare space outside the one tested field; construct exactly the stated boundary length in memory, never a real proc write or target invocation."
+    },
+    "SINGLE_COMPLETE_SCIENCE_COHORT": {
+      "phase": "AFTER_THE_SINGLE_REGISTERED_SCIENCE_COHORT_BEFORE_SEAL",
+      "description": "Isolated copies of the one complete original 36-target/21600-frame cohort. Default selected case is native/ALL_P/repeat1/reference unless the selector names another case. Every other original is unchanged."
+    },
+    "TIMING_ORDER_STATISTIC_TEMPLATE": {
+      "phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "description": "A valid bounded synthetic 600-frame timing-only vector with strictly increasing values1..600 ns for the tested role, correct raw summaries, exactly1.0s owned-target CPU and2.0s owned-target wall, and legal remaining fields. Bind starts at CPU0/wall0. It is never a DSP result or replacement for science timing."
+    },
+    "BUDGET_AND_JOBS_TEMPLATE": {
+      "phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "description": "Strict bounded valid original Jobs request/body/deadline and stage/command templates, with full 180-second admission, a unique dedicated F1 job and consistent run/attempt/event-head identity. The real acquisition remains separately mandatory."
+    },
+    "FREEZE_PROVIDER_TEMPLATE": {
+      "phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "description": "A complete bounded valid PRE/POST provider template for fixed issue845. Each comments page contains one valid matching-C freeze and one valid other-C freeze, with distinct IDs and matching bracketing counts. Both may have the same full tree but different actual commit identities. Templates cannot authorize a run."
+    },
+    "EVENT_SCOPE_TEMPLATE": {
+      "phase": "OFFLINE_METADATA_PREFLIGHT_INSIDE_AUTHORIZED_STAGE",
+      "description": "One valid provider-bound PR C/B/M or protected-main S-to-merged-PR C/B template and protected-B guard execution evidence. Main association templates contain exactly one matching merged PR; variants explicitly named by a control remain synthetic metadata."
+    }
+  },
+  "fixture_count": 7,
+  "engineering_fixtures": [
+    {
+      "id": "F1R1-P01",
+      "name": "complete-positive",
+      "mode": "COMPLETE",
+      "behavior": "One direct native fixture child follows PREEXEC, ENTRY and RETURN with all three ACKs, then exits0. Its body performs no DSP.",
+      "required_checkpoints": [
+        "PREEXEC",
+        "ENTRY",
+        "RETURN"
+      ],
+      "final_child_outcome": {
+        "kind": "exit",
+        "code": 0
+      },
+      "expected": "ENGINEERING_PROTOCOL_COMPLETE_ONLY_NOT_SCIENCE",
+      "order": 1,
+      "target": "native_engineering_only",
+      "launcher_processes": 1,
+      "direct_fixture_children": 1,
+      "descendants": 0,
+      "DSP_frames": 0,
+      "science_targets": 0,
+      "invocation_seconds": 1,
+      "automatic_retries": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN",
+      "work_deadline_offset_ns": 800000000,
+      "cleanup_reserve_ns": 200000000,
+      "final_deadline_offset_ns": 1000000000
+    },
+    {
+      "id": "F1R1-P02",
+      "name": "exec-absent",
+      "mode": "EXEC_ABSENT",
+      "behavior": "The launcher forks once; PREEXEC and its ACK complete. Direct execve targets an absent executable in the isolated fixture directory and reports the real ENOENT. The owned child exits127; ENTRY and RETURN are absent.",
+      "required_checkpoints": [
+        "PREEXEC"
+      ],
+      "final_child_outcome": {
+        "kind": "exit",
+        "code": 127,
+        "exec_errno": "ENOENT"
+      },
+      "expected": "F1R1_EXECVE_FAILED",
+      "order": 2,
+      "target": "native_engineering_only",
+      "launcher_processes": 1,
+      "direct_fixture_children": 1,
+      "descendants": 0,
+      "DSP_frames": 0,
+      "science_targets": 0,
+      "invocation_seconds": 1,
+      "automatic_retries": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN",
+      "work_deadline_offset_ns": 800000000,
+      "cleanup_reserve_ns": 200000000,
+      "final_deadline_offset_ns": 1000000000
+    },
+    {
+      "id": "F1R1-P03",
+      "name": "main-returns-seven",
+      "mode": "EXIT7",
+      "behavior": "PREEXEC, ENTRY and RETURN complete; RETURN reports return_code7 and actual owned wait reports exit7. This is an expected engineering rejection with zero validated science frames.",
+      "required_checkpoints": [
+        "PREEXEC",
+        "ENTRY",
+        "RETURN"
+      ],
+      "final_child_outcome": {
+        "kind": "exit",
+        "code": 7
+      },
+      "expected": "F1R1_TARGET_NONZERO_EXIT",
+      "order": 3,
+      "target": "native_engineering_only",
+      "launcher_processes": 1,
+      "direct_fixture_children": 1,
+      "descendants": 0,
+      "DSP_frames": 0,
+      "science_targets": 0,
+      "invocation_seconds": 1,
+      "automatic_retries": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN",
+      "work_deadline_offset_ns": 800000000,
+      "cleanup_reserve_ns": 200000000,
+      "final_deadline_offset_ns": 1000000000
+    },
+    {
+      "id": "F1R1-P04",
+      "name": "stall-after-ENTRY",
+      "mode": "STALL_AFTER_ENTRY",
+      "behavior": "PREEXEC and ENTRY complete with ACKs, then the direct child stalls without RETURN. At the fixed original invocation origin+800000000ns work deadline, report F1R1_ENGINEERING_INVOCATION_TIMEOUT and SIGKILL only the identified owned child, followed by its exact wait4. The original origin+1000000000ns final deadline includes launch/setup/protocol/kill/reap/encoding and is never restarted. A qualifying expected rejection requires final SIGKILL9 and complete owned reap/evidence before that1s deadline; late cleanup is a separate qualification failure.",
+      "required_checkpoints": [
+        "PREEXEC",
+        "ENTRY"
+      ],
+      "final_child_outcome": {
+        "kind": "signal",
+        "signal": "SIGKILL",
+        "number": 9
+      },
+      "expected": "F1R1_ENGINEERING_INVOCATION_TIMEOUT",
+      "order": 4,
+      "target": "native_engineering_only",
+      "launcher_processes": 1,
+      "direct_fixture_children": 1,
+      "descendants": 0,
+      "DSP_frames": 0,
+      "science_targets": 0,
+      "invocation_seconds": 1,
+      "automatic_retries": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN",
+      "expected_reason_semantics": "The registered reason denotes exhaustion of the fixed800ms engineering work window, not permission to begin cleanup after the final1s envelope.",
+      "work_deadline_offset_ns": 800000000,
+      "cleanup_reserve_ns": 200000000,
+      "final_deadline_offset_ns": 1000000000
+    },
+    {
+      "id": "F1R1-P05",
+      "name": "wire-257-byte-frame",
+      "mode": "OVERSIZED_WIRE_BEFORE_ENTRY",
+      "behavior": "After PREEXEC/ACK and successful fixture exec, the child writes exactly256 ASCII x bytes plus one LF as one257-byte logical wire frame, then waits. The launcher rejects by size before JSON decoding, sends no ACK for it, SIGKILLs its owned child and reaps it; a JSON parse error alone does not satisfy this fixture.",
+      "required_checkpoints": [
+        "PREEXEC"
+      ],
+      "wire_payload_definition": {
+        "ascii_x_bytes": 256,
+        "terminal_LF_bytes": 1,
+        "total_bytes": 257
+      },
+      "final_child_outcome": {
+        "kind": "signal",
+        "signal": "SIGKILL",
+        "number": 9
+      },
+      "expected": "F1R1_WIRE_BYTES_LIMIT",
+      "order": 5,
+      "target": "native_engineering_only",
+      "launcher_processes": 1,
+      "direct_fixture_children": 1,
+      "descendants": 0,
+      "DSP_frames": 0,
+      "science_targets": 0,
+      "invocation_seconds": 1,
+      "automatic_retries": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN",
+      "work_deadline_offset_ns": 800000000,
+      "cleanup_reserve_ns": 200000000,
+      "final_deadline_offset_ns": 1000000000
+    },
+    {
+      "id": "F1R1-P06",
+      "name": "EOF-without-ENTRY",
+      "mode": "EXEC_THEN_EOF_BEFORE_ENTRY",
+      "behavior": "After PREEXEC/ACK the fixture exec succeeds, closes its checkpoint channel and exits0 before sending ENTRY. Successful exec-error-pipe EOF and final exit0 cannot create an ENTRY observation or a complete case.",
+      "required_checkpoints": [
+        "PREEXEC"
+      ],
+      "final_child_outcome": {
+        "kind": "exit",
+        "code": 0
+      },
+      "expected": "F1R1_ENTRY_REQUIRED_AFTER_EXEC",
+      "order": 6,
+      "target": "native_engineering_only",
+      "launcher_processes": 1,
+      "direct_fixture_children": 1,
+      "descendants": 0,
+      "DSP_frames": 0,
+      "science_targets": 0,
+      "invocation_seconds": 1,
+      "automatic_retries": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN",
+      "work_deadline_offset_ns": 800000000,
+      "cleanup_reserve_ns": 200000000,
+      "final_deadline_offset_ns": 1000000000
+    },
+    {
+      "id": "F1R1-P07",
+      "name": "one-waited-descendant",
+      "mode": "ONE_WAITED_DESCENDANT",
+      "behavior": "After ENTRY the direct fixture child creates exactly one non-DSP descendant and waits for that exact PID; the descendant exits0 before the direct child sends RETURN and exits0. Retain fork/wait lineage. There is no RSS threshold, required increase, exclusive-main-image claim or concurrent-tree-sum claim.",
+      "required_checkpoints": [
+        "PREEXEC",
+        "ENTRY",
+        "RETURN"
+      ],
+      "final_child_outcome": {
+        "kind": "exit",
+        "code": 0
+      },
+      "descendant_outcome": {
+        "kind": "exit",
+        "code": 0
+      },
+      "expected": "ENGINEERING_DESCENDANT_SCOPE_RETAINED_ONLY",
+      "order": 7,
+      "target": "native_engineering_only",
+      "launcher_processes": 1,
+      "direct_fixture_children": 1,
+      "descendants": 1,
+      "DSP_frames": 0,
+      "science_targets": 0,
+      "invocation_seconds": 1,
+      "automatic_retries": 0,
+      "state": "NOT_IMPLEMENTED_NOT_RUN",
+      "work_deadline_offset_ns": 800000000,
+      "cleanup_reserve_ns": 200000000,
+      "final_deadline_offset_ns": 1000000000
+    }
+  ],
+  "engineering_budget": {
+    "one_registered_batch_only": true,
+    "launcher_processes": 7,
+    "direct_fixture_children": 7,
+    "descendants_max": 1,
+    "all_processes_max": 15,
+    "DSP_frames": 0,
+    "per_invocation_seconds": 1,
+    "aggregate_batch_seconds": 10,
+    "inside_same_collect_seconds": 180,
+    "deadline_covers": [
+      "launcher setup",
+      "fork",
+      "exec",
+      "wire exchanges",
+      "proc/identity capture",
+      "timeout handling",
+      "owned kill/reap",
+      "bounded evidence encoding"
+    ],
+    "deadline_restart_at_checkpoint_allowed": false,
+    "extra_descendant_proc_snapshots": 0,
+    "descendant_lineage_retained_in": "bounded engineering diagnostic/control record within existing envelope; no new unbudgeted proc member",
+    "case_failure_expectedness_does_not_authorize_extra_invocations": true,
+    "work_deadline_offset_ns": 800000000,
+    "cleanup_reserve_ns": 200000000,
+    "absolute_invocation_deadline_offset_ns": 1000000000,
+    "clock_origin": "Immediately before starting the native launcher; setup, fork, exec and all handshakes consume the same original clock.",
+    "work_and_cleanup": "Every fixture uses fixed work deadline origin+800000000ns and final completion deadline origin+1000000000ns, each also bounded by remaining batch/stage/job. Stop normal work at the work deadline; owned kill/reap and complete bounded evidence encoding must finish by the final deadline. The200ms reserve is inside1s and never borrowed to extend work. A shorter enclosing remaining window rejects before starting a fixture.",
+    "late_cleanup": "If cleanup/reap/encoding ends after the original1s deadline, preserve bounded failure but mark the fixture/batch qualification failed; expected semantic rejection cannot override a budget failure."
+  },
+  "rules": {
+    "every_control_currently_not_implemented_and_not_run": true,
+    "controls_authorize_execution": false,
+    "one_deterministic_semantic_mutation_per_control": true,
+    "logical_selectors": "Selectors name the final R1 validator record view, not an implemented file API. The owner must map each selector one-to-one to the final serialized schema and raw-source parser before freeze; unmapped controls block execution rather than silently skip.",
+    "logical_entrypoints": "R1_<CATEGORY>_READBACK names a pure bounded validator boundary, not an existing function. Final source must provide the reviewed mapping. Identity fields that require raw-source consistency are checked against parsed original raw bytes, not merely compared between self-authored summaries.",
+    "selector_specific_positive_bases": {
+      "failed_case": "Exactly600 retained raw frames with a real/nonzero-or-signal final-outcome metadata template, executed_raw_frames600 and validated_frames0.",
+      "local_receipt": "Explicit local execution with full_hosted_characterization false.",
+      "missing_freeze_registered_case": "An in-scope missing-authority rejection template; it is not a positive science case.",
+      "first_introduction": "Actual B has no F1 guard; valid disposition is SOURCE_METADATA_ONLY with zero F1 launchers, fixtures, targets and frames. Bootstrap source is independently reviewed, merged and its own main chain closed before selecting a guarded B and later final C/freeze. A comment cannot authorize bootstrap measurement.",
+      "wire_schema": "Compact valid ENTRY frame, nonce exactly64 lowercase hexadecimal bytes, ordinal1, pid123, ppid122, monotonic_ns1, with all required fields and total size small enough that adding a duplicate nonce still stays<=256B.",
+      "overflow_record": "An actual bounded-prefix representation with overflow true and complete_original false.",
+      "REAL_ORIGINAL_MAIN": "The resolved original main symbol and linkage; do not require a literal __real_main symbol that GNU --wrap may resolve away.",
+      "docs_only_execution_C": "Actual B has reviewed guard and independently closed own main chain; final C differs only in F1 baseline/contract/lock/docs, is the registered branch/event and must schedule F1. The actual B guard is executed on impact and fast-docs regardless of docs_only.",
+      "guard_source_OIDs": "For the synthetic guard-only template, actual protected B is1111111111111111111111111111111111111111 and candidate C is2222222222222222222222222222222222222222. These are template constants, never real Git/source authority. Positive executed_guard_source_commit is B; N177 mutates only it to C."
+    },
+    "process_identity_key": [
+      "pid",
+      "start_ticks",
+      "namespace_mapping"
+    ],
+    "later_numeric_PID_reuse_alone_is_not_a_failure": true,
+    "wire_ordinal_role": "Case/invocation ordinal; the same ordinal is retained across PREEXEC/ENTRY/RETURN/ACK within one invocation. Phase carries the checkpoint order.",
+    "base_positive_required": "The unmodified bounded input must pass the same validator entrypoint before its negative is attempted. A rejection caused only by malformed construction or a changed transport checksum does not count as the intended control.",
+    "copies_only": true,
+    "resealing_policy": "After the one declared mutation, recompute only enclosing local transport/manifest hashes, raw-byte counts and directly derived parse views needed to reach the named semantic predicate. Never change independently expected source pins, other raw observations, actual provider identities, untouched peer repetitions, limits, or decision rules to accommodate the mutation.",
+    "expected_reason_contract": "Each new R1 reason denotes the registered first violated semantic predicate at its named validator entrypoint. A generic exception, parse failure for a size test, timeout, crash or missing dependency is not a successful negative.",
+    "boundaries_checked_before_decoding": [
+      "wire byte cap",
+      "proc/identity/serialized member cap",
+      "API response cap"
+    ],
+    "synthetic_metadata_is_not_actual_provider_kernel_or_science_evidence": true,
+    "no_negative_invokes_compiler_launcher_target_fixture_or_HTTP": true,
+    "validation_is_in_process_and_bounded": true,
+    "all_metadata_control_work_counts_inside180seconds": true,
+    "negative_results_are_individual_and_in_exact_inventory_order": true,
+    "no_silent_skips_or_count_padding": true,
+    "failure_of_a_control_preserves_evidence_and_stops_qualification": true,
+    "required_five_read_permissions": [
+      "contents",
+      "packages",
+      "actions",
+      "issues",
+      "pull-requests"
+    ],
+    "artifact_and_case_caps_not_expanded_by_controls": true,
+    "source_and_science_originals_unchanged": true,
+    "no_claim_of_old_139_inventory_recovery": true,
+    "planned_inventory_is_not_quota_for_omitting_a_required_case": true,
+    "bootstrap_preparation": "After separate root docs-freeze authorization, source/static compilation/pure in-process offline controls may be prepared without running any F1 process. Qualification must still rerun applicable pure controls on the registered actual inputs inside the same180s execution stage; preparatory output is not a registered cohort."
+  }
+}

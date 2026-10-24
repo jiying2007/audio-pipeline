@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "id": "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-R1",
+  "status": "F0_MAIN_D_QUALIFIED_FINAL_F1_BASE_CANDIDATE_AND_PIN_PENDING",
+  "execution_authorized": false,
+  "execution_authorized_semantics": "This prerequisite record never independently authorizes F1 execution. Final B/C/source closure, reviewed external freeze and explicit root execution decision remain mandatory.",
+  "source_checkout_anchor": {
+    "commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+    "tree": "894253393823d842f620be408ec12339a61771d2",
+    "is_final_execution_B_or_C": false
+  },
+  "qualified_F0_main_D": {
+    "state": "INDEPENDENT_F0_MAIN_CLOSURE_VERIFIED_BEFORE_FIRST_F1_EXECUTION",
+    "commit": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+    "tree": "894253393823d842f620be408ec12339a61771d2",
+    "sole_parent": "7138b17acd6246cc779efa7597d25771ddfc8c7a",
+    "predecessor_PR": {
+      "id": 4996790991,
+      "number": 844,
+      "state": "closed",
+      "merged": true,
+      "merged_at": "2026-10-24T16:23:54Z",
+      "merge_commit_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+      "head": {
+        "sha": "5bd8e3dde8809c30b4330ea8b0badf78a40a53ae",
+        "ref": "research/fe09-t3s3-f0-call-resource-20261024",
+        "repository_id": 1347377137
+      },
+      "base": {
+        "sha": "7138b17acd6246cc779efa7597d25771ddfc8c7a",
+        "ref": "main",
+        "repository_id": 1347377137
+      },
+      "verify": {
+        "id": 40108346153,
+        "run_attempt": 1,
+        "head_sha": "5bd8e3dde8809c30b4330ea8b0badf78a40a53ae",
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "summary": {
+        "id": 120923326367,
+        "name": "summary",
+        "head_sha": "5bd8e3dde8809c30b4330ea8b0badf78a40a53ae",
+        "status": "completed",
+        "conclusion": "success",
+        "details_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40108346153/job/120923326367",
+        "app": {
+          "id": 15368,
+          "slug": "github-actions"
+        }
+      }
+    },
+    "verify": {
+      "id": 40111373922,
+      "run_attempt": 1,
+      "name": "Verify",
+      "path": ".github/workflows/verify.yml",
+      "event": "push",
+      "head_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+      "head_branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-24T16:23:57Z",
+      "run_started_at": "2026-10-24T16:23:57Z",
+      "updated_at": "2026-10-24T16:59:41Z"
+    },
+    "verify_jobs": {
+      "url": "https://api.github.com/repos/jiying2007/audio-pipeline/actions/runs/40111373922/attempts/1/jobs?per_page=100",
+      "total_count": 81,
+      "observed_count": 81,
+      "conclusions": {
+        "success": 80,
+        "skipped": 1
+      },
+      "skipped_jobs": [
+        {
+          "id": 120923687554,
+          "name": "fast-docs",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    "summary": {
+      "id": 120931623192,
+      "name": "summary",
+      "head_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-24T16:59:34Z",
+      "completed_at": "2026-10-24T16:59:40Z",
+      "details_url": "https://github.com/jiying2007/audio-pipeline/actions/runs/40111373922/job/120931623192",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    "release": {
+      "id": 40114080519,
+      "run_attempt": 1,
+      "name": "Release",
+      "path": ".github/workflows/release.yml",
+      "event": "workflow_run",
+      "head_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+      "head_branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-24T16:59:43Z",
+      "run_started_at": "2026-10-24T16:59:43Z",
+      "updated_at": "2026-10-24T17:00:06Z",
+      "jobs": [
+        {
+          "id": 120931667268,
+          "name": "release",
+          "run_id": 40114080519,
+          "run_attempt": 1,
+          "head_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T16:59:45Z",
+          "completed_at": "2026-10-24T17:00:00Z"
+        },
+        {
+          "id": 120931732523,
+          "name": "convergence",
+          "run_id": 40114080519,
+          "run_attempt": 1,
+          "head_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-24T17:00:02Z",
+          "completed_at": "2026-10-24T17:00:06Z"
+        }
+      ],
+      "existing_release_identity": {
+        "asset_count": 12,
+        "checksummed_assets": 11,
+        "immutable": true,
+        "manifest_payload_assets": 10,
+        "release_source_is_ancestor": true,
+        "release_source_sha": "c416a5f8e44b36a6af5be4dc53c71456dd6ba5ef",
+        "result": "EXISTING_RELEASE_IDENTITY_PASS",
+        "schema_version": 1,
+        "tag": "v2.3.56",
+        "verified_main_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+        "version": "2.3.56"
+      },
+      "convergence_log_marker": "post-release qualification already finalized: v2.3.56"
+    },
+    "published_closure": {
+      "id": 6390447705,
+      "issue_url": "https://api.github.com/repos/jiying2007/audio-pipeline/issues/841",
+      "created_at": "2026-10-24T22:40:50Z",
+      "updated_at": "2026-10-24T22:40:50Z",
+      "user": {
+        "login": "jiying2007",
+        "id": 33591504,
+        "type": "User"
+      },
+      "url": "https://github.com/jiying2007/audio-pipeline/issues/841#issuecomment-6390447705"
+    },
+    "main_artifact": {
+      "id": 12566987972,
+      "name": "frontend-fe09-t3s3-f0-40111373922-attempt-1",
+      "size_in_bytes": 5977281,
+      "url": "https://api.github.com/repos/jiying2007/audio-pipeline/actions/artifacts/12566987972",
+      "archive_download_url": "https://api.github.com/repos/jiying2007/audio-pipeline/actions/artifacts/12566987972/zip",
+      "expired": false,
+      "created_at": "2026-10-24T16:37:01Z",
+      "expires_at": "2026-11-23T16:36:59Z",
+      "updated_at": "2026-10-24T16:37:01Z",
+      "digest": "sha256:e602c9de118d0b34754b67ff99f4d86f40a5e19c37abd6544619e82a52afaa02",
+      "workflow_run": {
+        "id": 40111373922,
+        "repository_id": 1347377137,
+        "head_repository_id": 1347377137,
+        "head_branch": "main",
+        "head_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74"
+      },
+      "zip_sha256_independently_rechecked": "e602c9de118d0b34754b67ff99f4d86f40a5e19c37abd6544619e82a52afaa02",
+      "manifest_sha256": "beb99399fcf62e04a1c04bc031408486271352137bfdd5ac77fd5f65e7c2bf2c",
+      "receipt_sha256": "442e7835d2a3e8208e49f3a7d2208a703619349dab0cfb10b7bc3dd95b76c802",
+      "members": 261,
+      "expanded_bytes": 14910433
+    },
+    "independent_original_readback": {
+      "reviewer": "review_research_remaining",
+      "record_kind": "INDEPENDENT_READONLY_F0_MAIN_ARTIFACT_REVIEW_REGENERATED_AFTER_WORKSPACE_RESET",
+      "record_bytes": 30634,
+      "record_sha256": "025a74e9fcaf040466e36373118e90b4b91b68b1d497b0fa21b64394615247e4",
+      "reviewed_at_utc": "2026-10-24T22:45:05.053471+00:00",
+      "frozen_verifier_exit_code": 0,
+      "target_processes": 36,
+      "frames": 21600,
+      "timed_frames": 10800,
+      "statistic_groups_recomputed": 144,
+      "F0_PCM_payload_archived": false,
+      "no_DSP_or_build_execution_by_reread": true,
+      "local_report_not_alone_provider_authority": true
+    },
+    "independent_provider_observation": {
+      "reviewer": "review_image_adoption",
+      "observed_after_utc": "2026-10-24T22:43:38Z",
+      "completed_utc": "2026-10-24T22:53:45Z",
+      "summary_record_sha256": "9bd0b2efe428d33dabb4b72ea3acbf1431c5964d23c504a5fbfd9aae22bb5983",
+      "full_returned_record_sha256": "059b77e8c6305839ea8a98ae28ed687fdce37fd165a2c5750848e98ddc9ce497",
+      "retained_provider_record_is_HTTP_wire_bytes": false
+    }
+  },
+  "protected_execution_base_B": {
+    "status": "PENDING_FUTURE_PROTECTED_MAIN_SELECTION_AND_OWN_GATE_CLOSURE",
+    "commit": null,
+    "tree": null,
+    "relation_to_D": null,
+    "immutable_originals_preserved": null,
+    "applicable_main_gates": null,
+    "independent_review_record": null,
+    "rule": "Select actual protected B only after reviewed metadata-only guard bootstrap is protected-squashed and B own main Verify/summary plus Release/convergence close. Verify B descends from D and all96 originals match. D and a candidate bootstrap guard are not substitutes for final B.",
+    "guard_state": "PENDING_ACTUAL_B_WITH_INTEGRATED_REVIEWED_GUARD_AND_OWN_MAIN_CLOSURE"
+  },
+  "candidate_C_and_external_comment": {
+    "status": "PENDING_IMPLEMENTATION_COMPLETE_SOURCE_LOCK_INDEPENDENT_REVIEW_AND_LIVE_FREEZE",
+    "C_or_future_comment_identity_embedded_here": false,
+    "rule": "Final C/tree/lock/contract/negative/baseline digests are approved by a future strict external issue845 comment. Keep that comment ID/body hash in runtime/additive evidence, not this locked baseline."
+  },
+  "toolchain_image": "ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57",
+  "external_control_plane": {
+    "repository": {
+      "full_name": "jiying2007/audio-pipeline",
+      "id": 1347377137
+    },
+    "issue": {
+      "number": 845,
+      "id": 6015285792,
+      "node_id": "I_kwDOUE9X8c8AAAABZon6IA",
+      "created_at": "2026-10-24T16:50:18Z"
+    },
+    "author": {
+      "login": "jiying2007",
+      "id": 33591504,
+      "type": "User"
+    },
+    "registered_branch": "research/fe09-t3s3-f1-rss-20261024"
+  },
+  "pending_policy": "Any pending B/source/implementation/freeze prerequisite blocks every F1 launcher, engineering process fixture or DSP invocation; qualified D alone grants none.",
+  "recovery": {
+    "kind": "NEW_DOCS_ONLY_RECONSTRUCTION_R1_AFTER_WORKSPACE_RESET",
+    "claims_exact_recovery_of_lost_three_JSON_files": false,
+    "old_document_state": "DRAFT_FOR_REVIEW_NOT_FROZEN",
+    "old_draft_archive_commit": "49ab8e67731d93abdee9cecef853a58eb4b231d7",
+    "old_draft_archive_tree": "e789dc1942a55b2384fd300639a817731bbe5efe",
+    "old_draft_archive_url": "https://github.com/jiying2007/audio-pipeline/tree/49ab8e67731d93abdee9cecef853a58eb4b231d7/docs/research/frontend-evolution-v1/FE09_T3S3_F1_RSS_PREREGISTRATION_DRAFT_20261024",
+    "old_files": [
+      {
+        "file": "README.md",
+        "previously_recorded_bytes": 34311,
+        "previously_recorded_sha256": "e2295c62b4bc526a14f73d55e696492c63a61072dca1d3d45d43d09e6507fecc",
+        "recovery_state": "EXACT_BYTES_RECOVERED_AND_ARCHIVED"
+      },
+      {
+        "file": "test-contract.json",
+        "previously_recorded_bytes": 77737,
+        "previously_recorded_sha256": "fdb97b9f9d35294e590b318890d4e5025031e5662ccbbcd9b492b541cacca72d",
+        "recovery_state": "PREVIOUS_HASH_KNOWN_BYTES_NOT_RECOVERED_NOT_AN_EXECUTABLE_INPUT"
+      },
+      {
+        "file": "source-lock.json",
+        "previously_recorded_bytes": 46104,
+        "previously_recorded_sha256": "7a97009343bf5a10d41c678507421eee036c6113896c937f52ef9bad3b7be8b8",
+        "recovery_state": "PREVIOUS_HASH_KNOWN_BYTES_NOT_RECOVERED_NOT_AN_EXECUTABLE_INPUT"
+      },
+      {
+        "file": "negative-controls.json",
+        "previously_recorded_bytes": 69031,
+        "previously_recorded_sha256": "945d722e4d81143e836029191c3bb67f243503204c52215c6bd2b44f8952904b",
+        "recovery_state": "PREVIOUS_HASH_KNOWN_BYTES_NOT_RECOVERED_NOT_AN_EXECUTABLE_INPUT"
+      },
+      {
+        "file": "EXECUTION_BASELINE.json",
+        "previously_recorded_bytes": 4974,
+        "previously_recorded_sha256": "5f3beb310e9111c09b869e5a7deed6802410dd3e8869a2814ad18415956635de",
+        "recovery_state": "EXACT_BYTES_RECOVERED_AND_ARCHIVED"
+      }
+    ],
+    "R1_basis": "Complete exact recovered README protocol plus independently verified immutable F0/B3 sources, actual D92 provider closure and new original-artifact reread; complete R1 machine rules and negatives are reviewed anew.",
+    "old_139_negative_count_is_R1_quota": false,
+    "source_measurements_or_F0_originals_rewritten": false,
+    "R1_generated_docs_are_new_bytes_with_new_hashes": true,
+    "old_independent_F0_report": {
+      "sha256": "a59ddca71823a338c858e82e8cb2e1869ae700f67860058dd80edf7acc9abc33",
+      "bytes": 29645,
+      "state": "HISTORICAL_OBSERVATION_ORIGINAL_REPORT_BYTES_NOT_RECOVERED"
+    },
+    "new_independent_F0_reread_report": {
+      "sha256": "025a74e9fcaf040466e36373118e90b4b91b68b1d497b0fa21b64394615247e4",
+      "bytes": 30634,
+      "reviewed_at_utc": "2026-10-24T22:45:05.053471+00:00",
+      "decision": "PASS",
+      "no_DSP_or_build": true
+    }
+  },
+  "bootstrap_order": {
+    "state": "SOURCE_METADATA_ONLY",
+    "when": "Actual B does not yet contain the reviewed protected F1 guard/wiring.",
+    "allowed_after_separate_root_docs_freeze": [
+      "source/test editing",
+      "static syntax checks",
+      "static compilation",
+      "pure in-process offline metadata controls"
+    ],
+    "F1_launchers": 0,
+    "engineering_fixture_processes": 0,
+    "DSP_targets": 0,
+    "DSP_frames": 0,
+    "root_review": "Independently review bootstrap source/wiring and the absence of a B guard. A bootstrap candidate or external comment cannot authorize measurement or pretend to execute nonexistent B policy.",
+    "completion_order": [
+      "protected squash of reviewed metadata-only guard/bootstrap source",
+      "its own distinct main Verify/summary and Release/convergence closure",
+      "select resulting actual closed protected B with real guard",
+      "finalize new actual execution C even if docs-only",
+      "independent exact-C source review and external freeze",
+      "later registered PR activation and science cohort"
+    ],
+    "compiled_bootstrap_products_are_execution_evidence": false
+  }
+}

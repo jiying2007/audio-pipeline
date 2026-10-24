@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "id": "FE09-B3-F0-C4-16K-RENDER-PAP-V1",
+  "role": "INDEPENDENT_INPUT_ONLY_PRE_DSP_FREEZE",
+  "baseline_commit": "81ee559848e1e30e3dd2eb4d03b0b479b9bd971e",
+  "contract_sha256": "74e7294b1433207d222f9732326b68b33303c1ef63c8b6001283963419117284",
+  "source_lock_sha256": "32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d",
+  "generator_sha256": "903f390544ad071af3f238aab07d949907fa015da4e8e9dcfc4a62228c339773",
+  "encoding": "signed16 little-endian; Capture sample-major then physical mic0..3",
+  "DSP_executed": false,
+  "input_tuned": false,
+  "streams": {
+    "capture_all_p_and_pap": {
+      "sha256": "5a3f3360e0e65b0a28ae1ceb5350e1f697542fa988e463d2cafae1c48d520a6b",
+      "bytes": 768000,
+      "scalar_samples": 384000,
+      "channels": 4,
+      "sample_frames": 96000,
+      "minimum": -17389,
+      "maximum": 17397
+    },
+    "render_full_all_p": {
+      "sha256": "6a733da2ffa2476559ab0d58975e9e677ac5a39b2040cbbe000ac3e6f05509a1",
+      "bytes": 192000,
+      "scalar_samples": 96000,
+      "channels": 1,
+      "sample_frames": 96000,
+      "minimum": -4096,
+      "maximum": 4095
+    },
+    "render_pap_delivered": {
+      "sha256": "86ea76234a0c9da3d3edc18f4fd9b428268ac3d997c70862170aac686d128ef0",
+      "bytes": 179200,
+      "scalar_samples": 89600,
+      "channels": 1,
+      "sample_frames": 89600,
+      "minimum": -4096,
+      "maximum": 4095
+    },
+    "capture_future_suffix_control": {
+      "sha256": "762c671b38e61d5b540e72486b332a56aecce43d3c97ee2b9282696c9db573a9",
+      "bytes": 768000,
+      "scalar_samples": 384000,
+      "channels": 4,
+      "sample_frames": 96000,
+      "minimum": -17334,
+      "maximum": 17397
+    },
+    "render_pap_future_suffix_control": {
+      "sha256": "e0aa153ea186cd897e528398e21bd9c1af2247e52f271ff1c3c04807fff00f6c",
+      "bytes": 179200,
+      "scalar_samples": 89600,
+      "channels": 1,
+      "sample_frames": 89600,
+      "minimum": -4096,
+      "maximum": 4096
+    }
+  },
+  "prefix_controls": {
+    "capture_through_frame240_sha256": "33e92f1db8c8e8da99b3be7203362039ee96da81c890c6d964dd8e2e761d69ec",
+    "render_pap_delivered_through_frame240_sha256": "0942455e9ca53d86eb7072b2e8d0dfaf325ddc2563752acaaa1855cee9880822"
+  },
+  "bounds": {
+    "capture_theoretical_inclusive": [
+      -17472,
+      17469
+    ],
+    "echo_observed": [
+      -1024,
+      1023
+    ],
+    "near_observed": [
+      -16383,
+      16381
+    ],
+    "noise_observed_by_mic": [
+      [
+        -64,
+        63
+      ],
+      [
+        -64,
+        63
+      ],
+      [
+        -64,
+        63
+      ],
+      [
+        -64,
+        63
+      ]
+    ],
+    "capture_observed_by_mic": [
+      [
+        -17389,
+        17397
+      ],
+      [
+        -17335,
+        17378
+      ],
+      [
+        -17330,
+        17359
+      ],
+      [
+        -17355,
+        17345
+      ]
+    ],
+    "negative_nonmultiple4_echo_inputs": 35896,
+    "clipping_count": 0
+  },
+  "input_control_ledgers": {
+    "ALL_P": {
+      "path": "all_p_input_control.csv",
+      "sha256": "b822671fbbcde87d3272656b575867b45dadc3ff94886d4462d654c4de0bcf38",
+      "bytes": 101423,
+      "capture_frames": 600,
+      "present_events": 600,
+      "absent_events": 0,
+      "explicit_notifications": 0
+    },
+    "PAP": {
+      "path": "pap_input_control.csv",
+      "sha256": "7b5138865908ac9ac94af61f4573948715387bf029bdf1c03d2989f6653dbe3c",
+      "bytes": 98703,
+      "capture_frames": 600,
+      "present_events": 560,
+      "absent_events": 40,
+      "explicit_notifications": 2
+    }
+  },
+  "notes": [
+    "PAP delivered Render concatenates original frames1..200 and241..600; no absent PCM exists.",
+    "Control ledger event values1/2, source-reported reason1 and both Render gap flags2 match frozen public/owner headers.",
+    "The ALL_P/PAP Capture is one immutable byte stream. Future suffix inversion begins at frame241 only.",
+    "No raw PCM files retained; no downstream output or acoustic result inspected."
+  ]
+}

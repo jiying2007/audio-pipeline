@@ -263,6 +263,61 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ github.token }}
     steps:
+      - name: Record actual existing frontend-reference job deadline
+        shell: bash
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import json
+          import os
+          from pathlib import Path
+          import time
+          import urllib.request
+
+          # This is the first executable step, before checkout or qualification.
+          # Observe Actions' real job start; never restart a 15-minute clock at B3.
+          path = Path(os.environ['RUNNER_TEMP']) / 'fe09-frontend-job-deadline.json'
+          record = {'schema_version': 1, 'status': 'BLOCKED',
+                    'run_id': int(os.environ['GITHUB_RUN_ID']),
+                    'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+                    'observed_at_epoch': time.time(), 'timeout_minutes': 15,
+                    'archive_reserve_seconds': 60}
+          try:
+              repo = os.environ['GITHUB_REPOSITORY']
+              if repo != 'jiying2007/audio-pipeline':
+                  raise ValueError('REPOSITORY_IDENTITY')
+              url = (f'https://api.github.com/repos/{repo}/actions/runs/'
+                     f'{record["run_id"]}/attempts/{record["run_attempt"]}/jobs?per_page=100')
+              request = urllib.request.Request(url, headers={
+                  'Accept': 'application/vnd.github+json',
+                  'Authorization': 'Bearer ' + os.environ['GH_READ_TOKEN'],
+                  'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  jobs = json.load(response)['jobs']
+              matches = [j for j in jobs if j.get('name') in
+                         ('frontend-reference', 'quality / frontend-reference')
+                         and j.get('status') == 'in_progress']
+              if len(matches) != 1:
+                  raise ValueError('ACTUAL_JOB_START_NOT_UNIQUE_OR_VISIBLE')
+              job = matches[0]
+              started = datetime.datetime.fromisoformat(
+                  job['started_at'].replace('Z', '+00:00')).timestamp()
+              if not 0 < started <= time.time():
+                  raise ValueError('ACTUAL_JOB_START_INVALID')
+              record.update(status='OBSERVED_ACTUAL_JOB_START', job_id=job['id'],
+                            job_name=job['name'], started_at=job['started_at'],
+                            started_at_epoch=started, deadline_epoch=started + 900)
+          except Exception as error:
+              # Existing predecessor work can continue; B3 must retain BLOCKED
+              # evidence if the actual original deadline could not be observed.
+              record['failure'] = type(error).__name__ + ': ' + str(error)
+          path.write_text(json.dumps(record, sort_keys=True) + '\n')
+          with open(os.environ['GITHUB_ENV'], 'a') as environment:
+              environment.write('FE_FRONTEND_JOB_DEADLINE_FILE=' + str(path) + '\n')
+          print('FE09_ORIGINAL_JOB_DEADLINE', record['status'])
+          PY
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
@@ -777,6 +832,22 @@ jobs:
         with:
           name: frontend-doa-a1-${{ github.run_id }}
           path: fe-doa-a1/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Qualify FE09 B3-F0 fixed C4 actual CALL Render absence and reentry
+        id: fe09_b3_f0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/validation/frontend_evolution/fe09_b3_f0_qualification.py --self-test
+          python3 tests/validation/frontend_evolution/fe09_b3_f0_qualification.py \
+            --collect --output fe09-b3-f0 --execution-source "$GITHUB_SHA"
+      - name: Preserve FE09 B3-F0 exact-run composition evidence and failures
+        if: always() && (steps.fe09_b3_f0.outcome == 'success' || steps.fe09_b3_f0.outcome == 'failure')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-fe09-b3-f0-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: fe09-b3-f0/
           if-no-files-found: error
           retention-days: 30
       - name: Preserve reference evidence and failures

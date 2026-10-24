@@ -8,6 +8,8 @@
 
 Bind 用原初始化器生成固定配置的 fresh 状态，核对实际 Capture header、SRC、BF 和 mono 状态，排除已经预推 Render 但尚未处理 Capture 的 mono。Capture 的比较只规范化两项分配地址，初始化器不写的对齐 padding 不作配置真值。逐帧准入检查固定身份、配置、长度、范围及别名；owner 是最后一个可能正常拒绝的状态提交阶段。提交后的异常归为 `COMPOSITION_INVARIANT_BREACH`，停止并保留失败帧真实进度。
 
+Bridge 必须由调用者作为全零的新对象初始化；已有绑定或失败状态不能通过 `bind` 换入另一套 fresh source/mono 而重新开始。该准入按语义字段检查，不比较未定义 padding。N14 使用另一个全零 bridge 检验已消费的原 owner／mono，避免被 destination 的旧绑定提前拒绝而掩盖原负控。销毁并重建完整隔离 fixture 不属于连续恢复资格。
+
 PAP 的40个缺席事件没有 Render PCM；SDK 内部欠载产生的零参考不代表来源方投递。201／241帧的两次显式通知，与 SYNC 路径变化导致的自动 AEC reset 分开计数。外部 Capture 状态必须保留；mono 内部 reset 所涉及的9类状态在实际通知 wrapper 中核验。
 
 ## 独立控制与真实观察

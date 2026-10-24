@@ -42,6 +42,10 @@ typedef struct {
 } fe_b3_f0_receipt;
 
 /* All declared arenas must remain disjoint and owned for the binding lifetime.
+ * The caller supplies a zero-initialized new bridge, e.g. fe_b3_f0 b = {0}.
+ * An already-bound or failed bridge cannot be rebound. Uninitialized storage
+ * is not a valid input object; destroying/reinitializing a complete isolated
+ * fixture is not live recovery or continuation of its source history.
  * Only completely fresh, fixed C4/16k owner and real mono CALL states bind.
  * Rejected bind leaves the bridge and every input state unchanged. */
 fe_b3_f0_status fe_b3_f0_bind(fe_b3_f0 *bridge, fe_b1s0_state *owner,

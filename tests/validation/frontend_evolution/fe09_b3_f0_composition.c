@@ -149,6 +149,16 @@ static int fresh_owner(const fe_b1s0_state *q, const fe_b1b1_info *i) {
         i->accepted_frames == 0u && i->source.accepted_frames == 0u &&
         i->array.samples_processed == 0u;
 }
+static int fresh_bridge(const fe_b3_f0 *b) {
+    /* A semantic initialization marker, never memcmp of structure padding.
+     * Valid existing bindings always have B3_MAGIC, even after fatal failure.
+     * The caller's object must already have been zero-initialized. */
+    return b->magic==0u && b->failed==0u && b->prior_event==0u &&
+        !b->owner && !b->front && !b->capture && !b->mono &&
+        b->mono_bytes==0u && b->capture_bytes==0u && b->work_bytes==0u &&
+        b->accepted==0u && b->present==0u && b->absent==0u &&
+        b->notifications==0u && b->beam_clips==0u && b->reference_clips==0u;
+}
 fe_b3_f0_status fe_b3_f0_bind(fe_b3_f0 *b, fe_b1s0_state *q,
                              ap_pipeline_t *p, size_t mono_bytes) {
     fe_b3_f0 next;
@@ -160,7 +170,7 @@ fe_b3_f0_status fe_b3_f0_bind(fe_b3_f0 *b, fe_b1s0_state *q,
     fe_b1b1 *reference_capture=NULL;
     ap_pipeline_t *reference_mono=NULL;
     fe_b1b1_config frozen=frozen_capture_config();
-    if (!b || !q || !p || !q->core || !q->core->capture_bf ||
+    if (!b || !fresh_bridge(b) || !q || !p || !q->core || !q->core->capture_bf ||
         mono_bytes != ap_pipeline_state_size() ||
         mono_bytes > AP_PIPELINE_STATE_MAX_BYTES ||
         (uintptr_t)p % AP_PIPELINE_STATE_ALIGNMENT ||

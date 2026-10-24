@@ -224,7 +224,12 @@ static int b3_test_frame1_negatives(void) {
 }
 static int b3_test_postframe1_negative(void) {
     b3_test_fixture *f=&main_fixture;
-    NEGATIVE(f,14u,fe_b3_f0_bind(&f->seam,&f->q,f->mono,f->mono_bytes)==FE_B3_F0_REJECT);
+    fe_b3_f0 fresh,before;
+    memset(&fresh,0,sizeof(fresh));memcpy(&before,&fresh,sizeof(before));
+    /* Keep N14 about consumed original owner/mono admission. An already-bound
+     * destination would reject earlier and hide that distinct frozen gate. */
+    NEGATIVE(f,14u,fe_b3_f0_bind(&fresh,&f->q,f->mono,f->mono_bytes)==FE_B3_F0_REJECT &&
+                   memcmp(&fresh,&before,sizeof(fresh))==0);
     return 1;
 }
 static int b3_test_reentry_negatives(void) {

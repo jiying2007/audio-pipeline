@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "id": "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-V1",
+  "status": "PENDING_F0_MAIN_CLOSURE",
+  "execution_authorized": false,
+  "drafting_source": "5bd8e3dde8809c30b4330ea8b0badf78a40a53ae",
+  "drafting_source_is_execution_baseline": false,
+  "required_predecessor_pull_request": 844,
+  "predecessor_final_pr_head": null,
+  "predecessor_pr_verify": null,
+  "predecessor_pr_original_artifact_readback": null,
+  "baseline_main_commit": null,
+  "baseline_main_tree": null,
+  "baseline_verify": null,
+  "baseline_release": null,
+  "baseline_original_artifact_readback": null,
+  "independent_review_record": null,
+  "verified_before_first_f1_execution_at": null,
+  "toolchain_image": "ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57",
+  "null_policy": "Every null is an unmet prerequisite; no field is an optional success or permission to execute.",
+  "rejection_rules": [
+    "Reject the PR head, test merge, pre-F0 main or old B3 baseline as a substitute for the actual protected F0 main commit.",
+    "Reject inherited Verify/summary/Release/convergence success from another head, attempt or workflow.",
+    "Reject a candidate F1 run as evidence that its F0 predecessor was already qualified.",
+    "Reject a manifest hash or candidate-authored assertion without original Actions metadata and independent original-artifact readback.",
+    "Reject first execution while any pending state or null prerequisite remains.",
+    "External issue creation or a candidate-supplied freeze object cannot turn pending baseline fields into closed evidence.",
+    "No engineering-process or launcher first execution while this prerequisite is pending, even if source editing/static compilation has separately been authorized."
+  ],
+  "observed_pending_main": {
+    "observation_kind": "READONLY_PROVIDER_OBSERVATION_NOT_QUALIFICATION",
+    "observed_at_utc": "2026-10-24T16:27:12Z",
+    "pull_request": 844,
+    "head_sha": "5bd8e3dde8809c30b4330ea8b0badf78a40a53ae",
+    "merged_at": "2026-10-24T16:23:54Z",
+    "merge_commit_sha": "92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+    "tree": "894253393823d842f620be408ec12339a61771d2",
+    "sole_parent": "7138b17acd6246cc779efa7597d25771ddfc8c7a",
+    "verify_run_id": 40111373922,
+    "verify_attempt": 1,
+    "verify_status": "queued",
+    "verify_conclusion": null,
+    "release_or_convergence_qualified": false,
+    "main_original_artifact_readback_qualified": false,
+    "qualifies_execution_baseline": false,
+    "provider_urls": [
+      "https://api.github.com/repos/jiying2007/audio-pipeline/pulls/844",
+      "https://api.github.com/repos/jiying2007/audio-pipeline/git/commits/92a7546a75cfe0d8aca132c7ee5996dcf0005c74",
+      "https://api.github.com/repos/jiying2007/audio-pipeline/actions/runs/40111373922/attempts/1"
+    ]
+  },
+  "external_pin_ingress_status": "IDENTIFIED_ISSUE_845_PROTOCOL_DRAFT_NO_FREEZE_RECORD_OR_EXECUTION",
+  "external_control_plane": {
+    "repository": {
+      "full_name": "jiying2007/audio-pipeline",
+      "id": 1347377137
+    },
+    "issue": {
+      "number": 845,
+      "id": 6015285792,
+      "node_id": "I_kwDOUE9X8c8AAAABZon6IA",
+      "created_at": "2026-10-24T16:50:18Z"
+    },
+    "author": {
+      "login": "jiying2007",
+      "id": 33591504,
+      "type": "User"
+    },
+    "registered_branch": "research/fe09-t3s3-f1-rss-20261024",
+    "observed_provider_url": "https://api.github.com/repos/jiying2007/audio-pipeline/issues/845",
+    "observed_comment_count": 0,
+    "identity_observation_is_F0_closure_or_execution_authority": false
+  },
+  "implementation_order": "Source/test editing and static compilation may be separately authorized before F0 main closure; no F1 launcher, engineering-process fixture or DSP execution before real D/B closure, complete final C review and external freeze.",
+  "freeze_record_cycle_boundary": "This source-locked baseline records only closed predecessor evidence and the already-existing issue identity. The future approving comment ID/body hash and C are runtime/additive evidence, not prerequisites embedded back into this file.",
+  "protected_execution_base_B": {
+    "status": "PENDING_FINAL_PROTECTED_BASE_REVIEW",
+    "commit": null,
+    "tree": null,
+    "is_same_commit_as_D": null,
+    "descends_from_D_or_equals_D": null,
+    "immutable_originals_preserved": null,
+    "applicable_main_gate_closure": null,
+    "independent_review_record": null,
+    "null_policy": "Every field is required before final C freeze; if B equals qualified D, retain explicit equality and references to D original gate evidence rather than inventing separate runs."
+  },
+  "execution_authorized_field_semantics": "Always false for this prerequisite record alone, including after its closure state becomes qualified; live source/event freeze and explicit root decision supply execution authority separately. Do not backfill a future comment ID/hash into this locked baseline."
+}

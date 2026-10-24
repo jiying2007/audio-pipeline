@@ -20,6 +20,13 @@ main 与版本 tag Ruleset 的审计都要求实际可见的 `bypass_actors` 字
 administration-read 凭据不能证明字段一定可见。字段缺失或类型错误必须使审计失败并
 进入审查，不能解释为“无 bypass”。
 
+覆盖证明还要求显式提供 `conditions.ref_name.exclude`，且值恰为 `[]`，与 canonical
+bootstrap 配置一致。`include` 必须是字符串数组：main 须包含 `refs/heads/main` 或
+`~DEFAULT_BRANCH`，版本 tag 须包含 `refs/tags/v*` 或 `refs/tags/v**`。只要上述既有
+锚点能证明所需范围，仍支持多个 include 条目。ref 条件缺失、类型错误或任何非空
+exclude 都使审计失败，即使排除项看似不匹配所需 refs。这是有意收紧的覆盖证明合同，
+不模拟 GitHub 的模式匹配语义，也不接受仅有其他模式的配置作为覆盖证据。
+
 ## 2. software-commercial-ready
 
 这是**仓库/集成状态**，不是 Product Qualification 状态。

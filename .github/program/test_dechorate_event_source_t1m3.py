@@ -128,6 +128,7 @@ def model_for(root: Path, base: str, head: str, *, push: bool = False) -> tuple[
 def run_suite() -> dict:
     failures = []
     positives = []
+    v2_controls = []
     counts = {"actual_git_commands": 0, "offline_network_replacements": 0}
     with tempfile.TemporaryDirectory(prefix="t1-m3-real-git-") as temporary:
         area = Path(temporary) / "repo"
@@ -245,6 +246,38 @@ def run_suite() -> dict:
             corrupt_head = changed(corrupt_base, {M.WORKFLOW: gated})
             negative("m2_base_consumer_" + mode, model_for(area, corrupt_base, corrupt_head),
                      {"M2_SOURCE_NOT_IN_PROTECTED_EVENT_BASE"}, checkout=corrupt_base)
+
+        # Register a complete v2 consumer without weakening any old template.
+        # These controls establish frozen source/template identity only. The
+        # separate transport suite acquires explicitly offline API fixtures.
+        prior_contract = json.loads(git(area, "show", "5187c5e59526d4047b3965b44c770ab21edbde9f:" + M.CONTRACT))
+        assert all(contract["workflow_execution_template_sha256"][key] == value
+                   for key, value in prior_contract["workflow_execution_template_sha256"].items())
+        v2 = templates[M.V2_PROFILE + ":original-pins"]
+        missing_v2 = changed(m2_base, {M.WORKFLOW: v2})
+        negative("v2_missing_protected_transport_source", model_for(area, m2_base, missing_v2),
+                 {"SOURCE_BLOB_MODE_OR_TYPE_DRIFT"}, checkout=m2_base)
+        v2_copies = {path: (ROOT / path).read_text() for path in M.V2_SOURCE_FILES}
+        v2_base = changed(m2_base, v2_copies)
+        for pins in ("original-pins", "reviewed-2026-10-20-pins"):
+            v2_head = changed(v2_base, {M.WORKFLOW: templates[M.V2_PROFILE + ":" + pins]})
+            frozen = M.frozen_science(M.Git(area), v2_base, v2_head, contract)
+            assert frozen["workflow_execution_profiles"]["head"] == M.V2_PROFILE + ":" + pins
+            assert set(frozen["protected_v2_source_identity"]) == set(M.V2_SOURCE_FILES)
+            assert frozen["original_scientific_steps"] == 7
+            v2_controls.append({"profile": M.V2_PROFILE + ":" + pins,
+                                "source_only_frozen_identity": True,
+                                "authenticated_governance_or_measurement_claimed": False})
+        for name, candidate in (
+            ("v2_no_actions_read", v2.replace("  actions: read\n", "", 1)),
+            ("v2_privileged_token_in_consumer", v2.replace("${{ github.token }}", "${{ secrets.REPOSITORY_GOVERNANCE_TOKEN }}", 1)),
+            ("v2_old_helper_substitution", v2.replace("dechorate_governance_v2.py'),'consumer'", "dechorate_event_source_t1m3.py'),'consumer'", 1)),
+            ("v2_attemptless_artifact", v2.replace("dechorate-event-source-range-${{ github.run_id }}-${{ github.run_attempt }}", "dechorate-event-source-range-${{ github.run_id }}", 1)),
+        ):
+            assert candidate != v2
+            mutant = changed(v2_base, {M.WORKFLOW: candidate})
+            negative(name, model_for(area, v2_base, mutant), {"WORKFLOW_EXECUTION_TEMPLATE_NOT_PREREGISTERED"},
+                     checkout=v2_base)
 
         # The fixed Bind program actually creates its exact base worktree and
         # preserves a negative source receipt. A deliberately invalid repository
@@ -519,7 +552,8 @@ def run_suite() -> dict:
     return {"schema_version": 1, "decision": "T1_M3_OFFLINE_REAL_GIT_SOURCE_RANGE_TESTS_PASS",
             "source_base_sha": BASELINE, "helper_sha256": hashlib.sha256((ROOT / M.SELF).read_bytes()).hexdigest(),
             "contract_sha256": hashlib.sha256((ROOT / M.CONTRACT).read_bytes()).hexdigest(),
-            "nonvacuous_controls": positives, "old_guard_changed_path_count": len(historical),
+            "nonvacuous_controls": positives, "v2_complete_template_source_controls": v2_controls,
+            "old_guard_changed_path_count": len(historical),
             "old_guard_would_reject_clean_control": True, "negative_count": len(failures), "negatives": failures,
             "execution": counts, "metadata_role": "offline engineering fixtures only",
             "public_event_observed": False, "scientific_experiment_executed": False,

@@ -48,24 +48,26 @@ ARM/QEMU/ALSA/static-analysis 等重任务使用 immutable digest 固定的 GHCR
 本 checkout 的消费者引用为：
 
 ```text
-ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
 ```
 
-这是 [#811](https://github.com/jiying2007/audio-pipeline/issues/811) 跟踪的独立消费者
-采用变更。镜像由 `b80d819a486cb973e6a60b4fdf259803d45ec3f0` 构建，发布证据为
-[CI Toolchain Image run 39380255641 / job 118487510421](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/job/118487510421)。
-[原始 qualified artifact 12245087611](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/artifacts/12245087611)
-是 53,364 字节的 ZIP，SHA256 为
-`036a0307de88ad1b3d78499ff2ef95b7adf0d67425d089962ef9e29c824a2fb0`。
+这次独立消费者采用跟随 [PR #834](https://github.com/jiying2007/audio-pipeline/pull/834)
+受保护合入的 Dockerfile 更新。镜像由 `2692cc49c2795a05cf506c831d907ec5c29b2871`
+构建，发布证据为
+[CI Toolchain Image run 40093437552 / attempt 1 / job 120870662657](https://github.com/jiying2007/audio-pipeline/actions/runs/40093437552/job/120870662657)。
+[原始 qualified artifact 12560121945](https://github.com/jiying2007/audio-pipeline/actions/runs/40093437552/artifacts/12560121945)
+是 54,305 字节的 ZIP，SHA256 为
+`aaac1a6159545f3a31576246bf78b58f87ac29a36eb7a982ab2b10d91762cf56`。
 独立下载核验了全部 57 个 ZIP 成员、两份内部清单覆盖的 52 个文件摘要、已发布引用，
-以及完全相同的发布前与 digest 拉回执行收据。两阶段均在该来源提交上实际执行
-GCC、Clang、ArmHF/QEMU、AArch64/QEMU，每种配置的 CTest 都是 14/14 通过。
+以及原字节完全相同的发布前与 digest 拉回执行收据。两阶段均在该来源提交上实际执行
+GCC、Clang、ArmHF/QEMU、AArch64/QEMU，每种配置的 CTest 都是 15/15 通过，
+合计 120 次测试执行。原始作业日志还确认了同一已发布 digest 的 push 与后续 pull。
 
-固定 `b80d819` 基线的采用清单为 36 处引用：`ci.yml` 2 处、`quality.yml` 29 处、
-`resource-gates.yml` 4 处、`verify.yml` 1 处。其中 35 处是 container image，另 1 处是
+当前清单共有 38 处引用：`ci.yml` 2 处、`quality.yml` 31 处、
+`resource-gates.yml` 4 处、`verify.yml` 1 处。其中 37 处是 container image，另 1 处是
 资源交付收据的 `--toolchain-image` 身份参数，必须与实际执行镜像同步。
 镜像发布证据与本消费者采用 PR/main 的 Verify 门禁分别核验；工具链维护不创建
-新的 SDK 版本。
+新的 SDK 版本，也不构成实机或 HIL 资格。
 
 合入其他分支后，重新扫描全部消费者和收据身份：
 
@@ -73,11 +75,25 @@ GCC、Clang、ArmHF/QEMU、AArch64/QEMU，每种配置的 CTest 都是 14/14 通
 rg -n 'audio-pipeline-ci@sha256:' .github/workflows
 ```
 
-当前所有消费者均使用上面的受审 digest。整合
-[A1 PR #815](https://github.com/jiying2007/audio-pipeline/pull/815) 后，固定基线新增了
-一个消费者：当前树共有 37 处引用，其中 `quality.yml` 为 30 处，其余三个工作流
-数量不变。A1 作业也使用同一已发布 digest。消费者使用不可变 digest；
+当前所有消费者均使用上面的受审 digest。消费者使用不可变 digest；
 `ci-latest` 仅用于发布工作流完成拉回验证后的稳定指针更新。
+
+#### 上一次采用的历史证据
+
+之前使用的 digest 为
+`sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50`，
+由 [#811](https://github.com/jiying2007/audio-pipeline/issues/811) 跟踪。
+它由 `b80d819a486cb973e6a60b4fdf259803d45ec3f0` 构建，证据为
+[run 39380255641 / job 118487510421](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/job/118487510421)。
+[原始 artifact 12245087611](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/artifacts/12245087611)
+仍为 53,364 字节的 ZIP，SHA256 为
+`036a0307de88ad1b3d78499ff2ef95b7adf0d67425d089962ef9e29c824a2fb0`：
+57 个成员、52 个内部清单摘要、两阶段相同收据，以及历史来源上每种配置 14/14 的 CTest。
+固定 `b80d819` 基线的采用清单仍为 36 处引用（`ci.yml` 2 处、`quality.yml` 29 处、
+`resource-gates.yml` 4 处、`verify.yml` 1 处），即 35 个容器和 1 处收据身份。
+随后 [A1 PR #815](https://github.com/jiying2007/audio-pipeline/pull/815) 和
+[A2 PR #829](https://github.com/jiying2007/audio-pipeline/pull/829) 各增加一个消费者，
+因此当前总数为 38，`quality.yml` 为 31，其余工作流数量不变。
 
 Hosted resource 数字只维护在 `ci/resource-baseline.json`；`docs/generated/RESOURCE_BASELINE.md` 由它生成，Resource Gate 会重新测量并 diff 两者。
 

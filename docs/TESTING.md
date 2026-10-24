@@ -41,27 +41,30 @@ silicon, physical timing or HIL.
 The consumer reference in this checkout is:
 
 ```text
-ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
 ```
 
-This is the separate consumer adoption tracked by
-[#811](https://github.com/jiying2007/audio-pipeline/issues/811). The published
-image was built from `b80d819a486cb973e6a60b4fdf259803d45ec3f0` in
-[CI Toolchain Image run 39380255641, job 118487510421](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/job/118487510421).
-Its [original qualified artifact 12245087611](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/artifacts/12245087611)
-is a 53,364-byte ZIP with SHA256
-`036a0307de88ad1b3d78499ff2ef95b7adf0d67425d089962ef9e29c824a2fb0`.
+This separate consumer adoption follows the protected Dockerfile update in
+[PR #834](https://github.com/jiying2007/audio-pipeline/pull/834). The image was
+built from `2692cc49c2795a05cf506c831d907ec5c29b2871` in
+[CI Toolchain Image run 40093437552, attempt 1, job 120870662657](https://github.com/jiying2007/audio-pipeline/actions/runs/40093437552/job/120870662657).
+Its [original qualified artifact 12560121945](https://github.com/jiying2007/audio-pipeline/actions/runs/40093437552/artifacts/12560121945)
+is a 54,305-byte ZIP with SHA256
+`aaac1a6159545f3a31576246bf78b58f87ac29a36eb7a982ab2b10d91762cf56`.
 Independent download verified all 57 ZIP members, all 52 files covered by the
-two inner hash manifests, the published reference, and equal before-publish
-and digest-readback receipts. Each stage executed GCC, Clang, ArmHF/QEMU and
-AArch64/QEMU with 14/14 CTest cases per profile at that source revision.
+two inner hash manifests, the published reference, and byte-identical
+before-publish and digest-readback receipts. Each stage executed GCC, Clang,
+ArmHF/QEMU and AArch64/QEMU with 15/15 CTest cases per profile at that source
+revision: 120 test-case executions across the two stages. The original job log
+also confirms the push and subsequent pull of the same published digest.
 
-The adoption inventory at the frozen `b80d819` baseline is 36 references:
-`ci.yml` 2, `quality.yml` 29, `resource-gates.yml` 4 and `verify.yml` 1.
-These are 35 container images plus the `--toolchain-image` argument that records
-the resource delivery receipt identity; keep that argument aligned with the
-executing image. Publication evidence and the adoption PR/main Verify gates
-are checked separately. This toolchain maintenance does not create an SDK version.
+The current inventory is 38 references: `ci.yml` 2, `quality.yml` 31,
+`resource-gates.yml` 4 and `verify.yml` 1. These are 37 container images plus
+the `--toolchain-image` argument that records the resource delivery receipt
+identity; keep that argument aligned with the executing image. Publication
+evidence and the adoption PR/main Verify gates are checked separately. This
+toolchain maintenance does not create an SDK version or establish real-device
+or HIL qualification.
 
 After integrating another branch, rescan every consumer and receipt identity:
 
@@ -69,12 +72,28 @@ After integrating another branch, rescan every consumer and receipt identity:
 rg -n 'audio-pipeline-ci@sha256:' .github/workflows
 ```
 
-Every current consumer uses the reviewed digest above. Integrating
-[A1 PR #815](https://github.com/jiying2007/audio-pipeline/pull/815) adds one
-consumer to the frozen inventory: this checkout has 37 references, with 30 in
-`quality.yml` and the other three workflow counts unchanged. The A1 job uses
-the same published digest. Use an immutable digest for consumer jobs;
-`ci-latest` belongs to the publisher's verified stable-pointer update.
+Every current consumer uses the reviewed digest above. Use an immutable digest
+for consumer jobs; `ci-latest` belongs to the publisher's verified
+stable-pointer update.
+
+#### Previous adoption evidence
+
+The previous digest was
+`sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50`,
+tracked by [#811](https://github.com/jiying2007/audio-pipeline/issues/811).
+It was built from `b80d819a486cb973e6a60b4fdf259803d45ec3f0` in
+[run 39380255641, job 118487510421](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/job/118487510421).
+Its [original artifact 12245087611](https://github.com/jiying2007/audio-pipeline/actions/runs/39380255641/artifacts/12245087611)
+remains a 53,364-byte ZIP with SHA256
+`036a0307de88ad1b3d78499ff2ef95b7adf0d67425d089962ef9e29c824a2fb0`:
+57 members, 52 inner-manifest hashes, equal two-stage receipts and 14/14 CTest
+cases per profile at that historical source revision. The frozen `b80d819`
+inventory remains 36 references (`ci.yml` 2, `quality.yml` 29,
+`resource-gates.yml` 4, `verify.yml` 1): 35 containers and one receipt identity.
+[A1 PR #815](https://github.com/jiying2007/audio-pipeline/pull/815) subsequently
+added one consumer, and [A2 PR #829](https://github.com/jiying2007/audio-pipeline/pull/829)
+added another. Together these account for the current total of 38 and
+`quality.yml` count of 31; the other workflow counts are unchanged.
 
 ## Deterministic regression and public validation
 

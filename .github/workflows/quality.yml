@@ -151,7 +151,7 @@ jobs:
     if: inputs.run_extended
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -201,7 +201,7 @@ jobs:
     if: inputs.run_extended
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -225,7 +225,7 @@ jobs:
   static-analysis:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -258,7 +258,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -864,7 +864,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -977,7 +977,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1087,7 +1087,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1197,7 +1197,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 22
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1309,7 +1309,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1434,7 +1434,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1524,7 +1524,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1600,7 +1600,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1679,7 +1679,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1772,7 +1772,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1847,7 +1847,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -1923,7 +1923,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2000,7 +2000,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2079,7 +2079,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2156,7 +2156,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2245,7 +2245,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2517,7 +2517,7 @@ jobs:
     needs: [frontend-reference, frontend-gate-guard]
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2572,7 +2572,7 @@ jobs:
     needs: frontend-spatial
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2617,7 +2617,7 @@ jobs:
     needs: frontend-gate-guard
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2668,7 +2668,7 @@ jobs:
     needs: frontend-sync-faults
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2707,7 +2707,7 @@ jobs:
     needs: frontend-sync-route-reset
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2753,7 +2753,7 @@ jobs:
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2806,7 +2806,7 @@ jobs:
     needs: frontend-sync-timestamp-authority
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2859,7 +2859,7 @@ jobs:
     needs: frontend-aec-res-collab
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2916,7 +2916,7 @@ jobs:
     needs: frontend-res-immediate-dt
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -2962,7 +2962,7 @@ jobs:
     needs: frontend-res-oracle-near-bound
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -3019,7 +3019,7 @@ jobs:
     needs: frontend-ns-frequency-res
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

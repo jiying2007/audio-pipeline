@@ -98,7 +98,7 @@ jobs:
   cortex-a32-rom:
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -150,7 +150,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -276,7 +276,7 @@ jobs:
             --build build/ssc305-cortex-a32-low \
             --resource-qualification resource-profile-out/qualification.json \
             --output resource-profile-out/reference \
-            --toolchain-image 'ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50'
+            --toolchain-image 'ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57'
           (cd resource-profile-out && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
 
       - name: Upload delivery-profile evidence
@@ -293,7 +293,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     container:
-      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:db214be9b1eb6d0b979811003f0fbd510a9adbee099a3e7fd7e8b2edcc481d50
+      image: ghcr.io/jiying2007/audio-pipeline-ci@sha256:69d38c66e09885b78eb3abba3f8b7dcc92363b71430dc39fc7f74978ffae2e57
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

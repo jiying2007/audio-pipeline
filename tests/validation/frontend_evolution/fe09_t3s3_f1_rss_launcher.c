@@ -223,8 +223,12 @@ static int f1_options(int argc, char **argv, struct f1_options *o) {
     if (o->engineering) {
         if (o->work_deadline-o->origin!=INT64_C(800000000) ||
             o->final_deadline-o->origin!=INT64_C(1000000000)) return -1;
-    } else if (o->final_deadline-o->origin>INT64_C(30000000000) ||
-               o->work_deadline!=o->final_deadline) return -1;
+    } else if (o->final_deadline-o->origin>INT64_C(29500000000) ||
+               o->final_deadline-o->work_deadline!=INT64_C(500000000)) return -1;
+    /* Science keeps 500ms inside this native deadline for direct-child reap.
+     * The owning Python collector retains a further 500ms inside the original
+     * <=30s invocation for launcher wait4, owned-group cleanup and encoding.
+     * The engineering 800ms/1s contract above is unchanged. */
     o->ordinal=(int)ordinal; o->target=&argv[i];
     if(o->engineering) {
         static const char *modes[7]={"COMPLETE",NULL,"EXIT7","STALL_AFTER_ENTRY",

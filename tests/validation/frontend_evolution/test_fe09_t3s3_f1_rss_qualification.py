@@ -628,5 +628,347 @@ class MetadataTests(unittest.TestCase):
                     "push", run, [detail, second], detail, graph, association_has_next_page=False)
 
 
+class ProviderMetadataTests(unittest.TestCase):
+    """F1-A01..A20 and T01..T02: preregistered pure source preparation.
+
+    Synthetic records below never stand in for provider, DNS, process-group,
+    wait4, fixture or science originals. Neither execution flag is enabled.
+    """
+    reject = MetadataTests.reject
+
+    @staticmethod
+    def response_record(ordinal=1, phase='FIRST_JOB', name='jobs', raw=b'{}', final=True):
+        path = F1.api_route(name, run_id=2001, attempt=1, source_S='7' * 40,
+                            pr_number=9001, comment_id=101)
+        start = 1_000_000_000 + ordinal * 10_000_000
+        pid, ticks = (200, 20) if name == 'jobs' else (201, 21)
+        record = {'request_ordinal': ordinal, 'phase': phase, 'route_name': name,
+                  'method': 'GET', 'origin': F1.API_ORIGIN, 'path': path,
+                  'http_status': 200, 'response_final_origin': F1.API_ORIGIN,
+                  'response_final_url': F1.API_ORIGIN + path,
+                  'headers_without_credentials': [['content-type', 'application/json'],
+                                                   ['content-length', str(len(raw))]],
+                  'headers_complete': True, 'body_bytes': len(raw), 'body_sha256': F1.sha(raw),
+                  'body_complete': True, 'overflow': False, 'worker_pid': pid,
+                  'worker_start_ticks': ticks, 'started_monotonic_ns': start,
+                  'finished_monotonic_ns': start + 1_000_000, 'admitted_duration_ns': 5_000_000_000,
+                  'deadline_monotonic_ns': start + 5_000_000_000,
+                  'started_epoch_ns': 2_000_000_000_000 + start,
+                  'finished_epoch_ns': 2_000_000_000_000 + start + 1_000_000,
+                  'worker_exit_or_final_reap': {'state': 'REUSED_PENDING_FINAL_REAP'}}
+        if final:
+            record['worker_exit_or_final_reap'] = {'state': 'OWNED_WORKER_REAPED',
+                                                   'wait4_requested_pid': pid, 'wait4_returned_pid': pid,
+                                                   'raw_wait_status': 0,
+                                                   'finished_monotonic_ns': start + 900_000}
+        return path, record
+
+    @staticmethod
+    def job_body():
+        return {'total_count': 2, 'jobs': [
+            {'id': 3001, 'name': 'quality / frontend-rss-f1', 'status': 'in_progress',
+             'run_id': 2001, 'run_attempt': 1, 'head_sha': C, 'started_at': '2026-10-24T18:00:00Z'},
+            {'id': 3002, 'name': 'unrelated-job', 'status': 'completed'}]}
+
+    @staticmethod
+    def run_body(event='pull_request'):
+        return {'id': 2001, 'run_attempt': 1, 'event': event,
+                'head_sha': C if event == 'pull_request' else '7' * 40,
+                'path': '.github/workflows/verify.yml', 'created_at': '2026-10-24T18:00:01Z',
+                'repository': {'id': F1.REPOSITORY_ID, 'full_name': F1.REPOSITORY},
+                'pull_requests': [{'number': 9001, 'head': {'sha': C}}]}
+
+    def test_f1_a01_raw_commit_identity_and_header(self):
+        raw = f'tree {"5" * 40}\nparent {B}\nauthor Synthetic <unit@example.invalid> 1 +0000\ncommitter Synthetic <unit@example.invalid> 1 +0000\n\npure template\n'.encode()
+        digest = F1.git_object_digest('commit', raw)
+        parsed = F1.parse_commit_object(raw, digest)
+        self.assertEqual((parsed['tree'], parsed['parents']), ('5' * 40, [B]))
+        self.reject('F1R1_IMMUTABLE_GIT_OBJECT', F1.parse_commit_object, raw + b'x', digest)
+        duplicate = raw.replace(b'tree ' + b'5' * 40 + b'\n', b'tree ' + b'5' * 40 + b'\ntree ' + b'6' * 40 + b'\n')
+        self.reject('F1R1_IMMUTABLE_GIT_OBJECT', F1.parse_commit_object,
+                    duplicate, F1.git_object_digest('commit', duplicate))
+
+    def test_f1_a02_raw_blob_and_tree_identity(self):
+        raw = b'synthetic exact blob\n'
+        digest = F1.git_object_digest('blob', raw)
+        tree = b'100644 guard.py\0' + bytes.fromhex(digest)
+        entry = F1.parse_tree_object(tree, F1.git_object_digest('tree', tree))['guard.py']
+        self.assertEqual(entry, {'mode': '100644', 'oid': digest})
+        objects = F1.ImmutableGitObjects(Path('/synthetic'))
+        with patch.object(objects, 'member', return_value=entry), patch.object(F1, 'git', return_value=raw):
+            self.assertEqual(objects.blob(B, 'guard.py')[0], raw)
+        with patch.object(objects, 'member', return_value=entry), patch.object(F1, 'git', return_value=raw + b'x'):
+            self.reject('F1R1_IMMUTABLE_GIT_OBJECT', objects.blob, B, 'guard.py')
+        self.reject('F1R1_IMMUTABLE_GIT_OBJECT', F1.parse_tree_object,
+                    tree + b'x', F1.git_object_digest('tree', tree))
+
+    def test_f1_a03_canonical_fixed_route_only(self):
+        for name in F1.API_ROUTE_CATEGORIES:
+            path = F1.api_route(name, run_id=2001, attempt=1, source_S='7' * 40, pr_number=9001, comment_id=101)
+            F1.validate_api_path(path)
+        for path in ('https://elsewhere.invalid', F1.API_PREFIX + '/issues/846',
+                     F1.API_PREFIX + '/issues/845/comments?per_page=100&page=2',
+                     F1.API_PREFIX + '/issues/845/comments?per_page=100&page=1&since=now',
+                     F1.API_PREFIX + '/../secrets'):
+            self.reject('F1R1_CANONICAL_PROVIDER_ROUTE', F1.validate_api_path, path)
+        self.reject('F1R1_CANONICAL_PROVIDER_ROUTE', F1.api_route, 'jobs', run_id=True, attempt=1)
+
+    def test_f1_a04_exact_main17_PR15_and_no_extra_request(self):
+        for event, count in (('push', 17), ('pull_request', 15)):
+            ledger = F1.APIBudgetLedger(event)
+            self.assertEqual(len(ledger.plan), count)
+            for ordinal, (phase, name) in enumerate(ledger.plan, 1):
+                path, record = self.response_record(ordinal, phase, name, final=name == 'jobs' or ordinal == count)
+                ledger.accept(name, b'{}', record, expected_path=path)
+            self.assertEqual(ledger.complete()['actual_GET_requests'], count)
+            self.reject('F1R1_CONTROL_PLANE_REQUEST_LIMIT', ledger.next_request,
+                        'POST', 'issue_after', 1_000_000_000)
+
+    def test_f1_a05_independent_category_count_and_byte_caps(self):
+        self.assertEqual(sum(count * cap for count, cap in F1.API_CATEGORY_RULES.values()), 7798784)
+        ledger = F1.APIBudgetLedger('push')
+        self.reject('F1R1_CONTROL_PLANE_METADATA_BYTES', ledger.retain,
+                    'complete_comment_list_responses', b'x' * 1048577)
+        self.assertEqual(ledger.retained_bytes, 0)
+        ledger.retain('original_job_request_record', b'{}')
+        self.reject('F1R1_CONTROL_PLANE_METADATA_BYTES', ledger.retain,
+                    'original_job_request_record', b'{}')
+
+    def test_f1_a06_integer_minimum_of_existing_windows(self):
+        start = 9876543210123456
+        full = F1.api_request_window(start, 0, start + 180_000_000_000, start + 840_000_000_000)
+        self.assertEqual(full['admitted_duration_ns'], 5_000_000_000)
+        self.assertEqual(full['work_deadline_monotonic_ns'], start + 4_500_000_000)
+        self.assertEqual(F1.api_request_window(start, 59_000_000_000, None, None)['admitted_duration_ns'], 1_000_000_000)
+        self.assertEqual(F1.api_request_window(start, 0, start + 2_000_000_000, start + 1_500_000_000)['admitted_duration_ns'], 1_500_000_000)
+        self.reject('F1R1_CONTROL_PLANE_TIME_BUDGET', F1.api_request_window, start, 60_000_000_000, None, None)
+
+    def test_f1_a07_request_cleanup_lifecycle_models_only(self):
+        unused_path, row = self.response_record()
+        self.assertEqual(F1.validate_api_lifecycle(row, final_reap=True), 1_000_000)
+        late = dict(row, finished_monotonic_ns=row['deadline_monotonic_ns'] + 1)
+        self.reject('F1R1_CONTROL_PLANE_TIME_BUDGET', F1.validate_api_lifecycle, late, final_reap=True)
+        missing = dict(row, worker_exit_or_final_reap={'state': 'REUSED_PENDING_FINAL_REAP'})
+        self.reject('F1R1_CONTROL_PLANE_LIFECYCLE', F1.validate_api_lifecycle, missing, final_reap=True)
+        wrong = copy.deepcopy(row); wrong['worker_exit_or_final_reap']['wait4_returned_pid'] += 1
+        self.reject('F1R1_CONTROL_PLANE_LIFECYCLE', F1.validate_api_lifecycle, wrong, final_reap=True)
+
+    def test_f1_a08_response_origin_status_encoding_and_strict_JSON(self):
+        path, record = self.response_record()
+        F1.validate_api_response(b'{}', record, expected_path=path, cap=2097152)
+        for fields, reason in (({'http_status': 302}, 'F1R1_CONTROL_PLANE_HTTP_STATUS'),
+                               ({'response_final_url': 'https://elsewhere.invalid'}, 'F1R1_CANONICAL_PROVIDER_ROUTE'),
+                               ({'headers_without_credentials': record['headers_without_credentials'] + [['content-encoding', 'gzip']]}, 'F1R1_CONTROL_PLANE_CONTENT_ENCODING')):
+            self.reject(reason, F1.validate_api_response, b'{}', dict(record, **fields), expected_path=path, cap=2097152)
+        for raw, reason in ((b'\xff', 'F1R1_INVALID_JSON'), (b'{"a":1,"a":2}', 'F1R1_DUPLICATE_JSON_KEY')):
+            path, mutated = self.response_record(raw=raw)
+            self.reject(reason, F1.validate_api_response, raw, mutated, expected_path=path, cap=2097152)
+
+    def test_f1_a09_partial_overflow_is_retained_failure(self):
+        path, row = self.response_record(raw=b'{}')
+        F1.validate_api_response(b'{}', row, expected_path=path, cap=2097152)
+        for change in ({'body_complete': False}, {'overflow': True}, {'body_bytes': 3}):
+            self.reject('F1R1_CONTROL_PLANE_PARTIAL_RESPONSE', F1.validate_api_response,
+                        b'{}', dict(row, **change), expected_path=path, cap=2097152)
+        ledger = F1.APIBudgetLedger('push')
+        row.update(body_complete=False, body_bytes=1, body_sha256=F1.sha(b'{'), request_qualification_complete=False,
+                   reason='F1R1_CONTROL_PLANE_PARTIAL_RESPONSE')
+        ledger.failed_request('jobs', b'{', row)
+        self.assertTrue(ledger.failed)
+        self.assertEqual(ledger.category_bytes['original_job_response'], 1)
+        self.reject('F1R1_CONTROL_PLANE_REQUEST_LIMIT', ledger.complete)
+
+    def test_f1_a10_original_Jobs_completeness(self):
+        body = self.job_body()
+        args = dict(headers=[], run_id=2001, attempt=1, expected_head=C)
+        F1.validate_original_jobs(body, **args)
+        for bad in (dict(body, total_count=3), dict(body, total_count=True),
+                    dict(body, jobs=[body['jobs'][0], body['jobs'][0]])):
+            self.reject('F1R1_COMPLETE_ORIGINAL_JOBS', F1.validate_original_jobs, bad, **args)
+        next_args = dict(args, headers=[['link', '<https://api.github.com/next>; rel="next"']])
+        self.reject('F1R1_COMPLETE_ORIGINAL_JOBS', F1.validate_original_jobs, body, **next_args)
+
+    def test_f1_a11_original_Job_identity_and_fixed900_60(self):
+        body = self.job_body(); args = dict(headers=[], run_id=2001, attempt=1, expected_head=C)
+        deadline = F1.validate_original_jobs(body, **args)
+        self.assertEqual(deadline['deadline_epoch_ns'] - deadline['started_epoch_ns'], 900_000_000_000)
+        self.assertEqual(deadline['archive_reserve_seconds'], 60)
+        bad = copy.deepcopy(body); bad['jobs'][1]['name'] = 'frontend-rss-f1'
+        self.reject('F1R1_UNIQUE_ORIGINAL_JOB', F1.validate_original_jobs, bad, **args)
+        bad = copy.deepcopy(body); bad['jobs'][0]['run_attempt'] = 2
+        self.reject('F1R1_ORIGINAL_JOB_BINDING', F1.validate_original_jobs, bad, **args)
+        self.assertEqual(F1.provider_timestamp_ns('2026-10-24T19:00:00.123456789+01:00'),
+                         F1.provider_timestamp_ns('2026-10-24T18:00:00Z') + 123456789)
+
+    def test_f1_a12_actual_run_and_environment_source(self):
+        run = self.run_body()
+        kwargs = dict(run_id=2001, attempt=1, event='pull_request', expected_head=C)
+        F1.validate_actual_run(run, **kwargs)
+        self.reject('F1R1_RUN_WORKFLOW_SOURCE', F1.validate_actual_run,
+                    dict(run, path='.github/workflows/quality.yml'), **kwargs)
+        self.reject('F1R1_RUN_EVENT_SOURCE', F1.validate_actual_run, dict(run, run_attempt=2), **kwargs)
+        environment = dict(GITHUB_ACTIONS='true', GITHUB_REPOSITORY=F1.REPOSITORY,
+                           GITHUB_REPOSITORY_ID=str(F1.REPOSITORY_ID), GITHUB_JOB='frontend-rss-f1',
+                           GITHUB_RUN_ID='2001', GITHUB_RUN_ATTEMPT='1', GITHUB_SHA=M,
+                           GITHUB_REF='refs/pull/9001/merge', GITHUB_EVENT_NAME='pull_request')
+        event = dict(pr_event(), number=9001)
+        self.assertEqual(F1.hosted_provider_context(environment, event)['expected_provider_head'], C)
+        self.reject('F1R1_ACTUAL_JOB_CONTEXT', F1.hosted_provider_context,
+                    dict(environment, GITHUB_JOB='frontend-s3-t3s3f0'), event)
+
+    def test_f1_a13_PR_number_comes_from_event_run_association(self):
+        run = self.run_body(); event = dict(pr_event(), number=9001)
+        self.assertEqual(F1.select_provider_PR('pull_request', event, run, None,
+                                              association_has_next_page=None), 9001)
+        bad = dict(run, pull_requests=run['pull_requests'] * 2)
+        self.reject('F1R1_RUN_PR_ASSOCIATION', F1.select_provider_PR,
+                    'pull_request', event, bad, None, association_has_next_page=None)
+        self.reject('F1R1_RUN_PR_ASSOCIATION', F1.select_provider_PR,
+                    'pull_request', dict(event, number=9002), run, None, association_has_next_page=None)
+
+    def main_sweep_template(self):
+        sweep, kwargs = MetadataTests.freeze_template()
+        run = self.run_body('push'); S = '7' * 40
+        detail = dict(id=9001, number=9001, node_id='SYNTHETIC_PR_9001',
+                      head=pr_event()['pull_request']['head'],
+                      base=dict(pr_event()['pull_request']['base'], sha='8' * 40),
+                      merged=True, merged_at='2026-10-24T18:00:00Z', merge_commit_sha=S)
+        records = {'repository': sweep['repository'], 'run': run, 'association': [detail], 'pr': detail,
+                   'issue_before': sweep['issue_before'], 'comments': sweep['comments'],
+                   'selected': sweep['selected_comment'], 'issue_after': sweep['issue_after']}
+        context = dict(event='push', run_id=2001, run_attempt=1, checkout=S, expected_provider_head=S)
+        graph = dict(S=S, S_parents=[B], S_tree='5' * 40, C_tree='5' * 40, B_tree='4' * 40)
+        return records, context, graph, kwargs
+
+    def test_f1_a14_main_graph_and_actual_PR_precede_freeze_selection(self):
+        records, context, graph, kwargs = self.main_sweep_template()
+        order = []
+        def read(name, path):
+            order.append(name); F1.validate_api_path(path)
+            return copy.deepcopy(records[name]), []
+        def graph_read(detail):
+            order.append('immutable_graph'); return graph
+        result = F1.provider_sweep_readback(context, {}, read, graph_read,
+                                            schema=kwargs['schema'], expected_digests=kwargs['expected_digests'])
+        self.assertEqual(order, ['repository', 'run', 'association', 'pr', 'immutable_graph',
+                                 'issue_before', 'comments', 'selected', 'issue_after'])
+        self.assertEqual(result['source']['B'], B)
+        self.assertNotEqual(result['source']['B'], records['pr']['base']['sha'])
+        self.assertFalse(result['scientific_execution_admitted'])
+
+    def test_f1_a15_unique_actual_C_comment_before_direct_read(self):
+        sweep, args = MetadataTests.freeze_template()
+        kwargs = dict(source=args['source'], schema=args['schema'], has_next_page=False)
+        self.assertEqual(F1.select_freeze_comment(sweep['comments'], sweep['issue_before'], **kwargs), 101)
+        duplicated = copy.deepcopy(sweep['comments'])
+        duplicated[1]['body'] = duplicated[0]['body']
+        self.reject('F1R1_DUPLICATE_C_FREEZE', F1.select_freeze_comment,
+                    duplicated, sweep['issue_before'], **kwargs)
+        self.reject('F1R1_COMPLETE_COMMENT_LIST', F1.select_freeze_comment,
+                    sweep['comments'], sweep['issue_before'], **dict(kwargs, has_next_page=None))
+
+    def test_f1_a16_PRE_POST_source_freeze_tuple_stability(self):
+        records, context, graph, args = self.main_sweep_template()
+        result = F1.provider_sweep_readback(context, {}, lambda name, path: (copy.deepcopy(records[name]), []),
+                                            lambda detail: graph, schema=args['schema'], expected_digests=args['expected_digests'])
+        F1.validate_provider_sweep_pair(result, copy.deepcopy(result))
+        for field in ('source', 'run_identity', 'PR_authority', 'freeze_identity'):
+            changed = copy.deepcopy(result); changed[field]['synthetic_drift'] = True
+            self.reject('F1R1_PRE_POST_FREEZE_STABILITY', F1.validate_provider_sweep_pair, result, changed)
+
+    def test_f1_a17_reused_worker_process_key_and_final_reap(self):
+        ledger = F1.APIBudgetLedger('push')
+        for ordinal, name, phase in ((1, 'jobs', 'FIRST_JOB'), (2, 'repository', 'PRE')):
+            path, row = self.response_record(ordinal, phase, name, final=name == 'jobs')
+            ledger.accept(name, b'{}', row, expected_path=path)
+        path, changed = self.response_record(3, 'PRE', 'run', final=False)
+        changed['worker_start_ticks'] += 1
+        self.reject('F1R1_CONTROL_PLANE_WORKER_LIMIT', ledger.accept,
+                    'run', b'{}', changed, expected_path=path)
+        self.assertEqual(len(ledger.requests), 2)
+
+    def test_f1_a18_headers_and_child_env_do_not_copy_private_values(self):
+        self.reject('F1R1_CONTROL_PLANE_CREDENTIALS', F1.api_headers_view,
+                    [['authorization', 'synthetic-only-secret']])
+        with patch.dict(F1.os.environ, {'GH_TOKEN': 'synthetic-only-secret', 'AWS_SECRET_ACCESS_KEY': 'another-unit-only',
+                                       'CFLAGS': '-include injected.h', 'LD_PRELOAD': '/injected.so'}):
+            build = F1.build_child_environment(Path('/synthetic/build-tmp'))
+            launcher = F1.launcher_child_environment()
+        self.assertEqual(set(build), {'PATH', 'LC_ALL', 'TZ', 'TMPDIR'})
+        self.assertEqual(set(launcher), {'ASAN_OPTIONS', 'UBSAN_OPTIONS', 'LC_ALL', 'TZ'})
+        self.assertNotIn(b'synthetic-only-secret', F1.compact_json([build, launcher]))
+        self.assertNotIn('LD_PRELOAD', launcher)
+
+    def test_f1_a19_original_record_replay_binds_body_deadline_and_context(self):
+        context = dict(event='pull_request', run_id=2001, run_attempt=1, checkout=M, expected_provider_head=C)
+        raw = F1.compact_json(self.job_body())
+        unused_path, row = self.response_record(raw=raw)
+        deadline = F1.validate_original_jobs(self.job_body(), headers=row['headers_without_credentials'],
+                                             run_id=2001, attempt=1, expected_head=C)
+        row.update(started_epoch_ns=deadline['started_epoch_ns'] + 100_000_000,
+                   finished_epoch_ns=deadline['started_epoch_ns'] + 101_000_000,
+                   selected_job_id=3001, original_job_deadline=deadline, actual_context=context)
+        directory = Path('/synthetic/original-job')
+        original = {'response.json': raw, 'request.json': F1.compact_json(row)}
+        with patch.object(F1, 'bounded_file', side_effect=lambda path, cap: original[path.name]):
+            ledger = F1.APIBudgetLedger('pull_request')
+            self.assertEqual(F1.replay_original_job(directory, context, ledger), deadline)
+            self.assertEqual(len(ledger.requests), 1)
+        changed = copy.deepcopy(row); changed['original_job_deadline']['deadline_epoch_ns'] += 1
+        with patch.object(F1, 'bounded_file', side_effect=lambda path, cap: raw if path.name == 'response.json' else F1.compact_json(changed)):
+            self.reject('F1R1_ORIGINAL_JOB_BINDING', F1.replay_original_job,
+                        directory, context, F1.APIBudgetLedger('pull_request'))
+
+    def test_f1_a20_all_actual_worker_entries_reject_at_false_gates(self):
+        self.assertIs(F1.PROVIDER_EXECUTION_ENABLED, False)
+        self.assertIs(F1.SCIENCE_EXECUTION_ENABLED, False)
+        unstarted = object.__new__(F1.HTTPMetadataWorker)
+        with patch.object(F1.os, 'fork') as fork, patch.object(F1.subprocess, 'Popen') as popen, \
+             patch.object(F1.urllib.request.OpenerDirector, 'open') as request:
+            self.reject('F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP', F1.HTTPMetadataWorker,
+                        'synthetic-token', F1.APIBudgetLedger('push'), Path('/unused'))
+            self.reject('F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP', F1._http_worker_main, 1, 2, 'synthetic-token')
+            self.reject('F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP', unstarted._start)
+            self.reject('F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP', unstarted.get,
+                        'PRE', 'repository', F1.API_PREFIX, stage_deadline_ns=1, job_deadline_ns=1)
+            self.reject('F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP', F1.capture_original_job,
+                        {}, token='synthetic-token', output=Path('/unused'))
+            self.reject('F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP', unstarted.abort_between_requests,
+                        stage_deadline_ns=1, job_deadline_ns=1)
+            fork.assert_not_called(); popen.assert_not_called(); request.assert_not_called()
+
+    def test_f1_t01_science29_29half_30_inside_original_cap(self):
+        origin = 9876543210123456
+        row = F1.science_deadlines(origin, origin + 180_000_000_000, origin + 840_000_000_000)
+        self.assertEqual(row['admitted_duration_ns'], 30_000_000_000)
+        self.assertEqual(row['work_deadline_monotonic_ns'], origin + 29_000_000_000)
+        self.assertEqual(row['native_final_deadline_monotonic_ns'], origin + 29_500_000_000)
+        self.assertEqual(row['invocation_deadline_monotonic_ns'], origin + 30_000_000_000)
+        self.assertEqual(F1.science_deadlines(origin, origin + 3_000_000_000, origin + 4_000_000_000)['admitted_duration_ns'], 3_000_000_000)
+        self.reject('F1R1_SCIENCE_INVOCATION_WINDOW_REQUIRED', F1.science_deadlines,
+                    origin, origin + 1_000_000_000, origin + 30_000_000_000)
+        engineering = F1.engineering_deadlines(origin, origin + 1_000_000_000)
+        self.assertEqual(engineering['work_deadline_monotonic_ns'], origin + 800_000_000)
+        self.assertEqual(engineering['final_deadline_monotonic_ns'], origin + 1_000_000_000)
+
+    def test_f1_t02_owned_group_cleanup_order_model_only(self):
+        row = dict(launcher_pid=100, owned_process_group=100,
+                   invocation_started_monotonic_ns=1, leader_observed_waitable_monotonic_ns=2,
+                   group_SIGKILL_monotonic_ns=3, launcher_wait4_finished_monotonic_ns=4,
+                   group_absent_observed_monotonic_ns=5, encoding_finished_monotonic_ns=6,
+                   invocation_deadline_monotonic_ns=30_000_000_001,
+                   leader_wait_observation_consumed=False, leader_unreaped_at_group_SIGKILL=True,
+                   group_absent=True, wait4_requested_pid=100, wait4_returned_pid=100,
+                   signals_after_leader_reap=0, additional_descendant_proc_snapshots=0)
+        F1.validate_owned_group_cleanup(row)
+        F1.validate_owned_group_cleanup(dict(row, leader_observed_waitable_monotonic_ns=None))
+        self.reject('F1R1_OWNED_GROUP_CLEANUP_REQUIRED', F1.validate_owned_group_cleanup,
+                    dict(row, leader_unreaped_at_group_SIGKILL=False))
+        self.reject('F1R1_OWNED_GROUP_CLEANUP_ORDER', F1.validate_owned_group_cleanup,
+                    dict(row, launcher_wait4_finished_monotonic_ns=2))
+        self.reject('F1R1_OWNED_GROUP_CLEANUP_ORDER', F1.validate_owned_group_cleanup,
+                    dict(row, encoding_finished_monotonic_ns=30_000_000_002))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

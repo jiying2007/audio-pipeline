@@ -19,6 +19,9 @@ import re
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 
 
 EXPERIMENT = "FE09-T3S3-F1-TARGET-LIFETIME-AND-IMAGE-RSS-R1"
@@ -47,7 +50,34 @@ SOURCE_ONLY = "SOURCE_METADATA_ONLY"
 OUT_OF_SCOPE = "F1_SOURCE_METADATA_ONLY_OUT_OF_SCOPE"
 COMPLETE = "FE09_T3S3_F1_R1_COMPLETE_RSS_OBSERVATION_NO_DEVICE_PROMOTION"
 SCIENCE_EXECUTION_ENABLED = False
+PROVIDER_EXECUTION_ENABLED = False
 METADATA_BYTES = 2 * 1024 * 1024
+
+API_ORIGIN = 'https://api.github.com'
+API_PREFIX = '/repos/' + REPOSITORY
+API_CATEGORY_RULES = {
+    'original_job_response': (1, 2097152),
+    'original_job_request_record': (1, 65536),
+    'repository_responses': (2, 65536),
+    'run_attempt_responses': (2, 131072),
+    'issue_bracket_responses': (4, 65536),
+    'complete_comment_list_responses': (2, 1048576),
+    'selected_comment_responses': (2, 65536),
+    'complete_main_PR_association_responses': (2, 1048576),
+    'PR_detail_responses': (2, 262144),
+    'all_non_job_request_and_header_records': (16, 8192),
+}
+API_ROUTE_CATEGORIES = {
+    'jobs': 'original_job_response', 'repository': 'repository_responses',
+    'run': 'run_attempt_responses', 'association': 'complete_main_PR_association_responses',
+    'pr': 'PR_detail_responses', 'issue_before': 'issue_bracket_responses',
+    'comments': 'complete_comment_list_responses', 'selected': 'selected_comment_responses',
+    'issue_after': 'issue_bracket_responses',
+}
+API_HEADER_NAMES = frozenset(('content-type', 'content-length', 'content-encoding', 'link',
+                              'date', 'etag', 'x-github-request-id', 'x-ratelimit-limit',
+                              'x-ratelimit-remaining', 'x-ratelimit-reset', 'x-ratelimit-used',
+                              'x-ratelimit-resource', 'x-github-api-version-selected'))
 
 
 class Rejected(ValueError):
@@ -121,6 +151,54 @@ def stage_admission(original_job_deadline_epoch_ns: int,
             "stage_deadline_monotonic_ns": stage_started_monotonic_ns + effective_ns,
             "original_job_deadline_epoch_ns": original_job_deadline_epoch_ns,
             "archive_reserve_ns": 60_000_000_000}
+
+
+def science_deadlines(origin_ns: int, stage_deadline_ns: int, job_deadline_ns: int) -> dict:
+    require(all(integer(value) for value in (origin_ns, stage_deadline_ns, job_deadline_ns)),
+            'F1R1_STRICT_INTEGER_TIME')
+    duration = min(30_000_000_000, stage_deadline_ns - origin_ns, job_deadline_ns - origin_ns)
+    require(duration > 1_000_000_000, 'F1R1_SCIENCE_INVOCATION_WINDOW_REQUIRED')
+    return {'invocation_started_monotonic_ns': origin_ns, 'admitted_duration_ns': duration,
+            'work_deadline_monotonic_ns': origin_ns + duration - 1_000_000_000,
+            'native_final_deadline_monotonic_ns': origin_ns + duration - 500_000_000,
+            'invocation_deadline_monotonic_ns': origin_ns + duration,
+            'native_cleanup_reserve_ns': 500_000_000, 'outer_cleanup_reserve_ns': 500_000_000}
+
+
+def build_child_environment(temporary_directory: Path) -> dict:
+    require(temporary_directory.is_absolute(), 'F1R1_CLEAN_CHILD_ENVIRONMENT')
+    # Construct from the explicit allowlist; never copy-and-forget a private
+    # variable from the API owner's environment into a compiler or launcher.
+    return {'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+            'LC_ALL': 'C', 'TZ': 'UTC', 'TMPDIR': str(temporary_directory)}
+
+
+def launcher_child_environment() -> dict:
+    return {'ASAN_OPTIONS': 'detect_leaks=1:abort_on_error=1',
+            'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1', 'LC_ALL': 'C', 'TZ': 'UTC'}
+
+
+def validate_owned_group_cleanup(row: dict) -> None:
+    require(integer(row.get('launcher_pid'), 1) and row.get('owned_process_group') == row['launcher_pid'],
+            'F1R1_OWNED_GROUP_IDENTITY')
+    times = ('invocation_started_monotonic_ns', 'group_SIGKILL_monotonic_ns', 'launcher_wait4_finished_monotonic_ns',
+             'group_absent_observed_monotonic_ns', 'encoding_finished_monotonic_ns',
+             'invocation_deadline_monotonic_ns')
+    require(all(integer(row.get(key)) for key in times) and
+            all(row[left] <= row[right] for left, right in zip(times, times[1:])),
+            'F1R1_OWNED_GROUP_CLEANUP_ORDER')
+    require(row.get('leader_wait_observation_consumed') is False and
+            row.get('leader_unreaped_at_group_SIGKILL') is True and
+            row.get('group_absent') is True and row.get('wait4_requested_pid') ==
+            row.get('wait4_returned_pid') == row['launcher_pid'] and
+            row.get('signals_after_leader_reap') == 0 and row.get('additional_descendant_proc_snapshots') == 0,
+            'F1R1_OWNED_GROUP_CLEANUP_REQUIRED')
+    observed = row.get('leader_observed_waitable_monotonic_ns')
+    require(observed is None or integer(observed) and
+            row['invocation_started_monotonic_ns'] <= observed <= row['launcher_wait4_finished_monotonic_ns'],
+            'F1R1_OWNED_GROUP_CLEANUP_ORDER')
+    require(row['invocation_deadline_monotonic_ns'] - row['invocation_started_monotonic_ns'] <= 30_000_000_000,
+            'F1R1_SCIENCE_INVOCATION_LIMIT')
 
 
 def enforce_deadline(started_ns: int, finished_ns: int, duration_ns: int,
@@ -429,8 +507,982 @@ def validate_freeze_pair(pre: dict, post: dict) -> None:
     require(pre == post, "F1R1_PRE_POST_FREEZE_STABILITY")
 
 
+def compact_json(value: object) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True,
+                      separators=(',', ':'), allow_nan=False).encode('utf-8')
+
+
+def api_route(name: str, *, run_id: int, attempt: int, source_S: str | None = None,
+              pr_number: int | None = None, comment_id: int | None = None) -> str:
+    require(name in API_ROUTE_CATEGORIES and integer(run_id, 1) and integer(attempt, 1),
+            'F1R1_CANONICAL_PROVIDER_ROUTE')
+    if name == 'jobs':
+        return f'{API_PREFIX}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100'
+    if name == 'repository':
+        return API_PREFIX
+    if name == 'run':
+        return f'{API_PREFIX}/actions/runs/{run_id}/attempts/{attempt}'
+    if name == 'association':
+        require(oid(source_S), 'F1R1_CANONICAL_PROVIDER_ROUTE')
+        return f'{API_PREFIX}/commits/{source_S}/pulls?per_page=100&page=1'
+    if name == 'pr':
+        require(integer(pr_number, 1), 'F1R1_CANONICAL_PROVIDER_ROUTE')
+        return f'{API_PREFIX}/pulls/{pr_number}'
+    if name == 'comments':
+        return f'{API_PREFIX}/issues/845/comments?per_page=100&page=1'
+    if name == 'selected':
+        require(integer(comment_id, 1), 'F1R1_CANONICAL_PROVIDER_ROUTE')
+        return f'{API_PREFIX}/issues/comments/{comment_id}'
+    return f'{API_PREFIX}/issues/845'
+
+
+def validate_api_path(path: str) -> None:
+    patterns = (
+        re.escape(API_PREFIX),
+        re.escape(API_PREFIX) + r'/actions/runs/[1-9][0-9]*/attempts/[1-9][0-9]*',
+        re.escape(API_PREFIX) + r'/actions/runs/[1-9][0-9]*/attempts/[1-9][0-9]*/jobs\?per_page=100',
+        re.escape(API_PREFIX) + r'/commits/[0-9a-f]{40}/pulls\?per_page=100&page=1',
+        re.escape(API_PREFIX) + r'/pulls/[1-9][0-9]*',
+        re.escape(API_PREFIX) + r'/issues/845',
+        re.escape(API_PREFIX) + r'/issues/845/comments\?per_page=100&page=1',
+        re.escape(API_PREFIX) + r'/issues/comments/[1-9][0-9]*',
+    )
+    require(type(path) is str and len(path) <= 512 and any(re.fullmatch(pattern, path) for pattern in patterns),
+            'F1R1_CANONICAL_PROVIDER_ROUTE')
+
+
+def api_request_window(start_ns: int, active_acquisition_ns: int,
+                       stage_deadline_ns: int | None, job_deadline_ns: int | None) -> dict:
+    require(integer(start_ns) and integer(active_acquisition_ns), 'F1R1_CONTROL_PLANE_TIME_BUDGET')
+    limits = [5_000_000_000, 60_000_000_000 - active_acquisition_ns]
+    for deadline in (stage_deadline_ns, job_deadline_ns):
+        if deadline is not None:
+            require(integer(deadline), 'F1R1_CONTROL_PLANE_TIME_BUDGET')
+            limits.append(deadline - start_ns)
+    duration = min(limits)
+    require(duration > 500_000_000, 'F1R1_CONTROL_PLANE_TIME_BUDGET')
+    return {'started_monotonic_ns': start_ns, 'admitted_duration_ns': duration,
+            'work_deadline_monotonic_ns': start_ns + duration - 500_000_000,
+            'deadline_monotonic_ns': start_ns + duration}
+
+
+def api_headers_view(headers: list[list[str]]) -> dict[str, list[str]]:
+    require(type(headers) is list and len(headers) <= 64 and len(compact_json(headers)) <= 4096,
+            'F1R1_CONTROL_PLANE_METADATA_BYTES')
+    result = {}
+    for pair in headers:
+        require(type(pair) is list and len(pair) == 2 and all(type(value) is str for value in pair),
+                'F1R1_CONTROL_PLANE_HEADER_SCHEMA')
+        key, value = pair
+        require(key in API_HEADER_NAMES and not any(char in value for char in '\r\n\x00'),
+                'F1R1_CONTROL_PLANE_CREDENTIALS')
+        result.setdefault(key, []).append(value)
+    for key in ('content-type', 'content-length', 'content-encoding'):
+        require(len(result.get(key, [])) <= 1, 'F1R1_CONTROL_PLANE_HEADER_SCHEMA')
+    return result
+
+
+def api_has_next_page(headers: list[list[str]]) -> bool:
+    values = api_headers_view(headers).get('link', [])
+    next_page = False
+    for value in values:
+        for item in value.split(','):
+            match = re.fullmatch(r'\s*<(https://api\.github\.com/[^<>\s]+)>;\s*rel="(first|prev|next|last)"\s*', item)
+            require(match is not None, 'F1R1_COMPLETE_PROVIDER_PAGINATION')
+            next_page = next_page or match[2] == 'next'
+    return next_page
+
+
+def validate_api_response(raw: bytes, record: dict, *, expected_path: str, cap: int) -> object:
+    validate_api_path(expected_path)
+    require(type(raw) is bytes and len(raw) <= cap, 'F1R1_CONTROL_PLANE_BODY_BYTES')
+    require(record.get('method') == 'GET' and record.get('origin') == API_ORIGIN and
+            record.get('path') == expected_path and record.get('response_final_origin') == API_ORIGIN and
+            record.get('response_final_url') == API_ORIGIN + expected_path,
+            'F1R1_CANONICAL_PROVIDER_ROUTE')
+    require(type(record.get('http_status')) is int and record['http_status'] == 200,
+            'F1R1_CONTROL_PLANE_HTTP_STATUS')
+    require(record.get('headers_complete') is True, 'F1R1_CONTROL_PLANE_HEADER_SCHEMA')
+    headers = api_headers_view(record.get('headers_without_credentials'))
+    require(headers.get('content-encoding', ['identity']) == ['identity'],
+            'F1R1_CONTROL_PLANE_CONTENT_ENCODING')
+    content_type = headers.get('content-type', [''])[0].split(';', 1)[0].strip().lower()
+    require(content_type in ('application/json', 'application/vnd.github+json'),
+            'F1R1_CONTROL_PLANE_CONTENT_TYPE')
+    if 'content-length' in headers:
+        length = headers['content-length'][0]
+        require(re.fullmatch(r'0|[1-9][0-9]*', length) is not None and int(length) == len(raw),
+                'F1R1_CONTROL_PLANE_PARTIAL_RESPONSE')
+    require(record.get('body_complete') is True and record.get('overflow') is False and
+            integer(record.get('body_bytes')) and record['body_bytes'] == len(raw) and
+            record.get('body_sha256') == sha(raw), 'F1R1_CONTROL_PLANE_PARTIAL_RESPONSE')
+    return strict_json(raw, cap)
+
+
+def validate_api_lifecycle(record: dict, *, final_reap: bool) -> int:
+    required = ('started_monotonic_ns', 'finished_monotonic_ns', 'admitted_duration_ns',
+                'deadline_monotonic_ns', 'worker_pid', 'worker_start_ticks')
+    require(all(integer(record.get(key), 1) for key in required), 'F1R1_CONTROL_PLANE_LIFECYCLE')
+    start, end, duration = (record[key] for key in ('started_monotonic_ns', 'finished_monotonic_ns', 'admitted_duration_ns'))
+    require(0 <= end - start <= duration <= 5_000_000_000 and
+            record['deadline_monotonic_ns'] == start + duration,
+            'F1R1_CONTROL_PLANE_TIME_BUDGET')
+    require(integer(record.get('started_epoch_ns')) and integer(record.get('finished_epoch_ns')) and
+            record['started_epoch_ns'] <= record['finished_epoch_ns'], 'F1R1_CONTROL_PLANE_LIFECYCLE')
+    reap = record.get('worker_exit_or_final_reap')
+    require(type(reap) is dict, 'F1R1_CONTROL_PLANE_LIFECYCLE')
+    if final_reap:
+        require(reap.get('state') == 'OWNED_WORKER_REAPED' and
+                reap.get('wait4_requested_pid') == record['worker_pid'] == reap.get('wait4_returned_pid') and
+                integer(reap.get('finished_monotonic_ns')) and start <= reap['finished_monotonic_ns'] <= end and
+                reap.get('raw_wait_status') == 0, 'F1R1_CONTROL_PLANE_LIFECYCLE')
+    else:
+        require(reap.get('state') == 'REUSED_PENDING_FINAL_REAP', 'F1R1_CONTROL_PLANE_LIFECYCLE')
+    return end - start
+
+
+class APIBudgetLedger:
+    """Pure counted/byte/time admission; transport cannot invent a reset."""
+
+    def __init__(self, event: str) -> None:
+        require(event in ('pull_request', 'push'), 'F1R1_EVENT_SCOPE_NO_SCIENCE')
+        sweep = ['repository', 'run'] + (['association'] if event == 'push' else [])
+        sweep += ['pr', 'issue_before', 'comments', 'selected', 'issue_after']
+        self.event = event
+        self.plan = [('FIRST_JOB', 'jobs')] + [(phase, name) for phase in ('PRE', 'POST') for name in sweep]
+        self.requests = []
+        self.request_retained_sizes = []
+        self.active_acquisition_ns = 0
+        self.category_counts = {key: 0 for key in API_CATEGORY_RULES}
+        self.category_bytes = {key: 0 for key in API_CATEGORY_RULES}
+        self.retained_bytes = 0
+        self.worker_keys = {}
+        self.failed = False
+
+    def next_request(self, phase: str, name: str, start_ns: int,
+                     stage_deadline_ns: int | None = None,
+                     job_deadline_ns: int | None = None) -> dict:
+        require(not self.failed and len(self.requests) < len(self.plan) <= 17,
+                'F1R1_CONTROL_PLANE_REQUEST_LIMIT')
+        require((phase, name) == self.plan[len(self.requests)], 'F1R1_CONTROL_PLANE_REQUEST_ORDER')
+        return {'request_ordinal': len(self.requests) + 1, 'phase': phase, 'route_name': name,
+                **api_request_window(start_ns, self.active_acquisition_ns, stage_deadline_ns, job_deadline_ns)}
+
+    def retain(self, category: str, raw: bytes) -> None:
+        require(category in API_CATEGORY_RULES and type(raw) is bytes, 'F1R1_CONTROL_PLANE_METADATA_BYTES')
+        max_count, cap = API_CATEGORY_RULES[category]
+        require(self.category_counts[category] < max_count and len(raw) <= cap and
+                self.category_bytes[category] + len(raw) <= max_count * cap and
+                self.retained_bytes + len(raw) <= 8388608, 'F1R1_CONTROL_PLANE_METADATA_BYTES')
+        self.category_counts[category] += 1
+        self.category_bytes[category] += len(raw)
+        self.retained_bytes += len(raw)
+
+    def accept(self, name: str, raw: bytes, record: dict, *, expected_path: str) -> object:
+        position = len(self.requests)
+        require(position < len(self.plan) and (record.get('phase'), name) == self.plan[position] and
+                record.get('request_ordinal') == position + 1,
+                'F1R1_CONTROL_PLANE_REQUEST_ORDER')
+        category = API_ROUTE_CATEGORIES[name]
+        parsed = validate_api_response(raw, record, expected_path=expected_path, cap=API_CATEGORY_RULES[category][1])
+        final = name == 'jobs' or position + 1 == len(self.plan)
+        elapsed = validate_api_lifecycle(record, final_reap=final)
+        require(self.active_acquisition_ns + elapsed <= 60_000_000_000,
+                'F1R1_CONTROL_PLANE_TIME_BUDGET')
+        owner = 'FIRST_JOB' if name == 'jobs' else 'COLLECTOR'
+        key = (record['worker_pid'], record['worker_start_ticks'])
+        require(owner not in self.worker_keys or self.worker_keys[owner] == key,
+                'F1R1_CONTROL_PLANE_WORKER_LIMIT')
+        if owner == 'COLLECTOR' and 'FIRST_JOB' in self.worker_keys:
+            require(key != self.worker_keys['FIRST_JOB'], 'F1R1_CONTROL_PLANE_WORKER_LIMIT')
+        metadata = compact_json(record) + b'\n'
+        metadata_category = 'original_job_request_record' if name == 'jobs' else 'all_non_job_request_and_header_records'
+        require(len(metadata) <= API_CATEGORY_RULES[metadata_category][1] and
+                self.category_counts[category] < API_CATEGORY_RULES[category][0] and
+                self.category_counts[metadata_category] < API_CATEGORY_RULES[metadata_category][0] and
+                self.retained_bytes + len(raw) + len(metadata) <= 8388608,
+                'F1R1_CONTROL_PLANE_METADATA_BYTES')
+        self.retain(category, raw)
+        self.retain(metadata_category, metadata)
+        self.worker_keys[owner] = key
+        self.active_acquisition_ns += elapsed
+        self.requests.append(dict(record))
+        self.request_retained_sizes.append((len(raw), len(metadata)))
+        return parsed
+
+    def failed_request(self, name: str, raw: bytes, record: dict) -> None:
+        self.failed = True
+        category = API_ROUTE_CATEGORIES[name]
+        metadata_category = 'original_job_request_record' if name == 'jobs' else 'all_non_job_request_and_header_records'
+        metadata = compact_json(record) + b'\n'
+        require(len(raw) <= API_CATEGORY_RULES[category][1] and
+                len(metadata) <= API_CATEGORY_RULES[metadata_category][1],
+                'F1R1_CONTROL_PLANE_METADATA_BYTES')
+        ordinal = record['request_ordinal']
+        require(ordinal in (len(self.requests), len(self.requests) + 1) and ordinal > 0,
+                'F1R1_CONTROL_PLANE_REQUEST_ORDER')
+        if ordinal == len(self.requests):
+            previous = self.requests[-1]
+            charged = (previous['finished_monotonic_ns'] - previous['started_monotonic_ns'] +
+                       previous.get('owner_post_response_elapsed_ns', 0))
+            self.active_acquisition_ns += max(0, record['finished_monotonic_ns'] - record['started_monotonic_ns'] - charged)
+            old_body, old_metadata = self.request_retained_sizes[-1]
+            for key, old, new in ((category, old_body, len(raw)), (metadata_category, old_metadata, len(metadata))):
+                self.category_bytes[key] += new - old
+                self.retained_bytes += new - old
+            self.requests[-1] = dict(record)
+            self.request_retained_sizes[-1] = (len(raw), len(metadata))
+        else:
+            self.active_acquisition_ns += record['finished_monotonic_ns'] - record['started_monotonic_ns']
+            self.retain(category, raw)
+            self.retain(metadata_category, metadata)
+            self.requests.append(dict(record))
+            self.request_retained_sizes.append((len(raw), len(metadata)))
+        require(self.retained_bytes <= 8388608, 'F1R1_CONTROL_PLANE_METADATA_BYTES')
+
+    def complete(self) -> dict:
+        require(not self.failed and len(self.requests) == len(self.plan) and len(self.worker_keys) == 2,
+                'F1R1_CONTROL_PLANE_REQUEST_LIMIT')
+        validate_api_lifecycle(self.requests[0], final_reap=True)
+        validate_api_lifecycle(self.requests[-1], final_reap=True)
+        return {'actual_GET_requests': len(self.requests), 'active_acquisition_ns': self.active_acquisition_ns,
+                'category_counts': dict(self.category_counts), 'category_bytes': dict(self.category_bytes),
+                'retained_category_bytes': self.retained_bytes, 'HTTP_helper_starts': 2,
+                'both_helpers_reaped': True}
+
+
+def provider_timestamp_ns(value: object) -> int:
+    require(type(value) is str and re.fullmatch(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)', value),
+            'F1R1_ORIGINAL_JOB_TIMESTAMP')
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        require(parsed.tzinfo is not None, 'F1R1_ORIGINAL_JOB_TIMESTAMP')
+        seconds = calendar.timegm(parsed.utctimetuple())
+        match = re.search(r'\.(\d{1,9})(?:Z|[+-])', value)
+        fractions = int(match[1].ljust(9, '0')) if match else 0
+        return seconds * 1_000_000_000 + fractions
+    except ValueError as exc:
+        raise Rejected('F1R1_ORIGINAL_JOB_TIMESTAMP') from exc
+
+
+def validate_original_jobs(jobs_body: dict, *, headers: list[list[str]], run_id: int,
+                            attempt: int, expected_head: str) -> dict:
+    require(type(jobs_body) is dict and type(jobs_body.get('jobs')) is list and
+            integer(jobs_body.get('total_count'), 1) and
+            0 < len(jobs_body['jobs']) == jobs_body['total_count'] <= 100 and
+            api_has_next_page(headers) is False, 'F1R1_COMPLETE_ORIGINAL_JOBS')
+    jobs = jobs_body['jobs']
+    require(all(type(job) is dict and integer(job.get('id'), 1) for job in jobs) and
+            len({job['id'] for job in jobs}) == len(jobs), 'F1R1_COMPLETE_ORIGINAL_JOBS')
+    selected = [job for job in jobs if job.get('name') in ('frontend-rss-f1', 'quality / frontend-rss-f1')]
+    require(len(selected) == 1, 'F1R1_UNIQUE_ORIGINAL_JOB')
+    job = selected[0]
+    require(integer(run_id, 1) and integer(attempt, 1) and oid(expected_head) and
+            job.get('status') == 'in_progress' and type(job.get('run_id')) is int and
+            job['run_id'] == run_id and type(job.get('run_attempt')) is int and
+            job['run_attempt'] == attempt and job.get('head_sha') == expected_head,
+            'F1R1_ORIGINAL_JOB_BINDING')
+    started = provider_timestamp_ns(job.get('started_at'))
+    return {'job_id': job['id'], 'job_name': job['name'], 'run_id': run_id, 'run_attempt': attempt,
+            'head_sha': expected_head, 'started_at': job['started_at'], 'started_epoch_ns': started,
+            'deadline_epoch_ns': started + 900_000_000_000,
+            'job_seconds': 900, 'archive_reserve_seconds': 60}
+
+
+def validate_actual_run(run: dict, *, run_id: int, attempt: int,
+                         event: str, expected_head: str) -> dict:
+    require(type(run) is dict and run.get('id') == run_id and type(run.get('id')) is int and
+            run.get('run_attempt') == attempt and type(run.get('run_attempt')) is int and
+            run.get('event') == event and run.get('head_sha') == expected_head,
+            'F1R1_RUN_EVENT_SOURCE')
+    require(run.get('path') == '.github/workflows/verify.yml' and
+            run.get('repository', {}).get('id') == REPOSITORY_ID and
+            type(run.get('repository', {}).get('id')) is int and
+            run.get('repository', {}).get('full_name') == REPOSITORY,
+            'F1R1_RUN_WORKFLOW_SOURCE')
+    created = provider_timestamp_ns(run.get('created_at'))
+    require(type(run.get('pull_requests')) is list and len(run['pull_requests']) <= 100,
+            'F1R1_RUN_PR_ASSOCIATION')
+    return {'run_id': run_id, 'run_attempt': attempt, 'event': event, 'head_sha': expected_head,
+            'created_at': run['created_at'], 'created_epoch_ns': created,
+            'workflow_path': run['path'], 'repository_id': REPOSITORY_ID}
+
+
+def select_provider_PR(event: str, event_record: dict, run: dict,
+                        association: list | None, *, association_has_next_page: bool | None) -> int:
+    if event == 'pull_request':
+        event_number = event_record.get('number')
+        require(integer(event_number, 1) and type(run.get('pull_requests')) is list,
+                'F1R1_RUN_PR_ASSOCIATION')
+        rows = run['pull_requests']
+        require(all(type(row) is dict and integer(row.get('number'), 1) for row in rows) and
+                len({row['number'] for row in rows}) == len(rows), 'F1R1_RUN_PR_ASSOCIATION')
+        selected = [row for row in rows if row['number'] == event_number and
+                    row.get('head', {}).get('sha') == run.get('head_sha')]
+        require(len(selected) == 1, 'F1R1_RUN_PR_ASSOCIATION')
+        return selected[0]['number']
+    require(event == 'push' and type(association) is list and len(association) <= 100 and
+            association_has_next_page is False, 'F1R1_COMPLETE_MAIN_PR_ASSOCIATION')
+    require(all(type(row) is dict and integer(row.get('id'), 1) and integer(row.get('number'), 1) for row in association) and
+            len({row['id'] for row in association}) == len(association) and
+            len({row['number'] for row in association}) == len(association),
+            'F1R1_UNIQUE_MAIN_PR_ASSOCIATION')
+    matches = [row for row in association if row.get('merge_commit_sha') == run.get('head_sha') and
+               row.get('head', {}).get('ref') == REGISTERED_BRANCH and row.get('base', {}).get('ref') == 'main']
+    require(len(matches) == 1, 'F1R1_UNIQUE_MAIN_PR_ASSOCIATION')
+    return matches[0]['number']
+
+
+def select_freeze_comment(comments: list, issue_before: dict, *, source: dict,
+                           schema: dict, has_next_page: bool) -> int:
+    """Selection from one complete original list, before the direct GET."""
+    require(source.get('actual_C_derived_before_freeze') is True, 'F1R1_MAIN_PROVIDER_ASSOCIATION_REQUIRED')
+    require(type(comments) is list and len(comments) <= 100 and has_next_page is False and
+            type(issue_before.get('comments')) is int and issue_before['comments'] == len(comments),
+            'F1R1_COMPLETE_COMMENT_LIST')
+    require(all(type(row) is dict and integer(row.get('id'), 1) for row in comments) and
+            len({row['id'] for row in comments}) == len(comments), 'F1R1_COMPLETE_COMMENT_LIST')
+    selected = []
+    for row in comments:
+        user = row.get('user', {})
+        if not (user.get('login') == 'jiying2007' and type(user.get('id')) is int and
+                user['id'] == 33591504 and user.get('type') == 'User'):
+            continue
+        require(type(row.get('body')) is str, 'F1R1_FREEZE_SCHEMA')
+        if not row['body'].lstrip().startswith('{'):
+            continue
+        parsed = strict_json(row['body'].encode(), 16384)
+        validate_schema(parsed, schema)
+        if parsed['source']['reviewed_head_C'] == source['C']:
+            selected.append(row['id'])
+    require(selected, 'F1R1_UNIQUE_MATCHING_C_FREEZE')
+    require(len(selected) == 1, 'F1R1_DUPLICATE_C_FREEZE')
+    return selected[0]
+
+
+class _NoProviderRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _http_worker_main(command_fd: int, response_fd: int, token: str) -> None:
+    """One owned metadata-only worker; never called by offline controls.
+
+    DNS, socket and response reads may block only this process. The parent
+    enforces the whole request deadline and reaps this exact child on failure.
+    There is no retry or other process creation in this worker.
+    """
+    require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
+            'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoProviderRedirect())
+
+    def write_all(raw):
+        view = memoryview(raw)
+        while view:
+            count = os.write(response_fd, view)
+            if count <= 0:
+                os._exit(2)
+            view = view[count:]
+
+    for unused_request in range(16):
+        command = bytearray()
+        while b'\n' not in command:
+            piece = os.read(command_fd, min(1024, 1025 - len(command)))
+            if not piece:
+                os._exit(0 if not command else 2)
+            if len(command) + len(piece) > 1024:
+                os._exit(2)
+            command.extend(piece)
+        require(command[-1:] == b'\n' and command.count(b'\n') == 1, 'F1R1_HTTP_WORKER_PROTOCOL')
+        request = strict_json(bytes(command), 1024)
+        require(type(request) is dict and set(request) == {'path', 'cap', 'close_after_request'},
+                'F1R1_HTTP_WORKER_PROTOCOL')
+        path, cap = request['path'], request['cap']
+        validate_api_path(path)
+        require(integer(cap, 1) and cap <= 2097152 and type(request['close_after_request']) is bool,
+                'F1R1_HTTP_WORKER_PROTOCOL')
+        body = bytearray()
+        meta = {'http_status': 0, 'response_final_origin': API_ORIGIN,
+                'response_final_url': API_ORIGIN + path, 'headers_without_credentials': [],
+                'headers_complete': False, 'body_complete': False, 'overflow': False,
+                'worker_error_class': None}
+        response = None
+        try:
+            outgoing = urllib.request.Request(API_ORIGIN + path, method='GET', headers={
+                'Accept': 'application/vnd.github+json', 'Accept-Encoding': 'identity',
+                'User-Agent': 'FE09-F1-R1-bounded-metadata',
+                'X-GitHub-Api-Version': '2022-11-28', 'Authorization': 'Bearer ' + token})
+            try:
+                response = opener.open(outgoing, timeout=5)
+            except urllib.error.HTTPError as exc:
+                response = exc
+            meta['http_status'] = response.status
+            final_url = response.geturl()
+            parsed_url = urllib.parse.urlsplit(final_url)
+            meta['response_final_url'] = final_url
+            meta['response_final_origin'] = parsed_url.scheme + '://' + parsed_url.netloc
+            safe_headers = []
+            for key, value in response.headers.items():
+                lowered = key.lower()
+                if lowered in API_HEADER_NAMES:
+                    safe_headers.append([lowered, value])
+                    # Bound before keeping another header value or reading body.
+                    api_headers_view(safe_headers)
+            meta['headers_without_credentials'] = safe_headers
+            meta['headers_complete'] = True
+            while True:
+                piece = response.read(min(65536, cap - len(body) + 1))
+                if not piece:
+                    meta['body_complete'] = True
+                    break
+                remaining = cap - len(body)
+                if len(piece) > remaining:
+                    body.extend(piece[:remaining])
+                    meta['overflow'] = True
+                    break
+                body.extend(piece)
+        except BaseException as exc:
+            # Exception text can include server-controlled/private data. Retain
+            # only its type and the original bounded prefix already observed.
+            meta['worker_error_class'] = type(exc).__name__[:128]
+        finally:
+            if response is not None:
+                response.close()
+        meta['body_bytes'] = len(body)
+        meta['body_sha256'] = sha(bytes(body))
+        envelope = compact_json(meta)
+        require(len(envelope) <= 6144, 'F1R1_HTTP_WORKER_PROTOCOL')
+        write_all(len(envelope).to_bytes(4, 'big') + len(body).to_bytes(4, 'big'))
+        write_all(envelope)
+        write_all(body)
+        if request['close_after_request']:
+            os._exit(0)
+    os._exit(2)
+
+
+class HTTPMetadataWorker:
+    """At most one helper for this owner; source-only gates run before fork."""
+
+    def __init__(self, token: str, ledger: APIBudgetLedger, output: Path) -> None:
+        require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
+                'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+        require(sys.platform == 'linux' and type(token) is str and 0 < len(token) <= 8192 and
+                not any(char in token for char in '\r\n\x00'), 'F1R1_READ_TOKEN_REQUIRED')
+        self._token = token
+        self.ledger = ledger
+        self.output = output
+        self.pid = None
+        self.start_ticks = None
+        self.command_fd = None
+        self.response_fd = None
+        self.closed = False
+        self.failed = False
+        self.reap_record = None
+        self._partial_body = bytearray()
+
+    def _start(self) -> None:
+        require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
+                'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+        require(self.pid is None and not self.closed and not self.failed,
+                'F1R1_CONTROL_PLANE_WORKER_LIMIT')
+        read_command, write_command = os.pipe2(os.O_CLOEXEC)
+        try:
+            read_response, write_response = os.pipe2(os.O_CLOEXEC)
+        except BaseException:
+            os.close(read_command)
+            os.close(write_command)
+            raise
+        try:
+            pid = os.fork()
+        except BaseException:
+            for fd in (read_command, write_command, read_response, write_response):
+                os.close(fd)
+            raise
+        if pid == 0:
+            try:
+                os.close(write_command)
+                os.close(read_response)
+                # Preserve only the two owned protocol FDs. No credential or
+                # checkout descriptor is carried to this worker accidentally.
+                keep = sorted((read_command, write_response))
+                lower = 3
+                for fd in keep:
+                    os.closerange(lower, fd)
+                    lower = fd + 1
+                os.closerange(lower, os.sysconf('SC_OPEN_MAX'))
+                os.environ.clear()
+                _http_worker_main(read_command, write_response, self._token)
+            except BaseException:
+                pass
+            os._exit(2)
+        os.close(read_command)
+        os.close(write_response)
+        self.pid = pid
+        self.command_fd = write_command
+        self.response_fd = read_response
+        for fd in (write_command, read_response):
+            os.set_blocking(fd, False)
+        stat = bounded_file(Path('/proc') / str(pid) / 'stat', 1536)
+        self.start_ticks = parse_proc_stat(stat)['start_ticks']
+
+    def _pipe(self, fd: int, *, data: bytes | None = None, size: int | None = None,
+              deadline_ns: int, retain_body_prefix: bool = False) -> bytes:
+        reading = data is None
+        require((reading and integer(size) and size <= 2097152) or
+                (not reading and type(data) is bytes and len(data) <= 1024),
+                'F1R1_HTTP_WORKER_PROTOCOL')
+        output = bytearray()
+        if retain_body_prefix:
+            self._partial_body = output
+        offset = 0
+        with selectors.DefaultSelector() as selector:
+            selector.register(fd, selectors.EVENT_READ if reading else selectors.EVENT_WRITE)
+            while (len(output) < size if reading else offset < len(data)):
+                remaining = deadline_ns - time.monotonic_ns()
+                require(remaining > 0, 'F1R1_CONTROL_PLANE_TIME_BUDGET')
+                if not selector.select(remaining / 1_000_000_000):
+                    continue
+                try:
+                    if reading:
+                        piece = os.read(fd, min(65536, size - len(output)))
+                        require(piece, 'F1R1_CONTROL_PLANE_PARTIAL_RESPONSE')
+                        output.extend(piece)
+                    else:
+                        count = os.write(fd, data[offset:])
+                        require(count > 0, 'F1R1_HTTP_WORKER_PROTOCOL')
+                        offset += count
+                except BlockingIOError:
+                    continue
+        return bytes(output)
+
+    def _reap(self, deadline_ns: int, *, terminate: bool) -> dict:
+        require(self.pid is not None and self.reap_record is None, 'F1R1_CONTROL_PLANE_LIFECYCLE')
+        # Exact owned PID; never wait-any and never reuse a reaped PID to signal.
+        if terminate:
+            try:
+                os.kill(self.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        while True:
+            waited, status, usage = os.wait4(self.pid, os.WNOHANG)
+            if waited:
+                require(waited == self.pid, 'F1R1_CONTROL_PLANE_LIFECYCLE')
+                self.reap_record = {'state': 'OWNED_WORKER_REAPED',
+                                    'wait4_requested_pid': self.pid, 'wait4_returned_pid': waited,
+                                    'raw_wait_status': status, 'finished_monotonic_ns': time.monotonic_ns(),
+                                    'owned_worker_terminated': terminate}
+                self.closed = True
+                self._token = ''
+                require(self.reap_record['finished_monotonic_ns'] <= deadline_ns,
+                        'F1R1_CONTROL_PLANE_TIME_BUDGET')
+                return self.reap_record
+            remaining = deadline_ns - time.monotonic_ns()
+            require(remaining > 0, 'F1R1_CONTROL_PLANE_LIFECYCLE')
+            time.sleep(min(0.001, remaining / 1_000_000_000))
+
+    def _close_fds(self) -> None:
+        for name in ('command_fd', 'response_fd'):
+            fd = getattr(self, name)
+            if fd is not None:
+                os.close(fd)
+                setattr(self, name, None)
+
+    def abort_between_requests(self, *, stage_deadline_ns: int, job_deadline_ns: int) -> dict:
+        """No new GET, worker, or reset; use only the still-existing budgets."""
+        require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
+                'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+        self.failed = self.ledger.failed = True
+        if self.pid is None or self.reap_record is not None:
+            return {'worker_created': self.pid is not None, 'reap': self.reap_record}
+        started = time.monotonic_ns()
+        remaining = min(500_000_000, stage_deadline_ns - started, job_deadline_ns - started,
+                        60_000_000_000 - self.ledger.active_acquisition_ns)
+        deadline = started + max(0, remaining)
+        reason = None
+        try:
+            self._reap(deadline, terminate=True)
+        except (Rejected, OSError) as exc:
+            reason = exc.reason if isinstance(exc, Rejected) else 'F1R1_CONTROL_PLANE_LIFECYCLE'
+        finally:
+            self._close_fds()
+        finished = time.monotonic_ns()
+        self.ledger.active_acquisition_ns += finished - started
+        self.terminal_cleanup = {'started_monotonic_ns': started, 'finished_monotonic_ns': finished,
+                                 'original_stage_deadline_monotonic_ns': stage_deadline_ns,
+                                 'original_job_deadline_monotonic_ns': job_deadline_ns,
+                                 'cleanup_deadline_monotonic_ns': deadline,
+                                 'admitted_duration_ns': max(0, remaining),
+                                 'new_GET_requests': 0, 'new_worker_starts': 0,
+                                 'worker_pid': self.pid, 'worker_start_ticks': self.start_ticks,
+                                 'reap': self.reap_record, 'failure': reason,
+                                 'within_existing_budgets': reason is None and finished <= deadline}
+        return dict(self.terminal_cleanup)
+
+    def get(self, phase: str, name: str, path: str, *, stage_deadline_ns: int | None,
+            job_deadline_ns: int | None, close_after_request: bool = False) -> object:
+        require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
+                'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+        require(not self.failed and not self.closed and not self.ledger.failed,
+                'F1R1_CONTROL_PLANE_WORKER_LIMIT')
+        validate_api_path(path)
+        started_epoch = time.time_ns()
+        admission = self.ledger.next_request(phase, name, time.monotonic_ns(), stage_deadline_ns, job_deadline_ns)
+        cap = API_CATEGORY_RULES[API_ROUTE_CATEGORIES[name]][1]
+        raw, record = b'', {}
+        framing_complete = False
+        command_sent = False
+        self._partial_body = bytearray()
+        try:
+            if self.pid is None:
+                self._start()
+            command = compact_json({'path': path, 'cap': cap, 'close_after_request': close_after_request}) + b'\n'
+            self._pipe(self.command_fd, data=command, deadline_ns=admission['work_deadline_monotonic_ns'])
+            command_sent = True
+            prefix = self._pipe(self.response_fd, size=8, deadline_ns=admission['work_deadline_monotonic_ns'])
+            metadata_size, body_size = int.from_bytes(prefix[:4], 'big'), int.from_bytes(prefix[4:], 'big')
+            require(0 < metadata_size <= 6144 and body_size <= cap, 'F1R1_HTTP_WORKER_PROTOCOL')
+            metadata = self._pipe(self.response_fd, size=metadata_size, deadline_ns=admission['work_deadline_monotonic_ns'])
+            reply = strict_json(metadata, 6144)
+            require(type(reply) is dict, 'F1R1_HTTP_WORKER_PROTOCOL')
+            record = {**reply, **admission, 'method': 'GET', 'origin': API_ORIGIN, 'path': path,
+                      'started_epoch_ns': started_epoch, 'worker_pid': self.pid,
+                      'worker_start_ticks': self.start_ticks}
+            raw = self._pipe(self.response_fd, size=body_size, deadline_ns=admission['work_deadline_monotonic_ns'],
+                             retain_body_prefix=True)
+            framing_complete = True
+            parsed = validate_api_response(raw, record, expected_path=path, cap=cap)
+            if close_after_request:
+                record['worker_exit_or_final_reap'] = self._reap(admission['work_deadline_monotonic_ns'], terminate=False)
+                self._close_fds()
+            else:
+                record['worker_exit_or_final_reap'] = {'state': 'REUSED_PENDING_FINAL_REAP'}
+            # Include strict parsing, complete framing, and exact final reap in
+            # the same request. No socket-timeout-only success is possible.
+            compact_json(record)
+            record['finished_epoch_ns'] = time.time_ns()
+            record['finished_monotonic_ns'] = time.monotonic_ns()
+            self.ledger.accept(name, raw, record, expected_path=path)
+            directory = self.output / f'{admission["request_ordinal"]:02d}-{phase}-{name}'
+            directory.mkdir(parents=True, exist_ok=False)
+            (directory / 'response.json').write_bytes(raw)
+            (directory / 'request.json').write_bytes(compact_json(record) + b'\n')
+            returned = time.monotonic_ns()
+            extra = returned - record['finished_monotonic_ns']
+            self.ledger.active_acquisition_ns += extra
+            self.ledger.requests[-1]['owner_returned_monotonic_ns'] = returned
+            self.ledger.requests[-1]['owner_post_response_elapsed_ns'] = extra
+            require(returned <= admission['deadline_monotonic_ns'] and
+                    self.ledger.active_acquisition_ns <= 60_000_000_000,
+                    'F1R1_CONTROL_PLANE_TIME_BUDGET')
+            # The additional persistence/accounting interval is explicit. It
+            # is not reconstructed as a difference of floating timestamps.
+            return parsed
+        except BaseException as exc:
+            self.failed = self.ledger.failed = True
+            reason = exc.reason if isinstance(exc, Rejected) else 'F1R1_CONTROL_PLANE_REQUEST_FAILED'
+            if self.pid is not None and self.reap_record is None:
+                try:
+                    self._reap(admission['deadline_monotonic_ns'], terminate=True)
+                except (Rejected, OSError):
+                    pass
+            self._close_fds()
+            if not framing_complete:
+                raw = bytes(self._partial_body)
+            failure = {**record, **admission, 'method': 'GET', 'origin': API_ORIGIN, 'path': path,
+                       'reason': reason, 'started_epoch_ns': started_epoch,
+                       'finished_epoch_ns': time.time_ns(), 'finished_monotonic_ns': time.monotonic_ns(),
+                       'worker_pid': self.pid, 'worker_start_ticks': self.start_ticks,
+                       'worker_exit_or_final_reap': self.reap_record,
+                       'worker_declared_body_bytes': record.get('body_bytes'),
+                       'worker_declared_body_sha256': record.get('body_sha256'),
+                       'body_bytes': len(raw), 'body_sha256': sha(raw),
+                       'body_complete': framing_complete and record.get('body_complete', False),
+                       'overflow': record.get('overflow', False),
+                       'command_sent_to_worker': command_sent,
+                       'charged_GET_attempt_count_including_failure': admission['request_ordinal'],
+                       'request_qualification_complete': False}
+            # Retain only bounded original bytes. A timeout never turns a
+            # missing response into a fabricated successful provider object.
+            directory = self.output / f'{admission["request_ordinal"]:02d}-{phase}-{name}'
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / 'response.json').write_bytes(raw[:cap])
+            self.ledger.failed_request(name, raw, failure)
+            failure_raw = compact_json(failure) + b'\n'
+            require(len(failure_raw) <= (65536 if name == 'jobs' else 8192),
+                    'F1R1_CONTROL_PLANE_METADATA_BYTES')
+            (directory / 'request.json').write_bytes(failure_raw)
+            raise Rejected(reason) from None
+
+
 def oid(value: object) -> bool:
     return type(value) is str and re.fullmatch("[0-9a-f]{40}", value) is not None and value != "0" * 40
+
+
+def git_object_digest(kind: str, raw: bytes) -> str:
+    require(kind in ('commit', 'tree', 'blob') and type(raw) is bytes, 'F1R1_IMMUTABLE_GIT_OBJECT')
+    return hashlib.sha1(kind.encode('ascii') + b' ' + str(len(raw)).encode('ascii') + b'\0' + raw).hexdigest()
+
+
+def parse_commit_object(raw: bytes, expected: str) -> dict:
+    require(oid(expected) and type(raw) is bytes and len(raw) <= 65536 and
+            git_object_digest('commit', raw) == expected, 'F1R1_IMMUTABLE_GIT_OBJECT')
+    require(b'\n\n' in raw, 'F1R1_IMMUTABLE_GIT_OBJECT')
+    header = raw.split(b'\n\n', 1)[0].splitlines()
+    trees = [line[5:].decode('ascii', errors='strict') for line in header if line.startswith(b'tree ')]
+    parents = [line[7:].decode('ascii', errors='strict') for line in header if line.startswith(b'parent ')]
+    require(len(trees) == 1 and oid(trees[0]) and len(parents) <= 16 and
+            all(oid(parent) for parent in parents) and len(parents) == len(set(parents)),
+            'F1R1_IMMUTABLE_GIT_OBJECT')
+    return {'commit': expected, 'tree': trees[0], 'parents': parents,
+            'raw_bytes': len(raw), 'raw_sha256': sha(raw)}
+
+
+def parse_tree_object(raw: bytes, expected: str) -> dict:
+    require(oid(expected) and type(raw) is bytes and len(raw) <= METADATA_BYTES and
+            git_object_digest('tree', raw) == expected, 'F1R1_IMMUTABLE_GIT_OBJECT')
+    result, offset = {}, 0
+    while offset < len(raw):
+        space = raw.find(b' ', offset)
+        nul = raw.find(b'\0', space + 1)
+        require(space > offset and nul > space + 1 and nul + 21 <= len(raw),
+                'F1R1_IMMUTABLE_GIT_OBJECT')
+        mode = raw[offset:space].decode('ascii', errors='strict').zfill(6)
+        name = raw[space + 1:nul].decode('utf-8', errors='strict')
+        member = raw[nul + 1:nul + 21].hex()
+        require(mode in ('040000', '100644', '100755', '120000', '160000') and
+                name not in ('', '.', '..') and '/' not in name and name not in result and oid(member),
+                'F1R1_IMMUTABLE_GIT_OBJECT')
+        result[name] = {'mode': mode, 'oid': member}
+        offset = nul + 21
+    return result
+
+
+class ImmutableGitObjects:
+    """Read immutable graph bytes with hash verification and no demand fetch."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+        self.commits = {}
+        self.trees = {}
+
+    def commit(self, revision: str) -> dict:
+        require(oid(revision), 'F1R1_SOURCE_OID_REQUIRED')
+        if revision not in self.commits:
+            require(len(self.commits) < 256, 'F1R1_SOURCE_METADATA_BYTES_LIMIT')
+            self.commits[revision] = parse_commit_object(git(self.root, 'cat-file', 'commit', revision, cap=65536), revision)
+        return dict(self.commits[revision])
+
+    def member(self, revision: str, path: str) -> dict | None:
+        require(type(path) is str and not path.startswith('/') and
+                all(part not in ('', '.', '..') for part in path.split('/')), 'F1R1_SOURCE_PATH_ESCAPE')
+        tree = self.commit(revision)['tree']
+        parts = path.split('/')
+        for index, part in enumerate(parts):
+            if tree not in self.trees:
+                require(len(self.trees) < 512, 'F1R1_SOURCE_METADATA_BYTES_LIMIT')
+                self.trees[tree] = parse_tree_object(git(self.root, 'cat-file', 'tree', tree), tree)
+            entry = self.trees[tree].get(part)
+            if entry is None:
+                return None
+            if index + 1 == len(parts):
+                return dict(entry)
+            require(entry['mode'] == '040000', 'F1R1_SOURCE_FILE_MODE')
+            tree = entry['oid']
+        raise Rejected('F1R1_SOURCE_PATH_ESCAPE')
+
+    def blob(self, revision: str, path: str) -> tuple[bytes, dict]:
+        entry = self.member(revision, path)
+        require(entry is not None and entry['mode'] == '100644', 'F1R1_SOURCE_FILE_MODE')
+        raw = git(self.root, 'cat-file', 'blob', entry['oid'])
+        require(git_object_digest('blob', raw) == entry['oid'], 'F1R1_IMMUTABLE_GIT_OBJECT')
+        return raw, entry
+
+
+def derive_provider_git_roles(objects: ImmutableGitObjects, event: str,
+                              checkout: str, detail: dict, event_record: dict) -> dict:
+    candidate = detail.get('head', {}).get('sha')
+    C = objects.commit(candidate)
+    actual = objects.commit(checkout)
+    if event == 'push':
+        require(event_record.get('after') == checkout and len(actual['parents']) == 1 and
+                event_record.get('before') == actual['parents'][0], 'F1R1_IMMUTABLE_MAIN_PARENT_B')
+        B = objects.commit(actual['parents'][0])
+        return {'S': checkout, 'S_parents': actual['parents'], 'S_tree': actual['tree'],
+                'C_tree': C['tree'], 'B_tree': B['tree']}
+    require(event == 'pull_request' and len(actual['parents']) == 2 and
+            event_record.get('pull_request', {}).get('head', {}).get('sha') == candidate and
+            event_record.get('pull_request', {}).get('base', {}).get('sha') == actual['parents'][0],
+            'F1R1_EXACT_PR_MERGE_PARENTS')
+    B = objects.commit(actual['parents'][0])
+    return {'M': checkout, 'M_parents': actual['parents'], 'M_tree': actual['tree'],
+            'C_tree': C['tree'], 'B_tree': B['tree']}
+
+
+def hosted_provider_context(environment: dict, event_record: dict) -> dict:
+    require(environment.get('GITHUB_ACTIONS') == 'true' and
+            environment.get('GITHUB_REPOSITORY') == REPOSITORY and
+            environment.get('GITHUB_REPOSITORY_ID') == str(REPOSITORY_ID) and
+            environment.get('GITHUB_JOB') == 'frontend-rss-f1', 'F1R1_ACTUAL_JOB_CONTEXT')
+    for key in ('GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT'):
+        require(type(environment.get(key)) is str and re.fullmatch('[1-9][0-9]*', environment[key]),
+                'F1R1_ACTUAL_JOB_CONTEXT')
+    kind = environment.get('GITHUB_EVENT_NAME')
+    require(kind in ('pull_request', 'push') and type(event_record) is dict and
+            event_record.get('repository', {}).get('id') == REPOSITORY_ID and
+            type(event_record.get('repository', {}).get('id')) is int and
+            event_record.get('repository', {}).get('full_name') == REPOSITORY,
+            'F1R1_EVENT_SCOPE_NO_SCIENCE')
+    checkout = environment.get('GITHUB_SHA')
+    require(oid(checkout), 'F1R1_SOURCE_OID_REQUIRED')
+    if kind == 'pull_request':
+        expected_head = event_record.get('pull_request', {}).get('head', {}).get('sha')
+        require(integer(event_record.get('number'), 1) and
+                environment.get('GITHUB_REF') == f'refs/pull/{event_record["number"]}/merge',
+                'F1R1_RUN_PR_ASSOCIATION')
+    else:
+        expected_head = checkout
+        require(environment.get('GITHUB_REF') == 'refs/heads/main' and
+                event_record.get('ref') == 'refs/heads/main' and
+                event_record.get('after') == checkout and event_record.get('deleted') is False,
+                'F1R1_MAIN_EVENT_SOURCE')
+    require(oid(expected_head), 'F1R1_SOURCE_OID_REQUIRED')
+    return {'event': kind, 'run_id': int(environment['GITHUB_RUN_ID']),
+            'run_attempt': int(environment['GITHUB_RUN_ATTEMPT']),
+            'checkout': checkout, 'expected_provider_head': expected_head}
+
+
+def capture_original_job(context: dict, *, token: str, output: Path) -> dict:
+    require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
+            'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+    ledger = APIBudgetLedger(context['event'])
+    path = api_route('jobs', run_id=context['run_id'], attempt=context['run_attempt'])
+    worker = HTTPMetadataWorker(token, ledger, output)
+    body = worker.get('FIRST_JOB', 'jobs', path, stage_deadline_ns=None,
+                      job_deadline_ns=None, close_after_request=True)
+    record = ledger.requests[0]
+    deadline = validate_original_jobs(body, headers=record['headers_without_credentials'],
+                                      run_id=context['run_id'], attempt=context['run_attempt'],
+                                      expected_head=context['expected_provider_head'])
+    require(deadline['started_epoch_ns'] <= record['started_epoch_ns'] <= record['finished_epoch_ns'],
+            'F1R1_ORIGINAL_JOB_BINDING')
+    record['selected_job_id'] = deadline['job_id']
+    record['original_job_deadline'] = deadline
+    record['actual_context'] = dict(context)
+    # The one original request envelope also carries its derived deadline;
+    # there is no second uncounted raw Jobs metadata file or self-authored clock.
+    compact_json(record)
+    record['owner_returned_monotonic_ns'] = time.monotonic_ns()
+    record['owner_post_response_elapsed_ns'] = record['owner_returned_monotonic_ns'] - record['finished_monotonic_ns']
+    encoded = compact_json(record) + b'\n'
+    require(len(encoded) <= 65536 and time.monotonic_ns() <= record['deadline_monotonic_ns'],
+            'F1R1_CONTROL_PLANE_TIME_BUDGET')
+    request_file = output / '01-FIRST_JOB-jobs' / 'request.json'
+    request_file.write_bytes(encoded)
+    require(time.monotonic_ns() <= record['deadline_monotonic_ns'], 'F1R1_CONTROL_PLANE_TIME_BUDGET')
+    return {'deadline_file': str(request_file), 'API_observation_directory': str(output),
+            'selected_original_job': deadline, 'HTTP_requests': 1, 'HTTP_helper_starts': 1,
+            'HTTP_helper_reaped': True, 'F1_launcher_processes': 0, 'DSP_targets': 0}
+
+
+def replay_original_job(directory: Path, context: dict, ledger: APIBudgetLedger) -> dict:
+    raw = bounded_file(directory / '01-FIRST_JOB-jobs' / 'response.json', 2097152)
+    record = strict_json(bounded_file(directory / '01-FIRST_JOB-jobs' / 'request.json', 65536), 65536)
+    path = api_route('jobs', run_id=context['run_id'], attempt=context['run_attempt'])
+    body = ledger.accept('jobs', raw, record, expected_path=path)
+    deadline = validate_original_jobs(body, headers=record['headers_without_credentials'],
+                                      run_id=context['run_id'], attempt=context['run_attempt'],
+                                      expected_head=context['expected_provider_head'])
+    require(record.get('actual_context') == context and record.get('original_job_deadline') == deadline and
+            record.get('selected_job_id') == deadline['job_id'] and
+            deadline['started_epoch_ns'] <= record['started_epoch_ns'], 'F1R1_ORIGINAL_JOB_BINDING')
+    # Owner persistence time is charged separately from response/worker time.
+    extra = record.get('owner_post_response_elapsed_ns', 0)
+    require(integer(extra) and record['finished_monotonic_ns'] + extra <= record['deadline_monotonic_ns'],
+            'F1R1_CONTROL_PLANE_TIME_BUDGET')
+    ledger.active_acquisition_ns += extra
+    return deadline
+
+
+def provider_sweep_readback(context: dict, event_record: dict, read, graph,
+                             *, schema: dict, expected_digests: dict) -> dict:
+    """Same ordered validator for bounded live reads or explicit raw replay.
+
+    Only the live wrapper below can supply an HTTP owner. This function never
+    constructs a client, supplies a token or grants scientific execution.
+    """
+    def take(name, **ids):
+        path = api_route(name, run_id=context['run_id'], attempt=context['run_attempt'], **ids)
+        return read(name, path)
+    repository, unused_headers = take('repository')
+    require(type(repository) is dict and repository.get('id') == REPOSITORY_ID and
+            type(repository.get('id')) is int and repository.get('full_name') == REPOSITORY,
+            'F1R1_FREEZE_REPOSITORY_IDENTITY')
+    run, unused_headers = take('run')
+    run_identity = validate_actual_run(run, run_id=context['run_id'], attempt=context['run_attempt'],
+                                       event=context['event'], expected_head=context['expected_provider_head'])
+    association, association_next = None, None
+    if context['event'] == 'push':
+        association, association_headers = take('association', source_S=context['expected_provider_head'])
+        association_next = api_has_next_page(association_headers)
+    number = select_provider_PR(context['event'], event_record, run, association,
+                                association_has_next_page=association_next)
+    detail, unused_headers = take('pr', pr_number=number)
+    require(type(detail) is dict and detail.get('number') == number and integer(detail.get('id'), 1),
+            'F1R1_RUN_PR_ASSOCIATION')
+    roles = graph(detail)
+    source = actual_provider_C(context['event'], run, association, detail, roles,
+                               association_has_next_page=association_next)
+    # Actual C/B derive from original run/association/detail/Git before an
+    # approval JSON is inspected, including on main after squash.
+    issue_before, unused_headers = take('issue_before')
+    comments, comment_headers = take('comments')
+    no_next = api_has_next_page(comment_headers)
+    selected_id = select_freeze_comment(comments, issue_before, source=source,
+                                        schema=schema, has_next_page=no_next)
+    selected, unused_headers = take('selected', comment_id=selected_id)
+    issue_after, unused_headers = take('issue_after')
+    sweep = {'repository': repository, 'issue_before': issue_before, 'comments': comments,
+             'comments_has_next_page': no_next, 'selected_comment': selected, 'issue_after': issue_after}
+    freeze = validate_freeze_sweep(sweep, schema=schema, source=source,
+                                   expected_digests=expected_digests,
+                                   original_run_created_at=run_identity['created_at'])
+    authority = {'id': detail['id'], 'number': number, 'node_id': detail.get('node_id'),
+                 'head_sha': detail['head']['sha'], 'head_ref': detail['head']['ref'],
+                 'head_repository_id': detail['head']['repo']['id'],
+                 'base_ref': detail['base']['ref'], 'base_repository_id': detail['base']['repo']['id']}
+    if context['event'] == 'push':
+        authority.update(merged=detail['merged'], merged_at=detail['merged_at'],
+                         merge_commit_sha=detail['merge_commit_sha'])
+    else:
+        authority['base_sha'] = detail['base']['sha']
+    return {'source': source, 'run_identity': run_identity, 'PR_authority': authority,
+            'freeze_identity': freeze, 'scientific_execution_admitted': False}
+
+
+def acquire_provider_sweep(worker: HTTPMetadataWorker, phase: str, context: dict,
+                            event_record: dict, objects: ImmutableGitObjects, *, schema: dict,
+                            expected_digests: dict, stage_deadline_ns: int,
+                            job_deadline_ns: int) -> dict:
+    require(PROVIDER_EXECUTION_ENABLED and SCIENCE_EXECUTION_ENABLED,
+            'F1R1_EXECUTION_DISABLED_AT_BOOTSTRAP')
+    require(phase in ('PRE', 'POST'), 'F1R1_CONTROL_PLANE_REQUEST_ORDER')
+    def read(name, path):
+        parsed = worker.get(phase, name, path, stage_deadline_ns=stage_deadline_ns,
+                            job_deadline_ns=job_deadline_ns,
+                            close_after_request=phase == 'POST' and name == 'issue_after')
+        return parsed, worker.ledger.requests[-1]['headers_without_credentials']
+    try:
+        return provider_sweep_readback(context, event_record, read,
+                                      lambda detail: derive_provider_git_roles(objects, context['event'],
+                                                                               context['checkout'], detail, event_record),
+                                      schema=schema, expected_digests=expected_digests)
+    except BaseException:
+        worker.abort_between_requests(stage_deadline_ns=stage_deadline_ns, job_deadline_ns=job_deadline_ns)
+        raise
+
+
+def validate_provider_sweep_pair(pre: dict, post: dict) -> None:
+    require(pre == post, 'F1R1_PRE_POST_FREEZE_STABILITY')
 
 
 def bounded_file(path: Path, cap: int = METADATA_BYTES) -> bytes:
@@ -788,7 +1840,7 @@ F1_SUMMARY = """          # F1_R1_SUMMARY_BEGIN
 # This is one explicitly registered neighbouring loader, not an arbitrary
 # marker-delimited shell exemption. Its complete bytes accompany the shared
 # integration candidate for independent review; unknown versions fail closed.
-A3_COMPAT_SHELL_SHA256 = "0101cc251ef972bdefbe988fdde2b0c52fcc46a33413598f6e145ff790e3d522"
+A3_COMPAT_SHELL_SHA256 = "9ecd52affdb6e315c3f1f731c691dc5e20ec838411d7de792a9ca944eb68625d"
 COMPAT_METADATA_LINES = frozenset((
     'python3 tests/validation/frontend_evolution/fe09_a3_f0_source_admission.py --self-test',
     'python3 tests/validation/frontend_evolution/fe09_a3_f0_live_roll_qualification.py --self-test',

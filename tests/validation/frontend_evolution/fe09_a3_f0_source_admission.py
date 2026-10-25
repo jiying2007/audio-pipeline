@@ -996,8 +996,16 @@ class AcquisitionLedger:
     helper_starts: int = 0
     helper_reaped: bool = False
     accounted_routes: set[int] = dataclasses.field(default_factory=set)
+    request_records: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    validation_ns: int = 0
+
+    def consistent(self) -> None:
+        require(self.active_ns == self.validation_ns + sum(row["whole_operation_elapsed_ns"] for row in self.request_records) and
+                self.raw_bytes == sum(row["body_bytes"] + row["exchange_bytes"] for row in self.request_records),
+                "API_BUDGET_ACCOUNTING_DRIFT")
 
     def admit_start(self, route: int) -> None:
+        self.consistent()
         require(self.next_route == len(self.accounted_routes) + 1, "API_BUDGET_ACCOUNTING_DRIFT")
         require(type(route) is int and route == self.next_route and 1 <= route <= 17,
                 "API_REQUEST_BUDGET_EXCEEDED")
@@ -1005,22 +1013,33 @@ class AcquisitionLedger:
         self.next_route += 1
 
     def account(self, route: int, body_bytes: int, exchange_bytes: int, duration_ns: int) -> None:
+        self.consistent()
         require(type(route) is int and route == self.next_route - 1 == len(self.accounted_routes) + 1 and
                 route not in self.accounted_routes and 1 <= route <= 17, "API_BUDGET_ACCOUNTING_DRIFT")
         require(strict_int(body_bytes) and body_bytes <= API_BODY_CAPS[route - 1], "API_BODY_BOUND_EXCEEDED")
         require(strict_int(exchange_bytes) and exchange_bytes <= 16384, "API_EXCHANGE_BOUND_EXCEEDED")
         require(strict_int(duration_ns) and duration_ns <= COMMAND_NS, "API_WHOLE_OPERATION_TIMEOUT")
         require(self.active_ns + duration_ns <= API_ACTIVE_NS, "API_AGGREGATE_BUDGET_EXCEEDED")
-        require(self.raw_bytes + body_bytes + exchange_bytes <= CONTROL_BYTES, "CONTROL_EVIDENCE_BOUND_EXCEEDED")
+        validate_control_bytes(self.raw_bytes + body_bytes + exchange_bytes)
         self.active_ns += duration_ns
         self.raw_bytes += body_bytes + exchange_bytes
         self.accounted_routes.add(route)
+        self.request_records.append({"route": route, "body_bytes": body_bytes,
+                                     "exchange_bytes": exchange_bytes, "whole_operation_elapsed_ns": duration_ns})
+
+    def account_validation(self, duration_ns: int) -> None:
+        self.consistent()
+        require(strict_int(duration_ns) and self.active_ns + duration_ns <= API_ACTIVE_NS,
+                "API_AGGREGATE_BUDGET_EXCEEDED")
+        self.active_ns += duration_ns
+        self.validation_ns += duration_ns
 
     def start_helper(self) -> None:
         require(type(self.helper_starts) is int and self.helper_starts == 0, "METADATA_HELPER_RETRY_NOT_ALLOWED")
         self.helper_starts += 1
 
     def finish(self) -> None:
+        self.consistent()
         require(self.next_route == 18 and self.accounted_routes == set(range(1, 18)), "FREEZE_POST_CHECKPOINT_INCOMPLETE")
         require(type(self.helper_starts) is int and self.helper_starts == 1 and self.helper_reaped is True,
                 "METADATA_HELPER_LIFECYCLE_INCOMPLETE")
@@ -1033,7 +1052,9 @@ def validate_api_exchange(route: int, body: bytes, exchange: dict[str, Any], exp
     require(type(exchange.get("status")) is int and exchange["status"] == 200 and
             exchange.get("complete") is True, "API_RESPONSE_NOT_ADMITTED")
     headers = exchange.get("headers", {})
-    require(isinstance(headers, dict), "API_RESPONSE_NOT_ADMITTED")
+    require(isinstance(headers, dict) and all(isinstance(key, str) and isinstance(value, str)
+            and "\r" not in key and "\n" not in key and "\r" not in value and "\n" not in value
+            for key, value in headers.items()), "API_RESPONSE_NOT_ADMITTED")
     encoding = [v for k, v in headers.items() if k.lower() == "content-encoding"]
     require(len(encoding) <= 1 and (not encoding or encoding[0].lower() == "identity"),
             "API_RESPONSE_NOT_ADMITTED")
@@ -1042,6 +1063,580 @@ def validate_api_exchange(route: int, body: bytes, exchange: dict[str, Any], exp
             type(exchange.get("body_bytes")) is int and exchange["body_bytes"] == len(body),
             "CONTROL_ORIGINAL_EVIDENCE_INCOMPLETE")
     return strict_json(body, API_BODY_CAPS[route - 1])
+
+
+def validate_control_bytes(total_bytes: int) -> None:
+    require(strict_int(total_bytes) and total_bytes <= CONTROL_BYTES, "CONTROL_EVIDENCE_BOUND_EXCEEDED")
+
+
+def validate_operation_observation(record: dict[str, Any]) -> None:
+    """Validate the parent's complete operation, including capture and cleanup.
+
+    The raw exchange records its pre-capture measurement cut. This record is
+    emitted later in the original receipt, so it can include the capture that
+    created that exchange without claiming a self-observed future timestamp.
+    """
+    require(isinstance(record, dict), "API_BUDGET_ACCOUNTING_DRIFT")
+    admitted = record.get("admitted_duration_ns")
+    elapsed = record.get("whole_operation_elapsed_ns")
+    require(strict_int(admitted, 1) and admitted <= COMMAND_NS and strict_int(elapsed)
+            and elapsed <= admitted, "API_WHOLE_OPERATION_TIMEOUT")
+    require(strict_int(record.get("start_monotonic_ns")), "API_BUDGET_ACCOUNTING_DRIFT")
+
+
+def capture_control_member(output: Path, name: str, raw: bytes) -> None:
+    """Create a fixed original member through owned no-follow directory FDs."""
+    require(re.fullmatch(r"r(?:0[1-9]|1[0-7])-[a-z-]+\.(?:body|exchange)\.json", name) is not None,
+            "ARCHIVE_MEMBER_SET_INVALID")
+    flags = os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_NOFOLLOW", 0)
+    directory = os.open(output, flags)
+    descriptors = [directory]
+    try:
+        for part in ("control", "api"):
+            info = os.fstat(directory)
+            require(stat.S_ISDIR(info.st_mode) and info.st_uid == os.geteuid(),
+                    "CONTROL_EVIDENCE_DIRECTORY_INVALID")
+            try:
+                os.mkdir(part, 0o700, dir_fd=directory)
+            except FileExistsError:
+                pass
+            directory = os.open(part, flags, dir_fd=directory)
+            descriptors.append(directory)
+        info = os.fstat(directory)
+        require(stat.S_ISDIR(info.st_mode) and info.st_uid == os.geteuid(),
+                "CONTROL_EVIDENCE_DIRECTORY_INVALID")
+        fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                     0o600, dir_fd=directory)
+        try:
+            offset = 0
+            while offset < len(raw):
+                try:
+                    wrote = os.write(fd, raw[offset:])
+                except InterruptedError:
+                    continue
+                require(wrote > 0, "CONTROL_EVIDENCE_WRITE_INCOMPLETE")
+                offset += wrote
+        finally:
+            os.close(fd)
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def api_route_url(request: dict[str, Any]) -> str:
+    require(isinstance(request, dict) and set(request) == {"route", "role", "run_id", "pr_number", "C", "S", "comment_id"},
+            "API_ROUTE_NOT_REGISTERED")
+    route, role = request["route"], request["role"]
+    require(type(route) is int and 1 <= route <= 17 and role in ("pull_request", "push"),
+            "API_ROUTE_NOT_REGISTERED")
+    run_id = positive_id(request["run_id"], "API_ROUTE_NOT_REGISTERED")
+    if route in (1, 10):
+        path = f"actions/runs/{run_id}/attempts/1"
+    elif route == 2:
+        path = f"actions/runs/{run_id}/attempts/1/jobs?per_page=100&page=1"
+    elif route in (3, 11):
+        path = "git/ref/heads/main"
+    elif route in (4, 12):
+        path = (f"pulls/{positive_id(request['pr_number'], 'API_ROUTE_NOT_REGISTERED')}" if role == "pull_request"
+                else f"commits/{oid(request['S'])}/pulls?per_page=100&page=1")
+    elif route in (5, 13):
+        path = (f"commits/{oid(request['C'])}/pulls?per_page=100&page=1" if role == "pull_request"
+                else f"pulls/{positive_id(request['pr_number'], 'API_ROUTE_NOT_REGISTERED')}")
+    elif route in (6, 9, 14, 17):
+        path = "issues/847"
+    elif route in (7, 15):
+        path = "issues/847/comments?per_page=100&page=1"
+    else:
+        require(route in (8, 16), "API_ROUTE_NOT_REGISTERED")
+        path = f"issues/comments/{positive_id(request['comment_id'], 'API_ROUTE_NOT_REGISTERED')}"
+    return API_PREFIX + path
+
+
+def _worker_read_exact(stream: Any, count: int) -> bytes | None:
+    output = bytearray()
+    while len(output) < count:
+        part = stream.read(count - len(output))
+        if not part:
+            return None if not output else bytes(output)
+        output.extend(part)
+    return bytes(output)
+
+
+def _worker_frame(kind: bytes, payload: bytes) -> None:
+    import struct
+    require(kind in (b"H", b"B", b"D") and len(payload) <= (65536 if kind == b"B" else 16384),
+            "METADATA_WORKER_FRAME_BOUND_EXCEEDED")
+    for raw in (struct.pack("!cI", kind, len(payload)), payload):
+        offset = 0
+        while offset < len(raw):
+            try:
+                written = os.write(sys.stdout.fileno(), raw[offset:])
+            except InterruptedError:
+                continue
+            require(written > 0, "METADATA_WORKER_RESPONSE_TRUNCATED")
+            offset += written
+
+
+def metadata_http_worker() -> int:
+    """The sole owned HTTP child: fixed GET routes, streaming bounded originals.
+
+    This entry is never used by offline tests. The parent owns the complete
+    operation deadline, process group and wait; socket timeout alone is not it.
+    """
+    import struct
+    import http.client
+    import urllib.error
+    import urllib.request
+    require(os.environ.get("FE_A3_OWNED_HTTP_WORKER") == "1", "METADATA_WORKER_PARENT_REQUIRED")
+    require(os.environ.get("GITHUB_RUN_ATTEMPT") == "1", "RUN_ATTEMPT_NOT_REGISTERED")
+    token = os.environ.get("GH_TOKEN", "")
+    require(bool(token) and len(token) <= 8192 and "\r" not in token and "\n" not in token,
+            "READ_ONLY_PROVIDER_TOKEN_REQUIRED")
+
+    class RefuseRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> None:
+            return None
+
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), RefuseRedirect())
+    expected_route, role, run_id = 1, None, None
+    for _ in range(17):
+        raw_size = _worker_read_exact(sys.stdin.buffer, 4)
+        if raw_size is None:
+            return 0
+        require(len(raw_size) == 4, "METADATA_WORKER_REQUEST_TRUNCATED")
+        size = struct.unpack("!I", raw_size)[0]
+        require(0 < size <= 4096, "METADATA_WORKER_REQUEST_BOUND_EXCEEDED")
+        raw = _worker_read_exact(sys.stdin.buffer, size)
+        require(raw is not None and len(raw) == size, "METADATA_WORKER_REQUEST_TRUNCATED")
+        request = strict_json(raw, 4096)
+        url = api_route_url(request)
+        require(request["route"] == expected_route, "API_REQUEST_BUDGET_EXCEEDED")
+        if role is None:
+            role, run_id = request["role"], request["run_id"]
+            require(os.environ.get("GITHUB_EVENT_NAME") == role and
+                    os.environ.get("GITHUB_RUN_ID") == str(run_id) and
+                    os.environ.get("GITHUB_REPOSITORY") == REPOSITORY,
+                    "ACTUAL_RUN_BINDING_REQUIRED")
+        require((role, run_id) == (request["role"], request["run_id"]), "API_ROUTE_NOT_REGISTERED")
+        cap = API_BODY_CAPS[expected_route - 1]
+        digest, body_bytes, response_started = hashlib.sha256(), 0, False
+        failure, complete = "", False
+        response = None
+        try:
+            req = urllib.request.Request(url, method="GET", headers={
+                "Accept": "application/vnd.github+json", "Accept-Encoding": "identity",
+                "Authorization": "Bearer " + token, "User-Agent": "FE09-A3-R1-owned-source-admission",
+                "X-GitHub-Api-Version": "2022-11-28"})
+            try:
+                response = opener.open(req, timeout=4.5)
+            except urllib.error.HTTPError as exc:
+                # Preserve this actual response; never follow its Location.
+                response = exc
+            observed: dict[str, str] = {}
+            for header in ("Link", "Content-Type", "Content-Encoding", "Content-Length", "X-GitHub-Request-Id"):
+                values = response.headers.get_all(header, [])
+                if values:
+                    require(all(isinstance(value, str) for value in values), "API_RESPONSE_NOT_ADMITTED")
+                    observed[header.lower()] = ", ".join(values)
+            metadata = {"route": expected_route, "status": response.status, "headers": observed}
+            encoded = json.dumps(metadata, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+            require(len(encoded) <= 8192, "API_EXCHANGE_BOUND_EXCEEDED")
+            _worker_frame(b"H", encoded)
+            response_started = True
+            while True:
+                incomplete = False
+                try:
+                    chunk = response.read(min(65536, cap - body_bytes + 1))
+                except http.client.IncompleteRead as exc:
+                    chunk = exc.partial
+                    incomplete = True
+                if not chunk:
+                    complete = not incomplete
+                    failure = "API_RESPONSE_TRUNCATED" if incomplete else ""
+                    break
+                permitted = min(len(chunk), cap - body_bytes)
+                if permitted:
+                    prefix = chunk[:permitted]
+                    _worker_frame(b"B", prefix)
+                    digest.update(prefix)
+                    body_bytes += permitted
+                if permitted != len(chunk):
+                    failure = "API_BODY_BOUND_EXCEEDED"
+                    break
+                if incomplete:
+                    failure = "API_RESPONSE_TRUNCATED"
+                    break
+        except AdmissionError as exc:
+            failure = exc.reason
+        except (OSError, ValueError, urllib.error.URLError, http.client.HTTPException):
+            failure = "API_NETWORK_FAILED"
+        finally:
+            if response is not None:
+                response.close()
+        done = {"route": expected_route, "complete": complete and not failure,
+                "response_started": response_started, "failure_reason": failure,
+                "body_bytes": body_bytes, "body_sha256": digest.hexdigest()}
+        _worker_frame(b"D", json.dumps(done, sort_keys=True, separators=(",", ":")).encode())
+        if failure:
+            return 2
+        expected_route += 1
+    return 0
+
+
+class OwnedHTTPWorker:
+    """One helper for all17 reads; no restart and no live test entry point."""
+    def __init__(self, source_scope: dict[str, Any], collector_budget: DurationBudget,
+                 ledger: AcquisitionLedger, output: Path):
+        require(source_scope.get("disposition") == REQUIRED and
+                source_scope.get("scientific_execution_admitted") is False,
+                "PROVIDER_ACQUISITION_SCOPE_REQUIRED")
+        self.collector_budget = collector_budget
+        self.ledger = ledger
+        self.output = output
+        self.process: subprocess.Popen[bytes] | None = None
+        self.stderr = bytearray()
+        self.failed_budget: DurationBudget | None = None
+        self.failed_operation: dict[str, Any] | None = None
+        self.lifecycle: dict[str, Any] = {"source_path": str(Path(__file__).resolve()),
+                                          "source_sha256": hashlib.sha256(read_regular(Path(__file__), FILE_CAP)).hexdigest(),
+                                          "start_attempts": 0, "actual_pid": None, "wait_returncode": None,
+                                          "owned_process_reaped": False, "scientific_C_target": False}
+
+    def _budget(self) -> DurationBudget:
+        remaining = min(COMMAND_NS, API_ACTIVE_NS - self.ledger.active_ns,
+                        self.collector_budget.remaining_ns())
+        require(remaining > CLEANUP_RESERVE_NS, "API_AGGREGATE_BUDGET_EXCEEDED")
+        return DurationBudget.start(remaining)
+
+    def _start(self) -> None:
+        require(self.process is None and self.lifecycle["start_attempts"] == 0,
+                "METADATA_HELPER_RETRY_NOT_ALLOWED")
+        self.lifecycle["start_attempts"] = 1
+        self.ledger.start_helper()
+        env = {key: value for key, value in os.environ.items()
+               if not key.startswith("PYTHON") and key not in ("GITHUB_TOKEN",)}
+        env["FE_A3_OWNED_HTTP_WORKER"] = "1"
+        argv = [sys.executable, "-I", "-u", str(Path(__file__).resolve()), "--http-worker"]
+        self.lifecycle["argv"] = argv
+        self.lifecycle["start_monotonic_ns"] = time.monotonic_ns()
+        self.process = subprocess.Popen(argv, cwd=Path.cwd(), env=env, stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                        start_new_session=True, close_fds=True)
+        self.lifecycle["actual_pid"] = self.process.pid
+        for stream in (self.process.stdin, self.process.stdout, self.process.stderr):
+            assert stream is not None
+            os.set_blocking(stream.fileno(), False)
+
+    def _kill_wait(self, budget: DurationBudget) -> None:
+        if self.process is None or self.lifecycle["owned_process_reaped"]:
+            return
+        try:
+            os.killpg(self.process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            code = self.process.wait(timeout=budget.remaining_ns() / 1e9)
+        except subprocess.TimeoutExpired as exc:
+            raise AdmissionError("METADATA_HELPER_LIFECYCLE_INCOMPLETE") from exc
+        self.lifecycle["wait_returncode"] = code
+        self.lifecycle["owned_process_reaped"] = True
+        self.lifecycle["wait_monotonic_ns"] = time.monotonic_ns()
+        self.ledger.helper_reaped = True
+        require(budget.remaining_ns() > 0, "API_WHOLE_OPERATION_TIMEOUT")
+
+    def _write_request(self, payload: bytes, budget: DurationBudget) -> None:
+        assert self.process is not None and self.process.stdin is not None
+        selector = selectors.DefaultSelector()
+        try:
+            selector.register(self.process.stdin.fileno(), selectors.EVENT_WRITE)
+            done = 0
+            while done < len(payload):
+                left = budget.remaining_ns()
+                require(left > CLEANUP_RESERVE_NS, "API_WHOLE_OPERATION_TIMEOUT")
+                ready = selector.select(min(0.05, (left - CLEANUP_RESERVE_NS) / 1e9))
+                if not ready:
+                    continue
+                try:
+                    count = os.write(self.process.stdin.fileno(), payload[done:])
+                except BlockingIOError:
+                    continue
+                require(count > 0, "METADATA_WORKER_REQUEST_TRUNCATED")
+                done += count
+        finally:
+            selector.close()
+
+    def request(self, request: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
+        import struct
+        route = request.get("route")
+        url = api_route_url(request)
+        self.ledger.admit_start(route)
+        budget = self._budget()
+        body, wire = bytearray(), bytearray()
+        observed: dict[str, Any] | None = None
+        done: dict[str, Any] | None = None
+        failure = ""
+        selector = selectors.DefaultSelector()
+        value: Any = None
+        try:
+            if self.process is None:
+                self._start()
+            assert self.process is not None and self.process.stdout is not None and self.process.stderr is not None
+            raw = json.dumps(request, sort_keys=True, separators=(",", ":")).encode()
+            require(len(raw) <= 4096, "METADATA_WORKER_REQUEST_BOUND_EXCEEDED")
+            self._write_request(struct.pack("!I", len(raw)) + raw, budget)
+            selector.register(self.process.stdout.fileno(), selectors.EVENT_READ, "stdout")
+            selector.register(self.process.stderr.fileno(), selectors.EVENT_READ, "stderr")
+            while done is None:
+                left = budget.remaining_ns()
+                require(left > CLEANUP_RESERVE_NS, "API_WHOLE_OPERATION_TIMEOUT")
+                for key, _ in selector.select(min(0.05, (left - CLEANUP_RESERVE_NS) / 1e9)):
+                    try:
+                        part = os.read(key.fd, 65536)
+                    except BlockingIOError:
+                        continue
+                    if not part:
+                        selector.unregister(key.fd)
+                        require(key.data != "stdout" or done is not None, "METADATA_WORKER_RESPONSE_TRUNCATED")
+                        continue
+                    if key.data == "stderr":
+                        require(len(self.stderr) + len(part) <= STDERR_CAP, "METADATA_HELPER_DIAGNOSTIC_BOUND_EXCEEDED")
+                        self.stderr.extend(part)
+                        continue
+                    require(len(wire) + len(part) <= 131072, "METADATA_WORKER_FRAME_BOUND_EXCEEDED")
+                    wire.extend(part)
+                    while len(wire) >= 5:
+                        kind, count = struct.unpack("!cI", wire[:5])
+                        require(kind in (b"H", b"B", b"D") and count <= (65536 if kind == b"B" else 16384),
+                                "METADATA_WORKER_FRAME_BOUND_EXCEEDED")
+                        if len(wire) < count + 5:
+                            break
+                        payload = bytes(wire[5:5 + count]); del wire[:5 + count]
+                        if kind == b"H":
+                            require(observed is None and not body and done is None, "METADATA_WORKER_FRAME_ORDER_INVALID")
+                            observed = strict_json(payload, 16384)
+                            require(isinstance(observed, dict) and set(observed) == {"route", "status", "headers"} and
+                                    type(observed["route"]) is int and observed["route"] == route,
+                                    "METADATA_WORKER_FRAME_ORDER_INVALID")
+                        elif kind == b"B":
+                            require(observed is not None and done is None and
+                                    len(body) + len(payload) <= API_BODY_CAPS[route - 1], "API_BODY_BOUND_EXCEEDED")
+                            body.extend(payload)
+                        else:
+                            require(done is None, "METADATA_WORKER_FRAME_ORDER_INVALID")
+                            done = strict_json(payload, 16384)
+                            require(isinstance(done, dict) and set(done) == {"route", "complete", "response_started", "failure_reason", "body_bytes", "body_sha256"} and
+                                    type(done["route"]) is int and done["route"] == route and
+                                    type(done["complete"]) is bool and type(done["response_started"]) is bool and
+                                    type(done["body_bytes"]) is int and done["body_bytes"] == len(body) and
+                                    done["body_sha256"] == hashlib.sha256(body).hexdigest(),
+                                    "CONTROL_ORIGINAL_EVIDENCE_INCOMPLETE")
+                            require(not wire, "METADATA_WORKER_FRAME_ORDER_INVALID")
+            require(done["response_started"] == (observed is not None), "CONTROL_ORIGINAL_EVIDENCE_INCOMPLETE")
+            if done["failure_reason"]:
+                require(done["failure_reason"] in {"API_BODY_BOUND_EXCEEDED", "API_EXCHANGE_BOUND_EXCEEDED", "API_RESPONSE_NOT_ADMITTED", "API_NETWORK_FAILED", "API_RESPONSE_TRUNCATED"},
+                        "METADATA_WORKER_FRAME_ORDER_INVALID")
+                raise AdmissionError(done["failure_reason"])
+            preview = {"url": url, "method": "GET", "status": observed["status"] if observed else None,
+                       "headers": observed["headers"] if observed else {}, "complete": done["complete"],
+                       "body_bytes": len(body), "body_sha256": hashlib.sha256(body).hexdigest()}
+            value = validate_api_exchange(route, bytes(body), preview, url)
+            if route == 17:
+                left = budget.remaining_ns()
+                require(left > CLEANUP_RESERVE_NS, "API_WHOLE_OPERATION_TIMEOUT")
+                try:
+                    code = self.process.wait(timeout=(left - CLEANUP_RESERVE_NS) / 1e9)
+                except subprocess.TimeoutExpired as exc:
+                    raise AdmissionError("METADATA_HELPER_LIFECYCLE_INCOMPLETE") from exc
+                self.lifecycle["owned_process_reaped"] = True
+                self.lifecycle["wait_returncode"] = code
+                self.lifecycle["wait_monotonic_ns"] = time.monotonic_ns()
+                self.ledger.helper_reaped = True
+                require(code == 0, "METADATA_HELPER_LIFECYCLE_INCOMPLETE")
+                # A completed helper must not leave another response or child
+                # holding its pipes. No request is consumed speculatively.
+                for stream, channel in ((self.process.stdout, "stdout"), (self.process.stderr, "stderr")):
+                    assert stream is not None
+                    while True:
+                        try:
+                            trailing = os.read(stream.fileno(), 65536)
+                        except BlockingIOError as exc:
+                            raise AdmissionError("METADATA_HELPER_LIFECYCLE_INCOMPLETE") from exc
+                        if not trailing:
+                            break
+                        require(channel == "stderr", "METADATA_WORKER_FRAME_ORDER_INVALID")
+                        require(len(self.stderr) + len(trailing) <= STDERR_CAP,
+                                "METADATA_HELPER_DIAGNOSTIC_BOUND_EXCEEDED")
+                        self.stderr.extend(trailing)
+        except AdmissionError as exc:
+            failure = exc.reason
+        except (OSError, UnicodeError, ValueError):
+            failure = "API_ACQUISITION_FAILED"
+        finally:
+            selector.close()
+            if failure:
+                try:
+                    self._kill_wait(budget)
+                except AdmissionError as exc:
+                    failure = failure + ";" + exc.reason
+        elapsed = time.monotonic_ns() - budget.start_ns
+        if elapsed > budget.duration_ns:
+            failure = failure or "API_WHOLE_OPERATION_TIMEOUT"
+        if not failure and budget.remaining_ns() <= CLEANUP_RESERVE_NS:
+            failure = "API_WHOLE_OPERATION_TIMEOUT"
+            try:
+                self._kill_wait(budget)
+            except AdmissionError as exc:
+                failure += ";" + exc.reason
+        exchange = {"schema_version": 1, "route": route, "url": url, "method": "GET",
+                    "status": observed.get("status") if observed else None,
+                    "headers": observed.get("headers", {}) if observed else {},
+                    "response_started": observed is not None,
+                    "response_body_complete": done is not None and done.get("complete") is True,
+                    "complete": not failure and done is not None and done.get("complete") is True,
+                    "failure_reason": failure, "body_bytes": len(body), "body_sha256": hashlib.sha256(body).hexdigest(),
+                    "started_monotonic_ns": budget.start_ns, "admitted_duration_ns": budget.duration_ns,
+                    "acquisition_decode_cleanup_elapsed_ns": elapsed,
+                    "measurement_cut": "BEFORE_ORIGINAL_CONTROL_FILE_CAPTURE",
+                    "whole_operation_observation_location": "receipt.control_plane.request_records",
+                    "helper_pid": self.lifecycle["actual_pid"],
+                    "failure_body_role": "PARENT_RECEIVED_BOUNDED_PREFIX_ONLY" if failure else "COMPLETE_ORIGINAL_RESPONSE_BODY"}
+        exchange_raw = json.dumps(exchange, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode() + b"\n"
+        stem = f"r{route:02d}-" + API_LABELS[route - 1]
+        captured: list[str] = []
+        try:
+            require(len(exchange_raw) <= 16384, "API_EXCHANGE_BOUND_EXCEEDED")
+            validate_control_bytes(self.ledger.raw_bytes + len(body) + len(exchange_raw))
+            for suffix, raw in ((".body.json", bytes(body)), (".exchange.json", exchange_raw)):
+                capture_control_member(self.output, stem + suffix, raw)
+                captured.append("control/api/" + stem + suffix)
+            # Capture/serialization belongs to this request. The later receipt
+            # records this complete duration; the exchange explains its cut.
+            final_elapsed = time.monotonic_ns() - budget.start_ns
+            record = {"start_monotonic_ns": budget.start_ns,
+                      "admitted_duration_ns": budget.duration_ns,
+                      "whole_operation_elapsed_ns": final_elapsed}
+            validate_operation_observation(record)
+            if not failure:
+                self.ledger.account(route, len(body), len(exchange_raw), final_elapsed)
+                self.ledger.request_records[-1].update(record | {
+                    "response_body_sha256": exchange["body_sha256"],
+                    "exchange_sha256": hashlib.sha256(exchange_raw).hexdigest()})
+        except AdmissionError as exc:
+            failure = failure or exc.reason
+        except (OSError, UnicodeError, ValueError):
+            failure = failure or "CONTROL_EVIDENCE_WRITE_INCOMPLETE"
+        if failure:
+            self.failed_budget = budget
+            try:
+                self._kill_wait(budget)
+            except AdmissionError as exc:
+                failure += ";" + exc.reason
+            self.failed_operation = {"route": route, "failure_reason": failure,
+                                     "start_monotonic_ns": budget.start_ns,
+                                     "admitted_duration_ns": budget.duration_ns,
+                                     "actual_elapsed_ns": time.monotonic_ns() - budget.start_ns,
+                                     "body_bytes_received": len(body), "exchange_bytes_prepared": len(exchange_raw),
+                                     "original_members_captured": captured}
+            raise AdmissionError(failure)
+        return value, exchange
+
+    def close(self) -> None:
+        try:
+            if self.process is not None and not self.lifecycle["owned_process_reaped"]:
+                # An expired request receives no second cleanup allowance.
+                # With an exhausted aggregate allowance, still send SIGKILL
+                # and attempt an immediate reap; never report qualification.
+                remaining = max(0, min(COMMAND_NS, API_ACTIVE_NS - self.ledger.active_ns,
+                                       self.collector_budget.remaining_ns()))
+                budget = self.failed_budget or DurationBudget(time.monotonic_ns(), remaining)
+                try:
+                    self._kill_wait(budget)
+                finally:
+                    if self.failed_budget is None:
+                        self.ledger.account_validation(time.monotonic_ns() - budget.start_ns)
+        finally:
+            if self.process is not None:
+                for stream in (self.process.stdin, self.process.stdout, self.process.stderr):
+                    if stream is not None:
+                        stream.close()
+            self.lifecycle["stderr_bytes"] = len(self.stderr)
+            self.lifecycle["stderr_sha256"] = hashlib.sha256(self.stderr).hexdigest()
+            self.lifecycle["stderr_hex"] = bytes(self.stderr).hex()
+
+
+def transport_metadata_self_test() -> dict[str, Any]:
+    """Pure nonempty metadata traces, never real DNS, HTTP, timeout or kill."""
+    completed: list[dict[str, str]] = []
+    def reject(name: str, reason: str, action: Any) -> None:
+        try:
+            action()
+        except AdmissionError as exc:
+            require(exc.reason == reason, "SELF_TEST_WRONG_DENIAL", name + ":" + exc.reason)
+        else:
+            raise AdmissionError("SELF_TEST_DID_NOT_REJECT", name)
+        completed.append({"name": name, "actual_reason": reason})
+
+    request = {"route": 1, "role": "pull_request", "run_id": 42, "pr_number": 123,
+               "C": "2" * 40, "S": "3" * 40, "comment_id": 789}
+    url = api_route_url(request)
+    body = b'{"nonempty_offline_trace":true}'
+    exchange = {"url": url, "method": "GET", "status": 200, "headers": {}, "complete": True,
+                "body_bytes": len(body), "body_sha256": hashlib.sha256(body).hexdigest()}
+    require(validate_api_exchange(1, body, exchange, url) == {"nonempty_offline_trace": True},
+            "SELF_TEST_TRANSPORT_SEED")
+    for name, reason, changes in (
+        ("wrong_HTTP_host", "API_ROUTE_NOT_REGISTERED", {"url": "https://invalid.example/run"}),
+        ("wrong_HTTP_method", "API_ROUTE_NOT_REGISTERED", {"method": "POST"}),
+        ("redirect_response", "API_RESPONSE_NOT_ADMITTED", {"status": 302}),
+        ("non200_response", "API_RESPONSE_NOT_ADMITTED", {"status": 403}),
+        ("unexpected_encoding", "API_RESPONSE_NOT_ADMITTED", {"headers": {"content-encoding": "gzip"}}),
+    ):
+        reject(name, reason, lambda changes=changes: validate_api_exchange(1, body, exchange | changes, url))
+    reject("body_cap_plus_one", "API_BODY_BOUND_EXCEEDED", lambda:
+           validate_api_exchange(1, b"x" * (API_BODY_CAPS[0] + 1), exchange, url))
+    pending = AcquisitionLedger()
+    pending.admit_start(1)
+    reject("exchange_cap_plus_one", "API_EXCHANGE_BOUND_EXCEEDED", lambda:
+           pending.account(1, len(body), 16385, 1_000_000))
+    reject("metadata_total_plus_one", "CONTROL_EVIDENCE_BOUND_EXCEEDED", lambda:
+           validate_control_bytes(CONTROL_BYTES + 1))
+    timing = {"start_monotonic_ns": 10**18 + 123, "admitted_duration_ns": COMMAND_NS,
+              "whole_operation_elapsed_ns": COMMAND_NS}
+    validate_operation_observation(timing)
+    for name in ("DNS_whole_operation_timeout", "slow_body_whole_operation_timeout"):
+        reject(name, "API_WHOLE_OPERATION_TIMEOUT", lambda:
+               validate_operation_observation(timing | {"whole_operation_elapsed_ns": COMMAND_NS + 1}))
+
+    def ledger_through(count: int, duration: int = 1_000_000) -> AcquisitionLedger:
+        result = AcquisitionLedger()
+        result.start_helper()
+        for route in range(1, count + 1):
+            result.admit_start(route)
+            result.account(route, len(body), 512, duration)
+        return result
+    exhausted = ledger_through(12, COMMAND_NS)
+    reject("aggregate_sixty_plus", "API_AGGREGATE_BUDGET_EXCEEDED", lambda: exhausted.admit_start(13))
+    reset = ledger_through(9)
+    reset.active_ns = 0
+    reject("phase_budget_reset", "API_BUDGET_ACCOUNTING_DRIFT", lambda: reset.admit_start(10))
+    complete = ledger_through(17)
+    reject("eighteenth_request", "API_REQUEST_BUDGET_EXCEEDED", lambda: complete.admit_start(18))
+    reject("helper_restart", "METADATA_HELPER_RETRY_NOT_ALLOWED", complete.start_helper)
+    reject("helper_unreaped", "METADATA_HELPER_LIFECYCLE_INCOMPLETE", complete.finish)
+    complete.helper_reaped = True
+    complete.finish()
+    incomplete = ledger_through(9)
+    reject("POST_old_ID_only", "FREEZE_POST_CHECKPOINT_INCOMPLETE", incomplete.finish)
+    for role in ("pull_request", "push"):
+        urls = [api_route_url(request | {"role": role, "route": route}) for route in range(1, 18)]
+        require(len(urls) == 17 and all(item.startswith(API_PREFIX) for item in urls),
+                "SELF_TEST_REGISTERED_ROUTES")
+        require("actions/runs/42/attempts/1/jobs?per_page=100&page=1" in urls[1] and
+                urls[5] == urls[8] == urls[13] == urls[16] == ISSUE_URL and
+                urls[6] == urls[14] and urls[7] == urls[15], "SELF_TEST_REGISTERED_ROUTES")
+    return {"negative_cases": completed, "fixture_role": "OFFLINE_PARENT_TRACE_MODEL_ONLY",
+            "actual_HTTP_requests": 0, "actual_helper_starts": 0,
+            "real_transport_or_kill_wait_tested": False}
 
 
 def provider_metadata_fixture(role: str = "pull_request") -> dict[str, Any]:
@@ -1301,9 +1896,11 @@ def self_test() -> dict[str, Any]:
     require(not source_ready({}, {}), "SELF_TEST_PENDING_SOURCE")
     count += 1
     provider_controls = provider_metadata_self_test()
+    transport_controls = transport_metadata_self_test()
     return {"experiment_id": IDENTITY, "status": "BOOTSTRAP_PURE_METADATA_CONTROLS_PASS",
-            "actual_cases": count + len(provider_controls["negative_cases"]) + len(provider_controls["positive_cases"]),
+            "actual_cases": count + len(provider_controls["negative_cases"]) + len(provider_controls["positive_cases"]) + len(transport_controls["negative_cases"]),
             "local_source_control_cases": count, "provider_metadata_controls": provider_controls,
+            "transport_metadata_controls": transport_controls,
             "registered117_controls_complete": False,
             "network_requests": 0, "subprocess_starts": 0, "scientific_C_target_starts": 0,
             "DSP_frames": 0, "real_transport_or_kill_wait_tested": False}
@@ -1314,11 +1911,14 @@ def main() -> int:
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--self-test", action="store_true")
     modes.add_argument("--source-scope", action="store_true")
+    modes.add_argument("--http-worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--event", type=Path)
     parser.add_argument("--github-output", type=Path)
     args = parser.parse_args()
     try:
+        if args.http_worker:
+            return metadata_http_worker()
         if args.self_test:
             receipt = self_test()
         else:

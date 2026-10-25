@@ -66,11 +66,13 @@ python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1a_immutable_root_qua
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1bf0_seq17_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba1_anchor_root_qualification.py --self-test
 python3 tests/validation/frontend_evolution/fe09_b2s3_t3s2b1ba2_finite_retirement_qualification.py --self-test
+python3 tests/validation/frontend_evolution/fe09_t3s3_f0_call_resource_qualification.py --self-test
 python3 tests/validation/frontend_evolution/test_fe09_same_run_artifact_visibility.py
 python3 tests/validation/frontend_evolution/test_speech_download_retry.py
 python3 tests/validation/frontend_evolution/test_speech_source_stage_budget.py
 python3 tests/validation/frontend_evolution/test_speech_source_recovery.py
 python3 tests/validation/frontend_evolution/speech_pinned_snapshot.py --self-test
+python3 tests/validation/frontend_evolution/test_fe09_b3_f0_deadline_r1.py
 python3 .github/program/workflow_pin_only_scope.py --self-test
 python3 .github/program/workflow_pin_only_replay_t1.py --self-test
 python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --self-test
@@ -92,6 +94,6 @@ if [ "${GITHUB_EVENT_NAME:-}" = pull_request ]; then
   changed_t1m1=$(git -c "safe.directory=$PWD" diff --name-only "$2...HEAD" -- \
     .github/program/workflow_pin_only_actual_tree_t1m1.py)
   if [ "$changed_t1m1" = .github/program/workflow_pin_only_actual_tree_t1m1.py ]; then
-    python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --probe-real --review 2026-10-20
+    python3 .github/program/workflow_pin_only_actual_tree_t1m1.py --probe-real --review 2026-10-24
   fi
 fi

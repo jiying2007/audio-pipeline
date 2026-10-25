@@ -75,7 +75,7 @@ jobs:
           export PKG_CONFIG_PATH="$PWD/stage-multiarch-relocated/lib/x86_64-linux-gnu/pkgconfig"
           for package in audio-pipeline audio-pipeline-runtime; do
             pkg-config --exists "$package"
-            pkg-config --variable=prefix "$package" | grep -Fx "$PWD/stage-multiarch-relocated"
+            test "$(realpath -m "$(pkg-config --variable=prefix "$package")")" = "$PWD/stage-multiarch-relocated"
             cc tests/consumer/consumer.c -o "/tmp/${package}-multiarch" \
               $(pkg-config --cflags --libs "$package")
             "/tmp/${package}-multiarch"

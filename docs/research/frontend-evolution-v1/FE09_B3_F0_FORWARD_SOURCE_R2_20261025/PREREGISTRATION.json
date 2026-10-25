@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "identity": "FE09-B3-F0-FORWARD-SOURCE-R2-PREREGISTRATION",
+  "status": "SOURCE_IDENTITY_PREREGISTERED_NOT_EXECUTED",
+  "issue": "https://github.com/jiying2007/audio-pipeline/issues/854",
+  "source_authority": "first-party-existing-source-only-immutable-R1-lineage",
+  "frozen_predecessor": {
+    "source_lock_path": "docs/research/frontend-evolution-v1/FE09_B3_F0_PREREGISTRATION_20261024/source-lock.json",
+    "source_lock_sha256": "32bd625ee640bf60310bcdc9980a5f8a41711300aee66f029fbf65c98a9bb49d",
+    "baseline_commit": "81ee559848e1e30e3dd2eb4d03b0b479b9bd971e",
+    "locked_member_count": 77,
+    "executable_member_count": 66,
+    "original_current_build_blobs": {
+      "CMakeLists.txt": "3659b13659baaac99fd6e7e56fcb45cba243955c",
+      "src/platform/linux/ap_runtime.c": "7124a9c04d46f4d907c3d9831b3d4aa35ab8414e"
+    },
+    "immutable_result_identity": "FE09-B3-F0-C4-16K-RENDER-PAP-DEADLINE-R1",
+    "only_qualified_current_source": "71ce0cc5a75a72e7203c81e8712e76abf987fc9e",
+    "prior_rejected_run": 40205111409,
+    "prior_rejected_artifact": 12602889503,
+    "prior_rejected_zip_sha256": "580c1f10015edd3be756f7866b333b163fec446f9bd1c2fd8204cbcfe202dd63",
+    "prior_rejected_reason": "LOCKED_EXECUTABLE_SOURCE_CHANGED:CMakeLists.txt",
+    "prior_rejected_accepted_frames": 0
+  },
+  "upstream_protected_main": {
+    "sha": "a85aacc65c6c558578237ebed7b120be76a27914",
+    "governance_pr": 853,
+    "source_register": "tests/validation/frontend_evolution/fe09_runtime_maintenance_rebind.py",
+    "protected_inverse": "tests/validation/frontend_evolution/fe09_runtime_maintenance_2_3_56.patch",
+    "original_policy": "tests/validation/frontend_evolution/fe09_runtime_maintenance_2_3_56.json",
+    "original_policy_unchanged": true
+  },
+  "reviewed_profiles": {
+    "2.3.57": {
+      "cmake_git_blob": "1d1e7f7bbf29d8e95b61fc135a0c93de3193256a",
+      "runtime_git_blob": "519cf2732289af74c0285d3bbff4cae556bc7d07",
+      "forward_patch_git_blob": "7e5fe35b78ff44950c0941c8bec34f71ce5b1e15",
+      "candidate_pr": 850,
+      "candidate_promoted": false
+    },
+    "2.3.58": {
+      "cmake_git_blob": "231cf6085b2b6f7a962433327075d629e16b330e",
+      "runtime_git_blob": "519cf2732289af74c0285d3bbff4cae556bc7d07",
+      "forward_patch_git_blob": "dade779a6293c7c9bd72e48611710abe3d2d8f0c",
+      "candidate_pr": 851,
+      "candidate_promoted": false
+    }
+  },
+  "source_qualification_requirements": [
+    "full 77-member R1 frozen inventory readback with 66 compiled members; exactly CMakeLists.txt and src/platform/linux/ap_runtime.c may use the preregistered version-specific new blobs; every other original compiled source remains byte-identical",
+    "before any execution: independent protected-main approval of exact versioned source, Git patch blob, compiler flags, source-role changes, maintained versions, and reverse reconstruction to original R1 identities",
+    "source checkout SHA and clean tracked state verified; no branch-generated self-signed source lock or intermediate compiled-artifact substitution",
+    "exact public CMake dependency closure re-audited because private study build uses add_subdirectory(AP_REPO_ROOT)",
+    "all changed science code must be separately preregistered before first R2 experiment; this metadata does not authorize unknown source bytes"
+  ],
+  "experiment_contract": {
+    "dataset_role": "D0_FIRST_PARTY_DISCLOSED_SYNTHETIC_ENGINEERING",
+    "targets": [
+      "native",
+      "sanitized",
+      "arm"
+    ],
+    "frozen_trajectories_per_target": 11,
+    "frames_per_trajectory": 600,
+    "expected_b3_frames": 19800,
+    "expected_api_rejections": 48,
+    "expected_semantic_negative_controls": 8,
+    "f0_expected_processes": 36,
+    "f0_frames_per_process": 600,
+    "f0_expected_distinct_frames": 21600,
+    "f0_expected_stat_groups": 144,
+    "clock": "monotonic unscaled, float source duration preserved; strict budget predicates, no epsilon",
+    "outer_time_budget_seconds": 300,
+    "target_seconds": {
+      "native": 120,
+      "sanitized": 180,
+      "arm": 300
+    },
+    "job_timeout_seconds": 900,
+    "archive_reserve_seconds": 60,
+    "max_retained_evidence_bytes": 33554432,
+    "build_configuration": "same original private C4 16k render PAP composition with current exact public CMake/runtime source version; no silent compatibility patch",
+    "artifacts": "new per-run exact-head independent manifest and SHA256SUMS, failed/partial results preserved; never inherit R1 PASS"
+  },
+  "promotion": {
+    "public_sdk": false,
+    "real_array_benefit": false,
+    "four_mic_shipping": false,
+    "ssc305_hil": false,
+    "commercial_redistribution": false,
+    "shipping": false,
+    "audio_quality_superiority": false,
+    "private_data_publish": false
+  },
+  "completion_requirements": [
+    "new R2 source implementation and exact independent negative control CI",
+    "new actual 3-target B3/F0 execution of all fixed cases and independent readback on the same candidate head",
+    "all applicable direct science/hosted real/ABI/resource gates + required summary pass on exact PR head",
+    "protected squash with exact expected head; distinct fresh-main Verify and matching Release/convergence",
+    "rejection evidence retained, explicit non-promotion and no waiver for any disabled hardware requirement"
+  ],
+  "new_b3_execution_performed": false,
+  "new_f0_execution_performed": false,
+  "quality_thresholds_relaxed": false,
+  "source_lock_rewritten": false
+}

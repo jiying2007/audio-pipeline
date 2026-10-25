@@ -54,7 +54,7 @@ M2_SOURCE_FILES = (
     ".github/program/workflow_pin_pr_consumer.py",
     ".github/program/workflow_pin_only_actual_tree_t1m1.py",
     ".github/program/workflow_pin_only_scope.py",
-    ".github/program/workflow_pin_only_bot714_20261020.json",
+    ".github/program/workflow_pin_only_bot714_20261024.json",
 )
 # These are reviewable literal templates, not a general YAML interpreter or
 # an editable shell slot. No candidate-supplied token is interpolated here.
@@ -360,8 +360,8 @@ def workflow_templates(anchor: str) -> dict[str, str]:
 
 def protected_m2_closure(git: Git, base: str, contract: dict) -> dict:
     registered = contract.get("preregistered_m2_source_closure")
-    need(type(registered) is dict and registered.get("review_id") == "2026-10-20" and
-         registered.get("source_review_commit") == "a42427693484409f9954125dada37d5db6c6f51e" and
+    need(type(registered) is dict and registered.get("review_id") == "2026-10-24" and
+         registered.get("source_review_commit") == "74ac99649916f441d3674602fb4a8aff5c79da00" and
          registered.get("actual_m1_prerequisite_observed_by_this_helper") is False and
          registered.get("protected_main_closure_observed_by_this_helper") is False and
          type(registered.get("files")) is dict and set(registered["files"]) == set(M2_SOURCE_FILES),
